@@ -4106,3 +4106,206 @@ endpoint atomically.
   file) — the discipline that catches this specific class.
 - "Pre-Inspection MUST audit all callers of a touched endpoint"
   (this file) — producer-side analogue to caller-coverage.
+
+
+## Foundation-Override extension: Half-Wired-Visible-in-Production triggers P1
+
+Filed 2026-05-20 from the backlog re-prioritization audit
+(`docs/audits/backlog-reprioritization-2026-05-20.md`, commit
+`281a6f6`).
+
+The original Foundation-Override (in `ai-workflow.md` "ROADMAP
+priority tiers" + the 4-Axes audit methodology) auto-promotes
+items to P1 when **A2 = 5** (blocks 3+ items OR is upstream-
+blocker). The audit's apply phase surfaced a gap: items that
+score below 17 in raw 4-Axes totals but produce a **user-
+visible half-wired state in production** deserve the same P1
+override.
+
+### Concrete case that triggered the extension
+
+`PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01` scored 16 (A1=4 + A2=4
++ A3=4 + A4=4). The strict Foundation-Override didn't fire
+(A2=4 < 5). But the item closes the **degraded "no comic pages
+yet" state** that `ComicBookEditor` surfaces in production
+today: users can create a comic_book, the editor mounts, but
+they cannot add pages because plugin-kinderbuch's pages router
+gates on `book_type='picture_book'`. The half-wired state is
+visible to every user who tries to author a comic.
+
+Score-only methodology would have kept this at P2; the user-
+visible half-wired criterion bumps it to P1 because the cost
+of leaving it is paid by every user, not just the developer.
+
+### Extended override rule
+
+**P1 override fires when ANY of:**
+
+1. **A2 = 5** (original criterion: blocks 3+ items OR upstream-
+   blocker), OR
+2. **Half-Wired-Visible-in-Production**: the item closes a
+   half-wired feature that is currently shipping in production,
+   user-visible, and degraded.
+
+Half-Wired-Visible-in-Production criterion checks:
+
+- The half-wired feature is **already in production** (i.e. the
+  write-surface OR the partial-state shipped to users; it's not
+  a pre-ship gap)
+- The user-side **observes the broken-ness** (not just
+  developers; not just CI; not just future-state assumptions)
+- The item closes the read-surface, inverse-mutation, or
+  blocker that would make the feature whole
+
+### Distinction from "Half-Wired-Feature-Lifecycle" rule
+
+The existing "Half-wired feature lifecycle" lessons-learned
+entry (this file) covers PREVENTION: don't ship state-write
+without state-consumer; don't ship Create+Update+Delete without
+Read.
+
+This new override covers CLEANUP-PRIORITY: when a half-wired
+feature DID ship (often during a feature-rush or a deliberate
+in-stages decision), the closure item gets P1 priority instead
+of falling into normal-tier work.
+
+The two rules are complementary:
+
+- Prevention rule fires AT DEVELOPMENT TIME (Pre-Inspection
+  catches the gap).
+- Override rule fires AT BACKLOG-PRIORITIZATION TIME (closure
+  item gets P1).
+
+### Counterexamples (when override does NOT fire)
+
+- A half-wired feature that's **not yet shipped** (dev branch
+  only) is NOT under this override. Use the prevention rule
+  instead.
+- A half-wired feature that's shipped but **not user-visible**
+  (e.g. an internal admin tool only Aster uses) does NOT trigger
+  P1 — production-visible means user-visible.
+- A half-wired feature whose closure scope is **multi-session
+  XL work** (e.g. KDP-Wizard's wizard surfaces) gets the
+  normal-tier treatment because P1 implies "do soon" and the
+  multi-session shape can't honor that semantic.
+
+### Pairs with
+
+- `ai-workflow.md` "ROADMAP priority tiers" (the original
+  Foundation-Override definition lives there)
+- "Half-wired feature lifecycle: a state-write without its
+  inverse-mutation OR its state-consumer is purgatory, not a
+  feature" (this file) — prevention sibling
+
+
+## Periodic backlog re-prioritization discipline (4-Axes audit pattern)
+
+Filed 2026-05-20 from the audit's apply-phase retrospective.
+
+Backlog priorities are assigned at filing time. Over weeks-to-
+months of organic growth they drift from current strategic-
+state — items filed early under "next direction" lose
+relevance; speculative items mature into actionable; effort-
+estimates calibrate against shipped work. Single-author projects
+accumulate this drift faster than multi-author ones because
+nobody else re-reads the backlog from scratch.
+
+The 2026-05-20 audit revealed:
+
+- 24 of 67 active items had a tier mismatch under current
+  4-Axes scoring (~36%)
+- 4 items were archive candidates (work shipped or
+  semantic-duplicate)
+- 4 items had body-vs-section priority inconsistencies
+- 1 item had non-standard ID format
+- 2 audit-body candidates were stale references to already-
+  archived items
+
+### Trigger criteria for the next audit
+
+Schedule a re-prioritization session when **any of**:
+
+1. **Substantial growth** since last audit: >= 20 new items
+   filed
+2. **Major phase close**: Phase 4 wraps; v1.0 cut; multi-session
+   feature ships (e.g. Comics-Session-N + Mobile-Sync-N)
+3. **Strategic-direction shift** explicitly declared by user
+   (e.g. "we pivoting from picture-book to fiction")
+4. **Quarterly cadence**: ~3 months since last audit even
+   without strong trigger
+
+### Audit deliverable shape
+
+The audit's output is a SINGLE READ-ONLY document at
+`docs/audits/backlog-reprioritization-YYYY-MM-DD.md`. Structure:
+
+- Summary statistics (item count, distribution, changes
+  proposed)
+- Top-10 action list (highest-priority items)
+- Cluster identification (items that ship together for less
+  cost)
+- Full re-prioritization table (per-item 4-Axes scoring)
+- Archive candidates
+- Open Questions for user-decision
+- Methodology limitations
+
+The deliverable is **NOT** an apply commit. The apply phase is
+separate, follows user-adjudication of Open Questions, and is
+its own multi-commit session.
+
+### Audit-vs-Apply separation
+
+Three reasons to keep audit + apply as separate sessions:
+
+1. **User-adjudication latency**: Open Questions may take days
+   to resolve. The audit doc captures the audit-state at a fixed
+   commit; the apply phase consumes the adjudication.
+2. **Audit doc as historical record**: even after apply lands,
+   the audit doc documents WHY the changes were made. Future
+   contributors (or LLMs) revisit it.
+3. **Atomic commits**: audit = 1 commit (the doc); apply =
+   N commits (per-cluster). Separating them keeps each commit
+   focused.
+
+### 4-Axes scoring shape (canonical)
+
+Each item scored 1-5 across:
+
+- **A1 User-Visible-Impact**: does shipping it produce user-
+  visible value?
+- **A2 Foundation-Impact**: does it unblock other items?
+- **A3 Strategic-Alignment**: does it match current-quarter
+  direction?
+- **A4 Effort-Discounted-Value**: effort inverse-weighted by
+  value
+
+Sum is 4-20. Tier-map: 17-20 P1, 13-16 P2, 9-12 P3, 5-8 P4, 4
+P5. Plus the Foundation-Override (now extended; see prior
+section).
+
+### Anti-pattern: priority-as-filed without re-audit
+
+Priorities assigned at filing time + never re-audited produces
+predictable drift:
+
+- P3 grows to dominate the backlog (default-priority bias)
+- P5 accumulates trigger-gated speculative items that never
+  fire
+- New users / fresh contributors / future-sessions can't tell
+  what's important
+- The "next session" decision happens by recency-bias rather
+  than score
+
+The periodic audit forces a fresh look. The cost is small
+(1-2 hours per audit) and amortizes across many sessions
+that follow.
+
+### Pairs with
+
+- `ai-workflow.md` "ROADMAP priority tiers" (the canonical
+  tier semantics)
+- `ai-workflow.md` "Continuous-archival rule" (the daily-
+  hygiene sibling; re-prioritization is the periodic sibling)
+- "Foundation-Override extension" (this file) — the override
+  that the audit-methodology consumes
+
