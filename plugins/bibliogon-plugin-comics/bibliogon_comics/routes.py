@@ -70,11 +70,11 @@ def get_plugin_info() -> dict[str, Any]:
     """
     return {
         "name": "comics",
-        "version": "1.0.0",
-        "session": 1,
-        "status": "scaffolding",
+        "version": "1.1.0",
+        "session": 2,
+        "status": "active",
         "description": (
-            "Comic-authoring plugin. Session 1 ships scaffolding only; "
-            "Session 2 brings panels, multi-bubble, and the PDF walker."
+            "Comic-authoring plugin. Session 2 ships panels, multi-bubble, "
+            "PDF walker, and the frontend editor."
         ),
     }

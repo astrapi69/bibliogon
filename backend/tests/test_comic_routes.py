@@ -261,6 +261,92 @@ class TestComicPanelDelete:
 # --- Bubble routes ---
 
 
+class TestComicBubbleList:
+    """C6 Half-Wired-Lifecycle closure for the C2 missing-Read in
+    the bubble CRUD. Pins the new GET endpoint contract."""
+
+    def test_list_bubbles_returns_empty_for_new_panel(
+        self, client: TestClient
+    ) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        panel = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+            json={"bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 100, "height_pct": 100}},
+        ).json()
+        resp = client.get(
+            f"/api/books/{book_id}/comic-panels/{panel['id']}/bubbles",
+        )
+        assert resp.status_code == 200
+        assert resp.json() == []
+
+    def test_list_bubbles_returns_position_ordered(
+        self, client: TestClient
+    ) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        panel = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+            json={"bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 100, "height_pct": 100}},
+        ).json()
+        for bubble_type in ("speech", "thought", "shout"):
+            client.post(
+                f"/api/books/{book_id}/comic-panels/{panel['id']}/bubbles",
+                json={
+                    "bubble_type": bubble_type,
+                    "anchor": {"x_pct": 50, "y_pct": 50},
+                },
+            )
+        resp = client.get(
+            f"/api/books/{book_id}/comic-panels/{panel['id']}/bubbles",
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert len(body) == 3
+        assert [b["position"] for b in body] == [1, 2, 3]
+        assert [b["bubble_type"] for b in body] == [
+            "speech",
+            "thought",
+            "shout",
+        ]
+
+    def test_list_bubbles_400_on_non_comic_book(
+        self, client: TestClient
+    ) -> None:
+        # Picture-book + prose books cannot host comic-panels;
+        # the panel-resolution gate fires before bubble-list.
+        pb_id = _create_picture_book(client)
+        # Drop a Page directly so panel-id resolution proceeds far
+        # enough to hit the book-type gate (mirror of existing
+        # C2 negative-case style).
+        from app.database import SessionLocal
+        from app.models import Page
+
+        session = SessionLocal()
+        try:
+            page = Page(book_id=pb_id, position=1, layout="speech_bubble")
+            session.add(page)
+            session.commit()
+        finally:
+            session.close()
+        # No comic-panel can exist under a picture_book; the
+        # endpoint 400's at the book-type gate before any 404
+        # resolution. A made-up panel-id still triggers the gate.
+        resp = client.get(
+            f"/api/books/{pb_id}/comic-panels/made-up-panel-id/bubbles",
+        )
+        assert resp.status_code == 400
+
+    def test_list_bubbles_404_on_unknown_panel(
+        self, client: TestClient
+    ) -> None:
+        book_id = _create_comic_book(client)
+        resp = client.get(
+            f"/api/books/{book_id}/comic-panels/unknown-panel/bubbles",
+        )
+        assert resp.status_code == 404
+
+
 class TestComicBubbleCreate:
     def test_create_bubble_returns_201_with_defaults_from_migration(
         self, client: TestClient

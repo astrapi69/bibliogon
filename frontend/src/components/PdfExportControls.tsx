@@ -1,25 +1,31 @@
 /**
- * PDF export controls for picture-book PDFs (PDF-BLEED-MARKS-01 C2
- * shared component).
+ * PDF export controls for picture-book + comic-book PDFs.
  *
- * Encapsulates the format dropdown + bleed-marks checkbox + Export
- * PDF button. Mounts at two surfaces today:
+ * Originally PictureBookPdfExportControls (PDF-BLEED-MARKS-01 C2
+ * shared component); renamed in plugin-comics Session 2 C6 when
+ * the component picked up its third caller. The format dropdown
+ * (5 KDP picture-book trim sizes) + bleed-marks checkbox + the
+ * Export-PDF button mount the same way across all three surfaces;
+ * comic-book PDFs reuse the same trim catalogue per Q4 a.
  *
- * - ``PageEditor`` header (was PDF-KDP-FORMATS-01's home before
- *   this extraction)
- * - ``BookMetadataEditor`` Design tab (was the half-wired surface
- *   that PDF-KDP-FORMATS-01 silently left behind — Export-PDF
- *   button there ignored the format dropdown's selection because
- *   the dropdown only existed in PageEditor)
+ * Mounts at three surfaces:
  *
- * Recurring-Component-Unification Rule canonical 2-site extract-
- * plus-migrate. The half-wired surface is closed as an explicit
- * side-effect of this extraction.
+ * - ``PageEditor`` header (picture-book per-page surface; was
+ *   PDF-KDP-FORMATS-01's home before the PDF-BLEED-MARKS-01 extract)
+ * - ``BookMetadataEditor`` Design tab (picture-book book-level
+ *   surface; closes the PDF-KDP-FORMATS-01 half-wired gap)
+ * - ``ComicBookEditor`` header (comic-book book-level surface;
+ *   added in C6)
  *
  * Both controls + the export-button live INSIDE this component so
  * the parent only needs to pass ``bookId`` + a ``testidPrefix``
  * (for parent-scoped E2E targeting). State + localStorage +
  * handleExport are all owned here.
+ *
+ * The format/bleed localStorage keys are book-type-agnostic — a
+ * user's last-picked format applies across picture-book + comic-
+ * book contexts; intentional cross-surface continuity per the
+ * 2-surfaces-share-one-storage convention.
  */
 
 import React, {useCallback, useState} from "react"
@@ -98,7 +104,7 @@ interface Props {
     spinnerClassName?: string
 }
 
-export default function PictureBookPdfExportControls({
+export default function PdfExportControls({
     bookId,
     testidPrefix,
     controlClassName,

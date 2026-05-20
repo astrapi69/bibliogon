@@ -17,7 +17,7 @@ from pluginforge import BasePlugin
 
 class ComicsPlugin(BasePlugin):
     name = "comics"
-    version = "1.0.0"
+    version = "1.1.0"
     api_version = "1"
     target_application = "bibliogon"
     min_app_version = "0.35.0"

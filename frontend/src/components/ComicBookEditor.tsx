@@ -1,27 +1,49 @@
 /**
- * Placeholder editor for ``book_type === "comic_book"`` books.
+ * ComicBookEditor — full editor for ``book_type === "comic_book"``
+ * books.
  *
- * Session 1 (plugin-comics scaffolding): renders a minimal page
- * showing the book title, a back button, and the plugin's
- * ``/api/comics/info`` response so the user can verify the plugin
- * is mounted. The placeholder is INTENTIONAL — Session 2 ships the
- * full panel + multi-bubble editor and replaces this component.
+ * Comics-Session-2 C6. Replaces the Session-1 placeholder with a
+ * working multi-panel + multi-bubble editor that mounts the C5
+ * shared comic components (ComicPanelGrid, LayoutConfigComicBubble)
+ * + the renamed PdfExportControls in the header.
  *
- * This is NOT a half-wired feature per the lessons-learned rule.
- * The "Half-wired feature lifecycle" pattern fires when a state-
- * write surface exists without its consumer. Here the user creates
- * a comic_book via the Dashboard chevron menu and lands on a page
- * that LOUDLY tells them Session 2 is pending. The contract the
- * UI promises (a comic-authoring editor) is openly deferred, not
- * silently broken.
+ * Editing surface:
+ * - Header: back button, book title, PdfExportControls, fullscreen
+ * - Body: ComicPanelGrid for the active page (selected via the
+ *   page-switcher chips below the grid) + panel + bubble action
+ *   buttons (Add Panel, Add Bubble, Delete) keyed to the active
+ *   selection
+ * - Side pane: LayoutConfigComicBubble when a bubble is selected;
+ *   instructions otherwise
+ *
+ * Backend page-CRUD for comic_book is gated by plugin-kinderbuch's
+ * ``picture_book``-only contract — see PLUGIN-COMICS-SESSION-3-
+ * PAGES-CRUD-01 (filed in C7 backlog). For comic books WITHOUT
+ * pages, the editor surfaces a degraded "no pages yet" state with
+ * a pointer to the Session 3 follow-up. Authors can still test the
+ * editor against pages seeded via direct SQL.
  */
 
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useMemo, useState} from "react";
 import {Maximize2, Minimize2} from "lucide-react";
-import {api, ApiError, type ComicsPluginInfo} from "../api/client";
+
+import {
+    api,
+    ApiError,
+    type ComicBubbleOut,
+    type ComicPanelOut,
+    type ComicsPluginInfo,
+    type Page,
+} from "../api/client";
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
 import {useI18n} from "../hooks/useI18n";
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
+
+import {ComicPanelGrid} from "./comics/ComicPanelGrid";
+import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
+import type {ComicBubbleData} from "./comics/ComicBubble";
+import type {ComicPanelData} from "./comics/ComicPanel";
+import PdfExportControls from "./PdfExportControls";
 
 interface Props {
     bookId: string;
@@ -32,12 +54,19 @@ interface Props {
 export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
     const {t} = useI18n();
     const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
-    const [error, setError] = useState<string | null>(null);
+    const [pluginError, setPluginError] = useState<string | null>(null);
+    const [pages, setPages] = useState<Page[]>([]);
+    const [pagesError, setPagesError] = useState<string | null>(null);
+    const [activePageId, setActivePageId] = useState<string | null>(null);
+    const [panels, setPanels] = useState<ComicPanelOut[]>([]);
+    const [bubblesByPanel, setBubblesByPanel] = useState<
+        Record<string, ComicBubbleOut[]>
+    >({});
+    const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
+    const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(
+        null,
+    );
 
-    // EDITOR-FULLSCREEN-NATIVE-01: browser-native fullscreen
-    // toggle. Placeholder gets the same affordance as the four
-    // shipped editor surfaces - Session 2 inherits it when this
-    // component is replaced with the full multi-panel editor.
     const fullscreen = useFullscreenToggle();
     useKeyboardShortcuts(
         fullscreen.isSupported
@@ -56,21 +85,171 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 if (cancelled) return;
                 const detail =
                     err instanceof ApiError ? err.detail : String(err);
-                setError(detail);
+                setPluginError(detail);
             });
         return () => {
             cancelled = true;
         };
     }, []);
 
+    // Load pages. The /pages endpoint is owned by plugin-kinderbuch
+    // and currently gates on book_type='picture_book'; comic_book
+    // returns 400. We catch that explicitly so the editor surfaces
+    // a degraded "no pages yet" state instead of bubbling the error.
+    useEffect(() => {
+        let cancelled = false;
+        api.pages
+            .list(bookId)
+            .then((rows) => {
+                if (cancelled) return;
+                setPages(rows);
+                setActivePageId(rows[0]?.id ?? null);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [bookId]);
+
+    const refreshPanelsAndBubbles = useCallback(
+        async (pageId: string) => {
+            try {
+                const panelRows = await api.comics.listPanels(bookId, pageId);
+                setPanels(panelRows);
+                const bubbleMap: Record<string, ComicBubbleOut[]> = {};
+                await Promise.all(
+                    panelRows.map(async (panel) => {
+                        bubbleMap[panel.id] = await api.comics.listBubbles(
+                            bookId,
+                            panel.id,
+                        );
+                    }),
+                );
+                setBubblesByPanel(bubbleMap);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [bookId],
+    );
+
+    useEffect(() => {
+        if (!activePageId) {
+            setPanels([]);
+            setBubblesByPanel({});
+            return;
+        }
+        void refreshPanelsAndBubbles(activePageId);
+    }, [activePageId, refreshPanelsAndBubbles]);
+
+    const handleAddPanel = useCallback(async () => {
+        if (!activePageId) return;
+        try {
+            await api.comics.createPanel(bookId, activePageId, {
+                bounds: {x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100},
+            });
+            await refreshPanelsAndBubbles(activePageId);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [activePageId, bookId, refreshPanelsAndBubbles]);
+
+    const handleDeletePanel = useCallback(async () => {
+        if (!selectedPanelId || !activePageId) return;
+        try {
+            await api.comics.deletePanel(bookId, selectedPanelId);
+            setSelectedPanelId(null);
+            setSelectedBubbleId(null);
+            await refreshPanelsAndBubbles(activePageId);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
+
+    const handleAddBubble = useCallback(async () => {
+        if (!selectedPanelId || !activePageId) return;
+        try {
+            await api.comics.createBubble(bookId, selectedPanelId, {
+                bubble_type: "speech",
+                anchor: {x_pct: 25, y_pct: 25},
+            });
+            await refreshPanelsAndBubbles(activePageId);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
+
+    const handleDeleteBubble = useCallback(async () => {
+        if (!selectedBubbleId || !activePageId) return;
+        try {
+            await api.comics.deleteBubble(bookId, selectedBubbleId);
+            setSelectedBubbleId(null);
+            await refreshPanelsAndBubbles(activePageId);
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId]);
+
+    const handleUpdateBubble = useCallback(
+        async (partial: Partial<ComicBubbleData>) => {
+            if (!selectedBubbleId || !activePageId) return;
+            try {
+                await api.comics.updateBubble(
+                    bookId,
+                    selectedBubbleId,
+                    partial as Record<string, unknown>,
+                );
+                await refreshPanelsAndBubbles(activePageId);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId],
+    );
+
+    const selectedBubble = useMemo<ComicBubbleData | null>(() => {
+        if (!selectedBubbleId) return null;
+        for (const panelBubbles of Object.values(bubblesByPanel)) {
+            const found = panelBubbles.find((b) => b.id === selectedBubbleId);
+            if (found) return found as unknown as ComicBubbleData;
+        }
+        return null;
+    }, [bubblesByPanel, selectedBubbleId]);
+
+    const activePage = pages.find((p) => p.id === activePageId) ?? null;
+    const panelData = panels as unknown as ComicPanelData[];
+    const panelBubblesMap: Record<string, ComicBubbleData[]> = useMemo(
+        () =>
+            Object.fromEntries(
+                Object.entries(bubblesByPanel).map(([k, v]) => [
+                    k,
+                    v as unknown as ComicBubbleData[],
+                ]),
+            ),
+        [bubblesByPanel],
+    );
+
     return (
         <div
             data-testid="comic-book-editor-root"
             data-book-id={bookId}
             style={{
-                maxWidth: 720,
+                maxWidth: 1200,
                 margin: "0 auto",
-                padding: "24px",
+                padding: 20,
                 display: "flex",
                 flexDirection: "column",
                 gap: 16,
@@ -90,6 +269,10 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 >
                     {bookTitle}
                 </h1>
+                <PdfExportControls
+                    bookId={bookId}
+                    testidPrefix="comic-book-editor"
+                />
                 {fullscreen.isSupported && (
                     <button
                         type="button"
@@ -97,111 +280,240 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                         data-testid="comic-book-editor-fullscreen"
                         onClick={() => void fullscreen.toggle()}
                         aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
-                        aria-keyshortcuts="F11 Control+Shift+F"
-                        title={
-                            fullscreen.isFullscreen
-                                ? t("ui.toolbar.exit_fullscreen", "Vollbild verlassen") +
-                                  " (F11 / Ctrl+Shift+F)"
-                                : t("ui.toolbar.fullscreen", "Vollbild") +
-                                  " (F11 / Ctrl+Shift+F)"
-                        }
-                        style={{display: "inline-flex", alignItems: "center", gap: 6}}
                     >
                         {fullscreen.isFullscreen ? (
                             <Minimize2 size={14} />
                         ) : (
                             <Maximize2 size={14} />
                         )}
-                        <span>
-                            {fullscreen.isFullscreen
-                                ? t(
-                                      "ui.toolbar.exit_fullscreen",
-                                      "Vollbild verlassen",
-                                  )
-                                : t("ui.toolbar.fullscreen", "Vollbild")}
-                        </span>
                     </button>
                 )}
             </header>
 
-            <section
-                data-testid="comic-book-editor-placeholder"
-                style={{
-                    padding: 20,
-                    border: "1px solid var(--border, #ddd)",
-                    borderRadius: 8,
-                    backgroundColor: "var(--surface-2, #fafafa)",
-                }}
-            >
-                <h2 style={{marginTop: 0}}>
+            {pluginInfo && (
+                <div
+                    data-testid="comic-book-editor-plugin-info"
+                    style={{fontSize: "0.8rem", opacity: 0.7}}
+                >
+                    {pluginInfo.name} v{pluginInfo.version} (session{" "}
+                    {pluginInfo.session})
+                </div>
+            )}
+            {pluginError && (
+                <div
+                    data-testid="comic-book-editor-plugin-error"
+                    role="alert"
+                    style={{color: "var(--danger, #c00)"}}
+                >
                     {t(
-                        "ui.comic_book_editor.placeholder_title",
-                        "Comic-Editor in Vorbereitung",
-                    )}
-                </h2>
-                <p>
-                    {t(
-                        "ui.comic_book_editor.placeholder_message",
-                        "Das Comic-Plugin ist installiert. Der vollständige Editor mit Panels und Sprechblasen kommt in Session 2.",
-                    )}
-                </p>
+                        "ui.comic_book_editor.plugin_unreachable",
+                        "Comic-Plugin nicht erreichbar:",
+                    )}{" "}
+                    {pluginError}
+                </div>
+            )}
 
-                {pluginInfo && (
-                    <dl
-                        data-testid="comic-book-editor-plugin-info"
+            {pages.length === 0 ? (
+                <section
+                    data-testid="comic-book-editor-no-pages"
+                    style={{
+                        padding: 20,
+                        border: "1px dashed var(--border, #ddd)",
+                        borderRadius: 8,
+                        background: "var(--surface-2, #fafafa)",
+                    }}
+                >
+                    <h2 style={{marginTop: 0}}>
+                        {t(
+                            "ui.comic_book_editor.no_pages_title",
+                            "Noch keine Comic-Seiten",
+                        )}
+                    </h2>
+                    <p>
+                        {t(
+                            "ui.comic_book_editor.no_pages_message",
+                            "Comic-Seiten werden in Session 3 direkt aus dem Editor erstellt. Im Moment muss eine Seite über die Datenbank gesetzt sein, damit der Editor Panels und Sprechblasen rendert.",
+                        )}
+                    </p>
+                    {pagesError && (
+                        <p
+                            data-testid="comic-book-editor-pages-error"
+                            role="alert"
+                            style={{
+                                color: "var(--danger, #c00)",
+                                marginTop: 16,
+                            }}
+                        >
+                            {pagesError}
+                        </p>
+                    )}
+                </section>
+            ) : (
+                <div
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "1fr 320px",
+                        gap: 16,
+                    }}
+                >
+                    <section
                         style={{
-                            display: "grid",
-                            gridTemplateColumns: "auto 1fr",
-                            gap: "4px 12px",
-                            fontSize: "0.9rem",
-                            marginTop: 16,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 12,
                         }}
                     >
-                        <dt>
-                            <strong>
-                                {t(
-                                    "ui.comic_book_editor.plugin_label",
-                                    "Plugin",
-                                )}
-                            </strong>
-                        </dt>
-                        <dd
-                            data-testid="comic-book-editor-plugin-name"
-                            style={{margin: 0}}
+                        <nav
+                            data-testid="comic-book-editor-page-nav"
+                            style={{display: "flex", flexWrap: "wrap", gap: 6}}
                         >
-                            {pluginInfo.name} v{pluginInfo.version}
-                        </dd>
-                        <dt>
-                            <strong>
-                                {t(
-                                    "ui.comic_book_editor.session_label",
-                                    "Session",
-                                )}
-                            </strong>
-                        </dt>
-                        <dd
-                            data-testid="comic-book-editor-plugin-session"
-                            style={{margin: 0}}
-                        >
-                            {pluginInfo.session} ({pluginInfo.status})
-                        </dd>
-                    </dl>
-                )}
+                            {pages.map((page, idx) => (
+                                <button
+                                    key={page.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setActivePageId(page.id);
+                                        setSelectedPanelId(null);
+                                        setSelectedBubbleId(null);
+                                    }}
+                                    data-testid={`comic-book-editor-page-${page.id}`}
+                                    aria-pressed={
+                                        activePageId === page.id
+                                            ? "true"
+                                            : "false"
+                                    }
+                                    className="btn btn-secondary btn-sm"
+                                    style={{
+                                        fontWeight:
+                                            activePageId === page.id ? 700 : 400,
+                                    }}
+                                >
+                                    {t(
+                                        "ui.comic_book_editor.page_chip",
+                                        "Seite",
+                                    )}{" "}
+                                    {idx + 1}
+                                </button>
+                            ))}
+                        </nav>
 
-                {error && (
-                    <p
-                        data-testid="comic-book-editor-plugin-error"
-                        role="alert"
-                        style={{color: "var(--danger, #c00)", marginTop: 16}}
+                        <div
+                            data-testid="comic-book-editor-grid-wrapper"
+                            style={{
+                                position: "relative",
+                                aspectRatio: "1 / 1",
+                                border: "1px solid var(--border, #ddd)",
+                            }}
+                        >
+                            <ComicPanelGrid
+                                layoutConfig={
+                                    (activePage?.layout_config as
+                                        | Record<string, unknown>
+                                        | null) ?? null
+                                }
+                                panels={panelData}
+                                panelBubblesMap={panelBubblesMap}
+                                selectedPanelId={selectedPanelId}
+                                selectedBubbleId={selectedBubbleId}
+                                onPanelClick={(panelId) => {
+                                    setSelectedPanelId(panelId);
+                                    setSelectedBubbleId(null);
+                                }}
+                                onBubbleClick={(bubbleId) => {
+                                    setSelectedBubbleId(bubbleId);
+                                }}
+                            />
+                        </div>
+
+                        <div
+                            data-testid="comic-book-editor-actions"
+                            style={{display: "flex", gap: 8, flexWrap: "wrap"}}
+                        >
+                            <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                data-testid="comic-book-editor-add-panel"
+                                onClick={handleAddPanel}
+                                disabled={!activePageId}
+                            >
+                                {t(
+                                    "ui.comic_book_editor.add_panel",
+                                    "Panel hinzufügen",
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                data-testid="comic-book-editor-delete-panel"
+                                onClick={handleDeletePanel}
+                                disabled={!selectedPanelId}
+                            >
+                                {t(
+                                    "ui.comic_book_editor.delete_panel",
+                                    "Panel löschen",
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                data-testid="comic-book-editor-add-bubble"
+                                onClick={handleAddBubble}
+                                disabled={!selectedPanelId}
+                            >
+                                {t(
+                                    "ui.comic_book_editor.add_bubble",
+                                    "Sprechblase hinzufügen",
+                                )}
+                            </button>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                data-testid="comic-book-editor-delete-bubble"
+                                onClick={handleDeleteBubble}
+                                disabled={!selectedBubbleId}
+                            >
+                                {t(
+                                    "ui.comic_book_editor.delete_bubble",
+                                    "Sprechblase löschen",
+                                )}
+                            </button>
+                        </div>
+                    </section>
+
+                    <aside
+                        data-testid="comic-book-editor-side-pane"
+                        style={{
+                            border: "1px solid var(--border, #ddd)",
+                            borderRadius: 8,
+                            background: "var(--surface-2, #fafafa)",
+                            minHeight: 400,
+                            overflow: "auto",
+                        }}
                     >
-                        {t(
-                            "ui.comic_book_editor.plugin_unreachable",
-                            "Das Comic-Plugin ist nicht erreichbar:",
-                        )}{" "}
-                        {error}
-                    </p>
-                )}
-            </section>
+                        {selectedBubble ? (
+                            <LayoutConfigComicBubble
+                                bubble={selectedBubble}
+                                onChange={handleUpdateBubble}
+                            />
+                        ) : (
+                            <div
+                                data-testid="comic-book-editor-side-pane-empty"
+                                style={{padding: 16}}
+                            >
+                                {selectedPanelId
+                                    ? t(
+                                          "ui.comic_book_editor.side_pane_panel_selected",
+                                          "Panel ausgewählt. Wähle eine Sprechblase, um sie zu bearbeiten.",
+                                      )
+                                    : t(
+                                          "ui.comic_book_editor.side_pane_default",
+                                          "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
+                                      )}
+                            </div>
+                        )}
+                    </aside>
+                </div>
+            )}
         </div>
     );
 }

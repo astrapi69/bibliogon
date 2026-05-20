@@ -115,7 +115,17 @@ export function ComicBubble({bubble, selected, onClick}: ComicBubbleProps) {
             data-bubble-type={bubble.bubble_type}
             className={`${BUBBLE_BASE_CLASS} ${bubbleTypeClassName(bubble.bubble_type)}`}
             style={{...baseStyle, ...overrideStyle}}
-            onClick={onClick}
+            onClick={
+                onClick
+                    ? (e) => {
+                          // Bubble-click is more specific than panel-click;
+                          // stop propagation so the parent's onPanelClick
+                          // doesn't fire and clear the bubble selection.
+                          e.stopPropagation();
+                          onClick();
+                      }
+                    : undefined
+            }
             role={onClick ? "button" : undefined}
             tabIndex={onClick ? 0 : undefined}
         >

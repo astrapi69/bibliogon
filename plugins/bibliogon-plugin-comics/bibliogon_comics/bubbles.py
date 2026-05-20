@@ -86,6 +86,29 @@ def _serialize_json_field(value: dict[str, Any] | None) -> str | None:
     return json.dumps(value)
 
 
+@router.get(
+    "/{book_id}/comic-panels/{panel_id}/bubbles",
+    response_model=list[ComicBubbleOut],
+)
+def list_bubbles(
+    book_id: str, panel_id: str, db: Session = Depends(get_db)
+) -> list[ComicBubble]:
+    """List a comic-panel's bubbles ordered by position ascending.
+
+    Half-Wired-Lifecycle closure (C6, 2026-05-20): C2 shipped
+    Create+Update+Delete without Read, surfaced by the C6
+    Pre-Coding-Reality-Check when the frontend full editor
+    needed to populate ``ComicPanelGrid``'s ``panelBubblesMap``.
+    """
+    _get_panel_in_book_or_404(book_id, panel_id, db)
+    return (
+        db.query(ComicBubble)
+        .filter(ComicBubble.panel_id == panel_id)
+        .order_by(ComicBubble.position.asc())
+        .all()
+    )
+
+
 @router.post(
     "/{book_id}/comic-panels/{panel_id}/bubbles",
     response_model=ComicBubbleOut,

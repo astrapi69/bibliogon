@@ -1,5 +1,5 @@
 /**
- * Tests for PictureBookPdfExportControls (PDF-BLEED-MARKS-01 C2
+ * Tests for PdfExportControls (PDF-BLEED-MARKS-01 C2
  * shared component).
  *
  * The component is the canonical extraction site per the
@@ -24,7 +24,7 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach, afterEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
-import PictureBookPdfExportControls from "./PictureBookPdfExportControls"
+import PdfExportControls from "./PdfExportControls"
 import {ApiError} from "./../api/client"
 
 vi.mock("../hooks/useI18n", () => ({
@@ -67,10 +67,10 @@ afterEach(() => {
     localStorage.clear()
 })
 
-describe("PictureBookPdfExportControls - render", () => {
+describe("PdfExportControls - render", () => {
     it("renders the 5 KDP picture-book formats in the dropdown", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId(
             "pe-pdf-format-select",
@@ -87,7 +87,7 @@ describe("PictureBookPdfExportControls - render", () => {
 
     it("renders the bleed-marks checkbox + Export PDF button", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         expect(screen.getByTestId("pe-pdf-bleed-toggle")).toBeTruthy()
         expect(screen.getByTestId("pe-export-pdf")).toBeTruthy()
@@ -95,7 +95,7 @@ describe("PictureBookPdfExportControls - render", () => {
 
     it("testidPrefix scopes all 3 testids to the parent surface", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="metadata" />,
+            <PdfExportControls bookId="b1" testidPrefix="metadata" />,
         )
         expect(screen.getByTestId("metadata-pdf-format-select")).toBeTruthy()
         expect(screen.getByTestId("metadata-pdf-bleed-toggle")).toBeTruthy()
@@ -103,10 +103,10 @@ describe("PictureBookPdfExportControls - render", () => {
     })
 })
 
-describe("PictureBookPdfExportControls - localStorage initialisation", () => {
+describe("PdfExportControls - localStorage initialisation", () => {
     it("defaults to 8.5x8.5 + bleed=false when localStorage is empty", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId(
             "pe-pdf-format-select",
@@ -121,7 +121,7 @@ describe("PictureBookPdfExportControls - localStorage initialisation", () => {
     it("reads persisted bibliogon-picture-book-format on mount", () => {
         localStorage.setItem("bibliogon-picture-book-format", "11x8.5")
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId(
             "pe-pdf-format-select",
@@ -135,7 +135,7 @@ describe("PictureBookPdfExportControls - localStorage initialisation", () => {
             "true",
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const toggle = screen.getByTestId(
             "pe-pdf-bleed-toggle",
@@ -150,7 +150,7 @@ describe("PictureBookPdfExportControls - localStorage initialisation", () => {
             "garbage",
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId(
             "pe-pdf-format-select",
@@ -163,10 +163,10 @@ describe("PictureBookPdfExportControls - localStorage initialisation", () => {
     })
 })
 
-describe("PictureBookPdfExportControls - localStorage persistence", () => {
+describe("PdfExportControls - localStorage persistence", () => {
     it("format change writes to localStorage", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId(
             "pe-pdf-format-select",
@@ -179,7 +179,7 @@ describe("PictureBookPdfExportControls - localStorage persistence", () => {
 
     it("bleed toggle writes to localStorage", () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
         expect(
@@ -193,7 +193,7 @@ describe("PictureBookPdfExportControls - localStorage persistence", () => {
             "true",
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
         expect(
@@ -202,10 +202,10 @@ describe("PictureBookPdfExportControls - localStorage persistence", () => {
     })
 })
 
-describe("PictureBookPdfExportControls - export query-param emission", () => {
+describe("PdfExportControls - export query-param emission", () => {
     it("default state (8.5x8.5 + bleed=false) sends empty params", async () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
@@ -220,7 +220,7 @@ describe("PictureBookPdfExportControls - export query-param emission", () => {
 
     it("non-default format alone passes picture_book_format only", async () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.change(screen.getByTestId("pe-pdf-format-select"), {
             target: {value: "8.5x11"},
@@ -236,7 +236,7 @@ describe("PictureBookPdfExportControls - export query-param emission", () => {
 
     it("bleed=true alone passes picture_book_bleed_marks=true only", async () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
@@ -250,7 +250,7 @@ describe("PictureBookPdfExportControls - export query-param emission", () => {
 
     it("format + bleed both non-default pass both query params", async () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.change(screen.getByTestId("pe-pdf-format-select"), {
             target: {value: "11x8.5"},
@@ -267,7 +267,7 @@ describe("PictureBookPdfExportControls - export query-param emission", () => {
 
     it("switching back to default 8.5x8.5 + bleed=false returns to empty params", async () => {
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const select = screen.getByTestId("pe-pdf-format-select")
         fireEvent.change(select, {target: {value: "8x10"}})
@@ -284,7 +284,7 @@ describe("PictureBookPdfExportControls - export query-param emission", () => {
     })
 })
 
-describe("PictureBookPdfExportControls - exporting state + error handling", () => {
+describe("PdfExportControls - exporting state + error handling", () => {
     it("button disables while in-flight + re-enables on success", async () => {
         let resolveDownload: ((value: undefined) => void) | undefined
         mockDocumentExportDownload.mockReturnValue(
@@ -293,7 +293,7 @@ describe("PictureBookPdfExportControls - exporting state + error handling", () =
             }),
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const btn = screen.getByTestId("pe-export-pdf") as HTMLButtonElement
         fireEvent.click(btn)
@@ -310,7 +310,7 @@ describe("PictureBookPdfExportControls - exporting state + error handling", () =
             }),
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const btn = screen.getByTestId("pe-export-pdf")
         fireEvent.click(btn)
@@ -333,7 +333,7 @@ describe("PictureBookPdfExportControls - exporting state + error handling", () =
             ),
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
@@ -345,7 +345,7 @@ describe("PictureBookPdfExportControls - exporting state + error handling", () =
     it("non-ApiError rejection still surfaces a fallback error toast", async () => {
         mockDocumentExportDownload.mockRejectedValue(new Error("Network"))
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
@@ -359,7 +359,7 @@ describe("PictureBookPdfExportControls - exporting state + error handling", () =
             new ApiError(500, "Boom", "/books/b1/export/pdf", "GET"),
         )
         render(
-            <PictureBookPdfExportControls bookId="b1" testidPrefix="pe" />,
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
         )
         const btn = screen.getByTestId("pe-export-pdf") as HTMLButtonElement
         fireEvent.click(btn)

@@ -13,7 +13,7 @@ import {useWebSocket} from "../hooks/useWebSocket";
 import {useDialog} from "./AppDialog";
 import {useEditorPluginStatus, isPluginAvailable} from "../hooks/useEditorPluginStatus";
 import KeywordInput from "./KeywordInput";
-import PictureBookPdfExportControls from "./PictureBookPdfExportControls";
+import PdfExportControls from "./PdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "./CoverUpload";
@@ -131,7 +131,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     // its state were the half-wired surface that PDF-KDP-FORMATS-01
     // silently left behind (the button ignored the format dropdown
     // selection because the dropdown only lived in PageEditor).
-    // Replaced with PictureBookPdfExportControls (mounted in the
+    // Replaced with PdfExportControls (mounted in the
     // Design tab JSX below); state ownership + handler + format +
     // bleed all live in the shared component now.
 
@@ -455,7 +455,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             ExportDialog. */}
                         {book.book_type === "picture_book" && (
                             <div className={styles.row}>
-                                <PictureBookPdfExportControls
+                                <PdfExportControls
                                     bookId={book.id}
                                     testidPrefix="metadata"
                                     exportButtonClassName="button button-primary"

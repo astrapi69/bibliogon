@@ -3438,13 +3438,72 @@ export const api = {
         remove: () => request<void>("/ssh", {method: "DELETE"}),
     },
 
-    /** plugin-comics Session 1 client. Only the /info gate ships in
-     *  Session 1 — the ComicBookEditor placeholder reads it to verify
-     *  the plugin is mounted before rendering. Session 2 extends this
-     *  surface with the comic-page + comic-panel + comic-bubble CRUD
-     *  endpoints. */
+    /** plugin-comics Session 2 client. Session 2 adds full
+     *  panel + bubble CRUD on top of the Session 1 info gate.
+     *  The bubble-list endpoint was added in C6 as the
+     *  Half-Wired-Lifecycle closure of C2 (which shipped C+U+D
+     *  without R; gap surfaced by the C6 Pre-Coding-Reality-Check
+     *  when the full editor needed to populate ``ComicPanelGrid``). */
     comics: {
         getInfo: () => request<ComicsPluginInfo>("/comics/info"),
+
+        listPanels: (bookId: string, pageId: string) =>
+            request<ComicPanelOut[]>(
+                `/books/${bookId}/comic-pages/${pageId}/panels`,
+            ),
+
+        createPanel: (bookId: string, pageId: string, data: ComicPanelCreate) =>
+            request<ComicPanelOut>(
+                `/books/${bookId}/comic-pages/${pageId}/panels`,
+                {method: "POST", body: JSON.stringify(data)},
+            ),
+
+        updatePanel: (
+            bookId: string,
+            panelId: string,
+            data: ComicPanelUpdate,
+        ) =>
+            request<ComicPanelOut>(
+                `/books/${bookId}/comic-panels/${panelId}`,
+                {method: "PATCH", body: JSON.stringify(data)},
+            ),
+
+        deletePanel: (bookId: string, panelId: string) =>
+            request<void>(
+                `/books/${bookId}/comic-panels/${panelId}`,
+                {method: "DELETE"},
+            ),
+
+        listBubbles: (bookId: string, panelId: string) =>
+            request<ComicBubbleOut[]>(
+                `/books/${bookId}/comic-panels/${panelId}/bubbles`,
+            ),
+
+        createBubble: (
+            bookId: string,
+            panelId: string,
+            data: ComicBubbleCreate,
+        ) =>
+            request<ComicBubbleOut>(
+                `/books/${bookId}/comic-panels/${panelId}/bubbles`,
+                {method: "POST", body: JSON.stringify(data)},
+            ),
+
+        updateBubble: (
+            bookId: string,
+            bubbleId: string,
+            data: ComicBubbleUpdate,
+        ) =>
+            request<ComicBubbleOut>(
+                `/books/${bookId}/comic-bubbles/${bubbleId}`,
+                {method: "PATCH", body: JSON.stringify(data)},
+            ),
+
+        deleteBubble: (bookId: string, bubbleId: string) =>
+            request<void>(
+                `/books/${bookId}/comic-bubbles/${bubbleId}`,
+                {method: "DELETE"},
+            ),
     },
 
     /** About-Dialog backend client. Single cohesive payload — app
@@ -3465,6 +3524,76 @@ export interface ComicsPluginInfo {
     session: number
     status: string
     description: string
+}
+
+/** Comic-panel + comic-bubble Session-2 shapes. Field-name parity
+ *  with the backend Pydantic ``ComicPanelOut`` + ``ComicBubbleOut``
+ *  schemas. The 6 ``BubbleType`` ids and 10 ``BubbleTailDirection``
+ *  values are pinned by ``backend/app/schemas/__init__.py``;
+ *  unknown values from older payloads fall through gracefully at
+ *  the renderer (gamma-shim default-on-read). */
+export interface ComicPanelOut {
+    id: string
+    page_id: string
+    position: number
+    image_asset_id: string | null
+    bounds: Record<string, unknown>
+    panel_config: Record<string, unknown> | null
+    created_at: string
+    updated_at: string
+}
+
+export interface ComicPanelCreate {
+    bounds: Record<string, unknown>
+    image_asset_id?: string | null
+    panel_config?: Record<string, unknown> | null
+}
+
+export interface ComicPanelUpdate {
+    bounds?: Record<string, unknown>
+    image_asset_id?: string | null
+    panel_config?: Record<string, unknown> | null
+}
+
+export interface ComicBubbleOut {
+    id: string
+    panel_id: string
+    position: number
+    bubble_type: string
+    anchor: Record<string, unknown>
+    width_pct: number
+    height_pct: number
+    tail_direction: string
+    tail_position_pct: number
+    tail_length_px: number
+    bubble_config: Record<string, unknown> | null
+    text_content: string | null
+    created_at: string
+    updated_at: string
+}
+
+export interface ComicBubbleCreate {
+    bubble_type: string
+    anchor: Record<string, unknown>
+    width_pct?: number
+    height_pct?: number
+    tail_direction?: string
+    tail_position_pct?: number
+    tail_length_px?: number
+    bubble_config?: Record<string, unknown> | null
+    text_content?: string | null
+}
+
+export interface ComicBubbleUpdate {
+    bubble_type?: string
+    anchor?: Record<string, unknown>
+    width_pct?: number
+    height_pct?: number
+    tail_direction?: string
+    tail_position_pct?: number
+    tail_length_px?: number
+    bubble_config?: Record<string, unknown> | null
+    text_content?: string | null
 }
 
 export interface GitCommitEntry {

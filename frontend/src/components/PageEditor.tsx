@@ -9,7 +9,7 @@ import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas from "./PageCanvas"
-import PictureBookPdfExportControls from "./PictureBookPdfExportControls"
+import PdfExportControls from "./PdfExportControls"
 import RichTextToolbar from "./RichTextToolbar"
 import ThemeToggle from "./ThemeToggle"
 import styles from "./PageEditor.module.css"
@@ -31,7 +31,7 @@ const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 
 // PDF-BLEED-MARKS-01 C2: format dropdown + bleed checkbox + Export
 // PDF button are all encapsulated in the
-// ``PictureBookPdfExportControls`` shared component (mounted both
+// ``PdfExportControls`` shared component (mounted both
 // here AND in BookMetadataEditor's Design tab). Format constants
 // + localStorage helpers + state ownership all live in the shared
 // component now; this file only mounts it. PDF-KDP-FORMATS-01's
@@ -202,7 +202,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
     }, [activePageId])
 
     // PDF-BLEED-MARKS-01 C2: state + handlers extracted into the
-    // shared ``PictureBookPdfExportControls`` component.
+    // shared ``PdfExportControls`` component.
 
     return (
         <div
@@ -281,7 +281,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                  *  PDF-KDP-FORMATS-01 half-wired surface as a side-
                  *  effect (per the Recurring-Component-Unification
                  *  Rule's canonical 2-site extract-plus-migrate). */}
-                <PictureBookPdfExportControls
+                <PdfExportControls
                     bookId={bookId}
                     testidPrefix="page-editor"
                     controlClassName={styles.metadataBtn}

@@ -31,15 +31,15 @@ class TestComicsInfoEndpoint:
         client = _make_client()
         body = client.get("/api/comics/info").json()
         assert body["name"] == "comics"
-        assert body["version"] == "1.0.0"
+        assert body["version"] == "1.1.0"
 
     def test_returns_session_phase(self) -> None:
         # Pin the session marker so a future commit cannot silently
         # ship Session-2 features under the Session-1 plugin tag.
         client = _make_client()
         body = client.get("/api/comics/info").json()
-        assert body["session"] == 1
-        assert body["status"] == "scaffolding"
+        assert body["session"] == 2
+        assert body["status"] == "active"
 
     def test_returns_description(self) -> None:
         client = _make_client()

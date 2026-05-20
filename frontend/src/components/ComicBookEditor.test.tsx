@@ -1,100 +1,264 @@
 /**
- * Vitest coverage for the ComicBookEditor placeholder.
+ * Vitest coverage for the full ComicBookEditor (plugin-comics
+ * Session 2 C6).
  *
- * plugin-comics Session 1 Commit 3. The component is a deliberate
- * placeholder per the Half-Wired-Lifecycle exemption noted in the
- * exploration doc — Session 2 will replace it with the full panel
- * + multi-bubble editor. These tests pin the placeholder's
- * contract so a future commit cannot silently strip the
- * Session-1-marker info or the "back to dashboard" affordance.
+ * The Session-1 placeholder is gone. These tests pin the full
+ * editor's read-side wiring (panels + bubbles list flow), CRUD
+ * actions (add/delete panel + bubble), the degraded "no pages
+ * yet" state, and the PdfExportControls mount under the
+ * comic-book-editor testid namespace.
  */
 
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest"
-import {render, screen, fireEvent, waitFor} from "@testing-library/react"
-import ComicBookEditor from "./ComicBookEditor"
+import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
-// Mock useI18n to avoid the full provider chain — same pattern as
-// the other component tests in this directory.
+import ComicBookEditor from "./ComicBookEditor";
+
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
         setLang: vi.fn(),
     }),
-}))
+}));
 
-// Mock the api client so we can drive the /api/comics/info fetch
-// from each test without standing up MSW.
 vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>("../api/client")
+    const actual = await vi.importActual<typeof import("../api/client")>(
+        "../api/client",
+    );
     return {
         ...actual,
         api: {
             ...actual.api,
             comics: {
                 getInfo: vi.fn(),
+                listPanels: vi.fn(),
+                createPanel: vi.fn(),
+                updatePanel: vi.fn(),
+                deletePanel: vi.fn(),
+                listBubbles: vi.fn(),
+                createBubble: vi.fn(),
+                updateBubble: vi.fn(),
+                deleteBubble: vi.fn(),
+            },
+            pages: {
+                ...actual.api.pages,
+                list: vi.fn(),
             },
         },
-    }
-})
+    };
+});
 
-import {api} from "../api/client"
+import {api} from "../api/client";
 
-describe("ComicBookEditor", () => {
-    beforeEach(() => {
-        vi.mocked(api.comics.getInfo).mockImplementation(async () => ({
-            name: "comics",
-            version: "1.0.0",
-            session: 1,
-            status: "scaffolding",
-            description: "Test description.",
-        }))
-    })
+const fakePluginInfo = {
+    name: "comics",
+    version: "1.1.0",
+    session: 2,
+    status: "active",
+    description: "Test description.",
+};
 
-    afterEach(() => {
-        vi.mocked(api.comics.getInfo).mockClear()
-    })
+const fakePage = {
+    id: "page-1",
+    book_id: "book-1",
+    position: 1,
+    layout: "speech_bubble" as const,
+    layout_config: {comic_grid_template: "grid_2x2"},
+    image_asset_id: null,
+    text_content: null,
+    created_at: "2026-05-20T00:00:00",
+    updated_at: "2026-05-20T00:00:00",
+};
 
-    it("renders the book title in the header", () => {
+const fakePanel = {
+    id: "panel-1",
+    page_id: "page-1",
+    position: 1,
+    image_asset_id: null,
+    bounds: {x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100},
+    panel_config: null,
+    created_at: "2026-05-20T00:00:00",
+    updated_at: "2026-05-20T00:00:00",
+};
+
+const fakeBubble = {
+    id: "bubble-1",
+    panel_id: "panel-1",
+    position: 1,
+    bubble_type: "speech",
+    anchor: {x_pct: 25, y_pct: 25},
+    width_pct: 30,
+    height_pct: 20,
+    tail_direction: "S",
+    tail_position_pct: 50,
+    tail_length_px: 16,
+    bubble_config: null,
+    text_content: "Hello",
+    created_at: "2026-05-20T00:00:00",
+    updated_at: "2026-05-20T00:00:00",
+};
+
+beforeEach(() => {
+    vi.mocked(api.comics.getInfo).mockImplementation(async () => fakePluginInfo);
+    vi.mocked(api.comics.listPanels).mockImplementation(async () => [fakePanel]);
+    vi.mocked(api.comics.listBubbles).mockImplementation(async () => [
+        fakeBubble,
+    ]);
+    vi.mocked(api.comics.createPanel).mockImplementation(async () => fakePanel);
+    vi.mocked(api.comics.createBubble).mockImplementation(
+        async () => fakeBubble,
+    );
+    vi.mocked(api.comics.updateBubble).mockImplementation(
+        async () => fakeBubble,
+    );
+    vi.mocked(api.comics.deletePanel).mockImplementation(async () => undefined);
+    vi.mocked(api.comics.deleteBubble).mockImplementation(async () => undefined);
+    vi.mocked(api.pages.list).mockImplementation(async () => [fakePage]);
+});
+
+afterEach(() => {
+    vi.clearAllMocks();
+});
+
+describe("ComicBookEditor (Session 2 C6 full editor)", () => {
+    it("renders the book title + back button + fullscreen", () => {
         render(
             <ComicBookEditor
                 bookId="book-1"
                 bookTitle="My Comic"
                 onBack={vi.fn()}
             />,
-        )
-        const title = screen.getByTestId("comic-book-editor-title")
-        expect(title.textContent).toBe("My Comic")
-    })
-
-    it("renders the placeholder block with Session-2 marker", () => {
-        render(
-            <ComicBookEditor
-                bookId="book-1"
-                bookTitle="My Comic"
-                onBack={vi.fn()}
-            />,
-        )
-        const placeholder = screen.getByTestId("comic-book-editor-placeholder")
-        // Session-2-marker pin: a future commit shipping Session-2
-        // features must update this assertion together with the
-        // placeholder copy. The literal "Session 2" appears in the
-        // default English fallback string.
-        expect(placeholder.textContent).toMatch(/Session 2/)
-    })
+        );
+        expect(screen.getByTestId("comic-book-editor-title").textContent).toBe(
+            "My Comic",
+        );
+        expect(
+            screen.getByTestId("comic-book-editor-back"),
+        ).toBeInTheDocument();
+    });
 
     it("calls onBack when the back button is clicked", () => {
-        const onBack = vi.fn()
+        const onBack = vi.fn();
         render(
             <ComicBookEditor
                 bookId="book-1"
                 bookTitle="My Comic"
                 onBack={onBack}
             />,
-        )
-        fireEvent.click(screen.getByTestId("comic-book-editor-back"))
-        expect(onBack).toHaveBeenCalledOnce()
-    })
+        );
+        fireEvent.click(screen.getByTestId("comic-book-editor-back"));
+        expect(onBack).toHaveBeenCalledOnce();
+    });
+
+    it("surfaces the degraded 'no pages' state when pages.list returns []", async () => {
+        vi.mocked(api.pages.list).mockImplementation(async () => []);
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        expect(
+            await screen.findByTestId("comic-book-editor-no-pages"),
+        ).toBeInTheDocument();
+    });
+
+    it("renders the page nav + grid when pages exist", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.pages.list).toHaveBeenCalledWith("book-1");
+        });
+        expect(
+            await screen.findByTestId("comic-book-editor-page-nav"),
+        ).toBeInTheDocument();
+        expect(
+            await screen.findByTestId("comic-book-editor-page-page-1"),
+        ).toBeInTheDocument();
+    });
+
+    it("mounts the PdfExportControls under comic-book-editor testid namespace", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("comic-book-editor-pdf-format-select"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("comic-book-editor-export-pdf"),
+        ).toBeInTheDocument();
+    });
+
+    it("Add Panel button calls api.comics.createPanel on click", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("comic-book-editor-add-panel"),
+            ).not.toBeDisabled();
+        });
+        fireEvent.click(screen.getByTestId("comic-book-editor-add-panel"));
+        await waitFor(() => {
+            expect(api.comics.createPanel).toHaveBeenCalledWith(
+                "book-1",
+                "page-1",
+                expect.objectContaining({bounds: expect.any(Object)}),
+            );
+        });
+    });
+
+    it("Add Bubble + Delete buttons disable when nothing is selected", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.comics.listPanels).toHaveBeenCalled();
+        });
+        expect(
+            screen.getByTestId("comic-book-editor-add-bubble"),
+        ).toBeDisabled();
+        expect(
+            screen.getByTestId("comic-book-editor-delete-panel"),
+        ).toBeDisabled();
+        expect(
+            screen.getByTestId("comic-book-editor-delete-bubble"),
+        ).toBeDisabled();
+    });
+
+    it("renders LayoutConfigComicBubble in side pane after bubble click", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        const bubble = await screen.findByTestId(`comic-bubble-${fakeBubble.id}`);
+        fireEvent.click(bubble);
+        expect(
+            await screen.findByTestId("layout-config-comic-bubble"),
+        ).toBeInTheDocument();
+    });
 
     it("fetches and renders plugin info from /api/comics/info", async () => {
         render(
@@ -103,38 +267,28 @@ describe("ComicBookEditor", () => {
                 bookTitle="My Comic"
                 onBack={vi.fn()}
             />,
-        )
-        // The fetch fires inside useEffect; the dl appears once it
-        // resolves.
-        const name = await screen.findByTestId("comic-book-editor-plugin-name")
-        const session = await screen.findByTestId(
-            "comic-book-editor-plugin-session",
-        )
-        expect(name.textContent).toBe("comics v1.0.0")
-        expect(session.textContent).toBe("1 (scaffolding)")
-        // The mock was wired through useEffect; verify the call shape.
-        expect(api.comics.getInfo).toHaveBeenCalledOnce()
-    })
+        );
+        const info = await screen.findByTestId("comic-book-editor-plugin-info");
+        expect(info.textContent).toMatch(/comics v1\.1\.0/);
+    });
 
-    it("renders an error message when /api/comics/info fails", async () => {
-        // Override the per-test mock to reject. The component should
-        // surface the detail in the dedicated error slot.
-        const {ApiError} = await import("../api/client")
+    it("renders the plugin-error slot on getInfo failure", async () => {
+        const {ApiError} = await import("../api/client");
         vi.mocked(api.comics.getInfo).mockImplementation(async () => {
-            throw new ApiError(500, "boom", "/comics/info", "GET")
-        })
+            throw new ApiError(500, "boom", "/comics/info", "GET");
+        });
         render(
             <ComicBookEditor
                 bookId="book-1"
                 bookTitle="My Comic"
                 onBack={vi.fn()}
             />,
-        )
+        );
         const errorEl = await screen.findByTestId(
             "comic-book-editor-plugin-error",
-        )
+        );
         await waitFor(() => {
-            expect(errorEl.textContent).toMatch(/boom/)
-        })
-    })
-})
+            expect(errorEl.textContent).toMatch(/boom/);
+        });
+    });
+});

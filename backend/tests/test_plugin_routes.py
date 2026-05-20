@@ -270,11 +270,12 @@ class TestComicsInfo:
     def test_comics_info_identity(self, client: TestClient) -> None:
         body = client.get("/api/comics/info").json()
         assert body["name"] == "comics"
-        assert body["version"] == "1.0.0"
+        assert body["version"] == "1.1.0"
 
     def test_comics_info_session_phase(self, client: TestClient) -> None:
-        # Session-1 marker pin. If a future commit ships Session-2
-        # work, this test must update along with the plugin's status.
+        # Session-2 marker pin (bumped in C6). If a future commit ships
+        # Session-3 work, this test must update along with the plugin's
+        # status.
         body = client.get("/api/comics/info").json()
-        assert body["session"] == 1
-        assert body["status"] == "scaffolding"
+        assert body["session"] == 2
+        assert body["status"] == "active"
