@@ -286,6 +286,71 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         });
     });
 
+    it("Add Panel auto-selects the new panel (Add-Bubble enables)", async () => {
+        // Perception-lag fix: after a successful createPanel, the
+        // editor sets selectedPanelId to the new panel's id. The
+        // visible signal is Add-Bubble going from disabled to
+        // enabled (since the bubble-create handler gates on
+        // selectedPanelId).
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.comics.listPanels).toHaveBeenCalled();
+        });
+        // Pre-click: Add-Bubble disabled because no panel selected.
+        expect(
+            screen.getByTestId("comic-book-editor-add-bubble"),
+        ).toBeDisabled();
+        fireEvent.click(screen.getByTestId("comic-book-editor-add-panel"));
+        // Post-click: createPanel resolved, auto-select fired,
+        // Add-Bubble now enabled.
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("comic-book-editor-add-bubble"),
+            ).not.toBeDisabled();
+        });
+    });
+
+    it("Add Bubble auto-selects the new bubble (LayoutConfigComicBubble side-pane mounts)", async () => {
+        // Mirror of the Add-Panel auto-select: after a successful
+        // createBubble, the editor sets selectedBubbleId to the new
+        // bubble's id. The visible signal is the side-pane mounting
+        // LayoutConfigComicBubble (which only renders when
+        // selectedBubble is non-null).
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        // First select the panel so Add-Bubble enables. Click on the
+        // already-rendered fakePanel from the default mocks.
+        const panel = await screen.findByTestId(`comic-panel-${fakePanel.id}`);
+        fireEvent.click(panel);
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("comic-book-editor-add-bubble"),
+            ).not.toBeDisabled();
+        });
+        // Side-pane shows the "panel selected" instruction, NOT
+        // the LayoutConfigComicBubble.
+        expect(
+            screen.queryByTestId("layout-config-comic-bubble"),
+        ).not.toBeInTheDocument();
+        // Click Add-Bubble; auto-select should fire and mount the
+        // side-pane LayoutConfigComicBubble.
+        fireEvent.click(screen.getByTestId("comic-book-editor-add-bubble"));
+        expect(
+            await screen.findByTestId("layout-config-comic-bubble"),
+        ).toBeInTheDocument();
+    });
+
     it("Add Bubble + Delete buttons disable when nothing is selected", async () => {
         render(
             <ComicBookEditor

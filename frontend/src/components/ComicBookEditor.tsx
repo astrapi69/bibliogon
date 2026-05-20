@@ -179,10 +179,17 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
     const handleAddPanel = useCallback(async () => {
         if (!activePageId) return;
         try {
-            await api.comics.createPanel(bookId, activePageId, {
+            const newPanel = await api.comics.createPanel(bookId, activePageId, {
                 bounds: {x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100},
             });
             await refreshPanelsAndBubbles(activePageId);
+            // Auto-select the new panel so (a) the user gets visible
+            // feedback that the click worked (outline highlight on
+            // the new panel) and (b) Add-Bubble immediately enables
+            // without a separate panel-click. Mirrors the design-tool
+            // "draw-shape-then-it's-selected" pattern.
+            setSelectedPanelId(newPanel.id);
+            setSelectedBubbleId(null);
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : String(err);
             setPagesError(detail);
@@ -205,11 +212,20 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
     const handleAddBubble = useCallback(async () => {
         if (!selectedPanelId || !activePageId) return;
         try {
-            await api.comics.createBubble(bookId, selectedPanelId, {
-                bubble_type: "speech",
-                anchor: {x_pct: 25, y_pct: 25},
-            });
+            const newBubble = await api.comics.createBubble(
+                bookId,
+                selectedPanelId,
+                {
+                    bubble_type: "speech",
+                    anchor: {x_pct: 25, y_pct: 25},
+                },
+            );
             await refreshPanelsAndBubbles(activePageId);
+            // Auto-select the new bubble — same rationale as
+            // handleAddPanel above: visible feedback + the side-pane
+            // LayoutConfigComicBubble immediately becomes available
+            // for editing.
+            setSelectedBubbleId(newBubble.id);
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : String(err);
             setPagesError(detail);

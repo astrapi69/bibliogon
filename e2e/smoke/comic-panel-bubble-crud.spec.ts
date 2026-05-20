@@ -60,7 +60,16 @@ test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
         ).toBeEnabled();
 
         // Step 4: Add Bubble — bubble count goes 0 → 1.
-        const bubbles = page.locator('[data-testid^="comic-bubble-"]');
+        // Selector scoped to the canvas grid because
+        // LayoutConfigComicBubble's inner controls (in the side-pane)
+        // share the ``comic-bubble-*`` testid prefix; a bare
+        // ``[data-testid^="comic-bubble-"]`` would overmatch 30+
+        // slider/fieldset/radio elements once the side-pane mounts
+        // via auto-select. Documented anti-pattern: "Prefix testid
+        // selectors match every nested testid that shares the prefix."
+        const bubbles = page.locator(
+            '[data-testid^="comic-panel-"] [data-testid^="comic-bubble-"]',
+        );
         await expect(bubbles).toHaveCount(0);
         await page.getByTestId("comic-book-editor-add-bubble").click();
         await expect(bubbles).toHaveCount(1);
