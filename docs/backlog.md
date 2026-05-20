@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-20 (Backlog re-prioritization audit + apply. 4-Axes scoring shipped audit doc 281a6f6; apply phase landed 7 promotions + 17 demotions + 3 archives + hygiene fixes per the Q1-Q7 adjudication. PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 promoted to P1 (Foundation-Override-Extended: Half-Wired-Visible-in-Production); RECURRING-COMPONENT-AUDIT-01 promoted to P2 (feeds 4+ extractions); 3 archives (PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01 Sessions 1+2 shipped; COMIC-BOOK-PLUGIN-01 duplicate; PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01 primitive shipped in plugin-comics C4). D-02 follow-ups split into LAUNCHER-MACOS-UNIVERSAL2-01 + LAUNCHER-CODE-SIGNING-01. New: MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01 (P3, β path post-exploration). Pre-audit Comics-Session-2 close still on main: plugin-comics v1.1.0 fully shipped, 7-commit arc c080974..80399cd. Backend baseline 20 fail + 13 err under PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 (still open; PluginForge 0.8.0 fixes).)
 Current version: v0.35.1
-Open tasks: 64 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 65 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -403,6 +403,98 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01** (P3, filed
+  2026-05-20 from the re-prioritization audit Q6 adjudication
+  / β-path).
+
+  ### Scope
+
+  Triage the open exploration doc at
+  ``docs/explorations/exploration-bibliogon-mobile-selective-sync.md``
+  (filed 2026-05-20 by Strategic-Advisor; status "Open
+  exploration; not yet decisions").
+
+  The exploration adapts adaptive-learner Phase 13 (PWA/Dexie
+  phone + FastAPI/SQLite desktop, Local-Sync via QR-pairing +
+  AI-Assisted-Merge) to Bibliogon-specific constraints. Key
+  constraint per the exploration: user selects which content
+  (books / articles / chapters) goes mobile, NOT full-database
+  sync. Phone is **Capture-and-Review-Surface**, not
+  **Production-Surface** — Picture-Book layout, Comic panel-
+  grid, KDP Wizard are desktop-primary.
+
+  Triage produces per-phase backlog items (or alternative
+  direction) based on user-strategic-decision. The exploration
+  doc's 5-phase plan is a starting point; the triage may
+  consolidate / split / re-scope phases based on adoption
+  signal + constraint review.
+
+  ### Q6 audit context (path-β rationale)
+
+  Re-prioritization audit (2026-05-20) Q6 surfaced two paths:
+
+  - **α**: file 5 individual phase-items
+    (MOBILE-SYNC-PHASE-A-PWA-FOUNDATION-01,
+    ...-PHASE-B-MOBILE-UI-01, ...-PHASE-C-SELECTIVE-SYNC-01,
+    ...-PHASE-D-MERGE-01, ...-PHASE-E-POLISH-01)
+  - **β**: single triage item that produces per-phase items
+    later
+
+  Adjudicated β. Reasoning: the exploration is "open
+  exploration; not yet decisions" per the doc itself. Filing
+  5 phase-items pre-empts the strategic decision the
+  exploration is meant to surface. β preserves optionality
+  and respects the exploration's status.
+
+  ### Dependencies + trigger
+
+  **Trigger**: Comics-Foundation work reaches a stable state
+  where Mobile-Sync becomes a viable next-direction.
+  Concretely: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 (P1)
+  ships first; comic-book authoring is unblocked; then
+  Mobile-Sync exploration triage can proceed without
+  competing for attention with active Comics work.
+
+  **Comics-Foundation-Trigger-Gate**: explicit dependency.
+  Don't run Mobile-Sync triage while Comics-Session-3 is in
+  flight — splitting attention across two strategic
+  directions risks shipping neither well (same reasoning as
+  the original PB-PHASE4 / plugin-comics sequencing
+  decision).
+
+  ### Effort
+
+  S-M (1 session, ~3-5 commits):
+
+  1. Triage-doc commit: read the exploration, map its 5
+     phases against current Bibliogon strategic-state, surface
+     architecture decisions for Strategic-Advisor review.
+  2. Per-phase item filings (variable count depending on
+     triage outcome): each phase becomes its own backlog item
+     with concrete trigger + scope + effort. Phases that
+     consolidate become single items; phases that defer
+     remain in the exploration doc only.
+  3. Cross-reference + close: this triage item closes when
+     the per-phase items are filed; the exploration doc
+     gets a "Triage outcome" section referencing them.
+
+  ### Cross-references
+
+  - ``docs/explorations/exploration-bibliogon-mobile-selective-sync.md``
+    (the exploration doc itself)
+  - ``PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01`` (P1; the
+    Comics-Foundation-Trigger-Gate prerequisite)
+  - ``docs/audits/backlog-reprioritization-2026-05-20.md``
+    Open Question Q6 (the audit context that filed this
+    item)
+
+  ### Status
+
+  Pre-implementation triage required. Not P2 because no
+  immediate user-pain-blocker; not P4 because the filed
+  exploration deserves resolution. P3 captures "should
+  triage when the gate fires."
 
 - **MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01** (P3,
   filed 2026-05-20 during halted Comics-Session-2 cleanup):
