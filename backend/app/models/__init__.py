@@ -947,3 +947,137 @@ class Author(Base):
 
     def __repr__(self) -> str:
         return f"<Author {self.id!r} name={self.name!r} slug={self.slug!r}>"
+
+
+class ComicPanel(Base):
+    """A single panel within a comic-book page (plugin-comics Session 2).
+
+    Comic books reuse the existing ``pages`` table (Session 1
+    sharing decision; ``Book.book_type == "comic_book"`` is the
+    discriminator). A comic-book page has N ``ComicPanel`` rows
+    instead of the picture-book single-region layout.
+
+    ``bounds`` is JSON-encoded as Text (same pattern as
+    ``Page.layout_config``): ``{x_pct, y_pct, width_pct,
+    height_pct}`` — percentages of the page's content area. The
+    grid template (single_panel / grid_2x2 / grid_3x3) lives at
+    ``Page.layout_config.comic_grid_template`` per the Q1 β
+    decision; panel ``bounds`` rows are pre-filled when a template
+    is applied + freely editable from there.
+
+    ``panel_config`` is JSON-encoded as Text for per-panel
+    settings (border style, gutter width, motion-line decoration,
+    etc.). Currently nullable + opaque; Session 3 may add typed
+    sub-fields.
+
+    CASCADE chain: deleting a page deletes its panels deletes its
+    bubbles. ``image_asset_id`` FK SET NULL so deleting an asset
+    does NOT destroy the panel (mirrors ``Page.image_asset_id``).
+
+    Plugin-architecture note: this model lives in
+    ``backend/app/models/`` alongside ``Page`` because Bibliogon's
+    Alembic + SQLAlchemy ``Base.metadata`` are centralised. The
+    plugin-owned-table semantics are honored at the migration +
+    service-module + route level; the model declaration is
+    centralised by architectural convention.
+    """
+
+    __tablename__ = "comic_panels"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    page_id: Mapped[str] = mapped_column(
+        ForeignKey("pages.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    image_asset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
+    )
+    bounds: Mapped[str] = mapped_column(Text, nullable=False)
+    panel_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    bubbles: Mapped[list["ComicBubble"]] = relationship(
+        back_populates="panel",
+        cascade="all, delete-orphan",
+        order_by="ComicBubble.position",
+    )
+
+    def __repr__(self) -> str:
+        return f"<ComicPanel {self.id!r} page_id={self.page_id!r} pos={self.position}>"
+
+
+class ComicBubble(Base):
+    """A single speech / thought / narration / etc. bubble within
+    a comic panel (plugin-comics Session 2).
+
+    Tail fields (``tail_direction``, ``tail_position_pct``,
+    ``tail_length_px``) are SIBLINGS to ``bubble_config`` per the
+    comic-foundation.md schema — promoted to columns for SQL
+    sortability + querying, NOT nested in JSON.
+
+    ``bubble_config`` JSON holds the per-bubble Tier 1 (visual
+    style: background_color, border_color, border_width,
+    border_style, border_radius, shadow, shadow_intensity, padding)
+    + Tier 2 (typography: font_family, font_size, font_weight,
+    text_color, text_align, italic) properties — field-name parity
+    with picture-book's ``Page.layout_config.bubbles[0]`` shape so
+    the frontend Tier1Section + Tier2Section sub-components (to be
+    extracted in C5) consume the same key set.
+
+    ``text_content`` is plain text per Q2 decision (anti-
+    speculation: comic bubbles are usually short — "BAM!",
+    "Hello!"). TipTap-per-bubble is deferred to
+    PLUGIN-COMICS-TIPTAP-BUBBLE-01 if real demand surfaces.
+
+    ``position`` doubles as add-order + initial z-order. Session 3
+    adds explicit ``z_order`` column + drag-to-front/back
+    controls; Session 2 ships position-as-z-order baseline.
+
+    ``bubble_type`` is a string-validated enum at the Pydantic
+    schema layer (NOT at the DB layer; matches the
+    ``Chapter.chapter_type`` + ``Page.layout`` pattern). Valid
+    values: ``speech | thought | narration | shout | whisper |
+    sound_effect``.
+    """
+
+    __tablename__ = "comic_bubbles"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    panel_id: Mapped[str] = mapped_column(
+        ForeignKey("comic_panels.id", ondelete="CASCADE"), nullable=False
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False)
+    bubble_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    anchor: Mapped[str] = mapped_column(Text, nullable=False)
+    width_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
+    height_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=20)
+    tail_direction: Mapped[str] = mapped_column(
+        String(8), nullable=False, default="none"
+    )
+    tail_position_pct: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=50
+    )
+    tail_length_px: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=16
+    )
+    bubble_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    panel: Mapped["ComicPanel"] = relationship(back_populates="bubbles")
+
+    def __repr__(self) -> str:
+        return (
+            f"<ComicBubble {self.id!r} panel_id={self.panel_id!r} "
+            f"type={self.bubble_type!r} pos={self.position}>"
+        )
