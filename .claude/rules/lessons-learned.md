@@ -3928,3 +3928,107 @@ either a half-wired ship (instance #1) or a parallel-duplicate
 ship (instance #3) or an inapplicable wiring ship (instance #2).
 All three are real regressions; the surface message is the
 cheap prevention.
+
+
+## Single-Router-Per-Plugin convention
+
+Filed 2026-05-20 from the halted Comics-Session-2 Pre-Inspection.
+Bibliogon plugins MUST return ONE FastAPI router from
+``BasePlugin.get_routes()``, NOT a list of separate sibling
+routers. Nesting via ``router.include_router(sub_router)`` is the
+right shape for plugins that need multiple route namespaces.
+
+### Concrete instance
+
+Comics-Session-2's original C2 design specified three sibling
+routers returned from ``ComicsPlugin.get_routes()``:
+
+- ``info_router`` (prefix ``/comics``) — Session-1's
+  ``GET /info``
+- ``panels_router`` (prefix ``/books``) — Session-2 panel CRUD
+- ``bubbles_router`` (prefix ``/books``) — Session-2 bubble CRUD
+
+The full backend pytest sweep failed with
+``RecursionError: maximum recursion depth exceeded`` during
+``TestClient.wait_startup``. Refactoring to a SINGLE
+``info_router`` that internally calls
+``include_router(panels_router)`` + ``include_router(bubbles_router)``
+restored most of the sweep (recovered 14 of 27 failures and 154
+of 167 errors). The remaining failures were the
+``PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01`` underlying issue,
+which is a separate filing — but the three-router shape made
+the regression visible 14x sooner.
+
+### Why this is the right convention
+
+1. **Per-lifespan FastAPI route registration is one-directional**
+   (per the existing "FastAPI route-mount stickiness" rule in
+   this file). Each plugin's get_routes() result is mounted via
+   ``app.include_router(...)`` PER ROUTER returned. Plugin
+   deactivation logs the deactivation but the FastAPI app
+   retains the routes. ``N routers × M test lifespans`` is the
+   per-router multiplier; reducing N to 1 cuts the accumulated
+   route-registry state by Nx.
+
+2. **Kinderbuch precedent** — the canonical picture-book plugin
+   ships ONE router (``pages.py``'s router; the plugin's
+   ``get_routes()`` returns ``[router]``). 11 other shipped
+   plugins follow the same shape. Comics was the outlier in
+   specifying three.
+
+3. **Sub-routers nest cleanly** via FastAPI's
+   ``include_router``. Each sub-router carries its own prefix +
+   tags + dependencies; the top-level router stays composable
+   without flattening.
+
+### Mitigation rule for Pre-Inspection
+
+When specifying new plugin route structure, Pre-Inspection MUST
+include an explicit Pattern-Audit step:
+
+```bash
+# Grep existing plugin patterns BEFORE specifying the new one.
+for plug in plugins/bibliogon-plugin-*/; do
+  name=$(basename "$plug" | sed 's/bibliogon-plugin-//')
+  echo "--- $name ---"
+  grep -nE 'get_routes|return\s*\[' \
+    "$plug"/bibliogon_*/plugin.py 2>/dev/null | head -5
+done
+```
+
+If the existing convention is "1 router per plugin", new
+plugins MUST follow it. Deviating requires explicit user
+adjudication BEFORE the Pre-Inspection commits to a design.
+
+### Generalises to
+
+- New plugin authors' first-instinct "I have 3 logical
+  namespaces so I'll return 3 routers" — wrong; nest them.
+- Architectural-decision documents specifying plugin structure
+  without grepping existing plugins for conventions — wrong;
+  Pattern-Audit step is mandatory.
+- Any time a Pre-Inspection notes "matches the kinderbuch
+  pattern" or "follows existing convention" without an explicit
+  grep step — surface the grep result, don't trust prose
+  references.
+
+### Concrete artifact
+
+- Refactor commit: ``2ffaed8`` (Comics-Session-2 C2 — restored
+  single-router shape during the same commit that introduced
+  the issue, after the failed sweep surfaced it).
+- Backlog filing: ``PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01``
+  (P1) — the underlying state-accumulation bug that the
+  three-router shape exposed.
+
+### Pairs with
+
+- "FastAPI route-mount stickiness — DON'T assert via HTTP"
+  (this file) — explains the per-lifespan accumulation that
+  makes the N-router shape problematic.
+- "Pre-Coding-Reality-Check: re-audit at the keystroke, not
+  just the audit" (this file) — Pattern-Audit step would have
+  caught this BEFORE the C2 commit, not during it.
+- ``coding-standards.md`` Recurring-Component-Unification Rule
+  — same family of "look at what already exists before adding
+  parallel shapes" discipline.

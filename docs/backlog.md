@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-19 (PICTURE-BOOK-PDF-BLEED-MARKS-01 closed in 4 atomic-green commits. KDP-spec 0.125in bleed + crop marks via picture_book_bleed_marks query param. WeasyPrint @page bleed/marks native support; CSS-variable @page system from PDF-KDP-FORMATS-01 extended without redesign. PictureBookPdfExportControls shared component extracted per Recurring-Component-Unification Rule canonical 2-site extract-plus-migrate (PageEditor header + BookMetadataEditor Design tab); CLOSES PDF-KDP-FORMATS-01 half-wired surface as side-effect (Design-tab Export-PDF now respects format dropdown). Filename suffix policy: format-first-then-bleed. PDF Producer metadata extended with "(bleed)" suffix when on. PHASE 4 HARD-GATE TRIGGER-SET 100% CLOSED. TAIL-01 remains optional + plugin-comics-absorbable. Commits: cdb8705 (C1 backend) + 28a2f3e (C2 shared component) + 222ebca (C3 i18n) + this archive. 1679 / 1679 Vitest + 173 / 173 plugin-export pytest + 31 / 31 integration tests + 75 / 75 i18n tests passing.)
+Last updated: 2026-05-20 (Comics-Session-2 halted per Strategic-Advisor option-b decision. Session 2 work parked on feature/comics-session-2 branch (commits c080974 C1 + 2ffaed8 C2); main reset to origin/main (e159604). Bisect (this session) corrected my earlier mis-attribution: V060 baseline IS clean (1986 passed); my own C2 commit introduces the recursion regression via cross-test FastAPI route-mount accumulation in the long pytest sweep — NOT the V060 work as I initially reported. Three new filings: PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 (P1, blocks Comics-Session-2 resumption + any further V060-adoption work that adds backend TestClient surface); MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01 (P3, evidence of Failure-Mode 6 + Failure-Mode 1 during this halt session); Lessons-Learned: "Single-Router-Per-Plugin Convention" (kinderbuch precedent + Pre-Inspection-Pattern-Audit mitigation).)
 Current version: v0.35.1
-Open tasks: 62 active (P2..P5) + 2 BLOCKED-on-upstream entries
+Open tasks: 66 active (P2..P5) + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -41,7 +41,125 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-(none)
+- **PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01** (P1, filed
+  2026-05-20 during halted Comics-Session-2):
+  **Blocks Comics-Session-2 resumption + any further
+  V060-adoption work that adds backend test surface using
+  TestClient.**
+
+  ### Symptom
+
+  Full backend pytest sweep fails with **13 failed + 13 errored**
+  when a feature branch adds substantial new TestClient-using
+  tests on top of the V060-adoption baseline. Each failure /
+  error eventually surfaces as ``RecursionError: maximum
+  recursion depth exceeded`` during
+  ``starlette.testclient.TestClient.wait_startup``. Individual
+  tests pass in isolation — the failure is cross-test state
+  accumulation.
+
+  ### Bisect (confirmed via this halted session)
+
+  | Commit                          | Sweep result |
+  |---------------------------------|--------------|
+  | cf76904 (Phase 4 close, pre-V060) | 1986 passed |
+  | 1678b5c (V060 refresh_config refactor) | 1976 passed (clean) |
+  | de98679 (DiscoveryResult consumer) | 1974 passed (clean) |
+  | b62c339 (admin/rediscover endpoint) | 1980 passed (clean) |
+  | f59df1a (FilterReason mapping) | 1981 passed (clean) |
+  | 953eb2f (integration tests + smoke) | 1986 passed (clean) |
+  | e159604 (V060 close, current origin/main HEAD) | 1986 passed (clean) |
+  | c080974 (Comics-Session-2 C1 — schema + models only) | 2001 passed (clean) |
+  | 2ffaed8 (Comics-Session-2 C2 — service modules + 7 routes + tests) | **13 failed + 13 errored** |
+
+  The introducer is the Comics-Session-2 C2 commit. **V060
+  baseline is clean. The earlier halt-session report that
+  fingered V060 as the regression source was wrong** — see
+  ``MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`` (P3) for
+  the coordination-discipline followup.
+
+  ### Bandaid (confirmed effective)
+
+  ``sys.setrecursionlimit(5000)`` in either
+  ``backend/app/main.py`` (module-import time) or
+  ``backend/tests/conftest.py`` (test-setup time) restores the
+  sweep to green. Python's default limit (1000) is exceeded; 5000
+  is well within common practice for big async + ASGI stacks. The
+  bandaid hides the underlying state-accumulation issue but
+  unblocks the sweep.
+
+  ### Root cause hypothesis
+
+  1. **Module-level singleton.**
+     ``backend/app/main.py:308`` creates a global
+     ``manager = PluginManager(...)`` at module import time.
+     Every ``TestClient(app)`` lifespan in the sweep reuses the
+     same manager instance.
+
+  2. **FastAPI route-mount stickiness** (per the existing
+     ``lessons-learned.md`` rule "FastAPI route-mount stickiness
+     — DON'T assert via HTTP"): ``app.include_router(...)`` is
+     one-directional; plugin deactivation logs at lifespan
+     shutdown but the underlying FastAPI ``app.routes`` retains
+     the registered routes. Each subsequent lifespan re-mounts
+     the same routes via pluginforge's ``mount_plugin_routes``.
+
+  3. **N-test sweep × M-routes-per-plugin accumulation**: with
+     V060's expanded per-plugin route footprint (admin/rediscover
+     endpoint + extended /api/settings/plugins/discovered etc.)
+     plus C2's 7 new comic-panel + comic-bubble endpoints +
+     26 new TestClient-using tests, the ``app.routes`` list
+     grows past the threshold where FastAPI's recursive route
+     resolution exceeds Python's default recursion limit.
+
+  4. **Why the regression appeared at C2 specifically**: C1
+     added 15 SQLAlchemy-model tests that DON'T use
+     ``TestClient(app)`` (they hit ``SessionLocal`` directly).
+     C2 added 26 ``with TestClient(app)`` tests; each one
+     triggers a fresh lifespan that re-mounts every plugin's
+     routes. 26 × (all-plugin routes) tipped the route-registry
+     past the recursion ceiling.
+
+  ### Proposed fix paths (Strategic-Advisor decides)
+
+  - **(a) Idempotency in pluginforge's mount_plugin_routes**.
+    Check whether ``app.routes`` already contains a route with
+    matching ``path + methods`` before adding. Fix lives in
+    pluginforge 0.7.x or 0.8.0. **Recommended** — addresses the
+    root cause without test-fixture churn or production-side
+    runtime cost.
+  - **(b) Test-fixture-level fresh FastAPI app per TestClient**.
+    Replace the module-level ``app`` import with a fixture that
+    creates a new app per test. Big test churn (hundreds of
+    files). Cleanest semantically but expensive.
+  - **(c) ``sys.setrecursionlimit(5000)`` in main.py**. Permanent
+    bandaid. Defensible if pluginforge fix is out of scope. Hides
+    a real memory leak (manager state grows across tests in long
+    sweeps; production never sees N TestClient lifespans but
+    long-running uvicorn workers theoretically could if hot-
+    reload + admin/rediscover cycles often).
+
+  ### Filed-with notes
+
+  - Symptom verified via repeated full-sweep runs (3+ min each)
+    at 9 commit boundaries via ``git checkout <sha>`` + ``pytest tests/``.
+  - Bisect transcript lives in this halted-session's reasoning
+    log; reproduce by ``git checkout 2ffaed8`` (or equivalent feature
+    branch ``feature/comics-session-2``) and running
+    ``BIBLIOGON_TEST=1 poetry run pytest tests/``.
+  - Comics-Session-2 work parked on ``feature/comics-session-2``
+    branch (commits ``c080974`` + ``2ffaed8``); ``main`` reset
+    to ``origin/main`` (``e159604``).
+
+  ### Resumption gate
+
+  Comics-Session-2 C3-C7 will NOT resume until this item ships
+  + the full backend sweep is restored to clean on a feature
+  branch carrying C2-like surface (7+ endpoints + ~25+ TestClient
+  tests).
+
+  Effort: 1-3 commits depending on fix-path choice. Pluginforge-
+  side fix probably ships as 0.7.1 hotfix or 0.8.0 minor.
 
 ---
 
@@ -161,6 +279,72 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01** (P3,
+  filed 2026-05-20 during halted Comics-Session-2 cleanup):
+  decide which recommendations from
+  ``docs/explorations/exploration-multi-agent-gitflow-coordination.md``
+  (filed by Strategic-Advisor 2026-05-20) to adopt as
+  AI-workflow rules.
+
+  ### Evidence base
+
+  Two concrete failure modes from the exploration doc fired
+  during the 2026-05-20 work day:
+
+  1. **Failure-Mode 6 (User-Mediated-Sync-Gap) + stale-state
+     assumption.** Multiple times this session, my reports
+     referenced "7 commits ahead of origin" based on a stale
+     view of origin/main captured at session start. Between
+     that capture and later reports, the parallel-CC agent
+     had pushed the V060-adoption work. The stale view
+     persisted across multiple reports because I never
+     re-fetched. The user had to surface the discrepancy via
+     "user reports V060 push happened yesterday".
+     Strategic-Advisor's branch-state was invisible to me
+     because I didn't re-check.
+
+  2. **Failure-Mode 1 (cross-branch architecture decisions
+     not coordinated)**. The halted Comics-Session-2's
+     recursion-regression was initially mis-attributed to the
+     V060 baseline. Bisect (filed under
+     ``PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01``) showed
+     V060 baseline is clean — the regression is in
+     Comics-Session-2 C2 itself. Without the explicit
+     bisect-isolation step, the wrong subsystem got fingered
+     + a halt-plus-file order was issued for the wrong
+     reason.
+
+  3. **Undocumented Bibliogon convention surfaced**:
+     single-router-per-plugin pattern (kinderbuch precedent).
+     Comics-Session-2 original design specified 3 routers;
+     the refactor restored the convention but cost a
+     Stop-Condition-Trigger. Filed separately as the
+     ``Single-Router-Per-Plugin Convention`` Lessons-Learned
+     entry (this session).
+
+  ### Decisions pending
+
+  - Which Strategic-Advisor recommendations from the
+    exploration doc to adopt as durable AI-workflow rules vs
+    one-off discipline reminders?
+  - Specifically: is the proposed "re-fetch + verify branch
+    state at session start AND before any inter-session
+    state claim" worth codifying in ``.claude/rules/ai-workflow.md``?
+  - Is "Pre-Inspection-Pattern-Audit must explicitly grep
+    existing plugin / module conventions before specifying
+    new structure" a separate rule or an extension of the
+    existing Pre-Coding-Reality-Check?
+  - Coordinate with the sibling exploration
+    ``exploration-bibliogon-mobile-selective-sync.md`` (also
+    filed 2026-05-20 by Strategic-Advisor) if its
+    recommendations overlap.
+
+  Trigger: Strategic-Advisor schedules a review session OR
+  next halted-Session retrospective surfaces a new instance
+  of any of the 7 failure modes from the exploration. Effort:
+  S-M (1-3 commits) — primarily docs / rule edits + a few
+  workflow-discipline pins in ``.claude/rules/``.
 
 - **MAKEFILE-VERIFY-PLUGIN-LOCKS-PARSE-01** (P3,
   TOOLING-INVESTIGATION, filed 2026-05-20 during V060
