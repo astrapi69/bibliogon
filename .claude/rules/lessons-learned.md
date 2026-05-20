@@ -4309,3 +4309,60 @@ that follow.
 - "Foundation-Override extension" (this file) — the override
   that the audit-methodology consumes
 
+
+## Stale-bundle is the most common false-positive on post-ship user reports
+
+Filed 2026-05-20 from the PAGES-CRUD-01 → Add-Panel cycle. After
+a frontend-touching ship, if the user immediately reports the
+just-shipped feature "doesn't work", **stale-bundle (η class) is
+more likely than regression (β) or real-bug (ε)**. Cheap pre-check,
+mandatory before any deeper investigation.
+
+### The exact sequence that fired this rule
+
+The PAGES-CRUD-01 close shipped a Create-First-Page button.
+The very next user-action — Add Panel — was reported "geht nicht".
+Live Playwright Chromium + ``getComputedStyle`` + full-page
+screenshot all agreed: panel renders at 822×822 with the
+auto-select highlight active. User's manual-test reported a
+10px collapse. The reported book ID didn't exist in the dev DB.
+The most-likely cause was a browser session running pre-ship JS
+that wouldn't have shown the new visual feedback paths.
+
+### Verification recipe (run BEFORE opening an investigation)
+
+1. **Confirm HEAD.** ``git log --oneline -3`` matches the ship.
+2. **Hard-reload + disable cache.** Browser DevTools → Network →
+   "Disable cache" checkbox → ``Ctrl+Shift+R``. Confirm fresh
+   bundle in Network tab.
+3. **Reproduce on a fresh entity** (new comic_book, new page,
+   etc.) — not the user's possibly-corrupted pre-ship row.
+4. **Only then** open the investigation taxonomy (α-η).
+
+### Diagnostic-Layer-Disagreement is data, not contradiction
+
+When Playwright + getComputedStyle + screenshot agree, AND
+manual-test disagrees, the disagreement points to *stale bundle*
+or *data-corruption* or *environment-specific*, NOT "Playwright
+is wrong". Treat agreement-across-three-DOM-layers as the
+authoritative signal; the manual report is the input that
+triggered investigation, not the verdict.
+
+### Audit-First holds under user-pressure
+
+When a user re-classifies a finding ("you're wrong, it IS a real
+bug"), the right response is **demand evidence first** (computed
+height, screenshot, HEAD SHA), THEN re-open the investigation.
+Skipping straight to deeper investigation on a re-classification
+risks shipping fixes for bugs that don't exist. The audit
+discipline holds regardless of who's pushing back.
+
+### Pairs with
+
+- "User-perceived bug ≠ code bug: the perception-lag class"
+  (this file) — the parent pattern; stale-bundle is a frequent
+  perception-driver.
+- "Pre-Coding-Reality-Check: re-audit at the keystroke" (this
+  file) — same verify-before-act discipline, applied to the
+  responding-to-a-bug-report surface.
+
