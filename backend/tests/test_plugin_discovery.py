@@ -63,6 +63,45 @@ def test_discovered_plugins_carries_v060_state_fields():
         )
 
 
+def test_discovered_plugins_carries_v090_lifecycle_fields():
+    """PluginForge v0.9.0 ``inspect_plugin(name)`` exposes
+    ``PluginState.activated_at``, ``last_config_change``, and
+    ``source``. The settings/discovered endpoint surfaces them as
+    ISO 8601 strings (or null) so Settings UI can render
+    "Active since …" / "Settings applied …" / "via ZIP" hints.
+
+    Every first-party plugin activates on a clean test boot, so
+    ``activated_at`` MUST be a parseable ISO string and ``source``
+    MUST be ``"entry_point"``. ``last_config_change`` stays null
+    unless a config refresh happened during the boot.
+    """
+    from datetime import datetime
+
+    with TestClient(app):
+        resp = client.get("/api/settings/plugins/discovered")
+    assert resp.status_code == 200
+    payload = resp.json()
+    assert payload, "expected at least one discovered plugin"
+    for p in payload:
+        assert "activated_at" in p, f"{p['name']} missing activated_at key"
+        assert "last_config_change" in p, (
+            f"{p['name']} missing last_config_change key"
+        )
+        assert "source" in p, f"{p['name']} missing source key"
+        # First-party plugins should be entry-point sourced and
+        # activated with a real timestamp.
+        assert p["source"] == "entry_point", (
+            f"{p['name']} expected entry_point source, got {p['source']!r}"
+        )
+        assert p["activated_at"] is not None, (
+            f"{p['name']} expected non-null activated_at after clean boot"
+        )
+        # Parseable ISO 8601.
+        datetime.fromisoformat(p["activated_at"])
+        if p["last_config_change"] is not None:
+            datetime.fromisoformat(p["last_config_change"])
+
+
 def test_core_plugins_have_core_tier():
     """Core plugins should have license_tier='core' and has_license=True."""
     resp = client.get("/api/settings/plugins/discovered")

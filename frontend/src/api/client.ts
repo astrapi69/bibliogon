@@ -3856,6 +3856,19 @@ export interface DiscoveredPlugin {
      *  with an exception during init/activate (filter_reason =
      *  ``load_failed``). */
     load_error_message: string | null
+    /** PluginForge v0.9.0 ``PluginState.activated_at``. ISO 8601
+     *  timestamp of the most recent successful activation. Null
+     *  when the plugin has never activated. */
+    activated_at: string | null
+    /** PluginForge v0.9.0 ``PluginState.last_config_change``. ISO
+     *  8601 timestamp of the last ``on_config_changed`` delivery.
+     *  Null when no config refresh has happened since activation. */
+    last_config_change: string | null
+    /** PluginForge v0.9.0 ``PluginState.source``. ``"entry_point"``
+     *  for the standard install path, ``"direct_register"`` for
+     *  plugins added via ``register_plugin()`` (ZIP installs).
+     *  Null for configured-but-not-discovered rows. */
+    source: "entry_point" | "direct_register" | null
 }
 
 /** Returned by GET /api/system/info. Aggregates app identity +

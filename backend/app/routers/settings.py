@@ -234,7 +234,18 @@ def list_plugin_configs() -> dict[str, Any]:
 
 @router.get("/plugins/discovered")
 def list_discovered_plugins() -> list[dict[str, Any]]:
-    """List plugins with configs that are registered (entry point, ZIP, or bundled)."""
+    """List plugins with configs that are registered (entry point, ZIP, or bundled).
+
+    PluginForge v0.9.0 ``inspect_plugin(name)`` is the single-call
+    aggregator for per-plugin state + identity. It replaces the
+    five-accessor pattern (``get_active_plugins`` +
+    ``get_last_discovery_result`` + per-state lookup +
+    ``load_error.user_facing_message`` + ``activated`` membership)
+    that this endpoint composed by hand. Returns ``None`` for plugin
+    names not known to the manager (never discovered); we fall back
+    to the configured-but-not-discovered shape in that case so the
+    Settings UI can still render the row.
+    """
     if not _manager:
         return []
 
@@ -245,17 +256,7 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     plugins_cfg = app_config.get("plugins", {})
     enabled = set(plugins_cfg.get("enabled", []) or [])
     disabled = set(plugins_cfg.get("disabled", []) or [])
-    active = _active_plugin_names()
-    available = _collect_available_plugins(active)
-
-    # V060: per-plugin DiscoveryResult.states from PluginForge's last
-    # discovery pass (pluginforge v0.6.0+). Carries filter_reason +
-    # structured load_error.user_facing_message for the Settings UI
-    # status column. Returns None before the first discover; in that
-    # case the new fields surface as None and the frontend renders
-    # the row without a status badge.
-    last_result = _manager.get_last_discovery_result()
-    pf_states = last_result.states if last_result is not None else {}
+    available = _collect_available_plugins(_active_plugin_names())
 
     result = []
     for name in config_overlay.list_merged_plugin_names():
@@ -268,31 +269,35 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
         # + version + description from the canonical plugin config.
         # Empty/missing fields surface as ``None`` / ``{}`` so the
         # frontend renders the slug or hides the row gracefully.
-        # Backward-compatible addition — existing consumers
-        # (PluginSettings.tsx) ignore extra fields.
         plugin_meta = (
             cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
         )
-        pf_state = pf_states.get(name)
+        inspection = _manager.inspect_plugin(name)
+        state = inspection.state if inspection is not None else None
+        load_error = state.load_error if state is not None else None
+        activated_at = state.activated_at if state is not None else None
+        last_config_change = state.last_config_change if state is not None else None
         result.append(
             {
                 "name": name,
                 "has_config": True,
                 "enabled": name in enabled and name not in disabled,
-                "loaded": name in active,
+                "loaded": state.activated if state is not None else False,
                 "license_tier": tier,
                 "has_license": has_license,
                 "display_name": plugin_meta.get("display_name") or {},
                 "description": plugin_meta.get("description") or {},
                 "version": plugin_meta.get("version") or None,
-                "filter_reason": (
-                    pf_state.filter_reason if pf_state is not None else None
-                ),
+                "filter_reason": state.filter_reason if state is not None else None,
                 "load_error_message": (
-                    pf_state.load_error.user_facing_message
-                    if pf_state is not None and pf_state.load_error is not None
-                    else None
+                    load_error.user_facing_message if load_error is not None else None
                 ),
+                # PluginForge v0.9.0 lifecycle-visibility fields:
+                "activated_at": activated_at.isoformat() if activated_at else None,
+                "last_config_change": (
+                    last_config_change.isoformat() if last_config_change else None
+                ),
+                "source": state.source if state is not None else None,
             }
         )
     return result

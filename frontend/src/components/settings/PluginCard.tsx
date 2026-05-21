@@ -12,6 +12,21 @@ import {isSectionOrder} from "./utils";
 
 const CORE_PLUGINS = new Set(["export", "help", "getstarted", "ms-tools"]);
 
+/** Render an ISO 8601 timestamp as a locale-aware short string for
+ *  the per-plugin lifecycle line. Falls back to the raw string when
+ *  parsing fails (defensive against backend payload changes). */
+function formatLifecycleTimestamp(iso: string): string {
+    const ts = Date.parse(iso);
+    if (Number.isNaN(ts)) return iso;
+    return new Date(ts).toLocaleString(undefined, {
+        year: "numeric",
+        month: "short",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+}
+
 /** PluginForge v0.6.0 FilterReason → settings.plugin_status_* i18n
  *  key. Bibliogon maps the application-agnostic
  *  ``pre_activate_rejected`` to ``license_check_failed`` because
@@ -30,7 +45,7 @@ const FILTER_REASON_TO_I18N: Record<string, string> = {
     missing_target_application: "ui.settings.plugin_status_missing_target_application",
 };
 
-export function PluginCard({name, displayName, description, version, enabled, settings, filterReason, loadErrorMessage, onSave, onToggle, onRemove}: {
+export function PluginCard({name, displayName, description, version, enabled, settings, filterReason, loadErrorMessage, activatedAt, lastConfigChange, source, onSave, onToggle, onRemove}: {
     name: string;
     displayName: string;
     description: string;
@@ -45,6 +60,19 @@ export function PluginCard({name, displayName, description, version, enabled, se
      *  load failures. Renders below the description when set so
      *  the user can act (rebuild container, fix YAML, etc.). */
     loadErrorMessage?: string | null;
+    /** PluginForge v0.9.0 ``PluginState.activated_at`` (ISO 8601).
+     *  Surfaces "Active since {time}" in the lifecycle line so
+     *  admins can correlate restarts and rediscover cycles. */
+    activatedAt?: string | null;
+    /** PluginForge v0.9.0 ``PluginState.last_config_change``
+     *  (ISO 8601). Surfaces "Settings applied {time}" when
+     *  newer than ``activatedAt`` so admins can spot stale UI
+     *  after a config save. */
+    lastConfigChange?: string | null;
+    /** PluginForge v0.9.0 ``PluginState.source``. Renders a
+     *  "via ZIP" hint for ZIP-installed plugins; entry-point
+     *  installs render no source label (the common case). */
+    source?: "entry_point" | "direct_register" | null;
     onSave: (settings: Record<string, unknown>) => void;
     onToggle: (enable: boolean) => void;
     onRemove: () => void;
@@ -135,6 +163,32 @@ export function PluginCard({name, displayName, description, version, enabled, se
                             style={{color: "#dc2626", fontSize: "0.8125rem", marginTop: 4}}
                         >
                             {loadErrorMessage}
+                        </p>
+                    )}
+                    {(activatedAt || lastConfigChange || source === "direct_register") && (
+                        <p
+                            data-testid={`plugin-lifecycle-${name}`}
+                            style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4}}
+                        >
+                            {activatedAt && (
+                                <span>
+                                    {t("ui.settings.plugin_active_since", "Aktiv seit")}{" "}
+                                    {formatLifecycleTimestamp(activatedAt)}
+                                </span>
+                            )}
+                            {lastConfigChange && (
+                                <span>
+                                    {activatedAt ? " · " : ""}
+                                    {t("ui.settings.plugin_settings_applied", "Einstellungen angewendet")}{" "}
+                                    {formatLifecycleTimestamp(lastConfigChange)}
+                                </span>
+                            )}
+                            {source === "direct_register" && (
+                                <span>
+                                    {activatedAt || lastConfigChange ? " · " : ""}
+                                    {t("ui.settings.plugin_source_zip", "via ZIP")}
+                                </span>
+                            )}
                         </p>
                     )}
                 </div>

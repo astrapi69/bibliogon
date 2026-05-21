@@ -75,6 +75,9 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         version: "1.0.0",
         filter_reason: null,
         load_error_message: null,
+        activated_at: null,
+        last_config_change: null,
+        source: null,
     },
     {
         name: "kdp",
@@ -88,6 +91,9 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         version: "1.0.0",
         filter_reason: null,
         load_error_message: null,
+        activated_at: null,
+        last_config_change: null,
+        source: null,
     },
     {
         name: "comments",
@@ -101,6 +107,9 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         version: "1.0.0",
         filter_reason: null,
         load_error_message: null,
+        activated_at: null,
+        last_config_change: null,
+        source: null,
     },
 ];
 

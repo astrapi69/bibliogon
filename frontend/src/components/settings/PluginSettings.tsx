@@ -54,18 +54,29 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
 
     // Inactive plugins: only show plugins that are NOT active core plugins
     const [loadedPlugins, setLoadedPlugins] = useState<Set<string>>(new Set());
-    // V060: per-plugin filter_reason + load_error_message for the
-    // status badge on each PluginCard (sourced from PluginForge's
-    // last DiscoveryResult via /api/settings/plugins/discovered).
-    const [pluginStates, setPluginStates] = useState<Record<string, {filterReason: string | null; loadErrorMessage: string | null}>>({});
+    // V060+V090: per-plugin filter_reason + load_error_message for
+    // the status badge on each PluginCard, plus activated_at /
+    // last_config_change / source from PluginForge v0.9.0
+    // PluginState. All sourced from inspect_plugin via
+    // /api/settings/plugins/discovered.
+    const [pluginStates, setPluginStates] = useState<Record<string, {
+        filterReason: string | null;
+        loadErrorMessage: string | null;
+        activatedAt: string | null;
+        lastConfigChange: string | null;
+        source: "entry_point" | "direct_register" | null;
+    }>>({});
     useEffect(() => {
         api.settings.discoveredPlugins().then((discovered) => {
             setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
-            const states: Record<string, {filterReason: string | null; loadErrorMessage: string | null}> = {};
+            const states: typeof pluginStates = {};
             for (const p of discovered) {
                 states[p.name] = {
                     filterReason: p.filter_reason,
                     loadErrorMessage: p.load_error_message,
+                    activatedAt: p.activated_at,
+                    lastConfigChange: p.last_config_change,
+                    source: p.source,
                 };
             }
             setPluginStates(states);
@@ -175,6 +186,9 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
                         settings={settings}
                         filterReason={pluginStates[name]?.filterReason ?? null}
                         loadErrorMessage={pluginStates[name]?.loadErrorMessage ?? null}
+                        activatedAt={pluginStates[name]?.activatedAt ?? null}
+                        lastConfigChange={pluginStates[name]?.lastConfigChange ?? null}
+                        source={pluginStates[name]?.source ?? null}
                         onSave={(s) => onSavePlugin(name, s)}
                         onToggle={(e) => onTogglePlugin(name, e)}
                         onRemove={async () => {
