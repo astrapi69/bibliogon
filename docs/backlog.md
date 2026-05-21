@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23-late (RECURRING-COMPONENT-AUDIT-01 audit-followup Pattern B CLOSED via methodology-gap-closure-in-action. AuthorProfileSelect extracted in 1-commit 11198a4 — pure-presentational <select> + <optgroup> of user's-own profile (real-name + pen-names from useAuthorProfile); 2-site migration (ArticleEditor inline AuthorSelect DELETED + BookMetadataEditor inline AuthorSelectField kept as thin adapter wrapping the canonical). Closes the audit's methodology-gap concretely: the file-level component scan missed both Pattern B inline-functions; documented future-audit grep recipe in audit footnote (loaded-bearing for next iteration). Frontend Vitest 1803 → 1815 (+12: exactly the 12 new AuthorProfileSelect cases); ArticleEditor 13/13 + BookMetadataEditor 58/58 preserved without rewrites; backend baseline 2125 unchanged. Cumulative RCU progress: 3 of 5 candidates shipped (#2 BulkActionBar c2305e7, #4 AuthorSelectInput a213788, Pattern B AuthorProfileSelect 11198a4). Audit candidates remaining: #1 useSelection<T>() (DEFERRED-design-intent per useBookSelection.ts:7-10) + #3 ListRow (available). Earlier 2026-05-23 close: RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput via path α + Pattern-B-filing.)
+Last updated: 2026-05-23-late-2 (PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 CLOSED via 4-commit ship `a236057..f87d3f4` + this docs commit. User-real-test 2026-05-23 surfaced 2 Findings on comic-book editor: Add-Page-Button missing after First-Page-Creation + Pages-Sidebar missing for navigation. Half-Wired-Lifecycle-Cascade-Followup from PAGES-CRUD-01; Foundation-Override-Extended P1 promotion fired. Closed via RCU 2-site adoption of PageThumbnails by ComicBookEditor: testidNamespace prop added (precedent RichTextEditor); 3-col layout (220px | 1fr | 320px) mirrors PageEditor; unified handleAddPage serves first+subsequent creates; handleReorderPages auto-closes drag-reorder for comic_book. 5 testid migrations across 1 component + 1 Vitest + 4 E2E specs. Drag-reorder for comic_book pages auto-closes as Path-A side-effect. Frontend Vitest 1815 → 1819 (+4: exactly the 4 new multi-page navigation cases); backend 2126/1skip baseline holds. 1 new Playwright spec (comic-book-multi-page-navigation.spec.ts, 4 cases) with bounding-box-dimension assertion per LL Playwright-visible≠User-visible. New P3 filed: PAGES-DELETE-EDITOR-UI-01 (Half-Wired-Lifecycle-Cascade-Followup, page-delete UI absent in both PageEditor + ComicBookEditor — separate-session per Q5 adjudication). Earlier 2026-05-23 closes: RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput via path α + Pattern-B AuthorProfileSelect (methodology-gap closed-in-action).)
 Current version: v0.35.1
-Open tasks: 67 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 68 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -238,6 +238,125 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **PAGES-DELETE-EDITOR-UI-01** (P3, Half-Wired-Lifecycle-Cascade-
+  Followup, filed 2026-05-23 from PLUGIN-COMICS-MULTI-PAGE-
+  NAVIGATION-01 C5 close): page-delete UI is absent in BOTH
+  PageEditor (picture_book) AND ComicBookEditor (comic_book).
+  Backend supports it — `DELETE /api/books/{id}/pages/{pid}`
+  has shipped since PAGES-CRUD-01 (`879df22..2869f3f`,
+  2026-05-20) with position-shift-down on delete. `api.pages.
+  delete` exists in the frontend client and is exercised by
+  `frontend/src/api/client.pages.test.ts:134`. But neither
+  editor surface exposes the delete affordance — neither
+  PageThumbnails nor either editor's properties pane carries
+  a per-page delete control.
+
+  This is a separate Half-Wired-Lifecycle-Cascade from the
+  Add-Page-After-First gap that MULTI-PAGE-NAVIGATION-01
+  closed. Cross-surface: both editors share PageThumbnails,
+  so a clean fix lands the delete affordance in PageThumbnails
+  once + serves both sites simultaneously (RCU 2-site benefit).
+
+  ### Scope (one session, ~3-5 commits)
+
+  - Add per-row delete affordance to PageThumbnails (icon
+    button in the row, OR right-click menu, OR delete-key
+    keyboard shortcut — design decision at Pre-Inspection).
+  - Wire onDelete prop in PageThumbnails (idempotent removal
+    from local pages state per "Destructive row-actions must
+    reconcile collection state" LL).
+  - PageEditor + ComicBookEditor: pass onDelete handler that
+    calls `api.pages.delete` + clears activePageId if the
+    deleted page was active (auto-select next-available page).
+  - Confirm-dialog: 1-step confirmation (AppDialog) per
+    existing prose-side delete UX precedent.
+  - Vitest cases for the new handler (cover empty → 1-page →
+    delete → empty-state restored AND multi-page → delete-
+    active → next-page-auto-selected).
+  - Playwright smoke spec (positive: delete a page, sidebar
+    shrinks; positive: delete the last page, empty-state
+    restored).
+
+  ### Why this didn't ship inside MULTI-PAGE-NAVIGATION-01
+
+  Per user-adjudication 2026-05-23 Q5: "File alongside in
+  this session's C5 docs commit. NOT bundled with
+  implementation. Separate-Session for actual UI-
+  implementation." Bundling would have stretched the
+  MULTI-PAGE-NAVIGATION-01 session beyond its β-scope
+  (5-6 commits). Delete-UI is its own design-decision
+  (icon vs menu vs key) + its own confirm-flow choice;
+  the user wants it scoped + considered separately.
+
+  ### Cross-surface impact
+
+  - PageEditor (picture_book) — needs UI
+  - ComicBookEditor (comic_book) — needs UI
+  - Future comic-book layouts that add panel-delete / bubble-
+    delete already have their own controls; this is page-
+    delete specifically.
+
+  ### Trigger
+
+  Either user-real-test re-surfaces the page-delete gap, OR
+  the cleanup discipline catches it during the next session
+  picking from P3. Not deadline-pressure (P3-tier).
+
+- **HOOKSPEC-DISPATCH-WIRING-01** (P3, filed 2026-05-23 from the
+  plugin-communication investigation).
+
+  ### Scope
+
+  Decide what to do with three declared-but-undispatched
+  hookspecs in [backend/app/hookspecs.py](backend/app/hookspecs.py):
+
+  - ``export_formats`` - declared; no dispatch site in
+    ``backend/app/`` or ``plugins/``
+  - ``export_execute`` - declared; no dispatch site
+  - ``chapter_pre_save`` - declared; no dispatch site AND no
+    plugin implementation
+
+  Only ``content_pre_import`` is actually dispatched at runtime
+  ([markdown_utils.py:106](backend/app/services/backup/markdown_utils.py#L106)
+  for plugin-ms-tools).
+
+  Investigation context: the
+  2026-05-23 plugin-communication audit found that 3 of 4
+  "export-dependent" plugins do not actually call into export
+  at runtime. The real coupling shape is direct Python imports
+  (plugin-comics → plugin-export; plugin-export →
+  plugin-audiobook in 6 inline-import sites). The hookspecs
+  were intended as the cross-plugin coordination mechanism but
+  the dispatch side was never wired.
+
+  ### Decision dimensions
+
+  1. **Wire up dispatch sites** - make the hooks functional.
+     Concretely: plugin-export's routes.py would call
+     ``manager.call_hook("export_execute", ...)`` instead of
+     the current direct-import dispatch to
+     ``bibliogon_audiobook.generator``. Net effect: cleaner
+     decoupling between plugin-export and plugin-audiobook;
+     reverse-coupling (export imports audiobook) goes away.
+  2. **Delete the hookspecs entirely** - acknowledge that the
+     direct-import pattern is the project's actual cross-plugin
+     mechanism. Removes architectural intent that has not paid
+     off. Re-introducible later if requirements change.
+  3. **Status quo (TODO markers only)** - keep declarations as
+     "intended architecture, not yet wired", with the
+     ``TODO(HOOKSPEC-DISPATCH-WIRING-01)`` markers already in
+     place. Defers the decision; no immediate code change.
+
+  Trigger to revisit: any new plugin needing a publish/subscribe
+  shape with the application core or with another plugin. At
+  that point pick (1) or (2) deliberately. Until then (3) is
+  the parking state.
+
+  ### Status
+
+  Markers added to hookspecs.py in the same commit that filed
+  this item. No dispatch wiring or deletion performed.
 
 - **MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01** (P3, filed
   2026-05-20 from the re-prioritization audit Q6 adjudication
