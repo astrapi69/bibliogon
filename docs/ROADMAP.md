@@ -174,7 +174,7 @@ entry. The exploration document at
 captures the decision history.
 
 - Architecture exploration: [docs/explorations/article-authoring.md](explorations/article-authoring.md)
-- Editor-parity audit: [docs/explorations/article-editor-parity.md](explorations/article-editor-parity.md)
+- Editor-parity audit: [docs/explorations/archive/article-editor-parity.md](explorations/archive/article-editor-parity.md)
 - Validation log: [docs/journal/article-workflow-observations.md](journal/article-workflow-observations.md)
 - AR-03+ readiness audit: [docs/audits/2026-05-02-ar-03-readiness.md](audits/2026-05-02-ar-03-readiness.md)
 - UX conventions: [docs/ux-conventions.md](ux-conventions.md)

@@ -25,7 +25,7 @@ Exploration documents can transition to:
 
 ## Tracking table
 
-Last reviewed: 2026-04-22
+Last reviewed: 2026-05-23
 
 Value column reflects a subjective ROI judgement (user impact × adoption gain ÷ effort). Not a commitment.
 
@@ -40,7 +40,7 @@ Value column reflects a subjective ROI judgement (user impact × adoption gain �
 | [dependency-strategy.md](dependency-strategy.md) | Active maintenance doc | Quarterly review | C (meta) | Quarterly cadence or major-bump session. |
 | [multi-user-saas.md](multi-user-saas.md) | Long-term, not committed | 30+ sessions | D (lowest) | 5000+ active users AND funding model independent of SaaS subscription. |
 
-Archived explorations (shipped or historical) have moved to [archive/](archive/). Recent additions to the archive: `ai-review-extension.md` (shipped v0.20.0) and `git-based-backup.md` (shipped v0.21.0).
+Archived explorations (shipped or historical) have moved to [archive/](archive/). Recent additions to the archive (2026-05-23 cleanup sweep): `article-editor-parity.md`, `articles-dashboard-parity-audit.md`, `backup-articles-audit.md`, `backup-articles-debug.md`, `donation-visibility-diagnosis.md`, `inline-styles-audit.md` (T-01), `installer-discovery-report.md` + `prompt-installer-discovery.md` (D-05 closed won't-fix), `optimization-report-2026-04-28.md`, `prompt-ux-convention-document.md` (yielded `docs/ux-conventions.md`), `secrets-refactor-audit.md`, `trash-card-parity-audit.md`, `trash-card-permanent-delete-recheck.md`, `trash-parity-audit.md`. Earlier additions: `ai-review-extension.md` (shipped v0.20.0), `git-based-backup.md` (shipped v0.21.0).
 
 ---
 
