@@ -9,7 +9,23 @@
 >
 > 1. **Candidate #1 `useSelection<T>()` (score 16) — DEFERRED-PENDING-DESIGN-INTENT-ADJUDICATION.** Pre-Coding-Reality-Check surfaced an explicit anti-extraction rationale at [useBookSelection.ts:7-10](../../frontend/src/components/useBookSelection.ts#L7-L10): *"Kept as a separate hook (rather than a generic `useSelection`) so that future per-entity divergence (e.g. books-only constraints around audiobook job state) lands in one place without a cross-entity refactor."* The audit's `diff` confirmed implementation-identity but missed the documented design-intent in the doc-comment itself. Honoring the rationale + deferring this candidate pending explicit user adjudication on whether the speculative-divergence-defense should be overridden. Methodology gap: future audits should grep doc-comments for anti-extraction-rationale markers as a soft anti-signal.
 > 2. **Candidate #2 `BulkActionBar` (score 15) — SHIPPED via path γ pivot** (commit `c2305e7` on 2026-05-22). 3-site adapter-pattern extraction: new `BulkActionBar` shell wrapper + `BulkActionBar.module.css` (.bar + .count rules) + 5 Vitest cases; 3 adapter files now render `<BulkActionBar>{site-specific actions}</BulkActionBar>` keeping their entity-specific action clusters. No anti-extraction-rationale documented in any of the 3 source files; pivot was clean. Full Vitest 1783 → 1792.
-> 3. **Candidates #3 `ListRow` (score 13) + #4 `AuthorSelectInput` (score 12) — REMAIN AVAILABLE** for future sessions per the recommended sequence.
+> 3. **Candidates #3 `ListRow` (score 13) — REMAINS AVAILABLE** for future sessions per the recommended sequence.
+>
+> **Update 2026-05-23 — Implementation-session findings (candidate #4):**
+>
+> 4. **Candidate #4 `AuthorSelectInput` (score 12) — SHIPPED via path α (extraction-only, AUTHOR-DATALIST-EXTEND-EDITORS-01 pair deferred)** (commit `a213788`). 2-site adapter-pattern extraction: new pure-presentational `AuthorSelectInput` (input + datalist + Add-to-Authors-DB checkbox) at `frontend/src/components/AuthorSelectInput.tsx` + 11 Vitest cases. CreateBookModal + ConvertToBookWizard migrated; existing per-site tests (32 + 30) preserved without rewrites. The `inputTestId` override prop accommodates ConvertToBookWizard's non-standard "convert-to-book-wizard-metadata-author" testid (pinned by 12+ E2E + Vitest references) per the "Testid namespace pinning prevents silent E2E skips" LL. Full Vitest 1792 → 1803.
+> 5. **AUTHOR-DATALIST-EXTEND-EDITORS-01 — DEFERRED as UX-adjudication-required.** Pre-Coding-Reality-Check revealed that the backlog item proposes REPLACING an existing different pattern (Pattern B, see below) at ArticleEditor + BookMetadataEditor, not just adding the datalist pattern alongside. That's a UX design decision (closed-list profile-select vs free-text + Authors-DB autocomplete), not a mechanical migration. Filed for separate user-adjudication session.
+> 6. **NEW candidate: Pattern B `AuthorSelect` / `AuthorSelectField` profile-select cluster — estimated score 13.** Two inline functions at [ArticleEditor.tsx:1216-1275](../../frontend/src/pages/ArticleEditor.tsx#L1216-L1275) (function `AuthorSelect`) and [BookMetadataEditor.tsx:542](../../frontend/src/components/BookMetadataEditor.tsx#L542) (function `AuthorSelectField`). The ArticleEditor inline doc-comment self-identifies as: *"Mirrors the BookEditor AuthorPicker's matched-state ProfileSelect, simplified for the Article editor."* Both use `<select>` with `<optgroup>` of user's-own profile (real-name + pen-names from `useAuthorProfile()` hook); closed list, no free-text. A1=2, A2=4 (explicit mirrors comment + drift potential), A3=4 (clean prop-injection: value + profile + onChange + optgroup labels), A4=3 → total **13**, would rank above candidate #4 (12) and at parity with #3 (13). **Filed as audit-followup candidate** for the next iteration of this audit.
+>
+> **Methodology-gap note (filed 2026-05-23):** The original audit's file-level component scan missed Pattern B because both `AuthorSelect` and `AuthorSelectField` are inline functions inside larger page/component files (lines 1216 of a 1423-LOC ArticleEditor; line 542 of a several-hundred-LOC BookMetadataEditor). Future runs of this audit should grep doc-comments + inline function definitions inside large files (>500 LOC), not just file-level components. Recipe:
+>
+> ```bash
+> grep -rn "^function [A-Z][a-zA-Z]*Select\|^function [A-Z][a-zA-Z]*Picker\|^function [A-Z][a-zA-Z]*Input" \
+>   frontend/src/pages/ frontend/src/components/ --include="*.tsx" \
+>   | grep -v "^[A-Z]"
+> ```
+>
+> Plus grep doc-comments for explicit mirror-references ("Mirrors the X", "Cloned from Y") which are the load-bearing RCU-2-site signals the original audit identified in the BulkActionBar cluster but missed in Pattern B.
 
 ---
 
