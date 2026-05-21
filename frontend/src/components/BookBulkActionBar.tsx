@@ -15,6 +15,7 @@ import {useState} from "react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import {ChevronDown, Sparkles, Trash2} from "lucide-react"
 
+import BulkActionBar from "./BulkActionBar"
 import styles from "./BookBulkActionBar.module.css"
 
 export type BookBulkExportFormat = "epub" | "pdf" | "docx"
@@ -75,16 +76,16 @@ export default function BookBulkActionBar({
     ).replace("{count}", String(count))
 
     return (
-        <div
-            className={styles.bar}
-            data-testid="book-bulk-action-bar"
-            role="region"
-            aria-label={t("ui.dashboard.bulk.format_label", "Format")}
+        <BulkActionBar
+            count={count}
+            countLabel={renderCount}
+            ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
+            clearLabel={t("ui.dashboard.bulk.clear_button", "Clear selection")}
+            onClear={onClear}
+            barTestId="book-bulk-action-bar"
+            countTestId="book-bulk-count"
+            clearTestId="book-bulk-clear"
         >
-            <span className={styles.count} data-testid="book-bulk-count">
-                {renderCount}
-            </span>
-
             <span className={styles.label}>
                 {t("ui.dashboard.bulk.format_label", "Format")}
             </span>
@@ -240,14 +241,6 @@ export default function BookBulkActionBar({
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             )}
-            <button
-                type="button"
-                className="btn-ghost"
-                data-testid="book-bulk-clear"
-                onClick={onClear}
-            >
-                {t("ui.dashboard.bulk.clear_button", "Clear selection")}
-            </button>
-        </div>
+        </BulkActionBar>
     )
 }

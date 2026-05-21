@@ -1,36 +1,9 @@
 /**
- * Minimal sticky bulk-action bar for the Comments-Admin section.
- * Cloned from ArticleBulkActionBar.module.css but trimmed to the
- * delete-only subset — no format selector, no mode toggle, no AI
- * dropdown, no convert button. The shared visual language
- * (sticky-top + CSS variables + same paddings) keeps the bar
- * recognisable across Articles / Books / Comments admin surfaces.
+ * Comments-admin bulk-action bar local styles. The sticky-top
+ * container + count badge moved to BulkActionBar.module.css
+ * (RECURRING-COMPONENT-AUDIT-01 candidate #2 extraction,
+ * 2026-05-22). Only the layout spacer stays here.
  */
-
-.bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-}
-
-.count {
-    font-weight: 600;
-    color: var(--text-primary);
-    background: var(--bg-secondary);
-    border-radius: var(--radius-sm);
-    padding: 4px 10px;
-    white-space: nowrap;
-}
 
 .spacer {
     flex: 1;

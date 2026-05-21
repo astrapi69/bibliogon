@@ -1,0 +1,36 @@
+/**
+ * Shared shell styles for bulk-action bars. RECURRING-COMPONENT-
+ * AUDIT-01 Candidate #2 extraction (2026-05-22).
+ *
+ * Owns the byte-identical sticky-top container + count badge rules
+ * that previously appeared in ArticleBulkActionBar / BookBulkActionBar /
+ * CommentBulkActionBar's per-site module.css files. Each adapter
+ * keeps its own module.css for site-specific elements (.label,
+ * .select, .modeGroup, .modeButton, .spacer, .warning, .error)
+ * since those vary per surface.
+ */
+
+.bar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+}
+
+.count {
+    font-weight: 600;
+    color: var(--text-primary);
+    background: var(--bg-secondary);
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    white-space: nowrap;
+}

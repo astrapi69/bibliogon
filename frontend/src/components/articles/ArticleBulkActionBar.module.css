@@ -1,35 +1,9 @@
 /**
- * Sticky bulk-action bar shown above the Articles list when at
- * least one article is selected. Mirrors the dashboard look (uses
- * existing CSS variables) so it does not feel like a foreign
- * element. Position is sticky-top so it follows the user as they
- * scroll through a long list.
+ * Article-side bulk-action bar local styles. The sticky-top
+ * container + count badge moved to BulkActionBar.module.css
+ * (RECURRING-COMPONENT-AUDIT-01 candidate #2 extraction,
+ * 2026-05-22). Article-specific elements stay here.
  */
-
-.bar {
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    padding: 12px 16px;
-    margin-bottom: 12px;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px;
-}
-
-.count {
-    font-weight: 600;
-    color: var(--text-primary);
-    background: var(--bg-secondary);
-    border-radius: var(--radius-sm);
-    padding: 4px 10px;
-    white-space: nowrap;
-}
 
 .label {
     color: var(--text-secondary);

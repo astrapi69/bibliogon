@@ -18,6 +18,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {ChevronDown, Trash2} from "lucide-react";
 
+import BulkActionBar from "../BulkActionBar";
 import styles from "./CommentBulkActionBar.module.css";
 
 interface Props {
@@ -49,19 +50,22 @@ export default function CommentBulkActionBar({
     ).replace("{count}", String(count));
 
     return (
-        <div
-            className={styles.bar}
-            data-testid="comment-bulk-action-bar"
-            role="region"
-            aria-label={t(
+        <BulkActionBar
+            count={count}
+            countLabel={renderCount}
+            ariaLabel={t(
                 "ui.comments.admin.bulk.region_label",
                 "Bulk-Aktionen",
             )}
+            clearLabel={t(
+                "ui.comments.admin.bulk.clear_button",
+                "Auswahl aufheben",
+            )}
+            onClear={onClear}
+            barTestId="comment-bulk-action-bar"
+            countTestId="comment-bulk-count"
+            clearTestId="comment-bulk-clear"
         >
-            <span className={styles.count} data-testid="comment-bulk-count">
-                {renderCount}
-            </span>
-
             <div className={styles.spacer} />
 
             <DropdownMenu.Root>
@@ -116,17 +120,6 @@ export default function CommentBulkActionBar({
                 </DropdownMenu.Portal>
             </DropdownMenu.Root>
 
-            <button
-                type="button"
-                className="btn-ghost"
-                data-testid="comment-bulk-clear"
-                onClick={onClear}
-            >
-                {t(
-                    "ui.comments.admin.bulk.clear_button",
-                    "Auswahl aufheben",
-                )}
-            </button>
-        </div>
+        </BulkActionBar>
     );
 }

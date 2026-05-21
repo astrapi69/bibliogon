@@ -20,6 +20,7 @@ import {useState} from "react"
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import {BookOpen, ChevronDown, Sparkles, Trash2} from "lucide-react"
 
+import BulkActionBar from "../BulkActionBar"
 import styles from "./ArticleBulkActionBar.module.css"
 
 export type BulkExportFormat = "markdown" | "html" | "pdf" | "docx"
@@ -101,16 +102,16 @@ export default function ArticleBulkActionBar({
           )
 
     return (
-        <div
-            className={styles.bar}
-            data-testid="article-bulk-action-bar"
-            role="region"
-            aria-label={t("ui.articles.bulk.format_label", "Format")}
+        <BulkActionBar
+            count={count}
+            countLabel={renderCount}
+            ariaLabel={t("ui.articles.bulk.format_label", "Format")}
+            clearLabel={t("ui.articles.bulk.clear_button", "Clear selection")}
+            onClear={onClear}
+            barTestId="article-bulk-action-bar"
+            countTestId="article-bulk-count"
+            clearTestId="article-bulk-clear"
         >
-            <span className={styles.count} data-testid="article-bulk-count">
-                {renderCount}
-            </span>
-
             <span className={styles.label}>{t("ui.articles.bulk.format_label", "Format")}</span>
             <select
                 data-testid="article-bulk-format"
@@ -303,14 +304,6 @@ export default function ArticleBulkActionBar({
                     </DropdownMenu.Portal>
                 </DropdownMenu.Root>
             )}
-            <button
-                type="button"
-                className="btn-ghost"
-                data-testid="article-bulk-clear"
-                onClick={onClear}
-            >
-                {t("ui.articles.bulk.clear_button", "Clear selection")}
-            </button>
-        </div>
+        </BulkActionBar>
     )
 }
