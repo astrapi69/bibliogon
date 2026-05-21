@@ -13,40 +13,55 @@ plugin:
 
 guide:
   steps:
+    # GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 step #1: new step
+    # introducing the 3 book types. Pre-existing steps keep their
+    # IDs so returning users' localStorage progress is preserved
+    # (additive-over-destructive). The "create-book" + "add-chapters"
+    # step copies are broadened to cover all 3 book types without
+    # ID changes.
+    - id: "choose-book-type"
+      title:
+        de: "Buchtyp wählen"
+        en: "Choose Book Type"
+      description:
+        de: "Bibliogon unterstützt drei Buchtypen: Prosa (Romane, Sachbücher), Bilderbuch (eine Seite pro Bild + Text) und Comicbuch (Multi-Panel mit Sprechblasen). Wähle den passenden Typ für dein Projekt."
+        en: "Bibliogon supports three book types: Prose (novels, non-fiction), Picture Book (one image plus text per page), and Comic Book (multi-panel with speech bubbles). Pick the type that fits your project."
+      icon: "book-open"
+
     - id: "create-book"
       title:
         de: "Buch erstellen"
         en: "Create a Book"
       description:
-        de: "Klicke auf 'Neues Buch' im Dashboard. Gib Titel, Autor und Sprache ein."
-        en: "Click 'New Book' on the dashboard. Enter title, author, and language."
+        de: "Klicke auf 'Neues Buch' im Dashboard. Für Bilderbuch oder Comicbuch nutze das Dropdown rechts neben dem Button. Gib Titel, Autor und Sprache ein."
+        en: "Click 'New Book' on the dashboard. For Picture Book or Comic Book use the dropdown next to the button. Enter title, author, and language."
       icon: "book-plus"
 
     - id: "add-chapters"
       title:
-        de: "Kapitel hinzufügen"
-        en: "Add Chapters"
+        de: "Inhalt hinzufügen"
+        en: "Add Content"
       description:
-        de: "Oeffne dein Buch und klicke das '+' neben 'Kapitel' in der Sidebar."
-        en: "Open your book and click the '+' next to 'Chapters' in the sidebar."
+        de: "Bei Prosa-Büchern: Klicke das '+' neben 'Inhalt' in der Sidebar, um Kapitel hinzuzufügen. Bei Bilder- und Comicbüchern: Nutze die Seiten-Sidebar links im Editor, um Seiten anzulegen."
+        en: "Prose books: Click the '+' next to 'Content' in the sidebar to add chapters. Picture and Comic Books: Use the page sidebar on the left of the editor to add pages."
       icon: "file-plus"
 
     - id: "write-content"
       title:
-        de: "Schreiben"
-        en: "Write Content"
+        de: "Schreiben und gestalten"
+        en: "Write and Design"
       description:
-        de: "Nutze den WYSIWYG-Editor oder wechsle in den Markdown-Modus. Deine Änderungen werden automatisch gespeichert."
-        en: "Use the WYSIWYG editor or switch to Markdown mode. Your changes are saved automatically."
+        de: "Prosa: WYSIWYG- oder Markdown-Editor. Bilderbuch: Bild und Text pro Seite (Layout wählbar). Comicbuch: Panels per Grid-Template und Sprechblasen per Side-Pane. Änderungen werden automatisch gespeichert."
+        en: "Prose: WYSIWYG or Markdown editor. Picture Book: image and text per page (layout selectable). Comic Book: panels via grid template and speech bubbles via side-pane. Changes are saved automatically."
       icon: "pen-tool"
 
     - id: "organize"
       title:
-        de: "Kapitel ordnen"
-        en: "Organize Chapters"
+        de: "Reihenfolge anpassen"
+        en: "Reorder"
       description:
-        de: "Ziehe Kapitel per Drag-and-Drop in die gewuenschte Reihenfolge."
-        en: "Drag and drop chapters to reorder them."
+        de: "Ziehe Kapitel oder Seiten per Drag-and-Drop in die gewuenschte Reihenfolge. Front Matter, Hauptteil und Back Matter sind getrennte Bereiche."
+        en: "Drag and drop chapters or pages to reorder them. Front matter, main content, and back matter are separate sections."
       icon: "grip-vertical"
 
     - id: "export"
@@ -54,8 +69,8 @@ guide:
         de: "Exportieren"
         en: "Export"
       description:
-        de: "Exportiere dein Buch als EPUB, PDF oder ZIP-Projektstruktur über die Buttons in der Sidebar."
-        en: "Export your book as EPUB, PDF, or ZIP project structure via the sidebar buttons."
+        de: "Exportiere dein Buch als EPUB, PDF (alle Buchtypen) oder ZIP-Projektstruktur (Prosa). Bilderbuch und Comicbuch unterstützen KDP-fähige PDF-Formate mit Beschnittmarken."
+        en: "Export your book as EPUB, PDF (all book types), or ZIP project structure (prose). Picture Book and Comic Book support KDP-ready PDF formats with bleed marks."
       icon: "download"
 
     - id: "settings"
@@ -63,8 +78,8 @@ guide:
         de: "Einstellungen"
         en: "Settings"
       description:
-        de: "Unter Einstellungen konfigurierst du die App, Plugins und Lizenzen."
-        en: "In Settings you can configure the app, plugins, and licenses."
+        de: "Unter Einstellungen konfigurierst du die App, Plugins, Autorenprofile und Kategorien (Bilderbuch + Comicbuch nutzen KDP-BISAC-Codes)."
+        en: "In Settings you can configure the app, plugins, author profiles, and categories (Picture Book and Comic Book use KDP BISAC codes)."
       icon: "settings"
 
     - id: "backup"
@@ -72,35 +87,84 @@ guide:
         de: "Sichern und Importieren"
         en: "Backup and Import"
       description:
-        de: "Erstelle Backups deiner Bücher oder importiere bestehende write-book-template Projekte."
-        en: "Create backups of your books or import existing write-book-template projects."
+        de: "Erstelle Backups deiner Bücher oder importiere bestehende write-book-template Projekte und Medium-HTML-Exporte als Artikel."
+        en: "Create backups of your books or import existing write-book-template projects and Medium HTML exports as articles."
       icon: "archive"
 
-sample_book:
-  title:
-    de: "Mein erstes Buch"
-    en: "My First Book"
-  author: "Bibliogon"
-  language: "de"
-  description:
-    de: "Ein Beispielbuch zum Kennenlernen von Bibliogon"
-    en: "A sample book to explore Bibliogon"
-  chapters:
-    - title:
-        de: "Willkommen"
-        en: "Welcome"
-      content:
-        de: "Willkommen bei Bibliogon! Dies ist ein Beispielkapitel. Du kannst es bearbeiten oder löschen und mit deinem eigenen Buch beginnen.\n\nNutze die Toolbar oben für Formatierung, oder wechsle in den Markdown-Modus."
-        en: "Welcome to Bibliogon! This is a sample chapter. You can edit or delete it and start your own book.\n\nUse the toolbar above for formatting, or switch to Markdown mode."
-    - title:
-        de: "Kapitelstruktur"
-        en: "Chapter Structure"
-      content:
-        de: "Bibliogon unterstützt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Über den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
-        en: "Bibliogon supports different chapter types:\n\n- Regular chapters\n- Preface\n- Foreword\n- Acknowledgments\n- About the Author\n- Appendix, Glossary, Bibliography\n\nThese appear in the sidebar in their own sections."
-    - title:
-        de: "Export und Weiterverarbeitung"
-        en: "Export and Processing"
-      content:
-        de: "Dein Buch kann in drei Formaten exportiert werden:\n\n1. **EPUB** - Für E-Reader und digitale Veröffentlichung\n2. **PDF** - Für Druck und Weitergabe\n3. **ZIP** - Projektstruktur im write-book-template Format, kompatibel mit Pandoc"
-        en: "Your book can be exported in three formats:\n\n1. **EPUB** - For e-readers and digital publishing\n2. **PDF** - For printing and sharing\n3. **ZIP** - Project structure in write-book-template format, compatible with Pandoc"
+# GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 sample-book dict: keyed by
+# book_type. Backend defaults to "prose" when no book_type query
+# param is passed (backward-compat). Picture-Book and Comic-Book
+# variants ship "pages" instead of "chapters"; the frontend's
+# handleCreateSampleBook branches on the response shape.
+sample_books:
+  prose:
+    title:
+      de: "Mein erstes Buch"
+      en: "My First Book"
+    author: "Bibliogon"
+    language: "de"
+    book_type: "prose"
+    description:
+      de: "Ein Beispielbuch zum Kennenlernen von Bibliogon"
+      en: "A sample book to explore Bibliogon"
+    chapters:
+      - title:
+          de: "Willkommen"
+          en: "Welcome"
+        content:
+          de: "Willkommen bei Bibliogon! Dies ist ein Beispielkapitel. Du kannst es bearbeiten oder löschen und mit deinem eigenen Buch beginnen.\n\nNutze die Toolbar oben für Formatierung, oder wechsle in den Markdown-Modus."
+          en: "Welcome to Bibliogon! This is a sample chapter. You can edit or delete it and start your own book.\n\nUse the toolbar above for formatting, or switch to Markdown mode."
+      - title:
+          de: "Kapitelstruktur"
+          en: "Chapter Structure"
+        content:
+          de: "Bibliogon unterstützt verschiedene Kapiteltypen:\n\n- Regulaere Kapitel\n- Vorwort (Preface)\n- Geleitwort (Foreword)\n- Danksagung (Acknowledgments)\n- Über den Autor\n- Anhang, Glossar, Literaturverzeichnis\n\nDiese erscheinen in der Sidebar in eigenen Sektionen."
+          en: "Bibliogon supports different chapter types:\n\n- Regular chapters\n- Preface\n- Foreword\n- Acknowledgments\n- About the Author\n- Appendix, Glossary, Bibliography\n\nThese appear in the sidebar in their own sections."
+      - title:
+          de: "Export und Weiterverarbeitung"
+          en: "Export and Processing"
+        content:
+          de: "Dein Buch kann in drei Formaten exportiert werden:\n\n1. **EPUB** - Für E-Reader und digitale Veröffentlichung\n2. **PDF** - Für Druck und Weitergabe\n3. **ZIP** - Projektstruktur im write-book-template Format, kompatibel mit Pandoc"
+          en: "Your book can be exported in three formats:\n\n1. **EPUB** - For e-readers and digital publishing\n2. **PDF** - For printing and sharing\n3. **ZIP** - Project structure in write-book-template format, compatible with Pandoc"
+
+  picture_book:
+    title:
+      de: "Mein erstes Bilderbuch"
+      en: "My First Picture Book"
+    author: "Bibliogon"
+    language: "de"
+    book_type: "picture_book"
+    description:
+      de: "Ein Beispiel-Bilderbuch zum Kennenlernen der Seiten-Editor-Funktionen"
+      en: "A sample picture book to explore the page-editor features"
+    pages:
+      - layout: "image_top_text_bottom"
+        text_content:
+          de: "Willkommen im Bilderbuch-Editor! Tausche das Bild oben aus und schreibe deinen Text hier unten."
+          en: "Welcome to the Picture Book editor! Replace the image on top and write your text here below."
+      - layout: "image_left_text_right"
+        text_content:
+          de: "Jede Seite hat ein eigenes Layout. Wähle es rechts in der Properties-Pane."
+          en: "Each page has its own layout. Pick it on the right in the properties pane."
+      - layout: "text_only"
+        text_content:
+          de: "Manche Seiten brauchen kein Bild. Wähle das Text-Only Layout für reine Textseiten."
+          en: "Some pages don't need an image. Pick the Text-Only layout for text-only pages."
+
+  comic_book:
+    title:
+      de: "Mein erstes Comicbuch"
+      en: "My First Comic Book"
+    author: "Bibliogon"
+    language: "de"
+    book_type: "comic_book"
+    description:
+      de: "Ein Beispiel-Comicbuch zum Kennenlernen des Panel- und Sprechblasen-Editors"
+      en: "A sample comic book to explore the panel-and-bubble editor"
+    pages:
+      - layout: "comic_panel_grid"
+        layout_config:
+          comic_grid_template: "single_panel"
+      - layout: "comic_panel_grid"
+        layout_config:
+          comic_grid_template: "grid_2x2"
