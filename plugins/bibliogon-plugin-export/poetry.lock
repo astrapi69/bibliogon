@@ -1976,14 +1976,14 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginforge"
-version = "0.9.0"
+version = "0.10.0"
 description = "Application-agnostic plugin framework built on pluggy"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "pluginforge-0.9.0-py3-none-any.whl", hash = "sha256:5c755e6011396799a9270f08e28ac63e0be6379816d78baec0e729192a8a8758"},
-    {file = "pluginforge-0.9.0.tar.gz", hash = "sha256:6efaa0749ed0b626a3ef5f679f16cd010b0e406bad46070205b7dc0b0a2251e6"},
+    {file = "pluginforge-0.10.0-py3-none-any.whl", hash = "sha256:da5281a034834c4177a931c74b9e830cadf5f1e70910cf7c59752d2fbd6cf07b"},
+    {file = "pluginforge-0.10.0.tar.gz", hash = "sha256:91c5cae22b263c699d0644f441e05d8715e32881ed7a84af3ec1f84fdf9acd63"},
 ]
 
 [package.dependencies]
@@ -3164,4 +3164,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "920294c44c9c2f62cfa0896510f86ed37305531a631982ebc46b281d67f2525e"
+content-hash = "392e7a1ab2b6891a5548a3bab1e8277ce51d8f51b293faeca8ed9c9db84f42d2"

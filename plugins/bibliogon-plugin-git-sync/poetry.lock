@@ -261,7 +261,7 @@ develop = true
 [package.dependencies]
 fastapi = "^0.136.0"
 manuscripta = "^0.9.0"
-pluginforge = "^0.9.0"
+pluginforge = "^0.10.0"
 pyyaml = "^6.0"
 weasyprint = "^66.0"
 
@@ -1818,14 +1818,14 @@ testing = ["coverage", "pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pluginforge"
-version = "0.9.0"
+version = "0.10.0"
 description = "Application-agnostic plugin framework built on pluggy"
 optional = false
 python-versions = "<4.0,>=3.11"
 groups = ["main"]
 files = [
-    {file = "pluginforge-0.9.0-py3-none-any.whl", hash = "sha256:5c755e6011396799a9270f08e28ac63e0be6379816d78baec0e729192a8a8758"},
-    {file = "pluginforge-0.9.0.tar.gz", hash = "sha256:6efaa0749ed0b626a3ef5f679f16cd010b0e406bad46070205b7dc0b0a2251e6"},
+    {file = "pluginforge-0.10.0-py3-none-any.whl", hash = "sha256:da5281a034834c4177a931c74b9e830cadf5f1e70910cf7c59752d2fbd6cf07b"},
+    {file = "pluginforge-0.10.0.tar.gz", hash = "sha256:91c5cae22b263c699d0644f441e05d8715e32881ed7a84af3ec1f84fdf9acd63"},
 ]
 
 [package.dependencies]
@@ -2821,4 +2821,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "b90184e7d2f107b1890594a311bfaa885732b98069ad22b6e35d2b868721e387"
+content-hash = "5c36b7d6024880af8221aa9b6c6b0166ab2f05565b8ba6818c005de4959ff3c9"
