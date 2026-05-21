@@ -74,6 +74,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             language: book.language || "de",
             subtitle: book.subtitle || "",
             description: book.description || "",
+            book_idea: book.book_idea || "",
+            expose: book.expose || "",
             edition: book.edition || "",
             publisher: book.publisher || "",
             publisher_city: book.publisher_city || "",
@@ -234,6 +236,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             <Tabs.Root defaultValue="general" style={{maxWidth: 800}}>
                 <Tabs.List className="radix-tabs-list" style={{marginBottom: 16}}>
                     <Tabs.Trigger value="general" className="radix-tab-trigger" data-testid="metadata-tab-general">{t("ui.metadata.tab_general", "Allgemein")}</Tabs.Trigger>
+                    <Tabs.Trigger value="story" className="radix-tab-trigger" data-testid="metadata-tab-story">{t("ui.metadata.tab_story", "Story")}</Tabs.Trigger>
                     <Tabs.Trigger value="publisher" className="radix-tab-trigger" data-testid="metadata-tab-publisher">{t("ui.metadata.tab_publisher", "Verlag")}</Tabs.Trigger>
                     <Tabs.Trigger value="isbn" className="radix-tab-trigger" data-testid="metadata-tab-isbn">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
                     <Tabs.Trigger value="marketing" className="radix-tab-trigger" data-testid="metadata-tab-marketing">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
@@ -277,6 +280,41 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <Field label={t("ui.metadata.edition", "Edition")} value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
                             <Field label={t("ui.metadata.publish_date", "Datum")} value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
                         </Row>
+                    </div>
+                </Tabs.Content>
+
+                {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
+                  * the author-design metadata distinct from the
+                  * General tab's publication-side bibliographic
+                  * fields. ``book_idea`` is the short 1-2 sentence
+                  * premise (no fullscreen — small Field shape).
+                  * ``expose`` is the long-form Plot+Characters+
+                  * Setting document (Field multiline + markdown +
+                  * fullscreen — same shape as description). */}
+                <Tabs.Content value="story">
+                    <div className={styles.tabContent} data-testid="metadata-story-content">
+                        <Field
+                            label={t("ui.metadata.book_idea_label", "Buchidee")}
+                            value={form.book_idea}
+                            onChange={(v) => set("book_idea", v)}
+                            placeholder={t(
+                                "ui.metadata.book_idea_placeholder",
+                                "Kurz: 1-2 Sätze, worum geht es?",
+                            )}
+                            multiline
+                        />
+                        <Field
+                            label={t("ui.metadata.expose_label", "Exposé")}
+                            value={form.expose}
+                            onChange={(v) => set("expose", v)}
+                            placeholder={t(
+                                "ui.metadata.expose_placeholder",
+                                "Plot, Figuren, Schauplatz, Ton — ausführlich.",
+                            )}
+                            multiline
+                            language="markdown"
+                            fullscreen
+                        />
                     </div>
                 </Tabs.Content>
 

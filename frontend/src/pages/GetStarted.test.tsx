@@ -163,7 +163,7 @@ beforeEach(() => {
             return fakeProseSample;
         },
     );
-    vi.mocked(api.books.create).mockImplementation(async () => fakeBook);
+    vi.mocked(api.books.create).mockImplementation(async () => fakeBook as never);
     vi.mocked(api.chapters.create).mockImplementation(async () => ({
         id: "ch-1",
         book_id: "book-1",
@@ -171,7 +171,7 @@ beforeEach(() => {
         content: "Hello!",
         position: 1,
         chapter_type: "chapter",
-    }));
+    }) as never);
     vi.mocked(api.pages.create).mockImplementation(async () => ({
         id: "p-1",
         book_id: "book-1",
@@ -254,7 +254,7 @@ describe("GetStarted multi-book-type onboarding (C4)", () => {
         });
         // Prose call to api.books.create does NOT include book_type
         // (default-prose payload preserves pre-MULTIBOOK shape).
-        const proseCallArg = vi.mocked(api.books.create).mock.calls[0]?.[0] as Record<string, unknown>;
+        const proseCallArg = vi.mocked(api.books.create).mock.calls[0]?.[0] as unknown as Record<string, unknown>;
         expect("book_type" in proseCallArg).toBe(false);
         // Chapters dispatched, NO pages.
         expect(api.chapters.create).toHaveBeenCalled();

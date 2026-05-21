@@ -56,6 +56,12 @@ export interface Book {
     series: string | null;
     series_index: number | null;
     description: string | null;
+    /** EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
+     *  ``book_idea`` is the short premise (1-2 sentences);
+     *  ``expose`` is the long-form Exposé (Plot + Characters +
+     *  Setting + Tone document). Both default null. */
+    book_idea: string | null;
+    expose: string | null;
     edition: string | null;
     publisher: string | null;
     publisher_city: string | null;

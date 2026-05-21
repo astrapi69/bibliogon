@@ -69,6 +69,8 @@ const FAKE_BOOK: BookDetail = {
   series: null,
   series_index: null,
   description: "A life story",
+  book_idea: null,
+  expose: null,
   edition: null,
   publisher: null,
   publisher_city: null,

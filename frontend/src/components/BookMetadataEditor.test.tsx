@@ -13,7 +13,7 @@
 
 import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
-import {render, screen, fireEvent, waitFor} from "@testing-library/react"
+import {render, screen, fireEvent, waitFor, within} from "@testing-library/react"
 
 import BookMetadataEditor from "./BookMetadataEditor"
 import {ApiError, type BookDetail, type Book} from "../api/client"
@@ -139,6 +139,8 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     series: null,
     series_index: null,
     description: "A description",
+    book_idea: null,
+    expose: null,
     edition: "1st",
     publisher: "Test Publisher",
     publisher_city: "Berlin",
@@ -257,8 +259,9 @@ describe("BookMetadataEditor", () => {
   it("all tab panels are present in the DOM", () => {
     renderEditor()
     const panels = document.querySelectorAll('[role="tabpanel"]')
-    // 7 original tabs + 1 new "AI Template" tab (Session 2 commit 5)
-    expect(panels.length).toBe(8)
+    // 7 original + AI Template (Session 2 commit 5) + Story
+    // (EXPOSE-BUCHIDEE-METADATA-01 C2) = 9 panels.
+    expect(panels.length).toBe(9)
   })
 
   // --- Save ---
@@ -857,9 +860,10 @@ describe("BookMetadataEditor — book_type tab filtering (Session 5 Commit 1)", 
         )
     }
 
-    it("prose (default): all 8 tabs render", () => {
+    it("prose (default): all 9 tabs render (including Story added by EXPOSE-BUCHIDEE-METADATA-01)", () => {
         renderEditor({book_type: "prose"})
         expect(screen.getByTestId("metadata-tab-general")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-story")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
@@ -869,9 +873,10 @@ describe("BookMetadataEditor — book_type tab filtering (Session 5 Commit 1)", 
         expect(screen.getByTestId("metadata-tab-ai-template")).toBeTruthy()
     })
 
-    it("picture_book: Audiobook + Quality tabs hidden, other 6 visible", () => {
+    it("picture_book: Audiobook + Quality tabs hidden, other 7 visible (incl. Story)", () => {
         renderEditor({book_type: "picture_book", chapters: []})
         expect(screen.getByTestId("metadata-tab-general")).toBeTruthy()
+        expect(screen.getByTestId("metadata-tab-story")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy()
         expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy()
@@ -1028,5 +1033,98 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
         await new Promise((resolve) => setTimeout(resolve, 10))
         expect(documentExportDownloadMock).toHaveBeenCalledTimes(1)
         resolveDownload?.(undefined)
+    })
+})
+
+// --- EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab + book_idea/expose fields ---
+
+describe("BookMetadataEditor Story tab (EXPOSE-BUCHIDEE-METADATA-01)", () => {
+    const onSave = vi.fn()
+    const onBack = vi.fn()
+
+    beforeEach(() => {
+        onSave.mockClear()
+        onBack.mockClear()
+    })
+
+    // Per LL "Radix Tabs onMouseDown not onClick" — Radix Tabs
+    // activates the trigger on mouseDown, NOT click. fireEvent.click
+    // is a no-op for the activation.
+    const activateStoryTab = () => {
+        fireEvent.mouseDown(screen.getByTestId("metadata-tab-story"))
+    }
+
+    it("Story tab content mounts both book_idea + expose fields when clicked", () => {
+        render(<BookMetadataEditor book={makeBook()} onSave={onSave} onBack={onBack}/>)
+        activateStoryTab()
+        // The Story tab content body is uniquely identified.
+        expect(screen.getByTestId("metadata-story-content")).toBeTruthy()
+        // Both Field labels render. The Field component renders its
+        // ``label`` prop verbatim — i18n fallbacks "Buchidee" + "Exposé"
+        // surface here (German fallbacks per the i18n shape).
+        expect(screen.getByText("Buchidee")).toBeTruthy()
+        expect(screen.getByText(/Exposé/)).toBeTruthy()
+    })
+
+    it("book_idea input round-trips through form state to onSave payload", async () => {
+        const book = makeBook({book_idea: null, expose: null})
+        render(<BookMetadataEditor book={book} onSave={onSave} onBack={onBack}/>)
+        activateStoryTab()
+        // Find the book_idea textarea by its label-associated input.
+        const ideaInput = screen.getByRole("textbox", {name: "Buchidee"})
+        fireEvent.change(ideaInput, {target: {value: "A boy meets a dragon."}})
+        // Click save (the button is outside the Tabs subtree).
+        fireEvent.click(screen.getByText(/Speichern|Save/))
+        await waitFor(() => expect(onSave).toHaveBeenCalled())
+        const payload = onSave.mock.calls[0][0]
+        expect(payload.book_idea).toBe("A boy meets a dragon.")
+    })
+
+    it("expose input round-trips through form state to onSave payload", async () => {
+        const book = makeBook({book_idea: null, expose: null})
+        render(<BookMetadataEditor book={book} onSave={onSave} onBack={onBack}/>)
+        activateStoryTab()
+        const exposeInput = screen.getByRole("textbox", {name: /Exposé/})
+        const longText = "PLOT: A long form document.\n\nCHARACTERS: Liam, Sköll."
+        fireEvent.change(exposeInput, {target: {value: longText}})
+        fireEvent.click(screen.getByText(/Speichern|Save/))
+        await waitFor(() => expect(onSave).toHaveBeenCalled())
+        const payload = onSave.mock.calls[0][0]
+        expect(payload.expose).toBe(longText)
+    })
+
+    it("loading a book with pre-existing book_idea + expose prefills both fields", () => {
+        const book = makeBook({
+            book_idea: "Pre-loaded idea.",
+            expose: "Pre-loaded expose.",
+        })
+        render(<BookMetadataEditor book={book} onSave={onSave} onBack={onBack}/>)
+        activateStoryTab()
+        const ideaInput = screen.getByRole("textbox", {name: "Buchidee"}) as HTMLTextAreaElement
+        const exposeInput = screen.getByRole("textbox", {name: /Exposé/}) as HTMLTextAreaElement
+        expect(ideaInput.value).toBe("Pre-loaded idea.")
+        expect(exposeInput.value).toBe("Pre-loaded expose.")
+    })
+
+    it("Story tab is NOT mounted in the DOM until clicked (Radix lazy-content)", () => {
+        // Radix Tabs only mounts the active Tab's Content by default
+        // (forceMount opt-in not used here). Verifies that the Story
+        // testid is absent on initial render under the General-tab
+        // default — same pattern as the Categories/BISAC tab-leak
+        // hotfix mentioned at L309-321 of the source.
+        render(<BookMetadataEditor book={makeBook()} onSave={onSave} onBack={onBack}/>)
+        expect(screen.queryByTestId("metadata-story-content")).toBeNull()
+    })
+
+    it("description (existing field) is NOT in the Story tab body — semantic separation", () => {
+        // Regression-pin: ``description`` stays in General; only
+        // ``book_idea`` + ``expose`` live in Story. Catches an
+        // accidental refactor that would surface description twice
+        // or move it.
+        render(<BookMetadataEditor book={makeBook()} onSave={onSave} onBack={onBack}/>)
+        activateStoryTab()
+        const storyContent = screen.getByTestId("metadata-story-content")
+        // The "Beschreibung" label is in General, not Story.
+        expect(within(storyContent).queryByText("Beschreibung")).toBeNull()
     })
 })
