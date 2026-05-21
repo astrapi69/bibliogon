@@ -9,7 +9,7 @@ packages = [{include = "bibliogon_translation"}]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-pluginforge = "^0.8.0"
+pluginforge = "^0.9.0"
 fastapi = "^0.136.0"
 httpx = "^0.28.0"
 

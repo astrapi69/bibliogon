@@ -690,6 +690,7 @@ ui:
     plugin_status_load_failed: "Eklenti yüklenemedi"
     plugin_status_wrong_application: "Eklenti başka bir uygulama için yapılmış"
     plugin_status_identity_deprecation_warning: "Eklenti hedef uygulamayı belirtmiyor"
+    plugin_status_missing_target_application: "Eklenti hedef uygulamayı belirtmiyor"
     plugin_export: "Kitap disa aktarimi"
     plugin_export_desc: "EPUB, PDF, Word, proje yapisi"
     plugin_help: "Yardim"

@@ -754,6 +754,7 @@ ui:
     plugin_status_load_failed: "No se pudo cargar el plugin"
     plugin_status_wrong_application: "Plugin creado para otra aplicación"
     plugin_status_identity_deprecation_warning: "El plugin no declara su aplicación de destino"
+    plugin_status_missing_target_application: "El plugin no declara su aplicación de destino"
     plugin_export: "Exportar libros"
     plugin_export_desc: "EPUB, PDF, Word, estructura de proyecto"
     plugin_getstarted: "Primeros pasos"

@@ -664,6 +664,7 @@ ui:
     plugin_status_load_failed: "Plugin konnte nicht geladen werden"
     plugin_status_wrong_application: "Plugin für eine andere Anwendung gebaut"
     plugin_status_identity_deprecation_warning: "Plugin deklariert keine Zielanwendung"
+    plugin_status_missing_target_application: "Plugin deklariert keine Zielanwendung"
     plugin_export: "Buch-Export"
     plugin_export_desc: "EPUB, PDF, Word, Projektstruktur"
     plugin_help: "Hilfe"

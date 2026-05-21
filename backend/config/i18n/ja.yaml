@@ -676,6 +676,7 @@ ui:
     plugin_status_load_failed: "プラグインの読み込みに失敗しました"
     plugin_status_wrong_application: "プラグインは別のアプリケーション用に作られています"
     plugin_status_identity_deprecation_warning: "プラグインは対象アプリケーションを宣言していません"
+    plugin_status_missing_target_application: "プラグインは対象アプリケーションを宣言していません"
     plugin_export: "書籍エクスポート"
     plugin_export_desc: "EPUB, PDF, Word, プロジェクト構造"
     plugin_help: "ヘルプ"

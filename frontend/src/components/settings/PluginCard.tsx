@@ -27,6 +27,7 @@ const FILTER_REASON_TO_I18N: Record<string, string> = {
     pre_activate_rejected: "ui.settings.plugin_status_license_check_failed",
     load_failed: "ui.settings.plugin_status_load_failed",
     wrong_application: "ui.settings.plugin_status_wrong_application",
+    missing_target_application: "ui.settings.plugin_status_missing_target_application",
 };
 
 export function PluginCard({name, displayName, description, version, enabled, settings, filterReason, loadErrorMessage, onSave, onToggle, onRemove}: {

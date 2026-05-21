@@ -676,6 +676,7 @@ ui:
     plugin_status_load_failed: "Falha ao carregar o plugin"
     plugin_status_wrong_application: "Plugin criado para outra aplicação"
     plugin_status_identity_deprecation_warning: "O plugin não declara a aplicação alvo"
+    plugin_status_missing_target_application: "O plugin não declara a aplicação alvo"
     plugin_export: "Exportacao de livros"
     plugin_export_desc: "EPUB, PDF, Word, estrutura de projeto"
     plugin_help: "Ajuda"

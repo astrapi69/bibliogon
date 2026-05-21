@@ -740,6 +740,7 @@ ui:
     plugin_status_load_failed: "Αποτυχία φόρτωσης πρόσθετου"
     plugin_status_wrong_application: "Το πρόσθετο κατασκευάστηκε για άλλη εφαρμογή"
     plugin_status_identity_deprecation_warning: "Το πρόσθετο δεν δηλώνει την εφαρμογή-στόχο"
+    plugin_status_missing_target_application: "Το πρόσθετο δεν δηλώνει την εφαρμογή-στόχο"
     plugin_export: "Εξαγωγή βιβλίου"
     plugin_export_desc: "EPUB, PDF, Word, δομή έργου"
     plugin_getstarted: "Πρώτα βήματα"
