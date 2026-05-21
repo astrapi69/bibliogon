@@ -4533,3 +4533,59 @@ workflow where absorption is cheap to prevent.
   always lower than the cost of recovering from it
   non-destructively.
 
+
+## Audit-Methodology: design-intent-axis as 5th-Axis or Override-Filter
+
+Filed 2026-05-23 from two RCU-audit incidents within 48 hours.
+The 4-Axes scoring (Site-count, Drift-Risk, Extraction-Ease,
+Downstream-Value) carries an implicit implementation-identity-
+bias: scores HIGH on byte-identical clones, but misses cases
+where the cloning is INTENTIONAL per documented design-intent.
+
+### Two evidence-cases
+
+1. **useSelection<T>() (score 16) — DEFERRED-PERMANENT.**
+   Three byte-identical hooks; `diff` returned only doc-
+   comment differences. But those doc-comments contained
+   the anti-extraction-rationale at [useBookSelection.ts:7-10](../../frontend/src/components/useBookSelection.ts#L7-L10):
+   *"Kept as a separate hook (rather than a generic
+   `useSelection`) so that future per-entity divergence ...
+   lands in one place without a cross-entity refactor."*
+2. **AUTHOR-DATALIST-EXTEND-EDITORS-01 — DEFERRED UX-
+   ADJUDICATION.** The pair-shipping intent proposed
+   REPLACING existing Pattern B (closed-list profile-select)
+   with Pattern A (datalist + free-text) at editor surfaces
+   — a UX trade-off (safety vs flexibility), not a
+   mechanical migration.
+
+Both were caught by Pre-Coding-Reality-Check, NOT by the
+audit. An audit-methodology that scored design-intent
+explicitly would have caught them upstream.
+
+### Mitigation: override-filter (preferred over 5th-axis)
+
+Future audits apply BEFORE 4-Axes scoring: grep doc-comments
+for design-intent markers ("Kept as separate", "deliberate.*
+separate", "not extract", "intentional", "no synthetic
+merge"). Matches are filed as candidates but excluded from
+the ranked extraction sequence until explicit user-
+adjudication.
+
+Override-filter chosen over a 5th-axis because the grep
+takes seconds while carrying a 5th axis through every
+candidate's scoring adds methodology overhead for marginal
+benefit. Recipe lives in the audit's 2026-05-23 footnote.
+
+### Pairs with
+
+- "Pre-Coding-Reality-Check: re-audit at the keystroke" (this
+  file) — keystroke-time safety net for any audit that
+  already missed the design-intent marker.
+- "Recurring-Component Unification Rule"
+  (`coding-standards.md`) — the 2-surfaces threshold the
+  4-Axes scoring derives from; design-intent is the override
+  to that threshold.
+- `docs/audits/recurring-component-audit-2026-05-21.md`
+  footnotes 1 + 5 — the two concrete incidents driving this
+  filing.
+
