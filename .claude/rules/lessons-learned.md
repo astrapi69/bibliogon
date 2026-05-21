@@ -4366,3 +4366,103 @@ discipline holds regardless of who's pushing back.
   file) — same verify-before-act discipline, applied to the
   responding-to-a-bug-report surface.
 
+
+## Playwright-visible ≠ User-visible: assert bounding-box dimensions for CSS-collapse class bugs
+
+Filed 2026-05-20 from Phase 1 of PLUGIN-COMICS-PHASE-1-MULTI-
+PANEL-LAYOUTS-01.
+
+Playwright's ``toBeVisible()`` returns true when:
+
+- the element exists in the DOM
+- ``computed-style.display !== "none"``
+- ``computed-style.visibility !== "hidden"``
+- ``opacity > 0``
+- the element has non-zero size **on at least one axis**
+
+**A CSS-collapsed element with height: 0 to ~10px will still pass
+``toBeVisible()`` if it has any width.** The element is technically
+visible in the layout — it just renders as an invisible strip that
+the user cannot interact with or perceive as a UI affordance.
+
+This is the trap that made the Multi-Panel-Bug uncatchable by
+existing E2E coverage:
+
+- ``comic-panel-bubble-crud.spec.ts`` asserted
+  ``await expect(panel).toBeVisible()`` on the second panel.
+- Pre-Phase-1, the 2nd panel collapsed to ~0-10px height
+  (implicit CSS-grid auto-row collapse).
+- The element existed; had `display: block`; had non-zero
+  width — so ``toBeVisible()`` returned **true**. The spec
+  passed; the bug shipped; the user reported it.
+
+### Rule
+
+When the E2E spec is about **"this element renders correctly /
+visibly to the user"**, do NOT rely on ``toBeVisible()`` alone.
+Add a bounding-box dimension assertion:
+
+```typescript
+const bbox = await element.boundingBox();
+expect(bbox).not.toBeNull();
+expect(bbox!.height).toBeGreaterThan(50);   // or width, or both
+```
+
+Pick the dimension threshold to differentiate "rendered
+correctly" from "CSS-collapsed strip" without being brittle to
+viewport variations:
+
+- For full-height panels in an ~800x800 canvas: **>50px** is
+  safe (correct height is ~400px for grid_2x2; bug shipped at
+  ~0-10px).
+- For headers / toolbars: **>20px** typical.
+- For modal dialogs: **>200px** typical.
+
+### When to apply
+
+- Any layout-bug class where CSS-collapse / margin-collapse /
+  flex-collapse / grid-collapse is the failure mode.
+- Any spec asserting "panel / card / tile renders visibly" —
+  the visual-correctness contract requires dimensional check,
+  not just `toBeVisible()`.
+- After a real-user report of "X is too small / collapsed / not
+  showing" — file the regression-pin with the dimension
+  assertion, NOT just `toBeVisible()`.
+
+### When NOT to apply
+
+- For "this element exists somewhere in the DOM" intent:
+  `toBeVisible()` or even `expect(...).toHaveCount(1)` is right.
+- For "click target reachable" intent: `toBeEnabled()` is
+  more precise.
+- For tooltip / popover / async-load: `toBeVisible()` paired
+  with `findByTestId` (the auto-waiting variant) is correct;
+  the dimension check is overkill.
+
+### Concrete artefact
+
+The Phase 1 C5 spec (`e2e/smoke/comic-book-multi-panel-layout.spec.ts`)
+ships 4 cases, 2 of which use the bounding-box-dimension
+pattern:
+
+```typescript
+const bbox = await panels.nth(i).boundingBox();
+expect(bbox).not.toBeNull();
+expect(bbox!.height).toBeGreaterThan(50);
+```
+
+This regression-pin catches the Multi-Panel-Bug. A future
+contributor restoring the pre-Phase-1 single_panel-default
+behavior breaks the bounding-box assertion on the 2nd panel.
+
+### Pairs with
+
+- "Stale-bundle is the most common false-positive on post-ship
+  user reports" (this file) — same family. Both are about
+  diagnostic discipline when production reports contradict
+  passing tests.
+- "Testid namespace pinning prevents silent E2E skips" (this
+  file) — namespace pinning prevents the test from running
+  against wrong elements; dimension assertions prevent the test
+  from accepting a wrong-rendering of the right element.
+

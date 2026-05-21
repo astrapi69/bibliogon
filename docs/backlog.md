@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-20 (PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 closed via pluginforge 0.8.0 bump in commit 3fe8633. Recursion regression that Comics-Session-2 C2 introduced is fully resolved: backend sweep 2116/2116 passing (was 1 failed pre-bump on a stale plugin-comics version assertion; the originally-filed 13+13 baseline had already drifted before this work). All 12 pyproject.toml pinned to ^0.8.0, lockfiles re-synced via make lock-all-plugins, make verify-plugin-locks OK. P1 tier now empty. Follow-up filed: PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01 (P3) for pluginforge 0.8.0 deprecation warning on export plugin's 3-router shape (becomes error in v0.10.0). Prior 2026-05-20 close: PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 in 4 commits 879df22..00a18f8 (Path A1 — pages router moved from plugin-kinderbuch to backend core; PageLayout enum extended with comic_panel_grid; ComicBookEditor empty-state action button; 8 i18n catalogs + Playwright smoke updated). Add-Panel diagnostic cycle closed via auto-select fix (commit 2a83aed) + stale-bundle LL filing (commit 534bea9).)
+Last updated: 2026-05-20 (PLUGIN-COMICS-PHASE-1-MULTI-PANEL-LAYOUTS-01 CLOSED. Standard Layouts + header ComicGridTemplatePicker shipped in 6 commits 216b5a1..93b032a. Closes Findings #2 Multi-Panel-Bug + #4 Standard-Layouts from the 4-user-findings audit. 7 templates total (single_panel + grid_1x2 + grid_2x1 + grid_2x2 + grid_2x3 + grid_3x2 + grid_3x3-legacy); 6 surfaced in picker; grid_3x3 backward-compat only. Walker pytest 77 + Frontend Vitest 1768 + 4 new Playwright cases; tsc clean; no backend migration. Findings #1 (Panel-Image-Upload) + #3 (LayoutConfigComicPanel) await Phase 2 filing. Phase 3 (EXTENDED-FEATURES-01) BLOCKED-BY Phase 2 per audit. Prior 2026-05-20 close: PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01 via pluginforge 0.8.0 bump (3fe8633) + PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 in 4 commits 879df22..00a18f8 + Add-Panel diagnostic close (2a83aed + 534bea9).)
 Current version: v0.35.1
-Open tasks: 66 active (P2..P5) + 1 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 66 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -41,89 +41,7 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-- **PLUGIN-COMICS-PHASE-1-MULTI-PANEL-LAYOUTS-01** (P1, Foundation-
-  Override-Extended: Half-Wired-Visible-in-Production. Filed
-  2026-05-20 from the 4-user-findings audit; bundles Findings
-  #2 Multi-Panel-Bug + #4 Standard-Layouts because both share
-  the same code path).
-
-  ### Symptom
-
-  ComicBookEditor's grid never changes from the γ-shim
-  ``single_panel`` template because there's NO UI surface to
-  set ``Page.layout_config.comic_grid_template``. Adding a 2nd
-  panel spills into an implicit CSS-grid auto-row that
-  collapses to ~0 height (panel content is empty; bubbles are
-  ``position: absolute`` so contribute no intrinsic height).
-
-  Visible in production today: every user authoring a comic
-  with more than 1 panel sees Panel 2+ render as a tiny strip.
-
-  ### Scope (5-7 commits)
-
-  Bundles Findings #2 + #4 because the fix is the same code
-  path — ship Standard Layouts + a header LayoutPicker UI so
-  users can select the template before adding panels.
-
-  **Standard layout set (7 templates total; 6 user-facing + 1
-  legacy):**
-
-  | Template | Grid | Cells | User-facing |
-  |---|---|---|---|
-  | ``single_panel`` (existing) | 1fr / 1fr | 1 | YES (Splash) |
-  | ``grid_1x2`` (new) | 1fr / repeat(2, 1fr) | 2 | YES (Side-by-side) |
-  | ``grid_2x1`` (new) | repeat(2, 1fr) / 1fr | 2 | YES (Stacked) |
-  | ``grid_2x2`` (existing) | repeat(2, 1fr) / repeat(2, 1fr) | 4 | YES (Standard grid) |
-  | ``grid_2x3`` (new) | repeat(2, 1fr) / repeat(3, 1fr) | 6 | YES (Two-tier) |
-  | ``grid_3x2`` (new) | repeat(3, 1fr) / repeat(2, 1fr) | 6 | YES (Three-tier) |
-  | ``grid_3x3`` (existing) | repeat(3, 1fr) / repeat(3, 1fr) | 9 | NO (legacy/advanced) |
-
-  Asymmetric + variable-layout deferred per α decision
-  (symmetric-only v1).
-
-  Picker placement: header LayoutPicker for Phase 1; Phase 2
-  may absorb into LayoutConfigComicPage side-pane.
-
-  ### Commit plan
-
-  - C1 walker: 4 new template entries in
-    ``_GRID_TEMPLATE_CSS`` + ``COMIC_GRID_TEMPLATES``;
-    pytest parametrize across all 7
-  - C2 frontend: mirror entries in
-    ``frontend/src/components/comics/ComicPanelGrid.tsx``;
-    Vitest parametrize
-  - C3 ComicGridTemplatePicker UI + ComicBookEditor mount +
-    ``handleCreateFirstPage`` explicit-default-template
-  - C4 i18n × 8 catalogs (DE + EN canonical; 6 passthrough-EN)
-  - C5 Playwright smoke
-    (``e2e/smoke/comic-book-multi-panel-layout.spec.ts``)
-    with non-zero-height assertion (closes Playwright-visible
-    ≠ User-visible LL pattern)
-  - C6 backlog close + archive + LL filing (if novel pattern)
-
-  ### Closes findings
-
-  - Finding #2 (Multi-Panel-Bug): user-reported real-bug;
-    Half-Wired-Visible-in-Production
-  - Finding #4 (Standard-Layouts): new feature; shares code
-    path with #2
-
-  ### Dependencies + sequencing
-
-  - **Phase 2** (``PLUGIN-COMICS-PHASE-2-PANEL-CONFIG-01``,
-    P2 — filing TBD post-Phase-1) closes Findings #1
-    (Panel-Image-Upload) + #3 (LayoutConfigComicPanel)
-  - **Phase 3** (``PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01``,
-    P3 existing) BLOCKED-BY Phase 1 + Phase 2; ships drag,
-    snap, undo, RTL, z-order, gutter UI, auto-tail. Q1-Q4
-    audited at
-    [docs/audits/extended-features-pre-inspection-2026-05-20.md](audits/extended-features-pre-inspection-2026-05-20.md).
-
-  ### Effort
-
-  5-7 commits, 1 session within hard-stop budget. No backend
-  migration (template-IDs stored as strings in JSON-as-Text
-  column).
+(none)
 
 ---
 
