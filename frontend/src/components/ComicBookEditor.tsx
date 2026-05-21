@@ -48,6 +48,7 @@ import {
 } from "./comics/ComicPanelGrid";
 import {ComicGridTemplatePicker} from "./comics/ComicGridTemplatePicker";
 import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
+import {LayoutConfigComicPanel} from "./comics/LayoutConfigComicPanel";
 import type {ComicBubbleData} from "./comics/ComicBubble";
 import type {ComicPanelData} from "./comics/ComicPanel";
 import PdfExportControls from "./PdfExportControls";
@@ -304,6 +305,25 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
         [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId],
     );
 
+    const handleUpdatePanel = useCallback(
+        async (partial: Partial<ComicPanelData>) => {
+            if (!selectedPanelId || !activePageId) return;
+            try {
+                await api.comics.updatePanel(
+                    bookId,
+                    selectedPanelId,
+                    partial as Record<string, unknown>,
+                );
+                await refreshPanelsAndBubbles(activePageId);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId],
+    );
+
     const selectedBubble = useMemo<ComicBubbleData | null>(() => {
         if (!selectedBubbleId) return null;
         for (const panelBubbles of Object.values(bubblesByPanel)) {
@@ -315,6 +335,10 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
 
     const activePage = pages.find((p) => p.id === activePageId) ?? null;
     const panelData = panels as unknown as ComicPanelData[];
+    const selectedPanel = useMemo<ComicPanelData | null>(() => {
+        if (!selectedPanelId) return null;
+        return panelData.find((p) => p.id === selectedPanelId) ?? null;
+    }, [panelData, selectedPanelId]);
     const panelBubblesMap: Record<string, ComicBubbleData[]> = useMemo(
         () =>
             Object.fromEntries(
@@ -601,20 +625,20 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                                 bubble={selectedBubble}
                                 onChange={handleUpdateBubble}
                             />
+                        ) : selectedPanel ? (
+                            <LayoutConfigComicPanel
+                                panel={selectedPanel}
+                                onChange={handleUpdatePanel}
+                            />
                         ) : (
                             <div
                                 data-testid="comic-book-editor-side-pane-empty"
                                 style={{padding: 16}}
                             >
-                                {selectedPanelId
-                                    ? t(
-                                          "ui.comic_book_editor.side_pane_panel_selected",
-                                          "Panel ausgewählt. Wähle eine Sprechblase, um sie zu bearbeiten.",
-                                      )
-                                    : t(
-                                          "ui.comic_book_editor.side_pane_default",
-                                          "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
-                                      )}
+                                {t(
+                                    "ui.comic_book_editor.side_pane_default",
+                                    "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
+                                )}
                             </div>
                         )}
                     </aside>

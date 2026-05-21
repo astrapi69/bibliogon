@@ -346,11 +346,16 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
                 screen.getByTestId("comic-book-editor-add-bubble"),
             ).not.toBeDisabled();
         });
-        // Side-pane shows the "panel selected" instruction, NOT
-        // the LayoutConfigComicBubble.
+        // Side-pane shows LayoutConfigComicPanel (panel selected, no
+        // bubble), NOT LayoutConfigComicBubble. PHASE-2-PANEL-CONFIG-01
+        // C2 swapped the empty-state-text branch for the panel-config
+        // pane.
         expect(
             screen.queryByTestId("layout-config-comic-bubble"),
         ).not.toBeInTheDocument();
+        expect(
+            screen.getByTestId("layout-config-comic-panel"),
+        ).toBeInTheDocument();
         // Click Add-Bubble; auto-select should fire and mount the
         // side-pane LayoutConfigComicBubble.
         fireEvent.click(screen.getByTestId("comic-book-editor-add-bubble"));
