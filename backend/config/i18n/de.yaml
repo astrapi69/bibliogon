@@ -665,6 +665,9 @@ ui:
     plugin_status_wrong_application: "Plugin für eine andere Anwendung gebaut"
     plugin_status_identity_deprecation_warning: "Plugin deklariert keine Zielanwendung"
     plugin_status_missing_target_application: "Plugin deklariert keine Zielanwendung"
+    plugin_active_since: "Aktiv seit"
+    plugin_settings_applied: "Einstellungen angewendet"
+    plugin_source_zip: "via ZIP"
     plugin_export: "Buch-Export"
     plugin_export_desc: "EPUB, PDF, Word, Projektstruktur"
     plugin_help: "Hilfe"
@@ -2170,6 +2173,25 @@ ui:
           text_align_center: "Zentriert"
           text_align_right: "Rechts"
           italic: "Kursiv"
+      comic_panel:
+        heading: "Panel"
+        image: "Bild"
+        image_clear: "Bild entfernen"
+        uploading: "Wird hochgeladen..."
+        tier1:
+          heading: "Visueller Stil"
+          background_color: "Hintergrundfarbe"
+          border_color: "Rahmenfarbe"
+          border_width: "Rahmenbreite"
+          border_style: "Rahmenstil"
+          border_style_solid: "Durchgezogen"
+          border_style_dashed: "Gestrichelt"
+          border_style_dotted: "Gepunktet"
+          border_style_none: "Keiner"
+          border_radius: "Eckenradius"
+          shadow: "Schatten"
+          shadow_intensity: "Schattenintensität"
+          padding: "Innenabstand"
       image_top_text_bottom:
         heading: "Bild oben, Text unten"
       image_left_text_right:
@@ -2203,7 +2225,6 @@ ui:
     add_bubble: "Sprechblase hinzufügen"
     delete_bubble: "Sprechblase löschen"
     side_pane_default: "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten."
-    side_pane_panel_selected: "Panel ausgewählt. Wähle eine Sprechblase, um sie zu bearbeiten."
     layout_picker:
       heading: "Layout"
       single_panel: "Splash (1 Panel)"

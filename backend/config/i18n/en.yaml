@@ -665,6 +665,9 @@ ui:
     plugin_status_wrong_application: "Plugin built for a different application"
     plugin_status_identity_deprecation_warning: "Plugin does not declare its target application"
     plugin_status_missing_target_application: "Plugin does not declare its target application"
+    plugin_active_since: "Active since"
+    plugin_settings_applied: "Settings applied"
+    plugin_source_zip: "via ZIP"
     plugin_export: "Book Export"
     plugin_export_desc: "EPUB, PDF, Word, project structure"
     plugin_help: "Help"
@@ -2171,6 +2174,25 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+      comic_panel:
+        heading: "Panel"
+        image: "Image"
+        image_clear: "Remove image"
+        uploading: "Uploading..."
+        tier1:
+          heading: "Visual Style"
+          background_color: "Background color"
+          border_color: "Border color"
+          border_width: "Border width"
+          border_style: "Border style"
+          border_style_solid: "Solid"
+          border_style_dashed: "Dashed"
+          border_style_dotted: "Dotted"
+          border_style_none: "None"
+          border_radius: "Corner radius"
+          shadow: "Shadow"
+          shadow_intensity: "Shadow intensity"
+          padding: "Padding"
       image_top_text_bottom:
         heading: "Image top, text bottom"
       image_left_text_right:
@@ -2204,7 +2226,6 @@ ui:
     add_bubble: "Add bubble"
     delete_bubble: "Delete bubble"
     side_pane_default: "Click a panel or a bubble to edit it."
-    side_pane_panel_selected: "Panel selected. Pick a bubble to edit it."
     layout_picker:
       heading: "Layout"
       single_panel: "Splash (1 panel)"
