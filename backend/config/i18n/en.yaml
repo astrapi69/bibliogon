@@ -787,6 +787,13 @@ ui:
     open_editor: "Open Editor"
     open_settings: "Open Settings"
     sample_book_created: "Sample book created!"
+    # GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C4: 3-book-type picker
+    book_type_prose_title: "Prose"
+    book_type_prose_desc: "Novels, non-fiction, short stories. Chapter-based with WYSIWYG or Markdown editor."
+    book_type_picture_title: "Picture Book"
+    book_type_picture_desc: "One image plus text per page. 5 layouts (image-top/left, speech-bubble, etc.) and KDP-ready PDF export."
+    book_type_comic_title: "Comic Book"
+    book_type_comic_desc: "Multi-panel layouts (grid 2x2, 3x3, etc.) with speech bubbles and panel-level images."
     help_create_1: "Go to the Dashboard (home page)"
     help_create_2: "Click the \"New Book\" button"
     help_create_3: "Enter title and author (pen name is loaded from settings)"
