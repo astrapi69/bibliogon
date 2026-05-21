@@ -5,6 +5,12 @@
 **Scope:** read-only inventory. Extraction implementation is follow-up work.
 **Total clusters evaluated:** 7 + 2 anti-pattern candidates.
 
+> **Update 2026-05-22 — Implementation-session findings:**
+>
+> 1. **Candidate #1 `useSelection<T>()` (score 16) — DEFERRED-PENDING-DESIGN-INTENT-ADJUDICATION.** Pre-Coding-Reality-Check surfaced an explicit anti-extraction rationale at [useBookSelection.ts:7-10](../../frontend/src/components/useBookSelection.ts#L7-L10): *"Kept as a separate hook (rather than a generic `useSelection`) so that future per-entity divergence (e.g. books-only constraints around audiobook job state) lands in one place without a cross-entity refactor."* The audit's `diff` confirmed implementation-identity but missed the documented design-intent in the doc-comment itself. Honoring the rationale + deferring this candidate pending explicit user adjudication on whether the speculative-divergence-defense should be overridden. Methodology gap: future audits should grep doc-comments for anti-extraction-rationale markers as a soft anti-signal.
+> 2. **Candidate #2 `BulkActionBar` (score 15) — SHIPPED via path γ pivot** (commit `c2305e7` on 2026-05-22). 3-site adapter-pattern extraction: new `BulkActionBar` shell wrapper + `BulkActionBar.module.css` (.bar + .count rules) + 5 Vitest cases; 3 adapter files now render `<BulkActionBar>{site-specific actions}</BulkActionBar>` keeping their entity-specific action clusters. No anti-extraction-rationale documented in any of the 3 source files; pivot was clean. Full Vitest 1783 → 1792.
+> 3. **Candidates #3 `ListRow` (score 13) + #4 `AuthorSelectInput` (score 12) — REMAIN AVAILABLE** for future sessions per the recommended sequence.
+
 ---
 
 ## Summary statistics
