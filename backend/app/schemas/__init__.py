@@ -77,6 +77,12 @@ class BookCreate(BaseModel):
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
+    # EXPOSE-BUCHIDEE-METADATA-01: optional author-design metadata.
+    # See Book model field-comment for the distinction between
+    # ``book_idea`` (short premise), ``expose`` (long-form Exposé),
+    # and ``description`` (short blurb).
+    book_idea: str | None = None
+    expose: str | None = None
     # Default "prose" keeps existing clients backward-compatible: any
     # caller that omits book_type creates a prose book.
     book_type: BookType = "prose"
@@ -97,6 +103,9 @@ class BookUpdate(BaseModel):
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
+    # EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
+    book_idea: str | None = None
+    expose: str | None = None
     # Publishing metadata
     edition: str | None = None
     publisher: str | None = None
@@ -388,6 +397,10 @@ class BookOut(BaseModel):
     series: str | None
     series_index: int | None
     description: str | None
+    # EXPOSE-BUCHIDEE-METADATA-01: author-design metadata. Same
+    # nullable Text storage as ``description``.
+    book_idea: str | None = None
+    expose: str | None = None
     # Phase-4 discriminator. Defaults to "prose" for back-compat with
     # existing pre-migration rows.
     book_type: str = "prose"

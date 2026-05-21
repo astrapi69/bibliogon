@@ -61,6 +61,15 @@ class Book(Base):
     series: Mapped[str | None] = mapped_column(String(300), nullable=True)
     series_index: Mapped[int | None] = mapped_column(Integer, nullable=True)
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # EXPOSE-BUCHIDEE-METADATA-01: author-design metadata. ``book_idea``
+    # is the short 1-2 sentence premise / elevator pitch; ``expose`` is
+    # the long-form Plot + Characters + Setting document (standard
+    # German-publishing-domain "Exposé"). Both nullable Text — see
+    # ``description`` for the same storage pattern. Distinct from
+    # ``description`` (short blurb shown in stores) and
+    # ``backpage_description`` (back-cover marketing copy).
+    book_idea: Mapped[str | None] = mapped_column(Text, nullable=True)
+    expose: Mapped[str | None] = mapped_column(Text, nullable=True)
     genre: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     # Phase-4 discriminator. Splits the editor + export pipeline AND
