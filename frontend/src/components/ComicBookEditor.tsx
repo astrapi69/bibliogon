@@ -628,6 +628,7 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                         ) : selectedPanel ? (
                             <LayoutConfigComicPanel
                                 panel={selectedPanel}
+                                bookId={bookId}
                                 onChange={handleUpdatePanel}
                             />
                         ) : (

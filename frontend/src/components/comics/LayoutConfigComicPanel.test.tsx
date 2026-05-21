@@ -1,5 +1,5 @@
 /**
- * LayoutConfigComicPanel tests (PHASE-2-PANEL-CONFIG-01 C1).
+ * LayoutConfigComicPanel tests (PHASE-2-PANEL-CONFIG-01 C1 + C3).
  *
  * Pins:
  * - Mounts with a panel prop.
@@ -11,10 +11,16 @@
  * - Existing panel_config value reflects through Tier1Section
  *   (background_color input echoes the persisted hex).
  * - null panel_config does not crash; defaults flow through.
+ * - C3: file input upload calls api.assets.upload(bookId, file,
+ *   "figure") + onChange({image_asset_id: asset.id}).
+ * - C3: image-clear button renders only when image_asset_id is set;
+ *   click clears via onChange({image_asset_id: null}).
+ * - C3: upload error surfaces under comic-panel-image-upload-error
+ *   testid.
  */
 
-import {describe, it, expect, vi} from "vitest";
-import {render, screen, fireEvent} from "@testing-library/react";
+import {describe, it, expect, vi, beforeEach} from "vitest";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import {LayoutConfigComicPanel} from "./LayoutConfigComicPanel";
 import type {ComicPanelData} from "./ComicPanel";
@@ -22,6 +28,21 @@ import type {ComicPanelData} from "./ComicPanel";
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
 }));
+
+vi.mock("../../api/client", () => ({
+    api: {
+        assets: {
+            upload: vi.fn(),
+        },
+    },
+}));
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let mockedApi: any;
+beforeEach(async () => {
+    mockedApi = (await import("../../api/client")).api;
+    mockedApi.assets.upload.mockReset();
+});
 
 function makePanel(overrides: Partial<ComicPanelData> = {}): ComicPanelData {
     return {
@@ -40,6 +61,7 @@ describe("LayoutConfigComicPanel", () => {
         render(
             <LayoutConfigComicPanel
                 panel={makePanel()}
+                bookId="book-1"
                 onChange={() => {}}
             />,
         );
@@ -52,6 +74,7 @@ describe("LayoutConfigComicPanel", () => {
         render(
             <LayoutConfigComicPanel
                 panel={makePanel()}
+                bookId="book-1"
                 onChange={() => {}}
             />,
         );
@@ -62,6 +85,7 @@ describe("LayoutConfigComicPanel", () => {
         render(
             <LayoutConfigComicPanel
                 panel={makePanel()}
+                bookId="book-1"
                 onChange={() => {}}
             />,
         );
@@ -77,16 +101,15 @@ describe("LayoutConfigComicPanel", () => {
                 panel={makePanel({
                     panel_config: {background_color: "#ffeeaa"},
                 })}
+                bookId="book-1"
                 onChange={onChange}
             />,
         );
-        // Open Tier1Section so its color input is in the DOM
         fireEvent.click(screen.getByTestId("comic-panel-tier1-trigger"));
         const backgroundInput = screen.getByTestId(
             "comic-panel-background-color",
         );
         fireEvent.change(backgroundInput, {target: {value: "#abcdef"}});
-        // Tier1Section debounces color changes 300ms; wait via fake timers
         return new Promise<void>((resolve) => {
             setTimeout(() => {
                 expect(onChange).toHaveBeenCalled();
@@ -107,6 +130,7 @@ describe("LayoutConfigComicPanel", () => {
                 panel={makePanel({
                     panel_config: {background_color: "#123456"},
                 })}
+                bookId="book-1"
                 onChange={() => {}}
             />,
         );
@@ -121,6 +145,7 @@ describe("LayoutConfigComicPanel", () => {
         const {container} = render(
             <LayoutConfigComicPanel
                 panel={makePanel({panel_config: null})}
+                bookId="book-1"
                 onChange={() => {}}
             />,
         );
@@ -140,6 +165,7 @@ describe("LayoutConfigComicPanel", () => {
                         border_color: "#000000",
                     },
                 })}
+                bookId="book-1"
                 onChange={onChange}
             />,
         );
@@ -160,5 +186,118 @@ describe("LayoutConfigComicPanel", () => {
                 resolve();
             }, 350);
         });
+    });
+
+    // C3 — image-upload UI
+
+    it("renders the image input + section testids", () => {
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel()}
+                bookId="book-1"
+                onChange={() => {}}
+            />,
+        );
+        expect(
+            screen.getByTestId("comic-panel-image-section"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("comic-panel-image-input"),
+        ).toBeInTheDocument();
+    });
+
+    it("hides the image-clear button when no image is set", () => {
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel({image_asset_id: null})}
+                bookId="book-1"
+                onChange={() => {}}
+            />,
+        );
+        expect(
+            screen.queryByTestId("comic-panel-image-clear"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("shows the image-clear button when image_asset_id is set", () => {
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel({image_asset_id: "asset-99"})}
+                bookId="book-1"
+                onChange={() => {}}
+            />,
+        );
+        expect(
+            screen.getByTestId("comic-panel-image-clear"),
+        ).toBeInTheDocument();
+    });
+
+    it("clicking image-clear fires onChange({image_asset_id: null})", () => {
+        const onChange = vi.fn();
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel({image_asset_id: "asset-99"})}
+                bookId="book-1"
+                onChange={onChange}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("comic-panel-image-clear"));
+        expect(onChange).toHaveBeenCalledWith({image_asset_id: null});
+    });
+
+    it("file pick calls api.assets.upload(bookId, file, 'figure') and onChange({image_asset_id: ...})", async () => {
+        const onChange = vi.fn();
+        mockedApi.assets.upload.mockResolvedValue({
+            id: "new-asset-1",
+            filename: "panel.png",
+            url: "/api/books/book-1/assets/file/panel.png",
+        });
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel()}
+                bookId="book-1"
+                onChange={onChange}
+            />,
+        );
+        const input = screen.getByTestId(
+            "comic-panel-image-input",
+        ) as HTMLInputElement;
+        const file = new File(["test"], "panel.png", {type: "image/png"});
+        fireEvent.change(input, {target: {files: [file]}});
+        await waitFor(() => {
+            expect(mockedApi.assets.upload).toHaveBeenCalledWith(
+                "book-1",
+                file,
+                "figure",
+            );
+        });
+        await waitFor(() => {
+            expect(onChange).toHaveBeenCalledWith({
+                image_asset_id: "new-asset-1",
+            });
+        });
+    });
+
+    it("upload-error surfaces under comic-panel-image-upload-error testid", async () => {
+        const onChange = vi.fn();
+        mockedApi.assets.upload.mockRejectedValue(new Error("Upload boom"));
+        render(
+            <LayoutConfigComicPanel
+                panel={makePanel()}
+                bookId="book-1"
+                onChange={onChange}
+            />,
+        );
+        const input = screen.getByTestId(
+            "comic-panel-image-input",
+        ) as HTMLInputElement;
+        const file = new File(["test"], "panel.png", {type: "image/png"});
+        fireEvent.change(input, {target: {files: [file]}});
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("comic-panel-image-upload-error"),
+            ).toBeInTheDocument();
+        });
+        expect(onChange).not.toHaveBeenCalled();
     });
 });
