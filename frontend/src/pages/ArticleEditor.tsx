@@ -44,6 +44,7 @@ import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
 import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
+import AuthorProfileSelect from "../components/AuthorProfileSelect";
 import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
@@ -643,12 +644,35 @@ export default function ArticleEditor() {
                             "Autor des Artikels. Auswahl aus Echtnamen + Pseudonymen aus den Einstellungen.",
                         )}
                     />
-                    <AuthorSelect
+                    {/* RECURRING-COMPONENT-AUDIT-01 audit-followup
+                        (Pattern B): shared with BookMetadataEditor's
+                        AuthorSelectField via the canonical
+                        AuthorProfileSelect. Article-specific
+                        always-show "(kein Autor)" + bare style
+                        (no wrapping field/manage-link) preserved. */}
+                    <AuthorProfileSelect
                         value={article.author ?? ""}
                         profile={authorProfile}
                         onChange={(v) => {
                             setArticle({ ...article, author: v || null });
                             void persistMeta({ author: v || null });
+                        }}
+                        emptyOptionLabel={t(
+                            "ui.articles.author_none",
+                            "(kein Autor)",
+                        )}
+                        penNamesGroupLabel={t(
+                            "ui.articles.author_pen_names",
+                            "Pseudonyme",
+                        )}
+                        testId="article-editor-author"
+                        selectStyle={{
+                            padding: "6px 8px",
+                            border: "1px solid var(--border)",
+                            borderRadius: 4,
+                            background: "var(--bg-primary)",
+                            color: "var(--text-primary)",
+                            fontSize: "0.875rem",
                         }}
                     />
                     <FieldLabel
@@ -1205,72 +1229,6 @@ function SaveIndicator({ status }: { status: SaveStatus }) {
             <Save size={12} />
             {t("ui.articles.all_saved", "Alle Änderungen gespeichert")}
         </span>
-    );
-}
-
-/** Settings-managed author select: optgroup with real name + pen
- *  names; "(none)" option when the article has no author or when the
- *  current value is unknown to settings. Mirrors the BookEditor
- *  AuthorPicker's matched-state ProfileSelect, simplified for the
- *  Article editor (Articles allow empty author, no three-mode banner). */
-function AuthorSelect({
-    value,
-    profile,
-    onChange,
-}: {
-    value: string;
-    profile: { name: string; pen_names: string[] } | null;
-    onChange: (next: string) => void;
-}) {
-    const { t } = useI18n();
-    const choices = profile
-        ? [profile.name, ...profile.pen_names].filter(Boolean)
-        : [];
-    const valueIsKnown = value === "" || choices.includes(value);
-    return (
-        <select
-            data-testid="article-editor-author"
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            style={{
-                padding: "6px 8px",
-                border: "1px solid var(--border)",
-                borderRadius: 4,
-                background: "var(--bg-primary)",
-                color: "var(--text-primary)",
-                fontSize: "0.875rem",
-            }}
-        >
-            <option value="">
-                {t("ui.articles.author_none", "(kein Autor)")}
-            </option>
-            {profile && profile.name && (
-                <optgroup label={profile.name}>
-                    <option value={profile.name}>{profile.name}</option>
-                    {profile.pen_names.map((pen) => (
-                        <option key={pen} value={pen}>
-                            {pen}
-                        </option>
-                    ))}
-                </optgroup>
-            )}
-            {profile && !profile.name && profile.pen_names.length > 0 && (
-                <optgroup label={t("ui.articles.author_pen_names", "Pseudonyme")}>
-                    {profile.pen_names.map((pen) => (
-                        <option key={pen} value={pen}>
-                            {pen}
-                        </option>
-                    ))}
-                </optgroup>
-            )}
-            {!valueIsKnown && (
-                // Surface the unknown value so the user sees what is
-                // currently set (e.g. legacy article author from a
-                // pre-AR-02 migration). They can switch to a known
-                // entry; the unknown entry stays selectable.
-                <option value={value}>{value}</option>
-            )}
-        </select>
     );
 }
 

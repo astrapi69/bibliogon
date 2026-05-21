@@ -5,7 +5,8 @@ import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
-import {useAuthorProfile, profileDisplayNames, type AuthorProfile} from "../hooks/useAuthorProfile";
+import {useAuthorProfile, type AuthorProfile} from "../hooks/useAuthorProfile";
+import AuthorProfileSelect from "./AuthorProfileSelect";
 import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
 import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
 import {LoadingIndicator} from "./LoadingIndicator";
@@ -558,54 +559,46 @@ function AuthorSelectField({
 }) {
     const {t} = useI18n();
     const navigate = useNavigate();
-    const knownNames = profileDisplayNames(profile);
-    const valueIsKnown = value !== "" && knownNames.includes(value);
-    const valueIsUnknown = value !== "" && !valueIsKnown;
 
+    // RECURRING-COMPONENT-AUDIT-01 audit-followup (Pattern B):
+    // shared <select> + <optgroup> rendering with ArticleEditor via
+    // the canonical AuthorProfileSelect. Book-specific wrapping
+    // (field div + label + manage-link to Settings) stays here.
     return (
         <div className="field" style={{flex: 1}}>
             <label className="label">{label}</label>
-            <select
-                className="input"
+            <AuthorProfileSelect
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
-                data-testid="metadata-author-select"
-            >
-                {allowEmpty && (
-                    <option value="">
-                        {t("ui.metadata.author_no_author", "(no author)")}
-                    </option>
+                profile={profile}
+                onChange={onChange}
+                emptyOptionLabel={
+                    allowEmpty
+                        ? t("ui.metadata.author_no_author", "(no author)")
+                        : null
+                }
+                placeholderLabel={t(
+                    "ui.metadata.author_placeholder",
+                    "Autor auswählen...",
                 )}
-                {!allowEmpty && value === "" && (
-                    <option value="" disabled>
-                        {t("ui.metadata.author_placeholder", "Autor auswählen...")}
-                    </option>
+                unknownValueWrapper={(v) => ({
+                    label: (
+                        <>
+                            {t(
+                                "ui.metadata.author_unknown_prefix",
+                                "[unbekannt:",
+                            )}{" "}
+                            {v}]
+                        </>
+                    ),
+                    disabled: true,
+                })}
+                penNamesGroupLabel={t(
+                    "ui.metadata.author_pen_names_label",
+                    "Pen Names",
                 )}
-                {valueIsUnknown && (
-                    <option value={value} disabled>
-                        {t("ui.metadata.author_unknown_prefix", "[unbekannt:")} {value}]
-                    </option>
-                )}
-                {profile && profile.name && (
-                    <optgroup label={profile.name}>
-                        <option value={profile.name}>{profile.name}</option>
-                        {profile.pen_names.map((pen) => (
-                            <option key={pen} value={pen}>
-                                {pen}
-                            </option>
-                        ))}
-                    </optgroup>
-                )}
-                {profile && !profile.name && profile.pen_names.length > 0 && (
-                    <optgroup label={t("ui.metadata.author_pen_names_label", "Pen Names")}>
-                        {profile.pen_names.map((pen) => (
-                            <option key={pen} value={pen}>
-                                {pen}
-                            </option>
-                        ))}
-                    </optgroup>
-                )}
-            </select>
+                testId="metadata-author-select"
+                selectClassName="input"
+            />
             <a
                 href="/settings?tab=author"
                 data-testid="metadata-author-manage-link"
