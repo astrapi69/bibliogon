@@ -1024,6 +1024,9 @@ ui:
     delete_error: "Löschen fehlgeschlagen."
   metadata:
     tab_general: "Allgemein"
+    # EXPOSE-BUCHIDEE-METADATA-01 C3: Story tab houses book_idea +
+    # expose author-design fields (premise + long-form Exposé).
+    tab_story: "Story"
     tab_publisher: "Verlag"
     tab_isbn: "ISBN"
     tab_marketing: "Marketing"
@@ -1052,6 +1055,11 @@ ui:
     quality_nav_no_issues: "Keine Treffer in diesem Kapitel"
     subtitle: "Untertitel"
     description: "Beschreibung"
+    # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.
+    book_idea_label: "Buchidee"
+    book_idea_placeholder: "Kurz: 1-2 Sätze, worum geht es?"
+    expose_label: "Exposé"
+    expose_placeholder: "Plot, Figuren, Schauplatz, Ton — ausführlich."
     edition: "Edition"
     publish_date: "Erscheinungsdatum"
     publisher: "Verlag"

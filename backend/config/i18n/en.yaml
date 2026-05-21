@@ -1024,6 +1024,9 @@ ui:
     delete_error: "Delete failed."
   metadata:
     tab_general: "General"
+    # EXPOSE-BUCHIDEE-METADATA-01 C3: Story tab houses book_idea +
+    # expose author-design fields (premise + long-form Exposé).
+    tab_story: "Story"
     tab_publisher: "Publisher"
     tab_isbn: "ISBN"
     tab_marketing: "Marketing"
@@ -1052,6 +1055,11 @@ ui:
     quality_nav_no_issues: "No findings in this chapter"
     subtitle: "Subtitle"
     description: "Description"
+    # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.
+    book_idea_label: "Book Idea"
+    book_idea_placeholder: "In brief: 1-2 sentences — what is it about?"
+    expose_label: "Exposé"
+    expose_placeholder: "Plot, characters, setting, tone — detailed."
     edition: "Edition"
     publish_date: "Publish Date"
     publisher: "Publisher"
