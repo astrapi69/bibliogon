@@ -7,7 +7,14 @@
 
 > **Update 2026-05-22 — Implementation-session findings:**
 >
-> 1. **Candidate #1 `useSelection<T>()` (score 16) — DEFERRED-PENDING-DESIGN-INTENT-ADJUDICATION.** Pre-Coding-Reality-Check surfaced an explicit anti-extraction rationale at [useBookSelection.ts:7-10](../../frontend/src/components/useBookSelection.ts#L7-L10): *"Kept as a separate hook (rather than a generic `useSelection`) so that future per-entity divergence (e.g. books-only constraints around audiobook job state) lands in one place without a cross-entity refactor."* The audit's `diff` confirmed implementation-identity but missed the documented design-intent in the doc-comment itself. Honoring the rationale + deferring this candidate pending explicit user adjudication on whether the speculative-divergence-defense should be overridden. Methodology gap: future audits should grep doc-comments for anti-extraction-rationale markers as a soft anti-signal.
+> 1. **Candidate #1 `useSelection<T>()` (score 16) — DEFERRED-PERMANENT-DESIGN-INTENT-HONORED (adjudicated 2026-05-23).** Pre-Coding-Reality-Check surfaced an explicit anti-extraction rationale at [useBookSelection.ts:7-10](../../frontend/src/components/useBookSelection.ts#L7-L10): *"Kept as a separate hook (rather than a generic `useSelection`) so that future per-entity divergence (e.g. books-only constraints around audiobook job state) lands in one place without a cross-entity refactor."* The audit's `diff` confirmed implementation-identity but missed the documented design-intent in the doc-comment itself.
+>
+>     **Adjudication 2026-05-23 — Permanent-defer.** Anti-extraction-rationale honored. Three concurring reasons:
+>     1. **Per-entity divergence is evidence-based, not speculative.** Each hook's home entity already carries divergent state surfaces — Books have audiobook-job state, Articles have publication-state, Comments have moderation-state. Plausible future selection-aware feature would land at exactly one of those surfaces; a generic hook would force a synthetic cross-entity merge.
+>     2. **13 touch-points (7 prod callers + 3 test files + 3 wizard-state-machine refs) is a substantial migration surface for an already-stable contract.** No bug or feature pressure justifies the churn.
+>     3. **Split-back-out stays available.** If per-entity divergence never materializes after years and an unambiguous generic shape emerges, the extraction can ship later. Deferring loses nothing.
+>
+>     Methodology gap closed-in-action: future audits should grep doc-comments for anti-extraction-rationale markers as a soft anti-signal. Formalized via new Lessons-Learned filing 2026-05-23 ("Audit-Methodology: design-intent-axis as 5th-Axis or Override-Filter") — see `.claude/rules/lessons-learned.md`.
 > 2. **Candidate #2 `BulkActionBar` (score 15) — SHIPPED via path γ pivot** (commit `c2305e7` on 2026-05-22). 3-site adapter-pattern extraction: new `BulkActionBar` shell wrapper + `BulkActionBar.module.css` (.bar + .count rules) + 5 Vitest cases; 3 adapter files now render `<BulkActionBar>{site-specific actions}</BulkActionBar>` keeping their entity-specific action clusters. No anti-extraction-rationale documented in any of the 3 source files; pivot was clean. Full Vitest 1783 → 1792.
 > 3. **Candidates #3 `ListRow` (score 13) — REMAINS AVAILABLE** for future sessions per the recommended sequence.
 >
@@ -430,29 +437,37 @@ out-of-scope.
 ## Recommended extraction sequence
 
 Top-3 next-session candidates, ordered by combined score +
-dependency-graph (independence first, compounding later):
+dependency-graph (independence first, compounding later).
 
-### Session 1 (immediate, ~3 hours)
+> **Adjudication note (2026-05-23):** the original Session-1
+> recommendation `useSelection<T>()` was removed from the
+> extraction-sequence per the permanent-defer adjudication
+> documented in the implementation-session footnote above.
+> Methodology refinement: the 4-Axes scoring (Site-count,
+> Drift-Risk, Extraction-Ease, Downstream-Value) carries an
+> implicit implementation-identity-bias and DOES NOT measure
+> design-intent. Future audits should either (α) add a 5th
+> axis "Anti-Extraction-Rationale-Documented?" (1-5; if
+> score 4+, defer-pending-adjudication-default) OR
+> (β) treat documented anti-extraction-rationale as a
+> hard Stop-Condition filter applied BEFORE 4-Axes scoring.
+> Filed as Lessons-Learned `.claude/rules/lessons-learned.md`
+> "Audit-Methodology: design-intent-axis as 5th-Axis or
+> Override-Filter" (2026-05-23).
 
-**`useSelection<T>()` generic hook extract** (Rank 1, score 16).
-Easy win. Zero behavioral change. Proves the generic-hook
-pattern. Site-by-site migration with the existing
-component-local type-alias preserved as backward-compat.
+### Session 1 (immediate, ~5 hours) — `AuthorSelectInput` extract + apply
 
-### Session 2 (next, ~5 hours)
+**Rank 4, score 12.** *(Shipped 2026-05-23 as commit `a213788`;
+see footnote item 4 above.)* Pair with `AUTHOR-DATALIST-EXTEND-EDITORS-01`
+(already filed P3) so the extraction immediately gains 2 NEW
+callsites (ArticleEditor + BookEditor) in addition to the
+existing CreateBookModal + ConvertToBookWizard. Total: 4
+surfaces after this session.
 
-**`AuthorSelectInput` extract + apply** (Rank 4, score 12).
-Pair with `AUTHOR-DATALIST-EXTEND-EDITORS-01` (already filed
-P3) so the extraction immediately gains 2 NEW callsites
-(ArticleEditor + BookEditor) in addition to the existing
-CreateBookModal + ConvertToBookWizard. Total: 4 surfaces
-after this session.
+### Session 2 (mid-term, ~6 hours) — `BulkActionBar` shared component
 
-### Session 3 (mid-term, ~6 hours)
-
-**`BulkActionBar` shared component** (Rank 2, score 15).
-Larger lift but benefits from Session 1's
-`useSelection<T>()` foundation. Slot-based action cluster.
+**Rank 2, score 15.** *(Shipped 2026-05-22 as commit `c2305e7`;
+see footnote item 2 above.)* Larger lift. Slot-based action cluster.
 3 sites migrated + 1 E2E regression-pin per site.
 
 ### Session 4 (longer-term, ~6-8 hours)
