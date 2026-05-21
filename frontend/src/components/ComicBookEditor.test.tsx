@@ -196,8 +196,16 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         );
         fireEvent.click(createButton);
         await waitFor(() => {
+            // Phase 1 of PLUGIN-COMICS-PHASE-1-MULTI-PANEL-LAYOUTS-01
+            // sets the default template explicitly to avoid γ-shim
+            // reliance (previously this commit-payload was just
+            // {layout: "comic_panel_grid"}; explicit layout_config
+            // added 2026-05-20).
             expect(api.pages.create).toHaveBeenCalledWith("book-1", {
                 layout: "comic_panel_grid",
+                layout_config: {
+                    comic_grid_template: "single_panel",
+                },
             });
         });
         // After the create + refresh, the page nav appears.

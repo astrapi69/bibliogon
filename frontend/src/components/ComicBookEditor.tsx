@@ -40,7 +40,13 @@ import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
 import {useI18n} from "../hooks/useI18n";
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
 
-import {ComicPanelGrid} from "./comics/ComicPanelGrid";
+import {
+    ComicPanelGrid,
+    DEFAULT_COMIC_GRID_TEMPLATE,
+    resolveComicGridTemplate,
+    type ComicGridTemplate,
+} from "./comics/ComicPanelGrid";
+import {ComicGridTemplatePicker} from "./comics/ComicGridTemplatePicker";
 import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
 import type {ComicBubbleData} from "./comics/ComicBubble";
 import type {ComicPanelData} from "./comics/ComicPanel";
@@ -132,8 +138,15 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
     const handleCreateFirstPage = useCallback(async () => {
         setPagesError(null);
         try {
+            // Phase 1: set explicit default template at create-time
+            // so the page doesn't rely on the γ-shim fallback. The
+            // ComicGridTemplatePicker in the header lets the user
+            // change it afterwards.
             const newPage = await api.pages.create(bookId, {
                 layout: "comic_panel_grid",
+                layout_config: {
+                    comic_grid_template: DEFAULT_COMIC_GRID_TEMPLATE,
+                },
             });
             const rows = await refreshPages();
             setActivePageId(newPage.id ?? rows[0]?.id ?? null);
@@ -142,6 +155,34 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
             setPagesError(detail);
         }
     }, [bookId, refreshPages]);
+
+    // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
+    // into the active page's ``layout_config`` while preserving any
+    // sibling keys (future Phase 3 #6 panel-gutter, etc.).
+    const handleChangeGridTemplate = useCallback(
+        async (template: ComicGridTemplate) => {
+            if (!activePageId) return;
+            const activePage = pages.find((p) => p.id === activePageId);
+            if (!activePage) return;
+            const priorConfig =
+                (activePage.layout_config as Record<string, unknown> | null) ??
+                {};
+            try {
+                await api.pages.update(bookId, activePageId, {
+                    layout_config: {
+                        ...priorConfig,
+                        comic_grid_template: template,
+                    },
+                });
+                await refreshPages();
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [activePageId, bookId, pages, refreshPages],
+    );
 
     const refreshPanelsAndBubbles = useCallback(
         async (pageId: string) => {
@@ -312,6 +353,17 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 >
                     {bookTitle}
                 </h1>
+                {activePageId && (
+                    <ComicGridTemplatePicker
+                        value={resolveComicGridTemplate(
+                            (pages.find((p) => p.id === activePageId)
+                                ?.layout_config as
+                                | Record<string, unknown>
+                                | null) ?? null,
+                        )}
+                        onChange={handleChangeGridTemplate}
+                    />
+                )}
                 <PdfExportControls
                     bookId={bookId}
                     testidPrefix="comic-book-editor"
