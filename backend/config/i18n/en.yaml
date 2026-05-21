@@ -2204,6 +2204,14 @@ ui:
     delete_bubble: "Delete bubble"
     side_pane_default: "Click a panel or a bubble to edit it."
     side_pane_panel_selected: "Panel selected. Pick a bubble to edit it."
+    layout_picker:
+      heading: "Layout"
+      single_panel: "Splash (1 panel)"
+      grid_1x2: "Side-by-side (2 panels)"
+      grid_2x1: "Stacked (2 panels)"
+      grid_2x2: "Standard grid (4 panels)"
+      grid_2x3: "Two-tier (6 panels)"
+      grid_3x2: "Three-tier (6 panels)"
   about:
     heading: "About Bibliogon"
     loading: "Loading information ..."

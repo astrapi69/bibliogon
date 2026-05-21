@@ -2203,6 +2203,14 @@ ui:
     delete_bubble: "Sprechblase löschen"
     side_pane_default: "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten."
     side_pane_panel_selected: "Panel ausgewählt. Wähle eine Sprechblase, um sie zu bearbeiten."
+    layout_picker:
+      heading: "Layout"
+      single_panel: "Splash (1 Panel)"
+      grid_1x2: "Nebeneinander (2 Panels)"
+      grid_2x1: "Übereinander (2 Panels)"
+      grid_2x2: "Standardraster (4 Panels)"
+      grid_2x3: "Zweistufig (6 Panels)"
+      grid_3x2: "Dreistufig (6 Panels)"
   about:
     heading: "Über Bibliogon"
     loading: "Lade Informationen ..."
