@@ -33,6 +33,7 @@ from bibliogon_comics.comic_book_pdf import (
     COMIC_GRID_TEMPLATES,
     DEFAULT_COMIC_GRID_TEMPLATE,
     _BUBBLE_TYPE_CSS,
+    _GRID_TEMPLATE_CSS,
     _build_assets_map,
     _build_comic_html,
     _bubble_type_style,
@@ -70,6 +71,56 @@ def test_resolve_comic_grid_template_falls_back_for_unknown_value() -> None:
 
 def test_resolve_comic_grid_template_default_is_single_panel() -> None:
     assert DEFAULT_COMIC_GRID_TEMPLATE == "single_panel"
+
+
+# --- Standard Layouts CSS shape (Phase 1, 2026-05-20) ---
+
+
+def test_comic_grid_templates_includes_all_7_standards() -> None:
+    """Standard Layouts shipped in Phase 1: 6 user-facing + 1 legacy
+    (grid_3x3). Adding/removing a template here is a contract change
+    that must mirror frontend ``COMIC_GRID_TEMPLATES`` in
+    ``frontend/src/components/comics/ComicPanelGrid.tsx`` AND update
+    the i18n picker labels."""
+    assert set(COMIC_GRID_TEMPLATES) == {
+        "single_panel",
+        "grid_1x2",
+        "grid_2x1",
+        "grid_2x2",
+        "grid_2x3",
+        "grid_3x2",
+        "grid_3x3",
+    }
+    # Every template id must have matching CSS.
+    assert set(_GRID_TEMPLATE_CSS.keys()) == set(COMIC_GRID_TEMPLATES)
+
+
+def test_grid_1x2_emits_2_columns_single_row() -> None:
+    """grid_1x2 = side-by-side (1 row × 2 cols)."""
+    css = _GRID_TEMPLATE_CSS["grid_1x2"]
+    assert "grid-template-columns: repeat(2, 1fr)" in css
+    assert "grid-template-rows: 1fr" in css
+
+
+def test_grid_2x1_emits_single_column_2_rows() -> None:
+    """grid_2x1 = stacked (2 rows × 1 col)."""
+    css = _GRID_TEMPLATE_CSS["grid_2x1"]
+    assert "grid-template-columns: 1fr" in css
+    assert "grid-template-rows: repeat(2, 1fr)" in css
+
+
+def test_grid_2x3_emits_3_columns_2_rows() -> None:
+    """grid_2x3 = two-tier (2 rows × 3 cols)."""
+    css = _GRID_TEMPLATE_CSS["grid_2x3"]
+    assert "grid-template-columns: repeat(3, 1fr)" in css
+    assert "grid-template-rows: repeat(2, 1fr)" in css
+
+
+def test_grid_3x2_emits_2_columns_3_rows() -> None:
+    """grid_3x2 = three-tier (3 rows × 2 cols)."""
+    css = _GRID_TEMPLATE_CSS["grid_3x2"]
+    assert "grid-template-columns: repeat(2, 1fr)" in css
+    assert "grid-template-rows: repeat(3, 1fr)" in css
 
 
 # --- Bubble-type CSS variants ---

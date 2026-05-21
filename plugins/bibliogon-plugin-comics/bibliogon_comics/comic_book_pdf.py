@@ -64,11 +64,24 @@ from bibliogon_export.picture_book_fonts import font_face_css
 # Page-level layout for comic pages lives in
 # ``Page.layout_config.comic_grid_template`` (JSON-storage decision
 # Q1 β; no new schema enum). Valid template ids:
-COMIC_GRID_TEMPLATES = ("single_panel", "grid_2x2", "grid_3x3")
+#
+# Standard Layouts shipped by Phase 1 (PLUGIN-COMICS-PHASE-1-
+# MULTI-PANEL-LAYOUTS-01, 2026-05-20). 6 user-facing + 1 legacy.
+# Symmetric-only per α decision (asymmetric + variable deferred).
+COMIC_GRID_TEMPLATES = (
+    "single_panel",  # 1 panel (Splash)
+    "grid_1x2",      # 2 panels side-by-side
+    "grid_2x1",      # 2 panels stacked
+    "grid_2x2",      # 4 panels standard grid
+    "grid_2x3",      # 6 panels two-tier (2 rows × 3 cols)
+    "grid_3x2",      # 6 panels three-tier (3 rows × 2 cols)
+    "grid_3x3",      # 9 panels (legacy / advanced; not in default picker)
+)
 DEFAULT_COMIC_GRID_TEMPLATE = "single_panel"
 
 # CSS Grid template per layout id. Each value pairs with the
-# expected number of panels (N): single_panel = 1, grid_2x2 = 4,
+# expected number of panels (N): single_panel = 1, grid_1x2 = 2,
+# grid_2x1 = 2, grid_2x2 = 4, grid_2x3 = 6, grid_3x2 = 6,
 # grid_3x3 = 9. The walker doesn't enforce panel-count match —
 # it renders whatever ``comic_panels`` rows exist, sorted by
 # position, into the grid cells in order.
@@ -77,9 +90,25 @@ _GRID_TEMPLATE_CSS: dict[str, str] = {
         "grid-template-columns: 1fr;\n"
         "    grid-template-rows: 1fr;"
     ),
+    "grid_1x2": (
+        "grid-template-columns: repeat(2, 1fr);\n"
+        "    grid-template-rows: 1fr;"
+    ),
+    "grid_2x1": (
+        "grid-template-columns: 1fr;\n"
+        "    grid-template-rows: repeat(2, 1fr);"
+    ),
     "grid_2x2": (
         "grid-template-columns: repeat(2, 1fr);\n"
         "    grid-template-rows: repeat(2, 1fr);"
+    ),
+    "grid_2x3": (
+        "grid-template-columns: repeat(3, 1fr);\n"
+        "    grid-template-rows: repeat(2, 1fr);"
+    ),
+    "grid_3x2": (
+        "grid-template-columns: repeat(2, 1fr);\n"
+        "    grid-template-rows: repeat(3, 1fr);"
     ),
     "grid_3x3": (
         "grid-template-columns: repeat(3, 1fr);\n"
