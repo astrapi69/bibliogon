@@ -67,6 +67,7 @@ import {
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/notify"
 import {computeAuthorSuggestions} from "../../utils/computeAuthorSuggestions"
+import AuthorSelectInput from "../AuthorSelectInput"
 
 interface Props {
     open: boolean
@@ -795,34 +796,40 @@ export default function ConvertToBookWizard({
                 >
                     {t("ui.convert_to_book.metadata_author", "Autor")} *
                 </label>
-                <input
-                    id="convert-to-book-wizard-metadata-author"
-                    className="input"
-                    value={author}
-                    onChange={(e) => setAuthor(e.target.value)}
-                    list="convert-to-book-wizard-author-suggestions"
-                    autoComplete="off"
-                    data-testid="convert-to-book-wizard-metadata-author"
-                />
-                {/* Bug 8 Phase 2: datalist powered by
+                {/* RECURRING-COMPONENT-AUDIT-01 #4 extraction:
+                    input + datalist + Add-to-Authors-DB checkbox
+                    live in AuthorSelectInput. Suggestions still
+                    composed at this caller via
                     computeAuthorSuggestions(selectedArticles,
                     globalAuthors). Empty list still renders so a
                     browser that respects ``list`` attaches an empty
-                    dropdown rather than ignoring the attribute — the
-                    test surface is consistent regardless of
-                    suggestion count. */}
-                <datalist
-                    id="convert-to-book-wizard-author-suggestions"
-                    data-testid="convert-to-book-wizard-author-datalist"
-                >
-                    {authorSuggestions.map((name) => (
-                        <option
-                            key={name}
-                            value={name}
-                            data-testid={`convert-to-book-wizard-author-suggestion-${name}`}
-                        />
-                    ))}
-                </datalist>
+                    dropdown rather than ignoring the attribute. The
+                    inputTestId override preserves the non-standard
+                    "convert-to-book-wizard-metadata-author" testid
+                    that 12+ E2E + Vitest references already pin
+                    (per the "Testid namespace pinning prevents
+                    silent E2E skips" LL). The required-error
+                    message follows AuthorSelectInput; checkbox +
+                    error states are mutually exclusive (the
+                    checkbox only shows when value is typed AND
+                    not in DB; the error only shows when value is
+                    empty) so the visual order is preserved. */}
+                <AuthorSelectInput
+                    value={author}
+                    onChange={setAuthor}
+                    suggestions={authorSuggestions}
+                    showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
+                    addToAuthorsDb={addToAuthorsDb}
+                    onAddToAuthorsDbChange={setAddToAuthorsDb}
+                    testidPrefix="convert-to-book-wizard"
+                    inputTestId="convert-to-book-wizard-metadata-author"
+                    inputId="convert-to-book-wizard-metadata-author"
+                    datalistId="convert-to-book-wizard-author-suggestions"
+                    addToAuthorsLabel={t(
+                        "ui.convert_to_book.metadata_add_to_authors_db",
+                        "„{name}\" zur Autoren-Datenbank hinzufügen",
+                    )}
+                />
                 {author.trim() === "" && (
                     <small style={styles.fieldError}>
                         {t(
@@ -830,38 +837,6 @@ export default function ConvertToBookWizard({
                             "Autor ist erforderlich",
                         )}
                     </small>
-                )}
-                {/* Bug 8 Phase 2: Add-to-Authors-Database checkbox.
-                    Default-checked. Visible only when the typed
-                    author is not already in the global DB, so the
-                    user isn't prompted to "add" a name that's
-                    already there. Submit-flow handles the create
-                    (graceful fallback if the create fails: the
-                    book still creates with the free-text author). */}
-                {showAddToAuthorsCheckbox && (
-                    <label
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            marginTop: 8,
-                            fontSize: "0.875rem",
-                            color: "var(--text-secondary)",
-                        }}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={addToAuthorsDb}
-                            onChange={(e) => setAddToAuthorsDb(e.target.checked)}
-                            data-testid="convert-to-book-wizard-add-to-authors-checkbox"
-                        />
-                        <span>
-                            {t(
-                                "ui.convert_to_book.metadata_add_to_authors_db",
-                                "„{name}\" zur Autoren-Datenbank hinzufügen",
-                            ).replace("{name}", author.trim())}
-                        </span>
-                    </label>
                 )}
             </div>
             <div className="field">

@@ -4,6 +4,7 @@ import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
+import AuthorSelectInput from "./AuthorSelectInput";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
@@ -455,69 +456,31 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                             <label className="label" htmlFor="create-book-author">
                                 {t("ui.create_book.author", "Autor")} *
                             </label>
-                            {/* Bug-fix 2026-05-19: replaced the
-                                Select-or-input conditional with a
-                                unified input + datalist. Sources:
-                                user-identity choices (settings) +
-                                global Authors-Database. Free-text
-                                entry allowed (picture-book pen
-                                names, ghostwritten works). Mirrors
-                                ConvertToBookWizard's Step-2 pattern. */}
-                            <input
-                                id="create-book-author"
-                                className="input"
+                            {/* RECURRING-COMPONENT-AUDIT-01 #4
+                                extraction: unified input + datalist
+                                + Add-to-Authors-DB checkbox lives
+                                in AuthorSelectInput. Sources still
+                                composed at this caller (authorChoices
+                                from settings + globalAuthors from
+                                Authors-DB union'd into
+                                authorSuggestions). */}
+                            <AuthorSelectInput
                                 value={author}
-                                onChange={(e) => setAuthor(e.target.value)}
-                                placeholder={t("ui.create_book.author_placeholder", "Autorenname oder Pen Name")}
-                                list="create-book-author-suggestions"
-                                autoComplete="off"
-                                data-testid="create-book-author"
+                                onChange={setAuthor}
+                                suggestions={authorSuggestions}
+                                showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
+                                addToAuthorsDb={addToAuthorsDb}
+                                onAddToAuthorsDbChange={setAddToAuthorsDb}
+                                testidPrefix="create-book"
+                                placeholder={t(
+                                    "ui.create_book.author_placeholder",
+                                    "Autorenname oder Pen Name",
+                                )}
+                                addToAuthorsLabel={t(
+                                    "ui.create_book.add_to_authors_db",
+                                    "„{name}\" zur Autoren-Datenbank hinzufügen",
+                                )}
                             />
-                            <datalist
-                                id="create-book-author-suggestions"
-                                data-testid="create-book-author-datalist"
-                            >
-                                {authorSuggestions.map((name) => (
-                                    <option
-                                        key={name}
-                                        value={name}
-                                        data-testid={`create-book-author-suggestion-${name}`}
-                                    />
-                                ))}
-                            </datalist>
-                            {/* Bug-fix 2026-05-19: Add-to-Authors-DB
-                                checkbox. Default-checked. Visible
-                                only when the typed name is NOT
-                                already in the global DB (so the
-                                user is not prompted to "add" a name
-                                that's already there). Submit-flow
-                                handles the create (graceful
-                                fallback if author-create fails). */}
-                            {showAddToAuthorsCheckbox && (
-                                <label
-                                    style={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 6,
-                                        marginTop: 8,
-                                        fontSize: "0.875rem",
-                                        color: "var(--text-secondary)",
-                                    }}
-                                >
-                                    <input
-                                        type="checkbox"
-                                        checked={addToAuthorsDb}
-                                        onChange={(e) => setAddToAuthorsDb(e.target.checked)}
-                                        data-testid="create-book-add-to-authors-checkbox"
-                                    />
-                                    <span>
-                                        {t(
-                                            "ui.create_book.add_to_authors_db",
-                                            "„{name}\" zur Autoren-Datenbank hinzufügen",
-                                        ).replace("{name}", author.trim())}
-                                    </span>
-                                </label>
-                            )}
                         </div>
 
                         {/* === Stage 2: Optional fields (Radix Collapsible) === */}
