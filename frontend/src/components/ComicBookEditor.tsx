@@ -209,6 +209,36 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
         [bookId],
     );
 
+    // PHASE-2-PANEL-CONFIG-01 C4: close the Half-Wired gap on
+    // assetUrls. ComicPanelGrid consumes ``assetUrls: Record<assetId,
+    // url>`` to render panel images; without it, an
+    // ``image_asset_id``-set panel renders blank. Built from
+    // ``api.assets.list(bookId)`` mapping ``asset.id ->
+    // /api/books/{bookId}/assets/file/{filename}``. Refreshed on
+    // bookId change AND after panel updates that touch
+    // ``image_asset_id`` (uploads change the asset set; see
+    // handleUpdatePanel).
+    const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+
+    const refreshAssets = useCallback(async () => {
+        try {
+            const assets = await api.assets.list(bookId);
+            const urlMap: Record<string, string> = {};
+            for (const asset of assets) {
+                urlMap[asset.id] = `/api/books/${bookId}/assets/file/${asset.filename}`;
+            }
+            setAssetUrls(urlMap);
+        } catch (err) {
+            const detail =
+                err instanceof ApiError ? err.detail : String(err);
+            setPagesError(detail);
+        }
+    }, [bookId]);
+
+    useEffect(() => {
+        void refreshAssets();
+    }, [refreshAssets]);
+
     useEffect(() => {
         if (!activePageId) {
             setPanels([]);
@@ -315,13 +345,26 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                     partial as Record<string, unknown>,
                 );
                 await refreshPanelsAndBubbles(activePageId);
+                // Image upload + clear paths change the asset set:
+                // refresh the URL map so the new image surfaces in
+                // the editor body (ComicPanelGrid) and the cleared
+                // image vanishes.
+                if ("image_asset_id" in partial) {
+                    await refreshAssets();
+                }
             } catch (err) {
                 const detail =
                     err instanceof ApiError ? err.detail : String(err);
                 setPagesError(detail);
             }
         },
-        [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId],
+        [
+            activePageId,
+            bookId,
+            refreshAssets,
+            refreshPanelsAndBubbles,
+            selectedPanelId,
+        ],
     );
 
     const selectedBubble = useMemo<ComicBubbleData | null>(() => {
@@ -543,6 +586,7 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                                 }
                                 panels={panelData}
                                 panelBubblesMap={panelBubblesMap}
+                                assetUrls={assetUrls}
                                 selectedPanelId={selectedPanelId}
                                 selectedBubbleId={selectedBubbleId}
                                 onPanelClick={(panelId) => {

@@ -46,6 +46,11 @@ vi.mock("../api/client", async () => {
                 list: vi.fn(),
                 create: vi.fn(),
             },
+            assets: {
+                list: vi.fn(),
+                upload: vi.fn(),
+                delete: vi.fn(),
+            },
         },
     };
 });
@@ -117,6 +122,7 @@ beforeEach(() => {
     vi.mocked(api.comics.deleteBubble).mockImplementation(async () => undefined);
     vi.mocked(api.pages.list).mockImplementation(async () => [fakePage]);
     vi.mocked(api.pages.create).mockImplementation(async () => fakePage);
+    vi.mocked(api.assets.list).mockImplementation(async () => []);
 });
 
 afterEach(() => {
@@ -399,6 +405,61 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         expect(
             await screen.findByTestId("layout-config-comic-bubble"),
         ).toBeInTheDocument();
+    });
+
+    // PHASE-2-PANEL-CONFIG-01 C4 — assetUrls Half-Wired closure
+    it("calls api.assets.list(bookId) on mount to build the assetUrls map", async () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.assets.list).toHaveBeenCalledWith("book-1");
+        });
+    });
+
+    it("refreshes assets after a panel update that includes image_asset_id", async () => {
+        vi.mocked(api.comics.updatePanel).mockImplementation(
+            async () => fakePanel,
+        );
+        vi.mocked(api.assets.upload).mockImplementation(async () => ({
+            id: "new-asset",
+            book_id: "book-1",
+            filename: "panel.png",
+            asset_type: "figure",
+            path: "/uploads/book-1/panel.png",
+            uploaded_at: "2026-05-21T00:00:00",
+        }));
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        // Initial mount: api.assets.list fires once for the
+        // assetUrls map.
+        await waitFor(() => {
+            expect(api.assets.list).toHaveBeenCalledTimes(1);
+        });
+        // Select the panel so LayoutConfigComicPanel mounts in the
+        // side-pane.
+        const panel = await screen.findByTestId(`comic-panel-${fakePanel.id}`);
+        fireEvent.click(panel);
+        // Pick a file through the side-pane upload input. The chain:
+        // file -> api.assets.upload -> onChange({image_asset_id}) ->
+        // handleUpdatePanel -> api.comics.updatePanel ->
+        // refreshPanelsAndBubbles -> refreshAssets (because
+        // image_asset_id is in the partial).
+        const fileInput = await screen.findByTestId("comic-panel-image-input");
+        const file = new File(["test"], "panel.png", {type: "image/png"});
+        fireEvent.change(fileInput, {target: {files: [file]}});
+        await waitFor(() => {
+            expect(api.assets.list).toHaveBeenCalledTimes(2);
+        });
     });
 
     it("fetches and renders plugin info from /api/comics/info", async () => {
