@@ -89,11 +89,12 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 | plugin-help        | core    | -          | In-app help, shortcuts, FAQ                                     |
 | plugin-getstarted  | core    | -          | Onboarding, example book                                        |
 | plugin-ms-tools    | core    | -          | Style checks, sanitization, metrics, per-book thresholds        |
-| plugin-audiobook   | core    | export     | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-book config |
+| plugin-audiobook   | core    | -          | TTS via manuscripta (Edge/Google/ElevenLabs/pyttsx3), per-book config. Reverse coupling: plugin-export imports `bibliogon_audiobook.generator` to dispatch the `audiobook` format. |
 | plugin-translation | core    | -          | DeepL/LMStudio translation, custom settings panel               |
 | plugin-grammar     | core    | -          | LanguageTool (self-hosted + premium auth support)               |
 | plugin-kinderbuch  | core    | export     | One-image-per-page layout with 4 templates                      |
 | plugin-kdp         | core    | export     | KDP metadata, cover validation, completeness check              |
+| plugin-comics      | core    | export     | Multi-panel comic-book pages; imports `bibliogon_export.picture_book_pdf` + `picture_book_fonts` directly for PDF rendering |
 | plugin-git-sync    | core    | -          | Git-backed import + sync for write-book-template repositories   |
 | plugin-medium-import | core  | -          | Medium HTML-export importer: Article + Publication + provenance |
 

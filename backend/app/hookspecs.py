@@ -2,6 +2,17 @@
 
 Defines the hooks that plugins can implement.
 Uses pluggy's HookspecMarker for type-safe hook dispatch.
+
+Dispatch-site status (see HOOKSPEC-DISPATCH-WIRING-01):
+    content_pre_import  WIRED   - backend/app/services/backup/markdown_utils.py:106
+    export_formats      UNWIRED - declared, no dispatch site
+    export_execute      UNWIRED - declared, no dispatch site
+    chapter_pre_save    UNWIRED - declared, no dispatch site or implementation
+
+The three UNWIRED hookspecs represent intended architecture that has not
+been completed. Do NOT add @hookimpl implementations for them until a
+dispatch site is wired - they would be dead code (see
+.claude/rules/lessons-learned.md "Half-wired feature lifecycle").
 """
 
 from pathlib import Path
@@ -20,6 +31,10 @@ class BibliogonHookSpec:
         """Return list of supported export formats.
 
         Each format dict should have: id, label, extension, media_type.
+
+        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
+        plugin-export currently dispatches formats via a hardcoded
+        SUPPORTED_FORMATS set + direct imports from bibliogon_audiobook.
         """
         ...
 
@@ -36,6 +51,10 @@ class BibliogonHookSpec:
 
         Returns:
             Path to the generated output file.
+
+        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
+        plugin-export's routes.py handles formats by direct imports
+        (e.g. bibliogon_audiobook.generator) rather than via this hook.
         """
         ...
 
@@ -49,6 +68,9 @@ class BibliogonHookSpec:
 
         Returns:
             Transformed content, or None to keep original.
+
+        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
+        No plugin implements this hook and no save path dispatches it.
         """
         ...
 
