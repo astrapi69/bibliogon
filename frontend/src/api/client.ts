@@ -2899,8 +2899,27 @@ export const api = {
         guide: (lang: string = "de") =>
             request<{id: string; title: string; description: string; icon: string}[]>(`/get-started/guide?lang=${lang}`),
 
-        sampleBook: (lang: string = "de") =>
-            request<{title: string; author: string; language: string; description: string; chapters: {title: string; content: string}[]}>(`/get-started/sample-book?lang=${lang}`),
+        // GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: sample-book response
+        // varies by book_type:
+        //   - prose: carries ``chapters: [...]``
+        //   - picture_book / comic_book: carries ``pages: [...]``
+        // The TypeScript shape unions both so the caller branches on
+        // ``book_type`` (or just checks ``"chapters" in resp``).
+        sampleBook: (lang: string = "de", bookType: BookType = "prose") =>
+            request<{
+                title: string;
+                author: string;
+                language: string;
+                book_type: BookType;
+                description: string;
+                chapters?: {title: string; content: string}[];
+                pages?: {
+                    layout: string;
+                    text_content?: string;
+                    layout_config?: Record<string, unknown>;
+                    image_asset_id?: string | null;
+                }[];
+            }>(`/get-started/sample-book?lang=${lang}&book_type=${bookType}`),
     },
 
     pluginInstall: {

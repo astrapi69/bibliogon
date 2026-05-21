@@ -220,3 +220,59 @@
     padding-top: 16px;
     border-top: 1px solid var(--border);
 }
+
+/* GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: 3-card book-type picker
+ * grid + sample-button row. Used only inside the `choose-book-type`
+ * step. CSS-Grid with auto-fit lets the layout collapse to single-
+ * column on narrow viewports without extra media queries. */
+.bookTypeGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+}
+
+.bookTypeCard {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px;
+    background: var(--bg-card);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    min-height: 140px;
+}
+
+.bookTypeCardIcon {
+    color: var(--accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+.bookTypeCardTitle {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.bookTypeCardDesc {
+    margin: 0;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.sampleButtonRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 12px;
+    width: 100%;
+}

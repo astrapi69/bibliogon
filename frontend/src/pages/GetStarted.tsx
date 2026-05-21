@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
-import {api} from "../api/client";
+import {api, type BookType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import ThemeToggle from "../components/ThemeToggle";
 import {notify} from "../utils/notify";
@@ -8,11 +8,12 @@ import styles from "./GetStarted.module.css";
 import {
     ChevronLeft, ChevronRight, BookPlus, FilePlus, PenTool, GripVertical,
     Download, Settings, Archive, Rocket, Check, Home, HelpCircle,
-    ArrowRight, ArrowLeft, PartyPopper,
+    ArrowRight, ArrowLeft, PartyPopper, BookOpen, Image, Layers,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
     "book-plus": <BookPlus size={32}/>,
+    "book-open": <BookOpen size={32}/>,
     "file-plus": <FilePlus size={32}/>,
     "pen-tool": <PenTool size={32}/>,
     "grip-vertical": <GripVertical size={32}/>,
@@ -20,6 +21,47 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     "settings": <Settings size={32}/>,
     "archive": <Archive size={32}/>,
 };
+
+// GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: BookType card metadata.
+// Each card carries icon + i18n labels for the choose-book-type
+// step + the 3-button sample-row. Single source for the picker
+// surface; a future BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 backlog
+// item lifts this into a shared component when a 2nd consumer
+// (probably the Dashboard CreateBookModal pre-step) lands.
+interface BookTypeCardSpec {
+    type: BookType;
+    icon: React.ReactNode;
+    titleKey: string;
+    titleFallback: string;
+    descriptionKey: string;
+    descriptionFallback: string;
+}
+const BOOK_TYPE_CARDS: BookTypeCardSpec[] = [
+    {
+        type: "prose",
+        icon: <BookOpen size={28}/>,
+        titleKey: "ui.get_started.book_type_prose_title",
+        titleFallback: "Prosa",
+        descriptionKey: "ui.get_started.book_type_prose_desc",
+        descriptionFallback: "Romane, Sachbücher, Kurzgeschichten. Kapitel-basiert mit WYSIWYG- oder Markdown-Editor.",
+    },
+    {
+        type: "picture_book",
+        icon: <Image size={28}/>,
+        titleKey: "ui.get_started.book_type_picture_title",
+        titleFallback: "Bilderbuch",
+        descriptionKey: "ui.get_started.book_type_picture_desc",
+        descriptionFallback: "Eine Seite pro Bild plus Text. 5 Layouts (Bild oben/links, Speech-Bubble, etc.) und KDP-fähiger PDF-Export.",
+    },
+    {
+        type: "comic_book",
+        icon: <Layers size={28}/>,
+        titleKey: "ui.get_started.book_type_comic_title",
+        titleFallback: "Comicbuch",
+        descriptionKey: "ui.get_started.book_type_comic_desc",
+        descriptionFallback: "Multi-Panel-Layouts (Grid 2x2, 3x3, etc.) mit Sprechblasen und Bildern pro Panel.",
+    },
+];
 
 interface GuideStep {
     id: string;
@@ -83,18 +125,38 @@ export default function GetStarted() {
         });
     };
 
-    const handleCreateSampleBook = async () => {
+    // GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: sample-book creation
+    // branches on book_type. Prose ships chapters; picture_book +
+    // comic_book ship pages (api.pages.create instead of
+    // api.chapters.create). The Book row itself carries the
+    // book_type discriminator so the editor router lands on the
+    // right surface (PageEditor for picture_book, ComicBookEditor
+    // for comic_book, BookEditor for prose).
+    const handleCreateSampleBook = async (bookType: BookType = "prose") => {
         setCreating(true);
         try {
-            const sample = await api.getStarted.sampleBook("de");
+            const sample = await api.getStarted.sampleBook("de", bookType);
             const book = await api.books.create({
                 title: sample.title,
                 author: sample.author,
                 language: sample.language,
                 description: sample.description,
+                ...(bookType !== "prose" ? {book_type: bookType} : {}),
             });
-            for (const ch of sample.chapters) {
-                await api.chapters.create(book.id, {title: ch.title, content: ch.content});
+            if (sample.chapters && sample.chapters.length > 0) {
+                for (const ch of sample.chapters) {
+                    await api.chapters.create(book.id, {title: ch.title, content: ch.content});
+                }
+            }
+            if (sample.pages && sample.pages.length > 0) {
+                for (const pg of sample.pages) {
+                    await api.pages.create(book.id, {
+                        layout: pg.layout as never,
+                        ...(pg.text_content !== undefined ? {text_content: pg.text_content} : {}),
+                        ...(pg.layout_config !== undefined ? {layout_config: pg.layout_config} : {}),
+                        ...(pg.image_asset_id !== undefined ? {image_asset_id: pg.image_asset_id} : {}),
+                    });
+                }
             }
             notify.success(t("ui.get_started.sample_book_created", "Beispielbuch erstellt!"));
             navigate(`/book/${book.id}`);
@@ -220,6 +282,30 @@ export default function GetStarted() {
 
                         {expandedHelp && (
                             <div className={styles.helpContent}>
+                                {step.id === "choose-book-type" && (
+                                    <div
+                                        className={styles.bookTypeGrid}
+                                        data-testid="getstarted-book-type-grid"
+                                    >
+                                        {BOOK_TYPE_CARDS.map((card) => (
+                                            <div
+                                                key={card.type}
+                                                className={styles.bookTypeCard}
+                                                data-testid={`getstarted-book-type-card-${card.type}`}
+                                            >
+                                                <div className={styles.bookTypeCardIcon}>
+                                                    {card.icon}
+                                                </div>
+                                                <h3 className={styles.bookTypeCardTitle}>
+                                                    {t(card.titleKey, card.titleFallback)}
+                                                </h3>
+                                                <p className={styles.bookTypeCardDesc}>
+                                                    {t(card.descriptionKey, card.descriptionFallback)}
+                                                </p>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                                 {step.id === "create-book" && (
                                     <ol className={styles.helpList}>
                                         <li>{t("ui.get_started.help_create_1", "Gehe zum Dashboard (Startseite)")}</li>
@@ -284,14 +370,33 @@ export default function GetStarted() {
                         {/* Action buttons */}
                         <div className={styles.stepActions}>
                             {step.id === "create-book" && (
-                                <button
-                                    className="btn btn-ghost"
-                                    onClick={handleCreateSampleBook}
-                                    disabled={creating}
+                                <div
+                                    className={styles.sampleButtonRow}
+                                    data-testid="getstarted-sample-button-row"
                                 >
-                                    <BookPlus size={16}/>
-                                    {creating ? t("ui.get_started.creating", "Erstellt...") : t("ui.get_started.or_sample", "Oder: Beispielbuch erstellen")}
-                                </button>
+                                    {/* GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3:
+                                     *  3-button sample-book picker per Q2 RCU
+                                     *  Dashboard-split-button-shape adjudication.
+                                     *  Each button creates a sample book of the
+                                     *  matching type + navigates to the right
+                                     *  editor surface. */}
+                                    {BOOK_TYPE_CARDS.map((card) => (
+                                        <button
+                                            key={card.type}
+                                            className="btn btn-ghost btn-sm"
+                                            data-testid={`getstarted-sample-${card.type}`}
+                                            onClick={() => handleCreateSampleBook(card.type)}
+                                            disabled={creating}
+                                        >
+                                            {card.icon}
+                                            <span style={{marginLeft: 6}}>
+                                                {creating
+                                                    ? t("ui.get_started.creating", "Erstellt...")
+                                                    : t(card.titleKey, card.titleFallback)}
+                                            </span>
+                                        </button>
+                                    ))}
+                                </div>
                             )}
                             {ACTION_MAP[step.id] && (
                                 <button
