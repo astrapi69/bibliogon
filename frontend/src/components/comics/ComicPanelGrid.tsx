@@ -23,24 +23,67 @@ import type {CSSProperties} from "react";
 import {ComicPanel, type ComicPanelData} from "./ComicPanel";
 import type {ComicBubbleData} from "./ComicBubble";
 
-export type ComicGridTemplate = "single_panel" | "grid_2x2" | "grid_3x3";
+export type ComicGridTemplate =
+    | "single_panel"
+    | "grid_1x2"
+    | "grid_2x1"
+    | "grid_2x2"
+    | "grid_2x3"
+    | "grid_3x2"
+    | "grid_3x3";
 
-const COMIC_GRID_TEMPLATES: readonly ComicGridTemplate[] = [
-    "single_panel",
-    "grid_2x2",
-    "grid_3x3",
+// Standard Layouts shipped in Phase 1 (PLUGIN-COMICS-PHASE-1-
+// MULTI-PANEL-LAYOUTS-01, 2026-05-20). Must mirror walker's
+// COMIC_GRID_TEMPLATES tuple in
+// plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py.
+export const COMIC_GRID_TEMPLATES: readonly ComicGridTemplate[] = [
+    "single_panel",  // 1 panel (Splash)
+    "grid_1x2",      // 2 panels side-by-side
+    "grid_2x1",      // 2 panels stacked
+    "grid_2x2",      // 4 panels standard grid
+    "grid_2x3",      // 6 panels two-tier (2 rows × 3 cols)
+    "grid_3x2",      // 6 panels three-tier (3 rows × 2 cols)
+    "grid_3x3",      // 9 panels (legacy / advanced; not in default picker)
 ];
 
-const DEFAULT_COMIC_GRID_TEMPLATE: ComicGridTemplate = "single_panel";
+// User-facing subset surfaced by ComicGridTemplatePicker. grid_3x3
+// stays available for backward-compat but is not in the default
+// picker (per Q4 audit decision).
+export const COMIC_GRID_TEMPLATE_PICKER_OPTIONS: readonly ComicGridTemplate[] = [
+    "single_panel",
+    "grid_1x2",
+    "grid_2x1",
+    "grid_2x2",
+    "grid_2x3",
+    "grid_3x2",
+];
+
+export const DEFAULT_COMIC_GRID_TEMPLATE: ComicGridTemplate = "single_panel";
 
 const GRID_TEMPLATE_CSS: Record<ComicGridTemplate, CSSProperties> = {
     single_panel: {
         gridTemplateColumns: "1fr",
         gridTemplateRows: "1fr",
     },
+    grid_1x2: {
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gridTemplateRows: "1fr",
+    },
+    grid_2x1: {
+        gridTemplateColumns: "1fr",
+        gridTemplateRows: "repeat(2, 1fr)",
+    },
     grid_2x2: {
         gridTemplateColumns: "repeat(2, 1fr)",
         gridTemplateRows: "repeat(2, 1fr)",
+    },
+    grid_2x3: {
+        gridTemplateColumns: "repeat(3, 1fr)",
+        gridTemplateRows: "repeat(2, 1fr)",
+    },
+    grid_3x2: {
+        gridTemplateColumns: "repeat(2, 1fr)",
+        gridTemplateRows: "repeat(3, 1fr)",
     },
     grid_3x3: {
         gridTemplateColumns: "repeat(3, 1fr)",

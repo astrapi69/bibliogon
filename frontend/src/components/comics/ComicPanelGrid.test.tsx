@@ -13,6 +13,8 @@ import {describe, it, expect} from "vitest";
 import {render, screen} from "@testing-library/react";
 
 import {
+    COMIC_GRID_TEMPLATES,
+    COMIC_GRID_TEMPLATE_PICKER_OPTIONS,
     ComicPanelGrid,
     resolveComicGridTemplate,
 } from "./ComicPanelGrid";
@@ -30,7 +32,15 @@ function makePanel(id: string, position: number): ComicPanelData {
 }
 
 describe("resolveComicGridTemplate", () => {
-    it.each(["single_panel", "grid_2x2", "grid_3x3"])(
+    it.each([
+        "single_panel",
+        "grid_1x2",
+        "grid_2x1",
+        "grid_2x2",
+        "grid_2x3",
+        "grid_3x2",
+        "grid_3x3",
+    ])(
         "returns canonical template %s when explicitly set",
         (template) => {
             expect(
@@ -54,6 +64,65 @@ describe("resolveComicGridTemplate", () => {
             resolveComicGridTemplate({comic_grid_template: "made_up"}),
         ).toBe("single_panel");
     });
+});
+
+describe("Standard Layouts contract (Phase 1, 2026-05-20)", () => {
+    it("COMIC_GRID_TEMPLATES carries all 7 standards in canonical order", () => {
+        // Mirror of the walker's COMIC_GRID_TEMPLATES tuple in
+        // plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py.
+        // Walker pytest enforces the same set on the backend side.
+        expect([...COMIC_GRID_TEMPLATES]).toEqual([
+            "single_panel",
+            "grid_1x2",
+            "grid_2x1",
+            "grid_2x2",
+            "grid_2x3",
+            "grid_3x2",
+            "grid_3x3",
+        ]);
+    });
+
+    it("COMIC_GRID_TEMPLATE_PICKER_OPTIONS excludes grid_3x3 (legacy/advanced)", () => {
+        expect([...COMIC_GRID_TEMPLATE_PICKER_OPTIONS]).toEqual([
+            "single_panel",
+            "grid_1x2",
+            "grid_2x1",
+            "grid_2x2",
+            "grid_2x3",
+            "grid_3x2",
+        ]);
+        expect(COMIC_GRID_TEMPLATE_PICKER_OPTIONS).not.toContain("grid_3x3");
+    });
+});
+
+describe("ComicPanelGrid template CSS shapes", () => {
+    // Each new template's CSS shape is asserted by rendering with
+    // that template and reading the inline-style on the grid root.
+    // Mirrors the walker's per-template pytest cases.
+    const TEMPLATE_EXPECTATIONS: Array<[string, string, string]> = [
+        // [templateId, expected gridTemplateColumns, expected gridTemplateRows]
+        ["grid_1x2", "repeat(2, 1fr)", "1fr"],
+        ["grid_2x1", "1fr", "repeat(2, 1fr)"],
+        ["grid_2x3", "repeat(3, 1fr)", "repeat(2, 1fr)"],
+        ["grid_3x2", "repeat(2, 1fr)", "repeat(3, 1fr)"],
+    ];
+
+    it.each(TEMPLATE_EXPECTATIONS)(
+        "%s renders with gridTemplateColumns=%s + gridTemplateRows=%s",
+        (templateId, cols, rows) => {
+            render(
+                <ComicPanelGrid
+                    layoutConfig={{comic_grid_template: templateId}}
+                    panels={[]}
+                    panelBubblesMap={{}}
+                />,
+            );
+            const grid = screen.getByTestId("comic-page-grid") as HTMLElement;
+            expect(grid.style.gridTemplateColumns).toBe(cols);
+            expect(grid.style.gridTemplateRows).toBe(rows);
+            expect(grid.getAttribute("data-grid-template")).toBe(templateId);
+        },
+    );
 });
 
 describe("ComicPanelGrid", () => {
