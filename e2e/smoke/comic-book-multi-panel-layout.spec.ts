@@ -38,7 +38,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         );
         await page.goto(`/book/${book.id}`);
         await page
-            .getByTestId("comic-book-editor-create-first-page")
+            .getByTestId("comic-book-editor-add-page")
             .click();
 
         // Default template after Create-First-Page is single_panel.
@@ -62,7 +62,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         const book = await createComicBook("2x2 Layout", "E2E Author");
         await page.goto(`/book/${book.id}`);
         await page
-            .getByTestId("comic-book-editor-create-first-page")
+            .getByTestId("comic-book-editor-add-page")
             .click();
 
         // Switch to grid_2x2 BEFORE adding panels.
@@ -104,7 +104,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         const book = await createComicBook("Picker Options", "E2E Author");
         await page.goto(`/book/${book.id}`);
         await page
-            .getByTestId("comic-book-editor-create-first-page")
+            .getByTestId("comic-book-editor-add-page")
             .click();
 
         // Confirm each of the 6 standard-layout options is in the
@@ -135,7 +135,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         const book = await createComicBook("1x2 Layout", "E2E Author");
         await page.goto(`/book/${book.id}`);
         await page
-            .getByTestId("comic-book-editor-create-first-page")
+            .getByTestId("comic-book-editor-add-page")
             .click();
 
         await page

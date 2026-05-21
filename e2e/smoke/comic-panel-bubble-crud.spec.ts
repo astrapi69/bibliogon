@@ -39,11 +39,14 @@ test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
         await page.goto(`/book/${book.id}`);
 
         // Step 1: Create first page (closes the empty state).
+        // Post-MULTI-PAGE-NAVIGATION-01 C1: sidebar add-page button
+        // replaces the prior dedicated create-first-page button;
+        // sidebar page-list replaces the prior chip-nav.
         await expect(page.getByTestId("comic-book-editor-root")).toBeVisible();
-        await page
-            .getByTestId("comic-book-editor-create-first-page")
-            .click();
-        await expect(page.getByTestId("comic-book-editor-page-nav")).toBeVisible();
+        await page.getByTestId("comic-book-editor-add-page").click();
+        await expect(
+            page.getByTestId("comic-book-editor-page-list"),
+        ).toBeVisible();
 
         // Step 2: Add Panel — panel count goes 0 → 1.
         const panels = page.locator('[data-testid^="comic-panel-"]');

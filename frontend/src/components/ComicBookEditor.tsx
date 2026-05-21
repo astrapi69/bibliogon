@@ -51,6 +51,7 @@ import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
 import {LayoutConfigComicPanel} from "./comics/LayoutConfigComicPanel";
 import type {ComicBubbleData} from "./comics/ComicBubble";
 import type {ComicPanelData} from "./comics/ComicPanel";
+import PageThumbnails from "./PageThumbnails";
 import PdfExportControls from "./PdfExportControls";
 
 interface Props {
@@ -136,7 +137,14 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
         };
     }, [bookId]);
 
-    const handleCreateFirstPage = useCallback(async () => {
+    // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: unified Add-Page
+    // handler. Used for both first-page-creation AND adding pages
+    // after the first. Replaces the prior split handleCreateFirstPage
+    // (separate "Create first comic page" button in the empty state)
+    // — PageThumbnails' "+" button now handles both via the same
+    // onAddPage callback, closing the Half-Wired gap surfaced by
+    // 2026-05-23 user-real-test.
+    const handleAddPage = useCallback(async () => {
         setPagesError(null);
         try {
             // Phase 1: set explicit default template at create-time
@@ -150,12 +158,35 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 },
             });
             const rows = await refreshPages();
+            // Auto-select the newly-created page so the user gets
+            // visible feedback that the click worked (sidebar row
+            // highlights + canvas switches to the new page). Mirrors
+            // the Add-Panel perception-lag-fix pattern from 2026-05-20.
             setActivePageId(newPage.id ?? rows[0]?.id ?? null);
+            setSelectedPanelId(null);
+            setSelectedBubbleId(null);
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : String(err);
             setPagesError(detail);
         }
     }, [bookId, refreshPages]);
+
+    // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: drag-reorder pages
+    // via PageThumbnails. Mirrors PageEditor.tsx's handleReorder
+    // shape — the two surfaces share the same api.pages.reorder
+    // contract.
+    const handleReorderPages = useCallback(
+        async (pageIds: string[]) => {
+            try {
+                const next = await api.pages.reorder(bookId, pageIds);
+                setPages(next);
+            } catch (err) {
+                const detail = err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [bookId],
+    );
 
     // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
     // into the active page's ``layout_config`` while preserving any
@@ -398,12 +429,12 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
             data-testid="comic-book-editor-root"
             data-book-id={bookId}
             style={{
-                maxWidth: 1200,
                 margin: "0 auto",
                 padding: 20,
                 display: "flex",
                 flexDirection: "column",
                 gap: 16,
+                maxWidth: 1400,
             }}
         >
             <header style={{display: "flex", alignItems: "center", gap: 12}}>
@@ -475,220 +506,205 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 </div>
             )}
 
-            {pages.length === 0 ? (
-                <section
-                    data-testid="comic-book-editor-no-pages"
+            {/* PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: 3-column
+              * layout mirroring PageEditor's thumbnails | canvas |
+              * properties shape. PageThumbnails handles both the
+              * empty-state ("No pages yet. Click + to add the first
+              * page.") AND the populated list via a single unified
+              * surface — the prior split empty-state section + chip-
+              * nav is replaced. Closes the Half-Wired-Lifecycle-Cascade
+              * surfaced by PAGES-CRUD-01 (Add-Page-After-First was
+              * never wired). RCU 2-site adoption of PageThumbnails;
+              * testidNamespace="comic-book-editor" templates its
+              * testids for E2E namespace correctness. */}
+            <div
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "220px 1fr 320px",
+                    gap: 16,
+                    minHeight: 480,
+                }}
+            >
+                <aside
+                    data-testid="comic-book-editor-thumbnails"
                     style={{
-                        padding: 20,
-                        border: "1px dashed var(--border, #ddd)",
+                        border: "1px solid var(--border, #ddd)",
                         borderRadius: 8,
                         background: "var(--surface-2, #fafafa)",
+                        minHeight: 400,
+                        overflow: "auto",
                     }}
                 >
-                    <h2 style={{marginTop: 0}}>
-                        {t(
-                            "ui.comic_book_editor.no_pages_title",
-                            "Noch keine Comic-Seiten",
-                        )}
-                    </h2>
-                    <p>
-                        {t(
-                            "ui.comic_book_editor.no_pages_message",
-                            "Erstelle deine erste Comic-Seite, um Panels und Sprechblasen zu platzieren.",
-                        )}
-                    </p>
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        data-testid="comic-book-editor-create-first-page"
-                        onClick={handleCreateFirstPage}
-                    >
-                        {t(
-                            "ui.comic_book_editor.create_first_page",
-                            "Erste Comic-Seite erstellen",
-                        )}
-                    </button>
+                    <PageThumbnails
+                        pages={pages}
+                        activePageId={activePageId}
+                        onSelect={(pageId) => {
+                            setActivePageId(pageId);
+                            setSelectedPanelId(null);
+                            setSelectedBubbleId(null);
+                        }}
+                        onAddPage={handleAddPage}
+                        onReorder={handleReorderPages}
+                        testidNamespace="comic-book-editor"
+                    />
+                </aside>
+
+                <section
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 12,
+                        minWidth: 0,
+                    }}
+                >
                     {pagesError && (
                         <p
                             data-testid="comic-book-editor-pages-error"
                             role="alert"
                             style={{
                                 color: "var(--danger, #c00)",
-                                marginTop: 16,
+                                margin: 0,
                             }}
                         >
                             {pagesError}
                         </p>
                     )}
-                </section>
-            ) : (
-                <div
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "1fr 320px",
-                        gap: 16,
-                    }}
-                >
-                    <section
-                        style={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 12,
-                        }}
-                    >
-                        <nav
-                            data-testid="comic-book-editor-page-nav"
-                            style={{display: "flex", flexWrap: "wrap", gap: 6}}
-                        >
-                            {pages.map((page, idx) => (
-                                <button
-                                    key={page.id}
-                                    type="button"
-                                    onClick={() => {
-                                        setActivePageId(page.id);
-                                        setSelectedPanelId(null);
+                    {activePageId ? (
+                        <>
+                            <div
+                                data-testid="comic-book-editor-grid-wrapper"
+                                style={{
+                                    position: "relative",
+                                    aspectRatio: "1 / 1",
+                                    border: "1px solid var(--border, #ddd)",
+                                }}
+                            >
+                                <ComicPanelGrid
+                                    layoutConfig={
+                                        (activePage?.layout_config as
+                                            | Record<string, unknown>
+                                            | null) ?? null
+                                    }
+                                    panels={panelData}
+                                    panelBubblesMap={panelBubblesMap}
+                                    assetUrls={assetUrls}
+                                    selectedPanelId={selectedPanelId}
+                                    selectedBubbleId={selectedBubbleId}
+                                    onPanelClick={(panelId) => {
+                                        setSelectedPanelId(panelId);
                                         setSelectedBubbleId(null);
                                     }}
-                                    data-testid={`comic-book-editor-page-${page.id}`}
-                                    aria-pressed={
-                                        activePageId === page.id
-                                            ? "true"
-                                            : "false"
-                                    }
-                                    className="btn btn-secondary btn-sm"
-                                    style={{
-                                        fontWeight:
-                                            activePageId === page.id ? 700 : 400,
+                                    onBubbleClick={(bubbleId) => {
+                                        setSelectedBubbleId(bubbleId);
                                     }}
+                                />
+                            </div>
+
+                            <div
+                                data-testid="comic-book-editor-actions"
+                                style={{display: "flex", gap: 8, flexWrap: "wrap"}}
+                            >
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    data-testid="comic-book-editor-add-panel"
+                                    onClick={handleAddPanel}
+                                    disabled={!activePageId}
                                 >
                                     {t(
-                                        "ui.comic_book_editor.page_chip",
-                                        "Seite",
-                                    )}{" "}
-                                    {idx + 1}
+                                        "ui.comic_book_editor.add_panel",
+                                        "Panel hinzufügen",
+                                    )}
                                 </button>
-                            ))}
-                        </nav>
-
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="comic-book-editor-delete-panel"
+                                    onClick={handleDeletePanel}
+                                    disabled={!selectedPanelId}
+                                >
+                                    {t(
+                                        "ui.comic_book_editor.delete_panel",
+                                        "Panel löschen",
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-primary btn-sm"
+                                    data-testid="comic-book-editor-add-bubble"
+                                    onClick={handleAddBubble}
+                                    disabled={!selectedPanelId}
+                                >
+                                    {t(
+                                        "ui.comic_book_editor.add_bubble",
+                                        "Sprechblase hinzufügen",
+                                    )}
+                                </button>
+                                <button
+                                    type="button"
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="comic-book-editor-delete-bubble"
+                                    onClick={handleDeleteBubble}
+                                    disabled={!selectedBubbleId}
+                                >
+                                    {t(
+                                        "ui.comic_book_editor.delete_bubble",
+                                        "Sprechblase löschen",
+                                    )}
+                                </button>
+                            </div>
+                        </>
+                    ) : (
                         <div
-                            data-testid="comic-book-editor-grid-wrapper"
+                            data-testid="comic-book-editor-canvas-empty"
                             style={{
-                                position: "relative",
-                                aspectRatio: "1 / 1",
-                                border: "1px solid var(--border, #ddd)",
+                                padding: 48,
+                                textAlign: "center",
+                                color: "var(--text-muted, #666)",
                             }}
                         >
-                            <ComicPanelGrid
-                                layoutConfig={
-                                    (activePage?.layout_config as
-                                        | Record<string, unknown>
-                                        | null) ?? null
-                                }
-                                panels={panelData}
-                                panelBubblesMap={panelBubblesMap}
-                                assetUrls={assetUrls}
-                                selectedPanelId={selectedPanelId}
-                                selectedBubbleId={selectedBubbleId}
-                                onPanelClick={(panelId) => {
-                                    setSelectedPanelId(panelId);
-                                    setSelectedBubbleId(null);
-                                }}
-                                onBubbleClick={(bubbleId) => {
-                                    setSelectedBubbleId(bubbleId);
-                                }}
-                            />
+                            {t(
+                                "ui.comic_book_editor.canvas_empty",
+                                "Add a page from the sidebar to start authoring.",
+                            )}
                         </div>
+                    )}
+                </section>
 
+                <aside
+                    data-testid="comic-book-editor-side-pane"
+                    style={{
+                        border: "1px solid var(--border, #ddd)",
+                        borderRadius: 8,
+                        background: "var(--surface-2, #fafafa)",
+                        minHeight: 400,
+                        overflow: "auto",
+                    }}
+                >
+                    {selectedBubble ? (
+                        <LayoutConfigComicBubble
+                            bubble={selectedBubble}
+                            onChange={handleUpdateBubble}
+                        />
+                    ) : selectedPanel ? (
+                        <LayoutConfigComicPanel
+                            panel={selectedPanel}
+                            bookId={bookId}
+                            onChange={handleUpdatePanel}
+                        />
+                    ) : (
                         <div
-                            data-testid="comic-book-editor-actions"
-                            style={{display: "flex", gap: 8, flexWrap: "wrap"}}
+                            data-testid="comic-book-editor-side-pane-empty"
+                            style={{padding: 16}}
                         >
-                            <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                data-testid="comic-book-editor-add-panel"
-                                onClick={handleAddPanel}
-                                disabled={!activePageId}
-                            >
-                                {t(
-                                    "ui.comic_book_editor.add_panel",
-                                    "Panel hinzufügen",
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                data-testid="comic-book-editor-delete-panel"
-                                onClick={handleDeletePanel}
-                                disabled={!selectedPanelId}
-                            >
-                                {t(
-                                    "ui.comic_book_editor.delete_panel",
-                                    "Panel löschen",
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-primary btn-sm"
-                                data-testid="comic-book-editor-add-bubble"
-                                onClick={handleAddBubble}
-                                disabled={!selectedPanelId}
-                            >
-                                {t(
-                                    "ui.comic_book_editor.add_bubble",
-                                    "Sprechblase hinzufügen",
-                                )}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-secondary btn-sm"
-                                data-testid="comic-book-editor-delete-bubble"
-                                onClick={handleDeleteBubble}
-                                disabled={!selectedBubbleId}
-                            >
-                                {t(
-                                    "ui.comic_book_editor.delete_bubble",
-                                    "Sprechblase löschen",
-                                )}
-                            </button>
+                            {t(
+                                "ui.comic_book_editor.side_pane_default",
+                                "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
+                            )}
                         </div>
-                    </section>
-
-                    <aside
-                        data-testid="comic-book-editor-side-pane"
-                        style={{
-                            border: "1px solid var(--border, #ddd)",
-                            borderRadius: 8,
-                            background: "var(--surface-2, #fafafa)",
-                            minHeight: 400,
-                            overflow: "auto",
-                        }}
-                    >
-                        {selectedBubble ? (
-                            <LayoutConfigComicBubble
-                                bubble={selectedBubble}
-                                onChange={handleUpdateBubble}
-                            />
-                        ) : selectedPanel ? (
-                            <LayoutConfigComicPanel
-                                panel={selectedPanel}
-                                bookId={bookId}
-                                onChange={handleUpdatePanel}
-                            />
-                        ) : (
-                            <div
-                                data-testid="comic-book-editor-side-pane-empty"
-                                style={{padding: 16}}
-                            >
-                                {t(
-                                    "ui.comic_book_editor.side_pane_default",
-                                    "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
-                                )}
-                            </div>
-                        )}
-                    </aside>
-                </div>
-            )}
+                    )}
+                </aside>
+            </div>
         </div>
     );
 }

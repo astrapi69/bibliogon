@@ -28,6 +28,12 @@ interface Props {
     onSelect: (pageId: string) => void
     onAddPage: () => void
     onReorder: (pageIds: string[]) => void
+    /** Testid namespace for all data-testid attributes. Defaults to
+     *  "page-editor" (preserving Picture-Book's PageEditor backward-
+     *  compat). ComicBookEditor passes "comic-book-editor" for its
+     *  RCU 2-site adoption — pattern mirrors RichTextEditor's
+     *  testidNamespace prop. */
+    testidNamespace?: string
 }
 
 export default function PageThumbnails({
@@ -36,6 +42,7 @@ export default function PageThumbnails({
     onSelect,
     onAddPage,
     onReorder,
+    testidNamespace = "page-editor",
 }: Props) {
     const {t} = useI18n()
     const sensors = useSensors(
@@ -64,7 +71,7 @@ export default function PageThumbnails({
                     type="button"
                     className={styles.addBtn}
                     onClick={onAddPage}
-                    data-testid="page-editor-add-page"
+                    data-testid={`${testidNamespace}-add-page`}
                     title={t("ui.page_editor.add_page", "Add page")}
                     aria-label={t("ui.page_editor.add_page", "Add page")}
                 >
@@ -74,7 +81,7 @@ export default function PageThumbnails({
             {pages.length === 0 ? (
                 <div
                     className={styles.empty}
-                    data-testid="page-editor-thumbnails-empty"
+                    data-testid={`${testidNamespace}-thumbnails-empty`}
                 >
                     {t(
                         "ui.page_editor.empty_state",
@@ -91,13 +98,14 @@ export default function PageThumbnails({
                         items={pageIds}
                         strategy={verticalListSortingStrategy}
                     >
-                        <ul className={styles.list} data-testid="page-editor-page-list">
+                        <ul className={styles.list} data-testid={`${testidNamespace}-page-list`}>
                             {pages.map((page) => (
                                 <SortablePageRow
                                     key={page.id}
                                     page={page}
                                     isActive={page.id === activePageId}
                                     onSelect={onSelect}
+                                    testidNamespace={testidNamespace}
                                 />
                             ))}
                         </ul>
@@ -112,9 +120,10 @@ interface SortableRowProps {
     page: Page
     isActive: boolean
     onSelect: (pageId: string) => void
+    testidNamespace: string
 }
 
-function SortablePageRow({page, isActive, onSelect}: SortableRowProps) {
+function SortablePageRow({page, isActive, onSelect, testidNamespace}: SortableRowProps) {
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
         useSortable({id: page.id})
     const style: React.CSSProperties = {
@@ -133,7 +142,7 @@ function SortablePageRow({page, isActive, onSelect}: SortableRowProps) {
             ref={setNodeRef}
             style={style}
             className={className}
-            data-testid={`page-editor-page-row-${page.id}`}
+            data-testid={`${testidNamespace}-page-row-${page.id}`}
             data-active={isActive ? "true" : "false"}
             data-position={page.position}
             data-layout={page.layout}
@@ -151,7 +160,7 @@ function SortablePageRow({page, isActive, onSelect}: SortableRowProps) {
                 {...attributes}
                 {...listeners}
                 className={styles.dragHandle}
-                data-testid={`page-editor-drag-handle-${page.id}`}
+                data-testid={`${testidNamespace}-drag-handle-${page.id}`}
                 aria-label="Drag handle"
             >
                 <GripVertical size={14} />

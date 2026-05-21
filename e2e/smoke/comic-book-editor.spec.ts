@@ -1,15 +1,17 @@
 /**
  * Comic-book editor smoke (plugin-comics Session 2 C7
- * + Session 3 PAGES-CRUD-01 close).
+ * + Session 3 PAGES-CRUD-01 close
+ * + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1 sidebar adoption).
  *
  * Exercises the comic-book full editor wiring end-to-end:
  *   - create a comic_book via API
  *   - open /book/{id} and assert the ComicBookEditor mounts
  *     (not the chapter editor, not the picture-book PageEditor)
- *   - the empty-state surfaces a create-first-page action button
- *     (Session 3 close of PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01;
- *     pages-CRUD now accepts comic_book at the core router)
- *   - clicking the button creates page 1 + the page nav appears
+ *   - the empty-state surfaces the PageThumbnails sidebar with
+ *     an add-page button (post-C1: replaces the prior dedicated
+ *     "Create first comic page" section + button — the sidebar's
+ *     add-page button serves both first-create and subsequent-adds)
+ *   - clicking the button creates page 1 + the sidebar row appears
  *   - the PdfExportControls mount under the comic-book-editor
  *     testid namespace (validates the C6 3-surface rename)
  *
@@ -20,7 +22,7 @@
 import {test, expect, createComicBook} from "../fixtures/base";
 
 test.describe("Comic-book editor smoke", () => {
-    test("create comic_book -> editor mounts -> empty-state has create-first-page button", async ({
+    test("create comic_book -> editor mounts -> empty sidebar has add-page button", async ({
         page,
     }) => {
         const book = await createComicBook("My Comic Book", "E2E Author");
@@ -36,40 +38,36 @@ test.describe("Comic-book editor smoke", () => {
             page.getByTestId("comic-book-editor-title"),
         ).toContainText("My Comic Book");
 
-        // Empty-state with action button (Session 3 close).
+        // Empty-state surfaced through PageThumbnails sidebar; the
+        // add-page button doubles as the first-create affordance.
         await expect(
-            page.getByTestId("comic-book-editor-no-pages"),
+            page.getByTestId("comic-book-editor-thumbnails-empty"),
         ).toBeVisible();
         await expect(
-            page.getByTestId("comic-book-editor-create-first-page"),
+            page.getByTestId("comic-book-editor-add-page"),
         ).toBeVisible();
     });
 
-    test("clicking create-first-page creates page 1 and reveals the page nav", async ({
+    test("clicking add-page from empty state creates page 1 and reveals the sidebar row", async ({
         page,
     }) => {
         const book = await createComicBook("Create Page Comic", "E2E Author");
 
         await page.goto(`/book/${book.id}`);
         await expect(
-            page.getByTestId("comic-book-editor-create-first-page"),
+            page.getByTestId("comic-book-editor-add-page"),
         ).toBeVisible();
 
-        await page.getByTestId("comic-book-editor-create-first-page").click();
+        await page.getByTestId("comic-book-editor-add-page").click();
 
-        // After the create + refresh, the page nav appears and the
-        // empty-state disappears.
+        // After create + refresh, the sidebar list appears (replacing
+        // the empty-state marker) and the canvas grid is visible.
         await expect(
-            page.getByTestId("comic-book-editor-page-nav"),
+            page.getByTestId("comic-book-editor-page-list"),
         ).toBeVisible();
         await expect(
-            page.getByTestId("comic-book-editor-no-pages"),
+            page.getByTestId("comic-book-editor-thumbnails-empty"),
         ).toHaveCount(0);
-        // The new page chip is rendered with the page's id in its
-        // testid (``comic-book-editor-page-{id}``); the grid-wrapper
-        // is also visible once a page exists. Use the grid-wrapper
-        // testid as the unambiguous "pages exist now" signal; the
-        // prefix selector would overmatch the ``page-nav`` container.
         await expect(
             page.getByTestId("comic-book-editor-grid-wrapper"),
         ).toBeVisible();

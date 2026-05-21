@@ -1,12 +1,15 @@
 /**
  * Vitest coverage for the full ComicBookEditor (plugin-comics
- * Session 2 C6 + PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 close).
+ * Session 2 C6 + PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 close +
+ * PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1 sidebar adoption).
  *
  * Pins the full editor's read-side wiring (panels + bubbles list
  * flow), CRUD actions (add/delete panel + bubble), the empty
- * "no pages yet" state with its create-first-page action button
- * (Session 3), and the PdfExportControls mount under the
- * comic-book-editor testid namespace.
+ * "no pages yet" state surfaced through PageThumbnails (the
+ * sidebar's add-page button doubles as the first-page-create
+ * affordance after the 2026-05-23 sidebar adoption), and the
+ * PdfExportControls mount under the comic-book-editor testid
+ * namespace.
  */
 
 import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
@@ -159,7 +162,13 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         expect(onBack).toHaveBeenCalledOnce();
     });
 
-    it("surfaces the empty-pages state with a create-first-page button when pages.list returns []", async () => {
+    it("surfaces the empty-pages state via PageThumbnails when pages.list returns []", async () => {
+        // Post-MULTI-PAGE-NAVIGATION-01 C1: the prior dedicated
+        // empty-state section + its create-first-page button are
+        // replaced by PageThumbnails' unified empty-state ("Click +
+        // to add the first page.") + its add-page button. The
+        // sidebar's add-page button serves both first-create and
+        // subsequent-adds.
         vi.mocked(api.pages.list).mockImplementation(async () => []);
         render(
             <ComicBookEditor
@@ -169,14 +178,14 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             />,
         );
         expect(
-            await screen.findByTestId("comic-book-editor-no-pages"),
+            await screen.findByTestId("comic-book-editor-thumbnails-empty"),
         ).toBeInTheDocument();
         expect(
-            screen.getByTestId("comic-book-editor-create-first-page"),
+            screen.getByTestId("comic-book-editor-add-page"),
         ).toBeInTheDocument();
     });
 
-    it("clicking create-first-page calls api.pages.create with comic_panel_grid + refreshes the page list", async () => {
+    it("clicking add-page from the empty state calls api.pages.create with comic_panel_grid + refreshes", async () => {
         // Closure-flag pattern (per lessons-learned "React 18 dev-mode
         // double-effect-mount strands mockImplementationOnce"): both
         // strict-mode mounts of the initial useEffect see an empty
@@ -197,10 +206,10 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
                 onBack={vi.fn()}
             />,
         );
-        const createButton = await screen.findByTestId(
-            "comic-book-editor-create-first-page",
+        const addButton = await screen.findByTestId(
+            "comic-book-editor-add-page",
         );
-        fireEvent.click(createButton);
+        fireEvent.click(addButton);
         await waitFor(() => {
             // Phase 1 of PLUGIN-COMICS-PHASE-1-MULTI-PANEL-LAYOUTS-01
             // sets the default template explicitly to avoid γ-shim
@@ -214,13 +223,16 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
                 },
             });
         });
-        // After the create + refresh, the page nav appears.
+        // After create + refresh, the sidebar row appears (replacing
+        // the prior chip-nav assertion).
         expect(
-            await screen.findByTestId("comic-book-editor-page-nav"),
+            await screen.findByTestId(
+                `comic-book-editor-page-row-${fakePage.id}`,
+            ),
         ).toBeInTheDocument();
     });
 
-    it("surfaces an error in the empty state when api.pages.create fails", async () => {
+    it("surfaces an error in the editor body when api.pages.create fails", async () => {
         const {ApiError} = await import("../api/client");
         vi.mocked(api.pages.list).mockImplementation(async () => []);
         vi.mocked(api.pages.create).mockImplementation(async () => {
@@ -234,7 +246,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             />,
         );
         fireEvent.click(
-            await screen.findByTestId("comic-book-editor-create-first-page"),
+            await screen.findByTestId("comic-book-editor-add-page"),
         );
         const errorEl = await screen.findByTestId(
             "comic-book-editor-pages-error",
@@ -242,7 +254,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         expect(errorEl.textContent).toMatch(/creation failed/);
     });
 
-    it("renders the page nav + grid when pages exist", async () => {
+    it("renders the sidebar row + grid when pages exist", async () => {
         render(
             <ComicBookEditor
                 bookId="book-1"
@@ -254,10 +266,12 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             expect(api.pages.list).toHaveBeenCalledWith("book-1");
         });
         expect(
-            await screen.findByTestId("comic-book-editor-page-nav"),
+            await screen.findByTestId("comic-book-editor-page-list"),
         ).toBeInTheDocument();
         expect(
-            await screen.findByTestId("comic-book-editor-page-page-1"),
+            await screen.findByTestId(
+                `comic-book-editor-page-row-${fakePage.id}`,
+            ),
         ).toBeInTheDocument();
     });
 

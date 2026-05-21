@@ -38,12 +38,13 @@ test.describe("Comic-book panel-image upload round-trip", () => {
         const book = await createComicBook("Panel Image Upload", "E2E Author");
         await page.goto(`/book/${book.id}`);
 
-        // Step 1: Create first page.
+        // Step 1: Create first page via sidebar add-page button
+        // (post-MULTI-PAGE-NAVIGATION-01 C1 migration).
         await expect(page.getByTestId("comic-book-editor-root")).toBeVisible();
-        await page
-            .getByTestId("comic-book-editor-create-first-page")
-            .click();
-        await expect(page.getByTestId("comic-book-editor-page-nav")).toBeVisible();
+        await page.getByTestId("comic-book-editor-add-page").click();
+        await expect(
+            page.getByTestId("comic-book-editor-page-list"),
+        ).toBeVisible();
 
         // Step 2: Add panel. Auto-select fires so the side-pane
         // mounts LayoutConfigComicPanel.
