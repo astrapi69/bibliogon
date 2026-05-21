@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-23-late (RECURRING-COMPONENT-AUDIT-01 audit-followup Pattern B CLOSED via methodology-gap-closure-in-action. AuthorProfileSelect extracted in 1-commit 11198a4 — pure-presentational <select> + <optgroup> of user's-own profile (real-name + pen-names from useAuthorProfile); 2-site migration (ArticleEditor inline AuthorSelect DELETED + BookMetadataEditor inline AuthorSelectField kept as thin adapter wrapping the canonical). Closes the audit's methodology-gap concretely: the file-level component scan missed both Pattern B inline-functions; documented future-audit grep recipe in audit footnote (loaded-bearing for next iteration). Frontend Vitest 1803 → 1815 (+12: exactly the 12 new AuthorProfileSelect cases); ArticleEditor 13/13 + BookMetadataEditor 58/58 preserved without rewrites; backend baseline 2125 unchanged. Cumulative RCU progress: 3 of 5 candidates shipped (#2 BulkActionBar c2305e7, #4 AuthorSelectInput a213788, Pattern B AuthorProfileSelect 11198a4). Audit candidates remaining: #1 useSelection<T>() (DEFERRED-design-intent per useBookSelection.ts:7-10) + #3 ListRow (available). Earlier 2026-05-23 close: RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput via path α + Pattern-B-filing.)
 Current version: v0.35.1
-Open tasks: 66 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 67 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -2353,6 +2353,53 @@ store.
   paid Developer ID becomes available. Effort: M (signing
   certs + CI integration + notarization wait-loop + smoke on
   fresh OS install).
+
+- **USESELECTION-RESPLIT-IF-DIVERGENCE-MATERIALIZES-01** (P5,
+  filed 2026-05-23 from user-adjudication of RCU audit candidate
+  #1 permanent-defer). Re-evaluate the useSelection<T>() generic-
+  hook extraction if/when any of the 3 selection hooks
+  (``useArticleSelection``, ``useBookSelection``,
+  ``useCommentSelection``) develops entity-specific divergence
+  beyond the current byte-identical baseline. The audit's
+  permanent-defer (commit ``c1083bc``) is conditional on the
+  documented design-intent rationale at
+  ``frontend/src/components/useBookSelection.ts:7-10`` staying
+  true — *"Kept as a separate hook (rather than a generic
+  `useSelection`) so that future per-entity divergence (e.g.
+  books-only constraints around audiobook job state) lands in
+  one place without a cross-entity refactor."*
+
+  Trigger: ANY of the 3 hooks diverges from the byte-identical
+  baseline. Concrete examples: books-only ``selectVisible(ids)``
+  variant for audiobook batch operations; articles-only
+  selection-filter for publication-state; comments-only
+  selection-mode for moderation. ANY one of these means the
+  per-entity divergence the original author anticipated has
+  materialized.
+
+  Action when trigger fires: do NOT extract immediately. First
+  run the design-intent-axis override-filter check per the
+  2026-05-23 Lessons-Learned filing
+  (``.claude/rules/lessons-learned.md`` §"Audit-Methodology:
+  design-intent-axis as 5th-Axis or Override-Filter"). If the
+  rationale at useBookSelection.ts:7-10 still applies, defer
+  again. If divergence has invalidated the rationale (e.g.
+  the divergence forced the doc-comment to be rewritten or
+  removed), proceed with extraction per RCU canonical pattern.
+
+  References:
+  - ``docs/audits/recurring-component-audit-2026-05-21.md``
+    footnote 1 (PERMANENT-DEFER-DESIGN-INTENT-HONORED, 2026-05-23)
+  - ``.claude/rules/lessons-learned.md`` §"Audit-Methodology:
+    design-intent-axis as 5th-Axis or Override-Filter"
+    (filed 2026-05-23, commit ``563f298``)
+  - Commit ``c1083bc`` (adjudication ship)
+
+  Why P5: speculative (no concrete trigger yet); audit-doc IS
+  the load-bearing tracker for the deferral; this backlog entry
+  exists primarily to ensure that IF the trigger ever fires,
+  the action-protocol (override-filter check first) is visible
+  at the planning-time horizon, not buried inside an audit doc.
 
 ---
 
