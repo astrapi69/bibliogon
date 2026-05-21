@@ -4466,3 +4466,70 @@ behavior breaks the bounding-box assertion on the 2nd panel.
   against wrong elements; dimension assertions prevent the test
   from accepting a wrong-rendering of the right element.
 
+
+## Plain `git status` before every commit, especially in
+   Multi-Tool-Coordination sessions
+
+Filed 2026-05-21 from a concrete incident during Phase 2
+PANEL-CONFIG-01 C7. `git status` filtered by path (e.g.
+`git status docs/`) hides files that are STAGED but live
+outside the filter scope. In multi-tool-coordination
+workflows where a parallel session can leave pre-staged
+files in the index without committing them, the next
+`git add <other-path>` + `git commit` will absorb those
+pre-staged files silently — they end up in your commit
+under your subject line, even though you never touched
+them.
+
+### Concrete incident
+
+Phase 2 C7 (`954248e`) was intended to ship 2 docs/*
+files. A paused parallel session (PluginForge v0.9.0
+follow-up) had left 7 files staged in the index. The
+filtered `git status docs/` showed only the 2 docs
+files as not-yet-staged; the 7 already-staged files
+outside docs/ were invisible. `git commit` shipped all
+9 under the `docs(backlog): close ...` subject line.
+Full audit-trail at
+`docs/journal/c7-absorption-note-2026-05-21.md`.
+
+### Rule
+
+Run **plain `git status`** (no path filter, no
+`--porcelain`-but-grep) immediately before every
+`git commit`. Read the FULL index state — both
+"Changes to be committed" (staged) AND "Changes not
+staged for commit" (unstaged). If either section
+contains files you did not intend to ship in this
+commit, STOP and reconcile before committing.
+
+In single-tool workflows the discipline catches the
+occasional stale staging from your own prior session.
+In multi-tool-coordination workflows (parallel CC
+sessions, user-side commits interleaving with
+assistant commits) the discipline is load-bearing:
+silent absorption of a parallel session's in-flight
+files is the failure mode.
+
+### Detection-vs-prevention
+
+This rule is prevention, not just detection. A
+post-commit audit can catch absorption (`git show
+--stat HEAD` after each commit) but cannot un-ship it
+non-destructively once pushed; force-push amendments
+are destructive per CLAUDE.md safety rules. The pre-
+commit `git status` check is the only point in the
+workflow where absorption is cheap to prevent.
+
+### Pairs with
+
+- "Multi-tool collaboration tracking: re-sync before
+  accepting new orders" (this file) — same family.
+  That rule covers session-start re-sync; this rule
+  covers commit-time re-sync. Both prevent silent
+  drift between parallel agents.
+- "Hotfix cluster tag policy" (this file) — same
+  spirit. The cost of preventing a bad commit is
+  always lower than the cost of recovering from it
+  non-destructively.
+
