@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23-late-2 (PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 CLOSED via 4-commit ship `a236057..f87d3f4` + this docs commit. User-real-test 2026-05-23 surfaced 2 Findings on comic-book editor: Add-Page-Button missing after First-Page-Creation + Pages-Sidebar missing for navigation. Half-Wired-Lifecycle-Cascade-Followup from PAGES-CRUD-01; Foundation-Override-Extended P1 promotion fired. Closed via RCU 2-site adoption of PageThumbnails by ComicBookEditor: testidNamespace prop added (precedent RichTextEditor); 3-col layout (220px | 1fr | 320px) mirrors PageEditor; unified handleAddPage serves first+subsequent creates; handleReorderPages auto-closes drag-reorder for comic_book. 5 testid migrations across 1 component + 1 Vitest + 4 E2E specs. Drag-reorder for comic_book pages auto-closes as Path-A side-effect. Frontend Vitest 1815 → 1819 (+4: exactly the 4 new multi-page navigation cases); backend 2126/1skip baseline holds. 1 new Playwright spec (comic-book-multi-page-navigation.spec.ts, 4 cases) with bounding-box-dimension assertion per LL Playwright-visible≠User-visible. New P3 filed: PAGES-DELETE-EDITOR-UI-01 (Half-Wired-Lifecycle-Cascade-Followup, page-delete UI absent in both PageEditor + ComicBookEditor — separate-session per Q5 adjudication). Earlier 2026-05-23 closes: RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput via path α + Pattern-B AuthorProfileSelect (methodology-gap closed-in-action).)
+Last updated: 2026-05-23-late-3 (GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 CLOSED via 4-commit ship `75f2ef6..012396a` + this docs commit. Plugin-getstarted authored pre-Picture-Book + pre-Comic-Book remained prose-only; Half-Wired-Prevention trigger conditions all met. Closed via β-scope: NEW step #1 `choose-book-type` introducing 3 types; existing step IDs preserved per Q5 additive-over-destructive; `sample_book:` singular → `sample_books:` dict keyed by book_type; backend route accepts `?book_type=` query param with default "prose" backward-compat; frontend handleCreateSampleBook branches on chapters (prose) vs pages (picture/comic); 3-button sample-row replaces single button. plugin-getstarted 6 → 13 (+7); Frontend Vitest 1819 → 1826 (+7); new Playwright spec (5 cases, bounding-box-dimension assertion). i18n EN+DE +6 keys. 2 new P3 backlog filings per Q4 SSoT/RCU adjudication: BOOK-TYPES-SSOT-YAML-01 (consolidate scattered book-type metadata) + BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 (RCU pre-registered, deferred until 2nd site). Multi-Tool-Coordination active throughout (14 staged-renames + 3 modified docs + 1 untracked exploration prompt from parallel session) — all C1-C5 commits applied explicit-path discipline; LL addendum formalised. Earlier 2026-05-23 closes: PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 (4-commit ship `a236057..f87d3f4`) + RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
 Current version: v0.35.1
-Open tasks: 68 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -95,75 +95,6 @@ store.
   wire the existing /api/kdp/categories endpoint into the
   CategoryInput component.
 
-- **GETSTARTED-MULTIBOOK-TYPES-UPDATE-01** (P2, DOC/ONBOARDING,
-  filed 2026-05-18 from real-user-smoke + the Multi-Book-Type
-  architecture work that landed across v0.34.0 + v0.35.0 +
-  plugin-comics Foundation): the
-  ``plugin-getstarted`` onboarding flow was built before
-  Picture-Book and Comic-Book existed. It now needs to introduce
-  all 3 book types currently available (prose, picture-book,
-  comic-book — pending plugin-comics Session 1 close).
-
-  Concrete gaps:
-  1. Get-Started doesn't explain Prose vs Picture-Book vs
-     Comic-Book differences
-  2. Plus doesn't guide the user to the appropriate book
-     type for their project
-  3. Plus doesn't introduce new features that landed after
-     the plugin was last touched (PDF Export, Categories +
-     BISAC, picture-book layouts, RichTextEditor, etc.)
-
-  Expected behavior:
-  - Get-Started introduces 3 book types with use-case
-    guidance ("write a novel? → Prose. Write a children's
-    book? → Picture-Book. Write a comic? → Comic-Book")
-  - Visual examples per book type (sample cover + one page
-    rendered in the style of each)
-  - Links to relevant help docs per book type
-  - Matches existing plugin-getstarted UI patterns rather
-    than introducing a new visual language
-
-  Fix scope (estimated 3-4 commits):
-  - Get-Started content rewrite (1-2 commits)
-  - i18n in EN + DE per the existing exploration-doc
-    pattern (NOT 8 catalogs — prose limited to EN + DE per
-    the lessons-learned rule for onboarding/help docs)
-  - Vitest for new screens
-  - E2E Playwright for the full onboarding flow
-
-  Scope-expansion candidates (consider one coordinated
-  session):
-  - v0.36.0 Doc-Sweep (the 4c-B-1-DOCS tentative session)
-    could include the Get-Started update if both touch
-    plugin-getstarted
-  - Picture-Book + Comic-Book help-doc parity sweep can
-    ride along if the Get-Started rewrite surfaces gaps
-
-  Recurring-Component-Unification check: a "book-type card"
-  component could be shared across Get-Started + Dashboard
-  (the future CreateBookModal flow that picks book type
-  before opening the wizard). If both surfaces converge on
-  the same card shape, extract once. Filed as scope-
-  expansion candidate, not a separate item.
-
-  Single-Source-of-Truth check: the 3 book-type definitions
-  (label, description, sample, help-doc link) should live in
-  ONE config (e.g.
-  ``backend/config/book-types.yaml`` or a Python module
-  read by both the backend and the frontend onboarding) so
-  adding a 4th book type later updates one file, not three.
-
-  Half-Wired-Prevention check: onboarding must introduce
-  ALL 3 book types when it ships — not 2 with comics "coming
-  soon". Plugin-comics Session 1 needs to be closed before
-  this work begins, OR the onboarding ships gated behind
-  ``plugin-comics`` activation status with a fallback for
-  the 2-book-type case.
-
-  Trigger: 4c-B-1-DOCS coordinated session, OR separate
-  onboarding-focused session once plugin-comics Session 1
-  ships.
-
 - **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
   for duplicate UI patterns (component shapes, hook
   compositions, styling clusters) that violate the new
@@ -238,6 +169,101 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **BOOK-TYPES-SSOT-YAML-01** (P3, IMPROVEMENT, Single-Source-
+  of-Truth, filed 2026-05-23 from GETSTARTED-MULTIBOOK-TYPES-
+  UPDATE-01 C5 close per Q4 adjudication): book-type metadata
+  is currently scattered across 5+ surfaces with NO canonical
+  source. Each new book-type-aware surface (Dashboard split-
+  button, CreateBookModal, GetStarted picker, future book-type
+  templates) duplicates the same label + description + sample-
+  link + help-link data.
+
+  ### Current scattered surfaces
+
+  - Backend enum: `backend/app/models/__init__.py:70-75`
+    (book_type discriminator: prose | picture_book | comic_book)
+  - Backend Pydantic schema: `BookType` literal
+  - Frontend TS literal: `frontend/src/api/client.ts:37`
+  - i18n labels (partial): `backend/config/i18n/{de,en}.yaml`
+    via `ui.dashboard.new_picture_book` /
+    `ui.dashboard.new_comic_book` keys
+  - GetStarted card metadata: `frontend/src/pages/GetStarted.
+    tsx` BOOK_TYPE_CARDS inline (added in
+    GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3)
+  - Plugin-getstarted YAML sample books:
+    `plugins/bibliogon-plugin-getstarted/config/getstarted.
+    yaml` sample_books dict (added in
+    GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C1)
+
+  ### Proposed canonical source
+
+  `backend/config/book-types.yaml` reads at app startup;
+  exposed via `GET /api/book-types` endpoint OR consumed
+  directly by frontend via a build-time generator. Shape:
+
+  ```yaml
+  book_types:
+    prose:
+      icon: book-open
+      title:
+        de: Prosa
+        en: Prose
+      description:
+        de: "Romane, Sachbücher..."
+        en: "Novels, non-fiction..."
+      help_doc_slug: book-types/prose
+      sample_book_layout: chapter
+    picture_book: ...
+    comic_book: ...
+  ```
+
+  ### Trigger
+
+  When a 3rd surface needs book-type metadata (e.g. a new
+  book-type-aware export plugin, OR a Dashboard "what is this
+  book type?" tooltip), do the SSoT extract in the same
+  session — by then 6+ scattered consumers justify the
+  consolidation cost.
+
+  ### Cross-references
+
+  Pairs with `BOOK-TYPE-CARD-COMPONENT-EXTRACT-01` (below) —
+  the card-component extract reads from this SSoT once it
+  ships.
+
+- **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
+  registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
+  TYPES-UPDATE-01 C5 close per Q4 adjudication): the
+  GetStarted.tsx `BOOK_TYPE_CARDS` inline config + its 3-card
+  grid rendering are the first instance of a "book-type card"
+  pattern. RCU 2-surface threshold says: extract when a 2nd
+  consumer lands, NOT speculatively.
+
+  ### Likely 2nd surfaces
+
+  - **Dashboard CreateBookModal pre-step**: before opening
+    the modal, picture-book and comic-book creation could
+    show a 3-card picker (instead of the current split-
+    button + dropdown). The cards' shape would be identical
+    to GetStarted's.
+  - **Settings > Author Profile > "Default book type"**: a
+    visual picker for the user's preferred default.
+  - **Help docs**: per-book-type landing pages could share
+    the card visual as a navigation tile.
+
+  ### Pre-registered
+
+  This filing exists so the next contributor who lands a 2nd
+  consumer sees the RCU extraction triggered + already-
+  scoped. No code yet; trigger fires when 2nd site is
+  ready to ship.
+
+  ### Cross-references
+
+  Pairs with `BOOK-TYPES-SSOT-YAML-01` (above). When the
+  card-component extract ships, it reads metadata from the
+  SSoT YAML rather than re-embedding the inline list.
 
 - **PAGES-DELETE-EDITOR-UI-01** (P3, Half-Wired-Lifecycle-Cascade-
   Followup, filed 2026-05-23 from PLUGIN-COMICS-MULTI-PAGE-
@@ -1925,7 +1951,7 @@ store.
   the wrappers actually work in the wild. Per discovery report,
   this expands discovery surface meaningfully without changing
   the underlying install path. See
-  [docs/explorations/installer-discovery-report.md](explorations/installer-discovery-report.md).
+  [docs/explorations/archive/installer-discovery-report.md](explorations/archive/installer-discovery-report.md).
 
 - **AR-BULK-CROSSPAGE-SELECT-01**: cross-page Select-all for the
   bulk-export workflow. Articles dashboard does not paginate

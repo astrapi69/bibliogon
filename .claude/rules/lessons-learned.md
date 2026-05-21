@@ -4521,6 +4521,74 @@ are destructive per CLAUDE.md safety rules. The pre-
 commit `git status` check is the only point in the
 workflow where absorption is cheap to prevent.
 
+### Explicit-paths discipline (addendum 2026-05-23)
+
+Filed alongside GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C5
+per user-directive: explicit-paths-staging is canonical
+pattern for Multi-Tool-Coordination sessions, NOT an
+ad-hoc-bypass for individual incidents.
+
+**Rule:** during ANY session where parallel-session work
+is in flight (staged renames, modified files, untracked
+files NOT authored by the current session), every
+`git add` invocation MUST name files individually by
+absolute or relative path. The following commands are
+FORBIDDEN in this context:
+
+- `git add -A`
+- `git add .`
+- `git add --all`
+- `git add <directory>/` where the directory contains
+  parallel-session work
+
+The shape is:
+
+```bash
+# CORRECT — explicit paths, file-by-file
+git add backend/config/i18n/de.yaml backend/config/i18n/en.yaml
+git add frontend/src/pages/GetStarted.tsx
+
+# WRONG — absorbs parallel session's work
+git add .
+git add backend/  # may absorb parallel session's backend changes
+```
+
+**When to apply:**
+
+The discipline fires whenever the pre-commit `git status`
+shows EITHER staged files OR modified-unstaged files OR
+untracked files that the current session did NOT author.
+Concretely: any file in the index/working-tree that
+wasn't touched by the current session is parallel-session
+work and must be left alone.
+
+**Concrete artefacts:**
+
+- MULTI-PAGE-NAVIGATION-01 C5 (commit `90888df`,
+  2026-05-23) — staged 3 files explicitly; left 3
+  parallel-session HOOKSPEC files unstaged.
+- GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C1-C5 (commits
+  `75f2ef6..(C5)`, 2026-05-23) — every commit's
+  `git add` named files individually; 14 staged-renames
+  + 3 modified docs + 1 untracked from a parallel session
+  remained untouched throughout all 5 commits.
+
+**Pairs with:**
+
+- "Multi-tool collaboration tracking: re-sync before
+  accepting new orders" — session-start sibling.
+- The parent rule above (Plain `git status`) — the
+  status-check is the trigger; explicit-paths is the
+  action-shape that prevents the absorption.
+
+**When this rule does NOT fire:**
+
+Single-tool sessions where the entire working tree is
+the current session's work. `git add -A` is fine there
+(modulo the existing CLAUDE.md "stage specific files
+to avoid sensitive files" rule which is about
+security-class artefacts, not Multi-Tool-Coordination).
+
 ### Pairs with
 
 - "Multi-tool collaboration tracking: re-sync before
