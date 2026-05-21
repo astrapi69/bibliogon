@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23-late-3 (GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 CLOSED via 4-commit ship `75f2ef6..012396a` + this docs commit. Plugin-getstarted authored pre-Picture-Book + pre-Comic-Book remained prose-only; Half-Wired-Prevention trigger conditions all met. Closed via β-scope: NEW step #1 `choose-book-type` introducing 3 types; existing step IDs preserved per Q5 additive-over-destructive; `sample_book:` singular → `sample_books:` dict keyed by book_type; backend route accepts `?book_type=` query param with default "prose" backward-compat; frontend handleCreateSampleBook branches on chapters (prose) vs pages (picture/comic); 3-button sample-row replaces single button. plugin-getstarted 6 → 13 (+7); Frontend Vitest 1819 → 1826 (+7); new Playwright spec (5 cases, bounding-box-dimension assertion). i18n EN+DE +6 keys. 2 new P3 backlog filings per Q4 SSoT/RCU adjudication: BOOK-TYPES-SSOT-YAML-01 (consolidate scattered book-type metadata) + BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 (RCU pre-registered, deferred until 2nd site). Multi-Tool-Coordination active throughout (14 staged-renames + 3 modified docs + 1 untracked exploration prompt from parallel session) — all C1-C5 commits applied explicit-path discipline; LL addendum formalised. Earlier 2026-05-23 closes: PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 (4-commit ship `a236057..f87d3f4`) + RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
+Last updated: 2026-05-23-late-4 (EXPOSE-BUCHIDEE-METADATA-01 CLOSED via 4-commit ship `b8b6983..8148783` + this docs commit. User-real-test surfaced missing author-design metadata in Book editor; Pre-Inspection confirmed genuine missing-feature. Closed via β-scope: Backend Book model + BookCreate/Update/Out schemas + Alembic migration add book_idea + expose nullable Text columns; new Story tab in BookMetadataEditor between General + Publisher per Q4 semantic separation; book_idea rendered as multiline Field (short premise); expose rendered as multiline + markdown + fullscreen Field (canonical multi-paragraph shape mirroring description). 5 new ui.metadata.* i18n keys across all 8 catalogs per Q5 (DE+EN native, 6 passthrough-EN). Boy-Scout fix in C3: restored 6 pre-existing i18n-parity failures from GETSTARTED-MULTIBOOK-TYPES C4 (`012396a`) by adding the same passthrough-EN entries for ui.get_started.book_type_* across 6 non-DE/EN catalogs. Backend 2126 → 2137 (+11 exactly the new EXPOSE/BUCHIDEE pytest cases); Frontend Vitest 1826 → 1832 (+6 new Story-tab cases); i18n parity 45/51 → 51/51; 1 new Playwright spec (3 cases, bounding-box-dimension assertion). 1 new P3 backlog filing per Q3 adjudication: COMIC-BOOK-EDITOR-METADATA-BUTTON-01 (Half-Wired-Lifecycle-Cascade-Followup, ComicBookEditor has no path to BookMetadataEditor — RCU 2-site mirror of PageEditor's onShowMetadata shape, separate-session). Multi-Tool-Coordination throughout: C1-C3 saw parallel session's archive-rename state then clean by C2; explicit-paths-discipline applied. Earlier 2026-05-23 closes: GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 (`75f2ef6..012396a`) + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 (`a236057..f87d3f4`) + RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
 Current version: v0.35.1
-Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -169,6 +169,74 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **COMIC-BOOK-EDITOR-METADATA-BUTTON-01** (P3, Half-Wired-
+  Lifecycle-Cascade-Followup, filed 2026-05-23 from
+  EXPOSE-BUCHIDEE-METADATA-01 C4 close per Q3 adjudication):
+  ComicBookEditor has no path to BookMetadataEditor. Comic-book
+  authors cannot edit ANY book metadata (Categories, BISAC,
+  ISBN, Author, Description, Cover, AI Template, Audiobook —
+  AND the new Story tab with ``book_idea`` + ``expose`` shipped
+  in this session). This is a Picture-Book-vs-Comic-Book
+  parallel-surface asymmetry at the metadata-access axis.
+
+  ### Current state
+
+  - Prose: ``ChapterSidebar.onMetadata`` → BookEditor swaps to
+    ``<BookMetadataEditor>`` ✓
+  - Picture-Book: ``PageEditor.onShowMetadata`` prop → swaps
+    to BookMetadataEditor ✓ (PB-PHASE4 Session 5 Commit 2,
+    routing pattern shown in
+    ``frontend/src/pages/BookEditor.tsx:485-518``)
+  - Comic-Book: [BookEditor.tsx:524-532](frontend/src/pages/BookEditor.tsx#L524-L532)
+    routes directly to ``<ComicBookEditor>`` with NO
+    ``onShowMetadata`` plumbing. ComicBookEditor itself has
+    no metadata button.
+
+  ### Fix (one session, ~3-4 commits)
+
+  RCU 2-site fix mirroring PageEditor's shape:
+
+  - ``ComicBookEditor.tsx``: add ``onShowMetadata?: () => void``
+    prop; mount "Open book metadata" button in the header
+    (mirror PageEditor's L226-244 visual + i18n)
+  - ``BookEditor.tsx``: wire ``showMetadata`` state + branch
+    for comic_book identical to picture_book's L492-519 path
+    (lift the picture_book swap-block into a shared helper
+    or inline-mirror)
+  - i18n: ``ui.comic_book_editor.show_metadata`` (DE + EN +
+    6 passthrough per LL I18N-DIACRITICS-01)
+  - Vitest: ComicBookEditor.test.tsx new "show-metadata
+    button" case + BookEditor.test.tsx comic_book metadata-
+    route case
+  - Playwright: e2e/smoke spec covering open-metadata → fill
+    Story tab → save → return to editor (mirrors picture_book
+    coverage shape from earlier sessions)
+
+  ### Why deferred from EXPOSE-BUCHIDEE-METADATA-01
+
+  Per Q3 adjudication 2026-05-23: "Defer ComicBookEditor
+  metadata-button gap. File COMIC-BOOK-EDITOR-METADATA-
+  BUTTON-01 (P3, Half-Wired-Lifecycle-Cascade) in C4 docs
+  commit. Separate-session for actual implementation."
+  Bundling would have stretched EXPOSE-BUCHIDEE-METADATA-01
+  scope from 3-5 commits (β) to 6-9 (β + comic-book parity).
+  Comic-book authors can wait one session.
+
+  ### Trigger
+
+  Either user-real-test re-surfaces the comic-book metadata-
+  access gap, OR the cleanup discipline catches it during
+  the next session picking from P3. Not deadline-pressure
+  (P3-tier — comic-book authoring is functional, just
+  metadata-fields-of-secondary-concern are unreachable).
+
+  ### Cross-references
+
+  Same pattern as ``PAGES-DELETE-EDITOR-UI-01`` (page-delete
+  UI absent in both PageEditor + ComicBookEditor) — both are
+  Half-Wired-Lifecycle-Cascade items that surface during
+  related-feature work.
 
 - **BOOK-TYPES-SSOT-YAML-01** (P3, IMPROVEMENT, Single-Source-
   of-Truth, filed 2026-05-23 from GETSTARTED-MULTIBOOK-TYPES-
