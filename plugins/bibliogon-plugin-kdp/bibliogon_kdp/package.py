@@ -437,9 +437,24 @@ def build_kdp_package(book_id: str) -> Path:
             "bisac_codes": book_data["bisac_codes"],
             "chapters": chapters,
         })
-        # picture_book + comic_book don't use chapters; drop the
-        # client-side filter's equivalent server-side.
-        if book_type != "prose":
+        # BOOK-TYPES-SSOT-YAML-01 C9: page-based books don't use
+        # chapters; drop the client-side filter's equivalent
+        # server-side. Mirrors MetadataChecklist.filterIssues
+        # ForBookType (C7) — same content_model gate.
+        #
+        # Lazy import + ImportError fallback for the standalone
+        # plugin pytest path (same shape as plugin-getstarted's
+        # registry consumption in C8).
+        try:
+            from app.services.book_type_registry import get_book_type
+
+            bt_def = get_book_type(book_type)
+            content_model = bt_def.content_model if bt_def else None
+        except ImportError:
+            content_model = (
+                "chapters" if book_type == "prose" else "pages"
+            )
+        if content_model == "pages":
             meta_check.issues = [i for i in meta_check.issues if i.field != "chapters"]
         if not meta_check.is_complete:
             error_fields = [i.field for i in meta_check.issues if i.severity == "error"]
