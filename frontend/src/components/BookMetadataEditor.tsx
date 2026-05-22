@@ -2,7 +2,7 @@ import {useState, useEffect, useCallback} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
 import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
-import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2} from "lucide-react";
+import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useAuthorProfile, type AuthorProfile} from "../hooks/useAuthorProfile";
@@ -23,6 +23,7 @@ import * as Tabs from "@radix-ui/react-tabs";
 import QualityTab, {NavigableFindingType} from "./QualityTab";
 import TranslationLinks from "./TranslationLinks";
 import AITemplatePanel from "./AITemplatePanel";
+import KdpPublishingWizard from "./kdp-wizard/KdpPublishingWizard";
 import styles from "./BookMetadataEditor.module.css";
 
 interface Props {
@@ -63,6 +64,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
+    const [showKdpWizard, setShowKdpWizard] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
     const authorProfile = useAuthorProfile();
@@ -212,6 +214,14 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <Copy size={14}/> {t("ui.metadata.copy_from", "Von Buch übernehmen")}
                         </button>
                     )}
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setShowKdpWizard(true)}
+                        data-testid="metadata-open-kdp-wizard"
+                        title={t("ui.kdp_publishing_wizard.open_tooltip", "KDP-Veröffentlichungs-Assistenten öffnen")}
+                    >
+                        <Rocket size={14}/> {t("ui.kdp_publishing_wizard.open_button", "Für KDP veröffentlichen")}
+                    </button>
                     <button
                         className="btn btn-primary btn-sm"
                         onClick={handleSave}
@@ -560,6 +570,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     </div>
                 </Tabs.Content>
             </Tabs.Root>
+
+            <KdpPublishingWizard
+                open={showKdpWizard}
+                book={book}
+                onClose={() => setShowKdpWizard(false)}
+            />
         </div>
     );
 }
