@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-24 (COMIC-BOOK-EDITOR-METADATA-BUTTON-01 CLOSED via 4-commit ship `0d940cf..84218e6` + this docs commit. Foundation-Override-Extended P1 promotion (Half-Wired-Visible-in-Production: comic-book authors had no path to BookMetadataEditor → invisible to the just-shipped EXPOSE-BUCHIDEE Story tab + ALL other book metadata). Closed via α-scope inline-mirror: ComicBookEditor gains onShowMetadata prop + header FileText button between title and ComicGridTemplatePicker (C1); BookEditor wires comic_book branch with showMetadata-swap mirroring picture_book L492-519 (C2); 1 new ui.comic_book_editor.show_metadata key across all 8 catalogs (C3); 2 new Playwright cases added to existing comic-book-editor.spec.ts per Q5 with bounding-box-dimension assertion + Story-tab-reachable bridge-pin to yesterday's EXPOSE-BUCHIDEE work. Boy-Scout 1-line: metadata-back testid added to BookMetadataEditor's back button (resolves brittle fallback in picture-book-editor.spec.ts:407-416). Frontend Vitest 1832 → 1838 (+6: ComicBookEditor +3 + BookEditor +3); Backend 2137/1skip + i18n parity 51/51 baseline held throughout. 1 new P5 backlog filing per Q6: METADATA-BUTTON-COMPONENT-EXTRACT-01 (RCU pre-registered for 3rd-surface trigger — PageEditor's button + ComicBookEditor's new button are 2 surfaces of same shape but extraction overhead deferred for 19-line + 1-prop block). 1-day turnaround from EXPOSE-BUCHIDEE filing (2026-05-23) to close (2026-05-24). Earlier 2026-05-23 closes: EXPOSE-BUCHIDEE-METADATA-01 + GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 + RCU candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
+Last updated: 2026-05-24 (RECURRING-COMPONENT-AUDIT-01 CLOSED as housekeeping — deliverable shipped 2026-05-21 at `docs/audits/recurring-component-audit-2026-05-21.md` (565 lines, 7 + 2 anti-pattern candidates evaluated). 4 audit candidates already extracted in follow-up sessions (`useSelection<T>()` permanently deferred per design-intent; `BulkActionBar` shipped `c2305e7`; `AuthorSelectInput` shipped `a213788`; new candidate Pattern B `AuthorProfileSelect` shipped `11198a4`). Remaining audit-recommended sequence: rank #3 `ListRow` (score 13) lives as its own trigger-gated backlog item `LIST-VIEW-ROW-SHARED-EXTRACTION-01`; ranks #5–7 LOW tier below the audit's own 12-point action floor. Per-candidate backlog filings discipline preserved — closure of the umbrella audit item does NOT close the individual extraction items. Earlier 2026-05-24: COMIC-BOOK-EDITOR-METADATA-BUTTON-01 CLOSED via 4-commit ship `0d940cf..84218e6`; EXPOSE-BUCHIDEE-METADATA-01 + GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 + RCU candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect closed 2026-05-23.)
 Current version: v0.35.1
-Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -94,77 +94,6 @@ store.
   the wizard's category-picker step is the natural place to
   wire the existing /api/kdp/categories endpoint into the
   CategoryInput component.
-
-- **RECURRING-COMPONENT-AUDIT-01** (P3): frontend-wide audit
-  for duplicate UI patterns (component shapes, hook
-  compositions, styling clusters) that violate the new
-  Recurring-Component Unification Rule (filed 2026-05-19 in
-  ``.claude/rules/coding-standards.md``). The rule fires at
-  2-surfaces threshold (stricter than the generic
-  3-duplicates DRY rule); the codebase has accumulated
-  multiple known candidates before the rule was formalised,
-  so a one-time sweep is warranted.
-
-  Known candidates at filing time (active as of 2026-05-20):
-  - **AUTHOR-SELECT-INPUT-EXTRACT-01** (the rule's canonical
-    first-application; closes together with
-    ``AUTHOR-DATALIST-EXTEND-EDITORS-01``)
-  - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (ArticleRow +
-    BookListView row shape duplication)
-
-  Closed candidates (moved to archive 2026-05-15):
-  - ``ARTICLEFILTERBAR-EXTRACT-01`` — shipped 2026-05-15
-  - ``PLUGIN-SETTINGS-TESTID-COVERAGE-01`` — shipped 2026-05-15
-
-  Audit scope:
-  1. **Component-shape sweep:** grep for distinctive JSX +
-     prop combinations across ``frontend/src/components/``
-     and ``frontend/src/pages/``. Recipes in coding-
-     standards.md "Pre-Inspection for new UI components".
-     Output: candidate list with file:line citations.
-  2. **Hook-composition sweep:** identify hooks reused for
-     similar purposes across 2+ surfaces (``useSelection``
-     variants, ``useViewMode`` variants, etc.). Some
-     already extracted (e.g. ``useTrashViewMode`` after
-     Bug 3); the audit confirms no remaining duplicates.
-  3. **Styling-cluster sweep:** grep for repeated
-     className combinations across components. CSS module
-     duplication is harder to detect mechanically; manual
-     review of e.g. bulk-action-bar / filter-bar / toast-
-     variant styling.
-  4. **i18n key duplication:** secondary check — duplicate
-     UI patterns often grow duplicate i18n keys (e.g.
-     ``ui.create_book.author`` + ``ui.convert_to_book
-     .metadata_author``). Worth surfacing during the
-     extraction sessions for each candidate.
-
-  Deliverable: audit doc at
-  ``docs/audits/recurring-component-audit-YYYY-MM-DD.md``
-  with categorised candidate list (HIGH / MEDIUM / LOW
-  refactor value) + recommended ordering of extraction
-  sessions. Each HIGH-value candidate gets its own backlog
-  item (or extends an existing one) with the standard
-  extraction-plus-migration session shape from coding-
-  standards.md.
-
-  Defer reason: the audit itself is read-only and would
-  take 1-2 hours; the deliverable feeds N follow-up
-  extraction sessions that each ship as their own focused
-  work. Splitting audit-from-implementation matches the
-  established "audit-first" Bibliogon discipline.
-
-  Trigger: any time before v0.36.0 (extraction sessions
-  can run in parallel with v0.35.0 PDF Export + S6
-  closing). OR: a third recurring-component candidate
-  surfaces in everyday work, prompting "audit all of them
-  rather than chase individually".
-
-  Pairs with: the remaining active component-extraction
-  backlog items (``AUTHOR-SELECT-INPUT-EXTRACT-01`` +
-  ``LIST-VIEW-ROW-SHARED-EXTRACTION-01``). Prior siblings
-  ``ARTICLEFILTERBAR-EXTRACT-01`` +
-  ``PLUGIN-SETTINGS-TESTID-COVERAGE-01`` shipped 2026-05-15
-  and live in ``docs/roadmap-archive/2026-05.md``.
 
 ---
 
