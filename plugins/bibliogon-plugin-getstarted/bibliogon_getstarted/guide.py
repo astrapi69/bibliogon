@@ -2,10 +2,34 @@
 
 from typing import Any
 
-# GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C2: supported book types.
-# Keep in sync with backend BookType literal (prose, picture_book,
-# comic_book). Unknown values fall back to "prose" in the route layer.
-BOOK_TYPES: tuple[str, ...] = ("prose", "picture_book", "comic_book")
+# BOOK-TYPES-SSOT-YAML-01 C8: lazy-import the registry inside the
+# helper below. Plugin's standalone pytest path (poetry venv
+# without the backend installed) can't resolve ``from app.*``
+# at module import — by deferring until call time, the import
+# succeeds when the backend IS available (production + the
+# combined ``make test`` path) and the plugin's standalone tests
+# fall back via ImportError (see ``_FALLBACK_BOOK_TYPES``).
+_FALLBACK_BOOK_TYPES: frozenset[str] = frozenset(
+    {"prose", "picture_book", "comic_book"}
+)
+
+
+def _supported_book_types() -> frozenset[str]:
+    """Return the set of supported book_type ids.
+
+    Prefers the BookTypeRegistry (single source of truth — adding a
+    new book_type to backend/config/book-types.yaml automatically
+    makes it valid here, no separate sync needed). Falls back to
+    a frozen tuple of the 3 currently-known ids when the backend
+    isn't importable (plugin's standalone tests).
+    """
+    try:
+        from app.services.book_type_registry import book_type_ids
+    except ImportError:
+        return _FALLBACK_BOOK_TYPES
+    ids = book_type_ids()
+    # Empty registry (YAML missing / malformed) → safe fallback.
+    return ids if ids else _FALLBACK_BOOK_TYPES
 
 
 def get_guide_steps(config: dict[str, Any], lang: str = "de") -> list[dict[str, str]]:
@@ -40,7 +64,7 @@ def get_sample_book_data(
          pre-MULTIBOOK-TYPES configs + user-overlays)
       3. Empty defaults (title "My First Book", empty chapters / pages)
     """
-    if book_type not in BOOK_TYPES:
+    if book_type not in _supported_book_types():
         book_type = "prose"
 
     sample = _resolve_sample(config, book_type)
