@@ -1184,6 +1184,50 @@ export interface ArcReviewerUpdatePayload {
     reviewed_at?: string | null;
 }
 
+/** ``book_publishing_state`` row as the server returns it.
+ *  Matches the ``BookPublishingStateRead`` Pydantic schema. */
+export interface BookPublishingStateApi {
+    id: string;
+    book_id: string;
+    royalty_plan: "35" | "70" | null;
+    kdp_select_enrolled: boolean;
+    kdp_select_enrollment_date: string | null;
+    expanded_distribution: boolean;
+    prices: Record<
+        string,
+        {currency: string; list_price: number; page_count?: number}
+    >;
+    launch_checklist_state: Record<string, string>;
+    publication_target_date: string | null;
+    last_kdp_upload_at: string | null;
+    created_at: string;
+    updated_at: string;
+    arc_reviewers: ArcReviewerApi[];
+}
+
+/** Wrapped GET response carrying both the (nullable) state row
+ *  + the related book's ``updated_at`` for client-side conflict
+ *  detection (C11 banner). */
+export interface BookPublishingStateGetResponse {
+    book_id: string;
+    book_updated_at: string;
+    state: BookPublishingStateApi | null;
+}
+
+export interface BookPublishingStateUpdatePayload {
+    royalty_plan?: "35" | "70" | null;
+    kdp_select_enrolled?: boolean;
+    kdp_select_enrollment_date?: string | null;
+    expanded_distribution?: boolean;
+    prices?: Record<
+        string,
+        {currency: string; list_price: number; page_count?: number}
+    >;
+    launch_checklist_state?: Record<string, string>;
+    publication_target_date?: string | null;
+    last_kdp_upload_at?: string | null;
+}
+
 // --- ApiError with context ---
 
 /** Thrown by `api.chapters.update` when a newer save for the same
@@ -2899,6 +2943,32 @@ export const api = {
                 )
             }
         },
+
+        // --- BookPublishingState (Phase 2 C10) -------------------
+
+        /** Load the publishing-state row + the related book's
+         *  ``updated_at`` for client-side conflict detection.
+         *  Returns ``state: null`` when no row exists yet. */
+        getPublishingState: (bookId: string) =>
+            request<BookPublishingStateGetResponse>(
+                `/kdp/publishing-state/${bookId}`,
+            ),
+
+        /** Upsert the publishing-state row. Missing row → created
+         *  with defaults + payload overrides; existing row →
+         *  partial-updated with the explicitly-set payload
+         *  fields. */
+        upsertPublishingState: (
+            bookId: string,
+            payload: BookPublishingStateUpdatePayload,
+        ) =>
+            request<BookPublishingStateApi>(
+                `/kdp/publishing-state/${bookId}`,
+                {
+                    method: "PATCH",
+                    body: JSON.stringify(payload),
+                },
+            ),
     },
 
     i18n: {

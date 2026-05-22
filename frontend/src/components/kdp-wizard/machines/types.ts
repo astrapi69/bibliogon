@@ -137,6 +137,8 @@ export type KdpWizardEvent =
       }
     // Step-3 (pricing, C8):
     | { type: "PRICING_CHANGE"; pricing: Partial<PricingState> }
+    // Persistence (C10):
+    | { type: "STATE_LOADED"; pricing: PricingState }
     // Step-4 (export):
     | { type: "GENERATE" }
     | { type: "EXPORT_SUCCESS"; filename: string; blobUrl: string }

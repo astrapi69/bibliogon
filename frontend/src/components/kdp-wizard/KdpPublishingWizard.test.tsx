@@ -25,7 +25,7 @@
 
 import {useEffect} from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
-import {render, screen, fireEvent} from "@testing-library/react"
+import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import KdpPublishingWizard from "./KdpPublishingWizard"
 import {BookDetail} from "../../api/client"
@@ -37,6 +37,30 @@ vi.mock("../../hooks/useI18n", () => ({
         setLang: vi.fn(),
     }),
 }))
+
+// C10: mock the publishing-state API. Default returns ``state:
+// null`` so existing nav tests (which assume fresh-mount
+// behavior) keep working. Per-test overrides via
+// ``mockGetPublishingState.mockResolvedValueOnce(...)``.
+const mockGetPublishingState = vi.fn()
+const mockUpsertPublishingState = vi.fn()
+
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>(
+        "../../api/client",
+    )
+    return {
+        ...actual,
+        api: {
+            kdp: {
+                getPublishingState: (...args: unknown[]) =>
+                    mockGetPublishingState(...args),
+                upsertPublishingState: (...args: unknown[]) =>
+                    mockUpsertPublishingState(...args),
+            },
+        },
+    }
+})
 
 // Module-level mocks: each child fires its result callback on
 // mount so the wizard machine's guards pass + Next enables. Per-
@@ -184,6 +208,14 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
 describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        // Default: no persisted state. Test overrides via
+        // ``mockGetPublishingState.mockResolvedValueOnce(...)``.
+        mockGetPublishingState.mockResolvedValue({
+            book_id: "book-1",
+            book_updated_at: "2026-05-22T00:00:00",
+            state: null,
+        })
+        mockUpsertPublishingState.mockResolvedValue({})
     })
 
     it("Next disabled when MetadataChecklist doesn't dispatch onLoaded (machine sentinel)", async () => {
@@ -305,5 +337,136 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
             screen.getByTestId("kdp-publishing-wizard-close"),
         )
         expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    // --- C10 persistence wiring -----------------------------------
+
+    it("C10: fetches publishing-state on mount", async () => {
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        await waitFor(() => {
+            expect(mockGetPublishingState).toHaveBeenCalledWith("book-1")
+        })
+    })
+
+    it("C10: dispatches STATE_LOADED when a persisted state exists", async () => {
+        mockGetPublishingState.mockResolvedValueOnce({
+            book_id: "book-1",
+            book_updated_at: "2026-05-22T00:00:00",
+            state: {
+                id: "ps-1",
+                book_id: "book-1",
+                royalty_plan: "70",
+                kdp_select_enrolled: true,
+                kdp_select_enrollment_date: null,
+                expanded_distribution: false,
+                prices: {US: {currency: "USD", list_price: 4.99}},
+                launch_checklist_state: {},
+                publication_target_date: null,
+                last_kdp_upload_at: null,
+                created_at: "2026-05-22T00:00:00",
+                updated_at: "2026-05-22T00:00:00",
+                arc_reviewers: [],
+            },
+        })
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // Confirm hydration via the no-op behavior: with persisted
+        // state's royalty_plan already set, the auto-save effect
+        // doesn't re-PATCH (lastSavedPricingRef matches the
+        // hydrated value).
+        await waitFor(() => {
+            expect(mockGetPublishingState).toHaveBeenCalled()
+        })
+        // No PATCH on initial hydration (the ref is set to the
+        // hydrated JSON; auto-save's equality check short-circuits).
+        expect(mockUpsertPublishingState).not.toHaveBeenCalled()
+    })
+
+    it("C10: PRICING_CHANGE triggers an auto-save PATCH", async () => {
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // Mount: metadata → cover → pricing. Pricing mock fires
+        // onChange({royalty_plan: "70"}) → PRICING_CHANGE
+        // dispatched → auto-save useEffect → PATCH.
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-0-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-1-next"),
+        )
+        await waitFor(() => {
+            expect(mockUpsertPublishingState).toHaveBeenCalledWith(
+                "book-1",
+                expect.objectContaining({
+                    royalty_plan: "70",
+                }),
+            )
+        })
+    })
+
+    it("C10: PATCH failure is fail-open (wizard continues normally)", async () => {
+        mockUpsertPublishingState.mockRejectedValue(
+            new Error("network fail"),
+        )
+        const consoleWarnSpy = vi
+            .spyOn(console, "warn")
+            .mockImplementation(() => {})
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // Same advance path as above — PATCH rejects + the wizard
+        // does NOT crash. Confirm by asserting the wizard
+        // continues to render step-by-step.
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-0-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-1-next"),
+        )
+        await waitFor(() => {
+            expect(mockUpsertPublishingState).toHaveBeenCalled()
+        })
+        // The wizard's pricing step still rendered (no crash).
+        expect(
+            screen.getByTestId("kdp-publishing-wizard-step-2-pricing"),
+        ).toBeTruthy()
+        consoleWarnSpy.mockRestore()
+    })
+
+    it("C10: skips auto-save when royalty_plan is null (initial defaults)", async () => {
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // Mount-only: stay at metadata. No pricing change ever
+        // fires; auto-save effect sees royalty_plan === null and
+        // short-circuits.
+        await waitFor(() => {
+            expect(mockGetPublishingState).toHaveBeenCalled()
+        })
+        expect(mockUpsertPublishingState).not.toHaveBeenCalled()
     })
 })

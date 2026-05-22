@@ -100,6 +100,14 @@ export const kdpWizardMachine = setup({
                 },
             };
         }),
+        hydratePricing: assign(({ event }) => {
+            if (event.type !== "STATE_LOADED") return {};
+            // C10: replace pricing context wholesale on initial
+            // load from the persisted publishing-state row. Unlike
+            // PRICING_CHANGE which merges partials, STATE_LOADED
+            // is the boot-time hydration so we overwrite.
+            return { pricing: event.pricing };
+        }),
         setExportResult: assign(({ event }) => {
             if (event.type !== "EXPORT_SUCCESS") return {};
             return {
@@ -132,6 +140,12 @@ export const kdpWizardMachine = setup({
                     target: "metadataError",
                     actions: "setError",
                 },
+                // C10: persistence hydration on wizard mount. The
+                // machine stays at ``metadata`` (user re-validates
+                // their book against current metadata) but the
+                // pricing context is preloaded from the persisted
+                // row. Resume-at-step is filed as a follow-up.
+                STATE_LOADED: { actions: "hydratePricing" },
                 ADVANCE: {
                     target: "cover",
                     guard: "canAdvanceFromMetadata",

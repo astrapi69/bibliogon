@@ -121,6 +121,26 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
+    it("STATE_LOADED hydrates context.pricing on initial mount (C10)", () => {
+        const actor = createActor(kdpWizardMachine).start();
+        actor.send({
+            type: "STATE_LOADED",
+            pricing: {
+                royalty_plan: "70",
+                kdp_select_enrolled: true,
+                expanded_distribution: false,
+                prices: {US: {currency: "USD", list_price: 4.99}},
+            },
+        });
+        // Machine stays at metadata; pricing context overwritten.
+        const snap = actor.getSnapshot();
+        expect(snap.value).toBe("metadata");
+        expect(snap.context.pricing.royalty_plan).toBe("70");
+        expect(snap.context.pricing.kdp_select_enrolled).toBe(true);
+        expect(snap.context.pricing.prices.US?.list_price).toBe(4.99);
+        actor.stop();
+    });
+
     it("ADVANCE from metadata blocked before METADATA_LOADED dispatches", () => {
         // Sentinel: ``metadataResult !== null`` means "load
         // completed". Fresh actor has metadataResult=null →

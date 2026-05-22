@@ -22,11 +22,12 @@
  * Mount: BookMetadataEditor header. Self-contained.
  */
 
+import {useEffect, useRef, useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {useMachine} from "@xstate/react"
 import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
 
-import {BookDetail} from "../../api/client"
+import {BookDetail, api} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
 import ArcStep from "./ArcStep"
 import CoverValidation from "./CoverValidation"
@@ -97,6 +98,83 @@ function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 | 4 {
 export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const {t} = useI18n()
     const [snapshot, send] = useMachine(kdpWizardMachine)
+    // Track the most recently auto-saved pricing as a JSON string
+    // so the auto-save effect can short-circuit on no-op transitions
+    // + skip the initial-load PATCH.
+    const lastSavedPricingRef = useRef<string>("")
+    // Book.updated_at as of wizard-open time, used by C11's
+    // conflict-detection banner (filed for next commit; stored
+    // here now so the round-trip is observable).
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [bookUpdatedAt, setBookUpdatedAt] = useState<string | null>(null)
+
+    // C10 mount-time hydration. Fetches the persisted publishing-
+    // state row + dispatches STATE_LOADED if one exists. Failure
+    // is non-blocking (fail-open) — the wizard still starts with
+    // default context.
+    useEffect(() => {
+        if (!open) return
+        let cancelled = false
+        api.kdp
+            .getPublishingState(book.id)
+            .then((response) => {
+                if (cancelled) return
+                setBookUpdatedAt(response.book_updated_at)
+                if (response.state) {
+                    const pricing = {
+                        royalty_plan: response.state.royalty_plan,
+                        kdp_select_enrolled:
+                            response.state.kdp_select_enrolled,
+                        expanded_distribution:
+                            response.state.expanded_distribution,
+                        prices: response.state.prices,
+                    }
+                    send({type: "STATE_LOADED", pricing})
+                    lastSavedPricingRef.current = JSON.stringify(pricing)
+                }
+            })
+            .catch(() => {
+                // Fail-open per Track 5 A28. The wizard's local
+                // context stays authoritative for the session.
+            })
+        return () => {
+            cancelled = true
+        }
+        // book.id refetches on book switch; ``send`` is stable.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, book.id])
+
+    // C10 auto-save. PATCHes the publishing-state row whenever
+    // ``context.pricing`` content changes from the last saved
+    // snapshot. Skips the initial default (royalty_plan === null).
+    // Failure is non-blocking: log + continue, retry on next
+    // change.
+    useEffect(() => {
+        if (!open) return
+        const pricing = snapshot.context.pricing
+        // Skip when the user hasn't picked a royalty plan yet
+        // (initial default state; nothing meaningful to persist).
+        if (pricing.royalty_plan === null) return
+        const pricingJson = JSON.stringify(pricing)
+        if (pricingJson === lastSavedPricingRef.current) return
+        lastSavedPricingRef.current = pricingJson
+        api.kdp
+            .upsertPublishingState(book.id, {
+                royalty_plan: pricing.royalty_plan,
+                kdp_select_enrolled: pricing.kdp_select_enrolled,
+                expanded_distribution: pricing.expanded_distribution,
+                prices: pricing.prices,
+                launch_checklist_state: {
+                    wizard_step: String(snapshot.value),
+                },
+            })
+            .catch((err: unknown) => {
+                // Fail-open per A28. The local context stays
+                // authoritative; the next change retries.
+                // eslint-disable-next-line no-console
+                console.warn("KDP wizard auto-save failed", err)
+            })
+    }, [open, book.id, snapshot.context.pricing, snapshot.value])
 
     const stateValue = snapshot.value as string
     const step = stepIndexFromState(stateValue)
