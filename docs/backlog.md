@@ -2449,6 +2449,62 @@ store.
 
 ## P5 - Speculative / Nice-to-have
 
+- **WIZARD-SHELL-IMPORT-VARIANT-01** (P5, RCU pre-
+  registered, filed 2026-05-24 from WIZARD-SHELL-
+  COMPONENT-EXTRACT-01 C4 close per Pre-Coding-Reality-
+  Check Option-A adjudication): ImportWizardModal
+  ([frontend/src/components/import-wizard/ImportWizardModal.tsx](frontend/src/components/import-wizard/ImportWizardModal.tsx))
+  carries a wizard-shape variant that the 2026-05-24
+  WizardShell extraction deliberately left out:
+  className-based dialog styling (not inline) + 900px
+  width (not 640px) + text-only step indicator ("Step
+  X of 4", not dot-row) + per-step navigation buttons
+  inside each step component (not in shell) + a
+  WizardErrorBoundary wrapper around the body. The
+  divergence is documented as intentional asymmetry
+  in the file's header docstring.
+
+  ### Trigger
+
+  A 2nd wizard surface lands matching the ImportWizard
+  shape — same 5 properties (className styling + ~900px
+  + text indicator + per-step nav + ErrorBoundary).
+  Most likely surfaces:
+
+  - A "bulk-export wizard" if multi-format export ever
+    grows beyond the current dropdown picker.
+  - A "git-publish wizard" if the existing git-sync
+    plugin grows a multi-step setup flow.
+  - A "library-migration wizard" for moving content
+    between Bibliogon installations.
+
+  ### Pre-registered shape
+
+  Extract a sibling `WizardShellWide` (or
+  `WizardShellText`) component co-located with
+  `WizardShell.tsx`. Same testid-namespace context
+  pattern; different default dimensions + indicator
+  shape + nav-slot policy. Both shells could share a
+  common `WizardDialogChrome` primitive if a third
+  variant ever lands.
+
+  ### Cross-references
+
+  Original audit deliverable:
+  ``docs/audits/recurring-component-audit-2026-05-21.md``
+  (counted ImportWizardModal as a 3rd RCU site;
+  Pre-Coding-Reality-Check during the 2026-05-24
+  implementation session reclassified it as a separate
+  shape per the "Audit-Methodology: design-intent-axis
+  as 5th-Axis or Override-Filter" lessons-learned
+  rule).
+
+  Same RCU-pre-registration pattern as
+  ``METADATA-BUTTON-COMPONENT-EXTRACT-01`` (below) and
+  ``BOOK-TYPE-CARD-COMPONENT-EXTRACT-01`` (P3) — both
+  RCU 2-site filings that defer extraction to a 3rd-
+  surface trigger.
+
 - **METADATA-BUTTON-COMPONENT-EXTRACT-01** (P5, RCU pre-
   registered, filed 2026-05-24 from COMIC-BOOK-EDITOR-
   METADATA-BUTTON-01 C4 close per Q6 adjudication):

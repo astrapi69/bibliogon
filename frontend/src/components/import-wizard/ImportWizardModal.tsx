@@ -12,6 +12,46 @@
  * calls remain inside the per-step components (DetectingStep,
  * ExecutingStep) which dispatch the resulting events back to the
  * machine via the callbacks supplied here.
+ *
+ * --- INTENTIONAL ASYMMETRY (2026-05-24) ----------------------------
+ *
+ * Bibliogon ships THREE wizard surfaces. Two (KdpPublishingWizard +
+ * ConvertToBookWizard) share a common shape and were extracted into
+ * the shared <WizardShell> component at
+ * ``frontend/src/components/wizards/WizardShell.tsx`` under
+ * WIZARD-SHELL-COMPONENT-EXTRACT-01.
+ *
+ * ImportWizardModal deliberately stays OUT of that extraction. Its
+ * shape diverges in five load-bearing ways:
+ *
+ *   1. **Dialog styling** is className-based (`.dialog-content
+ *      .import-wizard-dialog`) with a CSS animation; the other two
+ *      wizards use inline styles. Migration would either bend
+ *      WizardShell into a god-component or strip the animation.
+ *   2. **Width is 900px** (vs WizardShell's 640px). The detection /
+ *      preview tables genuinely need the extra width — multi-book
+ *      previews wrap badly at 640px.
+ *   3. **Step indicator is text** ("Step X of 4") rather than the
+ *      dot-row. Some steps map to the same number (e.g. summary +
+ *      previewSingleBook both fall under step 3); a dot-row would
+ *      misrepresent that.
+ *   4. **Navigation buttons live INSIDE each per-step component**,
+ *      not in the shell. Each step has its own back / cancel /
+ *      confirm / retry semantics; WizardShell's <WizardNav> assumes
+ *      back / next / finish at the shell level.
+ *   5. **WizardErrorBoundary** wraps the body — neither of the other
+ *      wizards uses one.
+ *
+ * Per the "Intentional asymmetry between Articles and Books must be
+ * documented" rule in `.claude/rules/lessons-learned.md` (generalised
+ * here to wizard surfaces), this divergence is the right answer for
+ * this specific user-flow.
+ *
+ * If a SECOND wizard surface ever lands with the same shape
+ * (className-based + ~900px + text indicator + per-step nav +
+ * ErrorBoundary), file `WIZARD-SHELL-IMPORT-VARIANT-01` (P5,
+ * trigger MET) and extract a sibling variant. Until then, an
+ * extraction here would be one-site speculation.
  */
 
 import { useEffect, useRef } from "react";
