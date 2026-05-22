@@ -30,11 +30,47 @@ export type ChapterType =
 
 /** PB-PHASE4: discriminator for the book's authoring shape.
  *  ``prose`` keeps the existing Chapter-based editor; ``picture_book``
- *  routes into PageEditor; ``comic_book`` is reserved for a future
- *  plugin-comics package and currently unsupported in the UI.
+ *  routes into PageEditor; ``comic_book`` mounts ComicBookEditor.
  *  Defaults to ``prose`` server-side. Immutable after create per
- *  the Session-2 PATCH /api/books/{id} guard. */
+ *  the Session-2 PATCH /api/books/{id} guard.
+ *
+ *  BOOK-TYPES-SSOT-YAML-01 (2026-05-24): the value-set of this
+ *  Literal MUST stay in sync with backend/config/book-types.yaml.
+ *  The backend test ``test_book_type_registry.py::test_literal_matches_registry``
+ *  pins the parity. When adding a new book-type, bump BOTH this
+ *  Literal AND the YAML registry. */
 export type BookType = "prose" | "picture_book" | "comic_book";
+
+/** BOOK-TYPES-SSOT-YAML-01: per-type capability flags returned by
+ *  GET /api/book-types. Mirrors the backend's BookTypeCapabilities
+ *  Pydantic model. Negative-default semantics: any unspecified
+ *  capability is False. */
+export interface BookTypeCapabilities {
+    ebook_export: boolean;
+    paperback_export: boolean;
+    hardcover_export: boolean;
+    audiobook_export: boolean;
+    template_catalog: boolean;
+    kdp_package_supported: boolean;
+}
+
+/** BOOK-TYPES-SSOT-YAML-01: one book-type's full metadata bundle
+ *  served by GET /api/book-types. Mirrors the backend BookTypeDef
+ *  Pydantic model. */
+export interface BookTypeDef {
+    id: BookType;
+    label_key: string;
+    description_key: string;
+    icon: string;
+    /** "chapters" | "pages" — drives the editor selection + the
+     *  PAGEABLE_BOOK_TYPES gate on the backend. */
+    content_model: string;
+    editor_component: string;
+    capabilities: BookTypeCapabilities;
+    dashboard_create_visible: boolean;
+    immutable_after_create: boolean;
+    default_page_size: string | null;
+}
 
 export interface Book {
     id: string;
@@ -1808,6 +1844,15 @@ export const api = {
     articlePlatforms: {
         list: () =>
             request<Record<string, PlatformSchema>>("/article-platforms"),
+    },
+
+    /** BOOK-TYPES-SSOT-YAML-01: book-type registry loaded from
+     *  backend/config/book-types.yaml. Returns the {id: BookTypeDef}
+     *  mapping. Frontend's useBookTypes() hook + BookTypesProvider
+     *  consume this; per-component direct callers are also valid. */
+    bookTypes: {
+        list: () =>
+            request<Record<string, BookTypeDef>>("/book-types"),
     },
 
     /** AR-01 Phase 1: standalone Article CRUD. Article is its own

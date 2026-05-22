@@ -10,6 +10,7 @@ import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
+import {BookTypesProvider} from "./hooks/useBookTypes";
 import {DialogProvider} from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
@@ -103,6 +104,7 @@ export default function App() {
 
     return (
         <I18nProvider>
+        <BookTypesProvider>
         <DialogProvider>
         <AudiobookJobProvider>
         <BulkAiFillJobProvider>
@@ -163,6 +165,7 @@ export default function App() {
         </BulkAiFillJobProvider>
         </AudiobookJobProvider>
         </DialogProvider>
+        </BookTypesProvider>
         </I18nProvider>
     );
 }
