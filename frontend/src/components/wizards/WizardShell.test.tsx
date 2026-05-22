@@ -224,6 +224,25 @@ describe("WizardShell — step-dot indicator", () => {
         ).toBe("future")
     })
 
+    it("omits aria-label + title when step.label is undefined (Convert shape)", () => {
+        render(
+            <WizardShell
+                open={true}
+                onClose={vi.fn()}
+                namespace={NS}
+                title="Test Wizard"
+                steps={[{key: "a"}, {key: "b"}, {key: "c"}]}
+                currentStep={0}
+                closeAriaLabel="Close"
+            >
+                <div>body</div>
+            </WizardShell>,
+        )
+        const dot = screen.getByTestId(`${NS}-step-dot-0`)
+        expect(dot.hasAttribute("aria-label")).toBe(false)
+        expect(dot.hasAttribute("title")).toBe(false)
+    })
+
     it("policy=current-vs-completed: three distinct states", () => {
         render(
             <WizardShell

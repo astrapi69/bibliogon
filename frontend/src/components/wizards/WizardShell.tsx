@@ -36,8 +36,11 @@ import {useI18n} from "../../hooks/useI18n"
 export interface StepDef {
     /** Stable key (used as React `key` prop on the dot). */
     key: string
-    /** Visible label for aria-label + title attribute on the dot. */
-    label: string
+    /** Visible label for aria-label + title attribute on the dot.
+     *  Optional: omit when no per-dot label is desired (the
+     *  ConvertToBookWizard shape, which puts the aria-label on
+     *  the indicator container instead). */
+    label?: string
 }
 
 interface WizardShellProps {
@@ -199,6 +202,13 @@ function StepDotIndicator({
         >
             {steps.map((step, i) => {
                 const state = dotState(i, currentStep, policy)
+                // Omit aria-label / title attributes entirely when
+                // no label is provided (Convert wizard shape) so
+                // happy-dom + DOM both report the attribute as
+                // absent, not as the literal string "undefined".
+                const a11yProps = step.label
+                    ? {"aria-label": step.label, title: step.label}
+                    : {}
                 return (
                     <div
                         key={step.key}
@@ -208,8 +218,7 @@ function StepDotIndicator({
                             ...styles.stepDot,
                             background: dotBackground(state),
                         }}
-                        aria-label={step.label}
-                        title={step.label}
+                        {...a11yProps}
                     />
                 )
             })}

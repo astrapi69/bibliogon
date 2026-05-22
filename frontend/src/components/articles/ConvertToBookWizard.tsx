@@ -27,15 +27,7 @@
  */
 
 import {useEffect, useMemo, useRef, useState} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
-import {
-    BookOpen,
-    Check,
-    ChevronLeft,
-    ChevronRight,
-    GripVertical,
-    X,
-} from "lucide-react"
+import {BookOpen, Check, GripVertical, X} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -68,6 +60,7 @@ import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/notify"
 import {computeAuthorSuggestions} from "../../utils/computeAuthorSuggestions"
 import AuthorSelectInput from "../AuthorSelectInput"
+import WizardShell, {WizardNav} from "../wizards/WizardShell"
 
 interface Props {
     open: boolean
@@ -568,31 +561,27 @@ export default function ConvertToBookWizard({
     }
 
     // Renders ---------------------------------------------------------
+    //
+    // The Dialog chrome + step-dot indicator + back/skip/next nav
+    // + close-button live in <WizardShell> + <WizardNav> per
+    // WIZARD-SHELL-COMPONENT-EXTRACT-01 (2026-05-24). The 6 dots
+    // carry no per-dot aria-label / title (Convert's existing
+    // shape — the indicator container itself has no aria-label
+    // either after migration; the dot-row is decorative since
+    // the user navigates with explicit Back / Next buttons).
 
-    const renderStepIndicator = () => (
-        <div
-            style={styles.steps}
-            aria-label={t(
-                "ui.convert_to_book.step_indicator_aria",
-                "Wizard progress",
-            )}
-        >
-            {Array.from({length: TOTAL_STEPS}).map((_, i) => (
-                <div
-                    key={i}
-                    style={{
-                        ...styles.stepDot,
-                        background:
-                            i === step
-                                ? "var(--accent)"
-                                : i < step
-                                  ? "var(--success, #22c55e)"
-                                  : "var(--border)",
-                    }}
-                />
-            ))}
-        </div>
-    )
+    // Step-list for WizardShell. Labels are intentionally omitted
+    // to preserve the existing no-per-dot-label UX (vs KDP which
+    // does label each dot). Promoting to labeled dots is filed as
+    // CONVERT-WIZARD-STEP-LABELS-A11Y-01 if user demand surfaces.
+    const wizardSteps: ReadonlyArray<{key: string}> = [
+        {key: "selection"},
+        {key: "metadata"},
+        {key: "front-matter"},
+        {key: "back-matter"},
+        {key: "chapter-settings"},
+        {key: "review"},
+    ]
 
     const renderValidationBanner = () => {
         if (!validationError) return null
@@ -1159,132 +1148,63 @@ export default function ConvertToBookWizard({
 
     const skippableSteps = new Set([2, 3])
 
+    // Submitting guards onClose so the user can't dismiss the
+    // dialog mid-request (matches the pre-migration Dialog.Root
+    // onOpenChange + disabled-button pattern).
+    const guardedClose = () => {
+        if (!submitting) onClose()
+    }
+
     return (
-        <Dialog.Root
+        <WizardShell
             open={open}
-            onOpenChange={(o) => {
-                if (!o && !submitting) onClose()
-            }}
+            onClose={guardedClose}
+            namespace="convert-to-book-wizard"
+            title={t(
+                "ui.convert_to_book.dialog_title",
+                "Artikel als Buch zusammenfassen",
+            )}
+            titleIcon={<BookOpen size={18} />}
+            steps={wizardSteps}
+            currentStep={step}
+            stepColorPolicy="current-vs-completed"
+            banner={renderValidationBanner()}
+            closeAriaLabel={t("ui.common.close", "Schließen")}
+            closeDisabled={submitting}
+            bodyRef={stepContentRef}
+            nav={
+                <WizardNav
+                    step={step}
+                    onBack={
+                        step > 0 ? () => setStep(step - 1) : undefined
+                    }
+                    backDisabled={submitting}
+                    onSkip={
+                        skippableSteps.has(step)
+                            ? () => setStep(step + 1)
+                            : undefined
+                    }
+                    skipDisabled={submitting}
+                    onAdvance={
+                        step < TOTAL_STEPS - 1
+                            ? () => setStep(step + 1)
+                            : undefined
+                    }
+                    advanceDisabled={!stepAdvanceable(step) || submitting}
+                />
+            }
         >
-            <Dialog.Portal>
-                <Dialog.Overlay style={styles.overlay} />
-                <Dialog.Content style={styles.content}>
-                    <Dialog.Title style={styles.title}>
-                        <BookOpen size={18} />
-                        {t(
-                            "ui.convert_to_book.dialog_title",
-                            "Artikel als Buch zusammenfassen",
-                        )}
-                    </Dialog.Title>
-
-                    {renderStepIndicator()}
-                    {renderValidationBanner()}
-                    <div ref={stepContentRef}>{renderCurrentStep()}</div>
-
-                    <div style={styles.nav}>
-                        <div style={{display: "flex", gap: 8}}>
-                            {step > 0 && (
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => setStep(step - 1)}
-                                    data-testid={`convert-to-book-wizard-step-${step}-back`}
-                                    disabled={submitting}
-                                >
-                                    <ChevronLeft size={14} />{" "}
-                                    {t("ui.common.back", "Zurück")}
-                                </button>
-                            )}
-                            {skippableSteps.has(step) && (
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => setStep(step + 1)}
-                                    data-testid={`convert-to-book-wizard-step-${step}-skip`}
-                                    disabled={submitting}
-                                >
-                                    {t("ui.common.skip", "Überspringen")}
-                                </button>
-                            )}
-                        </div>
-                        <div style={{display: "flex", gap: 8}}>
-                            {step < TOTAL_STEPS - 1 && (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => setStep(step + 1)}
-                                    disabled={!stepAdvanceable(step) || submitting}
-                                    data-testid={`convert-to-book-wizard-step-${step}-next`}
-                                >
-                                    {t("ui.common.next", "Weiter")}{" "}
-                                    <ChevronRight size={14} />
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    <Dialog.Close asChild>
-                        <button
-                            type="button"
-                            style={styles.close}
-                            onClick={onClose}
-                            disabled={submitting}
-                            aria-label={t("ui.common.close", "Schließen")}
-                        >
-                            <X size={16} />
-                        </button>
-                    </Dialog.Close>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+            {renderCurrentStep()}
+        </WizardShell>
     )
 }
 
 // --- styles --------------------------------------------------------------
+// Dialog chrome (overlay, content, title), step indicator (steps,
+// stepDot), back/skip/next nav and close-button styles live in
+// WizardShell. Only step-body-specific styles remain here.
 
 const styles: Record<string, React.CSSProperties> = {
-    overlay: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 9998,
-    },
-    content: {
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        background: "var(--bg-card)",
-        borderRadius: "var(--radius-lg, 12px)",
-        padding: 24,
-        width: "min(640px, 92vw)",
-        maxHeight: "90vh",
-        overflowY: "auto",
-        boxShadow: "var(--shadow-lg)",
-        zIndex: 9999,
-    },
-    title: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        fontSize: "1.125rem",
-        fontWeight: 600,
-        margin: 0,
-        marginBottom: 16,
-        color: "var(--text-primary)",
-    },
-    steps: {
-        display: "flex",
-        gap: 6,
-        justifyContent: "center",
-        marginBottom: 20,
-    },
-    stepDot: {
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        transition: "background 0.2s",
-    },
     stepContent: {
         minHeight: 280,
     },
@@ -1333,24 +1253,6 @@ const styles: Record<string, React.CSSProperties> = {
         borderRadius: "var(--radius-sm, 4px)",
         maxHeight: 320,
         overflowY: "auto",
-    },
-    nav: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 20,
-        paddingTop: 16,
-        borderTop: "1px solid var(--border)",
-    },
-    close: {
-        position: "absolute",
-        top: 12,
-        right: 12,
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "var(--text-muted)",
-        padding: 4,
     },
     toggleRow: {
         display: "flex",
