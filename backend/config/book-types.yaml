@@ -1,0 +1,73 @@
+# Single source of truth for the Book.book_type enum + per-type
+# metadata. Both backend (BookTypeRegistry) and frontend (via the
+# /api/book-types endpoint) consume this file.
+#
+# Filed by BOOK-TYPES-SSOT-YAML-01 (2026-05-24). See
+# docs/audits/book-types-ssot-pre-inspection-2026-05-24.md for the
+# scope + design rationale.
+#
+# Adding a new book_type:
+#   1. Append a new entry to ``book_types`` below.
+#   2. Add the corresponding i18n keys in
+#      backend/config/i18n/<lang>.yaml under ui.get_started.
+#   3. Bump the BookType Literal in
+#      backend/app/schemas/__init__.py + frontend/src/api/client.ts.
+#      The verification test (test_book_type_registry.py
+#      ::test_literal_matches_registry) fails loudly on drift.
+#   4. Wire any plugin-side dispatch (export pipeline, KDP package
+#      builder, etc.) per the per-type editor_component name.
+#
+# Capability flags use NEGATIVE-DEFAULT semantics: an unspecified
+# capability defaults to False. New types must opt-in explicitly
+# to each capability — safe-by-default.
+
+book_types:
+  - id: prose
+    label_key: ui.get_started.book_type_prose_title
+    description_key: ui.get_started.book_type_prose_desc
+    icon: BookOpen
+    content_model: chapters
+    editor_component: BookEditor
+    capabilities:
+      ebook_export: true
+      paperback_export: true
+      hardcover_export: true
+      audiobook_export: true
+      template_catalog: true
+      kdp_package_supported: true
+    dashboard_create_visible: true
+    immutable_after_create: true
+
+  - id: picture_book
+    label_key: ui.get_started.book_type_picture_title
+    description_key: ui.get_started.book_type_picture_desc
+    icon: Image
+    content_model: pages
+    editor_component: PageEditor
+    capabilities:
+      ebook_export: false
+      paperback_export: true
+      hardcover_export: false
+      audiobook_export: false
+      template_catalog: false
+      kdp_package_supported: true
+    dashboard_create_visible: true
+    immutable_after_create: true
+    default_page_size: "8.5x8.5"
+
+  - id: comic_book
+    label_key: ui.get_started.book_type_comic_title
+    description_key: ui.get_started.book_type_comic_desc
+    icon: Layers
+    content_model: pages
+    editor_component: ComicBookEditor
+    capabilities:
+      ebook_export: false
+      paperback_export: true
+      hardcover_export: false
+      audiobook_export: false
+      template_catalog: false
+      kdp_package_supported: true
+    dashboard_create_visible: true
+    immutable_after_create: true
+    default_page_size: "7x10"
