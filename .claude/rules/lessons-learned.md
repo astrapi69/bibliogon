@@ -3930,6 +3930,108 @@ All three are real regressions; the surface message is the
 cheap prevention.
 
 
+## Architecture-doc consultation is part of Pre-Inspection, not
+## post-implementation discovery
+
+Filed 2026-05-22 from the KDP-PUBLISHING-WIZARD-01 Phase 1
+session. Two Pre-Inspections back-to-back missed
+``docs/architecture/state-machines.md`` even though the doc
+was explicitly relevant. Recorded as single-instance
+observation per the "single instance is incident, not
+pattern" discipline; promote to pattern if a second
+instance surfaces.
+
+### What happened
+
+The Pre-Inspection (Track 2 — frontend wizard-component audit)
+compared the codebase's three existing wizards:
+
+- ``ConvertToBookWizard`` — hand-rolled ``useState`` + step-
+  index, ~1430 LOC
+- ``AiSetupWizard`` — same shape, simpler, ~342 LOC
+- ``ImportWizardModal`` — XState v5 machine + actor pattern,
+  340 LOC machine + 403 LOC modal
+
+The audit recommended ``ConvertToBookWizard``'s shape because
+the new KDP wizard "has linear steps (no branching)". That
+inference was wrong on the merits — branching isn't the only
+criterion — but it was load-bearing in the implementation
+plan, which then locked in ``useState`` for C0-C5.
+
+After C2 shipped, the user surfaced
+``docs/architecture/state-machines.md``. The doc lists 5
+explicit trigger criteria for choosing XState v5; the KDP
+wizard satisfies all 5:
+
+1. 3+ states with multiple incoming transitions
+2. Async side effects gated by state (3 API calls, one per
+   step)
+3. Guards or invariants across transitions
+4. Reset/retry semantics
+5. Future flows likely to branch (Phase 2 adds pricing + ARC)
+
+The audit's frontend-component-tree grep did not reach the
+architecture-doc directory.
+
+### Mitigation that resolved THIS incident
+
+User adjudicated path (γ): finish Phase 1 hand-rolled,
+file ``KDP-WIZARD-XSTATE-MIGRATION-01`` as a P3 backlog
+item paired with Phase 2. Both honored: session instruction
+ships, architecture doc gets the migration at the natural
+seam where branching pressure forces it.
+
+The cost of the wrong-pattern Phase 1 ship: zero behavioral
+defect, ~3-4 hours of future migration work (covered by the
+filing).
+
+### Recipe for future Pre-Inspections
+
+Pre-Inspection's component-audit track MUST grep
+``docs/architecture/`` for any doc whose topic matches the
+component class being audited. Two-line grep:
+
+```bash
+grep -rln "<component-class-keyword>" docs/architecture/ docs/rules/ 2>/dev/null
+ls docs/architecture/
+```
+
+The second command (literal ``ls``) is the cheap insurance —
+six directories' worth of files in ``docs/architecture/``
+can be skimmed in 30 seconds. If a doc's filename obviously
+matches the component class (e.g. ``state-machines.md`` when
+designing a wizard), it must be read before scoring component
+candidates.
+
+### Adjacent risk: parallel-agent specifications
+
+The Phase 1 session prompt was authored by Strategic-Advisor
+2026-05-23 (a parallel agent). It explicitly said "follow
+ConvertToBookWizard as canonical reference". That directive
+held weight in the executing session and was an additional
+factor against the architecture-doc consultation: the
+executor agent was treating the parallel-agent's spec as
+authoritative.
+
+Per the existing "Multi-tool collaboration tracking: re-sync
+before accepting new orders" lessons-learned rule, the
+executor must verify the spec against the codebase state
+INCLUDING architecture docs. Specs written without
+architecture-doc awareness produce the wrong-pattern
+recommendation regardless of how authoritative they appear.
+
+### Pairs with
+
+- "Pre-Coding-Reality-Check: re-audit at the keystroke" (this
+  file) — same family. The keystroke-time grep catches the
+  audit-blind-spot one stage later; the recipe above prevents
+  the blind spot at audit time.
+- "Multi-tool collaboration tracking: re-sync before accepting
+  new orders" (this file) — same family. The architecture doc
+  is one of the things the executor must verify against, not
+  just commits + open issues.
+
+
 ## Single-Router-Per-Plugin convention
 
 Filed 2026-05-20 from the halted Comics-Session-2 Pre-Inspection.

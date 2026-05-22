@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-24 (RECURRING-COMPONENT-AUDIT-01 CLOSED as housekeeping — deliverable shipped 2026-05-21 at `docs/audits/recurring-component-audit-2026-05-21.md` (565 lines, 7 + 2 anti-pattern candidates evaluated). 4 audit candidates already extracted in follow-up sessions (`useSelection<T>()` permanently deferred per design-intent; `BulkActionBar` shipped `c2305e7`; `AuthorSelectInput` shipped `a213788`; new candidate Pattern B `AuthorProfileSelect` shipped `11198a4`). Remaining audit-recommended sequence: rank #3 `ListRow` (score 13) lives as its own trigger-gated backlog item `LIST-VIEW-ROW-SHARED-EXTRACTION-01`; ranks #5–7 LOW tier below the audit's own 12-point action floor. Per-candidate backlog filings discipline preserved — closure of the umbrella audit item does NOT close the individual extraction items. Earlier 2026-05-24: COMIC-BOOK-EDITOR-METADATA-BUTTON-01 CLOSED via 4-commit ship `0d940cf..84218e6`; EXPOSE-BUCHIDEE-METADATA-01 + GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 + RCU candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect closed 2026-05-23.)
+Last updated: 2026-05-22 (KDP-PUBLISHING-WIZARD-01 Phase 1 (MVP) CLOSED via 8-commit ship `1b84ad0..e839ec2`: housekeeping close of RECURRING-COMPONENT-AUDIT-01 + Pre-Inspection audit (670 lines) + C0 changelog filesystem-isolation fix (KDP-CHANGELOG-PATH-ISOLATION) + C1-C5 (wizard shell + MetadataChecklist + CoverValidation + ExportPackage + i18n × 8 + Playwright smoke). Strategic-direction gate opened by user, A1-A5 adjudicated (MVP-first 3-step / calculator-only / direct-import / 5-file ZIP / React-state only). New backend endpoint `POST /api/kdp/package/{book_id}` closes the "0 frontend consumers of /api/kdp/*" half-wired surface documented in the Pre-Inspection Track 3. Phase 2 (pricing + ARC + state persistence) filed as `KDP-PUBLISHING-WIZARD-01-PHASE-2`. XState migration filed as `KDP-WIZARD-XSTATE-MIGRATION-01` (5/5 trigger criteria from docs/architecture/state-machines.md satisfied; pairs with Phase 2). Vitest 1838 → 1871 (+33: 9 wizard nav + 9 MetadataChecklist + 9 CoverValidation + 6 ExportPackage); Backend pytest 2137 → 2142 (+5 endpoint integration); i18n parity 51/51 held throughout. Earlier 2026-05-22: RECURRING-COMPONENT-AUDIT-01 CLOSED as housekeeping (deliverable shipped 2026-05-21 at `docs/audits/recurring-component-audit-2026-05-21.md`).)
 Current version: v0.35.1
 Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -47,53 +47,91 @@ store.
 
 ## P2 - High-Value User Features
 
-- **KDP-PUBLISHING-WIZARD-01** (P2, STRATEGIC, filed 2026-05-19
-  from the
-  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
-  triage of exploration feature #6): end-to-end KDP publishing
-  pipeline as a wizard on top of the already-shipped plugin-kdp
-  foundation. Closes the "K-03 + K-04" half of the original
-  K-01..K-04 plan (K-01 metadata generation + K-02 cover
-  validation are shipped; K-03 wizard + K-04 pricing/ARC/launch
-  are this filing).
+- **KDP-PUBLISHING-WIZARD-01-PHASE-2** (P2, STRATEGIC, filed
+  2026-05-22 from Phase 1 close): Phase 2 of the KDP publishing
+  pipeline. Phase 1 MVP (3-step wizard — checklist + cover
+  validation + export package) shipped 2026-05-22 (commits
+  ``7b166dd..e839ec2``, archived in
+  ``docs/roadmap-archive/2026-05.md``). Phase 2 adds the
+  commercial-half scope deferred per A1 adjudication:
 
   Scope:
-  - Step-by-step wizard for first-time KDP launch
-  - Pre-launch checklist (categories selected, description
-    written, cover uploaded, BISAC codes valid, ISBN/ASIN
-    populated, etc.) - reads the existing metadata-checker
-    output as the gating signal
-  - Pricing strategy panel (KDP royalty calculations, region
-    pricing for US / EU / UK / JP / IN)
-  - ARC (Advance Reader Copy) management - track which
-    reviewers received which version, capture review
-    permalinks back into the book record
-  - Final-step export-package generation (KDP-ready ZIP
-    with manuscript + cover + metadata JSON)
+  - **Pricing step**: KDP royalty calculator (35% vs 70%) +
+    region pricing (US / EU / UK / JP / IN). Per A2: calculator-
+    only, not strategy-tool. New ``BookPublishingState`` table
+    (1:1 with Book) for persistence.
+  - **ARC step**: Advance Reader Copy reviewer tracking. New
+    ``ArcReviewer`` table (N:1 to Book). CRUD over invited /
+    received-copy / reviewed / declined status.
+  - **State persistence (A5)**: server-side
+    ``BookPublishingState`` row stores per-step completions +
+    pricing decisions + ARC list. Wizard reloads mid-flow on
+    page refresh.
+  - **XState migration**: per ``KDP-WIZARD-XSTATE-MIGRATION-01``
+    below, this is the natural seam to migrate the wizard to
+    the XState v5 pattern documented in
+    ``docs/architecture/state-machines.md``. The added branching
+    (pricing / ARC / persistence) crosses the 5/5 criteria
+    threshold.
 
-  Architecture-discipline notes (per audit
-  Track C):
-  - **Half-Wired-Lifecycle Prevention**: shipping wizard steps
-    without their export-pipeline consumers is the canonical
-    write-without-reader trap. Per-step Pre-Inspection required
-    when implementation starts: confirm the ARC list / pricing
-    decisions / launch-checklist results all have actual
-    consumers in the export package, not just UI surfaces.
-  - **3-Source-Plugin-Metadata-Pattern**: plugin-kdp's
-    ``backend/config/plugins/kdp.yaml`` will gain a
-    ``settings.wizard:`` block; the bundled
-    ``plugins/bibliogon-plugin-kdp/config/kdp.yaml`` must be
-    regenerated via ``make build-zip`` per the canonical-vs-
-    bundled rule.
+  Schema additions (Pre-Inspection Track 5):
 
-  Effort: XL (16+ commits, multi-session). Trigger: when
-  strategic-direction shifts toward KDP-publishing pipeline as
-  the primary differentiator (per the exploration doc's
-  Bundle B framing). Pairs with:
-  ``KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01`` (P5, existing) -
-  the wizard's category-picker step is the natural place to
-  wire the existing /api/kdp/categories endpoint into the
-  CategoryInput component.
+  - ``BookPublishingState`` columns: ``royalty_plan``,
+    ``kdp_select_enrolled``, ``kdp_select_enrollment_date``,
+    ``expanded_distribution``, ``prices`` (JSON), ``launch_
+    checklist_state`` (JSON), ``publication_target_date``,
+    ``last_kdp_upload_at``.
+  - ``ArcReviewer`` columns: ``book_id`` (FK), ``reviewer_name``,
+    ``reviewer_email``, ``review_status``, ``copy_version``,
+    ``review_permalink``, ``review_text_excerpt``, ``invited_at``,
+    ``reviewed_at``.
+
+  Effort: M (8-12 commits, 1-2 sessions). Pairs with
+  ``KDP-WIZARD-XSTATE-MIGRATION-01`` (run them in the same
+  session if possible — same surface).
+
+- **KDP-WIZARD-XSTATE-MIGRATION-01** (P3, ARCHITECTURE-DEBT,
+  filed 2026-05-22 from Phase 1 close per
+  ``docs/architecture/state-machines.md`` consultation): migrate
+  ``KdpPublishingWizard`` from hand-rolled ``useState`` step-
+  index to the XState v5 pattern. Phase 1 shipped with
+  ``useState`` per the session instruction "follow
+  ``ConvertToBookWizard``"; the architecture doc's 5/5 trigger
+  criteria are all satisfied:
+
+  1. 3+ states with multiple incoming transitions — ✓ (3 steps,
+     back+next transitions)
+  2. Async side effects gated by state — ✓ (3 API calls, one per
+     step: ``/api/kdp/check-metadata``,
+     ``/api/books/{id}/assets/file/...``,
+     ``/api/kdp/package/{id}``)
+  3. Guards or invariants across transitions — ✓ (step-0 gate
+     shipped in C2; step-1 gate in C3; step-2 finish in C4)
+  4. Reset/retry semantics — ✓ (close resets step; ExportPackage
+     retry-on-error)
+  5. Future flows likely to branch — ✓ (Phase 2 adds pricing +
+     ARC steps)
+
+  Trigger: at the start of Phase 2 implementation. The added
+  branching pressure of pricing + ARC + persistence is what
+  finally makes the hand-rolled approach genuinely break down;
+  migrating before is speculative, migrating at the seam ships
+  a machine that matches actually-shipped behavior.
+
+  Migration shape: new
+  ``frontend/src/components/kdp-wizard/machines/
+  kdpWizardMachine.ts`` (pure data file, zero React imports) +
+  ``KdpPublishingWizard.tsx`` switches from ``useState(step)``
+  to ``useMachine(kdpWizardMachine)``. Test surface adapts: the
+  4 wizard-navigation tests in ``KdpPublishingWizard.test.tsx``
+  become machine-actor-level tests under
+  ``machines/kdpWizardMachine.test.ts``; the per-step component
+  tests (MetadataChecklist + CoverValidation + ExportPackage)
+  stay component-level + machine-agnostic.
+
+  Effort: M (4-6 commits, 1 session). Pairs with
+  ``KDP-PUBLISHING-WIZARD-01-PHASE-2`` above — both ship in the
+  same session.
 
 ---
 
