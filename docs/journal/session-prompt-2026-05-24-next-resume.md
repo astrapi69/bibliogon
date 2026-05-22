@@ -1,136 +1,127 @@
-# Next Session Resume Prompt (2026-05-24)
+# Next Session Resume Prompt (2026-05-22 end-of-day)
 
 Fresh CC session. Resume work per
 [session-handoff-2026-05-24-next-resume.md](session-handoff-2026-05-24-next-resume.md).
 
+Filename note: keeps the `2026-05-24` suffix from the earlier
+handover commit `7f54b9a` for continuity. Actual date today
+is **2026-05-22**; today's session arcs landed in the range
+`0d940cf..4410b2d` (51 commits across 7 CC sessions).
+
 Paste the block below verbatim into the new CC session.
 
 ```text
-Resume from the 2026-05-22 close. The full KDP Publishing
-Wizard shipped (Phase 1 + Phase 2, 22 commits across 3 CC
-sessions); HEAD = 817b7df. Plus 4-commit COMIC-BOOK-EDITOR-
-METADATA-BUTTON-01 ship plus 1-commit RECURRING-COMPONENT-
-AUDIT-01 housekeeping close. 29 commits today total.
+Resume from the 2026-05-22 end-of-day close. Six substantial
+arcs + 1 housekeeping close shipped today across 51 commits:
 
-State of play:
-- HEAD = 817b7df, working tree clean, parity with origin/main.
-- Backend pytest: 2181 passed.
-- Frontend Vitest: 1940 passed.
-- i18n parity: 75/75 across 8 catalogs.
-- Playwright specs: 60 in e2e/smoke/.
-- Backlog: P0=0, P1=0, P2=0 (empty first time), P3=37, P4=27,
-  P5=7, BLOCKED=2.
+  - COMIC-BOOK-EDITOR-METADATA-BUTTON-01 (P1, 4 commits)
+  - RECURRING-COMPONENT-AUDIT-01 housekeeping (1 commit)
+  - KDP-PUBLISHING-WIZARD-01 Phase 1 (9 commits)
+  - KDP-PUBLISHING-WIZARD-01-PHASE-2 (15 commits, 2 sessions)
+  - WIZARD-SHELL-COMPONENT-EXTRACT-01 (5 commits)
+  - PAGES-DELETE-EDITOR-UI-01 (5 commits)
+  - BOOK-TYPES-SSOT-YAML-01 (1 Pre-Inspection + 10 commits)
 
-Closures (2026-05-22):
-- COMIC-BOOK-EDITOR-METADATA-BUTTON-01 (P1)
-- RECURRING-COMPONENT-AUDIT-01 (housekeeping)
-- KDP-PUBLISHING-WIZARD-01 Phase 1 (MVP)
-- KDP-PUBLISHING-WIZARD-01-PHASE-2 (P2 STRATEGIC)
-- KDP-WIZARD-XSTATE-MIGRATION-01 (P3 ARCHITECTURE-DEBT)
+HEAD = 4410b2d on origin/main. Clean working tree.
+Backend pytest 2207. Frontend Vitest 1987. i18n 75/75.
+Playwright 61 specs. tsc clean.
 
-Filings opened (2026-05-22):
-- WIZARD-SHELL-COMPONENT-EXTRACT-01 (P3, RCU 3-site, trigger
-  condition NOW MET)
-- KDP-WIZARD-RESUME-AT-STEP-01 (P3, true resume-at-step
-  requires server-stored validation results)
-- KDP-WIZARD-RESUME-BADGE-01 (P3, BookMetadataEditor badge)
-- METADATA-BUTTON-COMPONENT-EXTRACT-01 (P5, RCU pre-reg)
-- KDP-PRICING-PRECISE-FILE-SIZE-01 (P5, precise file-size)
-- ARC-MAILTO-LINK-01 (P5, polish for outbound email)
+Backlog state: P0 / P1 / P2 all EMPTY (third consecutive
+session-end at P2=0). 34 P3, 27 P4, 8 P5, 2 BLOCKED.
 
-The full handover is at
-docs/journal/session-handoff-2026-05-24-next-resume.md — read
-that first.
+## Step 1: State verify
 
-Quick start:
-1. git status                    (verify clean, HEAD=817b7df)
-2. git log origin/main --oneline -10
-3. cat docs/journal/session-handoff-2026-05-24-next-resume.md
-4. Tell me which path you'd take.
+git status
+git log origin/main --oneline -10
 
-Top three candidates:
+Confirm HEAD = 4410b2d.
 
-1. WIZARD-SHELL-COMPONENT-EXTRACT-01 (P3, RCU 3-site, trigger
-   met): extract a shared WizardShell from
-   ConvertToBookWizard + ImportWizardModal +
-   KdpPublishingWizard (Dialog-Chrome, Step-Indicator,
-   Nav-Buttons, testid-namespace wiring). M-effort (4-7
-   commits, 1 session). Natural follow-up to the KDP arc.
+## Step 2: Read handover
 
-2. PAGES-DELETE-EDITOR-UI-01 (P3, Half-Wired-Lifecycle-
-   Cascade): page-delete UI missing in both PageEditor +
-   ComicBookEditor; backend supports it; affordance just
-   needs to be exposed in PageThumbnails. S-effort (3-5
-   commits).
+cat docs/journal/session-handoff-2026-05-24-next-resume.md
 
-3. BOOK-TYPES-SSOT-YAML-01 (P3, IMPROVEMENT, trigger-gated):
-   book-type metadata SSoT across 5+ scattered surfaces.
-   Trigger: 3rd surface needs it (currently at 5; 6th
-   would fire). M-effort (6-10 commits).
+## Step 3: User-direction or Strategic-Advisor
 
-Plus: user may want to shift to non-Bibliogon work
-(adaptive-learner, PluginForge, creative projects). P2 is
-empty; no continuation forced.
+Next-Substantial-Session Candidates (ranked):
 
-Active disciplines (carry forward from prior session):
-- Plain `git status` before every commit (no path filter)
-- Explicit-paths-only `git add` (no `-A`, no `.`, no
-  directory-as-path; Multi-Tool-Coordination addendum
-  2026-05-23)
-- Atomic-green-per-commit-delta (pytest 2181 / Vitest 1940
-  baselines hold or grow)
-- Pre-Coding-Reality-Check at boundaries (re-grep immediate
-  touch-surface before keystroke; STOP on architectural
-  conflict)
-- Push autonomously after atomic-green commits (2026-05-21
-  discipline change)
-- Half-Wired-Prevention-Check at integration milestones
-- `ls docs/architecture/` + grep component-class keyword
-  during Pre-Inspection's component-audit track (2026-05-22
-  LL entry)
-- Option C discipline (single-instance observation, not
-  pattern-yet): XState machine states reflect current
-  reality, not planned future — add states alongside their
-  UI
+1. KDP-WIZARD-RESUME-AT-STEP-01 (P3 FEATURE-REFINEMENT,
+   M-effort, 5-8 commits). Natural KDP continuation.
+   Requires server-stored validation results in
+   BookPublishingState (schema shipped; needs field
+   additions + wizard hydration logic).
 
-Don't overscope. Prefer one clean close over two half-done.
-If you pick WIZARD-SHELL-COMPONENT-EXTRACT-01, lead with a
-Pre-Inspection (read-only) before any code — same shape as
-the KDP Phase 1 + Phase 2 sessions.
+2. BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 (P3 RCU pre-
+   registered). Note: BOOK-TYPES-SSOT-YAML-01 C5 already
+   DELETED the original BOOK_TYPE_CARDS array; the card-
+   shape extract may or may not have a 2nd surface left
+   today. Pre-Coding-Reality-Check needed before any
+   keystroke.
 
-User-Direction-Override always overrides Strategic-Advisor
-recommendation.
-```
+3. EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01 (P3 quick-win, XS,
+   single-session under 1 hour).
 
----
+4. MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01 (P3, triage
+   only, produces phase-decisions).
 
-## Recovery checklist (if state-divergence)
+5. AUTHOR-DATALIST-EXTEND-EDITORS-01 (P3, UX-adjudication
+   required upfront).
 
-If `git status` or `git log` shows divergence from the
-expected `817b7df` HEAD:
+6. LIST-VIEW-ROW-SHARED-EXTRACTION-01 (P3, RCU trigger-
+   gated: 3rd instance OR drift between ArticleRow +
+   BookListView).
 
-1. `git fetch origin` + `git log origin/main..HEAD` — confirm
-   no unpushed commits.
-2. If `origin/main` advanced past `817b7df`, read the new
-   commits' messages to understand what shipped overnight.
-3. Re-run test baselines (`make test` + Playwright smoke)
-   before adopting any state-as-baseline.
-4. If the divergence is non-trivial: STOP, surface the
-   divergence + the new state, ask for direction.
+7. HOOKSPEC-DISPATCH-WIRING-01 (P3, speculative; no current
+   production usage).
 
----
+User may also shift to non-Bibliogon work (adaptive-learner,
+PluginForge, creative projects). No P0/P1/P2 forces
+continuation.
+
+If user has explicit direction: proceed per direction.
+If user delegates: pick per user's session-budget signal
+(quick-win vs substantial vs strategic-pivot).
+
+## Step 4: Apply active disciplines
+
+Per handover's Critical-Constraints section. Key items:
+
+- Plain git status before every commit (no path filter)
+- Explicit-paths-only git add (no -A, no ., no
+  directory-as-path)
+- Atomic-green-per-commit-delta (pytest 2207 / Vitest 1987)
+- Pre-Coding-Reality-Check at boundaries
+- Push autonomously after atomic-green commits
+- Audit-First Pre-Inspection before non-trivial ship
+
+New patterns from today's arcs (single-instance, watch for
+2nd-context emergence):
+
+- Option C discipline (XState): machine states reflect
+  current reality, not planned future
+- Scope-revision pattern: surface Pre-Coding-Reality-Check
+  finding + Q1-Qn adjudication menu when filing's surface
+  count is materially wrong (today: WIZARD-SHELL 3→2;
+  BOOK-TYPES-SSOT 5→24)
+- Wrapper-based render() for provider auto-wrap in Vitest
+  (BookMetadataEditor.test.tsx C7 ships the pattern)
+- Plugin lazy-import + ImportError fallback for backend
+  modules consumed at standalone-pytest time
+
+## Step 5: Execute
+
+Per direction. Pre-Coding-Reality-Check at boundaries.
+Push autonomously after atomic-green commits. Surface on
+Stop-Conditions or completion.
+
+## Push convention
+
+Per discipline-change 2026-05-21: CC pushes autonomously
+after atomic-green. Surface only on Stop-Conditions or
+substantial-architecture-decisions.
 
 ## End-of-session
 
-Session-end-report per established convention:
-
-- SHA range (`{start}..{end}`)
-- Test deltas (pytest / Vitest / i18n)
-- Closures (backlog items closed this session)
-- Filings (new backlog items opened)
-- LL additions if any (single-instance observations vs
-  pattern promotions)
-- Next-substantial-candidates (1-3 ranked)
-
-Push autonomously after atomic-green commits. Surface only on
-Stop-Conditions or substantial architecture decisions.
+Session-end-report per established convention: SHA-range
++ test-deltas + closures + filings + LL-additions if any +
+next-substantial-candidates.
+```
