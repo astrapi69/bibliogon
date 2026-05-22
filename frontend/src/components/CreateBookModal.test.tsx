@@ -11,6 +11,52 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import CreateBookModal from "./CreateBookModal"
+import {BookTypesProvider} from "../hooks/useBookTypes"
+import type {BookTypeDef} from "../api/client"
+
+// BOOK-TYPES-SSOT-YAML-01 C6: CreateBookModal now reads the
+// BookType registry to drive the template-tab visibility
+// (capabilities.template_catalog). Static test snapshot.
+const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
+  prose: {
+    id: "prose",
+    label_key: "ui.get_started.book_type_prose_title",
+    description_key: "ui.get_started.book_type_prose_desc",
+    icon: "BookOpen",
+    content_model: "chapters",
+    editor_component: "BookEditor",
+    capabilities: {
+      ebook_export: true,
+      paperback_export: true,
+      hardcover_export: true,
+      audiobook_export: true,
+      template_catalog: true,
+      kdp_package_supported: true,
+    },
+    dashboard_create_visible: true,
+    immutable_after_create: true,
+    default_page_size: null,
+  },
+  picture_book: {
+    id: "picture_book",
+    label_key: "ui.get_started.book_type_picture_title",
+    description_key: "ui.get_started.book_type_picture_desc",
+    icon: "Image",
+    content_model: "pages",
+    editor_component: "PageEditor",
+    capabilities: {
+      ebook_export: false,
+      paperback_export: true,
+      hardcover_export: false,
+      audiobook_export: false,
+      template_catalog: false,
+      kdp_package_supported: true,
+    },
+    dashboard_create_visible: true,
+    immutable_after_create: true,
+    default_page_size: "8.5x8.5",
+  },
+}
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -93,13 +139,15 @@ describe("CreateBookModal", () => {
 
   function renderModal(open = true, bookType?: "prose" | "picture_book") {
     return render(
-      <CreateBookModal
-        open={open}
-        onClose={onClose}
-        onCreate={onCreate}
-        onCreateFromTemplate={onCreateFromTemplate}
-        bookType={bookType}
-      />,
+      <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+        <CreateBookModal
+          open={open}
+          onClose={onClose}
+          onCreate={onCreate}
+          onCreateFromTemplate={onCreateFromTemplate}
+          bookType={bookType}
+        />
+      </BookTypesProvider>,
     )
   }
 

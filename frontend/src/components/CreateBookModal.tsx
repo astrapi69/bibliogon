@@ -1,5 +1,6 @@
 import {useState, useEffect, useMemo} from "react";
 import {api, ApiError, Author, BookCreate, BookFromTemplateCreate, BookTemplate, BookType} from "../api/client";
+import {useBookTypes} from "../hooks/useBookTypes";
 import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
@@ -47,6 +48,15 @@ interface Props {
 export default function CreateBookModal({open, onClose, onCreate, onCreateFromTemplate, bookType = "prose"}: Props) {
     const {t} = useI18n();
     const dialog = useDialog();
+    // BOOK-TYPES-SSOT-YAML-01 C6: query the registry for this
+    // book type's capabilities. template_catalog drives the
+    // template-tab visibility — used to be hardcoded ===
+    // "prose"; now any future book type can opt in by flipping
+    // its YAML capability flag.
+    const bookTypesSnapshot = useBookTypes();
+    const supportsTemplateCatalog =
+        bookTypesSnapshot.types[bookType]?.capabilities
+            .template_catalog ?? false;
     const GENRE_KEYS = [
         "novel", "non_fiction", "technical", "children", "biography", "poetry",
         "short_stories", "academic", "textbook", "self_help", "fantasy",
@@ -318,10 +328,12 @@ export default function CreateBookModal({open, onClose, onCreate, onCreateFromTe
                     </div>
 
                     <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
-                        {/* Picture-books have no template catalog yet —
-                         *  hide the tab list so the user lands directly
-                         *  in the blank-form path. */}
-                        {bookType === "prose" && (
+                        {/* BOOK-TYPES-SSOT-YAML-01 C6: tab visibility
+                         *  driven by capabilities.template_catalog
+                         *  flag in book-types.yaml (prose has it;
+                         *  picture/comic don't — same behaviour as
+                         *  before, but the gate is now data-driven). */}
+                        {supportsTemplateCatalog && (
                             <Tabs.List className="radix-tabs-list" style={{marginBottom: 12}}>
                                 <Tabs.Trigger
                                     value="blank"

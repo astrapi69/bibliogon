@@ -6,6 +6,7 @@ import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
+import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
 import GitBackupDialog from "../components/GitBackupDialog";
@@ -23,11 +24,31 @@ import {EmptyState} from "../components/EmptyState";
 import {LoadingIndicator} from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
 
+// BOOK-TYPES-SSOT-YAML-01 C6: editor dispatch table. The
+// registry's ``editor_component`` field is a string name; this
+// map resolves it to the actual React component at render time.
+// Adding a new page-based book type with a different editor =
+// add the component import + one entry here. New chapter-based
+// types fall through to the prose path automatically.
+const EDITOR_COMPONENTS: Record<
+    string,
+    React.ComponentType<{
+        bookId: string;
+        bookTitle: string;
+        onBack: () => void;
+        onShowMetadata: () => void;
+    }>
+> = {
+    PageEditor,
+    ComicBookEditor,
+};
+
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
     const navigate = useNavigate();
     const dialog = useDialog();
     const {t} = useI18n();
+    const bookTypesSnapshot = useBookTypes();
     const [sidebarOpen, setSidebarOpen] = useState(true);
     const TYPE_LABELS: Record<ChapterType, string> = {
         chapter: t("ui.chapter_types.chapter", "Kapitel"),
@@ -477,84 +498,61 @@ export default function BookEditor() {
         );
     }
 
-    // PB-PHASE4 Session 3 Commit 6: picture-books mount the page-based
-    // editor instead of the chapter-based flow. Existing prose flow
-    // stays exactly as-is. comic_book books route to the placeholder
-    // ComicBookEditor shipped by plugin-comics Session 1; Session 2
-    // replaces that with the panel + multi-bubble editor.
+    // BOOK-TYPES-SSOT-YAML-01 C6: page-based book dispatch via the
+    // BookTypeRegistry. Replaces the two near-identical
+    // ``book.book_type === "picture_book"`` + ``=== "comic_book"``
+    // branches that each duplicated the showMetadata-swap pattern.
     //
-    // PB-PHASE4 Session 5 Commit 2: when ?view=metadata is set (or
-    // PageEditor's "Open metadata" button fires), render
-    // BookMetadataEditor in place of PageEditor — same URL-routed
-    // pattern as the prose flow. onBack from metadata clears the
-    // showMetadata flag so the user returns to PageEditor, not all
-    // the way to the dashboard.
-    if (book.book_type === "picture_book") {
-        if (showMetadata) {
+    // The registry's content_model="pages" flag picks page-based
+    // types; the editor_component name (e.g. "PageEditor",
+    // "ComicBookEditor") resolves to the React component via the
+    // EDITOR_COMPONENTS map declared at module top. Unknown editor
+    // names fall through to the prose path (negative-default safe).
+    //
+    // PB-PHASE4 Session 5 Commit 2 + COMIC-BOOK-EDITOR-METADATA-
+    // BUTTON-01 C2: when ?view=metadata is set (or the editor's
+    // "Open metadata" button fires), render BookMetadataEditor
+    // in place of the page-based editor — same URL-routed pattern
+    // as the prose flow.
+    if (pageableBookTypeIds(bookTypesSnapshot).has(book.book_type)) {
+        const editorName =
+            bookTypesSnapshot.types[book.book_type]?.editor_component;
+        const EditorComponent = editorName
+            ? EDITOR_COMPONENTS[editorName]
+            : undefined;
+        if (EditorComponent) {
+            if (showMetadata) {
+                return (
+                    <BookMetadataEditor
+                        book={book}
+                        onSave={async (data) => {
+                            const updated = await api.books.update(
+                                book.id,
+                                data,
+                            );
+                            setBook((prev) =>
+                                prev ? {...prev, ...updated} as BookDetail : prev,
+                            );
+                        }}
+                        onBack={() => _setShowMetadata(false)}
+                        allBooks={allBooks}
+                        onRefresh={async () => {
+                            if (!bookId) return;
+                            const fresh = await api.books.get(bookId);
+                            setBook(fresh);
+                        }}
+                    />
+                );
+            }
             return (
-                <BookMetadataEditor
-                    book={book}
-                    onSave={async (data) => {
-                        const updated = await api.books.update(book.id, data);
-                        setBook((prev) => prev ? {...prev, ...updated} as BookDetail : prev);
-                    }}
-                    onBack={() => _setShowMetadata(false)}
-                    allBooks={allBooks}
-                    onRefresh={async () => {
-                        if (!bookId) return;
-                        const fresh = await api.books.get(bookId);
-                        setBook(fresh);
-                    }}
+                <EditorComponent
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    onBack={() => navigate("/")}
+                    onShowMetadata={() => _setShowMetadata(true)}
                 />
             );
         }
-        return (
-            <PageEditor
-                bookId={book.id}
-                bookTitle={book.title}
-                onBack={() => navigate("/")}
-                onShowMetadata={() => _setShowMetadata(true)}
-            />
-        );
-    }
-
-    // plugin-comics Session 1: route comic_book books to the
-    // placeholder editor. Session 2 replaces ComicBookEditor with
-    // the full panel + multi-bubble surface.
-    //
-    // COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C2: comic_book gains the
-    // same showMetadata swap pattern that picture_book has above.
-    // Closes the Half-Wired-Visible-in-Production gap: comic-book
-    // authors can now reach BookMetadataEditor (and the new
-    // EXPOSE-BUCHIDEE Story tab from yesterday's session) via the
-    // header button shipped in C1.
-    if (book.book_type === "comic_book") {
-        if (showMetadata) {
-            return (
-                <BookMetadataEditor
-                    book={book}
-                    onSave={async (data) => {
-                        const updated = await api.books.update(book.id, data);
-                        setBook((prev) => prev ? {...prev, ...updated} as BookDetail : prev);
-                    }}
-                    onBack={() => _setShowMetadata(false)}
-                    allBooks={allBooks}
-                    onRefresh={async () => {
-                        if (!bookId) return;
-                        const fresh = await api.books.get(bookId);
-                        setBook(fresh);
-                    }}
-                />
-            );
-        }
-        return (
-            <ComicBookEditor
-                bookId={book.id}
-                bookTitle={book.title}
-                onBack={() => navigate("/")}
-                onShowMetadata={() => _setShowMetadata(true)}
-            />
-        );
     }
 
     return (

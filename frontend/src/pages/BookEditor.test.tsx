@@ -19,7 +19,73 @@ import {render, screen, waitFor} from "@testing-library/react";
 import {MemoryRouter, Route, Routes} from "react-router-dom";
 
 import BookEditor from "./BookEditor";
-import type {BookDetail} from "../api/client";
+import type {BookDetail, BookTypeDef} from "../api/client";
+import {BookTypesProvider} from "../hooks/useBookTypes";
+
+// BOOK-TYPES-SSOT-YAML-01 C6: BookEditor now reads the registry
+// to dispatch the editor component. Static snapshot covers
+// prose + picture_book + comic_book so the routing tests
+// resolve to PageEditor / ComicBookEditor / chapter-editor as
+// expected.
+const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
+    prose: {
+        id: "prose",
+        label_key: "ui.get_started.book_type_prose_title",
+        description_key: "ui.get_started.book_type_prose_desc",
+        icon: "BookOpen",
+        content_model: "chapters",
+        editor_component: "BookEditor",
+        capabilities: {
+            ebook_export: true,
+            paperback_export: true,
+            hardcover_export: true,
+            audiobook_export: true,
+            template_catalog: true,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: null,
+    },
+    picture_book: {
+        id: "picture_book",
+        label_key: "ui.get_started.book_type_picture_title",
+        description_key: "ui.get_started.book_type_picture_desc",
+        icon: "Image",
+        content_model: "pages",
+        editor_component: "PageEditor",
+        capabilities: {
+            ebook_export: false,
+            paperback_export: true,
+            hardcover_export: false,
+            audiobook_export: false,
+            template_catalog: false,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: "8.5x8.5",
+    },
+    comic_book: {
+        id: "comic_book",
+        label_key: "ui.get_started.book_type_comic_title",
+        description_key: "ui.get_started.book_type_comic_desc",
+        icon: "Layers",
+        content_model: "pages",
+        editor_component: "ComicBookEditor",
+        capabilities: {
+            ebook_export: false,
+            paperback_export: true,
+            hardcover_export: false,
+            audiobook_export: false,
+            template_catalog: false,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: "7x10",
+    },
+};
 
 const navigateMock = vi.fn();
 const getBookMock = vi.fn<(id: string) => Promise<BookDetail>>();
@@ -195,11 +261,13 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
 
 function renderEditor(bookId: string) {
     return render(
-        <MemoryRouter initialEntries={[`/book/${bookId}`]}>
-            <Routes>
-                <Route path="/book/:bookId" element={<BookEditor />} />
-            </Routes>
-        </MemoryRouter>,
+        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+            <MemoryRouter initialEntries={[`/book/${bookId}`]}>
+                <Routes>
+                    <Route path="/book/:bookId" element={<BookEditor />} />
+                </Routes>
+            </MemoryRouter>
+        </BookTypesProvider>,
     );
 }
 
@@ -290,11 +358,13 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
 
 function renderEditorAtPath(bookId: string, search = "") {
     return render(
-        <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
-            <Routes>
-                <Route path="/book/:bookId" element={<BookEditor />} />
-            </Routes>
-        </MemoryRouter>,
+        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+            <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
+                <Routes>
+                    <Route path="/book/:bookId" element={<BookEditor />} />
+                </Routes>
+            </MemoryRouter>
+        </BookTypesProvider>,
     );
 }
 
