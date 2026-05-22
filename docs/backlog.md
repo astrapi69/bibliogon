@@ -2,7 +2,7 @@
 
 Last updated: 2026-05-22 (KDP-PUBLISHING-WIZARD-01 Phase 1 (MVP) CLOSED via 8-commit ship `1b84ad0..e839ec2`: housekeeping close of RECURRING-COMPONENT-AUDIT-01 + Pre-Inspection audit (670 lines) + C0 changelog filesystem-isolation fix (KDP-CHANGELOG-PATH-ISOLATION) + C1-C5 (wizard shell + MetadataChecklist + CoverValidation + ExportPackage + i18n × 8 + Playwright smoke). Strategic-direction gate opened by user, A1-A5 adjudicated (MVP-first 3-step / calculator-only / direct-import / 5-file ZIP / React-state only). New backend endpoint `POST /api/kdp/package/{book_id}` closes the "0 frontend consumers of /api/kdp/*" half-wired surface documented in the Pre-Inspection Track 3. Phase 2 (pricing + ARC + state persistence) filed as `KDP-PUBLISHING-WIZARD-01-PHASE-2`. XState migration filed as `KDP-WIZARD-XSTATE-MIGRATION-01` (5/5 trigger criteria from docs/architecture/state-machines.md satisfied; pairs with Phase 2). Vitest 1838 → 1871 (+33: 9 wizard nav + 9 MetadataChecklist + 9 CoverValidation + 6 ExportPackage); Backend pytest 2137 → 2142 (+5 endpoint integration); i18n parity 51/51 held throughout. Earlier 2026-05-22: RECURRING-COMPONENT-AUDIT-01 CLOSED as housekeeping (deliverable shipped 2026-05-21 at `docs/audits/recurring-component-audit-2026-05-21.md`).)
 Current version: v0.35.1
-Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -231,6 +231,95 @@ store.
   Pairs with `BOOK-TYPES-SSOT-YAML-01` (above). When the
   card-component extract ships, it reads metadata from the
   SSoT YAML rather than re-embedding the inline list.
+
+- **WIZARD-SHELL-COMPONENT-EXTRACT-01** (P3, RCU 3-site, filed
+  2026-05-22 from KDP-PUBLISHING-WIZARD-01-PHASE-2 Session 1
+  C7 close): three wizard surfaces now share the same
+  composition shape — Dialog-chrome + step-indicator +
+  navigation-buttons + testid-namespace wiring. Extracting
+  a shared `WizardShell` component reduces duplication +
+  keeps the testid-namespace convention consistent across
+  every future wizard surface.
+
+  ### Three current consumers
+
+  - `frontend/src/components/articles/ConvertToBookWizard.tsx`
+    — 6-step convert-article-to-book flow, hand-rolled
+    `useState` step-index, testid namespace
+    `convert-to-book-wizard-{step}-{slot}`.
+  - `frontend/src/components/import-wizard/ImportWizardModal.tsx`
+    — multi-step import flow, XState v5
+    (`wizardMachine.ts`), testid namespace
+    `import-wizard-{step}-{slot}` (mixed; some legacy
+    `wizard-` prefix testids remain).
+  - `frontend/src/components/kdp-wizard/KdpPublishingWizard.tsx`
+    — 3-step KDP publishing flow (Phase 1 + Phase 2 base),
+    XState v5 (`kdpWizardMachine.ts`), testid namespace
+    `kdp-publishing-wizard-{step}-{slot}`.
+
+  ### Proposed extraction
+
+  `WizardShell` encapsulates:
+
+  - **Dialog chrome** — Radix Dialog wrapper (Root + Portal +
+    Overlay + Content + Title + Close button) with the
+    standard styling block currently duplicated across all
+    three wizards.
+  - **Step indicator** — the dot-row (filled-up-to-current
+    step) with a `{wizard}-step-indicator` testid + per-dot
+    `{wizard}-step-dot-{N}` testids derived from a passed-in
+    step-labels list.
+  - **Navigation buttons** — Back / Next / Finish with
+    disabled-state wiring driven by a per-wizard `canAdvance`
+    bool prop + testids `{wizard}-step-{step}-back / next /
+    finish`. Optional render-prop slots for custom button
+    labels per surface.
+  - **Testid-namespace wiring** — the wizard's namespace is
+    declared once at the WizardShell call site
+    (`namespace="kdp-publishing-wizard"`); WizardShell threads
+    it through every interactive surface. Eliminates the
+    drift seen in ImportWizardModal where some testids use
+    `wizard-*` and others use `import-wizard-*`.
+
+  Steps are provided as children OR render-props (probably
+  render-prop keyed by current step so the parent can match
+  on machine state.value). State machine stays with the
+  consumer — XState `useMachine` for the new wizards,
+  hand-rolled `useState` for ConvertToBookWizard until its
+  own migration ships (filed as
+  `CONVERT-TO-BOOK-WIZARD-XSTATE-MIGRATION-01` if/when the
+  trigger fires).
+
+  ### Trigger
+
+  KDP Phase 2 abgeschlossen — once C8-C14 land (pricing +
+  ARC + persistence + i18n + smoke), all three wizard
+  surfaces are in their final shape and the extraction
+  consolidates a stable contract. Earlier migration is
+  speculative; the Phase 2 work might still alter
+  KdpPublishingWizard's chrome (e.g. resume-banner).
+
+  ### Prior art evaluated
+
+  `react-use-wizard` (headless hook lib, ~6kB) covers
+  navigation state + next/back/finish guards. Does NOT cover
+  Dialog chrome, step-indicator rendering, or testid-namespace
+  wiring. Bibliogon's XState machines already handle the
+  navigation logic (one of the load-bearing concerns); the
+  hook library would duplicate machine functionality without
+  addressing the Dialog-chrome + testid-namespace
+  duplication this filing actually targets. Internal
+  extraction preferred over external dependency.
+
+  ### Cross-references
+
+  Pairs with the existing `BOOK-TYPE-CARD-COMPONENT-EXTRACT-01`
+  (above) as the second RCU 3-site filing produced from
+  Session-boundary close-outs. Together they exemplify the
+  "pre-register RCU candidates when the third instance ships"
+  discipline — extraction work waits for the trigger; the
+  filing exists so the next contributor sees the candidate +
+  its scoping inputs.
 
 - **PAGES-DELETE-EDITOR-UI-01** (P3, Half-Wired-Lifecycle-Cascade-
   Followup, filed 2026-05-23 from PLUGIN-COMICS-MULTI-PAGE-
