@@ -32,6 +32,7 @@ import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import MetadataChecklist from "./MetadataChecklist"
 
 interface Props {
     open: boolean
@@ -63,25 +64,19 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
 export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const {t} = useI18n()
     const [step, setStep] = useState<StepIndex>(0)
+    // C2: Step 0 gate — Next disabled until the MetadataChecklist
+    // child component reports that the (book-type-filtered) issue
+    // list has no errors. C3 / C4 will add their own gates.
+    const [step0CanAdvance, setStep0CanAdvance] = useState(false)
 
-    // Shell-only: each step is empty content for C1. C2/C3/C4
-    // fill these in; the shell renders a placeholder per step so
-    // the navigation contract is testable without step content.
     const renderCurrentStep = () => {
         switch (step) {
             case 0:
                 return (
-                    <div
-                        style={styles.stepContent}
-                        data-testid="kdp-publishing-wizard-step-0-metadata"
-                    >
-                        <p style={styles.hint}>
-                            {t(
-                                "ui.kdp_publishing_wizard.step_metadata_placeholder",
-                                "Schritt 1 — Metadaten-Checkliste (Inhalt folgt).",
-                            )}
-                        </p>
-                    </div>
+                    <MetadataChecklist
+                        book={book}
+                        onCanAdvanceChange={setStep0CanAdvance}
+                    />
                 )
             case 1:
                 return (
@@ -197,6 +192,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                                     onClick={() =>
                                         setStep((step + 1) as StepIndex)
                                     }
+                                    disabled={step === 0 && !step0CanAdvance}
                                     data-testid={`kdp-publishing-wizard-step-${step}-next`}
                                 >
                                     {t("ui.common.next", "Weiter")}{" "}

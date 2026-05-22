@@ -18,6 +18,7 @@
 
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
+import {useEffect} from "react"
 
 import KdpPublishingWizard from "./KdpPublishingWizard"
 import {BookDetail} from "../../api/client"
@@ -28,6 +29,31 @@ vi.mock("../../hooks/useI18n", () => ({
         lang: "en",
         setLang: vi.fn(),
     }),
+}))
+
+// Mock the MetadataChecklist child so the wizard-level tests
+// exercise navigation contract in isolation from the API
+// integration. The real MetadataChecklist's behaviour
+// (api.kdp.checkMetadata call, book-type filtering, etc.) lives
+// in MetadataChecklist.test.tsx.
+//
+// The mock always reports "can advance" so Next enables. A
+// follow-up wizard test below verifies the gated-Next contract
+// by using a separate mock that reports "cannot advance".
+vi.mock("./MetadataChecklist", () => ({
+    default: ({
+        onCanAdvanceChange,
+    }: {
+        onCanAdvanceChange: (canAdvance: boolean) => void
+    }) => {
+        // Mirror the real component: fire the callback once on
+        // mount so the wizard transitions from "Next disabled" to
+        // "Next enabled" when the metadata check completes.
+        useEffect(() => {
+            onCanAdvanceChange(true)
+        }, [onCanAdvanceChange])
+        return <div data-testid="kdp-publishing-wizard-step-0-metadata" />
+    },
 }))
 
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
@@ -213,5 +239,36 @@ describe("KdpPublishingWizard (shell)", () => {
             />,
         )
         expect(screen.queryByTestId("kdp-publishing-wizard-dialog")).toBeNull()
+    })
+
+    it("step-0 Next is gated by the MetadataChecklist callback", async () => {
+        // Override the default top-of-file mock with one that
+        // reports "cannot advance" so the gate stays closed.
+        vi.doMock("./MetadataChecklist", () => ({
+            default: ({
+                onCanAdvanceChange,
+            }: {
+                onCanAdvanceChange: (canAdvance: boolean) => void
+            }) => {
+                useEffect(() => {
+                    onCanAdvanceChange(false)
+                }, [onCanAdvanceChange])
+                return <div data-testid="kdp-publishing-wizard-step-0-metadata" />
+            },
+        }))
+        vi.resetModules()
+        const {default: WizardWithFailingGate} = await import(
+            "./KdpPublishingWizard"
+        )
+        render(
+            <WizardWithFailingGate
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        const nextButton = screen.getByTestId("kdp-publishing-wizard-step-0-next")
+        expect((nextButton as HTMLButtonElement).disabled).toBe(true)
+        vi.doUnmock("./MetadataChecklist")
     })
 })

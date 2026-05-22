@@ -1112,6 +1112,39 @@ export interface GrammarCheckResponse {
     matches: GrammarMatch[];
 }
 
+// --- KDP Publishing Wizard (Phase 1 MVP) ---
+
+export interface KdpCheckMetadataRequest {
+    title: string;
+    subtitle: string | null;
+    author: string;
+    description: string | null;
+    html_description: string | null;
+    language: string;
+    keywords: string[];
+    cover_image: string | null;
+    isbn_ebook: string | null;
+    isbn_paperback: string | null;
+    publisher: string | null;
+    backpage_description: string | null;
+    chapters: Array<{id: string; title: string}>;
+    categories: string[];
+    bisac_codes: string[];
+}
+
+export interface KdpMetadataIssue {
+    field: string;
+    message: string;
+    severity: "error" | "warning";
+}
+
+export interface KdpMetadataCheckResult {
+    complete: boolean;
+    error_count: number;
+    warning_count: number;
+    issues: KdpMetadataIssue[];
+}
+
 // --- ApiError with context ---
 
 /** Thrown by `api.chapters.update` when a newer save for the same
@@ -2725,6 +2758,17 @@ export const api = {
             request<GrammarCheckResponse>("/grammar/check", {
                 method: "POST",
                 body: JSON.stringify({text}),
+            }),
+    },
+
+    kdp: {
+        /** Metadata-completeness check for KDP publishing. Returns
+         *  errors (block publishing) + warnings (recommended).
+         *  Used by Phase 1 MVP wizard Step 1. */
+        checkMetadata: (payload: KdpCheckMetadataRequest) =>
+            request<KdpMetadataCheckResult>("/kdp/check-metadata", {
+                method: "POST",
+                body: JSON.stringify(payload),
             }),
     },
 
