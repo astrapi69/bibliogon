@@ -29,31 +29,37 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Book, Page
 from app.schemas import PageCreate, PageOut, PagesReorder, PageUpdate
+from app.services.book_type_registry import pageable_book_types
 
 router = APIRouter(prefix="/books", tags=["pages"])
-
-
-PAGEABLE_BOOK_TYPES: frozenset[str] = frozenset({"picture_book", "comic_book"})
 
 
 def _get_pageable_book_or_400(book_id: str, db: Session) -> Book:
     """Resolve the book and enforce the page-based book_type gate.
 
     Returns the Book row when it exists, is not soft-deleted, and is
-    one of the page-based book types (``picture_book`` or
-    ``comic_book``). Otherwise raises:
+    a page-based book type (content_model="pages" per the
+    BookTypeRegistry — currently ``picture_book`` + ``comic_book``).
+    Otherwise raises:
       - 404 if the book does not exist or is soft-deleted.
       - 400 if the book is prose (or any future non-page-based type).
+
+    BOOK-TYPES-SSOT-YAML-01 C4: the page-able set is now driven by
+    ``content_model == "pages"`` in backend/config/book-types.yaml
+    rather than the hardcoded ``PAGEABLE_BOOK_TYPES`` frozenset.
+    Adding a new page-based book type means flipping its
+    content_model field, not editing this file.
     """
     book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
         raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
-    if book.book_type not in PAGEABLE_BOOK_TYPES:
+    pageable = pageable_book_types()
+    if book.book_type not in pageable:
         raise HTTPException(
             status_code=400,
             detail=(
                 f"Pages are only available on page-based book types "
-                f"(book_type IN {sorted(PAGEABLE_BOOK_TYPES)}). Book "
+                f"(book_type IN {sorted(pageable)}). Book "
                 f"{book_id} is book_type='{book.book_type}'."
             ),
         )
