@@ -22,7 +22,7 @@ from typing import Any
 from fastapi import HTTPException
 from sqlalchemy.orm import Session
 
-from app.models import Book, BookPublishingState
+from app.models import ArcReviewer, Book, BookPublishingState
 
 
 def _get_book_or_404(db: Session, book_id: str) -> Book:
@@ -102,3 +102,158 @@ def delete_publishing_state(db: Session, book_id: str) -> bool:
     db.delete(row)
     db.commit()
     return True
+
+
+# --- ARC Reviewer service functions (C6) -------------------------
+
+
+def _ensure_publishing_state(
+    db: Session, book_id: str
+) -> BookPublishingState:
+    """Resolve the publishing-state row for ``book_id``, creating
+    a default row if none exists. Used by reviewer-add so the user
+    can manage reviewers without first touching the wizard's other
+    steps (the publishing-state row is an internal concern).
+
+    Raises 404 if the book itself doesn't exist (or is soft-
+    deleted).
+    """
+    _get_book_or_404(db, book_id)
+    row = get_publishing_state(db, book_id)
+    if row is None:
+        row = BookPublishingState(book_id=book_id)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+    return row
+
+
+def list_reviewers(db: Session, book_id: str) -> list[ArcReviewer]:
+    """List ARC reviewers for ``book_id``.
+
+    Returns ``[]`` when no publishing-state row exists yet (no
+    reviewers can possibly be attached). Raises 404 on missing
+    book.
+    """
+    _get_book_or_404(db, book_id)
+    state = get_publishing_state(db, book_id)
+    if state is None:
+        return []
+    return (
+        db.query(ArcReviewer)
+        .filter(ArcReviewer.publishing_state_id == state.id)
+        .order_by(ArcReviewer.created_at.asc())
+        .all()
+    )
+
+
+def create_reviewer(
+    db: Session, book_id: str, payload: dict[str, Any]
+) -> ArcReviewer:
+    """Add a reviewer to the book's ARC list.
+
+    Auto-creates the publishing-state row if absent (a new book
+    can start in the ARC step). Server-assigns ``review_status
+    ="invited"`` + ``invited_at=now``.
+    """
+    state = _ensure_publishing_state(db, book_id)
+    from datetime import UTC, datetime as _dt
+
+    reviewer = ArcReviewer(
+        publishing_state_id=state.id,
+        reviewer_name=payload["reviewer_name"],
+        reviewer_email=payload.get("reviewer_email"),
+        review_status="invited",
+        invited_at=_dt.now(UTC),
+    )
+    db.add(reviewer)
+    db.commit()
+    db.refresh(reviewer)
+    return reviewer
+
+
+def _get_reviewer_or_404(
+    db: Session, book_id: str, reviewer_id: str
+) -> ArcReviewer:
+    """Resolve a reviewer + validate it belongs to ``book_id``.
+
+    Prevents cross-book mutation: a reviewer from book A cannot be
+    edited via book B's URL.
+    """
+    _get_book_or_404(db, book_id)
+    state = get_publishing_state(db, book_id)
+    if state is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reviewer {reviewer_id} not found",
+        )
+    reviewer = (
+        db.query(ArcReviewer)
+        .filter(
+            ArcReviewer.id == reviewer_id,
+            ArcReviewer.publishing_state_id == state.id,
+        )
+        .first()
+    )
+    if reviewer is None:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Reviewer {reviewer_id} not found",
+        )
+    return reviewer
+
+
+def update_reviewer(
+    db: Session,
+    book_id: str,
+    reviewer_id: str,
+    payload: dict[str, Any],
+) -> ArcReviewer:
+    """Partial update on an ARC reviewer.
+
+    When ``review_status`` transitions to ``reviewed``, the
+    service auto-stamps ``reviewed_at`` unless the payload
+    explicitly provides one. Other fields are direct assignments.
+    """
+    reviewer = _get_reviewer_or_404(db, book_id, reviewer_id)
+    from datetime import UTC, datetime as _dt
+
+    new_status = payload.get("review_status")
+    explicit_reviewed_at = payload.get("reviewed_at")
+
+    for key, value in payload.items():
+        if value is None and key not in {
+            "copy_version",
+            "review_permalink",
+            "review_text_excerpt",
+            "reviewed_at",
+        }:
+            # Skip absent fields; preserve existing nullables.
+            continue
+        reviewer.__setattr__(key, value)
+
+    # Auto-stamp reviewed_at when status flips to "reviewed" and
+    # the payload didn't supply one explicitly.
+    if (
+        new_status == "reviewed"
+        and explicit_reviewed_at is None
+        and reviewer.reviewed_at is None
+    ):
+        reviewer.reviewed_at = _dt.now(UTC)
+
+    db.commit()
+    db.refresh(reviewer)
+    return reviewer
+
+
+def delete_reviewer(
+    db: Session, book_id: str, reviewer_id: str
+) -> None:
+    """Hard-delete an ARC reviewer.
+
+    No soft-delete (per A25). 404 if the reviewer doesn't exist or
+    belongs to a different book.
+    """
+    reviewer = _get_reviewer_or_404(db, book_id, reviewer_id)
+    db.delete(reviewer)
+    db.commit()

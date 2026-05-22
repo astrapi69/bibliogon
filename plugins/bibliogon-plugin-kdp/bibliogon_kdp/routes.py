@@ -13,6 +13,9 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Book
 from app.schemas import (
+    ArcReviewerCreate,
+    ArcReviewerOut,
+    ArcReviewerUpdate,
     BookPublishingStateGetResponse,
     BookPublishingStateRead,
     BookPublishingStateUpdate,
@@ -27,8 +30,12 @@ from .cover_validator import (
 from .metadata_checker import check_metadata_completeness
 from .package import KdpPackageError, build_kdp_package
 from .publishing_state_service import (
+    create_reviewer,
     delete_publishing_state,
+    delete_reviewer,
     get_publishing_state,
+    list_reviewers,
+    update_reviewer,
     upsert_publishing_state,
 )
 
@@ -313,3 +320,75 @@ def delete_book_publishing_state(
     No-op if no row exists. Returns 204 either way (idempotent).
     """
     delete_publishing_state(db, book_id)
+
+
+# --- ARC Reviewer CRUD (C6) ---------------------------------------
+#
+# Per-book ARC (Advance Reader Copy) reviewer tracking. Attached
+# to the publishing-state row; auto-created on first reviewer add
+# so the user can manage reviewers without first touching the
+# wizard's other steps.
+
+
+@router.get(
+    "/publishing-state/{book_id}/reviewers",
+    response_model=list[ArcReviewerOut],
+)
+def list_book_reviewers(
+    book_id: str, db: Session = Depends(get_db)
+) -> list[ArcReviewerOut]:
+    """List ARC reviewers for the book, ordered by created_at
+    ascending. Empty list when no reviewers have been added yet."""
+    rows = list_reviewers(db, book_id)
+    return [ArcReviewerOut.model_validate(r) for r in rows]
+
+
+@router.post(
+    "/publishing-state/{book_id}/reviewers",
+    response_model=ArcReviewerOut,
+    status_code=201,
+)
+def create_book_reviewer(
+    book_id: str,
+    payload: ArcReviewerCreate,
+    db: Session = Depends(get_db),
+) -> ArcReviewerOut:
+    """Add a reviewer to the book's ARC list. Server-assigns
+    ``review_status="invited"`` + ``invited_at=now``."""
+    reviewer = create_reviewer(db, book_id, payload.model_dump())
+    return ArcReviewerOut.model_validate(reviewer)
+
+
+@router.patch(
+    "/publishing-state/{book_id}/reviewers/{reviewer_id}",
+    response_model=ArcReviewerOut,
+)
+def update_book_reviewer(
+    book_id: str,
+    reviewer_id: str,
+    payload: ArcReviewerUpdate,
+    db: Session = Depends(get_db),
+) -> ArcReviewerOut:
+    """Partial update on an ARC reviewer (status transitions,
+    permalink, copy version). Auto-stamps ``reviewed_at`` when
+    status transitions to ``reviewed`` and the payload didn't
+    supply an explicit timestamp."""
+    reviewer = update_reviewer(
+        db, book_id, reviewer_id, payload.model_dump(exclude_unset=True)
+    )
+    return ArcReviewerOut.model_validate(reviewer)
+
+
+@router.delete(
+    "/publishing-state/{book_id}/reviewers/{reviewer_id}",
+    status_code=204,
+)
+def delete_book_reviewer(
+    book_id: str,
+    reviewer_id: str,
+    db: Session = Depends(get_db),
+) -> None:
+    """Hard-delete an ARC reviewer (per A25; no soft-delete).
+    404 if the reviewer doesn't exist or belongs to a different
+    book."""
+    delete_reviewer(db, book_id, reviewer_id)

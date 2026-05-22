@@ -1318,8 +1318,8 @@ class BookPublishingStateRead(BaseModel):
 
     JSON-as-Text columns (``prices`` + ``launch_checklist_state``)
     are decoded on read per the existing ``Page.layout_config``
-    convention. ``arc_reviewers`` is added in C6 alongside the
-    reviewer CRUD endpoints; C5 ships the wrapper without it.
+    convention. ``arc_reviewers`` is populated on read via the
+    relationship; empty list when no reviewers have been added.
     """
 
     model_config = ConfigDict(from_attributes=True)
@@ -1336,6 +1336,7 @@ class BookPublishingStateRead(BaseModel):
     last_kdp_upload_at: datetime | None = None
     created_at: datetime
     updated_at: datetime
+    arc_reviewers: list["ArcReviewerOut"] = Field(default_factory=list)
 
     @field_validator("prices", mode="before")
     @classmethod
@@ -1393,3 +1394,57 @@ class BookPublishingStateGetResponse(BaseModel):
     book_id: str
     book_updated_at: datetime
     state: BookPublishingStateRead | None = None
+
+
+# --- ARC Reviewer (C6) -------------------------------------------
+
+ReviewStatus = Literal[
+    "invited", "sent", "received", "reviewed", "declined"
+]
+
+
+class ArcReviewerCreate(BaseModel):
+    """Payload for ``POST .../publishing-state/{book_id}/reviewers``.
+
+    Server-assigns ``id`` + ``review_status="invited"`` +
+    ``invited_at=now``. Optional ``reviewer_email`` per A16 (email
+    integration is out-of-scope v1; reviewers may be known only by
+    name).
+    """
+
+    reviewer_name: str = Field(min_length=1, max_length=300)
+    reviewer_email: str | None = Field(default=None, max_length=320)
+
+
+class ArcReviewerUpdate(BaseModel):
+    """Payload for ``PATCH .../publishing-state/{book_id}/reviewers/{id}``.
+
+    All fields optional. ``review_status`` validated via Literal
+    enum (422 on unknown value). When status transitions to
+    ``reviewed``, the service auto-stamps ``reviewed_at``.
+    """
+
+    review_status: ReviewStatus | None = None
+    copy_version: str | None = Field(default=None, max_length=50)
+    review_permalink: str | None = Field(default=None, max_length=2000)
+    review_text_excerpt: str | None = None
+    reviewed_at: datetime | None = None
+
+
+class ArcReviewerOut(BaseModel):
+    """Response shape for ``arc_reviewers`` rows."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    publishing_state_id: str
+    reviewer_name: str
+    reviewer_email: str | None
+    review_status: str
+    copy_version: str | None
+    review_permalink: str | None
+    review_text_excerpt: str | None
+    invited_at: datetime | None
+    reviewed_at: datetime | None
+    created_at: datetime
+    updated_at: datetime
