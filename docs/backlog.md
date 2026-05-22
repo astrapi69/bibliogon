@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23-late-4 (EXPOSE-BUCHIDEE-METADATA-01 CLOSED via 4-commit ship `b8b6983..8148783` + this docs commit. User-real-test surfaced missing author-design metadata in Book editor; Pre-Inspection confirmed genuine missing-feature. Closed via β-scope: Backend Book model + BookCreate/Update/Out schemas + Alembic migration add book_idea + expose nullable Text columns; new Story tab in BookMetadataEditor between General + Publisher per Q4 semantic separation; book_idea rendered as multiline Field (short premise); expose rendered as multiline + markdown + fullscreen Field (canonical multi-paragraph shape mirroring description). 5 new ui.metadata.* i18n keys across all 8 catalogs per Q5 (DE+EN native, 6 passthrough-EN). Boy-Scout fix in C3: restored 6 pre-existing i18n-parity failures from GETSTARTED-MULTIBOOK-TYPES C4 (`012396a`) by adding the same passthrough-EN entries for ui.get_started.book_type_* across 6 non-DE/EN catalogs. Backend 2126 → 2137 (+11 exactly the new EXPOSE/BUCHIDEE pytest cases); Frontend Vitest 1826 → 1832 (+6 new Story-tab cases); i18n parity 45/51 → 51/51; 1 new Playwright spec (3 cases, bounding-box-dimension assertion). 1 new P3 backlog filing per Q3 adjudication: COMIC-BOOK-EDITOR-METADATA-BUTTON-01 (Half-Wired-Lifecycle-Cascade-Followup, ComicBookEditor has no path to BookMetadataEditor — RCU 2-site mirror of PageEditor's onShowMetadata shape, separate-session). Multi-Tool-Coordination throughout: C1-C3 saw parallel session's archive-rename state then clean by C2; explicit-paths-discipline applied. Earlier 2026-05-23 closes: GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 (`75f2ef6..012396a`) + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 (`a236057..f87d3f4`) + RECURRING-COMPONENT-AUDIT-01 candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
+Last updated: 2026-05-24 (COMIC-BOOK-EDITOR-METADATA-BUTTON-01 CLOSED via 4-commit ship `0d940cf..84218e6` + this docs commit. Foundation-Override-Extended P1 promotion (Half-Wired-Visible-in-Production: comic-book authors had no path to BookMetadataEditor → invisible to the just-shipped EXPOSE-BUCHIDEE Story tab + ALL other book metadata). Closed via α-scope inline-mirror: ComicBookEditor gains onShowMetadata prop + header FileText button between title and ComicGridTemplatePicker (C1); BookEditor wires comic_book branch with showMetadata-swap mirroring picture_book L492-519 (C2); 1 new ui.comic_book_editor.show_metadata key across all 8 catalogs (C3); 2 new Playwright cases added to existing comic-book-editor.spec.ts per Q5 with bounding-box-dimension assertion + Story-tab-reachable bridge-pin to yesterday's EXPOSE-BUCHIDEE work. Boy-Scout 1-line: metadata-back testid added to BookMetadataEditor's back button (resolves brittle fallback in picture-book-editor.spec.ts:407-416). Frontend Vitest 1832 → 1838 (+6: ComicBookEditor +3 + BookEditor +3); Backend 2137/1skip + i18n parity 51/51 baseline held throughout. 1 new P5 backlog filing per Q6: METADATA-BUTTON-COMPONENT-EXTRACT-01 (RCU pre-registered for 3rd-surface trigger — PageEditor's button + ComicBookEditor's new button are 2 surfaces of same shape but extraction overhead deferred for 19-line + 1-prop block). 1-day turnaround from EXPOSE-BUCHIDEE filing (2026-05-23) to close (2026-05-24). Earlier 2026-05-23 closes: EXPOSE-BUCHIDEE-METADATA-01 + GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 + PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 + RCU candidate #4 AuthorSelectInput + Pattern-B AuthorProfileSelect.)
 Current version: v0.35.1
 Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
@@ -169,74 +169,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **COMIC-BOOK-EDITOR-METADATA-BUTTON-01** (P3, Half-Wired-
-  Lifecycle-Cascade-Followup, filed 2026-05-23 from
-  EXPOSE-BUCHIDEE-METADATA-01 C4 close per Q3 adjudication):
-  ComicBookEditor has no path to BookMetadataEditor. Comic-book
-  authors cannot edit ANY book metadata (Categories, BISAC,
-  ISBN, Author, Description, Cover, AI Template, Audiobook —
-  AND the new Story tab with ``book_idea`` + ``expose`` shipped
-  in this session). This is a Picture-Book-vs-Comic-Book
-  parallel-surface asymmetry at the metadata-access axis.
-
-  ### Current state
-
-  - Prose: ``ChapterSidebar.onMetadata`` → BookEditor swaps to
-    ``<BookMetadataEditor>`` ✓
-  - Picture-Book: ``PageEditor.onShowMetadata`` prop → swaps
-    to BookMetadataEditor ✓ (PB-PHASE4 Session 5 Commit 2,
-    routing pattern shown in
-    ``frontend/src/pages/BookEditor.tsx:485-518``)
-  - Comic-Book: [BookEditor.tsx:524-532](frontend/src/pages/BookEditor.tsx#L524-L532)
-    routes directly to ``<ComicBookEditor>`` with NO
-    ``onShowMetadata`` plumbing. ComicBookEditor itself has
-    no metadata button.
-
-  ### Fix (one session, ~3-4 commits)
-
-  RCU 2-site fix mirroring PageEditor's shape:
-
-  - ``ComicBookEditor.tsx``: add ``onShowMetadata?: () => void``
-    prop; mount "Open book metadata" button in the header
-    (mirror PageEditor's L226-244 visual + i18n)
-  - ``BookEditor.tsx``: wire ``showMetadata`` state + branch
-    for comic_book identical to picture_book's L492-519 path
-    (lift the picture_book swap-block into a shared helper
-    or inline-mirror)
-  - i18n: ``ui.comic_book_editor.show_metadata`` (DE + EN +
-    6 passthrough per LL I18N-DIACRITICS-01)
-  - Vitest: ComicBookEditor.test.tsx new "show-metadata
-    button" case + BookEditor.test.tsx comic_book metadata-
-    route case
-  - Playwright: e2e/smoke spec covering open-metadata → fill
-    Story tab → save → return to editor (mirrors picture_book
-    coverage shape from earlier sessions)
-
-  ### Why deferred from EXPOSE-BUCHIDEE-METADATA-01
-
-  Per Q3 adjudication 2026-05-23: "Defer ComicBookEditor
-  metadata-button gap. File COMIC-BOOK-EDITOR-METADATA-
-  BUTTON-01 (P3, Half-Wired-Lifecycle-Cascade) in C4 docs
-  commit. Separate-session for actual implementation."
-  Bundling would have stretched EXPOSE-BUCHIDEE-METADATA-01
-  scope from 3-5 commits (β) to 6-9 (β + comic-book parity).
-  Comic-book authors can wait one session.
-
-  ### Trigger
-
-  Either user-real-test re-surfaces the comic-book metadata-
-  access gap, OR the cleanup discipline catches it during
-  the next session picking from P3. Not deadline-pressure
-  (P3-tier — comic-book authoring is functional, just
-  metadata-fields-of-secondary-concern are unreachable).
-
-  ### Cross-references
-
-  Same pattern as ``PAGES-DELETE-EDITOR-UI-01`` (page-delete
-  UI absent in both PageEditor + ComicBookEditor) — both are
-  Half-Wired-Lifecycle-Cascade items that surface during
-  related-feature work.
 
 - **BOOK-TYPES-SSOT-YAML-01** (P3, IMPROVEMENT, Single-Source-
   of-Truth, filed 2026-05-23 from GETSTARTED-MULTIBOOK-TYPES-
@@ -2497,6 +2429,55 @@ store.
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **METADATA-BUTTON-COMPONENT-EXTRACT-01** (P5, RCU pre-
+  registered, filed 2026-05-24 from COMIC-BOOK-EDITOR-
+  METADATA-BUTTON-01 C4 close per Q6 adjudication):
+  PageEditor's "Open book metadata" button
+  ([frontend/src/components/PageEditor.tsx:225-244](frontend/src/components/PageEditor.tsx#L225-L244))
+  and ComicBookEditor's "Buch-Metadaten öffnen" button
+  ([frontend/src/components/ComicBookEditor.tsx](frontend/src/components/ComicBookEditor.tsx))
+  shipped 2026-05-24 are 2 surfaces of the same shape
+  (~19-line button, 1 prop: ``onClick``, FileText icon).
+  RCU 2-site threshold fires; extraction deferred to P5
+  per Q2 cost-benefit adjudication — 19-line button + 1
+  prop doesn't justify the extraction overhead until a
+  3rd consumer lands.
+
+  ### Likely 3rd surfaces
+
+  - **Article editor**: if a future feature surfaces
+    article-level metadata editing on the same swap
+    pattern, this would be the natural extraction
+    trigger.
+  - **Project editor / Series editor**: hypothetical
+    future editors for non-Book entities that need to
+    swap into a metadata view.
+
+  ### Pre-registered shape
+
+  When the 3rd consumer lands, the component:
+  - Takes ``onClick: () => void`` (required) +
+    optional ``label?: string`` (default i18n key) +
+    optional ``testidPrefix?: string`` for per-surface
+    testid namespacing (precedent: RichTextEditor's
+    testidNamespace, PageThumbnails' testidNamespace
+    from the MULTI-PAGE-NAVIGATION-01 RCU adoption).
+  - Lives at ``frontend/src/components/MetadataButton.tsx``
+  - Same icon + className discipline (FileText +
+    `metadataBtn` CSS class)
+
+  ### Trigger
+
+  3rd consumer landing OR a deliberate RCU hygiene
+  session that batches small-component extractions.
+
+  ### Cross-references
+
+  Same pattern as
+  ``BOOK-TYPE-CARD-COMPONENT-EXTRACT-01`` (P3, RCU pre-
+  registered) — both are RCU 2-site filings that
+  defer extraction to a 3rd-surface trigger.
 
 - **PLUGIN-PYDANTIC-COORDINATED-BUMP-01**: realign
   plugin Pydantic versions with the backend. Audit
