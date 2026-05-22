@@ -1,9 +1,9 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-24 (PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..` through to the C5 docs commit: C1 PageThumbnails onDelete prop + Trash2 icon button per row + 5 Vitest cases; C2 PageEditor + ComicBookEditor handleDeletePage wiring [confirm via AppDialog + api.pages.delete + state reconciliation per LL "Destructive row-actions must reconcile collection state"] + 11 Vitest cases across both editors; C3 i18n keys delete_page + delete_page_title + delete_page_confirm in all 8 catalogs with native translations [no English passthrough]; C4 Playwright smoke spec [5 cases covering positive + negative paths across BOTH editor surfaces]; C5 docs close-out. RCU 2-site cross-surface fix per Half-Wired-Lifecycle-Cascade-Followup from PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C5 close. Vitest 1958 → 1974 (+16); i18n parity 75/75 held; tsc clean throughout.)
-Previous: 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be` (RCU 2-site WizardShell + WizardNav; ImportWizardModal stays out by design; Vitest 1940 → 1958).
+Last updated: 2026-05-24 (BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66`: C1 BookTypeRegistry + book-types.yaml (3 entries) + 22 backend tests (incl. ``test_literal_matches_registry`` SSoT verification gate); C2 GET /api/book-types endpoint + 4 endpoint tests; C3 useBookTypes() + BookTypesProvider mounted at App root + 13 Vitest cases; C4 pages.py PAGEABLE_BOOK_TYPES → pageable_book_types() registry call; C5 Dashboard + GetStarted migrated (new shared BookTypeIcon util; hardcoded DropdownMenu items + BOOK_TYPE_CARDS array DELETED); C6 CreateBookModal template-tab + BookEditor editor dispatch table (-30 LOC net via near-duplicate showMetadata-swap branch unification); C7 BookMetadataEditor isChapterBasedBookType + kdp-wizard MetadataChecklist + PricingStep capability-driven; C8 plugin-getstarted BOOK_TYPES tuple replaced with registry lookup (lazy import + ImportError fallback for standalone pytest path); C9 plugin-kdp/package.py chapter-filter capability-driven (lazy import + fallback). Pre-Coding-Reality-Check found audit scope 5 → 24 surfaces (4.8× higher); user-adjudicated full-scope ship via Q1.A + Q2.A core-owns-all + Q3.A runtime-API. plugin-export per-type loaders + plugin-kdp per-type manuscript dispatch documented as NOT-migrated (different signatures, not capability-driven). Backend pytest 2181 → 2207 (+26); Vitest 1974 → 1987 (+13); i18n parity 75/75 held; tsc clean throughout.)
+Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
 Current version: v0.35.1
-Open tasks: 68 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 67 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -54,68 +54,6 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-- **BOOK-TYPES-SSOT-YAML-01** (P3, IMPROVEMENT, Single-Source-
-  of-Truth, filed 2026-05-23 from GETSTARTED-MULTIBOOK-TYPES-
-  UPDATE-01 C5 close per Q4 adjudication): book-type metadata
-  is currently scattered across 5+ surfaces with NO canonical
-  source. Each new book-type-aware surface (Dashboard split-
-  button, CreateBookModal, GetStarted picker, future book-type
-  templates) duplicates the same label + description + sample-
-  link + help-link data.
-
-  ### Current scattered surfaces
-
-  - Backend enum: `backend/app/models/__init__.py:70-75`
-    (book_type discriminator: prose | picture_book | comic_book)
-  - Backend Pydantic schema: `BookType` literal
-  - Frontend TS literal: `frontend/src/api/client.ts:37`
-  - i18n labels (partial): `backend/config/i18n/{de,en}.yaml`
-    via `ui.dashboard.new_picture_book` /
-    `ui.dashboard.new_comic_book` keys
-  - GetStarted card metadata: `frontend/src/pages/GetStarted.
-    tsx` BOOK_TYPE_CARDS inline (added in
-    GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3)
-  - Plugin-getstarted YAML sample books:
-    `plugins/bibliogon-plugin-getstarted/config/getstarted.
-    yaml` sample_books dict (added in
-    GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C1)
-
-  ### Proposed canonical source
-
-  `backend/config/book-types.yaml` reads at app startup;
-  exposed via `GET /api/book-types` endpoint OR consumed
-  directly by frontend via a build-time generator. Shape:
-
-  ```yaml
-  book_types:
-    prose:
-      icon: book-open
-      title:
-        de: Prosa
-        en: Prose
-      description:
-        de: "Romane, Sachbücher..."
-        en: "Novels, non-fiction..."
-      help_doc_slug: book-types/prose
-      sample_book_layout: chapter
-    picture_book: ...
-    comic_book: ...
-  ```
-
-  ### Trigger
-
-  When a 3rd surface needs book-type metadata (e.g. a new
-  book-type-aware export plugin, OR a Dashboard "what is this
-  book type?" tooltip), do the SSoT extract in the same
-  session — by then 6+ scattered consumers justify the
-  consolidation cost.
-
-  ### Cross-references
-
-  Pairs with `BOOK-TYPE-CARD-COMPONENT-EXTRACT-01` (below) —
-  the card-component extract reads from this SSoT once it
-  ships.
-
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
   TYPES-UPDATE-01 C5 close per Q4 adjudication): the
@@ -145,9 +83,12 @@ store.
 
   ### Cross-references
 
-  Pairs with `BOOK-TYPES-SSOT-YAML-01` (above). When the
-  card-component extract ships, it reads metadata from the
-  SSoT YAML rather than re-embedding the inline list.
+  BOOK-TYPES-SSOT-YAML-01 closed 2026-05-24 (commits
+  `d2dcd8e..c68ec21`). When the card-component extract
+  fires (3rd surface trigger), the shared component reads
+  per-type metadata from useBookTypes() — the registry is
+  already in place; this extract just consolidates the
+  card-shape duplication once a 3rd surface lands.
 
 - **KDP-WIZARD-RESUME-AT-STEP-01** (P3, FEATURE-REFINEMENT,
   filed 2026-05-22 from KDP-PUBLISHING-WIZARD-01-PHASE-2 C10
