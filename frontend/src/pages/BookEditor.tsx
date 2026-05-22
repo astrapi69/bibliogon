@@ -521,12 +521,38 @@ export default function BookEditor() {
     // plugin-comics Session 1: route comic_book books to the
     // placeholder editor. Session 2 replaces ComicBookEditor with
     // the full panel + multi-bubble surface.
+    //
+    // COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C2: comic_book gains the
+    // same showMetadata swap pattern that picture_book has above.
+    // Closes the Half-Wired-Visible-in-Production gap: comic-book
+    // authors can now reach BookMetadataEditor (and the new
+    // EXPOSE-BUCHIDEE Story tab from yesterday's session) via the
+    // header button shipped in C1.
     if (book.book_type === "comic_book") {
+        if (showMetadata) {
+            return (
+                <BookMetadataEditor
+                    book={book}
+                    onSave={async (data) => {
+                        const updated = await api.books.update(book.id, data);
+                        setBook((prev) => prev ? {...prev, ...updated} as BookDetail : prev);
+                    }}
+                    onBack={() => _setShowMetadata(false)}
+                    allBooks={allBooks}
+                    onRefresh={async () => {
+                        if (!bookId) return;
+                        const fresh = await api.books.get(bookId);
+                        setBook(fresh);
+                    }}
+                />
+            );
+        }
         return (
             <ComicBookEditor
                 bookId={book.id}
                 bookTitle={book.title}
                 onBack={() => navigate("/")}
+                onShowMetadata={() => _setShowMetadata(true)}
             />
         );
     }

@@ -350,3 +350,65 @@ describe("BookEditor - picture-book metadata routing (Session 5 Commit 2)", () =
         );
     });
 });
+
+// --- COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C2: comic-book metadata routing ---
+//
+// Comic-books now reach BookMetadataEditor via the same
+// ?view=metadata URL pattern as prose-books + picture-books.
+// ComicBookEditor exposes an onShowMetadata callback that flips
+// BookEditor's showMetadata state; BookMetadataEditor renders in
+// place of ComicBookEditor; the metadata onBack returns to
+// ComicBookEditor (NOT all the way to the dashboard). Closes the
+// Half-Wired-Visible-in-Production gap surfaced during
+// EXPOSE-BUCHIDEE-METADATA-01 Track 5 — prior to this work, comic-
+// book authors could not edit ANY book metadata (Categories, BISAC,
+// ISBN, the new Story tab, etc.).
+
+describe("BookEditor - comic-book metadata routing (COMIC-BOOK-EDITOR-METADATA-BUTTON-01)", () => {
+    it("comic_book without ?view=metadata: renders ComicBookEditor with the show-metadata button", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({id: "cb1", book_type: "comic_book", title: "CB"}),
+        );
+        renderEditor("cb1");
+        await waitFor(() =>
+            expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy(),
+        );
+        // The new metadata button is rendered (onShowMetadata prop
+        // wired through BookEditor → ComicBookEditor).
+        expect(
+            screen.getByTestId("comic-book-editor-show-metadata"),
+        ).toBeTruthy();
+        // BookMetadataEditor stub is NOT rendered yet — only after
+        // the button click flips showMetadata.
+        expect(screen.queryByTestId("book-metadata-editor-stub")).toBeNull();
+    });
+
+    it("comic_book + ?view=metadata: renders BookMetadataEditor (not ComicBookEditor)", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({id: "cb1", book_type: "comic_book", title: "CB"}),
+        );
+        renderEditorAtPath("cb1", "?view=metadata");
+        await waitFor(() =>
+            expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy(),
+        );
+        // The comic-book editor root is NOT mounted while the
+        // metadata view is active — same in-place swap pattern as
+        // picture_book.
+        expect(screen.queryByTestId("comic-book-editor-root")).toBeNull();
+    });
+
+    it("picture_book + prose flows unaffected (cross-surface regression-pin)", async () => {
+        // Regression pin: the comic-book branch addition must not
+        // touch the picture_book OR prose paths.
+        getBookMock.mockResolvedValue(
+            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+        );
+        renderEditor("pb1");
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
+        );
+        // Picture-book still mounts PageEditor (NOT ComicBookEditor)
+        // — confirms the branch ordering didn't fall through.
+        expect(screen.queryByTestId("comic-book-editor-root")).toBeNull();
+    });
+});
