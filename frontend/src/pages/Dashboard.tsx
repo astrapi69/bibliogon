@@ -20,6 +20,8 @@ import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
+import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
+import {BookTypeIcon} from "../utils/bookTypeIcon";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
@@ -46,6 +48,7 @@ import {LoadingIndicator} from "../components/LoadingIndicator";
 
 export default function Dashboard() {
     const dialog = useDialog();
+    const bookTypesSnapshot = useBookTypes();
     const {openHelp} = useHelp();
     const {t} = useI18n();
     const {theme, toggle: toggleTheme} = useTheme();
@@ -312,15 +315,16 @@ export default function Dashboard() {
         const book = await api.books.create(data);
         setBooks((prev) => [book, ...prev]);
         setShowModal(false);
-        // PB-PHASE4 Session 3 Commit 9: picture-books need their
-        // page-based editor immediately — the dashboard view doesn't
-        // surface their content. Prose books stay on the dashboard
-        // (unchanged behavior). plugin-comics Session 1: comic_book
-        // gets the same treatment — open the (placeholder) editor
-        // immediately so the user verifies the plugin is mounted.
+        // PB-PHASE4 Session 3 Commit 9 + BOOK-TYPES-SSOT-YAML-01 C5:
+        // page-based books need their page-based editor immediately —
+        // the dashboard view doesn't surface their content. Prose
+        // books (content_model="chapters") stay on the dashboard.
+        // The set of page-based types comes from the BookTypeRegistry
+        // (content_model="pages"); adding a new page-based type means
+        // flipping the YAML field, not editing this branch.
         if (
-            data.book_type === "picture_book" ||
-            data.book_type === "comic_book"
+            data.book_type !== undefined &&
+            pageableBookTypeIds(bookTypesSnapshot).has(data.book_type)
         ) {
             navigate(`/book/${book.id}`);
             return;
@@ -462,28 +466,47 @@ export default function Dashboard() {
                                         align="end"
                                         sideOffset={4}
                                     >
-                                        <DropdownMenu.Item
-                                            className="hamburger-menu-item"
-                                            data-testid="new-book-menu-item-picture-book"
-                                            onSelect={() => openCreate("picture_book")}
-                                        >
-                                            <BookOpen size={14} style={{marginRight: 6}}/>
-                                            {t(
-                                                "ui.dashboard.new_picture_book",
-                                                "Bilderbuch",
-                                            )}
-                                        </DropdownMenu.Item>
-                                        <DropdownMenu.Item
-                                            className="hamburger-menu-item"
-                                            data-testid="new-book-menu-item-comic-book"
-                                            onSelect={() => openCreate("comic_book")}
-                                        >
-                                            <BookOpen size={14} style={{marginRight: 6}}/>
-                                            {t(
-                                                "ui.dashboard.new_comic_book",
-                                                "Comic",
-                                            )}
-                                        </DropdownMenu.Item>
+                                        {/* BOOK-TYPES-SSOT-YAML-01 C5:
+                                         *  menu items now driven by the
+                                         *  BookTypeRegistry (every type
+                                         *  except prose with
+                                         *  dashboard_create_visible=true).
+                                         *  Adding a 4th creatable type =
+                                         *  one YAML entry, NOT a new
+                                         *  hardcoded item here. Testid
+                                         *  pattern preserves the existing
+                                         *  hyphenated kebab-case shape
+                                         *  used by E2E specs. */}
+                                        {bookTypesSnapshot.ordered
+                                            .filter(
+                                                (bt) =>
+                                                    bt.id !== "prose" &&
+                                                    bt.dashboard_create_visible,
+                                            )
+                                            .map((bt) => (
+                                                <DropdownMenu.Item
+                                                    key={bt.id}
+                                                    className="hamburger-menu-item"
+                                                    data-testid={`new-book-menu-item-${bt.id.replace(/_/g, "-")}`}
+                                                    onSelect={() =>
+                                                        openCreate(
+                                                            bt.id as BookType,
+                                                        )
+                                                    }
+                                                >
+                                                    <BookTypeIcon
+                                                        iconName={bt.icon}
+                                                        size={14}
+                                                    />
+                                                    <span
+                                                        style={{
+                                                            marginLeft: 6,
+                                                        }}
+                                                    >
+                                                        {t(bt.label_key, bt.id)}
+                                                    </span>
+                                                </DropdownMenu.Item>
+                                            ))}
                                     </DropdownMenu.Content>
                                 </DropdownMenu.Portal>
                             </DropdownMenu.Root>

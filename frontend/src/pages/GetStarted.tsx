@@ -2,13 +2,15 @@ import {useEffect, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {api, type BookType} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
+import {useBookTypes} from "../hooks/useBookTypes";
+import {BookTypeIcon} from "../utils/bookTypeIcon";
 import ThemeToggle from "../components/ThemeToggle";
 import {notify} from "../utils/notify";
 import styles from "./GetStarted.module.css";
 import {
     ChevronLeft, ChevronRight, BookPlus, FilePlus, PenTool, GripVertical,
     Download, Settings, Archive, Rocket, Check, Home, HelpCircle,
-    ArrowRight, ArrowLeft, PartyPopper, BookOpen, Image, Layers,
+    ArrowRight, ArrowLeft, PartyPopper, BookOpen,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, React.ReactNode> = {
@@ -22,46 +24,15 @@ const ICON_MAP: Record<string, React.ReactNode> = {
     "archive": <Archive size={32}/>,
 };
 
-// GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: BookType card metadata.
-// Each card carries icon + i18n labels for the choose-book-type
-// step + the 3-button sample-row. Single source for the picker
-// surface; a future BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 backlog
-// item lifts this into a shared component when a 2nd consumer
-// (probably the Dashboard CreateBookModal pre-step) lands.
-interface BookTypeCardSpec {
-    type: BookType;
-    icon: React.ReactNode;
-    titleKey: string;
-    titleFallback: string;
-    descriptionKey: string;
-    descriptionFallback: string;
-}
-const BOOK_TYPE_CARDS: BookTypeCardSpec[] = [
-    {
-        type: "prose",
-        icon: <BookOpen size={28}/>,
-        titleKey: "ui.get_started.book_type_prose_title",
-        titleFallback: "Prosa",
-        descriptionKey: "ui.get_started.book_type_prose_desc",
-        descriptionFallback: "Romane, Sachbücher, Kurzgeschichten. Kapitel-basiert mit WYSIWYG- oder Markdown-Editor.",
-    },
-    {
-        type: "picture_book",
-        icon: <Image size={28}/>,
-        titleKey: "ui.get_started.book_type_picture_title",
-        titleFallback: "Bilderbuch",
-        descriptionKey: "ui.get_started.book_type_picture_desc",
-        descriptionFallback: "Eine Seite pro Bild plus Text. 5 Layouts (Bild oben/links, Speech-Bubble, etc.) und KDP-fähiger PDF-Export.",
-    },
-    {
-        type: "comic_book",
-        icon: <Layers size={28}/>,
-        titleKey: "ui.get_started.book_type_comic_title",
-        titleFallback: "Comicbuch",
-        descriptionKey: "ui.get_started.book_type_comic_desc",
-        descriptionFallback: "Multi-Panel-Layouts (Grid 2x2, 3x3, etc.) mit Sprechblasen und Bildern pro Panel.",
-    },
-];
+// BOOK-TYPES-SSOT-YAML-01 C5: book-type cards now come from
+// useBookTypes() (the SSoT registry) rather than a hardcoded
+// const here. icon + i18n keys + descriptions all live in
+// backend/config/book-types.yaml. Adding a 4th book type means
+// one YAML entry, NOT a change in this file.
+//
+// Previously a hardcoded BOOK_TYPE_CARDS array. The legacy
+// fallback strings live in the i18n catalogs (DE/EN authored
+// natively; the other 6 catalogs hold the same keys).
 
 interface GuideStep {
     id: string;
@@ -73,6 +44,7 @@ interface GuideStep {
 export default function GetStarted() {
     const navigate = useNavigate();
     const location = useLocation();
+    const {ordered: bookTypeCards} = useBookTypes();
     // ``location.key === "default"`` is react-router v6/v7's sentinel
     // for "this is the initial entry in the app's history stack" -
     // i.e. the user landed here via direct URL / bookmark / refresh.
@@ -287,20 +259,20 @@ export default function GetStarted() {
                                         className={styles.bookTypeGrid}
                                         data-testid="getstarted-book-type-grid"
                                     >
-                                        {BOOK_TYPE_CARDS.map((card) => (
+                                        {bookTypeCards.map((card) => (
                                             <div
-                                                key={card.type}
+                                                key={card.id}
                                                 className={styles.bookTypeCard}
-                                                data-testid={`getstarted-book-type-card-${card.type}`}
+                                                data-testid={`getstarted-book-type-card-${card.id}`}
                                             >
                                                 <div className={styles.bookTypeCardIcon}>
-                                                    {card.icon}
+                                                    <BookTypeIcon iconName={card.icon} size={28} />
                                                 </div>
                                                 <h3 className={styles.bookTypeCardTitle}>
-                                                    {t(card.titleKey, card.titleFallback)}
+                                                    {t(card.label_key, card.id)}
                                                 </h3>
                                                 <p className={styles.bookTypeCardDesc}>
-                                                    {t(card.descriptionKey, card.descriptionFallback)}
+                                                    {t(card.description_key, "")}
                                                 </p>
                                             </div>
                                         ))}
@@ -380,19 +352,19 @@ export default function GetStarted() {
                                      *  Each button creates a sample book of the
                                      *  matching type + navigates to the right
                                      *  editor surface. */}
-                                    {BOOK_TYPE_CARDS.map((card) => (
+                                    {bookTypeCards.map((card) => (
                                         <button
-                                            key={card.type}
+                                            key={card.id}
                                             className="btn btn-ghost btn-sm"
-                                            data-testid={`getstarted-sample-${card.type}`}
-                                            onClick={() => handleCreateSampleBook(card.type)}
+                                            data-testid={`getstarted-sample-${card.id}`}
+                                            onClick={() => handleCreateSampleBook(card.id as BookType)}
                                             disabled={creating}
                                         >
-                                            {card.icon}
+                                            <BookTypeIcon iconName={card.icon} size={28} />
                                             <span style={{marginLeft: 6}}>
                                                 {creating
                                                     ? t("ui.get_started.creating", "Erstellt...")
-                                                    : t(card.titleKey, card.titleFallback)}
+                                                    : t(card.label_key, card.id)}
                                             </span>
                                         </button>
                                     ))}

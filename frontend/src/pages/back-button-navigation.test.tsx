@@ -137,6 +137,33 @@ vi.mock("../api/client", () => ({
 import Settings from "./Settings";
 import Help from "./Help";
 import GetStarted from "./GetStarted";
+import {BookTypesProvider} from "../hooks/useBookTypes";
+import type {BookTypeDef} from "../api/client";
+
+// BOOK-TYPES-SSOT-YAML-01 C5: GetStarted now reads the BookType
+// registry via useBookTypes(). Minimal static snapshot for the
+// back-button test scope (the test doesn't exercise the cards).
+const MIN_BOOK_TYPES: Record<string, BookTypeDef> = {
+    prose: {
+        id: "prose",
+        label_key: "ui.get_started.book_type_prose_title",
+        description_key: "ui.get_started.book_type_prose_desc",
+        icon: "BookOpen",
+        content_model: "chapters",
+        editor_component: "BookEditor",
+        capabilities: {
+            ebook_export: true,
+            paperback_export: true,
+            hardcover_export: true,
+            audiobook_export: true,
+            template_catalog: true,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: null,
+    },
+};
 
 beforeEach(() => {
     navigateMock.mockClear();
@@ -180,14 +207,22 @@ describe("Bug 1: Help back-button origin tracking", () => {
 describe("Bug 1: GetStarted back-button origin tracking", () => {
     it("navigates to '/' when location.key === 'default'", () => {
         currentLocationKey = "default";
-        render(<GetStarted />);
+        render(
+            <BookTypesProvider initialTypes={MIN_BOOK_TYPES}>
+                <GetStarted />
+            </BookTypesProvider>,
+        );
         fireEvent.click(screen.getByTestId("getstarted-nav-back"));
         expect(navigateMock).toHaveBeenCalledWith("/");
     });
 
     it("navigates(-1) when location.key is a real history entry", () => {
         currentLocationKey = "abc123";
-        render(<GetStarted />);
+        render(
+            <BookTypesProvider initialTypes={MIN_BOOK_TYPES}>
+                <GetStarted />
+            </BookTypesProvider>,
+        );
         fireEvent.click(screen.getByTestId("getstarted-nav-back"));
         expect(navigateMock).toHaveBeenCalledWith(-1);
     });
