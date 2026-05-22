@@ -5,6 +5,7 @@ import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
+import {useDialog} from "./AppDialog"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
@@ -39,6 +40,7 @@ const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 
 export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: Props) {
     const {t} = useI18n()
+    const dialog = useDialog()
     const [pages, setPages] = useState<Page[]>([])
     const [activePageId, setActivePageId] = useState<string | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -88,6 +90,47 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
             setPages(next)
         },
         [bookId],
+    )
+
+    /**
+     * PAGES-DELETE-EDITOR-UI-01 C2: delete-page handler.
+     *
+     * Confirm via AppDialog (danger variant), then DELETE the row +
+     * filter from local pages state. If the deleted page was active,
+     * auto-select the next-by-position page (or null if it was the
+     * last page).
+     *
+     * Per "Destructive row-actions must reconcile collection state"
+     * lessons-learned rule — state reconciliation BEFORE any toast
+     * so the activePageId never lingers pointing at a row that's
+     * already gone.
+     */
+    const handleDeletePage = useCallback(
+        async (pageId: string) => {
+            const confirmed = await dialog.confirm(
+                t("ui.page_editor.delete_page_title", "Delete page?"),
+                t(
+                    "ui.page_editor.delete_page_confirm",
+                    "Are you sure you want to delete this page? This cannot be undone.",
+                ),
+                "danger",
+            )
+            if (!confirmed) return
+            try {
+                await api.pages.delete(bookId, pageId)
+            } catch (err: unknown) {
+                setLoadError(err instanceof Error ? err.message : String(err))
+                return
+            }
+            setPages((prev) => {
+                const remaining = prev.filter((p) => p.id !== pageId)
+                if (activePageId === pageId) {
+                    setActivePageId(remaining[0]?.id ?? null)
+                }
+                return remaining
+            })
+        },
+        [bookId, dialog, t, activePageId],
     )
 
     const activePage = useMemo(
@@ -300,6 +343,7 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                         onSelect={setActivePageId}
                         onAddPage={handleAddPage}
                         onReorder={handleReorder}
+                        onDelete={handleDeletePage}
                     />
                 </aside>
                 <main

@@ -51,6 +51,7 @@ import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
 import {LayoutConfigComicPanel} from "./comics/LayoutConfigComicPanel";
 import type {ComicBubbleData} from "./comics/ComicBubble";
 import type {ComicPanelData} from "./comics/ComicPanel";
+import {useDialog} from "./AppDialog";
 import PageThumbnails from "./PageThumbnails";
 import PdfExportControls from "./PdfExportControls";
 
@@ -77,6 +78,7 @@ export default function ComicBookEditor({
     onShowMetadata,
 }: Props) {
     const {t} = useI18n();
+    const dialog = useDialog();
     const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
     const [pluginError, setPluginError] = useState<string | null>(null);
     const [pages, setPages] = useState<Page[]>([]);
@@ -201,6 +203,46 @@ export default function ComicBookEditor({
             }
         },
         [bookId],
+    );
+
+    // PAGES-DELETE-EDITOR-UI-01 C2: page-delete handler. Mirrors
+    // PageEditor.tsx's handleDeletePage shape — the two surfaces
+    // share the same api.pages.delete contract + the same
+    // PageThumbnails onDelete prop. Confirm dialog + state
+    // reconciliation per "Destructive row-actions must reconcile
+    // collection state" LL: filter from local pages, clear
+    // activePageId if it was the deleted page, also clear panel +
+    // bubble selection (those rows are scoped to the deleted page
+    // and become invalid once it's gone).
+    const handleDeletePage = useCallback(
+        async (pageId: string) => {
+            const confirmed = await dialog.confirm(
+                t("ui.page_editor.delete_page_title", "Delete page?"),
+                t(
+                    "ui.page_editor.delete_page_confirm",
+                    "Are you sure you want to delete this page? This cannot be undone.",
+                ),
+                "danger",
+            );
+            if (!confirmed) return;
+            try {
+                await api.pages.delete(bookId, pageId);
+            } catch (err) {
+                const detail = err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+                return;
+            }
+            setPages((prev) => {
+                const remaining = prev.filter((p) => p.id !== pageId);
+                if (activePageId === pageId) {
+                    setActivePageId(remaining[0]?.id ?? null);
+                    setSelectedPanelId(null);
+                    setSelectedBubbleId(null);
+                }
+                return remaining;
+            });
+        },
+        [bookId, dialog, t, activePageId],
     );
 
     // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
@@ -587,6 +629,7 @@ export default function ComicBookEditor({
                         }}
                         onAddPage={handleAddPage}
                         onReorder={handleReorderPages}
+                        onDelete={handleDeletePage}
                         testidNamespace="comic-book-editor"
                     />
                 </aside>

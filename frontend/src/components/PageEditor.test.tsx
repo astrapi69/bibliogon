@@ -35,9 +35,20 @@ const mockList = vi.fn()
 const mockCreate = vi.fn()
 const mockReorder = vi.fn()
 const mockUpdate = vi.fn()
+const mockDelete = vi.fn()
 const mockUploadAsset = vi.fn()
 const mockDocumentExportDownload = vi.fn()
 const mockNotifyError = vi.fn()
+const mockConfirm = vi.fn()
+
+vi.mock("./AppDialog", () => ({
+    useDialog: () => ({
+        confirm: (...args: unknown[]) => mockConfirm(...args),
+        prompt: vi.fn(),
+        alert: vi.fn(),
+        choose: vi.fn(),
+    }),
+}))
 
 vi.mock("../api/client", () => ({
     api: {
@@ -46,6 +57,7 @@ vi.mock("../api/client", () => ({
             create: (...args: unknown[]) => mockCreate(...args),
             reorder: (...args: unknown[]) => mockReorder(...args),
             update: (...args: unknown[]) => mockUpdate(...args),
+            delete: (...args: unknown[]) => mockDelete(...args),
         },
         assets: {
             upload: (...args: unknown[]) => mockUploadAsset(...args),
@@ -111,10 +123,14 @@ beforeEach(() => {
     mockCreate.mockReset()
     mockReorder.mockReset()
     mockUpdate.mockReset()
+    mockDelete.mockReset()
     mockUploadAsset.mockReset()
     mockDocumentExportDownload.mockReset()
     mockNotifyError.mockReset()
+    mockConfirm.mockReset()
     mockList.mockResolvedValue([])
+    mockDelete.mockResolvedValue(undefined)
+    mockConfirm.mockResolvedValue(true)
     mockDocumentExportDownload.mockResolvedValue(undefined)
 })
 
@@ -925,5 +941,127 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
         )
         const [, , params] = mockDocumentExportDownload.mock.calls[0]
         expect(params.toString()).toBe("")
+    })
+})
+
+describe("PageEditor handleDeletePage (PAGES-DELETE-EDITOR-UI-01 C2)", () => {
+    it("shows the confirm dialog with i18n title + message + danger variant", async () => {
+        mockList.mockResolvedValue([makePage({id: "p1", position: 1})])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-delete-page-p1")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1))
+        const [title, message, variant] = mockConfirm.mock.calls[0]
+        expect(title).toBe("Delete page?")
+        expect(message).toContain("cannot be undone")
+        expect(variant).toBe("danger")
+    })
+
+    it("calls api.pages.delete and removes the row from local state on confirm", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1}),
+            makePage({id: "p2", position: 2}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-delete-page-p2")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p2"))
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("b1", "p2"))
+        await waitFor(() =>
+            expect(screen.queryByTestId("page-editor-page-row-p2")).toBeNull(),
+        )
+        expect(screen.getByTestId("page-editor-page-row-p1")).toBeTruthy()
+    })
+
+    it("does NOT call api.pages.delete when the user cancels the confirm", async () => {
+        mockConfirm.mockResolvedValue(false)
+        mockList.mockResolvedValue([makePage({id: "p1", position: 1})])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-delete-page-p1")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1))
+        expect(mockDelete).not.toHaveBeenCalled()
+        expect(screen.getByTestId("page-editor-page-row-p1")).toBeTruthy()
+    })
+
+    it("auto-selects the next page when the active page is deleted", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1}),
+            makePage({id: "p2", position: 2}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        // p1 is auto-selected on mount.
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-canvas")
+                    .getAttribute("data-active-page-id"),
+            ).toBe("p1"),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("b1", "p1"))
+        // p2 should become active now that p1 is gone.
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-canvas")
+                    .getAttribute("data-active-page-id"),
+            ).toBe("p2"),
+        )
+    })
+
+    it("clears activePageId to null when the last page is deleted", async () => {
+        mockList.mockResolvedValue([makePage({id: "p1", position: 1})])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-canvas")
+                    .getAttribute("data-active-page-id"),
+            ).toBe("p1"),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("b1", "p1"))
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-canvas")
+                    .getAttribute("data-active-page-id"),
+            ).toBe(""),
+        )
+        // Empty-state should reappear.
+        expect(screen.getByTestId("page-editor-thumbnails-empty")).toBeTruthy()
+    })
+
+    it("preserves the active page when a DIFFERENT page is deleted", async () => {
+        mockList.mockResolvedValue([
+            makePage({id: "p1", position: 1}),
+            makePage({id: "p2", position: 2}),
+            makePage({id: "p3", position: 3}),
+        ])
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        // Click p2 to make it active.
+        await waitFor(() => expect(screen.getByTestId("page-editor-page-row-p2")).toBeTruthy())
+        fireEvent.click(screen.getByTestId("page-editor-page-row-p2"))
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("page-editor-canvas")
+                    .getAttribute("data-active-page-id"),
+            ).toBe("p2"),
+        )
+        // Delete p1 (not active). p2 should stay active.
+        fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("b1", "p1"))
+        expect(
+            screen
+                .getByTestId("page-editor-canvas")
+                .getAttribute("data-active-page-id"),
+        ).toBe("p2")
     })
 })

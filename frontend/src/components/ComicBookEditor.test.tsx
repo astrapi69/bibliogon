@@ -49,6 +49,7 @@ vi.mock("../api/client", async () => {
                 list: vi.fn(),
                 create: vi.fn(),
                 reorder: vi.fn(),
+                delete: vi.fn(),
             },
             assets: {
                 list: vi.fn(),
@@ -58,6 +59,17 @@ vi.mock("../api/client", async () => {
         },
     };
 });
+
+const mockConfirm = vi.fn();
+
+vi.mock("./AppDialog", () => ({
+    useDialog: () => ({
+        confirm: (...args: unknown[]) => mockConfirm(...args),
+        prompt: vi.fn(),
+        alert: vi.fn(),
+        choose: vi.fn(),
+    }),
+}));
 
 import {api} from "../api/client";
 
@@ -127,7 +139,10 @@ beforeEach(() => {
     vi.mocked(api.pages.list).mockImplementation(async () => [fakePage]);
     vi.mocked(api.pages.create).mockImplementation(async () => fakePage);
     vi.mocked(api.pages.reorder).mockImplementation(async () => [fakePage]);
+    vi.mocked(api.pages.delete).mockImplementation(async () => undefined);
     vi.mocked(api.assets.list).mockImplementation(async () => []);
+    mockConfirm.mockReset();
+    mockConfirm.mockResolvedValue(true);
 });
 
 afterEach(() => {
@@ -727,6 +742,124 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             expect(
                 screen.queryByTestId("comic-book-editor-pages-error"),
             ).not.toBeInTheDocument();
+        });
+    });
+
+    describe("handleDeletePage (PAGES-DELETE-EDITOR-UI-01 C2)", () => {
+        it("renders the delete button per row", async () => {
+            render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                />,
+            );
+            await screen.findByTestId(
+                `comic-book-editor-delete-page-${fakePage.id}`,
+            );
+        });
+
+        it("shows the confirm dialog with danger variant on click", async () => {
+            render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                />,
+            );
+            await screen.findByTestId(
+                `comic-book-editor-delete-page-${fakePage.id}`,
+            );
+            fireEvent.click(
+                screen.getByTestId(
+                    `comic-book-editor-delete-page-${fakePage.id}`,
+                ),
+            );
+            await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+            const [title, message, variant] = mockConfirm.mock.calls[0];
+            expect(title).toBe("Delete page?");
+            expect(message).toContain("cannot be undone");
+            expect(variant).toBe("danger");
+        });
+
+        it("calls api.pages.delete with the bookId + pageId on confirm", async () => {
+            render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                />,
+            );
+            await screen.findByTestId(
+                `comic-book-editor-delete-page-${fakePage.id}`,
+            );
+            fireEvent.click(
+                screen.getByTestId(
+                    `comic-book-editor-delete-page-${fakePage.id}`,
+                ),
+            );
+            await waitFor(() =>
+                expect(vi.mocked(api.pages.delete)).toHaveBeenCalledWith(
+                    "book-1",
+                    fakePage.id,
+                ),
+            );
+        });
+
+        it("does NOT call api.pages.delete when the user cancels", async () => {
+            mockConfirm.mockResolvedValue(false);
+            render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                />,
+            );
+            await screen.findByTestId(
+                `comic-book-editor-delete-page-${fakePage.id}`,
+            );
+            fireEvent.click(
+                screen.getByTestId(
+                    `comic-book-editor-delete-page-${fakePage.id}`,
+                ),
+            );
+            await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+            expect(vi.mocked(api.pages.delete)).not.toHaveBeenCalled();
+            // Row still present.
+            expect(
+                screen.getByTestId(
+                    `comic-book-editor-page-row-${fakePage.id}`,
+                ),
+            ).toBeInTheDocument();
+        });
+
+        it("removes the row from local state on successful delete", async () => {
+            render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                />,
+            );
+            await screen.findByTestId(
+                `comic-book-editor-delete-page-${fakePage.id}`,
+            );
+            fireEvent.click(
+                screen.getByTestId(
+                    `comic-book-editor-delete-page-${fakePage.id}`,
+                ),
+            );
+            await waitFor(() =>
+                expect(
+                    screen.queryByTestId(
+                        `comic-book-editor-page-row-${fakePage.id}`,
+                    ),
+                ).toBeNull(),
+            );
+            // Empty-state should reappear.
+            expect(
+                screen.getByTestId("comic-book-editor-thumbnails-empty"),
+            ).toBeInTheDocument();
         });
     });
 });
