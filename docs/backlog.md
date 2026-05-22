@@ -1,8 +1,9 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-24 (WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..` through to the C5 docs commit: C1 new WizardShell + WizardNav composition (~340 LOC + 17 Vitest cases); C2 KdpPublishingWizard migration (-141 LOC); C3 ConvertToBookWizard migration (-191 LOC net) + StepDef.label made optional + 1 new Vitest case for the no-label behavior; C4 intentional-asymmetry docstring on ImportWizardModal + new P5 filing WIZARD-SHELL-IMPORT-VARIANT-01; C5 docs close-out. Pre-Coding-Reality-Check revised scope from RCU 3-site to RCU 2-site (user-adjudicated Option A): ImportWizardModal's shape (className-based styling + 900px + text indicator + per-step nav + WizardErrorBoundary) is materially different from KDP + Convert and stays out by design. Vitest 1940 → 1958 (+18); KDP testids preserved verbatim, Convert gains additive shell-level testids (dialog / step-indicator / step-dot-{i} / close). tsc clean throughout.)
+Last updated: 2026-05-24 (PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..` through to the C5 docs commit: C1 PageThumbnails onDelete prop + Trash2 icon button per row + 5 Vitest cases; C2 PageEditor + ComicBookEditor handleDeletePage wiring [confirm via AppDialog + api.pages.delete + state reconciliation per LL "Destructive row-actions must reconcile collection state"] + 11 Vitest cases across both editors; C3 i18n keys delete_page + delete_page_title + delete_page_confirm in all 8 catalogs with native translations [no English passthrough]; C4 Playwright smoke spec [5 cases covering positive + negative paths across BOTH editor surfaces]; C5 docs close-out. RCU 2-site cross-surface fix per Half-Wired-Lifecycle-Cascade-Followup from PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C5 close. Vitest 1958 → 1974 (+16); i18n parity 75/75 held; tsc clean throughout.)
+Previous: 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be` (RCU 2-site WizardShell + WizardNav; ImportWizardModal stays out by design; Vitest 1940 → 1958).
 Current version: v0.35.1
-Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 68 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -192,70 +193,6 @@ store.
   feedback; without that signal, the simpler restart-at-
   metadata model is more honest about what the wizard
   actually re-checks.
-
-- **PAGES-DELETE-EDITOR-UI-01** (P3, Half-Wired-Lifecycle-Cascade-
-  Followup, filed 2026-05-23 from PLUGIN-COMICS-MULTI-PAGE-
-  NAVIGATION-01 C5 close): page-delete UI is absent in BOTH
-  PageEditor (picture_book) AND ComicBookEditor (comic_book).
-  Backend supports it — `DELETE /api/books/{id}/pages/{pid}`
-  has shipped since PAGES-CRUD-01 (`879df22..2869f3f`,
-  2026-05-20) with position-shift-down on delete. `api.pages.
-  delete` exists in the frontend client and is exercised by
-  `frontend/src/api/client.pages.test.ts:134`. But neither
-  editor surface exposes the delete affordance — neither
-  PageThumbnails nor either editor's properties pane carries
-  a per-page delete control.
-
-  This is a separate Half-Wired-Lifecycle-Cascade from the
-  Add-Page-After-First gap that MULTI-PAGE-NAVIGATION-01
-  closed. Cross-surface: both editors share PageThumbnails,
-  so a clean fix lands the delete affordance in PageThumbnails
-  once + serves both sites simultaneously (RCU 2-site benefit).
-
-  ### Scope (one session, ~3-5 commits)
-
-  - Add per-row delete affordance to PageThumbnails (icon
-    button in the row, OR right-click menu, OR delete-key
-    keyboard shortcut — design decision at Pre-Inspection).
-  - Wire onDelete prop in PageThumbnails (idempotent removal
-    from local pages state per "Destructive row-actions must
-    reconcile collection state" LL).
-  - PageEditor + ComicBookEditor: pass onDelete handler that
-    calls `api.pages.delete` + clears activePageId if the
-    deleted page was active (auto-select next-available page).
-  - Confirm-dialog: 1-step confirmation (AppDialog) per
-    existing prose-side delete UX precedent.
-  - Vitest cases for the new handler (cover empty → 1-page →
-    delete → empty-state restored AND multi-page → delete-
-    active → next-page-auto-selected).
-  - Playwright smoke spec (positive: delete a page, sidebar
-    shrinks; positive: delete the last page, empty-state
-    restored).
-
-  ### Why this didn't ship inside MULTI-PAGE-NAVIGATION-01
-
-  Per user-adjudication 2026-05-23 Q5: "File alongside in
-  this session's C5 docs commit. NOT bundled with
-  implementation. Separate-Session for actual UI-
-  implementation." Bundling would have stretched the
-  MULTI-PAGE-NAVIGATION-01 session beyond its β-scope
-  (5-6 commits). Delete-UI is its own design-decision
-  (icon vs menu vs key) + its own confirm-flow choice;
-  the user wants it scoped + considered separately.
-
-  ### Cross-surface impact
-
-  - PageEditor (picture_book) — needs UI
-  - ComicBookEditor (comic_book) — needs UI
-  - Future comic-book layouts that add panel-delete / bubble-
-    delete already have their own controls; this is page-
-    delete specifically.
-
-  ### Trigger
-
-  Either user-real-test re-surfaces the page-delete gap, OR
-  the cleanup discipline catches it during the next session
-  picking from P3. Not deadline-pressure (P3-tier).
 
 - **HOOKSPEC-DISPATCH-WIRING-01** (P3, filed 2026-05-23 from the
   plugin-communication investigation).
