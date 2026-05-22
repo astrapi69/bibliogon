@@ -158,3 +158,46 @@ machine-translated; need native-speaker review.
 
 Placeholders preserved: `{count}`, `{noun}`. Sentence punctuation
 adapted to each locale (Japanese uses 。and 「」 conventions).
+
+## 2026-05-22 — KDP Phase 2 wizard strings (ES, FR, EL, PT, TR, JA)
+
+35 keys for the KDP Publishing Wizard Phase 2 (C8-C11):
+pricing step + ARC step + conflict banner. EN passthrough
+shipped pending native-speaker review.
+
+| Key | Languages |
+|-----|-----------|
+| `ui.kdp_publishing_wizard.step_pricing` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.step_arc` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_hint` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_royalty_plan` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_royalty_35_hint` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_royalty_70_hint` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_options` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_kdp_select` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_expanded_distribution` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_ebook_prices` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_region` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_list_price` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_royalty` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_paperback` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_page_count` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_print_cost` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_paperback_royalty` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.pricing_70_ineligible` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_hint` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_name_placeholder` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_email_placeholder` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_add` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_empty` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_loading` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_load_failed` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_status_invited` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_status_sent` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_status_received` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_status_reviewed` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_status_declined` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_mailto_subject` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.arc_send_mail` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.conflict_banner` | ES, FR, EL, PT, TR, JA |
+| `ui.kdp_publishing_wizard.conflict_dismiss` | ES, FR, EL, PT, TR, JA |
