@@ -40,6 +40,7 @@ from app.routers import (
     backup,
     book_ai_fill,
     book_ai_template,
+    book_types,
     books,
     bulk_delete,
     chapter_templates,
@@ -578,6 +579,7 @@ app.add_middleware(
 )
 
 app.include_router(books.router, prefix="/api")
+app.include_router(book_types.router, prefix="/api")
 app.include_router(articles.router, prefix="/api")
 app.include_router(authors.router, prefix="/api")
 app.include_router(article_assets.router, prefix="/api")
