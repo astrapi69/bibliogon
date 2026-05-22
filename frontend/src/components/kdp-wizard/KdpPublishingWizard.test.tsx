@@ -469,4 +469,145 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         })
         expect(mockUpsertPublishingState).not.toHaveBeenCalled()
     })
+
+    // --- C11 conflict-resolution banner ----------------------------
+
+    it("C11: banner renders when book.updated_at > state.updated_at", async () => {
+        mockGetPublishingState.mockResolvedValueOnce({
+            book_id: "book-1",
+            // Book edited AFTER the publishing-state was saved.
+            book_updated_at: "2026-05-22T10:00:00",
+            state: {
+                id: "ps-1",
+                book_id: "book-1",
+                royalty_plan: "70",
+                kdp_select_enrolled: false,
+                kdp_select_enrollment_date: null,
+                expanded_distribution: false,
+                prices: {},
+                launch_checklist_state: {},
+                publication_target_date: null,
+                last_kdp_upload_at: null,
+                created_at: "2026-05-22T09:00:00",
+                updated_at: "2026-05-22T09:00:00",
+                arc_reviewers: [],
+            },
+        })
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        await waitFor(() => {
+            expect(
+                screen.queryByTestId(
+                    "kdp-publishing-wizard-conflict-banner",
+                ),
+            ).toBeTruthy()
+        })
+    })
+
+    it("C11: banner is hidden when timestamps are in sync", async () => {
+        mockGetPublishingState.mockResolvedValueOnce({
+            book_id: "book-1",
+            book_updated_at: "2026-05-22T09:00:00",
+            state: {
+                id: "ps-1",
+                book_id: "book-1",
+                royalty_plan: "70",
+                kdp_select_enrolled: false,
+                kdp_select_enrollment_date: null,
+                expanded_distribution: false,
+                prices: {},
+                launch_checklist_state: {},
+                publication_target_date: null,
+                last_kdp_upload_at: null,
+                created_at: "2026-05-22T09:00:00",
+                updated_at: "2026-05-22T09:00:00",
+                arc_reviewers: [],
+            },
+        })
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        await waitFor(() => {
+            expect(mockGetPublishingState).toHaveBeenCalled()
+        })
+        expect(
+            screen.queryByTestId(
+                "kdp-publishing-wizard-conflict-banner",
+            ),
+        ).toBeNull()
+    })
+
+    it("C11: banner is hidden when no persisted state exists", async () => {
+        // Default mock returns state=null; banner should not show.
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        await waitFor(() => {
+            expect(mockGetPublishingState).toHaveBeenCalled()
+        })
+        expect(
+            screen.queryByTestId(
+                "kdp-publishing-wizard-conflict-banner",
+            ),
+        ).toBeNull()
+    })
+
+    it("C11: dismiss button hides the banner", async () => {
+        mockGetPublishingState.mockResolvedValueOnce({
+            book_id: "book-1",
+            book_updated_at: "2026-05-22T10:00:00",
+            state: {
+                id: "ps-1",
+                book_id: "book-1",
+                royalty_plan: "70",
+                kdp_select_enrolled: false,
+                kdp_select_enrollment_date: null,
+                expanded_distribution: false,
+                prices: {},
+                launch_checklist_state: {},
+                publication_target_date: null,
+                last_kdp_upload_at: null,
+                created_at: "2026-05-22T09:00:00",
+                updated_at: "2026-05-22T09:00:00",
+                arc_reviewers: [],
+            },
+        })
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        await waitFor(() => {
+            expect(
+                screen.getByTestId(
+                    "kdp-publishing-wizard-conflict-banner",
+                ),
+            ).toBeTruthy()
+        })
+        fireEvent.click(
+            screen.getByTestId(
+                "kdp-publishing-wizard-conflict-dismiss",
+            ),
+        )
+        expect(
+            screen.queryByTestId(
+                "kdp-publishing-wizard-conflict-banner",
+            ),
+        ).toBeNull()
+    })
 })

@@ -25,7 +25,14 @@
 import {useEffect, useRef, useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {useMachine} from "@xstate/react"
-import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
+import {
+    AlertTriangle,
+    ChevronLeft,
+    ChevronRight,
+    Check,
+    X,
+    Rocket,
+} from "lucide-react"
 
 import {BookDetail, api} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
@@ -102,11 +109,13 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
     // so the auto-save effect can short-circuit on no-op transitions
     // + skip the initial-load PATCH.
     const lastSavedPricingRef = useRef<string>("")
-    // Book.updated_at as of wizard-open time, used by C11's
-    // conflict-detection banner (filed for next commit; stored
-    // here now so the round-trip is observable).
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // C11 conflict-detection banner state. Compared as ISO 8601
+    // strings (lexicographically equivalent to chronological).
     const [bookUpdatedAt, setBookUpdatedAt] = useState<string | null>(null)
+    const [stateUpdatedAt, setStateUpdatedAt] = useState<string | null>(
+        null,
+    )
+    const [conflictDismissed, setConflictDismissed] = useState(false)
 
     // C10 mount-time hydration. Fetches the persisted publishing-
     // state row + dispatches STATE_LOADED if one exists. Failure
@@ -121,6 +130,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                 if (cancelled) return
                 setBookUpdatedAt(response.book_updated_at)
                 if (response.state) {
+                    setStateUpdatedAt(response.state.updated_at)
                     const pricing = {
                         royalty_plan: response.state.royalty_plan,
                         kdp_select_enrolled:
@@ -180,6 +190,17 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const step = stepIndexFromState(stateValue)
     const canAdvance = snapshot.can({type: "ADVANCE"})
     const isLastStep = step === TOTAL_STEPS - 1
+
+    // C11 conflict-detection banner. Fires when the book was
+    // edited after the persisted publishing-state row was last
+    // saved (ISO timestamps compare lexicographically). The user
+    // re-validates metadata + cover on the normal flow; the
+    // banner is informational + dismissable.
+    const hasConflict =
+        bookUpdatedAt !== null &&
+        stateUpdatedAt !== null &&
+        bookUpdatedAt > stateUpdatedAt
+    const showConflictBanner = hasConflict && !conflictDismissed
 
     const closeAndReset = () => {
         send({type: "CANCEL"})
@@ -306,6 +327,34 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                     </p>
 
                     {renderStepIndicator()}
+                    {showConflictBanner && (
+                        <div
+                            style={styles.conflictBanner}
+                            data-testid="kdp-publishing-wizard-conflict-banner"
+                            role="status"
+                            aria-live="polite"
+                        >
+                            <AlertTriangle size={14} />
+                            <span style={{flex: 1}}>
+                                {t(
+                                    "ui.kdp_publishing_wizard.conflict_banner",
+                                    "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
+                                )}
+                            </span>
+                            <button
+                                type="button"
+                                onClick={() => setConflictDismissed(true)}
+                                style={styles.conflictDismiss}
+                                aria-label={t(
+                                    "ui.kdp_publishing_wizard.conflict_dismiss",
+                                    "Hinweis schließen",
+                                )}
+                                data-testid="kdp-publishing-wizard-conflict-dismiss"
+                            >
+                                <X size={12} />
+                            </button>
+                        </div>
+                    )}
                     <div>{renderCurrentStep()}</div>
 
                     <div style={styles.nav}>
@@ -441,5 +490,27 @@ const styles: Record<string, React.CSSProperties> = {
         cursor: "pointer",
         color: "var(--text-muted)",
         padding: 4,
+    },
+    conflictBanner: {
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "8px 12px",
+        marginBottom: 12,
+        background: "var(--warning-bg, rgba(234,179,8,0.1))",
+        color: "var(--warning, #b45309)",
+        border: "1px solid var(--warning, #b45309)",
+        borderRadius: "var(--radius-sm, 4px)",
+        fontSize: "0.8125rem",
+    },
+    conflictDismiss: {
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        color: "inherit",
+        padding: 2,
+        display: "inline-flex",
+        alignItems: "center",
+        justifyContent: "center",
     },
 }
