@@ -179,4 +179,101 @@ describe("PageThumbnails", () => {
         fireEvent.click(screen.getByTestId("page-editor-add-page"))
         expect(onAddPage).toHaveBeenCalledTimes(1)
     })
+
+    describe("delete affordance (PAGES-DELETE-EDITOR-UI-01)", () => {
+        it("omits the delete button when onDelete is undefined", () => {
+            const pages = [makePage({id: "p1"})]
+            render(
+                <PageThumbnails
+                    pages={pages}
+                    activePageId={null}
+                    onSelect={vi.fn()}
+                    onAddPage={vi.fn()}
+                    onReorder={vi.fn()}
+                />,
+            )
+            expect(
+                screen.queryByTestId("page-editor-delete-page-p1"),
+            ).toBeNull()
+        })
+
+        it("renders a delete button per row when onDelete is provided", () => {
+            const pages = [
+                makePage({id: "p1"}),
+                makePage({id: "p2"}),
+                makePage({id: "p3"}),
+            ]
+            render(
+                <PageThumbnails
+                    pages={pages}
+                    activePageId={null}
+                    onSelect={vi.fn()}
+                    onAddPage={vi.fn()}
+                    onReorder={vi.fn()}
+                    onDelete={vi.fn()}
+                />,
+            )
+            expect(screen.getByTestId("page-editor-delete-page-p1")).toBeTruthy()
+            expect(screen.getByTestId("page-editor-delete-page-p2")).toBeTruthy()
+            expect(screen.getByTestId("page-editor-delete-page-p3")).toBeTruthy()
+        })
+
+        it("invokes onDelete with the page id when the delete button is clicked", () => {
+            const onDelete = vi.fn()
+            const pages = [makePage({id: "p1"}), makePage({id: "p2"})]
+            render(
+                <PageThumbnails
+                    pages={pages}
+                    activePageId={null}
+                    onSelect={vi.fn()}
+                    onAddPage={vi.fn()}
+                    onReorder={vi.fn()}
+                    onDelete={onDelete}
+                />,
+            )
+            fireEvent.click(screen.getByTestId("page-editor-delete-page-p2"))
+            expect(onDelete).toHaveBeenCalledWith("p2")
+            expect(onDelete).toHaveBeenCalledTimes(1)
+        })
+
+        it("delete button click does not trigger onSelect (stopPropagation)", () => {
+            const onSelect = vi.fn()
+            const onDelete = vi.fn()
+            const pages = [makePage({id: "p1"})]
+            render(
+                <PageThumbnails
+                    pages={pages}
+                    activePageId={null}
+                    onSelect={onSelect}
+                    onAddPage={vi.fn()}
+                    onReorder={vi.fn()}
+                    onDelete={onDelete}
+                />,
+            )
+            fireEvent.click(screen.getByTestId("page-editor-delete-page-p1"))
+            expect(onDelete).toHaveBeenCalledTimes(1)
+            expect(onSelect).not.toHaveBeenCalled()
+        })
+
+        it("uses the testidNamespace prefix for delete-button testids", () => {
+            const pages = [makePage({id: "p1"})]
+            render(
+                <PageThumbnails
+                    pages={pages}
+                    activePageId={null}
+                    onSelect={vi.fn()}
+                    onAddPage={vi.fn()}
+                    onReorder={vi.fn()}
+                    onDelete={vi.fn()}
+                    testidNamespace="comic-book-editor"
+                />,
+            )
+            expect(
+                screen.getByTestId("comic-book-editor-delete-page-p1"),
+            ).toBeTruthy()
+            expect(
+                screen.queryByTestId("page-editor-delete-page-p1"),
+            ).toBeNull()
+        })
+    })
 })

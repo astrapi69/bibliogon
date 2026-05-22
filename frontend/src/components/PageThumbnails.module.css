@@ -109,3 +109,31 @@
 .rowPosition {
     font-variant-numeric: tabular-nums;
 }
+
+.deleteBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-sidebar);
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.row:hover .deleteBtn,
+.row:focus-within .deleteBtn {
+    opacity: 0.6;
+}
+
+.deleteBtn:hover,
+.deleteBtn:focus {
+    opacity: 1;
+    background: color-mix(in srgb, var(--danger, #dc2626) 14%, transparent);
+    color: var(--danger, #dc2626);
+}

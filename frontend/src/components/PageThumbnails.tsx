@@ -1,5 +1,5 @@
 import React from "react"
-import {GripVertical, Plus, FileText} from "lucide-react"
+import {GripVertical, Plus, FileText, Trash2} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -28,6 +28,15 @@ interface Props {
     onSelect: (pageId: string) => void
     onAddPage: () => void
     onReorder: (pageIds: string[]) => void
+    /** Optional: per-row delete affordance. When provided, each row
+     *  renders a Trash2 button at the trailing edge with testid
+     *  ``${testidNamespace}-delete-page-${pageId}``. The handler is
+     *  called with the page id; the parent owns the confirm dialog
+     *  + DB call + activePageId cleanup (per the "Destructive row-
+     *  actions must reconcile collection state" lessons-learned
+     *  rule). When omitted, no delete affordance renders.
+     *  Filed by PAGES-DELETE-EDITOR-UI-01 (2026-05-24). */
+    onDelete?: (pageId: string) => void
     /** Testid namespace for all data-testid attributes. Defaults to
      *  "page-editor" (preserving Picture-Book's PageEditor backward-
      *  compat). ComicBookEditor passes "comic-book-editor" for its
@@ -42,6 +51,7 @@ export default function PageThumbnails({
     onSelect,
     onAddPage,
     onReorder,
+    onDelete,
     testidNamespace = "page-editor",
 }: Props) {
     const {t} = useI18n()
@@ -105,6 +115,7 @@ export default function PageThumbnails({
                                     page={page}
                                     isActive={page.id === activePageId}
                                     onSelect={onSelect}
+                                    onDelete={onDelete}
                                     testidNamespace={testidNamespace}
                                 />
                             ))}
@@ -120,10 +131,18 @@ interface SortableRowProps {
     page: Page
     isActive: boolean
     onSelect: (pageId: string) => void
+    onDelete?: (pageId: string) => void
     testidNamespace: string
 }
 
-function SortablePageRow({page, isActive, onSelect, testidNamespace}: SortableRowProps) {
+function SortablePageRow({
+    page,
+    isActive,
+    onSelect,
+    onDelete,
+    testidNamespace,
+}: SortableRowProps) {
+    const {t} = useI18n()
     const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
         useSortable({id: page.id})
     const style: React.CSSProperties = {
@@ -171,6 +190,21 @@ function SortablePageRow({page, isActive, onSelect, testidNamespace}: SortableRo
             <span className={styles.rowLabel}>
                 <span className={styles.rowPosition}>{page.position}</span>
             </span>
+            {onDelete && (
+                <button
+                    type="button"
+                    className={styles.deleteBtn}
+                    data-testid={`${testidNamespace}-delete-page-${page.id}`}
+                    title={t("ui.page_editor.delete_page", "Delete page")}
+                    aria-label={t("ui.page_editor.delete_page", "Delete page")}
+                    onClick={(e) => {
+                        e.stopPropagation()
+                        onDelete(page.id)
+                    }}
+                >
+                    <Trash2 size={12} />
+                </button>
+            )}
         </li>
     )
 }
