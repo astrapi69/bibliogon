@@ -6,38 +6,23 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 
 from .changelog import add_entry, export_changelog_markdown, get_changelog
-from .cover_validator import generate_kdp_metadata, validate_cover
+from .cover_validator import (
+    KDP_COVER_REQUIREMENTS,
+    generate_kdp_metadata,
+    validate_cover,
+)
 from .metadata_checker import check_metadata_completeness
+from .package import KdpPackageError, build_kdp_package
 
 router = APIRouter(prefix="/kdp", tags=["kdp"])
 
-
-# --- Amazon KDP cover requirements ---
-#
-# These values are dictated by Amazon's KDP cover specification and MUST
-# NOT be exposed as user-editable settings. Changing them silently in a
-# user config would let the validator approve covers that KDP itself will
-# reject during upload, which is worse than no validation at all.
-#
-# Reference: https://kdp.amazon.com/en_US/help/topic/G201145400 (KDP
-# cover requirements). The plugin-settings audit (2026-04-11) removed the
-# corresponding kdp.yaml settings.cover and settings.manuscript blocks
-# because they were never read by this code anyway, and the YAML being
-# editable made it look as if the user could change something.
-KDP_COVER_REQUIREMENTS: dict[str, Any] = {
-    "min_width": 625,
-    "min_height": 1000,
-    "max_width": 10000,
-    "max_height": 10000,
-    "min_dpi": 300,
-    "aspect_ratio_min": 1.5,
-    "aspect_ratio_max": 1.8,
-    "max_file_size_mb": 50,
-    "allowed_formats": ["jpg", "jpeg", "tiff", "png"],
-}
+# ``KDP_COVER_REQUIREMENTS`` re-exported from cover_validator for the
+# in-process consumers that import it from here (plugin-export's
+# preview pipeline, plus the soon-to-ship Phase 2 ARC step).
 
 
 # --- Amazon KDP category catalog ---
@@ -203,3 +188,43 @@ def export_book_changelog(book_id: str, title: str = "") -> dict[str, str]:
     """Export the changelog as Markdown text."""
     md = export_changelog_markdown(book_id, title)
     return {"markdown": md, "book_id": book_id}
+
+
+@router.post("/package/{book_id}")
+def build_package(book_id: str) -> FileResponse:
+    """Build the KDP-ready ZIP package for a book.
+
+    Endpoint shape from KDP-PUBLISHING-WIZARD-01 Phase 1 MVP
+    (A1 adjudication: 3-step wizard ships checklist + cover
+    validation + this package step). Returns a streamed ZIP
+    that the wizard's Step 3 triggers the user to download.
+
+    Architectural notes:
+    - Per A3, manuscript generation reaches into plugin-export
+      + plugin-comics via direct Python import. plugin-kdp
+      already ``depends_on=["export"]``; the comics import is
+      lazy + gated on the book_type discriminator so the
+      package builder still works when plugin-comics is absent.
+    - Per A4, ZIP layout: metadata.json + cover.{ext} +
+      cover-validation-report.json + manuscript-*.{ext} +
+      publishing-state-snapshot.json + README.txt.
+    - Per A5 (Phase 1 MVP), wizard state is session-scoped —
+      no BookPublishingState row read/written. The
+      publishing-state-snapshot.json is built from the Book
+      record only.
+
+    Defence-in-depth: the package builder re-runs the
+    metadata-completeness check server-side so a bypassed
+    client gate (e.g. direct curl) still gets blocked by the
+    same rules the wizard's Step 1 enforced.
+    """
+    try:
+        zip_path = build_kdp_package(book_id)
+    except KdpPackageError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    return FileResponse(
+        path=str(zip_path),
+        media_type="application/zip",
+        filename=zip_path.name,
+    )

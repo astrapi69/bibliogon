@@ -2770,6 +2770,37 @@ export const api = {
                 method: "POST",
                 body: JSON.stringify(payload),
             }),
+
+        /** Build the KDP-ready ZIP for a book. Returns the blob +
+         *  the server-supplied filename. Used by Phase 1 MVP
+         *  wizard Step 3. Returns a 400 with a readable detail
+         *  when metadata is incomplete (defence-in-depth gate). */
+        buildPackage: async (
+            bookId: string,
+        ): Promise<{blob: Blob; filename: string}> => {
+            const res = await fetch(`${BASE}/kdp/package/${bookId}`, {
+                method: "POST",
+            })
+            if (!res.ok) {
+                const err = await res
+                    .json()
+                    .catch(() => ({detail: res.statusText}))
+                throw new ApiError(
+                    res.status,
+                    typeof err.detail === "string"
+                        ? err.detail
+                        : "KDP package build failed",
+                    `${BASE}/kdp/package/${bookId}`,
+                    "POST",
+                )
+            }
+            const blob = await res.blob()
+            const filename =
+                _filenameFromContentDisposition(
+                    res.headers.get("Content-Disposition"),
+                ) || `${bookId}-kdp-package.zip`
+            return {blob, filename}
+        },
     },
 
     i18n: {

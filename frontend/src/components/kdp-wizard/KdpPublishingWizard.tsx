@@ -34,6 +34,7 @@ import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
 import MetadataChecklist from "./MetadataChecklist"
 import CoverValidation from "./CoverValidation"
+import ExportPackage from "./ExportPackage"
 
 interface Props {
     open: boolean
@@ -88,17 +89,15 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                 )
             case 2:
                 return (
-                    <div
-                        style={styles.stepContent}
-                        data-testid="kdp-publishing-wizard-step-2-export"
-                    >
-                        <p style={styles.hint}>
-                            {t(
-                                "ui.kdp_publishing_wizard.step_export_placeholder",
-                                "Schritt 3 — KDP-Paket exportieren (Inhalt folgt).",
-                            )}
-                        </p>
-                    </div>
+                    <ExportPackage
+                        book={book}
+                        onCanAdvanceChange={() => {
+                            /* Last step: Finish is always rendered.
+                               Prop preserved for parity with C2 / C3
+                               shape; the gate doesn't bind to a
+                               wizard-level button here. */
+                        }}
+                    />
                 )
             default:
                 return null

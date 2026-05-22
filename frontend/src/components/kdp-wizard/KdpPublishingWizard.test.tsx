@@ -69,6 +69,19 @@ vi.mock("./CoverValidation", () => ({
     },
 }))
 
+vi.mock("./ExportPackage", () => ({
+    default: ({
+        onCanAdvanceChange,
+    }: {
+        onCanAdvanceChange: (canAdvance: boolean) => void
+    }) => {
+        useEffect(() => {
+            onCanAdvanceChange(true)
+        }, [onCanAdvanceChange])
+        return <div data-testid="kdp-publishing-wizard-step-2-export" />
+    },
+}))
+
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     return {
         id: "book-1",

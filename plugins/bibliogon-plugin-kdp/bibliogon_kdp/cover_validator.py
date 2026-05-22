@@ -3,6 +3,34 @@
 from pathlib import Path
 from typing import Any
 
+# --- Amazon KDP cover requirements ---
+#
+# These values are dictated by Amazon's KDP cover specification and MUST
+# NOT be exposed as user-editable settings. Changing them silently in a
+# user config would let the validator approve covers that KDP itself will
+# reject during upload, which is worse than no validation at all.
+#
+# Reference: https://kdp.amazon.com/en_US/help/topic/G201145400 (KDP
+# cover requirements). The plugin-settings audit (2026-04-11) removed the
+# corresponding kdp.yaml settings.cover and settings.manuscript blocks
+# because they were never read by this code anyway, and the YAML being
+# editable made it look as if the user could change something.
+#
+# Moved here from routes.py during C4 (KDP-PUBLISHING-WIZARD-01 Phase 1)
+# to break a routes.py <-> package.py circular import. The constant
+# belongs next to validate_cover() which is its primary consumer.
+KDP_COVER_REQUIREMENTS: dict[str, Any] = {
+    "min_width": 625,
+    "min_height": 1000,
+    "max_width": 10000,
+    "max_height": 10000,
+    "min_dpi": 300,
+    "aspect_ratio_min": 1.5,
+    "aspect_ratio_max": 1.8,
+    "max_file_size_mb": 50,
+    "allowed_formats": ["jpg", "jpeg", "tiff", "png"],
+}
+
 
 class CoverValidationResult:
     """Result of a cover image validation."""
