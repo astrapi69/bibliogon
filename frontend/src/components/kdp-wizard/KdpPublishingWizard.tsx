@@ -1,40 +1,44 @@
 /**
- * KDP Publishing Wizard (MVP, 3 steps).
+ * KDP Publishing Wizard (Phase 2 substrate, 3 visible steps).
  *
  * Walks the user from a configured Book through to a KDP-ready
- * package ZIP. Three steps:
+ * package ZIP. Three visible steps (C2):
  *   0 — MetadataChecklist    (Step 1: validate KDP-required metadata)
  *   1 — CoverValidation      (Step 2: validate cover image)
  *   2 — ExportPackage        (Step 3: download KDP-package ZIP)
  *
- * Pattern: follows ``ConvertToBookWizard`` (canonical wizard
- * shape per the KDP Pre-Inspection 2026-05-24, Track 2):
- *   - Radix Dialog wrapping a step-index ``useState``
- *   - Conditional render per step
- *   - Per-step "advance-allowed" gating before Next button
- *     enables (filled in by C2/C3/C4 per the implementation plan;
- *     shell always allows for now)
- *   - Testid namespace: ``kdp-publishing-wizard-{step}-{slot}``
+ * Pattern: XState v5 via ``useMachine(kdpWizardMachine)``. Step
+ * navigation, guards, and reset semantics live in the machine
+ * (``frontend/src/components/kdp-wizard/machines/``). React layer
+ * is a thin renderer that maps ``snapshot.value`` to the per-step
+ * component + wires callback props to machine events.
  *
- * Phase 1 (MVP) is session-scoped — no ``BookPublishingState``
- * persistence per A5 adjudication. The wizard's state lives in
- * React; closing the dialog clears it. Phase 2 (pricing + ARC)
- * adds the persistence model.
+ * Phase 2 C2 ships the 3-state substrate matching Phase 1's
+ * user-visible navigation. C8 / C10 extend the machine with the
+ * pricing + ARC states; the wizard's stepIndex map widens
+ * accordingly. Per-step component prop signatures stay backward-
+ * compatible: existing ``onCanAdvanceChange`` callback remains;
+ * new optional callbacks (``onLoaded`` / ``onValidated`` /
+ * ``onGenerate`` / ``onSuccess`` / ``onFailed``) drive the
+ * machine events.
  *
- * Mount: BookMetadataEditor header. Self-contained (open via
- * internal useState in the parent). No prop-drilling through
- * BookEditor needed.
+ * Per A11: ExportPackage receives ``onGenerate`` from the parent;
+ * the component stays machine-agnostic. The parent dispatches
+ * GENERATE on receipt; the machine moves to ``exporting``.
+ *
+ * Mount: BookMetadataEditor header. Self-contained.
  */
 
-import {useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
+import {useMachine} from "@xstate/react"
 import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import MetadataChecklist from "./MetadataChecklist"
 import CoverValidation from "./CoverValidation"
 import ExportPackage from "./ExportPackage"
+import {kdpWizardMachine} from "./machines/kdpWizardMachine"
+import MetadataChecklist from "./MetadataChecklist"
 
 interface Props {
     open: boolean
@@ -42,7 +46,6 @@ interface Props {
     onClose: () => void
 }
 
-type StepIndex = 0 | 1 | 2
 const TOTAL_STEPS = 3
 
 const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = [
@@ -63,45 +66,92 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
     },
 ] as const
 
+/** Map machine ``state.value`` to the user-visible step index used
+ *  by the dot indicator + testid namespace. C8 / C10 extend this
+ *  when pricing + arc states return to the machine. */
+function stepIndexFromState(stateValue: string): 0 | 1 | 2 {
+    switch (stateValue) {
+        case "metadata":
+        case "metadataError":
+            return 0
+        case "cover":
+            return 1
+        case "export":
+        case "exporting":
+        case "exportSuccess":
+        case "exportError":
+            return 2
+        default:
+            return 0
+    }
+}
+
 export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const {t} = useI18n()
-    const [step, setStep] = useState<StepIndex>(0)
-    // C2/C3: per-step gates. Next is disabled until the step's
-    // child component reports it can advance.
-    const [step0CanAdvance, setStep0CanAdvance] = useState(false)
-    const [step1CanAdvance, setStep1CanAdvance] = useState(false)
+    const [snapshot, send] = useMachine(kdpWizardMachine)
+
+    const stateValue = snapshot.value as string
+    const step = stepIndexFromState(stateValue)
+    const canAdvance = snapshot.can({type: "ADVANCE"})
+    const isLastStep = step === TOTAL_STEPS - 1
+
+    const closeAndReset = () => {
+        send({type: "CANCEL"})
+        onClose()
+    }
 
     const renderCurrentStep = () => {
-        switch (step) {
-            case 0:
-                return (
-                    <MetadataChecklist
-                        book={book}
-                        onCanAdvanceChange={setStep0CanAdvance}
-                    />
-                )
-            case 1:
-                return (
-                    <CoverValidation
-                        book={book}
-                        onCanAdvanceChange={setStep1CanAdvance}
-                    />
-                )
-            case 2:
-                return (
-                    <ExportPackage
-                        book={book}
-                        onCanAdvanceChange={() => {
-                            /* Last step: Finish is always rendered.
-                               Prop preserved for parity with C2 / C3
-                               shape; the gate doesn't bind to a
-                               wizard-level button here. */
-                        }}
-                    />
-                )
-            default:
-                return null
+        if (stateValue === "metadata" || stateValue === "metadataError") {
+            return (
+                <MetadataChecklist
+                    book={book}
+                    onCanAdvanceChange={() => {
+                        /* Machine guard is now the source of
+                           truth; this callback is a no-op signal
+                           from the per-step component. */
+                    }}
+                    onLoaded={(result, issuesFiltered) =>
+                        send({
+                            type: "METADATA_LOADED",
+                            result,
+                            issuesFiltered,
+                        })
+                    }
+                    onFailed={(error) =>
+                        send({type: "METADATA_FAILED", error})
+                    }
+                />
+            )
         }
+        if (stateValue === "cover") {
+            return (
+                <CoverValidation
+                    book={book}
+                    onCanAdvanceChange={() => {}}
+                    onValidated={(dim, issues) =>
+                        send({type: "COVER_VALIDATED", dim, issues})
+                    }
+                />
+            )
+        }
+        // export / exporting / exportSuccess / exportError
+        return (
+            <ExportPackage
+                book={book}
+                onCanAdvanceChange={() => {}}
+                onGenerate={() => send({type: "GENERATE"})}
+                onSuccess={(filename, blobUrl) =>
+                    send({
+                        type: "EXPORT_SUCCESS",
+                        filename,
+                        blobUrl,
+                    })
+                }
+                onFailed={(error) =>
+                    send({type: "EXPORT_FAILED", error})
+                }
+            />
+        )
     }
 
     // Step-indicator dot row. Visited steps render filled; the
@@ -130,10 +180,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         <Dialog.Root
             open={open}
             onOpenChange={(o) => {
-                if (!o) {
-                    setStep(0)
-                    onClose()
-                }
+                if (!o) closeAndReset()
             }}
         >
             <Dialog.Portal>
@@ -167,9 +214,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                                 <button
                                     type="button"
                                     className="btn btn-ghost btn-sm"
-                                    onClick={() =>
-                                        setStep((step - 1) as StepIndex)
-                                    }
+                                    onClick={() => send({type: "BACK"})}
                                     data-testid={`kdp-publishing-wizard-step-${step}-back`}
                                 >
                                     <ChevronLeft size={14} />{" "}
@@ -178,31 +223,23 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                             )}
                         </div>
                         <div style={{display: "flex", gap: 8}}>
-                            {step < TOTAL_STEPS - 1 && (
+                            {!isLastStep && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"
-                                    onClick={() =>
-                                        setStep((step + 1) as StepIndex)
-                                    }
-                                    disabled={
-                                        (step === 0 && !step0CanAdvance) ||
-                                        (step === 1 && !step1CanAdvance)
-                                    }
+                                    onClick={() => send({type: "ADVANCE"})}
+                                    disabled={!canAdvance}
                                     data-testid={`kdp-publishing-wizard-step-${step}-next`}
                                 >
                                     {t("ui.common.next", "Weiter")}{" "}
                                     <ChevronRight size={14} />
                                 </button>
                             )}
-                            {step === TOTAL_STEPS - 1 && (
+                            {isLastStep && (
                                 <button
                                     type="button"
                                     className="btn btn-primary btn-sm"
-                                    onClick={() => {
-                                        setStep(0)
-                                        onClose()
-                                    }}
+                                    onClick={closeAndReset}
                                     data-testid={`kdp-publishing-wizard-step-${step}-finish`}
                                 >
                                     <Check size={14} />{" "}
@@ -216,8 +253,8 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                     </div>
 
                     {/* Close button: Dialog.Close handles the onOpenChange
-                        path which runs the step reset + onClose in the
-                        Dialog.Root handler above. No explicit onClick
+                        path which runs the CANCEL dispatch + onClose in
+                        the Dialog.Root handler above. No explicit onClick
                         here — double-firing was the original C1 bug. */}
                     <Dialog.Close asChild>
                         <button
@@ -286,15 +323,6 @@ const styles: Record<string, React.CSSProperties> = {
         height: 10,
         borderRadius: "50%",
         transition: "background 0.2s",
-    },
-    stepContent: {
-        minHeight: 280,
-    },
-    hint: {
-        fontSize: "0.875rem",
-        color: "var(--text-muted)",
-        marginBottom: 16,
-        lineHeight: 1.5,
     },
     nav: {
         display: "flex",

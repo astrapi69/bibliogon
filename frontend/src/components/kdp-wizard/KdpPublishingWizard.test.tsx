@@ -1,24 +1,31 @@
 /**
- * KdpPublishingWizard tests (C1 shell-only).
+ * KdpPublishingWizard React-layer integration tests (C3).
  *
- * Covers:
- *  - shell renders + dialog title + book-title subtitle
- *  - 3 step-dots rendered (one per step)
- *  - next + back navigation (step 0 -> 1 -> 2)
- *  - finish button on last step calls onClose + resets step
- *  - close button + ESC both call onClose + reset step
- *  - testid namespace `kdp-publishing-wizard-{step}-{slot}` for
- *    every interactive surface (Testid-namespace-pinning rule)
+ * Phase 2 swaps Phase 1's ``useState`` step-index for
+ * ``useMachine(kdpWizardMachine)``. Wizard-navigation behaviour
+ * is now actor-level (covered by
+ * ``machines/kdpWizardMachine.test.ts``); these tests pin the
+ * React-layer wiring:
  *
- * Step CONTENT is shell-only in C1 (placeholders); C2/C3/C4 add
- * the real content + their per-step tests. Dialog-level navigation
- * tests live here permanently — they assert the wizard's
- * navigation contract independent of step content.
+ *   1. mount renders MetadataChecklist + Next is disabled by
+ *      machine guard until the child reports onLoaded (sentinel)
+ *   2. onLoaded fires → guard passes → ADVANCE → CoverValidation
+ *      mounts
+ *   3. onValidated fires → guard passes → ADVANCE → ExportPackage
+ *      mounts (C2 direct path: cover → export, no pricing / arc)
+ *   4. Finish button on the last step calls onClose + resets the
+ *      machine
+ *   5. Close button (X) calls onClose
+ *
+ * Per-step component internals (loading spinner / error banner /
+ * issue list rendering) are covered in the per-step test files
+ * unchanged. Phase 1's 9 wizard-nav DOM tests are deleted: their
+ * navigation contract is now actor-level + machine-test-covered.
  */
 
+import {useEffect} from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
-import {useEffect} from "react"
 
 import KdpPublishingWizard from "./KdpPublishingWizard"
 import {BookDetail} from "../../api/client"
@@ -31,55 +38,68 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }))
 
-// Mock the MetadataChecklist child so the wizard-level tests
-// exercise navigation contract in isolation from the API
-// integration. The real MetadataChecklist's behaviour
-// (api.kdp.checkMetadata call, book-type filtering, etc.) lives
-// in MetadataChecklist.test.tsx.
-//
-// The mock always reports "can advance" so Next enables. A
-// follow-up wizard test below verifies the gated-Next contract
-// by using a separate mock that reports "cannot advance".
+// Module-level mocks: each child fires its result callback on
+// mount so the wizard machine's guards pass + Next enables. Per-
+// test overrides via ``vi.doMock`` + ``vi.resetModules`` for the
+// gated-Next sentinel test below.
+// Mock children use empty-deps useEffect (fire-once on mount).
+// This mirrors the real per-step components, which depend on
+// ``book.id`` rather than the parent-passed callbacks — the
+// callbacks close over a stable ``send`` reference from xstate-
+// react. Depending on ``onLoaded`` / ``onValidated`` would
+// create an infinite render loop: parent re-renders pass a new
+// arrow function → effect re-fires → dispatch → re-render.
 vi.mock("./MetadataChecklist", () => ({
     default: ({
-        onCanAdvanceChange,
+        onLoaded,
     }: {
-        onCanAdvanceChange: (canAdvance: boolean) => void
+        onLoaded?: (
+            result: {
+                complete: boolean
+                error_count: number
+                warning_count: number
+                issues: never[]
+            },
+            issuesFiltered: never[],
+        ) => void
     }) => {
-        // Mirror the real component: fire the callback once on
-        // mount so the wizard transitions from "Next disabled" to
-        // "Next enabled" when the metadata check completes.
         useEffect(() => {
-            onCanAdvanceChange(true)
-        }, [onCanAdvanceChange])
+            onLoaded?.(
+                {
+                    complete: true,
+                    error_count: 0,
+                    warning_count: 0,
+                    issues: [],
+                },
+                [],
+            )
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
         return <div data-testid="kdp-publishing-wizard-step-0-metadata" />
     },
 }))
 
 vi.mock("./CoverValidation", () => ({
     default: ({
-        onCanAdvanceChange,
+        onValidated,
     }: {
-        onCanAdvanceChange: (canAdvance: boolean) => void
+        onValidated?: (
+            dim: {width: number; height: number},
+            issues: never[],
+        ) => void
     }) => {
         useEffect(() => {
-            onCanAdvanceChange(true)
-        }, [onCanAdvanceChange])
+            onValidated?.({width: 1600, height: 2560}, [])
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
         return <div data-testid="kdp-publishing-wizard-step-1-cover" />
     },
 }))
 
 vi.mock("./ExportPackage", () => ({
-    default: ({
-        onCanAdvanceChange,
-    }: {
-        onCanAdvanceChange: (canAdvance: boolean) => void
-    }) => {
-        useEffect(() => {
-            onCanAdvanceChange(true)
-        }, [onCanAdvanceChange])
-        return <div data-testid="kdp-publishing-wizard-step-2-export" />
-    },
+    default: () => (
+        <div data-testid="kdp-publishing-wizard-step-2-export" />
+    ),
 }))
 
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
@@ -137,196 +157,114 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     } as BookDetail
 }
 
-describe("KdpPublishingWizard (shell)", () => {
+describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
     beforeEach(() => {
         vi.clearAllMocks()
     })
 
-    it("renders the dialog with title + book-title subtitle when open", () => {
-        const book = makeBook({title: "My Novel"})
-        render(
-            <KdpPublishingWizard
-                open
-                book={book}
-                onClose={vi.fn()}
-            />,
-        )
-        expect(screen.getByTestId("kdp-publishing-wizard-dialog")).toBeTruthy()
-        expect(screen.getByTestId("kdp-publishing-wizard-book-title").textContent).toBe(
-            "My Novel",
-        )
-    })
-
-    it("renders 3 step-dots (one per step)", () => {
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        expect(screen.getByTestId("kdp-publishing-wizard-step-dot-0")).toBeTruthy()
-        expect(screen.getByTestId("kdp-publishing-wizard-step-dot-1")).toBeTruthy()
-        expect(screen.getByTestId("kdp-publishing-wizard-step-dot-2")).toBeTruthy()
-    })
-
-    it("starts on step 0 (metadata placeholder)", () => {
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        expect(screen.getByTestId("kdp-publishing-wizard-step-0-metadata")).toBeTruthy()
-        // Step 0 has no Back button.
-        expect(screen.queryByTestId("kdp-publishing-wizard-step-0-back")).toBeNull()
-        // Step 0 has a Next button.
-        expect(screen.getByTestId("kdp-publishing-wizard-step-0-next")).toBeTruthy()
-    })
-
-    it("advances step 0 -> 1 -> 2 on Next clicks", () => {
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
-        expect(screen.getByTestId("kdp-publishing-wizard-step-1-cover")).toBeTruthy()
-
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-1-next"))
-        expect(screen.getByTestId("kdp-publishing-wizard-step-2-export")).toBeTruthy()
-    })
-
-    it("step 2 (last) shows Finish, not Next", () => {
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-1-next"))
-        expect(screen.getByTestId("kdp-publishing-wizard-step-2-finish")).toBeTruthy()
-        expect(screen.queryByTestId("kdp-publishing-wizard-step-2-next")).toBeNull()
-    })
-
-    it("Back navigates step 1 -> 0", () => {
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
-        expect(screen.getByTestId("kdp-publishing-wizard-step-1-cover")).toBeTruthy()
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-1-back"))
-        expect(screen.getByTestId("kdp-publishing-wizard-step-0-metadata")).toBeTruthy()
-    })
-
-    it("Finish calls onClose", () => {
-        const onClose = vi.fn()
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={onClose}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-1-next"))
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-2-finish"))
-        expect(onClose).toHaveBeenCalledTimes(1)
-    })
-
-    it("Close button calls onClose", () => {
-        const onClose = vi.fn()
-        render(
-            <KdpPublishingWizard
-                open
-                book={makeBook()}
-                onClose={onClose}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-close"))
-        expect(onClose).toHaveBeenCalledTimes(1)
-    })
-
-    it("does not render the dialog when open=false", () => {
-        render(
-            <KdpPublishingWizard
-                open={false}
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        expect(screen.queryByTestId("kdp-publishing-wizard-dialog")).toBeNull()
-    })
-
-    it("step-1 Next is gated by the CoverValidation callback", async () => {
-        // Override CoverValidation to report "cannot advance"; the
-        // wizard's step-1 Next must stay disabled even though
-        // step-0's MetadataChecklist reported success.
-        vi.doMock("./CoverValidation", () => ({
-            default: ({
-                onCanAdvanceChange,
-            }: {
-                onCanAdvanceChange: (canAdvance: boolean) => void
-            }) => {
-                useEffect(() => {
-                    onCanAdvanceChange(false)
-                }, [onCanAdvanceChange])
-                return <div data-testid="kdp-publishing-wizard-step-1-cover" />
-            },
-        }))
-        vi.resetModules()
-        const {default: WizardGatedAtCover} = await import("./KdpPublishingWizard")
-        render(
-            <WizardGatedAtCover
-                open
-                book={makeBook()}
-                onClose={vi.fn()}
-            />,
-        )
-        // Advance past step 0 (default mock reports advance=true).
-        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
-        const nextButton = screen.getByTestId("kdp-publishing-wizard-step-1-next")
-        expect((nextButton as HTMLButtonElement).disabled).toBe(true)
-        vi.doUnmock("./CoverValidation")
-    })
-
-    it("step-0 Next is gated by the MetadataChecklist callback", async () => {
-        // Override the default top-of-file mock with one that
-        // reports "cannot advance" so the gate stays closed.
+    it("Next disabled when MetadataChecklist doesn't dispatch onLoaded (machine sentinel)", async () => {
+        // Override the default mock with one that does NOT fire
+        // onLoaded → machine context's metadataResult stays null →
+        // canAdvanceFromMetadata guard returns false →
+        // snapshot.can({type:'ADVANCE'}) is false → Next disabled.
         vi.doMock("./MetadataChecklist", () => ({
-            default: ({
-                onCanAdvanceChange,
-            }: {
-                onCanAdvanceChange: (canAdvance: boolean) => void
-            }) => {
-                useEffect(() => {
-                    onCanAdvanceChange(false)
-                }, [onCanAdvanceChange])
-                return <div data-testid="kdp-publishing-wizard-step-0-metadata" />
-            },
+            default: () => (
+                <div data-testid="kdp-publishing-wizard-step-0-metadata" />
+            ),
         }))
         vi.resetModules()
-        const {default: WizardWithFailingGate} = await import(
+        const {default: WizardGated} = await import(
             "./KdpPublishingWizard"
         )
         render(
-            <WizardWithFailingGate
+            <WizardGated open book={makeBook()} onClose={vi.fn()} />,
+        )
+        const next = screen.getByTestId(
+            "kdp-publishing-wizard-step-0-next",
+        ) as HTMLButtonElement
+        expect(next.disabled).toBe(true)
+        vi.doUnmock("./MetadataChecklist")
+    })
+
+    it("advances metadata → cover when MetadataChecklist reports onLoaded with no errors", () => {
+        render(
+            <KdpPublishingWizard
                 open
                 book={makeBook()}
                 onClose={vi.fn()}
             />,
         )
-        const nextButton = screen.getByTestId("kdp-publishing-wizard-step-0-next")
-        expect((nextButton as HTMLButtonElement).disabled).toBe(true)
-        vi.doUnmock("./MetadataChecklist")
+        // Default mock fires onLoaded on mount → guard passes →
+        // Next enables.
+        const next = screen.getByTestId(
+            "kdp-publishing-wizard-step-0-next",
+        ) as HTMLButtonElement
+        expect(next.disabled).toBe(false)
+        fireEvent.click(next)
+        expect(
+            screen.getByTestId("kdp-publishing-wizard-step-1-cover"),
+        ).toBeTruthy()
+    })
+
+    it("advances cover → export directly (C2 path, no pricing / arc)", () => {
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // metadata → cover
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-0-next"),
+        )
+        // CoverValidation mock fires onValidated on mount → guard
+        // passes → Next enables.
+        const next = screen.getByTestId(
+            "kdp-publishing-wizard-step-1-next",
+        ) as HTMLButtonElement
+        expect(next.disabled).toBe(false)
+        fireEvent.click(next)
+        // C2 direct cover → export. C8 / C10 will insert pricing
+        // + arc between cover + export.
+        expect(
+            screen.getByTestId("kdp-publishing-wizard-step-2-export"),
+        ).toBeTruthy()
+    })
+
+    it("Finish on the last step calls onClose", () => {
+        const onClose = vi.fn()
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={onClose}
+            />,
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-0-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-1-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-2-finish"),
+        )
+        expect(onClose).toHaveBeenCalledTimes(1)
+    })
+
+    it("Close button (X) calls onClose", () => {
+        const onClose = vi.fn()
+        render(
+            <KdpPublishingWizard
+                open
+                book={makeBook()}
+                onClose={onClose}
+            />,
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-close"),
+        )
+        expect(onClose).toHaveBeenCalledTimes(1)
     })
 })

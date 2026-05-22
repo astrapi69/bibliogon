@@ -90,6 +90,21 @@ export interface KdpWizardError {
 
 // --- Machine context + events ------------------------------------
 
+/**
+ * C2 scope note: ``KdpWizardContext`` + ``KdpWizardEvent`` cover
+ * ONLY the 3 visible Phase 1 steps (metadata + cover + export)
+ * plus their error sub-states. The ``PricingState`` /
+ * ``ArcReviewer`` type primitives above stay defined here as
+ * forward-compat for C8 / C10, which extend the context +
+ * event union with the new state-specific fields when the
+ * corresponding UI ships.
+ *
+ * Why not include pricing/arc context now: the C1 design pre-
+ * committed pricing+arc into the navigation graph before the
+ * UI existed. C2's user-visible scope is 3 steps; including
+ * unreachable context fields creates Half-Wired-shaped
+ * confusion. C8 / C10 extend cleanly.
+ */
 export interface KdpWizardContext {
     // Step 1 — metadata:
     metadataResult: KdpMetadataCheckResult | null;
@@ -99,13 +114,7 @@ export interface KdpWizardContext {
     coverDimensions: ImageDimensions | null;
     coverIssues: ValidationIssue[];
 
-    // Step 3 — pricing:
-    pricing: PricingState;
-
-    // Step 4 — ARC reviewers:
-    arcReviewers: ArcReviewer[];
-
-    // Step 5 — export:
+    // Step 3 — export:
     exportFilename: string | null;
     exportBlobUrl: string | null;
 
@@ -127,31 +136,13 @@ export type KdpWizardEvent =
           dim: ImageDimensions;
           issues: ValidationIssue[];
       }
-    // Step-3 (pricing):
-    | { type: "PRICING_CHANGE"; pricing: Partial<PricingState> }
-    // Step-4 (ARC):
-    | {
-          type: "ADD_REVIEWER";
-          /** Caller generates the local id so actions stay pure. */
-          id: string;
-          reviewer: NewArcReviewer;
-      }
-    | {
-          type: "UPDATE_REVIEWER_STATUS";
-          id: string;
-          status: ReviewStatus;
-          permalink?: string | null;
-          excerpt?: string | null;
-      }
-    | { type: "REMOVE_REVIEWER"; id: string }
-    // Step-5 (export):
+    // Step-3 (export):
     | { type: "GENERATE" }
     | { type: "EXPORT_SUCCESS"; filename: string; blobUrl: string }
     | { type: "EXPORT_FAILED"; error: KdpWizardError }
     // Navigation:
     | { type: "ADVANCE" }
     | { type: "BACK" }
-    | { type: "FINISH" }
     // Recovery:
     | { type: "RETRY" }
     | { type: "CANCEL" }
@@ -164,13 +155,6 @@ export const initialContext: KdpWizardContext = {
     metadataIssuesFiltered: [],
     coverDimensions: null,
     coverIssues: [],
-    pricing: {
-        royalty_plan: null,
-        kdp_select_enrolled: false,
-        expanded_distribution: false,
-        prices: {},
-    },
-    arcReviewers: [],
     exportFilename: null,
     exportBlobUrl: null,
     error: null,

@@ -32,6 +32,21 @@ interface Props {
      *  the last step. The wizard shows Finish here regardless.
      *  Prop kept for shape-parity with Step 0 / Step 1. */
     onCanAdvanceChange: (canAdvance: boolean) => void
+    /** C2 (per A11): parent-passed callback fired on the user's
+     *  Generate-button click, BEFORE the API call. The wizard
+     *  dispatches GENERATE on receipt; the machine transitions
+     *  ``export → exporting``. Optional so per-step tests pass. */
+    onGenerate?: () => void
+    /** C2 machine-wiring: success report. Wizard dispatches
+     *  EXPORT_SUCCESS. Optional. */
+    onSuccess?: (filename: string, blobUrl: string) => void
+    /** C2 machine-wiring: failure report. Wizard dispatches
+     *  EXPORT_FAILED. Optional. */
+    onFailed?: (error: {
+        message: string
+        context: "export"
+        retryable: boolean
+    }) => void
 }
 
 type State =
@@ -54,7 +69,13 @@ function triggerDownload(blob: Blob, filename: string): string {
     return url
 }
 
-export default function ExportPackage({book, onCanAdvanceChange}: Props) {
+export default function ExportPackage({
+    book,
+    onCanAdvanceChange,
+    onGenerate,
+    onSuccess,
+    onFailed,
+}: Props) {
     const {t} = useI18n()
     const [state, setState] = useState<State>({kind: "idle"})
 
@@ -75,10 +96,15 @@ export default function ExportPackage({book, onCanAdvanceChange}: Props) {
             URL.revokeObjectURL(state.lastBlobUrl)
         }
         setState({kind: "generating"})
+        // C2 machine-wire: tell parent we're starting BEFORE the
+        // API call. Parent dispatches GENERATE → machine moves to
+        // ``exporting`` state.
+        onGenerate?.()
         try {
             const {blob, filename} = await api.kdp.buildPackage(book.id)
             const url = triggerDownload(blob, filename)
             setState({kind: "done", filename, lastBlobUrl: url})
+            onSuccess?.(filename, url)
         } catch (err) {
             const message =
                 err instanceof ApiError
@@ -90,6 +116,7 @@ export default function ExportPackage({book, onCanAdvanceChange}: Props) {
                           "Paket-Erstellung fehlgeschlagen.",
                       )
             setState({kind: "error", message})
+            onFailed?.({message, context: "export", retryable: true})
         }
     }
 

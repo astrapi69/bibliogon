@@ -6,10 +6,10 @@
  * shape: ``createActor(...).start()`` + direct event dispatch +
  * ``actor.getSnapshot()`` assertions. No DOM, no fake timers.
  *
- * Phase 2 C1 ships 20 cases covering every transition + every
- * guard at the boundary. Phase 1's wizard-nav DOM tests are
- * replaced by these + the small React-layer integration tests
- * landing in C3.
+ * C2 scope: 14 cases covering the 7-state visible Phase 1 subset
+ * (metadata + metadataError + cover + export + exporting +
+ * exportSuccess + exportError). C8 / C10 re-add pricing + arc
+ * tests when those states return to the machine.
  */
 
 import { describe, it, expect } from "vitest";
@@ -71,35 +71,21 @@ function failingCoverIssues(): ValidationIssue[] {
     ];
 }
 
-/** Drive a fresh actor to the ``arc`` state via the happy path.
- *  ADD_REVIEWER / UPDATE_REVIEWER_STATUS / REMOVE_REVIEWER only
- *  fire in the ``arc`` state; bare ``createActor.start()`` leaves
- *  the actor in ``metadata`` and those events get ignored. */
-function navigateToArc(): ReturnType<typeof createActor<typeof kdpWizardMachine>> {
-    const actor = createActor(kdpWizardMachine).start();
-    actor.send({
-        type: "METADATA_LOADED",
-        result: passingMetadataResult(),
-        issuesFiltered: passingMetadataIssues(),
-    });
-    actor.send({ type: "ADVANCE" });
-    actor.send({
-        type: "COVER_VALIDATED",
-        dim: validCoverDim(),
-        issues: passingCoverIssues(),
-    });
-    actor.send({ type: "ADVANCE" });
-    actor.send({
-        type: "PRICING_CHANGE",
-        pricing: { royalty_plan: "70" },
-    });
-    actor.send({ type: "ADVANCE" });
-    return actor;
-}
-
 describe("kdpWizardMachine", () => {
     it("starts in metadata state", () => {
         const actor = createActor(kdpWizardMachine).start();
+        expect(actor.getSnapshot().value).toBe("metadata");
+        actor.stop();
+    });
+
+    it("ADVANCE from metadata blocked before METADATA_LOADED dispatches", () => {
+        // Sentinel: ``metadataResult !== null`` means "load
+        // completed". Fresh actor has metadataResult=null →
+        // canAdvanceFromMetadata returns false. C1's original
+        // design (checking only the issuesFiltered array) had
+        // this hole.
+        const actor = createActor(kdpWizardMachine).start();
+        actor.send({ type: "ADVANCE" });
         expect(actor.getSnapshot().value).toBe("metadata");
         actor.stop();
     });
@@ -199,7 +185,7 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("ADVANCE from cover transitions to pricing when no error issues", () => {
+    it("ADVANCE from cover transitions to export when no error issues (C2 direct path)", () => {
         const actor = createActor(kdpWizardMachine).start();
         actor.send({
             type: "METADATA_LOADED",
@@ -213,7 +199,7 @@ describe("kdpWizardMachine", () => {
             issues: passingCoverIssues(),
         });
         actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("pricing");
+        expect(actor.getSnapshot().value).toBe("export");
         actor.stop();
     });
 
@@ -230,167 +216,6 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("PRICING_CHANGE merges into context.pricing", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "PRICING_CHANGE",
-            pricing: {
-                royalty_plan: "70",
-                prices: {
-                    US: { currency: "USD", list_price: 4.99 },
-                },
-            },
-        });
-        const ctx = actor.getSnapshot().context;
-        expect(ctx.pricing.royalty_plan).toBe("70");
-        expect(ctx.pricing.prices.US).toEqual({
-            currency: "USD",
-            list_price: 4.99,
-        });
-        // Untouched fields preserved:
-        expect(ctx.pricing.kdp_select_enrolled).toBe(false);
-        actor.stop();
-    });
-
-    it("ADVANCE from pricing blocked without royalty_plan", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        // No PRICING_CHANGE — royalty_plan stays null.
-        actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("pricing");
-        actor.stop();
-    });
-
-    it("ADVANCE from pricing transitions to arc when royalty_plan set", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "PRICING_CHANGE",
-            pricing: { royalty_plan: "70" },
-        });
-        actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("arc");
-        actor.stop();
-    });
-
-    it("ADD_REVIEWER appends to arcReviewers with invited status", () => {
-        const actor = navigateToArc();
-        actor.send({
-            type: "ADD_REVIEWER",
-            id: "local-1",
-            reviewer: {
-                reviewer_name: "Reviewer A",
-                reviewer_email: "a@example.com",
-            },
-        });
-        const reviewers = actor.getSnapshot().context.arcReviewers;
-        expect(reviewers).toHaveLength(1);
-        expect(reviewers[0].id).toBe("local-1");
-        expect(reviewers[0].reviewer_name).toBe("Reviewer A");
-        expect(reviewers[0].review_status).toBe("invited");
-        expect(reviewers[0].invited_at).not.toBeNull();
-        actor.stop();
-    });
-
-    it("UPDATE_REVIEWER_STATUS updates the matching reviewer", () => {
-        const actor = navigateToArc();
-        actor.send({
-            type: "ADD_REVIEWER",
-            id: "local-1",
-            reviewer: { reviewer_name: "Reviewer A" },
-        });
-        actor.send({
-            type: "UPDATE_REVIEWER_STATUS",
-            id: "local-1",
-            status: "reviewed",
-            permalink: "https://example.com/review-a",
-        });
-        const reviewers = actor.getSnapshot().context.arcReviewers;
-        expect(reviewers[0].review_status).toBe("reviewed");
-        expect(reviewers[0].review_permalink).toBe(
-            "https://example.com/review-a",
-        );
-        expect(reviewers[0].reviewed_at).not.toBeNull();
-        actor.stop();
-    });
-
-    it("REMOVE_REVIEWER drops the matching reviewer", () => {
-        const actor = navigateToArc();
-        actor.send({
-            type: "ADD_REVIEWER",
-            id: "local-1",
-            reviewer: { reviewer_name: "Reviewer A" },
-        });
-        actor.send({
-            type: "ADD_REVIEWER",
-            id: "local-2",
-            reviewer: { reviewer_name: "Reviewer B" },
-        });
-        actor.send({ type: "REMOVE_REVIEWER", id: "local-1" });
-        const reviewers = actor.getSnapshot().context.arcReviewers;
-        expect(reviewers).toHaveLength(1);
-        expect(reviewers[0].id).toBe("local-2");
-        actor.stop();
-    });
-
-    it("ADVANCE from arc transitions to export", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "PRICING_CHANGE",
-            pricing: { royalty_plan: "70" },
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("export");
-        actor.stop();
-    });
-
     it("GENERATE from export transitions to exporting", () => {
         const actor = createActor(kdpWizardMachine).start();
         actor.send({
@@ -404,12 +229,6 @@ describe("kdpWizardMachine", () => {
             dim: validCoverDim(),
             issues: passingCoverIssues(),
         });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "PRICING_CHANGE",
-            pricing: { royalty_plan: "70" },
-        });
-        actor.send({ type: "ADVANCE" });
         actor.send({ type: "ADVANCE" });
         actor.send({ type: "GENERATE" });
         expect(actor.getSnapshot().value).toBe("exporting");
@@ -429,12 +248,6 @@ describe("kdpWizardMachine", () => {
             dim: validCoverDim(),
             issues: passingCoverIssues(),
         });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "PRICING_CHANGE",
-            pricing: { royalty_plan: "70" },
-        });
-        actor.send({ type: "ADVANCE" });
         actor.send({ type: "ADVANCE" });
         actor.send({ type: "GENERATE" });
         actor.send({

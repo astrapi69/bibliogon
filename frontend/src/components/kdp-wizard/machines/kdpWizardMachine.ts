@@ -2,25 +2,21 @@
  * KDP Publishing Wizard — Phase 2 state machine (XState v5).
  *
  * Replaces the Phase 1 ``useState`` step-index in
- * ``KdpPublishingWizard.tsx``. Foundation for the Phase 2 feature
- * surface (pricing + ARC + persistence) per
- * ``docs/audits/kdp-publishing-wizard-phase-2-pre-inspection-2026-05-22.md``.
+ * ``KdpPublishingWizard.tsx``. C2 ships the 3-visible-step subset
+ * (metadata + cover + export) matching Phase 1's user-visible
+ * navigation. C8 extends with the ``pricing`` state; C10 extends
+ * with the ``arc`` state. The ``PricingState`` / ``ArcReviewer``
+ * type primitives in ``types.ts`` stay defined for that
+ * forward-compat path.
  *
- * State graph:
+ * State graph (C2 — 7 states):
  *
- *   metadata → metadataError ←→ metadata
- *      ↓
- *   cover  →  metadata (BACK)
- *      ↓
- *   pricing  →  cover (BACK)
- *      ↓
- *   arc  →  pricing (BACK)
- *      ↓
- *   export  →  arc (BACK)
- *      ↓ GENERATE
- *   exporting
- *      ↓
- *   exportSuccess  →  closed (FINISH)
+ *   metadata ⇌ metadataError
+ *      ↓ ADVANCE (canAdvanceFromMetadata)
+ *   cover
+ *      ↓ ADVANCE (canAdvanceFromCover)
+ *   export ⇌ exporting → exportSuccess
+ *                    └─→ exportError ⇌ exporting (RETRY)
  *
  *   anywhere: CANCEL → reset → metadata
  *   error sub-states: RETRY → previous async state (guarded)
@@ -32,15 +28,13 @@
  * land in context.
  *
  * STATE_LOADED / STATE_SAVED events deferred to C11
- * (persistence wiring); Phase 2 C1 ships the navigation
- * substrate only.
+ * (persistence wiring).
  */
 
 import { setup, assign } from "xstate";
 
 import {
     initialContext,
-    type ArcReviewer,
     type KdpWizardContext,
     type KdpWizardEvent,
 } from "./types";
@@ -51,14 +45,20 @@ export const kdpWizardMachine = setup({
         events: KdpWizardEvent;
     },
     guards: {
+        // ``metadataResult !== null`` is the "loaded" sentinel:
+        // before the step component's API call returns, the guard
+        // blocks ADVANCE. After load, an empty issuesFiltered
+        // array also passes (no errors).
         canAdvanceFromMetadata: ({ context }) =>
+            context.metadataResult !== null &&
             !context.metadataIssuesFiltered.some(
                 (i) => i.severity === "error",
             ),
+        // ``coverDimensions !== null`` is the equivalent "validated"
+        // sentinel for cover; populated by COVER_VALIDATED.
         canAdvanceFromCover: ({ context }) =>
+            context.coverDimensions !== null &&
             !context.coverIssues.some((i) => i.severity === "error"),
-        hasRequiredPricing: ({ context }) =>
-            context.pricing.royalty_plan !== null,
         canRetry: ({ context }) => context.error?.retryable === true,
     },
     actions: {
@@ -75,67 +75,6 @@ export const kdpWizardMachine = setup({
             return {
                 coverDimensions: event.dim,
                 coverIssues: event.issues,
-            };
-        }),
-        setPricing: assign(({ context, event }) => {
-            if (event.type !== "PRICING_CHANGE") return {};
-            return {
-                pricing: {
-                    ...context.pricing,
-                    ...event.pricing,
-                    prices: {
-                        ...context.pricing.prices,
-                        ...(event.pricing.prices ?? {}),
-                    },
-                },
-            };
-        }),
-        addReviewer: assign(({ context, event }) => {
-            if (event.type !== "ADD_REVIEWER") return {};
-            const now = new Date().toISOString();
-            const reviewer: ArcReviewer = {
-                id: event.id,
-                reviewer_name: event.reviewer.reviewer_name,
-                reviewer_email: event.reviewer.reviewer_email ?? null,
-                review_status: "invited",
-                copy_version: null,
-                review_permalink: null,
-                review_text_excerpt: null,
-                invited_at: now,
-                reviewed_at: null,
-            };
-            return {
-                arcReviewers: [...context.arcReviewers, reviewer],
-            };
-        }),
-        updateReviewerStatus: assign(({ context, event }) => {
-            if (event.type !== "UPDATE_REVIEWER_STATUS") return {};
-            const reviewedAt =
-                event.status === "reviewed"
-                    ? new Date().toISOString()
-                    : null;
-            return {
-                arcReviewers: context.arcReviewers.map((r) =>
-                    r.id === event.id
-                        ? {
-                              ...r,
-                              review_status: event.status,
-                              review_permalink:
-                                  event.permalink ?? r.review_permalink,
-                              review_text_excerpt:
-                                  event.excerpt ?? r.review_text_excerpt,
-                              reviewed_at: reviewedAt ?? r.reviewed_at,
-                          }
-                        : r,
-                ),
-            };
-        }),
-        removeReviewer: assign(({ context, event }) => {
-            if (event.type !== "REMOVE_REVIEWER") return {};
-            return {
-                arcReviewers: context.arcReviewers.filter(
-                    (r) => r.id !== event.id,
-                ),
             };
         }),
         setExportResult: assign(({ event }) => {
@@ -190,42 +129,23 @@ export const kdpWizardMachine = setup({
         cover: {
             on: {
                 COVER_VALIDATED: { actions: "setCoverValidated" },
+                // C2 direct cover → export. C8 inserts pricing
+                // between cover + export; C10 inserts arc between
+                // pricing + export.
                 ADVANCE: {
-                    target: "pricing",
+                    target: "export",
                     guard: "canAdvanceFromCover",
                 },
                 BACK: { target: "metadata" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
-        pricing: {
-            on: {
-                PRICING_CHANGE: { actions: "setPricing" },
-                ADVANCE: {
-                    target: "arc",
-                    guard: "hasRequiredPricing",
-                },
-                BACK: { target: "cover" },
-                CANCEL: { target: "metadata", actions: "reset" },
-            },
-        },
-        arc: {
-            on: {
-                ADD_REVIEWER: { actions: "addReviewer" },
-                UPDATE_REVIEWER_STATUS: {
-                    actions: "updateReviewerStatus",
-                },
-                REMOVE_REVIEWER: { actions: "removeReviewer" },
-                ADVANCE: { target: "export" },
-                BACK: { target: "pricing" },
-                CANCEL: { target: "metadata", actions: "reset" },
-            },
-        },
         export: {
             on: {
                 GENERATE: { target: "exporting" },
-                BACK: { target: "arc" },
-                FINISH: { target: "closed" },
+                // C2 BACK from export targets cover directly. C8 /
+                // C10 will retarget back through pricing / arc.
+                BACK: { target: "cover" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
@@ -243,7 +163,6 @@ export const kdpWizardMachine = setup({
         },
         exportSuccess: {
             on: {
-                FINISH: { target: "closed" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
@@ -257,9 +176,6 @@ export const kdpWizardMachine = setup({
                 BACK: { target: "export", actions: "clearError" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
-        },
-        closed: {
-            type: "final",
         },
     },
 });

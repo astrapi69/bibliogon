@@ -35,6 +35,20 @@ interface Props {
      *  error-severity entries, ``false`` otherwise. The wizard
      *  uses this to gate the Next button. */
     onCanAdvanceChange: (canAdvance: boolean) => void
+    /** C2 machine-wiring callback. Fires on successful API
+     *  completion with the raw result + the book-type-filtered
+     *  issue list. Optional so per-step tests that don't drive
+     *  the machine still pass. */
+    onLoaded?: (
+        result: KdpMetadataCheckResult,
+        issuesFiltered: KdpMetadataIssue[],
+    ) => void
+    /** C2 machine-wiring callback for failure. Optional. */
+    onFailed?: (error: {
+        message: string
+        context: "metadata"
+        retryable: boolean
+    }) => void
 }
 
 /** Build the check-metadata request payload from a BookDetail. */
@@ -79,7 +93,12 @@ function isComplete(issues: KdpMetadataIssue[]): boolean {
     return !issues.some((i) => i.severity === "error")
 }
 
-export default function MetadataChecklist({book, onCanAdvanceChange}: Props) {
+export default function MetadataChecklist({
+    book,
+    onCanAdvanceChange,
+    onLoaded,
+    onFailed,
+}: Props) {
     const {t} = useI18n()
     const [result, setResult] = useState<KdpMetadataCheckResult | null>(null)
     const [loading, setLoading] = useState(true)
@@ -96,11 +115,17 @@ export default function MetadataChecklist({book, onCanAdvanceChange}: Props) {
                 setResult(r)
                 const filtered = filterIssuesForBookType(r.issues, book.book_type)
                 onCanAdvanceChange(isComplete(filtered))
+                onLoaded?.(r, filtered)
             })
             .catch((e: Error) => {
                 if (cancelled) return
                 setError(e.message)
                 onCanAdvanceChange(false)
+                onFailed?.({
+                    message: e.message,
+                    context: "metadata",
+                    retryable: true,
+                })
             })
             .finally(() => {
                 if (!cancelled) setLoading(false)

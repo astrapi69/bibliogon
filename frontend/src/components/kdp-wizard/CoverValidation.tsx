@@ -32,6 +32,15 @@ import {useI18n} from "../../hooks/useI18n"
 interface Props {
     book: BookDetail
     onCanAdvanceChange: (canAdvance: boolean) => void
+    /** C2 machine-wiring callback. Fires whenever client-side
+     *  validation produces real dim + issues. Skipped on no-cover
+     *  and load-error paths (the machine's guard sees a null
+     *  ``coverDimensions`` and correctly blocks ADVANCE). Optional
+     *  so per-step tests pass without driving the machine. */
+    onValidated?: (
+        dim: ImageDimensions,
+        issues: ValidationIssue[],
+    ) => void
 }
 
 // Mirrors backend KDP_COVER_REQUIREMENTS exactly. If KDP changes
@@ -113,7 +122,11 @@ function validateDimensions(
     return issues
 }
 
-export default function CoverValidation({book, onCanAdvanceChange}: Props) {
+export default function CoverValidation({
+    book,
+    onCanAdvanceChange,
+    onValidated,
+}: Props) {
     const {t} = useI18n()
     const [dim, setDim] = useState<ImageDimensions | null>(null)
     const [loadError, setLoadError] = useState(false)
@@ -149,6 +162,10 @@ export default function CoverValidation({book, onCanAdvanceChange}: Props) {
         }
         if (dim) {
             onCanAdvanceChange(passed)
+            // C2 machine-wire: report real dim + computed issues
+            // so the wizard's machine sees ``coverDimensions`` and
+            // ``coverIssues`` populated.
+            onValidated?.(dim, issues)
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dim, loadError, passed])
