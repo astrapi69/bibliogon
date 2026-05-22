@@ -2067,6 +2067,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    delete_page: "ページを削除"
+    delete_page_title: "ページを削除しますか？"
+    delete_page_confirm: "このページを本当に削除しますか？この操作は取り消せません。"
     toolbar:
       label: "Text formatting"
       bold: "Bold"

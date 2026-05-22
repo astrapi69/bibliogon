@@ -2062,6 +2062,9 @@ ui:
     text_label: "Seitentext"
     text_placeholder: "Schreibe hier den Seitentext ..."
     show_metadata: "Metadaten"
+    delete_page: "Seite löschen"
+    delete_page_title: "Seite löschen?"
+    delete_page_confirm: "Diese Seite wirklich löschen? Das kann nicht rückgängig gemacht werden."
     toolbar:
       label: "Text-Formatierung"
       bold: "Fett"

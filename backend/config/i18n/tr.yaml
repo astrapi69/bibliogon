@@ -2067,6 +2067,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    delete_page: "Sayfayı sil"
+    delete_page_title: "Sayfa silinsin mi?"
+    delete_page_confirm: "Bu sayfayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
     toolbar:
       label: "Text formatting"
       bold: "Bold"

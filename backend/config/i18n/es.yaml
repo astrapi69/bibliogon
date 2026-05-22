@@ -2067,6 +2067,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    delete_page: "Eliminar página"
+    delete_page_title: "¿Eliminar página?"
+    delete_page_confirm: "¿Seguro que quieres eliminar esta página? No se puede deshacer."
     toolbar:
       label: "Text formatting"
       bold: "Bold"

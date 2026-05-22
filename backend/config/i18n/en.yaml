@@ -2063,6 +2063,9 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    delete_page: "Delete page"
+    delete_page_title: "Delete page?"
+    delete_page_confirm: "Are you sure you want to delete this page? This cannot be undone."
     toolbar:
       label: "Text formatting"
       bold: "Bold"
