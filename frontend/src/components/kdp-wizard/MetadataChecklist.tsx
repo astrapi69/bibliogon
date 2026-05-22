@@ -28,6 +28,7 @@ import {
     api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {useBookTypes} from "../../hooks/useBookTypes"
 
 interface Props {
     book: BookDetail
@@ -75,17 +76,23 @@ function buildCheckPayload(book: BookDetail) {
     }
 }
 
-/** Drop book-type-inapplicable issues. */
+/** Drop book-type-inapplicable issues.
+ *
+ *  BOOK-TYPES-SSOT-YAML-01 C7: the gate is now driven by
+ *  ``content_model``. Page-based books (content_model="pages")
+ *  carry no chapters by design — the backend's "Book has no
+ *  chapters" check is always-error for those, so we drop it
+ *  client-side. Chapter-based books (content_model="chapters")
+ *  pass every issue through unmodified.
+ *
+ *  ``contentModel === undefined`` (e.g. registry still loading,
+ *  or an unknown future book_type) falls through to the chapter-
+ *  based path — matches the pre-migration default. */
 function filterIssuesForBookType(
     issues: KdpMetadataIssue[],
-    bookType: string,
+    contentModel: string | undefined,
 ): KdpMetadataIssue[] {
-    if (bookType === "prose") return issues
-    // picture_book + comic_book use pages, not chapters. The
-    // backend's "Book has no chapters" check is always-error for
-    // those types; drop it client-side rather than adding a
-    // book_type-aware branch to the checker (per A3-style
-    // "branch at render-time" convention).
+    if (contentModel !== "pages") return issues
     return issues.filter((i) => i.field !== "chapters")
 }
 
@@ -100,6 +107,8 @@ export default function MetadataChecklist({
     onFailed,
 }: Props) {
     const {t} = useI18n()
+    const bookTypesSnapshot = useBookTypes()
+    const contentModel = bookTypesSnapshot.types[book.book_type]?.content_model
     const [result, setResult] = useState<KdpMetadataCheckResult | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -113,7 +122,7 @@ export default function MetadataChecklist({
             .then((r) => {
                 if (cancelled) return
                 setResult(r)
-                const filtered = filterIssuesForBookType(r.issues, book.book_type)
+                const filtered = filterIssuesForBookType(r.issues, contentModel)
                 onCanAdvanceChange(isComplete(filtered))
                 onLoaded?.(r, filtered)
             })
@@ -182,7 +191,7 @@ export default function MetadataChecklist({
         )
     }
 
-    const filtered = filterIssuesForBookType(result.issues, book.book_type)
+    const filtered = filterIssuesForBookType(result.issues, contentModel)
     const errors = filtered.filter((i) => i.severity === "error")
     const warnings = filtered.filter((i) => i.severity === "warning")
     const passed = isComplete(filtered)

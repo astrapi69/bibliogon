@@ -5,6 +5,7 @@ import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useBookTypes} from "../hooks/useBookTypes";
 import {useAuthorProfile, type AuthorProfile} from "../hooks/useAuthorProfile";
 import AuthorProfileSelect from "./AuthorProfileSelect";
 import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
@@ -40,20 +41,28 @@ interface Props {
     onRefresh?: () => void;
 }
 
-// PB-PHASE4 Session 5 Commit 1: the Audiobook + Quality tabs read
-// from ``book.chapters`` (AudiobookBookConfig + AudiobookDownloads
-// pass it through; QualityTab runs grammar/style on chapter text).
-// Picture-books and comic-books carry no chapters by design, so
-// exposing those tabs ships a write-surface without a consumer —
-// the half-wired-feature-lifecycle anti-pattern. Both tabs are
-// hidden for non-prose book_types. Prose flow is identical to
-// before this change (tabs all visible).
-function isChapterBasedBookType(bookType: BookType | undefined): boolean {
-    return bookType === undefined || bookType === "prose";
-}
-
 export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNavigateToIssue, onRefresh}: Props) {
     const {t} = useI18n();
+    // BOOK-TYPES-SSOT-YAML-01 C7: chapter-based vs page-based gate
+    // now driven by the registry's ``content_model`` field. The
+    // Audiobook + Quality tabs read from ``book.chapters``
+    // (AudiobookBookConfig + AudiobookDownloads pass it through;
+    // QualityTab runs grammar/style on chapter text). Page-based
+    // book types carry no chapters by design, so exposing those
+    // tabs ships a write-surface without a consumer (the
+    // half-wired-feature-lifecycle anti-pattern). Both tabs hide
+    // for content_model="pages". Unknown book_type (e.g. loading
+    // state) defaults to chapter-based — same fallback as the
+    // pre-migration helper.
+    const bookTypesSnapshot = useBookTypes();
+    const isChapterBased =
+        book.book_type === undefined ||
+        bookTypesSnapshot.types[book.book_type]?.content_model ===
+            "chapters" ||
+        // Fallback: if the registry hasn't loaded yet, assume
+        // chapter-based (matches the legacy helper's
+        // ``undefined → true`` branch).
+        bookTypesSnapshot.types[book.book_type] === undefined;
     const [form, setForm] = useState<Record<string, string | null>>({});
     const [keywords, setKeywords] = useState<string[]>([]);
     // Bug 9: Books-only subject categorisation. Pair of free-text +
@@ -256,7 +265,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     <Tabs.Trigger value="isbn" className="radix-tab-trigger" data-testid="metadata-tab-isbn">{t("ui.metadata.tab_isbn", "ISBN")}</Tabs.Trigger>
                     <Tabs.Trigger value="marketing" className="radix-tab-trigger" data-testid="metadata-tab-marketing">{t("ui.metadata.tab_marketing", "Marketing")}</Tabs.Trigger>
                     <Tabs.Trigger value="design" className="radix-tab-trigger" data-testid="metadata-tab-design">{t("ui.metadata.tab_design", "Design")}</Tabs.Trigger>
-                    {isChapterBasedBookType(book.book_type) && (
+                    {isChapterBased && (
                         <>
                             <Tabs.Trigger value="audiobook" className="radix-tab-trigger" data-testid="metadata-tab-audiobook">{t("ui.metadata.tab_audiobook", "Audiobook")}</Tabs.Trigger>
                             <Tabs.Trigger value="quality" className="radix-tab-trigger" data-testid="metadata-tab-quality">{t("ui.metadata.tab_quality", "Qualitaet")}</Tabs.Trigger>
@@ -526,7 +535,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     </div>
                 </Tabs.Content>
 
-                {isChapterBasedBookType(book.book_type) && (
+                {isChapterBased && (
                     <>
                         <Tabs.Content value="audiobook">
                             <div className={styles.tabContent}>

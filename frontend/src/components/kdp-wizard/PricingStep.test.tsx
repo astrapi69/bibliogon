@@ -8,12 +8,93 @@
  * inputs / outputs / book-type gating).
  */
 
+import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
-import {render, screen, fireEvent} from "@testing-library/react"
+import {
+    render as rtlRender,
+    screen,
+    fireEvent,
+    type RenderOptions,
+} from "@testing-library/react"
 
 import PricingStep from "./PricingStep"
-import {BookDetail} from "../../api/client"
+import {BookDetail, type BookTypeDef} from "../../api/client"
 import type {PricingState} from "./machines/types"
+import {BookTypesProvider} from "../../hooks/useBookTypes"
+
+// BOOK-TYPES-SSOT-YAML-01 C7: PricingStep now reads
+// capabilities.ebook_export from the registry instead of the
+// hardcoded isEbookSupported helper.
+const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
+    prose: {
+        id: "prose",
+        label_key: "ui.get_started.book_type_prose_title",
+        description_key: "ui.get_started.book_type_prose_desc",
+        icon: "BookOpen",
+        content_model: "chapters",
+        editor_component: "BookEditor",
+        capabilities: {
+            ebook_export: true,
+            paperback_export: true,
+            hardcover_export: true,
+            audiobook_export: true,
+            template_catalog: true,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: null,
+    },
+    picture_book: {
+        id: "picture_book",
+        label_key: "ui.get_started.book_type_picture_title",
+        description_key: "ui.get_started.book_type_picture_desc",
+        icon: "Image",
+        content_model: "pages",
+        editor_component: "PageEditor",
+        capabilities: {
+            ebook_export: false,
+            paperback_export: true,
+            hardcover_export: false,
+            audiobook_export: false,
+            template_catalog: false,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: "8.5x8.5",
+    },
+    comic_book: {
+        id: "comic_book",
+        label_key: "ui.get_started.book_type_comic_title",
+        description_key: "ui.get_started.book_type_comic_desc",
+        icon: "Layers",
+        content_model: "pages",
+        editor_component: "ComicBookEditor",
+        capabilities: {
+            ebook_export: false,
+            paperback_export: true,
+            hardcover_export: false,
+            audiobook_export: false,
+            template_catalog: false,
+            kdp_package_supported: true,
+        },
+        dashboard_create_visible: true,
+        immutable_after_create: true,
+        default_page_size: "7x10",
+    },
+}
+
+function render(ui: React.ReactElement, options?: RenderOptions) {
+    return rtlRender(ui, {
+        wrapper: ({children}) => (
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                {children}
+            </BookTypesProvider>
+        ),
+        ...options,
+    })
+}
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({

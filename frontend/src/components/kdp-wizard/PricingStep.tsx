@@ -23,6 +23,7 @@ import {AlertCircle, Banknote} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {useBookTypes} from "../../hooks/useBookTypes"
 import type {PricingState, RegionCode} from "./machines/types"
 import {
     DEFAULT_EBOOK_FILE_SIZE_MB,
@@ -64,15 +65,17 @@ function formatMoney(amount: number, currency: string): string {
     return `${sym}${amount.toFixed(fractionDigits)}`
 }
 
-function isEbookSupported(bookType: string): boolean {
-    // Per the Pre-Inspection Track 3.D matrix: only ``prose`` is
-    // ebook-eligible on KDP (picture_book + comic_book use
-    // WeasyPrint PDF, KDP does not accept those as ebook).
-    return bookType === "prose"
-}
-
 export default function PricingStep({book, pricing, onChange}: Props) {
     const {t} = useI18n()
+    // BOOK-TYPES-SSOT-YAML-01 C7: ebook-eligibility now read from
+    // the registry's capabilities.ebook_export flag (defaults to
+    // false for new types — picture_book + comic_book opt out;
+    // prose opts in). The hardcoded ``isEbookSupported(bookType)``
+    // helper (which only knew about prose) is gone.
+    const bookTypesSnapshot = useBookTypes()
+    const ebookSupported =
+        bookTypesSnapshot.types[book.book_type]?.capabilities
+            .ebook_export ?? false
 
     const handlePriceChange = (region: RegionCode, value: string) => {
         const numeric = parseFloat(value)
@@ -111,7 +114,6 @@ export default function PricingStep({book, pricing, onChange}: Props) {
         })
     }
 
-    const ebookSupported = isEbookSupported(book.book_type)
     const paperbackPageCount =
         pricing.prices.US?.page_count ??
         estimatePageCount(book.chapters.length)
