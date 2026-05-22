@@ -151,6 +151,54 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         ).toBeInTheDocument();
     });
 
+    // COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header metadata
+    // button. Inline mirror of PageEditor's onShowMetadata pattern.
+    it("does NOT render the metadata button when onShowMetadata is undefined", () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        // Optional prop — unit-test standalone path keeps the
+        // editor renderable without a parent that wires the
+        // metadata route (matches PageEditor's contract).
+        expect(
+            screen.queryByTestId("comic-book-editor-show-metadata"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders the metadata button when onShowMetadata is provided", () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+                onShowMetadata={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("comic-book-editor-show-metadata"),
+        ).toBeInTheDocument();
+    });
+
+    it("calls onShowMetadata when the metadata button is clicked", () => {
+        const onShowMetadata = vi.fn();
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+                onShowMetadata={onShowMetadata}
+            />,
+        );
+        fireEvent.click(
+            screen.getByTestId("comic-book-editor-show-metadata"),
+        );
+        expect(onShowMetadata).toHaveBeenCalledOnce();
+    });
+
     it("calls onBack when the back button is clicked", () => {
         const onBack = vi.fn();
         render(

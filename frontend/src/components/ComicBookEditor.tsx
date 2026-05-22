@@ -26,7 +26,7 @@
  */
 
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {Maximize2, Minimize2} from "lucide-react";
+import {FileText, Maximize2, Minimize2} from "lucide-react";
 
 import {
     api,
@@ -58,9 +58,24 @@ interface Props {
     bookId: string;
     bookTitle: string;
     onBack: () => void;
+    /** COMIC-BOOK-EDITOR-METADATA-BUTTON-01: entry-point into
+     *  BookMetadataEditor. Mirrors PageEditor's onShowMetadata prop
+     *  (PB-PHASE4 Session 5 Commit 2). When provided, the header
+     *  shows a "Metadata" button that calls this callback; the
+     *  parent (BookEditor) flips its showMetadata state and
+     *  re-renders BookMetadataEditor in place of ComicBookEditor —
+     *  same URL-routed pattern as prose + picture-book flows.
+     *  Optional so ComicBookEditor stays unit-testable standalone
+     *  without a parent that wires it. */
+    onShowMetadata?: () => void;
 }
 
-export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
+export default function ComicBookEditor({
+    bookId,
+    bookTitle,
+    onBack,
+    onShowMetadata,
+}: Props) {
     const {t} = useI18n();
     const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
     const [pluginError, setPluginError] = useState<string | null>(null);
@@ -451,6 +466,33 @@ export default function ComicBookEditor({bookId, bookTitle, onBack}: Props) {
                 >
                     {bookTitle}
                 </h1>
+                {/* COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header
+                  * metadata button. Inline mirror of PageEditor's
+                  * pattern (RCU 2-site adoption deferred per Q2
+                  * adjudication; METADATA-BUTTON-COMPONENT-EXTRACT-01
+                  * P5 pre-registered for 3rd surface). Closes the
+                  * Half-Wired-Visible-in-Production gap surfaced by
+                  * EXPOSE-BUCHIDEE-METADATA-01 Track 5. */}
+                {onShowMetadata && (
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        data-testid="comic-book-editor-show-metadata"
+                        onClick={onShowMetadata}
+                        title={t(
+                            "ui.comic_book_editor.show_metadata",
+                            "Buch-Metadaten öffnen",
+                        )}
+                    >
+                        <FileText size={14} />
+                        <span style={{marginLeft: 6}}>
+                            {t(
+                                "ui.comic_book_editor.show_metadata",
+                                "Buch-Metadaten öffnen",
+                            )}
+                        </span>
+                    </button>
+                )}
                 {activePageId && (
                     <ComicGridTemplatePicker
                         value={resolveComicGridTemplate(
