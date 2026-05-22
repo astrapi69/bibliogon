@@ -2,19 +2,18 @@
  * KDP Publishing Wizard — Phase 2 state machine (XState v5).
  *
  * Replaces the Phase 1 ``useState`` step-index in
- * ``KdpPublishingWizard.tsx``. C2 ships the 3-visible-step subset
- * (metadata + cover + export) matching Phase 1's user-visible
- * navigation. C8 extends with the ``pricing`` state; C10 extends
- * with the ``arc`` state. The ``PricingState`` / ``ArcReviewer``
- * type primitives in ``types.ts`` stay defined for that
- * forward-compat path.
+ * ``KdpPublishingWizard.tsx``. C8 ships the 4-visible-step
+ * subset (metadata + cover + pricing + export) matching the
+ * Phase 2 navigation. C10 extends with the ``arc`` state.
  *
- * State graph (C2 — 7 states):
+ * State graph (C8 — 8 states):
  *
  *   metadata ⇌ metadataError
  *      ↓ ADVANCE (canAdvanceFromMetadata)
  *   cover
  *      ↓ ADVANCE (canAdvanceFromCover)
+ *   pricing
+ *      ↓ ADVANCE (hasRequiredPricing)
  *   export ⇌ exporting → exportSuccess
  *                    └─→ exportError ⇌ exporting (RETRY)
  *
@@ -59,6 +58,11 @@ export const kdpWizardMachine = setup({
         canAdvanceFromCover: ({ context }) =>
             context.coverDimensions !== null &&
             !context.coverIssues.some((i) => i.severity === "error"),
+        // C8: pricing requires the user to pick a royalty plan
+        // (the calculator-only scope per A2). Other pricing
+        // fields stay optional.
+        hasRequiredPricing: ({ context }) =>
+            context.pricing.royalty_plan !== null,
         canRetry: ({ context }) => context.error?.retryable === true,
     },
     actions: {
@@ -75,6 +79,19 @@ export const kdpWizardMachine = setup({
             return {
                 coverDimensions: event.dim,
                 coverIssues: event.issues,
+            };
+        }),
+        setPricing: assign(({ context, event }) => {
+            if (event.type !== "PRICING_CHANGE") return {};
+            return {
+                pricing: {
+                    ...context.pricing,
+                    ...event.pricing,
+                    prices: {
+                        ...context.pricing.prices,
+                        ...(event.pricing.prices ?? {}),
+                    },
+                },
             };
         }),
         setExportResult: assign(({ event }) => {
@@ -129,23 +146,34 @@ export const kdpWizardMachine = setup({
         cover: {
             on: {
                 COVER_VALIDATED: { actions: "setCoverValidated" },
-                // C2 direct cover → export. C8 inserts pricing
-                // between cover + export; C10 inserts arc between
-                // pricing + export.
+                // C8: cover → pricing. C10 will keep this same
+                // target + add pricing → arc → export instead of
+                // today's pricing → export.
                 ADVANCE: {
-                    target: "export",
+                    target: "pricing",
                     guard: "canAdvanceFromCover",
                 },
                 BACK: { target: "metadata" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
+        pricing: {
+            on: {
+                PRICING_CHANGE: { actions: "setPricing" },
+                ADVANCE: {
+                    target: "export",
+                    guard: "hasRequiredPricing",
+                },
+                BACK: { target: "cover" },
+                CANCEL: { target: "metadata", actions: "reset" },
+            },
+        },
         export: {
             on: {
                 GENERATE: { target: "exporting" },
-                // C2 BACK from export targets cover directly. C8 /
-                // C10 will retarget back through pricing / arc.
-                BACK: { target: "cover" },
+                // C8 BACK from export targets pricing. C10 will
+                // retarget back through arc.
+                BACK: { target: "pricing" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },

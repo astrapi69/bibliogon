@@ -96,9 +96,26 @@ vi.mock("./CoverValidation", () => ({
     },
 }))
 
+// PricingStep mock: fires onChange with royalty_plan="70" on
+// mount so the machine's hasRequiredPricing guard passes + the
+// downstream tests can advance to export.
+vi.mock("./PricingStep", () => ({
+    default: ({
+        onChange,
+    }: {
+        onChange: (partial: {royalty_plan: "70"}) => void
+    }) => {
+        useEffect(() => {
+            onChange({royalty_plan: "70"})
+            // eslint-disable-next-line react-hooks/exhaustive-deps
+        }, [])
+        return <div data-testid="kdp-publishing-wizard-step-2-pricing" />
+    },
+}))
+
 vi.mock("./ExportPackage", () => ({
     default: () => (
-        <div data-testid="kdp-publishing-wizard-step-2-export" />
+        <div data-testid="kdp-publishing-wizard-step-3-export" />
     ),
 }))
 
@@ -206,7 +223,7 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         ).toBeTruthy()
     })
 
-    it("advances cover → export directly (C2 path, no pricing / arc)", () => {
+    it("advances cover → pricing → export (C8 full Phase 2 path)", () => {
         render(
             <KdpPublishingWizard
                 open
@@ -218,17 +235,23 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         fireEvent.click(
             screen.getByTestId("kdp-publishing-wizard-step-0-next"),
         )
-        // CoverValidation mock fires onValidated on mount → guard
-        // passes → Next enables.
+        // cover → pricing (CoverValidation mock fires onValidated)
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-1-next"),
+        )
+        expect(
+            screen.getByTestId("kdp-publishing-wizard-step-2-pricing"),
+        ).toBeTruthy()
+        // PricingStep mock fires onChange({royalty_plan: "70"}) on
+        // mount → hasRequiredPricing guard passes → Next enables.
         const next = screen.getByTestId(
-            "kdp-publishing-wizard-step-1-next",
+            "kdp-publishing-wizard-step-2-next",
         ) as HTMLButtonElement
         expect(next.disabled).toBe(false)
         fireEvent.click(next)
-        // C2 direct cover → export. C8 / C10 will insert pricing
-        // + arc between cover + export.
+        // pricing → export
         expect(
-            screen.getByTestId("kdp-publishing-wizard-step-2-export"),
+            screen.getByTestId("kdp-publishing-wizard-step-3-export"),
         ).toBeTruthy()
     })
 
@@ -248,7 +271,10 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
             screen.getByTestId("kdp-publishing-wizard-step-1-next"),
         )
         fireEvent.click(
-            screen.getByTestId("kdp-publishing-wizard-step-2-finish"),
+            screen.getByTestId("kdp-publishing-wizard-step-2-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-3-finish"),
         )
         expect(onClose).toHaveBeenCalledTimes(1)
     })

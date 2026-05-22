@@ -6,10 +6,10 @@
  * shape: ``createActor(...).start()`` + direct event dispatch +
  * ``actor.getSnapshot()`` assertions. No DOM, no fake timers.
  *
- * C2 scope: 14 cases covering the 7-state visible Phase 1 subset
- * (metadata + metadataError + cover + export + exporting +
- * exportSuccess + exportError). C8 / C10 re-add pricing + arc
- * tests when those states return to the machine.
+ * C8 scope: 18 cases covering the 8-state Phase 2 navigation
+ * (metadata + metadataError + cover + pricing + export +
+ * exporting + exportSuccess + exportError). C10 re-adds arc
+ * tests when that state returns to the machine.
  */
 
 import { describe, it, expect } from "vitest";
@@ -69,6 +69,41 @@ function failingCoverIssues(): ValidationIssue[] {
             message: "Cover too small",
         },
     ];
+}
+
+/** Drive a fresh actor to the ``pricing`` state via the happy
+ *  path (C8). PRICING_CHANGE only fires in this state. */
+function navigateToPricing(): ReturnType<
+    typeof createActor<typeof kdpWizardMachine>
+> {
+    const actor = createActor(kdpWizardMachine).start();
+    actor.send({
+        type: "METADATA_LOADED",
+        result: passingMetadataResult(),
+        issuesFiltered: passingMetadataIssues(),
+    });
+    actor.send({ type: "ADVANCE" });
+    actor.send({
+        type: "COVER_VALIDATED",
+        dim: validCoverDim(),
+        issues: passingCoverIssues(),
+    });
+    actor.send({ type: "ADVANCE" });
+    return actor;
+}
+
+/** Drive a fresh actor through pricing to the ``export`` state.
+ *  GENERATE / EXPORT_SUCCESS only fire from export onwards. */
+function navigateToExport(): ReturnType<
+    typeof createActor<typeof kdpWizardMachine>
+> {
+    const actor = navigateToPricing();
+    actor.send({
+        type: "PRICING_CHANGE",
+        pricing: { royalty_plan: "70" },
+    });
+    actor.send({ type: "ADVANCE" });
+    return actor;
 }
 
 describe("kdpWizardMachine", () => {
@@ -185,7 +220,7 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("ADVANCE from cover transitions to export when no error issues (C2 direct path)", () => {
+    it("ADVANCE from cover transitions to pricing when no error issues (C8)", () => {
         const actor = createActor(kdpWizardMachine).start();
         actor.send({
             type: "METADATA_LOADED",
@@ -199,7 +234,7 @@ describe("kdpWizardMachine", () => {
             issues: passingCoverIssues(),
         });
         actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("export");
+        expect(actor.getSnapshot().value).toBe("pricing");
         actor.stop();
     });
 
@@ -216,39 +251,60 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
+    it("PRICING_CHANGE merges partial pricing into context", () => {
+        const actor = navigateToPricing();
+        actor.send({
+            type: "PRICING_CHANGE",
+            pricing: {
+                royalty_plan: "70",
+                prices: { US: { currency: "USD", list_price: 4.99 } },
+            },
+        });
+        const ctx = actor.getSnapshot().context;
+        expect(ctx.pricing.royalty_plan).toBe("70");
+        expect(ctx.pricing.prices.US).toEqual({
+            currency: "USD",
+            list_price: 4.99,
+        });
+        // Untouched fields preserved:
+        expect(ctx.pricing.kdp_select_enrolled).toBe(false);
+        actor.stop();
+    });
+
+    it("ADVANCE from pricing blocked without royalty_plan", () => {
+        const actor = navigateToPricing();
+        actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("pricing");
+        actor.stop();
+    });
+
+    it("ADVANCE from pricing transitions to export when royalty_plan set", () => {
+        const actor = navigateToPricing();
+        actor.send({
+            type: "PRICING_CHANGE",
+            pricing: { royalty_plan: "70" },
+        });
+        actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("export");
+        actor.stop();
+    });
+
+    it("BACK from pricing returns to cover", () => {
+        const actor = navigateToPricing();
+        actor.send({ type: "BACK" });
+        expect(actor.getSnapshot().value).toBe("cover");
+        actor.stop();
+    });
+
     it("GENERATE from export transitions to exporting", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
+        const actor = navigateToExport();
         actor.send({ type: "GENERATE" });
         expect(actor.getSnapshot().value).toBe("exporting");
         actor.stop();
     });
 
     it("EXPORT_SUCCESS transitions to exportSuccess and stores filename", () => {
-        const actor = createActor(kdpWizardMachine).start();
-        actor.send({
-            type: "METADATA_LOADED",
-            result: passingMetadataResult(),
-            issuesFiltered: passingMetadataIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
-        actor.send({
-            type: "COVER_VALIDATED",
-            dim: validCoverDim(),
-            issues: passingCoverIssues(),
-        });
-        actor.send({ type: "ADVANCE" });
+        const actor = navigateToExport();
         actor.send({ type: "GENERATE" });
         actor.send({
             type: "EXPORT_SUCCESS",

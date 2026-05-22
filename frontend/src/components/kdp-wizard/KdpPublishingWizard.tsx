@@ -1,11 +1,12 @@
 /**
- * KDP Publishing Wizard (Phase 2 substrate, 3 visible steps).
+ * KDP Publishing Wizard (Phase 2 substrate, 4 visible steps).
  *
  * Walks the user from a configured Book through to a KDP-ready
- * package ZIP. Three visible steps (C2):
- *   0 — MetadataChecklist    (Step 1: validate KDP-required metadata)
- *   1 — CoverValidation      (Step 2: validate cover image)
- *   2 — ExportPackage        (Step 3: download KDP-package ZIP)
+ * package ZIP. Four visible steps (C8):
+ *   0 — MetadataChecklist    (validate KDP-required metadata)
+ *   1 — CoverValidation      (validate cover image)
+ *   2 — PricingStep          (royalty plan + per-region prices)
+ *   3 — ExportPackage        (download KDP-package ZIP)
  *
  * Pattern: XState v5 via ``useMachine(kdpWizardMachine)``. Step
  * navigation, guards, and reset semantics live in the machine
@@ -13,14 +14,7 @@
  * is a thin renderer that maps ``snapshot.value`` to the per-step
  * component + wires callback props to machine events.
  *
- * Phase 2 C2 ships the 3-state substrate matching Phase 1's
- * user-visible navigation. C8 / C10 extend the machine with the
- * pricing + ARC states; the wizard's stepIndex map widens
- * accordingly. Per-step component prop signatures stay backward-
- * compatible: existing ``onCanAdvanceChange`` callback remains;
- * new optional callbacks (``onLoaded`` / ``onValidated`` /
- * ``onGenerate`` / ``onSuccess`` / ``onFailed``) drive the
- * machine events.
+ * C8 ships PricingStep; C10 adds ArcStep (5th step).
  *
  * Per A11: ExportPackage receives ``onGenerate`` from the parent;
  * the component stays machine-agnostic. The parent dispatches
@@ -39,6 +33,7 @@ import CoverValidation from "./CoverValidation"
 import ExportPackage from "./ExportPackage"
 import {kdpWizardMachine} from "./machines/kdpWizardMachine"
 import MetadataChecklist from "./MetadataChecklist"
+import PricingStep from "./PricingStep"
 
 interface Props {
     open: boolean
@@ -46,7 +41,7 @@ interface Props {
     onClose: () => void
 }
 
-const TOTAL_STEPS = 3
+const TOTAL_STEPS = 4
 
 const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = [
     {
@@ -60,6 +55,11 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
         fallback: "Cover",
     },
     {
+        key: "pricing",
+        labelKey: "ui.kdp_publishing_wizard.step_pricing",
+        fallback: "Preise",
+    },
+    {
         key: "export",
         labelKey: "ui.kdp_publishing_wizard.step_export",
         fallback: "Paket",
@@ -67,20 +67,22 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
 ] as const
 
 /** Map machine ``state.value`` to the user-visible step index used
- *  by the dot indicator + testid namespace. C8 / C10 extend this
- *  when pricing + arc states return to the machine. */
-function stepIndexFromState(stateValue: string): 0 | 1 | 2 {
+ *  by the dot indicator + testid namespace. C10 will extend this
+ *  with the arc state at index 3 (export shifts to 4). */
+function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 {
     switch (stateValue) {
         case "metadata":
         case "metadataError":
             return 0
         case "cover":
             return 1
+        case "pricing":
+            return 2
         case "export":
         case "exporting":
         case "exportSuccess":
         case "exportError":
-            return 2
+            return 3
         default:
             return 0
     }
@@ -130,6 +132,17 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                     onCanAdvanceChange={() => {}}
                     onValidated={(dim, issues) =>
                         send({type: "COVER_VALIDATED", dim, issues})
+                    }
+                />
+            )
+        }
+        if (stateValue === "pricing") {
+            return (
+                <PricingStep
+                    book={book}
+                    pricing={snapshot.context.pricing}
+                    onChange={(partial) =>
+                        send({type: "PRICING_CHANGE", pricing: partial})
                     }
                 />
             )

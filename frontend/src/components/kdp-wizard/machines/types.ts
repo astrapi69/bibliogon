@@ -91,19 +91,15 @@ export interface KdpWizardError {
 // --- Machine context + events ------------------------------------
 
 /**
- * C2 scope note: ``KdpWizardContext`` + ``KdpWizardEvent`` cover
- * ONLY the 3 visible Phase 1 steps (metadata + cover + export)
- * plus their error sub-states. The ``PricingState`` /
- * ``ArcReviewer`` type primitives above stay defined here as
- * forward-compat for C8 / C10, which extend the context +
- * event union with the new state-specific fields when the
- * corresponding UI ships.
+ * C8 scope: ``KdpWizardContext`` + ``KdpWizardEvent`` cover
+ * the 4 visible steps (metadata + cover + pricing + export)
+ * plus their error sub-states. C10 will extend with the ``arc``
+ * state + ArcReviewer context field. The ``ArcReviewer`` type
+ * primitives above stay defined as forward-compat for C10.
  *
- * Why not include pricing/arc context now: the C1 design pre-
- * committed pricing+arc into the navigation graph before the
- * UI existed. C2's user-visible scope is 3 steps; including
- * unreachable context fields creates Half-Wired-shaped
- * confusion. C8 / C10 extend cleanly.
+ * History: C2 pruned pricing+arc from the machine (Option C
+ * adjudication — "machine state reflects current reality").
+ * C8 re-adds pricing now that its UI ships.
  */
 export interface KdpWizardContext {
     // Step 1 — metadata:
@@ -114,7 +110,10 @@ export interface KdpWizardContext {
     coverDimensions: ImageDimensions | null;
     coverIssues: ValidationIssue[];
 
-    // Step 3 — export:
+    // Step 3 — pricing (C8):
+    pricing: PricingState;
+
+    // Step 4 — export:
     exportFilename: string | null;
     exportBlobUrl: string | null;
 
@@ -136,7 +135,9 @@ export type KdpWizardEvent =
           dim: ImageDimensions;
           issues: ValidationIssue[];
       }
-    // Step-3 (export):
+    // Step-3 (pricing, C8):
+    | { type: "PRICING_CHANGE"; pricing: Partial<PricingState> }
+    // Step-4 (export):
     | { type: "GENERATE" }
     | { type: "EXPORT_SUCCESS"; filename: string; blobUrl: string }
     | { type: "EXPORT_FAILED"; error: KdpWizardError }
@@ -155,6 +156,12 @@ export const initialContext: KdpWizardContext = {
     metadataIssuesFiltered: [],
     coverDimensions: null,
     coverIssues: [],
+    pricing: {
+        royalty_plan: null,
+        kdp_select_enrolled: false,
+        expanded_distribution: false,
+        prices: {},
+    },
     exportFilename: null,
     exportBlobUrl: null,
     error: null,
