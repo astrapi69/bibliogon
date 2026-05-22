@@ -4,11 +4,26 @@ import json
 import logging
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
 
 logger = logging.getLogger(__name__)
 
-_CHANGELOG_DIR = Path("config/changelogs")
+
+def _get_changelog_dir() -> Path:
+    """Resolve the changelog directory fresh on every call.
+
+    Resolves through ``app.paths.get_data_dir()`` per the
+    Filesystem-isolation lessons-learned rule (data lives outside
+    the project tree; production resolves via platformdirs, tests
+    resolve via the ``BIBLIOGON_DATA_DIR`` env var that the
+    conftest sets to a tmp dir).
+
+    Lazy import keeps plugin discovery cheap when ``app`` isn't on
+    sys.path yet (which can happen during plugin metadata reads
+    before the backend mounts the plugin).
+    """
+    from app.paths import get_data_dir
+
+    return get_data_dir() / "kdp" / "changelogs"
 
 
 class PublicationEntry:
@@ -50,7 +65,7 @@ class PublicationEntry:
 
 def get_changelog(book_id: str) -> list[dict[str, str]]:
     """Get the publication changelog for a book."""
-    path = _CHANGELOG_DIR / f"{book_id}.json"
+    path = _get_changelog_dir() / f"{book_id}.json"
     if not path.exists():
         return []
     try:
@@ -67,13 +82,14 @@ def add_entry(
     notes: str = "",
 ) -> dict[str, str]:
     """Add a publication entry to a book's changelog."""
-    _CHANGELOG_DIR.mkdir(parents=True, exist_ok=True)
+    changelog_dir = _get_changelog_dir()
+    changelog_dir.mkdir(parents=True, exist_ok=True)
     entries = get_changelog(book_id)
     entry = PublicationEntry(
         version=version, format=format, book_type=book_type, notes=notes
     )
     entries.insert(0, entry.to_dict())
-    path = _CHANGELOG_DIR / f"{book_id}.json"
+    path = changelog_dir / f"{book_id}.json"
     path.write_text(json.dumps(entries, indent=2, ensure_ascii=False), encoding="utf-8")
     logger.info("Changelog: book=%s version=%s format=%s", book_id, version, format)
     return entry.to_dict()

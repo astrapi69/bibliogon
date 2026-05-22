@@ -1,13 +1,10 @@
 """Tests for KDP publication changelog."""
 
-import json
-
 from bibliogon_kdp.changelog import (
     PublicationEntry,
     add_entry,
     export_changelog_markdown,
     get_changelog,
-    _CHANGELOG_DIR,
 )
 
 
@@ -29,13 +26,13 @@ def test_publication_entry_from_dict():
 
 def test_get_changelog_empty(tmp_path, monkeypatch):
     import bibliogon_kdp.changelog as mod
-    monkeypatch.setattr(mod, "_CHANGELOG_DIR", tmp_path / "changelogs")
+    monkeypatch.setattr(mod, "_get_changelog_dir", lambda: tmp_path / "changelogs")
     assert get_changelog("nonexistent") == []
 
 
 def test_add_and_get_entry(tmp_path, monkeypatch):
     import bibliogon_kdp.changelog as mod
-    monkeypatch.setattr(mod, "_CHANGELOG_DIR", tmp_path / "changelogs")
+    monkeypatch.setattr(mod, "_get_changelog_dir", lambda: tmp_path / "changelogs")
 
     entry = add_entry("book1", version="1.0", format="epub")
     assert entry["version"] == "1.0"
@@ -47,7 +44,7 @@ def test_add_and_get_entry(tmp_path, monkeypatch):
 
 def test_multiple_entries_newest_first(tmp_path, monkeypatch):
     import bibliogon_kdp.changelog as mod
-    monkeypatch.setattr(mod, "_CHANGELOG_DIR", tmp_path / "changelogs")
+    monkeypatch.setattr(mod, "_get_changelog_dir", lambda: tmp_path / "changelogs")
 
     add_entry("book1", version="1.0", format="epub")
     add_entry("book1", version="1.1", format="pdf", notes="Updated cover")
@@ -60,7 +57,7 @@ def test_multiple_entries_newest_first(tmp_path, monkeypatch):
 
 def test_export_markdown_empty(tmp_path, monkeypatch):
     import bibliogon_kdp.changelog as mod
-    monkeypatch.setattr(mod, "_CHANGELOG_DIR", tmp_path / "changelogs")
+    monkeypatch.setattr(mod, "_get_changelog_dir", lambda: tmp_path / "changelogs")
 
     md = export_changelog_markdown("nonexistent", "My Book")
     assert "No publications" in md
@@ -69,7 +66,7 @@ def test_export_markdown_empty(tmp_path, monkeypatch):
 
 def test_export_markdown_with_entries(tmp_path, monkeypatch):
     import bibliogon_kdp.changelog as mod
-    monkeypatch.setattr(mod, "_CHANGELOG_DIR", tmp_path / "changelogs")
+    monkeypatch.setattr(mod, "_get_changelog_dir", lambda: tmp_path / "changelogs")
 
     add_entry("book1", version="1.0", format="epub", notes="Initial release")
     add_entry("book1", version="1.1", format="pdf", book_type="paperback")
@@ -82,3 +79,27 @@ def test_export_markdown_with_entries(tmp_path, monkeypatch):
     assert "PDF" in md
     assert "paperback" in md.lower()
     assert "Initial release" in md
+
+
+def test_changelog_dir_resolves_via_data_dir(tmp_path, monkeypatch):
+    """Regression-pin for the Filesystem-isolation fix.
+
+    The CWD-relative ``Path("config/changelogs")`` from the prior
+    shape would have resolved into the project tree. The new
+    resolver routes through ``app.paths.get_data_dir()`` so the
+    ``BIBLIOGON_DATA_DIR`` env-var override (the test isolation
+    contract) actually moves the changelog path.
+
+    Skipped when ``app.paths`` isn't importable (per-plugin CI
+    venv shape per the "Two installation paths" lessons-learned
+    rule — the backend ``make test`` path exercises the
+    integration).
+    """
+    import pytest
+
+    pytest.importorskip("app.paths")
+    monkeypatch.setenv("BIBLIOGON_DATA_DIR", str(tmp_path))
+    import bibliogon_kdp.changelog as mod
+
+    resolved = mod._get_changelog_dir()
+    assert resolved == tmp_path / "kdp" / "changelogs"
