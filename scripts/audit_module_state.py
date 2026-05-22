@@ -95,6 +95,16 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "cache_clear() before AND after each test, preventing "
         "cross-file cache poisoning. Verified 2026-05-15.",
     ),
+    (
+        "backend/app/services/book_type_registry.py",
+        "load_book_types",
+        "Cache lifetime: process. Tests in "
+        "test_book_type_registry.py and test_book_types_endpoint.py "
+        "monkeypatch _REGISTRY_PATH; both test files have an autouse "
+        "yield-based fixture that calls cache_clear() before AND after "
+        "each test, preventing cross-file cache poisoning. Verified "
+        "2026-05-22 (BOOK-TYPES-SSOT-YAML-01).",
+    ),
 ]
 
 

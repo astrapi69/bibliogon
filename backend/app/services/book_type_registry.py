@@ -28,9 +28,7 @@ from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY_PATH = (
-    Path(__file__).resolve().parents[2] / "config" / "book-types.yaml"
-)
+_REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config" / "book-types.yaml"
 
 
 class BookTypeCapabilities(BaseModel):
@@ -74,9 +72,7 @@ def load_book_types() -> dict[str, BookTypeDef]:
     and teardown of any fixture that fakes the registry.
     """
     if not _REGISTRY_PATH.is_file():
-        logger.warning(
-            "Book-types registry file not found at %s", _REGISTRY_PATH
-        )
+        logger.warning("Book-types registry file not found at %s", _REGISTRY_PATH)
         return {}
     with _REGISTRY_PATH.open("r", encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
@@ -120,9 +116,7 @@ def pageable_book_types() -> frozenset[str]:
     Replaces the hardcoded ``PAGEABLE_BOOK_TYPES`` in
     ``backend/app/routers/pages.py``.
     """
-    return frozenset(
-        t.id for t in load_book_types().values() if t.content_model == "pages"
-    )
+    return frozenset(t.id for t in load_book_types().values() if t.content_model == "pages")
 
 
 def book_types_with_capability(capability: str) -> frozenset[str]:
@@ -142,8 +136,4 @@ def immutable_book_field_ids() -> frozenset[str]:
     """Return ids of book types where ``immutable_after_create`` is
     True. Used by the books PATCH handler to gate the
     ``book_type`` field rejection."""
-    return frozenset(
-        t.id
-        for t in load_book_types().values()
-        if t.immutable_after_create
-    )
+    return frozenset(t.id for t in load_book_types().values() if t.immutable_after_create)

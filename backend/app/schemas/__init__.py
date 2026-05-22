@@ -1398,9 +1398,7 @@ class BookPublishingStateGetResponse(BaseModel):
 
 # --- ARC Reviewer (C6) -------------------------------------------
 
-ReviewStatus = Literal[
-    "invited", "sent", "received", "reviewed", "declined"
-]
+ReviewStatus = Literal["invited", "sent", "received", "reviewed", "declined"]
 
 
 class ArcReviewerCreate(BaseModel):

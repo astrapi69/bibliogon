@@ -1062,4 +1062,3 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         ).toBe("22pt")
     })
 })
-

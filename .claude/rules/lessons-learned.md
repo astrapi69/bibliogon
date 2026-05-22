@@ -4758,4 +4758,3 @@ benefit. Recipe lives in the audit's 2026-05-23 footnote.
 - `docs/audits/recurring-component-audit-2026-05-21.md`
   footnotes 1 + 5 — the two concrete incidents driving this
   filing.
-

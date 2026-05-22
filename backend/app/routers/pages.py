@@ -81,12 +81,7 @@ def _serialize_layout_config(config: dict[str, Any] | None) -> str | None:
 def list_pages(book_id: str, db: Session = Depends(get_db)) -> list[Page]:
     """List a book's pages ordered by position ascending."""
     _get_pageable_book_or_400(book_id, db)
-    return (
-        db.query(Page)
-        .filter(Page.book_id == book_id)
-        .order_by(Page.position.asc())
-        .all()
-    )
+    return db.query(Page).filter(Page.book_id == book_id).order_by(Page.position.asc()).all()
 
 
 @router.post(
@@ -140,9 +135,7 @@ def update_page(
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
     update_data = payload.model_dump(exclude_unset=True)
     if "layout_config" in update_data:
-        update_data["layout_config"] = _serialize_layout_config(
-            update_data["layout_config"]
-        )
+        update_data["layout_config"] = _serialize_layout_config(update_data["layout_config"])
     for key, value in update_data.items():
         setattr(page, key, value)
     db.commit()
@@ -169,9 +162,9 @@ def delete_page(
     deleted_position = page.position
     db.delete(page)
     # Shift every page after the deleted one down by 1.
-    db.query(Page).filter(
-        Page.book_id == book_id, Page.position > deleted_position
-    ).update({Page.position: Page.position - 1}, synchronize_session=False)
+    db.query(Page).filter(Page.book_id == book_id, Page.position > deleted_position).update(
+        {Page.position: Page.position - 1}, synchronize_session=False
+    )
     db.commit()
 
 
@@ -213,9 +206,4 @@ def reorder_pages(
     for new_position, page_id in enumerate(payload.page_ids, start=1):
         pages_by_id[page_id].position = new_position
     db.commit()
-    return (
-        db.query(Page)
-        .filter(Page.book_id == book_id)
-        .order_by(Page.position.asc())
-        .all()
-    )
+    return db.query(Page).filter(Page.book_id == book_id).order_by(Page.position.asc()).all()

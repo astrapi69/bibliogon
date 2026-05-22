@@ -269,9 +269,7 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
         # + version + description from the canonical plugin config.
         # Empty/missing fields surface as ``None`` / ``{}`` so the
         # frontend renders the slug or hides the row gracefully.
-        plugin_meta = (
-            cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
-        )
+        plugin_meta = cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
         inspection = _manager.inspect_plugin(name)
         state = inspection.state if inspection is not None else None
         load_error = state.load_error if state is not None else None

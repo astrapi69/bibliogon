@@ -994,18 +994,14 @@ class ComicPanel(Base):
     __tablename__ = "comic_panels"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
-    page_id: Mapped[str] = mapped_column(
-        ForeignKey("pages.id", ondelete="CASCADE"), nullable=False
-    )
+    page_id: Mapped[str] = mapped_column(ForeignKey("pages.id", ondelete="CASCADE"), nullable=False)
     position: Mapped[int] = mapped_column(Integer, nullable=False)
     image_asset_id: Mapped[str | None] = mapped_column(
         ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
     )
     bounds: Mapped[str] = mapped_column(Text, nullable=False)
     panel_config: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
@@ -1065,20 +1061,12 @@ class ComicBubble(Base):
     anchor: Mapped[str] = mapped_column(Text, nullable=False)
     width_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=30)
     height_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=20)
-    tail_direction: Mapped[str] = mapped_column(
-        String(8), nullable=False, default="none"
-    )
-    tail_position_pct: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=50
-    )
-    tail_length_px: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=16
-    )
+    tail_direction: Mapped[str] = mapped_column(String(8), nullable=False, default="none")
+    tail_position_pct: Mapped[int] = mapped_column(Integer, nullable=False, default=50)
+    tail_length_px: Mapped[int] = mapped_column(Integer, nullable=False, default=16)
     bubble_config: Mapped[str | None] = mapped_column(Text, nullable=True)
     text_content: Mapped[str | None] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
@@ -1141,22 +1129,16 @@ class BookPublishingState(Base):
     # JSON dict keyed by checklist_item_id → ISO timestamp.
     # Tracks per-checklist-item completion. Used by the auto-
     # resume logic in C11 to jump to the last-incomplete step.
-    launch_checklist_state: Mapped[str] = mapped_column(
-        Text, nullable=False, default="{}"
-    )
+    launch_checklist_state: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
 
     # ISO-date string (matches Book.publish_date shape). Optional
     # planning field; not used to gate any transition.
-    publication_target_date: Mapped[str | None] = mapped_column(
-        String(20), nullable=True
-    )
+    publication_target_date: Mapped[str | None] = mapped_column(String(20), nullable=True)
     last_kdp_upload_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
@@ -1216,27 +1198,17 @@ class ArcReviewer(Base):
     copy_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
     # URL of the posted review (Goodreads, Amazon, blog). Nullable
     # until status reaches "reviewed".
-    review_permalink: Mapped[str | None] = mapped_column(
-        String(2000), nullable=True
-    )
+    review_permalink: Mapped[str | None] = mapped_column(String(2000), nullable=True)
     review_text_excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
-    invited_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
-    reviewed_at: Mapped[datetime | None] = mapped_column(
-        DateTime(timezone=True), nullable=True
-    )
+    invited_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    reviewed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    created_at: Mapped[datetime] = mapped_column(
-        DateTime(timezone=True), default=_utcnow
-    )
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
     )
 
-    publishing_state: Mapped["BookPublishingState"] = relationship(
-        back_populates="arc_reviewers"
-    )
+    publishing_state: Mapped["BookPublishingState"] = relationship(back_populates="arc_reviewers")
 
     def __repr__(self) -> str:
         return (
