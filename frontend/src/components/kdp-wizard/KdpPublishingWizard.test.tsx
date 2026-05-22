@@ -98,7 +98,7 @@ vi.mock("./CoverValidation", () => ({
 
 // PricingStep mock: fires onChange with royalty_plan="70" on
 // mount so the machine's hasRequiredPricing guard passes + the
-// downstream tests can advance to export.
+// downstream tests can advance to arc.
 vi.mock("./PricingStep", () => ({
     default: ({
         onChange,
@@ -113,9 +113,16 @@ vi.mock("./PricingStep", () => ({
     },
 }))
 
+// ArcStep mock: no required props. Just renders a marker.
+vi.mock("./ArcStep", () => ({
+    default: () => (
+        <div data-testid="kdp-publishing-wizard-step-3-arc" />
+    ),
+}))
+
 vi.mock("./ExportPackage", () => ({
     default: () => (
-        <div data-testid="kdp-publishing-wizard-step-3-export" />
+        <div data-testid="kdp-publishing-wizard-step-4-export" />
     ),
 }))
 
@@ -223,7 +230,7 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         ).toBeTruthy()
     })
 
-    it("advances cover → pricing → export (C8 full Phase 2 path)", () => {
+    it("advances cover → pricing → arc → export (C9 full 5-step path)", () => {
         render(
             <KdpPublishingWizard
                 open
@@ -235,23 +242,26 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         fireEvent.click(
             screen.getByTestId("kdp-publishing-wizard-step-0-next"),
         )
-        // cover → pricing (CoverValidation mock fires onValidated)
+        // cover → pricing
         fireEvent.click(
             screen.getByTestId("kdp-publishing-wizard-step-1-next"),
         )
         expect(
             screen.getByTestId("kdp-publishing-wizard-step-2-pricing"),
         ).toBeTruthy()
-        // PricingStep mock fires onChange({royalty_plan: "70"}) on
-        // mount → hasRequiredPricing guard passes → Next enables.
-        const next = screen.getByTestId(
-            "kdp-publishing-wizard-step-2-next",
-        ) as HTMLButtonElement
-        expect(next.disabled).toBe(false)
-        fireEvent.click(next)
-        // pricing → export
+        // pricing → arc (PricingStep mock unlocks the guard)
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-2-next"),
+        )
         expect(
-            screen.getByTestId("kdp-publishing-wizard-step-3-export"),
+            screen.getByTestId("kdp-publishing-wizard-step-3-arc"),
+        ).toBeTruthy()
+        // arc → export (unguarded; reviewers are optional)
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-3-next"),
+        )
+        expect(
+            screen.getByTestId("kdp-publishing-wizard-step-4-export"),
         ).toBeTruthy()
     })
 
@@ -274,7 +284,10 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
             screen.getByTestId("kdp-publishing-wizard-step-2-next"),
         )
         fireEvent.click(
-            screen.getByTestId("kdp-publishing-wizard-step-3-finish"),
+            screen.getByTestId("kdp-publishing-wizard-step-3-next"),
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-4-finish"),
         )
         expect(onClose).toHaveBeenCalledTimes(1)
     })

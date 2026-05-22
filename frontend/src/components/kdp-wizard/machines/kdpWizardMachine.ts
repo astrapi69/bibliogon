@@ -2,11 +2,10 @@
  * KDP Publishing Wizard — Phase 2 state machine (XState v5).
  *
  * Replaces the Phase 1 ``useState`` step-index in
- * ``KdpPublishingWizard.tsx``. C8 ships the 4-visible-step
- * subset (metadata + cover + pricing + export) matching the
- * Phase 2 navigation. C10 extends with the ``arc`` state.
+ * ``KdpPublishingWizard.tsx``. C9 ships the full 5-visible-step
+ * Phase 2 navigation (metadata + cover + pricing + arc + export).
  *
- * State graph (C8 — 8 states):
+ * State graph (C9 — 9 states):
  *
  *   metadata ⇌ metadataError
  *      ↓ ADVANCE (canAdvanceFromMetadata)
@@ -14,6 +13,8 @@
  *      ↓ ADVANCE (canAdvanceFromCover)
  *   pricing
  *      ↓ ADVANCE (hasRequiredPricing)
+ *   arc
+ *      ↓ ADVANCE (unguarded — reviewers are optional)
  *   export ⇌ exporting → exportSuccess
  *                    └─→ exportError ⇌ exporting (RETRY)
  *
@@ -26,7 +27,12 @@
  * async state (in-flight promises, AbortControllers) MUST NOT
  * land in context.
  *
- * STATE_LOADED / STATE_SAVED events deferred to C11
+ * ARC reviewer state lives SERVER-SIDE (the C6 CRUD endpoints
+ * are the source of truth). The machine's ``arc`` state is just
+ * a navigation marker — no ADD_REVIEWER / UPDATE / REMOVE
+ * events; ArcStep talks to the server directly.
+ *
+ * STATE_LOADED / STATE_SAVED events deferred to C10
  * (persistence wiring).
  */
 
@@ -161,19 +167,28 @@ export const kdpWizardMachine = setup({
             on: {
                 PRICING_CHANGE: { actions: "setPricing" },
                 ADVANCE: {
-                    target: "export",
+                    target: "arc",
                     guard: "hasRequiredPricing",
                 },
                 BACK: { target: "cover" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
+        arc: {
+            // ARC reviewer state lives server-side (C6 endpoints).
+            // No ADD_REVIEWER / UPDATE / REMOVE events on the
+            // machine; ArcStep talks to the server directly.
+            // ADVANCE is unguarded — reviewers are optional.
+            on: {
+                ADVANCE: { target: "export" },
+                BACK: { target: "pricing" },
+                CANCEL: { target: "metadata", actions: "reset" },
+            },
+        },
         export: {
             on: {
                 GENERATE: { target: "exporting" },
-                // C8 BACK from export targets pricing. C10 will
-                // retarget back through arc.
-                BACK: { target: "pricing" },
+                BACK: { target: "arc" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },

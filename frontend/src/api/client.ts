@@ -1145,6 +1145,45 @@ export interface KdpMetadataCheckResult {
     issues: KdpMetadataIssue[];
 }
 
+// --- KDP Publishing Wizard Phase 2 (C9) ---------------------------
+
+export type ReviewStatus =
+    | "invited"
+    | "sent"
+    | "received"
+    | "reviewed"
+    | "declined";
+
+/** ARC reviewer row as the server returns it. Matches the
+ *  ``ArcReviewerOut`` Pydantic schema 1:1. */
+export interface ArcReviewerApi {
+    id: string;
+    publishing_state_id: string;
+    reviewer_name: string;
+    reviewer_email: string | null;
+    review_status: ReviewStatus;
+    copy_version: string | null;
+    review_permalink: string | null;
+    review_text_excerpt: string | null;
+    invited_at: string | null;
+    reviewed_at: string | null;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ArcReviewerCreatePayload {
+    reviewer_name: string;
+    reviewer_email?: string | null;
+}
+
+export interface ArcReviewerUpdatePayload {
+    review_status?: ReviewStatus;
+    copy_version?: string | null;
+    review_permalink?: string | null;
+    review_text_excerpt?: string | null;
+    reviewed_at?: string | null;
+}
+
 // --- ApiError with context ---
 
 /** Thrown by `api.chapters.update` when a newer save for the same
@@ -2800,6 +2839,65 @@ export const api = {
                     res.headers.get("Content-Disposition"),
                 ) || `${bookId}-kdp-package.zip`
             return {blob, filename}
+        },
+
+        // --- ARC reviewer CRUD (Phase 2 C9) ---------------------
+
+        /** List ARC reviewers for a book. Returns ``[]`` when no
+         *  publishing-state row exists yet. */
+        listReviewers: (bookId: string) =>
+            request<ArcReviewerApi[]>(
+                `/kdp/publishing-state/${bookId}/reviewers`,
+            ),
+
+        /** Add a reviewer to the book's ARC list. Server auto-
+         *  creates the publishing-state row if absent + assigns
+         *  ``review_status="invited"`` + ``invited_at=now``. */
+        addReviewer: (
+            bookId: string,
+            payload: ArcReviewerCreatePayload,
+        ) =>
+            request<ArcReviewerApi>(
+                `/kdp/publishing-state/${bookId}/reviewers`,
+                {
+                    method: "POST",
+                    body: JSON.stringify(payload),
+                },
+            ),
+
+        /** Update an ARC reviewer's status / permalink / excerpt.
+         *  Server auto-stamps ``reviewed_at`` when status flips to
+         *  ``reviewed`` and the payload didn't supply one. */
+        updateReviewer: (
+            bookId: string,
+            reviewerId: string,
+            payload: ArcReviewerUpdatePayload,
+        ) =>
+            request<ArcReviewerApi>(
+                `/kdp/publishing-state/${bookId}/reviewers/${reviewerId}`,
+                {
+                    method: "PATCH",
+                    body: JSON.stringify(payload),
+                },
+            ),
+
+        /** Hard-delete an ARC reviewer (no soft-delete per A25). */
+        deleteReviewer: async (
+            bookId: string,
+            reviewerId: string,
+        ): Promise<void> => {
+            const res = await fetch(
+                `${BASE}/kdp/publishing-state/${bookId}/reviewers/${reviewerId}`,
+                {method: "DELETE"},
+            )
+            if (!res.ok) {
+                throw new ApiError(
+                    res.status,
+                    `Reviewer delete failed (${res.status})`,
+                    `${BASE}/kdp/publishing-state/${bookId}/reviewers/${reviewerId}`,
+                    "DELETE",
+                )
+            }
         },
     },
 

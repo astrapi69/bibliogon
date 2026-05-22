@@ -1,20 +1,19 @@
 /**
- * KDP Publishing Wizard (Phase 2 substrate, 4 visible steps).
+ * KDP Publishing Wizard (Phase 2 — 5 visible steps).
  *
  * Walks the user from a configured Book through to a KDP-ready
- * package ZIP. Four visible steps (C8):
+ * package ZIP. Five visible steps (C9):
  *   0 — MetadataChecklist    (validate KDP-required metadata)
  *   1 — CoverValidation      (validate cover image)
  *   2 — PricingStep          (royalty plan + per-region prices)
- *   3 — ExportPackage        (download KDP-package ZIP)
+ *   3 — ArcStep              (ARC reviewer tracking)
+ *   4 — ExportPackage        (download KDP-package ZIP)
  *
  * Pattern: XState v5 via ``useMachine(kdpWizardMachine)``. Step
  * navigation, guards, and reset semantics live in the machine
  * (``frontend/src/components/kdp-wizard/machines/``). React layer
  * is a thin renderer that maps ``snapshot.value`` to the per-step
  * component + wires callback props to machine events.
- *
- * C8 ships PricingStep; C10 adds ArcStep (5th step).
  *
  * Per A11: ExportPackage receives ``onGenerate`` from the parent;
  * the component stays machine-agnostic. The parent dispatches
@@ -29,6 +28,7 @@ import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import ArcStep from "./ArcStep"
 import CoverValidation from "./CoverValidation"
 import ExportPackage from "./ExportPackage"
 import {kdpWizardMachine} from "./machines/kdpWizardMachine"
@@ -41,7 +41,7 @@ interface Props {
     onClose: () => void
 }
 
-const TOTAL_STEPS = 4
+const TOTAL_STEPS = 5
 
 const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = [
     {
@@ -60,6 +60,11 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
         fallback: "Preise",
     },
     {
+        key: "arc",
+        labelKey: "ui.kdp_publishing_wizard.step_arc",
+        fallback: "ARC",
+    },
+    {
         key: "export",
         labelKey: "ui.kdp_publishing_wizard.step_export",
         fallback: "Paket",
@@ -67,9 +72,8 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
 ] as const
 
 /** Map machine ``state.value`` to the user-visible step index used
- *  by the dot indicator + testid namespace. C10 will extend this
- *  with the arc state at index 3 (export shifts to 4). */
-function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 {
+ *  by the dot indicator + testid namespace. */
+function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 | 4 {
     switch (stateValue) {
         case "metadata":
         case "metadataError":
@@ -78,11 +82,13 @@ function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 {
             return 1
         case "pricing":
             return 2
+        case "arc":
+            return 3
         case "export":
         case "exporting":
         case "exportSuccess":
         case "exportError":
-            return 3
+            return 4
         default:
             return 0
     }
@@ -146,6 +152,9 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                     }
                 />
             )
+        }
+        if (stateValue === "arc") {
+            return <ArcStep book={book} />
         }
         // export / exporting / exportSuccess / exportError
         return (

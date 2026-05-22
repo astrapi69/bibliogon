@@ -6,10 +6,9 @@
  * shape: ``createActor(...).start()`` + direct event dispatch +
  * ``actor.getSnapshot()`` assertions. No DOM, no fake timers.
  *
- * C8 scope: 18 cases covering the 8-state Phase 2 navigation
- * (metadata + metadataError + cover + pricing + export +
- * exporting + exportSuccess + exportError). C10 re-adds arc
- * tests when that state returns to the machine.
+ * C9 scope: 21 cases covering the 9-state full Phase 2
+ * navigation (metadata + metadataError + cover + pricing + arc
+ * + export + exporting + exportSuccess + exportError).
  */
 
 import { describe, it, expect } from "vitest";
@@ -92,9 +91,8 @@ function navigateToPricing(): ReturnType<
     return actor;
 }
 
-/** Drive a fresh actor through pricing to the ``export`` state.
- *  GENERATE / EXPORT_SUCCESS only fire from export onwards. */
-function navigateToExport(): ReturnType<
+/** Drive a fresh actor through pricing to the ``arc`` state. */
+function navigateToArc(): ReturnType<
     typeof createActor<typeof kdpWizardMachine>
 > {
     const actor = navigateToPricing();
@@ -102,6 +100,16 @@ function navigateToExport(): ReturnType<
         type: "PRICING_CHANGE",
         pricing: { royalty_plan: "70" },
     });
+    actor.send({ type: "ADVANCE" });
+    return actor;
+}
+
+/** Drive a fresh actor through arc to the ``export`` state.
+ *  GENERATE / EXPORT_SUCCESS only fire from export onwards. */
+function navigateToExport(): ReturnType<
+    typeof createActor<typeof kdpWizardMachine>
+> {
+    const actor = navigateToArc();
     actor.send({ type: "ADVANCE" });
     return actor;
 }
@@ -278,14 +286,14 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("ADVANCE from pricing transitions to export when royalty_plan set", () => {
+    it("ADVANCE from pricing transitions to arc when royalty_plan set (C9)", () => {
         const actor = navigateToPricing();
         actor.send({
             type: "PRICING_CHANGE",
             pricing: { royalty_plan: "70" },
         });
         actor.send({ type: "ADVANCE" });
-        expect(actor.getSnapshot().value).toBe("export");
+        expect(actor.getSnapshot().value).toBe("arc");
         actor.stop();
     });
 
@@ -293,6 +301,30 @@ describe("kdpWizardMachine", () => {
         const actor = navigateToPricing();
         actor.send({ type: "BACK" });
         expect(actor.getSnapshot().value).toBe("cover");
+        actor.stop();
+    });
+
+    it("ADVANCE from arc transitions to export (unguarded; reviewers optional)", () => {
+        const actor = navigateToArc();
+        actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("export");
+        actor.stop();
+    });
+
+    it("BACK from arc returns to pricing", () => {
+        const actor = navigateToArc();
+        actor.send({ type: "BACK" });
+        expect(actor.getSnapshot().value).toBe("pricing");
+        actor.stop();
+    });
+
+    it("CANCEL from arc resets context and returns to metadata", () => {
+        const actor = navigateToArc();
+        actor.send({ type: "CANCEL" });
+        const snap = actor.getSnapshot();
+        expect(snap.value).toBe("metadata");
+        expect(snap.context.metadataResult).toBeNull();
+        expect(snap.context.pricing.royalty_plan).toBeNull();
         actor.stop();
     });
 
