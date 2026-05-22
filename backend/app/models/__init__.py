@@ -1090,3 +1090,157 @@ class ComicBubble(Base):
             f"<ComicBubble {self.id!r} panel_id={self.panel_id!r} "
             f"type={self.bubble_type!r} pos={self.position}>"
         )
+
+
+class BookPublishingState(Base):
+    """KDP Publishing Wizard Phase 2 — per-book commercial state.
+
+    1:1 with :class:`Book` via UNIQUE(book_id). The wizard creates
+    the row on first auto-save; subsequent transitions PATCH the
+    same row. Loading the wizard for a Book with no row returns
+    default values (royalty_plan=NULL, kdp_select=False, empty
+    JSON dicts).
+
+    All JSON-shaped fields use Text + json-as-string per the
+    existing Bibliogon convention (``Page.layout_config``,
+    ``ComicPanel.bounds``). The wizard parses on read, serialises
+    on write; Pydantic schemas at the API layer validate shape.
+
+    Schema design rationale: ``docs/audits/kdp-publishing-wizard-
+    phase-2-pre-inspection-2026-05-22.md`` Track 2.
+
+    Plugin-architecture note: this model lives in
+    ``backend/app/models/`` alongside the other plugin-owned
+    tables (ComicPanel, ComicBubble) because Bibliogon's
+    Alembic + SQLAlchemy ``Base.metadata`` are centralised.
+    """
+
+    __tablename__ = "book_publishing_state"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"),
+        nullable=False,
+        unique=True,
+        index=True,
+    )
+
+    # Pricing (Track 3): royalty plan is "35" | "70" | None.
+    # Stored as String(8) for forward-compat with hypothetical
+    # KDP-changed values; Pydantic Literal enforces shape at API.
+    royalty_plan: Mapped[str | None] = mapped_column(String(8), nullable=True)
+    kdp_select_enrolled: Mapped[bool] = mapped_column(Boolean, default=False)
+    kdp_select_enrollment_date: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    expanded_distribution: Mapped[bool] = mapped_column(Boolean, default=False)
+    # JSON dict keyed by region_code ("US","EU","UK","JP","IN") →
+    # {currency, list_price, royalty_rate}. Default "{}".
+    prices: Mapped[str] = mapped_column(Text, nullable=False, default="{}")
+
+    # JSON dict keyed by checklist_item_id → ISO timestamp.
+    # Tracks per-checklist-item completion. Used by the auto-
+    # resume logic in C11 to jump to the last-incomplete step.
+    launch_checklist_state: Mapped[str] = mapped_column(
+        Text, nullable=False, default="{}"
+    )
+
+    # ISO-date string (matches Book.publish_date shape). Optional
+    # planning field; not used to gate any transition.
+    publication_target_date: Mapped[str | None] = mapped_column(
+        String(20), nullable=True
+    )
+    last_kdp_upload_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    arc_reviewers: Mapped[list["ArcReviewer"]] = relationship(
+        back_populates="publishing_state",
+        cascade="all, delete-orphan",
+        order_by="ArcReviewer.created_at",
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<BookPublishingState {self.id!r} book_id={self.book_id!r} "
+            f"royalty_plan={self.royalty_plan!r}>"
+        )
+
+
+class ArcReviewer(Base):
+    """KDP Publishing Wizard Phase 2 — ARC reviewer tracking.
+
+    N:1 with :class:`BookPublishingState`. CASCADE chain:
+    deleting a Book deletes its ``BookPublishingState`` row
+    deletes its ARC reviewers.
+
+    ``review_status`` values (validated at Pydantic layer, NOT
+    at the DB layer; matches ``ComicBubble.bubble_type`` /
+    ``Chapter.chapter_type`` pattern):
+
+        - "invited"  : added to the list, not yet contacted
+        - "sent"     : ARC copy delivered (manually by user)
+        - "received" : reviewer confirmed receipt
+        - "reviewed" : review posted, permalink recorded
+        - "declined" : reviewer opted out
+
+    Email integration: OUT OF SCOPE for v1 (A16). The user adds
+    reviewers + tracks status manually. ``ARC-MAILTO-LINK-01``
+    (P5) is filed as a follow-up for a mailto: button.
+    """
+
+    __tablename__ = "arc_reviewers"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    publishing_state_id: Mapped[str] = mapped_column(
+        ForeignKey("book_publishing_state.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+
+    reviewer_name: Mapped[str] = mapped_column(String(300), nullable=False)
+    # RFC 5321 max length is 320 chars. Nullable: a reviewer may
+    # be known only by name (a colleague the user sees in person).
+    reviewer_email: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    review_status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="invited", index=True
+    )
+    # Free-text version label ("ARC-v1.0", "Final-Proof"). Optional.
+    copy_version: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    # URL of the posted review (Goodreads, Amazon, blog). Nullable
+    # until status reaches "reviewed".
+    review_permalink: Mapped[str | None] = mapped_column(
+        String(2000), nullable=True
+    )
+    review_text_excerpt: Mapped[str | None] = mapped_column(Text, nullable=True)
+    invited_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    reviewed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    publishing_state: Mapped["BookPublishingState"] = relationship(
+        back_populates="arc_reviewers"
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<ArcReviewer {self.id!r} "
+            f"publishing_state_id={self.publishing_state_id!r} "
+            f"name={self.reviewer_name!r} status={self.review_status!r}>"
+        )
