@@ -5,9 +5,18 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
+from sqlalchemy.orm import Session
+
+from app.database import get_db
+from app.models import Book
+from app.schemas import (
+    BookPublishingStateGetResponse,
+    BookPublishingStateRead,
+    BookPublishingStateUpdate,
+)
 
 from .changelog import add_entry, export_changelog_markdown, get_changelog
 from .cover_validator import (
@@ -17,6 +26,11 @@ from .cover_validator import (
 )
 from .metadata_checker import check_metadata_completeness
 from .package import KdpPackageError, build_kdp_package
+from .publishing_state_service import (
+    delete_publishing_state,
+    get_publishing_state,
+    upsert_publishing_state,
+)
 
 router = APIRouter(prefix="/kdp", tags=["kdp"])
 
@@ -228,3 +242,74 @@ def build_package(book_id: str) -> FileResponse:
         media_type="application/zip",
         filename=zip_path.name,
     )
+
+
+# --- KDP Publishing Wizard Phase 2 (C5) ---------------------------
+#
+# Per-book commercial / launch state for the wizard. Auto-save
+# target from the wizard's transition handlers in C11. 1:1 with
+# Book via UNIQUE(book_id); upsert semantics.
+
+
+@router.get(
+    "/publishing-state/{book_id}",
+    response_model=BookPublishingStateGetResponse,
+)
+def get_book_publishing_state(
+    book_id: str, db: Session = Depends(get_db)
+) -> BookPublishingStateGetResponse:
+    """Load the publishing-state row for ``book_id`` plus the
+    related Book's ``updated_at`` (for client-side conflict
+    detection per Track 5).
+
+    Returns ``state=None`` when no row exists yet — the wizard
+    treats this as "first run" + populates defaults locally.
+    """
+    book = (
+        db.query(Book)
+        .filter(Book.id == book_id, Book.deleted_at.is_(None))
+        .first()
+    )
+    if not book:
+        raise HTTPException(
+            status_code=404, detail=f"Book {book_id} not found"
+        )
+    row = get_publishing_state(db, book_id)
+    return BookPublishingStateGetResponse(
+        book_id=book_id,
+        book_updated_at=book.updated_at,
+        state=(BookPublishingStateRead.model_validate(row) if row else None),
+    )
+
+
+@router.patch(
+    "/publishing-state/{book_id}",
+    response_model=BookPublishingStateRead,
+)
+def upsert_book_publishing_state(
+    book_id: str,
+    payload: BookPublishingStateUpdate,
+    db: Session = Depends(get_db),
+) -> BookPublishingStateRead:
+    """Create-or-update the publishing-state row for ``book_id``.
+
+    PATCH semantics: missing row → created with defaults +
+    payload overrides; existing row → updated with the
+    explicitly-set payload fields (Pydantic's ``exclude_unset``
+    distinguishes "absent" from "null").
+    """
+    row = upsert_publishing_state(
+        db, book_id, payload.model_dump(exclude_unset=True)
+    )
+    return BookPublishingStateRead.model_validate(row)
+
+
+@router.delete("/publishing-state/{book_id}", status_code=204)
+def delete_book_publishing_state(
+    book_id: str, db: Session = Depends(get_db)
+) -> None:
+    """Hard-delete the publishing-state row + cascade ARC reviewers.
+
+    No-op if no row exists. Returns 204 either way (idempotent).
+    """
+    delete_publishing_state(db, book_id)

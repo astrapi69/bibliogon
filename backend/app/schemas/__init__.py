@@ -1306,3 +1306,90 @@ class AuthorOut(BaseModel):
     bio: str | None
     created_at: datetime
     updated_at: datetime
+
+
+# --- KDP Publishing Wizard Phase 2 (C5) ---------------------------
+
+RoyaltyPlan = Literal["35", "70"]
+
+
+class BookPublishingStateRead(BaseModel):
+    """Response shape for ``GET / PATCH /api/kdp/publishing-state/{book_id}``.
+
+    JSON-as-Text columns (``prices`` + ``launch_checklist_state``)
+    are decoded on read per the existing ``Page.layout_config``
+    convention. ``arc_reviewers`` is added in C6 alongside the
+    reviewer CRUD endpoints; C5 ships the wrapper without it.
+    """
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    book_id: str
+    royalty_plan: RoyaltyPlan | None = None
+    kdp_select_enrolled: bool
+    kdp_select_enrollment_date: datetime | None = None
+    expanded_distribution: bool
+    prices: dict[str, Any]
+    launch_checklist_state: dict[str, Any]
+    publication_target_date: str | None = None
+    last_kdp_upload_at: datetime | None = None
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("prices", mode="before")
+    @classmethod
+    def _decode_prices(cls, value: Any) -> dict[str, Any]:
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str) and value:
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+    @field_validator("launch_checklist_state", mode="before")
+    @classmethod
+    def _decode_checklist(cls, value: Any) -> dict[str, Any]:
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str) and value:
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
+
+
+class BookPublishingStateUpdate(BaseModel):
+    """Payload for ``PATCH /api/kdp/publishing-state/{book_id}``.
+
+    All fields optional. Upsert semantics: missing row → created;
+    existing row → updated with the non-unset fields. ``prices``
+    and ``launch_checklist_state`` accept dict input + the service
+    layer JSON-encodes for storage.
+    """
+
+    royalty_plan: RoyaltyPlan | None = None
+    kdp_select_enrolled: bool | None = None
+    kdp_select_enrollment_date: datetime | None = None
+    expanded_distribution: bool | None = None
+    prices: dict[str, Any] | None = None
+    launch_checklist_state: dict[str, Any] | None = None
+    publication_target_date: str | None = None
+    last_kdp_upload_at: datetime | None = None
+
+
+class BookPublishingStateGetResponse(BaseModel):
+    """Wrapped GET response carrying both the state row (nullable)
+    and the related Book's ``updated_at`` for client-side conflict
+    detection (per Track 5: yellow re-validate banner when
+    ``state.updated_at < book.updated_at``).
+    """
+
+    book_id: str
+    book_updated_at: datetime
+    state: BookPublishingStateRead | None = None
