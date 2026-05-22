@@ -23,19 +23,12 @@
  */
 
 import {useEffect, useRef, useState} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
 import {useMachine} from "@xstate/react"
-import {
-    AlertTriangle,
-    ChevronLeft,
-    ChevronRight,
-    Check,
-    X,
-    Rocket,
-} from "lucide-react"
+import {AlertTriangle, Check, X, Rocket} from "lucide-react"
 
 import {BookDetail, api} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import WizardShell, {WizardNav} from "../wizards/WizardShell"
 import ArcStep from "./ArcStep"
 import CoverValidation from "./CoverValidation"
 import ExportPackage from "./ExportPackage"
@@ -275,222 +268,88 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         )
     }
 
-    // Step-indicator dot row. Visited steps render filled; the
-    // current step is the rightmost filled dot.
-    const renderStepIndicator = () => (
-        <div style={styles.steps} data-testid="kdp-publishing-wizard-step-indicator">
-            {STEPS.map((s, i) => (
-                <div
-                    key={s.key}
-                    data-testid={`kdp-publishing-wizard-step-dot-${i}`}
-                    style={{
-                        ...styles.stepDot,
-                        background:
-                            i <= step
-                                ? "var(--accent, var(--primary))"
-                                : "var(--border)",
-                    }}
-                    aria-label={t(s.labelKey, s.fallback)}
-                    title={t(s.labelKey, s.fallback)}
-                />
-            ))}
+    const wizardSteps = STEPS.map((s) => ({
+        key: s.key,
+        label: t(s.labelKey, s.fallback),
+    }))
+
+    const conflictBanner = showConflictBanner ? (
+        <div
+            style={styles.conflictBanner}
+            data-testid="kdp-publishing-wizard-conflict-banner"
+            role="status"
+            aria-live="polite"
+        >
+            <AlertTriangle size={14} />
+            <span style={{flex: 1}}>
+                {t(
+                    "ui.kdp_publishing_wizard.conflict_banner",
+                    "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
+                )}
+            </span>
+            <button
+                type="button"
+                onClick={() => setConflictDismissed(true)}
+                style={styles.conflictDismiss}
+                aria-label={t(
+                    "ui.kdp_publishing_wizard.conflict_dismiss",
+                    "Hinweis schließen",
+                )}
+                data-testid="kdp-publishing-wizard-conflict-dismiss"
+            >
+                <X size={12} />
+            </button>
         </div>
-    )
+    ) : undefined
 
     return (
-        <Dialog.Root
+        <WizardShell
             open={open}
-            onOpenChange={(o) => {
-                if (!o) closeAndReset()
-            }}
-        >
-            <Dialog.Portal>
-                <Dialog.Overlay style={styles.overlay} />
-                <Dialog.Content
-                    style={styles.content}
-                    data-testid="kdp-publishing-wizard-dialog"
-                    aria-describedby={undefined}
-                >
-                    <Dialog.Title style={styles.title}>
-                        <Rocket size={18} />
-                        {t(
-                            "ui.kdp_publishing_wizard.dialog_title",
-                            "Für KDP veröffentlichen",
-                        )}
-                    </Dialog.Title>
-
-                    <p
-                        style={styles.subtitle}
-                        data-testid="kdp-publishing-wizard-book-title"
-                    >
-                        {book.title}
-                    </p>
-
-                    {renderStepIndicator()}
-                    {showConflictBanner && (
-                        <div
-                            style={styles.conflictBanner}
-                            data-testid="kdp-publishing-wizard-conflict-banner"
-                            role="status"
-                            aria-live="polite"
-                        >
-                            <AlertTriangle size={14} />
-                            <span style={{flex: 1}}>
-                                {t(
-                                    "ui.kdp_publishing_wizard.conflict_banner",
-                                    "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
-                                )}
-                            </span>
-                            <button
-                                type="button"
-                                onClick={() => setConflictDismissed(true)}
-                                style={styles.conflictDismiss}
-                                aria-label={t(
-                                    "ui.kdp_publishing_wizard.conflict_dismiss",
-                                    "Hinweis schließen",
-                                )}
-                                data-testid="kdp-publishing-wizard-conflict-dismiss"
-                            >
-                                <X size={12} />
-                            </button>
-                        </div>
+            onClose={closeAndReset}
+            namespace="kdp-publishing-wizard"
+            title={t(
+                "ui.kdp_publishing_wizard.dialog_title",
+                "Für KDP veröffentlichen",
+            )}
+            titleIcon={<Rocket size={18} />}
+            subtitle={book.title}
+            steps={wizardSteps}
+            currentStep={step}
+            stepColorPolicy="single"
+            banner={conflictBanner}
+            closeAriaLabel={t("ui.common.close", "Schließen")}
+            nav={
+                <WizardNav
+                    step={step}
+                    onBack={
+                        step > 0 ? () => send({type: "BACK"}) : undefined
+                    }
+                    onAdvance={
+                        isLastStep
+                            ? undefined
+                            : () => send({type: "ADVANCE"})
+                    }
+                    advanceDisabled={!canAdvance}
+                    onFinish={isLastStep ? closeAndReset : undefined}
+                    isLastStep={isLastStep}
+                    finishLabel={t(
+                        "ui.kdp_publishing_wizard.finish",
+                        "Fertig",
                     )}
-                    <div>{renderCurrentStep()}</div>
-
-                    <div style={styles.nav}>
-                        <div style={{display: "flex", gap: 8}}>
-                            {step > 0 && (
-                                <button
-                                    type="button"
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={() => send({type: "BACK"})}
-                                    data-testid={`kdp-publishing-wizard-step-${step}-back`}
-                                >
-                                    <ChevronLeft size={14} />{" "}
-                                    {t("ui.common.back", "Zurück")}
-                                </button>
-                            )}
-                        </div>
-                        <div style={{display: "flex", gap: 8}}>
-                            {!isLastStep && (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm"
-                                    onClick={() => send({type: "ADVANCE"})}
-                                    disabled={!canAdvance}
-                                    data-testid={`kdp-publishing-wizard-step-${step}-next`}
-                                >
-                                    {t("ui.common.next", "Weiter")}{" "}
-                                    <ChevronRight size={14} />
-                                </button>
-                            )}
-                            {isLastStep && (
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm"
-                                    onClick={closeAndReset}
-                                    data-testid={`kdp-publishing-wizard-step-${step}-finish`}
-                                >
-                                    <Check size={14} />{" "}
-                                    {t(
-                                        "ui.kdp_publishing_wizard.finish",
-                                        "Fertig",
-                                    )}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Close button: Dialog.Close handles the onOpenChange
-                        path which runs the CANCEL dispatch + onClose in
-                        the Dialog.Root handler above. No explicit onClick
-                        here — double-firing was the original C1 bug. */}
-                    <Dialog.Close asChild>
-                        <button
-                            type="button"
-                            style={styles.close}
-                            aria-label={t("ui.common.close", "Schließen")}
-                            data-testid="kdp-publishing-wizard-close"
-                        >
-                            <X size={16} />
-                        </button>
-                    </Dialog.Close>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+                    finishIcon={<Check size={14} />}
+                />
+            }
+        >
+            {renderCurrentStep()}
+        </WizardShell>
     )
 }
 
 // --- styles --------------------------------------------------------------
+// Dialog chrome + step indicator + nav lives in WizardShell. The
+// conflict-banner is wizard-specific and stays here.
 
 const styles: Record<string, React.CSSProperties> = {
-    overlay: {
-        position: "fixed",
-        inset: 0,
-        background: "rgba(0,0,0,0.5)",
-        zIndex: 9998,
-    },
-    content: {
-        position: "fixed",
-        top: "50%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        background: "var(--bg-card)",
-        color: "var(--text-primary)",
-        borderRadius: "var(--radius-md, 8px)",
-        padding: 24,
-        width: "min(640px, 92vw)",
-        maxHeight: "90vh",
-        overflowY: "auto",
-        boxShadow: "var(--shadow-lg)",
-        zIndex: 9999,
-    },
-    title: {
-        display: "flex",
-        alignItems: "center",
-        gap: 8,
-        fontSize: "1.125rem",
-        fontWeight: 600,
-        margin: 0,
-        marginBottom: 4,
-        color: "var(--text-primary)",
-    },
-    subtitle: {
-        fontSize: "0.875rem",
-        color: "var(--text-muted)",
-        marginTop: 0,
-        marginBottom: 16,
-    },
-    steps: {
-        display: "flex",
-        gap: 6,
-        justifyContent: "center",
-        marginBottom: 20,
-    },
-    stepDot: {
-        width: 10,
-        height: 10,
-        borderRadius: "50%",
-        transition: "background 0.2s",
-    },
-    nav: {
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginTop: 20,
-        paddingTop: 16,
-        borderTop: "1px solid var(--border)",
-    },
-    close: {
-        position: "absolute",
-        top: 12,
-        right: 12,
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        color: "var(--text-muted)",
-        padding: 4,
-    },
     conflictBanner: {
         display: "flex",
         alignItems: "center",
