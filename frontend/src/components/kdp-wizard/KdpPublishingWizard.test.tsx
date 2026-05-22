@@ -56,6 +56,19 @@ vi.mock("./MetadataChecklist", () => ({
     },
 }))
 
+vi.mock("./CoverValidation", () => ({
+    default: ({
+        onCanAdvanceChange,
+    }: {
+        onCanAdvanceChange: (canAdvance: boolean) => void
+    }) => {
+        useEffect(() => {
+            onCanAdvanceChange(true)
+        }, [onCanAdvanceChange])
+        return <div data-testid="kdp-publishing-wizard-step-1-cover" />
+    },
+}))
+
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     return {
         id: "book-1",
@@ -239,6 +252,38 @@ describe("KdpPublishingWizard (shell)", () => {
             />,
         )
         expect(screen.queryByTestId("kdp-publishing-wizard-dialog")).toBeNull()
+    })
+
+    it("step-1 Next is gated by the CoverValidation callback", async () => {
+        // Override CoverValidation to report "cannot advance"; the
+        // wizard's step-1 Next must stay disabled even though
+        // step-0's MetadataChecklist reported success.
+        vi.doMock("./CoverValidation", () => ({
+            default: ({
+                onCanAdvanceChange,
+            }: {
+                onCanAdvanceChange: (canAdvance: boolean) => void
+            }) => {
+                useEffect(() => {
+                    onCanAdvanceChange(false)
+                }, [onCanAdvanceChange])
+                return <div data-testid="kdp-publishing-wizard-step-1-cover" />
+            },
+        }))
+        vi.resetModules()
+        const {default: WizardGatedAtCover} = await import("./KdpPublishingWizard")
+        render(
+            <WizardGatedAtCover
+                open
+                book={makeBook()}
+                onClose={vi.fn()}
+            />,
+        )
+        // Advance past step 0 (default mock reports advance=true).
+        fireEvent.click(screen.getByTestId("kdp-publishing-wizard-step-0-next"))
+        const nextButton = screen.getByTestId("kdp-publishing-wizard-step-1-next")
+        expect((nextButton as HTMLButtonElement).disabled).toBe(true)
+        vi.doUnmock("./CoverValidation")
     })
 
     it("step-0 Next is gated by the MetadataChecklist callback", async () => {

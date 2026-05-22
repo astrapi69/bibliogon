@@ -33,6 +33,7 @@ import {ChevronLeft, ChevronRight, Check, X, Rocket} from "lucide-react"
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
 import MetadataChecklist from "./MetadataChecklist"
+import CoverValidation from "./CoverValidation"
 
 interface Props {
     open: boolean
@@ -64,10 +65,10 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
 export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const {t} = useI18n()
     const [step, setStep] = useState<StepIndex>(0)
-    // C2: Step 0 gate — Next disabled until the MetadataChecklist
-    // child component reports that the (book-type-filtered) issue
-    // list has no errors. C3 / C4 will add their own gates.
+    // C2/C3: per-step gates. Next is disabled until the step's
+    // child component reports it can advance.
     const [step0CanAdvance, setStep0CanAdvance] = useState(false)
+    const [step1CanAdvance, setStep1CanAdvance] = useState(false)
 
     const renderCurrentStep = () => {
         switch (step) {
@@ -80,17 +81,10 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                 )
             case 1:
                 return (
-                    <div
-                        style={styles.stepContent}
-                        data-testid="kdp-publishing-wizard-step-1-cover"
-                    >
-                        <p style={styles.hint}>
-                            {t(
-                                "ui.kdp_publishing_wizard.step_cover_placeholder",
-                                "Schritt 2 — Cover-Validierung (Inhalt folgt).",
-                            )}
-                        </p>
-                    </div>
+                    <CoverValidation
+                        book={book}
+                        onCanAdvanceChange={setStep1CanAdvance}
+                    />
                 )
             case 2:
                 return (
@@ -192,7 +186,10 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                                     onClick={() =>
                                         setStep((step + 1) as StepIndex)
                                     }
-                                    disabled={step === 0 && !step0CanAdvance}
+                                    disabled={
+                                        (step === 0 && !step0CanAdvance) ||
+                                        (step === 1 && !step1CanAdvance)
+                                    }
                                     data-testid={`kdp-publishing-wizard-step-${step}-next`}
                                 >
                                     {t("ui.common.next", "Weiter")}{" "}
