@@ -104,4 +104,71 @@ test.describe("Comic-book editor smoke", () => {
         await page.getByTestId("comic-book-editor-back").click();
         await expect(page).toHaveURL("/");
     });
+
+    // COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata
+    // button + BookEditor swap path. Closes the Half-Wired-Visible-
+    // in-Production gap surfaced during EXPOSE-BUCHIDEE-METADATA-01
+    // Track 5 — comic-book authors can now reach BookMetadataEditor
+    // and ALL book metadata (Categories, BISAC, ISBN, the new Story
+    // tab with book_idea + expose, etc.).
+    test("metadata button is visible in the header at non-zero height", async ({
+        page,
+    }) => {
+        const book = await createComicBook("Metadata Visible", "E2E Author");
+        await page.goto(`/book/${book.id}`);
+
+        const btn = page.getByTestId("comic-book-editor-show-metadata");
+        await expect(btn).toBeVisible();
+
+        // Bounding-box-dimension assertion per LL "Playwright-
+        // visible != User-visible": a clickable button must render
+        // at user-perceivable height (>20px). Catches CSS-collapse
+        // regressions that toBeVisible() would silently accept.
+        const bbox = await btn.boundingBox();
+        expect(bbox).not.toBeNull();
+        expect(bbox!.height).toBeGreaterThan(20);
+    });
+
+    test("clicking metadata button swaps to BookMetadataEditor; onBack returns to ComicBookEditor", async ({
+        page,
+    }) => {
+        const book = await createComicBook("Metadata Swap", "E2E Author");
+        await page.goto(`/book/${book.id}`);
+
+        // Pre-click: ComicBookEditor mounted; BookMetadataEditor
+        // not yet on screen.
+        await expect(
+            page.getByTestId("comic-book-editor-root"),
+        ).toBeVisible();
+
+        // Click the new metadata button.
+        await page.getByTestId("comic-book-editor-show-metadata").click();
+
+        // BookMetadataEditor mounts in place of ComicBookEditor.
+        // metadata-tab-general is a stable testid from
+        // BookMetadataEditor's Radix Tabs trigger list.
+        await expect(
+            page.getByTestId("metadata-tab-general"),
+        ).toBeVisible();
+        await expect(
+            page.getByTestId("comic-book-editor-root"),
+        ).toHaveCount(0);
+
+        // The Story tab from yesterday's EXPOSE-BUCHIDEE-METADATA-01
+        // ship is now reachable — pin the bridge between the two
+        // sessions' work.
+        await expect(
+            page.getByTestId("metadata-tab-story"),
+        ).toBeVisible();
+
+        // Click the metadata onBack to return to ComicBookEditor
+        // (NOT all the way to the dashboard — same UX as
+        // picture_book).
+        await page.getByTestId("metadata-back").click();
+        await expect(
+            page.getByTestId("comic-book-editor-root"),
+        ).toBeVisible();
+        // Confirm we're still on /book/{id} (not /).
+        await expect(page).not.toHaveURL("/");
+    });
 });

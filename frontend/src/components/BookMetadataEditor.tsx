@@ -196,7 +196,12 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             {/* Header */}
             <div className={styles.header}>
                 <div className="icon-row">
-                    <button className="btn-icon" onClick={onBack} title={t("ui.sidebar.back_to_dashboard", "Zurück")}>
+                    <button
+                        className="btn-icon"
+                        onClick={onBack}
+                        data-testid="metadata-back"
+                        title={t("ui.sidebar.back_to_dashboard", "Zurück")}
+                    >
                         <ChevronLeft size={18}/>
                     </button>
                     <h2 className={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>

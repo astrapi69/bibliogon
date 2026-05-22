@@ -2229,6 +2229,8 @@ ui:
       text_backdrop_opacity: "Backdrop opacity"
   comic_book_editor:
     back: "Back"
+    # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.
+    show_metadata: "Open book metadata"
     plugin_label: "Plugin"
     session_label: "Session"
     plugin_unreachable: "The comics plugin is unreachable:"
