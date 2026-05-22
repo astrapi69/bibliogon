@@ -138,3 +138,90 @@ No P0 or P1 items open.
 None at session close. A1-A5 adjudication clean; γ-path
 adjudication on the architecture-doc finding was explicit;
 all stop-conditions cleared cleanly.
+
+---
+
+## Session arc close — KDP-PUBLISHING-WIZARD-01-PHASE-2 + KDP-WIZARD-XSTATE-MIGRATION-01 (2026-05-22 close)
+
+Phase 2 + the paired XState migration shipped across two
+sessions. Closing the loop on what was a 2-session arc.
+
+### What landed
+
+**Session 1** (C1-C7): foundation. XState machine + wizard
+refactor + schema + endpoints. Wizard navigation moved to
+`useMachine`; new `BookPublishingState` + `ArcReviewer`
+tables + Alembic migration; CRUD endpoints for both; full
+lifecycle integration tests at the Session 1 boundary.
+
+**Session 2** (C8-C14): UI features + persistence + close.
+PricingStep with the 5-region calculator + paperback
+math; ArcStep with reviewer CRUD + mailto: link;
+auto-save on every pricing change; conflict-resolution
+banner; i18n × 8; Playwright smoke; this docs close-out.
+
+### Pre-Coding-Reality-Check from Session 1 mid-session
+
+C2's machine-state-vs-UI-scope finding (Option C
+adjudication): the C1 design pre-committed all 10 states
+into the machine, but C2's user-visible scope was still
+the 3-step Phase 1 shape. Three options proposed
+(auto-skip useEffect / placeholder UI / reshape the
+machine). User picked C (reshape) — the cleanest path.
+C2 pruned `pricing` + `arc` + `closed` + `FINISH` /
+`PRICING_CHANGE` / `ADD_REVIEWER` / `UPDATE_REVIEWER_STATUS`
+/ `REMOVE_REVIEWER` from C1's machine. C8 + C9 + C10
+re-added them alongside their UI in a clean lockstep.
+
+The discipline that protected this: "machine state
+reflects current reality" — states are reachable only
+when their UI exists. Tests pinned the constraint.
+
+### A1-A29 adjudication record
+
+Phase 2 carried 29 A-N decisions across 7 Pre-Inspection
+tracks. All defaults confirmed:
+- Track 1 (XState migration): A6-A11 — confirmed mid-
+  Session 1.
+- Tracks 2-7 (schema / pricing / ARC / persistence /
+  session-split / adjudication summary): A12-A29 —
+  confirmed before code-write.
+- Mid-session adjudication on Option C — explicit STOP
+  + surface + user pick + resume.
+
+### Test baselines
+
+| | Session 1 start | Session 2 end | Delta |
+|---|---|---|---|
+| Backend pytest | 2142 | 2181 | +39 |
+| Frontend Vitest | 1871 | 1940 | +69 |
+| i18n parity | 75/75 | 75/75 | (held) |
+
+### Follow-ups filed
+
+- `KDP-WIZARD-RESUME-AT-STEP-01` (P3) — true resume-at-
+  step requires server-stored validation results. C10's
+  partial-persistence ships a working UX without that
+  complexity.
+- `WIZARD-SHELL-COMPONENT-EXTRACT-01` (filed Session 1) —
+  trigger condition met; ready for next sweep.
+
+### Active disciplines that carried through
+
+- Plain `git status` before every commit.
+- Explicit-paths-only `git add`.
+- Atomic-green-per-commit-delta (baselines held or grew).
+- Pre-Coding-Reality-Check at boundaries (caught the
+  Option C finding).
+- Push autonomously after atomic-green commits.
+- Half-Wired-Prevention-Check at integration milestones
+  (drove the C7 lifecycle test).
+
+### Cross-session SHA range
+
+`520979f..` (C1) through the C14 docs commit. 14 commits
+total + 2 docs-only commits (Pre-Inspection + Session 1
+backlog filing) + 1 housekeeping close (RECURRING-COMPONENT-
+AUDIT-01 at session start, `1b84ad0`).
+
+End of arc.

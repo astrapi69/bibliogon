@@ -1,8 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-22 (KDP-PUBLISHING-WIZARD-01 Phase 1 (MVP) CLOSED via 8-commit ship `1b84ad0..e839ec2`: housekeeping close of RECURRING-COMPONENT-AUDIT-01 + Pre-Inspection audit (670 lines) + C0 changelog filesystem-isolation fix (KDP-CHANGELOG-PATH-ISOLATION) + C1-C5 (wizard shell + MetadataChecklist + CoverValidation + ExportPackage + i18n × 8 + Playwright smoke). Strategic-direction gate opened by user, A1-A5 adjudicated (MVP-first 3-step / calculator-only / direct-import / 5-file ZIP / React-state only). New backend endpoint `POST /api/kdp/package/{book_id}` closes the "0 frontend consumers of /api/kdp/*" half-wired surface documented in the Pre-Inspection Track 3. Phase 2 (pricing + ARC + state persistence) filed as `KDP-PUBLISHING-WIZARD-01-PHASE-2`. XState migration filed as `KDP-WIZARD-XSTATE-MIGRATION-01` (5/5 trigger criteria from docs/architecture/state-machines.md satisfied; pairs with Phase 2). Vitest 1838 → 1871 (+33: 9 wizard nav + 9 MetadataChecklist + 9 CoverValidation + 6 ExportPackage); Backend pytest 2137 → 2142 (+5 endpoint integration); i18n parity 51/51 held throughout. Earlier 2026-05-22: RECURRING-COMPONENT-AUDIT-01 CLOSED as housekeeping (deliverable shipped 2026-05-21 at `docs/audits/recurring-component-audit-2026-05-21.md`).)
+Last updated: 2026-05-22 (KDP-PUBLISHING-WIZARD-01 Phase 2 CLOSED via 8-commit ship `15e7dc9..` through to the C14 docs commit: C8 pricing.ts + PricingStep + machine extension; C9 ArcStep + machine extension; C10 persistence wiring + STATE_LOADED + auto-save; C11 conflict-resolution banner; C12 i18n × 8 catalogs (35 new keys); C13 Playwright smoke for Phase 2 (5-dot indicator + conflict banner round-trip); C14 docs close-out. Wizard now ships the full 5-step Phase 2 flow: metadata → cover → pricing → arc → export, with XState v5 throughout + persistence + conflict detection. `KDP-WIZARD-XSTATE-MIGRATION-01` closed in the same arc (migration completed in Session 1 C1). Two follow-ups filed: `KDP-WIZARD-RESUME-AT-STEP-01` (P3, true resume-at-step requires server-stored validation results) + `WIZARD-SHELL-COMPONENT-EXTRACT-01` trigger marked condition-met (ready for next prioritization sweep). Vitest 1871 → 1940 (+69); Backend pytest 2142 → 2181 (+39); i18n parity 75/75 held throughout.)
 Current version: v0.35.1
-Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 69 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -47,91 +47,7 @@ store.
 
 ## P2 - High-Value User Features
 
-- **KDP-PUBLISHING-WIZARD-01-PHASE-2** (P2, STRATEGIC, filed
-  2026-05-22 from Phase 1 close): Phase 2 of the KDP publishing
-  pipeline. Phase 1 MVP (3-step wizard — checklist + cover
-  validation + export package) shipped 2026-05-22 (commits
-  ``7b166dd..e839ec2``, archived in
-  ``docs/roadmap-archive/2026-05.md``). Phase 2 adds the
-  commercial-half scope deferred per A1 adjudication:
-
-  Scope:
-  - **Pricing step**: KDP royalty calculator (35% vs 70%) +
-    region pricing (US / EU / UK / JP / IN). Per A2: calculator-
-    only, not strategy-tool. New ``BookPublishingState`` table
-    (1:1 with Book) for persistence.
-  - **ARC step**: Advance Reader Copy reviewer tracking. New
-    ``ArcReviewer`` table (N:1 to Book). CRUD over invited /
-    received-copy / reviewed / declined status.
-  - **State persistence (A5)**: server-side
-    ``BookPublishingState`` row stores per-step completions +
-    pricing decisions + ARC list. Wizard reloads mid-flow on
-    page refresh.
-  - **XState migration**: per ``KDP-WIZARD-XSTATE-MIGRATION-01``
-    below, this is the natural seam to migrate the wizard to
-    the XState v5 pattern documented in
-    ``docs/architecture/state-machines.md``. The added branching
-    (pricing / ARC / persistence) crosses the 5/5 criteria
-    threshold.
-
-  Schema additions (Pre-Inspection Track 5):
-
-  - ``BookPublishingState`` columns: ``royalty_plan``,
-    ``kdp_select_enrolled``, ``kdp_select_enrollment_date``,
-    ``expanded_distribution``, ``prices`` (JSON), ``launch_
-    checklist_state`` (JSON), ``publication_target_date``,
-    ``last_kdp_upload_at``.
-  - ``ArcReviewer`` columns: ``book_id`` (FK), ``reviewer_name``,
-    ``reviewer_email``, ``review_status``, ``copy_version``,
-    ``review_permalink``, ``review_text_excerpt``, ``invited_at``,
-    ``reviewed_at``.
-
-  Effort: M (8-12 commits, 1-2 sessions). Pairs with
-  ``KDP-WIZARD-XSTATE-MIGRATION-01`` (run them in the same
-  session if possible — same surface).
-
-- **KDP-WIZARD-XSTATE-MIGRATION-01** (P3, ARCHITECTURE-DEBT,
-  filed 2026-05-22 from Phase 1 close per
-  ``docs/architecture/state-machines.md`` consultation): migrate
-  ``KdpPublishingWizard`` from hand-rolled ``useState`` step-
-  index to the XState v5 pattern. Phase 1 shipped with
-  ``useState`` per the session instruction "follow
-  ``ConvertToBookWizard``"; the architecture doc's 5/5 trigger
-  criteria are all satisfied:
-
-  1. 3+ states with multiple incoming transitions — ✓ (3 steps,
-     back+next transitions)
-  2. Async side effects gated by state — ✓ (3 API calls, one per
-     step: ``/api/kdp/check-metadata``,
-     ``/api/books/{id}/assets/file/...``,
-     ``/api/kdp/package/{id}``)
-  3. Guards or invariants across transitions — ✓ (step-0 gate
-     shipped in C2; step-1 gate in C3; step-2 finish in C4)
-  4. Reset/retry semantics — ✓ (close resets step; ExportPackage
-     retry-on-error)
-  5. Future flows likely to branch — ✓ (Phase 2 adds pricing +
-     ARC steps)
-
-  Trigger: at the start of Phase 2 implementation. The added
-  branching pressure of pricing + ARC + persistence is what
-  finally makes the hand-rolled approach genuinely break down;
-  migrating before is speculative, migrating at the seam ships
-  a machine that matches actually-shipped behavior.
-
-  Migration shape: new
-  ``frontend/src/components/kdp-wizard/machines/
-  kdpWizardMachine.ts`` (pure data file, zero React imports) +
-  ``KdpPublishingWizard.tsx`` switches from ``useState(step)``
-  to ``useMachine(kdpWizardMachine)``. Test surface adapts: the
-  4 wizard-navigation tests in ``KdpPublishingWizard.test.tsx``
-  become machine-actor-level tests under
-  ``machines/kdpWizardMachine.test.ts``; the per-step component
-  tests (MetadataChecklist + CoverValidation + ExportPackage)
-  stay component-level + machine-agnostic.
-
-  Effort: M (4-6 commits, 1 session). Pairs with
-  ``KDP-PUBLISHING-WIZARD-01-PHASE-2`` above — both ship in the
-  same session.
+(none)
 
 ---
 
@@ -292,12 +208,14 @@ store.
 
   ### Trigger
 
-  KDP Phase 2 abgeschlossen — once C8-C14 land (pricing +
-  ARC + persistence + i18n + smoke), all three wizard
-  surfaces are in their final shape and the extraction
-  consolidates a stable contract. Earlier migration is
-  speculative; the Phase 2 work might still alter
-  KdpPublishingWizard's chrome (e.g. resume-banner).
+  **Condition met as of 2026-05-22**: KDP Phase 2 closed via
+  C8-C14 (commits `15e7dc9..` through to C14 docs commit;
+  pricing + ARC + persistence + conflict banner + i18n +
+  smoke all shipped). All three wizard surfaces
+  (ConvertToBookWizard, ImportWizardModal,
+  KdpPublishingWizard) are in their stable final shape. The
+  extraction is ready to ship; left in P3 (un-prioritized)
+  pending the next backlog-prioritization sweep.
 
   ### Prior art evaluated
 
@@ -320,6 +238,51 @@ store.
   discipline — extraction work waits for the trigger; the
   filing exists so the next contributor sees the candidate +
   its scoping inputs.
+
+- **KDP-WIZARD-RESUME-AT-STEP-01** (P3, FEATURE-REFINEMENT,
+  filed 2026-05-22 from KDP-PUBLISHING-WIZARD-01-PHASE-2 C10
+  close): true "resume at last visited step" for the KDP
+  Publishing Wizard. C10 ships partial-persistence: the
+  wizard's pricing + ARC choices auto-save and rehydrate on
+  reopen, but the wizard always RESTARTS at the metadata step
+  (re-validating against the current book). True resume-at-
+  step would require server-stored validation results so the
+  machine can skip past metadata + cover when the book hasn't
+  changed.
+
+  ### Trigger
+
+  - User explicitly requests "wizard remembers where I was" as
+    a real workflow need (e.g. "I keep re-validating metadata
+    every time I open the wizard; that's annoying").
+  - OR the metadata + cover validation API calls measurably
+    slow down opening the wizard (currently sub-second).
+
+  ### Scope
+
+  - Server-side: store validation results (or a verifiable
+    hash of the book's metadata-relevant fields at last
+    validation) on the publishing-state row. Compare on
+    wizard mount; if unchanged, skip metadata + cover steps.
+  - Machine: add a synthetic `RESUME_AT` event that jumps to
+    a deferred target based on the persisted
+    `launch_checklist_state.wizard_step`. C10 already saves
+    this field; today it's unused on read.
+  - Conflict-resolution interaction (C11 banner): banner
+    fires when `book.updated_at > state.updated_at`; on
+    banner-visible, resume-at-step force-restarts at
+    metadata regardless of the saved last_step. C11 already
+    handles the timestamp comparison; resume-at-step
+    extends it.
+
+  ### Why deferred
+
+  v1 simplicity — the partial-persistence ships a working
+  user experience without the verification-result-storage
+  complexity. Real demand would surface "this is annoying"
+  feedback; without that signal, the simpler restart-at-
+  metadata model is more honest about what the wizard
+  actually re-checks.
 
 - **PAGES-DELETE-EDITOR-UI-01** (P3, Half-Wired-Lifecycle-Cascade-
   Followup, filed 2026-05-23 from PLUGIN-COMICS-MULTI-PAGE-
