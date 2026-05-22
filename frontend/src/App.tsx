@@ -34,6 +34,7 @@ import {
 } from "./components/SupportSection";
 import ShortcutCheatsheet from "./components/ShortcutCheatsheet";
 import {useKeyboardShortcuts, Shortcut} from "./hooks/useKeyboardShortcuts";
+import {useWordWrap} from "./hooks/useWordWrap";
 import {api, ApiError} from "./api/client";
 import {ToastContainer} from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
@@ -78,11 +79,18 @@ export default function App() {
             .catch(() => {}); // Config load failure is not critical for the wizard
     }, []);
 
+    // Word-wrap toggle (Alt+Z) — applies a body-level CSS class
+    // affecting every .ProseMirror + markdown textarea. Silent on
+    // toggle; the editor's visual state IS the feedback (matches
+    // VS Code / Sublime / IntelliJ behavior).
+    const {toggle: toggleWordWrap} = useWordWrap();
+
     // Shortcut cheatsheet
     const [showShortcuts, setShowShortcuts] = useState(false);
     const shortcuts = useMemo<Shortcut[]>(() => [
         {keys: "ctrl+/", handler: () => setShowShortcuts((s) => !s), label: "Show shortcuts"},
-    ], []);
+        {keys: "alt+z", handler: toggleWordWrap, label: "Toggle word wrap"},
+    ], [toggleWordWrap]);
     useKeyboardShortcuts(shortcuts);
 
     // Error report dialog state — opened via custom event from notify.ts

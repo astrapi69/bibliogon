@@ -628,6 +628,21 @@
     --notebook-margin: rgba(239, 68, 68, 0.4);
 }
 
+/* --- Word-wrap toggle (Alt+Z) ---
+   When `body.no-word-wrap` is set by useWordWrap(), suppress wrapping
+   in TipTap's .ProseMirror container AND the markdown textarea in
+   Editor.tsx. Long lines scroll horizontally instead. Matches the
+   VS Code / Sublime / IntelliJ industry-standard Alt+Z behavior.
+   Selectors target the TipTap-internal `.ProseMirror` class (stable
+   across versions) and the CSS-module-hashed `markdownEditor` class
+   via a class-substring match (the hash suffix doesn't disturb the
+   substring). */
+body.no-word-wrap .ProseMirror,
+body.no-word-wrap [class*="markdownEditor"] {
+    white-space: pre;
+    overflow-x: auto;
+}
+
 /* --- Editor-specific palette rules ---
    Applied to TipTap's .ProseMirror container so they only affect
    the editor surface, not sidebars or metadata forms. */

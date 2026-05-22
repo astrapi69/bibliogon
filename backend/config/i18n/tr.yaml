@@ -1413,6 +1413,7 @@ ui:
     section_app: "Uygulama"
     section_editor: "Duzenleyici"
     show_shortcuts: "Kisayollari goster"
+    toggle_word_wrap: "Satir kaydirmayi degistir"
     search_replace: "Bul ve degistir"
     bold: "Kalin"
     italic: "Italik"

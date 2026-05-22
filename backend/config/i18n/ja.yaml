@@ -1377,6 +1377,7 @@ ui:
     section_app: "アプリ"
     section_editor: "エディター"
     show_shortcuts: "ショートカットを表示"
+    toggle_word_wrap: "ワードラップを切り替え"
     search_replace: "検索と置換"
     bold: "太字"
     italic: "斜体"

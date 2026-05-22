@@ -1413,6 +1413,7 @@ ui:
     section_app: "App"
     section_editor: "Editor"
     show_shortcuts: "Mostrar atajos"
+    toggle_word_wrap: "Alternar ajuste de línea"
     search_replace: "Buscar y reemplazar"
     bold: "Negrita"
     italic: "Cursiva"

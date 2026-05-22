@@ -1413,6 +1413,7 @@ ui:
     section_app: "Εφαρμογή"
     section_editor: "Επεξεργαστής"
     show_shortcuts: "Εμφάνιση συντομεύσεων"
+    toggle_word_wrap: "Εναλλαγή αναδίπλωσης γραμμών"
     search_replace: "Αναζήτηση και αντικατάσταση"
     bold: "Έντονα"
     italic: "Πλάγια"

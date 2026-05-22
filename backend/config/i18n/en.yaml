@@ -1408,6 +1408,7 @@ ui:
     section_app: "App"
     section_editor: "Editor"
     show_shortcuts: "Show shortcuts"
+    toggle_word_wrap: "Toggle word wrap"
     search_replace: "Search & Replace"
     bold: "Bold"
     italic: "Italic"

@@ -1413,6 +1413,7 @@ ui:
     section_app: "App"
     section_editor: "Editeur"
     show_shortcuts: "Afficher les raccourcis"
+    toggle_word_wrap: "Activer/désactiver le retour à la ligne"
     search_replace: "Rechercher et remplacer"
     bold: "Gras"
     italic: "Italique"
