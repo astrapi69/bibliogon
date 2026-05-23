@@ -312,6 +312,18 @@ manager = PluginManager(
     pre_activate=_check_license,
     api_version="1",
     app_id="bibliogon",
+    # PLUGIN-VERSION-GATING-ENABLE-01: pass the host's __version__
+    # so pluginforge enforces each plugin's `min_app_version` class
+    # attribute. Without app_version, pluginforge silently
+    # short-circuits the compatibility check
+    # (pluginforge/manager.py:522). ComicsPlugin declares
+    # min_app_version="0.35.0" and KinderbuchPlugin declares
+    # min_app_version="0.9.0"; both pass at the current host
+    # version. A future plugin declaring min_app_version >
+    # __version__ will be filtered out at activation with
+    # filter_reason="incompatible_app_version" (severity=error
+    # per pluginforge Decision #4).
+    app_version=__version__,
 )
 manager.register_hookspecs(BibliogonHookSpec)
 
