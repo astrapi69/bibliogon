@@ -284,4 +284,66 @@ test.describe("Article-to-book conversion", () => {
         expect(sorted[0].chapter_type).toBe("title_page")
         expect(sorted[1].chapter_type).toBe("chapter")
     })
+
+    test("layout stability: action button stays in WizardNav footer slot across every step", async ({page}) => {
+        // CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01 Bug #2
+        // regression-pin: the action button (Next on steps 0-4,
+        // Finish on step 5) sits in the same physical slot on every
+        // step. Per the "Playwright-visible ≠ User-visible" rule,
+        // we assert the COMPUTED bounding-box position rather than
+        // just the testid existence.
+        const a = await seedArticle("Stability A")
+        const b = await seedArticle("Stability B")
+        await page.goto("/articles")
+        await page
+            .getByTestId(`article-select-checkbox-${a.id}`)
+            .click()
+        await page
+            .getByTestId(`article-select-checkbox-${b.id}`)
+            .click()
+        await page.getByTestId("article-bulk-convert-to-book").click()
+        await expect(page.getByTestId("convert-to-book-wizard-dialog"))
+            .toBeVisible()
+
+        // Capture the Next button bounding-box Y on each non-final
+        // step. The footer slot must be at the same Y across all
+        // navigations.
+        const stepYs: number[] = []
+        for (let step = 0; step < 5; step++) {
+            if (step === 1) {
+                await page
+                    .getByTestId("convert-to-book-wizard-metadata-title")
+                    .fill("Stability Test Book")
+                await page
+                    .getByTestId("convert-to-book-wizard-metadata-author")
+                    .fill("E2E Autor")
+            }
+            const nextLocator = page.getByTestId(
+                `convert-to-book-wizard-step-${step}-next`,
+            )
+            await expect(nextLocator).toBeVisible()
+            const box = await nextLocator.boundingBox()
+            expect(box).not.toBeNull()
+            stepYs.push(box!.y)
+            await nextLocator.click()
+        }
+
+        // Step 5: action button must be the WizardNav-footer Finish
+        // button, NOT an inline body button. Same Y as the prior
+        // Next buttons within a small tolerance (font-metric jitter
+        // can cause ~1-2px shift; 6px is generous).
+        const finishLocator = page.getByTestId(
+            "convert-to-book-wizard-step-5-finish",
+        )
+        await expect(finishLocator).toBeVisible()
+        const finishBox = await finishLocator.boundingBox()
+        expect(finishBox).not.toBeNull()
+        const avgPriorY = stepYs.reduce((s, y) => s + y, 0) / stepYs.length
+        expect(Math.abs(finishBox!.y - avgPriorY)).toBeLessThan(6)
+
+        // The pre-fix inline body button must NOT be present.
+        await expect(
+            page.getByTestId("convert-to-book-wizard-review-confirm"),
+        ).toHaveCount(0)
+    })
 })
