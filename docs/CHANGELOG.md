@@ -2,7 +2,17 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
-## [Unreleased]
+## [0.36.0] - 2026-05-23
+
+Largest release since v0.30.0 by commit count (230 commits since
+v0.35.1; +59765 / -2909 lines across 331 files). Three strategic
+streams matured together: plugin-comics from scaffold to working
+multi-panel + multi-bubble editor; the KDP Publishing Wizard
+(Phase 1 + Phase 2 shipped as a single 5-step XState v5 wizard with
+server-side persistence + conflict-resolution banner); and the
+PluginForge v0.7.0 → v0.10.0 adoption arc (3-source metadata
+pattern, DiscoveryResult severity filtering, version-gating,
+`/api/admin/rediscover`). Plus 17 other coherent surfaces.
 
 ### Added
 
@@ -64,6 +74,160 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
     C2 missing-Read gap; reinforces Half-Wired-Lifecycle
     Prevention rule
 
+- **KDP Publishing Wizard (Phase 1 + Phase 2)**. 5-step guided
+  publishing flow for KDP. Largest greenfield frontend feature
+  this cycle:
+  - **Phase 1 (3 steps)**: MetadataChecklist + CoverValidation
+    + ExportPackage. Calls existing KDP validation endpoints.
+  - **Phase 2 (2 additional steps)**: PricingStep (royalty
+    calculator with KDP's 35% / 70% split logic) + ArcStep
+    (Advanced Reader Copy reviewer tracking).
+  - **XState v5 wizard state machine** (``kdpWizardMachine.ts``):
+    replaces the hand-rolled ``useState`` + step-index pattern.
+    Branching transitions, guards, async side effects gated by
+    state, reset/retry semantics. 20 actor-level tests.
+  - **Server-side persistence**: ``BookPublishingState`` schema
+    (single row per book, JSON columns for per-step state) + 5
+    CRUD endpoints. Wizard auto-saves on each step transition;
+    rehydrates on reopen.
+  - **ArcReviewer schema** + CRUD: reviewer roster with status
+    (invited / accepted / submitted), one-to-many on book.
+  - **Conflict-resolution banner**: when ``book.updated_at >
+    publishing_state.updated_at`` (the user edited the book
+    between wizard sessions), the wizard surfaces a banner
+    offering re-validate-from-scratch vs continue-with-stale-
+    validation.
+
+- **Book-Types Single Source of Truth**
+  (``BOOK-TYPES-SSOT-YAML-01``). Single canonical declaration
+  of the 3 book types and their capabilities:
+  - ``backend/config/book-types.yaml`` — 3 entries (prose,
+    picture_book, comic_book) with per-type capabilities.
+  - ``BookTypeRegistry`` backend with ``@lru_cache`` + parity
+    gate test ``test_literal_matches_registry``.
+  - ``GET /api/book-types`` endpoint + frontend
+    ``useBookTypes()`` hook + ``BookTypesProvider`` mounted at
+    App root.
+  - 10 migrated surfaces (capability lookups replace hardcoded
+    book-type lists): pages.py PAGEABLE_BOOK_TYPES, Dashboard,
+    GetStarted, CreateBookModal, BookEditor, BookMetadataEditor,
+    kdp-wizard, plugin-getstarted, plugin-kdp/package.py.
+
+- **WizardShell composition primitive**
+  (``WIZARD-SHELL-COMPONENT-EXTRACT-01``). RCU 3-site extraction
+  + same-session migration of both wizard surfaces
+  (KdpPublishingWizard + ConvertToBookWizard). Step-index logic
+  centralized; ImportWizardModal kept as intentional asymmetry
+  (modal vs page-route shape).
+
+- **PluginForge v0.7.0 → v0.10.0 adoption** (3 successive bumps
+  across the cycle):
+  - 3-source plugin-metadata pattern codified in
+    ``architecture.md``.
+  - ``target_application`` + ``app_id`` declaration via
+    PluginForge ≥ 0.7.0 conventions.
+  - ``min_app_version`` moved from YAML to class attribute;
+    version-gating enabled via ``app_version=__version__``
+    constructor kwarg.
+  - DiscoveryResult with severity filtering replaces private-
+    state poking in callers.
+  - ``/api/admin/rediscover`` endpoint + ``manager.refresh_config()``.
+  - Plugin-status i18n mapping (``FilterReason`` →
+    ``ui.settings.plugin_status.*`` across 8 catalogs).
+  - ``/api/settings/plugins/discovered`` extended with per-plugin
+    status + failure-reason.
+
+- **Picture-book PDF improvements**:
+  - 5-format dropdown (``PDF-KDP-FORMATS-01``) — all 5 KDP
+    picture-book trim sizes (was 8.5×8.5 only). Dropdown next to
+    Export-PDF button; localStorage-persistent.
+  - Bleed marks + crop marks toggle (``PDF-BLEED-MARKS-01``) for
+    print-shop submission. ``PictureBookPdfExportControls``
+    extracted as 3-surface shared composite (closes half-wired
+    surface from PDF-KDP-FORMATS-01).
+
+- **Speech-bubble extended properties** (4c-B-2 +
+  ``PADDING-FONT-STYLE-01``). ``bubbles[0]`` wrapper-shape
+  read-path; Tier 1 visual style (border / background / opacity);
+  Tier 2 typography (font / size / weight / italic / padding).
+  Per-property i18n × 8 catalogs.
+
+- **Multi-book-type Get Started flow**
+  (``GETSTARTED-MULTIBOOK-TYPES-UPDATE-01``). 3-book-type
+  picker; per-type sample-book templates; frontend branches
+  into pages-editor for picture/comic types.
+
+- **Author input — Pattern A (Datalist) across 4 surfaces**
+  (``AUTHOR-DATALIST-EXTEND-EDITORS-01`` +
+  ``AUTHOR-SELECT-INPUT-EXTRACT-01``). ``AuthorSelectInput``
+  extraction; migrated CreateBookModal + ConvertToBookWizard +
+  BookMetadataEditor + ArticleEditor (last suppresses the
+  add-to-DB checkbox — auto-save would create partial-name
+  rows). Orphan ``AuthorProfileSelect`` deleted in the I18N
+  cleanup.
+
+- **Browser-native fullscreen across 3 editors**
+  (``EDITOR-FULLSCREEN-NATIVE-01``). ``useFullscreenToggle``
+  hook + Toolbar + PageEditor + ComicBookEditor fullscreen
+  buttons. ESC exits.
+
+- **Word-wrap toggle** (``EDITOR-KEYBOARD-SHORTCUT-ALT-Z-01``).
+  Alt+Z across every editor surface (chapter editor, picture-
+  book RichText, comic-book editor, markdown textarea). Single
+  CSS rule + ``useWordWrap`` hook with ``localStorage``
+  persistence.
+
+- **About dialog — 9th Settings tab**. New ``Settings > About``
+  tab with Version + Credits + System-Info + Plugin-List +
+  Donation-Channels sections. Backend ``/api/system/info``
+  endpoint + extended ``/api/settings/plugins/discovered``.
+
+- **Backups consolidation** (``BOOKDASHBOARD-CLEANUP-01``).
+  Version-History + Compare-Backups moved from Dashboard to
+  ``Settings > Backups`` (new 8th tab). i18n keys migrated
+  ``ui.dashboard.*`` → ``ui.backups.*`` across 8 catalogs.
+
+- **Page-delete UI** (``PAGES-DELETE-EDITOR-UI-01``).
+  ``PageThumbnails`` Trash2 button + ``onDelete`` prop. Wired in
+  PageEditor + ComicBookEditor (RCU 2-site).
+
+- **plugin-comics multi-page navigation**
+  (``PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01``). PageThumbnails
+  sidebar adopted by ComicBookEditor (RCU 2-site).
+
+- **Medium-import improvements**:
+  - Excerpt auto-fill (``MEDIUM-IMPORT-EXCERPT-AUTOFILL-01``):
+    ``Article.excerpt`` populated from subtitle or 300-char
+    sentence-boundary slice from body.
+  - ``<br>`` preservation in code blocks (Java / YAML / bash
+    no longer collapse to one line).
+  - ``null`` language tag fix on imported code blocks.
+
+- **BulkActionBar 3-site RCU extraction**
+  (``RECURRING-COMPONENT-AUDIT-01`` candidate #2). Article +
+  Book + Comment dashboards now share ``BulkActionBar`` wrapper.
+
+- **Story-tab metadata** (``EXPOSE-BUCHIDEE-METADATA-01``).
+  New ``Book.book_idea`` field + Book Metadata Story tab.
+  Author-design metadata fields exposed.
+
+- **KDP categories wired to CategoryInput**
+  (``KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01``). Autocomplete
+  now powers from the 26-entry ``KDP_CATEGORIES`` SSoT (was
+  empty suggestions list, half-wired surface).
+
+- **Comic-book metadata access path**
+  (``COMIC-BOOK-EDITOR-METADATA-BUTTON-01``). Same affordance as
+  the prose + picture-book editors.
+
+- **User-overlay plugin-enable migration**
+  (``USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01``). Lifespan helper
+  detects new plugins missing from existing user-overlay
+  ``plugins.enabled`` lists and appends them respecting the
+  user's explicit opt-out signal. Closes the silent-fall-through
+  bug where plugin-comics would fail to activate for upgrade
+  users.
+
 ### Changed
 
 - ``PictureBookPdfExportControls`` → ``PdfExportControls``.
@@ -73,24 +237,106 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   misnomer; testidPrefix prop mechanism preserves all existing
   test assertions verbatim across the rename.
 
-### Tests
+- ``export_execute`` hookspec wired for comic-book PDF dispatch
+  (``HOOKSPEC-EXPORT-EXECUTE-WIRE-01``). plugin-comics registers
+  ``@hookimpl export_execute`` gated on ``book_type ==
+  "comic_book" + fmt == "pdf"``. Eliminates the prior cross-
+  plugin reverse-import in plugin-export's routes.py. plugin-
+  audiobook retained as documented exception (async + SSE
+  streaming doesn't fit sync ``Path | None`` hookspec).
 
-- Backend: 4 new ``TestComicBubbleList`` cases (Half-Wired-
-  Lifecycle closure for the C2 missing-Read gap); existing C2 +
-  C3 tests adjusted to the v1.1.0 / session=2 / status=active
-  surface (``test_plugin_routes.py`` + ``test_routes.py``).
-- Frontend Vitest: 1748 tests passing (139 files, +45 net vs
-  pre-Session-2 baseline). New comics/ component test suite
-  covers BubbleTail (22 cases), Tier1Section (7), Tier2Section
-  (6), ComicBubble (7), ComicPanel (5), ComicPanelGrid (6),
-  LayoutConfigComicBubble (7), ComicBookEditor (10) +
-  PdfExportControls regression-pin under the rename.
-- Backend baseline: 20 fail + 13 err under
-  ``PLUGINFORGE-RECURSION-LIMIT-REGRESSION-01`` cascade-
-  recursion (vs 13+13 pre-Session-2 baseline). All +7 new
-  failures pass in isolation; verified at C3 / C5 / C6
-  commit boundaries. Ship-on-broken-baseline authorized by
-  the user under atomic-green-per-commit-delta discipline.
+- ``chapter_pre_save`` hookspec removed
+  (``HOOKSPEC-DISPATCH-WIRING-01``). Dead-intent hook with no
+  implementations.
+
+- Pages-CRUD router relocated from plugin-kinderbuch to backend
+  core. comic_book + picture_book share the same CRUD path.
+
+- Single-router-per-plugin convention completed
+  (``PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01``). plugin-export's
+  3 top-level routers consolidated to one parent_router with
+  ``include_router`` nesting (closes the pluginforge 0.8.0
+  DeprecationWarning).
+
+- Makefile completion (``PLUGIN-COMICS-MAKEFILE-INTEGRATION-01``).
+  All 12 plugins now in ``test-plugins`` + ``test-coverage-
+  plugins`` aggregates (was 10 / 9).
+
+### Fixed
+
+- **i18n cleanup** (``I18N-ARTICLES-NAMESPACE-CLEANUP-01``).
+  7 article-editor keys had been silently rendering hardcoded
+  German for non-DE users because they lived under
+  ``ui.template_picker.*`` while consumers called them via
+  ``ui.articles.*``. Fixed across all 8 catalogs. Orphan
+  ``AuthorProfileSelect`` component + test deleted (12 LOC of
+  dead component + 270 LOC of dead test).
+
+- **Convert-to-book wizard layout stability**
+  (``CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01``). Action-button
+  moved to WizardNav footer + ``stepContent`` min/max-height.
+  Dialog dimensions stay visually stable across all 6 steps (was:
+  button position jumped between steps).
+
+- **KDP changelog filesystem-isolation**
+  (``KDP-CHANGELOG-PATH-ISOLATION``). KDP-plugin's per-book
+  changelog file write path now respects ``get_data_dir()`` /
+  ``BIBLIOGON_DATA_DIR``; previously could land in CWD-relative
+  paths under some dev-environment configurations.
+
+### Lessons-learned filed this cycle
+
+- **Single-Router-Per-Plugin convention** (architectural pattern
+  surfaced through halted Comics-Session-2 + restored via
+  refactor).
+- **Pre-Coding-Reality-Check: re-audit at the keystroke** (three
+  concrete instances in V060 adoption arc).
+- **Audit-Methodology design-intent-axis** (5th-Axis or override-
+  filter — RCU audit hit two design-intent-deferral cases in
+  48 hours).
+- **CRUD shipping: List endpoint is non-optional** (Half-Wired-
+  Lifecycle prevention).
+- **Foundation-Override extension** (Half-Wired-Visible-in-
+  Production criterion for P1 promotion).
+- **Stale-bundle is the most common false-positive on post-ship
+  user reports** (diagnostic discipline).
+- **Plain ``git status`` before every commit, especially in
+  Multi-Tool-Coordination sessions** (explicit-paths-only staging
+  convention).
+- **Periodic backlog re-prioritization discipline** (4-Axes audit
+  pattern).
+- **Architecture-doc consultation is part of Pre-Inspection**
+  (single-instance observation from KDP Phase 1).
+- **Operational gaps masquerade as wired infrastructure**
+  (mutmut workflow first run).
+
+### Verification
+
+- Backend pytest: **2214 passed + 1 skipped**
+  (``--ignore=mutants``).
+- Frontend Vitest: **1986 passed** (155 test files).
+- i18n parity: **75 / 75 passed** across all 8 catalogs.
+- ``tsc --noEmit``: clean.
+- ``ruff check`` + ``mypy app/``: clean.
+- ``pre-commit run --all-files``: clean.
+- ``make verify-docs-discipline``: clean.
+- ``make verify-plugin-locks``: clean.
+- Launcher PyInstaller build smoke: green.
+- ``npm audit --audit-level=high``: zero high / critical
+  findings.
+
+### Deferred to a later release
+
+- ``PICTURE-BOOK-EPUB3-FIXED-LAYOUT-EXPORT-01``: EPUB3 Fixed-
+  Layout export + epubcheck for picture-books.
+- ``PICTURE-BOOK-KDP-PAGE-COUNT-VALIDATION-01``: validate page
+  count against KDP's 24–300 limit at metadata-save time.
+- ``PICTURE-BOOK-AI-DISCLOSURE-BADGE-01``: KDP-required
+  AI-disclosure metadata for picture-books with AI-generated
+  pages.
+- ``KDP-WIZARD-RESUME-AT-STEP-01``: true "resume at last visited
+  step" with server-stored validation results (current behavior
+  restarts at metadata each session).
 
 ## [0.35.1] - 2026-05-18
 

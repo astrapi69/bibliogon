@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-audiobook"
-version = "0.35.1"
+version = "0.36.0"
 description = "Audiobook generation plugin for Bibliogon: TTS-based chapter-by-chapter audio."
 authors = ["Asterios Raptis"]
 license = "MIT"
