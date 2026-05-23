@@ -50,7 +50,13 @@ def _convert_node(node: dict[str, Any]) -> str | None:
         return "\n".join(f"> {line}" for line in inner.split("\n"))
 
     if node_type == "codeBlock":
-        lang = node.get("attrs", {}).get("language", "")
+        # ``attrs.language`` may be missing, an empty string, or the
+        # JSON literal ``null`` (legacy Medium-imported docs persisted
+        # before the walker was fixed). ``dict.get(key, default)``
+        # returns ``None`` when the key is present with a ``None``
+        # value, NOT the supplied default - so a defensive coalesce
+        # is required to avoid emitting ``\`\`\`None`` as the fence.
+        lang = node.get("attrs", {}).get("language") or ""
         code = _extract_text(node.get("content", []))
         return f"```{lang}\n{code}\n```"
 

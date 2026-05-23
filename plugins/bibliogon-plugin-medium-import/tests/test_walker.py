@@ -832,3 +832,159 @@ def test_tier2_question_must_be_in_window() -> None:
     body_len = len(para1 + " " + para_middle + " " + para_last)
     assert body_len >= 500
     assert _classify_as_comment(doc) is False
+
+
+# ---------------------------------------------------------------------------
+# Code-block regression pins (Medium <pre> with <br>-separated lines)
+# ---------------------------------------------------------------------------
+
+
+def _wrap_body(inner_html: str) -> str:
+    return (
+        "<html><body>"
+        '<h1 class="p-name">T</h1>'
+        '<section data-field="body">'
+        '<section class="section section--body">'
+        '<div class="section-content"><div class="section-inner">'
+        f"{inner_html}"
+        "</div></div></section>"
+        "</section></body></html>"
+    )
+
+
+def test_code_block_preserves_br_as_newlines() -> None:
+    """Medium emits multi-line code as <br>-separated text inside <pre>.
+
+    Regression pin: walker.get_text() used to silently strip <br>,
+    collapsing every YAML / bash / Java sample into a single line.
+    """
+    html = _wrap_body(
+        '<pre data-code-block-lang="yaml" class="graf graf--pre">'
+        "version: '3.8'<br>services:<br>  db:<br>    image: mysql"
+        "</pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert len(blocks) == 1
+    text = blocks[0]["content"][0]["text"]
+    assert text.split("\n") == [
+        "version: '3.8'",
+        "services:",
+        "  db:",
+        "    image: mysql",
+    ]
+
+
+def test_code_block_preserves_text_inside_nested_inline_tags() -> None:
+    """Medium wraps in-pre emphasis with <em class="markup--pre-em">.
+
+    The walker must still capture text from these nested inline tags
+    while treating <br> as a line break.
+    """
+    html = _wrap_body(
+        '<pre class="graf graf--pre">'
+        "@Entity<br>@Table<em><br></em>@Data<br>"
+        "public class <em>Draws</em> extends UUIDEntity"
+        "</pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    text = blocks[0]["content"][0]["text"]
+    # The <em><br></em> contributes exactly one newline (same as a
+    # bare <br>); text inside the trailing <em>Draws</em> is captured
+    # in line with the surrounding "public class ... extends ...".
+    assert text.split("\n") == [
+        "@Entity",
+        "@Table",
+        "@Data",
+        "public class Draws extends UUIDEntity",
+    ]
+
+
+def test_code_block_omits_language_attr_when_absent() -> None:
+    """No ``data-code-block-lang`` attribute on the <pre> element.
+
+    Regression pin: walker used to emit ``attrs.language = None``,
+    which serializes through tiptap-to-markdown as the literal
+    string ``\\n\\`\\`\\`None`` after the opening fence.
+    """
+    html = _wrap_body('<pre class="graf graf--pre">echo hi</pre>')
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert blocks
+    assert "language" not in blocks[0]["attrs"]
+
+
+def test_code_block_keeps_language_attr_when_present() -> None:
+    """Sanity: a non-empty ``data-code-block-lang`` MUST survive."""
+    html = _wrap_body(
+        '<pre data-code-block-lang="bash" class="graf graf--pre">'
+        '<span class="pre--content">echo hi</span>'
+        "</pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert blocks[0]["attrs"]["language"] == "bash"
+
+
+def test_code_block_aggregates_syntax_highlight_spans() -> None:
+    """Medium's Mode-1 <pre> wraps tokens in nested hljs-* spans.
+
+    The walker must collect text from ALL nested spans and treat
+    <br> as the only line break — not interpret span boundaries
+    as breaks. Whole pre stays ONE codeBlock node.
+    """
+    html = _wrap_body(
+        '<pre data-code-block-lang="bash" class="graf graf--pre graf--preV2">'
+        '<span class="pre--content">'
+        '<span class="hljs-comment"># step one</span><br />'
+        'git <span class="hljs-built_in">clone</span> '
+        'https://example.com/repo.git'
+        "</span></pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert len(blocks) == 1
+    assert blocks[0]["content"][0]["text"].split("\n") == [
+        "# step one",
+        "git clone https://example.com/repo.git",
+    ]
+
+
+def test_code_block_handles_multiple_code_children() -> None:
+    """Defensive: even if a <pre> ever contains multiple <code>
+    children (not Medium's actual shape, but listed in the bug
+    report as a candidate variant), all of them aggregate into
+    ONE codeBlock node, not one per <code>."""
+    html = _wrap_body(
+        '<pre class="graf graf--pre">'
+        "<code>line one</code><br>"
+        "<code>line two</code>"
+        "</pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert len(blocks) == 1
+    assert blocks[0]["content"][0]["text"].split("\n") == ["line one", "line two"]
+
+
+def test_code_block_one_per_pre_against_real_corpus_sample() -> None:
+    """Integration: the corpus check showed 717 source <pre>
+    elements produce 717 codeBlock nodes (1:1). This test pins
+    the smallest realistic shape so regression is caught locally.
+    """
+    # Two adjacent multi-line pres -> exactly two codeBlocks,
+    # each multi-line (NOT four single-line blocks).
+    html = _wrap_body(
+        '<pre data-code-block-lang="bash" class="graf graf--pre">'
+        "echo a<br>echo b"
+        "</pre>"
+        '<pre data-code-block-lang="bash" class="graf graf--pre">'
+        "echo c<br>echo d"
+        "</pre>"
+    )
+    post = MediumWalker().parse(html)
+    blocks = [n for n in post.content_doc["content"] if n["type"] == "codeBlock"]
+    assert len(blocks) == 2
+    assert blocks[0]["content"][0]["text"] == "echo a\necho b"
+    assert blocks[1]["content"][0]["text"] == "echo c\necho d"

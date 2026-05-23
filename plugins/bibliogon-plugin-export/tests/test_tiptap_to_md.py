@@ -185,6 +185,60 @@ class TestTiptapToMarkdown:
         assert "print('hello')" in result
         assert result.endswith("```")
 
+    def test_code_block_null_language_emits_bare_fence(self) -> None:
+        """Legacy Medium-imported docs persisted ``attrs.language = None``
+        before the walker fix. The serializer must coalesce ``None``
+        to an empty string instead of emitting ``\\`\\`\\`None``.
+        """
+        doc = {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "codeBlock",
+                    "attrs": {"language": None},
+                    "content": [{"type": "text", "text": "echo hi"}],
+                }
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert "```None" not in result
+        assert "```\necho hi\n```" in result
+
+    def test_code_block_missing_language_emits_bare_fence(self) -> None:
+        doc = {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "codeBlock",
+                    "attrs": {},
+                    "content": [{"type": "text", "text": "echo hi"}],
+                }
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert "```None" not in result
+        assert "```\necho hi\n```" in result
+
+    def test_code_block_preserves_internal_newlines(self) -> None:
+        """The walker now emits multi-line code as a single text node
+        with embedded ``\\n``. The fenced-block serializer must keep
+        them; the rendered Markdown becomes the multi-line source.
+        """
+        doc = {
+            "type": "doc",
+            "content": [
+                {
+                    "type": "codeBlock",
+                    "attrs": {"language": "yaml"},
+                    "content": [
+                        {"type": "text", "text": "version: '3.8'\nservices:\n  db:"}
+                    ],
+                }
+            ],
+        }
+        result = tiptap_to_markdown(doc)
+        assert result == "```yaml\nversion: '3.8'\nservices:\n  db:\n```"
+
     def test_blockquote(self) -> None:
         doc = {
             "type": "doc",

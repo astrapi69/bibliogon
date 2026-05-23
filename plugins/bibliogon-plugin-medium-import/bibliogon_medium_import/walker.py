@@ -356,13 +356,28 @@ class MediumWalker:
     def _emit_code_block(self, tag: Tag) -> dict[str, Any]:
         lang_attr = tag.get("data-code-block-lang")
         language = lang_attr if isinstance(lang_attr, str) and lang_attr else None
-        text = tag.get_text()
+        # Medium encodes line breaks inside multi-line <pre> blocks as
+        # literal <br> tags, not as newline characters. BeautifulSoup's
+        # default get_text() strips <br> entirely, which collapses
+        # every line of the code block into one unreadable line. Walk
+        # descendants explicitly so <br> renders as \n while text
+        # inside nested inline tags (<em>, <span>, <strong>) is still
+        # captured.
+        text = _extract_pre_text(tag)
         content: list[dict[str, Any]] = []
         if text:
             content.append({"type": "text", "text": text})
+        # Only emit the language attr when we actually have one. A
+        # null language survives all the way to Markdown export and
+        # serializes as the literal string "None" after the opening
+        # fence (```None\n...). Omitting the key entirely lets the
+        # serializer emit a bare ``` fence.
+        attrs: dict[str, Any] = {}
+        if language:
+            attrs["language"] = language
         return {
             "type": "codeBlock",
-            "attrs": {"language": language},
+            "attrs": attrs,
             "content": content,
         }
 
@@ -496,6 +511,25 @@ def _marks_signature(marks: list[dict[str, Any]] | None) -> str:
     if not marks:
         return ""
     return json.dumps(marks, sort_keys=True)
+
+
+def _extract_pre_text(tag: Tag) -> str:
+    """Extract a <pre> element's text while preserving line breaks.
+
+    Medium represents newlines inside code blocks as <br> tags
+    rather than literal newline characters. BeautifulSoup's
+    ``get_text()`` drops <br> silently, which collapses multi-line
+    code into a single line. Walk descendants and emit "\\n" for
+    every <br> encountered while still capturing text from nested
+    inline tags (e.g. <em>, <span class="pre--content">, <strong>).
+    """
+    parts: list[str] = []
+    for descendant in tag.descendants:
+        if isinstance(descendant, NavigableString):
+            parts.append(str(descendant))
+        elif isinstance(descendant, Tag) and descendant.name == "br":
+            parts.append("\n")
+    return "".join(parts)
 
 
 def _classify_as_comment(content_doc: dict[str, Any]) -> bool:
