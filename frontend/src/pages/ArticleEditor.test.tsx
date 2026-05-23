@@ -102,6 +102,24 @@ vi.mock("../api/client", async () => {
                 })),
                 getComments: vi.fn(async () => []),
             },
+            // AUTHOR-DATALIST-EXTEND-EDITORS-01: the Article editor
+            // fetches api.authors.list({}) on mount to populate the
+            // datalist's Authors-DB tier. Mock returns empty list —
+            // the existing tests don't care about the DB suggestions;
+            // useAuthorProfile mock above already supplies the
+            // profile-tier suggestions.
+            authors: {
+                list: vi.fn(async () => []),
+                create: vi.fn(async ({name}: {name: string}) => ({
+                    id: `mock-${name}`,
+                    name,
+                    slug: name.toLowerCase(),
+                    email: null,
+                    bio: null,
+                    website: null,
+                    social_links: {},
+                })),
+            },
             settings: { updateApp: vi.fn(async () => ({})) },
         },
     };

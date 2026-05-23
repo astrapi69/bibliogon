@@ -176,6 +176,20 @@ vi.mock("../api/client", () => ({
     kdp: {
       listCategories: vi.fn().mockResolvedValue([]),
     },
+    authors: {
+      list: vi.fn().mockResolvedValue([]),
+      create: vi.fn().mockImplementation(
+        async ({name}: {name: string}) => ({
+          id: `mock-${name}`,
+          name,
+          slug: name.toLowerCase().replace(/\s+/g, "-"),
+          email: null,
+          bio: null,
+          website: null,
+          social_links: {},
+        }),
+      ),
+    },
   },
   ApiError: class extends Error {
     status: number
@@ -588,7 +602,14 @@ describe("BookMetadataEditor — author + language fields", () => {
   const onSave = vi.fn()
   const onBack = vi.fn()
 
-  it("renders author as a select dropdown (not editable input)", () => {
+  // AUTHOR-DATALIST-EXTEND-EDITORS-01 (2026-05-22): the author field
+  // migrated from Pattern B (closed-list <select> via
+  // AuthorProfileSelect, testid metadata-author-select) to Pattern A
+  // (<input> + <datalist> via AuthorSelectInput, testid
+  // metadata-author + metadata-author-datalist). Tests below pin
+  // the new contract.
+
+  it("renders author as a free-text input pre-filled with current value", () => {
     render(
       <BookMetadataEditor
         book={{
@@ -607,12 +628,12 @@ describe("BookMetadataEditor — author + language fields", () => {
         onBack={onBack}
       />,
     )
-    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
-    expect(select.tagName).toBe("SELECT")
-    expect(select.value).toBe("Test Author")
+    const input = screen.getByTestId("metadata-author") as HTMLInputElement
+    expect(input.tagName).toBe("INPUT")
+    expect(input.value).toBe("Test Author")
   })
 
-  it("dropdown lists profile name + all pen names", () => {
+  it("datalist exposes profile name + all pen names as suggestions", () => {
     render(
       <BookMetadataEditor
         book={{
@@ -631,15 +652,21 @@ describe("BookMetadataEditor — author + language fields", () => {
         onBack={vi.fn()}
       />,
     )
-    const select = screen.getByTestId("metadata-author-select")
-    const options = select.querySelectorAll("option")
-    const values = Array.from(options).map((o) => (o as HTMLOptionElement).value)
+    const datalist = screen.getByTestId("metadata-author-datalist")
+    const values = Array.from(datalist.querySelectorAll("option")).map(
+      (o) => (o as HTMLOptionElement).value,
+    )
     expect(values).toContain("Test Author")
     expect(values).toContain("Pen One")
     expect(values).toContain("Pen Two")
   })
 
-  it("unknown author value renders as disabled fallback option", () => {
+  it("unknown author value is accepted as free text (no disabled-fallback)", () => {
+    // Pattern A regression: unfamiliar names (ghostwritten works,
+    // collaborators, historical imports) survive as plain free-text
+    // values. The OLD Pattern B forced them to appear as a disabled
+    // <option> — that affordance is gone, and that is the intended
+    // behavior change. The new pin is "the value renders as-is."
     render(
       <BookMetadataEditor
         book={{
@@ -658,14 +685,8 @@ describe("BookMetadataEditor — author + language fields", () => {
         onBack={vi.fn()}
       />,
     )
-    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
-    expect(select.value).toBe("Stale Author")
-    const staleOption = Array.from(
-      select.querySelectorAll("option"),
-    ).find((o) => (o as HTMLOptionElement).value === "Stale Author") as HTMLOptionElement
-    expect(staleOption).toBeDefined()
-    expect(staleOption.disabled).toBe(true)
-    expect(staleOption.textContent).toContain("Stale Author")
+    const input = screen.getByTestId("metadata-author") as HTMLInputElement
+    expect(input.value).toBe("Stale Author")
   })
 
   it("manage-link is rendered next to the author field", () => {
@@ -690,7 +711,7 @@ describe("BookMetadataEditor — author + language fields", () => {
     expect(screen.getByTestId("metadata-author-manage-link")).toBeInTheDocument()
   })
 
-  it("changing dropdown selection updates form state", () => {
+  it("typing in the author input updates form state", () => {
     render(
       <BookMetadataEditor
         book={{
@@ -709,9 +730,9 @@ describe("BookMetadataEditor — author + language fields", () => {
         onBack={vi.fn()}
       />,
     )
-    const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement
-    fireEvent.change(select, {target: {value: "Pen One"}})
-    expect(select.value).toBe("Pen One")
+    const input = screen.getByTestId("metadata-author") as HTMLInputElement
+    fireEvent.change(input, {target: {value: "Pen One"}})
+    expect(input.value).toBe("Pen One")
   })
 
   it("renders language input with current code", () => {

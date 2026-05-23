@@ -1,14 +1,13 @@
-import {useState, useEffect, useCallback} from "react";
+import {useState, useEffect, useCallback, useMemo} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
-import {api, ApiError, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
+import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
 import {useBookTypes} from "../hooks/useBookTypes";
-import {useAuthorProfile, type AuthorProfile} from "../hooks/useAuthorProfile";
-import AuthorProfileSelect from "./AuthorProfileSelect";
-import {useAllowBooksWithoutAuthor} from "../hooks/useAllowBooksWithoutAuthor";
+import {useAuthorProfile, profileDisplayNames} from "../hooks/useAuthorProfile";
+import AuthorSelectInput from "./AuthorSelectInput";
 import {EnhancedTextarea} from "./textarea/EnhancedTextarea";
 import {LoadingIndicator} from "./LoadingIndicator";
 import {useWebSocket} from "../hooks/useWebSocket";
@@ -84,7 +83,6 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
     const authorProfile = useAuthorProfile();
-    const allowDeferAuthor = useAllowBooksWithoutAuthor();
 
     useEffect(() => {
         setForm({
@@ -147,11 +145,82 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         };
     }, []);
 
+    // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
+    // selection — free-text input + autocomplete suggestions union'd
+    // from the user-profile names + Authors-DB. Mirrors the
+    // CreateBookModal + ConvertToBookWizard precedent shipped via
+    // AuthorSelectInput.
+    const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
+    const [addAuthorToDb, setAddAuthorToDb] = useState(true);
+    useEffect(() => {
+        let cancelled = false;
+        api.authors
+            .list({})
+            .then((rows) => {
+                if (!cancelled) setGlobalAuthors(rows);
+            })
+            .catch(() => {
+                // Non-critical; the datalist degrades to user-profile
+                // suggestions only.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    const authorSuggestions = useMemo(() => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const c of profileDisplayNames(authorProfile)) {
+            const trimmed = c.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        for (const a of globalAuthors) {
+            const trimmed = a.name.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        return out;
+    }, [authorProfile, globalAuthors]);
+    const showAddToAuthorsCheckbox = useMemo(() => {
+        const trimmed = (form.author ?? "").trim().toLowerCase();
+        if (!trimmed) return false;
+        return !globalAuthors.some(
+            (a) => a.name.trim().toLowerCase() === trimmed,
+        );
+    }, [form.author, globalAuthors]);
+
     const set = (key: string, value: string) => setForm((prev) => ({...prev, [key]: value}));
 
     const handleSave = async () => {
         setSaving(true);
         try {
+            // AUTHOR-DATALIST-EXTEND-EDITORS-01: create the typed
+            // author in the global Authors-DB BEFORE the book PATCH
+            // when the user opted in. Mirrors CreateBookModal's
+            // pattern. Non-blocking — a failed author POST surfaces
+            // an error toast but the book save still proceeds with
+            // the free-text author value.
+            const typedAuthor = (form.author ?? "").trim();
+            if (showAddToAuthorsCheckbox && addAuthorToDb && typedAuthor) {
+                try {
+                    const created = await api.authors.create({name: typedAuthor});
+                    setGlobalAuthors((prev) => [...prev, created]);
+                } catch (err) {
+                    notify.error(
+                        t(
+                            "ui.metadata.author_add_failed",
+                            "Autor konnte nicht zur Datenbank hinzugefügt werden",
+                        ),
+                        err,
+                    );
+                }
+            }
+
             const data: Record<string, unknown> = {};
             for (const [key, value] of Object.entries(form)) {
                 data[key] = value || null;
@@ -315,9 +384,11 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <AuthorSelectField
                                 label={t("ui.metadata.author", "Autor")}
                                 value={form.author || ""}
-                                profile={authorProfile}
-                                allowEmpty={allowDeferAuthor}
                                 onChange={(v) => set("author", v)}
+                                suggestions={authorSuggestions}
+                                showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
+                                addToAuthorsDb={addAuthorToDb}
+                                onAddToAuthorsDbChange={setAddAuthorToDb}
                             />
                             <Field
                                 label={t("ui.metadata.language", "Sprache")}
@@ -625,76 +696,61 @@ function Row({children}: {children: React.ReactNode}) {
 }
 
 /**
- * Author field as a selection-only dropdown.
+ * Author field as a free-text input with Authors-DB autocomplete.
  *
- * Author management lives ONLY in Settings; this field never lets
- * the user create or rename. Options come from the single author
- * profile (real name + pen names). The current value, if it does
- * not match any known option, surfaces as a disabled fallback so
- * stale references stay visible until the user picks a real one.
+ * AUTHOR-DATALIST-EXTEND-EDITORS-01 (2026-05-22): migrated from
+ * Pattern B (closed-list <select> via AuthorProfileSelect) to
+ * Pattern A (free-text input + datalist via AuthorSelectInput).
+ * Rationale: Pattern A handles names not yet in the user-profile
+ * or Authors-DB (e.g. ghostwritten works, collaborators, historical
+ * imports with unfamiliar names) without forcing the user to
+ * detour into Settings.
  *
- * Pseudonyms render in an optgroup labeled with the parent real
- * name; if the user only has pen_names configured (no real name
- * set), pen_names appear ungrouped under a single placeholder.
+ * Book-specific wrapping (field div + label + manage-link to
+ * Settings) stays here so the user can still curate the Authors-DB
+ * proactively when desired.
  */
 function AuthorSelectField({
     label,
     value,
-    profile,
     onChange,
-    allowEmpty,
+    suggestions,
+    showAddToAuthorsCheckbox,
+    addToAuthorsDb,
+    onAddToAuthorsDbChange,
 }: {
     label: string;
     value: string;
-    profile: AuthorProfile | null;
     onChange: (v: string) => void;
-    /** When true, an empty selection is a valid "no author" state
-     * (the Settings toggle ``app.allow_books_without_author`` is on).
-     * Adds an explicit "(no author)" option so the user can clear
-     * the field; the placeholder is no longer disabled. */
-    allowEmpty: boolean;
+    suggestions: string[];
+    showAddToAuthorsCheckbox: boolean;
+    addToAuthorsDb: boolean;
+    onAddToAuthorsDbChange: (next: boolean) => void;
 }) {
     const {t} = useI18n();
     const navigate = useNavigate();
 
-    // RECURRING-COMPONENT-AUDIT-01 audit-followup (Pattern B):
-    // shared <select> + <optgroup> rendering with ArticleEditor via
-    // the canonical AuthorProfileSelect. Book-specific wrapping
-    // (field div + label + manage-link to Settings) stays here.
     return (
         <div className="field" style={{flex: 1}}>
-            <label className="label">{label}</label>
-            <AuthorProfileSelect
+            <label className="label" htmlFor="metadata-author">
+                {label}
+            </label>
+            <AuthorSelectInput
                 value={value}
-                profile={profile}
                 onChange={onChange}
-                emptyOptionLabel={
-                    allowEmpty
-                        ? t("ui.metadata.author_no_author", "(no author)")
-                        : null
-                }
-                placeholderLabel={t(
+                suggestions={suggestions}
+                showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
+                addToAuthorsDb={addToAuthorsDb}
+                onAddToAuthorsDbChange={onAddToAuthorsDbChange}
+                testidPrefix="metadata"
+                placeholder={t(
                     "ui.metadata.author_placeholder",
-                    "Autor auswählen...",
+                    "Autorenname oder Pen Name",
                 )}
-                unknownValueWrapper={(v) => ({
-                    label: (
-                        <>
-                            {t(
-                                "ui.metadata.author_unknown_prefix",
-                                "[unbekannt:",
-                            )}{" "}
-                            {v}]
-                        </>
-                    ),
-                    disabled: true,
-                })}
-                penNamesGroupLabel={t(
-                    "ui.metadata.author_pen_names_label",
-                    "Pen Names",
+                addToAuthorsLabel={t(
+                    "ui.metadata.add_to_authors_db",
+                    "„{name}\" zur Autoren-Datenbank hinzufügen",
                 )}
-                testId="metadata-author-select"
-                selectClassName="input"
             />
             <a
                 href="/settings?tab=author"

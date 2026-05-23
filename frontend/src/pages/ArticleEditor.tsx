@@ -22,7 +22,7 @@
  * because the only writer is the local editor).
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {
@@ -38,20 +38,20 @@ import {
     MoreVertical,
 } from "lucide-react";
 
-import { api, ApiError, Article, ArticleStatus } from "../api/client";
+import { api, ApiError, Article, ArticleStatus, Author } from "../api/client";
 import Editor from "../components/Editor";
 import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
 import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
-import AuthorProfileSelect from "../components/AuthorProfileSelect";
+import AuthorSelectInput from "../components/AuthorSelectInput";
 import Tooltip from "../components/Tooltip";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
-import { useAuthorProfile } from "../hooks/useAuthorProfile";
+import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/useTopics";
 import { notify } from "../utils/notify";
 import layout from "./ArticleEditor.module.css";
@@ -83,6 +83,48 @@ export default function ArticleEditor() {
     const [loading, setLoading] = useState(true);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const authorProfile = useAuthorProfile();
+
+    // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A author selection
+    // for the Article editor — free-text input + autocomplete
+    // suggestions union'd from user-profile names + Authors-DB.
+    // Mirrors the BookMetadataEditor + CreateBookModal precedents.
+    // Article-side does NOT expose the add-to-DB checkbox per the
+    // auto-save-on-keystroke rationale (see consumer site below).
+    const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
+    useEffect(() => {
+        let cancelled = false;
+        api.authors
+            .list({})
+            .then((rows) => {
+                if (!cancelled) setGlobalAuthors(rows);
+            })
+            .catch(() => {
+                // Non-critical; suggestions degrade to profile names.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+    const authorSuggestions = useMemo(() => {
+        const seen = new Set<string>();
+        const out: string[] = [];
+        for (const c of profileDisplayNames(authorProfile)) {
+            const trimmed = c.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        for (const a of globalAuthors) {
+            const trimmed = a.name.trim();
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed);
+                out.push(trimmed);
+            }
+        }
+        return out;
+    }, [authorProfile, globalAuthors]);
+
     const topicsFromHook = useTopics();
     // Local mirror of the settings topics list so inline-add via the
     // TopicSelect dropdown can append without waiting on a re-mount of
@@ -644,36 +686,37 @@ export default function ArticleEditor() {
                             "Autor des Artikels. Auswahl aus Echtnamen + Pseudonymen aus den Einstellungen.",
                         )}
                     />
-                    {/* RECURRING-COMPONENT-AUDIT-01 audit-followup
-                        (Pattern B): shared with BookMetadataEditor's
-                        AuthorSelectField via the canonical
-                        AuthorProfileSelect. Article-specific
-                        always-show "(kein Autor)" + bare style
-                        (no wrapping field/manage-link) preserved. */}
-                    <AuthorProfileSelect
+                    {/* AUTHOR-DATALIST-EXTEND-EDITORS-01 (Pattern A,
+                        adjudicated 2026-05-22): free-text + datalist
+                        via AuthorSelectInput. Migrated from
+                        AuthorProfileSelect; the closed-list dropdown
+                        forced users to detour into Settings for any
+                        unfamiliar name (ghostwritten works,
+                        collaborators, historical imports). The
+                        "Add to Authors-DB" checkbox is deliberately
+                        suppressed here because ArticleEditor
+                        auto-saves on every keystroke — an
+                        auto-DB-create at that rate would create
+                        partial-name rows. Curate via Settings >
+                        Author tab. */}
+                    <AuthorSelectInput
                         value={article.author ?? ""}
-                        profile={authorProfile}
                         onChange={(v) => {
-                            setArticle({ ...article, author: v || null });
-                            void persistMeta({ author: v || null });
+                            const next = v || null;
+                            setArticle({ ...article, author: next });
+                            void persistMeta({ author: next });
                         }}
-                        emptyOptionLabel={t(
-                            "ui.articles.author_none",
-                            "(kein Autor)",
+                        suggestions={authorSuggestions}
+                        showAddToAuthorsCheckbox={false}
+                        addToAuthorsDb={false}
+                        onAddToAuthorsDbChange={() => {}}
+                        testidPrefix="article-editor"
+                        inputTestId="article-editor-author"
+                        placeholder={t(
+                            "ui.articles.author_placeholder",
+                            "Autorenname oder Pen Name",
                         )}
-                        penNamesGroupLabel={t(
-                            "ui.articles.author_pen_names",
-                            "Pseudonyme",
-                        )}
-                        testId="article-editor-author"
-                        selectStyle={{
-                            padding: "6px 8px",
-                            border: "1px solid var(--border)",
-                            borderRadius: 4,
-                            background: "var(--bg-primary)",
-                            color: "var(--text-primary)",
-                            fontSize: "0.875rem",
-                        }}
+                        addToAuthorsLabel=""
                     />
                     <FieldLabel
                         label={t("ui.articles.topic", "Thema")}
