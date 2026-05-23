@@ -3,16 +3,26 @@
 Defines the hooks that plugins can implement.
 Uses pluggy's HookspecMarker for type-safe hook dispatch.
 
-Dispatch-site status (see HOOKSPEC-DISPATCH-WIRING-01):
+Dispatch-site status (post HOOKSPEC-DISPATCH-WIRING-01 adjudication
+2026-05-22):
     content_pre_import  WIRED   - backend/app/services/backup/markdown_utils.py:106
-    export_formats      UNWIRED - declared, no dispatch site
-    export_execute      UNWIRED - declared, no dispatch site
-    chapter_pre_save    UNWIRED - declared, no dispatch site or implementation
+    export_formats      UNWIRED - status-quo per adjudication
+                                  (hardcoded SUPPORTED_FORMATS set in
+                                  plugin-export covers today's single-
+                                  export-plugin reality; re-evaluate
+                                  when a 2nd export plugin lands)
+    export_execute      UNWIRED - planned wire-up tracked separately as
+                                  HOOKSPEC-EXPORT-EXECUTE-WIRE-01 (P3);
+                                  do not add @hookimpl implementations
+                                  until that session lands (would be
+                                  dead code per the Half-wired feature
+                                  lifecycle Lessons-Learned rule)
 
-The three UNWIRED hookspecs represent intended architecture that has not
-been completed. Do NOT add @hookimpl implementations for them until a
-dispatch site is wired - they would be dead code (see
-.claude/rules/lessons-learned.md "Half-wired feature lifecycle").
+Deleted hookspec (2026-05-22): chapter_pre_save. Zero implementations
+existed after multiple release cycles; the sibling content_pre_import
+covers the import-side case (the only one with a real plugin consumer).
+Re-file with a concrete use case + named consumer if pre-save
+transformation ever becomes a real need.
 """
 
 from pathlib import Path
@@ -32,9 +42,13 @@ class BibliogonHookSpec:
 
         Each format dict should have: id, label, extension, media_type.
 
-        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
-        plugin-export currently dispatches formats via a hardcoded
-        SUPPORTED_FORMATS set + direct imports from bibliogon_audiobook.
+        Status quo (HOOKSPEC-DISPATCH-WIRING-01 adjudication 2026-05-22):
+        plugin-export owns the hardcoded SUPPORTED_FORMATS set in
+        plugins/bibliogon-plugin-export/bibliogon_export/routes.py and
+        is the single export-plugin today. Wiring this hook would
+        require splitting the format catalog across plugins — useful
+        when a 2nd export plugin lands, speculative today. Re-evaluate
+        on first 2nd-export-plugin proposal.
         """
         ...
 
@@ -52,25 +66,13 @@ class BibliogonHookSpec:
         Returns:
             Path to the generated output file.
 
-        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
-        plugin-export's routes.py handles formats by direct imports
-        (e.g. bibliogon_audiobook.generator) rather than via this hook.
-        """
-        ...
-
-    @hookspec
-    def chapter_pre_save(self, content: str, chapter_id: str) -> str | None:
-        """Transform chapter content before saving.
-
-        Args:
-            content: The chapter content (TipTap JSON string).
-            chapter_id: The chapter ID.
-
-        Returns:
-            Transformed content, or None to keep original.
-
-        TODO(HOOKSPEC-DISPATCH-WIRING-01): dispatch site not yet wired.
-        No plugin implements this hook and no save path dispatches it.
+        Wire-up planned in HOOKSPEC-EXPORT-EXECUTE-WIRE-01 (P3,
+        separate session). The cleanup removes 6 cross-plugin direct-
+        import sites in plugin-export's routes.py (audiobook
+        dispatch) and plugin-comics's comic_book_pdf.py
+        (picture_book_pdf reuse). Do NOT add @hookimpl
+        implementations in plugins until that session lands; they
+        would be dead code today.
         """
         ...
 

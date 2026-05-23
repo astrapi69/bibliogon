@@ -135,60 +135,70 @@ store.
   metadata model is more honest about what the wizard
   actually re-checks.
 
-- **HOOKSPEC-DISPATCH-WIRING-01** (P3, filed 2026-05-23 from the
-  plugin-communication investigation).
+- **HOOKSPEC-EXPORT-EXECUTE-WIRE-01** (P3, filed 2026-05-22 from
+  HOOKSPEC-DISPATCH-WIRING-01 audit adjudication). Wire the
+  declared-but-undispatched ``export_execute`` hookspec at
+  [backend/app/hookspecs.py:41](backend/app/hookspecs.py#L41).
+  The wire-up eliminates 6+ cross-plugin direct-import sites
+  in plugin-export's routes.py (audiobook dispatch via inline
+  ``from bibliogon_audiobook.generator import ...``) and 1
+  site in plugin-comics's comic_book_pdf.py
+  (``from bibliogon_export.picture_book_pdf import ...``).
 
-  ### Scope
+  ### Why this matters
 
-  Decide what to do with three declared-but-undispatched
-  hookspecs in [backend/app/hookspecs.py](backend/app/hookspecs.py):
+  The current direct-import dispatch:
 
-  - ``export_formats`` - declared; no dispatch site in
-    ``backend/app/`` or ``plugins/``
-  - ``export_execute`` - declared; no dispatch site
-  - ``chapter_pre_save`` - declared; no dispatch site AND no
-    plugin implementation
+  - **Reverse couples plugin-export to plugin-audiobook**
+    (documented anti-pattern in CLAUDE.md; the export plugin
+    imports the audiobook plugin to dispatch the ``audiobook``
+    format).
+  - **Forward couples plugin-comics to plugin-export** for
+    PDF-rendering primitives (picture_book_pdf reuse).
+  - **Bypasses the plugin manager** for export decisions,
+    making it hard for a 3rd export plugin to ever ship
+    without re-wiring plugin-export.
 
-  Only ``content_pre_import`` is actually dispatched at runtime
-  ([markdown_utils.py:106](backend/app/services/backup/markdown_utils.py#L106)
-  for plugin-ms-tools).
+  Wiring the hook removes all three issues. plugin-export's
+  routes.py calls ``manager.call_hook("export_execute", book,
+  fmt, options)`` instead of the format-specific direct
+  dispatch; plugin-audiobook adds an ``@hookimpl`` for
+  ``fmt == "audiobook"``; plugin-comics adds an
+  ``@hookimpl`` for ``fmt == "pdf"`` when ``book_type ==
+  "comic_book"`` (or similar).
 
-  Investigation context: the
-  2026-05-23 plugin-communication audit found that 3 of 4
-  "export-dependent" plugins do not actually call into export
-  at runtime. The real coupling shape is direct Python imports
-  (plugin-comics → plugin-export; plugin-export →
-  plugin-audiobook in 6 inline-import sites). The hookspecs
-  were intended as the cross-plugin coordination mechanism but
-  the dispatch side was never wired.
+  ### Scope (separate session, 3-5 commits)
 
-  ### Decision dimensions
+  1. Wire dispatch site in plugin-export's routes.py — replace
+     the 6 inline ``from bibliogon_audiobook.generator`` import
+     sites with ``manager.call_hook(...)`` calls.
+  2. Add ``@hookimpl export_execute`` to plugin-audiobook for
+     the ``audiobook`` format.
+  3. Decide picture-book-pdf disposition: either add
+     ``@hookimpl`` for picture-book PDF dispatch (cleaner) OR
+     keep the direct-import from plugin-comics as a documented
+     exception (smaller diff). Pre-Inspection adjudicates.
+  4. Pytest + integration tests + Vitest for the wired flow.
+  5. Update CLAUDE.md to remove the reverse-coupling note now
+     that the coupling is gone.
 
-  1. **Wire up dispatch sites** - make the hooks functional.
-     Concretely: plugin-export's routes.py would call
-     ``manager.call_hook("export_execute", ...)`` instead of
-     the current direct-import dispatch to
-     ``bibliogon_audiobook.generator``. Net effect: cleaner
-     decoupling between plugin-export and plugin-audiobook;
-     reverse-coupling (export imports audiobook) goes away.
-  2. **Delete the hookspecs entirely** - acknowledge that the
-     direct-import pattern is the project's actual cross-plugin
-     mechanism. Removes architectural intent that has not paid
-     off. Re-introducible later if requirements change.
-  3. **Status quo (TODO markers only)** - keep declarations as
-     "intended architecture, not yet wired", with the
-     ``TODO(HOOKSPEC-DISPATCH-WIRING-01)`` markers already in
-     place. Defers the decision; no immediate code change.
+  ### Trigger
 
-  Trigger to revisit: any new plugin needing a publish/subscribe
-  shape with the application core or with another plugin. At
-  that point pick (1) or (2) deliberately. Until then (3) is
-  the parking state.
+  Standalone session — no upstream gate. Ranks above the
+  ``status quo`` option per HOOKSPEC-DISPATCH-WIRING-01
+  audit because the cleanup eliminates documented technical
+  debt (the reverse-coupling note in CLAUDE.md). Schedule
+  when 3-5-commit refactor scope fits.
 
-  ### Status
+  ### Cross-references
 
-  Markers added to hookspecs.py in the same commit that filed
-  this item. No dispatch wiring or deletion performed.
+  - HOOKSPEC-DISPATCH-WIRING-01 (closed 2026-05-22; this filing
+    is the only follow-up from that audit's "wire up" tier).
+  - CLAUDE.md plugin table note about plugin-export ↔ plugin-
+    audiobook reverse-coupling.
+  - Direct-import sites: ``plugins/bibliogon-plugin-export/
+    bibliogon_export/routes.py`` lines 714, 732, 1026, 1101,
+    1102, 1185.
 
 - **MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01** (P3, filed
   2026-05-20 from the re-prioritization audit Q6 adjudication
