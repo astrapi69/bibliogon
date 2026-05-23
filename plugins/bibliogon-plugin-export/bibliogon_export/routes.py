@@ -1586,3 +1586,18 @@ def download_job_result(job_id: str) -> FileResponse:
     if not path or not Path(path).exists():
         raise HTTPException(status_code=410, detail="Export file no longer available")
     return FileResponse(path=path, media_type=job.result.get("media_type", "application/octet-stream"), filename=job.result.get("filename", "export"))
+
+
+# PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01: pluginforge 0.8.0
+# deprecated returning multiple top-level routers from a plugin's
+# get_routes() and recommends the Single-Router-Per-Plugin
+# convention (one parent router nesting sub-routers via
+# include_router). The three sub-routers above
+# (router, bulk_router, jobs_router) keep their distinct prefixes
+# + tags; the parent is empty-prefix so each sub-router's prefix
+# applies as-is. Mirrors the canonical shape used by
+# plugin-kinderbuch + plugin-comics.
+parent_router = APIRouter(tags=["export"])
+parent_router.include_router(router)
+parent_router.include_router(bulk_router)
+parent_router.include_router(jobs_router)

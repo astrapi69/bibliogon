@@ -25,17 +25,19 @@ class ExportPlugin(BasePlugin):
             pass
 
     def get_routes(self) -> list[Any]:
-        """Return the export routers (main + async job polling + bulk).
+        """Return the single export router.
 
-        ``bulk_router`` lives at ``/books/bulk-export`` (sibling to the
-        per-book ``/books/{book_id}/export`` router). Bibliogon's
-        plugin-router include order does not matter for these two
-        because Starlette only matches ``/books/{book_id}/export/...``
-        when the path has 4+ segments and ``/books/bulk-export`` has
-        2; no path-param shadowing.
+        Per the Single-Router-Per-Plugin convention (lessons-learned
+        ".claude/rules/lessons-learned.md") and the pluginforge 0.8.0
+        deprecation guidance: one parent router nests the per-book,
+        bulk, and jobs sub-routers via ``include_router``. The
+        sub-routers keep their distinct prefixes
+        (``/books/{book_id}/export``, ``/books/bulk-export``,
+        ``/export/jobs``) and tags unchanged. No URL-shape change to
+        the API surface; only the plugin-manifest is reshaped.
         """
-        from .routes import bulk_router, jobs_router, router
-        return [router, bulk_router, jobs_router]
+        from .routes import parent_router
+        return [parent_router]
 
     def get_frontend_manifest(self) -> dict[str, Any] | None:
         """Return export-related UI manifest."""
