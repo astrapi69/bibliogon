@@ -339,6 +339,16 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         editorProps: {
             attributes: {
                 class: "tiptap-editor",
+                // a11y: TipTap renders the editor as a
+                // contenteditable div. ARIA-compliant browsers
+                // implicitly map contenteditable=true to
+                // role=textbox + aria-multiline=true, but the
+                // editor needs a discoverable accessible name so
+                // screen readers announce it as more than just
+                // "edit text". WCAG 2.1 SC 4.1.2.
+                "aria-label": t("ui.a11y.editor_label", "Editor"),
+                role: "textbox",
+                "aria-multiline": "true",
             },
             handleDrop: (_view, event, _slice, moved) => {
                 if (moved || !event.dataTransfer?.files?.length || !bookId) return false;

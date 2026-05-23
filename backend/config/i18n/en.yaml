@@ -1380,6 +1380,7 @@ ui:
     hint: "Double-click to edit, drag-and-drop to reorder"
   a11y:
     skip_to_content: "Skip to main content"
+    editor_label: "Editor"
   common:
     cancel: "Cancel"
     create: "Create"

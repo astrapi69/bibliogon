@@ -1349,6 +1349,7 @@ ui:
     hint: "Clique duplo para editar, arrastar e soltar para reordenar"
   a11y:
     skip_to_content: "Ir para o conteudo principal"
+    editor_label: "Editor"
   common:
     cancel: "Cancelar"
     create: "Criar"

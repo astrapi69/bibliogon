@@ -1349,6 +1349,7 @@ ui:
     hint: "ダブルクリックで編集、ドラッグ&ドロップで並べ替え"
   a11y:
     skip_to_content: "メインコンテンツへスキップ"
+    editor_label: "エディター"
   common:
     cancel: "キャンセル"
     create: "作成"

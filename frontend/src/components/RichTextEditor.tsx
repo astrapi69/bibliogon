@@ -40,6 +40,8 @@ import FontFamily from "@tiptap/extension-font-family"
 import type {JSONContent} from "@tiptap/core"
 import {useEffect, useRef} from "react"
 
+import {useI18n} from "../hooks/useI18n"
+
 interface Props {
     /** The current TipTap document. ``null`` renders an empty
      *  editor. ``undefined`` is treated as ``null``. */
@@ -80,6 +82,7 @@ export default function RichTextEditor({
     testidNamespace,
     className,
 }: Props) {
+    const {t} = useI18n()
     // The D1 MVP extension set. Order matches Editor.tsx's
     // convention (StarterKit first, then individual extensions).
     // Color + FontFamily both require TextStyle as a dependency
@@ -102,6 +105,17 @@ export default function RichTextEditor({
         ],
         content: content ?? "",
         editable,
+        editorProps: {
+            attributes: {
+                // a11y: discoverable accessible name + explicit
+                // role/multiline so screen readers announce the
+                // editor as more than just "edit text". WCAG 2.1
+                // SC 4.1.2. Mirrors Editor.tsx.
+                "aria-label": t("ui.a11y.editor_label", "Editor"),
+                role: "textbox",
+                "aria-multiline": "true",
+            },
+        },
         onUpdate: ({editor: e}) => {
             if (onChange) onChange(e.getJSON())
         },
