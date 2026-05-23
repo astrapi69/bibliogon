@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23 (I18N-ARTICLES-NAMESPACE-CLEANUP-01 CLOSED via 1-commit ship: 7 silently-falling-back keys moved from `ui.template_picker.*` to `ui.articles.*` across all 8 i18n catalogs + 3 dead keys deleted + orphaned AuthorProfileSelect component+test removed. Pre-Coding-Reality-Check expanded scope from filed 2-key surface to real 10-key + orphan-component cleanup; user-adjudicated path β. Backend pytest 2213 → 2214; Vitest 1998 → 1986 (orphan test deleted); i18n parity 75/75 held; tsc clean.)
+Last updated: 2026-05-23 (ACCESSIBILITY-AUDIT-WCAG-AA-01 CLOSED post-v0.36.0 via 7-commit ship `457e01c..2349797`: C1 skip-to-content link + landmark + heading hierarchy across 8 routed pages + new `<SkipToContentLink>` + sr-only utility + ui.a11y.skip_to_content in 8 catalogs; C2 universal `*:focus-visible` safety net + KdpPublishingWizard step-change focus management; C3 WizardShell `aria-current="step"` + Toolbar aria-pressed on 20+ formatting toggles; C4 TipTap editor surface aria-label + role/aria-multiline (Editor + RichTextEditor) + ui.a11y.editor_label in 8 catalogs; C5 WCAG AA color-contrast — 30 violations resolved by darkening text-muted + accent across all 10 theme variants (user-adjudicated path α); C6 `@axe-core/react` ^4.11.3 devDep-only via `import.meta.env.DEV` dynamic import (prod bundle verified clean); C7 universal `prefers-reduced-motion` rule covering all ~42 transition/animation sites at 0.01ms duration. Pre-Inspection findings closed: zero skip-link / zero motion-query / zero `<main>` on BookEditor / no h1 on BookEditor + ArticleEditor / 30 contrast violations / 0 axe-core integration. tsc + Vitest 1986/1986 + i18n 75/75 + prod build all green across the chain.)
+Previous: 2026-05-23 I18N-ARTICLES-NAMESPACE-CLEANUP-01 CLOSED via 1-commit ship: 7 silently-falling-back keys moved from `ui.template_picker.*` to `ui.articles.*` across all 8 i18n catalogs + 3 dead keys deleted + orphaned AuthorProfileSelect component+test removed.
 Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66`: C1 BookTypeRegistry + book-types.yaml (3 entries) + 22 backend tests (incl. ``test_literal_matches_registry`` SSoT verification gate); C2 GET /api/book-types endpoint + 4 endpoint tests; C3 useBookTypes() + BookTypesProvider mounted at App root + 13 Vitest cases; C4 pages.py PAGEABLE_BOOK_TYPES → pageable_book_types() registry call; C5 Dashboard + GetStarted migrated (new shared BookTypeIcon util; hardcoded DropdownMenu items + BOOK_TYPE_CARDS array DELETED); C6 CreateBookModal template-tab + BookEditor editor dispatch table (-30 LOC net via near-duplicate showMetadata-swap branch unification); C7 BookMetadataEditor isChapterBasedBookType + kdp-wizard MetadataChecklist + PricingStep capability-driven; C8 plugin-getstarted BOOK_TYPES tuple replaced with registry lookup (lazy import + ImportError fallback for standalone pytest path); C9 plugin-kdp/package.py chapter-filter capability-driven (lazy import + fallback). Pre-Coding-Reality-Check found audit scope 5 → 24 surfaces (4.8× higher); user-adjudicated full-scope ship via Q1.A + Q2.A core-owns-all + Q3.A runtime-API. plugin-export per-type loaders + plugin-kdp per-type manuscript dispatch documented as NOT-migrated (different signatures, not capability-driven). Backend pytest 2181 → 2207 (+26); Vitest 1974 → 1987 (+13); i18n parity 75/75 held; tsc clean throughout.)
 Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
 Current version: v0.36.0
@@ -54,86 +55,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **ACCESSIBILITY-AUDIT-WCAG-AA-01** (P3, QUALITY, adapted from
-  adaptive-learner accessibility audit pattern): comprehensive
-  WCAG 2.1 AA accessibility audit + remediation across Bibliogon's
-  frontend.
-
-  ### Scope (7 commits, single session)
-
-  - C1: Skip-to-content link (first focusable element, hidden
-    until focused) + semantic HTML fixes (landmark structure:
-    `<main>`, `<nav>`, `<header>`, heading hierarchy h1→h2→h3)
-  - C2: Keyboard navigation audit (Tab order logical across all
-    pages, Escape closes all modals/drawers/dialogs, focus
-    indicators visible on every interactive element, focus
-    management on route changes)
-  - C3: ARIA attributes sweep (aria-label on all icon-only
-    buttons incl. Trash2 delete buttons, PageThumbnails grip
-    handles, toolbar icon buttons; aria-live regions for toast
-    notifications; aria-required on form fields; aria-describedby
-    linking validation errors to fields)
-  - C4: TipTap/ProseMirror editor accessibility (verify ARIA
-    roles on editor surface, toolbar button aria-pressed states,
-    announce formatting changes via aria-live)
-  - C5: Color contrast verification (WCAG AA 4.5:1 normal text,
-    3:1 large text; verify across all 3 themes x light/dark;
-    information never conveyed by color alone)
-  - C6: `@axe-core/react` integration (devDependencies ONLY,
-    zero production impact; fix all critical + serious violations;
-    document remaining moderate/minor in backlog)
-  - C7: `prefers-reduced-motion` audit (verify all CSS
-    transitions/animations respect the media query; toast
-    slide-in, dialog open/close, sidebar transitions)
-
-  ### Bibliogon-specific considerations
-
-  - Radix UI primitives (Dialog, Tabs, Select, Dropdown,
-    Tooltip) provide good baseline accessibility. Audit focuses
-    on custom components built around Radix, not Radix internals.
-  - TipTap editor ARIA is a distinct surface from standard form
-    accessibility. ProseMirror's contenteditable has its own
-    screen-reader interaction model.
-  - PDF export accessibility (Tagged PDF for screen readers) is
-    OUT OF SCOPE for this audit. That's a separate export-pipeline
-    concern.
-  - WizardShell (KDP + ConvertToBook) needs step-indicator ARIA
-    (aria-current="step", aria-label per dot).
-  - PageThumbnails drag-and-drop (@dnd-kit) needs keyboard
-    reorder support verification.
-
-  ### Standards
-
-  - Target: WCAG 2.1 AA (not AAA)
-  - aria-label is NOT a substitute for visible labels on form
-    fields
-  - axe-core in devDependencies ONLY
-  - Atomic green commits per logical group
-
-  ### Trigger
-
-  Pre-v1.0 release gate OR first accessibility complaint from
-  a user OR legal requirement surfaces (EU Accessibility Act
-  2025 may apply to software tools). Not urgent for v0.36.0
-  but load-bearing for any public release marketed to a broad
-  audience.
-
-  ### Effort
-
-  M-L (7 commits, single session). The skip-to-content link
-  and ARIA sweep are quick. Color contrast across 6 theme
-  variants and TipTap editor accessibility are the heavier
-  tracks.
-
-  ### Cross-references
-
-  - adaptive-learner accessibility audit (source pattern,
-    7-commit structure)
-  - Radix UI accessibility docs (baseline provided by
-    primitives)
-  - `.claude/rules/coding-standards.md` (testid conventions
-    that support ARIA)
 
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
