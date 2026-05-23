@@ -70,7 +70,7 @@ export default function Help() {
                     </Tabs.Trigger>
                 </Tabs.List>
 
-            <main className={styles.main}>
+            <main id="main-content" className={styles.main}>
                 <Tabs.Content value="shortcuts">
                     <div className={styles.section}>
                         <h2 className={styles.sectionTitle}>{t("ui.help.shortcuts_tab", "Tastenkürzel")}</h2>

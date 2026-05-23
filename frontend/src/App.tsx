@@ -15,6 +15,7 @@ import {DialogProvider} from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
 import OfflineBanner from "./components/OfflineBanner";
+import SkipToContentLink from "./components/SkipToContentLink";
 import {AudiobookJobProvider} from "./contexts/AudiobookJobContext";
 import {BulkAiFillJobProvider} from "./contexts/BulkAiFillJobContext";
 import {MediumImportJobProvider} from "./contexts/MediumImportJobContext";
@@ -118,6 +119,7 @@ export default function App() {
         <BulkAiFillJobProvider>
         <MediumImportJobProvider>
         <HelpProvider>
+            <SkipToContentLink />
             <OfflineBanner />
             {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.
              *  Renders above Routes so the banner sits at the top

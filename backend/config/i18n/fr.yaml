@@ -1383,6 +1383,8 @@ ui:
     removed: "Mot-clé supprimé"
     undo: "Annuler"
     hint: "Double-cliquer pour modifier, glisser-déposer pour réordonner"
+  a11y:
+    skip_to_content: "Aller au contenu principal"
   common:
     cancel: "Annuler"
     create: "Creer"

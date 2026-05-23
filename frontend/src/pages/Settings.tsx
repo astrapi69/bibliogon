@@ -193,7 +193,7 @@ export default function Settings() {
                     );
                 })()}
 
-            <main className={styles.main}>
+            <main id="main-content" className={styles.main}>
                 <Tabs.Content value="app">
                     <AppSettings
                         config={appConfig}

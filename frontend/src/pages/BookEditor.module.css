@@ -12,6 +12,17 @@
     overflow: hidden;
 }
 
+/* WCAG SC 2.4.1 Bypass Blocks landmark wrapper around the chapter /
+ * metadata / loading / empty-state slot. Takes the remaining
+ * horizontal space next to the chapter sidebar. */
+.content {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
 .loading {
     display: flex;
     align-items: center;

@@ -1378,6 +1378,8 @@ ui:
     removed: "Keyword removed"
     undo: "Undo"
     hint: "Double-click to edit, drag-and-drop to reorder"
+  a11y:
+    skip_to_content: "Skip to main content"
   common:
     cancel: "Cancel"
     create: "Create"

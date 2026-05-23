@@ -1347,6 +1347,8 @@ ui:
     removed: "Palavra-chave removida"
     undo: "Desfazer"
     hint: "Clique duplo para editar, arrastar e soltar para reordenar"
+  a11y:
+    skip_to_content: "Ir para o conteudo principal"
   common:
     cancel: "Cancelar"
     create: "Criar"

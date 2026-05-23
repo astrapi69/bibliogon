@@ -1377,6 +1377,8 @@ ui:
     removed: "Schlüsselwort entfernt"
     undo: "Rückgängig"
     hint: "Doppelklick zum Bearbeiten, Drag-and-Drop zum Sortieren"
+  a11y:
+    skip_to_content: "Zum Hauptinhalt springen"
   common:
     cancel: "Abbrechen"
     create: "Erstellen"

@@ -293,7 +293,7 @@ export default function MediumImportPage() {
                 </div>
             </header>
 
-            <main className={styles.main}>
+            <main id="main-content" className={styles.main}>
                 <p className={styles.intro}>
                     {t(
                         "ui.medium_import.intro",

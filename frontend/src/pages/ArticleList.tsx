@@ -797,7 +797,7 @@ export default function ArticleList() {
                     </div>
                 </div>
             </header>
-            <main className={layout.main}>
+            <main id="main-content" className={layout.main}>
             {/* Page title row mirrors the books-dashboard ``mainHeader``
                 shape: heading + count + ViewToggle inline. Hidden in
                 trash mode; TrashPanel renders its own header that

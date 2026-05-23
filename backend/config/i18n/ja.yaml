@@ -1347,6 +1347,8 @@ ui:
     removed: "キーワードを削除しました"
     undo: "元に戻す"
     hint: "ダブルクリックで編集、ドラッグ&ドロップで並べ替え"
+  a11y:
+    skip_to_content: "メインコンテンツへスキップ"
   common:
     cancel: "キャンセル"
     create: "作成"

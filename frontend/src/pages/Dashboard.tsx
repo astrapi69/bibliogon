@@ -614,7 +614,7 @@ export default function Dashboard() {
             </header>
 
             {/* Content */}
-            <main className={styles.main}>
+            <main id="main-content" className={styles.main}>
                 {/* v0.35.1 (2026-05-18): DonationReminderBanner lifted
                  *  to App.tsx — App-level mount above <Routes>. The
                  *  banner now persists across navigation (every page

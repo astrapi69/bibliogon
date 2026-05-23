@@ -557,6 +557,7 @@ export default function BookEditor() {
 
     return (
         <div className={styles.layout} data-testid="book-editor">
+            <h1 className="sr-only">{book.title || "Bibliogon"}</h1>
             {/* Mobile sidebar toggle */}
             {!sidebarOpen && (
                 <button
@@ -613,6 +614,7 @@ export default function BookEditor() {
             />
             </div>
 
+            <main id="main-content" className={styles.content}>
             {showMetadata ? (
                 <BookMetadataEditor
                     book={book}
@@ -681,6 +683,7 @@ export default function BookEditor() {
                     }
                 />
             )}
+            </main>
 
             {bookId && (
                 <ExportDialog

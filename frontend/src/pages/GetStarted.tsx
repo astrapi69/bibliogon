@@ -168,7 +168,7 @@ export default function GetStarted() {
                 </div>
             </header>
 
-            <main className={styles.main}>
+            <main id="main-content" className={styles.main}>
                 {/* Progress bar */}
                 <div className={styles.progressSection}>
                     <div className={styles.progressBar}>

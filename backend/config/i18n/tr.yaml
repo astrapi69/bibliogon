@@ -1383,6 +1383,8 @@ ui:
     removed: "Anahtar kelime kaldırıldı"
     undo: "Geri al"
     hint: "Düzenlemek için çift tıklayın, sıralamak için sürükleyip bırakın"
+  a11y:
+    skip_to_content: "Ana icerige atla"
   common:
     cancel: "Iptal"
     create: "Olustur"
