@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-22 (PB-PHASE4 P2 block resolved across Sessions 3-7)
-Latest release: v0.35.1 (Fast-follow patch for v0.35.0 donation-visibility gap; see CLAUDE.md for the per-release headline.)
+Last updated: 2026-05-23 (v0.36.0 release cut; 230 commits since v0.35.1; +59765 / -2909 lines across 331 files)
+Latest release: v0.36.0 (Largest release since v0.30.0 by commit count. Three strategic streams matured together: plugin-comics v1.0.0 → v1.1.0 (multi-panel + multi-bubble editor); KDP Publishing Wizard Phase 1 + Phase 2 (5-step XState v5 + server-side persistence + conflict-resolution banner); PluginForge v0.7.0 → v0.10.0 adoption arc. Plus 17 other coherent surfaces. See changelog/releases/v0.36.0.md for the full per-release notes.)
 Open tasks: 0 P2 + 2 active (P3) + 2 active (P5) + 2 BLOCKED-on-upstream + 1 P5 LAUNCHER-I18N-NATIVE-REVIEW-01 (call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18)).
 Archive: [docs/roadmap-archive/](roadmap-archive/)
 
