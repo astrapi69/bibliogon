@@ -336,16 +336,11 @@ export default function MediumImportPage() {
                                       "Der Import läuft im Hintergrund. Du kannst die Seite verlassen — der Badge unten links zeigt den Fortschritt und bringt dich zurück.",
                                   )}
                         </p>
-                        {preview && (
-                            <MediumImportPreviewTable
-                                items={preview.items}
-                                errored={preview.errored}
-                                selected={selected}
-                                onToggleAll={handleToggleAll}
-                                onToggleRow={handleToggleRow}
-                                disabled={isImporting}
-                            />
-                        )}
+                        {/*
+                          Progress renders ABOVE the preview table during
+                          import: the user's attention is on the running
+                          job, not on the (now-disabled) selection list.
+                        */}
                         {isImporting && (
                             <MediumImportProgress
                                 phase="processing-async"
@@ -361,6 +356,16 @@ export default function MediumImportPage() {
                                 asyncSkippedComments={
                                     job.skippedCommentsCount
                                 }
+                            />
+                        )}
+                        {preview && (
+                            <MediumImportPreviewTable
+                                items={preview.items}
+                                errored={preview.errored}
+                                selected={selected}
+                                onToggleAll={handleToggleAll}
+                                onToggleRow={handleToggleRow}
+                                disabled={isImporting}
                             />
                         )}
                         <div className={styles.previewActions}>
