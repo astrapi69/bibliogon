@@ -184,6 +184,20 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
     const canAdvance = snapshot.can({type: "ADVANCE"})
     const isLastStep = step === TOTAL_STEPS - 1
 
+    // a11y: on step transition move keyboard focus to the first
+    // interactive element inside the step body so keyboard users
+    // land on something actionable. Mirrors the ConvertToBookWizard
+    // pattern at L274-282.
+    const stepContentRef = useRef<HTMLDivElement | null>(null)
+    useEffect(() => {
+        const container = stepContentRef.current
+        if (!container) return
+        const focusable = container.querySelector<HTMLElement>(
+            "input:not([type='hidden']), select, textarea, button",
+        )
+        focusable?.focus()
+    }, [step])
+
     // C11 conflict-detection banner. Fires when the book was
     // edited after the persisted publishing-state row was last
     // saved (ISO timestamps compare lexicographically). The user
@@ -339,6 +353,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
                     finishIcon={<Check size={14} />}
                 />
             }
+            bodyRef={stepContentRef}
         >
             {renderCurrentStep()}
         </WizardShell>

@@ -750,6 +750,23 @@ body {
     border: 0;
 }
 
+/* Global focus-visible safety net — WCAG 2.1 SC 2.4.7 "Focus
+ * Visible". Components that suppress the default outline (the
+ * many `outline: none` declarations across global.css + component
+ * CSS modules) leave keyboard users without a visible focus
+ * indicator. This universal rule restores it for keyboard focus
+ * only (`:focus-visible` does not match mouse-click focus, so
+ * input clicks stay outline-free). `!important` is required
+ * because per-component class rules win on specificity otherwise
+ * — accessibility override is justified here. Components that
+ * want a custom focus indicator can override with their own
+ * `*:focus-visible` rule of equal-or-higher specificity using
+ * `!important`. */
+*:focus-visible {
+    outline: 2px solid var(--accent, currentColor) !important;
+    outline-offset: 2px !important;
+}
+
 /* Skip-to-content link — first focusable element in the page. Hidden
  * off-screen until keyboard focus reveals it. WCAG 2.1 2.4.1
  * "Bypass Blocks". */
