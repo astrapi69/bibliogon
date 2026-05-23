@@ -1,10 +1,15 @@
-"""Bulk delete for Articles, Books, and ArticleComments.
+"""Bulk delete + bulk restore for Articles, Books, and ArticleComments.
 
-Three endpoints, mirrored:
+Mirrored across all three entities:
 
     POST /api/articles/bulk-delete
     POST /api/books/bulk-delete
     POST /api/comments/bulk-delete
+
+    POST /api/articles/trash/bulk-restore
+    POST /api/books/trash/bulk-restore
+    POST /api/comments/trash/bulk-restore  (lives in comments.py for
+                                            historical reasons; same shape)
 
 Body shape (all endpoints):
 
@@ -166,3 +171,93 @@ def bulk_delete_comments(
     db: Session = Depends(get_db),
 ) -> BulkDeleteResponse:
     return _bulk_delete(ArticleComment, body.ids, body.permanent, db)
+
+
+# ---------------------------------------------------------------------------
+# Bulk restore (counterpart to bulk-delete). Mirrors the shape of
+# the existing ``comments.bulk_restore_comments`` (see comments.py),
+# extended here to Article + Book so the bulk-delete + Undo-toast
+# flow consolidates from N parallel single-item restores into one
+# round-trip with per-id status.
+#
+# Why per-id status (not 404-or-204): the caller is an Undo flow
+# that already has the IDs in hand. A 4xx on the whole batch when
+# one id is unknown would be hostile (the other 89 should still
+# restore). The shape mirrors BulkDeleteResponse for symmetry.
+# ---------------------------------------------------------------------------
+
+
+class BulkRestoreRequest(BaseModel):
+    ids: list[str] = Field(min_length=1)
+
+
+class _RestoreFailedItem(BaseModel):
+    id: str
+    error: str
+
+
+class BulkRestoreResponse(BaseModel):
+    restored_count: int
+    skipped_not_in_trash: list[str] = Field(default_factory=list)
+    failed: list[_RestoreFailedItem] = Field(default_factory=list)
+
+
+def _bulk_restore(
+    model: type[Article] | type[Book],
+    ids: list[str],
+    db: Session,
+) -> BulkRestoreResponse:
+    """Shared core. Same shape as ``_bulk_delete`` but inverse:
+    clear ``deleted_at`` on every row whose ``deleted_at IS NOT NULL``.
+    Already-live rows land in ``skipped_not_in_trash`` (idempotent).
+
+    Single-transaction commit so a Promise.all-style undo can't race
+    SQLite write contention the way 90 parallel single-item POSTs can.
+    """
+    restored_count = 0
+    skipped: list[str] = []
+    failed: list[_RestoreFailedItem] = []
+
+    rows = cast(
+        "list[Article | Book]",
+        db.query(model).filter(model.id.in_(ids)).all(),
+    )
+    by_id: dict[str, Article | Book] = {row.id: row for row in rows}
+
+    for row_id in ids:
+        row = by_id.get(row_id)
+        if row is None:
+            failed.append(_RestoreFailedItem(id=row_id, error="not found"))
+            continue
+        if row.deleted_at is None:
+            skipped.append(row_id)
+            continue
+        try:
+            row.deleted_at = None
+            restored_count += 1
+        except Exception as exc:  # noqa: BLE001 - boundary handler
+            logger.exception("bulk-restore: failed on %s", row_id)
+            failed.append(_RestoreFailedItem(id=row_id, error=str(exc)))
+
+    db.commit()
+    return BulkRestoreResponse(
+        restored_count=restored_count,
+        skipped_not_in_trash=skipped,
+        failed=failed,
+    )
+
+
+@articles_router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
+def bulk_restore_articles(
+    body: BulkRestoreRequest,
+    db: Session = Depends(get_db),
+) -> BulkRestoreResponse:
+    return _bulk_restore(Article, body.ids, db)
+
+
+@books_router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
+def bulk_restore_books(
+    body: BulkRestoreRequest,
+    db: Session = Depends(get_db),
+) -> BulkRestoreResponse:
+    return _bulk_restore(Book, body.ids, db)

@@ -308,3 +308,99 @@ def test_over_200_ids_accepted_no_cap(client: TestClient) -> None:
     assert body["deleted_count"] == 0
     assert len(body["failed"]) == 201
     assert all(f["error"] == "not found" for f in body["failed"])
+
+
+# ---------------------------------------------------------------------------
+# Articles + Books — bulk-restore (counterpart to bulk-delete)
+# ---------------------------------------------------------------------------
+
+
+def test_articles_bulk_restore_clears_deleted_at(
+    client: TestClient, db: Session
+) -> None:
+    """Soft-delete then bulk-restore: every id's deleted_at is cleared
+    and restored_count matches. This is the canonical bulk-delete +
+    Undo-toast roundtrip."""
+    ids = [_make_article(client, f"Restore target {i}") for i in range(3)]
+    assert client.post(
+        "/api/articles/bulk-delete", json={"ids": ids, "permanent": False}
+    ).status_code == 200
+
+    resp = client.post("/api/articles/trash/bulk-restore", json={"ids": ids})
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["restored_count"] == 3
+    assert body["skipped_not_in_trash"] == []
+    assert body["failed"] == []
+    for aid in ids:
+        row = db.query(Article).filter(Article.id == aid).one()
+        assert row.deleted_at is None
+
+
+def test_articles_bulk_restore_skips_already_live(
+    client: TestClient,
+) -> None:
+    """Mixed batch: half in trash, half live. Live ones land in
+    skipped_not_in_trash (idempotent), trashed ones are restored."""
+    live_ids = [_make_article(client, f"Live {i}") for i in range(2)]
+    trashed_ids = [_make_article(client, f"Trashed {i}") for i in range(2)]
+    for tid in trashed_ids:
+        assert client.delete(f"/api/articles/{tid}").status_code == 204
+
+    resp = client.post(
+        "/api/articles/trash/bulk-restore", json={"ids": live_ids + trashed_ids}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 2
+    assert set(body["skipped_not_in_trash"]) == set(live_ids)
+    assert body["failed"] == []
+
+
+def test_articles_bulk_restore_missing_id_lands_in_failed(
+    client: TestClient,
+) -> None:
+    """Unknown id → failed entry; the rest of the batch still
+    processes (no short-circuit)."""
+    real_ids = [_make_article(client, f"Real {i}") for i in range(2)]
+    assert client.post(
+        "/api/articles/bulk-delete", json={"ids": real_ids, "permanent": False}
+    ).status_code == 200
+
+    resp = client.post(
+        "/api/articles/trash/bulk-restore",
+        json={"ids": real_ids + ["nonexistent-id-xyz"]},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 2
+    assert body["failed"] == [{"id": "nonexistent-id-xyz", "error": "not found"}]
+
+
+def test_books_bulk_restore_clears_deleted_at(
+    client: TestClient, db: Session
+) -> None:
+    """Books counterpart — same semantics, same shape."""
+    ids = [_make_book(client, f"Restore book {i}") for i in range(2)]
+    assert client.post(
+        "/api/books/bulk-delete", json={"ids": ids, "permanent": False}
+    ).status_code == 200
+
+    resp = client.post("/api/books/trash/bulk-restore", json={"ids": ids})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["restored_count"] == 2
+    assert body["skipped_not_in_trash"] == []
+    assert body["failed"] == []
+    for bid in ids:
+        row = db.query(Book).filter(Book.id == bid).one()
+        assert row.deleted_at is None
+
+
+def test_bulk_restore_empty_ids_rejected(client: TestClient) -> None:
+    """Empty body stays a 422 (Pydantic min_length=1), mirroring
+    bulk-delete validation."""
+    resp = client.post("/api/articles/trash/bulk-restore", json={"ids": []})
+    assert resp.status_code == 422
+    resp = client.post("/api/books/trash/bulk-restore", json={"ids": []})
+    assert resp.status_code == 422
