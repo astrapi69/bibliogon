@@ -1552,18 +1552,6 @@ store.
   comments router currently lacks; the GET / DELETE
   paths exist already).
 
-- **MEDIUM-IMPORT-EXCERPT-AUTOFILL-01**: auto-populate
-  ``Article.excerpt`` on Medium import, mirroring the existing
-  seo_title / seo_description defaults shipped in commit
-  ``2062393``. Trade-off: excerpt is conceptually similar to
-  seo_description (both summarize the article), so duplicating
-  the subtitle into both might feel redundant; alternatively,
-  excerpt could derive from the first paragraph of body text
-  with the existing heuristic-fallback rejection we applied to
-  seo_description. No user complaint yet — the seo_description
-  default covers the dashboard-tile use case. Promote to P2 if
-  a user reports an empty-excerpt issue on imported articles.
-
 ---
 
 ## P4 - Roadmap / Future Phases
