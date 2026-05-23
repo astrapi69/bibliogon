@@ -81,14 +81,35 @@ store.
   reference user's install) renders in milliseconds; the
   bug is latent, not observed.
 
-  ### Scope (Pattern B — Load more, PAGE_SIZE=100)
+  ### Scope (Pattern B — Load more + user-selectable PAGE_SIZE)
 
-  Pattern picked from the investigation:
+  Pattern picked from the investigation, with the
+  page-size-selector extension per user adjudication
+  2026-05-25:
 
+  - **Page-size dropdown**: 10 / 25 / 50 / 100. Default 25.
+    Standard UX pattern (Google / GitHub / Jira / Linear).
+    Positioned next to the "Load more" button OR at the bottom
+    of the list (final UX placement decided at implementation
+    time; both placements are conventional).
+  - **Selection persistence**: server-side, via the existing
+    app.yaml user-overlay (`ui.dashboard.books_page_size` +
+    `ui.dashboard.articles_page_size`). Survives browser-data
+    clear / device switch. Mirrors the existing
+    `ui.dashboard.books_trash_view` + `articles_trash_view`
+    pattern (see USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 for
+    the merge semantics that govern user-overlay defaults).
+  - **Load more** keeps its place: same button, bumps the
+    `limit` by the current PAGE_SIZE. Resets to PAGE_SIZE on
+    filter change.
   - Matches [CommentsAdminSection.tsx](../frontend/src/components/CommentsAdminSection.tsx)
-    prior art (PAGE_SIZE=100 + load-more button + reset-
-    on-filter-change). Tested at
+    prior art (load-more + reset-on-filter-change). Tested at
     [CommentsAdminSection.test.tsx:255,320,342,355](../frontend/src/components/CommentsAdminSection.test.tsx).
+    CommentsAdminSection's PAGE_SIZE is hardcoded at 100; the
+    Dashboards add the user-selectable variant — when that
+    pattern ships, CommentsAdminSection becomes a 3rd
+    candidate site for the same hook + selector component
+    (RCU follow-up filed implicitly via this entry).
   - Keeps Bibliogon's bulk-select-all semantics intact
     (`selectAll(filteredBooks.map(b => b.id))` still means
     "all visible"). Virtual scrolling (Pattern C) would
@@ -97,19 +118,29 @@ store.
     complexity that comes with `react-window` or
     `@tanstack/react-virtual`.
 
-  ### Commit plan (~4-6 commits, single session)
+  ### Commit plan (~6-8 commits, single session)
 
   1. Backend: `limit: int | None = Query(default=None, le=1000)`
      on `list_books` + `list_articles`, append `.limit(limit)`
      on the query. Paired pytest cases for limit/cap behavior.
-  2. Frontend: extract `usePagedList` hook from
+  2. Backend: extend `ui.dashboard` config keys
+     (`books_page_size` + `articles_page_size`, default 25,
+     enum [10, 25, 50, 100]). Add validation + paired settings
+     endpoint tests.
+  3. Frontend: extract `usePagedList(initialPageSize)` hook from
      CommentsAdminSection's pattern (per RCU 2-surfaces
-     threshold) + Vitest.
-  3. Wire into Dashboard: "Load more" button + reset-on-filter
-     `useEffect`.
-  4. Wire into ArticleList: same shape.
-  5. i18n: `ui.dashboard.load_more` key in all 8 catalogs.
-  6. Playwright smoke: load-more flow per surface.
+     threshold) + Vitest covering page-size change resets +
+     load-more increments + filter-change reset.
+  4. Frontend: extract `<PageSizeSelector>` component
+     (dropdown w/ 10/25/50/100, fires onChange) + Vitest.
+  5. Wire into Dashboard: "Load more" button + PageSizeSelector
+     + reset-on-filter `useEffect` + persist selection via
+     `api.settings.updateApp`.
+  6. Wire into ArticleList: same shape.
+  7. i18n: `ui.dashboard.load_more` + `ui.dashboard.page_size_label`
+     keys in all 8 catalogs.
+  8. Playwright smoke: load-more flow + page-size selector
+     persistence per surface.
 
   ### Why deferred (not P0/P1/P2)
 
