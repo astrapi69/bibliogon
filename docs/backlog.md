@@ -348,46 +348,6 @@ store.
   S-M (1-3 commits) — primarily docs / rule edits + a few
   workflow-discipline pins in ``.claude/rules/``.
 
-- **PLUGIN-VERSION-GATING-ENABLE-01** (P3, OPT-IN-FEATURE,
-  filed 2026-05-20 during V060 C3 β2 migration): enable
-  ``min_app_version`` gating by passing ``app_version=__version__``
-  to the ``PluginManager(...)`` ctor at
-  [backend/app/main.py:308](../backend/app/main.py#L308).
-  Currently the manager is constructed without ``app_version``,
-  so pluginforge's ``_check_app_version`` skip-shortcuts when
-  the host has not declared its version
-  ([pluginforge/manager.py:522](file:///media/astrapi69/T7_Shield/dev/git/hub/pluginforge/pluginforge/manager.py#L522)).
-  Class-attribute declarations on ``ComicsPlugin.min_app_version =
-  "0.35.0"`` and ``KinderbuchPlugin.min_app_version = "0.9.0"``
-  (from C3 commit ``997ca7d``) are documented but unenforced.
-
-  Scope:
-  - Add ``app_version=__version__`` to the
-    ``PluginManager(...)`` ctor at main.py:308.
-  - Audit current host version (0.35.1) against the 2 declared
-    minimums: comics 0.35.0 (passes), kinderbuch 0.9.0 (passes).
-    No first-party plugin fails the gate today.
-  - Document the upgrade path: when Bibliogon bumps to 0.36.0,
-    any plugin declaring ``min_app_version > 0.36.0`` would
-    fail to activate. Release-workflow gate: confirm no plugin
-    declarations exceed the target version before tagging.
-  - Add 1 regression test pinning gating behavior (synthetic
-    fixture plugin with ``min_app_version = "99.0.0"`` should
-    surface ``filter_reason="incompatible_app_version"``).
-
-  Architecture-discipline notes:
-  - Pluginforge default ``app_version_severity="error"`` per
-    Decision #4 — version mismatch refuses activation, doesn't
-    warn. Severity is configurable per ctor kwarg.
-  - Gating enable is a behavior change visible to operators
-    (release-workflow gate point). Surface explicitly in the
-    release CHANGELOG when shipped.
-
-  Effort: S (1 commit). Trigger: next time a plugin needs to
-  declare a real version requirement (e.g. depends on an
-  API surface added in a specific Bibliogon release), OR as
-  release-hardening work before v1.0.
-
 - **WRITING-GOALS-PROGRESS-TRACKING-01** (P3, FEATURE-REQUEST,
   filed 2026-05-19 from the
   ``docs/audits/exploration-features-2026-05-15-evaluation.md``
