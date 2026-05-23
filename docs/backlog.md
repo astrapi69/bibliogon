@@ -55,6 +55,86 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **ACCESSIBILITY-AUDIT-WCAG-AA-01** (P3, QUALITY, adapted from
+  adaptive-learner accessibility audit pattern): comprehensive
+  WCAG 2.1 AA accessibility audit + remediation across Bibliogon's
+  frontend.
+
+  ### Scope (7 commits, single session)
+
+  - C1: Skip-to-content link (first focusable element, hidden
+    until focused) + semantic HTML fixes (landmark structure:
+    `<main>`, `<nav>`, `<header>`, heading hierarchy h1→h2→h3)
+  - C2: Keyboard navigation audit (Tab order logical across all
+    pages, Escape closes all modals/drawers/dialogs, focus
+    indicators visible on every interactive element, focus
+    management on route changes)
+  - C3: ARIA attributes sweep (aria-label on all icon-only
+    buttons incl. Trash2 delete buttons, PageThumbnails grip
+    handles, toolbar icon buttons; aria-live regions for toast
+    notifications; aria-required on form fields; aria-describedby
+    linking validation errors to fields)
+  - C4: TipTap/ProseMirror editor accessibility (verify ARIA
+    roles on editor surface, toolbar button aria-pressed states,
+    announce formatting changes via aria-live)
+  - C5: Color contrast verification (WCAG AA 4.5:1 normal text,
+    3:1 large text; verify across all 3 themes x light/dark;
+    information never conveyed by color alone)
+  - C6: `@axe-core/react` integration (devDependencies ONLY,
+    zero production impact; fix all critical + serious violations;
+    document remaining moderate/minor in backlog)
+  - C7: `prefers-reduced-motion` audit (verify all CSS
+    transitions/animations respect the media query; toast
+    slide-in, dialog open/close, sidebar transitions)
+
+  ### Bibliogon-specific considerations
+
+  - Radix UI primitives (Dialog, Tabs, Select, Dropdown,
+    Tooltip) provide good baseline accessibility. Audit focuses
+    on custom components built around Radix, not Radix internals.
+  - TipTap editor ARIA is a distinct surface from standard form
+    accessibility. ProseMirror's contenteditable has its own
+    screen-reader interaction model.
+  - PDF export accessibility (Tagged PDF for screen readers) is
+    OUT OF SCOPE for this audit. That's a separate export-pipeline
+    concern.
+  - WizardShell (KDP + ConvertToBook) needs step-indicator ARIA
+    (aria-current="step", aria-label per dot).
+  - PageThumbnails drag-and-drop (@dnd-kit) needs keyboard
+    reorder support verification.
+
+  ### Standards
+
+  - Target: WCAG 2.1 AA (not AAA)
+  - aria-label is NOT a substitute for visible labels on form
+    fields
+  - axe-core in devDependencies ONLY
+  - Atomic green commits per logical group
+
+  ### Trigger
+
+  Pre-v1.0 release gate OR first accessibility complaint from
+  a user OR legal requirement surfaces (EU Accessibility Act
+  2025 may apply to software tools). Not urgent for v0.36.0
+  but load-bearing for any public release marketed to a broad
+  audience.
+
+  ### Effort
+
+  M-L (7 commits, single session). The skip-to-content link
+  and ARIA sweep are quick. Color contrast across 6 theme
+  variants and TipTap editor accessibility are the heavier
+  tracks.
+
+  ### Cross-references
+
+  - adaptive-learner accessibility audit (source pattern,
+    7-commit structure)
+  - Radix UI accessibility docs (baseline provided by
+    primitives)
+  - `.claude/rules/coding-standards.md` (testid conventions
+    that support ARIA)
+
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
   TYPES-UPDATE-01 C5 close per Q4 adjudication): the
