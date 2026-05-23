@@ -194,6 +194,19 @@ store.
   2026-05-20 from the re-prioritization audit Q6 adjudication
   / β-path).
 
+  ### Deferred 2026-05-22
+
+  User-adjudicated to defer until a real user-pull signal lands.
+  Rationale: no Bibliogon mobile app exists; no user has
+  requested mobile sync; the Comics-Foundation-Trigger-Gate is
+  technically met but no user demand justifies the strategic
+  attention. Re-evaluate when mobile access becomes a real user
+  request (e.g. an issue filed asking for phone-side
+  Capture-Review-Surface, OR Aster explicitly schedules a
+  mobile-app session). Until then the exploration doc stays as
+  the load-bearing tracker; this triage item parks at P3 with
+  no trigger fired.
+
   ### Scope
 
   Triage the open exploration doc at
@@ -288,6 +301,22 @@ store.
   ``docs/explorations/exploration-multi-agent-gitflow-coordination.md``
   (filed by Strategic-Advisor 2026-05-20) to adopt as
   AI-workflow rules.
+
+  ### Deferred 2026-05-22
+
+  User-adjudicated to defer until the current single-agent CC
+  workflow hits a real scaling limit. Rationale: the existing
+  single-agent + manual Strategic-Advisor layer is productive
+  (15+ commits/day demonstrated 2026-05-22; 7 backlog items
+  closed in one session). Multi-agent coordination optimization
+  is premature scope until the single-agent cadence breaks down
+  AND the breakdown traces back to one of the 7 failure modes
+  from the exploration doc (not just generic friction).
+  Existing Lessons-Learned rules ("Multi-tool collaboration
+  tracking", "Pre-Coding-Reality-Check") already encode the
+  highest-value workflow-discipline pins; the exploration's
+  remaining recommendations stay in the doc as candidates
+  until a concrete failure-mode recurrence demands them.
 
   ### Evidence base
 
