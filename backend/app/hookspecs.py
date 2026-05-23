@@ -3,20 +3,23 @@
 Defines the hooks that plugins can implement.
 Uses pluggy's HookspecMarker for type-safe hook dispatch.
 
-Dispatch-site status (post HOOKSPEC-DISPATCH-WIRING-01 adjudication
-2026-05-22):
+Dispatch-site status (updated 2026-05-23 after
+HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ):
     content_pre_import  WIRED   - backend/app/services/backup/markdown_utils.py:106
     export_formats      UNWIRED - status-quo per adjudication
                                   (hardcoded SUPPORTED_FORMATS set in
                                   plugin-export covers today's single-
                                   export-plugin reality; re-evaluate
                                   when a 2nd export plugin lands)
-    export_execute      UNWIRED - planned wire-up tracked separately as
-                                  HOOKSPEC-EXPORT-EXECUTE-WIRE-01 (P3);
-                                  do not add @hookimpl implementations
-                                  until that session lands (would be
-                                  dead code per the Half-wired feature
-                                  lifecycle Lessons-Learned rule)
+    export_execute      WIRED   - plugins/bibliogon-plugin-export/
+                                  bibliogon_export/routes.py
+                                  ``_export_comic_book_pdf``. Sole
+                                  hookimpl: plugin-comics handles
+                                  ``book_type == "comic_book"`` +
+                                  ``fmt == "pdf"``. The audiobook
+                                  case is a DOCUMENTED EXCEPTION
+                                  (see ``export_execute`` docstring
+                                  below).
 
 Deleted hookspec (2026-05-22): chapter_pre_save. Zero implementations
 existed after multiple release cycles; the sibling content_pre_import
@@ -59,20 +62,42 @@ class BibliogonHookSpec:
         """Execute an export. First plugin to return a result wins.
 
         Args:
-            book: Book data dict.
+            book: Book data dict (must include ``book_type`` for
+                implementations that gate on content shape).
             fmt: Export format id (e.g. "epub", "pdf", "project").
-            options: Additional export options.
+            options: Additional export options. Shape is dispatch-
+                site-specific; e.g. comic-book PDF carries
+                ``pages``, ``panels``, ``bubbles``, ``assets``,
+                ``upload_dir``, ``output_path``,
+                ``picture_book_format``, ``picture_book_bleed_marks``.
 
         Returns:
-            Path to the generated output file.
+            Path to the generated output file, or None when the
+            implementation does not handle this (book, fmt) pair.
 
-        Wire-up planned in HOOKSPEC-EXPORT-EXECUTE-WIRE-01 (P3,
-        separate session). The cleanup removes 6 cross-plugin direct-
-        import sites in plugin-export's routes.py (audiobook
-        dispatch) and plugin-comics's comic_book_pdf.py
-        (picture_book_pdf reuse). Do NOT add @hookimpl
-        implementations in plugins until that session lands; they
-        would be dead code today.
+        Wired sites (post HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ, 2026-05-23):
+
+        - plugin-comics ``ComicsPlugin.export_execute`` handles
+          ``book_type == "comic_book"`` + ``fmt == "pdf"`` and
+          replaces the prior plugin-export → plugin-comics
+          reverse-import in routes.py:365.
+
+        Documented exception — audiobook stays as a direct-import
+        dispatch in plugin-export's ``_run_audiobook_job``:
+
+        - Audiobook generation is async (minutes-long), streams
+          SSE progress events via ``job_store.publish_event``, and
+          returns a job-result dict rather than a single Path.
+          The sync ``Path | None`` signature here cannot carry
+          that state. Wiring audiobook through this hook would
+          require either an async signature variant or out-of-
+          band global state — both larger than the
+          coupling-removal value justifies today. Re-evaluate
+          when a SECOND async streaming-export plugin proposes
+          to register, at which point a separate hookspec
+          (e.g. ``export_execute_async``) becomes the right
+          shape. Until then, plugin-export ↔ plugin-audiobook
+          stays directly coupled by design, NOT by oversight.
         """
         ...
 
