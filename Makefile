@@ -1,9 +1,9 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
-       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync \
+       test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins \
-       test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted \
+       test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
        check-blockers archive-task archive-task-dry install-hooks \
@@ -173,7 +173,7 @@ test-backend: ## Run backend tests
 	@echo "=== Backend Tests ==="
 	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync ## Run all plugin tests
+test-plugins: test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import ## Run all plugin tests
 
 test-plugin-export: ## Run export plugin tests
 	@echo ""
@@ -225,6 +225,16 @@ test-plugin-git-sync: ## Run git-sync plugin tests (PGS-01)
 	@echo "=== Git-Sync Plugin Tests ==="
 	cd plugins/bibliogon-plugin-git-sync && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
+test-plugin-comics: ## Run comics plugin tests
+	@echo ""
+	@echo "=== Comics Plugin Tests ==="
+	cd plugins/bibliogon-plugin-comics && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
+test-plugin-medium-import: ## Run medium-import plugin tests
+	@echo ""
+	@echo "=== Medium-Import Plugin Tests ==="
+	cd plugins/bibliogon-plugin-medium-import && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
+
 # --- Coverage (heavy, opt-in; CI runs this on every push - see .github/workflows/coverage.yml) ---
 
 test-coverage: test-coverage-plugins test-coverage-backend test-coverage-frontend ## Run ALL tests with coverage (slow; prefer CI)
@@ -241,7 +251,7 @@ test-coverage-frontend: ## Frontend coverage report (coverage/)
 	@echo "=== Frontend Coverage ==="
 	cd frontend && npm run test:coverage
 
-test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted ## Run plugin tests with coverage
+test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import ## Run plugin tests with coverage
 
 test-coverage-plugin-audiobook: ## Audiobook plugin coverage
 	@echo ""
@@ -287,6 +297,21 @@ test-coverage-plugin-getstarted: ## Getstarted plugin coverage
 	@echo ""
 	@echo "=== Getstarted Plugin Coverage ==="
 	cd plugins/bibliogon-plugin-getstarted && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_getstarted --cov-report=html --cov-report=term
+
+test-coverage-plugin-git-sync: ## Git-sync plugin coverage
+	@echo ""
+	@echo "=== Git-Sync Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-git-sync && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_git_sync --cov-report=html --cov-report=term
+
+test-coverage-plugin-comics: ## Comics plugin coverage
+	@echo ""
+	@echo "=== Comics Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-comics && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_comics --cov-report=html --cov-report=term
+
+test-coverage-plugin-medium-import: ## Medium-import plugin coverage
+	@echo ""
+	@echo "=== Medium-Import Plugin Coverage ==="
+	cd plugins/bibliogon-plugin-medium-import && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ --cov=bibliogon_medium_import --cov-report=html --cov-report=term
 
 # --- Mutation Testing ---
 
