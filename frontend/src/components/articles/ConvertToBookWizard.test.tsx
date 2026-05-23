@@ -237,7 +237,7 @@ describe("ConvertToBookWizard navigation", () => {
         // Step 4 -> 5 (review)
         fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-4-next"))
         expect(
-            screen.getByTestId("convert-to-book-wizard-review-confirm"),
+            screen.getByTestId("convert-to-book-wizard-step-5-finish"),
         ).toBeTruthy()
         // Back to 4
         fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-back"))
@@ -465,7 +465,7 @@ describe("ConvertToBookWizard submit", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
         const payload = mockFromArticles.mock.calls[0][0]
         // Sorted alphabetically: Alpha → Mango → Zebra.
@@ -520,7 +520,7 @@ describe("ConvertToBookWizard submit", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(notify.successAction).toHaveBeenCalled())
 
         // Page-level callback ran; wizard requested close.
@@ -581,7 +581,7 @@ describe("ConvertToBookWizard submit", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
         // The wizard rewinds to Step 0 (selection visible) AND shows
         // the structured banner with the trashed title.
@@ -973,7 +973,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         // Author was created first, then book.
         await waitFor(() =>
             expect(mockCreateAuthor).toHaveBeenCalledWith({name: "An Author"}),
@@ -1016,7 +1016,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
         expect(mockCreateAuthor).not.toHaveBeenCalled()
     })
@@ -1065,7 +1065,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
         expect(mockCreateAuthor).not.toHaveBeenCalled()
     })
@@ -1097,11 +1097,70 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
         clickNext(2)
         clickNext(3)
         clickNext(4)
-        fireEvent.click(screen.getByTestId("convert-to-book-wizard-review-confirm"))
+        fireEvent.click(screen.getByTestId("convert-to-book-wizard-step-5-finish"))
         await waitFor(() => expect(mockCreateAuthor).toHaveBeenCalled())
         // Book create proceeds despite the author-create failure.
         await waitFor(() => expect(mockFromArticles).toHaveBeenCalled())
         // Error toast fired for the author-create failure.
         expect(notify.error).toHaveBeenCalled()
+    })
+})
+
+describe("ConvertToBookWizard layout-stability regression-pins", () => {
+    /**
+     * CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01 — fired during
+     * real-user-smoke 2026-05-18 (filed) + closed 2026-05-22.
+     * Bug #2 was the high-impact muscle-memory complaint: the
+     * "Buch erstellen" button used to live inside renderStepReview's
+     * stepContent body, while every other step's Next button sat in
+     * the WizardNav footer. These pins prevent the inline button from
+     * coming back AND verify the new dimension constraints stay
+     * applied on the stepContent body.
+     */
+
+    function _walkToReview() {
+        render(
+            <ConvertToBookWizard
+                open
+                articles={multi}
+                onClose={vi.fn()}
+                onConverted={vi.fn()}
+                onViewBook={vi.fn()}
+            />,
+        )
+        // Step 0 → 5 in one go using the same helper pattern as
+        // sibling tests.
+        clickNext(0)
+        setStandardMetadata()
+        clickNext(1)
+        clickNext(2)
+        clickNext(3)
+        clickNext(4)
+    }
+
+    it("Bug #2: on step 5, the action button lives in WizardNav (not inline)", () => {
+        _walkToReview()
+        // The new namespace-pinned button exists in WizardNav's
+        // footer slot.
+        expect(
+            screen.getByTestId("convert-to-book-wizard-step-5-finish"),
+        ).toBeInTheDocument()
+        // The OLD inline-body testid is gone — no regression.
+        expect(
+            screen.queryByTestId("convert-to-book-wizard-review-confirm"),
+        ).not.toBeInTheDocument()
+    })
+
+    it("Bug #1: stepContent applies minHeight + maxHeight + scroll", () => {
+        _walkToReview()
+        // The review-step body is the stepContent wrapper for step 5.
+        // Verify the inline-style dimension constraints are applied.
+        const reviewBody = screen.getByTestId(
+            "convert-to-book-wizard-review-title-value",
+        ).closest("div[style*='min-height']") as HTMLElement | null
+        expect(reviewBody).not.toBeNull()
+        expect(reviewBody!.style.minHeight).toBe("380px")
+        expect(reviewBody!.style.maxHeight).toBe("520px")
+        expect(reviewBody!.style.overflowY).toBe("auto")
     })
 })

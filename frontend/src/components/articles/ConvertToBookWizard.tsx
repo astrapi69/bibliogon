@@ -1105,27 +1105,23 @@ export default function ConvertToBookWizard({
                     </dt>
                     <dd>{sortStrategy}</dd>
                 </dl>
-                <button
-                    type="button"
-                    className="btn btn-primary"
-                    onClick={() => void handleSubmit()}
-                    disabled={
-                        submitting || title.trim() === "" || author.trim() === "" || selectedIds.size === 0
-                    }
-                    data-testid="convert-to-book-wizard-review-confirm"
-                >
-                    {submitting ? (
-                        t("ui.convert_to_book.review_submitting", "Wird konvertiert …")
-                    ) : (
-                        <>
-                            <Check size={14} />{" "}
-                            {t("ui.convert_to_book.review_confirm", "Buch erstellen")}
-                        </>
-                    )}
-                </button>
             </div>
         )
     }
+
+    // CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01 Bug #2: the
+    // "Buch erstellen" action button used to live INSIDE
+    // renderStepReview's stepContent body, while every other step's
+    // Next button sat in the WizardNav footer slot. User
+    // muscle-memory targeting the footer missed on step 5. The
+    // button now lives in WizardNav's onFinish slot below
+    // (testid: convert-to-book-wizard-step-5-finish), matching the
+    // footer-positioning of all earlier steps' Next button.
+    const finishDisabled =
+        submitting
+        || title.trim() === ""
+        || author.trim() === ""
+        || selectedIds.size === 0
 
     const renderCurrentStep = () => {
         switch (step) {
@@ -1191,6 +1187,21 @@ export default function ConvertToBookWizard({
                             : undefined
                     }
                     advanceDisabled={!stepAdvanceable(step) || submitting}
+                    onFinish={() => void handleSubmit()}
+                    finishDisabled={finishDisabled}
+                    isLastStep={step === TOTAL_STEPS - 1}
+                    finishLabel={
+                        submitting
+                            ? t(
+                                  "ui.convert_to_book.review_submitting",
+                                  "Wird konvertiert …",
+                              )
+                            : t(
+                                  "ui.convert_to_book.review_confirm",
+                                  "Buch erstellen",
+                              )
+                    }
+                    finishIcon={submitting ? undefined : <Check size={14} />}
                 />
             }
         >
@@ -1205,8 +1216,19 @@ export default function ConvertToBookWizard({
 // WizardShell. Only step-body-specific styles remain here.
 
 const styles: Record<string, React.CSSProperties> = {
+    // CONVERT-TO-BOOK-WIZARD-LAYOUT-STABILITY-01 Bug #1: the dialog
+    // used to grow / shrink with each step's content amount. The
+    // shell already caps the WHOLE dialog at maxHeight 90vh; we
+    // constrain the step body itself so the dialog dimensions stay
+    // visually stable across all 6 steps. minHeight covers the
+    // smallest-natural step (metadata, front-matter, etc.); maxHeight
+    // + overflowY scrolls inside the largest-natural step (selection
+    // list, review). Picked from a per-step audit; conservative
+    // enough that no step needs more than mild internal scroll.
     stepContent: {
-        minHeight: 280,
+        minHeight: 380,
+        maxHeight: 520,
+        overflowY: "auto",
     },
     hint: {
         fontSize: "0.875rem",

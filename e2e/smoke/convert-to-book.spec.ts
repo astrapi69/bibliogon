@@ -156,7 +156,7 @@ test.describe("Article-to-book conversion", () => {
         // with a "View book" CTA; clicking the CTA navigates to
         // /book/{id} (WARN-I1 fix — no auto-navigate, the user
         // owns the navigation step).
-        await page.getByTestId("convert-to-book-wizard-review-confirm").click()
+        await page.getByTestId("convert-to-book-wizard-step-5-finish").click()
         const viewBookCta = page.getByTestId(
             "convert-to-book-success-view-book",
         )
@@ -195,7 +195,7 @@ test.describe("Article-to-book conversion", () => {
         await page.getByTestId("convert-to-book-wizard-step-3-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-4-next").click()
         await page
-            .getByTestId("convert-to-book-wizard-review-confirm")
+            .getByTestId("convert-to-book-wizard-step-5-finish")
             .click()
         // Wait for the success toast (the wizard closes + clears
         // selection). We don't click the CTA here — this spec
@@ -257,7 +257,7 @@ test.describe("Article-to-book conversion", () => {
         // Submit + follow the toast's "View book" CTA to navigate
         // (WARN-I1 fix — auto-navigate replaced with user-owned CTA).
         await page
-            .getByTestId("convert-to-book-wizard-review-confirm")
+            .getByTestId("convert-to-book-wizard-step-5-finish")
             .click()
         const viewBookCta = page.getByTestId(
             "convert-to-book-success-view-book",
