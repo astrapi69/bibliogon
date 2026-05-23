@@ -18,9 +18,13 @@ import tomllib
 from pathlib import Path
 from typing import Any
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, Field
+from sqlalchemy.orm import Session
 
 from app import __version__
+from app.database import SessionLocal
+from app.services import reset_service, reset_token
 
 router = APIRouter(prefix="/system", tags=["system"])
 
@@ -103,3 +107,72 @@ def get_system_info() -> dict[str, Any]:
             "pluginforge": _safe_module_version("pluginforge"),
         },
     }
+
+
+# ---------- Danger Zone reset ------------------------------------------------
+#
+# Two-phase HMAC-token-gated reset. See
+# ``backend/app/services/reset_service.py`` for the actual wipe
+# logic and ``backend/app/services/reset_token.py`` for the token
+# scheme. The endpoint pair is split so a malicious or accidental
+# single request cannot trigger reset - the client must prove both
+# (a) it called ``prepare`` within the last 5 minutes and (b) the
+# user typed the literal string ``"RESET"`` to confirm.
+
+
+class _ResetPrepareResponse(BaseModel):
+    token: str
+    expires_at: int = Field(..., description="Unix epoch seconds when the token expires.")
+    ttl_seconds: int = Field(..., description="Token lifetime in seconds.")
+
+
+class _ResetRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+    confirmation: str = Field(
+        ...,
+        description="Must equal the literal string 'RESET'.",
+    )
+
+
+@router.post("/reset/prepare", response_model=_ResetPrepareResponse)
+def reset_prepare() -> _ResetPrepareResponse:
+    """Issue a one-time HMAC token for the subsequent ``/reset`` call.
+
+    The token is valid for ``reset_token.DEFAULT_TTL_SECONDS`` (5
+    min) and signed with a per-process random secret - i.e. it
+    cannot survive a backend restart by design. The endpoint takes
+    no body; the client just needs to know "I am about to reset"
+    to obtain a token.
+    """
+    issued = reset_token.issue_token()
+    return _ResetPrepareResponse(
+        token=issued.encoded,
+        expires_at=issued.expires_at,
+        ttl_seconds=reset_token.DEFAULT_TTL_SECONDS,
+    )
+
+
+@router.post("/reset")
+def reset_execute(body: _ResetRequest) -> dict[str, Any]:
+    """Execute the Danger Zone reset.
+
+    Both ``token`` (HMAC + TTL-validated) and ``confirmation == "RESET"``
+    must be present. On any validation failure the response is
+    HTTP 400 with a stable ``detail`` so the frontend can map it
+    to a user-facing toast string.
+    """
+    if body.confirmation != "RESET":
+        raise HTTPException(
+            status_code=400,
+            detail="Confirmation literal must equal 'RESET'.",
+        )
+    if not reset_token.verify_token(body.token):
+        raise HTTPException(
+            status_code=400,
+            detail="Reset token is invalid or expired.",
+        )
+    db: Session = SessionLocal()
+    try:
+        return reset_service.run_reset(db)
+    finally:
+        db.close()

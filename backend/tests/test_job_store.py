@@ -3,9 +3,7 @@
 import asyncio
 import time
 
-import pytest
-
-from app.job_store import Job, JobStatus, JobStore
+from app.job_store import JobStatus, JobStore
 
 
 def test_create_job():
@@ -113,7 +111,9 @@ def test_publish_event_appends_and_folds_progress():
 
     store.publish_event(job.id, "start", {"total": 5, "book_title": "Test"})
     store.publish_event(job.id, "chapter_start", {"index": 1, "title": "Ch 1"})
-    store.publish_event(job.id, "chapter_done", {"index": 1, "title": "Ch 1", "filename": "001.mp3"})
+    store.publish_event(
+        job.id, "chapter_done", {"index": 1, "title": "Ch 1", "filename": "001.mp3"}
+    )
     store.publish_event(job.id, "chapter_error", {"index": 2, "title": "Ch 2", "error": "tts down"})
 
     j = store.get(job.id)
@@ -211,3 +211,47 @@ def test_subscribe_cleanup_removes_subscriber():
         assert job._subscribers == []
 
     asyncio.run(run())
+
+
+def test_shutdown_all_cancels_active_jobs_and_clears_registry():
+    """``shutdown_all`` cancels every non-terminal job + empties ``_jobs``."""
+    store = JobStore()
+    pending = store.create()
+    running = store.create()
+    store.update(running.id, JobStatus.RUNNING)
+    terminal = store.create()
+    store.update(terminal.id, JobStatus.COMPLETED)
+
+    cancelled = store.shutdown_all()
+
+    # pending + running were cancelled (return True from cancel());
+    # the already-terminal one is removed from the registry but not
+    # counted as a cancellation.
+    assert cancelled == 2
+    assert store.get(pending.id) is None
+    assert store.get(running.id) is None
+    assert store.get(terminal.id) is None
+
+
+def test_shutdown_all_on_empty_store_is_noop():
+    """``shutdown_all`` returns 0 when no jobs exist."""
+    store = JobStore()
+    assert store.shutdown_all() == 0
+
+
+def test_shutdown_all_returns_count_of_active_cancellations():
+    """Mix of states - only non-terminal ones count toward the return."""
+    store = JobStore()
+    store.create()  # pending - counted
+    job_b = store.create()
+    store.update(job_b.id, JobStatus.RUNNING)  # running - counted
+    job_c = store.create()
+    store.update(job_c.id, JobStatus.FAILED, error="boom")  # terminal - not counted
+    job_d = store.create()
+    store.update(job_d.id, JobStatus.CANCELLED, error="user")  # terminal - not counted
+
+    cancelled = store.shutdown_all()
+
+    # Pending + Running are active -> counted.
+    # Failed + Cancelled are terminal -> not counted.
+    assert cancelled == 2

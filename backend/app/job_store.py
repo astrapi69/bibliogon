@@ -168,6 +168,23 @@ class JobStore:
             job._task.cancel()
         return True
 
+    def shutdown_all(self) -> int:
+        """Cancel every non-terminal job and clear the registry.
+
+        Used by ``POST /api/system/reset`` to stop in-flight exports
+        (audiobook, medium-import, AI bulk-fill) before the data
+        directory is wiped. Returns the count of jobs that were
+        actively cancelled (i.e. were not already in a terminal
+        state). Already-terminal jobs are still removed from the
+        registry but not counted.
+        """
+        cancelled = 0
+        for job_id in list(self._jobs.keys()):
+            if self.cancel(job_id):
+                cancelled += 1
+        self._jobs.clear()
+        return cancelled
+
     # --- Event streaming ---
 
     def publish_event(self, job_id: str, event_type: str, data: dict[str, Any]) -> None:
