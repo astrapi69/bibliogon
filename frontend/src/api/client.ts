@@ -448,6 +448,22 @@ export interface BulkDeleteResponse {
     failed: {id: string; error: string}[]
 }
 
+/** Response shape of POST /api/articles/trash/bulk-restore,
+ *  POST /api/books/trash/bulk-restore, and the existing
+ *  POST /api/comments/trash/bulk-restore. Mirrors the Pydantic
+ *  ``BulkRestoreResponse`` in backend/app/routers/bulk_delete.py
+ *  (articles + books) and backend/app/routers/comments.py
+ *  (comments). ``restored_count`` counts rows whose deleted_at
+ *  was cleared; ``skipped_not_in_trash`` is the idempotency-skip
+ *  list (already-live ids the caller sent anyway); ``failed[]``
+ *  is unknown-id or per-row error so the Undo never short-
+ *  circuits on one bad row. */
+export interface BulkRestoreResponse {
+    restored_count: number
+    skipped_not_in_trash: string[]
+    failed: {id: string; error: string}[]
+}
+
 // --- UNIVERSAL-AI-TEMPLATE-02 Session 2 types -------------------------
 //
 // AI template format (Article + Book) + AI-fill + bulk endpoints. The
@@ -1568,6 +1584,15 @@ export const api = {
         emptyTrash: () =>
             request<void>("/books/trash/empty", {method: "DELETE"}),
 
+        /** Bulk-restore (counterpart to ``bulkDelete`` soft path).
+         *  Single round-trip replacing ``Promise.all(ids.map(restore))``
+         *  in the Undo-toast flow. Mirrors ``articles.bulkRestore``. */
+        bulkRestore: (ids: string[]) =>
+            request<BulkRestoreResponse>("/books/trash/bulk-restore", {
+                method: "POST",
+                body: JSON.stringify({ids}),
+            }),
+
         /** Bulk-delete books. ``permanent=false`` moves to trash;
          *  ``true`` hard-deletes and cascades to Chapter / Asset /
          *  BookImportSource. Server-side cap MAX_BULK_DELETE=200
@@ -1958,6 +1983,17 @@ export const api = {
             request<BulkDeleteResponse>("/articles/bulk-delete", {
                 method: "POST",
                 body: JSON.stringify({ids, permanent}),
+            }),
+
+        /** Bulk-restore (counterpart to ``bulkDelete`` soft path).
+         *  Single round-trip replacing ``Promise.all(ids.map(restore))``
+         *  in the Undo-toast flow. Returns per-id status so the caller
+         *  can render "X restored, Y already live, Z failed". Mirrors
+         *  the existing ``comments.bulkRestore`` shape. */
+        bulkRestore: (ids: string[]) =>
+            request<BulkRestoreResponse>("/articles/trash/bulk-restore", {
+                method: "POST",
+                body: JSON.stringify({ids}),
             }),
 
         /** Bulk export. POSTs an explicit ID list (already in display

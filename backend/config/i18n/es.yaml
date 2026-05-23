@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} movidos a la papelera"
     toast_deleted_permanent: "{count} eliminados permanentemente"
     toast_undone: "Restaurado"
+    toast_undone_partial: "{restored} restaurados, {failed} fallaron"
     toast_undo_failed: "La restauración ha fallado"
     toast_failed: "La eliminación masiva ha fallado"
     undo_label: "Deshacer"

@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} movidos para a reciclagem"
     toast_deleted_permanent: "{count} eliminados permanentemente"
     toast_undone: "Restaurado"
+    toast_undone_partial: "{restored} restaurados, {failed} falharam"
     toast_undo_failed: "O restauro falhou"
     toast_failed: "A eliminação em massa falhou"
     undo_label: "Anular"

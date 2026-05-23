@@ -224,7 +224,12 @@ export default function ArticleList() {
                 "ui.bulk_delete.toast_trashed",
                 "{count} in den Papierkorb verschoben",
             ).replace("{count}", String(result.deleted_count));
-            // Undo restores every successfully-trashed row.
+            // Undo restores every successfully-trashed row via the
+            // bulk-restore endpoint (BULK-RESTORE-PARITY-01). One
+            // round-trip vs Promise.all(N) — serializes the work
+            // into one DB transaction and surfaces per-id failures
+            // via the response shape instead of swallowing them in
+            // Promise.all's "first rejection wins" semantics.
             notify.bulkAction(
                 message,
                 async () => {
@@ -233,13 +238,30 @@ export default function ArticleList() {
                             (id) => !result.skipped_already_trashed.includes(id)
                                 && !result.failed.some((f) => f.id === id),
                         );
-                        await Promise.all(undone.map((id) => api.articles.restore(id)));
+                        if (undone.length === 0) {
+                            notify.info(
+                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                            );
+                            return;
+                        }
+                        const undoResult = await api.articles.bulkRestore(undone);
                         const fresh = await api.articles.list();
                         setArticles(fresh);
                         void loadTrash();
-                        notify.info(
-                            t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
-                        );
+                        if (undoResult.failed.length > 0) {
+                            notify.warning(
+                                t(
+                                    "ui.bulk_delete.toast_undone_partial",
+                                    "{restored} wiederhergestellt, {failed} fehlgeschlagen",
+                                )
+                                    .replace("{restored}", String(undoResult.restored_count))
+                                    .replace("{failed}", String(undoResult.failed.length)),
+                            );
+                        } else {
+                            notify.info(
+                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                            );
+                        }
                     } catch (undoErr) {
                         notify.error(
                             t("ui.bulk_delete.toast_undo_failed", "Wiederherstellen fehlgeschlagen"),

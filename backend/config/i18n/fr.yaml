@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} déplacés dans la corbeille"
     toast_deleted_permanent: "{count} supprimés définitivement"
     toast_undone: "Restauré"
+    toast_undone_partial: "{restored} restaurés, {failed} échoués"
     toast_undo_failed: "Échec de la restauration"
     toast_failed: "Échec de la suppression groupée"
     undo_label: "Annuler"

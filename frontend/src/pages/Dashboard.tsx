@@ -200,12 +200,34 @@ export default function Dashboard() {
                                 !result.skipped_already_trashed.includes(id) &&
                                 !result.failed.some((f) => f.id === id),
                         );
-                        await Promise.all(undone.map((id) => api.books.restore(id)));
+                        if (undone.length === 0) {
+                            notify.info(
+                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                            );
+                            return;
+                        }
+                        // One round-trip via bulk-restore
+                        // (BULK-RESTORE-PARITY-01). Per-id status
+                        // surfaces partial failures via the response
+                        // shape instead of Promise.all's first-rejection
+                        // wins.
+                        const undoResult = await api.books.bulkRestore(undone);
                         loadBooks();
                         loadTrash();
-                        notify.info(
-                            t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
-                        );
+                        if (undoResult.failed.length > 0) {
+                            notify.warning(
+                                t(
+                                    "ui.bulk_delete.toast_undone_partial",
+                                    "{restored} wiederhergestellt, {failed} fehlgeschlagen",
+                                )
+                                    .replace("{restored}", String(undoResult.restored_count))
+                                    .replace("{failed}", String(undoResult.failed.length)),
+                            );
+                        } else {
+                            notify.info(
+                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
+                            );
+                        }
                     } catch (undoErr) {
                         notify.error(
                             t("ui.bulk_delete.toast_undo_failed", "Wiederherstellen fehlgeschlagen"),

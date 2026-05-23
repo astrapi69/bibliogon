@@ -1772,6 +1772,7 @@ ui:
     toast_trashed: "{count} in den Papierkorb verschoben"
     toast_deleted_permanent: "{count} endgültig gelöscht"
     toast_undone: "Wiederhergestellt"
+    toast_undone_partial: "{restored} wiederhergestellt, {failed} fehlgeschlagen"
     toast_undo_failed: "Wiederherstellen fehlgeschlagen"
     toast_failed: "Bulk-Löschen fehlgeschlagen"
     undo_label: "Rückgängig"

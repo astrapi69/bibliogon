@@ -1773,6 +1773,7 @@ ui:
     toast_trashed: "{count} moved to trash"
     toast_deleted_permanent: "{count} permanently deleted"
     toast_undone: "Restored"
+    toast_undone_partial: "{restored} restored, {failed} failed"
     toast_undo_failed: "Restore failed"
     toast_failed: "Bulk delete failed"
     undo_label: "Undo"

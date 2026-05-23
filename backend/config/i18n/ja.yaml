@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} 件をゴミ箱へ移動しました"
     toast_deleted_permanent: "{count} 件を完全に削除しました"
     toast_undone: "復元しました"
+    toast_undone_partial: "{restored} 件復元、{failed} 件失敗"
     toast_undo_failed: "復元に失敗しました"
     toast_failed: "一括削除に失敗しました"
     undo_label: "元に戻す"

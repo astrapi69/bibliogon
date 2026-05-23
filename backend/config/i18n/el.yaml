@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} μεταφέρθηκαν στον κάδο"
     toast_deleted_permanent: "{count} διαγράφηκαν οριστικά"
     toast_undone: "Επαναφέρθηκε"
+    toast_undone_partial: "{restored} επαναφέρθηκαν, {failed} απέτυχαν"
     toast_undo_failed: "Η επαναφορά απέτυχε"
     toast_failed: "Η μαζική διαγραφή απέτυχε"
     undo_label: "Αναίρεση"

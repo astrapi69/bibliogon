@@ -1778,6 +1778,7 @@ ui:
     toast_trashed: "{count} çöp kutusuna taşındı"
     toast_deleted_permanent: "{count} kalıcı olarak silindi"
     toast_undone: "Geri yüklendi"
+    toast_undone_partial: "{restored} geri yüklendi, {failed} başarısız"
     toast_undo_failed: "Geri yükleme başarısız"
     toast_failed: "Toplu silme başarısız"
     undo_label: "Geri al"
