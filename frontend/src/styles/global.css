@@ -767,6 +767,25 @@ body {
     outline-offset: 2px !important;
 }
 
+/* WCAG 2.1 SC 2.3.3 "Animation from Interactions" + WAI vestibular
+ * disorder guidance. Respect `prefers-reduced-motion: reduce` by
+ * collapsing every transition/animation to a near-zero duration
+ * across the app. Using 0.01ms (not 0ms) keeps transition-end /
+ * animation-end event callbacks firing so component logic that
+ * waits on them (e.g. ToastContainer dismiss, Radix Dialog open/
+ * close) still completes — only the visual motion is suppressed.
+ * `!important` overrides per-component duration overrides. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
 /* Skip-to-content link — first focusable element in the page. Hidden
  * off-screen until keyboard focus reveals it. WCAG 2.1 2.4.1
  * "Bypass Blocks". */
