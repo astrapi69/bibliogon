@@ -363,6 +363,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                         onClick={btn.action}
                         title={btn.title}
                         aria-label={btn.title}
+                        aria-pressed={btn.active}
                         data-testid={btn.testId}
                         className={cx(styles.button, btn.active && styles.buttonActive)}
                     >

@@ -206,9 +206,14 @@ function StepDotIndicator({
                 // no label is provided (Convert wizard shape) so
                 // happy-dom + DOM both report the attribute as
                 // absent, not as the literal string "undefined".
-                const a11yProps = step.label
+                const a11yProps: Record<string, string> = step.label
                     ? {"aria-label": step.label, title: step.label}
                     : {}
+                // a11y: mark the current step dot so screen readers
+                // announce "step X of N" instead of just N identical
+                // bullets. WAI-ARIA aria-current="step" is the
+                // standard for step indicators in a multi-step flow.
+                if (i === currentStep) a11yProps["aria-current"] = "step"
                 return (
                     <div
                         key={step.key}
