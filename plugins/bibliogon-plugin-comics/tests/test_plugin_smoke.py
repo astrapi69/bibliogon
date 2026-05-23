@@ -119,3 +119,76 @@ class TestComicsPluginEntryPoint:
         comics_ep = next(ep for ep in comics_entries if ep.name == "comics")
         loaded = comics_ep.load()
         assert loaded is ComicsPlugin
+
+
+class TestComicsExportExecuteHookimpl:
+    """HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ contract pins (2026-05-23).
+
+    The hookimpl MUST:
+    1. Return ``None`` (not raise) for non-matching book_type / fmt
+       so pluggy's ``firstresult=True`` cascade continues to other
+       implementations.
+    2. Dispatch to ``generate_comic_book_pdf`` only when both
+       ``book_type == "comic_book"`` AND ``fmt == "pdf"``.
+
+    The "actually-renders-a-PDF" path is exercised by the
+    integration test in backend's ``test_comic_routes.py``
+    (TestComicBookExportDispatch) where the full app + DB +
+    WeasyPrint stack is available. Here we only pin the
+    dispatch-gate contract.
+    """
+
+    def _make_plugin(self) -> ComicsPlugin:
+        plugin = ComicsPlugin()
+        plugin.init(app_config={}, plugin_config={})
+        plugin.activate()
+        return plugin
+
+    def test_returns_none_for_wrong_book_type(self) -> None:
+        plugin = self._make_plugin()
+        result = plugin.export_execute(
+            book={"book_type": "picture_book", "title": "X"},
+            fmt="pdf",
+            options={},
+        )
+        assert result is None
+
+    def test_returns_none_for_prose_book_type(self) -> None:
+        plugin = self._make_plugin()
+        result = plugin.export_execute(
+            book={"book_type": "prose", "title": "X"},
+            fmt="pdf",
+            options={},
+        )
+        assert result is None
+
+    def test_returns_none_for_missing_book_type(self) -> None:
+        """Defensive: prose books written before the book_type field
+        existed have ``book_type is None``. The hookimpl must NOT
+        attempt comic-book rendering on them."""
+        plugin = self._make_plugin()
+        result = plugin.export_execute(
+            book={"title": "X"},
+            fmt="pdf",
+            options={},
+        )
+        assert result is None
+
+    def test_returns_none_for_non_pdf_format(self) -> None:
+        plugin = self._make_plugin()
+        result = plugin.export_execute(
+            book={"book_type": "comic_book", "title": "X"},
+            fmt="epub",
+            options={},
+        )
+        assert result is None
+
+    # The "dispatches when book_type + fmt both match" assertion
+    # requires ``bibliogon_comics.comic_book_pdf``, which transitively
+    # imports ``bibliogon_export.picture_book_pdf`` + WeasyPrint +
+    # sqlalchemy. The per-plugin isolated venv (this file's runner)
+    # intentionally does NOT install those. The end-to-end dispatch
+    # pin lives in ``backend/tests/test_comic_routes.py::
+    # TestComicBookExportDispatch::
+    # test_comic_book_export_pdf_dispatches_via_export_execute_hook``
+    # where the full backend stack is available.

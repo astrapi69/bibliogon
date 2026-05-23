@@ -699,3 +699,66 @@ class TestComicBookExportDispatch:
         resp = client.get(f"/api/books/{book_id}/export/pdf")
         assert resp.status_code == 200, resp.text
         assert resp.headers["content-type"] == "application/pdf"
+
+    def test_comic_book_export_pdf_dispatches_via_export_execute_hook(
+        self, shared_client: TestClient
+    ) -> None:
+        """HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ pin (2026-05-23).
+
+        Asserts that the comic-book PDF dispatch goes THROUGH the
+        ``export_execute`` plugin hook rather than the previous
+        direct ``from bibliogon_comics.comic_book_pdf import ...``
+        in plugin-export's routes.py. We hook into the manager's
+        ``call_hook`` so we can observe the dispatch parameters
+        without mocking the underlying walker.
+
+        If a future refactor accidentally restores the direct
+        import, the spy assertion below fires.
+        """
+        client = shared_client
+        pytest.importorskip("weasyprint")
+        book_id = _create_comic_book(client, title="Hook Pin")
+        _add_comic_page(client, book_id)
+
+        from app.main import manager
+
+        original_call_hook = manager.call_hook
+        observed: list[dict] = []
+
+        def spy(hook_name: str, **kwargs):
+            if hook_name == "export_execute":
+                observed.append({
+                    "fmt": kwargs.get("fmt"),
+                    "book_type": (kwargs.get("book") or {}).get("book_type"),
+                    "has_pages": "pages" in (kwargs.get("options") or {}),
+                    "has_panels": "panels" in (kwargs.get("options") or {}),
+                    "has_bubbles": "bubbles" in (kwargs.get("options") or {}),
+                    "has_output_path": "output_path" in (
+                        kwargs.get("options") or {}
+                    ),
+                })
+            return original_call_hook(hook_name, **kwargs)
+
+        manager.call_hook = spy  # type: ignore[method-assign]
+        try:
+            resp = client.get(f"/api/books/{book_id}/export/pdf")
+        finally:
+            manager.call_hook = original_call_hook  # type: ignore[method-assign]
+
+        assert resp.status_code == 200, resp.text
+        # Exactly one export_execute dispatch for one /export/pdf
+        # request. If the count is 0, the direct-import regression
+        # has been reintroduced; if >1, a duplicate dispatch site
+        # appeared (also a regression).
+        assert len(observed) == 1, observed
+        call = observed[0]
+        assert call["fmt"] == "pdf"
+        assert call["book_type"] == "comic_book"
+        # All four comic-specific data slots must be wired into
+        # the options dict; missing any of them means the hook
+        # would land at plugin-comics with insufficient state to
+        # render.
+        assert call["has_pages"]
+        assert call["has_panels"]
+        assert call["has_bubbles"]
+        assert call["has_output_path"]

@@ -10,9 +10,13 @@ Session 2 will add ``comic_panels`` + ``comic_bubbles`` tables,
 panel-grid layouts, bubble-type variants, and the PDF walker.
 """
 
+from pathlib import Path
 from typing import Any
 
+import pluggy
 from pluginforge import BasePlugin
+
+hookimpl = pluggy.HookimplMarker("bibliogon.plugins")
 
 
 class ComicsPlugin(BasePlugin):
@@ -33,6 +37,53 @@ class ComicsPlugin(BasePlugin):
         plugin lifecycle.
         """
         self._settings = self.config.get("settings", {})
+
+    @hookimpl
+    def export_execute(
+        self,
+        book: dict[str, Any],
+        fmt: str,
+        options: dict[str, Any],
+    ) -> Path | None:
+        """Render a comic-book PDF.
+
+        Returns ``None`` for any non-matching book / format so
+        pluggy's ``firstresult=True`` semantics let other plugins
+        contribute their own implementations. Only handles the
+        case ``book_type == "comic_book"`` and ``fmt == "pdf"``.
+
+        The caller (plugin-export's ``_export_comic_book_pdf``)
+        owns the FileResponse wrapping + filename composition;
+        this hook only produces the file on disk and returns its
+        Path. ``options`` carries the pages / panels / bubbles /
+        assets the walker needs plus the resolved ``upload_dir``
+        and target ``output_path``.
+
+        Wiring rationale: HOOKSPEC-EXPORT-EXECUTE-WIRE-01
+        adjudication path γ (2026-05-23). Removes the one
+        cross-plugin reverse-import in plugin-export (line 365)
+        without forcing the audiobook async/streaming case
+        through a sync ``Path | None`` signature.
+        """
+        if book.get("book_type") != "comic_book" or fmt != "pdf":
+            return None
+
+        from .comic_book_pdf import generate_comic_book_pdf
+
+        generate_comic_book_pdf(
+            book_data=book,
+            pages=options["pages"],
+            panels=options["panels"],
+            bubbles=options["bubbles"],
+            assets=options["assets"],
+            upload_dir=options["upload_dir"],
+            output_path=options["output_path"],
+            picture_book_format=options.get("picture_book_format"),
+            picture_book_bleed_marks=options.get(
+                "picture_book_bleed_marks", False
+            ),
+        )
+        return options["output_path"]
 
     def get_routes(self) -> list[Any]:
         """Return FastAPI routers contributed by this plugin.

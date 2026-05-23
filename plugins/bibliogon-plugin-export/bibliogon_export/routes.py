@@ -344,13 +344,15 @@ def _export_comic_book_pdf(
     picture_book_format: str | None = None,
     picture_book_bleed_marks: bool = False,
 ) -> FileResponse:
-    """Render a comic book to PDF via the comic_book_pdf walker
-    and return a ``FileResponse``.
+    """Render a comic book to PDF and return a ``FileResponse``.
 
-    Lazy-imports ``bibliogon_comics.comic_book_pdf`` so plugin-
-    export does NOT carry a top-level dependency on plugin-comics
-    (keeps the dependency direction one-way: plugin-comics
-    ``depends_on = ["export"]``; export does NOT depend on comics).
+    Dispatches via the ``export_execute`` plugin hook
+    (HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ, 2026-05-23). plugin-comics
+    registers an ``@hookimpl`` for ``book_type == "comic_book"``
+    + ``fmt == "pdf"``; plugin-export only composes the filename,
+    resolves paths, and wraps the resulting Path in a FileResponse.
+    The hook dispatch replaces the prior lazy ``from
+    bibliogon_comics.comic_book_pdf import ...`` reverse-import.
 
     Filename suffix policy: same as picture-book per Q4 a (reuse
     picture-book formats + bleed flag). ``<slug>.pdf`` for default
@@ -360,13 +362,13 @@ def _export_comic_book_pdf(
     Caller MUST have verified ``book_data["book_type"] ==
     "comic_book"`` and ``fmt == "pdf"`` before calling.
     """
+    from app.main import manager
     from app.paths import get_upload_dir
 
-    from bibliogon_comics.comic_book_pdf import (
+    from bibliogon_export.picture_book_pdf import (
         DEFAULT_PICTURE_BOOK_FORMAT,
-        generate_comic_book_pdf,
+        _resolve_picture_book_format,
     )
-    from bibliogon_export.picture_book_pdf import _resolve_picture_book_format
 
     title = (book_data.get("title") or "comic-book").strip()
     slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "comic-book"
@@ -386,16 +388,21 @@ def _export_comic_book_pdf(
     output_path = tmp_dir / filename
 
     try:
-        generate_comic_book_pdf(
-            book_data=book_data,
-            pages=pages,
-            panels=panels,
-            bubbles=bubbles,
-            assets=assets,
-            upload_dir=upload_dir,
-            output_path=output_path,
-            picture_book_format=canonical_format,
-            picture_book_bleed_marks=picture_book_bleed_marks,
+        result_path = manager.call_hook(
+            "export_execute",
+            firstresult=True,
+            book=book_data,
+            fmt="pdf",
+            options={
+                "pages": pages,
+                "panels": panels,
+                "bubbles": bubbles,
+                "assets": assets,
+                "upload_dir": upload_dir,
+                "output_path": output_path,
+                "picture_book_format": canonical_format,
+                "picture_book_bleed_marks": picture_book_bleed_marks,
+            },
         )
     except ImportError as e:
         raise HTTPException(
@@ -411,8 +418,17 @@ def _export_comic_book_pdf(
             detail=f"Comic-book PDF generation failed: {e}",
         ) from e
 
+    if result_path is None:
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "No plugin handled comic-book PDF export. "
+                "Is plugin-comics installed and active?"
+            ),
+        )
+
     return FileResponse(
-        path=str(output_path),
+        path=str(result_path),
         filename=filename,
         media_type="application/pdf",
     )
