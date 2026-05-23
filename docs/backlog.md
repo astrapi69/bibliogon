@@ -56,6 +56,67 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- **DASHBOARD-PAGINATION-LOAD-MORE-01** (P3, PERFORMANCE,
+  filed 2026-05-25 from pagination-pattern investigation):
+  Article Dashboard ([frontend/src/pages/ArticleList.tsx](../frontend/src/pages/ArticleList.tsx)) +
+  Book Dashboard ([frontend/src/pages/Dashboard.tsx](../frontend/src/pages/Dashboard.tsx))
+  fetch + render the full list in one batch. Backend
+  `GET /api/books` ([backend/app/routers/books.py:140-143](../backend/app/routers/books.py#L140-L143))
+  and `GET /api/articles` ([backend/app/routers/articles.py:135-175](../backend/app/routers/articles.py#L135-L175))
+  return all rows, ordered `updated_at desc`. Frontend maps
+  every entry into the grid / list view. No virtualisation,
+  no chunking.
+
+  ### Trigger
+
+  - User reports a perceived performance issue on the
+    Dashboard (slow initial render, lag on filter change,
+    lag on scroll), OR
+  - Article OR book count exceeds ~500 in any production
+    install, OR
+  - A future feature multiplies per-row render cost (e.g.
+    inline preview thumbnails, per-row AI badges).
+
+  Trigger-gated because today's scale (~209 articles in the
+  reference user's install) renders in milliseconds; the
+  bug is latent, not observed.
+
+  ### Scope (Pattern B — Load more, PAGE_SIZE=100)
+
+  Pattern picked from the investigation:
+
+  - Matches [CommentsAdminSection.tsx](../frontend/src/components/CommentsAdminSection.tsx)
+    prior art (PAGE_SIZE=100 + load-more button + reset-
+    on-filter-change). Tested at
+    [CommentsAdminSection.test.tsx:255,320,342,355](../frontend/src/components/CommentsAdminSection.test.tsx).
+  - Keeps Bibliogon's bulk-select-all semantics intact
+    (`selectAll(filteredBooks.map(b => b.id))` still means
+    "all visible"). Virtual scrolling (Pattern C) would
+    force a re-think of selection semantics.
+  - Avoids the a11y / Playwright / indeterminate-checkbox
+    complexity that comes with `react-window` or
+    `@tanstack/react-virtual`.
+
+  ### Commit plan (~4-6 commits, single session)
+
+  1. Backend: `limit: int | None = Query(default=None, le=1000)`
+     on `list_books` + `list_articles`, append `.limit(limit)`
+     on the query. Paired pytest cases for limit/cap behavior.
+  2. Frontend: extract `usePagedList` hook from
+     CommentsAdminSection's pattern (per RCU 2-surfaces
+     threshold) + Vitest.
+  3. Wire into Dashboard: "Load more" button + reset-on-filter
+     `useEffect`.
+  4. Wire into ArticleList: same shape.
+  5. i18n: `ui.dashboard.load_more` key in all 8 catalogs.
+  6. Playwright smoke: load-more flow per surface.
+
+  ### Why deferred (not P0/P1/P2)
+
+  Latent, no user pain. Filing as P3 keeps the design + scope
+  on record so the next contributor (or a future smoke
+  finding) can ship without re-investigating.
+
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
   TYPES-UPDATE-01 C5 close per Q4 adjudication): the
