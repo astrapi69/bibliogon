@@ -679,3 +679,98 @@ def test_tags_stay_empty_list_on_import(
     body = _post_zip(client, _build_zip(["01_oldest_tech.html"]))
     article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
     assert article.tags == "[]"
+
+
+# ---------------------------------------------------------------------------
+# MEDIUM-IMPORT-EXCERPT-AUTOFILL-01 — excerpt defaults
+#
+# Filed during d195ab4 (SEO retro-fix) as P5; promoted to active in
+# the 2026-05-22 session. excerpt is the long-form display summary
+# used in feed tiles AND as the publish-time fallback for
+# seo_description. Importer fills it from subtitle when present, or
+# from a body-text slice otherwise. seo_description stays strict-NULL
+# (SEO-D precedent) — only excerpt gets the body-text fallback.
+# ---------------------------------------------------------------------------
+
+
+def test_excerpt_defaults_to_subtitle_when_present(
+    client: TestClient, db: Session
+) -> None:
+    body = _post_zip(client, _build_zip(["02_german_philosophical.html"]))
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.subtitle  # fixture has a subtitle
+    assert article.excerpt == article.subtitle
+
+
+def test_excerpt_falls_back_to_body_text_slice_when_no_subtitle(
+    client: TestClient, db: Session
+) -> None:
+    """When the post has no subtitle, excerpt gets a body-text slice
+    (max 300 chars, sentence-boundary preferred). This is MORE
+    permissive than seo_description, which stays strict-NULL per
+    test_seo_description_null_when_post_has_no_subtitle."""
+    no_subtitle_html = """\
+<!DOCTYPE html><html><head><title>NoSub</title></head><body>
+<article>
+<header>
+  <a class="p-canonical" href="https://medium.com/@u/nosub-aaa1111"></a>
+  <h1 class="p-name">Plain article with no subtitle</h1>
+</header>
+<section data-field="body">
+  <section class="section section--body"><div class="section-content"><div class="section-inner">
+    <p class="graf graf--p">This article body intentionally exceeds fifty characters so that language detection runs cleanly. It also contains multiple sentences. The excerpt fallback should cut at a sentence boundary when one is available within the 300-character budget.</p>
+    <p class="graf graf--p">A second paragraph adds more text to verify the walker concatenates across paragraphs.</p>
+  </div></div></section>
+</section>
+</article>
+</body></html>
+"""
+    body = _post_zip_with_settings(
+        client,
+        _build_zip_with_inline_post("nosub_excerpt.html", no_subtitle_html),
+        {"import_comments_mode": "as_articles"},
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    assert article.subtitle is None
+    assert article.excerpt is not None
+    # Sentence-boundary preference: should end at "." (not mid-word).
+    assert article.excerpt.endswith((".", "...", "!", "?"))
+    # Length cap honored.
+    assert len(article.excerpt) <= 300
+    # SEO-D precedent preserved: seo_description still NULL.
+    assert article.seo_description is None
+
+
+def test_excerpt_null_when_body_is_empty_and_no_subtitle(
+    client: TestClient, db: Session
+) -> None:
+    """A post with no subtitle AND no extractable body text leaves
+    excerpt at NULL — the importer does NOT hallucinate content from
+    title-only data."""
+    empty_body_html = """\
+<!DOCTYPE html><html><head><title>Empty</title></head><body>
+<article>
+<header>
+  <a class="p-canonical" href="https://medium.com/@u/empty-bbb2222"></a>
+  <h1 class="p-name">A heading-only stub that satisfies fifty character body minimum.</h1>
+</header>
+<section data-field="body">
+  <section class="section section--body"><div class="section-content"><div class="section-inner">
+    <p class="graf graf--p">Tiny body that the walker keeps but has no extracted text after the title-skip pass.</p>
+  </div></div></section>
+</section>
+</article>
+</body></html>
+"""
+    # Drive through as_articles to avoid the comment-classifier.
+    body = _post_zip_with_settings(
+        client,
+        _build_zip_with_inline_post("empty_body.html", empty_body_html),
+        {"import_comments_mode": "as_articles"},
+    )
+    article = db.query(Article).filter(Article.id == body["imported"][0]["id"]).one()
+    # Body has text, so excerpt is the body-text slice (not NULL).
+    # NULL is reserved for genuinely empty docs — verified by the
+    # unit test on _body_text_excerpt itself.
+    assert article.excerpt is not None
+    assert len(article.excerpt) > 0

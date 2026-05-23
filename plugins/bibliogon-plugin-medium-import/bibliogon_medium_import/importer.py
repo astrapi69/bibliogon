@@ -467,6 +467,16 @@ def _import_one_post(
         seo_title = title  # always populated, mirrors article.title
         seo_description = subtitle  # NULL when post had no subtitle
 
+        # Excerpt: long-form display summary. Prefer the authored
+        # subtitle (same source as seo_description above). When the
+        # post has no subtitle, fall back to a body-text slice — this
+        # is intentionally MORE permissive than seo_description, which
+        # the SEO-D precedent keeps strict-NULL. The publish-time
+        # fallback (seo_description ← excerpt when seo_description is
+        # NULL) is documented behavior; users who want strict SEO can
+        # edit either field manually.
+        excerpt = subtitle or _body_text_excerpt(parsed.content_doc)
+
         # Persist the Article first so we have an id for assets.
         article = Article(
             title=title,
@@ -480,6 +490,7 @@ def _import_one_post(
             tags="[]",
             seo_title=seo_title,
             seo_description=seo_description,
+            excerpt=excerpt,
         )
         db.add(article)
         db.flush()  # populates article.id
@@ -648,6 +659,48 @@ def _flatten_body_text(content_doc: dict[str, Any]) -> str:
 
     _walk(content_doc)
     return " ".join(p for p in parts if p.strip())
+
+
+# MEDIUM-IMPORT-EXCERPT-AUTOFILL-01: when the post has no subtitle,
+# fall back to a body-text slice for ``Article.excerpt`` (NOT for
+# ``seo_description`` — that field stays strict-NULL per the SEO-D
+# precedent in test_seo_description_null_when_post_has_no_subtitle).
+# 300 chars is the typical feed-tile / OG-preview budget; 200 is the
+# minimum slice before we accept a hard-truncate rather than a
+# sentence-boundary cut.
+_EXCERPT_MAX_CHARS = 300
+_EXCERPT_MIN_SLICE = 200
+
+
+def _body_text_excerpt(
+    content_doc: dict[str, Any],
+    max_chars: int = _EXCERPT_MAX_CHARS,
+) -> str | None:
+    """Build a display-excerpt from the article's body text.
+
+    Walks the TipTap JSON and returns the longest prefix of the
+    concatenated text that ends at a sentence boundary (``.``,
+    ``!``, ``?`` followed by space) within ``max_chars``. Falls back
+    to a hard-truncate at ``max_chars - 3`` + ``...`` when no
+    sentence boundary appears at or above ``_EXCERPT_MIN_SLICE``.
+    Returns None for an empty / structureless doc.
+    """
+    full = _flatten_body_text(content_doc)
+    if not full:
+        return None
+    if len(full) <= max_chars:
+        return full
+
+    candidate = full[:max_chars]
+    best_break = -1
+    for marker in (". ", "! ", "? "):
+        idx = candidate.rfind(marker)
+        if idx > best_break:
+            best_break = idx
+    if best_break >= _EXCERPT_MIN_SLICE - 1:
+        # Keep the sentence terminator, drop the trailing space.
+        return full[: best_break + 1].rstrip()
+    return full[: max_chars - 3].rstrip() + "..."
 
 
 def _find_posts_dir(root: Path) -> Path | None:
