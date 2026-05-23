@@ -1144,36 +1144,6 @@ store.
   (broader frontend sweep that may surface additional
   related candidates).
 
-- **PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01** (P3, filed
-  2026-05-20 from the pluginforge 0.8.0 bump's deprecation
-  warning). plugin-export's ``get_routes()`` returns 3 separate
-  routers; pluginforge 0.8.0 logs a DeprecationWarning advising
-  the Single-Router-Per-Plugin convention (one parent router with
-  ``router.include_router(...)`` to nest sub-routers). Supported
-  in 0.8.0 + 0.9.0; may become an error in 0.10.0.
-
-  Scope: refactor
-  ``plugins/bibliogon-plugin-export/bibliogon_export/plugin.py``
-  to return a single parent router that nests the existing 3
-  sub-routers via ``include_router``. Mirror the canonical shape
-  already used by plugin-kinderbuch + plugin-comics. Update any
-  per-plugin test fixtures that assert on the get_routes return
-  shape. Verify no route-prefix or URL change post-refactor.
-
-  Effort: S (1-2 commits).
-
-  Trigger: any of (i) pluginforge 0.10.0 release approaching,
-  (ii) any new plugin needs an export-plugin pattern as
-  reference and the 3-router shape would propagate the
-  anti-pattern, (iii) the deprecation warning becomes noisy
-  enough to mask other test output.
-
-  Cross-references:
-  - `.claude/rules/lessons-learned.md` "Single-Router-Per-Plugin
-    convention" (this filing is the concrete refactor work that
-    rule's existence implies).
-  - pluginforge 0.8.0 release notes (the deprecation source).
-
 - **PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01** (P3, filed
   2026-05-20 from Comics-Session-2 close). Session-3 polish work
   on the ComicBookEditor surface. Per the original Comic-
