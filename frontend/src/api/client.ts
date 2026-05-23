@@ -2890,6 +2890,16 @@ export const api = {
     },
 
     kdp: {
+        /** List the bundled KDP category catalog. Returns the 26
+         *  Amazon-canonical category names (verified by
+         *  test_kdp_categories_returns_full_26_catalog). The catalog
+         *  is dictated by Amazon and stable across the editor's
+         *  lifetime, so callers typically fetch once on mount and
+         *  cache for the duration of the surface (BookMetadataEditor
+         *  pattern). KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01. */
+        listCategories: () =>
+            request<string[]>("/kdp/categories"),
+
         /** Metadata-completeness check for KDP publishing. Returns
          *  errors (block publishing) + warnings (recommended).
          *  Used by Phase 1 MVP wizard Step 1. */

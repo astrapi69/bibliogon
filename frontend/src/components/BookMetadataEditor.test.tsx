@@ -173,6 +173,9 @@ vi.mock("../api/client", () => ({
     documentExport: {
       download: (...args: unknown[]) => documentExportDownloadMock(...args),
     },
+    kdp: {
+      listCategories: vi.fn().mockResolvedValue([]),
+    },
   },
   ApiError: class extends Error {
     status: number
@@ -914,6 +917,50 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
         const savedData = localOnSave.mock.calls[0][0]
         expect(savedData.categories).toEqual(["Pre-existing Category"])
         expect(savedData.bisac_codes).toEqual(["FIC022020"])
+    })
+
+    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: the BookMetadataEditor
+    // fires GET /api/kdp/categories once on mount and passes the
+    // returned catalog into CategoryInput's `suggestions` prop. Prior
+    // to this wiring the prop was hardcoded `[]` (Half-Wired-Visible-
+    // in-Production: visible Categories field with no autocomplete
+    // despite the 26-entry backend catalog). This pin prevents the
+    // wiring from regressing to the empty default and verifies the
+    // datalist is populated for the autocomplete to fire.
+    it("on mount, calls api.kdp.listCategories and the datalist exposes its options", async () => {
+        const {api} = await import("../api/client")
+        const listCategoriesMock = vi.mocked(api.kdp.listCategories)
+        listCategoriesMock.mockClear()
+        listCategoriesMock.mockResolvedValueOnce([
+            "Fiction",
+            "Mystery",
+            "Science Fiction",
+        ])
+        renderBookMeta()
+        // Endpoint fired exactly once on mount.
+        await waitFor(() => expect(listCategoriesMock).toHaveBeenCalledTimes(1))
+        // The category-input's datalist must carry the fetched
+        // options (CategoryInput renders a sibling <datalist> whose
+        // <option>s mirror the suggestions prop).
+        await waitFor(() => {
+            const options = Array.from(
+                document.querySelectorAll("datalist option"),
+            ).map((o) => (o as HTMLOptionElement).value)
+            expect(options).toContain("Fiction")
+            expect(options).toContain("Mystery")
+            expect(options).toContain("Science Fiction")
+        })
+    })
+
+    it("when api.kdp.listCategories fails, CategoryInput degrades to no suggestions (no crash)", async () => {
+        const {api} = await import("../api/client")
+        const listCategoriesMock = vi.mocked(api.kdp.listCategories)
+        listCategoriesMock.mockClear()
+        listCategoriesMock.mockRejectedValueOnce(new Error("network down"))
+        // Should not throw; the Marketing tab still renders.
+        renderBookMeta()
+        await waitFor(() => expect(listCategoriesMock).toHaveBeenCalled())
+        expect(screen.getByTestId("category-input")).toBeTruthy()
     })
 })
 

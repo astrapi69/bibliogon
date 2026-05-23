@@ -69,6 +69,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     // format-validated chip lists in the Marketing tab.
     const [categories, setCategories] = useState<string[]>([]);
     const [bisacCodes, setBisacCodes] = useState<string[]>([]);
+    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: bundled KDP category
+    // catalog (26 Amazon-canonical names), fetched once per
+    // BookMetadataEditor mount and fed to CategoryInput's
+    // `suggestions` prop. Empty until the fetch resolves; on
+    // failure stays empty (CategoryInput is free-text-capable, so
+    // a missing catalog degrades gracefully to plain typing).
+    const [kdpCategoriesCatalog, setKdpCategoriesCatalog] = useState<string[]>([]);
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -118,6 +125,27 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 : [],
         );
     }, [book]);
+
+    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: one-shot fetch of the
+    // KDP-category catalog on mount. Cached for the editor's
+    // lifetime — Amazon-side catalog is stable across the surface,
+    // no need to re-fetch on every book change. Failure stays at
+    // empty list; CategoryInput remains free-text-capable.
+    useEffect(() => {
+        let cancelled = false;
+        api.kdp.listCategories()
+            .then((catalog) => {
+                if (!cancelled) setKdpCategoriesCatalog(catalog);
+            })
+            .catch(() => {
+                // Silent degrade — autocomplete is a convenience, not
+                // a correctness requirement. The Categories field
+                // still accepts free-text input via CategoryInput.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const set = (key: string, value: string) => setForm((prev) => ({...prev, [key]: value}));
 
@@ -441,6 +469,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <CategoryInput
                                 categories={categories}
                                 onChange={setCategories}
+                                suggestions={kdpCategoriesCatalog}
                             />
                         </div>
                         <div className="field" data-testid="metadata-bisac-field">
