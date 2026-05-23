@@ -1116,7 +1116,7 @@ between v0.31.0 and today. 21 commits since v0.31.0.
   v0.31.0 misclassified 8 of 8 detectable comments; v0.32.0
   catches 11/11 — 3 new true-positive detections, 0 false
   positives, 0 lost detections. Audit at
-  `docs/audits/medium-comment-heuristic-2026-05-14.md`. An
+  `docs/archive/audits/medium-comment-heuristic-2026-05-14.md`. An
   earlier v1 multi-signal heuristic that scored 3+ generic
   signals (without requiring a conversational marker) flagged
   a German image-poem as a comment; v2's conversational-marker
@@ -1819,7 +1819,7 @@ v0.27.0 / v0.28.0).
   → ^25, `@vitejs/plugin-react` 5 → 6, all `@tiptap/*` 2.27
   → 3.22 (DEP-02 blocked).
 - Pre-v0.30.0 retrospective:
-  `docs/journal/retrospective-pre-v0.30.0.md` covers the
+  `docs/archive/journal/retrospective-pre-v0.30.0.md` covers the
   v0.27.0 → HEAD period (4 calendar days, 3 tagged releases,
   48 commits) in 6 sections. Five concrete commitments for
   v0.30.0+ each with what / why / how-enforced /
@@ -3247,7 +3247,7 @@ Audiobook export is now robust against cancellation and live-updates during gene
 - **Dashboard filters and sorting:** genre and language filter dropdowns, sort toggle (date/title/author), reset button and URL persistence for filter state. Filters are derived from the user's existing books, not a static list.
 - **Keyword editor improvements:** inline edit (click a chip to rename), soft warning at 40 keywords, hard limit at 50, undo-toast on delete. Keywords are now stored as a native `list[str]` in the API (removes the JSON-string workaround in the frontend).
 - **Three new themes:** Classic (serif-first, literary typography with proper paragraph indentation), Studio (clean sans-serif workspace), Notebook (warm, relaxed tones). Each with light and dark variants (6 new theme variants, 12 total). Central palette registry with a `useTheme` guard prevents invalid theme states.
-- **Coverage audit infrastructure:** `docs/audits/current-coverage.md` as the single source of truth for test statistics, with a history archive in `docs/audits/history/`. Coverage targets per module type codified in `quality-checks.md`. Single-source-of-truth rule prevents duplicated statistics across documentation files.
+- **Coverage audit infrastructure:** `docs/audits/current-coverage.md` as the single source of truth for test statistics, with a history archive in `docs/archive/audits/` (was `docs/audits/history/` until the 2026-05-23 docs cleanup pass). Coverage targets per module type codified in `quality-checks.md`. Single-source-of-truth rule prevents duplicated statistics across documentation files.
 - **274 new tests across 4 phases:**
   - Phase 1 (critical data integrity): 64 backend tests covering serializer, trash endpoints, html_to_markdown, license tiers, plugin install, settings integration
   - Phase 3 (frontend focus): 138 Vitest tests for hooks (useTheme, useEditorPluginStatus, HelpContext), form components (CreateBookModal, ChapterTypeSelect), display components (ThemeToggle, BookCard, OrderedListEditor), ExportDialog, BookMetadataEditor

@@ -95,13 +95,13 @@ Audits follow the structure in `docs/audits/current-coverage.md`:
 ```
 docs/audits/
   current-coverage.md            # always the latest audit
-  history/
-    2026-04-12-coverage.md       # snapshot frozen at audit date
-    2026-MM-DD-coverage.md       # subsequent snapshots
+docs/archive/audits/
+  2026-04-12-coverage.md         # snapshot frozen at audit date
+  2026-MM-DD-coverage.md         # subsequent snapshots
 ```
 
 - `current-coverage.md` is overwritten on every audit.
-- Before overwriting, copy the previous version to `history/YYYY-MM-DD-coverage.md`.
+- Before overwriting, copy the previous version to `docs/archive/audits/YYYY-MM-DD-coverage.md`.
 - History files are never modified after creation.
 
 ### Delta tracking

@@ -138,7 +138,7 @@ cd e2e && npx playwright test tests/ux-audit-group1.spec.ts --project=chromium -
 # 1 spec times out (BookEditor — book has 0 chapters, .ProseMirror never mounts).
 
 # Screenshots produced at:
-# docs/audits/ux-full-audit-2026-05-14-screenshots/group1-*.png
+# docs/archive/audits/ux-full-audit-2026-05-14-screenshots/group1-*.png
 ```
 
 ## Surface Group 2: Dashboards
@@ -230,7 +230,7 @@ cd e2e && npx playwright test tests/ux-audit-group2.spec.ts --project=chromium -
 # 7 specs pass; key console outputs above.
 
 # New screenshots:
-# docs/audits/ux-full-audit-2026-05-14-screenshots/group2-*.png
+# docs/archive/audits/ux-full-audit-2026-05-14-screenshots/group2-*.png
 ```
 
 ## Surface Group 3: Settings
@@ -372,7 +372,7 @@ This is a second pattern class to track alongside the Articles-vs-Books asymmetr
 
 ```bash
 cd e2e && npx playwright test tests/ux-audit-group3.spec.ts --project=chromium --reporter=line
-# 10 specs pass. Screenshots in docs/audits/ux-full-audit-2026-05-14-screenshots/group3-*.png
+# 10 specs pass. Screenshots in docs/archive/audits/ux-full-audit-2026-05-14-screenshots/group3-*.png
 ```
 
 ## STOP gate
