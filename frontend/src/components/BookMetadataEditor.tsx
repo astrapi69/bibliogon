@@ -698,12 +698,10 @@ function Row({children}: {children: React.ReactNode}) {
 /**
  * Author field as a free-text input with Authors-DB autocomplete.
  *
- * AUTHOR-DATALIST-EXTEND-EDITORS-01 (2026-05-22): migrated from
- * Pattern B (closed-list <select> via AuthorProfileSelect) to
- * Pattern A (free-text input + datalist via AuthorSelectInput).
- * Rationale: Pattern A handles names not yet in the user-profile
- * or Authors-DB (e.g. ghostwritten works, collaborators, historical
- * imports with unfamiliar names) without forcing the user to
+ * Pattern A (free-text input + datalist via AuthorSelectInput) was
+ * chosen over a closed-list <select> so names not yet in the
+ * user-profile or Authors-DB (e.g. ghostwritten works, collaborators,
+ * historical imports with unfamiliar names) don't force the user to
  * detour into Settings.
  *
  * Book-specific wrapping (field div + label + manage-link to

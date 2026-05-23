@@ -602,13 +602,6 @@ describe("BookMetadataEditor — author + language fields", () => {
   const onSave = vi.fn()
   const onBack = vi.fn()
 
-  // AUTHOR-DATALIST-EXTEND-EDITORS-01 (2026-05-22): the author field
-  // migrated from Pattern B (closed-list <select> via
-  // AuthorProfileSelect, testid metadata-author-select) to Pattern A
-  // (<input> + <datalist> via AuthorSelectInput, testid
-  // metadata-author + metadata-author-datalist). Tests below pin
-  // the new contract.
-
   it("renders author as a free-text input pre-filled with current value", () => {
     render(
       <BookMetadataEditor

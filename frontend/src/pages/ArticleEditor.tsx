@@ -686,18 +686,11 @@ export default function ArticleEditor() {
                             "Autor des Artikels. Auswahl aus Echtnamen + Pseudonymen aus den Einstellungen.",
                         )}
                     />
-                    {/* AUTHOR-DATALIST-EXTEND-EDITORS-01 (Pattern A,
-                        adjudicated 2026-05-22): free-text + datalist
-                        via AuthorSelectInput. Migrated from
-                        AuthorProfileSelect; the closed-list dropdown
-                        forced users to detour into Settings for any
-                        unfamiliar name (ghostwritten works,
-                        collaborators, historical imports). The
-                        "Add to Authors-DB" checkbox is deliberately
-                        suppressed here because ArticleEditor
-                        auto-saves on every keystroke — an
-                        auto-DB-create at that rate would create
-                        partial-name rows. Curate via Settings >
+                    {/* The "Add to Authors-DB" checkbox is
+                        deliberately suppressed here because
+                        ArticleEditor auto-saves on every keystroke —
+                        an auto-DB-create at that rate would create
+                        partial-name rows. Users curate via Settings >
                         Author tab. */}
                     <AuthorSelectInput
                         value={article.author ?? ""}
