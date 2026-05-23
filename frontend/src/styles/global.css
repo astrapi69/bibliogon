@@ -237,11 +237,11 @@
 
     --text-primary: #0f172a;
     --text-secondary: #475569;
-    --text-muted: #64748b;
+    --text-muted: #617188;
     --text-inverse: #f8fafc;
     --text-sidebar: #334155;
 
-    --accent: #3b82f6;
+    --accent: #276ee2;
     --accent-hover: #2563eb;
     --accent-light: #dbeafe;
     --accent-subtle: #bfdbfe;
@@ -269,11 +269,11 @@
 
     --text-primary: #2e3440;
     --text-secondary: #4c566a;
-    --text-muted: #7b88a1;
+    --text-muted: #5c6982;
     --text-inverse: #eceff4;
     --text-sidebar: #3b4252;
 
-    --accent: #5e81ac;
+    --accent: #4c6f9a;
     --accent-hover: #81a1c1;
     --accent-light: #d8e2ef;
     --accent-subtle: #b8cce2;
@@ -349,7 +349,7 @@
 
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
-    --text-muted: #475569;
+    --text-muted: #8290a4;
     --text-inverse: #0f172a;
     --text-sidebar: #cbd5e1;
 
@@ -377,7 +377,7 @@
 
     --text-primary: #eceff4;
     --text-secondary: #d8dee9;
-    --text-muted: #7b88a1;
+    --text-muted: #a1aec7;
     --text-inverse: #2e3440;
     --text-sidebar: #d8dee9;
 
@@ -410,7 +410,7 @@
 
     --text-primary: #2a1f15;
     --text-secondary: #5c4733;
-    --text-muted: #8b7355;
+    --text-muted: #786042;
     --text-inverse: #f4ede0;
     --text-sidebar: #5c4733;
 
@@ -447,7 +447,7 @@
 
     --text-primary: #e8d8c0;
     --text-secondary: #b8a583;
-    --text-muted: #8b7855;
+    --text-muted: #968360;
     --text-inverse: #1a140d;
     --text-sidebar: #b8a583;
 
@@ -485,11 +485,11 @@
 
     --text-primary: #1a1d23;
     --text-secondary: #4a5159;
-    --text-muted: #8b929c;
+    --text-muted: #676e78;
     --text-inverse: #f7f8fa;
     --text-sidebar: #4a5159;
 
-    --accent: #0d9488;
+    --accent: #008074;
     --accent-hover: #0f766e;
     --accent-light: #ccfbf1;
     --accent-subtle: #99f6e4;
@@ -522,7 +522,7 @@
 
     --text-primary: #e4e6eb;
     --text-secondary: #9ba3af;
-    --text-muted: #6b7280;
+    --text-muted: #888f9d;
     --text-inverse: #1c1e22;
     --text-sidebar: #9ba3af;
 
@@ -560,11 +560,11 @@
 
     --text-primary: #1f2937;
     --text-secondary: #4b5563;
-    --text-muted: #6b7280;
+    --text-muted: #69707e;
     --text-inverse: #fdfcf7;
     --text-sidebar: #4b5563;
 
-    --accent: #3b82f6;
+    --accent: #2970e4;
     --accent-hover: #2563eb;
     --accent-light: #dbeafe;
     --accent-subtle: #bfdbfe;
@@ -604,7 +604,7 @@
 
     --text-primary: #f0ede0;
     --text-secondary: #b8b29a;
-    --text-muted: #807a65;
+    --text-muted: #948e79;
     --text-inverse: #1f1d18;
     --text-sidebar: #b8b29a;
 
