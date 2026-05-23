@@ -859,6 +859,7 @@ ui:
     import_result_reason_no_wbt_layout: "Χωρίς δομή βιβλίου (λείπει το config/metadata.yaml)"
     import_result_reason_import_failed: "Η εισαγωγή απέτυχε (μη συμβατή δομή)"
   articles:
+    author_placeholder: "Όνομα συγγραφέα ή ψευδώνυμο"
     list_heading: "Άρθρα"
     count_singular: "Άρθρο"
     count_plural: "Άρθρα"
@@ -1107,11 +1108,13 @@ ui:
     html_field_show_source: "Εμφάνιση HTML"
     title: Τίτλος
     author: Συγγραφέας
-    author_placeholder: "Επιλέξτε συγγραφέα"
+    author_placeholder: "Όνομα συγγραφέα ή ψευδώνυμο"
     author_unknown_prefix: "[άγνωστο:"
     author_pen_names_label: "Ψευδώνυμα"
     author_no_author: "(χωρίς συγγραφέα)"
     author_manage_link: "Διαχείριση συγγραφέων στις Ρυθμίσεις"
+    add_to_authors_db: "Προσθήκη του „{name}\" στη βάση συγγραφέων"
+    author_add_failed: "Αποτυχία προσθήκης συγγραφέα στη βάση δεδομένων"
     language: Γλώσσα
     series_index: Αριθμός σειράς
     isbn_ebook: ISBN e-book

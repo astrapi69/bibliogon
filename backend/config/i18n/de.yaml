@@ -847,6 +847,7 @@ ui:
     import_result_reason_no_wbt_layout: "Kein Buch-Layout (config/metadata.yaml fehlt)"
     import_result_reason_import_failed: "Import fehlgeschlagen (inkompatible Struktur)"
   articles:
+    author_placeholder: "Autorenname oder Pen Name"
     list_heading: "Artikel"
     count_singular: "Artikel"
     count_plural: "Artikel"
@@ -1101,11 +1102,13 @@ ui:
     html_field_show_source: "HTML anzeigen"
     title: Titel
     author: Autor
-    author_placeholder: "Autor auswählen"
+    author_placeholder: "Autorenname oder Pen Name"
     author_unknown_prefix: "[unbekannt:"
     author_pen_names_label: "Pen Names"
     author_no_author: "(kein Autor)"
     author_manage_link: "Autoren in Einstellungen verwalten"
+    add_to_authors_db: "„{name}\" zur Autoren-Datenbank hinzufügen"
+    author_add_failed: "Autor konnte nicht zur Autoren-Datenbank hinzugefügt werden"
     language: Sprache
     series_index: Band-Nummer
     isbn_ebook: ISBN E-Book

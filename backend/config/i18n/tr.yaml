@@ -895,6 +895,7 @@ ui:
     import_result_reason_no_wbt_layout: "Kitap duzeni yok (config/metadata.yaml eksik)"
     import_result_reason_import_failed: "Iceri aktarma basarisiz (uyumsuz yapi)"
   articles:
+    author_placeholder: "Yazar adi veya takma ad"
     list_heading: "Makaleler"
     count_singular: "Makale"
     count_plural: "Makale"
@@ -1143,11 +1144,13 @@ ui:
     html_field_show_source: "HTML goster"
     title: Baslik
     author: Yazar
-    author_placeholder: "Bir yazar secin"
+    author_placeholder: "Yazar adi veya takma ad"
     author_unknown_prefix: "[bilinmeyen:"
     author_pen_names_label: "Takma adlar"
     author_no_author: "(yazar yok)"
     author_manage_link: "Yazarlari Ayarlarda yonet"
+    add_to_authors_db: "„{name}\" yazarini Yazarlar veritabanina ekle"
+    author_add_failed: "Yazar Yazarlar veritabanina eklenemedi"
     language: Dil
     series_index: Seri numarasi
     isbn_ebook: ISBN e-kitap

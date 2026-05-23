@@ -859,6 +859,7 @@ ui:
     import_result_reason_no_wbt_layout: "本のレイアウトなし (config/metadata.yaml がありません)"
     import_result_reason_import_failed: "インポート失敗 (互換性のない構造)"
   articles:
+    author_placeholder: "著者名またはペンネーム"
     list_heading: "記事"
     count_singular: "記事"
     count_plural: "記事"
@@ -1107,11 +1108,13 @@ ui:
     html_field_show_source: "HTMLを表示"
     title: タイトル
     author: 著者
-    author_placeholder: "著者を選択"
+    author_placeholder: "著者名またはペンネーム"
     author_unknown_prefix: "[不明:"
     author_pen_names_label: "ペンネーム"
     author_no_author: "（著者なし）"
     author_manage_link: "設定で著者を管理"
+    add_to_authors_db: "「{name}」を著者データベースに追加"
+    author_add_failed: "著者データベースへの追加に失敗しました"
     language: 言語
     series_index: シリーズ番号
     isbn_ebook: ISBN 電子書籍

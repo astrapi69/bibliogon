@@ -895,6 +895,7 @@ ui:
     import_result_reason_no_wbt_layout: "Pas de structure livre (config/metadata.yaml manquant)"
     import_result_reason_import_failed: "Echec de l'import (structure incompatible)"
   articles:
+    author_placeholder: "Nom de l'auteur ou pseudonyme"
     list_heading: "Articles"
     count_singular: "Article"
     count_plural: "Articles"
@@ -1143,11 +1144,13 @@ ui:
     html_field_show_source: "Afficher le HTML"
     title: Titre
     author: Auteur
-    author_placeholder: "Selectionner un auteur"
+    author_placeholder: "Nom de l'auteur ou pseudonyme"
     author_unknown_prefix: "[inconnu:"
     author_pen_names_label: "Pseudonymes"
     author_no_author: "(sans auteur)"
     author_manage_link: "Gerer les auteurs dans Parametres"
+    add_to_authors_db: "Ajouter „{name}\" à la base d'auteurs"
+    author_add_failed: "Impossible d'ajouter l'auteur à la base de données"
     language: Langue
     series_index: Numero dans la serie
     isbn_ebook: ISBN e-book
