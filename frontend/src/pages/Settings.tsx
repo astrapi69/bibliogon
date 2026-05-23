@@ -17,9 +17,10 @@ import {TopicsSettings} from "../components/settings/TopicsSettings";
 import {PluginSettings} from "../components/settings/PluginSettings";
 import {AboutSettings} from "../components/settings/AboutSettings";
 import {BackupsSettings} from "../components/settings/BackupsSettings";
+import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about"] as const;
+const VALID_SETTINGS_TABS = ["app", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "danger_zone"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -144,6 +145,7 @@ export default function Settings() {
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
                             : []),
                         {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
+                        {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
                     ];
                     const activeLabel = tabDefs.find((d) => d.value === activeTab)?.label ?? "";
                     return (
@@ -335,6 +337,9 @@ export default function Settings() {
                 ) : null}
                 <Tabs.Content value="about">
                     <AboutSettings appConfig={appConfig} />
+                </Tabs.Content>
+                <Tabs.Content value="danger_zone">
+                    <DangerZoneSettings />
                 </Tabs.Content>
             </main>
             </Tabs.Root>
