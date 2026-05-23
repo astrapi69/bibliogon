@@ -337,37 +337,14 @@ export default function MediumImportPage() {
                                   )}
                         </p>
                         {/*
-                          Progress renders ABOVE the preview table during
-                          import: the user's attention is on the running
-                          job, not on the (now-disabled) selection list.
+                          Action buttons render at the TOP of the panel
+                          so the user's primary controls (Import,
+                          Cancel, Run-in-background) are immediately
+                          reachable without scrolling past a long
+                          preview list. Progress + preview table follow
+                          below; progress is above the table during
+                          import per the prior fix.
                         */}
-                        {isImporting && (
-                            <MediumImportProgress
-                                phase="processing-async"
-                                asyncCurrent={job.current}
-                                asyncTotal={job.total}
-                                asyncCurrentFilename={job.currentFilename}
-                                asyncImported={job.importedCount}
-                                asyncSkipped={job.skippedCount}
-                                asyncErrored={job.erroredCount}
-                                asyncImportedComments={
-                                    job.importedCommentsCount
-                                }
-                                asyncSkippedComments={
-                                    job.skippedCommentsCount
-                                }
-                            />
-                        )}
-                        {preview && (
-                            <MediumImportPreviewTable
-                                items={preview.items}
-                                errored={preview.errored}
-                                selected={selected}
-                                onToggleAll={handleToggleAll}
-                                onToggleRow={handleToggleRow}
-                                disabled={isImporting}
-                            />
-                        )}
                         <div className={styles.previewActions}>
                             {preview && (
                                 <button
@@ -432,6 +409,33 @@ export default function MediumImportPage() {
                                 </button>
                             )}
                         </div>
+                        {isImporting && (
+                            <MediumImportProgress
+                                phase="processing-async"
+                                asyncCurrent={job.current}
+                                asyncTotal={job.total}
+                                asyncCurrentFilename={job.currentFilename}
+                                asyncImported={job.importedCount}
+                                asyncSkipped={job.skippedCount}
+                                asyncErrored={job.erroredCount}
+                                asyncImportedComments={
+                                    job.importedCommentsCount
+                                }
+                                asyncSkippedComments={
+                                    job.skippedCommentsCount
+                                }
+                            />
+                        )}
+                        {preview && (
+                            <MediumImportPreviewTable
+                                items={preview.items}
+                                errored={preview.errored}
+                                selected={selected}
+                                onToggleAll={handleToggleAll}
+                                onToggleRow={handleToggleRow}
+                                disabled={isImporting}
+                            />
+                        )}
                     </section>
                 )}
 
