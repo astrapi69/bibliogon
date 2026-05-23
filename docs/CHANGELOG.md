@@ -2,6 +2,39 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [Unreleased]
+
+### Added
+
+- **Danger Zone full-system reset** (DANGER-ZONE-RESET-EVERYTHING-01,
+  commits ``3c1381a`` + ``8b6a11b`` + ``bc363df`` + ``2cea204``).
+  New ``Settings → Gefahrenzone / Danger Zone`` tab with a
+  three-step HMAC-token-gated wipe that resets the entire app to
+  first-install-like state. Two-phase endpoint pair under
+  ``/api/system/`` (``POST /reset/prepare`` issues a per-process
+  random-secret-signed token valid 5 minutes; ``POST /reset``
+  validates the token + the literal string ``"RESET"`` before
+  executing). Backend ``reset_service.run_reset`` cancels
+  in-flight SSE jobs, truncates all 21 tables via
+  ``reversed(Base.metadata.sorted_tables)``, re-seeds 5 book +
+  4 chapter built-in templates, wipes ``<data_dir>/uploads/``,
+  ``tmp/``, ``backup_history.json``, ``config/app.yaml``,
+  ``config/plugins/*.yaml``, ``plugins/installed/*`` and
+  ``<config_dir>/secrets.yaml``. Preserves the production-marker
+  tripwire, platformdirs migration breadcrumb, launcher install
+  metadata, and project-tree ``licenses.json``. Frontend
+  ``DangerZoneSettings`` component drives a Radix Dialog with
+  background prepare-call + RESET-input gating + backup-first
+  link + post-reset ``localStorage.clear`` +
+  ``sessionStorage.clear`` + Dexie ``BibliogonDB`` drop + redirect
+  to Dashboard. i18n parity across 8 catalogs (DE + EN native, 6
+  passthrough-EN). Coverage: 25 new pytest cases (8 token unit +
+  7 service integration + 7 endpoint integration + 3 JobStore
+  extension), 9 Vitest cases for the component state machine, 2
+  Playwright smoke cases for the full UX. The existing
+  ``/api/test/reset`` debug-only endpoint stays untouched - both
+  surfaces coexist with different security contracts.
+
 ## [0.36.0] - 2026-05-23
 
 Largest release since v0.30.0 by commit count (230 commits since

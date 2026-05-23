@@ -229,6 +229,17 @@ navigation:
     icon: alert-triangle
 
   - title:
+      de: Einstellungen
+      en: Settings
+    slug: settings/danger-zone
+    icon: settings
+    children:
+      - title:
+          de: Gefahrenzone
+          en: Danger Zone
+        slug: settings/danger-zone
+
+  - title:
       de: Entwickler
       en: Developers
     slug: developers/architecture

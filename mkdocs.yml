@@ -73,6 +73,8 @@ plugins:
         Unterstützen: Support
         Glossar: Glossary
         Fehlerbehebung: Troubleshooting
+        Einstellungen: Settings
+        Gefahrenzone: Danger Zone
         Entwickler: Developers
         Architektur-Übersicht: Architecture overview
         Plugin-Entwicklung: Plugin Development
@@ -146,6 +148,8 @@ nav:
 - FAQ: de/faq.md
 - Glossar: de/glossary.md
 - Fehlerbehebung: de/troubleshooting.md
+- Einstellungen:
+  - Gefahrenzone: de/settings/danger-zone.md
 - Entwickler:
   - Architektur-Übersicht: de/developers/architecture.md
   - Plugin-Entwicklung: de/developers/plugins.md
