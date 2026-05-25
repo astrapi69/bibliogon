@@ -36,7 +36,10 @@ export function AuthorSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="author-settings">
-            <SectionHeader title={t("ui.settings.author_profile", "Autorenprofil")}/>
+            <SectionHeader
+                title={t("ui.settings.author_profile", "Autorenprofil")}
+                description={t("ui.settings.author_profile_description", "Dein Autorenname und Pseudonyme für neue Bücher und Artikel.")}
+            />
             <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.real_name", "Echter Name")}</label>

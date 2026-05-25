@@ -166,7 +166,10 @@ export function AuthorsDatabase() {
 
     return (
         <div className={styles.section} data-testid="authors-database-section">
-            <SectionHeader title={t("ui.authors_database.title", "Autoren-Datenbank")}/>
+            <SectionHeader
+                title={t("ui.authors_database.title", "Autoren-Datenbank")}
+                description={t("ui.authors_database.description", "Zentrale Sammlung bekannter Autoren für den Buch-Wizard.")}
+            />
             <p style={{fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: 16}}>
                 {t(
                     "ui.authors_database.hint",

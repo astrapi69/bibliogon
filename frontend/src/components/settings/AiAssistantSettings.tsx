@@ -64,7 +64,10 @@ export function AiAssistantSettings({config, onSave, saving}: {
     return (
         <div className={styles.main} data-testid="ai-assistant-settings">
             <div className={styles.section}>
-                <SectionHeader title={t("ui.settings.ai_title", "KI-Assistent")}/>
+                <SectionHeader
+                    title={t("ui.settings.ai_title", "KI-Assistent")}
+                    description={t("ui.settings.ai_description", "Anbieter, API-Schlüssel und Modell für die KI-Funktionen im Editor.")}
+                />
                 <div className={styles.card}>
                     <div className="field">
                         <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>

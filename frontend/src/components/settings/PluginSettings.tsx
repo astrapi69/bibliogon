@@ -98,7 +98,10 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
     return (
         <div className={styles.section} data-testid="plugin-settings">
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                <SectionHeader title={t("ui.settings.plugin_settings", "Plugin-Einstellungen")}/>
+                <SectionHeader
+                    title={t("ui.settings.plugin_settings", "Plugin-Einstellungen")}
+                    description={t("ui.settings.plugin_settings_description", "Installierte Plugins aktivieren, konfigurieren oder entfernen.")}
+                />
                 <div style={{display: "flex", gap: 8}}>
                     <button
                         className="btn btn-ghost btn-sm"

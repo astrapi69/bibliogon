@@ -62,7 +62,10 @@ export function BackupsSettings() {
             data-testid="backups-settings"
             style={{display: "flex", flexDirection: "column", gap: 16}}
         >
-            <SectionHeader title={t("ui.settings.tab_backups", "Backups")}/>
+            <SectionHeader
+                title={t("ui.settings.tab_backups", "Backups")}
+                description={t("ui.settings.backups_description", "Backup-Historie einsehen und .bgb-Dateien miteinander vergleichen.")}
+            />
 
             <div style={sectionStyle}>
                 <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>

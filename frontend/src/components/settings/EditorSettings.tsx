@@ -37,7 +37,10 @@ export function EditorSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="editor-settings">
-            <SectionHeader title={t("ui.settings.editor_title", "Editor")}/>
+            <SectionHeader
+                title={t("ui.settings.editor_title", "Editor")}
+                description={t("ui.settings.editor_description", "Autosave-Intervalle, Entwurfs-Aufbewahrung und KI-Kontextlimit.")}
+            />
             <div className={styles.card}>
                 <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
                     <div className="field" style={{flex: 1, minWidth: 140}}>

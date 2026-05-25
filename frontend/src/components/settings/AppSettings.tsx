@@ -116,7 +116,10 @@ export function AppSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="app-settings">
-            <SectionHeader title={t("ui.settings.app_settings", "App-Einstellungen")}/>
+            <SectionHeader
+                title={t("ui.settings.app_settings", "App-Einstellungen")}
+                description={t("ui.settings.app_settings_description", "Sprache, Theme, Standard-Ansichten und allgemeine App-Voreinstellungen.")}
+            />
             <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.language", "Sprache")}</label>

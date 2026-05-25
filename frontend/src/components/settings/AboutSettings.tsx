@@ -80,7 +80,10 @@ export function AboutSettings({appConfig}: Props) {
                 maxWidth: 720,
             }}
         >
-            <SectionHeader title={t("ui.about.heading", "Über Bibliogon")}/>
+            <SectionHeader
+                title={t("ui.about.heading", "Über Bibliogon")}
+                description={t("ui.about.description", "Version, System-Info, installierte Plugins und Spenden-Kanäle.")}
+            />
 
             {loading && (
                 <div

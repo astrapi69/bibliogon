@@ -37,7 +37,10 @@ export function TopicsSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="topics-settings">
-            <SectionHeader title={t("ui.settings.topics_title", "Artikel-Themen")}/>
+            <SectionHeader
+                title={t("ui.settings.topics_title", "Artikel-Themen")}
+                description={t("ui.settings.topics_description", "Themen, die im Artikel-Editor zur Auswahl stehen.")}
+            />
             <div className={styles.card}>
                 <div className="field">
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
