@@ -93,6 +93,33 @@ store.
   already in place; this extract just consolidates the
   card-shape duplication once a 3rd surface lands.
 
+  ### Trigger audit 2026-05-25 (NOT MET)
+
+  Pre-Coding-Reality-Check ran when this entry came up in
+  the backlog queue post-DASHBOARD-PAGINATION-LOAD-MORE-01
+  close. Grep-verified consumer count: **1** (only
+  `frontend/src/pages/GetStarted.tsx:262-278` renders the
+  book-type card grid; reads from `useBookTypes()` since
+  BOOK-TYPES-SSOT-YAML-01 C5).
+
+  Each "Likely 2nd surface" candidate re-checked, none
+  landed:
+
+  - Dashboard `CreateBookModal` pre-step: still uses the
+    split-button + dropdown chooser; no 3-card picker.
+  - Settings > Author Profile > "Default book type": no
+    such field exists in code or settings YAML
+    (`default_book_type` grep returns zero matches).
+  - Help docs per-book-type landing pages: no such
+    structure in `docs/help/`.
+
+  Item correctly deferred per its own deferral language
+  ("extract when a 2nd consumer lands, NOT speculatively").
+  Trigger unchanged; this annotation documents that the
+  audit was performed so the NEXT contributor knows the
+  state is fresh and can re-skip without re-running the
+  same audit.
+
 - **KDP-WIZARD-RESUME-AT-STEP-01** (P3, FEATURE-REFINEMENT,
   filed 2026-05-22 from KDP-PUBLISHING-WIZARD-01-PHASE-2 C10
   close): true "resume at last visited step" for the KDP
