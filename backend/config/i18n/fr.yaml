@@ -711,6 +711,7 @@ ui:
     white_label_desc: "Personnalisez Bibliogon comme votre propre application. Changez le nom, supprimez les plugins standard et creez votre propre plateforme d'ecriture."
     core_plugins: "Plugins standard"
     restart_hint: "Les modifications s'appliquent apres l'enregistrement. Redemarrage requis."
+    dashboard_views_title: "Vues par defaut"
     dashboard_books_view_label: "Tableau de bord livres : vue par defaut"
     dashboard_books_view_tooltip: "Vue initiale a l'ouverture du tableau de bord livres. Modifiable a tout moment via l'icone en haut a droite."
     dashboard_articles_view_label: "Tableau de bord articles : vue par defaut"

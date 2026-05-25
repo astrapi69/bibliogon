@@ -165,79 +165,86 @@ export function AppSettings({config, onSave, saving}: {
                         }))}
                     />
                 </div>
-                <div className="field">
-                    <label className="label" title={t("ui.settings.dashboard_books_view_tooltip", "Standard-Ansicht beim Öffnen des Bücher-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
-                        {t("ui.settings.dashboard_books_view_label", "Bücher-Dashboard: Standard-Ansicht")}
-                    </label>
-                    <RadixSelect
-                        value={booksView}
-                        onValueChange={setBooksView}
-                        testId="settings-books-view"
-                        options={[
-                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
-                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
-                        ]}
-                    />
-                </div>
-                <div className="field">
-                    <label className="label" title={t("ui.settings.dashboard_articles_view_tooltip", "Standard-Ansicht beim Öffnen des Artikel-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
-                        {t("ui.settings.dashboard_articles_view_label", "Artikel-Dashboard: Standard-Ansicht")}
-                    </label>
-                    <RadixSelect
-                        value={articlesView}
-                        onValueChange={setArticlesView}
-                        testId="settings-articles-view"
-                        options={[
-                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
-                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
-                        ]}
-                    />
-                </div>
-                <div className="field">
-                    <label
-                        className="label"
-                        title={t(
-                            "ui.settings.dashboard_books_trash_view_tooltip",
-                            "Standard-Ansicht für den Bücher-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
-                        )}
-                    >
-                        {t(
-                            "ui.settings.dashboard_books_trash_view_label",
-                            "Bücher-Papierkorb: Standard-Ansicht",
-                        )}
-                    </label>
-                    <RadixSelect
-                        value={booksTrashView}
-                        onValueChange={setBooksTrashView}
-                        testId="settings-books-trash-view"
-                        options={[
-                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
-                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
-                        ]}
-                    />
-                </div>
-                <div className="field">
-                    <label
-                        className="label"
-                        title={t(
-                            "ui.settings.dashboard_articles_trash_view_tooltip",
-                            "Standard-Ansicht für den Artikel-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
-                        )}
-                    >
-                        {t(
-                            "ui.settings.dashboard_articles_trash_view_label",
-                            "Artikel-Papierkorb: Standard-Ansicht",
-                        )}
-                    </label>
-                    <RadixSelect
-                        value={articlesTrashView}
-                        onValueChange={setArticlesTrashView}
-                        testId="settings-articles-trash-view"
-                        options={[
-                            {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
-                            {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
-                        ]}
-                    />
+                <div className={styles.subCard} data-testid="settings-dashboard-views">
+                    <h3 className={styles.subCardTitle}>
+                        {t("ui.settings.dashboard_views_title", "Standard-Ansichten")}
+                    </h3>
+                    <div className={styles.subCardGrid}>
+                        <div className="field">
+                            <label className="label" title={t("ui.settings.dashboard_books_view_tooltip", "Standard-Ansicht beim Öffnen des Bücher-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
+                                {t("ui.settings.dashboard_books_view_label", "Bücher-Dashboard: Standard-Ansicht")}
+                            </label>
+                            <RadixSelect
+                                value={booksView}
+                                onValueChange={setBooksView}
+                                testId="settings-books-view"
+                                options={[
+                                    {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                                    {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                                ]}
+                            />
+                        </div>
+                        <div className="field">
+                            <label className="label" title={t("ui.settings.dashboard_articles_view_tooltip", "Standard-Ansicht beim Öffnen des Artikel-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden.")}>
+                                {t("ui.settings.dashboard_articles_view_label", "Artikel-Dashboard: Standard-Ansicht")}
+                            </label>
+                            <RadixSelect
+                                value={articlesView}
+                                onValueChange={setArticlesView}
+                                testId="settings-articles-view"
+                                options={[
+                                    {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                                    {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                                ]}
+                            />
+                        </div>
+                        <div className="field">
+                            <label
+                                className="label"
+                                title={t(
+                                    "ui.settings.dashboard_books_trash_view_tooltip",
+                                    "Standard-Ansicht für den Bücher-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
+                                )}
+                            >
+                                {t(
+                                    "ui.settings.dashboard_books_trash_view_label",
+                                    "Bücher-Papierkorb: Standard-Ansicht",
+                                )}
+                            </label>
+                            <RadixSelect
+                                value={booksTrashView}
+                                onValueChange={setBooksTrashView}
+                                testId="settings-books-trash-view"
+                                options={[
+                                    {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                                    {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                                ]}
+                            />
+                        </div>
+                        <div className="field">
+                            <label
+                                className="label"
+                                title={t(
+                                    "ui.settings.dashboard_articles_trash_view_tooltip",
+                                    "Standard-Ansicht für den Artikel-Papierkorb. Toggles im Papierkorb sind sitzungsspezifisch und überschreiben diese Einstellung nicht.",
+                                )}
+                            >
+                                {t(
+                                    "ui.settings.dashboard_articles_trash_view_label",
+                                    "Artikel-Papierkorb: Standard-Ansicht",
+                                )}
+                            </label>
+                            <RadixSelect
+                                value={articlesTrashView}
+                                onValueChange={setArticlesTrashView}
+                                testId="settings-articles-trash-view"
+                                options={[
+                                    {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
+                                    {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
+                                ]}
+                            />
+                        </div>
+                    </div>
                 </div>
                 <div className="field">
                     <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>

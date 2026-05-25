@@ -735,6 +735,7 @@ ui:
     plugin_help_desc: "SSS, kisayollar, hakkinda"
     plugin_getstarted: "Baslangic"
     plugin_getstarted_desc: "Baslangic sihirbazi, ornek kitap"
+    dashboard_views_title: "Varsayilan gorunumler"
     dashboard_books_view_label: "Kitap panosu: varsayilan gorunum"
     dashboard_books_view_tooltip: "Kitap panosu acildiginda gosterilen ilk gorunum. Sag ust kosedeki simgeyle istediginiz zaman degistirebilirsiniz."
     dashboard_articles_view_label: "Makale panosu: varsayilan gorunum"
