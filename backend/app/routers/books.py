@@ -4,7 +4,7 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 import yaml
-from fastapi import APIRouter, Body, Depends, HTTPException, status
+from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import ValidationError
 from sqlalchemy.orm import Session, joinedload
 
@@ -138,9 +138,22 @@ def cleanup_expired_trash() -> int:
 
 
 @router.get("", response_model=list[BookOut])
-def list_books(db: Session = Depends(get_db)):
-    """List all active (non-deleted) books."""
-    return db.query(Book).filter(Book.deleted_at.is_(None)).order_by(Book.updated_at.desc()).all()
+def list_books(
+    limit: int | None = Query(default=None, ge=1, le=1000),
+    db: Session = Depends(get_db),
+):
+    """List all active (non-deleted) books.
+
+    Optional ``limit`` caps the response at the most-recently-updated
+    N rows. Default ``None`` preserves the historical "return
+    everything" behaviour for callers that have not opted in
+    (BookEditor navigation, backup, etc.); the Dashboard's
+    pagination passes the user-selected page size.
+    """
+    query = db.query(Book).filter(Book.deleted_at.is_(None)).order_by(Book.updated_at.desc())
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 @router.post("", response_model=BookOut, status_code=status.HTTP_201_CREATED)

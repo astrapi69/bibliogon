@@ -98,6 +98,53 @@ def test_list_articles_orders_by_updated_at_desc() -> None:
     assert ids_in_order.index(older["id"]) < ids_in_order.index(newer["id"])
 
 
+# --- limit (DASHBOARD-PAGINATION-LOAD-MORE-01) ---
+
+
+def test_list_articles_limit_caps_response() -> None:
+    """``limit`` returns the N most-recently-updated rows."""
+    _create("limit-A")
+    _create("limit-B")
+    _create("limit-C")
+    rows = client.get("/api/articles", params={"limit": 2}).json()
+    assert len(rows) == 2
+
+
+def test_list_articles_limit_preserves_order_after_filter() -> None:
+    """Filter composes with limit: filter first, then cap."""
+    pub_a = _create("pub-A")
+    _create("draft-A")
+    pub_b = _create("pub-B")
+    client.patch(f"/api/articles/{pub_a['id']}", json={"status": "published"})
+    client.patch(f"/api/articles/{pub_b['id']}", json={"status": "published"})
+    rows = client.get(
+        "/api/articles", params={"status": "published", "limit": 1}
+    ).json()
+    assert len(rows) == 1
+    # Most-recently-updated wins — pub_b was patched last.
+    assert rows[0]["id"] == pub_b["id"]
+
+
+def test_list_articles_limit_rejects_zero_and_negative() -> None:
+    """``ge=1`` guards against silly values."""
+    assert client.get("/api/articles", params={"limit": 0}).status_code == 422
+    assert client.get("/api/articles", params={"limit": -5}).status_code == 422
+
+
+def test_list_articles_limit_rejects_above_cap() -> None:
+    """``le=1000`` prevents huge-page abuse."""
+    assert client.get("/api/articles", params={"limit": 1001}).status_code == 422
+
+
+def test_list_articles_no_limit_returns_all() -> None:
+    """Omitting ``limit`` preserves the historical no-cap behaviour."""
+    for i in range(3):
+        _create(f"no-limit-{i}")
+    rows = client.get("/api/articles").json()
+    titles = {r["title"] for r in rows}
+    assert {"no-limit-0", "no-limit-1", "no-limit-2"}.issubset(titles)
+
+
 # --- get ---
 
 

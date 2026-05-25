@@ -138,6 +138,7 @@ def list_articles(
     series: str | None = Query(default=None, max_length=300),
     tag: str | None = Query(default=None, max_length=100),
     topic: str | None = Query(default=None, max_length=100),
+    limit: int | None = Query(default=None, ge=1, le=1000),
     db: Session = Depends(get_db),
 ) -> list[Article]:
     """List live articles with optional filters (status, series, tag, topic).
@@ -153,6 +154,11 @@ def list_articles(
     payload with the tag wrapped in quotes - good enough for the
     typical tag set sizes Bibliogon ships with and avoids a
     DB-engine-specific operator.
+
+    Optional ``limit`` caps the response at the most-recently-updated
+    N rows after filtering. Default ``None`` preserves the historical
+    "return everything" behaviour; the ArticleList dashboard passes
+    the user-selected page size.
     """
     query = db.query(Article).filter(Article.deleted_at.is_(None))
     if article_status is not None:
@@ -172,7 +178,10 @@ def list_articles(
         # a tag that is only a substring of another.
         needle = json.dumps(tag)
         query = query.filter(Article.tags.like(f"%{needle}%"))
-    return query.order_by(Article.updated_at.desc()).all()
+    query = query.order_by(Article.updated_at.desc())
+    if limit is not None:
+        query = query.limit(limit)
+    return query.all()
 
 
 # --- Trash ---
