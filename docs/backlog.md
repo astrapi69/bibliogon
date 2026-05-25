@@ -1,11 +1,12 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-23 (ACCESSIBILITY-AUDIT-WCAG-AA-01 CLOSED post-v0.36.0 via 7-commit ship `457e01c..2349797`: C1 skip-to-content link + landmark + heading hierarchy across 8 routed pages + new `<SkipToContentLink>` + sr-only utility + ui.a11y.skip_to_content in 8 catalogs; C2 universal `*:focus-visible` safety net + KdpPublishingWizard step-change focus management; C3 WizardShell `aria-current="step"` + Toolbar aria-pressed on 20+ formatting toggles; C4 TipTap editor surface aria-label + role/aria-multiline (Editor + RichTextEditor) + ui.a11y.editor_label in 8 catalogs; C5 WCAG AA color-contrast — 30 violations resolved by darkening text-muted + accent across all 10 theme variants (user-adjudicated path α); C6 `@axe-core/react` ^4.11.3 devDep-only via `import.meta.env.DEV` dynamic import (prod bundle verified clean); C7 universal `prefers-reduced-motion` rule covering all ~42 transition/animation sites at 0.01ms duration. Pre-Inspection findings closed: zero skip-link / zero motion-query / zero `<main>` on BookEditor / no h1 on BookEditor + ArticleEditor / 30 contrast violations / 0 axe-core integration. tsc + Vitest 1986/1986 + i18n 75/75 + prod build all green across the chain.)
+Last updated: 2026-05-25 (DASHBOARD-PAGINATION-LOAD-MORE-01 CLOSED via 8-commit ship `822050c..277dd1d`: C1 backend `limit` query on GET /api/books + GET /api/articles (ge=1, le=1000) + 10 pytest cases; C2 PATCH /api/settings/app enum-validation for `ui.dashboard.{books,articles}_page_size` (10/25/50/100) + 5 pytest cases; C3 `usePagedList(scope)` hook with read-merge-write persistence mirroring useViewMode + 10 Vitest cases; C4 stateless `<PageSizeSelector>` native-select component + 5 Vitest cases; C5 wired into Book Dashboard with client-side slicing (filters live client-side); C6 symmetric wire into Article Dashboard per Articles-vs-Books parity rule + mirrored testid namespaces; C7 `ui.dashboard.{load_more,page_size_label}` in 8 i18n catalogs (parity 75/75 held); C8 4 Playwright smoke tests pinning load-more growth via counted-tile assertions + page-size persistence per surface. Selection semantics preserved (select-all still operates on full filtered set, not visible page). Backend pytest 2255 → 2260; Vitest 1986 → 2010; tsc clean.)
+Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 CLOSED post-v0.36.0 via 7-commit ship `457e01c..2349797`: C1 skip-to-content link + landmarks; C2 universal `*:focus-visible` + KdpPublishingWizard step focus; C3 WizardShell `aria-current="step"` + Toolbar aria-pressed; C4 TipTap editor surface aria-label; C5 WCAG AA color-contrast 30 violations resolved; C6 `@axe-core/react` devDep-only via `import.meta.env.DEV`; C7 universal `prefers-reduced-motion` rule.
 Previous: 2026-05-23 I18N-ARTICLES-NAMESPACE-CLEANUP-01 CLOSED via 1-commit ship: 7 silently-falling-back keys moved from `ui.template_picker.*` to `ui.articles.*` across all 8 i18n catalogs + 3 dead keys deleted + orphaned AuthorProfileSelect component+test removed.
-Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66`: C1 BookTypeRegistry + book-types.yaml (3 entries) + 22 backend tests (incl. ``test_literal_matches_registry`` SSoT verification gate); C2 GET /api/book-types endpoint + 4 endpoint tests; C3 useBookTypes() + BookTypesProvider mounted at App root + 13 Vitest cases; C4 pages.py PAGEABLE_BOOK_TYPES → pageable_book_types() registry call; C5 Dashboard + GetStarted migrated (new shared BookTypeIcon util; hardcoded DropdownMenu items + BOOK_TYPE_CARDS array DELETED); C6 CreateBookModal template-tab + BookEditor editor dispatch table (-30 LOC net via near-duplicate showMetadata-swap branch unification); C7 BookMetadataEditor isChapterBasedBookType + kdp-wizard MetadataChecklist + PricingStep capability-driven; C8 plugin-getstarted BOOK_TYPES tuple replaced with registry lookup (lazy import + ImportError fallback for standalone pytest path); C9 plugin-kdp/package.py chapter-filter capability-driven (lazy import + fallback). Pre-Coding-Reality-Check found audit scope 5 → 24 surfaces (4.8× higher); user-adjudicated full-scope ship via Q1.A + Q2.A core-owns-all + Q3.A runtime-API. plugin-export per-type loaders + plugin-kdp per-type manuscript dispatch documented as NOT-migrated (different signatures, not capability-driven). Backend pytest 2181 → 2207 (+26); Vitest 1974 → 1987 (+13); i18n parity 75/75 held; tsc clean throughout.)
+Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66` (BookTypeRegistry + GET /api/book-types + useBookTypes() + 22 backend + 13 Vitest tests; pageable_book_types() registry call replacing hardcoded literals across 5 → 24 audit-discovered surfaces).
 Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
 Current version: v0.36.0
-Open tasks: 67 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 66 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -55,98 +56,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **DASHBOARD-PAGINATION-LOAD-MORE-01** (P3, PERFORMANCE,
-  filed 2026-05-25 from pagination-pattern investigation):
-  Article Dashboard ([frontend/src/pages/ArticleList.tsx](../frontend/src/pages/ArticleList.tsx)) +
-  Book Dashboard ([frontend/src/pages/Dashboard.tsx](../frontend/src/pages/Dashboard.tsx))
-  fetch + render the full list in one batch. Backend
-  `GET /api/books` ([backend/app/routers/books.py:140-143](../backend/app/routers/books.py#L140-L143))
-  and `GET /api/articles` ([backend/app/routers/articles.py:135-175](../backend/app/routers/articles.py#L135-L175))
-  return all rows, ordered `updated_at desc`. Frontend maps
-  every entry into the grid / list view. No virtualisation,
-  no chunking.
-
-  ### Trigger
-
-  - User reports a perceived performance issue on the
-    Dashboard (slow initial render, lag on filter change,
-    lag on scroll), OR
-  - Article OR book count exceeds ~500 in any production
-    install, OR
-  - A future feature multiplies per-row render cost (e.g.
-    inline preview thumbnails, per-row AI badges).
-
-  Trigger-gated because today's scale (~209 articles in the
-  reference user's install) renders in milliseconds; the
-  bug is latent, not observed.
-
-  ### Scope (Pattern B — Load more + user-selectable PAGE_SIZE)
-
-  Pattern picked from the investigation, with the
-  page-size-selector extension per user adjudication
-  2026-05-25:
-
-  - **Page-size dropdown**: 10 / 25 / 50 / 100. Default 25.
-    Standard UX pattern (Google / GitHub / Jira / Linear).
-    Positioned next to the "Load more" button OR at the bottom
-    of the list (final UX placement decided at implementation
-    time; both placements are conventional).
-  - **Selection persistence**: server-side, via the existing
-    app.yaml user-overlay (`ui.dashboard.books_page_size` +
-    `ui.dashboard.articles_page_size`). Survives browser-data
-    clear / device switch. Mirrors the existing
-    `ui.dashboard.books_trash_view` + `articles_trash_view`
-    pattern (see USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01 for
-    the merge semantics that govern user-overlay defaults).
-  - **Load more** keeps its place: same button, bumps the
-    `limit` by the current PAGE_SIZE. Resets to PAGE_SIZE on
-    filter change.
-  - Matches [CommentsAdminSection.tsx](../frontend/src/components/CommentsAdminSection.tsx)
-    prior art (load-more + reset-on-filter-change). Tested at
-    [CommentsAdminSection.test.tsx:255,320,342,355](../frontend/src/components/CommentsAdminSection.test.tsx).
-    CommentsAdminSection's PAGE_SIZE is hardcoded at 100; the
-    Dashboards add the user-selectable variant — when that
-    pattern ships, CommentsAdminSection becomes a 3rd
-    candidate site for the same hook + selector component
-    (RCU follow-up filed implicitly via this entry).
-  - Keeps Bibliogon's bulk-select-all semantics intact
-    (`selectAll(filteredBooks.map(b => b.id))` still means
-    "all visible"). Virtual scrolling (Pattern C) would
-    force a re-think of selection semantics.
-  - Avoids the a11y / Playwright / indeterminate-checkbox
-    complexity that comes with `react-window` or
-    `@tanstack/react-virtual`.
-
-  ### Commit plan (~6-8 commits, single session)
-
-  1. Backend: `limit: int | None = Query(default=None, le=1000)`
-     on `list_books` + `list_articles`, append `.limit(limit)`
-     on the query. Paired pytest cases for limit/cap behavior.
-  2. Backend: extend `ui.dashboard` config keys
-     (`books_page_size` + `articles_page_size`, default 25,
-     enum [10, 25, 50, 100]). Add validation + paired settings
-     endpoint tests.
-  3. Frontend: extract `usePagedList(initialPageSize)` hook from
-     CommentsAdminSection's pattern (per RCU 2-surfaces
-     threshold) + Vitest covering page-size change resets +
-     load-more increments + filter-change reset.
-  4. Frontend: extract `<PageSizeSelector>` component
-     (dropdown w/ 10/25/50/100, fires onChange) + Vitest.
-  5. Wire into Dashboard: "Load more" button + PageSizeSelector
-     + reset-on-filter `useEffect` + persist selection via
-     `api.settings.updateApp`.
-  6. Wire into ArticleList: same shape.
-  7. i18n: `ui.dashboard.load_more` + `ui.dashboard.page_size_label`
-     keys in all 8 catalogs.
-  8. Playwright smoke: load-more flow + page-size selector
-     persistence per surface.
-
-  ### Why deferred (not P0/P1/P2)
-
-  Latent, no user pain. Filing as P3 keeps the design + scope
-  on record so the next contributor (or a future smoke
-  finding) can ship without re-investigating.
 
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
