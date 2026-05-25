@@ -19,6 +19,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {getLocalized} from "./utils";
 import SupportSection, {getDonationsConfig} from "../SupportSection";
 import styles from "../../pages/Settings.module.css";
+import {SectionHeader} from "./SectionHeader";
 
 interface Props {
     appConfig: Record<string, unknown>;
@@ -79,9 +80,7 @@ export function AboutSettings({appConfig}: Props) {
                 maxWidth: 720,
             }}
         >
-            <h2 className={styles.sectionTitle}>
-                {t("ui.about.heading", "Über Bibliogon")}
-            </h2>
+            <SectionHeader title={t("ui.about.heading", "Über Bibliogon")}/>
 
             {loading && (
                 <div

@@ -3,6 +3,7 @@ import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {HelpText} from "./HelpText";
+import {SectionHeader} from "./SectionHeader";
 
 export function EditorSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -36,7 +37,7 @@ export function EditorSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="editor-settings">
-            <h2 className={styles.sectionTitle}>{t("ui.settings.editor_title", "Editor")}</h2>
+            <SectionHeader title={t("ui.settings.editor_title", "Editor")}/>
             <div className={styles.card}>
                 <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
                     <div className="field" style={{flex: 1, minWidth: 140}}>

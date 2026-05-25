@@ -7,6 +7,7 @@ import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
 import {HelpText} from "./HelpText";
+import {SectionHeader} from "./SectionHeader";
 
 export function AiAssistantSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -63,7 +64,7 @@ export function AiAssistantSettings({config, onSave, saving}: {
     return (
         <div className={styles.main} data-testid="ai-assistant-settings">
             <div className={styles.section}>
-                <h2 className={styles.sectionTitle}>{t("ui.settings.ai_title", "KI-Assistent")}</h2>
+                <SectionHeader title={t("ui.settings.ai_title", "KI-Assistent")}/>
                 <div className={styles.card}>
                     <div className="field">
                         <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>

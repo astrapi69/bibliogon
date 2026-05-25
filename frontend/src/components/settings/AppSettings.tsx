@@ -7,6 +7,7 @@ import SshKeySection from "../SshKeySection";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
 import {HelpText} from "./HelpText";
+import {SectionHeader} from "./SectionHeader";
 
 export function AppSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -115,7 +116,7 @@ export function AppSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="app-settings">
-            <h2 className={styles.sectionTitle}>{t("ui.settings.app_settings", "App-Einstellungen")}</h2>
+            <SectionHeader title={t("ui.settings.app_settings", "App-Einstellungen")}/>
             <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.language", "Sprache")}</label>
@@ -320,9 +321,7 @@ export function AppSettings({config, onSave, saving}: {
 
             {/* Advanced: White-Label (collapsible "Erweitert" section) */}
             <div data-testid="advanced-section">
-                <h2 className={styles.sectionTitle}>
-                    {t("ui.settings.advanced_section", "Erweitert")}
-                </h2>
+                <SectionHeader title={t("ui.settings.advanced_section", "Erweitert")}/>
                 <Collapsible.Root open={showAdvanced} onOpenChange={setShowAdvanced}>
                     <Collapsible.Trigger asChild>
                         <button

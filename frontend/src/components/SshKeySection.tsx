@@ -6,6 +6,7 @@ import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import styles from "../pages/Settings.module.css"
 import {HelpText} from "./settings/HelpText"
+import {SectionHeader} from "./settings/SectionHeader"
 
 export default function SshKeySection() {
     const {t} = useI18n()
@@ -91,10 +92,10 @@ export default function SshKeySection() {
 
     return (
         <div data-testid="ssh-key-section">
-            <h2 className={styles.sectionTitle}>
-                <Key size={16} style={{verticalAlign: -2, marginRight: 6}}/>
-                {t("ui.ssh.title", "SSH-Schlüssel für Git-Sync")}
-            </h2>
+            <SectionHeader
+                icon={<Key size={16} style={{verticalAlign: -2, marginRight: 6}}/>}
+                title={t("ui.ssh.title", "SSH-Schlüssel für Git-Sync")}
+            />
             <div className={styles.card}>
                 <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
                     {t(

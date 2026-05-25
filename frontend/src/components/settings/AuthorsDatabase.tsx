@@ -5,6 +5,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
+import {SectionHeader} from "./SectionHeader";
 
 /** Authors-Database tab (Bug 8 Phase 1, Commit 5).
  *
@@ -165,9 +166,7 @@ export function AuthorsDatabase() {
 
     return (
         <div className={styles.section} data-testid="authors-database-section">
-            <h2 className={styles.sectionTitle}>
-                {t("ui.authors_database.title", "Autoren-Datenbank")}
-            </h2>
+            <SectionHeader title={t("ui.authors_database.title", "Autoren-Datenbank")}/>
             <p style={{fontSize: "0.875rem", color: "var(--text-muted)", marginBottom: 16}}>
                 {t(
                     "ui.authors_database.hint",

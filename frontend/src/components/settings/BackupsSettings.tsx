@@ -29,6 +29,7 @@ import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import BackupCompareDialog from "../BackupCompareDialog";
 import styles from "../../pages/Settings.module.css";
+import {SectionHeader} from "./SectionHeader";
 
 interface BackupHistoryEntry {
     timestamp: string;
@@ -61,9 +62,7 @@ export function BackupsSettings() {
             data-testid="backups-settings"
             style={{display: "flex", flexDirection: "column", gap: 16}}
         >
-            <h2 className={styles.sectionTitle}>
-                {t("ui.settings.tab_backups", "Backups")}
-            </h2>
+            <SectionHeader title={t("ui.settings.tab_backups", "Backups")}/>
 
             <div style={sectionStyle}>
                 <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>

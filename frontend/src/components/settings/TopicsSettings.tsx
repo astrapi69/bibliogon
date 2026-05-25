@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {Save, Plus, X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
+import {SectionHeader} from "./SectionHeader";
 
 export function TopicsSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -36,7 +37,7 @@ export function TopicsSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="topics-settings">
-            <h2 className={styles.sectionTitle}>{t("ui.settings.topics_title", "Artikel-Themen")}</h2>
+            <SectionHeader title={t("ui.settings.topics_title", "Artikel-Themen")}/>
             <div className={styles.card}>
                 <div className="field">
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>

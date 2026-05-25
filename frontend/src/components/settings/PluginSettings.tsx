@@ -6,6 +6,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import {PluginCard} from "./PluginCard";
+import {SectionHeader} from "./SectionHeader";
 import {getLocalized} from "./utils";
 
 export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin, onAddPlugin, onRemovePlugin, onReload}: {
@@ -97,7 +98,7 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
     return (
         <div className={styles.section} data-testid="plugin-settings">
             <div style={{display: "flex", alignItems: "center", justifyContent: "space-between"}}>
-                <h2 className={styles.sectionTitle}>{t("ui.settings.plugin_settings", "Plugin-Einstellungen")}</h2>
+                <SectionHeader title={t("ui.settings.plugin_settings", "Plugin-Einstellungen")}/>
                 <div style={{display: "flex", gap: 8}}>
                     <button
                         className="btn btn-ghost btn-sm"

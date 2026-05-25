@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {Save, Plus, X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
+import {SectionHeader} from "./SectionHeader";
 
 export function AuthorSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -35,7 +36,7 @@ export function AuthorSettings({config, onSave, saving}: {
 
     return (
         <div className={styles.section} data-testid="author-settings">
-            <h2 className={styles.sectionTitle}>{t("ui.settings.author_profile", "Autorenprofil")}</h2>
+            <SectionHeader title={t("ui.settings.author_profile", "Autorenprofil")}/>
             <div className={styles.card}>
                 <div className="field">
                     <label className="label">{t("ui.settings.real_name", "Echter Name")}</label>
