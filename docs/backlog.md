@@ -1136,36 +1136,17 @@ store.
   cognitive cost. Plugin model means non-fiction authors
   never see it.
 
-- **PLUGIN-COMICS-E2E-SMOKE-01**: live-dev-server E2E
-  Playwright spec for plugin-comics. Would have caught
-  today's 404 BEFORE the user's manual smoke. Concrete
-  scope: a spec under ``e2e/smoke/`` that creates a
-  ``book_type = "comic_book"`` book, opens the editor,
-  asserts the green plugin-info panel renders with
-  ``name = "comics"`` + ``session = 1``, and asserts NO
-  ``role="alert"`` plugin-unreachable error element
-  appears. Effort: S (~30-60 min in advance, or natural
-  fit at Session-2 landing). Strategic note: this is a
-  broader pattern. Backend pytest with TestClient
-  triggers a fresh FastAPI lifespan per session, so it
-  masks an entire class of operational issues that
-  long-running uvicorn surfaces — stale plugin
-  discovery, env-var absence, filesystem state drift,
-  cross-process cache poisoning. Filing under plugin-
-  comics scope per the "single instance is incident,
-  not pattern" discipline. If a SECOND plugin needs the
-  same pattern, extract a shared
-  ``LIVE-DEV-SMOKE-INFRASTRUCTURE-01`` (P4) per the
-  Recurring-Component-Unification rule's 2-surfaces
-  threshold — do NOT pre-emptively file the
-  infrastructure item now. Trigger: plugin-comics
-  Session 2 starts, OR another plugin needs live-dev
-  E2E smoke (which would also trigger the
-  infrastructure extraction). Filed by plugin-comics
-  Session 1 smoke 2026-05-18.
-
 (D-05 closed as won't-fix 2026-05-05; archived in
 [docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
+
+(PLUGIN-COMICS-E2E-SMOKE-01 CLOSED 2026-05-25; archive entry
+in [docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).
+The live-dev plugin-info-panel-renders + no-plugin-error
+assertion landed as a 4th test in
+``e2e/smoke/comic-book-editor.spec.ts``; the related stale
+``version === "1.0.0"`` assertion in
+``user-overlay-migration.spec.ts`` was bumped to ``/^1\./``
+in the same session.)
 
 - **GH-ACTIONS-PERIODIC-AUDIT-01**: recurring CI-hygiene audit
   for GitHub Actions version drift. The 2026-05-14 sweep

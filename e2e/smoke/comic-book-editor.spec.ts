@@ -48,6 +48,48 @@ test.describe("Comic-book editor smoke", () => {
         ).toBeVisible();
     });
 
+    // PLUGIN-COMICS-E2E-SMOKE-01: live-dev plugin-discovery probe.
+    //
+    // pytest with TestClient masks the operational class this
+    // assertion catches — backend lifespan + plugin discovery run
+    // fresh per-test, so a broken plugin-load path (stale entry
+    // points, env-var absence, post-install rediscover gap)
+    // silently passes there but 404s against a long-running
+    // uvicorn. The frontend ComicBookEditor renders one of two
+    // surfaces based on the GET /api/comics/info probe:
+    //   - ``comic-book-editor-plugin-info``: green panel with
+    //     plugin name + version + session. Comics is reachable.
+    //   - ``comic-book-editor-plugin-error``: role="alert" with
+    //     the unreachable message. The plugin failed to load OR
+    //     the route was never mounted.
+    // Both testids cannot coexist; this test pins the healthy
+    // branch (info visible, error absent) on every smoke run.
+    test("plugin-info panel renders + no plugin-unreachable alert", async ({
+        page,
+    }) => {
+        const book = await createComicBook("Plugin Info Probe", "E2E Author");
+        await page.goto(`/book/${book.id}`);
+
+        // Healthy branch: green panel with the comics-plugin
+        // identity. ``toContainText("comics")`` is the contract
+        // (matches "comics v1.X.Y (session N)"); version + session
+        // numbers float across releases so we don't pin them.
+        await expect(
+            page.getByTestId("comic-book-editor-plugin-info"),
+        ).toBeVisible();
+        await expect(
+            page.getByTestId("comic-book-editor-plugin-info"),
+        ).toContainText("comics");
+
+        // Negative-path regression-pin: the role="alert"
+        // plugin-unreachable element MUST NOT be in the DOM. If
+        // this fires the plugin is broken in the live stack even
+        // though pytest is green.
+        await expect(
+            page.getByTestId("comic-book-editor-plugin-error"),
+        ).toHaveCount(0);
+    });
+
     test("clicking add-page from empty state creates page 1 and reveals the sidebar row", async ({
         page,
     }) => {

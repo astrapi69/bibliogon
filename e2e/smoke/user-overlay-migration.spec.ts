@@ -104,7 +104,11 @@ test.describe("User-overlay plugin-enable migration (live-dev)", () => {
         expect(resp.status).toBe(200);
         const body = (await resp.json()) as {name: string; version: string};
         expect(body.name).toBe("comics");
-        expect(body.version).toBe("1.0.0");
+        // Comics shipped 1.0.0 in v0.35.x; Session 2 bumped to
+        // 1.1.0 in v0.36.0. Match any 1.x release rather than
+        // pin a specific patch so this assertion survives future
+        // minor bumps without test churn.
+        expect(body.version).toMatch(/^1\./);
     });
 
     test("user-overlay app.yaml on disk has comics in plugins.enabled", () => {
