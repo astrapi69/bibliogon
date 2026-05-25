@@ -152,15 +152,19 @@ ROADMAP's "Deferred sub-parts" block; not yet filed in backlog.
   load remains sub-second; no user feedback. Re-evaluate when
   either signal fires.
 
-### Book Metadata Extensions (NEW, filed via this ROADMAP refresh)
+### Book Metadata Extensions
 
-- `BOOK-REPOSITORY-URL-FIELD-01` (P3, NEW) — optional
-  `repository_url` field on the Book model for authors who manage
-  their book project in a git repository (manual or git-sync
-  import). Surfaces in BookMetadataEditor. Pre-Inspection
-  in-flight (see Task B in the 2026-05-25 housekeeping batch);
-  scope adjudication still pending based on whether
-  plugin-git-sync's mapping table already stores the URL.
+- ~~`BOOK-REPOSITORY-URL-FIELD-01`~~ — **CLOSED 2026-05-25**
+  via 5-commit ship `8a8a11b..55829b8`: nullable
+  `Book.repository_url` String(2000) + Alembic migration +
+  BookMetadataEditor General-tab field with git-sync read-
+  precedence (free input when no GitSyncMapping; read-only +
+  "managed by git-sync" hint when a mapping owns the URL) + 4
+  i18n keys × 8 catalogs + 9 backend pytest cases + 5 frontend
+  Vitest cases + 2 Playwright smoke tests. Backend sweep 2260 →
+  2269; Vitest 66 → 71 in the touched file; i18n parity 75/75
+  held. See [docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md)
+  for the full archive entry.
 
 ### Editor Display Preferences (NEW, filed via this ROADMAP refresh)
 
