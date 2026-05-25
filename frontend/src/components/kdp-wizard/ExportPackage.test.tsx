@@ -77,6 +77,7 @@ function makeBook(): BookDetail {
         backpage_author_bio: null,
         cover_image: null,
         custom_css: null,
+        repository_url: null,
         cover_image_prompt: null,
         chapter_summaries: [],
         ai_assisted: false,

@@ -121,6 +121,13 @@ export interface Book {
     backpage_author_bio: string | null;
     cover_image: string | null;
     custom_css: string | null;
+    /** BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL for
+     *  books tracked externally. When the book is
+     *  plugin-git-sync-managed, GitSyncMappingStatus.repo_url
+     *  takes precedence in the UI (BookMetadataEditor reads it
+     *  read-only); this column carries the value for manually-
+     *  tracked repos. */
+    repository_url: string | null;
     ai_assisted: boolean;
     ai_tokens_used: number;
     tts_engine: string | null;

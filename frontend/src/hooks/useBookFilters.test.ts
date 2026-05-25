@@ -47,6 +47,7 @@ function makeBook(overrides: Partial<Book> = {}): Book {
         backpage_author_bio: null,
         cover_image: null,
         custom_css: null,
+        repository_url: null,
         ai_assisted: false,
         ai_tokens_used: 0,
         tts_engine: null,
