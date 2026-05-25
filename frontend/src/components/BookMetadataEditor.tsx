@@ -1,7 +1,7 @@
 import {useState, useEffect, useCallback, useMemo} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
-import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel} from "../api/client";
+import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel, type GitSyncMappingStatus} from "../api/client";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -75,6 +75,13 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     // failure stays empty (CategoryInput is free-text-capable, so
     // a missing catalog degrades gracefully to plain typing).
     const [kdpCategoriesCatalog, setKdpCategoriesCatalog] = useState<string[]>([]);
+    // BOOK-REPOSITORY-URL-FIELD-01 C3: snapshot of the
+    // plugin-git-sync mapping for this book. When ``mapped=true``,
+    // the General-tab Repository-URL field switches to read-only
+    // and surfaces ``status.repo_url`` (the canonical URL the
+    // round-trip uses). When ``mapped=false`` OR the call fails,
+    // the field falls back to free input editing ``Book.repository_url``.
+    const [gitSyncStatus, setGitSyncStatus] = useState<GitSyncMappingStatus | null>(null);
     const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
     const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
     const [saving, setSaving] = useState(false);
@@ -112,6 +119,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             tts_speed: book.tts_speed || "1.0",
             audiobook_merge: book.audiobook_merge || "merged",
             audiobook_filename: book.audiobook_filename || "",
+            repository_url: book.repository_url || "",
         });
         setKeywords(Array.isArray(book.keywords) ? book.keywords : []);
         setCategories(Array.isArray(book.categories) ? book.categories : []);
@@ -144,6 +152,30 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             cancelled = true;
         };
     }, []);
+
+    // BOOK-REPOSITORY-URL-FIELD-01 C3: fetch the GitSyncMapping
+    // status for this book on mount + on book.id change. When
+    // ``mapped=true``, the Repository-URL field renders read-only
+    // and shows the mapping's canonical URL (the round-trip uses
+    // it; manual edits would diverge from the on-disk clone).
+    // Silent failure: gitSyncStatus stays null, the field falls
+    // back to free-input editing Book.repository_url.
+    useEffect(() => {
+        let cancelled = false;
+        api.gitSync
+            .status(book.id)
+            .then((status) => {
+                if (!cancelled) setGitSyncStatus(status);
+            })
+            .catch(() => {
+                // Silent degrade — the field still works as a
+                // free input. Most-likely cause: the git-sync
+                // router is not registered (plugin disabled).
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [book.id]);
 
     // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
     // selection — free-text input + autocomplete suggestions union'd
@@ -403,6 +435,22 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <Field label={t("ui.metadata.edition", "Edition")} value={form.edition} onChange={(v) => set("edition", v)} placeholder="z.B. Second Edition"/>
                             <Field label={t("ui.metadata.publish_date", "Datum")} value={form.publish_date} onChange={(v) => set("publish_date", v)} placeholder="z.B. 2025"/>
                         </Row>
+                        {/* BOOK-REPOSITORY-URL-FIELD-01 C3: optional
+                          * git repo URL. When plugin-git-sync owns
+                          * this book (mapping exists), the field
+                          * renders read-only with the canonical
+                          * mapping URL + "managed by git-sync" hint
+                          * so the user understands manual edits
+                          * would diverge from the round-trip. When
+                          * no mapping exists OR the status fetch
+                          * failed, the field is a normal free input
+                          * backed by Book.repository_url. */}
+                        <RepositoryUrlField
+                            value={form.repository_url ?? ""}
+                            onChange={(v) => set("repository_url", v)}
+                            gitSyncStatus={gitSyncStatus}
+                            t={t}
+                        />
                     </div>
                 </Tabs.Content>
 
@@ -693,6 +741,96 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
 
 function Row({children}: {children: React.ReactNode}) {
     return <div className={styles.row}>{children}</div>;
+}
+
+/**
+ * Repository-URL field with git-sync read-precedence.
+ *
+ * BOOK-REPOSITORY-URL-FIELD-01 C3. Two render shapes:
+ *
+ * - When ``gitSyncStatus.mapped === true``: the field is read-only
+ *   and surfaces ``gitSyncStatus.repo_url``. A small hint below the
+ *   input tells the user the URL is owned by plugin-git-sync
+ *   (manual edits would diverge from the round-trip). The
+ *   ``Book.repository_url`` column is ignored in this case to
+ *   avoid two competing sources of truth.
+ * - When ``mapped === false`` OR ``gitSyncStatus === null`` (fetch
+ *   failed / plugin disabled): the field is a normal free input
+ *   editing ``Book.repository_url`` via the form's
+ *   ``onChange`` → ``set("repository_url", v)`` chain.
+ */
+function RepositoryUrlField({
+    value,
+    onChange,
+    gitSyncStatus,
+    t,
+}: {
+    value: string;
+    onChange: (v: string) => void;
+    gitSyncStatus: GitSyncMappingStatus | null;
+    t: (key: string, fallback: string) => string;
+}) {
+    const managedByGitSync = gitSyncStatus?.mapped === true;
+    const label = t("ui.metadata.repository_url", "Git-Repository (URL)");
+    if (managedByGitSync) {
+        return (
+            <div className="field" style={{flex: 1}} data-testid="metadata-repository-url-managed">
+                <label className="label">{label}</label>
+                <input
+                    className="input"
+                    type="url"
+                    value={gitSyncStatus?.repo_url ?? ""}
+                    readOnly
+                    aria-readonly="true"
+                    data-testid="metadata-repository-url-input"
+                    style={{background: "var(--surface-2)", cursor: "default"}}
+                />
+                <small
+                    style={{
+                        display: "block",
+                        marginTop: 4,
+                        fontSize: "0.8125rem",
+                        color: "var(--text-muted)",
+                    }}
+                    data-testid="metadata-repository-url-managed-hint"
+                >
+                    {t(
+                        "ui.metadata.repository_url_managed_hint",
+                        "Wird von plugin-git-sync verwaltet — manuelle Änderungen würden vom Round-Trip abweichen.",
+                    )}
+                </small>
+            </div>
+        );
+    }
+    return (
+        <div className="field" style={{flex: 1}} data-testid="metadata-repository-url-manual">
+            <label className="label">{label}</label>
+            <input
+                className="input"
+                type="url"
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={t(
+                    "ui.metadata.repository_url_placeholder",
+                    "https://github.com/...",
+                )}
+                data-testid="metadata-repository-url-input"
+            />
+            <small
+                style={{
+                    display: "block",
+                    marginTop: 4,
+                    fontSize: "0.8125rem",
+                    color: "var(--text-muted)",
+                }}
+            >
+                {t(
+                    "ui.metadata.repository_url_hint",
+                    "Optional. Externer Git-Repo-Link für Bücher, die nicht über plugin-git-sync importiert wurden.",
+                )}
+            </small>
+        </div>
+    );
 }
 
 /**

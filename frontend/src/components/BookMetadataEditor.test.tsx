@@ -176,6 +176,23 @@ vi.mock("../api/client", () => ({
     kdp: {
       listCategories: vi.fn().mockResolvedValue([]),
     },
+    gitSync: {
+      // BOOK-REPOSITORY-URL-FIELD-01 C3: per-test override sets
+      // ``mapped: true`` to exercise the read-only branch; the
+      // default ``mapped: false`` keeps the free-input branch
+      // active.
+      status: vi.fn().mockResolvedValue({
+        mapped: false,
+        repo_url: null,
+        branch: null,
+        last_imported_commit_sha: null,
+        local_clone_path: null,
+        last_committed_at: null,
+        dirty: null,
+        core_git_initialized: false,
+            has_credential: false,
+      }),
+    },
     authors: {
       list: vi.fn().mockResolvedValue([]),
       create: vi.fn().mockImplementation(
@@ -261,6 +278,7 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     backpage_author_bio: null,
     cover_image: null,
     custom_css: null,
+    repository_url: null,
     ai_assisted: false,
     ai_tokens_used: 0,
     tts_engine: null,
@@ -1272,5 +1290,185 @@ describe("BookMetadataEditor Story tab (EXPOSE-BUCHIDEE-METADATA-01)", () => {
         const storyContent = screen.getByTestId("metadata-story-content")
         // The "Beschreibung" label is in General, not Story.
         expect(within(storyContent).queryByText("Beschreibung")).toBeNull()
+    })
+})
+
+// --- BOOK-REPOSITORY-URL-FIELD-01 C3: Repository-URL field with
+// --- git-sync read-precedence ---
+
+describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD-01)", () => {
+    const onSave = vi.fn().mockResolvedValue(undefined)
+    const onBack = vi.fn()
+
+    beforeEach(() => {
+        onSave.mockClear()
+        onBack.mockClear()
+    })
+
+    it("renders the free-input branch when no git-sync mapping exists", async () => {
+        const {api} = await import("../api/client")
+        const statusMock = vi.mocked(api.gitSync.status)
+        statusMock.mockClear()
+        statusMock.mockResolvedValueOnce({
+            mapped: false,
+            repo_url: null,
+            branch: null,
+            last_imported_commit_sha: null,
+            local_clone_path: null,
+            last_committed_at: null,
+            dirty: null,
+            core_git_initialized: false,
+            has_credential: false,
+        })
+        render(
+            <BookMetadataEditor
+                book={makeBook({repository_url: "https://github.com/me/book.git"})}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+        await waitFor(() => expect(statusMock).toHaveBeenCalledTimes(1))
+        const wrapper = await screen.findByTestId("metadata-repository-url-manual")
+        const input = within(wrapper).getByTestId(
+            "metadata-repository-url-input",
+        ) as HTMLInputElement
+        expect(input.value).toBe("https://github.com/me/book.git")
+        expect(input.hasAttribute("readonly")).toBe(false)
+    })
+
+    it("renders the read-only branch when git-sync mapping exists", async () => {
+        const {api} = await import("../api/client")
+        const statusMock = vi.mocked(api.gitSync.status)
+        statusMock.mockClear()
+        statusMock.mockResolvedValueOnce({
+            mapped: true,
+            repo_url: "https://gitlab.com/me/synced-book.git",
+            branch: "main",
+            last_imported_commit_sha: "abc1234",
+            local_clone_path: "/data/clones/book-1",
+            last_committed_at: null,
+            dirty: false,
+            core_git_initialized: true,
+            has_credential: false,
+        })
+        render(
+            <BookMetadataEditor
+                book={makeBook({repository_url: "https://github.com/me/diverged.git"})}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+        await waitFor(() => expect(statusMock).toHaveBeenCalledTimes(1))
+        // Read-only wrapper carries the managed-by-git-sync testid.
+        const wrapper = await screen.findByTestId("metadata-repository-url-managed")
+        const input = within(wrapper).getByTestId(
+            "metadata-repository-url-input",
+        ) as HTMLInputElement
+        // The mapping's URL wins (not Book.repository_url) — single
+        // source of truth when git-sync owns the book.
+        expect(input.value).toBe("https://gitlab.com/me/synced-book.git")
+        expect(input.hasAttribute("readonly")).toBe(true)
+        // Manual branch's wrapper is absent.
+        expect(screen.queryByTestId("metadata-repository-url-manual")).toBeNull()
+        // Managed-hint surfaces (i18n fallback).
+        expect(
+            within(wrapper).getByTestId("metadata-repository-url-managed-hint"),
+        ).toBeTruthy()
+    })
+
+    it("falls back to the free-input branch when the git-sync status call fails", async () => {
+        const {api} = await import("../api/client")
+        const statusMock = vi.mocked(api.gitSync.status)
+        statusMock.mockClear()
+        statusMock.mockRejectedValueOnce(new Error("plugin-git-sync disabled"))
+        render(
+            <BookMetadataEditor
+                book={makeBook({repository_url: null})}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+        await waitFor(() => expect(statusMock).toHaveBeenCalledTimes(1))
+        // Manual branch renders even though Book.repository_url is
+        // null — the field starts empty + accepts free input.
+        const wrapper = await screen.findByTestId("metadata-repository-url-manual")
+        const input = within(wrapper).getByTestId(
+            "metadata-repository-url-input",
+        ) as HTMLInputElement
+        expect(input.value).toBe("")
+        expect(input.hasAttribute("readonly")).toBe(false)
+    })
+
+    it("typing into the free-input branch flows the value into the save payload as repository_url", async () => {
+        const {api} = await import("../api/client")
+        const statusMock = vi.mocked(api.gitSync.status)
+        statusMock.mockClear()
+        statusMock.mockResolvedValueOnce({
+            mapped: false,
+            repo_url: null,
+            branch: null,
+            last_imported_commit_sha: null,
+            local_clone_path: null,
+            last_committed_at: null,
+            dirty: null,
+            core_git_initialized: false,
+            has_credential: false,
+        })
+        render(
+            <BookMetadataEditor
+                book={makeBook({repository_url: null})}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+        await waitFor(() => expect(statusMock).toHaveBeenCalledTimes(1))
+        const wrapper = await screen.findByTestId("metadata-repository-url-manual")
+        const input = within(wrapper).getByTestId(
+            "metadata-repository-url-input",
+        ) as HTMLInputElement
+        fireEvent.change(input, {
+            target: {value: "https://codeberg.org/me/new-book.git"},
+        })
+        // Save button label "Speichern" (DE fallback).
+        const saveButton = screen.getAllByText("Speichern")[0]
+        fireEvent.click(saveButton)
+        await waitFor(() => expect(onSave).toHaveBeenCalled())
+        const payload = onSave.mock.calls[0][0]
+        expect(payload.repository_url).toBe("https://codeberg.org/me/new-book.git")
+    })
+
+    it("clearing the input sends repository_url=null on save (empty string → null)", async () => {
+        const {api} = await import("../api/client")
+        const statusMock = vi.mocked(api.gitSync.status)
+        statusMock.mockClear()
+        statusMock.mockResolvedValueOnce({
+            mapped: false,
+            repo_url: null,
+            branch: null,
+            last_imported_commit_sha: null,
+            local_clone_path: null,
+            last_committed_at: null,
+            dirty: null,
+            core_git_initialized: false,
+            has_credential: false,
+        })
+        render(
+            <BookMetadataEditor
+                book={makeBook({repository_url: "https://github.com/me/existing.git"})}
+                onSave={onSave}
+                onBack={onBack}
+            />,
+        )
+        await waitFor(() => expect(statusMock).toHaveBeenCalledTimes(1))
+        const wrapper = await screen.findByTestId("metadata-repository-url-manual")
+        const input = within(wrapper).getByTestId(
+            "metadata-repository-url-input",
+        ) as HTMLInputElement
+        fireEvent.change(input, {target: {value: ""}})
+        const saveButton = screen.getAllByText("Speichern")[0]
+        fireEvent.click(saveButton)
+        await waitFor(() => expect(onSave).toHaveBeenCalled())
+        const payload = onSave.mock.calls[0][0]
+        expect(payload.repository_url).toBeNull()
     })
 })
