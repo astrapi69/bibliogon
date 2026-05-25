@@ -166,16 +166,20 @@ ROADMAP's "Deferred sub-parts" block; not yet filed in backlog.
   held. See [docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md)
   for the full archive entry.
 
-### Editor Display Preferences (NEW, filed via this ROADMAP refresh)
+### Editor Display Preferences
 
-- `EDITOR-DISPLAY-SETTINGS-01` (P3, NEW) — configurable editor
-  display settings (text width, font family, font size, line
-  height) callable from the editor toolbar. Settings affect how
-  the author sees text while writing, NOT export output.
-  Persisted via existing `api.settings.updateApp` user-overlay
-  (mirrors the word-wrap-toggle pattern). Pre-Inspection in-flight
-  (see Task C in the 2026-05-25 housekeeping batch); STOP for
-  user adjudication on scope before implementation.
+- ~~`EDITOR-DISPLAY-SETTINGS-01`~~ — **CLOSED 2026-05-25**
+  via 6-commit ship `6197c35..2fb82f4`: per-device
+  localStorage-backed editor display preferences (width, font
+  family, font size, line height) + popover triggered from the
+  shared Editor.tsx toolbar (chapter editor + ArticleEditor).
+  CSS variables on `document.documentElement` cascade into
+  `.tiptap-editor` via `var()` references with fallbacks
+  matching pre-feature literals. 20 i18n keys × 8 catalogs +
+  11 hook Vitest cases + 11 component Vitest cases + 2
+  Playwright smoke tests. i18n parity 75/75 held; tsc clean.
+  See [docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md)
+  for the full archive entry.
 
 ### Infrastructure / Quality
 
