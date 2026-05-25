@@ -4593,7 +4593,7 @@ files as not-yet-staged; the 7 already-staged files
 outside docs/ were invisible. `git commit` shipped all
 9 under the `docs(backlog): close ...` subject line.
 Full audit-trail at
-`docs/journal/c7-absorption-note-2026-05-21.md`.
+`docs/archive/journal/c7-absorption-note-2026-05-21.md`.
 
 ### Rule
 
