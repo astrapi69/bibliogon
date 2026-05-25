@@ -17,6 +17,8 @@ import { formatActiveBookFilters } from "../utils/formatActiveFilters";
 import {useBookSelection} from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
+import PageSizeSelector from "../components/PageSizeSelector";
+import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
@@ -76,6 +78,12 @@ export default function Dashboard() {
     // Settings UI. See ``useTrashViewMode`` for the rationale.
     const { mode: trashViewMode, setMode: setTrashViewMode } =
         useTrashViewMode("books");
+    // DASHBOARD-PAGINATION-LOAD-MORE-01 C5: paged display of the
+    // active (non-trash) book list. Slices ``filters.filteredBooks``
+    // to ``paged.limit`` for render; "Load more" grows the limit;
+    // PageSizeSelector persists the user's preference. Filter changes
+    // reset the limit (effect below).
+    const paged = usePagedList("books");
 
     /** Bulk export. Reads the current filtered list in display order,
      *  restricts to the selected IDs, then POSTs them to the backend
@@ -281,13 +289,19 @@ export default function Dashboard() {
      *  articles dashboard hit when depending on the whole selection
      *  object. */
     const clearBookSelection = selection.clear;
+    const resetPagination = paged.reset;
     useEffect(() => {
         clearBookSelection();
+        // Reset display limit on filter change so the user always
+        // sees the first PAGE_SIZE rows of the new filter result —
+        // not a mid-page slice carried over from the prior filter.
+        resetPagination();
     }, [
         filters.searchQuery,
         filters.genre,
         filters.language,
         clearBookSelection,
+        resetPagination,
     ]);
 
     const loadBooks = async () => {
@@ -844,41 +858,95 @@ export default function Dashboard() {
                                     </label>
                                 </div>
                             ) : null}
-                            {viewMode === "list" ? (
-                                <BookListView
-                                    books={filters.filteredBooks}
-                                    onClick={(book) => navigate(`/book/${book.id}`)}
-                                    onDelete={(book) => handleDelete(book.id)}
-                                    onDeletePermanent={(book) => handleDeletePermanent(book.id)}
-                                    isSelected={(book) => selection.isSelected(book.id)}
-                                    onToggleSelect={(book) => selection.toggle(book.id)}
-                                />
-                            ) : (
-                                <div className={styles.grid}>
-                                    {filters.filteredBooks.map((book) => (
-                                        <div
-                                            key={book.id}
-                                            className={`${styles.tileWrapper}${selection.isSelected(book.id) ? ` ${styles.tileSelected}` : ""}`}
-                                        >
-                                            <input
-                                                type="checkbox"
-                                                className={styles.tileCheckbox}
-                                                data-testid={`book-bulk-check-${book.id}`}
-                                                checked={selection.isSelected(book.id)}
-                                                onChange={() => selection.toggle(book.id)}
-                                                onClick={(e) => e.stopPropagation()}
-                                                aria-label="Select book"
+                            {(() => {
+                                // C5: slice to ``paged.limit`` for render.
+                                // Selection semantics unchanged — select-all
+                                // still operates on the full filtered set,
+                                // not just the visible page. The pagination
+                                // is a display-cost guard, not a selection
+                                // boundary.
+                                const visibleBooks = filters.filteredBooks.slice(
+                                    0,
+                                    paged.limit,
+                                );
+                                const hasMore =
+                                    filters.filteredBooks.length > visibleBooks.length;
+                                return (
+                                    <>
+                                        {viewMode === "list" ? (
+                                            <BookListView
+                                                books={visibleBooks}
+                                                onClick={(book) => navigate(`/book/${book.id}`)}
+                                                onDelete={(book) => handleDelete(book.id)}
+                                                onDeletePermanent={(book) => handleDeletePermanent(book.id)}
+                                                isSelected={(book) => selection.isSelected(book.id)}
+                                                onToggleSelect={(book) => selection.toggle(book.id)}
                                             />
-                                            <BookCard
-                                                book={book}
-                                                onClick={() => navigate(`/book/${book.id}`)}
-                                                onDelete={() => handleDelete(book.id)}
-                                                onDeletePermanent={() => handleDeletePermanent(book.id)}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
+                                        ) : (
+                                            <div className={styles.grid}>
+                                                {visibleBooks.map((book) => (
+                                                    <div
+                                                        key={book.id}
+                                                        className={`${styles.tileWrapper}${selection.isSelected(book.id) ? ` ${styles.tileSelected}` : ""}`}
+                                                    >
+                                                        <input
+                                                            type="checkbox"
+                                                            className={styles.tileCheckbox}
+                                                            data-testid={`book-bulk-check-${book.id}`}
+                                                            checked={selection.isSelected(book.id)}
+                                                            onChange={() => selection.toggle(book.id)}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                            aria-label="Select book"
+                                                        />
+                                                        <BookCard
+                                                            book={book}
+                                                            onClick={() => navigate(`/book/${book.id}`)}
+                                                            onDelete={() => handleDelete(book.id)}
+                                                            onDeletePermanent={() => handleDeletePermanent(book.id)}
+                                                        />
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                        {filters.filteredBooks.length > 0 && (
+                                            <div
+                                                data-testid="dashboard-pagination"
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "center",
+                                                    alignItems: "center",
+                                                    gap: 16,
+                                                    marginTop: 16,
+                                                    paddingBottom: 8,
+                                                    flexWrap: "wrap",
+                                                }}
+                                            >
+                                                {hasMore && (
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-secondary"
+                                                        data-testid="dashboard-load-more"
+                                                        onClick={paged.loadMore}
+                                                    >
+                                                        {t(
+                                                            "ui.dashboard.load_more",
+                                                            "Mehr laden",
+                                                        )}
+                                                        {" "}
+                                                        ({visibleBooks.length} /{" "}
+                                                        {filters.filteredBooks.length})
+                                                    </button>
+                                                )}
+                                                <PageSizeSelector
+                                                    value={paged.pageSize}
+                                                    onChange={paged.setPageSize}
+                                                    data-testid="dashboard-page-size"
+                                                />
+                                            </div>
+                                        )}
+                                    </>
+                                );
+                            })()}
                             </>
                         )}
                     </>
