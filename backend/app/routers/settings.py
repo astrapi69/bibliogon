@@ -28,6 +28,38 @@ router = APIRouter(prefix="/settings", tags=["settings"])
 # Initial scope mirrors _ENV_SECRET_OVERRIDES in app.main: ai.api_key.
 _SECRET_FIELDS: tuple[tuple[str, str], ...] = (("ai", "api_key"),)
 
+# DASHBOARD-PAGINATION-LOAD-MORE-01 C2: allowed page-size values for
+# the dashboard "Load more" paginator. Matches the frontend
+# PageSizeSelector dropdown. Both keys validated together so the
+# Dashboard / ArticleList paginator can persist user selection
+# without the backend silently accepting nonsense values.
+_DASHBOARD_PAGE_SIZE_KEYS: tuple[str, ...] = (
+    "books_page_size",
+    "articles_page_size",
+)
+_DASHBOARD_PAGE_SIZE_ALLOWED: frozenset[int] = frozenset({10, 25, 50, 100})
+
+
+def _validate_dashboard_page_sizes(ui: dict[str, Any]) -> None:
+    """Reject ui.dashboard.{books,articles}_page_size values outside
+    the allowed enum. Raises 400 with a precise message naming the
+    offending key + the allowed set. Silent on missing keys."""
+    dashboard = ui.get("dashboard")
+    if not isinstance(dashboard, dict):
+        return
+    for key in _DASHBOARD_PAGE_SIZE_KEYS:
+        if key not in dashboard:
+            continue
+        value = dashboard[key]
+        if value not in _DASHBOARD_PAGE_SIZE_ALLOWED:
+            allowed = sorted(_DASHBOARD_PAGE_SIZE_ALLOWED)
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"ui.dashboard.{key} must be one of {allowed}; got {value!r}"
+                ),
+            )
+
 
 def _secrets_managed_externally() -> bool:
     """True when the user has migrated secrets to the override file
@@ -178,6 +210,11 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
                     parent_key,
                     child_key,
                 )
+
+    if body.ui is not None:
+        # Validate enum-constrained dashboard keys (C2) BEFORE merging
+        # so an invalid request never reaches disk.
+        _validate_dashboard_page_sizes(body.ui)
 
     if body.app is not None:
         current.setdefault("app", {}).update(body.app)

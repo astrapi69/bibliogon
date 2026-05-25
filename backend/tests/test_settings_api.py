@@ -241,6 +241,63 @@ def test_patch_preserves_api_key_when_not_externally_managed(client):
     assert resp.json()["ai"]["api_key"] == "from-ui"
 
 
+# --- DASHBOARD-PAGINATION-LOAD-MORE-01 C2: page-size validation ---
+
+
+def test_patch_accepts_books_page_size_in_enum(client):
+    """All four allowed values round-trip cleanly."""
+    for value in (10, 25, 50, 100):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"dashboard": {"books_page_size": value}}},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["ui"]["dashboard"]["books_page_size"] == value
+
+
+def test_patch_accepts_articles_page_size_in_enum(client):
+    """Mirror test for the articles key."""
+    for value in (10, 25, 50, 100):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"dashboard": {"articles_page_size": value}}},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["ui"]["dashboard"]["articles_page_size"] == value
+
+
+def test_patch_rejects_out_of_enum_page_size(client):
+    """Values outside {10, 25, 50, 100} produce a 400."""
+    for bad in (5, 15, 99, 200, 0, -10):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"dashboard": {"books_page_size": bad}}},
+        )
+        assert resp.status_code == 400, f"value {bad} should have failed"
+        assert "books_page_size" in resp.json()["detail"]
+
+
+def test_patch_rejects_non_int_page_size(client):
+    """String / null / float values are rejected."""
+    for bad in ("25", None, 25.5):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"dashboard": {"articles_page_size": bad}}},
+        )
+        assert resp.status_code == 400, f"value {bad!r} should have failed"
+
+
+def test_patch_page_size_does_not_break_unrelated_ui_keys(client):
+    """Validation fires only on the page-size keys; other ui.dashboard
+    fields (e.g. ``books_view``) flow through untouched."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ui": {"dashboard": {"books_view": "list"}}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["ui"]["dashboard"]["books_view"] == "list"
+
+
 # --- GET /api/settings/plugins ---
 
 
