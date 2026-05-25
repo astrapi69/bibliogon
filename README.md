@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.29.0**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.36.0**
 
 ## Features
 
@@ -26,7 +26,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Multi-provider AI assistant (Anthropic, OpenAI, Gemini, Mistral, LM Studio) with chapter review, marketing text generation, and context-aware suggestions
 - Plugin system with ZIP installation for third-party plugins
 - Encrypted credential storage (Fernet) for API keys and service accounts
-- 6 themes (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) x Light/Dark
+- 5 themes (Classic, Cool Modern, Nord, Notebook, Studio) x Light/Dark
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
 - Responsive layout with hamburger menu on mobile
 

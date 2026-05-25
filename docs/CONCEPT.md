@@ -2,7 +2,7 @@
 
 **Repository:** [github.com/astrapi69/bibliogon](https://github.com/astrapi69/bibliogon)
 **Related project:** [github.com/astrapi69/write-book-template](https://github.com/astrapi69/write-book-template)
-**PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.5.0)
+**PluginForge:** [github.com/astrapi69/pluginforge](https://github.com/astrapi69/pluginforge) (PyPI: pluginforge ^0.10.0)
 
 This document describes the architecture and the concept. For version history see `docs/CHANGELOG.md`, for current and planned work see `docs/ROADMAP.md`.
 
@@ -60,7 +60,7 @@ PluginForge is a standalone PyPI package:
 ```toml
 # bibliogon/backend/pyproject.toml
 [tool.poetry.dependencies]
-pluginforge = {version = "^0.5.0", extras = ["fastapi"]}
+pluginforge = {version = "^0.10.0", extras = ["fastapi"]}
 ```
 
 Another developer can use PluginForge independently:
@@ -68,7 +68,7 @@ Another developer can use PluginForge independently:
 ```toml
 # podcast-tool/pyproject.toml
 [tool.poetry.dependencies]
-pluginforge = "^0.5.0"
+pluginforge = "^0.10.0"
 ```
 
 ### 2.3 Tech stack
@@ -348,7 +348,7 @@ migrations = ["alembic"]
 
 ### 4.1 Data model
 
-**Current (v0.7.0):**
+**Current (v0.10.0):**
 
 ```
 Book

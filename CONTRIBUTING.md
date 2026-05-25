@@ -9,7 +9,7 @@ as plugins, not core changes.
 
 - `backend/` - FastAPI app, SQLAlchemy models, Alembic migrations
 - `frontend/` - React + TypeScript + Vite, TipTap editor
-- `plugins/` - 10 first-party plugins, each a standalone Poetry package
+- `plugins/` - 12 first-party plugins, each a standalone Poetry package
 - `launcher/` - Cross-platform launcher (PyInstaller)
 - `docs/` - User docs (MkDocs), API reference, journals, audits
 - `.claude/rules/` - Project rules read on demand

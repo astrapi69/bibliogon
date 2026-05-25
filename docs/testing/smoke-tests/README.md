@@ -6,8 +6,8 @@ release or whenever regressions are suspected.
 Each doc lives at `docs/testing/smoke-tests/<feature>.md`. Single
 commit per shipping cycle adds new entries here.
 
-For tonight-walkthrough convenience covering today's shipments,
-see also [`../smoke-end-of-day-2026-04-30.md`](../smoke-end-of-day-2026-04-30.md).
+For tonight-walkthrough convenience covering 2026-04-30 shipments,
+see the archived [`smoke-end-of-day-2026-04-30.md`](../../archive/testing/smoke-end-of-day-2026-04-30.md).
 
 ## Active smoke tests
 

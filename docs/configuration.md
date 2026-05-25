@@ -119,7 +119,7 @@ files; the Settings UI for each plugin still writes back there.
 # docker-compose.prod.yml (example excerpt)
 services:
   backend:
-    image: bibliogon:0.24.0
+    image: bibliogon:0.36.0
     environment:
       BIBLIOGON_AI_API_KEY: ${BIBLIOGON_AI_API_KEY}
       BIBLIOGON_DEBUG: "false"
