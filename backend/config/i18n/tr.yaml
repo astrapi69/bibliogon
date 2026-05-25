@@ -368,7 +368,7 @@ ui:
     remote_url: Remote URL
     remote_url_required: Remote URL required
   ssh:
-    title: "SSH Key for Git"
+    title: "SSH Key for Git-Sync"
     intro: "Kurulum başına bir Ed25519 anahtar çifti. Açık anahtar GitHub/GitLab/Gitea'ya eklenir; özel anahtar yerel kalır (dosya modu 0600)."
     comment: "Comment (optional)"
     comment_hint: "Host arayüzünde anahtar etiketi olarak gösterilir."

@@ -368,7 +368,7 @@ ui:
     remote_url: Remote URL
     remote_url_required: Remote URL required
   ssh:
-    title: "SSH Key for Git"
+    title: "SSH Key for Git-Sync"
     intro: "Ένα ζεύγος κλειδιών Ed25519 ανά εγκατάσταση. Το δημόσιο μισό προστίθεται στο GitHub/GitLab/Gitea· το ιδιωτικό μισό παραμένει τοπικά (δικαιώματα αρχείου 0600)."
     comment: "Comment (optional)"
     comment_hint: "Εμφανίζεται ως ετικέτα του κλειδιού στο περιβάλλον του host."

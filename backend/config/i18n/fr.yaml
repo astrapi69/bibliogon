@@ -368,7 +368,7 @@ ui:
     remote_url: Remote URL
     remote_url_required: Remote URL required
   ssh:
-    title: "SSH Key for Git"
+    title: "SSH Key for Git-Sync"
     intro: "Une paire de clés Ed25519 par installation. La moitié publique est ajoutée à GitHub/GitLab/Gitea ; la moitié privée reste locale (permissions 0600)."
     comment: "Comment (optional)"
     comment_hint: "Affiché comme libellé de la clé dans l'interface de l'hôte."

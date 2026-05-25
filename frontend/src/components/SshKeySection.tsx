@@ -4,6 +4,7 @@ import {api, ApiError, SshKeyInfo} from "../api/client"
 import {useDialog} from "./AppDialog"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
+import styles from "../pages/Settings.module.css"
 
 export default function SshKeySection() {
     const {t} = useI18n()
@@ -88,12 +89,12 @@ export default function SshKeySection() {
     if (!info) return null
 
     return (
-        <div style={{marginTop: 16}} data-testid="ssh-key-section">
-            <h2 style={{fontFamily: "var(--font-display)", fontSize: "1.125rem", fontWeight: 600, marginBottom: 8}}>
+        <div data-testid="ssh-key-section">
+            <h2 className={styles.sectionTitle}>
                 <Key size={16} style={{verticalAlign: -2, marginRight: 6}}/>
-                {t("ui.ssh.title", "SSH-Schlüssel für Git")}
+                {t("ui.ssh.title", "SSH-Schlüssel für Git-Sync")}
             </h2>
-            <div style={{background: "var(--bg-card)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", padding: 16}}>
+            <div className={styles.card}>
                 <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", marginBottom: 12}}>
                     {t(
                         "ui.ssh.intro",

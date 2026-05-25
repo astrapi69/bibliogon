@@ -356,7 +356,7 @@ ui:
     conflict_diverged_body: 'Beide Seiten haben eigene Commits. Wähle: mergen (bei Konflikten pro Datei entscheiden), Remote ignorieren (Force Push), oder abbrechen.'
     conflict_push_rejected_body: 'Das Remote hat neuere Commits, die lokal nicht vorhanden sind. Entscheide, welche Seite gewinnt:'
   ssh:
-    title: "SSH-Schlüssel für Git"
+    title: "SSH-Schlüssel für Git-Sync"
     intro: "Einmalig erzeugter Ed25519-Schlüssel. Der öffentliche Teil wird bei GitHub/GitLab/Gitea hinterlegt; der private Teil bleibt lokal (Dateirechte 0600)."
     comment: "Kommentar (optional)"
     comment_hint: "Wird im Host-UI als Schlüssel-Label angezeigt."

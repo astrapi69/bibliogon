@@ -368,7 +368,7 @@ ui:
     remote_url: Remote URL
     remote_url_required: Remote URL required
   ssh:
-    title: "SSH Key for Git"
+    title: "SSH Key for Git-Sync"
     intro: "インストールごとにEd25519キーペアが1組。公開キーはGitHub/GitLab/Giteaに追加し、秘密キーはローカル（ファイルモード0600）に保持します。"
     comment: "Comment (optional)"
     comment_hint: "ホストUIでキーのラベルとして表示されます。"
