@@ -1,13 +1,10 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-25 (COMMENTS-ADMIN-PAGINATION-01 CLOSED as already-shipped — audit-finding stale at filing time; UX-Full-Audit G2-F3 filed 2026-05-15 against "no pagination" claim that was already false: commit `fe55add` shipped load-more pagination on 2026-05-12 (3 days BEFORE the audit), and `CommentsAdminSection.tsx` has carried `PAGE_SIZE=100` + `setPageLimit` + `data-testid="comments-admin-load-more"` since then. Closed without code change; archive entry documents the closeable-stale-entry pattern (inverse of "operational gaps masquerade as wired infrastructure" — here, shipped infrastructure masquerading as an open gap). Surfaced during the trigger-audit walk that followed DASHBOARD-PAGINATION-LOAD-MORE-01 close.)
-Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 CLOSED via 8-commit ship `822050c..277dd1d`: C1 backend `limit` query on GET /api/books + GET /api/articles (ge=1, le=1000) + 10 pytest cases; C2 PATCH /api/settings/app enum-validation for `ui.dashboard.{books,articles}_page_size` (10/25/50/100) + 5 pytest cases; C3 `usePagedList(scope)` hook + 10 Vitest cases; C4 stateless `<PageSizeSelector>` + 5 Vitest cases; C5-C6 wired into Book + Article dashboards with client-side slicing + mirrored testid namespaces; C7 i18n in 8 catalogs (parity 75/75); C8 4 Playwright smoke tests. Backend pytest 2255 → 2260; Vitest 1986 → 2010.
-Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 CLOSED post-v0.36.0 via 7-commit ship `457e01c..2349797`: C1 skip-to-content link + landmarks; C2 universal `*:focus-visible` + KdpPublishingWizard step focus; C3 WizardShell `aria-current="step"` + Toolbar aria-pressed; C4 TipTap editor surface aria-label; C5 WCAG AA color-contrast 30 violations resolved; C6 `@axe-core/react` devDep-only via `import.meta.env.DEV`; C7 universal `prefers-reduced-motion` rule.
-Previous: 2026-05-23 I18N-ARTICLES-NAMESPACE-CLEANUP-01 CLOSED via 1-commit ship: 7 silently-falling-back keys moved from `ui.template_picker.*` to `ui.articles.*` across all 8 i18n catalogs + 3 dead keys deleted + orphaned AuthorProfileSelect component+test removed.
-Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66` (BookTypeRegistry + GET /api/book-types + useBookTypes() + 22 backend + 13 Vitest tests; pageable_book_types() registry call replacing hardcoded literals across 5 → 24 audit-discovered surfaces).
-Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
-Current version: v0.36.0
-Open tasks: 65 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Last updated: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75. New backlog filings post-release: 8 Settings-page UX audit follow-ups (SETT-QW-1..7 + SETT-M-1 + SETT-M-3 + SETT-M-2 + SETT-M-4 + SETT-L-1 + SETT-L-2) + HELP-DOCS-V0.37.0-GAPS-01.)
+Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
+Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
+Current version: v0.37.0
+Open tasks: 73 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -57,6 +54,145 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
+
+- **SETT-PHASE-1-QUICK-WINS-01** (P3, UX-POLISH, filed
+  2026-05-25 from Settings-page UX audit per user adjudication):
+  bundle the 7 quick wins from the Settings UX audit. Single
+  session, ~9 commits.
+
+  ### Scope (7 quick wins, all in scope; no scope changes)
+
+  1. **SETT-QW-1**: group the 4 dashboard-view RadixSelects
+     (books / articles / books-trash / articles-trash) into a
+     sub-card with one header "Standard-Ansichten" + a 2×2 grid.
+  2. **SETT-QW-2**: move `SshKeySection` into its own card with
+     explicit header ("SSH-Schlüssel für Git-Sync"). Currently
+     floats between the first card and the Editor card with no
+     visual separator.
+  3. **SETT-QW-3**: move Editor settings to their own tab
+     ("Editor" — tab position between Allgemein and KI-Assistent).
+     Hidden inside Allgemein Card 2 today.
+  4. **SETT-QW-4**: standardise section-title styling across all
+     sub-components. Currently `BackupsSettings` + `AboutSettings`
+     + `DangerZoneSettings` use inline `<h2 style={{margin: 0}}>`
+     instead of `styles.sectionTitle`.
+  5. **SETT-QW-5**: extract `<HelpText>` component for the small
+     italic help-text under inputs. Currently 3 inconsistent
+     fontSize values (0.7 / 0.75 / 0.8125rem) across ~30 sites.
+  6. **SETT-QW-6**: clarify White-Label "Erweitert" affordance —
+     either own tab or labeled section header. Currently behind
+     a `<Wrench>` toggle button few users will click.
+  7. **SETT-QW-7**: add per-section descriptions (1-2 lines
+     under each `sectionTitle`) explaining what the section
+     controls. Matches Notion / Linear convention.
+
+  ### Trigger
+
+  Post-v0.37.0 — ship immediately as the first post-release
+  feature stream per user adjudication. No external trigger
+  needed; the audit findings + ship-decision are the trigger.
+
+  ### Effort
+
+  ~9 commits in a single session.
+
+- **SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01** (P3, UX-POLISH,
+  filed 2026-05-25 from Settings-page UX audit per user
+  adjudication): split the catch-all "Allgemein" tab into 3
+  focused tabs after SETT-PHASE-1-QUICK-WINS-01 lands.
+
+  ### Scope (SETT-M-1 from the audit)
+
+  Split "Allgemein" into 3 tabs:
+
+  - **Erscheinungsbild** (Theme + Dashboard views — moved from
+    Allgemein Card 1 + the dashboard-views sub-card extracted in
+    SETT-QW-1).
+  - **Verhalten** (Trash + delete-permanently + allow-without-
+    author + Language).
+  - **Editor** (editor numeric inputs — was an SETT-QW-3 tab;
+    re-confirm placement during M-1 implementation).
+
+  White-Label moves to its own **Erweitert** tab.
+
+  ### Trigger
+
+  Ship immediately after SETT-PHASE-1-QUICK-WINS-01. Per the
+  user adjudication: Phase 1 then Phase 2 then Phase 3, all
+  immediate post-v0.37.0.
+
+  ### Effort
+
+  4-5 commits.
+
+  ### Cross-references
+
+  Depends on SETT-PHASE-1-QUICK-WINS-01 (SETT-QW-1 + SETT-QW-3
+  pave the way for the tab-split shape).
+
+- **SETT-PHASE-3-TOGGLE-COMPONENT-01** (P3, RCU, filed
+  2026-05-25 from Settings-page UX audit per user adjudication):
+  extract a shared `<Toggle>` component and migrate all
+  checkbox-style settings to use it.
+
+  ### Scope (SETT-M-3 from the audit)
+
+  - Component shape:
+    `<Toggle label="..." description="..." checked={} onChange={}>`.
+  - Migrate ~15 checkbox sites across Settings sub-components.
+  - Matches Notion / Linear "label + description in same row"
+    pattern. Replaces the current
+    `<input type="checkbox" style={{accentColor: "var(--accent)"}}>`
+    + plain `<small>` help-text pattern that varies across sites.
+  - Vitest covering the component shape; per-call-site test
+    updates may need testid namespace adjustments.
+
+  ### Trigger
+
+  Ship after SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 lands. Per
+  user adjudication.
+
+  ### Effort
+
+  4-5 commits.
+
+  ### Cross-references
+
+  Depends on SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 (toggles
+  re-grouped first, then the shared component lands with the
+  new groupings).
+
+- **HELP-DOCS-V0.37.0-GAPS-01** (P3, DOCS, filed 2026-05-25
+  from v0.37.0 release-time help-docs review): four features
+  shipped in v0.37.0 without dedicated help pages.
+
+  ### Scope
+
+  Add help pages for:
+
+  - Dashboard pagination (load-more + page-size selector) —
+    currently no help page; explain the persistence mechanism +
+    the four page-size choices.
+  - Word-wrap (Alt+Z) — mentioned in `shortcuts.md` only;
+    add a dedicated 1-paragraph explanation under
+    `docs/help/{de,en}/editor/word-wrap.md`.
+  - Editor display settings — currently no help page; explain
+    the toolbar popover + the per-device persistence semantics.
+  - Book.repository_url metadata field — currently no help page;
+    explain the git-sync read-precedence (manual entry vs
+    plugin-git-sync managed).
+
+  Per language (DE + EN). Register in `docs/help/_meta.yaml`.
+  Verify via `make verify-docs-discipline`.
+
+  ### Trigger
+
+  Next session that touches help docs OR next release-cycle
+  pre-release sweep. Not blocking v0.37.x point releases.
+
+  ### Effort
+
+  S — ~4-6 short pages × 2 languages + nav-yaml entries.
 
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
@@ -1168,6 +1304,75 @@ in the same session.)
 
 ## P4 - Roadmap / Future Phases
 
+- **SETT-M-2-PER-TAB-SUBSECTION-HEADERS-01** (P4, UX-POLISH,
+  filed 2026-05-25 from Settings-page UX audit, deferred per
+  user adjudication): add explicit subsection headers within
+  each Settings tab (e.g. "Anzeige" / "Speichern" / etc.) so
+  the existing card-per-subsection pattern surfaces a named
+  hierarchy.
+
+  ### Why P4
+
+  Lower impact than SETT-PHASE-1..3; ships AFTER the Allgemein-
+  split lands so the new sub-tabs have a clean baseline to apply
+  consistent subsection headers to.
+
+  ### Trigger
+
+  Either (a) post-SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 + post-
+  SETT-PHASE-3-TOGGLE-COMPONENT-01 close — schedule as the
+  natural Settings polish follow-up; or (b) a user report about
+  in-tab findability friction.
+
+  ### Effort
+
+  3-4 commits.
+
+- **SETT-M-4-SETTINGS-SEARCH-01** (P4, FEATURE-REQUEST, filed
+  2026-05-25 from Settings-page UX audit, deferred per user
+  adjudication): search box above the Settings tab bar that
+  live-filters tabs + within-tab cards by matching label +
+  description text.
+
+  ### Why P4
+
+  At 11 tabs the current structure is navigable without search;
+  a half-baked search (matches some controls but not others) is
+  worse than no search.
+
+  ### Trigger
+
+  User complaint about findability OR Settings reaches 15+ tabs.
+
+  ### Effort
+
+  5 commits (search component + per-tab filter wiring + Vitest +
+  Playwright + i18n).
+
+- **SETT-L-1-SIDEBAR-REDESIGN-01** (P4, REFACTOR, filed
+  2026-05-25 from Settings-page UX audit, deferred per user
+  adjudication): replace the horizontal Settings tab bar with a
+  left-sidebar nav (2-column layout). Sidebar groups: Authoring
+  (App + Editor + Author + Authors-DB + Topics) / Data (Plugins
+  + Comments + Backups) / Meta (About + Support) / Danger
+  (Danger Zone, visually separated at bottom with red accent).
+  Sidebar collapsible on mobile.
+
+  ### Why P4
+
+  Substantial design commitment; the horizontal tab bar works
+  at 11 tabs. Defer until either the tab count or a user-pull
+  signal forces it.
+
+  ### Trigger
+
+  13+ tabs (current 11 + 2 more) OR user-pull signal ("I can't
+  find the Settings tab I want" / "Settings is overwhelming").
+
+  ### Effort
+
+  8-10 commits.
+
 - **BACKUP-DIFF-DEEP-VARIANTS-01** (P4, FEATURE-EXTENSION,
   filed 2026-05-19 from the
   ``docs/audits/exploration-features-2026-05-15-evaluation.md``
@@ -1770,6 +1975,22 @@ in the same session.)
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **SETT-L-2-FULL-RESPONSIVE-AND-SEARCH-01** (P5, REFACTOR,
+  filed 2026-05-25 from Settings-page UX audit, deferred per
+  user adjudication): full responsive Settings redesign that
+  combines SETT-L-1 + SETT-M-4 + URL-based deep-link per-
+  section. Single XL session.
+
+  ### Trigger
+
+  Only if both SETT-L-1 + SETT-M-4 land separately + user
+  pulls for the combined experience. Otherwise stays
+  speculative.
+
+  ### Effort
+
+  12-15 commits (XL session).
 
 - **WIZARD-SHELL-IMPORT-VARIANT-01** (P5, RCU pre-
   registered, filed 2026-05-24 from WIZARD-SHELL-
