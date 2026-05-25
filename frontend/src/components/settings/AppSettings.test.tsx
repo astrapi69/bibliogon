@@ -28,6 +28,35 @@ vi.mock("../../api/client", () => ({
     api: {},
 }));
 
+describe("AppSettings — Advanced/White-Label section (SETT-QW-6)", () => {
+    const baseConfig = {
+        app: {default_language: "de"},
+        ui: {
+            title: "Bibliogon",
+            theme: "warm-literary",
+            dashboard: {books_view: "grid", articles_view: "list"},
+        },
+        plugins: {enabled: ["export", "help", "getstarted"]},
+        editor: {},
+    };
+
+    it("renders an Erweitert section header above the White-Label toggle", () => {
+        render(<AppSettings config={baseConfig} onSave={vi.fn()} saving={false}/>);
+        const section = screen.getByTestId("advanced-section");
+        expect(section).toHaveTextContent("Erweitert");
+        expect(section).toHaveTextContent("White-Label: App anpassen");
+    });
+
+    it("starts collapsed (white-label-card not rendered)", () => {
+        render(<AppSettings config={baseConfig} onSave={vi.fn()} saving={false}/>);
+        // Radix Collapsible renders the content with hidden state when
+        // closed. We assert via the aria-expanded attribute on the
+        // toggle button.
+        const toggle = screen.getByTestId("white-label-toggle");
+        expect(toggle).toHaveAttribute("aria-expanded", "false");
+    });
+});
+
 describe("AppSettings — dashboard-views sub-card (SETT-QW-1)", () => {
     const baseConfig = {
         app: {default_language: "de"},

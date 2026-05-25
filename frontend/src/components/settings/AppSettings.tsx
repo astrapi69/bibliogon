@@ -1,5 +1,6 @@
 import {useEffect, useState} from "react";
-import {Save, Wrench} from "lucide-react";
+import {Save, Wrench, ChevronDown, ChevronRight} from "lucide-react";
+import * as Collapsible from "@radix-ui/react-collapsible";
 import {useI18n} from "../../hooks/useI18n";
 import {PALETTES} from "../../themes/palettes";
 import SshKeySection from "../SshKeySection";
@@ -317,19 +318,27 @@ export function AppSettings({config, onSave, saving}: {
 
             <SshKeySection/>
 
-            {/* Advanced: White-Label */}
-            <div style={{marginTop: 16}}>
-                <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => setShowAdvanced(!showAdvanced)}
-                    data-testid="white-label-toggle"
-                    style={{gap: 6}}
-                >
-                    <Wrench size={14}/>
-                    {showAdvanced ? t("ui.settings.white_label_hide", "Erweitert ausblenden") : t("ui.settings.white_label", "Erweitert: App anpassen")}
-                </button>
-
-                {showAdvanced && (
+            {/* Advanced: White-Label (collapsible "Erweitert" section) */}
+            <div data-testid="advanced-section">
+                <h2 className={styles.sectionTitle}>
+                    {t("ui.settings.advanced_section", "Erweitert")}
+                </h2>
+                <Collapsible.Root open={showAdvanced} onOpenChange={setShowAdvanced}>
+                    <Collapsible.Trigger asChild>
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            data-testid="white-label-toggle"
+                            style={{gap: 6, width: "100%", justifyContent: "space-between"}}
+                            aria-expanded={showAdvanced}
+                        >
+                            <span style={{display: "inline-flex", alignItems: "center", gap: 6}}>
+                                <Wrench size={14}/>
+                                {t("ui.settings.white_label_button", "White-Label: App anpassen")}
+                            </span>
+                            {showAdvanced ? <ChevronDown size={14}/> : <ChevronRight size={14}/>}
+                        </button>
+                    </Collapsible.Trigger>
+                    <Collapsible.Content>
                     <div
                         className={styles.card}
                         data-testid="white-label-card"
@@ -392,7 +401,8 @@ export function AppSettings({config, onSave, saving}: {
                             {t("ui.settings.restart_hint", "Änderungen werden beim nächsten \"Speichern\" übernommen. Neustart erforderlich.")}
                         </p>
                     </div>
-                )}
+                    </Collapsible.Content>
+                </Collapsible.Root>
             </div>
         </div>
     );
