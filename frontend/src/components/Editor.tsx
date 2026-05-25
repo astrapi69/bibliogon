@@ -41,6 +41,8 @@ const ISSUE_TYPE_LABELS: Record<FixIssueType, (t: Translator) => string> = {
     long_sentence: (t) => t("ui.editor.ai_fix_issue_label_long", "Langer Satz"),
 };
 import Toolbar from "./Toolbar";
+import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
+import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
 import {api, ApiError, SaveAbortedError} from "../api/client";
 import {notify} from "../utils/notify";
@@ -185,6 +187,15 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
             : [],
     );
+    // EDITOR-DISPLAY-SETTINGS-01 C4: per-device editor display
+    // preferences (width / font / size / line-height). Reads + writes
+    // localStorage; applies CSS custom properties to
+    // document.documentElement so the styling cascades into this
+    // editor surface AND any sibling editor mounted on the same page.
+    // Multiple Editor instances would all stay in sync because
+    // localStorage is the source of truth; the popover surface is
+    // local per-instance.
+    const editorDisplay = useEditorDisplaySettings();
 
     const lastAttemptedJson = useRef<string | null>(null);
 
@@ -1011,6 +1022,27 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 documentTitle={documentTitle ?? chapterTitle}
                 documentSubtitle={documentSubtitle}
             />
+
+            {/* EDITOR-DISPLAY-SETTINGS-01 C4: editor-display popover.
+              * Sits just below the Toolbar, right-aligned so it does
+              * not crowd the toolbar's left-aligned formatting buttons.
+              * Click opens a panel with the 4 controls + reset. */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    padding: "0 12px",
+                }}
+            >
+                <EditorDisplaySettingsPopover
+                    settings={editorDisplay.settings}
+                    onWidthChange={editorDisplay.setWidth}
+                    onFontFamilyChange={editorDisplay.setFontFamily}
+                    onFontSizeChange={editorDisplay.setFontSize}
+                    onLineHeightChange={editorDisplay.setLineHeight}
+                    onReset={editorDisplay.reset}
+                />
+            </div>
 
             {/* TTS Preview Player */}
             {previewAudioUrl && (
