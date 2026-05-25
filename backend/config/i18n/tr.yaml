@@ -619,6 +619,7 @@ ui:
   settings:
     title: "Ayarlar"
     tab_general: "Genel"
+    tab_editor: "Editor"
     tab_ai: "AI Asistani"
     tab_author: "Yazar"
     tab_plugins: "Eklentiler"

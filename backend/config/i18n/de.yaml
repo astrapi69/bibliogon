@@ -593,6 +593,7 @@ ui:
   settings:
     title: "Einstellungen"
     tab_general: "Allgemein"
+    tab_editor: "Editor"
     tab_ai: "KI-Assistent"
     tab_author: "Autor"
     tab_plugins: "Plugins"

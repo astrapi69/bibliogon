@@ -605,6 +605,7 @@ ui:
   settings:
     title: "Configuracoes"
     tab_general: "Geral"
+    tab_editor: "Editor"
     tab_ai: "Assistente AI"
     tab_author: "Autor"
     tab_plugins: "Plugins"

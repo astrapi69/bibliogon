@@ -605,6 +605,7 @@ ui:
   settings:
     title: "Ρυθμίσεις"
     tab_general: "Γενικά"
+    tab_editor: "Επεξεργαστής"
     tab_ai: "Βοηθός AI"
     tab_author: "Συγγραφέας"
     tab_plugins: "Plugins"

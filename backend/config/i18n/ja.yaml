@@ -605,6 +605,7 @@ ui:
   settings:
     title: "設定"
     tab_general: "一般"
+    tab_editor: "エディタ"
     tab_ai: "AIアシスタント"
     tab_author: "著者"
     tab_plugins: "プラグイン"
