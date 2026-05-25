@@ -4,13 +4,25 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.37.0] - 2026-05-25
+
+53 commits since v0.36.0 across two coordinated batches: an
+accessibility + safety + parity foundation push (a11y WCAG 2.1
+AA audit, Danger Zone reset, bulk-restore parity, Medium-import
+polish), followed by a v0.36.0 housekeeping + feature stream
+(Dashboard pagination, Book.repository_url field, editor display
+settings, ROADMAP refresh, archive restructure). Plus 1 stale-
+backlog closure (COMMENTS-ADMIN-PAGINATION-01 was already
+shipped at filing time) and 2 trigger-audit annotations
+(BOOK-TYPE-CARD + KDP-WIZARD-RESUME).
+
 ### Added
 
 - **Danger Zone full-system reset** (DANGER-ZONE-RESET-EVERYTHING-01,
-  commits ``3c1381a`` + ``8b6a11b`` + ``bc363df`` + ``2cea204``).
-  New ``Settings → Gefahrenzone / Danger Zone`` tab with a
-  three-step HMAC-token-gated wipe that resets the entire app to
-  first-install-like state. Two-phase endpoint pair under
+  commits ``3c1381a`` + ``8b6a11b`` + ``bc363df`` + ``2cea204`` +
+  ``6339a32``). New ``Settings → Gefahrenzone / Danger Zone`` tab
+  with a three-step HMAC-token-gated wipe that resets the entire
+  app to first-install-like state. Two-phase endpoint pair under
   ``/api/system/`` (``POST /reset/prepare`` issues a per-process
   random-secret-signed token valid 5 minutes; ``POST /reset``
   validates the token + the literal string ``"RESET"`` before
@@ -34,6 +46,185 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   Playwright smoke cases for the full UX. The existing
   ``/api/test/reset`` debug-only endpoint stays untouched - both
   surfaces coexist with different security contracts.
+
+- **Dashboard pagination with user-selectable page size**
+  (DASHBOARD-PAGINATION-LOAD-MORE-01, 8-commit ship
+  ``822050c..277dd1d``). Book + Article dashboards now paginate
+  via a "Mehr laden" button + a 10/25/50/100 page-size dropdown.
+  Backend ``limit`` query param on ``GET /api/books`` +
+  ``GET /api/articles`` (``ge=1, le=1000``); default ``None``
+  preserves the historical no-cap behaviour for non-dashboard
+  callers (BookEditor navigation, backup). PATCH
+  ``/api/settings/app`` enum-validates
+  ``ui.dashboard.{books,articles}_page_size`` against
+  ``{10, 25, 50, 100}``. New ``usePagedList(scope)`` hook +
+  ``<PageSizeSelector>`` component with read-merge-write
+  persistence mirroring useViewMode. Selection semantics
+  preserved: select-all still operates on the full filtered set,
+  not just the visible page. 10 backend pytest cases + 15
+  Vitest cases + 4 Playwright smoke + 2 i18n keys × 8 catalogs.
+
+- **Bulk-restore parity for articles + books**
+  (BULK-RESTORE-PARITY-01, commits ``35591a7`` + ``7a762d0``).
+  Single-round-trip restore endpoints
+  ``POST /api/articles/trash/bulk-restore`` +
+  ``POST /api/books/trash/bulk-restore`` accept a list of trash
+  IDs and return a ``{restored: [...], failed: [...]}`` shape.
+  Replaces the previous "loop the single-restore endpoint per
+  ID" pattern that the Undo toast triggered after bulk-trash.
+  Frontend ``Undo`` action now hits the bulk endpoint once.
+  i18n parity across 8 catalogs.
+
+- **Book.repository_url metadata field**
+  (BOOK-REPOSITORY-URL-FIELD-01, 5-commit ship ``8a8a11b..55829b8``).
+  Optional ``Book.repository_url`` ``String(2000)`` nullable
+  column + Alembic migration ``s8c9d0e1f234``. Surfaces in
+  BookMetadataEditor's General tab via a new
+  ``RepositoryUrlField`` sub-component with git-sync read-
+  precedence: when the book is plugin-git-sync-managed
+  (``GitSyncMapping`` exists), the field renders read-only with
+  the canonical mapping URL + a "managed by git-sync" hint;
+  when no mapping exists, free input editing
+  ``Book.repository_url``. Two storage shapes for two
+  lifecycles: GitSyncMapping for round-trip; Book.repository_url
+  for manually-tracked external repos. 9 backend pytest + 5
+  Vitest + 2 Playwright smoke + 4 i18n keys × 8 catalogs.
+
+- **Editor display settings** (EDITOR-DISPLAY-SETTINGS-01,
+  6-commit ship ``6197c35..2fb82f4``). Per-device localStorage-
+  backed preferences for text width (narrow/medium/wide/full),
+  font family (serif/sans/mono), font size (small/medium/large),
+  and line height (compact/normal/relaxed). Toolbar popover
+  trigger from the shared Editor.tsx surface — single mount
+  covers BOTH chapter-based BookEditor AND ArticleEditor. CSS
+  variables on ``document.documentElement`` cascade into
+  ``.tiptap-editor``; ``var()`` fallbacks match pre-feature
+  literals so opt-out users see no change. Width presets
+  picked per reading-research recommendations (narrow=680px ≈
+  45-55 chars, medium=780px, wide=900px, full=none). 11 hook
+  Vitest + 11 component Vitest + 2 Playwright smoke + 20 i18n
+  keys × 8 catalogs. Per-device persistence chosen over per-
+  account YAML because monitor sizes vary; pairs naturally
+  with the existing Alt+Z word-wrap toggle.
+
+- **Comic-book plugin operational smoke**
+  (PLUGIN-COMICS-E2E-SMOKE-01, commit ``acc7b78``). Live-dev
+  plugin-info-panel-renders + no-plugin-error assertion as
+  the 4th test in ``e2e/smoke/comic-book-editor.spec.ts`` +
+  stale ``version === "1.0.0"`` assertion in
+  ``user-overlay-migration.spec.ts`` bumped to ``/^1\./``.
+  Operational-gap regression-pin (a broken plugin-load path
+  silently passes in pytest because the lifespan + plugin
+  discovery run fresh per test, but 404s against a long-running
+  uvicorn).
+
+- **Medium-import progress polish** (commits ``e193f5f``,
+  ``760b944``, ``d3edbd3``). Progress panel sits ABOVE the
+  preview table during import (was below); action buttons (Run,
+  Cancel, Run-in-background) at the TOP of the preview panel
+  (was bottom); retro-fix script
+  ``scripts/retro_fix_medium_codeblock_newlines.py`` repairs
+  collapsed code-block newlines on already-imported legacy
+  rows (one-off; documented in archive).
+
+### Changed
+
+- **Accessibility audit — WCAG 2.1 AA**
+  (ACCESSIBILITY-AUDIT-WCAG-AA-01, 7-commit ship
+  ``457e01c..2349797`` + close ``e760cf4``). Audit identified
+  zero-coverage gaps; remediation in 7 coherent commits:
+  - **C1**: ``<SkipToContentLink>`` component + ``main`` /
+    ``aside`` / ``header`` / ``footer`` landmark sweep + heading
+    hierarchy normalization across 8 routed pages. New i18n key
+    ``ui.a11y.skip_to_content`` × 8 catalogs.
+  - **C2**: universal ``*:focus-visible`` keyboard-focus safety-
+    net CSS rule covering every interactive element + KDP
+    Publishing Wizard step-change focus management
+    (focus-first-interactive on each step transition).
+  - **C3**: ARIA sweep — ``WizardShell`` ``aria-current="step"``
+    on the active step indicator, ``aria-pressed`` on 20+
+    Toolbar formatting toggles (bold / italic / underline /
+    headings / alignment / etc.).
+  - **C4**: TipTap editor surface accessible name
+    (``aria-label`` + ``role="textbox"`` + ``aria-multiline``)
+    on both ``Editor.tsx`` (chapter + article) and
+    ``RichTextEditor.tsx`` (picture-book). New i18n key
+    ``ui.a11y.editor_label`` × 8 catalogs.
+  - **C5**: WCAG AA color-contrast — 30 axe-core findings
+    resolved by darkening ``--text-muted`` + ``--accent`` across
+    all 10 theme variants (5 themes × light/dark). User-
+    adjudicated path α (fix-all-themes) over path β (per-theme
+    opt-in).
+  - **C6**: ``@axe-core/react`` ``^4.11.3`` integration as
+    devDependency-only via ``import.meta.env.DEV`` dynamic
+    import. Prod bundle verified clean — zero axe-core bytes
+    in the production build.
+  - **C7**: universal ``prefers-reduced-motion`` CSS rule
+    coercing all ~42 transition/animation sites to ``0.01ms``
+    duration when the OS-level preference is set.
+  Pre-Inspection findings fully closed: skip-link / motion-
+  query / BookEditor ``<main>`` / no-h1 / 30 contrast
+  violations / 0 axe-core integration — all resolved.
+
+### Infrastructure
+
+- **docs/archive/ restructure** (commit ``8670c44``):
+  ``docs/roadmap-archive/`` → ``docs/archive/roadmap/`` so all
+  archived content lives under a single ``docs/archive/`` root
+  (matches the existing ``docs/archive/journal/`` +
+  ``docs/archive/audits/`` + ``docs/archive/testing/`` siblings).
+  15 live-file cross-references updated;
+  ``scripts/archive_completed_task.py`` ARCHIVE_DIR constant
+  updated. Archived-journal cross-refs preserved as historical
+  record per the existing convention.
+
+- **ROADMAP refresh post-v0.36.0** (commit ``68afd44``).
+  Previous per-phase / per-session journal structure replaced
+  with a thematic overview that defers detailed scope to
+  ``docs/backlog.md``. P3 grouped by theme: Picture-Book &
+  Comics Optimization, KDP Wizard Refinements, Book Metadata
+  Extensions, Editor Display Preferences, Infrastructure /
+  Quality, UX Polish, Strategic / Long-Term, Import / Export
+  Refinements, Article Authoring, Launcher / Distribution,
+  Plugin Ecosystem, i18n, Tooling / Test Infrastructure.
+  Previous ROADMAP archived at
+  ``docs/archive/roadmap/ROADMAP-v0.36.0.md``.
+
+- **Stale documentation hygiene sweep** (commits ``e82e30e`` +
+  ``e35e2db`` + ``939ff35`` + ``52f0e94`` + ``b3041a7``).
+  CLAUDE.md tech-stack version refs (pluginforge ^0.5.0 →
+  ^0.10.0, manuscripta ^0.7.0 → ^0.9.0); README + README-de
+  current-version (v0.29.0 → v0.36.0) + theme list (6 →
+  actual 5: Classic, Cool Modern, Nord, Notebook, Studio);
+  CONTRIBUTING plugin count (10 → 12); CONCEPT.md pluginforge
+  version references; configuration.md docker compose example
+  tag; smoke-tests README dead link; 3 stale journal handover
+  notes archived; coverage-history + ux-full-audit screenshots
+  archived; ruff-format release-prep nit. Backlog audits:
+  COMMENTS-ADMIN-PAGINATION-01 closed as already-shipped
+  (audit-finding was stale at filing time — fix shipped 3 days
+  before the audit). BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 +
+  KDP-WIZARD-RESUME-AT-STEP-01 annotated with NOT-MET trigger
+  audits.
+
+### Result
+
+- Backend pytest: 2214 → 2269 (+55 across the cycle)
+- Frontend Vitest: 1986 → 2037 (+51 across 160 files)
+- i18n parity: 75/75 across all 8 catalogs
+- npm audit: 0 high/critical (2 moderate ``ws`` advisories,
+  documented + within release-workflow.md tolerance)
+- External Bibliogon-owned deps: ``manuscripta ^0.9.0`` +
+  ``pluginforge ^0.10.0`` at PyPI latest
+- tsc + ruff + mypy + pre-commit + verify-docs-discipline +
+  verify-plugin-locks + launcher PyInstaller build smoke all
+  green
+
+### Known gaps (filed as v0.37.x follow-ups)
+
+- ``HELP-DOCS-V0.37.0-GAPS-01`` — pagination + word-wrap +
+  editor display settings + repository URL field shipped
+  without dedicated help pages.
 
 ## [0.36.0] - 2026-05-23
 
