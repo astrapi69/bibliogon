@@ -4,13 +4,13 @@ Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-05-23 (v0.36.0 release cut; 230 commits since v0.35.1; +59765 / -2909 lines across 331 files)
 Latest release: v0.36.0 (Largest release since v0.30.0 by commit count. Three strategic streams matured together: plugin-comics v1.0.0 → v1.1.0 (multi-panel + multi-bubble editor); KDP Publishing Wizard Phase 1 + Phase 2 (5-step XState v5 + server-side persistence + conflict-resolution banner); PluginForge v0.7.0 → v0.10.0 adoption arc. Plus 17 other coherent surfaces. See changelog/releases/v0.36.0.md for the full per-release notes.)
 Open tasks: 0 P2 + 2 active (P3) + 2 active (P5) + 2 BLOCKED-on-upstream + 1 P5 LAUNCHER-I18N-NATIVE-REVIEW-01 (call-for-reviewers at [#18](https://github.com/astrapi69/bibliogon/issues/18)).
-Archive: [docs/roadmap-archive/](roadmap-archive/)
+Archive: [docs/archive/roadmap/](archive/roadmap/)
 
 Phase 1 (feature-complete single-user tool, v0.1.0 through v0.14.0)
 is archived at
-[docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md).
+[docs/archive/roadmap/phase-1-complete.md](archive/roadmap/phase-1-complete.md).
 The bulk of Phase 2 work (v0.15.0 through v0.25.0) is archived at
-[docs/roadmap-archive/v0.25.0-cleanup-2026-05-02.md](roadmap-archive/v0.25.0-cleanup-2026-05-02.md).
+[docs/archive/roadmap/v0.25.0-cleanup-2026-05-02.md](archive/roadmap/v0.25.0-cleanup-2026-05-02.md).
 
 This file lists ONLY open tasks. Tasks are sorted by priority tier
 (P0 most urgent, P5 most speculative). BLOCKED-on-upstream items
@@ -162,7 +162,7 @@ spreads; AI-generated illustrations.
 ## P4 - Roadmap / Future Phases
 
 (D-05 closed as won't-fix 2026-05-05; see
-[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).
+[docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md).
 Docker EULA forbids third-party silent install per the
 installer discovery report.)
 
@@ -256,6 +256,6 @@ See [docs/explorations/](explorations/) for future considerations:
 
 ## Archive
 
-- **Phase 1** (v0.1.0 - v0.14.0): [docs/roadmap-archive/phase-1-complete.md](roadmap-archive/phase-1-complete.md). Includes the 2026-04-15 postscript on CF-01.
-- **Phase 2 cleanup pass** (v0.15.0 - v0.25.0): [docs/roadmap-archive/v0.25.0-cleanup-2026-05-02.md](roadmap-archive/v0.25.0-cleanup-2026-05-02.md). 77 entries archived 2026-05-02. AR-03+ Platform APIs archived as obsolete in the same pass.
-- **Backlog "Recently closed" prose**: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md). Preserves commit hashes + closure notes for items shipped 2026-04-24..2026-05-02.
+- **Phase 1** (v0.1.0 - v0.14.0): [docs/archive/roadmap/phase-1-complete.md](archive/roadmap/phase-1-complete.md). Includes the 2026-04-15 postscript on CF-01.
+- **Phase 2 cleanup pass** (v0.15.0 - v0.25.0): [docs/archive/roadmap/v0.25.0-cleanup-2026-05-02.md](archive/roadmap/v0.25.0-cleanup-2026-05-02.md). 77 entries archived 2026-05-02. AR-03+ Platform APIs archived as obsolete in the same pass.
+- **Backlog "Recently closed" prose**: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md). Preserves commit hashes + closure notes for items shipped 2026-04-24..2026-05-02.

@@ -599,7 +599,7 @@ Findings to be written back in the next implementation session
   ROADMAP edit: move D-05 entry from P4 to a new
   "Closed / won't-fix" section (or, per the
   continuous-archival rule in `.claude/rules/ai-workflow.md`,
-  archive to `docs/roadmap-archive/2026-05.md` when the
+  archive to `docs/archive/roadmap/2026-05.md` when the
   closure commit lands).
 
 - **LAUNCHER-SELFREPLACE-01 status update** (`docs/backlog.md`

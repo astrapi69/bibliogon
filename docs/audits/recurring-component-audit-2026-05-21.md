@@ -556,9 +556,9 @@ under any reasonable re-scoring).
 ## References
 
 - [docs/audits/backlog-reprioritization-2026-05-20.md](backlog-reprioritization-2026-05-20.md) (RCU-AUDIT-01 promotion + filed candidates)
-- [docs/roadmap-archive/2026-05.md](../roadmap-archive/2026-05.md) §"Archived 2026-05-15 (ARTICLEFILTERBAR-EXTRACT-01)" (precedent extraction)
-- [docs/roadmap-archive/2026-05.md](../roadmap-archive/2026-05.md) §"Archived 2026-05-20 (Comics-Session-2 CLOSE)" (Tier1+Tier2+PictureBookPdfExportControls extractions)
-- [docs/roadmap-archive/2026-05.md](../roadmap-archive/2026-05.md) §"Archived 2026-05-21 (PLUGIN-COMICS-PHASE-2-PANEL-CONFIG-01)" (Tier1Section 3rd-site application — RCU canonical confirmation)
+- [docs/archive/roadmap/2026-05.md](../archive/roadmap/2026-05.md) §"Archived 2026-05-15 (ARTICLEFILTERBAR-EXTRACT-01)" (precedent extraction)
+- [docs/archive/roadmap/2026-05.md](../archive/roadmap/2026-05.md) §"Archived 2026-05-20 (Comics-Session-2 CLOSE)" (Tier1+Tier2+PictureBookPdfExportControls extractions)
+- [docs/archive/roadmap/2026-05.md](../archive/roadmap/2026-05.md) §"Archived 2026-05-21 (PLUGIN-COMICS-PHASE-2-PANEL-CONFIG-01)" (Tier1Section 3rd-site application — RCU canonical confirmation)
 - [.claude/rules/coding-standards.md](../../.claude/rules/coding-standards.md) §"Recurring-Component Unification Rule"
 - [.claude/rules/lessons-learned.md](../../.claude/rules/lessons-learned.md) §"Inline-component duplication is the upstream cause of parallel-surface asymmetry"
 - [.claude/rules/lessons-learned.md](../../.claude/rules/lessons-learned.md) §"Articles-vs-Books parallel-surface asymmetry"

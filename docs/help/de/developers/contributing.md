@@ -164,7 +164,7 @@ Der Release-Workflow lebt in `release-workflow.md` — intern, aber öffentlich 
 4. Pflicht-Pre-Tag-Kette: `make test`, `tsc --noEmit`, `vitest`, `playwright --project=smoke`, `ruff check`, `mypy app/`, `pre-commit run --all-files`, `pyinstaller bibliogon-launcher.spec --clean --noconfirm`. Alle grün.
 5. `git tag -a vX.Y.Z -m "Release vX.Y.Z"` und Tag + main pushen.
 6. `gh release create vX.Y.Z --notes-file changelog/releases/vX.Y.Z.md`.
-7. Post-Release: ausgelieferte Items in `docs/roadmap-archive/YYYY-MM.md` archivieren, `docs/ROADMAP.md` `Latest release`-Zeile aktualisieren, `CLAUDE.md` `Version`-Zeile aktualisieren, Chat-Journal-Eintrag schreiben.
+7. Post-Release: ausgelieferte Items in `docs/archive/roadmap/YYYY-MM.md` archivieren, `docs/ROADMAP.md` `Latest release`-Zeile aktualisieren, `CLAUDE.md` `Version`-Zeile aktualisieren, Chat-Journal-Eintrag schreiben.
 
 CI prüft dieselben Gates in `release-gate.yml` beim Tag-Push. Eine Drift in irgendeinem Subsystem blockiert das Anhängen der Artefakte.
 

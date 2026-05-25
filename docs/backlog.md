@@ -8,7 +8,7 @@ Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e.
 Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
 Current version: v0.36.0
 Open tasks: 65 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
-Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
+Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
 the canonical theme tracker; this file is forward-looking only.
@@ -976,7 +976,7 @@ store.
   Trigger: builds on the v0.33.0 Settings-monolith extraction work
   shipped 2026-05-15 (archived: ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``,
   ``SETTINGS-INLINE-TABS-EXTRACT-01``, both in
-  ``docs/roadmap-archive/2026-05.md``). Now that the per-tab
+  ``docs/archive/roadmap/2026-05.md``). Now that the per-tab
   components exist (AppSettings / AiAssistantSettings /
   TopicsSettings / PluginSettings / AuthorSettings), reorganization
   sits cleanly on top — no extraction prerequisite remaining.
@@ -1103,10 +1103,10 @@ store.
   never see it.
 
 (D-05 closed as won't-fix 2026-05-05; archived in
-[docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).)
+[docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md).)
 
 (PLUGIN-COMICS-E2E-SMOKE-01 CLOSED 2026-05-25; archive entry
-in [docs/roadmap-archive/2026-05.md](roadmap-archive/2026-05.md).
+in [docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md).
 The live-dev plugin-info-panel-renders + no-plugin-error
 assertion landed as a 4th test in
 ``e2e/smoke/comic-book-editor.spec.ts``; the related stale

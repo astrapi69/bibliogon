@@ -1009,7 +1009,7 @@ test-isolation hardenings, and 5 new lessons-learned sections.
   plus 2 from the UX-Full-Audit's trigger-gated tail.
 
 - **v0.32.0 cycle archived** in
-  `docs/roadmap-archive/2026-05.md`: Phase B-F mapping
+  `docs/archive/roadmap/2026-05.md`: Phase B-F mapping
   (planning labels ↔ repo F1/F2a/F2b/F2c/F3) + UX-Full-Audit
   close-out summary + Bug A close-out retrospective. One
   indexed entry per archival day, newest first, per the
@@ -2344,7 +2344,7 @@ ordering before Docker check). Total in this release: 39 new
 tests covering the user-visible bulk-export contract end to end.
 
 **Backlog churn.** Closed: D-05 (won't-fix, archived to
-`docs/roadmap-archive/2026-05.md`). Added: AR-BULK-SERIES-
+`docs/archive/roadmap/2026-05.md`). Added: AR-BULK-SERIES-
 HIERARCHY-01 (P3, parent/child series), AR-BULK-BOOKS-PARITY-01
 (P4, books-dashboard parity), AR-BULK-CROSSPAGE-SELECT-01 (P4,
 gated on pagination), AR-BULK-ASYNC-PROGRESS-01 (P5, gated on

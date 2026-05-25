@@ -244,7 +244,7 @@ entry was not closed:
 
 | Item ID | Why archive | Action |
 |---|---|---|
-| `PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01` | Body opens with "Sessions 1+2 SHIPPED 2026-05-20". Session 3 is filed as 2 separate IDs (`PAGES-CRUD-01` + `EXTENDED-FEATURES-01`). The tracker has done its job. | Move to `docs/roadmap-archive/2026-05.md` Comics-Session-2 close section. |
+| `PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01` | Body opens with "Sessions 1+2 SHIPPED 2026-05-20". Session 3 is filed as 2 separate IDs (`PAGES-CRUD-01` + `EXTENDED-FEATURES-01`). The tracker has done its job. | Move to `docs/archive/roadmap/2026-05.md` Comics-Session-2 close section. |
 | `COMIC-BOOK-PLUGIN-01` (P5) | Duplicate of `PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01`. Body describes building the plugin that shipped Sessions 1+2. | Move to archive same date. |
 | `PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01` (P3) | SVG-tail primitive shipped in Comics-Session-2 C4 (`b652942` BubbleTail.tsx). Picture-book single-bubble side never adopted (Q3 decision in Comic-Foundation: picture-book does NOT reuse). | Move to archive. The follow-up "picture-book single-bubble adopts the primitive" would be a NEW filing if a real user request lands. |
 | (optional) Three 4c-B items (`PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01`, `PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01`, `PICTURE-BOOK-TEXT-CONFIGURATION-01`) | v0.35.0 changelog claims "Picture-Book TipTap rich-text editing — RichTextEditor wrapper for the 3 unbounded layouts" + tier-property work. Status unclear. | **DO NOT archive without user confirmation**. See Open Question Q1. |
@@ -464,7 +464,7 @@ Where the 4-Axes scoring fell short:
 ## References
 
 - `docs/backlog.md` at commit `80399cd` (source)
-- `docs/roadmap-archive/2026-05.md` (archive precedent)
+- `docs/archive/roadmap/2026-05.md` (archive precedent)
 - `docs/explorations/` (exploration docs; Mobile-Sync +
   Multi-Agent-Coordination filed 2026-05-20)
 - `docs/CHANGELOG.md` v0.35.0 entry (used to verify Q1 scope)

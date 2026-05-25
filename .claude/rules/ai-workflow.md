@@ -413,7 +413,7 @@ It is NOT a duplicate definition store.
 
 ### Archive
 
-Completed tasks are archived to `docs/roadmap-archive/`:
+Completed tasks are archived to `docs/archive/roadmap/`:
 
 - `phase-1-complete.md` (v0.1.0..v0.14.0). One-time Phase 1 -> 2
   transition snapshot.
@@ -438,7 +438,7 @@ across the archive boundary mean single-word prompts like
 When a task in `ROADMAP.md` or `backlog.md` is marked `[x]` AND
 the work is genuinely done, archive it in the same commit that
 closes it. Active files contain ONLY open work; completed tasks
-live in `docs/roadmap-archive/YYYY-MM.md`.
+live in `docs/archive/roadmap/YYYY-MM.md`.
 
 #### Definition of done
 
@@ -458,7 +458,7 @@ A task is done when ALL of:
 3. Run `make archive-task` (interactive) or
    `make archive-task-dry` to preview.
 4. Confirm each `[x]` candidate with `y` / `n` / `s` (skip-all).
-5. Confirmed items move to `docs/roadmap-archive/YYYY-MM.md`.
+5. Confirmed items move to `docs/archive/roadmap/YYYY-MM.md`.
 6. Commit ROADMAP, backlog, archive file together with the same
    change that closes the task:
    `feat(scope): implement T-01 (archived)`.

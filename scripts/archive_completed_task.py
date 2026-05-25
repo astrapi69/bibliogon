@@ -6,7 +6,7 @@ The active files (``docs/ROADMAP.md`` + ``docs/backlog.md``) hold
 ONLY open work per the ai-workflow.md "Continuous archival rule".
 A task marked ``- [x] **ID**: ...`` is fair game: this script
 identifies the block, asks for confirmation, then moves it into
-``docs/roadmap-archive/YYYY-MM.md`` (the current month, UTC) under
+``docs/archive/roadmap/YYYY-MM.md`` (the current month, UTC) under
 a ``## Archived YYYY-MM-DD`` section.
 
 Modes
@@ -24,7 +24,7 @@ Workflow
 1. Run ``make archive-task`` after marking ``[x]``.
 2. Confirm each candidate.
 3. Stage all touched files together:
-   ``git add docs/ROADMAP.md docs/backlog.md docs/roadmap-archive/``
+   ``git add docs/ROADMAP.md docs/backlog.md docs/archive/roadmap/``
 4. Commit with the same change that closes the task.
 
 Never edit a previously-archived ID. Stable IDs across the archive
@@ -44,7 +44,7 @@ from typing import Iterator
 REPO_ROOT = Path(__file__).resolve().parent.parent
 ROADMAP = REPO_ROOT / "docs" / "ROADMAP.md"
 BACKLOG = REPO_ROOT / "docs" / "backlog.md"
-ARCHIVE_DIR = REPO_ROOT / "docs" / "roadmap-archive"
+ARCHIVE_DIR = REPO_ROOT / "docs" / "archive" / "roadmap"
 
 # ``- [x] **TASK-ID**: description``  (the optional colon + space matches both
 # styles seen in the wild; the ID prefix mirrors the project's naming
@@ -150,7 +150,7 @@ def scan_file(path: Path) -> list[TaskBlock]:
 
 
 def archive_path_for(today: datetime.date) -> Path:
-    """Monthly bucket: ``docs/roadmap-archive/YYYY-MM.md``."""
+    """Monthly bucket: ``docs/archive/roadmap/YYYY-MM.md``."""
     return ARCHIVE_DIR / f"{today.strftime('%Y-%m')}.md"
 
 
@@ -387,7 +387,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description=(
             "Move completed [x] tasks out of docs/ROADMAP.md + "
-            "docs/backlog.md into docs/roadmap-archive/YYYY-MM.md."
+            "docs/backlog.md into docs/archive/roadmap/YYYY-MM.md."
         ),
     )
     parser.add_argument(
@@ -485,7 +485,7 @@ def main() -> int:
         print()
         print("Next steps:")
         print(
-            "  git add docs/ROADMAP.md docs/backlog.md docs/roadmap-archive/"
+            "  git add docs/ROADMAP.md docs/backlog.md docs/archive/roadmap/"
         )
         print("  git diff --cached")
         print("  git commit")

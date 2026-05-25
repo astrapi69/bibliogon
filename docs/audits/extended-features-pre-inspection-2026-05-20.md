@@ -213,5 +213,5 @@ the current 3-user-findings session closes).
 - This file: EXTENDED-FEATURES Pre-Inspection (reference)
 - Companion (current-session work): the 3-user-findings audit
   (multi-panel-bug + panel-image-upload + LayoutConfigComicPanel)
-- Comics-Session-2 close archive entry: `docs/roadmap-archive/2026-05.md`
+- Comics-Session-2 close archive entry: `docs/archive/roadmap/2026-05.md`
 - Comic-Foundation exploration: `docs/explorations/comic-foundation.md`

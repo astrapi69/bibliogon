@@ -164,7 +164,7 @@ The release workflow is `release-workflow.md` — internal but public-readable. 
 4. Mandatory pre-tag chain: `make test`, `tsc --noEmit`, `vitest`, `playwright --project=smoke`, `ruff check`, `mypy app/`, `pre-commit run --all-files`, `pyinstaller bibliogon-launcher.spec --clean --noconfirm`. All green.
 5. `git tag -a vX.Y.Z -m "Release vX.Y.Z"` and push tag + main.
 6. `gh release create vX.Y.Z --notes-file changelog/releases/vX.Y.Z.md`.
-7. Post-release: archive shipped items in `docs/roadmap-archive/YYYY-MM.md`, update `docs/ROADMAP.md` `Latest release` line, update `CLAUDE.md` `Version` line, write the chat journal entry.
+7. Post-release: archive shipped items in `docs/archive/roadmap/YYYY-MM.md`, update `docs/ROADMAP.md` `Latest release` line, update `CLAUDE.md` `Version` line, write the chat journal entry.
 
 CI gates the same checks at `release-gate.yml` on tag push. A drift in any subsystem blocks the artifact attachment.
 

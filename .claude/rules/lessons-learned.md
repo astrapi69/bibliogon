@@ -3722,7 +3722,7 @@ time.
 - `backend/tests/test_user_overlay_migration_lifespan.py` —
   4 integration cases.
 - `e2e/smoke/user-overlay-migration.spec.ts` — live-dev smoke.
-- `docs/roadmap-archive/2026-05.md` —
+- `docs/archive/roadmap/2026-05.md` —
   "Archived 2026-05-18 (USER-OVERLAY-PLUGIN-ENABLE-MIGRATION-01)"
   for the close-out artifact.
 
