@@ -17,6 +17,8 @@ ui:
     view_toggle_label: "Cambiar vista"
     view_grid: "Vista de cuadricula"
     view_list: "Vista de lista"
+    load_more: "Cargar mas"
+    page_size_label: "Por pagina:"
     list_aria_label: "Lista de libros"
     col_cover: "Portada"
     col_title: "Titulo"

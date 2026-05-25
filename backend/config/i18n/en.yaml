@@ -5,6 +5,8 @@ ui:
     view_toggle_label: "Toggle view"
     view_grid: "Grid view"
     view_list: "List view"
+    load_more: "Load more"
+    page_size_label: "Per page:"
     list_aria_label: "Book list"
     col_cover: "Cover"
     col_title: "Title"

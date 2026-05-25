@@ -5,6 +5,8 @@ ui:
     view_toggle_label: "Ansicht umschalten"
     view_grid: "Kachel-Ansicht"
     view_list: "Listen-Ansicht"
+    load_more: "Mehr laden"
+    page_size_label: "Pro Seite:"
     list_aria_label: "Bücherliste"
     col_cover: "Cover"
     col_title: "Titel"

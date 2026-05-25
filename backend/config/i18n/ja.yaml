@@ -17,6 +17,8 @@ ui:
     view_toggle_label: "表示切替"
     view_grid: "グリッド表示"
     view_list: "リスト表示"
+    load_more: "もっと読み込む"
+    page_size_label: "ページあたり:"
     list_aria_label: "本のリスト"
     col_cover: "表紙"
     col_title: "タイトル"

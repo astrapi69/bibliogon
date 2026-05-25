@@ -17,6 +17,8 @@ ui:
     view_toggle_label: "Gorunum degistir"
     view_grid: "Izgara gorunumu"
     view_list: "Liste gorunumu"
+    load_more: "Daha fazla yukle"
+    page_size_label: "Sayfa basina:"
     list_aria_label: "Kitap listesi"
     col_cover: "Kapak"
     col_title: "Baslik"

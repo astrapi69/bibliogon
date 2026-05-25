@@ -17,6 +17,8 @@ ui:
     view_toggle_label: "Alternar visualizacao"
     view_grid: "Visualizacao em grade"
     view_list: "Visualizacao em lista"
+    load_more: "Carregar mais"
+    page_size_label: "Por pagina:"
     list_aria_label: "Lista de livros"
     col_cover: "Capa"
     col_title: "Titulo"

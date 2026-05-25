@@ -17,6 +17,8 @@ ui:
     view_toggle_label: "Changer de vue"
     view_grid: "Vue grille"
     view_list: "Vue liste"
+    load_more: "Charger plus"
+    page_size_label: "Par page :"
     list_aria_label: "Liste des livres"
     col_cover: "Couverture"
     col_title: "Titre"
