@@ -1,12 +1,13 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-25 (DASHBOARD-PAGINATION-LOAD-MORE-01 CLOSED via 8-commit ship `822050c..277dd1d`: C1 backend `limit` query on GET /api/books + GET /api/articles (ge=1, le=1000) + 10 pytest cases; C2 PATCH /api/settings/app enum-validation for `ui.dashboard.{books,articles}_page_size` (10/25/50/100) + 5 pytest cases; C3 `usePagedList(scope)` hook with read-merge-write persistence mirroring useViewMode + 10 Vitest cases; C4 stateless `<PageSizeSelector>` native-select component + 5 Vitest cases; C5 wired into Book Dashboard with client-side slicing (filters live client-side); C6 symmetric wire into Article Dashboard per Articles-vs-Books parity rule + mirrored testid namespaces; C7 `ui.dashboard.{load_more,page_size_label}` in 8 i18n catalogs (parity 75/75 held); C8 4 Playwright smoke tests pinning load-more growth via counted-tile assertions + page-size persistence per surface. Selection semantics preserved (select-all still operates on full filtered set, not visible page). Backend pytest 2255 → 2260; Vitest 1986 → 2010; tsc clean.)
+Last updated: 2026-05-25 (COMMENTS-ADMIN-PAGINATION-01 CLOSED as already-shipped — audit-finding stale at filing time; UX-Full-Audit G2-F3 filed 2026-05-15 against "no pagination" claim that was already false: commit `fe55add` shipped load-more pagination on 2026-05-12 (3 days BEFORE the audit), and `CommentsAdminSection.tsx` has carried `PAGE_SIZE=100` + `setPageLimit` + `data-testid="comments-admin-load-more"` since then. Closed without code change; archive entry documents the closeable-stale-entry pattern (inverse of "operational gaps masquerade as wired infrastructure" — here, shipped infrastructure masquerading as an open gap). Surfaced during the trigger-audit walk that followed DASHBOARD-PAGINATION-LOAD-MORE-01 close.)
+Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 CLOSED via 8-commit ship `822050c..277dd1d`: C1 backend `limit` query on GET /api/books + GET /api/articles (ge=1, le=1000) + 10 pytest cases; C2 PATCH /api/settings/app enum-validation for `ui.dashboard.{books,articles}_page_size` (10/25/50/100) + 5 pytest cases; C3 `usePagedList(scope)` hook + 10 Vitest cases; C4 stateless `<PageSizeSelector>` + 5 Vitest cases; C5-C6 wired into Book + Article dashboards with client-side slicing + mirrored testid namespaces; C7 i18n in 8 catalogs (parity 75/75); C8 4 Playwright smoke tests. Backend pytest 2255 → 2260; Vitest 1986 → 2010.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 CLOSED post-v0.36.0 via 7-commit ship `457e01c..2349797`: C1 skip-to-content link + landmarks; C2 universal `*:focus-visible` + KdpPublishingWizard step focus; C3 WizardShell `aria-current="step"` + Toolbar aria-pressed; C4 TipTap editor surface aria-label; C5 WCAG AA color-contrast 30 violations resolved; C6 `@axe-core/react` devDep-only via `import.meta.env.DEV`; C7 universal `prefers-reduced-motion` rule.
 Previous: 2026-05-23 I18N-ARTICLES-NAMESPACE-CLEANUP-01 CLOSED via 1-commit ship: 7 silently-falling-back keys moved from `ui.template_picker.*` to `ui.articles.*` across all 8 i18n catalogs + 3 dead keys deleted + orphaned AuthorProfileSelect component+test removed.
 Previous: 2026-05-24 BOOK-TYPES-SSOT-YAML-01 CLOSED via 10-commit ship `d2dcd8e..` through to the C10 docs commit + 1 Pre-Inspection commit `796ab66` (BookTypeRegistry + GET /api/book-types + useBookTypes() + 22 backend + 13 Vitest tests; pageable_book_types() registry call replacing hardcoded literals across 5 → 24 audit-discovered surfaces).
 Previous: 2026-05-24 PAGES-DELETE-EDITOR-UI-01 CLOSED via 5-commit ship `acdf4fb..f67e15a` (RCU 2-site page-delete affordance; Vitest 1958 → 1974). 2026-05-24 WIZARD-SHELL-COMPONENT-EXTRACT-01 CLOSED via 5-commit ship `52b9f3e..fef15be`.
 Current version: v0.36.0
-Open tasks: 66 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 65 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/roadmap-archive/backlog-recently-closed-2026-05-02.md](roadmap-archive/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -1442,16 +1443,6 @@ in the same session.)
   is acceptable. Utility extraction adds value at scale (4+ sites),
   not at 3. Filed during the v0.33.0 Bug 1 hotfix where the
   pattern emerged across Settings + Help + GetStarted.
-
-- **COMMENTS-ADMIN-PAGINATION-01** (P4, IMPROVEMENT): filed
-  by UX-Full-Audit 2026-05-15 (G2-F3). Comments admin tab
-  renders all comments in a single DOM table without
-  pagination or virtualization. At current scale (49) it's
-  fine; at 500+ comments the initial render and DOM weight
-  will degrade. Add pagination OR virtualization OR a hard
-  cap with "Show all" affordance. Effort: S-M. Trigger:
-  first user >200 comments OR Settings sluggishness
-  complaint.
 
 - **I18N-NATIVE-REVIEW-V031-01**: native-speaker review for the
   three v0.31.0 namespaces (``ai_template``, ``bulk_ai_fill``,
