@@ -165,6 +165,35 @@ store.
   metadata model is more honest about what the wizard
   actually re-checks.
 
+  ### Trigger audit 2026-05-25 (NOT MET)
+
+  Pre-Coding-Reality-Check ran when this entry came up in
+  the backlog queue post-BOOK-TYPE-CARD-COMPONENT-EXTRACT-01
+  audit. Both triggers verified absent:
+
+  - **No user feedback** about "wizard re-validates every
+    time" annoyance. Grep of `docs/journal/` for
+    "wizard.*annoying" / "resume.*wizard" / "wizard.*remember"
+    returns zero matches.
+  - **No measured perf regression**. Grep of `docs/journal/`
+    for "wizard.*slow" / "wizard.*perf" / "wizard.*latency"
+    returns zero matches. Validation calls remain sub-second
+    per the original filing.
+
+  Code-state confirmed unchanged from the filing:
+  `KdpPublishingWizard.tsx:170-172` writes
+  `launch_checklist_state.wizard_step` on every auto-save
+  but no mount-side reader consumes it (grep verified).
+  The C10 partial-persistence shape is intact; resume-at-
+  step infrastructure remains a green-field add when a
+  trigger fires.
+
+  Item correctly deferred per its own "Real demand would
+  surface 'this is annoying' feedback" language. Trigger
+  unchanged; this annotation documents that the audit was
+  performed so the NEXT contributor knows the state is
+  fresh and can re-skip without re-running the same audit.
+
 - **MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01** (P3, filed
   2026-05-20 from the re-prioritization audit Q6 adjudication
   / β-path).
