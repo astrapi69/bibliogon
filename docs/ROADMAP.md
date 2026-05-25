@@ -1,8 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-25 (refreshed post-v0.36.0; previous version archived at [docs/archive/roadmap/ROADMAP-v0.36.0.md](archive/roadmap/ROADMAP-v0.36.0.md))
-Latest release: v0.36.0 (2026-05-23) — largest release since v0.30.0 by commit count. See changelog/releases/v0.36.0.md for the full per-release notes; v0.36.0 thematic summary below under "Recently shipped".
+Last updated: 2026-05-25 (v0.37.0 released — safety + parity + polish; 53 commits across accessibility WCAG 2.1 AA, Danger Zone reset, bulk-restore parity, Medium-import polish, Dashboard pagination, Book.repository_url, editor display settings, docs/archive/ restructure)
+Latest release: v0.37.0 (2026-05-25) — see [changelog/releases/v0.37.0.md](../changelog/releases/v0.37.0.md) for the full per-release notes.
+Previous release: v0.36.0 (2026-05-23) — largest release since v0.30.0 by commit count.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
