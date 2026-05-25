@@ -55,9 +55,7 @@ def _validate_dashboard_page_sizes(ui: dict[str, Any]) -> None:
             allowed = sorted(_DASHBOARD_PAGE_SIZE_ALLOWED)
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    f"ui.dashboard.{key} must be one of {allowed}; got {value!r}"
-                ),
+                detail=(f"ui.dashboard.{key} must be one of {allowed}; got {value!r}"),
             )
 
 
