@@ -130,6 +130,11 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # BOOK-REPOSITORY-URL-FIELD-01: manual repo URL for books not
+    # imported via plugin-git-sync. See Book model field-comment +
+    # docs/ROADMAP.md "Book Metadata Extensions" entry. Empty string
+    # is coerced to None so an emptied UI field clears the value.
+    repository_url: str | None = None
     # AI-assisted content flag
     ai_assisted: bool | None = None
     ai_tokens_used: int | None = None
@@ -426,6 +431,11 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL. The
+    # BookMetadataEditor reads this directly when no GitSyncMapping
+    # exists; when a mapping exists, the UI prefers the mapping's
+    # repo_url for display (read-only) and ignores this column.
+    repository_url: str | None = None
     # UNIVERSAL-AI-TEMPLATE-01 Session 1 columns. Same JSON-text-as-list
     # convention as keywords for chapter_summaries.
     cover_image_prompt: str | None = None

@@ -121,6 +121,18 @@ class Book(Base):
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # BOOK-REPOSITORY-URL-FIELD-01: optional git repository URL for
+    # authors who track their book project externally. Two source
+    # paths overlap conceptually but have different lifecycles:
+    #   - plugin-git-sync imports: GitSyncMapping.repo_url holds the
+    #     canonical URL + branch + clone path. That row is the source
+    #     of truth for the round-trip (commit + push). When present,
+    #     the UI surfaces GitSyncMapping.repo_url read-only.
+    #   - Manual tracking: the author maintains the repo themselves
+    #     (no plugin-git-sync involvement) and just wants the URL in
+    #     metadata. This column carries the value for that case.
+    # Nullable; no migration needed for existing rows.
+    repository_url: Mapped[str | None] = mapped_column(String(2000), nullable=True)
 
     # UNIVERSAL-AI-TEMPLATE-01 Session 1 fields. ``cover_image_prompt`` is the
     # Stable-Diffusion-style prompt for the book cover. ``chapter_summaries``
