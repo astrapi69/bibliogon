@@ -3,6 +3,7 @@ import {Save, Eye, EyeOff, Trash2} from "lucide-react";
 import {api} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
 import {notify} from "../../../utils/notify";
+import {HelpText} from "../HelpText";
 
 export function ElevenLabsKeyPanel() {
     const {t} = useI18n();
@@ -107,12 +108,12 @@ export function ElevenLabsKeyPanel() {
                         {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}
                     </button>
                 </div>
-                <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                <HelpText>
                     {t(
                         "ui.audiobook.elevenlabs_hint",
                         "Nur nötig für ElevenLabs Engine. Kostenloses Konto auf elevenlabs.io, API-Key im Profil generieren.",
                     )}
-                </small>
+                </HelpText>
                 {configured === true && (
                     <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 4}}>
                         {t("ui.audiobook.elevenlabs_configured", "Schlüssel hinterlegt.")}

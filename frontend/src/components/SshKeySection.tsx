@@ -5,6 +5,7 @@ import {useDialog} from "./AppDialog"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import styles from "../pages/Settings.module.css"
+import {HelpText} from "./settings/HelpText"
 
 export default function SshKeySection() {
     const {t} = useI18n()
@@ -114,9 +115,9 @@ export default function SshKeySection() {
                                 disabled={busy}
                                 data-testid="ssh-comment-input"
                             />
-                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                            <HelpText>
                                 {t("ui.ssh.comment_hint", "Wird im Host-UI als Schlüssel-Label angezeigt.")}
-                            </small>
+                            </HelpText>
                         </div>
                         <button
                             className="btn btn-primary btn-sm"
@@ -189,12 +190,12 @@ export default function SshKeySection() {
                                 <Trash2 size={14}/> {t("ui.ssh.delete", "Löschen")}
                             </button>
                         </div>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                        <HelpText>
                             {t(
                                 "ui.ssh.host_hint",
                                 "Füge diesen Schlüssel bei deinem Host ein (GitHub → Settings → SSH keys, GitLab → Preferences → SSH Keys).",
                             )}
-                        </small>
+                        </HelpText>
                     </div>
                 )}
             </div>

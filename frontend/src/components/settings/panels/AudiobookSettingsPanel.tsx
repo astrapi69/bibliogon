@@ -4,6 +4,7 @@ import {api, AudiobookVoice, formatVoiceLabel} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
+import {HelpText} from "../HelpText";
 import {normalizeMergeMode} from "../utils";
 import {ElevenLabsKeyPanel} from "./ElevenLabsKeyPanel";
 import {GoogleCloudTTSPanel} from "./GoogleCloudTTSPanel";
@@ -164,9 +165,9 @@ export function AudiobookSettingsPanel({settings, onSave}: {
                     />
                     {t("ui.audiobook.read_chapter_number_label", "Kapitel-Nummer ansagen")}
                 </label>
-                <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginTop: 4}}>
+                <HelpText>
                     {t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Bücher keine gesprochenen Kapitelmarken wollen.")}
-                </small>
+                </HelpText>
             </div>
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
                 <Save size={12}/> {t("ui.common.save", "Speichern")}

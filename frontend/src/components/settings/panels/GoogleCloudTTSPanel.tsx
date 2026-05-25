@@ -3,6 +3,7 @@ import {Upload, Trash2} from "lucide-react";
 import {api} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
 import {notify} from "../../../utils/notify";
+import {HelpText} from "../HelpText";
 
 export function GoogleCloudTTSPanel() {
     const {t} = useI18n();
@@ -142,12 +143,12 @@ export function GoogleCloudTTSPanel() {
                 </>
             ) : (
                 <>
-                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
+                    <HelpText style={{marginTop: 0, marginBottom: 8}}>
                         {t(
                             "ui.audiobook.google_hint",
                             "Google Cloud Console > Projekt > Cloud Text-to-Speech API aktivieren > Service Account erstellen > JSON-Key herunterladen.",
                         )}
-                    </small>
+                    </HelpText>
                     <label className="btn btn-secondary btn-sm" style={{cursor: "pointer"}}>
                         <Upload size={12}/>
                         {" "}

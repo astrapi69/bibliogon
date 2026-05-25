@@ -6,6 +6,7 @@ import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../../uti
 import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
+import {HelpText} from "./HelpText";
 
 export function AiAssistantSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -75,9 +76,9 @@ export function AiAssistantSettings({config, onSave, saving}: {
                             />
                             <span className="label" style={{margin: 0}}>{t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}</span>
                         </label>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                        <HelpText indented>
                             {t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
-                        </small>
+                        </HelpText>
                     </div>
 
                     <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>
@@ -175,15 +176,15 @@ export function AiAssistantSettings({config, onSave, saving}: {
                                         {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
                                     </button>
                                 </div>
-                                <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                                <HelpText>
                                     {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.")}
-                                </small>
+                                </HelpText>
                             </div>
                         )}
                         {aiProvider === "lmstudio" && (
-                            <small style={{color: "var(--text-muted)", fontSize: "0.75rem", display: "block", marginBottom: 8}}>
+                            <HelpText style={{marginTop: 0, marginBottom: 8}}>
                                 {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.")}
-                            </small>
+                            </HelpText>
                         )}
                         <div style={{display: "flex", gap: 8, alignItems: "center", marginTop: 8}}>
                             <button

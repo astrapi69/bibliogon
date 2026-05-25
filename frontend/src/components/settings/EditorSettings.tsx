@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
+import {HelpText} from "./HelpText";
 
 export function EditorSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -43,14 +44,14 @@ export function EditorSettings({config, onSave, saving}: {
                         <input className="input" type="number" min="200" max="5000" step="100"
                             data-testid="editor-autosave"
                             value={edAutosave} onChange={(e) => setEdAutosave(e.target.value)}/>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_autosave_hint", "Verzoegerung bis zum automatischen Speichern")}</small>
+                        <HelpText>{t("ui.settings.editor_autosave_hint", "Verzoegerung bis zum automatischen Speichern")}</HelpText>
                     </div>
                     <div className="field" style={{flex: 1, minWidth: 140}}>
                         <label className="label">{t("ui.settings.editor_draft_save", "Entwurf (ms)")}</label>
                         <input className="input" type="number" min="500" max="10000" step="500"
                             data-testid="editor-draft-save"
                             value={edDraftSave} onChange={(e) => setEdDraftSave(e.target.value)}/>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_hint", "Verzoegerung bis zur lokalen Sicherung")}</small>
+                        <HelpText>{t("ui.settings.editor_draft_hint", "Verzoegerung bis zur lokalen Sicherung")}</HelpText>
                     </div>
                 </div>
                 <div style={{display: "flex", gap: 12, flexWrap: "wrap"}}>
@@ -59,14 +60,14 @@ export function EditorSettings({config, onSave, saving}: {
                         <input className="input" type="number" min="1" max="365" step="1"
                             data-testid="editor-draft-age"
                             value={edDraftAge} onChange={(e) => setEdDraftAge(e.target.value)}/>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe älter als dieser Wert werden gelöscht")}</small>
+                        <HelpText>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe älter als dieser Wert werden gelöscht")}</HelpText>
                     </div>
                     <div className="field" style={{flex: 1, minWidth: 140}}>
                         <label className="label">{t("ui.settings.editor_ai_chars", "KI-Kontext (Zeichen)")}</label>
                         <input className="input" type="number" min="500" max="32000" step="500"
                             data-testid="editor-ai-chars"
                             value={edAiChars} onChange={(e) => setEdAiChars(e.target.value)}/>
-                        <small style={{color: "var(--text-muted)", fontSize: "0.7rem"}}>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl für KI-Vorschläge")}</small>
+                        <HelpText>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl für KI-Vorschläge")}</HelpText>
                     </div>
                 </div>
                 <button

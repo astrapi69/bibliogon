@@ -5,6 +5,7 @@ import {PALETTES} from "../../themes/palettes";
 import SshKeySection from "../SshKeySection";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
+import {HelpText} from "./HelpText";
 
 export function AppSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -260,11 +261,11 @@ export function AppSettings({config, onSave, saving}: {
                             />
                         </div>
                     )}
-                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block"}}>
+                    <HelpText>
                         {trashEnabled
                             ? t("ui.settings.trash_info", "Bücher im Papierkorb werden nach {days} Tagen automatisch gelöscht").replace("{days}", trashDays)
                             : t("ui.settings.trash_disabled", "Deaktiviert (manuell löschen)")}
-                    </small>
+                    </HelpText>
                 </div>
                 <div className="field">
                     <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
@@ -277,9 +278,9 @@ export function AppSettings({config, onSave, saving}: {
                         />
                         <span className="label" style={{margin: 0}}>{t("ui.settings.delete_permanently", "Gelöschte Bücher sofort permanent löschen")}</span>
                     </label>
-                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                    <HelpText indented>
                         {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben.")}
-                    </small>
+                    </HelpText>
                 </div>
                 <div className="field">
                     <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
@@ -297,12 +298,12 @@ export function AppSettings({config, onSave, saving}: {
                             )}
                         </span>
                     </label>
-                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem", marginTop: 4, display: "block", marginLeft: 24}}>
+                    <HelpText indented>
                         {t(
                             "ui.settings.allow_books_without_author_hint",
                             "Aktiviere diese Option, um Bücher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbüchern, bei denen keine Autorinformation nötig ist.",
                         )}
-                    </small>
+                    </HelpText>
                 </div>
                 <button
                     className="btn btn-primary"
