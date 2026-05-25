@@ -1294,15 +1294,31 @@ body {
     }
 }
 
-/* --- TipTap Editor --- */
+/* --- TipTap Editor ---
+   EDITOR-DISPLAY-SETTINGS-01 C3: typography + width vars read
+   from document.documentElement (set by useEditorDisplaySettings).
+   Defaults below match the pre-feature literal values so any
+   user without the hook mounted (or pre-feature snapshot tests)
+   sees the same rendering as before.
+   --editor-content-width "none" (default) leaves the editor
+   unconstrained; concrete widths (680/780/900px) constrain the
+   ProseMirror body. The width is applied via `max-width` on the
+   inner `.ProseMirror` (TipTap's actual content surface) +
+   `margin: 0 auto` so the constrained text centers in the
+   editor pane. */
 .tiptap-editor {
     min-height: 400px;
     padding: 2rem;
     outline: none;
-    font-family: var(--font-display);
-    font-size: 1.125rem;
-    line-height: 1.8;
+    font-family: var(--editor-font-family, var(--font-display));
+    font-size: var(--editor-font-size, 1.125rem);
+    line-height: var(--editor-line-height, 1.8);
     color: var(--text-primary);
+}
+
+.tiptap-editor .ProseMirror {
+    max-width: var(--editor-content-width, none);
+    margin: 0 auto;
 }
 
 .tiptap-editor:focus {
