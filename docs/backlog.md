@@ -1,10 +1,11 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75. New backlog filings post-release: 8 Settings-page UX audit follow-ups (SETT-QW-1..7 + SETT-M-1 + SETT-M-3 + SETT-M-2 + SETT-M-4 + SETT-L-1 + SETT-L-2) + HELP-DOCS-V0.37.0-GAPS-01.)
+Last updated: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle. Dashboard-view sub-card grouping + SshKeySection own card + Editor tab extraction + sectionTitle standardisation + HelpText component + White-Label collapsible "Erweitert" section + SectionHeader composition component + per-section descriptions across 9 tabs in 8 catalogs. Vitest 2037 → 2052 (+15); i18n parity 75/75; tsc clean.)
+Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75.)
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
 Current version: v0.37.0
-Open tasks: 73 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 72 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -54,47 +55,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **SETT-PHASE-1-QUICK-WINS-01** (P3, UX-POLISH, filed
-  2026-05-25 from Settings-page UX audit per user adjudication):
-  bundle the 7 quick wins from the Settings UX audit. Single
-  session, ~9 commits.
-
-  ### Scope (7 quick wins, all in scope; no scope changes)
-
-  1. **SETT-QW-1**: group the 4 dashboard-view RadixSelects
-     (books / articles / books-trash / articles-trash) into a
-     sub-card with one header "Standard-Ansichten" + a 2×2 grid.
-  2. **SETT-QW-2**: move `SshKeySection` into its own card with
-     explicit header ("SSH-Schlüssel für Git-Sync"). Currently
-     floats between the first card and the Editor card with no
-     visual separator.
-  3. **SETT-QW-3**: move Editor settings to their own tab
-     ("Editor" — tab position between Allgemein and KI-Assistent).
-     Hidden inside Allgemein Card 2 today.
-  4. **SETT-QW-4**: standardise section-title styling across all
-     sub-components. Currently `BackupsSettings` + `AboutSettings`
-     + `DangerZoneSettings` use inline `<h2 style={{margin: 0}}>`
-     instead of `styles.sectionTitle`.
-  5. **SETT-QW-5**: extract `<HelpText>` component for the small
-     italic help-text under inputs. Currently 3 inconsistent
-     fontSize values (0.7 / 0.75 / 0.8125rem) across ~30 sites.
-  6. **SETT-QW-6**: clarify White-Label "Erweitert" affordance —
-     either own tab or labeled section header. Currently behind
-     a `<Wrench>` toggle button few users will click.
-  7. **SETT-QW-7**: add per-section descriptions (1-2 lines
-     under each `sectionTitle`) explaining what the section
-     controls. Matches Notion / Linear convention.
-
-  ### Trigger
-
-  Post-v0.37.0 — ship immediately as the first post-release
-  feature stream per user adjudication. No external trigger
-  needed; the audit findings + ship-decision are the trigger.
-
-  ### Effort
-
-  ~9 commits in a single session.
 
 - **SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01** (P3, UX-POLISH,
   filed 2026-05-25 from Settings-page UX audit per user
