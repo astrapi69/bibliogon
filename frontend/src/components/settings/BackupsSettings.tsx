@@ -28,6 +28,7 @@ import {GitCompare} from "lucide-react";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import BackupCompareDialog from "../BackupCompareDialog";
+import styles from "../../pages/Settings.module.css";
 
 interface BackupHistoryEntry {
     timestamp: string;
@@ -60,7 +61,7 @@ export function BackupsSettings() {
             data-testid="backups-settings"
             style={{display: "flex", flexDirection: "column", gap: 16}}
         >
-            <h2 style={{margin: 0}}>
+            <h2 className={styles.sectionTitle}>
                 {t("ui.settings.tab_backups", "Backups")}
             </h2>
 

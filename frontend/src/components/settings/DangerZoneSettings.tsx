@@ -40,6 +40,7 @@ import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/notify";
 import {db} from "../../db/drafts";
+import styles from "../../pages/Settings.module.css";
 
 type DialogState = "idle" | "typing" | "submitting";
 
@@ -193,7 +194,7 @@ export function DangerZoneSettings() {
         <div style={sectionStyle} data-testid="danger-zone-section">
             <div style={headerRowStyle}>
                 <AlertTriangle size={20} aria-hidden="true" />
-                <h2 style={{margin: 0, fontSize: 18, fontWeight: 600}}>
+                <h2 className={styles.sectionTitle} style={{margin: 0}}>
                     {t("ui.settings.danger_zone.title", "Gefahrenzone")}
                 </h2>
             </div>
