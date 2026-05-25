@@ -52,6 +52,8 @@ import FieldClassDialog, {type FieldClassDialogResult} from "../components/Field
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
+import { usePagedList } from "../hooks/usePagedList";
+import PageSizeSelector from "../components/PageSizeSelector";
 import { useArticleFilters } from "../hooks/useArticleFilters";
 import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
@@ -79,6 +81,12 @@ export default function ArticleList() {
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
+    // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
+    // active (non-trash) article list. Slices ``filters.filteredArticles``
+    // to ``paged.limit`` for render; "Load more" grows the limit;
+    // PageSizeSelector persists the user's preference. Filter changes
+    // reset the limit (effect below).
+    const paged = usePagedList("articles");
     const [importWizardOpen, setImportWizardOpen] = useState(false);
 
     /** Article-to-book conversion wizard. Snapshot the user's selected
@@ -317,8 +325,13 @@ export default function ArticleList() {
      *  callback rather than the whole ``selection`` object avoids
      *  an infinite-render loop. */
     const clearSelection = selection.clear;
+    const resetPagination = paged.reset;
     useEffect(() => {
         clearSelection();
+        // C6: snap display limit back to PAGE_SIZE on filter change
+        // so the user always sees the first page of the new filter
+        // result, not a mid-page slice carried over.
+        resetPagination();
     }, [
         filters.searchQuery,
         filters.topic,
@@ -327,6 +340,7 @@ export default function ArticleList() {
         filters.series,
         filters.tag,
         clearSelection,
+        resetPagination,
     ]);
 
     /** Project-wide backup export. Same handler as Dashboard.tsx
@@ -928,49 +942,100 @@ export default function ArticleList() {
                         </button>
                     }
                 />
-            ) : viewMode === "grid" ? (
-                <div className={layout.grid} data-testid="article-list">
-                    {filters.filteredArticles.map((a) => (
-                        <div
-                            key={a.id}
-                            className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
-                        >
-                            <input
-                                type="checkbox"
-                                className={layout.tileCheckbox}
-                                data-testid={`article-bulk-check-${a.id}`}
-                                checked={selection.isSelected(a.id)}
-                                onChange={() => selection.toggle(a.id)}
-                                onClick={(e) => e.stopPropagation()}
-                                aria-label={t(
-                                    "ui.articles.bulk.select_all",
-                                    "Select",
+            ) : (() => {
+                // C6: slice to ``paged.limit`` for render. Selection
+                // semantics unchanged — select-all still operates on
+                // the full filtered set, not just the visible page.
+                const visibleArticles = filters.filteredArticles.slice(
+                    0,
+                    paged.limit,
+                );
+                const hasMore =
+                    filters.filteredArticles.length > visibleArticles.length;
+                return (
+                    <>
+                        {viewMode === "grid" ? (
+                            <div className={layout.grid} data-testid="article-list">
+                                {visibleArticles.map((a) => (
+                                    <div
+                                        key={a.id}
+                                        className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
+                                    >
+                                        <input
+                                            type="checkbox"
+                                            className={layout.tileCheckbox}
+                                            data-testid={`article-bulk-check-${a.id}`}
+                                            checked={selection.isSelected(a.id)}
+                                            onChange={() => selection.toggle(a.id)}
+                                            onClick={(e) => e.stopPropagation()}
+                                            aria-label={t(
+                                                "ui.articles.bulk.select_all",
+                                                "Select",
+                                            )}
+                                        />
+                                        <ArticleCard
+                                            article={a}
+                                            onClick={() => navigate(`/articles/${a.id}`)}
+                                            onDelete={() => void handleDelete(a)}
+                                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
+                                        />
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <ul className={layout.list} data-testid="article-list">
+                                {visibleArticles.map((a) => (
+                                    <ArticleRow
+                                        key={a.id}
+                                        article={a}
+                                        onOpen={() => navigate(`/articles/${a.id}`)}
+                                        onDelete={() => void handleDelete(a)}
+                                        onDeletePermanent={() => void handleDeletePermanentFromList(a)}
+                                        isSelected={selection.isSelected(a.id)}
+                                        onToggleSelect={() => selection.toggle(a.id)}
+                                    />
+                                ))}
+                            </ul>
+                        )}
+                        {filters.filteredArticles.length > 0 && (
+                            <div
+                                data-testid="article-list-pagination"
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "center",
+                                    alignItems: "center",
+                                    gap: 16,
+                                    marginTop: 16,
+                                    paddingBottom: 8,
+                                    flexWrap: "wrap",
+                                }}
+                            >
+                                {hasMore && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        data-testid="article-list-load-more"
+                                        onClick={paged.loadMore}
+                                    >
+                                        {t(
+                                            "ui.dashboard.load_more",
+                                            "Mehr laden",
+                                        )}
+                                        {" "}
+                                        ({visibleArticles.length} /{" "}
+                                        {filters.filteredArticles.length})
+                                    </button>
                                 )}
-                            />
-                            <ArticleCard
-                                article={a}
-                                onClick={() => navigate(`/articles/${a.id}`)}
-                                onDelete={() => void handleDelete(a)}
-                                onDeletePermanent={() => void handleDeletePermanentFromList(a)}
-                            />
-                        </div>
-                    ))}
-                </div>
-            ) : (
-                <ul className={layout.list} data-testid="article-list">
-                    {filters.filteredArticles.map((a) => (
-                        <ArticleRow
-                            key={a.id}
-                            article={a}
-                            onOpen={() => navigate(`/articles/${a.id}`)}
-                            onDelete={() => void handleDelete(a)}
-                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
-                            isSelected={selection.isSelected(a.id)}
-                            onToggleSelect={() => selection.toggle(a.id)}
-                        />
-                    ))}
-                </ul>
-            )}
+                                <PageSizeSelector
+                                    value={paged.pageSize}
+                                    onChange={paged.setPageSize}
+                                    data-testid="article-list-page-size"
+                                />
+                            </div>
+                        )}
+                    </>
+                );
+            })()}
             </main>
             <ImportWizardModal
                 open={importWizardOpen}
