@@ -10,6 +10,7 @@ import {useI18n} from "../hooks/useI18n";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import CommentsAdminSection from "../components/CommentsAdminSection";
 import {AppSettings} from "../components/settings/AppSettings";
+import {ErscheinungsbildSettings} from "../components/settings/ErscheinungsbildSettings";
 import {EditorSettings} from "../components/settings/EditorSettings";
 import {AiAssistantSettings} from "../components/settings/AiAssistantSettings";
 import {AuthorSettings} from "../components/settings/AuthorSettings";
@@ -21,7 +22,7 @@ import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "danger_zone"] as const;
+const VALID_SETTINGS_TABS = ["app", "erscheinungsbild", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "danger_zone"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -135,6 +136,7 @@ export default function Settings() {
                     // they are not Tabs.Trigger nodes.
                     const tabDefs: {value: SettingsTab; label: string; testId: string}[] = [
                         {value: "app", label: t("ui.settings.tab_general", "Allgemein"), testId: "settings-tab-app"},
+                        {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
                         {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
                         {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
                         {value: "author", label: t("ui.settings.tab_author", "Autor"), testId: "settings-tab-author"},
@@ -209,6 +211,23 @@ export default function Settings() {
                                 // Live language switch without reload
                                 const newLang = (data.app as Record<string, unknown>)?.default_language as string;
                                 if (newLang) setGlobalLang(newLang);
+                                showMessage(t("ui.settings.saved", "Gespeichert"));
+                            } catch (err) {
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                            }
+                            setSaving(false);
+                        }}
+                        saving={saving}
+                    />
+                </Tabs.Content>
+                <Tabs.Content value="erscheinungsbild">
+                    <ErscheinungsbildSettings
+                        config={appConfig}
+                        onSave={async (data) => {
+                            setSaving(true);
+                            try {
+                                const updated = await api.settings.updateApp(data);
+                                setAppConfig(updated);
                                 showMessage(t("ui.settings.saved", "Gespeichert"));
                             } catch (err) {
                                 showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);

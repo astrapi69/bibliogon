@@ -593,6 +593,7 @@ ui:
   settings:
     title: "Einstellungen"
     tab_general: "Allgemein"
+    tab_erscheinungsbild: "Erscheinungsbild"
     tab_editor: "Editor"
     tab_ai: "KI-Assistent"
     tab_author: "Autor"
@@ -717,6 +718,8 @@ ui:
     plugin_help_desc: "FAQ, Tastenkürzel, About"
     plugin_getstarted: "Erste Schritte"
     plugin_getstarted_desc: "Onboarding-Wizard, Beispielbuch"
+    erscheinungsbild_title: "Erscheinungsbild"
+    erscheinungsbild_description: "Theme und Standard-Ansichten für Bücher- und Artikel-Dashboard."
     dashboard_views_title: "Standard-Ansichten"
     dashboard_books_view_label: "Bücher-Dashboard: Standard-Ansicht"
     dashboard_books_view_tooltip: "Standard-Ansicht beim Öffnen des Bücher-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden."

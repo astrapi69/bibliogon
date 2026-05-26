@@ -619,6 +619,7 @@ ui:
   settings:
     title: "Ayarlar"
     tab_general: "Genel"
+    tab_erscheinungsbild: "Gorunum"
     tab_editor: "Editor"
     tab_ai: "AI Asistani"
     tab_author: "Yazar"
@@ -743,6 +744,8 @@ ui:
     plugin_help_desc: "SSS, kisayollar, hakkinda"
     plugin_getstarted: "Baslangic"
     plugin_getstarted_desc: "Baslangic sihirbazi, ornek kitap"
+    erscheinungsbild_title: "Gorunum"
+    erscheinungsbild_description: "Kitap ve makale panolari icin tema ve varsayilan gorunumler."
     dashboard_views_title: "Varsayilan gorunumler"
     dashboard_books_view_label: "Kitap panosu: varsayilan gorunum"
     dashboard_books_view_tooltip: "Kitap panosu acildiginda gosterilen ilk gorunum. Sag ust kosedeki simgeyle istediginiz zaman degistirebilirsiniz."
