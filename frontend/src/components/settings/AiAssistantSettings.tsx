@@ -8,6 +8,7 @@ import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
+import {Toggle} from "./Toggle";
 
 export function AiAssistantSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -70,19 +71,14 @@ export function AiAssistantSettings({config, onSave, saving}: {
                 />
                 <div className={styles.card}>
                     <div className="field">
-                        <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
-                            <input
-                                type="checkbox"
-                                checked={aiEnabled}
-                                onChange={(e) => setAiEnabled(e.target.checked)}
-                                data-testid="ai-enabled"
-                                style={{width: 16, height: 16, accentColor: "var(--accent)"}}
-                            />
-                            <span className="label" style={{margin: 0}}>{t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}</span>
-                        </label>
-                        <HelpText indented>
-                            {t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
-                        </HelpText>
+                        <Toggle
+                            label={t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}
+                            description={t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
+                            checked={aiEnabled}
+                            onChange={setAiEnabled}
+                            testId="ai-enabled"
+                            indentedDescription
+                        />
                     </div>
 
                     <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>

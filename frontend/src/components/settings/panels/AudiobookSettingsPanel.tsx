@@ -4,7 +4,7 @@ import {api, AudiobookVoice, formatVoiceLabel} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
-import {HelpText} from "../HelpText";
+import {Toggle} from "../Toggle";
 import {normalizeMergeMode} from "../utils";
 import {ElevenLabsKeyPanel} from "./ElevenLabsKeyPanel";
 import {GoogleCloudTTSPanel} from "./GoogleCloudTTSPanel";
@@ -157,17 +157,13 @@ export function AudiobookSettingsPanel({settings, onSave}: {
                 </div>
             </div>
             <div className="field" style={{marginTop: 16}}>
-                <label className="label icon-row">
-                    <input
-                        type="checkbox"
-                        checked={readChapterNumber}
-                        onChange={(e) => setReadChapterNumber(e.target.checked)}
-                    />
-                    {t("ui.audiobook.read_chapter_number_label", "Kapitel-Nummer ansagen")}
-                </label>
-                <HelpText>
-                    {t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Bücher keine gesprochenen Kapitelmarken wollen.")}
-                </HelpText>
+                <Toggle
+                    label={t("ui.audiobook.read_chapter_number_label", "Kapitel-Nummer ansagen")}
+                    description={t("ui.audiobook.read_chapter_number_description", "Wenn aktiviert, sagt die TTS vor jedem Kapitel ein 'Erstes Kapitel', 'Zweites Kapitel' usw. an. Standardmaessig deaktiviert, weil die meisten Bücher keine gesprochenen Kapitelmarken wollen.")}
+                    checked={readChapterNumber}
+                    onChange={setReadChapterNumber}
+                    testId="audiobook-read-chapter-number"
+                />
             </div>
             <button className="btn btn-primary btn-sm mt-1" onClick={handleSave}>
                 <Save size={12}/> {t("ui.common.save", "Speichern")}
