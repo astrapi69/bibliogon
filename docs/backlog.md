@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
+Last updated: 2026-05-26 (HELP-DOCS-V0.37.0-GAPS-01 CLOSED — extended to also cover v0.38.0 Settings-UX overhaul; 6 help topics × DE + EN = 12 Markdown pages + 5 Playwright-generated screenshots in default theme (warm-literary light, 1280×800). New manual-only ``screenshots`` Playwright project. Pages: settings/sidebar, editor/display-settings, editor/word-wrap, books/repository-url, dashboard/pagination, dashboard/trash-and-restore. _meta.yaml gained a new top-level "Dashboard" group + 5 child entries. ``make verify-docs-discipline`` green.)
+Previous: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
 Previous: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
 Previous: 2026-05-26 (SETT-PHASE-3-TOGGLE-COMPONENT-01 CLOSED — 4-commit ship of the shared Toggle composition component + 5-site migration.)
 Previous: 2026-05-26 (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 CLOSED — 5-commit ship of the Settings UX Phase 2 Allgemein-tab split. Tab count 12 → 14.)
@@ -59,38 +60,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **HELP-DOCS-V0.37.0-GAPS-01** (P3, DOCS, filed 2026-05-25
-  from v0.37.0 release-time help-docs review): four features
-  shipped in v0.37.0 without dedicated help pages.
-
-  ### Scope
-
-  Add help pages for:
-
-  - Dashboard pagination (load-more + page-size selector) —
-    currently no help page; explain the persistence mechanism +
-    the four page-size choices.
-  - Word-wrap (Alt+Z) — mentioned in `shortcuts.md` only;
-    add a dedicated 1-paragraph explanation under
-    `docs/help/{de,en}/editor/word-wrap.md`.
-  - Editor display settings — currently no help page; explain
-    the toolbar popover + the per-device persistence semantics.
-  - Book.repository_url metadata field — currently no help page;
-    explain the git-sync read-precedence (manual entry vs
-    plugin-git-sync managed).
-
-  Per language (DE + EN). Register in `docs/help/_meta.yaml`.
-  Verify via `make verify-docs-discipline`.
-
-  ### Trigger
-
-  Next session that touches help docs OR next release-cycle
-  pre-release sweep. Not blocking v0.37.x point releases.
-
-  ### Effort
-
-  S — ~4-6 short pages × 2 languages + nav-yaml entries.
 
 - **BOOK-TYPE-CARD-COMPONENT-EXTRACT-01** (P3, RCU pre-
   registered, filed 2026-05-23 from GETSTARTED-MULTIBOOK-
@@ -1204,27 +1173,40 @@ in the same session.)
 
 - **SETT-M-2-PER-TAB-SUBSECTION-HEADERS-01** (P4, UX-POLISH,
   filed 2026-05-25 from Settings-page UX audit, deferred per
-  user adjudication): add explicit subsection headers within
-  each Settings tab (e.g. "Anzeige" / "Speichern" / etc.) so
-  the existing card-per-subsection pattern surfaces a named
-  hierarchy.
+  user adjudication; **partial scope shipped 2026-05-26**): add
+  explicit subsection headers within each Settings tab (e.g.
+  "Anzeige" / "Speichern" / etc.) so the existing
+  card-per-subsection pattern surfaces a named hierarchy.
+
+  ### Partial-scope status (2026-05-26)
+
+  SETT-QW-7 (commit `91704f6` + content commit `fd855ff`)
+  shipped the new ``SectionHeader`` composition component +
+  per-TAB descriptions across every Settings tab. That covers
+  the "what does this tab do" cue at the top of each tab.
+
+  Still pending: per-SUBSECTION-within-tab headers (the named
+  ``subCardTitle`` style is already used in ErscheinungsbildSettings'
+  ``Standard-Ansichten`` block; needs consistent application
+  across the other tabs that have multiple logical sub-groups —
+  Verhalten + AI + Audiobook + Backups + Erweitert).
 
   ### Why P4
 
-  Lower impact than SETT-PHASE-1..3; ships AFTER the Allgemein-
-  split lands so the new sub-tabs have a clean baseline to apply
-  consistent subsection headers to.
+  Lower impact than SETT-PHASE-1..3; the per-TAB layer is
+  shipped, the per-subsection-within-tab layer is the natural
+  next iteration.
 
   ### Trigger
 
-  Either (a) post-SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 + post-
-  SETT-PHASE-3-TOGGLE-COMPONENT-01 close — schedule as the
-  natural Settings polish follow-up; or (b) a user report about
-  in-tab findability friction.
+  Either (a) a user report about in-tab findability friction;
+  or (b) a natural session that touches multiple Settings
+  sub-components for another reason.
 
   ### Effort
 
-  3-4 commits.
+  2-3 commits (revised down from 3-4 since per-TAB scope is
+  already done).
 
 - **SETT-M-4-SETTINGS-SEARCH-01** (P4, FEATURE-REQUEST, filed
   2026-05-25 from Settings-page UX audit, deferred per user
