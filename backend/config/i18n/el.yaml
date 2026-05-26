@@ -610,6 +610,7 @@ ui:
     tab_editor: "Επεξεργαστής"
     tab_ai: "Βοηθός AI"
     tab_author: "Συγγραφέας"
+    tab_autoren: "Συγγραφείς"
     tab_plugins: "Plugins"
     tab_comments: "Comments"
     tab_backups: "Backups"

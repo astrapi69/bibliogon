@@ -624,6 +624,7 @@ ui:
     tab_editor: "Editor"
     tab_ai: "AI Asistani"
     tab_author: "Yazar"
+    tab_autoren: "Yazarlar"
     tab_plugins: "Eklentiler"
     tab_comments: "Comments"
     tab_backups: "Backups"

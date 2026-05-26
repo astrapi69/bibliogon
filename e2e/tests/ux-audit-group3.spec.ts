@@ -123,12 +123,15 @@ test.describe("UX-Audit Group 3: Settings", () => {
         console.log(`ai-api-key-input: ${aiApiKey}, ai-api-key-external-note: ${aiNote}`)
     })
 
-    test("04 Tab: author", async ({page}) => {
+    test("04 Tab: autoren (was: author + authors-database)", async ({page}) => {
         await page.goto("http://localhost:5173/settings")
         await page.waitForTimeout(500)
-        await page.locator('button:has-text("Autor")').first().click()
+        // SETT-AUTHORS-TAB-CONSOLIDATION-01 merged the previous
+        // "Autor" + "Autoren-Datenbank" tabs into a single
+        // "Autoren" tab.
+        await page.getByTestId("settings-tab-autoren").click()
         await page.waitForTimeout(500)
-        await snap(page, "04-tab-author")
+        await snap(page, "04-tab-autoren")
 
         // What testids does the author tab have?
         const allTestidsOnPage = await page

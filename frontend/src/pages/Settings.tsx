@@ -14,8 +14,7 @@ import {VerhaltenSettings} from "../components/settings/VerhaltenSettings";
 import {EditorSettings} from "../components/settings/EditorSettings";
 import {ErweitertSettings} from "../components/settings/ErweitertSettings";
 import {AiAssistantSettings} from "../components/settings/AiAssistantSettings";
-import {AuthorSettings} from "../components/settings/AuthorSettings";
-import {AuthorsDatabase} from "../components/settings/AuthorsDatabase";
+import {AutorenSettings} from "../components/settings/AutorenSettings";
 import {TopicsSettings} from "../components/settings/TopicsSettings";
 import {PluginSettings} from "../components/settings/PluginSettings";
 import {AboutSettings} from "../components/settings/AboutSettings";
@@ -23,12 +22,22 @@ import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
+const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "autoren", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
     return value !== null && (VALID_SETTINGS_TABS as readonly string[]).includes(value);
 }
+
+// SETT-AUTHORS-TAB-CONSOLIDATION-01: the legacy "author" +
+// "authors_database" tabs merged into a single "autoren" tab.
+// Keep old deep-link URLs working by redirecting them at parse
+// time so bookmarks + the help-docs "?tab=author" links land on
+// the right surface.
+const LEGACY_TAB_REDIRECTS: Record<string, SettingsTab> = {
+    author: "autoren",
+    authors_database: "autoren",
+};
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -54,12 +63,17 @@ export default function Settings() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
 
-    // Deep-link tab via ?tab=author. Falls back to "erscheinungsbild"
+    // Deep-link tab via ?tab=autoren. Falls back to "erscheinungsbild"
     // for unknown values so a stale URL never lands on an invalid
     // Radix tab. Phase 2 removed the legacy "app" / "Allgemein" tab;
     // the three replacement tabs (erscheinungsbild + verhalten +
-    // erweitert) split its content.
-    const initialTab: SettingsTab = isSettingsTab(searchParams.get("tab")) ? (searchParams.get("tab") as SettingsTab) : "erscheinungsbild";
+    // erweitert) split its content. Authors-consolidation
+    // additionally redirects ?tab=author + ?tab=authors_database
+    // → autoren via LEGACY_TAB_REDIRECTS.
+    const rawTab = searchParams.get("tab");
+    const redirected = rawTab && rawTab in LEGACY_TAB_REDIRECTS ? LEGACY_TAB_REDIRECTS[rawTab] : null;
+    const initialTab: SettingsTab = redirected
+        ?? (isSettingsTab(rawTab) ? (rawTab as SettingsTab) : "erscheinungsbild");
     const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
     const handleTabChange = (next: string) => {
@@ -143,8 +157,7 @@ export default function Settings() {
                         {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
                         {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
                         {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
-                        {value: "author", label: t("ui.settings.tab_author", "Autor"), testId: "settings-tab-author"},
-                        {value: "authors_database", label: t("ui.settings.tab_authors_database", "Autoren-Datenbank"), testId: "settings-tab-authors-database"},
+                        {value: "autoren", label: t("ui.settings.tab_autoren", "Autoren"), testId: "settings-tab-autoren"},
                         {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
                         {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                         {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
@@ -276,8 +289,8 @@ export default function Settings() {
                         saving={saving}
                     />
                 </Tabs.Content>
-                <Tabs.Content value="author">
-                    <AuthorSettings
+                <Tabs.Content value="autoren">
+                    <AutorenSettings
                         config={appConfig}
                         onSave={async (data) => {
                             setSaving(true);
@@ -292,9 +305,6 @@ export default function Settings() {
                         }}
                         saving={saving}
                     />
-                </Tabs.Content>
-                <Tabs.Content value="authors_database">
-                    <AuthorsDatabase/>
                 </Tabs.Content>
                 <Tabs.Content value="topics">
                     <TopicsSettings

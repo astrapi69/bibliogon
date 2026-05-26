@@ -598,6 +598,7 @@ ui:
     tab_editor: "Editor"
     tab_ai: "AI Assistant"
     tab_author: "Author"
+    tab_autoren: "Authors"
     tab_plugins: "Plugins"
     tab_comments: "Comments"
     tab_backups: "Backups"

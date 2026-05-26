@@ -32,7 +32,13 @@ async function getAuthor(): Promise<{name?: string; pen_names?: string[]}> {
     return body.author || {};
 }
 
-test.describe("Settings - author tab", () => {
+// SETT-AUTHORS-TAB-CONSOLIDATION-01: the "author" + "authors_database"
+// tabs merged into a single "autoren" tab. Internal testids
+// (``author-settings`` / ``author-real-name`` / ``author-save`` /
+// ``author-pen-name-*``) are preserved verbatim because the
+// AuthorSettings component still mounts unchanged inside the
+// AutorenSettings wrapper. Only the deep-link query param changes.
+test.describe("Settings - autoren tab (author profile)", () => {
     test.beforeEach(async () => {
         await patchAuthor({name: "", pen_names: []});
     });
@@ -42,7 +48,7 @@ test.describe("Settings - author tab", () => {
     });
 
     test("real-name persists after Save", async ({page}) => {
-        await page.goto("/settings?tab=author");
+        await page.goto("/settings?tab=autoren");
 
         const root = page.getByTestId("author-settings");
         await expect(root).toBeVisible();
@@ -60,7 +66,7 @@ test.describe("Settings - author tab", () => {
     });
 
     test("pen-name add via Add button persists", async ({page}) => {
-        await page.goto("/settings?tab=author");
+        await page.goto("/settings?tab=autoren");
 
         await page.getByTestId("author-pen-name-input").fill("E2E Pseudonym");
         await page.getByTestId("author-pen-name-add").click();
@@ -77,7 +83,7 @@ test.describe("Settings - author tab", () => {
 
     test("pen-name remove drops the entry on save", async ({page}) => {
         await patchAuthor({pen_names: ["Keep", "Drop"]});
-        await page.goto("/settings?tab=author");
+        await page.goto("/settings?tab=autoren");
 
         // Both seeded entries are present.
         await expect(page.getByTestId("author-pen-name-0")).toContainText("Keep");

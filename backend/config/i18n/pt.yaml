@@ -610,6 +610,7 @@ ui:
     tab_editor: "Editor"
     tab_ai: "Assistente AI"
     tab_author: "Autor"
+    tab_autoren: "Autores"
     tab_plugins: "Plugins"
     tab_comments: "Comments"
     tab_backups: "Backups"

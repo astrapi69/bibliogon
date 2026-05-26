@@ -610,6 +610,7 @@ ui:
     tab_editor: "エディタ"
     tab_ai: "AIアシスタント"
     tab_author: "著者"
+    tab_autoren: "著者管理"
     tab_plugins: "プラグイン"
     tab_comments: "Comments"
     tab_backups: "Backups"

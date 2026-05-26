@@ -598,6 +598,7 @@ ui:
     tab_editor: "Editor"
     tab_ai: "KI-Assistent"
     tab_author: "Autor"
+    tab_autoren: "Autoren"
     tab_plugins: "Plugins"
     tab_comments: "Kommentare"
     tab_backups: "Backups"
