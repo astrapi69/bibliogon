@@ -51,10 +51,47 @@
     color: var(--text-primary);
 }
 
-.main {
-    max-width: 900px;
+/*
+ * SETT-L-1 C1: two-column layout (sidebar + content).
+ *
+ * Replaces the single max-width: 900px main column. The grid
+ * gives the sidebar a fixed 220px rail and lets the content
+ * column take the remaining width, capped to the same effective
+ * content area (~900px) inside a 1180px outer container.
+ *
+ * On viewports <= 768px the sidebar column collapses (C2 will
+ * refine the mobile experience); the existing mobile dropdown
+ * pattern stays in place above the content area.
+ */
+.layout {
+    max-width: 1180px;
     margin: 0 auto;
     padding: 24px;
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+}
+
+.sidebarColumn {
+    /* Container so the sticky sidebar can scroll independently
+       when the viewport is short. */
+    min-width: 0;
+}
+
+.main {
+    min-width: 0;
+    max-width: 900px;
+}
+
+@media (max-width: 768px) {
+    .layout {
+        grid-template-columns: 1fr;
+        padding: 16px;
+        gap: 0;
+    }
+    .sidebarColumn {
+        display: none;
+    }
 }
 
 .section {

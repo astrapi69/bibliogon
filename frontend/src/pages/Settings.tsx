@@ -1,10 +1,9 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Check, Home, Menu} from "lucide-react";
 import {notify} from "../utils/notify";
-import * as Tabs from "@radix-ui/react-tabs";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
@@ -20,6 +19,7 @@ import {PluginSettings} from "../components/settings/PluginSettings";
 import {AboutSettings} from "../components/settings/AboutSettings";
 import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
+import {SettingsSidebar, type SidebarGroup} from "../components/settings/SettingsSidebar";
 import styles from "./Settings.module.css";
 
 const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "autoren", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
@@ -61,11 +61,10 @@ export default function Settings() {
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
     const [saving, setSaving] = useState(false);
-    const [message, setMessage] = useState("");
 
     // Deep-link tab via ?tab=autoren. Falls back to "erscheinungsbild"
     // for unknown values so a stale URL never lands on an invalid
-    // Radix tab. Phase 2 removed the legacy "app" / "Allgemein" tab;
+    // section. Phase 2 removed the legacy "app" / "Allgemein" tab;
     // the three replacement tabs (erscheinungsbild + verhalten +
     // erweitert) split its content. Authors-consolidation
     // additionally redirects ?tab=author + ?tab=authors_database
@@ -115,6 +114,62 @@ export default function Settings() {
         }
     };
 
+    // Sidebar groups + the legacy flat tabDefs share the same item
+    // definitions so testids + labels stay in lock-step. The mobile
+    // dropdown reuses the flat list; C2 will refine the mobile UX.
+    const hasDonations = Boolean(getDonationsConfig(appConfig));
+    const sidebarGroups: SidebarGroup[] = useMemo(() => {
+        const groups: SidebarGroup[] = [
+            {
+                key: "darstellung",
+                items: [
+                    {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
+                    {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
+                    {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
+                ],
+            },
+            {
+                key: "inhalt",
+                items: [
+                    {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
+                    {value: "autoren", label: t("ui.settings.tab_autoren", "Autoren"), testId: "settings-tab-autoren"},
+                    {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
+                ],
+            },
+            {
+                key: "system",
+                items: [
+                    {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
+                    {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
+                    {value: "backups", label: t("ui.settings.tab_backups", "Backups"), testId: "settings-tab-backups"},
+                    {value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"},
+                ],
+            },
+            {
+                key: "info",
+                items: [
+                    {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
+                    ...(hasDonations
+                        ? [{value: "support", label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
+                        : []),
+                ],
+            },
+            {
+                key: "danger",
+                items: [
+                    {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
+                ],
+            },
+        ];
+        return groups;
+    }, [t, hasDonations]);
+
+    const flatItems = useMemo(
+        () => sidebarGroups.flatMap((g) => g.items),
+        [sidebarGroups],
+    );
+    const activeLabel = flatItems.find((i) => i.value === activeTab)?.label ?? "";
+
     return (
         <div className={styles.container}>
             {/* Header */}
@@ -146,273 +201,233 @@ export default function Settings() {
                 </div>
             </header>
 
-            <Tabs.Root value={activeTab} onValueChange={handleTabChange}>
-                {(() => {
-                    // Single source of truth so the desktop Tabs.List and the
-                    // mobile DropdownMenu render the same set of options. The
-                    // dropdown items call ``handleTabChange`` directly because
-                    // they are not Tabs.Trigger nodes.
-                    const tabDefs: {value: SettingsTab; label: string; testId: string}[] = [
-                        {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
-                        {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
-                        {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
-                        {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
-                        {value: "autoren", label: t("ui.settings.tab_autoren", "Autoren"), testId: "settings-tab-autoren"},
-                        {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
-                        {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
-                        {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
-                        {value: "backups", label: t("ui.settings.tab_backups", "Backups"), testId: "settings-tab-backups"},
-                        ...(getDonationsConfig(appConfig)
-                            ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
-                            : []),
-                        {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
-                        {value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"},
-                        {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
-                    ];
-                    const activeLabel = tabDefs.find((d) => d.value === activeTab)?.label ?? "";
-                    return (
-                        <>
-                            <Tabs.List className="radix-tabs-list settings-tabs-desktop">
-                                {tabDefs.map((d) => (
-                                    <Tabs.Trigger
-                                        key={d.value}
-                                        value={d.value}
-                                        className="radix-tab-trigger"
-                                        data-testid={d.testId}
-                                    >
-                                        {d.label}
-                                    </Tabs.Trigger>
-                                ))}
-                            </Tabs.List>
-                            <div className="settings-tabs-mobile">
-                                <DropdownMenu.Root>
-                                    <DropdownMenu.Trigger asChild>
-                                        <button
-                                            className="btn btn-secondary settings-tabs-mobile-trigger"
-                                            data-testid="settings-tabs-mobile-trigger"
-                                            aria-label={t("ui.settings.open_tab_menu", "Tab-Menü öffnen")}
-                                        >
-                                            <Menu size={16}/>
-                                            <span>{activeLabel}</span>
-                                        </button>
-                                    </DropdownMenu.Trigger>
-                                    <DropdownMenu.Portal>
-                                        <DropdownMenu.Content className="hamburger-menu-content" align="start" sideOffset={4}>
-                                            {tabDefs.map((d) => (
-                                                <DropdownMenu.Item
-                                                    key={d.value}
-                                                    className="hamburger-menu-item"
-                                                    data-testid={`${d.testId}-mobile`}
-                                                    onSelect={() => handleTabChange(d.value)}
-                                                >
-                                                    {d.label}
-                                                    {d.value === activeTab ? <Check size={14}/> : null}
-                                                </DropdownMenu.Item>
-                                            ))}
-                                        </DropdownMenu.Content>
-                                    </DropdownMenu.Portal>
-                                </DropdownMenu.Root>
-                            </div>
-                        </>
-                    );
-                })()}
+            {/* Mobile dropdown — preserved from the pre-sidebar layout.
+                C2 will refine the responsive behaviour. */}
+            <div className="settings-tabs-mobile">
+                <DropdownMenu.Root>
+                    <DropdownMenu.Trigger asChild>
+                        <button
+                            className="btn btn-secondary settings-tabs-mobile-trigger"
+                            data-testid="settings-tabs-mobile-trigger"
+                            aria-label={t("ui.settings.open_tab_menu", "Tab-Menü öffnen")}
+                        >
+                            <Menu size={16}/>
+                            <span>{activeLabel}</span>
+                        </button>
+                    </DropdownMenu.Trigger>
+                    <DropdownMenu.Portal>
+                        <DropdownMenu.Content className="hamburger-menu-content" align="start" sideOffset={4}>
+                            {flatItems.map((d) => (
+                                <DropdownMenu.Item
+                                    key={d.value}
+                                    className="hamburger-menu-item"
+                                    data-testid={`${d.testId}-mobile`}
+                                    onSelect={() => handleTabChange(d.value)}
+                                >
+                                    {d.label}
+                                    {d.value === activeTab ? <Check size={14}/> : null}
+                                </DropdownMenu.Item>
+                            ))}
+                        </DropdownMenu.Content>
+                    </DropdownMenu.Portal>
+                </DropdownMenu.Root>
+            </div>
 
-            <main id="main-content" className={styles.main}>
-                <Tabs.Content value="erscheinungsbild">
-                    <ErscheinungsbildSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
+            <div className={styles.layout}>
+                <div className={styles.sidebarColumn}>
+                    <SettingsSidebar
+                        groups={sidebarGroups}
+                        activeTab={activeTab}
+                        onChange={handleTabChange}
                     />
-                </Tabs.Content>
-                <Tabs.Content value="verhalten">
-                    <VerhaltenSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                // Live language switch without reload
-                                const newLang = (data.app as Record<string, unknown>)?.default_language as string;
-                                if (newLang) setGlobalLang(newLang);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="editor">
-                    <EditorSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="ai">
-                    <AiAssistantSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="autoren">
-                    <AutorenSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
-                            } catch {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="topics">
-                    <TopicsSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.topics_saved", "Themen gespeichert"));
-                            } catch {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="plugins">
-                    <PluginSettings
-                        configs={pluginConfigs}
-                        appConfig={appConfig}
-                        onReload={loadData}
-                        onSavePlugin={async (name, settings) => {
-                            try {
-                                const updated = await api.settings.updatePlugin(name, settings);
-                                setPluginConfigs((prev) => ({...prev, [name]: updated as Record<string, unknown>}));
-                                showMessage(`${name} ${t("ui.settings.saved", "gespeichert")}`);
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                        }}
-                        onTogglePlugin={async (name, enable) => {
-                            try {
-                                if (enable) {
-                                    await api.settings.enablePlugin(name);
-                                } else {
-                                    await api.settings.disablePlugin(name);
+                </div>
+
+                <main id="main-content" className={styles.main}>
+                    {activeTab === "erscheinungsbild" && (
+                        <ErscheinungsbildSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.saved", "Gespeichert"));
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
                                 }
-                                const app = await api.settings.getApp();
-                                setAppConfig(app);
-                                showMessage(`${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`);
-                            } catch (err) {
-                                showMessage(t("ui.common.error", "Fehler"), true);
-                            }
-                        }}
-                        onAddPlugin={async (data) => {
-                            try {
-                                await api.settings.createPlugin(data);
-                                const plugins = await api.settings.listPlugins();
-                                setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
-                                showMessage(`${data.name} hinzugefügt`);
-                            } catch (err) {
-                                showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
-                            }
-                        }}
-                        onRemovePlugin={async (name) => {
-                            try {
-                                await api.settings.deletePlugin(name);
-                                const [plugins, app] = await Promise.all([
-                                    api.settings.listPlugins(),
-                                    api.settings.getApp(),
-                                ]);
-                                setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
-                                setAppConfig(app);
-                                showMessage(`${name} ${t("ui.common.remove", "entfernt")}`);
-                            } catch (err) {
-                                showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
-                            }
-                        }}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="comments">
-                    <CommentsAdminSection />
-                </Tabs.Content>
-                <Tabs.Content value="backups">
-                    <BackupsSettings />
-                </Tabs.Content>
-                {getDonationsConfig(appConfig) ? (
-                    <Tabs.Content value="support">
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "verhalten" && (
+                        <VerhaltenSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    // Live language switch without reload
+                                    const newLang = (data.app as Record<string, unknown>)?.default_language as string;
+                                    if (newLang) setGlobalLang(newLang);
+                                    showMessage(t("ui.settings.saved", "Gespeichert"));
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "editor" && (
+                        <EditorSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.saved", "Gespeichert"));
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "ai" && (
+                        <AiAssistantSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.saved", "Gespeichert"));
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "autoren" && (
+                        <AutorenSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
+                                } catch {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "topics" && (
+                        <TopicsSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.topics_saved", "Themen gespeichert"));
+                                } catch {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "plugins" && (
+                        <PluginSettings
+                            configs={pluginConfigs}
+                            appConfig={appConfig}
+                            onReload={loadData}
+                            onSavePlugin={async (name, settings) => {
+                                try {
+                                    const updated = await api.settings.updatePlugin(name, settings);
+                                    setPluginConfigs((prev) => ({...prev, [name]: updated as Record<string, unknown>}));
+                                    showMessage(`${name} ${t("ui.settings.saved", "gespeichert")}`);
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                            }}
+                            onTogglePlugin={async (name, enable) => {
+                                try {
+                                    if (enable) {
+                                        await api.settings.enablePlugin(name);
+                                    } else {
+                                        await api.settings.disablePlugin(name);
+                                    }
+                                    const app = await api.settings.getApp();
+                                    setAppConfig(app);
+                                    showMessage(`${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`);
+                                } catch (err) {
+                                    showMessage(t("ui.common.error", "Fehler"), true);
+                                }
+                            }}
+                            onAddPlugin={async (data) => {
+                                try {
+                                    await api.settings.createPlugin(data);
+                                    const plugins = await api.settings.listPlugins();
+                                    setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
+                                    showMessage(`${data.name} hinzugefügt`);
+                                } catch (err) {
+                                    showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
+                                }
+                            }}
+                            onRemovePlugin={async (name) => {
+                                try {
+                                    await api.settings.deletePlugin(name);
+                                    const [plugins, app] = await Promise.all([
+                                        api.settings.listPlugins(),
+                                        api.settings.getApp(),
+                                    ]);
+                                    setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
+                                    setAppConfig(app);
+                                    showMessage(`${name} ${t("ui.common.remove", "entfernt")}`);
+                                } catch (err) {
+                                    showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
+                                }
+                            }}
+                        />
+                    )}
+                    {activeTab === "comments" && <CommentsAdminSection />}
+                    {activeTab === "backups" && <BackupsSettings />}
+                    {activeTab === "support" && hasDonations && (
                         <SupportSection config={getDonationsConfig(appConfig)!} />
-                    </Tabs.Content>
-                ) : null}
-                <Tabs.Content value="about">
-                    <AboutSettings appConfig={appConfig} />
-                </Tabs.Content>
-                <Tabs.Content value="erweitert">
-                    <ErweitertSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
-                <Tabs.Content value="danger_zone">
-                    <DangerZoneSettings />
-                </Tabs.Content>
-            </main>
-            </Tabs.Root>
+                    )}
+                    {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
+                    {activeTab === "erweitert" && (
+                        <ErweitertSettings
+                            config={appConfig}
+                            onSave={async (data) => {
+                                setSaving(true);
+                                try {
+                                    const updated = await api.settings.updateApp(data);
+                                    setAppConfig(updated);
+                                    showMessage(t("ui.settings.saved", "Gespeichert"));
+                                } catch (err) {
+                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                                }
+                                setSaving(false);
+                            }}
+                            saving={saving}
+                        />
+                    )}
+                    {activeTab === "danger_zone" && <DangerZoneSettings />}
+                </main>
+            </div>
         </div>
     );
 }

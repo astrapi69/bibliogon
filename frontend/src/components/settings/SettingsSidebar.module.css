@@ -1,0 +1,64 @@
+/**
+ * SETT-L-1 C1: Sidebar navigation for the Settings page.
+ *
+ * Replaces the horizontal Radix.Tabs bar. Visual treatment for
+ * group headers + Danger-Zone red accent lands in C3; this
+ * module ships the structural shell only.
+ */
+
+.sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    align-self: start;
+    position: sticky;
+    top: 16px;
+    max-height: calc(100vh - 32px);
+}
+
+.group {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.item {
+    margin: 0;
+    padding: 0;
+}
+
+.link {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 8px 12px;
+    background: none;
+    border: none;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    font-family: var(--font-body);
+    color: var(--text-secondary);
+    transition: background 120ms, color 120ms;
+}
+
+.link:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.linkActive {
+    background: var(--bg-hover);
+    color: var(--accent);
+    font-weight: 600;
+}
+
+.link:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
