@@ -915,6 +915,7 @@ ui:
     count_plural: "Articles"
     list_error: "Could not load article list."
     new: "New Article"
+    import_more_tooltip: "More import sources"
     default_title: "New Article"
     create_error: "Could not create article."
     empty_heading: "No articles yet"

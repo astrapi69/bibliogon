@@ -915,6 +915,7 @@ ui:
     count_plural: "Artikel"
     list_error: "Konnte Artikelliste nicht laden."
     new: "Neuer Artikel"
+    import_more_tooltip: "Weitere Import-Quellen"
     default_title: "Neuer Artikel"
     create_error: "Konnte Artikel nicht erstellen."
     empty_heading: "Noch keine Artikel"

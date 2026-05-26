@@ -963,6 +963,7 @@ ui:
     count_plural: "Makale"
     list_error: "Makale listesi yuklenemedi."
     new: "Yeni makale"
+    import_more_tooltip: "Diğer içe aktarma kaynakları"
     default_title: "Yeni makale"
     create_error: "Makale olusturulamadi."
     empty_heading: "Henuz makale yok"

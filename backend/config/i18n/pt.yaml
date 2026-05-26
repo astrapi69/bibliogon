@@ -927,6 +927,7 @@ ui:
     count_plural: "Artigos"
     list_error: "Nao foi possivel carregar a lista de artigos."
     new: "Novo artigo"
+    import_more_tooltip: "Mais fontes de importação"
     default_title: "Novo artigo"
     create_error: "Nao foi possivel criar o artigo."
     empty_heading: "Ainda sem artigos"

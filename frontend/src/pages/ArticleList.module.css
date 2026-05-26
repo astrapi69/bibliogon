@@ -63,6 +63,31 @@
     margin: 0 4px;
 }
 
+/* Importieren split-button group. Mirrors ``.newBookGroup`` in
+   Dashboard.module.css so the two dashboards' top-nav layouts
+   stay aligned. The chevron exposes article-specific import
+   flows (e.g. "Aus Medium importieren") that don't deserve a
+   standalone toolbar button. */
+.importGroup {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.importGroup > :first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.importChevron {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    border-left: 1px solid var(--border);
+    padding-left: 8px;
+    padding-right: 8px;
+    min-width: auto;
+}
+
 .trashBadge {
     position: absolute;
     top: -4px;

@@ -7,6 +7,20 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-26 — Article-Dashboard import-chevron tooltip (ES, FR, EL, PT, TR, JA)
+
+1 key translated into 6 languages = 6 translation cells. Stems
+from the Article Dashboard top-nav alignment fix (the standalone
+"Aus Medium importieren" button collapsed into an Importieren
+split-button so the top-nav doesn't widen the Article view past
+the Book Dashboard width).
+
+| Key | Languages |
+|-----|-----------|
+| `ui.articles.import_more_tooltip` | ES, FR, EL, PT, TR, JA |
+
+DE canonical, EN direct-translation authored.
+
 ## 2026-05-26 — Settings-sidebar group labels (ES, FR, EL, PT, TR, JA)
 
 5 keys translated into 6 languages = 30 translation cells. All

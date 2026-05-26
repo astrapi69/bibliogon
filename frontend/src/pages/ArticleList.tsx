@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import {
     AlertTriangle,
     BookOpen,
+    ChevronDown,
     ChevronLeft,
     Download,
     FileText,
@@ -680,11 +681,18 @@ export default function ArticleList() {
 
                         {/* Desktop chrome: every icon button + ThemeToggle.
                             Hidden under 768px; the hamburger menu below
-                            takes over on mobile. */}
+                            takes over on mobile. Structure mirrors
+                            Dashboard.tsx so the top-nav layout doesn't
+                            jump when switching between the two
+                            dashboards. */}
                         <div
                             className="hide-mobile"
                             style={{ display: "flex", alignItems: "center", gap: 6 }}
                         >
+                            {/* Symmetric separator before the action
+                                cluster — Book Dashboard ships the same
+                                separator at the same position. */}
+                            <div className={layout.headerSeparator} />
                             <button
                                 className="btn btn-secondary btn-sm"
                                 data-testid="article-backup-export-btn"
@@ -694,22 +702,62 @@ export default function ArticleList() {
                             >
                                 <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
                             </button>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                data-testid="article-import-wizard-btn"
-                                onClick={() => setImportWizardOpen(true)}
-                                title={t("ui.dashboard.import", "Importieren")}
-                            >
-                                <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
-                            </button>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                data-testid="article-medium-import-btn"
-                                onClick={() => navigate("/articles/import/medium")}
-                                title={t("ui.medium_import.nav_label", "Aus Medium importieren")}
-                            >
-                                <Upload size={14} /> {t("ui.medium_import.nav_label", "Aus Medium importieren")}
-                            </button>
+                            {/* Import-Group split-button: the primary
+                                ``Importieren`` button keeps the existing
+                                article-import-wizard flow; the chevron
+                                exposes the article-specific
+                                ``Aus Medium importieren`` flow so it
+                                doesn't widen the top nav with a third
+                                button. Mirrors the
+                                ``newBookGroup`` split-button on
+                                Dashboard.tsx. */}
+                            <div className={layout.importGroup} data-testid="article-import-group">
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="article-import-wizard-btn"
+                                    onClick={() => setImportWizardOpen(true)}
+                                    title={t("ui.dashboard.import", "Importieren")}
+                                >
+                                    <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
+                                </button>
+                                <DropdownMenu.Root>
+                                    <DropdownMenu.Trigger asChild>
+                                        <button
+                                            type="button"
+                                            className={`btn btn-secondary btn-sm ${layout.importChevron}`}
+                                            data-testid="article-import-chevron"
+                                            title={t(
+                                                "ui.articles.import_more_tooltip",
+                                                "Weitere Import-Quellen",
+                                            )}
+                                            aria-label={t(
+                                                "ui.articles.import_more_tooltip",
+                                                "Weitere Import-Quellen",
+                                            )}
+                                        >
+                                            <ChevronDown size={14} />
+                                        </button>
+                                    </DropdownMenu.Trigger>
+                                    <DropdownMenu.Portal>
+                                        <DropdownMenu.Content
+                                            className="hamburger-menu-content"
+                                            align="end"
+                                            sideOffset={4}
+                                        >
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                data-testid="article-medium-import-btn"
+                                                onSelect={() => navigate("/articles/import/medium")}
+                                            >
+                                                <Upload size={14} />
+                                                <span style={{ marginLeft: 6 }}>
+                                                    {t("ui.medium_import.nav_label", "Aus Medium importieren")}
+                                                </span>
+                                            </DropdownMenu.Item>
+                                        </DropdownMenu.Content>
+                                    </DropdownMenu.Portal>
+                                </DropdownMenu.Root>
+                            </div>
                             <div className={layout.headerSeparator} />
                             <button
                                 className="btn-icon"

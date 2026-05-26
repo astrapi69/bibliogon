@@ -927,6 +927,7 @@ ui:
     count_plural: "記事"
     list_error: "記事リストを読み込めませんでした。"
     new: "新しい記事"
+    import_more_tooltip: "他のインポート元"
     default_title: "新しい記事"
     create_error: "記事を作成できませんでした。"
     empty_heading: "まだ記事がありません"
