@@ -1,12 +1,13 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-26 (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 CLOSED — 5-commit ship of the Settings UX Phase 2 Allgemein-tab split. Allgemein → Erscheinungsbild (Theme + Dashboard-Views) + Verhalten (Language + Trash + flags) + Erweitert (SshKeySection + White-Label). White-Label uncollapsed in its own tab. Vitest 2052 → 2056 (+4 net; +11 from new tests, -7 from deleted AppSettings.test.tsx); i18n parity 75/75; tsc clean. Tab count 12 → 14.)
-Previous: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle. Dashboard-view sub-card grouping + SshKeySection own card + Editor tab extraction + sectionTitle standardisation + HelpText component + White-Label collapsible "Erweitert" section + SectionHeader composition component + per-section descriptions across 9 tabs in 8 catalogs. Vitest 2037 → 2052 (+15); i18n parity 75/75; tsc clean.)
+Last updated: 2026-05-26 (SETT-PHASE-3-TOGGLE-COMPONENT-01 CLOSED — 4-commit ship of the shared Toggle composition component + 5-site migration. New ``<Toggle label description checked onChange testId indentedDescription>{children}</Toggle>`` covering canonical checkbox-with-description pattern. Migrated: VerhaltenSettings (3 sites) + AiAssistantSettings (1) + AudiobookSettingsPanel (1). Vitest 2056 → 2062 (+6 from Toggle.test.tsx); tsc clean.)
+Previous: 2026-05-26 (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 CLOSED — 5-commit ship of the Settings UX Phase 2 Allgemein-tab split. Allgemein → Erscheinungsbild + Verhalten + Erweitert. Tab count 12 → 14.)
+Previous: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle.)
 Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75.)
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
 Current version: v0.37.0
-Open tasks: 71 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -56,38 +57,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **SETT-PHASE-3-TOGGLE-COMPONENT-01** (P3, RCU, filed
-  2026-05-25 from Settings-page UX audit per user adjudication):
-  extract a shared `<Toggle>` component and migrate all
-  checkbox-style settings to use it.
-
-  ### Scope (SETT-M-3 from the audit)
-
-  - Component shape:
-    `<Toggle label="..." description="..." checked={} onChange={}>`.
-  - Migrate ~15 checkbox sites across Settings sub-components.
-  - Matches Notion / Linear "label + description in same row"
-    pattern. Replaces the current
-    `<input type="checkbox" style={{accentColor: "var(--accent)"}}>`
-    + plain `<small>` help-text pattern that varies across sites.
-  - Vitest covering the component shape; per-call-site test
-    updates may need testid namespace adjustments.
-
-  ### Trigger
-
-  Ship after SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 lands. Per
-  user adjudication.
-
-  ### Effort
-
-  4-5 commits.
-
-  ### Cross-references
-
-  Depends on SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 (toggles
-  re-grouped first, then the shared component lands with the
-  new groupings).
 
 - **HELP-DOCS-V0.37.0-GAPS-01** (P3, DOCS, filed 2026-05-25
   from v0.37.0 release-time help-docs review): four features
