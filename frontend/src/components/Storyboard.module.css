@@ -196,3 +196,35 @@
     text-transform: capitalize;
     font-weight: 500;
 }
+
+.dragHandle {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--bg) 80%, transparent);
+    color: color-mix(in srgb, var(--text) 50%, transparent);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.15s, color 0.15s;
+    z-index: 2;
+    user-select: none;
+}
+
+.card:hover ~ .dragHandle,
+div:hover > .dragHandle,
+.dragHandle:hover,
+.dragHandle:focus-visible {
+    opacity: 1;
+    color: var(--text);
+    background: color-mix(in srgb, var(--bg) 95%, transparent);
+}
+
+.dragHandle:active {
+    cursor: grabbing;
+}

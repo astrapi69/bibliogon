@@ -19,8 +19,25 @@
  * clicked page selected — wired via ``onSelectPage`` callback that
  * the parent (BookEditor) routes through history state.
  */
-import React, {useEffect, useMemo, useState} from "react"
-import {ArrowLeft, FileImage, ImageOff} from "lucide-react"
+import React, {useCallback, useEffect, useMemo, useState} from "react"
+import {ArrowLeft, FileImage, GripVertical, ImageOff} from "lucide-react"
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    useSensor,
+    useSensors,
+    type DragEndEvent,
+} from "@dnd-kit/core"
+import {
+    arrayMove,
+    rectSortingStrategy,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+} from "@dnd-kit/sortable"
+import {CSS} from "@dnd-kit/utilities"
 
 import {api, type Page} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
@@ -68,6 +85,48 @@ export default function Storyboard({
 
     const grouped = useMemo(() => groupByActGroup(pages), [pages])
     const totalPages = pages.length
+    const pageIds = useMemo(() => pages.map((p) => p.id), [pages])
+
+    // @dnd-kit reorder mirrors PageThumbnails (codebase convention is
+    // inline reorder logic per-component; no shared useSortable hook).
+    // Pointer activation constraint of 5px prevents drag-on-click;
+    // KeyboardSensor enables Tab+Space/Enter reorder for accessibility.
+    const sensors = useSensors(
+        useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
+        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
+    )
+
+    const handleDragEnd = useCallback(
+        (event: DragEndEvent) => {
+            const {active, over} = event
+            if (!over || active.id === over.id) return
+            const oldIndex = pageIds.indexOf(active.id as string)
+            const newIndex = pageIds.indexOf(over.id as string)
+            if (oldIndex === -1 || newIndex === -1) return
+            const next = arrayMove(pageIds, oldIndex, newIndex)
+            // Optimistic local reorder before the network round-trip
+            // so the cards don't visibly snap back to their old slots.
+            // The /reorder endpoint returns the canonical re-positioned
+            // rows; replace local state with that authoritative shape.
+            const nextPages = next
+                .map((id) => pages.find((p) => p.id === id))
+                .filter((p): p is Page => Boolean(p))
+            setPages(nextPages.map((p, idx) => ({...p, position: idx + 1})))
+            void api.pages
+                .reorder(bookId, next)
+                .then((rows) => setPages(rows))
+                .catch((err: unknown) => {
+                    // On failure, refetch authoritative order so the
+                    // UI doesn't silently keep the optimistic state.
+                    setLoadError(err instanceof Error ? err.message : String(err))
+                    void api.pages
+                        .list(bookId)
+                        .then((rows) => setPages(rows))
+                        .catch(() => {})
+                })
+        },
+        [bookId, pageIds, pages],
+    )
 
     return (
         <div className={styles.container} data-testid={testidNamespace}>
@@ -124,32 +183,42 @@ export default function Storyboard({
                         )}
                     </div>
                 ) : (
-                    grouped.map(({actGroup, pages: groupPages}, idx) => (
-                        <div
-                            key={actGroup ?? `__no-act-${idx}`}
-                            className={styles.actGroup}
-                            data-testid={`${testidNamespace}-act-group`}
-                            data-act-group={actGroup ?? ""}
-                        >
-                            {actGroup && (
-                                <h3 className={styles.actGroupHeader}>{actGroup}</h3>
-                            )}
-                            <div
-                                className={styles.grid}
-                                data-testid={`${testidNamespace}-grid`}
-                            >
-                                {groupPages.map((page) => (
-                                    <StoryboardCard
-                                        key={page.id}
-                                        bookId={bookId}
-                                        page={page}
-                                        onSelect={onSelectPage}
-                                        testidNamespace={testidNamespace}
-                                    />
-                                ))}
-                            </div>
-                        </div>
-                    ))
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                    >
+                        <SortableContext items={pageIds} strategy={rectSortingStrategy}>
+                            {grouped.map(({actGroup, pages: groupPages}, idx) => (
+                                <div
+                                    key={actGroup ?? `__no-act-${idx}`}
+                                    className={styles.actGroup}
+                                    data-testid={`${testidNamespace}-act-group`}
+                                    data-act-group={actGroup ?? ""}
+                                >
+                                    {actGroup && (
+                                        <h3 className={styles.actGroupHeader}>
+                                            {actGroup}
+                                        </h3>
+                                    )}
+                                    <div
+                                        className={styles.grid}
+                                        data-testid={`${testidNamespace}-grid`}
+                                    >
+                                        {groupPages.map((page) => (
+                                            <SortableStoryboardCard
+                                                key={page.id}
+                                                bookId={bookId}
+                                                page={page}
+                                                onSelect={onSelectPage}
+                                                testidNamespace={testidNamespace}
+                                            />
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </SortableContext>
+                    </DndContext>
                 )}
             </div>
         </div>
@@ -161,6 +230,38 @@ interface CardProps {
     page: Page
     onSelect: (pageId: string) => void
     testidNamespace: string
+}
+
+/** Sortable wrapper around StoryboardCard. The card itself is a
+ *  <button> so the drag-handle is a sibling <span> with the
+ *  ``draggable`` listeners + attributes; clicking the card body
+ *  navigates via ``onSelect``, gripping the handle starts a drag.
+ *  Mirrors PageThumbnails' SortablePageRow split between row +
+ *  drag handle. */
+function SortableStoryboardCard(props: CardProps) {
+    const {attributes, listeners, setNodeRef, transform, transition, isDragging} =
+        useSortable({id: props.page.id})
+    const sortableStyle: React.CSSProperties = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        opacity: isDragging ? 0.5 : undefined,
+        position: "relative",
+    }
+    const {t} = useI18n()
+    return (
+        <div ref={setNodeRef} style={sortableStyle}>
+            <StoryboardCard {...props} />
+            <span
+                {...attributes}
+                {...listeners}
+                className={styles.dragHandle}
+                data-testid={`${props.testidNamespace}-drag-handle-${props.page.id}`}
+                aria-label={t("ui.storyboard.drag_handle", "Drag to reorder")}
+            >
+                <GripVertical size={14} />
+            </span>
+        </div>
+    )
 }
 
 function StoryboardCard({bookId, page, onSelect, testidNamespace}: CardProps) {
