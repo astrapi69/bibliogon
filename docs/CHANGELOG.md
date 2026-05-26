@@ -42,10 +42,22 @@ section descriptions + dedicated tabs.
 - **Settings Phase 3 — Toggle composition component**
   (``SETT-PHASE-3-TOGGLE-COMPONENT-01``, commits
   ``cabd51c..1404cc0`` + ``482c685``). New ``Toggle`` component
-  ships the same checkbox+label+help-text shape as the
-  pre-existing inline pattern in ~15 sites. 5 sites migrated
-  in this release (VerhaltenSettings 3 + AI 1 + Audiobook 1);
-  remaining 10 deferred as a P3 RCU completion sweep.
+  ships the canonical checkbox + label + HelpText pattern. 5
+  canonical-shape sites migrated (VerhaltenSettings 3 + AI 1 +
+  AudiobookSettingsPanel readChapterNumber 1). The remaining
+  6 checkbox sites in Settings sub-components are intentional
+  design-intent exemptions documented in the
+  ``Toggle.tsx`` docstring per the design-intent-axis lessons-
+  learned rule — NOT deferred work:
+  - 2 inline label-after-checkbox sites (AudiobookSettingsPanel
+    ``highQualityOnly``, TranslationSettingsPanel ``freeApi``)
+    where Toggle adds no value
+  - 3 list-row sites (ErweitertSettings
+    ``white-label-core-*`` loop) with a different structural
+    shape (strong + side-by-side description + bottom border)
+  - 1 generic plugin-setting renderer
+    (``ScalarSettingField``) out of scope for the Settings-
+    specific component
 
 - **Settings — Autor + Autoren-Datenbank consolidated**
   (``SETT-AUTHORS-TAB-CONSOLIDATION-01``, commits ``e45d8ae`` +
