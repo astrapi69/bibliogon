@@ -3,8 +3,8 @@ import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "./RadixSelect";
-import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
+import {Toggle} from "./Toggle";
 
 export function VerhaltenSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -67,78 +67,61 @@ export function VerhaltenSettings({config, onSave, saving}: {
                     />
                 </div>
                 <div className="field">
-                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
-                        <input
-                            type="checkbox"
-                            checked={trashEnabled}
-                            onChange={(e) => setTrashEnabled(e.target.checked)}
-                            data-testid="settings-trash-enabled"
-                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
-                        />
-                        <span className="label" style={{margin: 0}}>{t("ui.settings.trash_checkbox", "Gelöschte Bücher automatisch entfernen")}</span>
-                    </label>
-                    {trashEnabled && (
-                        <div style={{marginTop: 8, marginLeft: 24}}>
-                            <label className="label">{t("ui.settings.trash_delete_after", "Endgültig löschen nach")}</label>
-                            <RadixSelect
-                                value={trashDays}
-                                onValueChange={setTrashDays}
-                                testId="settings-trash-days"
-                                options={[
-                                    {value: "7", label: t("ui.settings.trash_days_7", "7 Tage")},
-                                    {value: "14", label: t("ui.settings.trash_days_14", "14 Tage")},
-                                    {value: "30", label: t("ui.settings.trash_days_30", "30 Tage")},
-                                    {value: "60", label: t("ui.settings.trash_days_60", "60 Tage")},
-                                    {value: "90", label: t("ui.settings.trash_days_90", "90 Tage")},
-                                    {value: "180", label: t("ui.settings.trash_days_180", "180 Tage")},
-                                    {value: "365", label: t("ui.settings.trash_days_365", "365 Tage")},
-                                ]}
-                            />
-                        </div>
-                    )}
-                    <HelpText>
-                        {trashEnabled
+                    <Toggle
+                        label={t("ui.settings.trash_checkbox", "Gelöschte Bücher automatisch entfernen")}
+                        checked={trashEnabled}
+                        onChange={setTrashEnabled}
+                        testId="settings-trash-enabled"
+                        description={trashEnabled
                             ? t("ui.settings.trash_info", "Bücher im Papierkorb werden nach {days} Tagen automatisch gelöscht").replace("{days}", trashDays)
                             : t("ui.settings.trash_disabled", "Deaktiviert (manuell löschen)")}
-                    </HelpText>
+                    >
+                        {trashEnabled && (
+                            <div style={{marginTop: 8, marginLeft: 24}}>
+                                <label className="label">{t("ui.settings.trash_delete_after", "Endgültig löschen nach")}</label>
+                                <RadixSelect
+                                    value={trashDays}
+                                    onValueChange={setTrashDays}
+                                    testId="settings-trash-days"
+                                    options={[
+                                        {value: "7", label: t("ui.settings.trash_days_7", "7 Tage")},
+                                        {value: "14", label: t("ui.settings.trash_days_14", "14 Tage")},
+                                        {value: "30", label: t("ui.settings.trash_days_30", "30 Tage")},
+                                        {value: "60", label: t("ui.settings.trash_days_60", "60 Tage")},
+                                        {value: "90", label: t("ui.settings.trash_days_90", "90 Tage")},
+                                        {value: "180", label: t("ui.settings.trash_days_180", "180 Tage")},
+                                        {value: "365", label: t("ui.settings.trash_days_365", "365 Tage")},
+                                    ]}
+                                />
+                            </div>
+                        )}
+                    </Toggle>
                 </div>
                 <div className="field">
-                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
-                        <input
-                            type="checkbox"
-                            checked={deletePermanently}
-                            onChange={(e) => setDeletePermanently(e.target.checked)}
-                            data-testid="settings-delete-permanently"
-                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
-                        />
-                        <span className="label" style={{margin: 0}}>{t("ui.settings.delete_permanently", "Gelöschte Bücher sofort permanent löschen")}</span>
-                    </label>
-                    <HelpText indented>
-                        {t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben.")}
-                    </HelpText>
+                    <Toggle
+                        label={t("ui.settings.delete_permanently", "Gelöschte Bücher sofort permanent löschen")}
+                        description={t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben.")}
+                        checked={deletePermanently}
+                        onChange={setDeletePermanently}
+                        testId="settings-delete-permanently"
+                        indentedDescription
+                    />
                 </div>
                 <div className="field">
-                    <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer"}}>
-                        <input
-                            type="checkbox"
-                            checked={allowBooksWithoutAuthor}
-                            onChange={(e) => setAllowBooksWithoutAuthor(e.target.checked)}
-                            data-testid="settings-allow-books-without-author"
-                            style={{width: 16, height: 16, accentColor: "var(--accent)"}}
-                        />
-                        <span className="label" style={{margin: 0}}>
-                            {t(
-                                "ui.settings.allow_books_without_author",
-                                "Bücher ohne Autor zulassen (erweitert)",
-                            )}
-                        </span>
-                    </label>
-                    <HelpText indented>
-                        {t(
+                    <Toggle
+                        label={t(
+                            "ui.settings.allow_books_without_author",
+                            "Bücher ohne Autor zulassen (erweitert)",
+                        )}
+                        description={t(
                             "ui.settings.allow_books_without_author_hint",
                             "Aktiviere diese Option, um Bücher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbüchern, bei denen keine Autorinformation nötig ist.",
                         )}
-                    </HelpText>
+                        checked={allowBooksWithoutAuthor}
+                        onChange={setAllowBooksWithoutAuthor}
+                        testId="settings-allow-books-without-author"
+                        indentedDescription
+                    />
                 </div>
                 <button
                     className="btn btn-primary"
