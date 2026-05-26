@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-25 (v0.37.0 released — safety + parity + polish; 53 commits across accessibility WCAG 2.1 AA, Danger Zone reset, bulk-restore parity, Medium-import polish, Dashboard pagination, Book.repository_url, editor display settings, docs/archive/ restructure)
-Latest release: v0.37.0 (2026-05-25) — see [changelog/releases/v0.37.0.md](../changelog/releases/v0.37.0.md) for the full per-release notes.
-Previous release: v0.36.0 (2026-05-23) — largest release since v0.30.0 by commit count.
+Last updated: 2026-05-26 (v0.38.0 released — Settings-UX overhaul; 30 commits across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar nav) + Article Dashboard nav-jump fix.)
+Latest release: v0.38.0 (2026-05-26) — see [changelog/releases/v0.38.0.md](../changelog/releases/v0.38.0.md) for the full per-release notes.
+Previous release: v0.37.0 (2026-05-25) — safety + parity + polish release; 53 commits across accessibility WCAG 2.1 AA + Danger Zone reset + bulk-restore parity + Medium-import polish + Dashboard pagination + Book.repository_url + editor display settings.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).

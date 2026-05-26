@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
+Last updated: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
+Previous: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
 Previous: 2026-05-26 (SETT-PHASE-3-TOGGLE-COMPONENT-01 CLOSED — 4-commit ship of the shared Toggle composition component + 5-site migration.)
 Previous: 2026-05-26 (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 CLOSED — 5-commit ship of the Settings UX Phase 2 Allgemein-tab split. Tab count 12 → 14.)
 Previous: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle.)
