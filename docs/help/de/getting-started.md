@@ -67,6 +67,10 @@ Die Arbeit an Bibliogon selbst nutzt ein anderes Setup: `make install` (Poetry +
 
 Wenn du [http://localhost:7880](http://localhost:7880) zum ersten Mal öffnest, ist die Datenbank leer. Bibliogon nutzt SQLite als lokale Datenbank; alle Daten liegen auf deinem Rechner, es wird kein externer Server benötigt. Über die Einstellungen kannst du Sprache und Theme anpassen. Es stehen sechs Themes (Warm Literary, Cool Modern, Nord, Klassisch, Studio, Notizbuch) jeweils in Light- und Dark-Variante zur Verfügung - Details im Abschnitt Themes.
 
+Beim ersten Aufruf zeigt Bibliogon den Onboarding-Assistenten unter `/get-started` an — sieben kurze Schritte, die durch die wichtigsten Funktionen führen.
+
+![Erste-Schritte-Onboarding-Assistent, Schritt 1 von 7](../assets/screenshots/get-started.png)
+
 ## Dashboard: Filter, Sortierung, Papierkorb
 
 Wenn die Buchsammlung wächst, bietet das Dashboard oberhalb des Buch-Rasters Such-, Filter- und Sortier-Steuerungen. Du kannst nach Titel, Autor, Genre oder Sprache suchen, nach Genre und Sprache filtern und nach Datum, Titel oder Autor in beiden Richtungen sortieren.
