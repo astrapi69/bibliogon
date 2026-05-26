@@ -340,6 +340,10 @@ class Page(Base):
         ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
     )
     layout_config: Mapped[str | None] = mapped_column(Text, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    story_beat: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    mood_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    act_group: Mapped[str | None] = mapped_column(String(100), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
