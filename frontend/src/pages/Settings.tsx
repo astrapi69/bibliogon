@@ -122,6 +122,7 @@ export default function Settings() {
         const groups: SidebarGroup[] = [
             {
                 key: "darstellung",
+                label: t("ui.settings.group_darstellung", "Darstellung"),
                 items: [
                     {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
                     {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
@@ -130,6 +131,7 @@ export default function Settings() {
             },
             {
                 key: "inhalt",
+                label: t("ui.settings.group_inhalt", "Inhalt"),
                 items: [
                     {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
                     {value: "autoren", label: t("ui.settings.tab_autoren", "Autoren"), testId: "settings-tab-autoren"},
@@ -138,6 +140,7 @@ export default function Settings() {
             },
             {
                 key: "system",
+                label: t("ui.settings.group_system", "System"),
                 items: [
                     {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                     {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
@@ -147,6 +150,7 @@ export default function Settings() {
             },
             {
                 key: "info",
+                label: t("ui.settings.group_info", "Info"),
                 items: [
                     {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
                     ...(hasDonations
@@ -156,6 +160,11 @@ export default function Settings() {
             },
             {
                 key: "danger",
+                // The single-item Danger Zone group renders only the
+                // item (no group header) since the header text would
+                // duplicate the item label. ``variant: "danger"``
+                // drives the red accent + visual separation.
+                variant: "danger",
                 items: [
                     {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
                 ],

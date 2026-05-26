@@ -26,6 +26,7 @@ vi.mock("../../hooks/useI18n", () => ({
 const groups: SidebarGroup[] = [
     {
         key: "darstellung",
+        label: "Darstellung",
         items: [
             {value: "erscheinungsbild", label: "Erscheinungsbild", testId: "settings-tab-erscheinungsbild"},
             {value: "verhalten", label: "Verhalten", testId: "settings-tab-verhalten"},
@@ -34,6 +35,7 @@ const groups: SidebarGroup[] = [
     },
     {
         key: "inhalt",
+        label: "Inhalt",
         items: [
             {value: "ai", label: "KI-Assistent", testId: "settings-tab-ai"},
             {value: "autoren", label: "Autoren", testId: "settings-tab-autoren"},
@@ -42,6 +44,7 @@ const groups: SidebarGroup[] = [
     },
     {
         key: "system",
+        label: "System",
         items: [
             {value: "plugins", label: "Plugins", testId: "settings-tab-plugins"},
             {value: "comments", label: "Kommentare", testId: "settings-tab-comments"},
@@ -51,12 +54,14 @@ const groups: SidebarGroup[] = [
     },
     {
         key: "info",
+        label: "Info",
         items: [
             {value: "about", label: "Über", testId: "settings-tab-about"},
         ],
     },
     {
         key: "danger",
+        variant: "danger",
         items: [
             {value: "danger_zone", label: "Gefahrenzone", testId: "settings-tab-danger-zone"},
         ],
@@ -115,5 +120,57 @@ describe("SettingsSidebar", () => {
         // present. Re-render without it and assert it is absent.
         render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
         expect(screen.queryByTestId("settings-tab-support")).toBeNull();
+    });
+
+    // --- C3: group headers + Danger Zone visual treatment ---
+
+    it("renders an <h2> group header for every group that has a label", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        // 4 groups have labels: darstellung, inhalt, system, info.
+        // The danger group has no label by design (single-item
+        // group; header would duplicate the item label).
+        const labelledKeys = ["darstellung", "inhalt", "system", "info"];
+        for (const key of labelledKeys) {
+            const heading = screen.getByTestId(`settings-sidebar-group-label-${key}`);
+            expect(heading.tagName).toBe("H2");
+        }
+        expect(screen.queryByTestId("settings-sidebar-group-label-danger")).toBeNull();
+    });
+
+    it("group headers show the label text from the groups prop", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        expect(screen.getByTestId("settings-sidebar-group-label-darstellung").textContent).toBe("Darstellung");
+        expect(screen.getByTestId("settings-sidebar-group-label-inhalt").textContent).toBe("Inhalt");
+        expect(screen.getByTestId("settings-sidebar-group-label-system").textContent).toBe("System");
+        expect(screen.getByTestId("settings-sidebar-group-label-info").textContent).toBe("Info");
+    });
+
+    it("group headers associate the items via aria-labelledby", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        const heading = screen.getByTestId("settings-sidebar-group-label-darstellung");
+        const list = screen.getByTestId("settings-sidebar-group-darstellung");
+        expect(heading.id).toBe("settings-sidebar-heading-darstellung");
+        expect(list).toHaveAttribute("aria-labelledby", "settings-sidebar-heading-darstellung");
+    });
+
+    it("Danger Zone item carries the danger styling hook", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        const dangerItem = screen.getByTestId("settings-tab-danger-zone");
+        // The danger variant must add a class that contains the
+        // word "Danger" — CSS modules hash class names so the test
+        // matches by substring rather than the literal name.
+        expect(dangerItem.className).toMatch(/Danger/i);
+    });
+
+    it("non-danger items do NOT carry the danger styling hook", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        const normalItem = screen.getByTestId("settings-tab-erscheinungsbild");
+        expect(normalItem.className).not.toMatch(/linkDanger/);
+    });
+
+    it("Danger Zone section carries the section-danger styling hook", () => {
+        render(<SettingsSidebar groups={groups} activeTab="erscheinungsbild" onChange={vi.fn()}/>);
+        const section = screen.getByTestId("settings-sidebar-section-danger");
+        expect(section.className).toMatch(/Danger/i);
     });
 });

@@ -1,20 +1,49 @@
 /**
- * SETT-L-1 C1: Sidebar navigation for the Settings page.
+ * SETT-L-1: Sidebar navigation for the Settings page.
  *
- * Replaces the horizontal Radix.Tabs bar. Visual treatment for
- * group headers + Danger-Zone red accent lands in C3; this
- * module ships the structural shell only.
+ * C1 shipped the structural shell (nav + grouped lists).
+ * C3 layers visual treatment: group header labels + Danger-Zone
+ * red accent + extra top spacing to separate the destructive
+ * group from the rest of the nav.
  */
 
 .sidebar {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 4px;
     overflow-y: auto;
     align-self: start;
     position: sticky;
     top: 16px;
     max-height: calc(100vh - 32px);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Visually separate the Danger Zone group from the rest of the
+   nav: extra top margin + a thin divider above. The divider
+   uses --border (a neutral color) so the red accent on the
+   item is what carries the "destructive" cue, not the divider. */
+.sectionDanger {
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.groupLabel {
+    font-family: var(--font-body);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    margin: 0;
+    padding: 0 12px;
+    line-height: 1.4;
 }
 
 .group {
@@ -61,4 +90,25 @@
 .link:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
+}
+
+/* Danger Zone item: red accent on the base + hover + active
+   states. The destructive tone reads as "be careful with this
+   tab" without needing a dedicated icon. */
+.linkDanger {
+    color: var(--danger);
+}
+
+.linkDanger:hover {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.linkDanger.linkActive {
+    background: var(--danger-bg);
+    color: var(--danger);
+}
+
+.linkDanger:focus-visible {
+    outline-color: var(--danger);
 }

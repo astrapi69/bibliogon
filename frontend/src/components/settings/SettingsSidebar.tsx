@@ -10,6 +10,14 @@ export interface SidebarItem {
 export interface SidebarGroup {
     key: string;
     items: SidebarItem[];
+    // C3: optional visible group header (rendered as <h2>). Groups
+    // without a label render only their items — used by the
+    // single-item Danger Zone group where a header would duplicate
+    // the item label.
+    label?: string;
+    // C3: "danger" tints the items + adds extra top spacing so the
+    // group reads as a visually-distinct destructive section.
+    variant?: "default" | "danger";
 }
 
 interface Props {
@@ -18,10 +26,9 @@ interface Props {
     onChange: (next: string) => void;
 }
 
-// SETT-L-1 C1: replaces the horizontal Radix.Tabs bar (13 tabs
-// produced a horizontal scrollbar at 900px max-width). Group
-// labels render plain in C1; C3 layers visual treatment +
-// Danger-Zone red accent on top of this structural shell.
+// SETT-L-1: replaces the horizontal Radix.Tabs bar. C1 wired the
+// structural shell; C3 adds visible group headers + Danger-Zone
+// red accent.
 export function SettingsSidebar({groups, activeTab, onChange}: Props) {
     const {t} = useI18n();
     return (
@@ -30,30 +37,54 @@ export function SettingsSidebar({groups, activeTab, onChange}: Props) {
             aria-label={t("ui.settings.sidebar_nav", "Einstellungs-Navigation")}
             data-testid="settings-sidebar"
         >
-            {groups.map((group) => (
-                <ul
-                    key={group.key}
-                    className={styles.group}
-                    data-testid={`settings-sidebar-group-${group.key}`}
-                >
-                    {group.items.map((item) => {
-                        const isActive = item.value === activeTab;
-                        return (
-                            <li key={item.value} className={styles.item}>
-                                <button
-                                    type="button"
-                                    className={`${styles.link}${isActive ? ` ${styles.linkActive}` : ""}`}
-                                    data-testid={item.testId}
-                                    aria-current={isActive ? "page" : undefined}
-                                    onClick={() => onChange(item.value)}
-                                >
-                                    {item.label}
-                                </button>
-                            </li>
-                        );
-                    })}
-                </ul>
-            ))}
+            {groups.map((group) => {
+                const isDanger = group.variant === "danger";
+                const headingId = group.label ? `settings-sidebar-heading-${group.key}` : undefined;
+                return (
+                    <div
+                        key={group.key}
+                        className={`${styles.section}${isDanger ? ` ${styles.sectionDanger}` : ""}`}
+                        data-testid={`settings-sidebar-section-${group.key}`}
+                    >
+                        {group.label ? (
+                            <h2
+                                id={headingId}
+                                className={styles.groupLabel}
+                                data-testid={`settings-sidebar-group-label-${group.key}`}
+                            >
+                                {group.label}
+                            </h2>
+                        ) : null}
+                        <ul
+                            className={styles.group}
+                            data-testid={`settings-sidebar-group-${group.key}`}
+                            aria-labelledby={headingId}
+                        >
+                            {group.items.map((item) => {
+                                const isActive = item.value === activeTab;
+                                const linkClass = [
+                                    styles.link,
+                                    isActive ? styles.linkActive : "",
+                                    isDanger ? styles.linkDanger : "",
+                                ].filter(Boolean).join(" ");
+                                return (
+                                    <li key={item.value} className={styles.item}>
+                                        <button
+                                            type="button"
+                                            className={linkClass}
+                                            data-testid={item.testId}
+                                            aria-current={isActive ? "page" : undefined}
+                                            onClick={() => onChange(item.value)}
+                                        >
+                                            {item.label}
+                                        </button>
+                                    </li>
+                                );
+                            })}
+                        </ul>
+                    </div>
+                );
+            })}
         </nav>
     );
 }
