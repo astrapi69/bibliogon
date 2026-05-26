@@ -691,3 +691,172 @@ class TestComicBookPagesCRUD:
         book = _create_book(client, "PB-Cross", book_type="picture_book")
         page = _create_page(client, book["id"], "comic_panel_grid")
         assert page["layout"] == "comic_panel_grid"
+
+
+# --- Storyboard fields (PICTURE-BOOK-STORYBOARD-VIEW-01) ---------------
+
+
+class TestStoryboardFields:
+    """Round-trip coverage for the 4 storyboard schema columns.
+
+    Per the lessons-learned rule "End-to-end behavior tests are not
+    'kwarg passes through' tests": each new field gets at least one
+    case that flips it to a non-default value and asserts an
+    observable difference in the response shape. Covers create-path
+    + patch-path + persistence + validation rejection.
+    """
+
+    def test_default_storyboard_fields_are_null(self, client):
+        book = _create_book(client, "SB-Default", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        assert page["notes"] is None
+        assert page["story_beat"] is None
+        assert page["mood_color"] is None
+        assert page["act_group"] is None
+
+    def test_create_page_with_all_storyboard_fields_roundtrips(self, client):
+        book = _create_book(client, "SB-Create", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="speech_bubble",
+            notes="Pacing feels slow here; consider trimming.",
+            story_beat="climax",
+            mood_color="#FF6B35",
+            act_group="Act II",
+        )
+        assert page["notes"] == "Pacing feels slow here; consider trimming."
+        assert page["story_beat"] == "climax"
+        assert page["mood_color"] == "#FF6B35"
+        assert page["act_group"] == "Act II"
+        # Persistence: re-read confirms.
+        r = client.get(f"/api/books/{book['id']}/pages")
+        persisted = r.json()[0]
+        assert persisted["notes"] == "Pacing feels slow here; consider trimming."
+        assert persisted["story_beat"] == "climax"
+        assert persisted["mood_color"] == "#FF6B35"
+        assert persisted["act_group"] == "Act II"
+
+    def test_patch_notes_roundtrips(self, client):
+        book = _create_book(client, "SB-Notes", book_type="picture_book")
+        page = _create_page(client, book["id"], "text_only")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"notes": "Author memo: needs revision."},
+        )
+        assert r.status_code == 200
+        assert r.json()["notes"] == "Author memo: needs revision."
+
+    @pytest.mark.parametrize(
+        "beat",
+        ["setup", "inciting", "rising", "climax", "falling", "resolution"],
+    )
+    def test_patch_story_beat_accepts_all_six_values(self, client, beat):
+        book = _create_book(client, f"SB-Beat-{beat}", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"story_beat": beat},
+        )
+        assert r.status_code == 200
+        assert r.json()["story_beat"] == beat
+
+    def test_invalid_story_beat_rejected(self, client):
+        book = _create_book(client, "SB-BeatBad", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"story_beat": "denouement"},
+        )
+        assert r.status_code == 422
+
+    @pytest.mark.parametrize(
+        "color",
+        ["#FF0000", "#abcdef", "#0a0B0c", "#FFFFFF", "#000000"],
+    )
+    def test_patch_mood_color_accepts_valid_hex(self, client, color):
+        book = _create_book(client, f"SB-Color-{color[1:]}", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"mood_color": color},
+        )
+        assert r.status_code == 200
+        assert r.json()["mood_color"] == color
+
+    @pytest.mark.parametrize(
+        "color",
+        ["red", "#F00", "FF6B35", "#GGGGGG", "#1234567", "#12345"],
+    )
+    def test_invalid_mood_color_rejected(self, client, color):
+        book = _create_book(client, f"SB-ColorBad-{color}", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"mood_color": color},
+        )
+        assert r.status_code == 422
+
+    def test_patch_act_group_roundtrips(self, client):
+        book = _create_book(client, "SB-Act", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"act_group": "Opening Act"},
+        )
+        assert r.status_code == 200
+        assert r.json()["act_group"] == "Opening Act"
+
+    def test_patch_clears_storyboard_field_via_null(self, client):
+        # PATCH ``{"notes": null}`` sets notes back to NULL (per
+        # PageUpdate's exclude_unset semantics — the key IS present,
+        # value IS None, so setattr fires and clears the row).
+        book = _create_book(client, "SB-Clear", book_type="picture_book")
+        page = _create_page(client, book["id"], "speech_bubble", notes="Initial note")
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"notes": None},
+        )
+        assert r.status_code == 200
+        assert r.json()["notes"] is None
+
+    def test_patch_one_field_does_not_overwrite_others(self, client):
+        # Half-wired-prevention pin: PATCH'ing only ``story_beat``
+        # must NOT clobber notes / mood_color / act_group. Tests the
+        # ``exclude_unset=True`` semantics of the PageUpdate handler.
+        book = _create_book(client, "SB-Partial", book_type="picture_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="speech_bubble",
+            notes="Keep me",
+            story_beat="setup",
+            mood_color="#112233",
+            act_group="Act I",
+        )
+        r = client.patch(
+            f"/api/books/{book['id']}/pages/{page['id']}",
+            json={"story_beat": "climax"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["story_beat"] == "climax"
+        assert body["notes"] == "Keep me"
+        assert body["mood_color"] == "#112233"
+        assert body["act_group"] == "Act I"
+
+    def test_comic_book_pages_also_accept_storyboard_fields(self, client):
+        # Storyboard view is picture-book-only in v1 (per A4 of the
+        # Pre-Inspection), but the SCHEMA is shared. Comic-book pages
+        # must accept the same fields so a future v2 extension to
+        # comic_book Storyboard works without a schema change.
+        book = _create_book(client, "SB-Comic", book_type="comic_book")
+        page = _create_page(
+            client,
+            book["id"],
+            layout="comic_panel_grid",
+            notes="Comic-book annotation",
+            story_beat="rising",
+        )
+        assert page["notes"] == "Comic-book annotation"
+        assert page["story_beat"] == "rising"
