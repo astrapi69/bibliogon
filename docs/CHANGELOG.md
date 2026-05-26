@@ -4,6 +4,132 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.38.0] - 2026-05-26
+
+A Settings-UX overhaul release. 30 commits since v0.37.0 (one
+day after the v0.37.0 ship). The audit filed at v0.37.0
+release-time (8 follow-up items in
+``056fdfd``) drove four coordinated work streams that, together,
+restructure the Settings page from a 13-tab horizontal scroller
+into a left-sidebar grouped nav with consistent toggles + per-
+section descriptions + dedicated tabs.
+
+### Changed
+
+- **Settings Phase 1 — 7 quick wins**
+  (``SETT-PHASE-1-QUICK-WINS-01``, commits ``b33963b..fd855ff`` +
+  ``b62c698``). Tightens the existing Settings page without
+  structural changes: dashboard-view controls grouped into a
+  shared sub-card (SETT-QW-1); SSH-Key block migrated into its
+  own card with a header (SETT-QW-2); Editor tab extracted from
+  Allgemein (SETT-QW-3); sectionTitle CSS-Module class
+  standardized across all panels (SETT-QW-4); HelpText component
+  extracted (SETT-QW-5); White-Label section turned into a
+  collapsible (SETT-QW-6); ``SectionHeader`` composition
+  component + per-section descriptions across every tab
+  (SETT-QW-7).
+
+- **Settings Phase 2 — Allgemein tab split**
+  (``SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01``, commits
+  ``b194ddf..2b28d17`` + ``d27de1d``). The catch-all "Allgemein"
+  tab decomposed into three focused tabs:
+  ``Erscheinungsbild`` (5 dashboard-view controls + 5 theme/
+  language/per-page controls), ``Verhalten`` (autosave +
+  default-status + trash-auto-delete), and ``Erweitert``
+  (debug-only + white-label collapsible). Obsolete
+  ``AppSettings.tsx`` removed.
+
+- **Settings Phase 3 — Toggle composition component**
+  (``SETT-PHASE-3-TOGGLE-COMPONENT-01``, commits
+  ``cabd51c..1404cc0`` + ``482c685``). New ``Toggle`` component
+  ships the same checkbox+label+help-text shape as the
+  pre-existing inline pattern in ~15 sites. 5 sites migrated
+  in this release (VerhaltenSettings 3 + AI 1 + Audiobook 1);
+  remaining 10 deferred as a P3 RCU completion sweep.
+
+- **Settings — Autor + Autoren-Datenbank consolidated**
+  (``SETT-AUTHORS-TAB-CONSOLIDATION-01``, commits ``e45d8ae`` +
+  ``1205f74``). The two formerly-separate tabs (Autor for the
+  user's own profile + Autoren-Datenbank for the known-authors
+  registry) merged into a single ``Autoren`` tab. Both
+  ``AuthorSettings`` and ``AuthorsDatabase`` sub-components
+  unchanged; only the tab wrapper changed. Legacy ``?tab=author``
+  and ``?tab=authors_database`` URLs redirect to ``?tab=autoren``
+  via ``LEGACY_TAB_REDIRECTS``.
+
+- **Settings — horizontal tab bar replaced with left sidebar**
+  (``SETT-L-1-SIDEBAR-REDESIGN-01``, 5-commit chain
+  ``85ae7fe..bd54ec2``). The 13-tab horizontal bar produced a
+  horizontal scrollbar at the 900px max-width once
+  SETT-AUTHORS consolidation closed (user-pull trigger fired
+  the same day). Two-column grid layout (220px sidebar + 900px
+  content inside a 1180px outer container); 5 sidebar groups
+  (Darstellung, Inhalt, System, Info, Gefahrenzone); 4 visible
+  group headers (Gefahrenzone is a single-item group, no header
+  by design); Danger Zone item carries a ``--danger`` red accent
+  + a ``--border`` divider above. Mobile (<=768px) collapses to
+  the existing DropdownMenu pattern with ``DropdownMenu.Separator``
+  between groups. All 13 ``settings-tab-{value}`` testids
+  preserved — 3 existing E2E specs (about-dialog,
+  trash-view-mode-defaults, article-topic-seo) keep working
+  without modification. ``?tab=`` URL routing + the legacy-tab
+  redirect map preserved. New
+  ``e2e/smoke/settings-sidebar.spec.ts`` ships 7 cases pinning
+  the sidebar landmark + group headers + click→content swap +
+  deep-link + legacy redirect + Danger Zone visual cue.
+
+- **Article Dashboard top-nav aligned with Book Dashboard**
+  (commit ``18dd836``). Different button counts between the two
+  views caused a visible horizontal layout shift when switching
+  dashboards. The standalone ``Aus Medium importieren`` button
+  collapsed into a chevron disclosure on the ``Importieren``
+  button (split-button pattern matching the
+  ``newBookGroup`` on Dashboard.tsx); a second headerSeparator
+  added before Backup to mirror the Books-side structure.
+  Article width was ~1014px, Book ~908px (~106px jump);
+  after: both ~908px. The ``article-medium-import-btn`` testid
+  moved to the DropdownMenu.Item.
+
+### Added
+
+- ``SectionHeader`` composition component + per-section
+  descriptions on every Settings tab (SETT-QW-7) — gives users a
+  one-paragraph "what this tab does" cue without opening the
+  help docs.
+- ``Toggle`` composition component (SETT-PHASE-3) — first 5
+  consumer sites migrated; remaining 10 tracked as a P3 sweep.
+- 5 new i18n keys × 8 catalogs = 40 cells:
+  ``ui.settings.sidebar_nav`` +
+  ``ui.settings.group_darstellung/inhalt/system/info``.
+  DE canonical, EN direct-translation authored, 6 langs
+  machine-translated and recorded in
+  ``backend/config/i18n/AUTO_TRANSLATED.md``.
+- 1 i18n key × 8 catalogs:
+  ``ui.articles.import_more_tooltip`` for the Article Dashboard
+  import-chevron tooltip.
+- ``DropdownMenu.Separator`` between groups inside the
+  Settings mobile-menu popover — the desktop group structure
+  now surfaces on mobile too without extra config.
+
+### Fixed
+
+- **Top-nav layout jump between Book and Article Dashboard**
+  (commit ``18dd836``). See the corresponding "Changed" entry
+  above — same fix solves both the structural drift and the
+  user-visible UX bug.
+
+### Infrastructure
+
+- ROADMAP refresh post-v0.37.0 (``6bda82b``).
+- 8 v0.37.0 post-release follow-ups filed in backlog
+  (``056fdfd``) including
+  ``HELP-DOCS-V0.37.0-GAPS-01`` (Editor display settings +
+  Book.repository_url + dashboard pagination + word-wrap help
+  pages still pending).
+- Test counts unchanged at baseline (backend pytest 2269;
+  ``make test`` reaches 2269 backend + 2080 Vitest + all plugin
+  suites green). i18n parity 51/51.
+
 ## [0.37.0] - 2026-05-25
 
 53 commits since v0.36.0 across two coordinated batches: an
