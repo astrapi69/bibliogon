@@ -629,6 +629,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Consulter l'historique des sauvegardes et comparer les fichiers .bgb."
     tab_about: "About"
+    tab_erweitert: "Avance"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Ouvrir le menu d'onglets"
     danger_zone:
@@ -725,6 +726,8 @@ ui:
     erscheinungsbild_description: "Theme et vues par defaut pour les tableaux de bord livres et articles."
     verhalten_title: "Comportement"
     verhalten_description: "Langue, corbeille et preferences de gestion des donnees."
+    erweitert_title: "Avance"
+    erweitert_description: "Cles SSH pour Git-Sync et configuration marque blanche."
     dashboard_views_title: "Vues par defaut"
     dashboard_books_view_label: "Tableau de bord livres : vue par defaut"
     dashboard_books_view_tooltip: "Vue initiale a l'ouverture du tableau de bord livres. Modifiable a tout moment via l'icone en haut a droite."

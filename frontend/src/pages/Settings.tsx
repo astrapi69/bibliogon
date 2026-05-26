@@ -13,6 +13,7 @@ import {AppSettings} from "../components/settings/AppSettings";
 import {ErscheinungsbildSettings} from "../components/settings/ErscheinungsbildSettings";
 import {VerhaltenSettings} from "../components/settings/VerhaltenSettings";
 import {EditorSettings} from "../components/settings/EditorSettings";
+import {ErweitertSettings} from "../components/settings/ErweitertSettings";
 import {AiAssistantSettings} from "../components/settings/AiAssistantSettings";
 import {AuthorSettings} from "../components/settings/AuthorSettings";
 import {AuthorsDatabase} from "../components/settings/AuthorsDatabase";
@@ -23,7 +24,7 @@ import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "erscheinungsbild", "verhalten", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "danger_zone"] as const;
+const VALID_SETTINGS_TABS = ["app", "erscheinungsbild", "verhalten", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -151,6 +152,7 @@ export default function Settings() {
                             ? [{value: "support" as SettingsTab, label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
                             : []),
                         {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
+                        {value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"},
                         {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
                     ];
                     const activeLabel = tabDefs.find((d) => d.value === activeTab)?.label ?? "";
@@ -397,6 +399,23 @@ export default function Settings() {
                 ) : null}
                 <Tabs.Content value="about">
                     <AboutSettings appConfig={appConfig} />
+                </Tabs.Content>
+                <Tabs.Content value="erweitert">
+                    <ErweitertSettings
+                        config={appConfig}
+                        onSave={async (data) => {
+                            setSaving(true);
+                            try {
+                                const updated = await api.settings.updateApp(data);
+                                setAppConfig(updated);
+                                showMessage(t("ui.settings.saved", "Gespeichert"));
+                            } catch (err) {
+                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
+                            }
+                            setSaving(false);
+                        }}
+                        saving={saving}
+                    />
                 </Tabs.Content>
                 <Tabs.Content value="danger_zone">
                     <DangerZoneSettings />

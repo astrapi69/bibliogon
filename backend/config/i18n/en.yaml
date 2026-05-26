@@ -603,6 +603,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Inspect backup history and compare .bgb files."
     tab_about: "About"
+    tab_erweitert: "Advanced"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Open tab menu"
     danger_zone:
@@ -723,6 +724,8 @@ ui:
     erscheinungsbild_description: "Theme and default views for the Books and Articles dashboards."
     verhalten_title: "Behavior"
     verhalten_description: "Language, trash and data-handling preferences."
+    erweitert_title: "Advanced"
+    erweitert_description: "SSH keys for Git-Sync and white-label configuration."
     dashboard_views_title: "Default views"
     dashboard_books_view_label: "Books dashboard: default view"
     dashboard_books_view_tooltip: "Initial view when opening the books dashboard. Can be changed any time via the icon at the top right."

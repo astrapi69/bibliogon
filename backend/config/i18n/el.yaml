@@ -615,6 +615,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Προβολή ιστορικού αντιγράφων και σύγκριση αρχείων .bgb."
     tab_about: "About"
+    tab_erweitert: "Για προχωρημένους"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Άνοιγμα μενού καρτελών"
     danger_zone:
@@ -711,6 +712,8 @@ ui:
     erscheinungsbild_description: "Θέμα και προεπιλεγμένες προβολές για τους πίνακες βιβλίων και άρθρων."
     verhalten_title: "Συμπεριφορά"
     verhalten_description: "Γλώσσα, κάδος απορριμμάτων και προτιμήσεις χειρισμού δεδομένων."
+    erweitert_title: "Για προχωρημένους"
+    erweitert_description: "Κλειδιά SSH για Git-Sync και ρύθμιση White-Label."
     dashboard_views_title: "Προεπιλεγμένες προβολές"
     dashboard_books_view_label: "Πίνακας βιβλίων: προεπιλεγμένη προβολή"
     dashboard_books_view_tooltip: "Αρχική προβολή κατά το άνοιγμα του πίνακα βιβλίων. Μπορεί να αλλάξει οποιαδήποτε στιγμή μέσω του εικονιδίου επάνω δεξιά."

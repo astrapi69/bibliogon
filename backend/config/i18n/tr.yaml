@@ -629,6 +629,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Yedek gecmisini inceleyin ve .bgb dosyalarini karsilastirin."
     tab_about: "About"
+    tab_erweitert: "Gelismis"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Sekme menüsünü aç"
     danger_zone:
@@ -749,6 +750,8 @@ ui:
     erscheinungsbild_description: "Kitap ve makale panolari icin tema ve varsayilan gorunumler."
     verhalten_title: "Davranis"
     verhalten_description: "Dil, cop kutusu ve veri isleme tercihleri."
+    erweitert_title: "Gelismis"
+    erweitert_description: "Git-Sync icin SSH anahtarlari ve White-Label yapilandirmasi."
     dashboard_views_title: "Varsayilan gorunumler"
     dashboard_books_view_label: "Kitap panosu: varsayilan gorunum"
     dashboard_books_view_tooltip: "Kitap panosu acildiginda gosterilen ilk gorunum. Sag ust kosedeki simgeyle istediginiz zaman degistirebilirsiniz."

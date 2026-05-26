@@ -603,6 +603,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Backup-Historie einsehen und .bgb-Dateien miteinander vergleichen."
     tab_about: "Über"
+    tab_erweitert: "Erweitert"
     tab_danger_zone: "Gefahrenzone"
     open_tab_menu: "Tab-Menü öffnen"
     danger_zone:
@@ -723,6 +724,8 @@ ui:
     erscheinungsbild_description: "Theme und Standard-Ansichten für Bücher- und Artikel-Dashboard."
     verhalten_title: "Verhalten"
     verhalten_description: "Sprache, Papierkorb und Daten-Voreinstellungen."
+    erweitert_title: "Erweitert"
+    erweitert_description: "SSH-Schlüssel für Git-Sync und White-Label-Konfiguration."
     dashboard_views_title: "Standard-Ansichten"
     dashboard_books_view_label: "Bücher-Dashboard: Standard-Ansicht"
     dashboard_books_view_tooltip: "Standard-Ansicht beim Öffnen des Bücher-Dashboards. Kann jederzeit über das Symbol oben rechts geändert werden."

@@ -615,6 +615,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "バックアップ履歴の確認と.bgbファイルの比較。"
     tab_about: "About"
+    tab_erweitert: "詳細設定"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "タブメニューを開く"
     danger_zone:
@@ -735,6 +736,8 @@ ui:
     erscheinungsbild_description: "本と記事のダッシュボードのテーマとデフォルト表示。"
     verhalten_title: "動作"
     verhalten_description: "言語、ゴミ箱、データ処理の設定。"
+    erweitert_title: "詳細設定"
+    erweitert_description: "Git-Sync用のSSHキーとホワイトラベル設定。"
     dashboard_views_title: "デフォルト表示"
     dashboard_books_view_label: "本ダッシュボード: デフォルト表示"
     dashboard_books_view_tooltip: "本ダッシュボードを開いたときの初期表示。右上のアイコンからいつでも変更できます。"

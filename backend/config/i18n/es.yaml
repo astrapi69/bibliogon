@@ -629,6 +629,7 @@ ui:
     tab_backups: "Backups"
     backups_description: "Inspeccionar historial de copias y comparar archivos .bgb."
     tab_about: "About"
+    tab_erweitert: "Avanzado"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Abrir menú de pestañas"
     danger_zone:
@@ -725,6 +726,8 @@ ui:
     erscheinungsbild_description: "Tema y vistas predeterminadas para los paneles de libros y articulos."
     verhalten_title: "Comportamiento"
     verhalten_description: "Idioma, papelera y preferencias de manejo de datos."
+    erweitert_title: "Avanzado"
+    erweitert_description: "Claves SSH para Git-Sync y configuracion de marca blanca."
     dashboard_views_title: "Vistas predeterminadas"
     dashboard_books_view_label: "Panel de libros: vista predeterminada"
     dashboard_books_view_tooltip: "Vista inicial al abrir el panel de libros. Se puede cambiar en cualquier momento con el icono en la esquina superior derecha."
