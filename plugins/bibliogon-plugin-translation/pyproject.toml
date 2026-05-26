@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-translation"
-version = "0.37.0"
+version = "0.38.0"
 description = "Translation plugin for Bibliogon: DeepL and local LLM (LMStudio) integration."
 authors = ["Asterios Raptis"]
 license = "MIT"
