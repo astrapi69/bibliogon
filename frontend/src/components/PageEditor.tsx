@@ -1,6 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
-import {ChevronLeft, FileText, Maximize2, Minimize2} from "lucide-react"
+import {ChevronLeft, FileText, LayoutGrid, Maximize2, Minimize2} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
@@ -26,6 +26,14 @@ interface Props {
      *  URL-routed pattern as prose-flow. Optional so PageEditor can
      *  still be unit-tested standalone without a parent that wires it. */
     onShowMetadata?: () => void
+    /** PICTURE-BOOK-STORYBOARD-VIEW-01 C5: entry-point into the
+     *  Storyboard grid view. When provided, the header shows a
+     *  Storyboard button next to Metadata. Parent flips ?view=storyboard
+     *  and re-renders Storyboard in place of PageEditor (same URL-routed
+     *  pattern as the metadata toggle). Optional so PageEditor still
+     *  unit-tests standalone, and so BookEditor can withhold it for
+     *  non-supported book_types (currently picture_book only per A4). */
+    onShowStoryboard?: () => void
 }
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
@@ -38,7 +46,13 @@ const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
 // component now; this file only mounts it. PDF-KDP-FORMATS-01's
 // inline state + readStoredFormat helper relocated out of here.
 
-export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: Props) {
+export default function PageEditor({
+    bookId,
+    bookTitle,
+    onBack,
+    onShowMetadata,
+    onShowStoryboard,
+}: Props) {
     const {t} = useI18n()
     const dialog = useDialog()
     const [pages, setPages] = useState<Page[]>([])
@@ -281,6 +295,26 @@ export default function PageEditor({bookId, bookTitle, onBack, onShowMetadata}: 
                             {t(
                                 "ui.page_editor.show_metadata",
                                 "Open book metadata",
+                            )}
+                        </span>
+                    </button>
+                )}
+                {onShowStoryboard && (
+                    <button
+                        type="button"
+                        onClick={onShowStoryboard}
+                        data-testid="page-editor-show-storyboard"
+                        className={styles.metadataBtn}
+                        title={t(
+                            "ui.page_editor.show_storyboard",
+                            "Open storyboard",
+                        )}
+                    >
+                        <LayoutGrid size={14} />
+                        <span>
+                            {t(
+                                "ui.page_editor.show_storyboard",
+                                "Storyboard",
                             )}
                         </span>
                     </button>

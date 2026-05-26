@@ -19,17 +19,16 @@
  * clicked page selected — wired via ``onSelectPage`` callback that
  * the parent (BookEditor) routes through history state.
  */
-import React, {useMemo} from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import {ArrowLeft, FileImage, ImageOff} from "lucide-react"
 
-import type {Page} from "../api/client"
+import {api, type Page} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import styles from "./Storyboard.module.css"
 
 interface Props {
     bookId: string
     bookTitle: string
-    pages: Page[]
     onSelectPage: (pageId: string) => void
     onBack: () => void
     /** Testid namespace per the project's testid-pinning rule. */
@@ -39,12 +38,34 @@ interface Props {
 export default function Storyboard({
     bookId,
     bookTitle,
-    pages,
     onSelectPage,
     onBack,
     testidNamespace = "storyboard",
 }: Props) {
     const {t} = useI18n()
+    const [pages, setPages] = useState<Page[]>([])
+    const [loadError, setLoadError] = useState<string | null>(null)
+    const [loaded, setLoaded] = useState(false)
+
+    useEffect(() => {
+        let cancelled = false
+        api.pages
+            .list(bookId)
+            .then((rows) => {
+                if (cancelled) return
+                setPages(rows)
+                setLoaded(true)
+            })
+            .catch((err: unknown) => {
+                if (cancelled) return
+                setLoadError(err instanceof Error ? err.message : String(err))
+                setLoaded(true)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [bookId])
+
     const grouped = useMemo(() => groupByActGroup(pages), [pages])
     const totalPages = pages.length
 
@@ -78,7 +99,21 @@ export default function Storyboard({
                 </div>
             </div>
             <div className={styles.scroll}>
-                {totalPages === 0 ? (
+                {loadError ? (
+                    <div
+                        className={styles.empty}
+                        data-testid={`${testidNamespace}-error`}
+                    >
+                        {t("ui.storyboard.load_error", "Failed to load pages.")}
+                    </div>
+                ) : !loaded ? (
+                    <div
+                        className={styles.empty}
+                        data-testid={`${testidNamespace}-loading`}
+                    >
+                        {t("ui.storyboard.loading", "Loading pages...")}
+                    </div>
+                ) : totalPages === 0 ? (
                     <div
                         className={styles.empty}
                         data-testid={`${testidNamespace}-empty`}

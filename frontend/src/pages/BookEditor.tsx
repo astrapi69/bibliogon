@@ -6,6 +6,7 @@ import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
+import Storyboard from "../components/Storyboard";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
@@ -37,11 +38,24 @@ const EDITOR_COMPONENTS: Record<
         bookTitle: string;
         onBack: () => void;
         onShowMetadata: () => void;
+        /** Optional storyboard entry-point. Currently picture_book
+         *  only per A4 of the Storyboard-View Pre-Inspection;
+         *  ComicBookEditor receives no value and renders nothing
+         *  for it. */
+        onShowStoryboard?: () => void;
     }>
 > = {
     PageEditor,
     ComicBookEditor,
 };
+
+/** Per-editor allow-list for the Storyboard view. Mirrors the
+ *  ``content_model: pages`` gate but adds the v1 picture_book-only
+ *  restriction per A4 of the PICTURE-BOOK-STORYBOARD-VIEW-01
+ *  Pre-Inspection. Comic-book extension lands in a follow-up
+ *  session when the multi-panel + multi-bubble UX has dedicated
+ *  storyboard semantics. */
+const STORYBOARD_BOOK_TYPES = new Set<string>(["picture_book"]);
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();
@@ -91,23 +105,35 @@ export default function BookEditor() {
     const [versionsChapterId, setVersionsChapterId] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
+    const [showStoryboard, setShowStoryboard] = useState(searchParams.get("view") === "storyboard");
 
-    // Keep ``?view=metadata`` in sync so the audiobook badge can deep-link
-    // here after a completed export and so a browser back/forward retains
-    // the user's view choice.
+    // Keep ``?view=metadata`` / ``?view=storyboard`` in sync so the
+    // audiobook badge / Storyboard back-link / browser back-forward
+    // can deep-link in either direction and retain the user's view.
     useEffect(() => {
-        const wantsMetadata = searchParams.get("view") === "metadata";
-        if (wantsMetadata !== showMetadata) {
-            setShowMetadata(wantsMetadata);
-        }
+        const view = searchParams.get("view");
+        const wantsMetadata = view === "metadata";
+        const wantsStoryboard = view === "storyboard";
+        if (wantsMetadata !== showMetadata) setShowMetadata(wantsMetadata);
+        if (wantsStoryboard !== showStoryboard) setShowStoryboard(wantsStoryboard);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
     const _setShowMetadata = (next: boolean) => {
         setShowMetadata(next);
+        if (next) setShowStoryboard(false);
         const params = new URLSearchParams(searchParams);
         if (next) params.set("view", "metadata");
-        else params.delete("view");
+        else if (params.get("view") === "metadata") params.delete("view");
+        setSearchParams(params, {replace: true});
+    };
+
+    const _setShowStoryboard = (next: boolean) => {
+        setShowStoryboard(next);
+        if (next) setShowMetadata(false);
+        const params = new URLSearchParams(searchParams);
+        if (next) params.set("view", "storyboard");
+        else if (params.get("view") === "storyboard") params.delete("view");
         setSearchParams(params, {replace: true});
     };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
@@ -521,6 +547,17 @@ export default function BookEditor() {
             ? EDITOR_COMPONENTS[editorName]
             : undefined;
         if (EditorComponent) {
+            const storyboardSupported = STORYBOARD_BOOK_TYPES.has(book.book_type);
+            if (showStoryboard && storyboardSupported) {
+                return (
+                    <Storyboard
+                        bookId={book.id}
+                        bookTitle={book.title}
+                        onBack={() => _setShowStoryboard(false)}
+                        onSelectPage={() => _setShowStoryboard(false)}
+                    />
+                );
+            }
             if (showMetadata) {
                 return (
                     <BookMetadataEditor
@@ -550,6 +587,11 @@ export default function BookEditor() {
                     bookTitle={book.title}
                     onBack={() => navigate("/")}
                     onShowMetadata={() => _setShowMetadata(true)}
+                    onShowStoryboard={
+                        storyboardSupported
+                            ? () => _setShowStoryboard(true)
+                            : undefined
+                    }
                 />
             );
         }
