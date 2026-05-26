@@ -2149,6 +2149,7 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    show_storyboard: "Storyboard"
     delete_page: "Sayfayı sil"
     delete_page_title: "Sayfa silinsin mi?"
     delete_page_confirm: "Bu sayfayı silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
@@ -2316,6 +2317,23 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  storyboard:
+    title: "Storyboard"
+    back: "Editöre dön"
+    pages_unit: "sayfa"
+    empty: "Henüz sayfa yok. Burada görüntülemek için editörden sayfa ekleyin."
+    loading: "Sayfalar yükleniyor..."
+    load_error: "Sayfalar yüklenemedi."
+    open_page: "Sayfayı aç"
+    card_no_text: "(metin yok)"
+    drag_handle: "Yeniden sıralamak için sürükle"
+    beat:
+      setup: "Kuruluş"
+      inciting: "Tetikleyici Olay"
+      rising: "Yükselen Eylem"
+      climax: "Doruk Noktası"
+      falling: "Düşen Eylem"
+      resolution: "Çözüm"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

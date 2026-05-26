@@ -2145,6 +2145,7 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    show_storyboard: "Storyboard"
     delete_page: "Delete page"
     delete_page_title: "Delete page?"
     delete_page_confirm: "Are you sure you want to delete this page? This cannot be undone."
@@ -2312,6 +2313,23 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  storyboard:
+    title: "Storyboard"
+    back: "Back to editor"
+    pages_unit: "pages"
+    empty: "No pages yet. Add pages from the editor to see them here."
+    loading: "Loading pages..."
+    load_error: "Failed to load pages."
+    open_page: "Open page"
+    card_no_text: "(no text)"
+    drag_handle: "Drag to reorder"
+    beat:
+      setup: "Setup"
+      inciting: "Inciting"
+      rising: "Rising"
+      climax: "Climax"
+      falling: "Falling"
+      resolution: "Resolution"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.

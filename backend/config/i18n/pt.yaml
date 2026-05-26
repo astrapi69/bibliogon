@@ -2149,6 +2149,7 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    show_storyboard: "Storyboard"
     delete_page: "Excluir página"
     delete_page_title: "Excluir página?"
     delete_page_confirm: "Tem certeza que deseja excluir esta página? Esta ação não pode ser desfeita."
@@ -2316,6 +2317,23 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  storyboard:
+    title: "Storyboard"
+    back: "Voltar ao editor"
+    pages_unit: "páginas"
+    empty: "Ainda não há páginas. Adicione páginas a partir do editor para vê-las aqui."
+    loading: "A carregar páginas..."
+    load_error: "Falha ao carregar páginas."
+    open_page: "Abrir página"
+    card_no_text: "(sem texto)"
+    drag_handle: "Arrastar para reordenar"
+    beat:
+      setup: "Exposição"
+      inciting: "Incidente Desencadeante"
+      rising: "Ação Crescente"
+      climax: "Clímax"
+      falling: "Ação Decrescente"
+      resolution: "Resolução"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

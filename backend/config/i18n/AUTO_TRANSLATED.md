@@ -7,6 +7,38 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-27 — Storyboard-View (ES, FR, EL, PT, TR, JA)
+
+16 keys translated into 6 languages = 96 translation cells. All
+stem from PICTURE-BOOK-STORYBOARD-VIEW-01 Session 1 C7 (new
+``ui.storyboard.*`` namespace + ``ui.page_editor.show_storyboard``
+button label).
+
+| Key | Languages |
+|-----|-----------|
+| `ui.page_editor.show_storyboard` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.title` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.back` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.pages_unit` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.empty` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.loading` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.load_error` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.open_page` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.card_no_text` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.drag_handle` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.setup` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.inciting` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.rising` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.climax` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.falling` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat.resolution` | ES, FR, EL, PT, TR, JA |
+
+DE canonical (real umlauts per the German-content rule), EN
+direct-translation authored. "Storyboard" itself is kept as a
+loanword across ES/FR/PT/TR (widely-understood industry term);
+EL + JA use phonetic/native equivalents (Στόρυμπορντ +
+ストーリーボード).
+
 ## 2026-05-26 — Article-Dashboard import-chevron tooltip (ES, FR, EL, PT, TR, JA)
 
 1 key translated into 6 languages = 6 translation cells. Stems

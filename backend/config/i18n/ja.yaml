@@ -2149,6 +2149,7 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    show_storyboard: "ストーリーボード"
     delete_page: "ページを削除"
     delete_page_title: "ページを削除しますか？"
     delete_page_confirm: "このページを本当に削除しますか？この操作は取り消せません。"
@@ -2316,6 +2317,23 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  storyboard:
+    title: "ストーリーボード"
+    back: "エディタに戻る"
+    pages_unit: "ページ"
+    empty: "ページがまだありません。エディタからページを追加するとここに表示されます。"
+    loading: "ページを読み込んでいます…"
+    load_error: "ページの読み込みに失敗しました。"
+    open_page: "ページを開く"
+    card_no_text: "（テキストなし）"
+    drag_handle: "ドラッグして並べ替え"
+    beat:
+      setup: "導入"
+      inciting: "きっかけ"
+      rising: "上昇展開"
+      climax: "クライマックス"
+      falling: "下降展開"
+      resolution: "結末"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

@@ -2149,6 +2149,7 @@ ui:
     text_label: "Page text"
     text_placeholder: "Write the page text here..."
     show_metadata: "Metadata"
+    show_storyboard: "Storyboard"
     delete_page: "Διαγραφή σελίδας"
     delete_page_title: "Διαγραφή σελίδας;"
     delete_page_confirm: "Είστε σίγουροι ότι θέλετε να διαγράψετε αυτή τη σελίδα; Δεν μπορεί να αναιρεθεί."
@@ -2316,6 +2317,23 @@ ui:
       text_position_middle: "Middle"
       text_position_bottom: "Bottom"
       text_backdrop_opacity: "Backdrop opacity"
+  storyboard:
+    title: "Storyboard"
+    back: "Επιστροφή στον επεξεργαστή"
+    pages_unit: "σελίδες"
+    empty: "Δεν υπάρχουν σελίδες ακόμη. Προσθέστε σελίδες από τον επεξεργαστή για να εμφανιστούν εδώ."
+    loading: "Φόρτωση σελίδων..."
+    load_error: "Αποτυχία φόρτωσης σελίδων."
+    open_page: "Άνοιγμα σελίδας"
+    card_no_text: "(κανένα κείμενο)"
+    drag_handle: "Σύρετε για αναδιάταξη"
+    beat:
+      setup: "Εισαγωγή"
+      inciting: "Αφορμή"
+      rising: "Άνοδος"
+      climax: "Κορύφωση"
+      falling: "Κάθοδος"
+      resolution: "Λύση"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).
