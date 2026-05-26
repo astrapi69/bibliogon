@@ -7,6 +7,8 @@ Bibliogon bietet sechs Farbpaletten, jeweils in einer Hell- und einer Dunkel-Var
 ### Warm Literary *(Standard)*
 Warme Creme- und Braun-Töne mit Crimson Pro als Serifen-Schrift. Die Originalpalette von Bibliogon, angelehnt an klassisches Druckpapier.
 
+![Warm Literary-Theme](../assets/screenshots/theme-warm-literary.png)
+
 ### Cool Modern
 Kühle Blau-Grau-Töne mit Inter als serifenloser Schrift. Klares, modernes Layout für Autoren die einen nüchternen Look bevorzugen.
 
@@ -31,6 +33,8 @@ Dunkler, professioneller Look mit hohen Kontrasten und Mint/Teal-Akzent. Orienti
 
 ### Notizbuch *(neu)*
 Helles Papier mit Linien-Optik wie ein Notizbuch. Der Editor bekommt subtile horizontale Linien (1.6em Zeilenhöhe) und einen roten Rand-Strich am linken Rand. Lora als Serifen-Schrift. Dark-Variante erhält die gleichen Linien mit angepassten Farben.
+
+![Notizbuch-Theme](../assets/screenshots/theme-notebook.png)
 
 **Wann wählen:** Handschriftliches Schreibgefühl, Brainstorming, Notizbuch-ähnliche Workflows.
 

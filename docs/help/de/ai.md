@@ -12,7 +12,7 @@ Bibliogon enthält einen optionalen KI-Assistenten, der beim Schreiben, Bearbeit
 
 Beim ersten Start führt ein Einrichtungsassistent durch diese Schritte.
 
-![Einstellungen > Allgemein > KI-Assistent](../assets/screenshots/settings-general-ai.png)
+![Einstellungen > KI-Assistent](../assets/screenshots/settings-ai.png)
 
 Der KI-Assistent ist standardmäßig deaktiviert. Dein Text wird nur an den KI-Anbieter gesendet, wenn du eine KI-Funktion ausdrücklich nutzt. Im Hintergrund wird nichts gesendet.
 

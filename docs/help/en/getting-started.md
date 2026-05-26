@@ -71,11 +71,11 @@ When you open [http://localhost:7880](http://localhost:7880) for the first time 
 
 As your collection grows, the Dashboard offers search, filter, and sort controls above the book grid. You can search by title, author, genre, or language, filter by genre and language, and sort by date, title, or author in either direction.
 
-![Dashboard filter and sort controls](../assets/screenshots/dashboard-filter-sort.png)
+![Book Dashboard with search, filter, and sort controls above the book grid](../assets/screenshots/book-dashboard-grid.png)
 
 Deleted books go to the Trash (soft delete). The Trash view lists them with three actions: **Restore** puts a book back in the library, **Delete permanently** removes the book and its files immediately, **Empty trash** clears everything at once. Books in the Trash are automatically deleted after 90 days; the timer can be configured in Settings.
 
-![Trash view with Restore, Delete permanently, Empty trash](../assets/screenshots/dashboard-trash.png)
+![Trash view with Restore, Delete permanently, Empty trash](../assets/screenshots/trash-and-restore.png)
 
 ## Creating your first book
 

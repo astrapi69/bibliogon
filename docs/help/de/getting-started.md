@@ -71,11 +71,11 @@ Wenn du [http://localhost:7880](http://localhost:7880) zum ersten Mal öffnest, 
 
 Wenn die Buchsammlung wächst, bietet das Dashboard oberhalb des Buch-Rasters Such-, Filter- und Sortier-Steuerungen. Du kannst nach Titel, Autor, Genre oder Sprache suchen, nach Genre und Sprache filtern und nach Datum, Titel oder Autor in beiden Richtungen sortieren.
 
-![Dashboard: Filter und Sortierung](../assets/screenshots/dashboard-filter-sort.png)
+![Bücher-Dashboard: Such-, Filter- und Sortier-Steuerung über dem Buch-Raster](../assets/screenshots/book-dashboard-grid.png)
 
 Gelöschte Bücher landen im Papierkorb (Soft-Delete). Die Papierkorb-Ansicht listet sie mit drei Aktionen: **Wiederherstellen** holt ein Buch zurück in die Bibliothek, **Endgültig löschen** entfernt Buch und Dateien sofort, **Papierkorb leeren** entfernt alles auf einmal. Bücher im Papierkorb werden nach 90 Tagen automatisch gelöscht; die Frist lässt sich in den Einstellungen konfigurieren.
 
-![Papierkorb-Ansicht mit Wiederherstellen, Endgültig löschen, Papierkorb leeren](../assets/screenshots/dashboard-trash.png)
+![Papierkorb-Ansicht mit Wiederherstellen, Endgültig löschen, Papierkorb leeren](../assets/screenshots/trash-and-restore.png)
 
 ## Das erste Buch anlegen
 

@@ -1,5 +1,7 @@
 # Formatierung
 
+![Buch-Editor mit Toolbar und Kapitel-Sidebar](../../assets/screenshots/book-editor.png)
+
 ## Textformatierung
 
 Bibliogon unterstützt die gängigen Textformatierungen, die du aus Textverarbeitungsprogrammen kennst. Alle Formatierungen sind über die Toolbar oder Tastenkürzel erreichbar:

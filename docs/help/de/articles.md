@@ -24,6 +24,8 @@ Wenn du Kapitel oder eine Backpage-Beschreibung brauchst, willst du ein Buch, ke
 2. **Neuer Artikel** klicken (oder den Empty-State-CTA beim ersten Aufruf).
 3. Bibliogon legt einen Entwurf an und öffnet sofort den Editor. Deine Änderungen werden mit 1-Sekunden-Verzögerung automatisch gespeichert; die Kopfzeile zeigt während des Tippens "Speichert…" / "Gespeichert".
 
+![Artikel-Liste mit drei Beispiel-Artikeln](../assets/screenshots/article-dashboard-grid.png)
+
 ## Der Editor
 
 Der Artikel-Editor unterscheidet sich bewusst vom Buch-Editor:
@@ -35,6 +37,8 @@ Der Artikel-Editor unterscheidet sich bewusst vom Buch-Editor:
 - **Status-Auswahl** bewegt einen Artikel durch Entwurf / Veröffentlicht / Archiviert.
 
 Der Titel lässt sich oben auf der Seite inline editieren. Auf den Titel klicken und tippen.
+
+![Artikel-Editor mit Metadaten-Sidebar links und Toolbar oben](../assets/screenshots/article-editor.png)
 
 ## Thema und SEO
 

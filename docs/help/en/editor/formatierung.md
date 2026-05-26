@@ -1,5 +1,7 @@
 # Formatting
 
+![Book editor with the toolbar and chapter sidebar](../../assets/screenshots/book-editor.png)
+
 ## Text formatting
 
 Bibliogon supports the usual text formatting options you know from word processors. All of them are reachable via the toolbar or keyboard shortcuts:

@@ -7,6 +7,8 @@ Bibliogon ships with six color palettes, each available in a light and a dark va
 ### Warm Literary *(default)*
 Warm cream and brown tones with Crimson Pro as the serif typeface. Bibliogon's original palette, evoking classic print on paper.
 
+![Warm Literary theme](../assets/screenshots/theme-warm-literary.png)
+
 ### Cool Modern
 Cool blue-grey tones with Inter as the sans-serif typeface. Clean, modern layout for authors who prefer a sober look.
 
@@ -31,6 +33,8 @@ Dark, professional look with high contrast and a mint/teal accent. Visually insp
 
 ### Notebook *(new)*
 Light paper with a ruled-lines look, like a notebook page. The editor gets subtle horizontal lines (1.6em line-height) and a red margin line down the left side. Lora as the serif typeface. The dark variant keeps the same lines with adjusted colors.
+
+![Notebook theme](../assets/screenshots/theme-notebook.png)
 
 **When to pick it:** handwritten writing feel, brainstorming, notebook-style workflows.
 

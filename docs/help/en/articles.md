@@ -24,6 +24,8 @@ If you find yourself reaching for chapters or a back-cover description, you want
 2. Click **New Article** (or use the empty-state CTA on first run).
 3. Bibliogon creates a draft and opens the editor immediately. Your changes auto-save every second; the title bar shows "Saving…" / "Saved" while you work.
 
+![Article list with three sample articles](../assets/screenshots/article-dashboard-grid.png)
+
 ## The editor
 
 Article editor differs from the book editor by design:
@@ -35,6 +37,8 @@ Article editor differs from the book editor by design:
 - **Status select** moves an article through draft / published / archived.
 
 Title is editable inline at the top of the page. Click the title text and start typing.
+
+![Article editor with metadata sidebar on the left and toolbar at the top](../assets/screenshots/article-editor.png)
 
 ## Topic and SEO
 

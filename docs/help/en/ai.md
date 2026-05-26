@@ -12,7 +12,7 @@ Bibliogon includes an optional AI assistant that helps with writing, editing, an
 
 On first launch, a setup wizard guides you through these steps.
 
-![Settings > General > AI Assistant](../assets/screenshots/settings-general-ai.png)
+![Settings > AI Assistant](../assets/screenshots/settings-ai.png)
 
 The AI assistant is disabled by default. Your text is only sent to the AI provider when you explicitly use an AI feature. Nothing is sent in the background.
 

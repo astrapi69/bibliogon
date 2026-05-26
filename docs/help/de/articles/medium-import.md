@@ -19,6 +19,9 @@ Bibliogon importiert das gesamte Medium-Archiv, das du über "Download your info
 1. **Artikel** in der Seitenleiste öffnen.
 2. **Aus Medium importieren** in der Werkzeugleiste klicken.
 3. Die dedizierte Import-Seite öffnet sich unter `/articles/import/medium`. Bei Bedarf Einstellungen anpassen (siehe unten), dann die ZIP-Datei in die Upload-Zone ziehen oder per Dateidialog auswählen. Maximalgröße: 200 MB.
+
+![Medium-Import-Seite mit Einstellungen-Karte und Upload-Zone](../../assets/screenshots/medium-import-page.png)
+
 4. **Import starten** klicken. Der Fortschrittsbalken zeigt den Upload in Prozent; sobald der Upload abgeschlossen ist, wechselt das Panel auf eine Server-Verarbeitungsanzeige. Ein Archiv mit 200 Artikeln dauert typischerweise 30–60 Sekunden.
 5. Das Ergebnis erscheint darunter mit drei Bereichen: importiert, übersprungen (bereits vorhanden), Fehler. Die Titel der importierten Artikel verlinken direkt auf den Bibliogon-Artikel.
 

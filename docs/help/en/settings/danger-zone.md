@@ -39,6 +39,8 @@ Clicking **Delete permanently** irreversibly removes:
 1. Open **Settings → Danger Zone** (the last tab).
 2. Click **Reset Everything**.
 3. The dialog shows the full list of what will be deleted, plus a prominently placed **Create backup** button.
+
+![Reset confirmation dialog with delete-list, backup button, and RESET input](../../assets/screenshots/danger-zone-dialog.png)
 4. Optional: clicking **Create backup** downloads a `.bgb` backup of all books and articles to your browser's default download directory. The dialog stays open.
 5. Type **RESET** (uppercase) into the text field at the bottom of the dialog. Only then does the red **Delete permanently** button become active.
 6. Click **Delete permanently**.

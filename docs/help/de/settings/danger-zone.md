@@ -39,6 +39,8 @@ Beim Klick auf **Endgültig löschen** werden unwiderruflich gelöscht:
 1. **Einstellungen → Gefahrenzone** öffnen (letzter Tab).
 2. **Alles zurücksetzen** klicken.
 3. Der Dialog zeigt die vollständige Liste dessen, was gelöscht wird, plus einen prominent platzierten **Backup erstellen**-Knopf.
+
+![Reset-Bestätigungsdialog mit Lösch-Liste, Backup-Knopf und RESET-Eingabe](../../assets/screenshots/danger-zone-dialog.png)
 4. Optional: Klick auf **Backup erstellen** lädt ein `.bgb`-Backup aller Bücher und Artikel herunter. Das Backup landet im Standard-Download-Verzeichnis des Browsers. Der Dialog bleibt geöffnet.
 5. In das Textfeld am unteren Rand des Dialogs **RESET** (Großbuchstaben) eingeben. Erst dann wird die rote Schaltfläche **Endgültig löschen** aktiv.
 6. **Endgültig löschen** klicken.
