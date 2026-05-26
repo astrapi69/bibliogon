@@ -1,11 +1,12 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle. Dashboard-view sub-card grouping + SshKeySection own card + Editor tab extraction + sectionTitle standardisation + HelpText component + White-Label collapsible "Erweitert" section + SectionHeader composition component + per-section descriptions across 9 tabs in 8 catalogs. Vitest 2037 → 2052 (+15); i18n parity 75/75; tsc clean.)
+Last updated: 2026-05-26 (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 CLOSED — 5-commit ship of the Settings UX Phase 2 Allgemein-tab split. Allgemein → Erscheinungsbild (Theme + Dashboard-Views) + Verhalten (Language + Trash + flags) + Erweitert (SshKeySection + White-Label). White-Label uncollapsed in its own tab. Vitest 2052 → 2056 (+4 net; +11 from new tests, -7 from deleted AppSettings.test.tsx); i18n parity 75/75; tsc clean. Tab count 12 → 14.)
+Previous: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the Settings UX Phase 1 quick-win bundle. Dashboard-view sub-card grouping + SshKeySection own card + Editor tab extraction + sectionTitle standardisation + HelpText component + White-Label collapsible "Erweitert" section + SectionHeader composition component + per-section descriptions across 9 tabs in 8 catalogs. Vitest 2037 → 2052 (+15); i18n parity 75/75; tsc clean.)
 Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75.)
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
 Current version: v0.37.0
-Open tasks: 72 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 71 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -55,40 +56,6 @@ store.
 ---
 
 ## P3 - Infrastructure / Quality
-
-- **SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01** (P3, UX-POLISH,
-  filed 2026-05-25 from Settings-page UX audit per user
-  adjudication): split the catch-all "Allgemein" tab into 3
-  focused tabs after SETT-PHASE-1-QUICK-WINS-01 lands.
-
-  ### Scope (SETT-M-1 from the audit)
-
-  Split "Allgemein" into 3 tabs:
-
-  - **Erscheinungsbild** (Theme + Dashboard views — moved from
-    Allgemein Card 1 + the dashboard-views sub-card extracted in
-    SETT-QW-1).
-  - **Verhalten** (Trash + delete-permanently + allow-without-
-    author + Language).
-  - **Editor** (editor numeric inputs — was an SETT-QW-3 tab;
-    re-confirm placement during M-1 implementation).
-
-  White-Label moves to its own **Erweitert** tab.
-
-  ### Trigger
-
-  Ship immediately after SETT-PHASE-1-QUICK-WINS-01. Per the
-  user adjudication: Phase 1 then Phase 2 then Phase 3, all
-  immediate post-v0.37.0.
-
-  ### Effort
-
-  4-5 commits.
-
-  ### Cross-references
-
-  Depends on SETT-PHASE-1-QUICK-WINS-01 (SETT-QW-1 + SETT-QW-3
-  pave the way for the tab-split shape).
 
 - **SETT-PHASE-3-TOGGLE-COMPONENT-01** (P3, RCU, filed
   2026-05-25 from Settings-page UX audit per user adjudication):
