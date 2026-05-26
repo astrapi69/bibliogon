@@ -146,9 +146,15 @@ class TestResetExecute:
     def test_tampered_token_rejected(self) -> None:
         with _client() as c:
             token = c.post("/api/system/reset/prepare").json()["token"]
-            # Flip a character in the signature half.
+            # Flip a character in the signature half. The signature is
+            # base64-encoded HMAC-SHA256, so 'X' is a valid base64
+            # character; if the original signature happens to end with
+            # 'X' (~1.5% of runs), replacing with 'X' produces the
+            # same signature and the test would fail with status 200.
+            # Use '!' which is NEVER a valid base64 character so the
+            # tampered signature is guaranteed different.
             payload, sig = token.split(".", 1)
-            tampered = f"{payload}.{sig[:-1]}X"
+            tampered = f"{payload}.{sig[:-1]}!"
             resp = c.post(
                 "/api/system/reset",
                 json={"token": tampered, "confirmation": "RESET"},
