@@ -110,6 +110,10 @@ def create_page(book_id: str, payload: PageCreate, db: Session = Depends(get_db)
         text_content=payload.text_content,
         image_asset_id=payload.image_asset_id,
         layout_config=_serialize_layout_config(payload.layout_config),
+        notes=payload.notes,
+        story_beat=payload.story_beat,
+        mood_color=payload.mood_color,
+        act_group=payload.act_group,
     )
     db.add(page)
     db.commit()

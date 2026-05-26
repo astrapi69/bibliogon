@@ -17,6 +17,11 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # digit, lowercase, wrong segment length).
 BISAC_CODE_RE = re.compile(r"^[A-Z]{3}[0-9]{6}$")
 
+# Hex color regex for ``Page.mood_color`` (PICTURE-BOOK-STORYBOARD-
+# VIEW-01). Matches ``#RRGGBB`` only — no 3-char shorthand, no alpha
+# channel, no named colors. Picker UIs always emit the 6-digit form.
+MOOD_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
+
 # --- Enums ---
 
 
@@ -999,6 +1004,21 @@ PageLayout = Literal[
 ]
 
 
+# Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
+# STORYBOARD-VIEW-01). Six fixed values constrain future beat-sheet
+# templates (Save-the-Cat, Hero's Journey, Three-Act). Stored as
+# ``String(20)`` in the DB; validated as Literal at the Pydantic
+# layer per the existing ``Page.layout`` precedent (no SQL ENUM).
+StoryBeat = Literal[
+    "setup",
+    "inciting",
+    "rising",
+    "climax",
+    "falling",
+    "resolution",
+]
+
+
 class PageCreate(BaseModel):
     """Payload for POST /api/books/{id}/pages.
 
@@ -1024,6 +1044,23 @@ class PageCreate(BaseModel):
     # Passed through verbatim to the DB; renderer reads at render time.
     # Renamed from speech_bubble_config in PB-PHASE4 Session 4c.
     layout_config: dict[str, Any] | None = None
+    # Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
+    # Edited from the Storyboard view (Session 2 of the feature);
+    # accepted on create for forward-compat with importers that pre-
+    # populate them.
+    notes: str | None = None
+    story_beat: StoryBeat | None = None
+    mood_color: str | None = Field(default=None, max_length=7)
+    act_group: str | None = Field(default=None, max_length=100)
+
+    @field_validator("mood_color")
+    @classmethod
+    def _validate_mood_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("mood_color must be a hex color code like #RRGGBB")
+        return value
 
 
 class PageUpdate(BaseModel):
@@ -1039,6 +1076,22 @@ class PageUpdate(BaseModel):
     text_content: str | None = None
     image_asset_id: str | None = None
     layout_config: dict[str, Any] | None = None
+    # Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
+    # All optional; ``exclude_unset=True`` semantics in the router
+    # mean unsent fields are NOT overwritten to NULL.
+    notes: str | None = None
+    story_beat: StoryBeat | None = None
+    mood_color: str | None = Field(default=None, max_length=7)
+    act_group: str | None = Field(default=None, max_length=100)
+
+    @field_validator("mood_color")
+    @classmethod
+    def _validate_mood_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("mood_color must be a hex color code like #RRGGBB")
+        return value
 
 
 class PageOut(BaseModel):
@@ -1055,6 +1108,15 @@ class PageOut(BaseModel):
     # convention. Renamed from speech_bubble_config in PB-PHASE4
     # Session 4c when the column was generalized beyond Layout-A.
     layout_config: dict[str, Any] | None = None
+    # Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
+    # Always returned (NULL when unset); no decode logic — plain
+    # String / Text columns round-trip directly. story_beat returns
+    # the raw String value (no Literal enforcement on read so legacy
+    # rows with unexpected values still serialize cleanly).
+    notes: str | None = None
+    story_beat: str | None = None
+    mood_color: str | None = None
+    act_group: str | None = None
     created_at: datetime
     updated_at: datetime
 
