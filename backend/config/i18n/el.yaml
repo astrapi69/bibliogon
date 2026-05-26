@@ -619,6 +619,11 @@ ui:
     tab_erweitert: "Για προχωρημένους"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Άνοιγμα μενού καρτελών"
+    sidebar_nav: "Πλοήγηση ρυθμίσεων"
+    group_darstellung: "Προβολή"
+    group_inhalt: "Περιεχόμενο"
+    group_system: "Σύστημα"
+    group_info: "Πληροφορίες"
     danger_zone:
       title: "Danger Zone"
       description: "Resets the entire app to its first-install state. All books, articles, chapters, comments, uploads, settings and the AI API key will be permanently deleted."

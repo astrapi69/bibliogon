@@ -619,6 +619,11 @@ ui:
     tab_erweitert: "詳細設定"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "タブメニューを開く"
+    sidebar_nav: "設定ナビゲーション"
+    group_darstellung: "表示"
+    group_inhalt: "コンテンツ"
+    group_system: "システム"
+    group_info: "情報"
     danger_zone:
       title: "Danger Zone"
       description: "Resets the entire app to its first-install state. All books, articles, chapters, comments, uploads, settings and the AI API key will be permanently deleted."

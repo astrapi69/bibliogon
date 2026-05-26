@@ -7,6 +7,24 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-26 — Settings-sidebar group labels (ES, FR, EL, PT, TR, JA)
+
+5 keys translated into 6 languages = 30 translation cells. All
+stem from SETT-L-1 C4 (Settings page replaced its horizontal tab
+bar with a left-sidebar nav; the group headers + nav landmark
+need user-visible strings).
+
+| Key | Languages |
+|-----|-----------|
+| `ui.settings.sidebar_nav` | ES, FR, EL, PT, TR, JA |
+| `ui.settings.group_darstellung` | ES, FR, EL, PT, TR, JA |
+| `ui.settings.group_inhalt` | ES, FR, EL, PT, TR, JA |
+| `ui.settings.group_system` | ES, FR, EL, PT, TR, JA |
+| `ui.settings.group_info` | ES, FR, EL, PT, TR, JA |
+
+DE is canonical (Asterios-authored); EN is direct-translation
+authored.
+
 ## 2026-04-22 — Git + SSH + export-dialog strings (ES, FR, EL, PT, TR, JA)
 
 19 keys translated into 6 languages = 114 translation cells. All

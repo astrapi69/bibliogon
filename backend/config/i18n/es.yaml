@@ -633,6 +633,11 @@ ui:
     tab_erweitert: "Avanzado"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Abrir menú de pestañas"
+    sidebar_nav: "Navegación de configuración"
+    group_darstellung: "Visualización"
+    group_inhalt: "Contenido"
+    group_system: "Sistema"
+    group_info: "Información"
     danger_zone:
       title: "Danger Zone"
       description: "Resets the entire app to its first-install state. All books, articles, chapters, comments, uploads, settings and the AI API key will be permanently deleted."

@@ -633,6 +633,11 @@ ui:
     tab_erweitert: "Gelismis"
     tab_danger_zone: "Danger Zone"
     open_tab_menu: "Sekme menüsünü aç"
+    sidebar_nav: "Ayarlar gezintisi"
+    group_darstellung: "Görüntü"
+    group_inhalt: "İçerik"
+    group_system: "Sistem"
+    group_info: "Bilgi"
     danger_zone:
       title: "Danger Zone"
       description: "Resets the entire app to its first-install state. All books, articles, chapters, comments, uploads, settings and the AI API key will be permanently deleted."

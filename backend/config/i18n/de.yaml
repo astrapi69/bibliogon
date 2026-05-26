@@ -607,6 +607,11 @@ ui:
     tab_erweitert: "Erweitert"
     tab_danger_zone: "Gefahrenzone"
     open_tab_menu: "Tab-Menü öffnen"
+    sidebar_nav: "Einstellungs-Navigation"
+    group_darstellung: "Darstellung"
+    group_inhalt: "Inhalt"
+    group_system: "System"
+    group_info: "Info"
     danger_zone:
       title: "Gefahrenzone"
       description: "Setzt die gesamte App auf den Erstinstallationszustand zurück. Alle Bücher, Artikel, Kapitel, Kommentare, Uploads, Einstellungen und der KI-API-Schlüssel werden unwiderruflich gelöscht."
