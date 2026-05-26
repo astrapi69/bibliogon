@@ -1246,30 +1246,6 @@ in the same session.)
   5 commits (search component + per-tab filter wiring + Vitest +
   Playwright + i18n).
 
-- **SETT-L-1-SIDEBAR-REDESIGN-01** (P4, REFACTOR, filed
-  2026-05-25 from Settings-page UX audit, deferred per user
-  adjudication): replace the horizontal Settings tab bar with a
-  left-sidebar nav (2-column layout). Sidebar groups: Authoring
-  (App + Editor + Author + Authors-DB + Topics) / Data (Plugins
-  + Comments + Backups) / Meta (About + Support) / Danger
-  (Danger Zone, visually separated at bottom with red accent).
-  Sidebar collapsible on mobile.
-
-  ### Why P4
-
-  Substantial design commitment; the horizontal tab bar works
-  at 11 tabs. Defer until either the tab count or a user-pull
-  signal forces it.
-
-  ### Trigger
-
-  13+ tabs (current 11 + 2 more) OR user-pull signal ("I can't
-  find the Settings tab I want" / "Settings is overwhelming").
-
-  ### Effort
-
-  8-10 commits.
-
 - **BACKUP-DIFF-DEEP-VARIANTS-01** (P4, FEATURE-EXTENSION,
   filed 2026-05-19 from the
   ``docs/audits/exploration-features-2026-05-15-evaluation.md``
