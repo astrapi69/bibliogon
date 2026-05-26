@@ -45,6 +45,25 @@ navigation:
           de: Massen-Export
           en: Bulk export
         slug: books/bulk-export
+      - title:
+          de: Git-Repository-URL
+          en: Git repository URL
+        slug: books/repository-url
+
+  - title:
+      de: Dashboard
+      en: Dashboard
+    slug: dashboard/pagination
+    icon: layout-dashboard
+    children:
+      - title:
+          de: Paginierung
+          en: Pagination
+        slug: dashboard/pagination
+      - title:
+          de: Papierkorb und Wiederherstellung
+          en: Trash and restore
+        slug: dashboard/trash-and-restore
 
   - title:
       de: Editor
@@ -60,6 +79,14 @@ navigation:
           de: Formatierung
           en: Formatting
         slug: editor/formatierung
+      - title:
+          de: Anzeige-Einstellungen
+          en: Display settings
+        slug: editor/display-settings
+      - title:
+          de: Zeilenumbruch
+          en: Word wrap
+        slug: editor/word-wrap
 
   - title:
       de: Export
@@ -231,9 +258,13 @@ navigation:
   - title:
       de: Einstellungen
       en: Settings
-    slug: settings/danger-zone
+    slug: settings/sidebar
     icon: settings
     children:
+      - title:
+          de: Navigation
+          en: Navigation
+        slug: settings/sidebar
       - title:
           de: Gefahrenzone
           en: Danger Zone

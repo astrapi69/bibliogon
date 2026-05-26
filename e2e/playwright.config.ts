@@ -49,5 +49,15 @@ export default defineConfig({
             testDir: "./smoke",
             use: {browserName: "chromium"},
         },
+        {
+            // HELP-DOCS-V0.37.0-GAPS-01 screenshot generator. Run with:
+            //   npx playwright test --project=screenshots
+            // Output goes under docs/help/assets/screenshots/.
+            // Manual-only — kept out of the default suite because it
+            // resets DB state per-test for seeded fixtures.
+            name: "screenshots",
+            testDir: "./screenshots",
+            use: {browserName: "chromium", viewport: {width: 1280, height: 800}},
+        },
     ],
 });
