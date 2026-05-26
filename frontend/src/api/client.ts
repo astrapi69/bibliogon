@@ -178,6 +178,17 @@ export type PageLayout =
     | "text_only"
     | "comic_panel_grid"
 
+/** Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
+ *  STORYBOARD-VIEW-01). 6 fixed values constrain future beat-sheet
+ *  templates. Keep in sync with the Pydantic ``StoryBeat`` Literal. */
+export type StoryBeat =
+    | "setup"
+    | "inciting"
+    | "rising"
+    | "climax"
+    | "falling"
+    | "resolution"
+
 export interface Page {
     id: string
     book_id: string
@@ -195,6 +206,15 @@ export interface Page {
      *  speech_bubble_config in PB-PHASE4 Session 4c when the column
      *  was generalized beyond Layout-A. */
     layout_config: Record<string, unknown> | null
+    /** Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
+     *  Edited from the Storyboard view; NULL for legacy rows and any
+     *  page where the author hasn't set a value. ``story_beat``
+     *  returns the raw String value (no Literal enforcement on read
+     *  so legacy values still serialise cleanly). */
+    notes: string | null
+    story_beat: string | null
+    mood_color: string | null
+    act_group: string | null
     created_at: string
     updated_at: string
 }
@@ -204,6 +224,10 @@ export interface PageCreate {
     text_content?: string | null
     image_asset_id?: string | null
     layout_config?: Record<string, unknown> | null
+    notes?: string | null
+    story_beat?: StoryBeat | null
+    mood_color?: string | null
+    act_group?: string | null
 }
 
 export interface PageUpdate {
@@ -211,6 +235,10 @@ export interface PageUpdate {
     text_content?: string | null
     image_asset_id?: string | null
     layout_config?: Record<string, unknown> | null
+    notes?: string | null
+    story_beat?: StoryBeat | null
+    mood_color?: string | null
+    act_group?: string | null
 }
 
 export interface StyleFinding {

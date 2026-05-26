@@ -247,6 +247,10 @@ beforeEach(() => {
         layout_config: null,
         image_asset_id: null,
         text_content: null,
+        notes: null,
+        story_beat: null,
+        mood_color: null,
+        act_group: null,
         created_at: "2026-05-23T00:00:00",
         updated_at: "2026-05-23T00:00:00",
     }));
