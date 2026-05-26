@@ -10,17 +10,15 @@ git status
 git log origin/main --oneline -10
 ```
 
-Expected HEAD: `1205f74` or later. Clean working tree, parity
-with origin/main.
+Confirm:
+- HEAD: `5a959d1` (or later if user shipped follow-up commits between sessions)
+- Working tree: clean
+- Branch: `main`, parity with `origin/main`
 
-Confirm test baselines still hold:
-
-- Backend pytest: 2269
-- Frontend Vitest: 2063
-- i18n parity: 75/75
-
-If divergence — STOP and surface for adjudication before
-proceeding.
+Plus confirm test baselines hold:
+- Backend pytest: **2269**
+- Frontend Vitest: **2080**
+- i18n parity: **51/51** (75/75 keys per catalog)
 
 ## Step 2: Read Handover
 
@@ -28,76 +26,50 @@ proceeding.
 cat docs/journal/session-handoff-2026-05-26-next-resume.md
 ```
 
-Highlights to extract:
+## Step 3: Direction
 
-- Backlog is fully trigger-gated (P0/P1/P2 = 0; P3 = 24 all
-  gated; P4 = 29 deferred; P5 = 9 speculative; BLOCKED = 2)
-- Settings UX overhaul complete (Phase 1 + Phase 2 + Phase 3 +
-  Authors-Consolidation, all closed 2026-05-26)
-- v0.37.0 released 2026-05-25
-- Critical-constraints + active-disciplines section lists the
-  ~12 most-load-bearing rules from `.claude/rules/lessons-learned.md`
+User direction: **Picture-Book & Comics Stack**. Read the relevant backlog entries:
 
-## Step 3: User-Direction Required
+```bash
+grep -A 40 "PICTURE-BOOK-STORYBOARD" docs/backlog.md
+grep -A 40 "PICTURE-BOOK-PAGE-TEXT-TIPTAP" docs/backlog.md
+grep -A 30 "PICTURE-BOOK-OVERLAY-TEXT" docs/backlog.md
+grep -A 30 "PICTURE-BOOK-TEXT-CONFIGURATION" docs/backlog.md
+```
 
-Backlog is fully gated. No ungated items remain. User direction
-required before substantial work begins. Candidates:
+**Recommended start:** Pre-Inspection for `PICTURE-BOOK-STORYBOARD-VIEW-01` (standalone, 10-15 commits, explicit RCU + schema-additive shape).
 
-- **Picture-Book & Comics Optimization stack** (3 sibling P3
-  items, multi-session)
-- **Strategic new feature** (Story-Bible plugin, Writing-Goals
-  tracking)
-- **Help-docs catch-up** (`HELP-DOCS-V0.37.0-GAPS-01`, ~4-6
-  commits)
-- **Non-Bibliogon work** (adaptive-learner, PluginForge, BFREI,
-  creative projects)
-- **Override trigger-gates** on specific P3 items if user
-  decides the gate criteria are overcautious
-
-Wait for user direction. Do not pick a P3 item autonomously
-unless explicitly told to.
+**User-Direction-Override always overrides.** The user may redirect to the paired TipTap + Overlay stack (`PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01` + `PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01`, 10-13 commits combined) instead.
 
 ## Step 4: Apply Active Disciplines
 
-Per the handover's "Critical Constraints + Active Disciplines"
-section. Most likely to fire:
+Per the handover's "Critical Constraints + Active Disciplines" section. Most relevant for PB/Comics work:
 
-- Plain `git status` before every commit
-- Explicit-paths-only staging when parallel-session work in
-  flight
-- Pre-Coding-Reality-Check at every keystroke boundary
-- End-to-end behaviour tests (not kwarg-passes-through)
-- RCU 2-surface threshold + same-session migration
-- Articles-vs-Books parallel-surface parity verification
-- Half-wired-lifecycle audit when adding state-writes
+- **Audit-First Pre-Inspection** for anything above XS effort
+- **Recurring-Component-Unification 2-surface rule** (STORYBOARD-VIEW explicitly flags PageThumbnail extraction)
+- **Single-Source-of-Truth** (reuse `page.position`; no parallel ordering shape)
+- **Half-wired feature lifecycle** (every state-write needs a render-consumer in the same chain)
+- **Architecture-doc consultation as part of Pre-Inspection** (grep `docs/architecture/` + `docs/explorations/`)
+- **TipTap `imageFigure` not `image`** for any TipTap-emitting code
+- **Module-level caches survive test boundaries** (bidirectional `yield`-based autouse fixture for any new `@lru_cache`)
 
 ## Step 5: Execute
 
-Per direction. Atomic-green-per-commit-delta. Pre-Coding-
-Reality-Check at boundaries. Push autonomously after atomic-
-green commits. Surface only on Stop-Conditions or substantial-
-architecture-decisions.
+**Pre-Inspection first.** STOP for adjudication on substantial architecture decisions BEFORE any code-write. Push autonomously after atomic-green commits.
 
 ## Push Convention
 
-CC pushes autonomously after atomic-green commits. The trigger
-for surfacing back to the user is one of:
+CC pushes autonomously after atomic-green commits. Surface only on:
+- Stop-Conditions (test red, audit-surfacing-architecture-decision, parallel-session-conflict)
+- Substantial architecture decisions requiring user adjudication
+- End-of-session summary
 
-- Stop-Condition fires (state divergence, scope expansion,
-  Multi-Tool-Coordination conflict)
-- Substantial architecture decision requiring adjudication
-- Session completion (end-of-session report)
-- Pre-Inspection findings that change scope before
-  implementation starts
+## End-of-Session Report
 
-## End-of-Session
-
-Session-end-report per established convention:
-
-- Summary table of commits with one-line per commit
-- Test-signal delta (Vitest before → after, pytest if touched,
-  i18n parity, tsc)
-- Intentional decisions documented
-- Cross-references to follow-up backlog items if any
-- Next-session-direction hint or "session complete, no
-  follow-up needed"
+Per established convention:
+- Commits shipped (hash + subject)
+- Test deltas (backend pytest + frontend Vitest + i18n parity)
+- Disciplines re-validated
+- Pre-Coding-Reality-Check findings (if any)
+- Backlog state changes
+- Next session candidate
