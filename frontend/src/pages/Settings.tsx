@@ -2,9 +2,8 @@ import {useEffect, useMemo, useState} from "react";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {api} from "../api/client";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Check, Home, Menu} from "lucide-react";
+import {ChevronLeft, Home} from "lucide-react";
 import {notify} from "../utils/notify";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import CommentsAdminSection from "../components/CommentsAdminSection";
@@ -20,6 +19,7 @@ import {AboutSettings} from "../components/settings/AboutSettings";
 import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import {SettingsSidebar, type SidebarGroup} from "../components/settings/SettingsSidebar";
+import {SettingsMobileMenu} from "../components/settings/SettingsMobileMenu";
 import styles from "./Settings.module.css";
 
 const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "autoren", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
@@ -164,12 +164,6 @@ export default function Settings() {
         return groups;
     }, [t, hasDonations]);
 
-    const flatItems = useMemo(
-        () => sidebarGroups.flatMap((g) => g.items),
-        [sidebarGroups],
-    );
-    const activeLabel = flatItems.find((i) => i.value === activeTab)?.label ?? "";
-
     return (
         <div className={styles.container}>
             {/* Header */}
@@ -201,37 +195,11 @@ export default function Settings() {
                 </div>
             </header>
 
-            {/* Mobile dropdown — preserved from the pre-sidebar layout.
-                C2 will refine the responsive behaviour. */}
-            <div className="settings-tabs-mobile">
-                <DropdownMenu.Root>
-                    <DropdownMenu.Trigger asChild>
-                        <button
-                            className="btn btn-secondary settings-tabs-mobile-trigger"
-                            data-testid="settings-tabs-mobile-trigger"
-                            aria-label={t("ui.settings.open_tab_menu", "Tab-Menü öffnen")}
-                        >
-                            <Menu size={16}/>
-                            <span>{activeLabel}</span>
-                        </button>
-                    </DropdownMenu.Trigger>
-                    <DropdownMenu.Portal>
-                        <DropdownMenu.Content className="hamburger-menu-content" align="start" sideOffset={4}>
-                            {flatItems.map((d) => (
-                                <DropdownMenu.Item
-                                    key={d.value}
-                                    className="hamburger-menu-item"
-                                    data-testid={`${d.testId}-mobile`}
-                                    onSelect={() => handleTabChange(d.value)}
-                                >
-                                    {d.label}
-                                    {d.value === activeTab ? <Check size={14}/> : null}
-                                </DropdownMenu.Item>
-                            ))}
-                        </DropdownMenu.Content>
-                    </DropdownMenu.Portal>
-                </DropdownMenu.Root>
-            </div>
+            <SettingsMobileMenu
+                groups={sidebarGroups}
+                activeTab={activeTab}
+                onChange={handleTabChange}
+            />
 
             <div className={styles.layout}>
                 <div className={styles.sidebarColumn}>
