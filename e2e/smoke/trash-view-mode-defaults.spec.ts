@@ -22,10 +22,11 @@ import {test, expect} from "../fixtures/base";
 test.describe("Trash view-mode default settings (Bug 3)", () => {
     test("Settings UI exposes 4 view-mode dropdowns", async ({page}) => {
         await page.goto("/settings");
-        // Tab to App settings - the testid switches based on the
-        // active tab in the Settings layout. Switching to the App
-        // tab is the canonical pattern used elsewhere.
-        await page.getByTestId("settings-tab-app").click();
+        // SETT-PHASE-2 split: the 4 dashboard-view dropdowns live in
+        // the Erscheinungsbild tab (was previously the catch-all
+        // Allgemein tab). The save button is
+        // ``erscheinungsbild-settings-save``.
+        await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         await expect(page.getByTestId("settings-books-view")).toBeVisible();
         await expect(page.getByTestId("settings-articles-view")).toBeVisible();
@@ -35,12 +36,12 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
 
     test("BD-Trash default = list propagates to the trash view", async ({page}) => {
         await page.goto("/settings");
-        await page.getByTestId("settings-tab-app").click();
+        await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // Set the books-trash default to "list" via the Radix Select.
         await page.getByTestId("settings-books-trash-view").click();
         await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
-        await page.getByTestId("settings-save").click();
+        await page.getByTestId("erscheinungsbild-settings-save").click();
 
         // Open the BD trash; the view should mount as list.
         await page.goto("/");
@@ -50,7 +51,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
 
     test("AD/BD active default and BD-Trash default are independent", async ({page}) => {
         await page.goto("/settings");
-        await page.getByTestId("settings-tab-app").click();
+        await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // Active BD = grid, Trash BD = list. Active and trash should
         // pick up different defaults — that's the whole point of Bug 3.
@@ -59,7 +60,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
 
         await page.getByTestId("settings-books-trash-view").click();
         await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
-        await page.getByTestId("settings-save").click();
+        await page.getByTestId("erscheinungsbild-settings-save").click();
 
         await page.goto("/");
         // Active surface mounts grid.
@@ -75,10 +76,10 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
     test("toggling view-mode inside trash does NOT persist to YAML", async ({page}) => {
         // Set trash default to grid via Settings.
         await page.goto("/settings");
-        await page.getByTestId("settings-tab-app").click();
+        await page.getByTestId("settings-tab-erscheinungsbild").click();
         await page.getByTestId("settings-books-trash-view").click();
         await page.getByRole("option", {name: /kachel-ansicht|grid/i}).click();
-        await page.getByTestId("settings-save").click();
+        await page.getByTestId("erscheinungsbild-settings-save").click();
 
         // Open trash, toggle to list.
         await page.goto("/");
@@ -89,7 +90,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         // Re-open Settings — the saved value should STILL be grid,
         // because the in-trash toggle is session-local.
         await page.goto("/settings");
-        await page.getByTestId("settings-tab-app").click();
+        await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // The select shows the saved value as its current item label.
         // The exact label depends on i18n; we read the trigger's text

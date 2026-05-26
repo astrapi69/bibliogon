@@ -9,7 +9,6 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
 import SupportSection, {getDonationsConfig} from "../components/SupportSection";
 import CommentsAdminSection from "../components/CommentsAdminSection";
-import {AppSettings} from "../components/settings/AppSettings";
 import {ErscheinungsbildSettings} from "../components/settings/ErscheinungsbildSettings";
 import {VerhaltenSettings} from "../components/settings/VerhaltenSettings";
 import {EditorSettings} from "../components/settings/EditorSettings";
@@ -24,7 +23,7 @@ import {BackupsSettings} from "../components/settings/BackupsSettings";
 import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["app", "erscheinungsbild", "verhalten", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
+const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "author", "authors_database", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -55,9 +54,12 @@ export default function Settings() {
     const [saving, setSaving] = useState(false);
     const [message, setMessage] = useState("");
 
-    // Deep-link tab via ?tab=author. Falls back to "app" for unknown
-    // values so a stale URL never lands on an invalid Radix tab.
-    const initialTab: SettingsTab = isSettingsTab(searchParams.get("tab")) ? (searchParams.get("tab") as SettingsTab) : "app";
+    // Deep-link tab via ?tab=author. Falls back to "erscheinungsbild"
+    // for unknown values so a stale URL never lands on an invalid
+    // Radix tab. Phase 2 removed the legacy "app" / "Allgemein" tab;
+    // the three replacement tabs (erscheinungsbild + verhalten +
+    // erweitert) split its content.
+    const initialTab: SettingsTab = isSettingsTab(searchParams.get("tab")) ? (searchParams.get("tab") as SettingsTab) : "erscheinungsbild";
     const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
     const handleTabChange = (next: string) => {
@@ -137,7 +139,6 @@ export default function Settings() {
                     // dropdown items call ``handleTabChange`` directly because
                     // they are not Tabs.Trigger nodes.
                     const tabDefs: {value: SettingsTab; label: string; testId: string}[] = [
-                        {value: "app", label: t("ui.settings.tab_general", "Allgemein"), testId: "settings-tab-app"},
                         {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
                         {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
                         {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
@@ -204,26 +205,6 @@ export default function Settings() {
                 })()}
 
             <main id="main-content" className={styles.main}>
-                <Tabs.Content value="app">
-                    <AppSettings
-                        config={appConfig}
-                        onSave={async (data) => {
-                            setSaving(true);
-                            try {
-                                const updated = await api.settings.updateApp(data);
-                                setAppConfig(updated);
-                                // Live language switch without reload
-                                const newLang = (data.app as Record<string, unknown>)?.default_language as string;
-                                if (newLang) setGlobalLang(newLang);
-                                showMessage(t("ui.settings.saved", "Gespeichert"));
-                            } catch (err) {
-                                showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                            }
-                            setSaving(false);
-                        }}
-                        saving={saving}
-                    />
-                </Tabs.Content>
                 <Tabs.Content value="erscheinungsbild">
                     <ErscheinungsbildSettings
                         config={appConfig}

@@ -61,9 +61,11 @@ test.describe("UX-Audit Group 3: Settings", () => {
             console.log(`  ${t}: ${n}`)
         }
 
-        // The 3 tabs WITHOUT testIds (app, author, plugins) — count
-        // their Radix Tabs.Trigger label text instead.
-        const labels = ["Allgemein", "Autor", "Plugins"]
+        // SETT-PHASE-2 removed the "Allgemein" catch-all tab and
+        // split it into Erscheinungsbild / Verhalten / Erweitert
+        // (each with its own testid). Author + Plugins tabs still
+        // lack testIds; count their labels instead.
+        const labels = ["Autor", "Plugins"]
         for (const l of labels) {
             const n = await page
                 .locator(`button:has-text("${l}")`)
@@ -80,14 +82,15 @@ test.describe("UX-Audit Group 3: Settings", () => {
         console.log(`mobile-tabs-trigger: ${mobileTrigger}`)
     })
 
-    test("02 Tab: app (general)", async ({page}) => {
+    test("02 Tab: verhalten (was: app/general)", async ({page}) => {
         await page.goto("http://localhost:5173/settings")
         await page.waitForTimeout(500)
 
-        // Click via label text since the tab lacks a testId.
-        await page.locator('button:has-text("Allgemein")').first().click()
+        // SETT-PHASE-2 moved settings-allow-books-without-author
+        // into the Verhalten tab.
+        await page.getByTestId("settings-tab-verhalten").click()
         await page.waitForTimeout(500)
-        await snap(page, "02a-tab-app")
+        await snap(page, "02a-tab-verhalten")
 
         const allowBooksWithoutAuthor = await page
             .locator('[data-testid="settings-allow-books-without-author"]')

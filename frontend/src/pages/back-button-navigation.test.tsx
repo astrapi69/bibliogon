@@ -67,8 +67,17 @@ vi.mock("../components/SupportSection", () => ({
 vi.mock("../components/CommentsAdminSection", () => ({
     default: () => <div data-testid="comments-stub" />,
 }));
-vi.mock("../components/settings/AppSettings", () => ({
-    AppSettings: () => <div data-testid="app-settings-stub" />,
+vi.mock("../components/settings/ErscheinungsbildSettings", () => ({
+    ErscheinungsbildSettings: () => <div data-testid="erscheinungsbild-stub" />,
+}));
+vi.mock("../components/settings/VerhaltenSettings", () => ({
+    VerhaltenSettings: () => <div data-testid="verhalten-stub" />,
+}));
+vi.mock("../components/settings/EditorSettings", () => ({
+    EditorSettings: () => <div data-testid="editor-stub" />,
+}));
+vi.mock("../components/settings/ErweitertSettings", () => ({
+    ErweitertSettings: () => <div data-testid="erweitert-stub" />,
 }));
 vi.mock("../components/settings/AiAssistantSettings", () => ({
     AiAssistantSettings: () => <div data-testid="ai-stub" />,
