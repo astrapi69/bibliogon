@@ -58,21 +58,21 @@ describe("ComicBubble", () => {
         );
     });
 
-    it("renders the BubbleTail child when tail_direction != 'none'", () => {
+    it("emits the single-path SVG outline (approach A)", () => {
         render(<ComicBubble bubble={makeBubble({tail_direction: "S"})} />);
-        expect(screen.getByTestId("bubble-tail-svg")).toBeInTheDocument();
+        expect(screen.getByTestId("bubble-shape-svg-b1")).toBeInTheDocument();
+        const path = screen.getByTestId("bubble-shape-path-b1");
+        // The path's d attr includes a cubic bezier (curved tail).
+        expect(path.getAttribute("d") ?? "").toContain("C ");
     });
 
-    it("omits the BubbleTail child when tail_direction === 'none'", () => {
-        const {container} = render(
-            <ComicBubble bubble={makeBubble({tail_direction: "none"})} />,
-        );
-        expect(
-            container.querySelector("[data-testid=bubble-tail-svg]"),
-        ).toBeNull();
+    it("renders the SVG even when tail_direction === 'none' (shape stays)", () => {
+        render(<ComicBubble bubble={makeBubble({tail_direction: "none"})} />);
+        // Bubble outline still renders without the tail diversion.
+        expect(screen.getByTestId("bubble-shape-svg-b1")).toBeInTheDocument();
     });
 
-    it("applies bubble_config border + radius overrides as inline style", () => {
+    it("applies bubble_config border + dashed overrides as SVG path attrs", () => {
         render(
             <ComicBubble
                 bubble={makeBubble({
@@ -80,14 +80,26 @@ describe("ComicBubble", () => {
                         border_color: "#ff0000",
                         border_width: 3,
                         border_style: "dashed",
-                        border_radius: 25,
                     },
                 })}
             />,
         );
-        const el = screen.getByTestId("comic-bubble-b1") as HTMLElement;
-        expect(el.style.border).toContain("dashed");
-        expect(el.style.borderRadius).toBe("25%");
+        const path = screen.getByTestId("bubble-shape-path-b1");
+        expect(path.getAttribute("stroke")).toBe("#ff0000");
+        expect(path.getAttribute("stroke-width")).toBe("3");
+        expect(path.getAttribute("stroke-dasharray")).toBe("4 3");
+    });
+
+    it("applies bubble_config background_color as SVG path fill", () => {
+        render(
+            <ComicBubble
+                bubble={makeBubble({
+                    bubble_config: {background_color: "#fffacd"},
+                })}
+            />,
+        );
+        const path = screen.getByTestId("bubble-shape-path-b1");
+        expect(path.getAttribute("fill")).toBe("#fffacd");
     });
 
     it("clamps out-of-range anchor pct into [0, 100]", () => {

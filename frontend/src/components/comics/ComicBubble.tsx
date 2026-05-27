@@ -31,11 +31,8 @@
 
 import {useCallback, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent} from "react";
 
-import {BubbleTail, type BubbleTailDirection} from "./BubbleTail";
-import {
-    BUBBLE_BASE_CLASS,
-    bubbleTypeClassName,
-} from "./bubbleTypeStyle";
+import {buildBubblePath, type BubbleShape} from "./bubblePath";
+import type {BubbleTailDirection} from "./BubbleTail";
 import {
     computeVisibleTipPosition,
     deriveTailFromTip,
@@ -369,48 +366,102 @@ export function ComicBubble({
         outlineOffset: "1px",
         cursor: onDragEnd ? "move" : onClick ? "pointer" : "default",
         touchAction: onDragEnd ? "none" : undefined,
+        overflow: "visible",
     };
 
-    // bubble_config Tier-1 overrides (background_color, border_color,
-    // border_width, border_style, border_radius, opacity). Renderer
-    // is permissive: unknown values fall through.
+    // bubble_config Tier-1 overrides. Now flow into SVG path
+    // attributes (fill, stroke, stroke-width, stroke-dasharray) +
+    // text-overlay CSS (typography, opacity, padding).
     const config = bubble.bubble_config ?? {};
-    const overrideStyle: CSSProperties = {};
-    if (typeof config.background_color === "string") {
-        overrideStyle.background = config.background_color;
-    }
-    if (typeof config.border_color === "string" && typeof config.border_width === "number") {
-        const style =
-            typeof config.border_style === "string" ? config.border_style : "solid";
-        overrideStyle.border = `${config.border_width}px ${style} ${config.border_color}`;
-    }
-    if (typeof config.border_radius === "number") {
-        overrideStyle.borderRadius = `${config.border_radius}%`;
-    }
+    const textOverlayStyle: CSSProperties = {
+        position: "absolute",
+        inset: 0,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        textAlign: "center",
+        padding: "4px 8px",
+        boxSizing: "border-box",
+        pointerEvents: "none",
+    };
     if (typeof config.opacity === "number") {
-        overrideStyle.opacity = config.opacity;
+        textOverlayStyle.opacity = config.opacity;
     }
     if (typeof config.padding === "number") {
-        overrideStyle.padding = `${config.padding}px`;
+        textOverlayStyle.padding = `${config.padding}px`;
     }
     if (typeof config.font_family === "string") {
-        overrideStyle.fontFamily = config.font_family;
+        textOverlayStyle.fontFamily = config.font_family;
     }
     if (typeof config.font_size === "number") {
-        overrideStyle.fontSize = `${config.font_size}pt`;
+        textOverlayStyle.fontSize = `${config.font_size}pt`;
     }
     if (typeof config.font_weight === "string") {
-        overrideStyle.fontWeight = config.font_weight;
+        textOverlayStyle.fontWeight = config.font_weight;
     }
     if (typeof config.text_color === "string") {
-        overrideStyle.color = config.text_color;
+        textOverlayStyle.color = config.text_color;
     }
     if (typeof config.text_align === "string") {
-        overrideStyle.textAlign = config.text_align as CSSProperties["textAlign"];
+        textOverlayStyle.textAlign = config.text_align as CSSProperties["textAlign"];
     }
     if (config.italic === true) {
-        overrideStyle.fontStyle = "italic";
+        textOverlayStyle.fontStyle = "italic";
     }
+
+    // Default visual attributes per bubble type. These match the
+    // values that used to live in ``bubble-types.module.css`` —
+    // moved here so the single SVG path carries them as SVG
+    // attributes instead of CSS class-based rules.
+    const bubbleType = bubble.bubble_type;
+    let defaultFill = "white";
+    let defaultStroke: string | null = "black";
+    let defaultStrokeWidth = 1.5;
+    let defaultStrokeDasharray: string | undefined;
+    if (bubbleType === "narration") {
+        defaultFill = "#f5f5dc";
+        defaultStrokeWidth = 1;
+    } else if (bubbleType === "thought") {
+        defaultStrokeWidth = 1;
+    } else if (bubbleType === "whisper") {
+        defaultStrokeWidth = 1;
+        defaultStrokeDasharray = "4 3";
+    } else if (bubbleType === "sound_effect") {
+        defaultFill = "transparent";
+        defaultStroke = null;
+    }
+    const fillColor =
+        typeof config.background_color === "string"
+            ? config.background_color
+            : defaultFill;
+    const strokeColor =
+        typeof config.border_color === "string"
+            ? config.border_color
+            : defaultStroke ?? "transparent";
+    const strokeWidth =
+        typeof config.border_width === "number"
+            ? config.border_width
+            : defaultStrokeWidth;
+    const strokeDasharray =
+        typeof config.border_style === "string" &&
+        config.border_style === "dashed"
+            ? "4 3"
+            : typeof config.border_style === "string" &&
+                config.border_style === "dotted"
+              ? "1 2"
+              : defaultStrokeDasharray;
+
+    // Build the single SVG path. The viewBox uses a 100×100 unit
+    // space; CSS overflow:visible lets the tail extend past the
+    // bubble's bounding box.
+    const pathOutput = buildBubblePath({
+        shape: bubbleType as BubbleShape,
+        width: 100,
+        height: 100,
+        tailDirection: renderTailDirection as BubbleTailDirection,
+        tailPositionPct: renderTailPositionPct,
+        tailLengthPx: renderTailLengthPx,
+    });
 
     const interactive = Boolean(onDragEnd || onClick);
     // a11y accessible name: when the bubble carries text_content,
@@ -425,8 +476,7 @@ export function ComicBubble({
         <div
             data-testid={`comic-bubble-${bubble.id}`}
             data-bubble-type={bubble.bubble_type}
-            className={`${BUBBLE_BASE_CLASS} ${bubbleTypeClassName(bubble.bubble_type)}`}
-            style={{...baseStyle, ...overrideStyle}}
+            style={baseStyle}
             aria-label={interactive ? bubbleAriaLabel : undefined}
             onPointerDown={onDragEnd ? handlePointerDown : undefined}
             onPointerMove={onDragEnd ? handlePointerMove : undefined}
@@ -457,17 +507,33 @@ export function ComicBubble({
             role={interactive ? "button" : undefined}
             tabIndex={interactive ? 0 : undefined}
         >
-            {bubble.text_content ?? ""}
-            <BubbleTail
-                direction={renderTailDirection as BubbleTailDirection}
-                positionPct={renderTailPositionPct}
-                lengthPx={renderTailLengthPx}
-                bubbleBackgroundColor={
-                    typeof config.background_color === "string"
-                        ? config.background_color
-                        : "white"
-                }
-            />
+            {pathOutput.d ? (
+                <svg
+                    data-testid={`bubble-shape-svg-${bubble.id}`}
+                    width="100%"
+                    height="100%"
+                    viewBox={pathOutput.viewBox}
+                    preserveAspectRatio="none"
+                    style={{
+                        position: "absolute",
+                        inset: 0,
+                        overflow: "visible",
+                        pointerEvents: "none",
+                    }}
+                    aria-hidden="true"
+                >
+                    <path
+                        data-testid={`bubble-shape-path-${bubble.id}`}
+                        d={pathOutput.d}
+                        fill={fillColor}
+                        stroke={strokeColor}
+                        strokeWidth={strokeWidth}
+                        strokeDasharray={strokeDasharray}
+                        strokeLinejoin="round"
+                    />
+                </svg>
+            ) : null}
+            <div style={textOverlayStyle}>{bubble.text_content ?? ""}</div>
             {/* Tail drag handle — only when the bubble is selected,
                 a drag callback is wired, and the tail is actually
                 visible (direction !== "none"). The handle is a
