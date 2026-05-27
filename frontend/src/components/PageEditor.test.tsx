@@ -339,10 +339,14 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         fireEvent.click(
             screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
         )
+        // Fix B (4c-B sub-item) supersedes Fix A's layout_config: null
+        // purge: per-layout namespacing means each layout's config
+        // lives in its own ``layout_config[layout]`` key. The PATCH
+        // no longer carries layout_config; sibling-layout namespaces
+        // survive the switch untouched, ready to re-apply on switch-back.
         await waitFor(() =>
             expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
                 layout: "image_top_text_bottom",
-                layout_config: null,
             }),
         )
         await waitFor(() =>
@@ -355,25 +359,27 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
     })
 
     /**
-     * PB-PHASE4 Session 4c-A regression pin: purge layout_config on
-     * layout switch (v0.33.1). Before the fix, the update payload was
-     * just {layout: <new>}, leaving stale layout_config keys from the
-     * previous layout — e.g. speech_bubble's image_fit:"cover" survived
-     * a switch to image_full_text_overlay and cropped the image
-     * unexpectedly. The fix sets layout_config: null in the same
-     * payload so the dict is purged atomically with the layout flip.
+     * Fix B (PICTURE-BOOK-TEXT-CONFIGURATION-01, 4c-B sub-item):
+     * supersedes Fix A's purge-on-switch behaviour. With per-layout
+     * namespacing, the renderer reads ``layout_config[page.layout]``
+     * exclusively, so stale cross-layout keys can't bleed through —
+     * no purge needed. The PATCH carries ONLY the layout flip.
+     *
+     * This test pins the new contract: a legacy-flat layout_config
+     * does NOT get nulled on switch; the writer migrates it on the
+     * next user edit (covered by the legacy-flat-page-promoted test
+     * below, now updated for Fix B's namespace shape).
      */
-    it("purges layout_config to null when the layout changes (Session 4c-A Bug A + Bug C regression pin)", async () => {
+    it("does NOT purge layout_config on layout switch (Fix B namespace preservation)", async () => {
         mockList.mockResolvedValue([
             makePage({
                 id: "p1",
                 position: 1,
                 layout: "speech_bubble",
                 layout_config: {
-                    anchor_position: "top-right",
-                    opacity: 0.7,
-                    image_fit: "cover",
-                    bubble_size_width_pct: 50,
+                    speech_bubble: {
+                        bubbles: [{anchor_position: "top-right", opacity: 0.7}],
+                    },
                 },
             }),
         ])
@@ -382,7 +388,11 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
                 id: "p1",
                 position: 1,
                 layout: "image_full_text_overlay",
-                layout_config: null,
+                layout_config: {
+                    speech_bubble: {
+                        bubbles: [{anchor_position: "top-right", opacity: 0.7}],
+                    },
+                },
             }),
         )
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
@@ -397,15 +407,19 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         await waitFor(() =>
             expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
                 layout: "image_full_text_overlay",
-                layout_config: null,
             }),
         )
-        // After the round-trip resolves, the optimistic state reflects
-        // the canonical updated row with layout_config null.
+        // After the round-trip resolves, the speech_bubble namespace
+        // is preserved; switching back to speech_bubble would re-find
+        // its config. The active-layout namespace (image_full_text_overlay)
+        // is absent so the dispatcher shows defaults.
         await waitFor(() => {
             const keys = screen
                 .getByTestId("layout-config-root")
                 .getAttribute("data-config-keys")
+            // image_full_text_overlay's namespace doesn't exist yet,
+            // so the dispatcher's body-namespace is null + data-config-keys
+            // reads from {} → empty string.
             expect(keys === "" || keys === null).toBe(true)
         })
     })
@@ -569,19 +583,24 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
 // pin that contract so any future refactor to handleUpdateLayoutConfig
 // (deep-merge, replace-vs-merge change, etc.) is caught.
 
-describe("PageEditor handleUpdateLayoutConfig + bubbles[0] (4c-B-2 C5)", () => {
-    it("anchor click writes bubbles[0] with prior bubble fields preserved", async () => {
+describe("PageEditor handleUpdateLayoutConfig + bubbles[0] (4c-B-2 C5 + Fix B)", () => {
+    it("anchor click writes layout_config.speech_bubble.bubbles[0] with prior fields preserved", async () => {
+        // Fix B (4c-B sub-item): layout_config is now namespaced
+        // per-layout. speech_bubble's bubbles[0] wrapper lives INSIDE
+        // the speech_bubble namespace.
         const initial = makePage({
             id: "p1",
             layout: "speech_bubble",
             layout_config: {
-                bubbles: [
-                    {
-                        anchor_position: "bottom-center",
-                        opacity: 0.6,
-                        bubble_width: 55,
-                    },
-                ],
+                speech_bubble: {
+                    bubbles: [
+                        {
+                            anchor_position: "bottom-center",
+                            opacity: 0.6,
+                            bubble_width: 55,
+                        },
+                    ],
+                },
             },
         })
         mockList.mockResolvedValue([initial])
@@ -597,21 +616,23 @@ describe("PageEditor handleUpdateLayoutConfig + bubbles[0] (4c-B-2 C5)", () => {
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled())
         const [, , updates] = mockUpdate.mock.calls[0]
         // The merged layout_config sent to the API carries
-        // bubbles[0] with the new anchor + the preserved
+        // speech_bubble.bubbles[0] with the new anchor + the preserved
         // opacity + bubble_width.
         expect(updates.layout_config).toBeTruthy()
-        expect(updates.layout_config.bubbles).toHaveLength(1)
-        expect(updates.layout_config.bubbles[0].anchor_position).toBe("top-left")
-        expect(updates.layout_config.bubbles[0].opacity).toBe(0.6)
-        expect(updates.layout_config.bubbles[0].bubble_width).toBe(55)
+        const sbNamespace = updates.layout_config.speech_bubble
+        expect(sbNamespace).toBeTruthy()
+        expect(sbNamespace.bubbles).toHaveLength(1)
+        expect(sbNamespace.bubbles[0].anchor_position).toBe("top-left")
+        expect(sbNamespace.bubbles[0].opacity).toBe(0.6)
+        expect(sbNamespace.bubbles[0].bubble_width).toBe(55)
     })
 
-    it("legacy flat-shape page promoted to bubbles[0] on first edit", async () => {
-        // Pre-C1 picture-book pages persist flat. The first edit
-        // through writeBubble pulls those flat fields into
-        // bubbles[0] (per readBubbleConfig's merge), so the
-        // outgoing write carries the FULL prior state under
-        // the wrapper.
+    it("legacy flat-shape page migrates into speech_bubble namespace + bubbles[0] on first edit", async () => {
+        // Fix B migration: legacy flat layout_config is treated as
+        // belonging to the current layout. The first write through
+        // writeLayoutNamespace migrates {anchor_position: ...} into
+        // {speech_bubble: {anchor_position: ...}}, then writeBubble
+        // pulls those flat fields into bubbles[0].
         const legacy = makePage({
             id: "p1",
             layout: "speech_bubble",
@@ -636,12 +657,13 @@ describe("PageEditor handleUpdateLayoutConfig + bubbles[0] (4c-B-2 C5)", () => {
         fireEvent.click(screen.getByTestId("speech-bubble-anchor-top-right"))
         await waitFor(() => expect(mockUpdate).toHaveBeenCalled())
         const [, , updates] = mockUpdate.mock.calls[0]
-        // The OLD flat keys persist on the layout_config top
-        // level (PageEditor shallow-merge); the NEW bubbles[0]
-        // holds the canonical new state. Read-path shim then
-        // honours bubbles[0] precedence.
-        expect(updates.layout_config.bubbles).toHaveLength(1)
-        const written = updates.layout_config.bubbles[0]
+        // Migrated: layout_config now carries speech_bubble.bubbles[0]
+        // with the canonical new state. Read-path shim honours
+        // bubbles[0] precedence and reads flat keys as fallback.
+        const sbNamespace = updates.layout_config.speech_bubble
+        expect(sbNamespace).toBeTruthy()
+        expect(sbNamespace.bubbles).toHaveLength(1)
+        const written = sbNamespace.bubbles[0]
         expect(written.anchor_position).toBe("top-right")
         expect(written.opacity).toBe(0.8)
         expect(written.bubble_width).toBe(45)

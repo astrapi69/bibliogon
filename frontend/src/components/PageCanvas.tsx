@@ -3,6 +3,7 @@ import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {readLayoutNamespace} from "../utils/layoutConfig"
 import {useI18n} from "../hooks/useI18n"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import RichTextEditor from "./RichTextEditor"
@@ -553,13 +554,22 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
     const isSpeechBubble = page.layout === "speech_bubble"
     const isTextOnly = page.layout === "text_only"
+    // Fix B (4c-B sub-item): extract the active layout's namespace
+    // before reading per-key fields. Legacy-flat configs return the
+    // whole dict (transparent backward-compat). Namespaced configs
+    // return the layout's own bucket; sibling-layout namespaces are
+    // invisible to this layout's renderer.
+    const layoutNamespace = readLayoutNamespace(
+        page.layout_config,
+        page.layout as PageLayout,
+    )
     const speechBubbleStyle = isSpeechBubble
-        ? speechBubbleInlineStyle(page.layout_config)
+        ? speechBubbleInlineStyle(layoutNamespace)
         : undefined
 
     // Session 4c Commit 5: image_top_text_bottom +
     // image_left_text_right + image_full_text_overlay configs.
-    const layoutConfig = page.layout_config ?? {}
+    const layoutConfig = layoutNamespace ?? {}
     const imagePosition =
         typeof layoutConfig.image_position === "string" &&
         ["left", "center", "right"].includes(layoutConfig.image_position as string)
@@ -738,10 +748,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                     data-anchor={
                         isSpeechBubble
                             ? ((readBubbleConfig(
-                                  page.layout_config as Record<
-                                      string,
-                                      unknown
-                                  > | null,
+                                  layoutNamespace,
                               ).anchor_position as string) ?? "bottom-center")
                             : undefined
                     }

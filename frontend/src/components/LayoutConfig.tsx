@@ -1,5 +1,6 @@
 import React from "react"
-import type {Page} from "../api/client"
+import type {Page, PageLayout} from "../api/client"
+import {readLayoutNamespace} from "../utils/layoutConfig"
 import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
 import {
     LayoutConfigImageTopTextBottom,
@@ -37,33 +38,42 @@ interface Props {
  * returns null for it.
  */
 export default function LayoutConfig({page, onChange}: Props) {
+    // Fix B: extract the active layout's namespace before passing
+    // to the body. Legacy-flat configs return the whole flat dict
+    // (treated as the current layout's namespace); the next write
+    // through PageEditor.handleUpdateLayoutConfig migrates it into
+    // namespaced shape via ``writeLayoutNamespace``.
+    const layoutNamespace = readLayoutNamespace(
+        page.layout_config,
+        page.layout as PageLayout,
+    )
     return (
         <div
             data-testid="layout-config-root"
             data-layout={page.layout}
-            data-config-keys={Object.keys(page.layout_config ?? {}).join(",")}
+            data-config-keys={Object.keys(layoutNamespace ?? {}).join(",")}
         >
             {page.layout === "speech_bubble" && (
                 <LayoutConfigSpeechBubble
-                    config={page.layout_config}
+                    config={layoutNamespace}
                     onChange={onChange}
                 />
             )}
             {page.layout === "image_top_text_bottom" && (
                 <LayoutConfigImageTopTextBottom
-                    config={page.layout_config}
+                    config={layoutNamespace}
                     onChange={onChange}
                 />
             )}
             {page.layout === "image_left_text_right" && (
                 <LayoutConfigImageLeftTextRight
-                    config={page.layout_config}
+                    config={layoutNamespace}
                     onChange={onChange}
                 />
             )}
             {page.layout === "image_full_text_overlay" && (
                 <LayoutConfigImageFullTextOverlay
-                    config={page.layout_config}
+                    config={layoutNamespace}
                     onChange={onChange}
                 />
             )}

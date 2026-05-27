@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
 import {ChevronLeft, FileText, LayoutGrid, Maximize2, Minimize2} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {writeLayoutNamespace} from "../utils/layoutConfig"
 import {useI18n} from "../hooks/useI18n"
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
@@ -153,31 +154,27 @@ export default function PageEditor({
     )
 
     /**
-     * PB-PHASE4 Session 4c-A bug-fix (v0.33.1): purge layout_config on
-     * layout switch.
+     * Layout-switch handler.
      *
-     * Why: layout_config is a single JSON dict that holds heterogeneous
-     * keys from EVERY layout the page has ever worn. Without a purge,
-     * switching speech_bubble → image_full_text_overlay → image_top
-     * leaves anchor_position, opacity, bubble_size_*, image_fit,
-     * text_position, text_backdrop_opacity, image_position, split_ratio
-     * all co-resident. Stale keys then bleed into the renderer: e.g. a
-     * speech_bubble's image_fit:"cover" survives the switch to
-     * image_full_text_overlay and crops the photo unexpectedly (Bug A
-     * + Bug C of the 2026-05-17 manual smoke).
+     * **Fix B (PICTURE-BOOK-TEXT-CONFIGURATION-01, 4c-B sub-item)**
+     * supersedes the original Fix A (v0.33.1) purge-on-switch
+     * behaviour. With per-layout namespacing of layout_config, each
+     * layout's settings live inside its own ``layout_config[layout]``
+     * key — switching speech_bubble → image_full_text_overlay no
+     * longer pollutes the renderer because the dispatcher reads
+     * ``layout_config[page.layout]`` exclusively. Switching BACK to a
+     * prior layout finds its preserved namespace.
      *
-     * Trade-off: this discards the user's per-layout config when they
-     * switch. The follow-up "Fix B" (namespace layout_config per
-     * layout, e.g. {speech_bubble: {...}, image_top_text_bottom: {...}})
-     * preserves both layouts' settings independently — tracked under
-     * PICTURE-BOOK-TEXT-CONFIGURATION-01 (4c-B sub-item).
+     * The PATCH no longer carries ``layout_config: null``. Existing
+     * legacy-flat configs auto-migrate into the new layout's
+     * namespace on the next write (per ``writeLayoutNamespace``);
+     * dirty cross-layout flat keys silently drop on first write.
      */
     const handleChangeLayout = useCallback(
         async (newLayout: PageLayout) => {
             if (!activePage) return
             const updated = await api.pages.update(bookId, activePage.id, {
                 layout: newLayout,
-                layout_config: null,
             })
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
@@ -194,29 +191,37 @@ export default function PageEditor({
     )
 
     /**
-     * PB-PHASE4 Session 4c Commit 3: per-page layout_config writer.
+     * Per-page layout_config writer.
      *
-     * Merges `partial` over the active page's current `layout_config`
-     * (null treated as empty) and persists the merged dict. Optimistic
-     * state update keeps the properties pane snappy: discrete controls
-     * see the new value immediately, the API roundtrip lands a moment
-     * later and the canonical updated row replaces the optimistic one.
+     * **Fix B (4c-B sub-item)**: wraps the partial update into the
+     * active layout's namespace via ``writeLayoutNamespace``. Sibling
+     * layouts' namespaces are preserved. Legacy-flat configs are
+     * auto-migrated into namespaced shape on the first write.
      *
      * Auto-save discipline: callers control timing — discrete controls
      * (radio, dropdown) call this directly; continuous controls
      * (slider) wrap through `useDebouncedCallback(_, 300)`.
+     *
+     * Optimistic state update keeps the properties pane snappy:
+     * discrete controls see the new value immediately, the API
+     * roundtrip lands a moment later and the canonical updated row
+     * replaces the optimistic one.
      */
     const handleUpdateLayoutConfig = useCallback(
         async (partial: Record<string, unknown>) => {
             if (!activePage) return
-            const merged = {...(activePage.layout_config ?? {}), ...partial}
+            const nextConfig = writeLayoutNamespace(
+                activePage.layout_config,
+                activePage.layout as PageLayout,
+                partial,
+            )
             setPages((prev) =>
                 prev.map((p) =>
-                    p.id === activePage.id ? {...p, layout_config: merged} : p,
+                    p.id === activePage.id ? {...p, layout_config: nextConfig} : p,
                 ),
             )
             const updated = await api.pages.update(bookId, activePage.id, {
-                layout_config: merged,
+                layout_config: nextConfig,
             })
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
