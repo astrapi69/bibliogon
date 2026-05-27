@@ -49,6 +49,10 @@ navigation:
           de: Git-Repository-URL
           en: Git repository URL
         slug: books/repository-url
+      - title:
+          de: Storyboard-Ansicht
+          en: Storyboard view
+        slug: books/storyboard
 
   - title:
       de: Dashboard

@@ -698,112 +698,70 @@ store.
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
 
-- **PICTURE-BOOK-STORYBOARD-VIEW-01** (P3, filed
-  2026-05-18): storyboard view for Picture-Book
-  authoring. Lets the author see the entire story-flow
-  at a glance, drag-reorder pages, and manage the
-  narrative arc across all pages with structure
-  annotations. Substantial Author-Workflow improvement
-  driven by the real KDP picture-book workflow (32 or
-  40 pages industry standard — needs mental overview
-  of pacing). Brainstorming captured here for future
-  Pre-Inspection; no immediate action needed.
+- **PICTURE-BOOK-STORYBOARD-OPERATIONS-01** (P5,
+  trigger-gated, filed 2026-05-27 from the closure of
+  `PICTURE-BOOK-STORYBOARD-VIEW-01`): page-operations
+  follow-up for the Storyboard view. Closes the
+  original Session 1 backlog's "Deferred to a later
+  session" half:
 
-  Scope MVP (Picture-Book only initially):
-  - Separate view alongside PageEditor (PageEditor
-    stays the detail-work surface; Storyboard is the
-    additional overview surface)
-  - Entry-point: button in PageEditor header next to
-    Metadata + Export-PDF buttons
-  - Grid-view of all pages as thumbnails
-  - Per-page summary (title + first line + layout
-    preview)
-  - Drag-reorder pages (reuse @dnd-kit pattern from
-    the existing thumbnail sidebar)
-  - Add-page-inbetween + duplicate-page + split-page
-    + merge-pages operations
+  - Add-page-in-between (insert at a specific
+    position; backend endpoint + UI affordance)
+  - Duplicate page (clone with new id, append after
+    source, all annotations copied)
+  - Split page (decision needed: what does split mean
+    for an atomic image+text picture-book page?)
+  - Merge pages (decision needed: which page's image
+    + layout wins?)
+  - Print storyboard (PDF / print stylesheet for the
+    annotated grid)
+  - Auto-update `act_group` when a card is dragged
+    across visual group boundaries (currently the
+    drag reorders position only; the page snaps back
+    to its own group on next render)
 
-  Story-structure annotations (MVP):
-  - Page-Notes field (author-memo, not user-visible
-    in the rendered book)
-  - Optional Story-Beat tag per page (Setup /
-    Inciting / Rising / Climax / Falling /
-    Resolution)
-  - Optional Color-Coding for mood/tone
-  - Optional Act/Chapter grouping
+  Trigger: user requests one of these operations
+  during real Picture-Book authoring, OR multiple
+  picture-book authors report friction in workflows
+  that the existing reorder + annotation + click-to-
+  navigate flow can't cover.
 
-  Deferred to follow-up sessions:
-  - Tree-View / Branching for Choose-Your-Adventure
-  - Beat-Sheet templates (Save-the-Cat, Hero's
-    Journey, etc.)
-  - Character-Tracking across pages
-  - Plot-Threads multi-storyline visualization
-  - Print-Storyboard export
-  - Multi-Book-Type migration (Comic + Prose)
+  Out of scope (filed separately): tree-view /
+  branching, beat-sheet templates, character-
+  tracking, plot-threads.
 
-  Schema implications (new optional columns on
-  `Page` model, all nullable, backward-compat by
-  default-NULL):
-  - `notes` (text)
-  - `story_beat` (enum)
-  - `mood_color` (string)
-  - `act_group` (string)
-  - Alembic migration to add the columns
-  - Existing pages: NULL across the board, no
-    rendering impact
+- **STORYBOARD-MOOD-FREE-PICKER-01** (P5,
+  trigger-gated, filed 2026-05-27): free-hex color
+  picker for `page.mood_color`. Session 2 C3 shipped
+  10 preset swatches that cover the typical
+  picture-book emotional range without adding a
+  dependency. Free-picker would extend the palette
+  to arbitrary hex codes.
 
-  Established disciplines to apply:
-  - Single-Source-of-Truth: `page.position` already
-    exists; Storyboard reuses the same field for
-    ordering — no parallel ordering shape.
-  - Recurring-Component-Unification: the
-    PageThumbnail component is reusable between the
-    existing thumbnail sidebar and the new
-    Storyboard grid. Per the 2-surfaces rule in
-    coding-standards.md, extract first + migrate
-    both sites in the same session.
-  - Future Comic-Plugin will reuse the Storyboard
-    pattern (Multi-Book-Type migration target).
+  Trigger: user requests a custom color OR a real
+  picture-book context surfaces a mood the 10
+  presets can't approximate.
 
-  Pairs with / cross-references:
-  - `PLUGIN-COMICS-FOUNDATION-SCAFFOLDING-01`
-    (multi-bubble + panel work, replaces the
-    earlier "Comic-Foundation Session" framing
-    that lived in picture-book; reframed
-    2026-05-18 to plugin-comics scope)
-  - `PICTURE-BOOK-SPEECH-BUBBLE-TAIL-01`
-    (optional picture-book polish; SVG-tail
-    primitive reusable in plugin-comics)
-  - Candidate for a Combined-Storyboard-plus-
-    plugin-comics-session sequencing if both
-    land in the same v0.36.x cycle.
+  Implementation note: native `<input type="color">`
+  is the dependency-free baseline; a Radix Color
+  primitive would be the upgraded path if Radix
+  ships one in a future release.
 
-  Schema-Foundation-Pre-Commitment question for
-  4c-B-2 Tier-Property scope: if Storyboard later
-  needs Page-Notes + Story-Beat columns, should
-  4c-B-2 add the Schema-Foundation now (NULL
-  columns) so Storyboard ships frontend-only, OR
-  should the Storyboard Session add them later
-  alongside its own UI? CC decides whether to
-  surface this in the 4c-B-2 Pre-Inspection or
-  defer entirely.
+- **STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01**
+  (P5, trigger-gated, filed 2026-05-27): when a
+  Storyboard card is dragged across a visual
+  act-group boundary, auto-update the dropped
+  page's `act_group` to match the destination
+  group. Currently drag reorders position only;
+  act_group is set via the inline label.
 
-  User-real-workflow rationale: KDP picture-books
-  typically run 32 or 40 pages; the author needs a
-  mental overview of pacing across all pages.
-  Storyboard is the ideal surface for the
-  outline/iteration phase. Matches the
-  Real-Author-Workflow ("outline + storyboard
-  first, then detail-work in PageEditor") that
-  picture-book authors already follow in print.
+  Trigger: user reports the snap-back behaviour as
+  confusing during real picture-book authoring.
 
-  Trigger: post-v0.35.0 dedicated session OR user
-  requests Storyboard during real Picture-Book
-  authoring with existing Kinderbücher. Effort:
-  10-15 commits (substantial session — schema
-  migration + Storyboard component family +
-  drag-reorder wiring + annotations panel +
-  i18n × 8 + Vitest + E2E + help docs).
+  Implementation requires detecting the target
+  group from the drop neighbour's `act_group` value
+  and bundling the act_group update into the same
+  reorder save (currently two separate API surfaces).
 
 - **PICTURE-BOOK-TEXT-CONFIGURATION-01** (P3): ship Tier 1 +
   Tier 2 text-configuration properties across image-based

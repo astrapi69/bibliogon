@@ -52,6 +52,7 @@ plugins:
         Als Buch zusammenfassen: Convert to book
         Bücher: Books
         Git-Repository-URL: Git repository URL
+        Storyboard-Ansicht: Storyboard view
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
         Formatierung: Formatting
@@ -117,6 +118,7 @@ nav:
 - Bücher:
   - Massen-Export: de/books/bulk-export.md
   - Git-Repository-URL: de/books/repository-url.md
+  - Storyboard-Ansicht: de/books/storyboard.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md
