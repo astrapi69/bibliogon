@@ -67,10 +67,10 @@ Wenn du vor Fix B mit den Layouts experimentiert hast, wurden deine alten Konfig
 - Overlay-Maß-Slider für Breite + Höhe
 - Layout-Wechsel-Bewahrung über den pro-Layout-Namespace
 - TipTap-Reichtext-Bearbeitung (bereits in v0.35.0 ausgeliefert) für image_top, image_left, text_only
+- Aktive Text-Konvertierung beim Layout-Wechsel: wechselst du von einem TipTap-Layout (image_top, image_left, text_only) zu einem Tier-Property-Layout (speech_bubble, image_full_text_overlay), wird der Text automatisch in die einfache Textform umgewandelt. Beim Rückwechsel wird der einfache Text wieder in eine TipTap-Struktur eingebettet.
 
 **Vertagt auf Folge-Sessions:**
 - Das `text_only`-Layout hat in diesem Release keine Tier-Sektionen (kein Bild zum Komponieren; das Layout hat aktuell überhaupt keine Konfiguration-UI). Wird gefiled, sobald Autor-Nachfrage entsteht.
-- Aktive Migration von Legacy-Klartext-Reihen in TipTap-JSON für die Reichtext-Layouts (`PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01`, P3, trigger-gated). Heute Null Nutzerwirkung — der Editor behandelt Legacy-Klartext beim Lesen.
 
 ## Wo findest du die Steuerungen?
 
@@ -83,3 +83,9 @@ Wenn du vor Fix B mit den Layouts experimentiert hast, wurden deine alten Konfig
 | `text_only` | (keine Konfiguration-UI in diesem Release) |
 
 Alle Tier-Konfigurationen werden im Editor-Preview und im exportierten PDF identisch wiedergegeben.
+
+## Verwandte Themen
+
+- [Storyboard-Ansicht](storyboard.md) — Drag-Reorder-Raster mit Notizen, Story-Beats, Stimmungsfarben und Akt-Gruppen
+- [Editor-Anzeige-Einstellungen](../editor/display-settings.md) — Schriftart, Größe, Zeilenhöhe pro Browser
+- [Export](../export/pdf.md) — wie die Tier-Konfiguration im exportierten PDF rendert

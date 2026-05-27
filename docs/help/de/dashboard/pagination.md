@@ -18,3 +18,8 @@ Die Pro-Seite-Auswahl liegt in den App-Einstellungen unter `ui.dashboard.books_p
 ## Auswahl und Massen-Aktionen
 
 "Alle auswählen" bezieht sich immer auf den **gesamten gefilterten Satz**, nicht nur auf die gerade sichtbare Seite. Das stellt sicher, dass Massen-Export oder Massen-Löschen nicht versehentlich Einträge auslässt, die der Filter eigentlich freigibt.
+
+## Verwandte Themen
+
+- [Papierkorb und Wiederherstellen](trash-and-restore.md) — paginierte Trash-Ansicht mit Bulk-Restore
+- [Einstellungen-Navigation](../settings/sidebar.md) — wo die globale Pro-Seite-Wahl liegt

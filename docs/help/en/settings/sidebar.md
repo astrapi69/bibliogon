@@ -20,3 +20,9 @@ Below 768 px width the sidebar collapses and a hamburger dropdown opens the tab 
 
 - The active tab's URL stays in the address bar, so reload + back button return to the same tab.
 - Legacy bookmarks like `?tab=author` or `?tab=authors_database` are auto-redirected to the consolidated `?tab=autoren`.
+
+## Related
+
+- [Danger Zone](danger-zone.md) — the red area at the bottom of the sidebar with the full-system reset
+- [Editor display settings](../editor/display-settings.md) — per-browser editor rendering
+- [Dashboard pagination](../dashboard/pagination.md) — per-account page-size control

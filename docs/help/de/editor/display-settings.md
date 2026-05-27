@@ -16,3 +16,9 @@
 Die Einstellungen werden in `localStorage` gespeichert (Schlüssel `bibliogon-editor-display-settings`). Sie gelten **pro Browser und Gerät**, nicht pro Konto oder pro Buch — eine Wahl auf dem Laptop verändert das Tablet nicht. Mit **Standard wiederherstellen** lassen sich alle vier Werte auf die Voreinstellung zurücksetzen.
 
 Die Einstellungen wirken sowohl im Buch- als auch im Artikel-Editor — beide nutzen denselben Editor-Code.
+
+## Verwandte Themen
+
+- [Zeilenumbruch (Alt+Z)](word-wrap.md) — Tastenkürzel für langes-Zeile-Layout im Markdown-Modus
+- [Storyboard-Ansicht](../books/storyboard.md) — Bilderbuch-Übersicht mit Drag-Reorder + Annotationen
+- [Einstellungen-Navigation](../settings/sidebar.md) — App-weite Einstellungen unter dem Sidebar-Layout

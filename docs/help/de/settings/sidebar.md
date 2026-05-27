@@ -20,3 +20,9 @@ Unter 768 px Breite verschwindet die Sidebar, und ein Hamburger-Dropdown öffnet
 
 - Die zuletzt aktive Tab-URL wird in der Adressleiste mitgeführt; ein Reload oder Zurück-Knopf landet wieder am selben Punkt.
 - Alte Lesezeichen wie `?tab=author` oder `?tab=authors_database` werden automatisch zum konsolidierten `?tab=autoren` umgeleitet.
+
+## Verwandte Themen
+
+- [Gefahrenzone](danger-zone.md) — der rote Bereich am unteren Ende der Sidebar mit dem Komplett-Reset
+- [Editor-Anzeige-Einstellungen](../editor/display-settings.md) — pro-Browser-Darstellung des Editors
+- [Paginierung im Dashboard](../dashboard/pagination.md) — pro-Konto gesteuerte Seitengröße

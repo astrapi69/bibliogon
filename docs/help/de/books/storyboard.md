@@ -91,3 +91,8 @@ Auf spätere Sessions verschoben, festgehalten in `PICTURE-BOOK-STORYBOARD-OPERA
 - Akt-Gruppe automatisch übernehmen, wenn eine Karte über Gruppen-Grenzen hinweg gezogen wird
 
 Diese Items sind gegen konkrete User-Nachfrage angelegt. Die aktuelle v2 deckt den **Annotations- + Übersichts- + Umsortier-Workflow** ab, der den täglichen Bilderbuch-Authoring-Rhythmus trägt.
+
+## Verwandte Themen
+
+- [Text-Konfiguration für Bilderbuch-Seiten](text-configuration.md) — Tier 1 + Tier 2 Eigenschaften, die im Seiten-Editor pro Seite gesetzt werden
+- [Editor-Anzeige-Einstellungen](../editor/display-settings.md) — Schriftart, Größe, Zeilenhöhe und Spaltenbreite pro Browser

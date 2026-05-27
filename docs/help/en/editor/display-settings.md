@@ -16,3 +16,9 @@ The cog icon at the right end of the editor toolbar opens a small popover that c
 The settings are stored in `localStorage` under the key `bibliogon-editor-display-settings`. They apply **per browser and device**, not per account or per book — a choice on your laptop does not affect your tablet. **Restore defaults** resets all four values to the built-in default.
 
 The settings apply to both the book editor and the article editor — both share the same underlying editor.
+
+## Related
+
+- [Word wrap (Alt+Z)](word-wrap.md) — keyboard shortcut for long-line layout in Markdown mode
+- [Storyboard View](../books/storyboard.md) — picture-book overview with drag-reorder + annotations
+- [Settings sidebar](../settings/sidebar.md) — app-wide settings under the sidebar layout

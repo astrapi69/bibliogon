@@ -67,10 +67,10 @@ If you experimented with the layouts before Fix B shipped, your old configuratio
 - Overlay-only width + height dimension sliders
 - Layout-switch preservation via per-layout namespace
 - TipTap rich-text editing (already shipped in v0.35.0) for image_top, image_left, text_only
+- Active text-conversion on layout switch: when you switch from a TipTap layout (image_top, image_left, text_only) to a Tier-Property layout (speech_bubble, image_full_text_overlay), the text content is automatically converted to its plain-text shape. Switching back wraps the plain text into a TipTap doc on read.
 
 **Deferred to follow-ups:**
 - `text_only` layout has no Tier sections in this release (no image to compose against; the layout currently has no config UI at all). Filed as a follow-up if author demand surfaces.
-- Active migration of legacy plain-text rows into TipTap JSON for the rich-text layouts (`PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01`, P3, trigger-gated). Zero user-impact today — the editor handles legacy plain-text on read.
 
 ## Where to find the controls
 
@@ -83,3 +83,9 @@ If you experimented with the layouts before Fix B shipped, your old configuratio
 | `text_only` | (no config UI in this release) |
 
 All Tier configurations render identically in the editor preview and in the exported PDF.
+
+## Related
+
+- [Storyboard View](storyboard.md) — drag-reorder grid with notes, story beats, mood colors, and act groups
+- [Editor Display Settings](../editor/display-settings.md) — font / size / line-height per browser
+- [Export](../export/pdf.md) — how Tier configuration renders in the exported PDF

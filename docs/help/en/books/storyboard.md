@@ -91,3 +91,8 @@ Deferred to follow-up sessions, captured in `PICTURE-BOOK-STORYBOARD-OPERATIONS-
 - Auto-update act_group when dragging a card across visual groups
 
 These are filed against real user-pull demand. The current v2 covers the **annotation + overview + reorder** flow that the daily picture-book authoring rhythm needs.
+
+## Related
+
+- [Text Configuration for Picture-Book Pages](text-configuration.md) — Tier 1 + Tier 2 properties set per page in the page editor
+- [Editor Display Settings](../editor/display-settings.md) — font / size / line-height / column-width per browser
