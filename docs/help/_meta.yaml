@@ -53,6 +53,10 @@ navigation:
           de: Storyboard-Ansicht
           en: Storyboard view
         slug: books/storyboard
+      - title:
+          de: Text-Konfiguration (Bilderbuch)
+          en: Text configuration (picture-book)
+        slug: books/text-configuration
 
   - title:
       de: Dashboard
