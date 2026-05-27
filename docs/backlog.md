@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work. P3 count 17 → 16.)
+Last updated: 2026-05-27 (PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 CLOSED — active text-conversion at PageEditor.handleChangeLayout (commit ``5d87560``). Trigger: user-authorized backlog re-sync; shipped as smallest-scope P3 ahead of v0.39.0 release. Vitest 2186→2190 (+4 PageEditor cases). P3 count 16 → 15.)
+Previous: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work. P3 count 17 → 16.)
 Previous: 2026-05-26 (HELP-DOCS-V0.37.0-GAPS-01 CLOSED — extended to also cover v0.38.0 Settings-UX overhaul; 6 help topics × DE + EN = 12 Markdown pages + 5 Playwright-generated screenshots in default theme (warm-literary light, 1280×800). New manual-only ``screenshots`` Playwright project. Pages: settings/sidebar, editor/display-settings, editor/word-wrap, books/repository-url, dashboard/pagination, dashboard/trash-and-restore. _meta.yaml gained a new top-level "Dashboard" group + 5 child entries. ``make verify-docs-discipline`` green.)
 Previous: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
 Previous: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
@@ -495,40 +496,6 @@ store.
   Bibliogon donation infrastructure rather than
   building a new generic ReminderPanel; generic
   extraction defers here.
-
-- **PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01** (P3):
-  active conversion of ``page.text_content`` when the user
-  switches a page's layout between a TipTap layout (JSON-
-  serialized doc shape) and a Tier-Property layout (plain
-  string shape). Currently (post-Session 4c-B-1 Fix C) a
-  defensive read in PageCanvas + ``picture_book_pdf._render_page``
-  unwraps any JSON-shaped text_content into plain text on
-  display, so the user never sees raw JSON. But the DB shape
-  remains "dirty" (a Tier-Property page may carry a JSON
-  string in text_content from a prior TipTap session) until
-  the next user edit overwrites it.
-
-  Active-conversion proposal: on layout-switch in
-  ``PageEditor.handleChangeLayout``, when transitioning FROM
-  a TipTap layout TO a Tier-Property layout, also send
-  ``text_content: <extracted-plain-text>`` in the same PATCH
-  that flips the layout (alongside the existing
-  ``layout_config: null`` purge from v0.34.0 Fix A).
-  Symmetric direction (Tier-Property → TipTap) doesn't need
-  active conversion because ``parseTextContentToJson`` already
-  wraps plain text into a minimal TipTap doc on read.
-
-  Scope: 1 small commit + Vitest pin (extends the existing
-  layout-switch test in PageEditor.test.tsx). The defensive
-  read stays in place as a belt-and-braces safety net for any
-  pre-conversion dirty rows that exist in the wild.
-
-  Trigger: a backend consumer that depends on
-  ``text_content`` shape matching the layout type (e.g. a
-  future export pipeline that requires "pure plain text for
-  Tier-Property layouts"), OR an explicit data-hygiene sweep
-  on existing books. Filed during the 4c-B-1 Fix C close-out
-  (2026-05-19).
 
 - **PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01** (P3, filed
   2026-05-18 from 4c-B-1 smoke Bug 3): allow per-character
