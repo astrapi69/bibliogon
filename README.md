@@ -37,6 +37,10 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Author datalist (Pattern A) across editors with the Authors-Database as the autocomplete source
 - Danger Zone full-system reset under Settings for a clean slate
 - Accessibility WCAG 2.1 AA audit pass: ARIA labels, focus order, keyboard navigation
+- Settings > Backups tab with version-history list, per-entry delete, clear-all action, and a Compare-Backups dialog for diffing two `.bgb` snapshots
+- Per-search clear button (X) on every search/filter input across Articles, Books, Authors-Database, and Help so a single field can be cleared without resetting other filters
+- Collapsible-section open-state persistence in the picture-book and comic-book editor sidebar (Tier 1 Visual Style and Tier 2 Typography sections remember their state per surface across navigation and reload)
+- White-label feature flag (`features.white_label` in `app.yaml`) gates the Settings > Erweitert tab; off by default so power-user surfaces stay accessible via YAML edits without cluttering the sidebar
 
 ## Picture Book Authoring
 

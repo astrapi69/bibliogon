@@ -37,6 +37,10 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 - Autor-Datalist (Pattern A) in allen Editoren mit der Autoren-Datenbank als Autocomplete-Quelle
 - Danger-Zone-Komplett-Reset in den Einstellungen für einen sauberen Neustart
 - Barrierefreiheit (WCAG 2.1 AA) auditiert: ARIA-Labels, Fokus-Reihenfolge, Tastaturnavigation
+- Einstellungen > Backups: Versions-Historie mit Einzel-Löschen, "Alle löschen" und einem Vergleich-Dialog zum Diffen zweier `.bgb`-Stände
+- Eingabe-Leeren-Knopf (X) an jedem Suchen/Filtern-Feld in Artikeln, Büchern, Autoren-Datenbank und Hilfe — einzelnes Feld leeren, ohne andere Filter zurückzusetzen
+- Persistenz von ein-/ausgeklappten Bereichen im Bilderbuch- und Comic-Editor-Sidebar (Tier 1 Visueller Stil und Tier 2 Typografie merken sich ihren Zustand pro Surface über Navigation und Reload hinweg)
+- White-Label-Feature-Flag (`features.white_label` in `app.yaml`) gattet den Einstellungs-Reiter "Erweitert"; standardmäßig aus, damit Power-User-Surfaces über YAML-Bearbeitung zugänglich bleiben ohne die Sidebar zu überladen
 
 ## Bilderbuch-Autorenschaft
 
