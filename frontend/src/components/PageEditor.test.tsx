@@ -571,6 +571,124 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
             expect(keys).toEqual(["anchor_position", "opacity"])
         })
     })
+
+    /**
+     * Fix B (PICTURE-BOOK-TEXT-CONFIGURATION-01, 4c-B sub-item) —
+     * **load-bearing preservation test**.
+     *
+     * Per backlog: "Tests must include a switch → switch-back
+     * assertion that prior config re-applies after returning to
+     * a layout."
+     *
+     * Scenario: a page starts on speech_bubble with a bubbles[0]
+     * anchor preset. User switches to image_full_text_overlay and
+     * edits a property there. Switches BACK to speech_bubble. The
+     * prior bubbles[0] anchor must re-apply (NOT default-to-bottom-
+     * center as it would under Fix A's purge-on-switch behaviour).
+     *
+     * Integration coverage: exercises the full read+write chain
+     * through the dispatcher + the namespace helpers + the
+     * handler + the data-config-keys serialization.
+     */
+    it("preserves prior speech_bubble config across switch → switch-back (Fix B preservation pin)", async () => {
+        // Start: speech_bubble with bubbles[0] anchor=top-left.
+        const initialConfig = {
+            speech_bubble: {
+                bubbles: [{anchor_position: "top-left", opacity: 0.7}],
+            },
+        }
+        const initial = makePage({
+            id: "p1",
+            layout: "speech_bubble",
+            layout_config: initialConfig,
+        })
+        mockList.mockResolvedValue([initial])
+        // Stateful mock: api.pages.update returns the new state
+        // each call, threading the layout_config + layout flips
+        // through. This simulates the backend honouring the
+        // request payload exactly.
+        let currentState = initial
+        mockUpdate.mockImplementation(async (_bookId, _pageId, updates) => {
+            currentState = {...currentState, ...updates} as typeof initial
+            return currentState
+        })
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("layout-config-root")).toBeTruthy(),
+        )
+        // Confirm initial namespace is read into the body.
+        await waitFor(() => {
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("speech_bubble")
+        })
+        // Step 1: switch to image_full_text_overlay.
+        // image_full_text_overlay sits behind the "More layouts"
+        // disclosure.
+        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_full_text_overlay"),
+        )
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("image_full_text_overlay"),
+        )
+        // Step 2: edit a property on image_full_text_overlay
+        // (text_position dropdown). This triggers the writer to
+        // create the image_full_text_overlay namespace alongside
+        // the preserved speech_bubble namespace.
+        fireEvent.change(
+            screen.getByTestId("image-full-text-position-select"),
+            {target: {value: "top"}},
+        )
+        await waitFor(() => {
+            // The handler called update with the new image_full
+            // namespace + the preserved speech_bubble namespace.
+            const lastCall = mockUpdate.mock.calls[mockUpdate.mock.calls.length - 1]
+            const updatesArg = lastCall[2]
+            expect(updatesArg.layout_config?.image_full_text_overlay).toEqual({
+                text_position: "top",
+            })
+            // Preservation pin: speech_bubble namespace survives
+            // the image_full_text_overlay write.
+            expect(updatesArg.layout_config?.speech_bubble).toEqual({
+                bubbles: [{anchor_position: "top-left", opacity: 0.7}],
+            })
+        })
+        // Step 3: switch BACK to speech_bubble.
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-speech_bubble"),
+        )
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("speech_bubble"),
+        )
+        // Step 4: the speech_bubble namespace's bubbles[0] keys
+        // re-appear in data-config-keys. THIS is the load-bearing
+        // pin: under Fix A purge, the body would see no keys
+        // (empty layout_config). Under Fix B, the namespace
+        // survived the round-trip + re-applies on switch-back.
+        await waitFor(() => {
+            const keys = screen
+                .getByTestId("layout-config-root")
+                .getAttribute("data-config-keys")!
+                .split(",")
+                .filter(Boolean)
+                .sort()
+            // The speech_bubble namespace contains {bubbles: [...]}
+            // → after readLayoutNamespace it becomes the body's
+            // config, and Object.keys() yields ["bubbles"].
+            expect(keys).toContain("bubbles")
+        })
+    })
 })
 
 // --- 4c-B-2 C5: handleUpdateLayoutConfig + bubbles[0] wrapper ---
