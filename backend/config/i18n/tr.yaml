@@ -2411,6 +2411,7 @@ ui:
     empty: "Henüz sayfa yok. Burada görüntülemek için editörden sayfa ekleyin."
     loading: "Sayfalar yükleniyor..."
     load_error: "Sayfalar yüklenemedi."
+    save_failed: "Kaydetme başarısız"
     open_page: "Sayfayı aç"
     card_no_text: "(metin yok)"
     drag_handle: "Yeniden sıralamak için sürükle"

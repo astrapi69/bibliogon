@@ -288,7 +288,7 @@ Per lessons-learned: each commit ships green individually (backend pytest baseli
 
 Run before any code-write per lessons-learned. Findings:
 
-- **PageThumbnails already shared** — RCU done; no missing 2-surfaces extraction step before Storyboard ships. RCU re-evaluation deferred to future 3rd-conceptually-similar-surface trigger (Outline View). 
+- **PageThumbnails already shared** — RCU done; no missing 2-surfaces extraction step before Storyboard ships. RCU re-evaluation deferred to future 3rd-conceptually-similar-surface trigger (Outline View).
 - **Position field exists + reorder endpoint exists + stale-client check works** — SSoT preserved; Storyboard reuses `api.pages.reorder`.
 - **BookEditor dispatch via `editor_component` from book-types.yaml** — Storyboard mounts as `?view=storyboard` query-param flip; NOT a new editor_component row. No registry change required.
 - **Backend models in core (not plugins)** — schema migration goes in `backend/migrations/versions/`. Picture-book + comic-book are sub-types of shared backend Page model. No plugin schema changes.

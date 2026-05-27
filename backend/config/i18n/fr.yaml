@@ -2411,6 +2411,7 @@ ui:
     empty: "Aucune page pour l'instant. Ajoutez des pages depuis l'éditeur pour les voir ici."
     loading: "Chargement des pages..."
     load_error: "Échec du chargement des pages."
+    save_failed: "Échec de l'enregistrement"
     open_page: "Ouvrir la page"
     card_no_text: "(pas de texte)"
     drag_handle: "Faire glisser pour réordonner"

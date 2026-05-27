@@ -2406,6 +2406,7 @@ ui:
     empty: "Noch keine Seiten. Lege im Editor Seiten an, um sie hier zu sehen."
     loading: "Lade Seiten ..."
     load_error: "Seiten konnten nicht geladen werden."
+    save_failed: "Speichern fehlgeschlagen"
     open_page: "Seite öffnen"
     card_no_text: "(kein Text)"
     drag_handle: "Zum Umsortieren ziehen"

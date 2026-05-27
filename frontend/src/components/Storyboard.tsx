@@ -181,9 +181,7 @@ export default function Storyboard({
                     prev.map((p) => (p.id === pageId ? updated : p)),
                 )
             } catch (err: unknown) {
-                const message =
-                    err instanceof Error ? err.message : String(err)
-                notify.error(`Save failed: ${message}`)
+                notify.error(t("ui.storyboard.save_failed", "Save failed"), err)
                 throw err
             }
         },

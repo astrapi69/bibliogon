@@ -2407,6 +2407,7 @@ ui:
     empty: "No pages yet. Add pages from the editor to see them here."
     loading: "Loading pages..."
     load_error: "Failed to load pages."
+    save_failed: "Save failed"
     open_page: "Open page"
     card_no_text: "(no text)"
     drag_handle: "Drag to reorder"

@@ -2411,6 +2411,7 @@ ui:
     empty: "Ainda não há páginas. Adicione páginas a partir do editor para vê-las aqui."
     loading: "A carregar páginas..."
     load_error: "Falha ao carregar páginas."
+    save_failed: "Falha ao guardar"
     open_page: "Abrir página"
     card_no_text: "(sem texto)"
     drag_handle: "Arrastar para reordenar"
