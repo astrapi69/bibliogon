@@ -75,6 +75,34 @@ ui:
   subtitle: ''
   theme: warm-literary
   title: Bibliogon
+  picture_book:
+    # Workspace default for the picture-book / comic-book PDF export
+    # controls (PdfExportControls). Authors can still override per
+    # export in the inline controls; the Settings UI value sets the
+    # initial pick when the export controls mount.
+    # Allowed values: "8.5x8.5", "8x10", "8.5x11", "11x8.5", "10x8".
+    pdf_default_format: "8.5x8.5"
+    # Workspace default for the bleed + crop-marks checkbox alongside
+    # the format dropdown. When true, the export controls mount with
+    # bleed pre-enabled (3 mm bleed + crop marks for print-shop
+    # submission). Per-export override stays available inline.
+    pdf_default_bleed_marks: false
+kdp:
+  # Workspace default for the KDP Publishing Wizard pricing step.
+  # When the wizard mounts and the book has no persisted marketplace
+  # pick yet, the canonical pricing row defaults to this region.
+  # User overrides apply per wizard session and persist into
+  # BookPublishingState.
+  # Allowed values match REGION_CURRENCIES in PricingStep.tsx:
+  # "US", "UK", "DE", "FR", "ES", "IT", "JP", "CA", "AU", "IN", "BR".
+  default_marketplace: "US"
+behavior:
+  # Power-user mode: when true, non-destructive AppDialog.confirm()
+  # calls auto-resolve to "OK" without rendering. Destructive
+  # confirmations (permanent-delete, danger-zone, type-to-confirm)
+  # ALWAYS render regardless of this flag — they carry data-loss
+  # risk and the safety prompt is load-bearing.
+  skip_non_destructive_confirmations: false
 features:
   # Project-level feature flags. Edit via this YAML, not via the
   # Settings UI.

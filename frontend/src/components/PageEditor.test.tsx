@@ -66,6 +66,10 @@ vi.mock("../api/client", () => ({
             download: (...args: unknown[]) =>
                 mockDocumentExportDownload(...args),
         },
+        settings: {
+            getApp: async () => ({ui: {}}),
+            updateApp: async () => ({}),
+        },
     },
     ApiError: class ApiError extends Error {
         status: number
@@ -1271,16 +1275,17 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
         expect(params.toString()).toBe("")
     })
 
-    it("changing format to a non-default value writes localStorage + persists to React state", () => {
+    it("changing format to a non-default value persists to React state (workspace default lives in app.yaml now)", () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
             "page-editor-pdf-format-select",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "8.5x11"}})
         expect(select.value).toBe("8.5x11")
-        expect(localStorage.getItem("bibliogon-picture-book-format")).toBe(
-            "8.5x11",
-        )
+        // Inline picks are session-only since the Settings-
+        // Completeness audit close (2026-05-27) moved the workspace
+        // default to app.yaml under ``ui.picture_book.pdf_default_*``.
+        expect(localStorage.getItem("bibliogon-picture-book-format")).toBeNull()
     })
 
     it("Export PDF with non-default format passes picture_book_format query param", async () => {
@@ -1297,15 +1302,17 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
         expect(params.get("picture_book_format")).toBe("11x8.5")
     })
 
-    it("persisted localStorage value initialises the dropdown on mount", () => {
-        // Seed localStorage BEFORE PageEditor mounts to exercise
-        // the readStoredFormat path.
+    it("legacy localStorage value initialises the dropdown on mount as a migration fallback", async () => {
+        // Seed legacy localStorage BEFORE PageEditor mounts. The
+        // workspace default fetched via api.settings.getApp is empty
+        // (the mock returns ``{ui: {}}``), so the migration path
+        // falls back to the legacy value.
         localStorage.setItem("bibliogon-picture-book-format", "10x8")
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
-        const select = screen.getByTestId(
+        const select = (await screen.findByTestId(
             "page-editor-pdf-format-select",
-        ) as HTMLSelectElement
-        expect(select.value).toBe("10x8")
+        )) as HTMLSelectElement
+        await waitFor(() => expect(select.value).toBe("10x8"))
     })
 
     it("unknown localStorage value falls back to 8.5x8.5 default (gamma-shim)", () => {

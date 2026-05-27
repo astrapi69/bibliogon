@@ -19,16 +19,23 @@
  *
  * Both controls + the export-button live INSIDE this component so
  * the parent only needs to pass ``bookId`` + a ``testidPrefix``
- * (for parent-scoped E2E targeting). State + localStorage +
- * handleExport are all owned here.
+ * (for parent-scoped E2E targeting). State + handleExport are
+ * owned here.
  *
- * The format/bleed localStorage keys are book-type-agnostic — a
- * user's last-picked format applies across picture-book + comic-
- * book contexts; intentional cross-surface continuity per the
- * 2-surfaces-share-one-storage convention.
+ * Workspace defaults for format + bleed live in app.yaml under
+ * ``ui.picture_book.pdf_default_format`` /
+ * ``ui.picture_book.pdf_default_bleed_marks`` (per the
+ * Settings-Completeness audit close, 2026-05-27). Per-export
+ * inline picks stay in local React state — they apply to the
+ * current export only; the global default changes via Settings >
+ * Editor only. Legacy ``bibliogon-picture-book-format`` +
+ * ``bibliogon-picture-book-bleed-marks`` localStorage keys are
+ * no longer read or written; a one-time migration in the
+ * ``useEffect`` below pushes any stale localStorage value to
+ * the workspace settings if app.yaml has not been customised yet.
  */
 
-import React, {useCallback, useState} from "react"
+import React, {useCallback, useEffect, useRef, useState} from "react"
 import {Download, Loader2} from "lucide-react"
 import {api, ApiError} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
@@ -46,39 +53,48 @@ export const PICTURE_BOOK_FORMATS = [
 ] as const
 export type PictureBookFormat = (typeof PICTURE_BOOK_FORMATS)[number]
 export const DEFAULT_PICTURE_BOOK_FORMAT: PictureBookFormat = "8.5x8.5"
-export const PICTURE_BOOK_FORMAT_STORAGE_KEY =
-    "bibliogon-picture-book-format"
 
-// PDF-BLEED-MARKS-01: bleed toggle persisted alongside the format
-// selection. Q7 namespace decision: matches the format key exactly.
-export const PICTURE_BOOK_BLEED_STORAGE_KEY =
-    "bibliogon-picture-book-bleed-marks"
-const DEFAULT_PICTURE_BOOK_BLEED = false
+// Legacy localStorage keys — read once for migration, then no
+// longer touched. The values now live in app.yaml under
+// ``ui.picture_book.pdf_default_*``.
+const LEGACY_FORMAT_STORAGE_KEY = "bibliogon-picture-book-format"
+const LEGACY_BLEED_STORAGE_KEY = "bibliogon-picture-book-bleed-marks"
 
-function readStoredFormat(): PictureBookFormat {
-    try {
-        const stored = localStorage.getItem(PICTURE_BOOK_FORMAT_STORAGE_KEY)
-        if (
-            stored !== null &&
-            (PICTURE_BOOK_FORMATS as readonly string[]).includes(stored)
-        ) {
-            return stored as PictureBookFormat
-        }
-    } catch {
-        // Privacy-mode browser or SSR; keep default.
-    }
-    return DEFAULT_PICTURE_BOOK_FORMAT
+function isPictureBookFormat(value: unknown): value is PictureBookFormat {
+    return (
+        typeof value === "string" &&
+        (PICTURE_BOOK_FORMATS as readonly string[]).includes(value)
+    )
 }
 
-function readStoredBleed(): boolean {
+function readLegacyFormat(): PictureBookFormat | null {
     try {
-        const stored = localStorage.getItem(PICTURE_BOOK_BLEED_STORAGE_KEY)
+        const stored = localStorage.getItem(LEGACY_FORMAT_STORAGE_KEY)
+        if (isPictureBookFormat(stored)) return stored
+    } catch {
+        // Privacy-mode browser; ignore.
+    }
+    return null
+}
+
+function readLegacyBleed(): boolean | null {
+    try {
+        const stored = localStorage.getItem(LEGACY_BLEED_STORAGE_KEY)
         if (stored === "true") return true
         if (stored === "false") return false
     } catch {
-        // Privacy-mode browser or SSR; keep default.
+        // Same defensive pattern as format.
     }
-    return DEFAULT_PICTURE_BOOK_BLEED
+    return null
+}
+
+function clearLegacyKeys(): void {
+    try {
+        localStorage.removeItem(LEGACY_FORMAT_STORAGE_KEY)
+        localStorage.removeItem(LEGACY_BLEED_STORAGE_KEY)
+    } catch {
+        // Best-effort cleanup; not load-bearing if it fails.
+    }
 }
 
 interface Props {
@@ -112,33 +128,95 @@ export default function PdfExportControls({
     spinnerClassName,
 }: Props) {
     const {t} = useI18n()
-    const [format, setFormat] = useState<PictureBookFormat>(readStoredFormat)
-    const [bleed, setBleed] = useState<boolean>(readStoredBleed)
-    const [exporting, setExporting] = useState(false)
-
-    const handleFormatChange = useCallback(
-        (next: PictureBookFormat) => {
-            setFormat(next)
-            try {
-                localStorage.setItem(PICTURE_BOOK_FORMAT_STORAGE_KEY, next)
-            } catch {
-                // Privacy-mode browsers reject setItem; React state
-                // still applies for the current session.
-            }
-        },
-        [],
+    const [format, setFormat] = useState<PictureBookFormat>(
+        DEFAULT_PICTURE_BOOK_FORMAT,
     )
+    const [bleed, setBleed] = useState<boolean>(false)
+    const [exporting, setExporting] = useState(false)
+    const migratedRef = useRef(false)
+
+    // Fetch workspace defaults on mount; fall back to legacy
+    // localStorage values for the one-time migration.
+    useEffect(() => {
+        let cancelled = false
+        api.settings
+            .getApp()
+            .then((config) => {
+                if (cancelled) return
+                const ui =
+                    (config.ui as Record<string, unknown> | undefined) ?? {}
+                const pictureBook =
+                    (ui.picture_book as Record<string, unknown> | undefined) ??
+                    {}
+                const cfgFormat = pictureBook.pdf_default_format
+                const cfgBleed = pictureBook.pdf_default_bleed_marks
+
+                const hasCfgFormat = isPictureBookFormat(cfgFormat)
+                const hasCfgBleed = typeof cfgBleed === "boolean"
+                const legacyFormat = readLegacyFormat()
+                const legacyBleed = readLegacyBleed()
+
+                // Initial state: app.yaml wins; legacy localStorage
+                // fills the gap for first-mount-after-upgrade.
+                const initialFormat = hasCfgFormat
+                    ? (cfgFormat as PictureBookFormat)
+                    : (legacyFormat ?? DEFAULT_PICTURE_BOOK_FORMAT)
+                const initialBleed = hasCfgBleed
+                    ? (cfgBleed as boolean)
+                    : (legacyBleed ?? false)
+
+                setFormat(initialFormat)
+                setBleed(initialBleed)
+
+                // One-time migration: if app.yaml has no value yet
+                // AND localStorage carries a stale pick, push the
+                // legacy value to app.yaml and clear the keys.
+                const needsMigration =
+                    (!hasCfgFormat && legacyFormat !== null) ||
+                    (!hasCfgBleed && legacyBleed !== null)
+                if (needsMigration && !migratedRef.current) {
+                    migratedRef.current = true
+                    api.settings
+                        .updateApp({
+                            ui: {
+                                ...ui,
+                                picture_book: {
+                                    ...pictureBook,
+                                    pdf_default_format: initialFormat,
+                                    pdf_default_bleed_marks: initialBleed,
+                                },
+                            },
+                        })
+                        .then(() => clearLegacyKeys())
+                        .catch(() => {
+                            // Migration is best-effort. Local state
+                            // already reflects the right value; the
+                            // next change via Settings UI will land
+                            // app.yaml properly.
+                        })
+                } else if (
+                    (hasCfgFormat && legacyFormat !== null) ||
+                    (hasCfgBleed && legacyBleed !== null)
+                ) {
+                    // app.yaml is authoritative now; sweep the
+                    // legacy keys regardless.
+                    clearLegacyKeys()
+                }
+            })
+            .catch(() => {
+                // Settings unreachable on this mount; keep defaults.
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
+    const handleFormatChange = useCallback((next: PictureBookFormat) => {
+        setFormat(next)
+    }, [])
 
     const handleBleedChange = useCallback((next: boolean) => {
         setBleed(next)
-        try {
-            localStorage.setItem(
-                PICTURE_BOOK_BLEED_STORAGE_KEY,
-                next ? "true" : "false",
-            )
-        } catch {
-            // Same defensive pattern as format.
-        }
     }, [])
 
     const handleExport = useCallback(async () => {

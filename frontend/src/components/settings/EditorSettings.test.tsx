@@ -53,7 +53,7 @@ describe("EditorSettings — extracted Editor tab (SETT-QW-3)", () => {
         expect(screen.getByTestId("editor-ai-chars")).toHaveValue(2000);
     });
 
-    it("invokes onSave with the {editor: {...}} envelope on save click", () => {
+    it("invokes onSave with the {editor + ui.picture_book} envelope on save click", () => {
         const onSave = vi.fn();
         render(<EditorSettings config={baseConfig} onSave={onSave} saving={false}/>);
         fireEvent.change(screen.getByTestId("editor-autosave"), {target: {value: "1500"}});
@@ -66,6 +66,37 @@ describe("EditorSettings — extracted Editor tab (SETT-QW-3)", () => {
                 draft_max_age_days: 45,
                 ai_context_chars: 4000,
             },
+            ui: {
+                picture_book: {
+                    pdf_default_format: "8.5x8.5",
+                    pdf_default_bleed_marks: false,
+                },
+            },
         });
+    });
+
+    it("seeds PDF defaults from config.ui.picture_book when present", () => {
+        const cfg = {
+            ...baseConfig,
+            ui: {
+                picture_book: {
+                    pdf_default_format: "8.5x11",
+                    pdf_default_bleed_marks: true,
+                },
+            },
+        };
+        const onSave = vi.fn();
+        render(<EditorSettings config={cfg} onSave={onSave} saving={false}/>);
+        fireEvent.click(screen.getByTestId("editor-settings-save"));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ui: expect.objectContaining({
+                    picture_book: {
+                        pdf_default_format: "8.5x11",
+                        pdf_default_bleed_marks: true,
+                    },
+                }),
+            }),
+        );
     });
 });

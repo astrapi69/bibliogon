@@ -1,20 +1,20 @@
 /**
- * Tests for PdfExportControls (PDF-BLEED-MARKS-01 C2
- * shared component).
+ * Tests for PdfExportControls.
  *
- * The component is the canonical extraction site per the
- * Recurring-Component-Unification Rule: mounted in PageEditor's
- * header AND BookMetadataEditor's Design tab, closing the
- * PDF-KDP-FORMATS-01 half-wired surface as a side-effect. The
- * existing PageEditor.test.tsx + BookMetadataEditor.test.tsx
- * already integration-test the mount-and-export-button-fires
- * contract at each parent surface. This file unit-tests the
- * component's behavior in isolation:
+ * Workspace defaults for format + bleed live in app.yaml (per the
+ * Settings-Completeness audit close, 2026-05-27). Inline picks
+ * within the export controls are session-only — the global default
+ * changes via Settings > Editor only. Legacy localStorage keys
+ * (``bibliogon-picture-book-format`` +
+ * ``bibliogon-picture-book-bleed-marks``) are read once on first
+ * mount for migration, then cleared.
  *
+ * Pinned behaviour:
  * - 5 format options rendered (parity with PICTURE_BOOK_FORMATS)
- * - localStorage initialization + persistence for both format +
- *   bleed
- * - Defensive fallback on missing / unknown / privacy-mode reads
+ * - Mount fetches workspace defaults via ``api.settings.getApp``
+ * - Legacy localStorage values fill the gap on first mount after
+ *   upgrade AND are pushed to app.yaml then cleared
+ * - Inline changes do NOT write to localStorage or app.yaml
  * - Query-param emission per (format × bleed) state matrix
  * - Disabled-while-exporting + finally-reenables contract
  * - ApiError + non-ApiError surfacing via notify.error
@@ -36,6 +36,9 @@ vi.mock("../hooks/useI18n", () => ({
 }))
 
 const mockDocumentExportDownload = vi.fn()
+const mockGetApp = vi.fn()
+const mockUpdateApp = vi.fn()
+
 vi.mock("../api/client", async () => {
     const actual = await vi.importActual<typeof import("../api/client")>(
         "../api/client",
@@ -46,6 +49,10 @@ vi.mock("../api/client", async () => {
             documentExport: {
                 download: (...args: unknown[]) =>
                     mockDocumentExportDownload(...args),
+            },
+            settings: {
+                getApp: (...args: unknown[]) => mockGetApp(...args),
+                updateApp: (...args: unknown[]) => mockUpdateApp(...args),
             },
         },
     }
@@ -59,6 +66,10 @@ vi.mock("../utils/notify", () => ({
 beforeEach(() => {
     mockDocumentExportDownload.mockReset()
     mockDocumentExportDownload.mockResolvedValue(undefined)
+    mockGetApp.mockReset()
+    mockGetApp.mockResolvedValue({ui: {}})
+    mockUpdateApp.mockReset()
+    mockUpdateApp.mockResolvedValue({})
     mockNotifyError.mockReset()
     localStorage.clear()
 })
@@ -68,13 +79,11 @@ afterEach(() => {
 })
 
 describe("PdfExportControls - render", () => {
-    it("renders the 5 KDP picture-book formats in the dropdown", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const select = screen.getByTestId(
+    it("renders the 5 KDP picture-book formats in the dropdown", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
             "pe-pdf-format-select",
-        ) as HTMLSelectElement
+        )) as HTMLSelectElement
         const values = Array.from(select.options).map((o) => o.value)
         expect(values).toEqual([
             "8.5x8.5",
@@ -85,128 +94,166 @@ describe("PdfExportControls - render", () => {
         ])
     })
 
-    it("renders the bleed-marks checkbox + Export PDF button", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        expect(screen.getByTestId("pe-pdf-bleed-toggle")).toBeTruthy()
+    it("renders the bleed-marks checkbox + Export PDF button", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        expect(await screen.findByTestId("pe-pdf-bleed-toggle")).toBeTruthy()
         expect(screen.getByTestId("pe-export-pdf")).toBeTruthy()
     })
 
-    it("testidPrefix scopes all 3 testids to the parent surface", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="metadata" />,
-        )
-        expect(screen.getByTestId("metadata-pdf-format-select")).toBeTruthy()
+    it("testidPrefix scopes all 3 testids to the parent surface", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="metadata" />)
+        expect(
+            await screen.findByTestId("metadata-pdf-format-select"),
+        ).toBeTruthy()
         expect(screen.getByTestId("metadata-pdf-bleed-toggle")).toBeTruthy()
         expect(screen.getByTestId("metadata-export-pdf")).toBeTruthy()
     })
 })
 
-describe("PdfExportControls - localStorage initialisation", () => {
-    it("defaults to 8.5x8.5 + bleed=false when localStorage is empty", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const select = screen.getByTestId(
+describe("PdfExportControls - workspace-default initialisation", () => {
+    it("defaults to 8.5x8.5 + bleed=false when app.yaml has no picture_book", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
             "pe-pdf-format-select",
-        ) as HTMLSelectElement
+        )) as HTMLSelectElement
         const toggle = screen.getByTestId(
             "pe-pdf-bleed-toggle",
         ) as HTMLInputElement
+        await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
         expect(select.value).toBe("8.5x8.5")
         expect(toggle.checked).toBe(false)
     })
 
-    it("reads persisted bibliogon-picture-book-format on mount", () => {
-        localStorage.setItem("bibliogon-picture-book-format", "11x8.5")
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const select = screen.getByTestId(
+    it("seeds format + bleed from app.yaml when set", async () => {
+        mockGetApp.mockResolvedValue({
+            ui: {
+                picture_book: {
+                    pdf_default_format: "11x8.5",
+                    pdf_default_bleed_marks: true,
+                },
+            },
+        })
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
             "pe-pdf-format-select",
-        ) as HTMLSelectElement
-        expect(select.value).toBe("11x8.5")
+        )) as HTMLSelectElement
+        const toggle = screen.getByTestId(
+            "pe-pdf-bleed-toggle",
+        ) as HTMLInputElement
+        await waitFor(() => expect(select.value).toBe("11x8.5"))
+        await waitFor(() => expect(toggle.checked).toBe(true))
     })
 
-    it("reads persisted bibliogon-picture-book-bleed-marks=true on mount", () => {
+    it("falls back to legacy localStorage format on first mount after upgrade", async () => {
+        localStorage.setItem("bibliogon-picture-book-format", "8x10")
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
+            "pe-pdf-format-select",
+        )) as HTMLSelectElement
+        await waitFor(() => expect(select.value).toBe("8x10"))
+    })
+
+    it("falls back to legacy localStorage bleed on first mount after upgrade", async () => {
         localStorage.setItem(
             "bibliogon-picture-book-bleed-marks",
             "true",
         )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const toggle = screen.getByTestId(
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const toggle = (await screen.findByTestId(
             "pe-pdf-bleed-toggle",
-        ) as HTMLInputElement
-        expect(toggle.checked).toBe(true)
+        )) as HTMLInputElement
+        await waitFor(() => expect(toggle.checked).toBe(true))
     })
 
-    it("unknown localStorage values fall back to defaults", () => {
+    it("unknown legacy localStorage format falls back to default", async () => {
         localStorage.setItem("bibliogon-picture-book-format", "garbage")
-        localStorage.setItem(
-            "bibliogon-picture-book-bleed-marks",
-            "garbage",
-        )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const select = screen.getByTestId(
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
             "pe-pdf-format-select",
-        ) as HTMLSelectElement
-        const toggle = screen.getByTestId(
-            "pe-pdf-bleed-toggle",
-        ) as HTMLInputElement
+        )) as HTMLSelectElement
+        await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
         expect(select.value).toBe("8.5x8.5")
-        expect(toggle.checked).toBe(false)
     })
 })
 
-describe("PdfExportControls - localStorage persistence", () => {
-    it("format change writes to localStorage", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
+describe("PdfExportControls - one-time legacy migration", () => {
+    it("pushes legacy localStorage value to app.yaml when app.yaml is empty", async () => {
+        localStorage.setItem("bibliogon-picture-book-format", "8.5x11")
+        localStorage.setItem("bibliogon-picture-book-bleed-marks", "true")
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        await waitFor(() => expect(mockUpdateApp).toHaveBeenCalledTimes(1))
+        expect(mockUpdateApp).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ui: expect.objectContaining({
+                    picture_book: {
+                        pdf_default_format: "8.5x11",
+                        pdf_default_bleed_marks: true,
+                    },
+                }),
+            }),
         )
-        const select = screen.getByTestId(
+        // Migration also clears the legacy keys.
+        await waitFor(() =>
+            expect(
+                localStorage.getItem("bibliogon-picture-book-format"),
+            ).toBeNull(),
+        )
+        expect(
+            localStorage.getItem("bibliogon-picture-book-bleed-marks"),
+        ).toBeNull()
+    })
+
+    it("does NOT push to app.yaml when app.yaml already has a value", async () => {
+        mockGetApp.mockResolvedValue({
+            ui: {
+                picture_book: {
+                    pdf_default_format: "8.5x11",
+                    pdf_default_bleed_marks: false,
+                },
+            },
+        })
+        localStorage.setItem("bibliogon-picture-book-format", "8x10")
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
+        // Give the effect a chance to NOT call updateApp.
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        expect(mockUpdateApp).not.toHaveBeenCalled()
+        // But the legacy keys still get swept since app.yaml is
+        // authoritative now.
+        expect(
+            localStorage.getItem("bibliogon-picture-book-format"),
+        ).toBeNull()
+    })
+
+    it("inline format change does NOT write to localStorage or app.yaml", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = (await screen.findByTestId(
             "pe-pdf-format-select",
-        ) as HTMLSelectElement
+        )) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "8x10"}})
-        expect(localStorage.getItem("bibliogon-picture-book-format")).toBe(
-            "8x10",
-        )
+        expect(
+            localStorage.getItem("bibliogon-picture-book-format"),
+        ).toBeNull()
+        // updateApp should only be called by the migration path, not
+        // by inline picks. The default app.yaml has no picture_book
+        // AND localStorage is empty, so no migration fires either.
+        expect(mockUpdateApp).not.toHaveBeenCalled()
     })
 
-    it("bleed toggle writes to localStorage", () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
+    it("inline bleed toggle does NOT write to localStorage", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const toggle = await screen.findByTestId("pe-pdf-bleed-toggle")
+        fireEvent.click(toggle)
         expect(
             localStorage.getItem("bibliogon-picture-book-bleed-marks"),
-        ).toBe("true")
-    })
-
-    it("bleed toggle off writes 'false' (not removed)", () => {
-        localStorage.setItem(
-            "bibliogon-picture-book-bleed-marks",
-            "true",
-        )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
-        expect(
-            localStorage.getItem("bibliogon-picture-book-bleed-marks"),
-        ).toBe("false")
+        ).toBeNull()
     })
 })
 
 describe("PdfExportControls - export query-param emission", () => {
     it("default state (8.5x8.5 + bleed=false) sends empty params", async () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        await screen.findByTestId("pe-export-pdf")
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
             expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
@@ -219,12 +266,9 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("non-default format alone passes picture_book_format only", async () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.change(screen.getByTestId("pe-pdf-format-select"), {
-            target: {value: "8.5x11"},
-        })
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = await screen.findByTestId("pe-pdf-format-select")
+        fireEvent.change(select, {target: {value: "8.5x11"}})
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
             expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
@@ -235,10 +279,9 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("bleed=true alone passes picture_book_bleed_marks=true only", async () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const toggle = await screen.findByTestId("pe-pdf-bleed-toggle")
+        fireEvent.click(toggle)
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
             expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
@@ -249,12 +292,9 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("format + bleed both non-default pass both query params", async () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.change(screen.getByTestId("pe-pdf-format-select"), {
-            target: {value: "11x8.5"},
-        })
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const select = await screen.findByTestId("pe-pdf-format-select")
+        fireEvent.change(select, {target: {value: "11x8.5"}})
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
@@ -263,24 +303,6 @@ describe("PdfExportControls - export query-param emission", () => {
         const [, , params] = mockDocumentExportDownload.mock.calls[0]
         expect(params.get("picture_book_format")).toBe("11x8.5")
         expect(params.get("picture_book_bleed_marks")).toBe("true")
-    })
-
-    it("switching back to default 8.5x8.5 + bleed=false returns to empty params", async () => {
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const select = screen.getByTestId("pe-pdf-format-select")
-        fireEvent.change(select, {target: {value: "8x10"}})
-        fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
-        // Flip both back to defaults.
-        fireEvent.change(select, {target: {value: "8.5x8.5"}})
-        fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
-        fireEvent.click(screen.getByTestId("pe-export-pdf"))
-        await waitFor(() =>
-            expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
-        )
-        const [, , params] = mockDocumentExportDownload.mock.calls[0]
-        expect(params.toString()).toBe("")
     })
 })
 
@@ -292,10 +314,10 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 resolveDownload = resolve
             }),
         )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const btn = screen.getByTestId("pe-export-pdf") as HTMLButtonElement
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
         fireEvent.click(btn)
         await waitFor(() => expect(btn.disabled).toBe(true))
         resolveDownload?.(undefined)
@@ -309,10 +331,8 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 resolveDownload = resolve
             }),
         )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const btn = screen.getByTestId("pe-export-pdf")
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = await screen.findByTestId("pe-export-pdf")
         fireEvent.click(btn)
         await waitFor(() =>
             expect(mockDocumentExportDownload).toHaveBeenCalledTimes(1),
@@ -332,10 +352,9 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 "GET",
             ),
         )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.click(screen.getByTestId("pe-export-pdf"))
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = await screen.findByTestId("pe-export-pdf")
+        fireEvent.click(btn)
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
         expect(mockNotifyError.mock.calls[0][0]).toContain(
             "Picture-book export failed",
@@ -344,10 +363,9 @@ describe("PdfExportControls - exporting state + error handling", () => {
 
     it("non-ApiError rejection still surfaces a fallback error toast", async () => {
         mockDocumentExportDownload.mockRejectedValue(new Error("Network"))
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        fireEvent.click(screen.getByTestId("pe-export-pdf"))
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = await screen.findByTestId("pe-export-pdf")
+        fireEvent.click(btn)
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
         expect(mockNotifyError.mock.calls[0][0]).toBe(
             "PDF-Export fehlgeschlagen",
@@ -358,10 +376,10 @@ describe("PdfExportControls - exporting state + error handling", () => {
         mockDocumentExportDownload.mockRejectedValue(
             new ApiError(500, "Boom", "/books/b1/export/pdf", "GET"),
         )
-        render(
-            <PdfExportControls bookId="b1" testidPrefix="pe" />,
-        )
-        const btn = screen.getByTestId("pe-export-pdf") as HTMLButtonElement
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
         fireEvent.click(btn)
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalled())
         await waitFor(() => expect(btn.disabled).toBe(false))

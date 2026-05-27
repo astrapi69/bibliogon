@@ -4,6 +4,20 @@ import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
+import {
+    PICTURE_BOOK_FORMATS,
+    DEFAULT_PICTURE_BOOK_FORMAT,
+    type PictureBookFormat,
+} from "../PdfExportControls";
+import {RadixSelect} from "./RadixSelect";
+import {Toggle} from "./Toggle";
+
+function isPictureBookFormat(value: unknown): value is PictureBookFormat {
+    return (
+        typeof value === "string" &&
+        (PICTURE_BOOK_FORMATS as readonly string[]).includes(value)
+    );
+}
 
 export function EditorSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
@@ -12,17 +26,38 @@ export function EditorSettings({config, onSave, saving}: {
 }) {
     const {t} = useI18n();
     const editorConfig = (config.editor || {}) as Record<string, unknown>;
+    const ui = (config.ui || {}) as Record<string, unknown>;
+    const pictureBook =
+        (ui.picture_book as Record<string, unknown> | undefined) ?? {};
 
     const [edAutosave, setEdAutosave] = useState(String(editorConfig.autosave_debounce_ms ?? 800));
     const [edDraftSave, setEdDraftSave] = useState(String(editorConfig.draft_save_debounce_ms ?? 2000));
     const [edDraftAge, setEdDraftAge] = useState(String(editorConfig.draft_max_age_days ?? 30));
     const [edAiChars, setEdAiChars] = useState(String(editorConfig.ai_context_chars ?? 2000));
+    const [pdfFormat, setPdfFormat] = useState<PictureBookFormat>(
+        isPictureBookFormat(pictureBook.pdf_default_format)
+            ? (pictureBook.pdf_default_format as PictureBookFormat)
+            : DEFAULT_PICTURE_BOOK_FORMAT,
+    );
+    const [pdfBleed, setPdfBleed] = useState<boolean>(
+        Boolean(pictureBook.pdf_default_bleed_marks),
+    );
 
     useEffect(() => {
         setEdAutosave(String(editorConfig.autosave_debounce_ms ?? 800));
         setEdDraftSave(String(editorConfig.draft_save_debounce_ms ?? 2000));
         setEdDraftAge(String(editorConfig.draft_max_age_days ?? 30));
         setEdAiChars(String(editorConfig.ai_context_chars ?? 2000));
+        const pb =
+            (((config.ui || {}) as Record<string, unknown>).picture_book as
+                | Record<string, unknown>
+                | undefined) ?? {};
+        setPdfFormat(
+            isPictureBookFormat(pb.pdf_default_format)
+                ? (pb.pdf_default_format as PictureBookFormat)
+                : DEFAULT_PICTURE_BOOK_FORMAT,
+        );
+        setPdfBleed(Boolean(pb.pdf_default_bleed_marks));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
 
@@ -32,6 +67,14 @@ export function EditorSettings({config, onSave, saving}: {
             draft_save_debounce_ms: parseInt(edDraftSave) || 2000,
             draft_max_age_days: parseInt(edDraftAge) || 30,
             ai_context_chars: parseInt(edAiChars) || 2000,
+        },
+        ui: {
+            ...ui,
+            picture_book: {
+                ...pictureBook,
+                pdf_default_format: pdfFormat,
+                pdf_default_bleed_marks: pdfBleed,
+            },
         },
     });
 
@@ -74,6 +117,40 @@ export function EditorSettings({config, onSave, saving}: {
                         <HelpText>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl für KI-Vorschläge")}</HelpText>
                     </div>
                 </div>
+
+                <div className={styles.subCard} data-testid="settings-picture-book-pdf">
+                    <h3 className={styles.subCardTitle}>
+                        {t("ui.settings.pdf_defaults_title", "PDF-Export-Standards (Bilderbuch + Comic)")}
+                    </h3>
+                    <HelpText>
+                        {t("ui.settings.pdf_defaults_hint", "Standard-Werte für die Export-Steuerung; können beim Export pro Vorgang überschrieben werden.")}
+                    </HelpText>
+                    <div className={styles.subCardGrid}>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.pdf_default_format", "Standard-Format")}</label>
+                            <RadixSelect
+                                value={pdfFormat}
+                                onValueChange={(v) => setPdfFormat(v as PictureBookFormat)}
+                                testId="settings-pdf-default-format"
+                                options={PICTURE_BOOK_FORMATS.map((fmt) => ({
+                                    value: fmt,
+                                    label: t(`ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`, fmt),
+                                }))}
+                            />
+                        </div>
+                        <div className="field">
+                            <Toggle
+                                label={t("ui.settings.pdf_default_bleed", "Beschnittmarken standardmäßig aktiv")}
+                                description={t("ui.page_editor.pdf_bleed_hint", "Fügt 3 mm Beschnitt + Schnittmarken für den Druckereinsatz hinzu")}
+                                checked={pdfBleed}
+                                onChange={setPdfBleed}
+                                testId="settings-pdf-default-bleed"
+                                indentedDescription
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <button
                     className="btn btn-primary"
                     disabled={saving}
