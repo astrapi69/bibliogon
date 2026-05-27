@@ -197,6 +197,37 @@
     font-weight: 500;
 }
 
+.notesEditor {
+    width: 100%;
+    min-height: 38px;
+    margin-top: 4px;
+    padding: 6px 8px;
+    border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text) 2%, var(--bg));
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    resize: vertical;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.notesEditor:hover {
+    border-color: color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+.notesEditor:focus {
+    outline: none;
+    border-color: var(--accent, color-mix(in srgb, var(--text) 40%, transparent));
+    background: var(--bg);
+}
+
+.notesEditor::placeholder {
+    color: color-mix(in srgb, var(--text) 40%, transparent);
+    font-style: italic;
+}
+
 .dragHandle {
     position: absolute;
     top: 8px;

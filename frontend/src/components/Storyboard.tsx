@@ -39,8 +39,9 @@ import {
 } from "@dnd-kit/sortable"
 import {CSS} from "@dnd-kit/utilities"
 
-import {api, type Page} from "../api/client"
+import {api, type Page, type PageUpdate} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {notify} from "../utils/notify"
 import styles from "./Storyboard.module.css"
 
 interface Props {
@@ -128,6 +129,30 @@ export default function Storyboard({
         [bookId, pageIds, pages],
     )
 
+    /** Annotation auto-save (Session 2 C1+). Patches a single field
+     *  on a single page; on success, replaces the page row in local
+     *  state with the authoritative response. On failure, fires a
+     *  toast (per the lessons-learned "annotation PATCH fails
+     *  silently" Stop-Condition) — local state stays optimistic so
+     *  the user doesn't lose their edit, but the toast surfaces the
+     *  error for retry. */
+    const handlePatchPage = useCallback(
+        async (pageId: string, patch: PageUpdate): Promise<void> => {
+            try {
+                const updated = await api.pages.update(bookId, pageId, patch)
+                setPages((prev) =>
+                    prev.map((p) => (p.id === pageId ? updated : p)),
+                )
+            } catch (err: unknown) {
+                const message =
+                    err instanceof Error ? err.message : String(err)
+                notify.error(`Save failed: ${message}`)
+                throw err
+            }
+        },
+        [bookId],
+    )
+
     return (
         <div className={styles.container} data-testid={testidNamespace}>
             <div className={styles.header}>
@@ -211,6 +236,7 @@ export default function Storyboard({
                                                 bookId={bookId}
                                                 page={page}
                                                 onSelect={onSelectPage}
+                                                onPatch={handlePatchPage}
                                                 testidNamespace={testidNamespace}
                                             />
                                         ))}
@@ -229,6 +255,11 @@ interface CardProps {
     bookId: string
     page: Page
     onSelect: (pageId: string) => void
+    /** Auto-save annotation patch (notes / story_beat / mood_color /
+     *  act_group). Parent merges the response into the pages list.
+     *  Rejects on network/validation failure; the caller has already
+     *  shown a toast — children should not double-toast. */
+    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
     testidNamespace: string
 }
 
@@ -264,7 +295,7 @@ function SortableStoryboardCard(props: CardProps) {
     )
 }
 
-function StoryboardCard({bookId, page, onSelect, testidNamespace}: CardProps) {
+function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: CardProps) {
     const {t} = useI18n()
     const previewTitle = derivePreviewTitle(page)
     const moodStyle: React.CSSProperties = page.mood_color
@@ -274,12 +305,27 @@ function StoryboardCard({bookId, page, onSelect, testidNamespace}: CardProps) {
         .filter(Boolean)
         .join(" ")
 
+    // Card root is a div + role="button" (not <button>) so the nested
+    // form controls (notes textarea + future beat select / color
+    // picker / act-group input) are valid HTML. Mirrors the
+    // PageThumbnails SortablePageRow pattern.
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        // Don't navigate when the user is typing in a child input.
+        if (e.target !== e.currentTarget) return
+        if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault()
+            onSelect(page.id)
+        }
+    }
+
     return (
-        <button
-            type="button"
+        <div
+            role="button"
+            tabIndex={0}
             className={cardClass}
             style={moodStyle}
             onClick={() => onSelect(page.id)}
+            onKeyDown={handleKeyDown}
             data-testid={`${testidNamespace}-card-${page.id}`}
             data-position={page.position}
             data-layout={page.layout}
@@ -333,8 +379,76 @@ function StoryboardCard({bookId, page, onSelect, testidNamespace}: CardProps) {
                         </span>
                     )}
                 </div>
+                <NotesEditor
+                    page={page}
+                    onPatch={onPatch}
+                    testidNamespace={testidNamespace}
+                />
             </div>
-        </button>
+        </div>
+    )
+}
+
+interface NotesEditorProps {
+    page: Page
+    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
+    testidNamespace: string
+}
+
+/** Auto-saving notes textarea (PICTURE-BOOK-STORYBOARD-VIEW-01
+ *  Session 2 C1). Local state mirrors page.notes; onBlur fires the
+ *  PATCH only when the value changed from the server's view of the
+ *  field. Empty string normalises to null so a user clearing the
+ *  textarea writes NULL back (matching the patch_clears_storyboard_
+ *  field_via_null backend test pin).
+ *
+ *  stopPropagation on click + keyDown + mouseDown prevents the
+ *  card's navigation handler from firing while the user edits the
+ *  notes. Drag-handle remains a sibling overlay (no interference). */
+function NotesEditor({page, onPatch, testidNamespace}: NotesEditorProps) {
+    const {t} = useI18n()
+    const [value, setValue] = useState<string>(page.notes ?? "")
+
+    // Sync local state when the page row is replaced (e.g. by a
+    // sibling annotation save that returns the same row with fresh
+    // updated_at). useEffect guards against the case where the
+    // user is mid-edit on a different field — we keep local state
+    // when only updated_at changed.
+    useEffect(() => {
+        setValue(page.notes ?? "")
+    }, [page.id, page.notes])
+
+    const handleBlur = () => {
+        const normalised = value.trim() === "" ? null : value
+        const persisted = page.notes ?? null
+        if (normalised === persisted) return
+        void onPatch(page.id, {notes: normalised}).catch(() => {
+            // Parent already toasted the error; keep local state so
+            // the user doesn't lose their edit.
+        })
+    }
+
+    const stop = (e: React.SyntheticEvent) => {
+        e.stopPropagation()
+    }
+
+    return (
+        <textarea
+            className={styles.notesEditor}
+            value={value}
+            placeholder={t(
+                "ui.storyboard.notes_placeholder",
+                "Add notes...",
+            )}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={handleBlur}
+            onClick={stop}
+            onMouseDown={stop}
+            onKeyDown={stop}
+            data-testid={`${testidNamespace}-notes-${page.id}`}
+            aria-label={t("ui.storyboard.notes_label", "Page notes")}
+            rows={2}
+        />
     )
 }
 

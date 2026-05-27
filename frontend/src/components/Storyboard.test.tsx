@@ -79,6 +79,13 @@ const defaultProps = {
 }
 
 beforeEach(() => {
+    // mockClear (not mockReset) per the "Module-level caches survive
+    // test boundaries" lessons-learned rule — preserves any factory
+    // defaults set in the vi.mock factory while resetting call
+    // history between tests.
+    vi.mocked(api.pages.list).mockClear()
+    vi.mocked(api.pages.update).mockClear()
+    vi.mocked(api.pages.reorder).mockClear()
     vi.mocked(api.pages.list).mockResolvedValue([])
     vi.mocked(api.pages.reorder).mockResolvedValue([])
     defaultProps.onSelectPage = vi.fn()
@@ -299,6 +306,115 @@ describe("Storyboard", () => {
             // Localised fallback returned by the mock t() is the
             // hardcoded "(no text)" string.
             expect(card.textContent).toContain("(no text)")
+        })
+    })
+
+    describe("NotesEditor (Session 2 C1)", () => {
+        it("renders the textarea with the namespaced testid", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: null}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const textarea = await screen.findByTestId("storyboard-notes-p1")
+            expect(textarea).toBeTruthy()
+            expect((textarea as HTMLTextAreaElement).value).toBe("")
+        })
+
+        it("renders existing notes value when page.notes is set", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: "Pacing feels slow here."}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const textarea = await screen.findByTestId("storyboard-notes-p1")
+            expect((textarea as HTMLTextAreaElement).value).toBe(
+                "Pacing feels slow here.",
+            )
+        })
+
+        it("blur triggers PATCH with the new notes value", async () => {
+            const updated = makePage({id: "p1", notes: "Edited note"})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: null}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const textarea = (await screen.findByTestId(
+                "storyboard-notes-p1",
+            )) as HTMLTextAreaElement
+            fireEvent.change(textarea, {target: {value: "Edited note"}})
+            fireEvent.blur(textarea)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    notes: "Edited note",
+                })
+            })
+        })
+
+        it("blur with unchanged value does NOT trigger PATCH (no-op)", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: "Initial"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const textarea = (await screen.findByTestId(
+                "storyboard-notes-p1",
+            )) as HTMLTextAreaElement
+            // Focus + blur without editing.
+            fireEvent.focus(textarea)
+            fireEvent.blur(textarea)
+            // Tiny defer to let any async microtask flush.
+            await new Promise((r) => setTimeout(r, 0))
+            expect(api.pages.update).not.toHaveBeenCalled()
+        })
+
+        it("clearing the textarea blurs with notes: null (empty → null)", async () => {
+            const updated = makePage({id: "p1", notes: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: "Initial"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const textarea = (await screen.findByTestId(
+                "storyboard-notes-p1",
+            )) as HTMLTextAreaElement
+            fireEvent.change(textarea, {target: {value: ""}})
+            fireEvent.blur(textarea)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    notes: null,
+                })
+            })
+        })
+
+        it("whitespace-only value blurs with notes: null (trimmed → null)", async () => {
+            const updated = makePage({id: "p1", notes: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: "Initial"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const textarea = (await screen.findByTestId(
+                "storyboard-notes-p1",
+            )) as HTMLTextAreaElement
+            fireEvent.change(textarea, {target: {value: "   \n  "}})
+            fireEvent.blur(textarea)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    notes: null,
+                })
+            })
+        })
+
+        it("clicking inside the textarea does NOT trigger onSelectPage", async () => {
+            const onSelectPage = vi.fn()
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", notes: null}),
+            ])
+            render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
+            const textarea = await screen.findByTestId("storyboard-notes-p1")
+            fireEvent.click(textarea)
+            // Card-level onClick should NOT fire when clicking the
+            // textarea (stopPropagation).
+            expect(onSelectPage).not.toHaveBeenCalled()
         })
     })
 
