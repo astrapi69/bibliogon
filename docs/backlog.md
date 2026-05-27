@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-26 (HELP-DOCS-V0.37.0-GAPS-01 CLOSED — extended to also cover v0.38.0 Settings-UX overhaul; 6 help topics × DE + EN = 12 Markdown pages + 5 Playwright-generated screenshots in default theme (warm-literary light, 1280×800). New manual-only ``screenshots`` Playwright project. Pages: settings/sidebar, editor/display-settings, editor/word-wrap, books/repository-url, dashboard/pagination, dashboard/trash-and-restore. _meta.yaml gained a new top-level "Dashboard" group + 5 child entries. ``make verify-docs-discipline`` green.)
+Last updated: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work. P3 count 17 → 16.)
+Previous: 2026-05-26 (HELP-DOCS-V0.37.0-GAPS-01 CLOSED — extended to also cover v0.38.0 Settings-UX overhaul; 6 help topics × DE + EN = 12 Markdown pages + 5 Playwright-generated screenshots in default theme (warm-literary light, 1280×800). New manual-only ``screenshots`` Playwright project. Pages: settings/sidebar, editor/display-settings, editor/word-wrap, books/repository-url, dashboard/pagination, dashboard/trash-and-restore. _meta.yaml gained a new top-level "Dashboard" group + 5 child entries. ``make verify-docs-discipline`` green.)
 Previous: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
 Previous: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
 Previous: 2026-05-26 (SETT-PHASE-3-TOGGLE-COMPONENT-01 CLOSED — 4-commit ship of the shared Toggle composition component + 5-site migration.)
@@ -724,52 +725,6 @@ store.
 - **PGS-05-FU-01**: real-world unified-commit failure-mode tuning
   (only one of two subsystems active, partial-failure UX). Effort
   S; trigger by user report.
-
-- **SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01** (P3, IMPROVEMENT):
-  Settings → "Allgemein" tab requires scroll to reach all
-  settings below the initial three Kacheln/cards. Should be
-  reorganized for better discoverability.
-
-  Recommended approach (CC decides at implementation time):
-  - Option B preferred: split "Allgemein" into multiple top-level
-    tabs (consistent with the existing tab pattern, avoids
-    tab-in-tab cognitive load).
-  - Option A acceptable: sub-tabs within "Allgemein" if Option B's
-    tab-bar becomes too wide.
-  - Option C fallback: cards-layout optimization only
-    (Collapsible-Sections, denser grid).
-
-  Scope:
-  - Audit current "Allgemein" tab structure (which settings are
-    grouped there).
-  - Decide grouping strategy: Erscheinung / Verhalten / Daten / etc.
-  - Implementation: extract relevant settings into separate tab
-    components OR sub-navigation.
-  - i18n: new tab labels in 8 languages.
-  - Tests: Vitest + E2E for navigation between new tabs.
-
-  Effort estimate: 4-6 commits (substantial Settings refactor).
-
-  Trigger: builds on the v0.33.0 Settings-monolith extraction work
-  shipped 2026-05-15 (archived: ``PLUGIN-SETTINGS-TESTID-COVERAGE-01``,
-  ``SETTINGS-INLINE-TABS-EXTRACT-01``, both in
-  ``docs/archive/roadmap/2026-05.md``). Now that the per-tab
-  components exist (AppSettings / AiAssistantSettings /
-  TopicsSettings / PluginSettings / AuthorSettings), reorganization
-  sits cleanly on top — no extraction prerequisite remaining.
-  Trigger this item when a Settings-Polish-Session is convened OR a
-  user complaint about Settings scroll friction surfaces.
-
-  Defer reason:
-  - Not user-blocking (existing scroll works, just friction).
-  - Today's Sprint-Velocity is at the upper edge (23+ commits since
-    v0.33.0); this is the 8th surface-pattern instance manual
-    smoke-testing has surfaced.
-  - Bug 4 (Comments-Admin restructure) + Kinderbuch test-discipline
-    deliverables are this session's defined scope.
-
-  Filed by Hotfix-Session 2026-05-16 evening (after Bug-4 ship)
-  per user instruction.
 
 - **PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01** (P3, filed
   2026-05-20 from Comics-Session-2 close). Session-3 polish work
