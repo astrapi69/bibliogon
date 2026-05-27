@@ -118,6 +118,23 @@ export default function Settings() {
     // definitions so testids + labels stay in lock-step. The mobile
     // dropdown reuses the flat list; C2 will refine the mobile UX.
     const hasDonations = Boolean(getDonationsConfig(appConfig));
+    // White-Label feature flag (features.white_label in app.yaml).
+    // Defaults to false so the "Erweitert" tab stays hidden for the
+    // typical author user; power users flip the flag in YAML to
+    // surface the SSH-key + white-label customisation panels.
+    const hasWhiteLabel = Boolean(
+        (appConfig.features as Record<string, unknown> | undefined)?.white_label,
+    );
+
+    // White-Label gate: a stale deep-link like ?tab=erweitert lands on
+    // an empty panel when the flag is off. Redirect to the default
+    // tab once appConfig has loaded and confirms the flag is false.
+    useEffect(() => {
+        if (activeTab === "erweitert" && !hasWhiteLabel) {
+            handleTabChange("erscheinungsbild");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, hasWhiteLabel]);
     const sidebarGroups: SidebarGroup[] = useMemo(() => {
         const groups: SidebarGroup[] = [
             {
@@ -145,7 +162,9 @@ export default function Settings() {
                     {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
                     {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
                     {value: "backups", label: t("ui.settings.tab_backups", "Backups"), testId: "settings-tab-backups"},
-                    {value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"},
+                    ...(hasWhiteLabel
+                        ? [{value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"}]
+                        : []),
                 ],
             },
             {
@@ -171,7 +190,7 @@ export default function Settings() {
             },
         ];
         return groups;
-    }, [t, hasDonations]);
+    }, [t, hasDonations, hasWhiteLabel]);
 
     return (
         <div className={styles.container}>
@@ -385,7 +404,7 @@ export default function Settings() {
                         <SupportSection config={getDonationsConfig(appConfig)!} />
                     )}
                     {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
-                    {activeTab === "erweitert" && (
+                    {activeTab === "erweitert" && hasWhiteLabel && (
                         <ErweitertSettings
                             config={appConfig}
                             onSave={async (data) => {
