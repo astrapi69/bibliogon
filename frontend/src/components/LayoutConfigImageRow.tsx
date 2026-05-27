@@ -1,6 +1,8 @@
 import React from "react"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
+import {Tier1Section} from "./comics/Tier1Section"
+import {Tier2Section} from "./comics/Tier2Section"
 import styles from "./LayoutConfigImageRow.module.css"
 
 type ImagePosition = "left" | "center" | "right"
@@ -336,6 +338,40 @@ export function LayoutConfigImageFullTextOverlay({
                     {opacity.toFixed(2)}
                 </span>
             </label>
+            {/*
+             * PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
+             * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C5.
+             * Tier-Property sections (8-field Visual Style +
+             * 6-field Typography) extracted from speech_bubble.
+             *
+             * Overlay differs from speech_bubble: no bubbles[0]
+             * wrapping (single text region per page). Tier1/Tier2
+             * onChange writes go DIRECTLY through the dispatcher's
+             * onChange — the new key + value land flat inside the
+             * image_full_text_overlay namespace.
+             *
+             * Tier1 + Tier2 readers in bubbleConfigReads.ts call
+             * readBubbleConfig under the hood, which honours flat
+             * top-level keys (the legacy bubble fallback), so the
+             * non-bubbles[0] shape works transparently.
+             *
+             * background_color composes with text_backdrop_opacity
+             * at render time (PageCanvas extends its overlayTextStyle
+             * derivation in the same commit); default #ffffff +
+             * legacy backdrop-opacity behaviour preserved.
+             */}
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="overlay-text"
+                i18nKeyPrefix="ui.page_editor.config.overlay_text"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="overlay-text"
+                i18nKeyPrefix="ui.page_editor.config.overlay_text"
+            />
         </div>
     )
 }

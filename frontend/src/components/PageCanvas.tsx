@@ -613,9 +613,97 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     }
     const overlayTextStyle: React.CSSProperties = {}
     if (page.layout === "image_full_text_overlay") {
-        overlayTextStyle.background = `rgba(0, 0, 0, ${textBackdropOpacity})`
-        // Use individual properties (not `inset` shorthand) so the
-        // serialized inline style is testable in jsdom.
+        // PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
+        // PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C5: read
+        // Tier 1+2 Visual-Style + Typography from the overlay
+        // namespace and emit per-field overrides. Defaults match
+        // the pre-C5 hardcoded styling so legacy pages render
+        // identically (background dark #000 + 0.45 opacity, no
+        // border, no shadow, no custom font / weight / color /
+        // align, padding inherited from CSS module).
+        const tierConfig = layoutConfig as Record<string, unknown>
+
+        // Background composition: hex background_color × the
+        // existing text_backdrop_opacity slider. Default
+        // background_color is #000000 (black) so legacy pages
+        // behave identically; setting any color (e.g. #FFC857 sunny)
+        // tints the overlay backdrop without losing the opacity
+        // dimension.
+        const bgRgb = hexToRgb(tierConfig.background_color) ?? {r: 0, g: 0, b: 0}
+        overlayTextStyle.background = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${textBackdropOpacity})`
+
+        // Tier 1 — border + radius + shadow + padding.
+        const borderColorRgb =
+            hexToRgb(tierConfig.border_color) ?? {r: 0, g: 0, b: 0}
+        const borderWidthRaw =
+            typeof tierConfig.border_width === "number"
+                ? tierConfig.border_width
+                : 0
+        const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
+        const borderStyleRaw = tierConfig.border_style
+        const borderStyle =
+            borderStyleRaw === "solid" ||
+            borderStyleRaw === "dashed" ||
+            borderStyleRaw === "dotted" ||
+            borderStyleRaw === "none"
+                ? borderStyleRaw
+                : "none"
+        if (borderWidth > 0 && borderStyle !== "none") {
+            overlayTextStyle.border = `${borderWidth}px ${borderStyle} rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
+        }
+        const borderRadiusRaw =
+            typeof tierConfig.border_radius === "number"
+                ? tierConfig.border_radius
+                : 0
+        if (borderRadiusRaw > 0) {
+            overlayTextStyle.borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
+        }
+        const shadowOn =
+            typeof tierConfig.shadow === "boolean" ? tierConfig.shadow : false
+        if (shadowOn) {
+            const shadowIntensityRaw =
+                typeof tierConfig.shadow_intensity === "number"
+                    ? tierConfig.shadow_intensity
+                    : 5
+            const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
+            overlayTextStyle.boxShadow = `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
+        }
+        const paddingRaw =
+            typeof tierConfig.padding === "number" ? tierConfig.padding : undefined
+        if (typeof paddingRaw === "number") {
+            overlayTextStyle.padding = `${Math.max(0, Math.min(32, paddingRaw))}px`
+        }
+
+        // Tier 2 — typography. Each control overrides the
+        // CSS-module default by inline specificity; absent values
+        // leave the CSS-module default in place.
+        if (typeof tierConfig.font_family === "string" && tierConfig.font_family.length > 0) {
+            overlayTextStyle.fontFamily = tierConfig.font_family
+        }
+        if (typeof tierConfig.font_size === "number") {
+            overlayTextStyle.fontSize = `${Math.max(10, Math.min(32, tierConfig.font_size))}pt`
+        }
+        if (tierConfig.font_weight === "bold" || tierConfig.font_weight === "normal") {
+            overlayTextStyle.fontWeight = tierConfig.font_weight
+        }
+        if (typeof tierConfig.italic === "boolean") {
+            overlayTextStyle.fontStyle = tierConfig.italic ? "italic" : "normal"
+        }
+        const textColorRgb = hexToRgb(tierConfig.text_color)
+        if (textColorRgb) {
+            overlayTextStyle.color = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
+        }
+        if (
+            tierConfig.text_align === "left" ||
+            tierConfig.text_align === "center" ||
+            tierConfig.text_align === "right"
+        ) {
+            overlayTextStyle.textAlign = tierConfig.text_align
+        }
+
+        // Positioning (unchanged from pre-C5). Use individual
+        // properties (not `inset` shorthand) so the serialized
+        // inline style is testable in jsdom.
         overlayTextStyle.left = 0
         overlayTextStyle.right = 0
         if (textPosition === "top") {
