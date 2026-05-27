@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-26 (v0.38.0 released — Settings-UX overhaul; 30 commits across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar nav) + Article Dashboard nav-jump fix.)
+Last updated: 2026-05-27 (post-v0.38.0 housekeeping arc — 2 stale-filing closures (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 was already shipped under SETT-PHASE-2 in v0.38.0; PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 shipped today as a smallest-scope P3 win) + 3 P5-mis-located items moved from the P3 section to P5. Comprehensive README + help-doc + CONTRIBUTING + CLAUDE.md update bundle landing in the same arc. v0.39.0 release follows from this state.)
 Latest release: v0.38.0 (2026-05-26) — see [changelog/releases/v0.38.0.md](../changelog/releases/v0.38.0.md) for the full per-release notes.
 Previous release: v0.37.0 (2026-05-25) — safety + parity + polish release; 53 commits across accessibility WCAG 2.1 AA + Danger Zone reset + bulk-restore parity + Medium-import polish + Dashboard pagination + Book.repository_url + editor display settings.
 
@@ -11,8 +11,9 @@ ROADMAP entries cross-reference backlog items by ID rather than
 duplicating their bodies.
 
 Tasks are sorted by priority tier (P0 most urgent, P5 most
-speculative). Active backlog at 65 items (P3..P5 + 2 BLOCKED-on-
-upstream); see backlog for the per-tier list.
+speculative). Active backlog at 57 items (P3=17 + P4=28 + P5=12;
+P0=P1=P2=0) + 2 BLOCKED-on-upstream entries; see backlog for the
+per-tier list.
 
 ---
 
@@ -128,9 +129,6 @@ trigger-gated.
 - `PICTURE-BOOK-PDF-FRONT-MATTER-01` — author-controlled
   dedication / copyright / imprint pages in generated PDF.
   Trigger: user requests OR Aster's second book needs imprint.
-- `PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01` —
-  active conversion of `page.text_content` on layout switch.
-  Defensive read shipped Session 4c-B-1 Fix C.
 - `PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01` — per-span font
   override on picture-book pages. Trigger: explicit user request.
 - `PLUGIN-COMICS-SESSION-3-EXTENDED-FEATURES-01` — drag-to-
@@ -211,10 +209,6 @@ ROADMAP's "Deferred sub-parts" block; not yet filed in backlog.
 
 ### UX Polish
 
-- `SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01` — reorganize the
-  Settings → Allgemein tab (Option B preferred; tab-split).
-  Trigger: Settings-Polish-Session OR user complaint about
-  scroll friction.
 - `FULLSCREEN-PATTERN-RECONCILE-01` — reconcile the two
   fullscreen patterns (State-CSS textarea vs browser-Fullscreen
   API hook); trigger: third surface emerges OR user-feedback
