@@ -423,6 +423,29 @@ export default function ComicBookEditor({
         [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId],
     );
 
+    /** Bubble drag-end handler: persists the new anchor and selects
+     *  the dragged bubble (so the side-pane's anchor sliders update
+     *  to match the dragged position via the controlled-input
+     *  binding). Drag-end fires once per drag, AFTER the 5px
+     *  threshold has been crossed. */
+    const handleBubbleDragEnd = useCallback(
+        async (bubbleId: string, x_pct: number, y_pct: number) => {
+            if (!activePageId) return;
+            setSelectedBubbleId(bubbleId);
+            try {
+                await api.comics.updateBubble(bookId, bubbleId, {
+                    anchor: {x_pct, y_pct},
+                });
+                await refreshPanelsAndBubbles(activePageId);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [activePageId, bookId, refreshPanelsAndBubbles],
+    );
+
     const handleUpdatePanel = useCallback(
         async (partial: Partial<ComicPanelData>) => {
             if (!selectedPanelId || !activePageId) return;
@@ -682,6 +705,7 @@ export default function ComicBookEditor({
                                     onBubbleClick={(bubbleId) => {
                                         setSelectedBubbleId(bubbleId);
                                     }}
+                                    onBubbleDragEnd={handleBubbleDragEnd}
                                 />
                             </div>
 

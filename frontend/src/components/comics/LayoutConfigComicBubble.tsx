@@ -208,7 +208,7 @@ export function LayoutConfigComicBubble({
                     min={ANCHOR_PCT_MIN}
                     max={ANCHOR_PCT_MAX}
                     step={ANCHOR_PCT_STEP}
-                    defaultValue={anchorX}
+                    value={anchorX}
                     onChange={(e) =>
                         debouncedAnchorX(parseInt(e.target.value, 10))
                     }
@@ -231,7 +231,7 @@ export function LayoutConfigComicBubble({
                     min={ANCHOR_PCT_MIN}
                     max={ANCHOR_PCT_MAX}
                     step={ANCHOR_PCT_STEP}
-                    defaultValue={anchorY}
+                    value={anchorY}
                     onChange={(e) =>
                         debouncedAnchorY(parseInt(e.target.value, 10))
                     }
@@ -255,7 +255,7 @@ export function LayoutConfigComicBubble({
                     min={WIDTH_PCT_MIN}
                     max={WIDTH_PCT_MAX}
                     step={WIDTH_PCT_STEP}
-                    defaultValue={bubble.width_pct}
+                    value={bubble.width_pct}
                     onChange={(e) =>
                         debouncedWidth(parseInt(e.target.value, 10))
                     }
@@ -278,7 +278,7 @@ export function LayoutConfigComicBubble({
                     min={HEIGHT_PCT_MIN}
                     max={HEIGHT_PCT_MAX}
                     step={HEIGHT_PCT_STEP}
-                    defaultValue={bubble.height_pct}
+                    value={bubble.height_pct}
                     onChange={(e) =>
                         debouncedHeight(parseInt(e.target.value, 10))
                     }

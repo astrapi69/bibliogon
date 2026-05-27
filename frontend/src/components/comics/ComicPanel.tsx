@@ -33,6 +33,10 @@ interface ComicPanelProps {
     selected?: boolean;
     onClick?: () => void;
     onBubbleClick?: (bubbleId: string) => void;
+    /** Fires once on bubble pointer-up after a drag exceeded the
+     *  5px threshold. The receiver should persist the new anchor
+     *  via the existing ``api.comics.updateBubble`` path. */
+    onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
     selectedBubbleId?: string | null;
 }
 
@@ -43,6 +47,7 @@ export function ComicPanel({
     selected,
     onClick,
     onBubbleClick,
+    onBubbleDragEnd,
     selectedBubbleId,
 }: ComicPanelProps) {
     const config = panel.panel_config ?? {};
@@ -92,6 +97,12 @@ export function ComicPanel({
                     selected={selectedBubbleId === bubble.id}
                     onClick={
                         onBubbleClick ? () => onBubbleClick(bubble.id) : undefined
+                    }
+                    onDragEnd={
+                        onBubbleDragEnd
+                            ? (x_pct, y_pct) =>
+                                  onBubbleDragEnd(bubble.id, x_pct, y_pct)
+                            : undefined
                     }
                 />
             ))}
