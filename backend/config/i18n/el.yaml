@@ -2327,6 +2327,14 @@ ui:
     open_page: "Άνοιγμα σελίδας"
     card_no_text: "(κανένα κείμενο)"
     drag_handle: "Σύρετε για αναδιάταξη"
+    notes_label: "Σημειώσεις σελίδας"
+    notes_placeholder: "Προσθήκη σημειώσεων..."
+    beat_label: "Δραματικό σημείο"
+    beat_none: "— κανένα σημείο —"
+    mood_label: "Χρώμα διάθεσης"
+    mood_clear: "Καθαρισμός χρώματος"
+    act_group_label: "Ομάδα πράξης"
+    act_group_placeholder: "Πράξη / κεφάλαιο (προαιρετικό)"
     beat:
       setup: "Εισαγωγή"
       inciting: "Αφορμή"
@@ -2334,6 +2342,17 @@ ui:
       climax: "Κορύφωση"
       falling: "Κάθοδος"
       resolution: "Λύση"
+    mood:
+      sunny: "Ηλιόλουστο"
+      passionate: "Παθιασμένο"
+      calm: "Ήρεμο"
+      dreamy: "Ονειρικό"
+      peaceful: "Γαλήνιο"
+      adventurous: "Περιπετειώδες"
+      tender: "Τρυφερό"
+      somber: "Σκοτεινό"
+      mysterious: "Μυστηριώδες"
+      gentle: "Ευγενικό"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

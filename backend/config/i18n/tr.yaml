@@ -2327,6 +2327,14 @@ ui:
     open_page: "Sayfayı aç"
     card_no_text: "(metin yok)"
     drag_handle: "Yeniden sıralamak için sürükle"
+    notes_label: "Sayfa notları"
+    notes_placeholder: "Not ekle..."
+    beat_label: "Hikaye anı"
+    beat_none: "— an yok —"
+    mood_label: "Atmosfer rengi"
+    mood_clear: "Rengi temizle"
+    act_group_label: "Perde grubu"
+    act_group_placeholder: "Perde / bölüm (isteğe bağlı)"
     beat:
       setup: "Kuruluş"
       inciting: "Tetikleyici Olay"
@@ -2334,6 +2342,17 @@ ui:
       climax: "Doruk Noktası"
       falling: "Düşen Eylem"
       resolution: "Çözüm"
+    mood:
+      sunny: "Güneşli"
+      passionate: "Tutkulu"
+      calm: "Sakin"
+      dreamy: "Hayalperest"
+      peaceful: "Huzurlu"
+      adventurous: "Maceraperest"
+      tender: "Şefkatli"
+      somber: "Hüzünlü"
+      mysterious: "Gizemli"
+      gentle: "Yumuşak"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

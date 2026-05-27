@@ -2323,6 +2323,14 @@ ui:
     open_page: "Open page"
     card_no_text: "(no text)"
     drag_handle: "Drag to reorder"
+    notes_label: "Page notes"
+    notes_placeholder: "Add notes..."
+    beat_label: "Story beat"
+    beat_none: "— no beat —"
+    mood_label: "Mood color"
+    mood_clear: "Clear color"
+    act_group_label: "Act group"
+    act_group_placeholder: "Act / chapter (optional)"
     beat:
       setup: "Setup"
       inciting: "Inciting"
@@ -2330,6 +2338,17 @@ ui:
       climax: "Climax"
       falling: "Falling"
       resolution: "Resolution"
+    mood:
+      sunny: "Sunny"
+      passionate: "Passionate"
+      calm: "Calm"
+      dreamy: "Dreamy"
+      peaceful: "Peaceful"
+      adventurous: "Adventurous"
+      tender: "Tender"
+      somber: "Somber"
+      mysterious: "Mysterious"
+      gentle: "Gentle"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.

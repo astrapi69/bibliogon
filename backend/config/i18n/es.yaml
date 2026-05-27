@@ -2327,6 +2327,14 @@ ui:
     open_page: "Abrir página"
     card_no_text: "(sin texto)"
     drag_handle: "Arrastrar para reordenar"
+    notes_label: "Notas de la página"
+    notes_placeholder: "Añadir notas..."
+    beat_label: "Beat narrativo"
+    beat_none: "— sin beat —"
+    mood_label: "Color de ambiente"
+    mood_clear: "Quitar color"
+    act_group_label: "Grupo de acto"
+    act_group_placeholder: "Acto / capítulo (opcional)"
     beat:
       setup: "Planteamiento"
       inciting: "Detonante"
@@ -2334,6 +2342,17 @@ ui:
       climax: "Clímax"
       falling: "Acción descendente"
       resolution: "Desenlace"
+    mood:
+      sunny: "Soleado"
+      passionate: "Apasionado"
+      calm: "Tranquilo"
+      dreamy: "Soñador"
+      peaceful: "Apacible"
+      adventurous: "Aventurero"
+      tender: "Tierno"
+      somber: "Sombrío"
+      mysterious: "Misterioso"
+      gentle: "Suave"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

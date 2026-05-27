@@ -2327,6 +2327,14 @@ ui:
     open_page: "ページを開く"
     card_no_text: "（テキストなし）"
     drag_handle: "ドラッグして並べ替え"
+    notes_label: "ページのメモ"
+    notes_placeholder: "メモを追加..."
+    beat_label: "ストーリービート"
+    beat_none: "— ビートなし —"
+    mood_label: "ムードカラー"
+    mood_clear: "色を消去"
+    act_group_label: "アクトグループ"
+    act_group_placeholder: "アクト／章（任意）"
     beat:
       setup: "導入"
       inciting: "きっかけ"
@@ -2334,6 +2342,17 @@ ui:
       climax: "クライマックス"
       falling: "下降展開"
       resolution: "結末"
+    mood:
+      sunny: "晴れやか"
+      passionate: "情熱的"
+      calm: "穏やか"
+      dreamy: "夢見がち"
+      peaceful: "平和"
+      adventurous: "冒険的"
+      tender: "優しい"
+      somber: "陰鬱"
+      mysterious: "神秘的"
+      gentle: "柔らか"
   comic_book_editor:
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).

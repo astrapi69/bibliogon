@@ -7,6 +7,37 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-27 — Storyboard annotations: notes / beat / mood / act-group (ES, FR, EL, PT, TR, JA)
+
+18 keys translated into 6 languages = 108 translation cells.
+All stem from PICTURE-BOOK-STORYBOARD-VIEW-01 Session 2 C5
+(annotation strings for the C1 NotesEditor + C2 BeatSelector +
+C3 MoodColorPicker + C4 ActGroupInput components).
+
+| Key | Languages |
+|-----|-----------|
+| `ui.storyboard.notes_label` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.notes_placeholder` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat_label` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.beat_none` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood_label` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood_clear` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.act_group_label` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.act_group_placeholder` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.sunny` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.passionate` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.calm` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.dreamy` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.peaceful` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.adventurous` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.tender` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.somber` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.mysterious` | ES, FR, EL, PT, TR, JA |
+| `ui.storyboard.mood.gentle` | ES, FR, EL, PT, TR, JA |
+
+DE canonical (real umlauts: Verträumt, Düster, etc.), EN
+direct-translation authored.
+
 ## 2026-05-27 — Storyboard-View (ES, FR, EL, PT, TR, JA)
 
 16 keys translated into 6 languages = 96 translation cells. All
