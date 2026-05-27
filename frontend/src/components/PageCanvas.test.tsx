@@ -2144,3 +2144,129 @@ describe("PageCanvas - Tier 2 Typography render (4c-B-2 C3)", () => {
         }
     })
 })
+
+// --- C5+C7: overlay Tier 1+2 + width/height inline-style ---
+//
+// PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
+// PICTURE-BOOK-TEXT-CONFIGURATION-01. Pin that PageCanvas applies
+// each Tier field + width/height knob to the region-text node's
+// inline style for image_full_text_overlay (mirrors the PDF walker
+// pins in test_picture_book_pdf.py).
+//
+// Per Fix B (C1+C2), layout_config is now namespaced. The
+// dispatcher passes the namespace to bodies; PageCanvas reads it
+// via readLayoutNamespace, so fixtures use the namespaced shape.
+
+describe("PageCanvas image_full_text_overlay Tier 1+2 inline-style (C5+C7)", () => {
+    function regionTextStyle(layoutConfig: Record<string, unknown>): string {
+        const {container} = render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_full_text_overlay",
+                    layout_config: layoutConfig,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        return (
+            container
+                .querySelector("[data-testid=page-canvas-region-text]")
+                ?.getAttribute("style") ?? ""
+        )
+    }
+
+    it("legacy-baseline empty config emits dark backdrop + position only", () => {
+        const style = regionTextStyle({})
+        expect(style).toContain("rgba(0, 0, 0, 0.45)")
+        expect(style).not.toContain("border:")
+        expect(style).not.toContain("box-shadow")
+        expect(style).not.toContain("font-family")
+    })
+
+    it("Tier 1 background_color composes with text_backdrop_opacity into rgba()", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {
+                background_color: "#FFC857",
+                text_backdrop_opacity: 0.6,
+            },
+        })
+        expect(style).toContain("rgba(255, 200, 87, 0.6)")
+    })
+
+    it("Tier 1 border emits when width > 0 + style != 'none'", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {
+                border_width: 3,
+                border_style: "solid",
+                border_color: "#FF6B6B",
+            },
+        })
+        expect(style).toContain("border: 3px solid rgb(255, 107, 107)")
+    })
+
+    it("Tier 1 shadow emits as box-shadow when enabled", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {shadow: true, shadow_intensity: 8},
+        })
+        expect(style).toContain("box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3)")
+    })
+
+    it("Tier 2 font_family + font_size + text_color emit when set", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {
+                font_family: "Atkinson Hyperlegible",
+                font_size: 18,
+                text_color: "#FFFFFF",
+            },
+        })
+        // happy-dom serialises font-family values with quotes.
+        expect(style).toContain(`font-family: "Atkinson Hyperlegible"`)
+        expect(style).toContain("font-size: 18pt")
+        expect(style).toContain("color: rgb(255, 255, 255)")
+    })
+
+    it("C7 text_container_width emits side offsets centred", () => {
+        // width=60 → side_offset=20% on each side.
+        const style = regionTextStyle({
+            image_full_text_overlay: {text_container_width: 60},
+        })
+        expect(style).toContain("left: 20%")
+        expect(style).toContain("right: 20%")
+    })
+
+    it("C7 text_container_width default (full) emits left: 0 + right: 0", () => {
+        const style = regionTextStyle({})
+        expect(style).toContain("left: 0")
+        expect(style).toContain("right: 0")
+    })
+
+    it("C7 text_container_height override emits explicit max-height for top position", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {
+                text_position: "top",
+                text_container_height: 40,
+            },
+        })
+        expect(style).toContain("max-height: 40%")
+        expect(style).toContain("top: 0")
+    })
+
+    it("C7 text_container_height override beats legacy 70% middle default", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {
+                text_position: "middle",
+                text_container_height: 50,
+            },
+        })
+        expect(style).toContain("max-height: 50%")
+        expect(style).not.toContain("max-height: 70%")
+    })
+
+    it("C7 middle position with no override keeps legacy max-height: 70%", () => {
+        const style = regionTextStyle({
+            image_full_text_overlay: {text_position: "middle"},
+        })
+        expect(style).toContain("max-height: 70%")
+    })
+})
