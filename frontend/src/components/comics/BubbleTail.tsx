@@ -142,16 +142,13 @@ export function BubbleTail({
         sideStyle.top = `${edgeOffset}%`;
     }
 
-    // SVG element extends both outward (along the direction) and
-    // inward (the mask overlap). Accommodate both.
-    const svgWidth = Math.max(
-        Math.floor(Math.abs(tipX) + HALF_BASE * 2 + OVERLAP_PX * 2),
-        4,
-    );
-    const svgHeight = Math.max(
-        Math.floor(Math.abs(tipY) + HALF_BASE * 2 + OVERLAP_PX * 2),
-        4,
-    );
+    // SVG element extends in the direction of the tip; the mask
+    // overlap (3px inward) fits within the SVG box and ``overflow:
+    // visible`` lets the tip render outside it. Keeping the
+    // formula identical to the original (pre-mask) sizing
+    // preserves the visible protrusion distance.
+    const svgWidth = Math.max(Math.floor(Math.abs(tipX) + HALF_BASE * 2), 4);
+    const svgHeight = Math.max(Math.floor(Math.abs(tipY) + HALF_BASE * 2), 4);
     const viewBox =
         `${(-svgWidth / 2).toFixed(0)} ` +
         `${(-svgHeight / 2).toFixed(0)} ` +

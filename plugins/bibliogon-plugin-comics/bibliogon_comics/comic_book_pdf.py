@@ -309,10 +309,13 @@ def _render_bubble_tail_svg(
     elif canonical_direction == "W":
         side_attr = f"left: 0; top: {edge_offset}%;"
 
-    # SVG element extends both outward (along the direction) and
-    # inward (the mask overlap). Accommodate both.
-    svg_width = max(int(abs(tip_x) + half_base * 2 + overlap_px * 2), 4)
-    svg_height = max(int(abs(tip_y) + half_base * 2 + overlap_px * 2), 4)
+    # SVG element extends in the direction of the tip; the mask
+    # overlap (3px inward) fits within the SVG box and
+    # ``overflow: visible`` lets the tip render outside it.
+    # Keeping the formula identical to the pre-mask sizing
+    # preserves the visible protrusion distance.
+    svg_width = max(int(abs(tip_x) + half_base * 2), 4)
+    svg_height = max(int(abs(tip_y) + half_base * 2), 4)
     # viewBox is centred so the triangle's tip + base offset both
     # render correctly. The SVG element overflows the bubble's
     # box; the bubble's parent .panel has overflow: visible.
