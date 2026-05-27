@@ -799,6 +799,130 @@ def test_overlay_text_container_height_clamped_to_range() -> None:
     assert "max-height: 100%;" in out_high["region_text_style"]
 
 
+# --- Session 2 C3: Tier 1+2 emission on image_top + image_left ---
+#
+# The _compute_tier_text_style helper drives the emission for all
+# 3 non-bubble layouts. These tests pin the shape on the two new
+# layouts (image_top + image_left). Cross-layout consistency is
+# pinned in C4 integration tests.
+
+
+def test_image_top_tier_default_baseline_emits_nothing() -> None:
+    """Backward-compat pin: empty config emits NO Tier overrides
+    on image_top_text_bottom (region_text_style stays empty)."""
+    out = _image_layout_style("image_top_text_bottom", {})
+    assert out["region_text_style"] == ""
+
+
+def test_image_top_tier_border_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_top_text_bottom",
+        {
+            "border_width": 3,
+            "border_style": "solid",
+            "border_color": "#FF6B6B",
+        },
+    )
+    assert "border: 3px solid rgb(255, 107, 107);" in out["region_text_style"]
+
+
+def test_image_top_tier_shadow_emits_when_enabled() -> None:
+    out = _image_layout_style(
+        "image_top_text_bottom",
+        {"shadow": True, "shadow_intensity": 6},
+    )
+    assert "box-shadow: 0 3.0px 12px rgba(0, 0, 0, 0.3);" in out["region_text_style"]
+
+
+def test_image_top_tier_padding_emits_when_set() -> None:
+    out = _image_layout_style("image_top_text_bottom", {"padding": 20})
+    assert "padding: 20px;" in out["region_text_style"]
+
+
+def test_image_top_tier2_font_family_size_color_align_all_emit() -> None:
+    out = _image_layout_style(
+        "image_top_text_bottom",
+        {
+            "font_family": "Atkinson Hyperlegible",
+            "font_size": 16,
+            "text_color": "#000000",
+            "text_align": "left",
+        },
+    )
+    style = out["region_text_style"]
+    assert "font-family: Atkinson Hyperlegible;" in style
+    assert "font-size: 16pt;" in style
+    assert "color: rgb(0, 0, 0);" in style
+    assert "text-align: left;" in style
+
+
+def test_image_top_tier_does_not_clobber_existing_image_position_style() -> None:
+    """image_top retains its image-position + image-fit emission
+    INDEPENDENTLY of the Tier text style; both fields appear in
+    the dict output."""
+    out = _image_layout_style(
+        "image_top_text_bottom",
+        {
+            "image_position": "right",
+            "image_fit": "cover",
+            "font_size": 18,
+        },
+    )
+    assert "justify-content: flex-end;" in out["region_image_style"]
+    assert "object-fit: cover;" in out["image_style"]
+    assert "font-size: 18pt;" in out["region_text_style"]
+
+
+def test_image_left_tier_default_baseline_emits_nothing() -> None:
+    """Backward-compat pin for image_left_text_right."""
+    out = _image_layout_style("image_left_text_right", {})
+    assert out["region_text_style"] == ""
+
+
+def test_image_left_tier_border_radius_shadow_padding_all_emit() -> None:
+    out = _image_layout_style(
+        "image_left_text_right",
+        {
+            "border_width": 2,
+            "border_style": "dashed",
+            "border_color": "#C7B8EA",
+            "border_radius": 8,
+            "shadow": True,
+            "shadow_intensity": 4,
+            "padding": 14,
+        },
+    )
+    style = out["region_text_style"]
+    assert "border: 2px dashed rgb(199, 184, 234);" in style
+    assert "border-radius: 8%;" in style
+    assert "box-shadow: 0 2.0px 8px rgba(0, 0, 0, 0.3);" in style
+    assert "padding: 14px;" in style
+
+
+def test_image_left_tier2_font_weight_italic_emit() -> None:
+    out = _image_layout_style(
+        "image_left_text_right",
+        {
+            "font_weight": "bold",
+            "italic": True,
+        },
+    )
+    style = out["region_text_style"]
+    assert "font-weight: bold;" in style
+    assert "font-style: italic;" in style
+
+
+def test_image_left_tier_does_not_clobber_split_ratio() -> None:
+    """image_left retains canvas_style (grid-template-columns)
+    INDEPENDENTLY of Tier emission."""
+    out = _image_layout_style(
+        "image_left_text_right",
+        {"split_ratio": 65, "font_size": 15},
+    )
+    assert "grid-template-columns: 65% 35%;" in out["canvas_style"]
+    assert "font-size: 15pt;" in out["region_text_style"]
+
+
 # --- _render_page ---
 
 

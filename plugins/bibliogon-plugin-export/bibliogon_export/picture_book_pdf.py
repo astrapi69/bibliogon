@@ -586,6 +586,101 @@ def _speech_bubble_style(config: dict[str, Any] | None) -> str:
     return f"{reset} {pos} background: {bg}; {width} {height} {tier1} {tier2}"
 
 
+def _compute_tier_text_style(config: dict[str, Any] | None) -> str:
+    """Compute the Tier 1 (Visual Style) + Tier 2 (Typography)
+    inline-style string for a non-bubble text container.
+
+    PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C3. Mirrors the
+    frontend ``computeTierTextStyles`` in PageCanvas.tsx. Returns
+    ONLY the Tier subset — callers compose layout-specific
+    background + positioning on top.
+
+    Used by image_full_text_overlay (Session 1 C6), and Session 2
+    C3 extends to image_top_text_bottom + image_left_text_right.
+    speech_bubble has its own derivation inside
+    _speech_bubble_style that intentionally diverges (positioning
+    + width/height defaults + bg-with-opacity composition).
+
+    Defaults — Tier fields ABSENT means the corresponding CSS
+    property is NOT emitted (CSS-module default takes effect).
+    Border gated on width > 0 AND style != "none". Shadow gated
+    on the shadow boolean. Padding emits only when set. Tier 2
+    fields ABSENT also leave CSS-module defaults.
+    """
+    if not isinstance(config, dict):
+        return ""
+
+    tier1_parts: list[str] = []
+    border_color_rgb = _hex_to_rgb(config.get("border_color")) or (0, 0, 0)
+    border_width_raw = config.get("border_width")
+    border_width = (
+        max(0, min(8, int(border_width_raw)))
+        if isinstance(border_width_raw, (int, float))
+        else 0
+    )
+    border_style_raw = config.get("border_style")
+    border_style = (
+        border_style_raw
+        if border_style_raw in {"solid", "dashed", "dotted", "none"}
+        else "none"
+    )
+    if border_width > 0 and border_style != "none":
+        tier1_parts.append(
+            f"border: {border_width}px {border_style} "
+            f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]});"
+        )
+    border_radius_raw = config.get("border_radius")
+    if isinstance(border_radius_raw, (int, float)) and border_radius_raw > 0:
+        tier1_parts.append(
+            f"border-radius: {max(0, min(50, int(border_radius_raw)))}%;"
+        )
+    shadow_on = config.get("shadow")
+    if isinstance(shadow_on, bool) and shadow_on:
+        shadow_intensity_raw = config.get("shadow_intensity")
+        shadow_intensity = (
+            max(0, min(10, int(shadow_intensity_raw)))
+            if isinstance(shadow_intensity_raw, (int, float))
+            else 5
+        )
+        tier1_parts.append(
+            f"box-shadow: 0 {shadow_intensity / 2}px "
+            f"{shadow_intensity * 2}px rgba(0, 0, 0, 0.3);"
+        )
+    padding_raw = config.get("padding")
+    if isinstance(padding_raw, (int, float)):
+        tier1_parts.append(
+            f"padding: {max(0, min(32, int(padding_raw)))}px;"
+        )
+
+    tier2_parts: list[str] = []
+    font_family_raw = config.get("font_family")
+    if isinstance(font_family_raw, str) and font_family_raw:
+        tier2_parts.append(f"font-family: {font_family_raw};")
+    font_size_raw = config.get("font_size")
+    if isinstance(font_size_raw, (int, float)):
+        tier2_parts.append(
+            f"font-size: {max(10, min(32, int(font_size_raw)))}pt;"
+        )
+    font_weight_raw = config.get("font_weight")
+    if font_weight_raw in ("bold", "normal"):
+        tier2_parts.append(f"font-weight: {font_weight_raw};")
+    italic_raw = config.get("italic")
+    if isinstance(italic_raw, bool):
+        tier2_parts.append(
+            f"font-style: {'italic' if italic_raw else 'normal'};"
+        )
+    text_color_rgb = _hex_to_rgb(config.get("text_color"))
+    if text_color_rgb is not None:
+        tier2_parts.append(
+            f"color: rgb({text_color_rgb[0]}, {text_color_rgb[1]}, {text_color_rgb[2]});"
+        )
+    text_align_raw = config.get("text_align")
+    if text_align_raw in ("left", "center", "right"):
+        tier2_parts.append(f"text-align: {text_align_raw};")
+
+    return " ".join(tier1_parts + tier2_parts)
+
+
 def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str, str]:
     """Compute inline-style overrides for non-speech-bubble layouts.
 
@@ -610,6 +705,9 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         fit = config.get("image_fit")
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
+        # Session 2 C3: Tier 1+2 inline-style on the text region.
+        # Mirrors PageCanvas.tsx computeTierTextStyles wiring.
+        region_text_style = _compute_tier_text_style(config)
 
     elif layout == "image_left_text_right":
         ratio_raw = config.get("split_ratio")
@@ -622,6 +720,8 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         fit = config.get("image_fit")
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
+        # Session 2 C3: Tier 1+2 inline-style on the text region.
+        region_text_style = _compute_tier_text_style(config)
 
     elif layout == "image_full_text_overlay":
         pos = config.get("text_position")
@@ -641,80 +741,11 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         bg_rgb = _hex_to_rgb(config.get("background_color")) or (0, 0, 0)
         bg = f"background: rgba({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]}, {opacity});"
 
-        # Tier 1 border + radius + shadow + padding. Defaults
-        # match the pre-C6 hardcoded styling so legacy pages
-        # render unchanged (no border, no shadow, no extra
-        # padding, no rounded corners).
-        tier1_parts: list[str] = []
-        border_color_rgb = _hex_to_rgb(config.get("border_color")) or (0, 0, 0)
-        border_width_raw = config.get("border_width")
-        border_width = (
-            max(0, min(8, int(border_width_raw)))
-            if isinstance(border_width_raw, (int, float))
-            else 0
-        )
-        border_style_raw = config.get("border_style")
-        border_style = (
-            border_style_raw
-            if border_style_raw in {"solid", "dashed", "dotted", "none"}
-            else "none"
-        )
-        if border_width > 0 and border_style != "none":
-            tier1_parts.append(
-                f"border: {border_width}px {border_style} "
-                f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]});"
-            )
-        border_radius_raw = config.get("border_radius")
-        if isinstance(border_radius_raw, (int, float)) and border_radius_raw > 0:
-            tier1_parts.append(
-                f"border-radius: {max(0, min(50, int(border_radius_raw)))}%;"
-            )
-        shadow_on = config.get("shadow")
-        if isinstance(shadow_on, bool) and shadow_on:
-            shadow_intensity_raw = config.get("shadow_intensity")
-            shadow_intensity = (
-                max(0, min(10, int(shadow_intensity_raw)))
-                if isinstance(shadow_intensity_raw, (int, float))
-                else 5
-            )
-            tier1_parts.append(
-                f"box-shadow: 0 {shadow_intensity / 2}px "
-                f"{shadow_intensity * 2}px rgba(0, 0, 0, 0.3);"
-            )
-        padding_raw = config.get("padding")
-        if isinstance(padding_raw, (int, float)):
-            tier1_parts.append(
-                f"padding: {max(0, min(32, int(padding_raw)))}px;"
-            )
-
-        # Tier 2 typography. Each field overrides the CSS-module
-        # default by inline specificity; absent values leave the
-        # CSS-module default in place.
-        tier2_parts: list[str] = []
-        font_family_raw = config.get("font_family")
-        if isinstance(font_family_raw, str) and font_family_raw:
-            tier2_parts.append(f"font-family: {font_family_raw};")
-        font_size_raw = config.get("font_size")
-        if isinstance(font_size_raw, (int, float)):
-            tier2_parts.append(
-                f"font-size: {max(10, min(32, int(font_size_raw)))}pt;"
-            )
-        font_weight_raw = config.get("font_weight")
-        if font_weight_raw in ("bold", "normal"):
-            tier2_parts.append(f"font-weight: {font_weight_raw};")
-        italic_raw = config.get("italic")
-        if isinstance(italic_raw, bool):
-            tier2_parts.append(
-                f"font-style: {'italic' if italic_raw else 'normal'};"
-            )
-        text_color_rgb = _hex_to_rgb(config.get("text_color"))
-        if text_color_rgb is not None:
-            tier2_parts.append(
-                f"color: rgb({text_color_rgb[0]}, {text_color_rgb[1]}, {text_color_rgb[2]});"
-            )
-        text_align_raw = config.get("text_align")
-        if text_align_raw in ("left", "center", "right"):
-            tier2_parts.append(f"text-align: {text_align_raw};")
+        # Session 2 C3: Tier 1+2 derivation extracted into
+        # _compute_tier_text_style. Same subset emitted as for
+        # image_top + image_left; layout-specific bg + positioning
+        # + width/height stay inline below.
+        tier_extras = _compute_tier_text_style(config)
 
         # C7 Bug D scope-add: text_container_width +
         # text_container_height. Width defaults to 100%; height
@@ -735,7 +766,6 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         else:
             explicit_max_height = None
 
-        tier_extras = " ".join(tier1_parts + tier2_parts)
         if pos == "top":
             max_h = explicit_max_height or ""
             region_text_style = (
