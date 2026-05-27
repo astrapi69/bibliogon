@@ -4,6 +4,119 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.39.0] - 2026-05-27
+
+A Picture-Book authoring depth release. 49 commits since v0.38.0
+across two coordinated multi-session arcs (Storyboard View +
+Picture-Book Text-Stack) plus one closure-by-discovery (Settings-
+Allgemein already-shipped) and the LAYOUT-SWITCH-TEXT-CONVERSION
+data-hygiene win, all wrapped with a comprehensive doc-sweep
+covering README, CONTRIBUTING, CLAUDE.md, and the help-doc
+cross-link layer.
+
+### Added
+
+- **Storyboard View for picture books**
+  (``PICTURE-BOOK-STORYBOARD-VIEW-01``, 16 commits across 2
+  sessions, ``f48f71b..fc7ab98``). New ``?view=storyboard``
+  mount that renders a drag-reorder grid of picture-book pages
+  with per-page annotations: inline notes textarea, 6-value
+  story-beat tag selector (Exposition / Inciting / Rising /
+  Climax / Falling / Resolution), 10-preset mood-color palette,
+  free-text act-group label for visual chapter boundaries.
+  Click-to-navigate jumps to the regular page editor. Drag-
+  reorder uses the existing ``/api/books/{id}/pages/reorder``
+  endpoint with stale-client detection.
+- **Page schema extended** with 4 nullable Storyboard columns:
+  ``notes``, ``story_beat``, ``mood_color``, ``act_group``.
+  Alembic migration auto-applies on first start; existing rows
+  get ``NULL``.
+- **Tier 1 (Visual Style) + Tier 2 (Typography) sections** added
+  to picture-book layouts ``image_top_text_bottom``,
+  ``image_left_text_right``, and ``image_full_text_overlay``
+  (``PICTURE-BOOK-PAGE-TEXT-TIPTAP-INTEGRATION-01`` /
+  ``PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01`` /
+  ``PICTURE-BOOK-TEXT-CONFIGURATION-01``, 18 commits across 2
+  sessions, ``d8da5fe..08a6504``). 14 fields per layout (8
+  Visual-Style + 6 Typography) matching the existing
+  ``speech_bubble`` precedent. Overlay-specific width + height
+  sliders narrow the text band horizontally and limit vertical
+  height.
+- **Shared style helper:** ``computeTierTextStyles`` (TypeScript)
+  + ``_compute_tier_text_style`` (Python mirror) — RCU 3-surface
+  extraction so the editor preview and the WeasyPrint PDF walker
+  render the same Tier configuration.
+- **Help-doc surface**: 6 new help-doc topic pairs (DE + EN =
+  12 Markdown pages) under ``HELP-DOCS-V0.37.0-GAPS-01``:
+  ``settings/sidebar``, ``editor/display-settings``,
+  ``editor/word-wrap``, ``books/repository-url``,
+  ``dashboard/pagination``, ``dashboard/trash-and-restore``.
+  5 Playwright-generated screenshots in the default theme
+  (warm-literary light, 1280×800). New manual-only
+  ``screenshots`` Playwright project for regenerating help
+  screenshots.
+
+### Changed
+
+- **Fix B per-layout namespace for ``Page.layout_config``**
+  (commit ``d8da5fe``). ``layout_config`` now nests
+  configurations under each layout's name (e.g.
+  ``{speech_bubble: {...}, image_top_text_bottom: {...}}``).
+  Switching layouts no longer purges the dict; each layout's
+  configuration is preserved across switch + switch-back.
+  Legacy flat configs auto-migrate to the namespaced shape on
+  the next write. Supersedes Fix A (v0.33.1) purge-on-switch.
+- **Active text-conversion on layout-switch**
+  (``PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01``, commit
+  ``5d87560``). When switching FROM a TipTap layout to a
+  Tier-Property layout, the PATCH carries the extracted
+  plain-text version of ``text_content`` alongside the layout
+  flip. The DB shape is cleaned at switch time; subsequent
+  reads don't pay the parse cost; rows no longer carry a
+  stringified TipTap doc in a Tier-Property layout. Symmetric
+  direction (Tier-Property → TipTap) leaves ``text_content``
+  untouched; ``parseTextContentToJson`` wraps plain text on
+  read.
+- **README + README-de**: 8 new feature bullets each + 3 new
+  top-level sections (Picture Book Authoring, Comic Book
+  Authoring, KDP Publishing Wizard) + plugin-table gap fix
+  (``comics`` + ``medium-import`` rows added).
+- **CLAUDE.md**: data model section expanded — ``Page`` (5
+  picture-book layouts + ``comic_panel_grid`` + 4 Storyboard
+  columns), ``ComicPanel / ComicBubble``, ``BookPublishingState``
+  were missing.
+- **CONTRIBUTING.md**: PluginForge version bump ``^0.5.0`` →
+  ``^0.10.0`` in the plugin-development reference.
+- **Help-doc cross-link layer**: "Verwandte Themen" / "Related"
+  sections added to 5 page pairs (DE + EN = 10 files) —
+  storyboard ↔ text-configuration ↔ display-settings ↔
+  sidebar ↔ pagination ↔ trash-and-restore. ``text-
+  configuration.md`` updated to reflect the LAYOUT-SWITCH-
+  TEXT-CONVERSION ship.
+
+### Fixed
+
+- **CI pre-commit hook bundle** (commit ``fe0e84a``):
+  ``notify.error in catch blocks must pass the caught error``
+  failing on ``Storyboard.tsx:186`` (single-arg call) +
+  trailing-whitespace strip in a Pre-Inspection audit doc.
+  Fix added ``ui.storyboard.save_failed`` key across all 8
+  i18n catalogs + flipped the call shape to
+  ``notify.error(t("ui.storyboard.save_failed", "Save failed"), err)``.
+
+### Backlog hygiene
+
+- **``SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01`` closed
+  retroactively**: surfaced as a stale filing during the
+  post-v0.38.0 backlog re-sync. The Option B scope (split
+  Allgemein into multiple top-level tabs) had already shipped
+  under ``SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01`` in v0.38.0.
+- **3 P5-bodied items moved from the P3 section to P5**:
+  ``PICTURE-BOOK-STORYBOARD-OPERATIONS-01``,
+  ``STORYBOARD-MOOD-FREE-PICKER-01``,
+  ``STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01``. Mis-location
+  was a filing-time oversight; bodies + triggers unchanged.
+
 ## [0.38.0] - 2026-05-26
 
 A Settings-UX overhaul release. 30 commits since v0.37.0 (one

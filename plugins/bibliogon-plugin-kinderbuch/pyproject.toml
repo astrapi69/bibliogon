@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-kinderbuch"
-version = "0.38.0"
+version = "0.39.0"
 description = "Children's book plugin for Bibliogon - picture-per-page layout and special templates"
 authors = ["astrapi69"]
 license = "MIT"
