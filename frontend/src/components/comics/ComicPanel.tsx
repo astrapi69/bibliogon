@@ -87,6 +87,7 @@ export function ComicPanel({
             style={style}
             onClick={onClick}
             role={onClick ? "button" : undefined}
+            aria-label={onClick ? `Comic panel ${panel.position + 1}` : undefined}
         >
             {imageUrl ? (
                 <img

@@ -610,6 +610,22 @@ export default function ComicBookEditor({
                         data-testid="comic-book-editor-fullscreen"
                         onClick={() => void fullscreen.toggle()}
                         aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
+                        aria-label={
+                            fullscreen.isFullscreen
+                                ? t(
+                                      "ui.editor.exit_fullscreen",
+                                      "Vollbild verlassen",
+                                  )
+                                : t("ui.editor.fullscreen", "Vollbild")
+                        }
+                        title={
+                            fullscreen.isFullscreen
+                                ? t(
+                                      "ui.editor.exit_fullscreen",
+                                      "Vollbild verlassen",
+                                  )
+                                : t("ui.editor.fullscreen", "Vollbild")
+                        }
                     >
                         {fullscreen.isFullscreen ? (
                             <Minimize2 size={14} />
@@ -623,7 +639,10 @@ export default function ComicBookEditor({
             {pluginInfo && (
                 <div
                     data-testid="comic-book-editor-plugin-info"
-                    style={{fontSize: "0.8rem", opacity: 0.7}}
+                    style={{
+                        fontSize: "0.8rem",
+                        color: "var(--text-muted)",
+                    }}
                 >
                     {pluginInfo.name} v{pluginInfo.version} (session{" "}
                     {pluginInfo.session})

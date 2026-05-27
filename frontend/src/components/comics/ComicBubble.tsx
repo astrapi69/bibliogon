@@ -413,12 +413,21 @@ export function ComicBubble({
     }
 
     const interactive = Boolean(onDragEnd || onClick);
+    // a11y accessible name: when the bubble carries text_content,
+    // the text inside is the accessible name. When empty (common
+    // for freshly-added bubbles), provide an explicit aria-label
+    // so axe-core's "button-name" rule is satisfied.
+    const bubbleAriaLabel =
+        bubble.text_content && bubble.text_content.trim() !== ""
+            ? undefined
+            : `Comic ${bubble.bubble_type} bubble`;
     return (
         <div
             data-testid={`comic-bubble-${bubble.id}`}
             data-bubble-type={bubble.bubble_type}
             className={`${BUBBLE_BASE_CLASS} ${bubbleTypeClassName(bubble.bubble_type)}`}
             style={{...baseStyle, ...overrideStyle}}
+            aria-label={interactive ? bubbleAriaLabel : undefined}
             onPointerDown={onDragEnd ? handlePointerDown : undefined}
             onPointerMove={onDragEnd ? handlePointerMove : undefined}
             onPointerUp={onDragEnd ? handlePointerUp : undefined}
@@ -492,6 +501,9 @@ export function ComicBubble({
                     return (
                         <div
                             data-testid={`comic-bubble-tail-handle-${bubble.id}`}
+                            role="button"
+                            tabIndex={0}
+                            aria-label="Drag the tail tip to reposition"
                             onPointerDown={handleTailPointerDown}
                             onPointerMove={handleTailPointerMove}
                             onPointerUp={handleTailPointerUp}
