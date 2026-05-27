@@ -94,6 +94,13 @@ ui:
     no_history: "まだバックアップが作成されていません。"
     compare_backups: "バックアップを比較"
     compare_backups_tooltip: "ファイルシステムから 2 つの .bgb ファイルを比較します"
+    delete_entry: "エントリを削除"
+    delete_entry_failed: "エントリを削除できませんでした"
+    clear_all: "すべて削除"
+    clear_all_confirm_title: "すべてのバージョン履歴を削除しますか？"
+    clear_all_confirm_body: "ディスク上の .bgb ファイルはそのまま残り、ログのみ削除されます。"
+    clear_all_confirm_button: "すべて削除"
+    clear_all_failed: "バージョン履歴を削除できませんでした"
   backup:
     compare:
       title: "バックアップの比較"

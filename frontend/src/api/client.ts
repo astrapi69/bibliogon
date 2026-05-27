@@ -3163,6 +3163,16 @@ export const api = {
         history: (limit = 50) =>
             request<{timestamp: string; action: string; book_count: number; chapter_count: number; file_size_bytes: number; filename: string; details: string}[]>(`/backup/history?limit=${limit}`),
 
+        deleteHistoryEntry: (timestamp: string) =>
+            request<{status: string}>(`/backup/history/${encodeURIComponent(timestamp)}`, {
+                method: "DELETE",
+            }),
+
+        clearHistory: () =>
+            request<{status: string}>(`/backup/history`, {
+                method: "DELETE",
+            }),
+
         import: async (
             file: File,
         ): Promise<{imported_books: number; imported_articles?: number}> => {

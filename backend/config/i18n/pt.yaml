@@ -94,6 +94,13 @@ ui:
     no_history: "Nenhum backup criado ainda."
     compare_backups: "Comparar copias de seguranca"
     compare_backups_tooltip: "Comparar dois ficheiros .bgb do sistema de ficheiros"
+    delete_entry: "Eliminar entrada"
+    delete_entry_failed: "Nao foi possivel eliminar a entrada"
+    clear_all: "Limpar tudo"
+    clear_all_confirm_title: "Limpar todo o historico de versoes?"
+    clear_all_confirm_body: "Os ficheiros .bgb no disco sao mantidos — apenas o registo e limpo."
+    clear_all_confirm_button: "Limpar tudo"
+    clear_all_failed: "Nao foi possivel limpar o historico de versoes"
   backup:
     compare:
       title: "Comparar copias de seguranca"

@@ -82,6 +82,13 @@ ui:
     no_history: "Noch keine Backups erstellt."
     compare_backups: "Backups vergleichen"
     compare_backups_tooltip: "Zwei .bgb-Dateien aus dem Dateisystem vergleichen"
+    delete_entry: "Eintrag löschen"
+    delete_entry_failed: "Eintrag konnte nicht gelöscht werden"
+    clear_all: "Alle löschen"
+    clear_all_confirm_title: "Gesamte Versionsgeschichte löschen?"
+    clear_all_confirm_body: "Die .bgb-Dateien auf der Festplatte bleiben erhalten — nur das Protokoll wird geleert."
+    clear_all_confirm_button: "Alle löschen"
+    clear_all_failed: "Versionsgeschichte konnte nicht geleert werden"
   backup:
     compare:
       title: "Backups vergleichen"

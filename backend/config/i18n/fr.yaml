@@ -94,6 +94,13 @@ ui:
     no_history: "Aucune sauvegarde creee."
     compare_backups: "Comparer les sauvegardes"
     compare_backups_tooltip: "Comparer deux fichiers .bgb depuis votre systeme de fichiers"
+    delete_entry: "Supprimer l'entrée"
+    delete_entry_failed: "Impossible de supprimer l'entrée"
+    clear_all: "Tout effacer"
+    clear_all_confirm_title: "Effacer tout l'historique des versions ?"
+    clear_all_confirm_body: "Les fichiers .bgb sur le disque sont conservés — seul le journal est effacé."
+    clear_all_confirm_button: "Tout effacer"
+    clear_all_failed: "Impossible d'effacer l'historique des versions"
   backup:
     compare:
       title: "Comparer les sauvegardes"

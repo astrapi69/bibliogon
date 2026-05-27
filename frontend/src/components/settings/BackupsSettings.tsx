@@ -24,11 +24,12 @@
  */
 
 import {useEffect, useState} from "react";
-import {GitCompare} from "lucide-react";
+import {GitCompare, Trash2} from "lucide-react";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
+import {useDialog} from "../AppDialog";
+import {notify} from "../../utils/notify";
 import BackupCompareDialog from "../BackupCompareDialog";
-import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 
 interface BackupHistoryEntry {
@@ -47,6 +48,7 @@ const sectionStyle: React.CSSProperties = {
 
 export function BackupsSettings() {
     const {t} = useI18n();
+    const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
 
@@ -56,6 +58,44 @@ export function BackupsSettings() {
             .then(setBackupHistory)
             .catch(() => {});
     }, []);
+
+    const handleDeleteEntry = async (entry: BackupHistoryEntry) => {
+        const previous = backupHistory;
+        setBackupHistory((prev) =>
+            prev.filter((e) => e.timestamp !== entry.timestamp),
+        );
+        try {
+            await api.backup.deleteHistoryEntry(entry.timestamp);
+        } catch (err: unknown) {
+            setBackupHistory(previous);
+            notify.error(
+                t("ui.backups.delete_entry_failed", "Could not delete entry"),
+                err,
+            );
+        }
+    };
+
+    const handleClearAll = async () => {
+        const ok = await dialog.confirm(
+            t("ui.backups.clear_all_confirm_title", "Clear all version history?"),
+            t(
+                "ui.backups.clear_all_confirm_body",
+                "The .bgb files on disk are kept — only the log is cleared.",
+            ),
+        );
+        if (!ok) return;
+        const previous = backupHistory;
+        setBackupHistory([]);
+        try {
+            await api.backup.clearHistory();
+        } catch (err: unknown) {
+            setBackupHistory(previous);
+            notify.error(
+                t("ui.backups.clear_all_failed", "Could not clear version history"),
+                err,
+            );
+        }
+    };
 
     return (
         <div
@@ -95,10 +135,23 @@ export function BackupsSettings() {
             </div>
 
             <div style={sectionStyle} data-testid="backups-history-section">
-                <h3 style={{margin: "0 0 12px 0", fontSize: "1rem"}}>
-                    {t("ui.backups.version_history", "Versionsgeschichte")}
-                    {backupHistory.length > 0 && ` (${backupHistory.length})`}
-                </h3>
+                <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>
+                    <h3 style={{margin: 0, fontSize: "1rem"}}>
+                        {t("ui.backups.version_history", "Versionsgeschichte")}
+                        {backupHistory.length > 0 && ` (${backupHistory.length})`}
+                    </h3>
+                    {backupHistory.length > 0 && (
+                        <button
+                            className="btn btn-secondary btn-sm"
+                            onClick={handleClearAll}
+                            data-testid="backups-history-clear-all"
+                            style={{gap: 6}}
+                        >
+                            <Trash2 size={14}/>
+                            {t("ui.backups.clear_all", "Alle löschen")}
+                        </button>
+                    )}
+                </div>
                 {backupHistory.length === 0 ? (
                     <p
                         data-testid="backups-history-empty"
@@ -162,6 +215,17 @@ export function BackupsSettings() {
                                         {entry.filename}
                                     </span>
                                 )}
+                                <button
+                                    type="button"
+                                    className="btn btn-icon btn-sm"
+                                    onClick={() => handleDeleteEntry(entry)}
+                                    data-testid={`backups-history-entry-${i}-delete`}
+                                    title={t("ui.backups.delete_entry", "Eintrag löschen")}
+                                    aria-label={t("ui.backups.delete_entry", "Eintrag löschen")}
+                                    style={{marginLeft: "auto"}}
+                                >
+                                    <Trash2 size={14}/>
+                                </button>
                             </div>
                         ))}
                     </div>

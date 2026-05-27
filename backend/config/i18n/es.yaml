@@ -94,6 +94,13 @@ ui:
     no_history: "Aun no se han creado copias de seguridad."
     compare_backups: "Comparar copias de seguridad"
     compare_backups_tooltip: "Comparar dos archivos .bgb del sistema de archivos"
+    delete_entry: "Eliminar entrada"
+    delete_entry_failed: "No se pudo eliminar la entrada"
+    clear_all: "Borrar todo"
+    clear_all_confirm_title: "¿Borrar todo el historial de versiones?"
+    clear_all_confirm_body: "Los archivos .bgb del disco se conservan — solo se borra el registro."
+    clear_all_confirm_button: "Borrar todo"
+    clear_all_failed: "No se pudo borrar el historial de versiones"
   backup:
     compare:
       title: "Comparar copias de seguridad"

@@ -94,6 +94,13 @@ ui:
     no_history: "Henuz yedekleme olusturulmadi."
     compare_backups: "Yedekleri karsilastir"
     compare_backups_tooltip: "Dosya sisteminizdeki iki .bgb dosyasini karsilastirin"
+    delete_entry: "Girisi sil"
+    delete_entry_failed: "Giris silinemedi"
+    clear_all: "Tumunu temizle"
+    clear_all_confirm_title: "Tum surum gecmisi temizlensin mi?"
+    clear_all_confirm_body: "Diskteki .bgb dosyalari korunur — yalnizca gunluk temizlenir."
+    clear_all_confirm_button: "Tumunu temizle"
+    clear_all_failed: "Surum gecmisi temizlenemedi"
   backup:
     compare:
       title: "Yedekleri karsilastir"

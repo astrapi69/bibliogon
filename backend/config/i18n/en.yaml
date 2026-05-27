@@ -82,6 +82,13 @@ ui:
     no_history: "No backups created yet."
     compare_backups: "Compare Backups"
     compare_backups_tooltip: "Compare two .bgb files from your filesystem"
+    delete_entry: "Delete entry"
+    delete_entry_failed: "Could not delete entry"
+    clear_all: "Clear all"
+    clear_all_confirm_title: "Clear all version history?"
+    clear_all_confirm_body: "The .bgb files on disk are kept — only the log is cleared."
+    clear_all_confirm_button: "Clear all"
+    clear_all_failed: "Could not clear version history"
   backup:
     compare:
       title: "Compare Backups"
