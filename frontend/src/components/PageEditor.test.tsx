@@ -689,6 +689,105 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
             expect(keys).toContain("bubbles")
         })
     })
+
+    /**
+     * Session 2 C4: parallel switch-→-switch-back preservation
+     * pin for IMAGE LAYOUTS. Same shape as the Session 1 C4
+     * speech_bubble pin, but for image_top_text_bottom →
+     * image_left_text_right → image_top_text_bottom. Pins that
+     * Fix B's per-layout namespacing keeps the image_top Tier
+     * config alive when the user goes through image_left.
+     */
+    it("preserves image_top_text_bottom Tier config across switch to image_left and back (Fix B + Session 2)", async () => {
+        const initialConfig = {
+            image_top_text_bottom: {
+                image_position: "right",
+                image_fit: "cover",
+                font_family: "Atkinson Hyperlegible",
+                font_size: 16,
+            },
+        }
+        const initial = makePage({
+            id: "p1",
+            layout: "image_top_text_bottom",
+            layout_config: initialConfig,
+        })
+        mockList.mockResolvedValue([initial])
+        let currentState = initial
+        mockUpdate.mockImplementation(async (_bookId, _pageId, updates) => {
+            currentState = {...currentState, ...updates} as typeof initial
+            return currentState
+        })
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("layout-config-root")).toBeTruthy(),
+        )
+        await waitFor(() => {
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("image_top_text_bottom")
+        })
+        // Step 1: switch to image_left_text_right.
+        // image_left_text_right sits behind the "More layouts"
+        // disclosure (not in the DEFAULT_LAYOUTS primary set).
+        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_left_text_right"),
+        )
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("image_left_text_right"),
+        )
+        // Step 2: edit something on image_left to trigger a write.
+        // image_left's split-ratio slider is debounced; pick a
+        // discrete control instead — image_fit dropdown.
+        fireEvent.change(screen.getByTestId("image-left-image-fit"), {
+            target: {value: "cover"},
+        })
+        await waitFor(() => {
+            const lastCall = mockUpdate.mock.calls[mockUpdate.mock.calls.length - 1]
+            const updatesArg = lastCall[2]
+            // image_left namespace created.
+            expect(updatesArg.layout_config?.image_left_text_right).toBeTruthy()
+            // image_top namespace PRESERVED across the write.
+            expect(updatesArg.layout_config?.image_top_text_bottom).toEqual({
+                image_position: "right",
+                image_fit: "cover",
+                font_family: "Atkinson Hyperlegible",
+                font_size: 16,
+            })
+        })
+        // Step 3: switch BACK to image_top_text_bottom.
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
+        )
+        await waitFor(() =>
+            expect(
+                screen
+                    .getByTestId("layout-config-root")
+                    .getAttribute("data-layout"),
+            ).toBe("image_top_text_bottom"),
+        )
+        // Step 4: the image_top namespace re-appears in the body
+        // config (data-config-keys reflects the namespace's keys).
+        await waitFor(() => {
+            const keys = screen
+                .getByTestId("layout-config-root")
+                .getAttribute("data-config-keys")!
+                .split(",")
+                .filter(Boolean)
+                .sort()
+            // The image_top namespace contains image_position +
+            // image_fit + font_family + font_size.
+            expect(keys).toContain("image_position")
+            expect(keys).toContain("font_family")
+        })
+    })
 })
 
 // --- 4c-B-2 C5: handleUpdateLayoutConfig + bubbles[0] wrapper ---

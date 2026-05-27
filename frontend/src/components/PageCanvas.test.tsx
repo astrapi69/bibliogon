@@ -2438,3 +2438,110 @@ describe("PageCanvas image_left_text_right Tier 1+2 inline-style (Session 2 C2)"
         expect(style).toContain("text-align: right")
     })
 })
+
+// --- Session 2 C4: cross-layout Tier consistency pins ---
+//
+// Same Tier 1+2 input → equivalent inline-style output across
+// the 3 non-bubble image layouts. Catches future drift in the
+// computeTierTextStyles helper or its per-layout wiring.
+
+describe("PageCanvas cross-layout Tier consistency (Session 2 C4)", () => {
+    function regionTextStyleFor(
+        layout: "image_top_text_bottom" | "image_left_text_right" | "image_full_text_overlay",
+        layoutConfig: Record<string, unknown>,
+    ): string {
+        const {container} = render(
+            <PageCanvas
+                page={makePage({layout, layout_config: layoutConfig})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        return (
+            container
+                .querySelector("[data-testid=page-canvas-region-text]")
+                ?.getAttribute("style") ?? ""
+        )
+    }
+
+    /** Extract ONLY the Tier 1+2 CSS properties from a serialized
+     *  inline style; drop the layout-specific bg + positioning so
+     *  the assertion compares Tier subsets only. Overlay also
+     *  emits bg + left/right/top/bottom/max-height; image_top +
+     *  image_left don't — filtering normalises across all 3. */
+    function tierSubset(style: string): string[] {
+        const tierKeys = new Set([
+            "border",
+            "border-radius",
+            "box-shadow",
+            "padding",
+            "font-family",
+            "font-size",
+            "font-weight",
+            "font-style",
+            "color",
+            "text-align",
+        ])
+        return style
+            .split(";")
+            .map((s) => s.trim())
+            .filter((s) => s.length > 0)
+            .filter((s) => {
+                const key = s.split(":")[0].trim()
+                return tierKeys.has(key)
+            })
+            .sort()
+    }
+
+    it("identical Tier config produces identical Tier styling across all 3 image layouts", () => {
+        const tierConfig = {
+            border_width: 2,
+            border_style: "solid",
+            border_color: "#FF6B6B",
+            border_radius: 12,
+            shadow: true,
+            shadow_intensity: 6,
+            padding: 16,
+            font_family: "Atkinson Hyperlegible",
+            font_size: 18,
+            font_weight: "bold",
+            italic: false,
+            text_color: "#2E4057",
+            text_align: "center",
+        }
+        const overlayTier = tierSubset(
+            regionTextStyleFor("image_full_text_overlay", {
+                image_full_text_overlay: tierConfig,
+            }),
+        )
+        const topTier = tierSubset(
+            regionTextStyleFor("image_top_text_bottom", {
+                image_top_text_bottom: tierConfig,
+            }),
+        )
+        const leftTier = tierSubset(
+            regionTextStyleFor("image_left_text_right", {
+                image_left_text_right: tierConfig,
+            }),
+        )
+        expect(topTier).toEqual(overlayTier)
+        expect(leftTier).toEqual(overlayTier)
+        // Sanity: the subset isn't empty.
+        expect(overlayTier.length).toBeGreaterThan(0)
+    })
+
+    it("empty Tier config produces empty Tier subset across all 3 layouts", () => {
+        const overlayTier = tierSubset(
+            regionTextStyleFor("image_full_text_overlay", {}),
+        )
+        const topTier = tierSubset(
+            regionTextStyleFor("image_top_text_bottom", {}),
+        )
+        const leftTier = tierSubset(
+            regionTextStyleFor("image_left_text_right", {}),
+        )
+        expect(overlayTier).toEqual([])
+        expect(topTier).toEqual([])
+        expect(leftTier).toEqual([])
+    })
+})

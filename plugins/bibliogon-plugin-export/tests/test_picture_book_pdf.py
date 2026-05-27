@@ -923,6 +923,58 @@ def test_image_left_tier_does_not_clobber_split_ratio() -> None:
     assert "font-size: 15pt;" in out["region_text_style"]
 
 
+# --- Session 2 C4: cross-layout Tier consistency (walker side) ---
+
+
+def test_compute_tier_text_style_identical_input_across_3_layouts() -> None:
+    """Same Tier config → identical emitted Tier string across
+    overlay + image_top + image_left. Catches future drift in the
+    helper's per-layout wiring."""
+    tier_config = {
+        "border_width": 2,
+        "border_style": "solid",
+        "border_color": "#FF6B6B",
+        "border_radius": 12,
+        "shadow": True,
+        "shadow_intensity": 6,
+        "padding": 16,
+        "font_family": "Atkinson Hyperlegible",
+        "font_size": 18,
+        "font_weight": "bold",
+        "italic": False,
+        "text_color": "#2E4057",
+        "text_align": "center",
+    }
+    # image_top_text_bottom's region_text_style is just the
+    # _compute_tier_text_style output (no layout-specific prefix);
+    # image_left likewise. Both should be identical.
+    top_out = _image_layout_style("image_top_text_bottom", tier_config)
+    left_out = _image_layout_style("image_left_text_right", tier_config)
+    assert top_out["region_text_style"] == left_out["region_text_style"]
+    # Both should be non-empty.
+    assert len(top_out["region_text_style"]) > 0
+
+    # Overlay wraps the Tier emission inside positioning + bg, so
+    # its region_text_style is a SUPERSET (different prefix). We
+    # can't compare byte-for-byte; instead assert each Tier field
+    # from the shared helper appears in overlay's output too.
+    overlay_out = _image_layout_style("image_full_text_overlay", tier_config)
+    for field in [
+        "border: 2px solid rgb(255, 107, 107);",
+        "border-radius: 12%;",
+        "box-shadow: 0 3.0px 12px rgba(0, 0, 0, 0.3);",
+        "padding: 16px;",
+        "font-family: Atkinson Hyperlegible;",
+        "font-size: 18pt;",
+        "font-weight: bold;",
+        "color: rgb(46, 64, 87);",
+        "text-align: center;",
+    ]:
+        assert field in overlay_out["region_text_style"], (
+            f"missing {field!r} in overlay output"
+        )
+
+
 # --- _render_page ---
 
 
