@@ -426,6 +426,11 @@ function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: Card
                     onPatch={onPatch}
                     testidNamespace={testidNamespace}
                 />
+                <ActGroupInput
+                    page={page}
+                    onPatch={onPatch}
+                    testidNamespace={testidNamespace}
+                />
                 <NotesEditor
                     page={page}
                     onPatch={onPatch}
@@ -489,6 +494,72 @@ function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
                 </option>
             ))}
         </select>
+    )
+}
+
+interface ActGroupInputProps {
+    page: Page
+    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
+    testidNamespace: string
+}
+
+/** Inline editable act-group label (PICTURE-BOOK-STORYBOARD-VIEW-01
+ *  Session 2 C4). Drives the grouping-headers in the storyboard
+ *  grid (groupByActGroup helper reads page.act_group; cards
+ *  re-render under a new group when the label changes).
+ *
+ *  Drag behaviour intentionally does NOT couple to act_group:
+ *  the SortableContext wraps the flat page-id list, so dragging
+ *  a card across visual group boundaries reorders ``position``
+ *  but leaves act_group unchanged. The next render snaps the
+ *  card back to its own group, which would look glitchy if the
+ *  user intended to change groups — but they didn't, they
+ *  intended to reorder position. Auto-update-on-cross-group is
+ *  filed as STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01 follow-up
+ *  if the UX surfaces a real-world need. */
+function ActGroupInput({page, onPatch, testidNamespace}: ActGroupInputProps) {
+    const {t} = useI18n()
+    const [value, setValue] = useState<string>(page.act_group ?? "")
+
+    useEffect(() => {
+        setValue(page.act_group ?? "")
+    }, [page.id, page.act_group])
+
+    const handleBlur = () => {
+        const normalised = value.trim() === "" ? null : value.trim()
+        const persisted = page.act_group ?? null
+        if (normalised === persisted) return
+        void onPatch(page.id, {act_group: normalised}).catch(() => {})
+    }
+
+    const stop = (e: React.SyntheticEvent) => {
+        e.stopPropagation()
+    }
+
+    return (
+        <input
+            type="text"
+            className={styles.actGroupInput}
+            value={value}
+            placeholder={t(
+                "ui.storyboard.act_group_placeholder",
+                "Act / chapter (optional)",
+            )}
+            onChange={(e) => setValue(e.target.value)}
+            onBlur={handleBlur}
+            onClick={stop}
+            onMouseDown={stop}
+            onKeyDown={(e) => {
+                stop(e)
+                if (e.key === "Enter") {
+                    e.preventDefault()
+                    ;(e.target as HTMLInputElement).blur()
+                }
+            }}
+            data-testid={`${testidNamespace}-act-group-${page.id}`}
+            aria-label={t("ui.storyboard.act_group_label", "Act group")}
+            maxLength={100}
+        />
     )
 }
 

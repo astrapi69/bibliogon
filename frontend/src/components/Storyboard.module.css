@@ -197,6 +197,34 @@
     font-weight: 500;
 }
 
+.actGroupInput {
+    width: 100%;
+    margin-top: 4px;
+    padding: 5px 8px;
+    border: 1px solid color-mix(in srgb, var(--text) 10%, transparent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--text) 2%, var(--bg));
+    color: var(--text);
+    font-family: inherit;
+    font-size: 0.75rem;
+    transition: border-color 0.12s, background 0.12s;
+}
+
+.actGroupInput:hover {
+    border-color: color-mix(in srgb, var(--text) 20%, transparent);
+}
+
+.actGroupInput:focus {
+    outline: none;
+    border-color: var(--accent, color-mix(in srgb, var(--text) 40%, transparent));
+    background: var(--bg);
+}
+
+.actGroupInput::placeholder {
+    color: color-mix(in srgb, var(--text) 40%, transparent);
+    font-style: italic;
+}
+
 .moodPalette {
     display: flex;
     flex-wrap: wrap;

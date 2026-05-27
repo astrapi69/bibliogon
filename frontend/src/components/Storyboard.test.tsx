@@ -309,6 +309,106 @@ describe("Storyboard", () => {
         })
     })
 
+    describe("ActGroupInput (Session 2 C4)", () => {
+        it("renders the input with the namespaced testid", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: null}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const input = await screen.findByTestId("storyboard-act-group-p1")
+            expect((input as HTMLInputElement).value).toBe("")
+        })
+
+        it("renders the existing act_group value", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: "Act II"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const input = await screen.findByTestId("storyboard-act-group-p1")
+            expect((input as HTMLInputElement).value).toBe("Act II")
+        })
+
+        it("blur with a new value PATCHes act_group: <trimmed value>", async () => {
+            const updated = makePage({id: "p1", act_group: "Act I"})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: null}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const input = (await screen.findByTestId(
+                "storyboard-act-group-p1",
+            )) as HTMLInputElement
+            fireEvent.change(input, {target: {value: "  Act I  "}})
+            fireEvent.blur(input)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    act_group: "Act I",
+                })
+            })
+        })
+
+        it("blur with empty value PATCHes act_group: null", async () => {
+            const updated = makePage({id: "p1", act_group: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: "Act II"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const input = (await screen.findByTestId(
+                "storyboard-act-group-p1",
+            )) as HTMLInputElement
+            fireEvent.change(input, {target: {value: ""}})
+            fireEvent.blur(input)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    act_group: null,
+                })
+            })
+        })
+
+        it("blur with unchanged value does NOT trigger PATCH (no-op)", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: "Act III"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const input = (await screen.findByTestId(
+                "storyboard-act-group-p1",
+            )) as HTMLInputElement
+            fireEvent.focus(input)
+            fireEvent.blur(input)
+            await new Promise((r) => setTimeout(r, 0))
+            expect(api.pages.update).not.toHaveBeenCalled()
+        })
+
+        it("Enter keyDown does NOT bubble up to card-level handlers (stopPropagation)", async () => {
+            // The Enter-key-blurs-save chain depends on happy-dom's
+            // blur() implementation which is unreliable in unit
+            // tests; covered by the Playwright E2E spec in S2-C6
+            // instead. Pin the stopPropagation discipline here so
+            // the card's role="button" Enter handler doesn't fire
+            // navigate-to-page while the user is mid-edit.
+            const onSelectPage = vi.fn()
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: null}),
+            ])
+            render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
+            const input = await screen.findByTestId("storyboard-act-group-p1")
+            fireEvent.keyDown(input, {key: "Enter"})
+            expect(onSelectPage).not.toHaveBeenCalled()
+        })
+
+        it("clicking the input does NOT trigger onSelectPage", async () => {
+            const onSelectPage = vi.fn()
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", act_group: null}),
+            ])
+            render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
+            const input = await screen.findByTestId("storyboard-act-group-p1")
+            fireEvent.click(input)
+            expect(onSelectPage).not.toHaveBeenCalled()
+        })
+    })
+
     describe("MoodColorPicker (Session 2 C3)", () => {
         it("renders 10 preset swatches with the namespaced testid", async () => {
             vi.mocked(api.pages.list).mockResolvedValue([
