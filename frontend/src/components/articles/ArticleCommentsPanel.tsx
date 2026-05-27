@@ -21,21 +21,14 @@ import {useEffect, useState} from "react";
 
 import {api, ApiError, type ArticleComment} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
+import {formatLocaleDate} from "../../utils/formatDate";
 
 interface Props {
     articleId: string;
 }
 
 function formatDate(iso: string | null, lang: string): string {
-    if (!iso) return "";
-    try {
-        return new Date(iso).toLocaleDateString(
-            lang === "de" ? "de-DE" : "en-US",
-            {day: "numeric", month: "short", year: "numeric"},
-        );
-    } catch {
-        return iso;
-    }
+    return formatLocaleDate(iso, lang);
 }
 
 export default function ArticleCommentsPanel({articleId}: Props) {

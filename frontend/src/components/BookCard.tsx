@@ -4,6 +4,7 @@ import {useI18n} from "../hooks/useI18n";
 import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
+import {formatLocaleDate} from "../utils/formatDate";
 import styles from "./BookCard.module.css";
 
 interface Props {
@@ -14,13 +15,9 @@ interface Props {
 }
 
 export default function BookCard({book, onClick, onDelete, onDeletePermanent}: Props) {
-    const {t} = useI18n();
+    const {t, lang} = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
-    const updated = new Date(book.updated_at).toLocaleDateString("de-DE", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-    });
+    const updated = formatLocaleDate(book.updated_at, lang);
 
     // Extract cover filename from path (e.g. "uploads/abc/cover/cover.png" -> "cover.png")
     const coverFilename = book.cover_image ? book.cover_image.split("/").pop() : null;

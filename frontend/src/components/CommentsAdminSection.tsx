@@ -17,6 +17,7 @@ import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {formatLocaleDate} from "../utils/formatDate";
 import {LoadingIndicator} from "./LoadingIndicator";
 import CommentBulkActionBar from "./comments/CommentBulkActionBar";
 import CommentPreviewModal from "./comments/CommentPreviewModal";
@@ -47,15 +48,7 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 function formatDate(iso: string | null, lang: string): string {
-    if (!iso) return "";
-    try {
-        return new Date(iso).toLocaleDateString(
-            lang === "de" ? "de-DE" : "en-US",
-            {day: "numeric", month: "short", year: "numeric"},
-        );
-    } catch {
-        return iso;
-    }
+    return formatLocaleDate(iso, lang);
 }
 
 type ViewMode = "active" | "trash";

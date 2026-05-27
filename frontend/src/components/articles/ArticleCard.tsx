@@ -11,6 +11,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import CoverPlaceholder from "../CoverPlaceholder";
+import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
 import styles from "./ArticleCard.module.css";
 
@@ -29,7 +30,7 @@ interface Props {
 }
 
 export default function ArticleCard({ article, onClick, onDelete, onDeletePermanent }: Props) {
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     // Prefer the canonical "first published anywhere" date for
     // imported articles; fall back to ``updated_at`` for native
@@ -38,17 +39,7 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
     // ``updated_at`` (the 2026 Bibliogon import timestamp) as its
     // public date.
     const displayDateRaw = article.original_published_at ?? article.updated_at;
-    const updated = (() => {
-        try {
-            return new Date(displayDateRaw).toLocaleDateString("de-DE", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-            });
-        } catch {
-            return displayDateRaw;
-        }
-    })();
+    const updated = formatLocaleDate(displayDateRaw, lang);
 
     return (
         <div

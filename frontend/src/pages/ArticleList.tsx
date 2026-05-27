@@ -44,6 +44,7 @@ import { useArticleSelection } from "../components/articles/useArticleSelection"
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
+import { formatLocaleDate } from "../utils/formatDate";
 import CoverPlaceholder from "../components/CoverPlaceholder";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
@@ -1370,7 +1371,7 @@ function ArticleRow({
     isSelected?: boolean;
     onToggleSelect?: () => void;
 }) {
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     // Prefer original_published_at (computed server-side as the
     // earliest Publication.published_at) over updated_at so imported
@@ -1378,17 +1379,10 @@ function ArticleRow({
     // the import timestamp. Native articles with no publications
     // fall back to updated_at unchanged.
     const displayDateRaw = article.original_published_at ?? article.updated_at;
-    const updated = useMemo(() => {
-        try {
-            return new Date(displayDateRaw).toLocaleDateString("de-DE", {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-            });
-        } catch {
-            return displayDateRaw;
-        }
-    }, [displayDateRaw]);
+    const updated = useMemo(
+        () => formatLocaleDate(displayDateRaw, lang),
+        [displayDateRaw, lang],
+    );
 
     return (
         <li

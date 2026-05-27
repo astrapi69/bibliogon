@@ -20,6 +20,7 @@ import * as Dialog from "@radix-ui/react-dialog";
 import {FileText, Trash2, X} from "lucide-react";
 
 import type {ArticleComment} from "../../api/client";
+import {formatLocaleDateTime} from "../../utils/formatDate";
 
 interface Props {
     comment: ArticleComment | null;
@@ -35,21 +36,7 @@ interface Props {
 }
 
 function formatDate(iso: string | null, lang: string): string {
-    if (!iso) return "";
-    try {
-        return new Date(iso).toLocaleString(
-            lang === "de" ? "de-DE" : "en-US",
-            {
-                day: "numeric",
-                month: "short",
-                year: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-            },
-        );
-    } catch {
-        return iso;
-    }
+    return formatLocaleDateTime(iso, lang);
 }
 
 export default function CommentPreviewModal({

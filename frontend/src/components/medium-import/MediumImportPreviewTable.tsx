@@ -33,6 +33,7 @@ import type {
     MediumImportPreviewErroredItem,
     MediumImportPreviewItem,
 } from "../../api/client";
+import { formatLocaleDate } from "../../utils/formatDate";
 import styles from "./MediumImportPreviewTable.module.css";
 
 interface MediumImportPreviewTableProps {
@@ -47,15 +48,10 @@ interface MediumImportPreviewTableProps {
     disabled?: boolean;
 }
 
-function formatDate(isoString: string | null, locale: string): string {
+function formatDate(isoString: string | null, lang: string): string {
     if (!isoString) return "—";
-    const date = new Date(isoString);
-    if (Number.isNaN(date.getTime())) return "—";
-    return date.toLocaleDateString(locale, {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-    });
+    const formatted = formatLocaleDate(isoString, lang);
+    return formatted === "" || formatted === isoString ? "—" : formatted;
 }
 
 export default function MediumImportPreviewTable({
