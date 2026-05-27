@@ -1,6 +1,7 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
+Last updated: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)
+Previous: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
 Previous: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
 Previous: 2026-05-27 (PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 CLOSED — active text-conversion at PageEditor.handleChangeLayout (commit ``5d87560``). Trigger: user-authorized backlog re-sync; shipped as smallest-scope P3 ahead of v0.39.0 release. Vitest 2186→2190 (+4 PageEditor cases).)
 Previous: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work.)
@@ -14,7 +15,7 @@ Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two b
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
 Current version: v0.37.0
-Open tasks: 60 active (P3=18 + P4=28 + P5=14; P0=P1=P2=0) + 2 BLOCKED-on-upstream entries
+Open tasks: 57 active (P3=17 + P4=28 + P5=12; P0=P1=P2=0) + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -546,40 +547,6 @@ store.
   Trigger: user requests author-controlled front-matter OR
   Aster's second book needs an imprint page. Approx 5-7
   commits. Filed per audit D5 reservation at S6 close.
-
-- **PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01** (P3, RCU 2-key
-  pattern, filed 2026-05-27 from the Settings-Completeness
-  audit closure): mirror the picture-book PDF format + bleed
-  defaults into a Settings UI dropdown so the author's
-  preference is set ONCE per workspace instead of being
-  rediscovered per-device via localStorage.
-
-  Today's shape: `PdfExportControls` reads + writes two
-  localStorage keys (`bibliogon-picture-book-format`,
-  `bibliogon-picture-book-bleed-marks`). Persists across
-  sessions per-device; a multi-device author has to set the
-  preference on every device individually.
-
-  Proposed:
-  - Two new `app.yaml` keys (paired RCU pattern, e.g.
-    `ui.picture_book.pdf_default_format` +
-    `ui.picture_book.pdf_default_bleed_marks`) — symmetric
-    shape so a future Comics-PDF default can plug in via
-    the same convention.
-  - Settings UI dropdown in the Erscheinungsbild tab
-    (matches the existing "Standard-Ansichten" sub-card
-    convention).
-  - `PdfExportControls` reads the workspace default on
-    mount; localStorage override stays for per-device
-    session-ephemeral picks (matches the page-size pattern:
-    inline writes the global default).
-
-  Trigger: a multi-device author reports re-picking the
-  trim size on every machine, OR a Comics-PDF defaults
-  filing fires the 2nd-surface RCU threshold.
-
-  Out of scope (separate filing): KDP marketplace defaults
-  (`KDP-DEFAULT-MARKETPLACE-01`, P5).
 
 - **PICTURE-BOOK-KDP-SPECIFIC-FIELDS-01** (P3): add three KDP-
   specific metadata fields for picture-books (and likely future
@@ -1498,51 +1465,6 @@ in the same session.)
 ---
 
 ## P5 - Speculative / Nice-to-have
-
-- **KDP-DEFAULT-MARKETPLACE-01** (P5, trigger-gated, filed
-  2026-05-27 from the Settings-Completeness audit closure):
-  global default for the KDP Publishing Wizard's primary
-  marketplace + currency. Today the wizard hardcodes US /
-  USD as the canonical row in BookPublishingState's pricing
-  block; authors targeting a non-US primary marketplace
-  (UK / DE / JP) have to re-enter the price in their currency
-  every time.
-
-  Scope: an `app.yaml` key (`kdp.default_marketplace` +
-  derived currency via the existing `REGION_CURRENCIES` map)
-  + a Settings UI dropdown in either Verhalten or a new
-  KDP-specific sub-section.
-
-  Trigger: a non-US author reports the per-wizard re-pick
-  friction, OR two such reports surface from different
-  marketplaces (suggests the assumption is genuinely
-  wrong, not just one user's edge case).
-
-- **CONFIRMATION-SKIP-MODE-01** (P5, trigger-gated, filed
-  2026-05-27 from the Settings-Completeness audit closure):
-  power-user mode that skips non-destructive confirmation
-  dialogs. Today every "soft" action (soft-delete, archive,
-  status-change, etc.) goes through an AppDialog.confirm()
-  even for users who never want it.
-
-  Scope: a single `app.yaml` boolean (e.g.
-  `app.skip_soft_confirmations`) + a Settings UI toggle in
-  Verhalten. Hard rule: destructive confirmations
-  (permanent-delete, danger-zone, type-to-confirm) MUST stay
-  regardless of the flag. The flag only affects the soft-
-  delete / archive / status-toggle family.
-
-  Trigger: a power-user reports the friction explicitly, OR
-  the support tracker collects 3+ "click count is too high"
-  complaints in the same release cycle. Without one of those,
-  the existing confirms are a safety net worth keeping for
-  the default user.
-
-  Audit recipe at filing time: grep `AppDialog\.confirm\(`
-  across the codebase and classify each call as
-  destructive-or-not. The boolean only short-circuits the
-  not-destructive set; the destructive set hard-codes its
-  confirmation regardless.
 
 - **PICTURE-BOOK-STORYBOARD-OPERATIONS-01** (P5,
   trigger-gated, filed 2026-05-27 from the closure of
