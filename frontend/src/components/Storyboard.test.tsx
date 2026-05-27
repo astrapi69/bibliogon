@@ -309,6 +309,104 @@ describe("Storyboard", () => {
         })
     })
 
+    describe("BeatSelector (Session 2 C2)", () => {
+        it("renders the select with the namespaced testid + all 6 beat options + empty option", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: null}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const select = (await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )) as HTMLSelectElement
+            expect(select).toBeTruthy()
+            // 6 beat options + 1 empty option = 7
+            expect(select.options).toHaveLength(7)
+            const values = Array.from(select.options).map((o) => o.value)
+            expect(values).toEqual([
+                "",
+                "setup",
+                "inciting",
+                "rising",
+                "climax",
+                "falling",
+                "resolution",
+            ])
+        })
+
+        it("preselects the current story_beat value", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: "climax"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const select = (await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )) as HTMLSelectElement
+            expect(select.value).toBe("climax")
+        })
+
+        it("change triggers PATCH with the new story_beat value", async () => {
+            const updated = makePage({id: "p1", story_beat: "rising"})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: null}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const select = (await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )) as HTMLSelectElement
+            fireEvent.change(select, {target: {value: "rising"}})
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    story_beat: "rising",
+                })
+            })
+        })
+
+        it("selecting the empty option clears via story_beat: null", async () => {
+            const updated = makePage({id: "p1", story_beat: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: "climax"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const select = (await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )) as HTMLSelectElement
+            fireEvent.change(select, {target: {value: ""}})
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    story_beat: null,
+                })
+            })
+        })
+
+        it("changing to the current value does NOT trigger PATCH (no-op)", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: "climax"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const select = (await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )) as HTMLSelectElement
+            fireEvent.change(select, {target: {value: "climax"}})
+            await new Promise((r) => setTimeout(r, 0))
+            expect(api.pages.update).not.toHaveBeenCalled()
+        })
+
+        it("clicking the select does NOT trigger onSelectPage", async () => {
+            const onSelectPage = vi.fn()
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", story_beat: null}),
+            ])
+            render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
+            const select = await screen.findByTestId(
+                "storyboard-beat-select-p1",
+            )
+            fireEvent.click(select)
+            expect(onSelectPage).not.toHaveBeenCalled()
+        })
+    })
+
     describe("NotesEditor (Session 2 C1)", () => {
         it("renders the textarea with the namespaced testid", async () => {
             vi.mocked(api.pages.list).mockResolvedValue([

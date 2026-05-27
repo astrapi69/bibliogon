@@ -39,7 +39,20 @@ import {
 } from "@dnd-kit/sortable"
 import {CSS} from "@dnd-kit/utilities"
 
-import {api, type Page, type PageUpdate} from "../api/client"
+import {api, type Page, type PageUpdate, type StoryBeat} from "../api/client"
+
+/** 6 story-beat values per Pre-Inspection A2 (Setup / Inciting /
+ *  Rising / Climax / Falling / Resolution). The order matters for
+ *  the dropdown: it follows the canonical dramatic-structure arc
+ *  the author walks through, not alphabetical. */
+const STORY_BEATS: readonly StoryBeat[] = [
+    "setup",
+    "inciting",
+    "rising",
+    "climax",
+    "falling",
+    "resolution",
+] as const
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import styles from "./Storyboard.module.css"
@@ -379,6 +392,11 @@ function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: Card
                         </span>
                     )}
                 </div>
+                <BeatSelector
+                    page={page}
+                    onPatch={onPatch}
+                    testidNamespace={testidNamespace}
+                />
                 <NotesEditor
                     page={page}
                     onPatch={onPatch}
@@ -386,6 +404,62 @@ function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: Card
                 />
             </div>
         </div>
+    )
+}
+
+interface BeatSelectorProps {
+    page: Page
+    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
+    testidNamespace: string
+}
+
+/** Native <select> dropdown for ``page.story_beat`` (PICTURE-BOOK-
+ *  STORYBOARD-VIEW-01 Session 2 C2). 6 dramatic-structure values per
+ *  A2 + an empty "—" option for clearing.
+ *
+ *  Native <select> chosen over Radix Select for happy-dom test
+ *  reliability (per the "Radix DropdownMenu + happy-dom is
+ *  brittle" lessons-learned rule). The same brittleness applies to
+ *  Radix Select; native <select>'s onChange fires deterministically
+ *  in Vitest. The visible badge above the selector already shows
+ *  the chosen value translated via ui.storyboard.beat.* so the
+ *  user reads the localised name even when the <select> dropdown
+ *  itself shows the i18n labels. */
+function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
+    const {t} = useI18n()
+    const value = page.story_beat ?? ""
+
+    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        const next = e.target.value as StoryBeat | ""
+        const normalised: StoryBeat | null = next === "" ? null : next
+        if (normalised === (page.story_beat ?? null)) return
+        void onPatch(page.id, {story_beat: normalised}).catch(() => {})
+    }
+
+    const stop = (e: React.SyntheticEvent) => {
+        e.stopPropagation()
+    }
+
+    return (
+        <select
+            className={styles.beatSelect}
+            value={value}
+            onChange={handleChange}
+            onClick={stop}
+            onMouseDown={stop}
+            onKeyDown={stop}
+            data-testid={`${testidNamespace}-beat-select-${page.id}`}
+            aria-label={t("ui.storyboard.beat_label", "Story beat")}
+        >
+            <option value="">
+                {t("ui.storyboard.beat_none", "— no beat —")}
+            </option>
+            {STORY_BEATS.map((beat) => (
+                <option key={beat} value={beat}>
+                    {t(`ui.storyboard.beat.${beat}`, beat)}
+                </option>
+            ))}
+        </select>
     )
 }
 
