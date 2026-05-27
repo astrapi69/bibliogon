@@ -71,6 +71,43 @@ def test_clear_empties_entries(history):
     assert history.list() == []
 
 
+def test_remove_by_timestamp(history):
+    """remove(timestamp) drops only the matching entry."""
+    a = history.add(action="backup", filename="a.bgb")
+    history.add(action="restore", filename="b.bgb")
+
+    removed = history.remove(a["timestamp"])
+    assert removed is True
+
+    remaining = history.list()
+    assert len(remaining) == 1
+    assert remaining[0]["filename"] == "b.bgb"
+
+
+def test_remove_unknown_timestamp_returns_false(history):
+    """remove() on a non-existent timestamp returns False and is a no-op."""
+    history.add(action="backup", filename="a.bgb")
+    removed = history.remove("9999-01-01T00:00:00+00:00")
+
+    assert removed is False
+    assert len(history.list()) == 1
+
+
+def test_remove_persists_to_disk(tmp_path):
+    """After remove(), a fresh BackupHistory on the same path sees the deletion."""
+    history_path = tmp_path / "history.json"
+
+    writer = BackupHistory(path=history_path)
+    a = writer.add(action="backup", filename="first.bgb")
+    writer.add(action="restore", filename="second.bgb")
+    writer.remove(a["timestamp"])
+
+    reader = BackupHistory(path=history_path)
+    entries = reader.list()
+    assert len(entries) == 1
+    assert entries[0]["filename"] == "second.bgb"
+
+
 def test_max_100_entries(history):
     """The history never stores more than 100 entries."""
     for i in range(105):
@@ -196,3 +233,54 @@ def test_get_backup_history_endpoint_returns_list():
         r = client.get("/api/backup/history?limit=5")
         assert r.status_code == 200
         assert len(r.json()) <= 5
+
+
+def test_delete_backup_history_entry_endpoint_removes_match():
+    """DELETE /api/backup/history/{timestamp} removes the matching entry."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.routers.backup import _history
+
+    _history.clear()
+    seeded = _history.add(action="backup", filename="seed.bgb")
+
+    with TestClient(app) as client:
+        r = client.delete(f"/api/backup/history/{seeded['timestamp']}")
+        assert r.status_code == 200
+        assert r.json() == {"status": "deleted"}
+
+        body = client.get("/api/backup/history").json()
+        assert all(e["timestamp"] != seeded["timestamp"] for e in body)
+
+
+def test_delete_backup_history_entry_unknown_returns_404():
+    """DELETE with an unknown timestamp returns HTTP 404 with detail."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+
+    with TestClient(app) as client:
+        r = client.delete("/api/backup/history/9999-01-01T00:00:00+00:00")
+        assert r.status_code == 404
+        assert "No backup-history entry" in r.json()["detail"]
+
+
+def test_delete_backup_history_clear_all_endpoint():
+    """DELETE /api/backup/history (no id) clears every entry."""
+    from fastapi.testclient import TestClient
+
+    from app.main import app
+    from app.routers.backup import _history
+
+    _history.clear()
+    _history.add(action="backup", filename="x.bgb")
+    _history.add(action="restore", filename="y.bgb")
+
+    with TestClient(app) as client:
+        r = client.delete("/api/backup/history")
+        assert r.status_code == 200
+        assert r.json() == {"status": "cleared"}
+
+        body = client.get("/api/backup/history").json()
+        assert body == []

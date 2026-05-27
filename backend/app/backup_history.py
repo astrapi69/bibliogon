@@ -103,8 +103,27 @@ class BackupHistory:
 
     def clear(self) -> None:
         """Clear all history entries."""
+        self._load()
         self._entries = []
         self._save()
+
+    def remove(self, timestamp: str) -> bool:
+        """Remove the entry with the given ``timestamp`` (natural key).
+
+        Reloads from disk first so cross-instance writes are visible
+        and a stale in-memory list cannot resurrect a deleted entry.
+
+        Returns:
+            ``True`` if an entry was removed; ``False`` if no entry
+            with that timestamp existed (caller can map to HTTP 404).
+        """
+        self._load()
+        before = len(self._entries)
+        self._entries = [e for e in self._entries if e.get("timestamp") != timestamp]
+        removed = len(self._entries) != before
+        if removed:
+            self._save()
+        return removed
 
     def _load(self) -> None:
         if not self.path.exists():

@@ -7,7 +7,7 @@ All business logic lives in that package - see its ``__init__`` for the map.
 
 from typing import Any
 
-from fastapi import APIRouter, Depends, File, UploadFile
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
@@ -47,6 +47,37 @@ def export_backup(
 def get_backup_history(limit: int = 50) -> list[dict[str, Any]]:
     """Return chronological list of backup/restore/import events."""
     return _history.list(limit)
+
+
+@router.delete("/history")
+def clear_backup_history() -> dict[str, str]:
+    """Remove every backup/restore/import history entry.
+
+    Used by the Backups Settings tab's "Alle löschen" button. The
+    underlying .bgb files on disk are NOT touched; only the history
+    log is cleared. To wipe history + on-disk files in one step,
+    use the Danger Zone reset endpoint.
+    """
+    _history.clear()
+    return {"status": "cleared"}
+
+
+@router.delete("/history/{timestamp:path}")
+def delete_backup_history_entry(timestamp: str) -> dict[str, str]:
+    """Remove a single history entry by its ``timestamp`` natural key.
+
+    ``timestamp`` is the entry's ISO-8601 ``timestamp`` field as
+    returned by ``GET /api/backup/history``. The ``:path`` converter
+    accepts the colon-bearing value without forcing URL-encoding at
+    the caller. 404 when no entry with that timestamp exists.
+    """
+    removed = _history.remove(timestamp)
+    if not removed:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No backup-history entry with timestamp={timestamp}",
+        )
+    return {"status": "deleted"}
 
 
 @router.post("/import")
