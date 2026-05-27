@@ -10,6 +10,7 @@ import {api, HelpNavItem} from "../../api/client";
 import {useHelp} from "../../contexts/HelpContext";
 import {useI18n} from "../../hooks/useI18n";
 import {LoadingIndicator} from "../LoadingIndicator";
+import SearchClearButton from "../SearchClearButton";
 
 /**
  * Full-screen slide-over help panel mounted at the App root.
@@ -165,11 +166,23 @@ export default function HelpPanel() {
                                     }}/>
                                     <input
                                         className="input"
+                                        type="search"
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         placeholder={t("ui.help.search_placeholder", "Suchen...")}
-                                        style={{paddingLeft: 28, fontSize: "0.8125rem", height: 32}}
+                                        style={{paddingLeft: 28, paddingRight: 28, fontSize: "0.8125rem", height: 32}}
+                                        data-testid="help-search"
                                     />
+                                    <div style={{
+                                        position: "absolute", right: 4, top: "50%",
+                                        transform: "translateY(-50%)",
+                                    }}>
+                                        <SearchClearButton
+                                            value={searchQuery}
+                                            onClear={() => setSearchQuery("")}
+                                            data-testid="help-search-clear"
+                                        />
+                                    </div>
                                 </div>
                             </div>
 

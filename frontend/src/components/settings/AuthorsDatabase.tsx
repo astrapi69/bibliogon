@@ -5,6 +5,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
+import SearchClearButton from "../SearchClearButton";
 import {SectionHeader} from "./SectionHeader";
 
 /** Authors-Database tab (Bug 8 Phase 1, Commit 5).
@@ -194,16 +195,30 @@ export function AuthorsDatabase() {
                         />
                         <input
                             className="input"
-                            type="text"
+                            type="search"
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
                             placeholder={t(
                                 "ui.authors_database.search_placeholder",
                                 "Nach Name suchen…",
                             )}
-                            style={{paddingLeft: 32}}
+                            style={{paddingLeft: 32, paddingRight: 32}}
                             data-testid="authors-database-search"
                         />
+                        <div
+                            style={{
+                                position: "absolute",
+                                right: 4,
+                                top: "50%",
+                                transform: "translateY(-50%)",
+                            }}
+                        >
+                            <SearchClearButton
+                                value={search}
+                                onClear={() => setSearch("")}
+                                data-testid="authors-database-search-clear"
+                            />
+                        </div>
                     </div>
                     {!showAddForm && (
                         <button

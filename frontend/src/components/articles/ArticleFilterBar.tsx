@@ -1,7 +1,8 @@
-import {Search, X as XIcon, ArrowUp, ArrowDown} from "lucide-react";
+import {Search, ArrowUp, ArrowDown} from "lucide-react";
 import {ArticleStatus} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {useArticleFilters} from "../../hooks/useArticleFilters";
+import SearchClearButton from "../SearchClearButton";
 import layout from "../../pages/ArticleList.module.css";
 
 export const STATUS_FILTERS: (ArticleStatus | "all")[] = [
@@ -26,16 +27,12 @@ export function ArticleFilterBar({filters}: {filters: ReturnType<typeof useArtic
                     data-testid="article-list-search"
                     className={layout.searchInput}
                 />
-                {filters.searchQuery ? (
-                    <button
-                        type="button"
-                        className={`btn-icon ${layout.searchClear}`}
-                        aria-label={t("ui.common.clear", "Löschen")}
-                        onClick={() => filters.setSearchQuery("")}
-                    >
-                        <XIcon size={12} />
-                    </button>
-                ) : null}
+                <SearchClearButton
+                    value={filters.searchQuery}
+                    onClear={() => filters.setSearchQuery("")}
+                    className={`btn-icon ${layout.searchClear}`}
+                    data-testid="article-list-search-clear"
+                />
             </div>
 
             {/* Status: button row, mirrors the previous quick filter so

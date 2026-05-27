@@ -1475,6 +1475,7 @@ ui:
     cancel: "Iptal"
     create: "Olustur"
     delete: "Sil"
+    clear: "Temizle"
     save: "Kaydet"
     close: "Kapat"
     error: "Hata"

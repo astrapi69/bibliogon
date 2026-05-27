@@ -15,6 +15,7 @@ import * as Select from "@radix-ui/react-select";
 import {ChevronDownIcon} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import type {BookFilters, SortField} from "../hooks/useBookFilters";
+import SearchClearButton from "./SearchClearButton";
 import styles from "./DashboardFilterBar.module.css";
 
 interface Props {
@@ -45,9 +46,16 @@ export default function DashboardFilterBar({filters, layout = "row"}: Props) {
                 <input
                     className={`input ${styles.searchInput}`}
                     data-testid="filter-search-input"
+                    type="search"
                     value={filters.searchQuery}
                     onChange={(e) => filters.setSearchQuery(e.target.value)}
                     placeholder={t("ui.dashboard.search_placeholder", "Suche nach Titel, Autor, Genre oder Sprache...")}
+                />
+                <SearchClearButton
+                    value={filters.searchQuery}
+                    onClear={() => filters.setSearchQuery("")}
+                    className={`btn-icon btn-sm ${styles.resetBtn}`}
+                    data-testid="filter-search-clear"
                 />
                 {filters.hasActiveFilters && (
                     <button

@@ -1439,6 +1439,7 @@ ui:
     cancel: "Cancelar"
     create: "Criar"
     delete: "Excluir"
+    clear: "Limpar"
     save: "Salvar"
     close: "Fechar"
     error: "Erro"

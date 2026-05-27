@@ -1469,6 +1469,7 @@ ui:
     cancel: "Abbrechen"
     create: "Erstellen"
     delete: "Löschen"
+    clear: "Leeren"
     save: "Speichern"
     close: "Schließen"
     error: "Fehler"

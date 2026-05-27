@@ -1475,6 +1475,7 @@ ui:
     cancel: "Annuler"
     create: "Creer"
     delete: "Supprimer"
+    clear: "Effacer"
     save: "Enregistrer"
     close: "Fermer"
     error: "Erreur"

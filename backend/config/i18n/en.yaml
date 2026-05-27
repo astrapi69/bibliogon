@@ -1470,6 +1470,7 @@ ui:
     cancel: "Cancel"
     create: "Create"
     delete: "Delete"
+    clear: "Clear"
     save: "Save"
     close: "Close"
     error: "Error"

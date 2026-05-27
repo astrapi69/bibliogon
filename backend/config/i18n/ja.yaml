@@ -1439,6 +1439,7 @@ ui:
     cancel: "キャンセル"
     create: "作成"
     delete: "削除"
+    clear: "クリア"
     save: "保存"
     close: "閉じる"
     error: "エラー"
