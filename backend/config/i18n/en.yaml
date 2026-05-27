@@ -659,7 +659,8 @@ ui:
     saved: "Saved"
     save_error: "Error saving"
     author_profile: "Author Profile"
-    author_profile_description: "Your author name and pen names for new books and articles."
+    author_profile_description: "Your own author identity — real name and pen names you publish your own books and articles under. Stays private in this Bibliogon install."
+    autoren_intro: "Two separate sections: your own author profile above (just for you), and the catalogue of other authors below as an autocomplete source. They are intentionally distinct — pen names in your profile do NOT auto-appear in the catalogue."
     real_name: "Real Name"
     real_name_placeholder: "Your full name"
     pen_names: "Pen Names"
@@ -809,7 +810,7 @@ ui:
     editor_ai_chars_hint: "Maximum character count for AI suggestions"
   authors_database:
     title: "Authors Database"
-    description: "Central collection of known authors for the book wizard."
+    description: "Catalogue of other authors that powers autocomplete suggestions in wizards and editors. Your own identity lives above under \"Author profile\"."
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"

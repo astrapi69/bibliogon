@@ -685,7 +685,8 @@ ui:
     saved: "Kaydedildi"
     save_error: "Kaydetme hatasi"
     author_profile: "Yazar profili"
-    author_profile_description: "Yeni kitap ve makaleler icin yazar adiniz ve takma adlariniz."
+    author_profile_description: "Kendi yazar kimliginiz — kendi kitap ve makalelerinizi yayinladiginiz gercek ad ve takma adlar. Bu Bibliogon kurulumunda ozel kalir."
+    autoren_intro: "Iki ayri bolum: ustte kendi yazar profiliniz (yalnizca sizin icin), altta otomatik tamamlama onerileri kaynagi olarak diger yazarlar katalogu. Kasitli olarak ayrilmislardir — profilinizdeki takma adlar katalogda otomatik olarak GORUNMEZ."
     real_name: "Gercek ad"
     real_name_placeholder: "Tam adiniz"
     pen_names: "Takma adlar"
@@ -835,7 +836,7 @@ ui:
     editor_ai_chars_hint: "AI onerileri icin maksimum karakter sayisi"
   authors_database:
     title: "Authors Database"
-    description: "Kitap sihirbazi icin merkezi taninan yazar koleksiyonu."
+    description: "Sihirbazlar ve editorlerdeki otomatik tamamlama onerilerini besleyen diger yazarlar katalogu. Kendi kimliginiz yukarida \"Yazar profili\" altinda yer alir."
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"

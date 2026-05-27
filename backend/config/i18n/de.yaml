@@ -659,7 +659,8 @@ ui:
     saved: "Gespeichert"
     save_error: "Fehler beim Speichern"
     author_profile: "Autorenprofil"
-    author_profile_description: "Dein Autorenname und Pseudonyme für neue Bücher und Artikel."
+    author_profile_description: "Deine eigene Autorenidentität — Klarname und Pseudonyme, die du auf deinen eigenen Büchern und Artikeln führst. Bleibt privat in dieser Bibliogon-Installation."
+    autoren_intro: "Zwei getrennte Bereiche: oben dein eigenes Autorenprofil (gilt nur für dich), unten der Katalog anderer Autoren als Quelle für Autocomplete-Vorschläge. Sie sind absichtlich getrennt — Pseudonyme in deinem Profil tauchen nicht automatisch im Katalog auf."
     real_name: "Echter Name"
     real_name_placeholder: "Dein vollständiger Name"
     pen_names: "Pseudonyme (Pen Names)"
@@ -809,7 +810,7 @@ ui:
     editor_ai_chars_hint: "Maximale Zeichenanzahl für KI-Vorschläge"
   authors_database:
     title: "Autoren-Datenbank"
-    description: "Zentrale Sammlung bekannter Autoren für den Buch-Wizard."
+    description: "Katalog anderer Autoren als Quelle für Autocomplete-Vorschläge in Wizards und Editoren. Deine eigene Identität pflegst du oben unter \"Autorenprofil\"."
     hint: "Sammlung bekannter Autoren für den Buch-Wizard. Bestehende Bücher und Artikel sind unabhängig — Änderungen hier wirken sich nur auf neue Vorschläge aus."
     search_placeholder: "Nach Name suchen…"
     add: "Hinzufügen"

@@ -685,7 +685,8 @@ ui:
     saved: "Enregistre"
     save_error: "Erreur lors de l'enregistrement"
     author_profile: "Profil de l'auteur"
-    author_profile_description: "Votre nom d'auteur et pseudonymes pour les nouveaux livres et articles."
+    author_profile_description: "Votre propre identité d'auteur — nom réel et pseudonymes sous lesquels vous publiez vos propres livres et articles. Reste privé dans cette installation Bibliogon."
+    autoren_intro: "Deux sections séparées : votre propre profil d'auteur en haut (uniquement pour vous), et le catalogue d'autres auteurs en bas comme source de suggestions d'autocomplétion. Elles sont intentionnellement distinctes — les pseudonymes de votre profil n'apparaissent PAS automatiquement dans le catalogue."
     real_name: "Nom reel"
     real_name_placeholder: "Votre nom complet"
     pen_names: "Pseudonymes"
@@ -835,7 +836,7 @@ ui:
     read_only: "Configuration (lecture seule)"
   authors_database:
     title: "Authors Database"
-    description: "Collection centrale d'auteurs connus pour l'assistant."
+    description: "Catalogue d'autres auteurs qui alimente les suggestions d'autocomplétion dans les assistants et éditeurs. Votre propre identité se trouve ci-dessus dans « Profil d'auteur »."
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"

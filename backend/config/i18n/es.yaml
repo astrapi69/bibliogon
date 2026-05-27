@@ -685,7 +685,8 @@ ui:
     saved: "Guardado"
     save_error: "Error al guardar"
     author_profile: "Perfil del autor"
-    author_profile_description: "Tu nombre de autor y seudonimos para libros y articulos nuevos."
+    author_profile_description: "Tu propia identidad de autor — nombre real y seudonimos con los que firmas tus propios libros y articulos. Permanece privado en esta instalacion de Bibliogon."
+    autoren_intro: "Dos secciones separadas: arriba tu propio perfil de autor (solo para ti), debajo el catalogo de otros autores como fuente de sugerencias de autocompletado. Estan deliberadamente separadas — los seudonimos de tu perfil NO aparecen automaticamente en el catalogo."
     real_name: "Nombre real"
     real_name_placeholder: "Tu nombre completo"
     pen_names: "Seudonimos"
@@ -835,7 +836,7 @@ ui:
     read_only: "Configuracion (solo lectura)"
   authors_database:
     title: "Authors Database"
-    description: "Coleccion central de autores conocidos para el asistente."
+    description: "Catalogo de otros autores que alimenta las sugerencias de autocompletado en asistentes y editores. Tu propia identidad esta arriba en \"Perfil de autor\"."
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"

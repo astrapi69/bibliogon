@@ -671,7 +671,8 @@ ui:
     saved: "保存済み"
     save_error: "保存エラー"
     author_profile: "著者プロフィール"
-    author_profile_description: "新しい本や記事のためのあなたの著者名とペンネーム。"
+    author_profile_description: "あなた自身の著者アイデンティティ — 自分の本や記事を出版する際の本名とペンネーム。この Bibliogon インストール内でプライベートに保たれます。"
+    autoren_intro: "2 つの独立したセクション：上はあなた自身の著者プロファイル（あなた専用）、下は他の著者カタログ（オートコンプリート候補のソース）。意図的に分離されています — プロファイルのペンネームはカタログに自動的に表示されません。"
     real_name: "本名"
     real_name_placeholder: "フルネーム"
     pen_names: "ペンネーム"
@@ -821,7 +822,7 @@ ui:
     editor_ai_chars_hint: "AI提案の最大文字数"
   authors_database:
     title: "Authors Database"
-    description: "ブックウィザード用の既知の著者の中央コレクション。"
+    description: "ウィザードやエディタでのオートコンプリート候補のソースとなる、他の著者のカタログ。あなた自身のアイデンティティは上の「著者プロファイル」にあります。"
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"

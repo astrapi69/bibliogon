@@ -68,4 +68,32 @@ describe("AutorenSettings — consolidated author tab", () => {
             expect(screen.getByTestId("authors-database-section")).toBeInTheDocument();
         });
     });
+
+    /**
+     * Task 3.7 (UX clarification — Path C): the wrapper renders an
+     * intro paragraph at the top and a visible divider between the
+     * two child sections so the user perceives the boundary as
+     * deliberate, not accidental.
+     */
+    it("renders the intro paragraph at the top of the tab", () => {
+        render(
+            <AutorenSettings
+                config={{author: {name: "Asterios", pen_names: []}}}
+                onSave={vi.fn()}
+                saving={false}
+            />,
+        );
+        expect(screen.getByTestId("autoren-settings-intro")).toBeInTheDocument();
+    });
+
+    it("renders a divider between AuthorSettings and AuthorsDatabase", () => {
+        render(
+            <AutorenSettings
+                config={{author: {name: "Asterios", pen_names: []}}}
+                onSave={vi.fn()}
+                saving={false}
+            />,
+        );
+        expect(screen.getByTestId("autoren-settings-divider")).toBeInTheDocument();
+    });
 });

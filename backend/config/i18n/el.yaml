@@ -671,7 +671,8 @@ ui:
     saved: "Αποθηκεύτηκε"
     save_error: "Σφάλμα αποθήκευσης"
     author_profile: "Προφίλ συγγραφέα"
-    author_profile_description: "Το όνομα συγγραφέα σας και ψευδώνυμα για νέα βιβλία και άρθρα."
+    author_profile_description: "Η δική σας ταυτότητα ως συγγραφέα — πραγματικό όνομα και ψευδώνυμα με τα οποία εκδίδετε τα δικά σας βιβλία και άρθρα. Παραμένει ιδιωτικό σε αυτήν την εγκατάσταση Bibliogon."
+    autoren_intro: "Δύο ξεχωριστές ενότητες: επάνω το δικό σας προφίλ συγγραφέα (μόνο για εσάς), κάτω ο κατάλογος άλλων συγγραφέων ως πηγή προτάσεων αυτόματης συμπλήρωσης. Είναι σκόπιμα διακριτές — τα ψευδώνυμα του προφίλ σας ΔΕΝ εμφανίζονται αυτόματα στον κατάλογο."
     real_name: "Πραγματικό όνομα"
     real_name_placeholder: "Το πλήρες όνομά σας"
     pen_names: "Ψευδώνυμα"
@@ -821,7 +822,7 @@ ui:
     read_only: "Ρυθμίσεις (μόνο ανάγνωση)"
   authors_database:
     title: "Authors Database"
-    description: "Κεντρική συλλογή γνωστών συγγραφέων για τον οδηγό βιβλίων."
+    description: "Κατάλογος άλλων συγγραφέων που τροφοδοτεί τις προτάσεις αυτόματης συμπλήρωσης σε οδηγούς και συντάκτες. Η δική σας ταυτότητα βρίσκεται παραπάνω στο «Προφίλ συγγραφέα»."
     hint: "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions."
     search_placeholder: "Search by name…"
     add: "Add"
