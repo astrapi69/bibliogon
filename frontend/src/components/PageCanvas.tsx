@@ -23,7 +23,7 @@ const TIPTAP_LAYOUTS: ReadonlySet<PageLayout> = new Set([
     "text_only",
 ])
 
-function isTipTapLayout(layout: PageLayout): boolean {
+export function isTipTapLayout(layout: PageLayout): boolean {
     return TIPTAP_LAYOUTS.has(layout)
 }
 

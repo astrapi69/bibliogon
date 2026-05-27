@@ -10,7 +10,7 @@ import {useDialog} from "./AppDialog"
 import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
-import PageCanvas from "./PageCanvas"
+import PageCanvas, {extractPlainText, isTipTapLayout} from "./PageCanvas"
 import PdfExportControls from "./PdfExportControls"
 import RichTextToolbar from "./RichTextToolbar"
 import ThemeToggle from "./ThemeToggle"
@@ -169,13 +169,31 @@ export default function PageEditor({
      * legacy-flat configs auto-migrate into the new layout's
      * namespace on the next write (per ``writeLayoutNamespace``);
      * dirty cross-layout flat keys silently drop on first write.
+     *
+     * **PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01**: active
+     * text-conversion when switching FROM a TipTap layout TO a
+     * Tier-Property layout. PageCanvas's defensive ``extractPlainText``
+     * read (4c-B-1 Fix C) handles the display path regardless, so the
+     * user never sees raw JSON in the textarea. This active conversion
+     * cleans the DB shape at switch time so subsequent reads don't
+     * pay the parse cost AND the row no longer carries a stringified
+     * TipTap doc in a Tier-Property layout. Symmetric direction
+     * (Tier-Property → TipTap) is unnecessary: ``parseTextContentToJson``
+     * wraps plain text into a minimal TipTap doc on read.
      */
     const handleChangeLayout = useCallback(
         async (newLayout: PageLayout) => {
             if (!activePage) return
-            const updated = await api.pages.update(bookId, activePage.id, {
-                layout: newLayout,
-            })
+            const updates: PageUpdate = {layout: newLayout}
+            const oldLayout = activePage.layout as PageLayout
+            if (
+                isTipTapLayout(oldLayout) &&
+                !isTipTapLayout(newLayout) &&
+                activePage.text_content
+            ) {
+                updates.text_content = extractPlainText(activePage.text_content)
+            }
+            const updated = await api.pages.update(bookId, activePage.id, updates)
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
         [bookId, activePage],

@@ -424,6 +424,153 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         })
     })
 
+    /**
+     * PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01: when switching
+     * FROM a TipTap layout (image_top_text_bottom / image_left_text_right
+     * / text_only) TO a Tier-Property layout (speech_bubble /
+     * image_full_text_overlay), the PATCH carries the extracted
+     * plain-text version of ``text_content`` alongside the layout
+     * flip. Symmetric direction (Tier-Property → TipTap) does NOT
+     * convert (parseTextContentToJson wraps plain text on read).
+     */
+    it("converts text_content TipTap → Tier-Property on layout switch", async () => {
+        const tiptapJson = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Hello world"}],
+                },
+            ],
+        })
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "image_top_text_bottom",
+                text_content: tiptapJson,
+            }),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "speech_bubble",
+                text_content: "Hello world",
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-layout-option-speech_bubble"))
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "speech_bubble",
+                text_content: "Hello world",
+            }),
+        )
+    })
+
+    it("does NOT convert text_content on Tier-Property → TipTap switch", async () => {
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "speech_bubble",
+                text_content: "Plain caption",
+            }),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "image_top_text_bottom",
+                text_content: "Plain caption",
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
+        )
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "image_top_text_bottom",
+            }),
+        )
+    })
+
+    it("does NOT convert text_content on TipTap → TipTap switch", async () => {
+        const tiptapJson = JSON.stringify({
+            type: "doc",
+            content: [
+                {
+                    type: "paragraph",
+                    content: [{type: "text", text: "Body text"}],
+                },
+            ],
+        })
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "image_top_text_bottom",
+                text_content: tiptapJson,
+            }),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "text_only",
+                text_content: tiptapJson,
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        // text_only sits behind the "More layouts" disclosure.
+        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        fireEvent.click(screen.getByTestId("page-editor-layout-option-text_only"))
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "text_only",
+            }),
+        )
+    })
+
+    it("does NOT include text_content when source page has null text_content", async () => {
+        mockList.mockResolvedValue([
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "image_top_text_bottom",
+                text_content: null,
+            }),
+        ])
+        mockUpdate.mockResolvedValue(
+            makePage({
+                id: "p1",
+                position: 1,
+                layout: "speech_bubble",
+            }),
+        )
+        render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
+        )
+        fireEvent.click(screen.getByTestId("page-editor-layout-option-speech_bubble"))
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
+                layout: "speech_bubble",
+            }),
+        )
+    })
+
     it("shows the canvas-empty state when no pages exist", async () => {
         mockList.mockResolvedValue([])
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
