@@ -1,7 +1,8 @@
 # Bibliogon Backlog
 
-Last updated: 2026-05-27 (PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 CLOSED — active text-conversion at PageEditor.handleChangeLayout (commit ``5d87560``). Trigger: user-authorized backlog re-sync; shipped as smallest-scope P3 ahead of v0.39.0 release. Vitest 2186→2190 (+4 PageEditor cases). P3 count 16 → 15.)
-Previous: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work. P3 count 17 → 16.)
+Last updated: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
+Previous: 2026-05-27 (PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 CLOSED — active text-conversion at PageEditor.handleChangeLayout (commit ``5d87560``). Trigger: user-authorized backlog re-sync; shipped as smallest-scope P3 ahead of v0.39.0 release. Vitest 2186→2190 (+4 PageEditor cases).)
+Previous: 2026-05-27 (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 CLOSED — stale filing; full scope already shipped under SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01 in v0.38.0. Surfaced by backlog re-sync audit after two consecutive prompt-collisions with archived work.)
 Previous: 2026-05-26 (HELP-DOCS-V0.37.0-GAPS-01 CLOSED — extended to also cover v0.38.0 Settings-UX overhaul; 6 help topics × DE + EN = 12 Markdown pages + 5 Playwright-generated screenshots in default theme (warm-literary light, 1280×800). New manual-only ``screenshots`` Playwright project. Pages: settings/sidebar, editor/display-settings, editor/word-wrap, books/repository-url, dashboard/pagination, dashboard/trash-and-restore. _meta.yaml gained a new top-level "Dashboard" group + 5 child entries. ``make verify-docs-discipline`` green.)
 Previous: 2026-05-26 (v0.38.0 RELEASED — Settings-UX overhaul; 30 commits since v0.37.0 across SETT-PHASE-1 (7 quick wins) + SETT-PHASE-2 (Allgemein tab split) + SETT-PHASE-3 (Toggle component + migration) + SETT-AUTHORS consolidation + SETT-L-1 (horizontal tabs → left sidebar) + Article Dashboard nav-jump fix + pre-existing test flake fix. Backend pytest 2269 (no change); Vitest 2063 → 2080 (+17); i18n parity 51/51 (75/75 keys); npm audit 0 high/critical.)
 Previous: 2026-05-26 (SETT-AUTHORS-TAB-CONSOLIDATION-01 CLOSED — 2-commit ship of the Autor + Autoren-Datenbank consolidation into a single Autoren tab. AuthorSettings + AuthorsDatabase mount as stacked sections inside the new ``AutorenSettings`` wrapper; LEGACY_TAB_REDIRECTS map preserves ``?tab=author`` + ``?tab=authors_database`` deep-links. Tab count 14 → 13. Vitest 2062 → 2063 (+1); i18n parity 75/75; tsc clean.)
@@ -12,7 +13,7 @@ Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two b
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
 Current version: v0.37.0
-Open tasks: 70 active (P2..P5) + 0 active P1 + 2 BLOCKED-on-upstream entries
+Open tasks: 57 active (P3=17 + P4=28 + P5=12; P0=P1=P2=0) + 2 BLOCKED-on-upstream entries
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -582,71 +583,6 @@ store.
   comic-book editor likely has similar specific KDP needs
   (panel-count, page-count, format). One consistent shape
   reduces future drift.
-
-- **PICTURE-BOOK-STORYBOARD-OPERATIONS-01** (P5,
-  trigger-gated, filed 2026-05-27 from the closure of
-  `PICTURE-BOOK-STORYBOARD-VIEW-01`): page-operations
-  follow-up for the Storyboard view. Closes the
-  original Session 1 backlog's "Deferred to a later
-  session" half:
-
-  - Add-page-in-between (insert at a specific
-    position; backend endpoint + UI affordance)
-  - Duplicate page (clone with new id, append after
-    source, all annotations copied)
-  - Split page (decision needed: what does split mean
-    for an atomic image+text picture-book page?)
-  - Merge pages (decision needed: which page's image
-    + layout wins?)
-  - Print storyboard (PDF / print stylesheet for the
-    annotated grid)
-  - Auto-update `act_group` when a card is dragged
-    across visual group boundaries (currently the
-    drag reorders position only; the page snaps back
-    to its own group on next render)
-
-  Trigger: user requests one of these operations
-  during real Picture-Book authoring, OR multiple
-  picture-book authors report friction in workflows
-  that the existing reorder + annotation + click-to-
-  navigate flow can't cover.
-
-  Out of scope (filed separately): tree-view /
-  branching, beat-sheet templates, character-
-  tracking, plot-threads.
-
-- **STORYBOARD-MOOD-FREE-PICKER-01** (P5,
-  trigger-gated, filed 2026-05-27): free-hex color
-  picker for `page.mood_color`. Session 2 C3 shipped
-  10 preset swatches that cover the typical
-  picture-book emotional range without adding a
-  dependency. Free-picker would extend the palette
-  to arbitrary hex codes.
-
-  Trigger: user requests a custom color OR a real
-  picture-book context surfaces a mood the 10
-  presets can't approximate.
-
-  Implementation note: native `<input type="color">`
-  is the dependency-free baseline; a Radix Color
-  primitive would be the upgraded path if Radix
-  ships one in a future release.
-
-- **STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01**
-  (P5, trigger-gated, filed 2026-05-27): when a
-  Storyboard card is dragged across a visual
-  act-group boundary, auto-update the dropped
-  page's `act_group` to match the destination
-  group. Currently drag reorders position only;
-  act_group is set via the inline label.
-
-  Trigger: user reports the snap-back behaviour as
-  confusing during real picture-book authoring.
-
-  Implementation requires detecting the target
-  group from the drop neighbour's `act_group` value
-  and bundling the act_group update into the same
-  reorder save (currently two separate API surfaces).
 
 - **LIST-VIEW-ROW-SHARED-EXTRACTION-01** (P3): extract a shared
   `<ListViewRow>` base component that `ArticleRow` and
@@ -1527,6 +1463,71 @@ in the same session.)
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **PICTURE-BOOK-STORYBOARD-OPERATIONS-01** (P5,
+  trigger-gated, filed 2026-05-27 from the closure of
+  `PICTURE-BOOK-STORYBOARD-VIEW-01`): page-operations
+  follow-up for the Storyboard view. Closes the
+  original Session 1 backlog's "Deferred to a later
+  session" half:
+
+  - Add-page-in-between (insert at a specific
+    position; backend endpoint + UI affordance)
+  - Duplicate page (clone with new id, append after
+    source, all annotations copied)
+  - Split page (decision needed: what does split mean
+    for an atomic image+text picture-book page?)
+  - Merge pages (decision needed: which page's image
+    + layout wins?)
+  - Print storyboard (PDF / print stylesheet for the
+    annotated grid)
+  - Auto-update `act_group` when a card is dragged
+    across visual group boundaries (currently the
+    drag reorders position only; the page snaps back
+    to its own group on next render)
+
+  Trigger: user requests one of these operations
+  during real Picture-Book authoring, OR multiple
+  picture-book authors report friction in workflows
+  that the existing reorder + annotation + click-to-
+  navigate flow can't cover.
+
+  Out of scope (filed separately): tree-view /
+  branching, beat-sheet templates, character-
+  tracking, plot-threads.
+
+- **STORYBOARD-MOOD-FREE-PICKER-01** (P5,
+  trigger-gated, filed 2026-05-27): free-hex color
+  picker for `page.mood_color`. Session 2 C3 shipped
+  10 preset swatches that cover the typical
+  picture-book emotional range without adding a
+  dependency. Free-picker would extend the palette
+  to arbitrary hex codes.
+
+  Trigger: user requests a custom color OR a real
+  picture-book context surfaces a mood the 10
+  presets can't approximate.
+
+  Implementation note: native `<input type="color">`
+  is the dependency-free baseline; a Radix Color
+  primitive would be the upgraded path if Radix
+  ships one in a future release.
+
+- **STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01**
+  (P5, trigger-gated, filed 2026-05-27): when a
+  Storyboard card is dragged across a visual
+  act-group boundary, auto-update the dropped
+  page's `act_group` to match the destination
+  group. Currently drag reorders position only;
+  act_group is set via the inline label.
+
+  Trigger: user reports the snap-back behaviour as
+  confusing during real picture-book authoring.
+
+  Implementation requires detecting the target
+  group from the drop neighbour's `act_group` value
+  and bundling the act_group update into the same
+  reorder save (currently two separate API surfaces).
 
 - **SETT-L-2-FULL-RESPONSIVE-AND-SEARCH-01** (P5, REFACTOR,
   filed 2026-05-25 from Settings-page UX audit, deferred per
