@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-27 (post-v0.38.0 housekeeping arc — 2 stale-filing closures (SETTINGS-ALLGEMEIN-TAB-REORGANIZATION-01 was already shipped under SETT-PHASE-2 in v0.38.0; PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 shipped today as a smallest-scope P3 win) + 3 P5-mis-located items moved from the P3 section to P5. Comprehensive README + help-doc + CONTRIBUTING + CLAUDE.md update bundle landing in the same arc. v0.39.0 release follows from this state.)
-Latest release: v0.38.0 (2026-05-26) — see [changelog/releases/v0.38.0.md](../changelog/releases/v0.38.0.md) for the full per-release notes.
-Previous release: v0.37.0 (2026-05-25) — safety + parity + polish release; 53 commits across accessibility WCAG 2.1 AA + Danger Zone reset + bulk-restore parity + Medium-import polish + Dashboard pagination + Book.repository_url + editor display settings.
+Last updated: 2026-05-27 (v0.39.0 released — Picture-Book authoring depth release; 49 commits since v0.38.0 across two coordinated multi-session arcs (Storyboard View + Picture-Book Text-Stack) plus LAYOUT-SWITCH-TEXT-CONVERSION + a comprehensive doc-sweep. Backend pytest 2294, Vitest 2190, i18n 75/75 all green.)
+Latest release: v0.39.0 (2026-05-27) — see [changelog/releases/v0.39.0.md](../changelog/releases/v0.39.0.md) for the full per-release notes.
+Previous release: v0.38.0 (2026-05-26) — Settings-UX overhaul; 30 commits across SETT-PHASE-1 + SETT-PHASE-2 + SETT-PHASE-3 + SETT-AUTHORS + SETT-L-1 + Article Dashboard nav-jump fix.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
