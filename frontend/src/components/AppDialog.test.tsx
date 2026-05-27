@@ -7,7 +7,7 @@
  */
 
 import React from "react"
-import {describe, it, expect, vi} from "vitest"
+import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 
 import {DialogProvider, useDialog} from "./AppDialog"
@@ -20,6 +20,20 @@ vi.mock("../hooks/useI18n", () => ({
     setLang: vi.fn(),
   }),
 }))
+
+const mockGetApp = vi.fn()
+vi.mock("../api/client", () => ({
+  api: {
+    settings: {
+      getApp: (...args: unknown[]) => mockGetApp(...args),
+    },
+  },
+}))
+
+beforeEach(() => {
+  mockGetApp.mockReset()
+  mockGetApp.mockResolvedValue({})
+})
 
 /** Helper that renders a button to trigger a dialog and shows the result. */
 function TestHarness({
@@ -187,6 +201,53 @@ describe("AppDialog", () => {
       expect(() => render(<Broken />)).toThrow(
         "useDialog must be used within DialogProvider",
       )
+    })
+  })
+
+  describe("skip-non-destructive-confirmations mode (#33)", () => {
+    it("non-danger confirm auto-resolves true when flag is on", async () => {
+      mockGetApp.mockResolvedValue({
+        behavior: {skip_non_destructive_confirmations: true},
+      })
+      renderWithDialog(async (dialog) => dialog.confirm("Title", "Message"))
+      // Wait for the provider's useEffect to flip the flag.
+      await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
+      fireEvent.click(screen.getByTestId("trigger"))
+      await waitFor(() => {
+        expect(screen.getByTestId("result").textContent).toBe("true")
+      })
+      // No dialog renders.
+      expect(screen.queryByTestId("app-dialog-confirm")).toBeNull()
+    })
+
+    it("danger confirm still renders the dialog even when flag is on", async () => {
+      mockGetApp.mockResolvedValue({
+        behavior: {skip_non_destructive_confirmations: true},
+      })
+      renderWithDialog(async (dialog) =>
+        dialog.confirm("Delete", "Permanent?", "danger"),
+      )
+      await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
+      fireEvent.click(screen.getByTestId("trigger"))
+      // Dialog DOES render — user must click confirm.
+      const btn = await screen.findByTestId("app-dialog-confirm")
+      fireEvent.click(btn)
+      await waitFor(() => {
+        expect(screen.getByTestId("result").textContent).toBe("true")
+      })
+    })
+
+    it("default non-danger confirm renders normally when flag is off", async () => {
+      // Flag absent / false (the default mock response).
+      renderWithDialog(async (dialog) => dialog.confirm("Title", "Message"))
+      await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
+      fireEvent.click(screen.getByTestId("trigger"))
+      // Dialog renders; user must click confirm.
+      const btn = await screen.findByTestId("app-dialog-confirm")
+      fireEvent.click(btn)
+      await waitFor(() => {
+        expect(screen.getByTestId("result").textContent).toBe("true")
+      })
     })
   })
 })

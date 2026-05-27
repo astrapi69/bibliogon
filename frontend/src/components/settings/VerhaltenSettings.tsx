@@ -13,6 +13,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
 }) {
     const {t} = useI18n();
     const app = (config.app || {}) as Record<string, unknown>;
+    const behavior = (config.behavior || {}) as Record<string, unknown>;
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
@@ -21,6 +22,9 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const [allowBooksWithoutAuthor, setAllowBooksWithoutAuthor] = useState(
         Boolean(app.allow_books_without_author),
     );
+    const [skipNonDestructive, setSkipNonDestructive] = useState(
+        Boolean(behavior.skip_non_destructive_confirmations),
+    );
 
     useEffect(() => {
         setLang((app.default_language as string) || "de");
@@ -28,6 +32,8 @@ export function VerhaltenSettings({config, onSave, saving}: {
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
         setDeletePermanently(Boolean(app.delete_permanently));
         setAllowBooksWithoutAuthor(Boolean(app.allow_books_without_author));
+        const b = (config.behavior || {}) as Record<string, unknown>;
+        setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
 
@@ -38,6 +44,10 @@ export function VerhaltenSettings({config, onSave, saving}: {
             trash_auto_delete_days: Number(trashDays),
             delete_permanently: deletePermanently,
             allow_books_without_author: allowBooksWithoutAuthor,
+        },
+        behavior: {
+            ...behavior,
+            skip_non_destructive_confirmations: skipNonDestructive,
         },
     });
 
@@ -120,6 +130,22 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         checked={allowBooksWithoutAuthor}
                         onChange={setAllowBooksWithoutAuthor}
                         testId="settings-allow-books-without-author"
+                        indentedDescription
+                    />
+                </div>
+                <div className="field">
+                    <Toggle
+                        label={t(
+                            "ui.settings.skip_non_destructive_confirmations",
+                            "Bestätigungen für ungefährliche Aktionen überspringen",
+                        )}
+                        description={t(
+                            "ui.settings.skip_non_destructive_confirmations_hint",
+                            "Aktiviert: Aktionen wie „Als Buch zusammenfassen?“, „Importieren?“ laufen ohne Rückfrage. Zerstörende Aktionen (Löschen, Papierkorb, Gefahrenzone) fragen IMMER nach.",
+                        )}
+                        checked={skipNonDestructive}
+                        onChange={setSkipNonDestructive}
+                        testId="settings-skip-non-destructive-confirmations"
                         indentedDescription
                     />
                 </div>

@@ -40,7 +40,7 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
         expect(screen.getByTestId("settings-allow-books-without-author")).toBeChecked();
     });
 
-    it("invokes onSave with the {app: {...}} envelope on save click", () => {
+    it("invokes onSave with the {app + behavior} envelope on save click", () => {
         const onSave = vi.fn();
         render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
         fireEvent.click(screen.getByTestId("verhalten-settings-save"));
@@ -53,7 +53,22 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                 delete_permanently: false,
                 allow_books_without_author: true,
             },
+            behavior: {
+                skip_non_destructive_confirmations: false,
+            },
         });
+    });
+
+    it("skip-non-destructive toggle threads through the save payload", () => {
+        const onSave = vi.fn();
+        render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
+        fireEvent.click(screen.getByTestId("settings-skip-non-destructive-confirmations"));
+        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                behavior: {skip_non_destructive_confirmations: true},
+            }),
+        );
     });
 
     it("reflects checkbox toggles in the save payload", () => {

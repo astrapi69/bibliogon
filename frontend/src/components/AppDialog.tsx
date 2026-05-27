@@ -1,4 +1,5 @@
-import {useState, useCallback, createContext, useContext} from "react";
+import {useState, useEffect, useCallback, createContext, useContext} from "react";
+import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import * as Dialog from "@radix-ui/react-dialog";
 import {X, AlertTriangle, CheckCircle, Info} from "lucide-react";
@@ -59,6 +60,33 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     const {t} = useI18n();
     const [dialog, setDialog] = useState<DialogState | null>(null);
     const [inputValue, setInputValue] = useState("");
+    // #33 from the Settings-Completeness audit close: power-user
+    // mode that skips non-destructive confirmation dialogs. Reads
+    // ``behavior.skip_non_destructive_confirmations`` from
+    // app.yaml on mount; defaults to false (every confirm renders
+    // normally, the existing behaviour). Destructive dialogs
+    // (variant === "danger") ALWAYS render regardless of this flag.
+    const [skipNonDestructive, setSkipNonDestructive] = useState(false);
+    useEffect(() => {
+        let cancelled = false;
+        api.settings
+            .getApp()
+            .then((config) => {
+                if (cancelled) return;
+                const behavior =
+                    (config.behavior as Record<string, unknown> | undefined) ??
+                    {};
+                if (behavior.skip_non_destructive_confirmations === true) {
+                    setSkipNonDestructive(true);
+                }
+            })
+            .catch(() => {
+                // Keep default false when settings unreachable.
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const showDialog = useCallback((options: DialogOptions): Promise<string | boolean | null> => {
         return new Promise((resolve) => {
@@ -68,8 +96,16 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     }, []);
 
     const confirm = useCallback((title: string, message: string, variant?: DialogVariant, labels?: ConfirmLabels) => {
+        // Auto-confirm path: power-user mode + the call is not
+        // marked destructive. ``variant === "danger"`` is the
+        // load-bearing signal; absence means safe-to-skip.
+        // ``prompt`` + ``choose`` + ``alert`` never reach this
+        // branch (separate exported APIs).
+        if (skipNonDestructive && variant !== "danger") {
+            return Promise.resolve(true);
+        }
         return showDialog({title, message, type: "confirm", variant, ...labels}) as Promise<boolean>;
-    }, [showDialog]);
+    }, [showDialog, skipNonDestructive]);
 
     const prompt = useCallback((title: string, message: string, placeholder?: string, defaultValue?: string) => {
         return showDialog({title, message, type: "prompt", placeholder, defaultValue}) as Promise<string | null>;
