@@ -10,7 +10,7 @@
  * - onChange receives partial dicts in flat shape.
  */
 
-import {describe, it, expect, vi} from "vitest";
+import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
 import {Tier1Section} from "./Tier1Section";
@@ -20,6 +20,10 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 describe("Tier1Section", () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     it("renders all 8 Tier-1 fields with default testidPrefix", () => {
         render(<Tier1Section config={null} onChange={() => {}} />);
         fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"));

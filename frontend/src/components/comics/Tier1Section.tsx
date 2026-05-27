@@ -22,9 +22,9 @@
  * shadow_intensity, padding.
  */
 
-import {useState} from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 
+import {useCollapsibleState} from "../../hooks/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
 
@@ -71,7 +71,10 @@ export function Tier1Section({
     defaultOpen = false,
 }: Tier1SectionProps) {
     const {t} = useI18n();
-    const [open, setOpen] = useState(defaultOpen);
+    const {open, onOpenChange} = useCollapsibleState(
+        `bibliogon-collapsible-${testidPrefix}-tier1`,
+        defaultOpen,
+    );
 
     const currentBackgroundColor = readHexColor(
         config,
@@ -118,7 +121,7 @@ export function Tier1Section({
     return (
         <Collapsible.Root
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             data-testid={`${testidPrefix}-tier1-section`}
         >
             <Collapsible.Trigger asChild>

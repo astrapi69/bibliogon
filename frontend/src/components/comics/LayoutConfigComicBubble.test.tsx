@@ -10,7 +10,7 @@
  * - bubble_type radio fires onChange with the new value.
  */
 
-import {describe, it, expect, vi} from "vitest";
+import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
 import {LayoutConfigComicBubble} from "./LayoutConfigComicBubble";
@@ -39,6 +39,10 @@ function makeBubble(overrides: Partial<ComicBubbleData> = {}): ComicBubbleData {
 }
 
 describe("LayoutConfigComicBubble", () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     it("renders 6 bubble-type radios", () => {
         render(
             <LayoutConfigComicBubble

@@ -19,9 +19,9 @@
  * text_align, italic (toggle).
  */
 
-import {useState} from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 
+import {useCollapsibleState} from "../../hooks/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
 import {
@@ -62,7 +62,10 @@ export function Tier2Section({
     defaultOpen = false,
 }: Tier2SectionProps) {
     const {t} = useI18n();
-    const [open, setOpen] = useState(defaultOpen);
+    const {open, onOpenChange} = useCollapsibleState(
+        `bibliogon-collapsible-${testidPrefix}-tier2`,
+        defaultOpen,
+    );
 
     const currentFontFamily = readFontFamily(config);
     const currentFontSize = readFontSize(config);
@@ -87,7 +90,7 @@ export function Tier2Section({
     return (
         <Collapsible.Root
             open={open}
-            onOpenChange={setOpen}
+            onOpenChange={onOpenChange}
             data-testid={`${testidPrefix}-tier2-section`}
         >
             <Collapsible.Trigger asChild>

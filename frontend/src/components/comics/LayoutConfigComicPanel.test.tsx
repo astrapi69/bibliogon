@@ -42,6 +42,7 @@ let mockedApi: any;
 beforeEach(async () => {
     mockedApi = (await import("../../api/client")).api;
     mockedApi.assets.upload.mockReset();
+    localStorage.clear();
 });
 
 function makePanel(overrides: Partial<ComicPanelData> = {}): ComicPanelData {

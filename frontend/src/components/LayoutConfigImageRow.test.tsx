@@ -33,10 +33,12 @@ vi.mock("../hooks/useI18n", () => ({
 
 beforeEach(() => {
     vi.useFakeTimers()
+    localStorage.clear()
 })
 
 afterEach(() => {
     vi.useRealTimers()
+    localStorage.clear()
 })
 
 describe("LayoutConfigImageTopTextBottom", () => {

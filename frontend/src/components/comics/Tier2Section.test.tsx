@@ -8,7 +8,7 @@
  * - Read precedence: bubbles[0].X overrides flat X.
  */
 
-import {describe, it, expect, vi} from "vitest";
+import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
 import {Tier2Section} from "./Tier2Section";
@@ -18,6 +18,10 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 describe("Tier2Section", () => {
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     it("renders all 6 Tier-2 fields with default testidPrefix", () => {
         render(
             <Tier2Section
