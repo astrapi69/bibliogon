@@ -707,6 +707,98 @@ def test_overlay_tier_defaults_render_legacy_baseline() -> None:
     assert "color: rgb" not in style
 
 
+# --- C7 Bug D: text_container_width + text_container_height ---
+
+
+def test_overlay_text_container_width_default_full() -> None:
+    """No text_container_width set → left: 0; right: 0 (full width)."""
+    out = _image_layout_style("image_full_text_overlay", {})
+    style = out["region_text_style"]
+    assert "left: 0" in style
+    assert "right: 0" in style
+
+
+def test_overlay_text_container_width_centers_with_side_offsets() -> None:
+    """width=60 → side_offset=20% on each side; emits left+right."""
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_container_width": 60}
+    )
+    style = out["region_text_style"]
+    assert "left: 20.0%" in style
+    assert "right: 20.0%" in style
+
+
+def test_overlay_text_container_width_clamped_to_range() -> None:
+    """Out-of-range values clamp to [30, 100]."""
+    out_low = _image_layout_style(
+        "image_full_text_overlay", {"text_container_width": 5}
+    )
+    assert "left: 35.0%" in out_low["region_text_style"]  # 30 clamped
+    out_high = _image_layout_style(
+        "image_full_text_overlay", {"text_container_width": 200}
+    )
+    assert "left: 0" in out_high["region_text_style"]  # 100 clamped
+
+
+def test_overlay_text_container_height_default_for_middle_position() -> None:
+    """No text_container_height + middle position → max-height 70%
+    (legacy default)."""
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_position": "middle"}
+    )
+    assert "max-height: 70%;" in out["region_text_style"]
+
+
+def test_overlay_text_container_height_default_for_top_position() -> None:
+    """No text_container_height + top position → no max-height
+    emitted (legacy auto height)."""
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_position": "top"}
+    )
+    assert "max-height" not in out["region_text_style"]
+
+
+def test_overlay_text_container_height_default_for_bottom_position() -> None:
+    """No text_container_height + bottom position → no max-height
+    (legacy auto height)."""
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_position": "bottom"}
+    )
+    assert "max-height" not in out["region_text_style"]
+
+
+def test_overlay_text_container_height_override_top() -> None:
+    """text_container_height=40 + top position → max-height: 40%."""
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"text_position": "top", "text_container_height": 40},
+    )
+    assert "max-height: 40%;" in out["region_text_style"]
+
+
+def test_overlay_text_container_height_override_middle() -> None:
+    """text_container_height=50 + middle position → max-height: 50%
+    (overrides the legacy 70% default)."""
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"text_position": "middle", "text_container_height": 50},
+    )
+    assert "max-height: 50%;" in out["region_text_style"]
+    assert "max-height: 70%" not in out["region_text_style"]
+
+
+def test_overlay_text_container_height_clamped_to_range() -> None:
+    """Out-of-range values clamp to [15, 100]."""
+    out_low = _image_layout_style(
+        "image_full_text_overlay", {"text_container_height": 5}
+    )
+    assert "max-height: 15%;" in out_low["region_text_style"]
+    out_high = _image_layout_style(
+        "image_full_text_overlay", {"text_container_height": 200}
+    )
+    assert "max-height: 100%;" in out_high["region_text_style"]
+
+
 # --- _render_page ---
 
 

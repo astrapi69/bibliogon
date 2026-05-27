@@ -701,22 +701,50 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
             overlayTextStyle.textAlign = tierConfig.text_align
         }
 
+        // C7 Bug D scope-add: text_container_width +
+        // text_container_height sliders override the
+        // position-derived dimensions. Width defaults to 100%
+        // (full); height defaults to position-derived
+        // (middle → max-height 70%; top/bottom → auto).
+        const textContainerWidthRaw = tierConfig.text_container_width
+        if (typeof textContainerWidthRaw === "number") {
+            const widthPct = Math.max(
+                30,
+                Math.min(100, textContainerWidthRaw),
+            )
+            // Override the full-width default by computing left
+            // offsets per the alignment (centered horizontally).
+            const sideOffset = (100 - widthPct) / 2
+            overlayTextStyle.left = `${sideOffset}%`
+            overlayTextStyle.right = `${sideOffset}%`
+        } else {
+            overlayTextStyle.left = 0
+            overlayTextStyle.right = 0
+        }
+        const textContainerHeightRaw = tierConfig.text_container_height
+        const hasHeightOverride =
+            typeof textContainerHeightRaw === "number"
+        const heightPct = hasHeightOverride
+            ? Math.max(15, Math.min(100, textContainerHeightRaw))
+            : null
+
         // Positioning (unchanged from pre-C5). Use individual
         // properties (not `inset` shorthand) so the serialized
         // inline style is testable in jsdom.
-        overlayTextStyle.left = 0
-        overlayTextStyle.right = 0
         if (textPosition === "top") {
             overlayTextStyle.top = 0
             overlayTextStyle.bottom = "auto"
+            if (heightPct !== null) overlayTextStyle.maxHeight = `${heightPct}%`
         } else if (textPosition === "middle") {
             overlayTextStyle.top = "50%"
             overlayTextStyle.bottom = "auto"
             overlayTextStyle.transform = "translateY(-50%)"
-            overlayTextStyle.maxHeight = "70%"
+            overlayTextStyle.maxHeight =
+                heightPct !== null ? `${heightPct}%` : "70%"
         } else {
             overlayTextStyle.top = "auto"
             overlayTextStyle.bottom = 0
+            if (heightPct !== null) overlayTextStyle.maxHeight = `${heightPct}%`
         }
     }
 

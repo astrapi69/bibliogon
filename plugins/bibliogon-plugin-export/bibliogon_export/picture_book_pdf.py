@@ -716,18 +716,42 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         if text_align_raw in ("left", "center", "right"):
             tier2_parts.append(f"text-align: {text_align_raw};")
 
+        # C7 Bug D scope-add: text_container_width +
+        # text_container_height. Width defaults to 100%; height
+        # defaults to position-derived (middle → 70%; top/bottom
+        # → auto). Setting either overrides via explicit %.
+        text_container_width_raw = config.get("text_container_width")
+        if isinstance(text_container_width_raw, (int, float)):
+            width_pct = max(30, min(100, int(text_container_width_raw)))
+            side_offset = (100 - width_pct) / 2
+            width_style = f"left: {side_offset}%; right: {side_offset}%; "
+        else:
+            width_style = "left: 0; right: 0; "
+
+        text_container_height_raw = config.get("text_container_height")
+        if isinstance(text_container_height_raw, (int, float)):
+            height_pct = max(15, min(100, int(text_container_height_raw)))
+            explicit_max_height = f"max-height: {height_pct}%;"
+        else:
+            explicit_max_height = None
+
         tier_extras = " ".join(tier1_parts + tier2_parts)
         if pos == "top":
-            region_text_style = f"top: 0; bottom: auto; {bg} {tier_extras}".strip()
+            max_h = explicit_max_height or ""
+            region_text_style = (
+                f"top: 0; bottom: auto; {width_style}{bg} {max_h} {tier_extras}"
+            ).strip()
         elif pos == "middle":
+            max_h = explicit_max_height or "max-height: 70%;"
             region_text_style = (
                 f"top: 50%; bottom: auto; transform: translateY(-50%); "
-                f"max-height: 70%; {bg} {tier_extras}"
+                f"{max_h} {width_style}{bg} {tier_extras}"
             ).strip()
         else:
+            max_h = explicit_max_height or ""
             region_text_style = (
-                f"top: auto; bottom: 0; {bg} {tier_extras}".strip()
-            )
+                f"top: auto; bottom: 0; {width_style}{bg} {max_h} {tier_extras}"
+            ).strip()
 
     return {
         "canvas_style": canvas_style,

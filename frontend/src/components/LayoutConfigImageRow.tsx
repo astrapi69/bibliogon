@@ -230,6 +230,19 @@ const BACKDROP_OPACITY_MAX = 0.8
 const BACKDROP_OPACITY_STEP = 0.05
 const DEFAULT_BACKDROP_OPACITY = 0.45
 
+// PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C7 (Bug D scope-add):
+// text-container width + height sliders give authors control over
+// the text-region dimensions as a % of the page canvas. Defaults
+// match the pre-C7 hardcoded behaviour: width 100%, height
+// position-derived (middle → max-height 70%; top/bottom → auto).
+const TEXT_CONTAINER_WIDTH_MIN = 30
+const TEXT_CONTAINER_WIDTH_MAX = 100
+const TEXT_CONTAINER_WIDTH_STEP = 5
+const DEFAULT_TEXT_CONTAINER_WIDTH = 100
+const TEXT_CONTAINER_HEIGHT_MIN = 15
+const TEXT_CONTAINER_HEIGHT_MAX = 100
+const TEXT_CONTAINER_HEIGHT_STEP = 5
+
 function readTextPosition(config: Record<string, unknown> | null): TextPosition {
     const value = config?.text_position
     if (
@@ -254,6 +267,35 @@ function readBackdropOpacity(
     return DEFAULT_BACKDROP_OPACITY
 }
 
+function readTextContainerWidth(
+    config: Record<string, unknown> | null,
+): number {
+    const value = config?.text_container_width
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(
+            TEXT_CONTAINER_WIDTH_MIN,
+            Math.min(TEXT_CONTAINER_WIDTH_MAX, value),
+        )
+    }
+    return DEFAULT_TEXT_CONTAINER_WIDTH
+}
+
+function readTextContainerHeight(
+    config: Record<string, unknown> | null,
+): number | null {
+    // Height defaults to NULL (no override) so the position-based
+    // CSS rules take effect (middle → max-height 70%; top/bottom →
+    // auto). Setting any value overrides via an explicit max-height.
+    const value = config?.text_container_height
+    if (typeof value === "number" && Number.isFinite(value)) {
+        return Math.max(
+            TEXT_CONTAINER_HEIGHT_MIN,
+            Math.min(TEXT_CONTAINER_HEIGHT_MAX, value),
+        )
+    }
+    return null
+}
+
 /** image_full_text_overlay config: text-position dropdown +
  *  backdrop-opacity slider. */
 export function LayoutConfigImageFullTextOverlay({
@@ -263,9 +305,23 @@ export function LayoutConfigImageFullTextOverlay({
     const {t} = useI18n()
     const position = readTextPosition(config)
     const opacity = readBackdropOpacity(config)
+    const textContainerWidth = readTextContainerWidth(config)
+    const textContainerHeight = readTextContainerHeight(config)
     const debouncedOpacityChange = useDebouncedCallback((value: number) => {
         onChange({text_backdrop_opacity: value})
     }, 300)
+    const debouncedTextContainerWidthChange = useDebouncedCallback(
+        (value: number) => {
+            onChange({text_container_width: value})
+        },
+        300,
+    )
+    const debouncedTextContainerHeightChange = useDebouncedCallback(
+        (value: number) => {
+            onChange({text_container_height: value})
+        },
+        300,
+    )
     return (
         <div
             className={styles.container}
@@ -336,6 +392,89 @@ export function LayoutConfigImageFullTextOverlay({
                     data-testid="image-full-backdrop-opacity-value"
                 >
                     {opacity.toFixed(2)}
+                </span>
+            </label>
+            {/*
+             * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C7
+             * (Bug D scope-add): text_container_width +
+             * text_container_height sliders. Width defaults to
+             * 100% (full); height defaults to NULL so the
+             * position-based CSS rules take effect (middle →
+             * max-height 70%; top/bottom → auto). Setting either
+             * overrides via explicit %.
+             */}
+            <label className={styles.fieldLabel}>
+                <span className={styles.legend}>
+                    {t(
+                        "ui.page_editor.config.text_container_width",
+                        "Text container width (%)",
+                    )}
+                </span>
+                <input
+                    type="range"
+                    min={TEXT_CONTAINER_WIDTH_MIN}
+                    max={TEXT_CONTAINER_WIDTH_MAX}
+                    step={TEXT_CONTAINER_WIDTH_STEP}
+                    defaultValue={textContainerWidth}
+                    onChange={(e) =>
+                        debouncedTextContainerWidthChange(
+                            parseInt(e.target.value, 10),
+                        )
+                    }
+                    data-testid="image-full-text-container-width-slider"
+                    aria-label={t(
+                        "ui.page_editor.config.text_container_width",
+                        "Text container width (%)",
+                    )}
+                />
+                <span
+                    className={styles.sliderValue}
+                    data-testid="image-full-text-container-width-value"
+                >
+                    {textContainerWidth}%
+                </span>
+            </label>
+            <label className={styles.fieldLabel}>
+                <span className={styles.legend}>
+                    {t(
+                        "ui.page_editor.config.text_container_height",
+                        "Text container height (%)",
+                    )}
+                </span>
+                <input
+                    type="range"
+                    min={TEXT_CONTAINER_HEIGHT_MIN}
+                    max={TEXT_CONTAINER_HEIGHT_MAX}
+                    step={TEXT_CONTAINER_HEIGHT_STEP}
+                    defaultValue={
+                        textContainerHeight ??
+                        Math.round(
+                            (TEXT_CONTAINER_HEIGHT_MIN +
+                                TEXT_CONTAINER_HEIGHT_MAX) /
+                                2,
+                        )
+                    }
+                    onChange={(e) =>
+                        debouncedTextContainerHeightChange(
+                            parseInt(e.target.value, 10),
+                        )
+                    }
+                    data-testid="image-full-text-container-height-slider"
+                    aria-label={t(
+                        "ui.page_editor.config.text_container_height",
+                        "Text container height (%)",
+                    )}
+                />
+                <span
+                    className={styles.sliderValue}
+                    data-testid="image-full-text-container-height-value"
+                >
+                    {textContainerHeight !== null
+                        ? `${textContainerHeight}%`
+                        : t(
+                              "ui.page_editor.config.text_container_height_auto",
+                              "auto",
+                          )}
                 </span>
             </label>
             {/*
