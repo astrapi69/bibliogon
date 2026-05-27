@@ -2374,3 +2374,67 @@ describe("PageCanvas image_top_text_bottom Tier 1+2 inline-style (Session 2 C1)"
         expect(styleNormal).toContain("font-weight: normal")
     })
 })
+
+describe("PageCanvas image_left_text_right Tier 1+2 inline-style (Session 2 C2)", () => {
+    function regionTextStyle(layoutConfig: Record<string, unknown>): string {
+        const {container} = render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_left_text_right",
+                    layout_config: layoutConfig,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        return (
+            container
+                .querySelector("[data-testid=page-canvas-region-text]")
+                ?.getAttribute("style") ?? ""
+        )
+    }
+
+    it("legacy-baseline empty config emits NO Tier overrides", () => {
+        const style = regionTextStyle({})
+        expect(style).not.toContain("border:")
+        expect(style).not.toContain("box-shadow")
+        expect(style).not.toContain("font-family")
+    })
+
+    it("Tier 1 border + radius + shadow + padding all emit when set", () => {
+        const style = regionTextStyle({
+            image_left_text_right: {
+                border_width: 2,
+                border_style: "dashed",
+                border_color: "#C7B8EA",
+                border_radius: 8,
+                shadow: true,
+                shadow_intensity: 4,
+                padding: 14,
+            },
+        })
+        expect(style).toContain("border: 2px dashed rgb(199, 184, 234)")
+        expect(style).toContain("border-radius: 8%")
+        expect(style).toContain("box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3)")
+        expect(style).toContain("padding: 14px")
+    })
+
+    it("Tier 2 font + color + align emit when set", () => {
+        const style = regionTextStyle({
+            image_left_text_right: {
+                font_family: "Atkinson Hyperlegible",
+                font_size: 15,
+                font_weight: "bold",
+                italic: true,
+                text_color: "#2E4057",
+                text_align: "right",
+            },
+        })
+        expect(style).toContain(`font-family: "Atkinson Hyperlegible"`)
+        expect(style).toContain("font-size: 15pt")
+        expect(style).toContain("font-weight: bold")
+        expect(style).toContain("font-style: italic")
+        expect(style).toContain("color: rgb(46, 64, 87)")
+        expect(style).toContain("text-align: right")
+    })
+})

@@ -211,6 +211,64 @@ describe("LayoutConfigImageLeftTextRight", () => {
             screen.getByTestId("image-left-split-ratio-value").textContent,
         ).toBe("70%")
     })
+
+    // --- Session 2 C2: Tier 1+2 sections ---
+
+    it("mounts Tier1Section + Tier2Section with image-left-text testid prefix", () => {
+        render(
+            <LayoutConfigImageLeftTextRight
+                config={null}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("image-left-text-tier1-section"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("image-left-text-tier2-section"),
+        ).toBeTruthy()
+    })
+
+    it("Tier1Section onChange writes flat into the namespace (no bubbles[0])", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigImageLeftTextRight
+                config={null}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("image-left-text-tier1-trigger"))
+        const colorInput = screen.getByTestId(
+            "image-left-text-background-color",
+        ) as HTMLInputElement
+        fireEvent.change(colorInput, {target: {value: "#7fb069"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({background_color: "#7fb069"})
+        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1]
+        expect(lastCall[0]).not.toHaveProperty("bubbles")
+    })
+
+    it("Tier2Section onChange writes font_family flat", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigImageLeftTextRight
+                config={null}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("image-left-text-tier2-trigger"))
+        const fontSelect = screen.getByTestId(
+            "image-left-text-font-family-select",
+        ) as HTMLSelectElement
+        fireEvent.change(fontSelect, {
+            target: {value: "Atkinson Hyperlegible"},
+        })
+        expect(onChange).toHaveBeenCalled()
+        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1]
+        expect(lastCall[0]).toHaveProperty("font_family")
+    })
 })
 
 describe("LayoutConfigImageFullTextOverlay", () => {

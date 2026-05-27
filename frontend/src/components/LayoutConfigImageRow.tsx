@@ -238,6 +238,26 @@ export function LayoutConfigImageLeftTextRight({
                 onChange={(next) => onChange({image_fit: next})}
                 testid="image-left-image-fit"
             />
+            {/*
+             * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C2.
+             * Tier 1+2 sections mounted with the "image-left-text"
+             * testid prefix + namespaced i18n keys. Same shape as
+             * Session 2 C1 (image_top_text_bottom) — single text
+             * region, no bubbles[0] wrapping, writes flat into
+             * the image_left_text_right namespace.
+             */}
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-left-text"
+                i18nKeyPrefix="ui.page_editor.config.image_left_text"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-left-text"
+                i18nKeyPrefix="ui.page_editor.config.image_left_text"
+            />
         </div>
     )
 }
