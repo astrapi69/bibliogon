@@ -4758,3 +4758,89 @@ benefit. Recipe lives in the audit's 2026-05-23 footnote.
 - `docs/audits/recurring-component-audit-2026-05-21.md`
   footnotes 1 + 5 — the two concrete incidents driving this
   filing.
+
+
+## German typographic quotes in YAML: all-or-nothing, never mixed
+
+Surfaced 2026-05-27 during a help-doc / i18n edit pass. YAML's
+double-quoted scalar uses ASCII `"` (U+0022) as both opening and
+closing delimiter. Inside such a scalar, an embedded ASCII `"`
+ends the scalar. German typographic quotes — opening `„`
+(U+201E) and closing `"` (U+201D, the same glyph family as the
+English `"` but a distinct codepoint) — are NOT delimiters in
+YAML; they are ordinary characters when typed correctly.
+
+The trap: a translator (human OR LLM doing a localisation pass)
+types the opening `„` correctly but uses ASCII `"` for the
+closing, OR vice versa. The first character that resembles a
+YAML delimiter (the ASCII `"`) terminates the scalar EARLY, and
+the rest of the line becomes a YAML parse error. Worse: in many
+contexts the parser silently truncates the value to whatever
+came before the unexpected `"`, and downstream consumers see
+half a sentence with no error surfaced.
+
+### Rule
+
+Inside a double-quoted YAML scalar that contains German
+typographic quotes:
+
+1. **Both quotes must be the German typographic codepoints**:
+   opening `„` (U+201E) AND closing `"` (U+201D). NOT mixed
+   with ASCII `"`.
+2. **OR** escape every embedded `"` as `\"` if you genuinely
+   need ASCII quotes inside the value.
+
+Pick one; do NOT mix.
+
+### Examples
+
+```yaml
+# RIGHT — both German codepoints
+ui.message: "Klicke auf „Speichern", um fortzufahren."
+
+# RIGHT — fully ASCII-escaped form
+ui.message: "Klicke auf \"Speichern\", um fortzufahren."
+
+# WRONG — opening „ is German, closing is ASCII " → terminates
+# the scalar after "Speichern, leaving the rest as YAML noise.
+ui.message: "Klicke auf „Speichern", um fortzufahren."
+```
+
+The third example LOOKS identical to the first in many editors
+because most monospace fonts render `"` (U+0022) and `"`
+(U+201D) very similarly. Visual inspection is unreliable;
+codepoint inspection is authoritative.
+
+### Detection
+
+Grep the i18n catalogs (or any YAML file with translator-
+edited scalars) for ASCII `"` immediately following the German
+opening `„`:
+
+```bash
+# Match opening „ followed eventually by a closing ASCII "
+# inside the same scalar value.
+grep -nP '„[^"\n]*"' backend/config/i18n/*.yaml
+```
+
+Any hit is a candidate for the mixed-quotes bug. Manual review:
+is the ASCII `"` actually closing the German `„`? If yes, fix
+to either both-German or both-ASCII-escaped.
+
+### Where this fires
+
+- `backend/config/i18n/{de,en,...}.yaml` — primary surface for
+  translator-authored quoted scalars.
+- Plugin YAML metadata under `backend/config/plugins/*.yaml` —
+  same risk class for German `display_name` / `description`
+  fields.
+- Any docs-as-YAML surfaces (e.g. ``docs/help/_meta.yaml``'s
+  display labels).
+
+### Pairs with
+
+- "German content uses real umlauts" (this file) — same family
+  of "use proper Unicode where the user reads it" discipline.
+  Umlauts are about character correctness; quotation marks add
+  the YAML-syntactic dimension where wrong codepoints don't
+  just look ugly but actively break the parse.
