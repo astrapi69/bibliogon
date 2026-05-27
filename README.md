@@ -21,7 +21,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Dry-run mode: listen to a sample before committing to a full export
 - Persistent audiobook storage with per-chapter and merged downloads
 - Full-data backup and restore (.bgb) with images and optional audiobook files
-- Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS
+- Book metadata: ISBN, ASIN, Publisher, Keywords, Cover, Custom CSS, repository URL
 - In-app help panel with Markdown rendering, search, and context-sensitive links
 - Multi-provider AI assistant (Anthropic, OpenAI, Gemini, Mistral, LM Studio) with chapter review, marketing text generation, and context-aware suggestions
 - Plugin system with ZIP installation for third-party plugins
@@ -29,6 +29,42 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - 5 themes (Classic, Cool Modern, Nord, Notebook, Studio) x Light/Dark
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
 - Responsive layout with hamburger menu on mobile
+- Settings sidebar with 5 grouped sections (Darstellung, Inhalt, System, Info, Gefahrenzone) replacing the older horizontal-tabs layout
+- Editor display settings popover for per-user width / font / size / line-height customisation
+- Dashboard pagination with configurable page size, applied across books, articles, and trash views
+- Bulk-restore parity for articles and books from the trash view
+- Alt+Z word-wrap toggle in the editor for proofing long lines side-by-side
+- Author datalist (Pattern A) across editors with the Authors-Database as the autocomplete source
+- Danger Zone full-system reset under Settings for a clean slate
+- Accessibility WCAG 2.1 AA audit pass: ARIA labels, focus order, keyboard navigation
+
+## Picture Book Authoring
+
+Bibliogon supports a dedicated picture-book authoring flow with per-page image + text layouts, a Storyboard grid view, and a direct WeasyPrint PDF pipeline.
+
+- **5 page layouts:** Image-Top / Image-Left / Image-Full-Text-Overlay / Speech-Bubble / Text-Only — each with its own per-layout `layout_config` namespace so switching layouts preserves prior settings.
+- **Tier 1 + Tier 2 properties** per layout (Visual-Style and Typography sections in the editor properties pane): text alignment, vertical centering, padding, font family, font size, line-height, text color, font weight, container width/height.
+- **Storyboard View** (drag-reorder grid): annotate each page with notes, a story-beat tag (Exposition / Inciting / Rising / Climax / Falling / Resolution), a mood color (10-preset palette), and an act-group label for visual chapter boundaries.
+- **PDF export** via WeasyPrint with KDP-aligned format dropdown (square 8.5x8.5, landscape 8.5x11) + bleed and crop marks controls.
+- **Layout-switch hygiene:** active text-conversion between TipTap-based and Tier-Property-based layouts so the DB shape always matches the active layout.
+
+## Comic Book Authoring
+
+A dedicated comic-book editor (`book_type='comic_book'`) ships multi-panel page layouts with multi-bubble per-panel speech-bubble support.
+
+- **Comic panel grid** with 3 grid templates (1x1, 2x1, 2x2) selectable per page.
+- **Multi-bubble per panel:** position bubbles via anchor presets (top-left through bottom-right, plus center) with opacity and size controls.
+- **6 bubble-type CSS variants** (speech, thought, shout, whisper, narration, off-screen) + an SVG triangle tail with 8 directional anchors plus an `auto` mode.
+- **PDF export** via the shared WeasyPrint pipeline; comics dispatch through the `export_execute` hookspec to keep core decoupled from plugin code.
+
+## KDP Publishing Wizard
+
+A 5-step XState-driven wizard for Amazon KDP publishing prep with server-side persistence and conflict detection.
+
+- **5 steps:** Metadata → Cover → Pricing → ARC reviewers → Launch checklist.
+- **Server-side state** (BookPublishingState row) auto-saves wizard progress; on reopen the wizard rehydrates pricing + ARC choices.
+- **Conflict banner** when the book has been edited outside the wizard (book.updated_at > state.updated_at) so the user re-validates metadata.
+- **Cover validation** with KDP dimension + DPI + bleed checks, surfaced inline at the Cover step.
 
 ## Article Authoring (Phase 2 - beta)
 
@@ -160,7 +196,9 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | grammar | MIT | LanguageTool grammar checking |
 | kinderbuch | MIT | Children's book page layout |
 | kdp | MIT | Amazon KDP metadata, cover validation |
+| comics | MIT | Multi-panel comic-book pages with multi-bubble per-panel speech bubbles |
 | git-sync | MIT | Book-as-git-repo: import, commit, smart-merge, multi-language linking |
+| medium-import | MIT | Medium HTML-export importer for articles with provenance tracking |
 
 Third-party plugins can be installed as ZIP files via Settings > Plugins.
 

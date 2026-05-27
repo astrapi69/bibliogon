@@ -75,11 +75,14 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 
 ## Data model (short)
 
-- **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css)
-- **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type
+- **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css), book_type (from BookTypeRegistry YAML SSoT)
+- **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type. Used by prose books (`content_model="chapters"`).
+- **Page:** id, book_id, position, layout (5 picture-book layouts + `comic_panel_grid`), text_content (string), image_asset_id, layout_config (per-layout namespaced JSON via Fix B), plus 4 Storyboard columns (notes, story_beat, mood_color, act_group). Used by picture-books + comic-books (`content_model="pages"`).
+- **ComicPanel / ComicBubble:** plugin-comics tables for comic_book pages (panel grid templates + multi-bubble per-panel speech bubbles).
 - **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
 - **BookTemplate / BookTemplateChapter:** reusable book structures; 5 builtins seeded at startup. `/api/templates/`, `POST /api/books/from-template`.
 - **ChapterTemplate:** reusable single-chapter structures with TipTap JSON content; 4 builtins (Interview, FAQ, Recipe, Photo Report). `/api/chapter-templates/`.
+- **BookPublishingState:** server-side persistence for the KDP Publishing Wizard (pricing + ARC choices + last visited step).
 
 **ChapterType (31):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action, half_title, title_page, copyright, section, conclusion. Marketing types (also_by_author, excerpt, call_to_action) are in the audiobook-export skip list by default. Per-book override via Book.audiobook_skip_chapter_types.
 

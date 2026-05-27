@@ -55,7 +55,7 @@ make check-types              # mypy + tsc --noEmit
 ## Plugin Development
 
 Bibliogon plugins are standalone Poetry packages that register
-through PluginForge ^0.5.0 entry points. New format-specific or
+through PluginForge ^0.10.0 entry points. New format-specific or
 workflow-specific features generally belong in a plugin, not in
 core.
 

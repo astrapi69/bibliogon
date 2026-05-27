@@ -21,7 +21,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 - Dry-Run-Modus: Probehören vor dem vollständigen Export
 - Persistente Hörbuch-Speicherung mit Pro-Kapitel- und Gesamt-Downloads
 - Voll-Backup und -Restore (.bgb) inkl. Bilder und optional Hörbuch-Dateien
-- Buch-Metadaten: ISBN, ASIN, Verlag, Keywords, Cover, Custom CSS
+- Buch-Metadaten: ISBN, ASIN, Verlag, Keywords, Cover, Custom CSS, Repository-URL
 - In-App-Hilfe mit Markdown-Rendering, Suche und kontextsensitiven Links
 - Multi-Provider-KI-Assistent (Anthropic, OpenAI, Gemini, Mistral, LM Studio) für Kapitel-Review, Marketing-Texte und kontextbewusste Vorschläge
 - Plugin-System mit ZIP-Installation für Drittanbieter-Plugins
@@ -29,6 +29,42 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 - 5 Themes (Classic, Cool Modern, Nord, Notebook, Studio) x Hell/Dunkel
 - i18n: Deutsch, Englisch, Spanisch, Französisch, Griechisch, Portugiesisch, Türkisch, Japanisch
 - Responsives Layout mit Hamburger-Menü auf Mobilgeräten
+- Einstellungs-Sidebar mit 5 Gruppen (Darstellung, Inhalt, System, Info, Gefahrenzone) löst das frühere horizontale Tab-Layout ab
+- Editor-Anzeige-Einstellungen (Popover) für nutzerspezifische Breite / Schriftart / Schriftgröße / Zeilenhöhe
+- Dashboard-Paginierung mit konfigurierbarer Seitengröße für Bücher, Artikel und Papierkorb
+- Bulk-Wiederherstellung für Artikel und Bücher aus dem Papierkorb (Parität zwischen beiden Surfaces)
+- Alt+Z Zeilenumbruch-Toggle im Editor für Korrektur langer Zeilen Seite-an-Seite
+- Autor-Datalist (Pattern A) in allen Editoren mit der Autoren-Datenbank als Autocomplete-Quelle
+- Danger-Zone-Komplett-Reset in den Einstellungen für einen sauberen Neustart
+- Barrierefreiheit (WCAG 2.1 AA) auditiert: ARIA-Labels, Fokus-Reihenfolge, Tastaturnavigation
+
+## Bilderbuch-Autorenschaft
+
+Bibliogon unterstützt einen dedizierten Bilderbuch-Workflow mit pro-Seite Bild- und Text-Layouts, einer Storyboard-Rasteransicht und einer direkten WeasyPrint-PDF-Pipeline.
+
+- **5 Seitenlayouts:** Image-Top / Image-Left / Image-Full-Text-Overlay / Speech-Bubble / Text-Only — jedes mit eigenem `layout_config`-Namensraum, damit Layout-Wechsel die vorherigen Einstellungen erhalten.
+- **Tier 1 + Tier 2 Eigenschaften** pro Layout (Visual-Style- und Typografie-Sektionen im Editor): Textausrichtung, vertikale Zentrierung, Padding, Schriftart, Schriftgröße, Zeilenhöhe, Textfarbe, Schriftgewicht, Container-Breite/-Höhe.
+- **Storyboard-Ansicht** (Drag-Reorder-Raster): Notizen pro Seite, Story-Beat-Tag (Exposition / Auslösendes Ereignis / Steigende Handlung / Höhepunkt / Fallende Handlung / Auflösung), Stimmungsfarbe (10-Preset-Palette) und Akt-Gruppen-Label für visuelle Kapitelgrenzen.
+- **PDF-Export** via WeasyPrint mit KDP-kompatiblem Format-Dropdown (Quadrat 8.5x8.5, Querformat 8.5x11) plus Bleed- und Schnittmarken-Optionen.
+- **Layout-Wechsel-Hygiene:** aktive Text-Konvertierung zwischen TipTap- und Tier-Property-Layouts, damit die DB-Form immer zum aktiven Layout passt.
+
+## Comic-Autorenschaft
+
+Ein dedizierter Comic-Editor (`book_type='comic_book'`) liefert mehrteilige Panel-Layouts mit Multi-Bubble-Unterstützung pro Panel.
+
+- **Comic-Panel-Raster** mit 3 Templates (1x1, 2x1, 2x2) pro Seite wählbar.
+- **Multi-Bubble pro Panel:** Bubbles über Anker-Presets positionieren (Top-Left bis Bottom-Right plus Center) mit Deckkraft- und Größenreglern.
+- **6 Bubble-Typen-CSS-Varianten** (Speech, Thought, Shout, Whisper, Narration, Off-Screen) plus SVG-Dreiecks-Schwanz mit 8 Richtungsankern plus `auto`-Modus.
+- **PDF-Export** über die gemeinsame WeasyPrint-Pipeline; Comics dispatchen via `export_execute`-Hookspec, damit der Kern vom Plugin-Code entkoppelt bleibt.
+
+## KDP-Veröffentlichungs-Wizard
+
+Ein 5-Schritt-Wizard auf XState-Basis für die Amazon-KDP-Veröffentlichungsvorbereitung mit serverseitiger Persistenz und Konflikt-Erkennung.
+
+- **5 Schritte:** Metadaten → Cover → Preisgestaltung → ARC-Reviewer → Launch-Checkliste.
+- **Serverseitiger Zustand** (BookPublishingState-Zeile) speichert den Wizard-Fortschritt automatisch; beim erneuten Öffnen rehydriert der Wizard Preisgestaltung und ARC-Auswahl.
+- **Konflikt-Banner**, wenn das Buch außerhalb des Wizards bearbeitet wurde (book.updated_at > state.updated_at), damit der Nutzer die Metadaten erneut validiert.
+- **Cover-Validierung** mit KDP-Maß-, DPI- und Bleed-Prüfungen, inline im Cover-Schritt angezeigt.
 
 ## Artikel-Autorenschaft (Phase 2 - beta)
 
@@ -166,7 +202,9 @@ Browser --> nginx (statische Dateien + /api-Proxy) --> FastAPI (uvicorn)
 | grammar | MIT | LanguageTool-Grammatikprüfung |
 | kinderbuch | MIT | Kinderbuch-Seitenlayout |
 | kdp | MIT | Amazon-KDP-Metadaten, Cover-Validierung |
+| comics | MIT | Mehrteilige Comic-Seiten mit Multi-Bubble-Unterstützung pro Panel |
 | git-sync | MIT | Buch-als-Git-Repo: Import, Commit, Smart-Merge, Mehrsprachen-Verknüpfung |
+| medium-import | MIT | Medium-HTML-Export-Importer für Artikel mit Provenienz-Tracking |
 
 Drittanbieter-Plugins lassen sich als ZIP-Dateien über Einstellungen > Plugins installieren.
 
