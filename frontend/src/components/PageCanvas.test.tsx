@@ -2270,3 +2270,107 @@ describe("PageCanvas image_full_text_overlay Tier 1+2 inline-style (C5+C7)", () 
         expect(style).toContain("max-height: 70%")
     })
 })
+
+// --- Session 2 C1: Tier-text style applied to image_top_text_bottom ---
+//
+// Per Fix B + Session 2 C1, the shared computeTierTextStyles helper
+// emits Tier 1+2 inline-style for image_top_text_bottom too. The
+// helper is gated on the layout being image_top OR image_left;
+// speech_bubble + overlay have their own derivations.
+
+describe("PageCanvas image_top_text_bottom Tier 1+2 inline-style (Session 2 C1)", () => {
+    function regionTextStyle(layoutConfig: Record<string, unknown>): string {
+        const {container} = render(
+            <PageCanvas
+                page={makePage({
+                    layout: "image_top_text_bottom",
+                    layout_config: layoutConfig,
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        return (
+            container
+                .querySelector("[data-testid=page-canvas-region-text]")
+                ?.getAttribute("style") ?? ""
+        )
+    }
+
+    it("legacy-baseline empty config emits NO Tier overrides", () => {
+        const style = regionTextStyle({})
+        expect(style).not.toContain("border:")
+        expect(style).not.toContain("box-shadow")
+        expect(style).not.toContain("font-family")
+        expect(style).not.toContain("font-size")
+    })
+
+    it("Tier 1 border emits when width > 0 + style != 'none'", () => {
+        const style = regionTextStyle({
+            image_top_text_bottom: {
+                border_width: 3,
+                border_style: "solid",
+                border_color: "#FF6B6B",
+            },
+        })
+        expect(style).toContain("border: 3px solid rgb(255, 107, 107)")
+    })
+
+    it("Tier 1 border-radius emits when positive", () => {
+        const style = regionTextStyle({
+            image_top_text_bottom: {border_radius: 12},
+        })
+        expect(style).toContain("border-radius: 12%")
+    })
+
+    it("Tier 1 shadow emits as box-shadow when enabled", () => {
+        const style = regionTextStyle({
+            image_top_text_bottom: {shadow: true, shadow_intensity: 6},
+        })
+        expect(style).toContain("box-shadow: 0 3px 12px rgba(0, 0, 0, 0.3)")
+    })
+
+    it("Tier 1 padding emits when set", () => {
+        const style = regionTextStyle({
+            image_top_text_bottom: {padding: 20},
+        })
+        expect(style).toContain("padding: 20px")
+    })
+
+    it("Tier 2 font_family + font_size + text_color + text_align emit when set", () => {
+        const style = regionTextStyle({
+            image_top_text_bottom: {
+                font_family: "Atkinson Hyperlegible",
+                font_size: 16,
+                text_color: "#000000",
+                text_align: "left",
+            },
+        })
+        expect(style).toContain(`font-family: "Atkinson Hyperlegible"`)
+        expect(style).toContain("font-size: 16pt")
+        expect(style).toContain("color: rgb(0, 0, 0)")
+        expect(style).toContain("text-align: left")
+    })
+
+    it("Tier 2 italic boolean translates to font-style", () => {
+        const styleItalic = regionTextStyle({
+            image_top_text_bottom: {italic: true},
+        })
+        expect(styleItalic).toContain("font-style: italic")
+        const styleNormal = regionTextStyle({
+            image_top_text_bottom: {italic: false},
+        })
+        expect(styleNormal).toContain("font-style: normal")
+    })
+
+    it("Tier 2 font_weight bold/normal both emit", () => {
+        const styleBold = regionTextStyle({
+            image_top_text_bottom: {font_weight: "bold"},
+        })
+        expect(styleBold).toContain("font-weight: bold")
+        const styleNormal = regionTextStyle({
+            image_top_text_bottom: {font_weight: "normal"},
+        })
+        expect(styleNormal).toContain("font-weight: normal")
+    })
+})

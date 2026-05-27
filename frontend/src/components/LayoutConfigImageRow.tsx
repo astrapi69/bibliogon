@@ -131,7 +131,7 @@ function ImagePositionRadio({
 }
 
 /** image_top_text_bottom config: image-position radio +
- *  image-fit dropdown. */
+ *  image-fit dropdown + Tier 1+2 sections. */
 export function LayoutConfigImageTopTextBottom({config, onChange}: BaseProps) {
     const {t} = useI18n()
     const position = readImagePosition(config)
@@ -155,6 +155,27 @@ export function LayoutConfigImageTopTextBottom({config, onChange}: BaseProps) {
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
                 testid="image-top-image-fit"
+            />
+            {/*
+             * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1.
+             * Tier 1+2 sections mounted with the "image-top-text"
+             * testid prefix + namespaced i18n keys. Per the same
+             * pattern as overlay (Session 1 C5): no bubbles[0]
+             * wrapping (single text region per page); writes flow
+             * flat into the image_top_text_bottom namespace via
+             * the dispatcher's onChange + writeLayoutNamespace.
+             */}
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-top-text"
+                i18nKeyPrefix="ui.page_editor.config.image_top_text"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-top-text"
+                i18nKeyPrefix="ui.page_editor.config.image_top_text"
             />
         </div>
     )

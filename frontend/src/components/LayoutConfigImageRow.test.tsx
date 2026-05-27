@@ -90,6 +90,73 @@ describe("LayoutConfigImageTopTextBottom", () => {
                 .value,
         ).toBe("cover")
     })
+
+    // --- Session 2 C1: Tier 1+2 sections ---
+
+    it("mounts Tier1Section + Tier2Section with image-top-text testid prefix", () => {
+        render(
+            <LayoutConfigImageTopTextBottom
+                config={null}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("image-top-text-tier1-section"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("image-top-text-tier1-trigger"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("image-top-text-tier2-section"),
+        ).toBeTruthy()
+        expect(
+            screen.getByTestId("image-top-text-tier2-trigger"),
+        ).toBeTruthy()
+    })
+
+    it("Tier1Section onChange writes through dispatcher's onChange (no bubbles[0] wrapping)", () => {
+        // Same pattern as overlay (Session 1 C5): single text
+        // region per page, no bubbles[0] wrapping. Partial lands
+        // flat in the image_top_text_bottom namespace.
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigImageTopTextBottom
+                config={null}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("image-top-text-tier1-trigger"))
+        const colorInput = screen.getByTestId(
+            "image-top-text-background-color",
+        ) as HTMLInputElement
+        fireEvent.change(colorInput, {target: {value: "#ffc857"}})
+        act(() => {
+            vi.advanceTimersByTime(300)
+        })
+        expect(onChange).toHaveBeenCalledWith({background_color: "#ffc857"})
+        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1]
+        expect(lastCall[0]).not.toHaveProperty("bubbles")
+    })
+
+    it("Tier2Section onChange writes through dispatcher's onChange (font_family)", () => {
+        const onChange = vi.fn()
+        render(
+            <LayoutConfigImageTopTextBottom
+                config={null}
+                onChange={onChange}
+            />,
+        )
+        fireEvent.click(screen.getByTestId("image-top-text-tier2-trigger"))
+        const fontSelect = screen.getByTestId(
+            "image-top-text-font-family-select",
+        ) as HTMLSelectElement
+        fireEvent.change(fontSelect, {
+            target: {value: "Atkinson Hyperlegible"},
+        })
+        expect(onChange).toHaveBeenCalled()
+        const lastCall = onChange.mock.calls[onChange.mock.calls.length - 1]
+        expect(lastCall[0]).toHaveProperty("font_family")
+    })
 })
 
 describe("LayoutConfigImageLeftTextRight", () => {

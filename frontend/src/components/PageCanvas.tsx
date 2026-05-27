@@ -209,6 +209,103 @@ function hexToRgb(
     return {r: (v >> 16) & 0xff, g: (v >> 8) & 0xff, b: v & 0xff}
 }
 
+/** PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1: shared
+ *  Tier 1 (Visual Style) + Tier 2 (Typography) inline-style
+ *  derivation. Returns ONLY the Tier subset — callers compose
+ *  layout-specific background + positioning + sizing on top.
+ *
+ *  Used by image_full_text_overlay (Session 1 C5),
+ *  image_top_text_bottom (Session 2 C1), and
+ *  image_left_text_right (Session 2 C2). speech_bubble has its
+ *  own derivation inside speechBubbleInlineStyle that
+ *  intentionally diverges (positioning + width/height defaults +
+ *  background composition with opacity).
+ *
+ *  Defaults — Tier 1 fields ABSENT means the corresponding CSS
+ *  property is NOT set (CSS-module default takes effect). Tier
+ *  border is gated on width > 0 AND style != "none". Tier shadow
+ *  is gated on the shadow boolean. Padding emits only when the
+ *  field is set. Tier 2 fields ABSENT also leave CSS-module
+ *  defaults; only explicit values produce overrides. This shape
+ *  matches the overlay/image_top/image_left contract where
+ *  pre-C5 pages render identically. */
+function computeTierTextStyles(
+    namespace: Record<string, unknown> | null | undefined,
+): React.CSSProperties {
+    const style: React.CSSProperties = {}
+    if (!namespace) return style
+
+    // Tier 1 — border + radius + shadow + padding.
+    const borderColorRgb =
+        hexToRgb(namespace.border_color) ?? {r: 0, g: 0, b: 0}
+    const borderWidthRaw =
+        typeof namespace.border_width === "number"
+            ? namespace.border_width
+            : 0
+    const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
+    const borderStyleRaw = namespace.border_style
+    const borderStyle =
+        borderStyleRaw === "solid" ||
+        borderStyleRaw === "dashed" ||
+        borderStyleRaw === "dotted" ||
+        borderStyleRaw === "none"
+            ? borderStyleRaw
+            : "none"
+    if (borderWidth > 0 && borderStyle !== "none") {
+        style.border = `${borderWidth}px ${borderStyle} rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
+    }
+    const borderRadiusRaw =
+        typeof namespace.border_radius === "number"
+            ? namespace.border_radius
+            : 0
+    if (borderRadiusRaw > 0) {
+        style.borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
+    }
+    const shadowOn =
+        typeof namespace.shadow === "boolean" ? namespace.shadow : false
+    if (shadowOn) {
+        const shadowIntensityRaw =
+            typeof namespace.shadow_intensity === "number"
+                ? namespace.shadow_intensity
+                : 5
+        const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
+        style.boxShadow = `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
+    }
+    const paddingRaw =
+        typeof namespace.padding === "number" ? namespace.padding : undefined
+    if (typeof paddingRaw === "number") {
+        style.padding = `${Math.max(0, Math.min(32, paddingRaw))}px`
+    }
+
+    // Tier 2 — typography. Each control overrides the
+    // CSS-module default by inline specificity; absent values
+    // leave the CSS-module default in place.
+    if (typeof namespace.font_family === "string" && namespace.font_family.length > 0) {
+        style.fontFamily = namespace.font_family
+    }
+    if (typeof namespace.font_size === "number") {
+        style.fontSize = `${Math.max(10, Math.min(32, namespace.font_size))}pt`
+    }
+    if (namespace.font_weight === "bold" || namespace.font_weight === "normal") {
+        style.fontWeight = namespace.font_weight
+    }
+    if (typeof namespace.italic === "boolean") {
+        style.fontStyle = namespace.italic ? "italic" : "normal"
+    }
+    const textColorRgb = hexToRgb(namespace.text_color)
+    if (textColorRgb) {
+        style.color = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
+    }
+    if (
+        namespace.text_align === "left" ||
+        namespace.text_align === "center" ||
+        namespace.text_align === "right"
+    ) {
+        style.textAlign = namespace.text_align
+    }
+    return style
+}
+
 /** PB-PHASE4 Session 4c Commit 4: derive the speech-bubble's
  *  position + background-opacity inline style from
  *  page.layout_config. Default (NULL config) is bottom-right + full
@@ -611,6 +708,23 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     if (page.layout === "image_top_text_bottom" || page.layout === "image_left_text_right") {
         imageInlineStyle.objectFit = imageFit
     }
+    // PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1: shared
+    // Tier 1+2 style derivation across image_full_text_overlay,
+    // image_top_text_bottom, image_left_text_right. The same 14
+    // Tier fields produce equivalent inline-style overrides
+    // regardless of which text container they live in; the
+    // helper returns ONLY the Tier subset (no positioning, no
+    // background composition — those are layout-specific and
+    // composed by the caller). 3-surface RCU threshold satisfied
+    // (the 2-surface threshold was satisfied in Session 1 C5
+    // when overlay joined speech_bubble; image_top + image_left
+    // are sites 3 + 4 of the same conceptual style derivation).
+    const imageLayoutTierStyle: React.CSSProperties =
+        page.layout === "image_top_text_bottom" ||
+        page.layout === "image_left_text_right"
+            ? computeTierTextStyles(layoutNamespace)
+            : {}
+
     const overlayTextStyle: React.CSSProperties = {}
     if (page.layout === "image_full_text_overlay") {
         // PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
@@ -632,74 +746,11 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         const bgRgb = hexToRgb(tierConfig.background_color) ?? {r: 0, g: 0, b: 0}
         overlayTextStyle.background = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${textBackdropOpacity})`
 
-        // Tier 1 — border + radius + shadow + padding.
-        const borderColorRgb =
-            hexToRgb(tierConfig.border_color) ?? {r: 0, g: 0, b: 0}
-        const borderWidthRaw =
-            typeof tierConfig.border_width === "number"
-                ? tierConfig.border_width
-                : 0
-        const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
-        const borderStyleRaw = tierConfig.border_style
-        const borderStyle =
-            borderStyleRaw === "solid" ||
-            borderStyleRaw === "dashed" ||
-            borderStyleRaw === "dotted" ||
-            borderStyleRaw === "none"
-                ? borderStyleRaw
-                : "none"
-        if (borderWidth > 0 && borderStyle !== "none") {
-            overlayTextStyle.border = `${borderWidth}px ${borderStyle} rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
-        }
-        const borderRadiusRaw =
-            typeof tierConfig.border_radius === "number"
-                ? tierConfig.border_radius
-                : 0
-        if (borderRadiusRaw > 0) {
-            overlayTextStyle.borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
-        }
-        const shadowOn =
-            typeof tierConfig.shadow === "boolean" ? tierConfig.shadow : false
-        if (shadowOn) {
-            const shadowIntensityRaw =
-                typeof tierConfig.shadow_intensity === "number"
-                    ? tierConfig.shadow_intensity
-                    : 5
-            const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
-            overlayTextStyle.boxShadow = `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
-        }
-        const paddingRaw =
-            typeof tierConfig.padding === "number" ? tierConfig.padding : undefined
-        if (typeof paddingRaw === "number") {
-            overlayTextStyle.padding = `${Math.max(0, Math.min(32, paddingRaw))}px`
-        }
-
-        // Tier 2 — typography. Each control overrides the
-        // CSS-module default by inline specificity; absent values
-        // leave the CSS-module default in place.
-        if (typeof tierConfig.font_family === "string" && tierConfig.font_family.length > 0) {
-            overlayTextStyle.fontFamily = tierConfig.font_family
-        }
-        if (typeof tierConfig.font_size === "number") {
-            overlayTextStyle.fontSize = `${Math.max(10, Math.min(32, tierConfig.font_size))}pt`
-        }
-        if (tierConfig.font_weight === "bold" || tierConfig.font_weight === "normal") {
-            overlayTextStyle.fontWeight = tierConfig.font_weight
-        }
-        if (typeof tierConfig.italic === "boolean") {
-            overlayTextStyle.fontStyle = tierConfig.italic ? "italic" : "normal"
-        }
-        const textColorRgb = hexToRgb(tierConfig.text_color)
-        if (textColorRgb) {
-            overlayTextStyle.color = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
-        }
-        if (
-            tierConfig.text_align === "left" ||
-            tierConfig.text_align === "center" ||
-            tierConfig.text_align === "right"
-        ) {
-            overlayTextStyle.textAlign = tierConfig.text_align
-        }
+        // Session 2 C1: Tier 1+2 derivation extracted into
+        // computeTierTextStyles. Merge the Tier subset on top of
+        // the overlay-specific background; positioning + width/
+        // height follow below.
+        Object.assign(overlayTextStyle, computeTierTextStyles(tierConfig))
 
         // C7 Bug D scope-add: text_container_width +
         // text_container_height sliders override the
@@ -874,7 +925,10 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                             ? speechBubbleStyle
                             : page.layout === "image_full_text_overlay"
                               ? overlayTextStyle
-                              : undefined
+                              : page.layout === "image_top_text_bottom" ||
+                                  page.layout === "image_left_text_right"
+                                ? imageLayoutTierStyle
+                                : undefined
                     }
                 >
                     {isTipTapLayout(page.layout as PageLayout) ? (
