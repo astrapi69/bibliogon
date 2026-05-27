@@ -9,6 +9,8 @@ import {
     DEFAULT_PICTURE_BOOK_FORMAT,
     type PictureBookFormat,
 } from "../PdfExportControls";
+import {KDP_REGIONS, REGION_LABELS} from "../kdp-wizard/pricing";
+import type {RegionCode} from "../kdp-wizard/machines/types";
 import {RadixSelect} from "./RadixSelect";
 import {Toggle} from "./Toggle";
 
@@ -16,6 +18,13 @@ function isPictureBookFormat(value: unknown): value is PictureBookFormat {
     return (
         typeof value === "string" &&
         (PICTURE_BOOK_FORMATS as readonly string[]).includes(value)
+    );
+}
+
+function isRegionCode(value: unknown): value is RegionCode {
+    return (
+        typeof value === "string" &&
+        (KDP_REGIONS as readonly string[]).includes(value)
     );
 }
 
@@ -29,6 +38,7 @@ export function EditorSettings({config, onSave, saving}: {
     const ui = (config.ui || {}) as Record<string, unknown>;
     const pictureBook =
         (ui.picture_book as Record<string, unknown> | undefined) ?? {};
+    const kdpConfig = (config.kdp || {}) as Record<string, unknown>;
 
     const [edAutosave, setEdAutosave] = useState(String(editorConfig.autosave_debounce_ms ?? 800));
     const [edDraftSave, setEdDraftSave] = useState(String(editorConfig.draft_save_debounce_ms ?? 2000));
@@ -41,6 +51,11 @@ export function EditorSettings({config, onSave, saving}: {
     );
     const [pdfBleed, setPdfBleed] = useState<boolean>(
         Boolean(pictureBook.pdf_default_bleed_marks),
+    );
+    const [kdpMarketplace, setKdpMarketplace] = useState<RegionCode>(
+        isRegionCode(kdpConfig.default_marketplace)
+            ? (kdpConfig.default_marketplace as RegionCode)
+            : "US",
     );
 
     useEffect(() => {
@@ -58,6 +73,12 @@ export function EditorSettings({config, onSave, saving}: {
                 : DEFAULT_PICTURE_BOOK_FORMAT,
         );
         setPdfBleed(Boolean(pb.pdf_default_bleed_marks));
+        const kdp = (config.kdp || {}) as Record<string, unknown>;
+        setKdpMarketplace(
+            isRegionCode(kdp.default_marketplace)
+                ? (kdp.default_marketplace as RegionCode)
+                : "US",
+        );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
 
@@ -75,6 +96,10 @@ export function EditorSettings({config, onSave, saving}: {
                 pdf_default_format: pdfFormat,
                 pdf_default_bleed_marks: pdfBleed,
             },
+        },
+        kdp: {
+            ...kdpConfig,
+            default_marketplace: kdpMarketplace,
         },
     });
 
@@ -148,6 +173,26 @@ export function EditorSettings({config, onSave, saving}: {
                                 indentedDescription
                             />
                         </div>
+                    </div>
+                </div>
+
+                <div className={styles.subCard} data-testid="settings-kdp-default-marketplace">
+                    <h3 className={styles.subCardTitle}>
+                        {t("ui.settings.kdp_default_marketplace_title", "KDP-Standard-Marktplatz")}
+                    </h3>
+                    <HelpText>
+                        {t("ui.settings.kdp_default_marketplace_hint", "Standard-Marktplatz für den KDP-Publishing-Wizard. Pro Buch im Wizard änderbar.")}
+                    </HelpText>
+                    <div className="field">
+                        <RadixSelect
+                            value={kdpMarketplace}
+                            onValueChange={(v) => setKdpMarketplace(v as RegionCode)}
+                            testId="settings-kdp-default-marketplace-select"
+                            options={KDP_REGIONS.map((region) => ({
+                                value: region,
+                                label: REGION_LABELS[region],
+                            }))}
+                        />
                     </div>
                 </div>
 

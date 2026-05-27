@@ -89,12 +89,12 @@ ui:
     pdf_default_bleed_marks: false
 kdp:
   # Workspace default for the KDP Publishing Wizard pricing step.
-  # When the wizard mounts and the book has no persisted marketplace
-  # pick yet, the canonical pricing row defaults to this region.
-  # User overrides apply per wizard session and persist into
-  # BookPublishingState.
-  # Allowed values match REGION_CURRENCIES in PricingStep.tsx:
-  # "US", "UK", "DE", "FR", "ES", "IT", "JP", "CA", "AU", "IN", "BR".
+  # The canonical pricing row (page-count anchor + summary
+  # display) uses this region instead of the hardcoded "US"
+  # fallback. User picks per-region prices within the wizard as
+  # before; the default just changes which row is canonical.
+  # Allowed values match KDP_REGIONS in pricing.ts:
+  # "US", "EU", "UK", "JP", "IN".
   default_marketplace: "US"
 behavior:
   # Power-user mode: when true, non-destructive AppDialog.confirm()

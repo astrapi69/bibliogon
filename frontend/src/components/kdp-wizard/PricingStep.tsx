@@ -19,9 +19,10 @@
  *     KDP)
  */
 
+import {useEffect, useState} from "react"
 import {AlertCircle, Banknote} from "lucide-react"
 
-import {BookDetail} from "../../api/client"
+import {api, BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
 import {useBookTypes} from "../../hooks/useBookTypes"
 import type {PricingState, RegionCode} from "./machines/types"
@@ -38,6 +39,15 @@ import {
     estimatePageCount,
     isEbookRoyalty70Eligible,
 } from "./pricing"
+
+const DEFAULT_MARKETPLACE: RegionCode = "US"
+
+function isRegionCode(value: unknown): value is RegionCode {
+    return (
+        typeof value === "string" &&
+        (KDP_REGIONS as readonly string[]).includes(value)
+    )
+}
 
 interface Props {
     book: BookDetail
@@ -77,6 +87,33 @@ export default function PricingStep({book, pricing, onChange}: Props) {
         bookTypesSnapshot.types[book.book_type]?.capabilities
             .ebook_export ?? false
 
+    // #30 from the Settings-Completeness audit close: read the
+    // workspace default marketplace from app.yaml on mount so the
+    // canonical row (page-count anchor + summary display) matches
+    // the user's preferred region. Falls back to "US" when the
+    // setting is missing or unreachable.
+    const [defaultMarketplace, setDefaultMarketplace] =
+        useState<RegionCode>(DEFAULT_MARKETPLACE)
+    useEffect(() => {
+        let cancelled = false
+        api.settings
+            .getApp()
+            .then((config) => {
+                if (cancelled) return
+                const kdp =
+                    (config.kdp as Record<string, unknown> | undefined) ?? {}
+                if (isRegionCode(kdp.default_marketplace)) {
+                    setDefaultMarketplace(kdp.default_marketplace)
+                }
+            })
+            .catch(() => {
+                // Keep US fallback when settings unreachable.
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
     const handlePriceChange = (region: RegionCode, value: string) => {
         const numeric = parseFloat(value)
         const currency = REGION_CURRENCIES[region]
@@ -96,18 +133,19 @@ export default function PricingStep({book, pricing, onChange}: Props) {
     }
 
     const handlePageCountChange = (value: string) => {
-        // Page count stored on every entry that has one. C8 v1
-        // stores it on the US entry (canonical marketplace);
-        // future polish can carry per-region page counts.
+        // Page count stored on the canonical-marketplace entry
+        // (workspace default from app.yaml; falls back to US).
+        // Future polish can carry per-region page counts.
         const pages = parseInt(value, 10)
         if (Number.isNaN(pages) || pages < 1) return
-        const us = pricing.prices.US
+        const anchor = pricing.prices[defaultMarketplace]
+        const anchorCurrency = REGION_CURRENCIES[defaultMarketplace]
         onChange({
             prices: {
                 ...pricing.prices,
-                US: {
-                    currency: "USD",
-                    list_price: us?.list_price ?? 0,
+                [defaultMarketplace]: {
+                    currency: anchorCurrency,
+                    list_price: anchor?.list_price ?? 0,
                     page_count: pages,
                 },
             },
@@ -115,7 +153,7 @@ export default function PricingStep({book, pricing, onChange}: Props) {
     }
 
     const paperbackPageCount =
-        pricing.prices.US?.page_count ??
+        pricing.prices[defaultMarketplace]?.page_count ??
         estimatePageCount(book.chapters.length)
 
     return (
@@ -389,7 +427,7 @@ export default function PricingStep({book, pricing, onChange}: Props) {
                             )}
                         </strong>
                     </span>
-                    {pricing.prices.US?.list_price && (
+                    {pricing.prices[defaultMarketplace]?.list_price && (
                         <span style={styles.paperbackStat}>
                             {t(
                                 "ui.kdp_publishing_wizard.pricing_paperback_royalty",
@@ -401,11 +439,12 @@ export default function PricingStep({book, pricing, onChange}: Props) {
                             >
                                 {formatMoney(
                                     computePaperbackRoyalty(
-                                        pricing.prices.US.list_price,
+                                        pricing.prices[defaultMarketplace]!
+                                            .list_price,
                                         paperbackPageCount,
                                         "bw",
                                     ),
-                                    "USD",
+                                    REGION_CURRENCIES[defaultMarketplace],
                                 )}
                             </strong>
                         </span>
