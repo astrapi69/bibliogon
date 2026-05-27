@@ -43,6 +43,7 @@ circular-load risk flagged in the C3 stop-conditions).
 from __future__ import annotations
 
 import json
+import math
 from html import escape
 from pathlib import Path
 from typing import Any
@@ -344,6 +345,337 @@ def _render_bubble_tail_svg(
     )
 
 
+# --- Single SVG path generator (approach A, 2026-05-27) ---
+#
+# Mirror of frontend/src/components/comics/bubblePath.ts. The
+# bubble outline + tail render as ONE <svg> with ONE <path>. The
+# bubble's text content overlays the SVG via a positioned <div>.
+
+_TAIL_BASE_HALF_WIDTH = 6.0
+_TAIL_OVERLAP = 2.0
+_BEZIER_BULGE = 0.55
+_BEZIER_TIP_PULLBACK = 0.15
+
+
+def _fmt(n: float) -> str:
+    s = f"{n:.1f}"
+    return s[:-2] if s.endswith(".0") else s
+
+
+def _compute_tail_geometry(
+    bubble_width: float,
+    bubble_height: float,
+    bubble_left: float,
+    bubble_top: float,
+    tail_direction: str,
+    tail_position_pct: int,
+    tail_length_px: int,
+) -> dict[str, Any] | None:
+    """Compute the tail's base_left, base_right, tip points + which
+    edge the tail attaches to. Mirrors the TS computeTailGeometry."""
+    if tail_direction == "none":
+        return None
+    direction = "S" if tail_direction == "auto" else tail_direction
+    vec = _TAIL_DIRECTION_VECTORS.get(direction)
+    if vec is None:
+        return None
+    vx, vy = vec
+    pct = max(0, min(100, tail_position_pct)) / 100.0
+    if direction in ("S", "SE", "SW"):
+        edge = "bottom"
+        base_x = bubble_left + pct * bubble_width
+        base_y = bubble_top + bubble_height
+    elif direction in ("N", "NE", "NW"):
+        edge = "top"
+        base_x = bubble_left + pct * bubble_width
+        base_y = bubble_top
+    elif direction == "E":
+        edge = "right"
+        base_x = bubble_left + bubble_width
+        base_y = bubble_top + pct * bubble_height
+    else:  # W
+        edge = "left"
+        base_x = bubble_left
+        base_y = bubble_top + pct * bubble_height
+    if edge in ("top", "bottom"):
+        base_left = (base_x - _TAIL_BASE_HALF_WIDTH, base_y)
+        base_right = (base_x + _TAIL_BASE_HALF_WIDTH, base_y)
+        # Clamp to bubble edge x-range.
+        x_lo, x_hi = bubble_left, bubble_left + bubble_width
+        base_left = (max(x_lo, min(x_hi, base_left[0])), base_left[1])
+        base_right = (max(x_lo, min(x_hi, base_right[0])), base_right[1])
+    else:
+        base_left = (base_x, base_y - _TAIL_BASE_HALF_WIDTH)
+        base_right = (base_x, base_y + _TAIL_BASE_HALF_WIDTH)
+        y_lo, y_hi = bubble_top, bubble_top + bubble_height
+        base_left = (base_left[0], max(y_lo, min(y_hi, base_left[1])))
+        base_right = (base_right[0], max(y_lo, min(y_hi, base_right[1])))
+    tip = (base_x + vx * tail_length_px, base_y + vy * tail_length_px)
+    return {
+        "base_left": base_left,
+        "base_right": base_right,
+        "tip": tip,
+        "edge": edge,
+    }
+
+
+def _tail_subpath(
+    base_left: tuple[float, float],
+    base_right: tuple[float, float],
+    tip: tuple[float, float],
+    direction: str,
+) -> str:
+    """Two cubic beziers forming the curved tail edges."""
+    vec = _TAIL_DIRECTION_VECTORS.get("S" if direction == "auto" else direction)
+    if vec is None:
+        return (
+            f" L {_fmt(tip[0])} {_fmt(tip[1])}"
+            f" L {_fmt(base_right[0])} {_fmt(base_right[1])}"
+        )
+    vx, vy = vec
+    base_mid_x = (base_left[0] + base_right[0]) / 2
+    base_mid_y = (base_left[1] + base_right[1]) / 2
+    tip_dist = math.hypot(tip[0] - base_mid_x, tip[1] - base_mid_y)
+    c1x = base_left[0] + vx * tip_dist * _BEZIER_BULGE
+    c1y = base_left[1] + vy * tip_dist * _BEZIER_BULGE
+    c2x = tip[0] - vx * tip_dist * _BEZIER_TIP_PULLBACK
+    c2y = tip[1] - vy * tip_dist * _BEZIER_TIP_PULLBACK
+    c3x = tip[0] - vx * tip_dist * _BEZIER_TIP_PULLBACK
+    c3y = tip[1] - vy * tip_dist * _BEZIER_TIP_PULLBACK
+    c4x = base_right[0] + vx * tip_dist * _BEZIER_BULGE
+    c4y = base_right[1] + vy * tip_dist * _BEZIER_BULGE
+    return (
+        f" C {_fmt(c1x)} {_fmt(c1y)} {_fmt(c2x)} {_fmt(c2y)} {_fmt(tip[0])} {_fmt(tip[1])}"
+        f" C {_fmt(c3x)} {_fmt(c3y)} {_fmt(c4x)} {_fmt(c4y)} {_fmt(base_right[0])} {_fmt(base_right[1])}"
+    )
+
+
+def _ellipse_path(
+    cx: float,
+    cy: float,
+    rx: float,
+    ry: float,
+    tail: dict[str, Any] | None,
+    tail_direction: str,
+) -> str:
+    """Trace an ellipse as 4 cubic beziers (kappa = 0.5522847498)."""
+    K = 0.5522847498
+    cx_rx_k = rx * K
+    cy_ry_k = ry * K
+    ellipse = (
+        f"M {_fmt(cx - rx)} {_fmt(cy)} "
+        f"C {_fmt(cx - rx)} {_fmt(cy - cy_ry_k)} {_fmt(cx - cx_rx_k)} {_fmt(cy - ry)} {_fmt(cx)} {_fmt(cy - ry)} "
+        f"C {_fmt(cx + cx_rx_k)} {_fmt(cy - ry)} {_fmt(cx + rx)} {_fmt(cy - cy_ry_k)} {_fmt(cx + rx)} {_fmt(cy)} "
+        f"C {_fmt(cx + rx)} {_fmt(cy + cy_ry_k)} {_fmt(cx + cx_rx_k)} {_fmt(cy + ry)} {_fmt(cx)} {_fmt(cy + ry)} "
+        f"C {_fmt(cx - cx_rx_k)} {_fmt(cy + ry)} {_fmt(cx - rx)} {_fmt(cy + cy_ry_k)} {_fmt(cx - rx)} {_fmt(cy)} "
+        f"Z"
+    )
+    if tail is None:
+        return ellipse
+    vec = _TAIL_DIRECTION_VECTORS.get(
+        "S" if tail_direction == "auto" else tail_direction
+    )
+    if vec is None:
+        return ellipse
+    vx, vy = vec
+    base_left = tail["base_left"]
+    base_right = tail["base_right"]
+    inset_left = (base_left[0] - vx * _TAIL_OVERLAP, base_left[1] - vy * _TAIL_OVERLAP)
+    inset_right = (
+        base_right[0] - vx * _TAIL_OVERLAP,
+        base_right[1] - vy * _TAIL_OVERLAP,
+    )
+    tail_path = (
+        f"M {_fmt(inset_left[0])} {_fmt(inset_left[1])}"
+        f"{_tail_subpath(inset_left, inset_right, tail['tip'], tail_direction)}"
+        f" L {_fmt(inset_left[0])} {_fmt(inset_left[1])} Z"
+    )
+    return f"{ellipse} {tail_path}"
+
+
+def _rounded_rect_path(
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    rx: float,
+    ry: float,
+    tail: dict[str, Any] | None,
+    tail_direction: str,
+) -> str:
+    rx = min(rx, width / 2)
+    ry = min(ry, height / 2)
+    right = left + width
+    bottom = top + height
+    if tail is None:
+        return (
+            f"M {_fmt(left + rx)} {_fmt(top)} "
+            f"L {_fmt(right - rx)} {_fmt(top)} "
+            f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(right)} {_fmt(top + ry)} "
+            f"L {_fmt(right)} {_fmt(bottom - ry)} "
+            f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(right - rx)} {_fmt(bottom)} "
+            f"L {_fmt(left + rx)} {_fmt(bottom)} "
+            f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(left)} {_fmt(bottom - ry)} "
+            f"L {_fmt(left)} {_fmt(top + ry)} "
+            f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(left + rx)} {_fmt(top)} Z"
+        )
+    segments: list[str] = [f"M {_fmt(left + rx)} {_fmt(top)}"]
+
+    def _inject(edge: str) -> dict[str, Any] | None:
+        return tail if tail["edge"] == edge else None
+
+    top_tail = _inject("top")
+    if top_tail:
+        segments.append(f"L {_fmt(top_tail['base_left'][0])} {_fmt(top_tail['base_left'][1])}")
+        segments.append(
+            _tail_subpath(
+                top_tail["base_left"], top_tail["base_right"], top_tail["tip"], tail_direction
+            )
+        )
+    segments.append(f"L {_fmt(right - rx)} {_fmt(top)}")
+    segments.append(f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(right)} {_fmt(top + ry)}")
+    right_tail = _inject("right")
+    if right_tail:
+        segments.append(f"L {_fmt(right_tail['base_left'][0])} {_fmt(right_tail['base_left'][1])}")
+        segments.append(
+            _tail_subpath(
+                right_tail["base_left"], right_tail["base_right"], right_tail["tip"], tail_direction
+            )
+        )
+    segments.append(f"L {_fmt(right)} {_fmt(bottom - ry)}")
+    segments.append(f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(right - rx)} {_fmt(bottom)}")
+    bottom_tail = _inject("bottom")
+    if bottom_tail:
+        segments.append(f"L {_fmt(bottom_tail['base_right'][0])} {_fmt(bottom_tail['base_right'][1])}")
+        segments.append(
+            _tail_subpath(
+                bottom_tail["base_right"], bottom_tail["base_left"], bottom_tail["tip"], tail_direction
+            )
+        )
+    segments.append(f"L {_fmt(left + rx)} {_fmt(bottom)}")
+    segments.append(f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(left)} {_fmt(bottom - ry)}")
+    left_tail = _inject("left")
+    if left_tail:
+        segments.append(f"L {_fmt(left_tail['base_right'][0])} {_fmt(left_tail['base_right'][1])}")
+        segments.append(
+            _tail_subpath(
+                left_tail["base_right"], left_tail["base_left"], left_tail["tip"], tail_direction
+            )
+        )
+    segments.append(f"L {_fmt(left)} {_fmt(top + ry)}")
+    segments.append(f"A {_fmt(rx)} {_fmt(ry)} 0 0 1 {_fmt(left + rx)} {_fmt(top)}")
+    segments.append("Z")
+    return " ".join(segments)
+
+
+def _shout_path(
+    left: float,
+    top: float,
+    width: float,
+    height: float,
+    tail: dict[str, Any] | None,
+    tail_direction: str,
+) -> str:
+    star_pcts: tuple[tuple[float, float], ...] = (
+        (0, 20), (10, 0), (25, 15), (40, 0), (55, 15),
+        (70, 0), (85, 15), (100, 20), (90, 40),
+        (100, 60), (85, 75), (100, 90), (75, 100),
+        (60, 85), (45, 100), (30, 85), (15, 100),
+        (0, 80), (10, 60), (0, 40),
+    )
+    points = [
+        (left + (px / 100) * width, top + (py / 100) * height) for px, py in star_pcts
+    ]
+    star = f"M {_fmt(points[0][0])} {_fmt(points[0][1])}"
+    for x, y in points[1:]:
+        star += f" L {_fmt(x)} {_fmt(y)}"
+    star += " Z"
+    if tail is None:
+        return star
+    vec = _TAIL_DIRECTION_VECTORS.get(
+        "S" if tail_direction == "auto" else tail_direction
+    )
+    if vec is None:
+        return star
+    vx, vy = vec
+    overlap = 3.0
+    base_left = tail["base_left"]
+    base_right = tail["base_right"]
+    inset_left = (base_left[0] - vx * overlap, base_left[1] - vy * overlap)
+    inset_right = (base_right[0] - vx * overlap, base_right[1] - vy * overlap)
+    tail_path = (
+        f"M {_fmt(inset_left[0])} {_fmt(inset_left[1])}"
+        f"{_tail_subpath(inset_left, inset_right, tail['tip'], tail_direction)}"
+        f" L {_fmt(inset_left[0])} {_fmt(inset_left[1])} Z"
+    )
+    return f"{star} {tail_path}"
+
+
+def _build_bubble_path(
+    shape: str,
+    width: float,
+    height: float,
+    tail_direction: str,
+    tail_position_pct: int,
+    tail_length_px: int,
+) -> str:
+    """Return the SVG path 'd' attribute for the bubble + tail.
+    Mirrors frontend/src/components/comics/bubblePath.ts."""
+    tail = _compute_tail_geometry(
+        width, height, 0, 0, tail_direction, tail_position_pct, tail_length_px
+    )
+    if shape == "sound_effect":
+        return ""
+    if shape == "narration":
+        return _rounded_rect_path(0, 0, width, height, 0, 0, tail, tail_direction)
+    if shape in ("thought", "whisper"):
+        rx = min(width, height) * 0.3
+        return _rounded_rect_path(0, 0, width, height, rx, rx, tail, tail_direction)
+    if shape == "speech":
+        return _ellipse_path(
+            width / 2, height / 2, width / 2, height / 2, tail, tail_direction
+        )
+    if shape == "shout":
+        return _shout_path(0, 0, width, height, tail, tail_direction)
+    return ""
+
+
+# Per-type SVG attribute defaults (mirror the frontend defaults
+# in ComicBubble.tsx).
+_BUBBLE_DEFAULT_FILL: dict[str, str] = {
+    "speech": "white",
+    "thought": "white",
+    "narration": "#f5f5dc",
+    "shout": "white",
+    "whisper": "white",
+    "sound_effect": "transparent",
+}
+_BUBBLE_DEFAULT_STROKE: dict[str, str | None] = {
+    "speech": "black",
+    "thought": "black",
+    "narration": "black",
+    "shout": "black",
+    "whisper": "black",
+    "sound_effect": None,
+}
+_BUBBLE_DEFAULT_STROKE_WIDTH: dict[str, float] = {
+    "speech": 1.5,
+    "thought": 1.0,
+    "narration": 1.0,
+    "shout": 1.5,
+    "whisper": 1.0,
+    "sound_effect": 0,
+}
+_BUBBLE_DEFAULT_DASHARRAY: dict[str, str | None] = {
+    "speech": None,
+    "thought": None,
+    "narration": None,
+    "shout": None,
+    "whisper": "4 3",
+    "sound_effect": None,
+}
+
+
 # --- Single-bubble render ---
 
 
@@ -363,7 +695,6 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
     - text_content: plain text (Q2 a decision; TipTap deferred)
     """
     bubble_type = bubble.get("bubble_type", "speech")
-    type_css = _bubble_type_style(bubble_type)
 
     anchor = bubble.get("anchor") or {}
     if isinstance(anchor, str):
@@ -378,9 +709,10 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
     width_pct = bubble.get("width_pct", 30)
     height_pct = bubble.get("height_pct", 20)
 
-    # bubble_config Tier 1+2 fields (field-name parity with
-    # picture-book's layout_config.bubbles[0]). Optional overrides
-    # on top of the bubble-type defaults.
+    # bubble_config Tier 1+2 fields. Approach A (2026-05-27):
+    # background_color / border_color / border_width / border_style
+    # flow into SVG path attributes; typography / opacity / padding
+    # apply to the text overlay div.
     config = bubble.get("bubble_config") or {}
     if isinstance(config, str):
         try:
@@ -390,71 +722,106 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
     if not isinstance(config, dict):
         config = {}
 
-    config_css_parts: list[str] = []
-    if isinstance(config.get("background_color"), str):
-        config_css_parts.append(f"background-color: {config['background_color']};")
-    if isinstance(config.get("border_color"), str):
-        config_css_parts.append(f"border-color: {config['border_color']};")
+    # SVG path attributes (with per-type defaults).
+    fill = config.get("background_color") if isinstance(
+        config.get("background_color"), str
+    ) else _BUBBLE_DEFAULT_FILL.get(bubble_type, "white")
+    stroke_default = _BUBBLE_DEFAULT_STROKE.get(bubble_type, "black")
+    stroke = config.get("border_color") if isinstance(
+        config.get("border_color"), str
+    ) else (stroke_default or "transparent")
+    stroke_width = (
+        float(config["border_width"])
+        if isinstance(config.get("border_width"), (int, float))
+        else _BUBBLE_DEFAULT_STROKE_WIDTH.get(bubble_type, 1.0)
+    )
+    border_style = config.get("border_style")
+    if border_style == "dashed":
+        stroke_dasharray: str | None = "4 3"
+    elif border_style == "dotted":
+        stroke_dasharray = "1 2"
+    else:
+        stroke_dasharray = _BUBBLE_DEFAULT_DASHARRAY.get(bubble_type)
+
+    path_d = _build_bubble_path(
+        shape=bubble_type,
+        width=100,
+        height=100,
+        tail_direction=bubble.get("tail_direction", "none"),
+        tail_position_pct=bubble.get("tail_position_pct", 50),
+        tail_length_px=bubble.get("tail_length_px", 16),
+    )
+
+    # Text-overlay style (typography + padding + opacity).
+    text_css_parts: list[str] = [
+        "position: absolute;",
+        "inset: 0;",
+        "display: flex;",
+        "align-items: center;",
+        "justify-content: center;",
+        "text-align: center;",
+        "padding: 4pt 8pt;",
+        "box-sizing: border-box;",
+        "font-family: 'Atkinson Hyperlegible', sans-serif;",
+        "font-size: 10pt;",
+        "color: black;",
+    ]
     if isinstance(config.get("text_color"), str):
-        config_css_parts.append(f"color: {config['text_color']};")
+        text_css_parts.append(f"color: {config['text_color']};")
     if isinstance(config.get("font_family"), str):
-        config_css_parts.append(
+        text_css_parts.append(
             f"font-family: '{config['font_family']}', sans-serif;"
         )
     if isinstance(config.get("font_size"), (int, float)):
-        config_css_parts.append(f"font-size: {int(config['font_size'])}pt;")
+        text_css_parts.append(f"font-size: {int(config['font_size'])}pt;")
     if config.get("font_weight") in ("normal", "bold"):
-        config_css_parts.append(f"font-weight: {config['font_weight']};")
+        text_css_parts.append(f"font-weight: {config['font_weight']};")
     if config.get("text_align") in ("left", "center", "right"):
-        config_css_parts.append(f"text-align: {config['text_align']};")
+        text_css_parts.append(f"text-align: {config['text_align']};")
     if config.get("italic") is True:
-        config_css_parts.append("font-style: italic;")
-    config_css = " ".join(config_css_parts)
-
-    # Tail-fill colour reads from bubble_config.background_color
-    # when present; otherwise pick the bubble-type's canonical
-    # interior so the overlap-mask still hides the seam under the
-    # tail base. Narration's parchment ``#f5f5dc`` is the only
-    # non-white default among the 6 types; everything else is
-    # white.
-    bubble_bg = config.get("background_color")
-    if not isinstance(bubble_bg, str) or not bubble_bg:
-        bubble_bg = "#f5f5dc" if bubble_type == "narration" else "white"
-
-    tail_svg = _render_bubble_tail_svg(
-        direction=bubble.get("tail_direction", "none"),
-        position_pct=bubble.get("tail_position_pct", 50),
-        length_px=bubble.get("tail_length_px", 16),
-        bubble_background_color=bubble_bg,
-    )
+        text_css_parts.append("font-style: italic;")
+    if isinstance(config.get("opacity"), (int, float)):
+        text_css_parts.append(f"opacity: {config['opacity']};")
+    text_css = " ".join(text_css_parts)
 
     text = bubble.get("text_content") or ""
     text_html = escape(str(text))
 
-    style = (
+    container_style = (
         f"position: absolute;"
         f" left: {x_pct}%;"
         f" top: {y_pct}%;"
         f" width: {width_pct}%;"
         f" height: {height_pct}%;"
         f" transform: translate(-50%, -50%);"
-        f" display: flex;"
-        f" align-items: center;"
-        f" justify-content: center;"
-        f" padding: 4pt 8pt;"
-        f" font-family: 'Atkinson Hyperlegible', sans-serif;"
-        f" font-size: 10pt;"
-        f" color: black;"
-        f" text-align: center;"
-        f" {type_css}"
-        f" {config_css}"
+        f" overflow: visible;"
     )
+
+    if path_d:
+        dasharray_attr = (
+            f' stroke-dasharray="{stroke_dasharray}"'
+            if stroke_dasharray
+            else ""
+        )
+        svg = (
+            f'<svg width="100%" height="100%" viewBox="0 0 100 100" '
+            f'preserveAspectRatio="none" '
+            f'style="position: absolute; inset: 0; overflow: visible; '
+            f'pointer-events: none;">'
+            f'<path d="{path_d}" fill="{fill}" stroke="{stroke}" '
+            f'stroke-width="{stroke_width}"{dasharray_attr} '
+            f'stroke-linejoin="round" />'
+            f"</svg>"
+        )
+    else:
+        # sound_effect: no shape, just the text overlay.
+        svg = ""
 
     return (
         f'<div class="comic-bubble" data-bubble-type="{escape(bubble_type)}" '
-        f'style="{style}">'
-        f"<span>{text_html}</span>"
-        f"{tail_svg}"
+        f'style="{container_style}">'
+        f"{svg}"
+        f'<div style="{text_css}"><span>{text_html}</span></div>'
         f"</div>"
     )
 

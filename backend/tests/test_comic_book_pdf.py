@@ -268,22 +268,33 @@ def test_render_comic_bubble_carries_bubble_type_in_data_attr() -> None:
     assert 'data-bubble-type="thought"' in html
 
 
-def test_render_comic_bubble_includes_tail_svg_when_direction_set() -> None:
+def test_render_comic_bubble_emits_svg_path_when_tail_direction_set() -> None:
+    """Approach A (2026-05-27): bubble outline + tail render as one
+    <svg> with one <path>. The tail diversion uses cubic beziers, so
+    the path string includes ``C `` segments past the bubble's bbox."""
     html = _render_comic_bubble(_make_bubble(tail_direction="S"))
     assert "<svg" in html
-    assert "bubble-tail" in html
+    assert "<path" in html
+    # Tail uses bezier curves, not straight lines.
+    assert " C " in html
 
 
 def test_render_comic_bubble_no_tail_for_direction_none() -> None:
+    """Bubble outline still renders without the tail diversion when
+    tail_direction='none'; the path's d attr just closes the
+    bubble shape."""
     html = _render_comic_bubble(_make_bubble(tail_direction="none"))
-    assert "bubble-tail" not in html
+    assert "<svg" in html
+    assert "<path" in html
 
 
 def test_render_comic_bubble_applies_bubble_config_background_color() -> None:
+    """Approach A: background_color flows into the SVG path's fill
+    attribute, not into a CSS background-color rule."""
     html = _render_comic_bubble(
         _make_bubble(bubble_config={"background_color": "#ff0000"})
     )
-    assert "background-color: #ff0000" in html
+    assert 'fill="#ff0000"' in html
 
 
 def test_render_comic_bubble_applies_bubble_config_typography_overrides() -> None:
