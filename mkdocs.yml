@@ -81,6 +81,7 @@ plugins:
         Glossar: Glossary
         Fehlerbehebung: Troubleshooting
         Einstellungen: Settings
+        Backups verwalten: Manage backups
         Gefahrenzone: Danger Zone
         Entwickler: Developers
         Architektur-Übersicht: Architecture overview
@@ -165,6 +166,7 @@ nav:
 - Fehlerbehebung: de/troubleshooting.md
 - Einstellungen:
   - Navigation: de/settings/sidebar.md
+  - Backups verwalten: de/settings/backups.md
   - Gefahrenzone: de/settings/danger-zone.md
 - Entwickler:
   - Architektur-Übersicht: de/developers/architecture.md

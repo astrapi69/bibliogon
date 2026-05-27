@@ -274,6 +274,10 @@ navigation:
           en: Navigation
         slug: settings/sidebar
       - title:
+          de: Backups verwalten
+          en: Manage backups
+        slug: settings/backups
+      - title:
           de: Gefahrenzone
           en: Danger Zone
         slug: settings/danger-zone
