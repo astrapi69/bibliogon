@@ -7,6 +7,30 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-27 — Image-row Tier 1+2 sections for image_top + image_left (ES, FR, EL, PT, TR, JA)
+
+52 keys translated into 6 languages = 312 translation cells.
+All stem from PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2
+C1+C2+C5 (Tier Visual-Style + Typography sections for
+image_top_text_bottom + image_left_text_right; same 26-key
+shape as the Session 1 C9 overlay_text + speech_bubble.tier1/2).
+
+| Key prefix | Keys | Languages |
+|---|---|---|
+| `ui.page_editor.config.image_top_text.tier1.*` | 13 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.image_top_text.tier2.*` | 13 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.image_left_text.tier1.*` | 13 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.image_left_text.tier2.*` | 13 | ES, FR, EL, PT, TR, JA |
+
+DE canonical (real umlauts: Visueller Stil / Schriftgröße /
+etc.), EN direct-translation authored.
+
+The image_top_text + image_left_text Tier translations REUSE
+the same overlay_text + speech_bubble translations verbatim
+per language — they're the same fields (Border color, Font
+size, etc.) applied to a different container, so the user
+sees consistent terminology across all Tier surfaces.
+
 ## 2026-05-27 — Overlay text Tier 1+2 + width/height (ES, FR, EL, PT, TR, JA)
 
 29 keys translated into 6 languages = 174 translation cells.
