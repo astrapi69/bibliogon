@@ -7,6 +7,31 @@ row from the matching language column.
 The parity test in [backend/tests/test_i18n_parity.py](../../tests/test_i18n_parity.py)
 does not inspect this file; it is maintenance metadata only.
 
+## 2026-05-27 — Overlay text Tier 1+2 + width/height (ES, FR, EL, PT, TR, JA)
+
+29 keys translated into 6 languages = 174 translation cells.
+All stem from PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
+PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C5+C7+C9 (Tier
+Visual-Style + Typography sections for image_full_text_overlay
++ Bug D text_container_width / text_container_height sliders).
+
+| Key prefix | Keys | Languages |
+|---|---|---|
+| `ui.page_editor.config.text_container_width` | 1 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.text_container_height` | 1 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.text_container_height_auto` | 1 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.overlay_text.tier1.*` | 13 | ES, FR, EL, PT, TR, JA |
+| `ui.page_editor.config.overlay_text.tier2.*` | 13 | ES, FR, EL, PT, TR, JA |
+
+DE canonical (real umlauts: Visueller Stil / Hintergrundfarbe /
+Schriftgröße / etc.), EN direct-translation authored. The
+overlay_text Tier 1+2 translations REUSE the existing
+speech_bubble Tier 1+2 translations verbatim per language —
+they're the same fields (Background color, Border color, Font
+size, etc.) just applied to a different container, so the user
+sees consistent terminology across all Tier surfaces (bubble +
+overlay + future comic-panel).
+
 ## 2026-05-27 — Storyboard annotations: notes / beat / mood / act-group (ES, FR, EL, PT, TR, JA)
 
 18 keys translated into 6 languages = 108 translation cells.
