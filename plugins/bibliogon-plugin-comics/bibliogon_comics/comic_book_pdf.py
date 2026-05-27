@@ -225,6 +225,7 @@ def _render_bubble_tail_svg(
     direction: str,
     position_pct: int,
     length_px: int,
+    bubble_background_color: str = "white",
 ) -> str:
     """Emit the SVG tail for a comic bubble.
 
@@ -239,10 +240,20 @@ def _render_bubble_tail_svg(
     bubble's edge from the corner; tail-length scales the
     extension distance.
 
-    Output: a self-contained ``<svg>`` element with a single
-    triangle ``<polygon>``. Positioning happens via the bubble's
-    parent ``position: relative`` + this svg's ``position:
-    absolute`` per the inline-style emit.
+    Visual integration with the bubble (2026-05-27 audit close,
+    approach B "overlap + mask"): the SVG carries TWO children —
+    a fill polygon whose base extends ``OVERLAP_PX`` (3pt) INWARD
+    past the bubble's edge to mask the bubble border segment under
+    the tail base, plus two stroked ``<line>`` elements (tip →
+    base-left, tip → base-right) WITHOUT a third base line. The
+    bubble's own border continues uninterrupted under the mask so
+    the tail looks like a natural extension of the outline.
+
+    ``bubble_background_color`` should match the bubble's interior
+    color (reads from ``bubble_config.background_color`` when
+    present; falls through to the bubble-type's canonical
+    background otherwise — white for speech/thought/whisper,
+    ``#f5f5dc`` for narration).
     """
     if direction == "none":
         return ""
@@ -253,20 +264,33 @@ def _render_bubble_tail_svg(
     vx, vy = vec
 
     # Triangle vertices in a local coordinate system anchored at
-    # the bubble's edge. The triangle has 3 vertices:
+    # the bubble's edge.
     # - tip (length_px in the direction vector)
-    # - base-left (8pt perpendicular-left of tip's base)
-    # - base-right (8pt perpendicular-right of tip's base)
+    # - base-left + base-right (half_base perpendicular to the tip)
+    # - mask-left + mask-right shifted backward by OVERLAP_PX into
+    #   the bubble interior so the fill covers the bubble border
+    #   under the tail base.
     # Perpendicular vector is (-vy, vx).
     half_base = 4.0
+    overlap_px = 3.0
     tip_x = vx * length_px
     tip_y = vy * length_px
     base_perp_x = -vy * half_base
     base_perp_y = vx * half_base
-    points = (
+    base_left_x = base_perp_x
+    base_left_y = base_perp_y
+    base_right_x = -base_perp_x
+    base_right_y = -base_perp_y
+    mask_inset_x = -vx * overlap_px
+    mask_inset_y = -vy * overlap_px
+    mask_left_x = base_left_x + mask_inset_x
+    mask_left_y = base_left_y + mask_inset_y
+    mask_right_x = base_right_x + mask_inset_x
+    mask_right_y = base_right_y + mask_inset_y
+    mask_points = (
         f"{tip_x:.1f},{tip_y:.1f} "
-        f"{base_perp_x:.1f},{base_perp_y:.1f} "
-        f"{-base_perp_x:.1f},{-base_perp_y:.1f}"
+        f"{mask_left_x:.1f},{mask_left_y:.1f} "
+        f"{mask_right_x:.1f},{mask_right_y:.1f}"
     )
 
     # Position the SVG element along the bubble's edge per the
@@ -285,8 +309,10 @@ def _render_bubble_tail_svg(
     elif canonical_direction == "W":
         side_attr = f"left: 0; top: {edge_offset}%;"
 
-    svg_width = max(int(abs(tip_x) + half_base * 2), 4)
-    svg_height = max(int(abs(tip_y) + half_base * 2), 4)
+    # SVG element extends both outward (along the direction) and
+    # inward (the mask overlap). Accommodate both.
+    svg_width = max(int(abs(tip_x) + half_base * 2 + overlap_px * 2), 4)
+    svg_height = max(int(abs(tip_y) + half_base * 2 + overlap_px * 2), 4)
     # viewBox is centred so the triangle's tip + base offset both
     # render correctly. The SVG element overflows the bubble's
     # box; the bubble's parent .panel has overflow: visible.
@@ -303,8 +329,14 @@ def _render_bubble_tail_svg(
         f'width: {svg_width}px; height: {svg_height}px; '
         f'transform: translate(-50%, 0); overflow: visible;" '
         f'viewBox="{viewbox}">'
-        f'<polygon points="{points}" '
-        'fill="white" stroke="black" stroke-width="1.5" />'
+        f'<polygon points="{mask_points}" '
+        f'fill="{bubble_background_color}" stroke="none" />'
+        f'<line x1="{base_left_x:.1f}" y1="{base_left_y:.1f}" '
+        f'x2="{tip_x:.1f}" y2="{tip_y:.1f}" '
+        f'stroke="black" stroke-width="1.5" stroke-linecap="round" />'
+        f'<line x1="{base_right_x:.1f}" y1="{base_right_y:.1f}" '
+        f'x2="{tip_x:.1f}" y2="{tip_y:.1f}" '
+        f'stroke="black" stroke-width="1.5" stroke-linecap="round" />'
         f"</svg>"
     )
 
@@ -376,10 +408,21 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
         config_css_parts.append("font-style: italic;")
     config_css = " ".join(config_css_parts)
 
+    # Tail-fill colour reads from bubble_config.background_color
+    # when present; otherwise pick the bubble-type's canonical
+    # interior so the overlap-mask still hides the seam under the
+    # tail base. Narration's parchment ``#f5f5dc`` is the only
+    # non-white default among the 6 types; everything else is
+    # white.
+    bubble_bg = config.get("background_color")
+    if not isinstance(bubble_bg, str) or not bubble_bg:
+        bubble_bg = "#f5f5dc" if bubble_type == "narration" else "white"
+
     tail_svg = _render_bubble_tail_svg(
         direction=bubble.get("tail_direction", "none"),
         position_pct=bubble.get("tail_position_pct", 50),
         length_px=bubble.get("tail_length_px", 16),
+        bubble_background_color=bubble_bg,
     )
 
     text = bubble.get("text_content") or ""

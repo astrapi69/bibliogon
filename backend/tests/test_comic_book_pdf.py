@@ -180,7 +180,12 @@ def test_tail_svg_emits_polygon_for_each_octant(direction: str) -> None:
     svg = _render_bubble_tail_svg(direction, 50, 16)
     assert svg.startswith("<svg")
     assert "<polygon" in svg
+    # Visual integration (overlap + mask): the polygon is the
+    # bubble-bg mask (no stroke); the two <line> elements carry
+    # the tail's outline strokes.
     assert 'fill="white"' in svg
+    assert 'stroke="none"' in svg
+    assert svg.count("<line") == 2
     assert 'stroke="black"' in svg
 
 
@@ -193,6 +198,30 @@ def test_tail_svg_position_pct_clamps_to_0_100() -> None:
     high = _render_bubble_tail_svg("S", 200, 16)
     assert "left: 0%" in low
     assert "left: 100%" in high
+
+
+def test_tail_svg_bubble_background_color_threads_into_mask_fill() -> None:
+    """Visual integration: the tail-fill polygon (the mask that
+    hides the bubble border under the tail base) renders with the
+    bubble's interior color, NOT a hardcoded white. Narration's
+    parchment ``#f5f5dc`` is the canonical non-white case."""
+    parchment = _render_bubble_tail_svg(
+        "S", 50, 16, bubble_background_color="#f5f5dc",
+    )
+    assert 'fill="#f5f5dc"' in parchment
+    # The stroke lines are unaffected — they remain black.
+    assert 'stroke="black"' in parchment
+
+
+def test_tail_svg_no_base_line_in_output() -> None:
+    """The old closed-polygon shape stroked all three sides; the
+    new overlap-mask shape strokes only the two side edges via
+    <line> elements. This pin prevents a regression to the
+    seam-visible closed-polygon form."""
+    svg = _render_bubble_tail_svg("S", 50, 16)
+    # Only the mask polygon (no stroke) + 2 lines.
+    assert svg.count("<polygon") == 1
+    assert svg.count("<line") == 2
 
 
 # --- Single-bubble render ---

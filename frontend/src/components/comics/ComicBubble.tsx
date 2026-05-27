@@ -307,6 +307,11 @@ export function ComicBubble({bubble, selected, onClick, onDragEnd}: ComicBubbleP
                 direction={bubble.tail_direction as BubbleTailDirection}
                 positionPct={bubble.tail_position_pct}
                 lengthPx={bubble.tail_length_px}
+                bubbleBackgroundColor={
+                    typeof config.background_color === "string"
+                        ? config.background_color
+                        : "white"
+                }
             />
         </div>
     );

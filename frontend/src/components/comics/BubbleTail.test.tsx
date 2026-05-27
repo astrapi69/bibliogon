@@ -115,6 +115,66 @@ describe("BubbleTail", () => {
         expect(westSvg!.style.left).toBe("0px");
         expect(westSvg!.style.top).toBe("60%");
     });
+
+    describe("visual integration (overlap + mask)", () => {
+        it("emits a mask polygon with bubbleBackgroundColor and no stroke", () => {
+            render(
+                <BubbleTail
+                    direction="S"
+                    positionPct={50}
+                    lengthPx={16}
+                    bubbleBackgroundColor="#f5f5dc"
+                />,
+            );
+            const mask = screen.getByTestId("bubble-tail-mask");
+            expect(mask.getAttribute("fill")).toBe("#f5f5dc");
+            expect(mask.getAttribute("stroke")).toBe("none");
+        });
+
+        it("mask polygon defaults to white when bubbleBackgroundColor is omitted", () => {
+            render(<BubbleTail direction="S" positionPct={50} lengthPx={16} />);
+            const mask = screen.getByTestId("bubble-tail-mask");
+            expect(mask.getAttribute("fill")).toBe("white");
+        });
+
+        it("emits two stroked lines (left + right) instead of a closed-base polygon", () => {
+            render(<BubbleTail direction="S" positionPct={50} lengthPx={16} />);
+            const left = screen.getByTestId("bubble-tail-stroke-left");
+            const right = screen.getByTestId("bubble-tail-stroke-right");
+            // Both start at the bubble's edge (perpendicular base
+            // vertex) and end at the tip.
+            expect(left.getAttribute("stroke")).toBe("black");
+            expect(right.getAttribute("stroke")).toBe("black");
+            // For S direction: tip is at (0, 16); base-left is at
+            // (-(-1)*4, 0*4) = (4, 0); base-right is at (-4, 0).
+            // The S vector vec=(0, 1), so perp=(-vy,vx)=(-1, 0),
+            // base_perp = perp * half_base = (-4, 0). base-left =
+            // base_perp, base-right = -base_perp. So:
+            //   left: x1=-4, y1=0, x2=0, y2=16
+            //   right: x1=4, y1=0, x2=0, y2=16
+            expect(parseFloat(left.getAttribute("x1") ?? "")).toBe(-4);
+            expect(parseFloat(left.getAttribute("y1") ?? "")).toBe(0);
+            expect(parseFloat(left.getAttribute("x2") ?? "")).toBe(0);
+            expect(parseFloat(left.getAttribute("y2") ?? "")).toBe(16);
+            expect(parseFloat(right.getAttribute("x1") ?? "")).toBe(4);
+            expect(parseFloat(right.getAttribute("y1") ?? "")).toBe(0);
+            expect(parseFloat(right.getAttribute("x2") ?? "")).toBe(0);
+            expect(parseFloat(right.getAttribute("y2") ?? "")).toBe(16);
+        });
+
+        it("mask polygon base extends INWARD by the overlap (3px) past the bubble edge", () => {
+            render(<BubbleTail direction="S" positionPct={50} lengthPx={16} />);
+            const mask = screen.getByTestId("bubble-tail-mask");
+            const points = mask.getAttribute("points") ?? "";
+            // S direction: vec=(0,1). Mask vertices are tip +
+            // (base-left + mask-inset) + (base-right + mask-inset).
+            // mask-inset = -vec * 3 = (0, -3).
+            // base-left = (-4, 0); mask-left = (-4, -3).
+            // base-right = (4, 0); mask-right = (4, -3).
+            // tip = (0, 16).
+            expect(points).toBe("0.0,16.0 -4.0,-3.0 4.0,-3.0");
+        });
+    });
 });
 
 describe("bubbleTypeClassName", () => {

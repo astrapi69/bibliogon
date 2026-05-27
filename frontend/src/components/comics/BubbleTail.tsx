@@ -1,5 +1,5 @@
 /**
- * BubbleTail — shared SVG triangle primitive for comic-book bubbles.
+ * BubbleTail — shared SVG primitive for comic-book bubbles.
  *
  * Comics-Session-2 C4 (plugin-comics). Mirrors the walker's
  * tail geometry verbatim so the in-editor preview matches the
@@ -14,16 +14,24 @@
  * S until Session 3 nearest-edge auto-pick lands; matches the
  * walker's gamma-shim default).
  *
- * The component renders a self-contained ``<svg>`` element with
- * a single triangle ``<polygon>``. Positioning happens via the
- * parent bubble's ``position: relative`` + this svg's
- * ``position: absolute`` — same shape the walker emits.
+ * Visual integration with the bubble (2026-05-27 audit close,
+ * approach B "overlap + mask"): the tail renders as TWO SVG
+ * children inside one ``<svg>`` element:
  *
- * Lives in ``components/comics/`` rather than the plugin
- * namespace because the picture-book single-bubble path
- * (Q3 decision) does NOT reuse it; this is a comic-book-only
- * primitive but housed at the shared-frontend layer so future
- * surfaces can adopt it without crossing the plugin boundary.
+ *   1. A filled polygon whose base extends ``OVERLAP_PX`` (3px)
+ *      INWARD past the bubble's edge. The fill matches the
+ *      bubble's interior color (``bubbleBackgroundColor`` prop,
+ *      defaults to white). This polygon's role is to mask the
+ *      segment of the bubble's border that would otherwise show
+ *      across the tail base.
+ *   2. Two ``<line>`` elements (tip → base-left, tip → base-right)
+ *      stroked at ``strokeColor`` / ``strokeWidthPx``. NO third
+ *      base line — the bubble's own border continues uninterrupted
+ *      under the fill mask, so the tail looks like a natural
+ *      extension of the bubble outline.
+ *
+ * The result: bubble + tail render as one visually continuous
+ * shape with no seam between them.
  */
 
 import type {CSSProperties} from "react";
@@ -44,7 +52,13 @@ interface BubbleTailProps {
     direction: BubbleTailDirection;
     positionPct: number;
     lengthPx: number;
-    fillColor?: string;
+    /** Fill color for the tail interior AND the mask polygon that
+     *  hides the bubble's border at the tail base. Should match
+     *  the bubble's interior color for a seamless look. Reads from
+     *  ``bubble_config.background_color`` on the bubble row when
+     *  available; defaults to white for the canonical speech/
+     *  thought/whisper bubbles. */
+    bubbleBackgroundColor?: string;
     strokeColor?: string;
     strokeWidthPx?: number;
 }
@@ -61,12 +75,17 @@ const TAIL_DIRECTION_VECTORS: Record<string, [number, number]> = {
 };
 
 const HALF_BASE = 4.0;
+/** Pixels by which the tail's filled polygon overlaps the bubble
+ *  interior. Keeps the seam between bubble outline + tail base
+ *  hidden under the fill. 3px is enough for the canonical 1.5pt
+ *  bubble border to vanish; larger values waste interior space. */
+const OVERLAP_PX = 3.0;
 
 export function BubbleTail({
     direction,
     positionPct,
     lengthPx,
-    fillColor = "white",
+    bubbleBackgroundColor = "white",
     strokeColor = "black",
     strokeWidthPx = 1.5,
 }: BubbleTailProps) {
@@ -80,14 +99,32 @@ export function BubbleTail({
     }
     const [vx, vy] = vec;
 
+    // Tip in SVG-local coords (origin = bubble's edge midpoint).
     const tipX = vx * lengthPx;
     const tipY = vy * lengthPx;
+    // Base perpendicular vector — half the base width on either
+    // side of the direction vector.
     const basePerpX = -vy * HALF_BASE;
     const basePerpY = vx * HALF_BASE;
-    const points =
+    // Base vertices AT the bubble's edge (these are where the
+    // stroked lines start).
+    const baseLeftX = basePerpX;
+    const baseLeftY = basePerpY;
+    const baseRightX = -basePerpX;
+    const baseRightY = -basePerpY;
+    // Mask polygon vertices — shifted INWARD into the bubble by
+    // OVERLAP_PX along the negative direction vector. Hides the
+    // bubble's border under the tail base.
+    const maskInsetX = -vx * OVERLAP_PX;
+    const maskInsetY = -vy * OVERLAP_PX;
+    const maskLeftX = baseLeftX + maskInsetX;
+    const maskLeftY = baseLeftY + maskInsetY;
+    const maskRightX = baseRightX + maskInsetX;
+    const maskRightY = baseRightY + maskInsetY;
+    const maskPoints =
         `${tipX.toFixed(1)},${tipY.toFixed(1)} ` +
-        `${basePerpX.toFixed(1)},${basePerpY.toFixed(1)} ` +
-        `${(-basePerpX).toFixed(1)},${(-basePerpY).toFixed(1)}`;
+        `${maskLeftX.toFixed(1)},${maskLeftY.toFixed(1)} ` +
+        `${maskRightX.toFixed(1)},${maskRightY.toFixed(1)}`;
 
     const edgeOffset = Math.max(0, Math.min(100, positionPct));
     const sideStyle: CSSProperties = {position: "absolute"};
@@ -105,8 +142,16 @@ export function BubbleTail({
         sideStyle.top = `${edgeOffset}%`;
     }
 
-    const svgWidth = Math.max(Math.floor(Math.abs(tipX) + HALF_BASE * 2), 4);
-    const svgHeight = Math.max(Math.floor(Math.abs(tipY) + HALF_BASE * 2), 4);
+    // SVG element extends both outward (along the direction) and
+    // inward (the mask overlap). Accommodate both.
+    const svgWidth = Math.max(
+        Math.floor(Math.abs(tipX) + HALF_BASE * 2 + OVERLAP_PX * 2),
+        4,
+    );
+    const svgHeight = Math.max(
+        Math.floor(Math.abs(tipY) + HALF_BASE * 2 + OVERLAP_PX * 2),
+        4,
+    );
     const viewBox =
         `${(-svgWidth / 2).toFixed(0)} ` +
         `${(-svgHeight / 2).toFixed(0)} ` +
@@ -127,10 +172,30 @@ export function BubbleTail({
             viewBox={viewBox}
         >
             <polygon
-                points={points}
-                fill={fillColor}
+                data-testid="bubble-tail-mask"
+                points={maskPoints}
+                fill={bubbleBackgroundColor}
+                stroke="none"
+            />
+            <line
+                data-testid="bubble-tail-stroke-left"
+                x1={baseLeftX.toFixed(1)}
+                y1={baseLeftY.toFixed(1)}
+                x2={tipX.toFixed(1)}
+                y2={tipY.toFixed(1)}
                 stroke={strokeColor}
                 strokeWidth={strokeWidthPx}
+                strokeLinecap="round"
+            />
+            <line
+                data-testid="bubble-tail-stroke-right"
+                x1={baseRightX.toFixed(1)}
+                y1={baseRightY.toFixed(1)}
+                x2={tipX.toFixed(1)}
+                y2={tipY.toFixed(1)}
+                stroke={strokeColor}
+                strokeWidth={strokeWidthPx}
+                strokeLinecap="round"
             />
         </svg>
     );
