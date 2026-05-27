@@ -309,6 +309,133 @@ describe("Storyboard", () => {
         })
     })
 
+    describe("MoodColorPicker (Session 2 C3)", () => {
+        it("renders 10 preset swatches with the namespaced testid", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: null}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            await screen.findByTestId("storyboard-mood-palette-p1")
+            // 10 preset colors per MOOD_PALETTE.
+            const keys = [
+                "sunny",
+                "passionate",
+                "calm",
+                "dreamy",
+                "peaceful",
+                "adventurous",
+                "tender",
+                "somber",
+                "mysterious",
+                "gentle",
+            ]
+            for (const k of keys) {
+                expect(
+                    screen.getByTestId(`storyboard-mood-swatch-${k}-p1`),
+                ).toBeTruthy()
+            }
+        })
+
+        it("clicking a swatch triggers PATCH with that color (hex)", async () => {
+            const updated = makePage({id: "p1", mood_color: "#FF6B6B"})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: null}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const swatch = await screen.findByTestId(
+                "storyboard-mood-swatch-passionate-p1",
+            )
+            fireEvent.click(swatch)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    mood_color: "#FF6B6B",
+                })
+            })
+        })
+
+        it("the currently-selected swatch carries data-selected='true'", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: "#4ECDC4"}),
+            ])
+            render(<Storyboard {...defaultProps} />)
+            const selected = await screen.findByTestId(
+                "storyboard-mood-swatch-calm-p1",
+            )
+            expect(selected.getAttribute("data-selected")).toBe("true")
+            // A non-selected one stays false.
+            const other = screen.getByTestId("storyboard-mood-swatch-sunny-p1")
+            expect(other.getAttribute("data-selected")).toBe("false")
+        })
+
+        it("clicking the selected swatch toggles it off (mood_color: null)", async () => {
+            const updated = makePage({id: "p1", mood_color: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: "#4ECDC4"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const selected = await screen.findByTestId(
+                "storyboard-mood-swatch-calm-p1",
+            )
+            fireEvent.click(selected)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    mood_color: null,
+                })
+            })
+        })
+
+        it("renders a clear button only when mood_color is set", async () => {
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: null}),
+            ])
+            const {rerender} = render(<Storyboard {...defaultProps} />)
+            await screen.findByTestId("storyboard-mood-palette-p1")
+            expect(screen.queryByTestId("storyboard-mood-clear-p1")).toBeNull()
+
+            // Now mount with mood_color set.
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: "#FFC857"}),
+            ])
+            rerender(<Storyboard {...defaultProps} bookId="b2" />)
+            await waitFor(() => {
+                expect(
+                    screen.getByTestId("storyboard-mood-clear-p1"),
+                ).toBeTruthy()
+            })
+        })
+
+        it("clicking the clear button PATCHes mood_color: null", async () => {
+            const updated = makePage({id: "p1", mood_color: null})
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: "#F18A07"}),
+            ])
+            vi.mocked(api.pages.update).mockResolvedValue(updated)
+            render(<Storyboard {...defaultProps} />)
+            const clear = await screen.findByTestId("storyboard-mood-clear-p1")
+            fireEvent.click(clear)
+            await waitFor(() => {
+                expect(api.pages.update).toHaveBeenCalledWith("b1", "p1", {
+                    mood_color: null,
+                })
+            })
+        })
+
+        it("clicking a swatch does NOT trigger onSelectPage", async () => {
+            const onSelectPage = vi.fn()
+            vi.mocked(api.pages.list).mockResolvedValue([
+                makePage({id: "p1", mood_color: null}),
+            ])
+            render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
+            const swatch = await screen.findByTestId(
+                "storyboard-mood-swatch-sunny-p1",
+            )
+            fireEvent.click(swatch)
+            expect(onSelectPage).not.toHaveBeenCalled()
+        })
+    })
+
     describe("BeatSelector (Session 2 C2)", () => {
         it("renders the select with the namespaced testid + all 6 beat options + empty option", async () => {
             vi.mocked(api.pages.list).mockResolvedValue([

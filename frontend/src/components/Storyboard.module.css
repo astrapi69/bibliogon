@@ -197,6 +197,61 @@
     font-weight: 500;
 }
 
+.moodPalette {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 4px;
+    padding: 4px 0;
+}
+
+.moodSwatch {
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
+}
+
+.moodSwatch:hover {
+    transform: scale(1.18);
+    border-color: color-mix(in srgb, var(--text) 35%, transparent);
+}
+
+.moodSwatch:focus-visible {
+    outline: 2px solid var(--accent, var(--text));
+    outline-offset: 1px;
+}
+
+.moodSwatchSelected {
+    border-color: var(--text);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--bg) 100%, transparent),
+        0 0 0 3.5px var(--text);
+}
+
+.moodClear {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    padding: 0;
+    border: 1.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+    border-radius: 50%;
+    background: transparent;
+    color: color-mix(in srgb, var(--text) 60%, transparent);
+    cursor: pointer;
+    transition: transform 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.moodClear:hover {
+    transform: scale(1.18);
+    border-color: var(--danger, #dc2626);
+    color: var(--danger, #dc2626);
+}
+
 .beatSelect {
     width: 100%;
     margin-top: 4px;

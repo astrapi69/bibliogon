@@ -20,7 +20,7 @@
  * the parent (BookEditor) routes through history state.
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, FileImage, GripVertical, ImageOff} from "lucide-react"
+import {ArrowLeft, FileImage, GripVertical, ImageOff, X} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -52,6 +52,30 @@ const STORY_BEATS: readonly StoryBeat[] = [
     "climax",
     "falling",
     "resolution",
+] as const
+
+/** Mood-color preset palette (PICTURE-BOOK-STORYBOARD-VIEW-01
+ *  Session 2 C3). 10 curated colors covering the typical picture-
+ *  book emotional range (warm/cool/happy/sad/calm/exciting/etc.).
+ *
+ *  Stored as a tuple {value, key} where ``value`` is the hex code
+ *  that round-trips into ``page.mood_color`` (validated via
+ *  MOOD_COLOR_RE on the backend) and ``key`` is the i18n key
+ *  segment for the localised label (used as title-attr tooltip
+ *  + screen-reader aria-label). Authors with custom needs can
+ *  hand-edit the YAML or wait for the v3 free-color-picker
+ *  follow-up. */
+const MOOD_PALETTE: readonly {value: string; key: string}[] = [
+    {value: "#FFC857", key: "sunny"},
+    {value: "#FF6B6B", key: "passionate"},
+    {value: "#4ECDC4", key: "calm"},
+    {value: "#C7B8EA", key: "dreamy"},
+    {value: "#7FB069", key: "peaceful"},
+    {value: "#F18A07", key: "adventurous"},
+    {value: "#F4A6CD", key: "tender"},
+    {value: "#6C7A89", key: "somber"},
+    {value: "#2E4057", key: "mysterious"},
+    {value: "#F4ECD8", key: "gentle"},
 ] as const
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
@@ -397,6 +421,11 @@ function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: Card
                     onPatch={onPatch}
                     testidNamespace={testidNamespace}
                 />
+                <MoodColorPicker
+                    page={page}
+                    onPatch={onPatch}
+                    testidNamespace={testidNamespace}
+                />
                 <NotesEditor
                     page={page}
                     onPatch={onPatch}
@@ -460,6 +489,87 @@ function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
                 </option>
             ))}
         </select>
+    )
+}
+
+interface MoodColorPickerProps {
+    page: Page
+    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
+    testidNamespace: string
+}
+
+/** Preset mood-color swatches (PICTURE-BOOK-STORYBOARD-VIEW-01
+ *  Session 2 C3). 10 curated picture-book mood colors + a clear
+ *  button. Clicking a swatch sets it; clicking the currently-
+ *  selected swatch clears it (toggle behaviour). The card's left
+ *  border already renders the mood color via the cardMoodBorder
+ *  class shipped in Session 1 C4 — this picker drives that
+ *  border. */
+function MoodColorPicker({page, onPatch, testidNamespace}: MoodColorPickerProps) {
+    const {t} = useI18n()
+    const current = page.mood_color ?? null
+
+    const setColor = (next: string | null) => {
+        if (next === current) return
+        void onPatch(page.id, {mood_color: next}).catch(() => {})
+    }
+
+    const stop = (e: React.SyntheticEvent) => {
+        e.stopPropagation()
+    }
+
+    return (
+        <div
+            className={styles.moodPalette}
+            data-testid={`${testidNamespace}-mood-palette-${page.id}`}
+            onClick={stop}
+            onMouseDown={stop}
+            onKeyDown={stop}
+            role="group"
+            aria-label={t("ui.storyboard.mood_label", "Mood color")}
+        >
+            {MOOD_PALETTE.map(({value, key}) => {
+                const selected = current?.toUpperCase() === value.toUpperCase()
+                const label = t(`ui.storyboard.mood.${key}`, key)
+                return (
+                    <button
+                        key={value}
+                        type="button"
+                        className={[
+                            styles.moodSwatch,
+                            selected ? styles.moodSwatchSelected : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" ")}
+                        style={{backgroundColor: value}}
+                        onClick={(e) => {
+                            stop(e)
+                            setColor(selected ? null : value)
+                        }}
+                        data-testid={`${testidNamespace}-mood-swatch-${key}-${page.id}`}
+                        data-selected={selected ? "true" : "false"}
+                        title={label}
+                        aria-label={label}
+                        aria-pressed={selected ? "true" : "false"}
+                    />
+                )
+            })}
+            {current && (
+                <button
+                    type="button"
+                    className={styles.moodClear}
+                    onClick={(e) => {
+                        stop(e)
+                        setColor(null)
+                    }}
+                    data-testid={`${testidNamespace}-mood-clear-${page.id}`}
+                    title={t("ui.storyboard.mood_clear", "Clear color")}
+                    aria-label={t("ui.storyboard.mood_clear", "Clear color")}
+                >
+                    <X size={10} aria-hidden />
+                </button>
+            )}
+        </div>
     )
 }
 
