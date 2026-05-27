@@ -559,6 +559,154 @@ def test_image_full_text_overlay_backdrop_opacity_clamped() -> None:
     assert "rgba(0, 0, 0, 0.8)" in out_high["region_text_style"]
 
 
+# --- C6: Tier 1+2 emission on image_full_text_overlay ---
+#
+# Each test pins ONE Tier field's emission shape so a future refactor
+# of the inline-style string concatenation breaks each independently.
+# Defaults stay legacy-identical (no border, no shadow, etc.) so
+# pre-C6 pages render unchanged. Mirrors the frontend PageCanvas
+# overlayTextStyle derivation byte-for-byte.
+
+
+def test_overlay_tier1_background_color_composes_with_opacity() -> None:
+    """A non-default background_color tints the overlay backdrop;
+    text_backdrop_opacity stays the alpha channel."""
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"background_color": "#FFC857", "text_backdrop_opacity": 0.6},
+    )
+    assert "rgba(255, 200, 87, 0.6)" in out["region_text_style"]
+
+
+def test_overlay_tier1_background_color_default_is_black() -> None:
+    """No background_color set → legacy dark backdrop."""
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_backdrop_opacity": 0.5}
+    )
+    assert "rgba(0, 0, 0, 0.5)" in out["region_text_style"]
+
+
+def test_overlay_tier1_border_emits_when_width_and_style_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {
+            "border_width": 3,
+            "border_style": "solid",
+            "border_color": "#FF6B6B",
+        },
+    )
+    assert "border: 3px solid rgb(255, 107, 107);" in out["region_text_style"]
+
+
+def test_overlay_tier1_border_omitted_when_width_zero() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"border_width": 0, "border_style": "solid"},
+    )
+    assert "border:" not in out["region_text_style"]
+
+
+def test_overlay_tier1_border_omitted_when_style_none() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"border_width": 3, "border_style": "none"},
+    )
+    assert "border:" not in out["region_text_style"]
+
+
+def test_overlay_tier1_border_radius_emits_when_positive() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"border_radius": 25}
+    )
+    assert "border-radius: 25%;" in out["region_text_style"]
+
+
+def test_overlay_tier1_border_radius_omitted_when_zero() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"border_radius": 0}
+    )
+    assert "border-radius:" not in out["region_text_style"]
+
+
+def test_overlay_tier1_shadow_emits_when_enabled() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"shadow": True, "shadow_intensity": 8},
+    )
+    assert "box-shadow: 0 4.0px 16px rgba(0, 0, 0, 0.3);" in out["region_text_style"]
+
+
+def test_overlay_tier1_shadow_omitted_by_default() -> None:
+    out = _image_layout_style("image_full_text_overlay", {})
+    assert "box-shadow" not in out["region_text_style"]
+
+
+def test_overlay_tier1_padding_emits_when_set() -> None:
+    out = _image_layout_style("image_full_text_overlay", {"padding": 16})
+    assert "padding: 16px;" in out["region_text_style"]
+
+
+def test_overlay_tier2_font_family_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay",
+        {"font_family": "Atkinson Hyperlegible"},
+    )
+    assert "font-family: Atkinson Hyperlegible;" in out["region_text_style"]
+
+
+def test_overlay_tier2_font_size_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"font_size": 18}
+    )
+    assert "font-size: 18pt;" in out["region_text_style"]
+
+
+def test_overlay_tier2_font_weight_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"font_weight": "bold"}
+    )
+    assert "font-weight: bold;" in out["region_text_style"]
+
+
+def test_overlay_tier2_italic_emits_when_true() -> None:
+    out = _image_layout_style("image_full_text_overlay", {"italic": True})
+    assert "font-style: italic;" in out["region_text_style"]
+
+
+def test_overlay_tier2_italic_emits_when_false() -> None:
+    out = _image_layout_style("image_full_text_overlay", {"italic": False})
+    assert "font-style: normal;" in out["region_text_style"]
+
+
+def test_overlay_tier2_text_color_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_color": "#FFFFFF"}
+    )
+    assert "color: rgb(255, 255, 255);" in out["region_text_style"]
+
+
+def test_overlay_tier2_text_align_emits_when_set() -> None:
+    out = _image_layout_style(
+        "image_full_text_overlay", {"text_align": "left"}
+    )
+    assert "text-align: left;" in out["region_text_style"]
+
+
+def test_overlay_tier_defaults_render_legacy_baseline() -> None:
+    """Backward-compat pin: empty config produces ONLY the
+    pre-C6 inline-style fields (positioning + dark backdrop).
+    No tier additions leak in for legacy pages."""
+    out = _image_layout_style("image_full_text_overlay", {})
+    style = out["region_text_style"]
+    assert "rgba(0, 0, 0, 0.45)" in style  # default backdrop
+    assert "border:" not in style
+    assert "border-radius:" not in style
+    assert "box-shadow" not in style
+    assert "font-family" not in style
+    assert "font-size" not in style
+    assert "color: rgb" not in style
+
+
 # --- _render_page ---
 
 

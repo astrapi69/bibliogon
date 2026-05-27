@@ -631,15 +631,103 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
             if isinstance(opacity_raw, (int, float))
             else 0.45
         )
-        bg = f"background: rgba(0, 0, 0, {opacity});"
+        # PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
+        # PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C6:
+        # Tier 1 background_color composes with the existing
+        # text_backdrop_opacity. Default #000000 keeps legacy
+        # rendering identical; any custom color tints the
+        # backdrop without dropping the opacity dimension.
+        # Mirrors PageCanvas.tsx overlayTextStyle derivation.
+        bg_rgb = _hex_to_rgb(config.get("background_color")) or (0, 0, 0)
+        bg = f"background: rgba({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]}, {opacity});"
+
+        # Tier 1 border + radius + shadow + padding. Defaults
+        # match the pre-C6 hardcoded styling so legacy pages
+        # render unchanged (no border, no shadow, no extra
+        # padding, no rounded corners).
+        tier1_parts: list[str] = []
+        border_color_rgb = _hex_to_rgb(config.get("border_color")) or (0, 0, 0)
+        border_width_raw = config.get("border_width")
+        border_width = (
+            max(0, min(8, int(border_width_raw)))
+            if isinstance(border_width_raw, (int, float))
+            else 0
+        )
+        border_style_raw = config.get("border_style")
+        border_style = (
+            border_style_raw
+            if border_style_raw in {"solid", "dashed", "dotted", "none"}
+            else "none"
+        )
+        if border_width > 0 and border_style != "none":
+            tier1_parts.append(
+                f"border: {border_width}px {border_style} "
+                f"rgb({border_color_rgb[0]}, {border_color_rgb[1]}, {border_color_rgb[2]});"
+            )
+        border_radius_raw = config.get("border_radius")
+        if isinstance(border_radius_raw, (int, float)) and border_radius_raw > 0:
+            tier1_parts.append(
+                f"border-radius: {max(0, min(50, int(border_radius_raw)))}%;"
+            )
+        shadow_on = config.get("shadow")
+        if isinstance(shadow_on, bool) and shadow_on:
+            shadow_intensity_raw = config.get("shadow_intensity")
+            shadow_intensity = (
+                max(0, min(10, int(shadow_intensity_raw)))
+                if isinstance(shadow_intensity_raw, (int, float))
+                else 5
+            )
+            tier1_parts.append(
+                f"box-shadow: 0 {shadow_intensity / 2}px "
+                f"{shadow_intensity * 2}px rgba(0, 0, 0, 0.3);"
+            )
+        padding_raw = config.get("padding")
+        if isinstance(padding_raw, (int, float)):
+            tier1_parts.append(
+                f"padding: {max(0, min(32, int(padding_raw)))}px;"
+            )
+
+        # Tier 2 typography. Each field overrides the CSS-module
+        # default by inline specificity; absent values leave the
+        # CSS-module default in place.
+        tier2_parts: list[str] = []
+        font_family_raw = config.get("font_family")
+        if isinstance(font_family_raw, str) and font_family_raw:
+            tier2_parts.append(f"font-family: {font_family_raw};")
+        font_size_raw = config.get("font_size")
+        if isinstance(font_size_raw, (int, float)):
+            tier2_parts.append(
+                f"font-size: {max(10, min(32, int(font_size_raw)))}pt;"
+            )
+        font_weight_raw = config.get("font_weight")
+        if font_weight_raw in ("bold", "normal"):
+            tier2_parts.append(f"font-weight: {font_weight_raw};")
+        italic_raw = config.get("italic")
+        if isinstance(italic_raw, bool):
+            tier2_parts.append(
+                f"font-style: {'italic' if italic_raw else 'normal'};"
+            )
+        text_color_rgb = _hex_to_rgb(config.get("text_color"))
+        if text_color_rgb is not None:
+            tier2_parts.append(
+                f"color: rgb({text_color_rgb[0]}, {text_color_rgb[1]}, {text_color_rgb[2]});"
+            )
+        text_align_raw = config.get("text_align")
+        if text_align_raw in ("left", "center", "right"):
+            tier2_parts.append(f"text-align: {text_align_raw};")
+
+        tier_extras = " ".join(tier1_parts + tier2_parts)
         if pos == "top":
-            region_text_style = f"top: 0; bottom: auto; {bg}"
+            region_text_style = f"top: 0; bottom: auto; {bg} {tier_extras}".strip()
         elif pos == "middle":
             region_text_style = (
-                f"top: 50%; bottom: auto; transform: translateY(-50%); max-height: 70%; {bg}"
-            )
+                f"top: 50%; bottom: auto; transform: translateY(-50%); "
+                f"max-height: 70%; {bg} {tier_extras}"
+            ).strip()
         else:
-            region_text_style = f"top: auto; bottom: 0; {bg}"
+            region_text_style = (
+                f"top: auto; bottom: 0; {bg} {tier_extras}".strip()
+            )
 
     return {
         "canvas_style": canvas_style,
