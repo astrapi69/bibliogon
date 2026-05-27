@@ -310,6 +310,69 @@ def _layout_class(layout: str) -> str:
     return f"page--{layout}"
 
 
+# --- Fix B (PICTURE-BOOK-TEXT-CONFIGURATION-01, 4c-B sub-item) ---
+#
+# Per-layout namespace helpers. Mirror the TypeScript
+# ``frontend/src/utils/layoutConfig.ts`` exactly so in-editor render
+# + PDF render resolve the same per-layout settings.
+#
+# Pre-Fix-B layout_config was a flat dict accumulating cross-layout
+# keys. Fix B namespaces by layout: layout_config[layout] holds the
+# layout's settings; sibling layouts' namespaces survive switches.
+# Legacy-flat configs are transparently treated as the current
+# layout's namespace (auto-migrated on next write through the
+# frontend's writeLayoutNamespace).
+
+_KNOWN_LAYOUTS: frozenset[str] = frozenset(
+    {
+        "speech_bubble",
+        "image_top_text_bottom",
+        "image_left_text_right",
+        "image_full_text_overlay",
+        "text_only",
+        "comic_panel_grid",
+    }
+)
+
+
+def _looks_namespaced(config: dict[str, Any] | None) -> bool:
+    """True iff at least one top-level key matches a known layout
+    name AND its value is a dict. Mirrors ``looksNamespaced`` in
+    frontend/src/utils/layoutConfig.ts."""
+    if not isinstance(config, dict):
+        return False
+    for key, value in config.items():
+        if key not in _KNOWN_LAYOUTS:
+            continue
+        if isinstance(value, dict):
+            return True
+    return False
+
+
+def _read_layout_namespace(
+    config: dict[str, Any] | None,
+    layout: str,
+) -> dict[str, Any] | None:
+    """Extract the active layout's namespace. Mirrors
+    ``readLayoutNamespace`` in frontend/src/utils/layoutConfig.ts.
+
+    - Namespaced config: returns ``config[layout]`` if present + dict.
+    - Legacy-flat config: returns the whole flat dict (back-compat).
+    - None / not-a-dict / namespaced-but-layout-absent: returns None.
+    """
+    if not isinstance(config, dict):
+        return None
+    if _looks_namespaced(config):
+        namespaced = config.get(layout)
+        if isinstance(namespaced, dict):
+            return namespaced
+        return None
+    # Legacy flat shape: treat the whole config as the current
+    # layout's namespace. The frontend's writeLayoutNamespace
+    # migrates it on next write.
+    return config
+
+
 def _read_bubble_config(config: dict[str, Any] | None) -> dict[str, Any]:
     """4c-B-2 C1 read-path shim. Mirrors the TypeScript
     ``readBubbleConfig`` in ``frontend/src/components/PageCanvas.tsx``
@@ -874,7 +937,14 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     layout = page.get("layout", "image_top_text_bottom")
     text_html = _render_tiptap_doc(page.get("text_content"))
     image_asset_id = page.get("image_asset_id")
-    config = page.get("layout_config")
+    raw_config = page.get("layout_config")
+    # Fix B: extract the active layout's namespace before passing
+    # to the per-layout style functions. Legacy-flat configs return
+    # the whole dict (transparent back-compat); namespaced configs
+    # return the layout's own bucket. speech_bubble's bubbles[0]
+    # wrapper lives INSIDE the namespace and is read by
+    # _read_bubble_config inside _speech_bubble_style.
+    config = _read_layout_namespace(raw_config, layout)
     css_class = _layout_class(layout)
 
     image_html = ""

@@ -29,6 +29,8 @@ from bibliogon_export.picture_book_pdf import (
     _format_css,
     _image_layout_style,
     _layout_class,
+    _looks_namespaced,
+    _read_layout_namespace,
     _render_page,
     _resolve_picture_book_format,
     _speech_bubble_style,
@@ -1880,3 +1882,212 @@ def test_build_html_bleed_combines_with_non_default_format() -> None:
     assert "size: 11.0in 8.5in" in html
     assert "bleed: 3.0mm" in html
     assert "(bleed)" in html
+
+
+# --- Fix B namespace helpers (PICTURE-BOOK-TEXT-CONFIGURATION-01) ---
+#
+# Mirror the frontend ``layoutConfig.test.ts`` cases. Walker-side
+# helpers must round-trip identically so PDF render + in-editor
+# render resolve the same per-layout settings.
+
+
+def test_looks_namespaced_returns_false_for_none_and_non_dict() -> None:
+    assert _looks_namespaced(None) is False
+    assert _looks_namespaced({}) is False
+
+
+def test_looks_namespaced_returns_false_for_legacy_flat_shape() -> None:
+    assert _looks_namespaced({"anchor_position": "top-left", "opacity": 0.7}) is False
+    assert _looks_namespaced({"split_ratio": 60, "image_fit": "cover"}) is False
+
+
+def test_looks_namespaced_returns_true_for_namespaced_dict() -> None:
+    assert _looks_namespaced({"speech_bubble": {"bubbles": []}}) is True
+    assert (
+        _looks_namespaced({"image_top_text_bottom": {"image_position": "left"}})
+        is True
+    )
+
+
+def test_looks_namespaced_false_when_layout_key_is_non_dict_value() -> None:
+    assert _looks_namespaced({"speech_bubble": None}) is False
+    assert _looks_namespaced({"speech_bubble": "stringy"}) is False
+
+
+def test_read_layout_namespace_returns_none_for_none_and_non_dict() -> None:
+    assert _read_layout_namespace(None, "speech_bubble") is None
+
+
+def test_read_layout_namespace_returns_namespace_from_namespaced_config() -> None:
+    config = {
+        "speech_bubble": {"bubbles": [{"anchor_position": "top-left"}]},
+        "image_top_text_bottom": {"image_position": "right"},
+    }
+    sb = _read_layout_namespace(config, "speech_bubble")
+    assert sb == {"bubbles": [{"anchor_position": "top-left"}]}
+    itb = _read_layout_namespace(config, "image_top_text_bottom")
+    assert itb == {"image_position": "right"}
+
+
+def test_read_layout_namespace_returns_none_when_layout_absent_in_namespaced_config() -> None:
+    config = {"speech_bubble": {"opacity": 0.8}}
+    assert _read_layout_namespace(config, "image_full_text_overlay") is None
+
+
+def test_read_layout_namespace_returns_whole_flat_dict_for_legacy_configs() -> None:
+    config = {"anchor_position": "center", "opacity": 0.6}
+    assert _read_layout_namespace(config, "speech_bubble") == config
+    # Same flat dict read for a different layout: returns the whole
+    # thing (legacy fallback). The frontend's writeLayoutNamespace
+    # migrates it on first write.
+    assert _read_layout_namespace(config, "image_top_text_bottom") == config
+
+
+# --- _render_page with namespaced configs (Fix B) ---
+
+
+def test_render_page_speech_bubble_reads_through_namespace() -> None:
+    """A namespaced speech_bubble config produces the same inline
+    style as the legacy flat shape did. Mirrors the existing
+    test_render_page_speech_bubble_inline_style_present but with
+    the namespaced shape."""
+    html = _render_page(
+        _make_page(
+            layout="speech_bubble",
+            layout_config={
+                "speech_bubble": {
+                    "anchor_position": "top-left",
+                    "opacity": 0.7,
+                    "size": 35,
+                }
+            },
+        ),
+        {},
+    )
+    assert "top: 16pt" in html
+    assert "left: 16pt" in html
+    assert "rgba(255, 255, 255, 0.7)" in html
+    assert "width: 35%" in html
+
+
+def test_render_page_speech_bubble_reads_through_namespace_with_bubbles_zero() -> None:
+    """Speech_bubble's bubbles[0] wrapper lives INSIDE the namespace
+    after Fix B."""
+    html = _render_page(
+        _make_page(
+            layout="speech_bubble",
+            layout_config={
+                "speech_bubble": {
+                    "bubbles": [
+                        {
+                            "anchor_position": "top-right",
+                            "opacity": 0.8,
+                            "bubble_width": 40,
+                        }
+                    ]
+                }
+            },
+        ),
+        {},
+    )
+    assert "top: 16pt" in html
+    assert "right: 16pt" in html
+    assert "rgba(255, 255, 255, 0.8)" in html
+    assert "width: 40%" in html
+
+
+def test_render_page_image_top_text_bottom_reads_through_namespace() -> None:
+    html = _render_page(
+        _make_page(
+            layout="image_top_text_bottom",
+            image_asset_id="a1",
+            layout_config={
+                "image_top_text_bottom": {
+                    "image_position": "right",
+                    "image_fit": "cover",
+                }
+            },
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    assert "justify-content: flex-end" in html
+    assert "object-fit: cover" in html
+
+
+def test_render_page_image_full_text_overlay_reads_through_namespace() -> None:
+    html = _render_page(
+        _make_page(
+            layout="image_full_text_overlay",
+            image_asset_id="a1",
+            layout_config={
+                "image_full_text_overlay": {
+                    "text_position": "top",
+                    "text_backdrop_opacity": 0.7,
+                }
+            },
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    assert "top: 0; bottom: auto" in html
+    assert "rgba(0, 0, 0, 0.7)" in html
+
+
+def test_render_page_sibling_namespaces_dont_bleed() -> None:
+    """A page with layout=image_full_text_overlay + a speech_bubble
+    namespace from a prior layout-state must render image_full
+    cleanly without bubble bleed-through."""
+    html = _render_page(
+        _make_page(
+            layout="image_full_text_overlay",
+            image_asset_id="a1",
+            layout_config={
+                "speech_bubble": {
+                    "anchor_position": "top-left",
+                    "opacity": 0.5,
+                },
+                "image_full_text_overlay": {
+                    "text_position": "middle",
+                },
+            },
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    # Image_full overlay middle position emits transform:
+    # translateY(-50%). The sibling speech_bubble namespace must NOT
+    # contribute its 16pt anchor positions.
+    assert "translateY(-50%)" in html
+    assert "top: 16pt" not in html
+    assert "left: 16pt" not in html
+
+
+def test_render_page_legacy_flat_config_still_renders_speech_bubble() -> None:
+    """Backward-compat: production rows pre-Fix-B still have flat
+    configs. The walker treats them as the current layout's
+    namespace."""
+    html = _render_page(
+        _make_page(
+            layout="speech_bubble",
+            layout_config={
+                "anchor_position": "bottom-center",
+                "opacity": 0.9,
+                "bubble_width": 50,
+            },
+        ),
+        {},
+    )
+    assert "bottom: 16pt" in html
+    assert "rgba(255, 255, 255, 0.9)" in html
+    assert "width: 50%" in html
+
+
+def test_render_page_legacy_flat_config_still_renders_image_top() -> None:
+    html = _render_page(
+        _make_page(
+            layout="image_top_text_bottom",
+            image_asset_id="a1",
+            layout_config={"image_position": "left", "image_fit": "contain"},
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    assert "justify-content: flex-start" in html
+    assert "object-fit: contain" in html
