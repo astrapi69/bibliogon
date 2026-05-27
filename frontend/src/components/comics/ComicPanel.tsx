@@ -37,6 +37,15 @@ interface ComicPanelProps {
      *  5px threshold. The receiver should persist the new anchor
      *  via the existing ``api.comics.updateBubble`` path. */
     onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
+    /** Fires once on tail-handle pointer-up after a drag exceeded
+     *  the 5px threshold. Persists the new (direction, position,
+     *  length) triple via the existing api.comics.updateBubble. */
+    onBubbleTailDragEnd?: (
+        bubbleId: string,
+        direction: string,
+        positionPct: number,
+        lengthPx: number,
+    ) => void;
     selectedBubbleId?: string | null;
 }
 
@@ -48,6 +57,7 @@ export function ComicPanel({
     onClick,
     onBubbleClick,
     onBubbleDragEnd,
+    onBubbleTailDragEnd,
     selectedBubbleId,
 }: ComicPanelProps) {
     const config = panel.panel_config ?? {};
@@ -102,6 +112,17 @@ export function ComicPanel({
                         onBubbleDragEnd
                             ? (x_pct, y_pct) =>
                                   onBubbleDragEnd(bubble.id, x_pct, y_pct)
+                            : undefined
+                    }
+                    onTailDragEnd={
+                        onBubbleTailDragEnd
+                            ? (direction, positionPct, lengthPx) =>
+                                  onBubbleTailDragEnd(
+                                      bubble.id,
+                                      direction,
+                                      positionPct,
+                                      lengthPx,
+                                  )
                             : undefined
                     }
                 />

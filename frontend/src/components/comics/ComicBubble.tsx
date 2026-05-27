@@ -36,6 +36,10 @@ import {
     BUBBLE_BASE_CLASS,
     bubbleTypeClassName,
 } from "./bubbleTypeStyle";
+import {
+    computeVisibleTipPosition,
+    deriveTailFromTip,
+} from "./tailDerivation";
 
 export interface ComicBubbleData {
     id: string;
@@ -61,6 +65,15 @@ interface ComicBubbleProps {
      *  the parent panel. Click-vs-drag disambiguation: if movement
      *  stays under the threshold, ``onClick`` fires instead. */
     onDragEnd?: (x_pct: number, y_pct: number) => void;
+    /** Fires once on pointer-up after a tail-handle drag exceeds
+     *  the 5px threshold. The receiver should persist the new
+     *  (direction, position_pct, length_px) via the existing
+     *  ``api.comics.updateBubble`` path. */
+    onTailDragEnd?: (
+        direction: string,
+        positionPct: number,
+        lengthPx: number,
+    ) => void;
 }
 
 const DRAG_THRESHOLD_PX = 5;
@@ -100,7 +113,13 @@ interface DragState {
     draftY: number;
 }
 
-export function ComicBubble({bubble, selected, onClick, onDragEnd}: ComicBubbleProps) {
+export function ComicBubble({
+    bubble,
+    selected,
+    onClick,
+    onDragEnd,
+    onTailDragEnd,
+}: ComicBubbleProps) {
     const x = clampPct(bubble.anchor?.x_pct, 0);
     const y = clampPct(bubble.anchor?.y_pct, 0);
     const w = clampPct(bubble.width_pct, 30);
@@ -117,9 +136,36 @@ export function ComicBubble({bubble, selected, onClick, onDragEnd}: ComicBubbleP
     const [draftAnchor, setDraftAnchor] = useState<{x: number; y: number} | null>(
         null,
     );
+    /** Tail-handle drag state. Mirrors the bubble-drag shape but
+     *  operates in BUBBLE-local pixel coords (origin = bubble top-
+     *  left) rather than panel-relative percent coords. */
+    const tailDragRef = useRef<{
+        startClientX: number;
+        startClientY: number;
+        startTipX: number;
+        startTipY: number;
+        bubbleWidthPx: number;
+        bubbleHeightPx: number;
+        crossedThreshold: boolean;
+        draftDirection: string;
+        draftPositionPct: number;
+        draftLengthPx: number;
+    } | null>(null);
+    const [tailDraft, setTailDraft] = useState<{
+        direction: string;
+        positionPct: number;
+        lengthPx: number;
+    } | null>(null);
 
     const renderX = draftAnchor?.x ?? x;
     const renderY = draftAnchor?.y ?? y;
+    // Apply the tail-drag draft when active so the visible tail
+    // tracks the cursor without committing to the API.
+    const renderTailDirection =
+        tailDraft?.direction ?? bubble.tail_direction;
+    const renderTailPositionPct =
+        tailDraft?.positionPct ?? bubble.tail_position_pct;
+    const renderTailLengthPx = tailDraft?.lengthPx ?? bubble.tail_length_px;
 
     const handlePointerDown = useCallback(
         (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -213,6 +259,106 @@ export function ComicBubble({bubble, selected, onClick, onDragEnd}: ComicBubbleP
         setDraftAnchor(null);
     }, []);
 
+    const handleTailPointerDown = useCallback(
+        (event: ReactPointerEvent<HTMLDivElement>) => {
+            if (!onTailDragEnd) return;
+            if (event.button !== 0 && event.pointerType === "mouse") return;
+            // Stop propagation so the bubble's own pointer-down does
+            // NOT also fire (which would start a bubble move).
+            event.stopPropagation();
+            const handleEl = event.currentTarget;
+            // The handle is a direct child of the bubble; the bubble
+            // is the handle's parentElement.
+            const bubbleEl = handleEl.parentElement as HTMLElement | null;
+            if (!bubbleEl) return;
+            const rect = bubbleEl.getBoundingClientRect();
+            if (rect.width === 0 || rect.height === 0) return;
+            // Starting tip position in bubble-local pixel coords.
+            const startTipX = event.clientX - rect.left;
+            const startTipY = event.clientY - rect.top;
+            tailDragRef.current = {
+                startClientX: event.clientX,
+                startClientY: event.clientY,
+                startTipX,
+                startTipY,
+                bubbleWidthPx: rect.width,
+                bubbleHeightPx: rect.height,
+                crossedThreshold: false,
+                draftDirection: bubble.tail_direction,
+                draftPositionPct: bubble.tail_position_pct,
+                draftLengthPx: bubble.tail_length_px,
+            };
+            try {
+                handleEl.setPointerCapture(event.pointerId);
+            } catch {
+                // happy-dom may reject; not fatal.
+            }
+        },
+        [
+            onTailDragEnd,
+            bubble.tail_direction,
+            bubble.tail_position_pct,
+            bubble.tail_length_px,
+        ],
+    );
+
+    const handleTailPointerMove = useCallback(
+        (event: ReactPointerEvent<HTMLDivElement>) => {
+            const state = tailDragRef.current;
+            if (!state) return;
+            const dx = event.clientX - state.startClientX;
+            const dy = event.clientY - state.startClientY;
+            if (!state.crossedThreshold) {
+                if (Math.hypot(dx, dy) < DRAG_THRESHOLD_PX) return;
+                state.crossedThreshold = true;
+            }
+            const tipX = state.startTipX + dx;
+            const tipY = state.startTipY + dy;
+            const derived = deriveTailFromTip(
+                tipX,
+                tipY,
+                state.bubbleWidthPx,
+                state.bubbleHeightPx,
+            );
+            state.draftDirection = derived.direction;
+            state.draftPositionPct = derived.positionPct;
+            state.draftLengthPx = derived.lengthPx;
+            setTailDraft({
+                direction: derived.direction,
+                positionPct: derived.positionPct,
+                lengthPx: derived.lengthPx,
+            });
+        },
+        [],
+    );
+
+    const handleTailPointerUp = useCallback(
+        (event: ReactPointerEvent<HTMLDivElement>) => {
+            const state = tailDragRef.current;
+            tailDragRef.current = null;
+            try {
+                event.currentTarget.releasePointerCapture(event.pointerId);
+            } catch {
+                // ignore
+            }
+            if (!state) return;
+            if (state.crossedThreshold && onTailDragEnd) {
+                onTailDragEnd(
+                    state.draftDirection,
+                    state.draftPositionPct,
+                    state.draftLengthPx,
+                );
+            }
+            setTailDraft(null);
+        },
+        [onTailDragEnd],
+    );
+
+    const handleTailPointerCancel = useCallback(() => {
+        tailDragRef.current = null;
+        setTailDraft(null);
+    }, []);
+
     const baseStyle: CSSProperties = {
         position: "absolute",
         left: `${renderX}%`,
@@ -304,15 +450,73 @@ export function ComicBubble({bubble, selected, onClick, onDragEnd}: ComicBubbleP
         >
             {bubble.text_content ?? ""}
             <BubbleTail
-                direction={bubble.tail_direction as BubbleTailDirection}
-                positionPct={bubble.tail_position_pct}
-                lengthPx={bubble.tail_length_px}
+                direction={renderTailDirection as BubbleTailDirection}
+                positionPct={renderTailPositionPct}
+                lengthPx={renderTailLengthPx}
                 bubbleBackgroundColor={
                     typeof config.background_color === "string"
                         ? config.background_color
                         : "white"
                 }
             />
+            {/* Tail drag handle — only when the bubble is selected,
+                a drag callback is wired, and the tail is actually
+                visible (direction !== "none"). The handle is a
+                small circle positioned at the visible tail tip; the
+                user grabs it to reshape the tail. Position derived
+                via computeVisibleTipPosition so it stays aligned
+                with the rendered BubbleTail polygon. */}
+            {selected &&
+                onTailDragEnd &&
+                renderTailDirection !== "none" &&
+                (() => {
+                    // bubble's bounding rect can be computed only at
+                    // runtime; use the pct-of-panel × panel-pixels
+                    // approximation. We don't have panel pixels in
+                    // ComicBubble's render closure, so use 100×100 as
+                    // a normalized reference frame — the BubbleTail
+                    // renders relative to the bubble itself, so the
+                    // handle position can be a function of the
+                    // bubble's own width/height. We use 100 as a
+                    // canonical unit, then render with the same
+                    // ``left: X%`` / ``top: Y%`` shape the bubble uses
+                    // for its own positioning.
+                    const tipNorm = computeVisibleTipPosition(
+                        renderTailDirection as BubbleTailDirection,
+                        renderTailPositionPct,
+                        renderTailLengthPx,
+                        100,
+                        100,
+                    );
+                    if (!tipNorm) return null;
+                    return (
+                        <div
+                            data-testid={`comic-bubble-tail-handle-${bubble.id}`}
+                            onPointerDown={handleTailPointerDown}
+                            onPointerMove={handleTailPointerMove}
+                            onPointerUp={handleTailPointerUp}
+                            onPointerCancel={handleTailPointerCancel}
+                            style={{
+                                position: "absolute",
+                                left: `${tipNorm.x}%`,
+                                top: `${tipNorm.y}%`,
+                                width: 12,
+                                height: 12,
+                                marginLeft: -6,
+                                marginTop: -6,
+                                borderRadius: "50%",
+                                background:
+                                    "var(--accent, #b45309)",
+                                border: "2px solid white",
+                                boxShadow:
+                                    "0 1px 3px rgba(0, 0, 0, 0.4)",
+                                cursor: "grab",
+                                touchAction: "none",
+                                zIndex: 2,
+                            }}
+                        />
+                    );
+                })()}
         </div>
     );
 }

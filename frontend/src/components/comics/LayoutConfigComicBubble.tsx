@@ -333,7 +333,7 @@ export function LayoutConfigComicBubble({
                     min={TAIL_POSITION_MIN}
                     max={TAIL_POSITION_MAX}
                     step={TAIL_POSITION_STEP}
-                    defaultValue={bubble.tail_position_pct}
+                    value={bubble.tail_position_pct}
                     disabled={bubble.tail_direction === "none"}
                     onChange={(e) =>
                         debouncedTailPosition(parseInt(e.target.value, 10))
@@ -357,7 +357,7 @@ export function LayoutConfigComicBubble({
                     min={TAIL_LENGTH_MIN}
                     max={TAIL_LENGTH_MAX}
                     step={TAIL_LENGTH_STEP}
-                    defaultValue={bubble.tail_length_px}
+                    value={bubble.tail_length_px}
                     disabled={bubble.tail_direction === "none"}
                     onChange={(e) =>
                         debouncedTailLength(parseInt(e.target.value, 10))

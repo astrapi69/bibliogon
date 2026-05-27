@@ -116,6 +116,12 @@ interface ComicPanelGridProps {
     onPanelClick?: (panelId: string) => void;
     onBubbleClick?: (bubbleId: string) => void;
     onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
+    onBubbleTailDragEnd?: (
+        bubbleId: string,
+        direction: string,
+        positionPct: number,
+        lengthPx: number,
+    ) => void;
 }
 
 export function ComicPanelGrid({
@@ -128,6 +134,7 @@ export function ComicPanelGrid({
     onPanelClick,
     onBubbleClick,
     onBubbleDragEnd,
+    onBubbleTailDragEnd,
 }: ComicPanelGridProps) {
     const templateId = resolveComicGridTemplate(layoutConfig);
     const gridCss = GRID_TEMPLATE_CSS[templateId];
@@ -169,6 +176,7 @@ export function ComicPanelGrid({
                         }
                         onBubbleClick={onBubbleClick}
                         onBubbleDragEnd={onBubbleDragEnd}
+                        onBubbleTailDragEnd={onBubbleTailDragEnd}
                     />
                 );
             })}

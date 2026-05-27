@@ -446,6 +446,36 @@ export default function ComicBookEditor({
         [activePageId, bookId, refreshPanelsAndBubbles],
     );
 
+    /** Tail-handle drag-end handler: persists the derived
+     *  (tail_direction, tail_position_pct, tail_length_px) triple
+     *  for the dragged bubble. Same select-then-persist shape as
+     *  handleBubbleDragEnd so the side-pane tail sliders reflect
+     *  the new values via controlled-input binding. */
+    const handleBubbleTailDragEnd = useCallback(
+        async (
+            bubbleId: string,
+            direction: string,
+            positionPct: number,
+            lengthPx: number,
+        ) => {
+            if (!activePageId) return;
+            setSelectedBubbleId(bubbleId);
+            try {
+                await api.comics.updateBubble(bookId, bubbleId, {
+                    tail_direction: direction,
+                    tail_position_pct: positionPct,
+                    tail_length_px: lengthPx,
+                });
+                await refreshPanelsAndBubbles(activePageId);
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [activePageId, bookId, refreshPanelsAndBubbles],
+    );
+
     const handleUpdatePanel = useCallback(
         async (partial: Partial<ComicPanelData>) => {
             if (!selectedPanelId || !activePageId) return;
@@ -706,6 +736,9 @@ export default function ComicBookEditor({
                                         setSelectedBubbleId(bubbleId);
                                     }}
                                     onBubbleDragEnd={handleBubbleDragEnd}
+                                    onBubbleTailDragEnd={
+                                        handleBubbleTailDragEnd
+                                    }
                                 />
                             </div>
 
