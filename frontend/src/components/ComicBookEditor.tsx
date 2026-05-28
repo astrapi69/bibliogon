@@ -55,6 +55,7 @@ import type {ComicPanelData} from "./comics/ComicPanel";
 import {useDialog} from "./AppDialog";
 import PageThumbnails from "./PageThumbnails";
 import PdfExportControls from "./PdfExportControls";
+import ThemeToggle from "./ThemeToggle";
 
 interface Props {
     bookId: string;
@@ -653,6 +654,14 @@ export default function ComicBookEditor({
                         )}
                     </button>
                 )}
+                {/* Cross-editor convention: ThemeToggle is the LAST
+                  * header item. Matches Dashboard, ArticleEditor,
+                  * BookEditor (via ChapterSidebar), and PageEditor's
+                  * post-this-fix ordering. Closes the
+                  * Parallel-Surface-Asymmetry gap where
+                  * ComicBookEditor was the only editor without a
+                  * theme toggle in its header. */}
+                <ThemeToggle variant="dark" />
             </header>
 
             {pluginInfo && (

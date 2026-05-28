@@ -342,7 +342,6 @@ export default function PageEditor({
                         </span>
                     </button>
                 )}
-                <ThemeToggle variant="dark" />
                 {fullscreen.isSupported && (
                     <button
                         type="button"
@@ -387,6 +386,13 @@ export default function PageEditor({
                     controlClassName={styles.metadataBtn}
                     spinnerClassName={styles.spinner}
                 />
+                {/* Cross-editor convention (2026-05-28): ThemeToggle
+                  * is the LAST header item. Matches Dashboard +
+                  * ArticleEditor + ComicBookEditor + BookEditor (via
+                  * ChapterSidebar). Pre-2026-05-28, PageEditor was
+                  * the outlier with the toggle BEFORE fullscreen +
+                  * PdfExportControls. */}
+                <ThemeToggle variant="dark" />
             </header>
             <div className={styles.body}>
                 <aside

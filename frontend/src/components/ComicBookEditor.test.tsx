@@ -170,6 +170,24 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         ).toBeInTheDocument();
     });
 
+    // Cross-editor convention (2026-05-28): ThemeToggle mounts in
+    // every editor header (Dashboard + ArticleEditor + BookEditor
+    // via ChapterSidebar + PageEditor + ComicBookEditor). Pre-this-
+    // fix, ComicBookEditor was the only editor without a theme
+    // toggle in its header — a Parallel-Surface-Asymmetry gap.
+    // Regression pin so a future refactor cannot silently drop it
+    // again. Mirrors PageEditor.test.tsx's "Finding D" pin shape.
+    it("renders ThemeToggle in the header (cross-editor convention)", () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        expect(screen.getByTestId("theme-toggle")).toBeTruthy();
+    });
+
     // COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header metadata
     // button. Inline mirror of PageEditor's onShowMetadata pattern.
     it("does NOT render the metadata button when onShowMetadata is undefined", () => {
