@@ -76,7 +76,6 @@ test.describe("Picture-Book Tier 1+2 sections across image layouts", () => {
         // Switch the page to image_left_text_right (behind the
         // "More layouts" disclosure per LayoutPicker's
         // DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS split).
-        await page.getByTestId("page-editor-layout-more-toggle").click()
         await page
             .getByTestId("page-editor-layout-option-image_left_text_right")
             .click()
@@ -170,7 +169,6 @@ test.describe("Picture-Book Tier 1+2 sections across image layouts", () => {
         ).toBeVisible()
 
         // Switch to image_left_text_right (behind More layouts).
-        await page.getByTestId("page-editor-layout-more-toggle").click()
         await page
             .getByTestId("page-editor-layout-option-image_left_text_right")
             .click()

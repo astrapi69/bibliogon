@@ -144,11 +144,12 @@ test.describe("Picture-Book PageEditor smoke", () => {
             page.getByTestId(`page-editor-page-row-${activeRow!.id}`),
         ).toHaveAttribute("data-layout", "speech_bubble")
 
-        // Expand the 'More layouts' disclosure and pick text_only as
-        // a final assertion that the additional set is reachable.
-        await page.getByTestId("page-editor-layout-more-toggle").click()
+        // Phase 1 C4 (2026-05-28): the "More layouts" toggle is gone;
+        // the picker now surfaces all 8 layouts under 4 category
+        // sections. text_only lives in the ``nur_text`` category and
+        // is directly clickable.
         await expect(
-            page.getByTestId("page-editor-layout-options-more"),
+            page.getByTestId("page-editor-layout-category-nur_text"),
         ).toBeVisible()
         await expect(
             page.getByTestId("page-editor-layout-option-text_only"),
@@ -267,17 +268,8 @@ test.describe("Picture-Book PageEditor smoke", () => {
         ] as const
 
         for (const layout of layouts) {
-            // Expand the disclosure if the target layout sits behind
-            // it. The 3 default-visible layouts are speech_bubble +
-            // image_top_text_bottom; the rest are under "More layouts".
-            const inDefault =
-                layout === "speech_bubble" || layout === "image_top_text_bottom"
-            if (!inDefault) {
-                const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
-                if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
-                    await moreToggle.click()
-                }
-            }
+            // Phase 1 C4 (2026-05-28): all 8 layouts surface in
+            // category sections; no disclosure to expand.
             await page.getByTestId(`page-editor-layout-option-${layout}`).click()
 
             // The picker reflects the selection.
@@ -469,10 +461,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         ).toHaveCount(2)
 
         // Switch the active page's layout to image_left_text_right.
-        const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
-        if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
-            await moreToggle.click()
-        }
+        // Phase 1 C4 (2026-05-28): direct click; no disclosure.
         await page.getByTestId("page-editor-layout-option-image_left_text_right").click()
         await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
             "data-layout",
@@ -604,10 +593,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         ).toHaveAttribute("data-image-position", "right")
 
         // --- image_left_text_right: split-ratio slider ---
-        const moreToggle = page.getByTestId("page-editor-layout-more-toggle")
-        if ((await moreToggle.getAttribute("data-expanded")) !== "true") {
-            await moreToggle.click()
-        }
+        // Phase 1 C4 (2026-05-28): direct click; no disclosure.
         await page
             .getByTestId("page-editor-layout-option-image_left_text_right")
             .click()
