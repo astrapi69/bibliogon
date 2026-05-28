@@ -39,6 +39,11 @@ const LAYOUT_CATEGORIES: ReadonlyArray<LayoutCategory> = [
             "image_left_text_right",
             "image_right_text_left",
             "image_full_text_overlay",
+            // Phase 2 C6 (2026-05-28). image_border_text_center is a
+            // single-image overlay layout — natural fit in the
+            // bild_mit_text category alongside image_full_text_overlay
+            // (both put text on top of an image).
+            "image_border_text_center",
         ],
     },
     {
@@ -46,6 +51,20 @@ const LAYOUT_CATEGORIES: ReadonlyArray<LayoutCategory> = [
         labelKey: "ui.page_editor.layout_category.nur_bild",
         labelFallback: "Nur Bild",
         layouts: ["image_full_no_text"],
+    },
+    {
+        // Phase 2 C6 (2026-05-28). New mehrere_bilder category for
+        // the 3 multi-image layouts. Per the handover plan, the
+        // category is introduced with Phase 2 — Phase 1's 4-category
+        // shape leaves room for this addition.
+        id: "mehrere_bilder",
+        labelKey: "ui.page_editor.layout_category.mehrere_bilder",
+        labelFallback: "Mehrere Bilder",
+        layouts: [
+            "two_images_text_center",
+            "split_horizontal",
+            "split_vertical",
+        ],
     },
     {
         id: "nur_text",
