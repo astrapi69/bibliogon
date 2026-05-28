@@ -6,6 +6,7 @@ import {
     LayoutConfigImageTopTextBottom,
     LayoutConfigImageLeftTextRight,
     LayoutConfigImageFullTextOverlay,
+    LayoutConfigImageFullNoText,
 } from "./LayoutConfigImageRow"
 
 interface Props {
@@ -73,6 +74,29 @@ export default function LayoutConfig({page, onChange}: Props) {
             )}
             {page.layout === "image_full_text_overlay" && (
                 <LayoutConfigImageFullTextOverlay
+                    config={layoutNamespace}
+                    onChange={onChange}
+                />
+            )}
+            {/* Phase 1 C4 (2026-05-28). Mirror layouts share the
+             *  parent's body via the ``flipDirection`` prop per the
+             *  adjudicated Q6 — no separate file, no duplication. */}
+            {page.layout === "image_bottom_text_top" && (
+                <LayoutConfigImageTopTextBottom
+                    config={layoutNamespace}
+                    onChange={onChange}
+                    flipDirection
+                />
+            )}
+            {page.layout === "image_right_text_left" && (
+                <LayoutConfigImageLeftTextRight
+                    config={layoutNamespace}
+                    onChange={onChange}
+                    flipDirection
+                />
+            )}
+            {page.layout === "image_full_no_text" && (
+                <LayoutConfigImageFullNoText
                     config={layoutNamespace}
                     onChange={onChange}
                 />

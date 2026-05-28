@@ -13,6 +13,15 @@ interface BaseProps {
     onChange: (partial: Record<string, unknown>) => void
 }
 
+/** Per the adjudicated Q6 of the layout-expansion plan: mirror
+ *  layouts (image_bottom_text_top / image_right_text_left)
+ *  share the same body component as their parents via a
+ *  flipDirection prop. Only the heading label + testid differ;
+ *  every other control + Tier-section mount is identical. */
+interface DirectionalProps extends BaseProps {
+    flipDirection?: boolean
+}
+
 const IMAGE_POSITIONS: readonly ImagePosition[] = ["left", "center", "right"]
 const IMAGE_FITS: readonly ImageFit[] = ["contain", "cover"]
 const DEFAULT_IMAGE_POSITION: ImagePosition = "center"
@@ -131,21 +140,36 @@ function ImagePositionRadio({
 }
 
 /** image_top_text_bottom config: image-position radio +
- *  image-fit dropdown + Tier 1+2 sections. */
-export function LayoutConfigImageTopTextBottom({config, onChange}: BaseProps) {
+ *  image-fit dropdown + Tier 1+2 sections.
+ *
+ *  ``flipDirection`` (Phase 1 C4, 2026-05-28): when true, the
+ *  same body renders as the mirror layout image_bottom_text_top
+ *  (image below, text above). The heading + testid change; every
+ *  other control + namespace flow is shared. Q6 adjudication:
+ *  share via prop, not separate file. */
+export function LayoutConfigImageTopTextBottom({
+    config,
+    onChange,
+    flipDirection,
+}: DirectionalProps) {
     const {t} = useI18n()
     const position = readImagePosition(config)
     const fit = readImageFit(config)
+    const testid = flipDirection
+        ? "layout-config-image-bottom-text-top"
+        : "layout-config-image-top-text-bottom"
+    const headingKey = flipDirection
+        ? "ui.page_editor.config.image_bottom_text_top.heading"
+        : "ui.page_editor.config.image_top_text_bottom.heading"
+    const headingFallback = flipDirection ? "Bild unten" : "Bild oben"
+    const tierPrefix = flipDirection ? "image-bottom-text" : "image-top-text"
+    const tierI18nPrefix = flipDirection
+        ? "ui.page_editor.config.image_bottom_text"
+        : "ui.page_editor.config.image_top_text"
     return (
-        <div
-            className={styles.container}
-            data-testid="layout-config-image-top-text-bottom"
-        >
+        <div className={styles.container} data-testid={testid}>
             <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.image_top_text_bottom.heading",
-                    "Bild oben",
-                )}
+                {t(headingKey, headingFallback)}
             </h4>
             <ImagePositionRadio
                 value={position}
@@ -154,55 +178,68 @@ export function LayoutConfigImageTopTextBottom({config, onChange}: BaseProps) {
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
-                testid="image-top-image-fit"
+                testid={`${tierPrefix.replace("-text", "")}-image-fit`}
             />
             {/*
              * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1.
-             * Tier 1+2 sections mounted with the "image-top-text"
-             * testid prefix + namespaced i18n keys. Per the same
-             * pattern as overlay (Session 1 C5): no bubbles[0]
-             * wrapping (single text region per page); writes flow
-             * flat into the image_top_text_bottom namespace via
-             * the dispatcher's onChange + writeLayoutNamespace.
+             * Tier 1+2 sections mounted with the prefix +
+             * namespaced i18n keys. Per the same pattern as
+             * overlay (Session 1 C5): no bubbles[0] wrapping
+             * (single text region per page); writes flow flat
+             * into the active layout's namespace via the
+             * dispatcher's onChange + writeLayoutNamespace.
              */}
             <Tier1Section
                 config={config}
                 onChange={onChange}
-                testidPrefix="image-top-text"
-                i18nKeyPrefix="ui.page_editor.config.image_top_text"
+                testidPrefix={tierPrefix}
+                i18nKeyPrefix={tierI18nPrefix}
             />
             <Tier2Section
                 config={config}
                 onChange={onChange}
-                testidPrefix="image-top-text"
-                i18nKeyPrefix="ui.page_editor.config.image_top_text"
+                testidPrefix={tierPrefix}
+                i18nKeyPrefix={tierI18nPrefix}
             />
         </div>
     )
 }
 
 /** image_left_text_right config: split-ratio slider (50-70%
- *  image) + image-fit dropdown. */
+ *  image) + image-fit dropdown.
+ *
+ *  ``flipDirection`` (Phase 1 C4, 2026-05-28): when true, the
+ *  same body renders as the mirror layout image_right_text_left
+ *  (image on right, text on left). Same controls + namespace
+ *  flow; the canvas-side CSS flips the column order. Q6
+ *  adjudication: share via prop. */
 export function LayoutConfigImageLeftTextRight({
     config,
     onChange,
-}: BaseProps) {
+    flipDirection,
+}: DirectionalProps) {
     const {t} = useI18n()
     const splitRatio = readSplitRatio(config)
     const fit = readImageFit(config)
     const debouncedSplitChange = useDebouncedCallback((value: number) => {
         onChange({split_ratio: value})
     }, 300)
+    const testid = flipDirection
+        ? "layout-config-image-right-text-left"
+        : "layout-config-image-left-text-right"
+    const headingKey = flipDirection
+        ? "ui.page_editor.config.image_right_text_left.heading"
+        : "ui.page_editor.config.image_left_text_right.heading"
+    const headingFallback = flipDirection ? "Bild rechts" : "Bild links"
+    const tierPrefix = flipDirection ? "image-right-text" : "image-left-text"
+    const tierI18nPrefix = flipDirection
+        ? "ui.page_editor.config.image_right_text"
+        : "ui.page_editor.config.image_left_text"
+    const sliderTestidBase = flipDirection ? "image-right" : "image-left"
     return (
-        <div
-            className={styles.container}
-            data-testid="layout-config-image-left-text-right"
-        >
+        <div className={styles.container} data-testid={testid}>
             <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.image_left_text_right.heading",
-                    "Bild links",
-                )}
+                {t(headingKey, headingFallback)}
             </h4>
             <label className={styles.fieldLabel}>
                 <span className={styles.legend}>
@@ -220,7 +257,7 @@ export function LayoutConfigImageLeftTextRight({
                     onChange={(e) =>
                         debouncedSplitChange(parseInt(e.target.value, 10))
                     }
-                    data-testid="image-left-split-ratio-slider"
+                    data-testid={`${sliderTestidBase}-split-ratio-slider`}
                     aria-label={t(
                         "ui.page_editor.config.split_ratio",
                         "Split ratio (image %)",
@@ -228,7 +265,7 @@ export function LayoutConfigImageLeftTextRight({
                 />
                 <span
                     className={styles.sliderValue}
-                    data-testid="image-left-split-ratio-value"
+                    data-testid={`${sliderTestidBase}-split-ratio-value`}
                 >
                     {splitRatio}%
                 </span>
@@ -236,27 +273,55 @@ export function LayoutConfigImageLeftTextRight({
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
-                testid="image-left-image-fit"
+                testid={`${sliderTestidBase}-image-fit`}
             />
             {/*
              * PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C2.
-             * Tier 1+2 sections mounted with the "image-left-text"
-             * testid prefix + namespaced i18n keys. Same shape as
-             * Session 2 C1 (image_top_text_bottom) — single text
-             * region, no bubbles[0] wrapping, writes flat into
-             * the image_left_text_right namespace.
+             * Tier 1+2 sections mounted with the dynamic testid
+             * prefix + namespaced i18n keys. Same shape as
+             * Session 2 C1 — single text region, no bubbles[0]
+             * wrapping, writes flat into the active namespace.
              */}
             <Tier1Section
                 config={config}
                 onChange={onChange}
-                testidPrefix="image-left-text"
-                i18nKeyPrefix="ui.page_editor.config.image_left_text"
+                testidPrefix={tierPrefix}
+                i18nKeyPrefix={tierI18nPrefix}
             />
             <Tier2Section
                 config={config}
                 onChange={onChange}
-                testidPrefix="image-left-text"
-                i18nKeyPrefix="ui.page_editor.config.image_left_text"
+                testidPrefix={tierPrefix}
+                i18nKeyPrefix={tierI18nPrefix}
+            />
+        </div>
+    )
+}
+
+/** image_full_no_text config (Phase 1 C4, 2026-05-28).
+ *
+ *  Minimal body: image_fit only (no text region → no Tier1/2,
+ *  no image_position semantics — the image fills the panel).
+ *  Per the adjudicated Q5: text_content is silent-ignored at
+ *  render so there's nothing to style in the text region. */
+export function LayoutConfigImageFullNoText({config, onChange}: BaseProps) {
+    const {t} = useI18n()
+    const fit = readImageFit(config)
+    return (
+        <div
+            className={styles.container}
+            data-testid="layout-config-image-full-no-text"
+        >
+            <h4 className={styles.heading}>
+                {t(
+                    "ui.page_editor.config.image_full_no_text.heading",
+                    "Vollbild (kein Text)",
+                )}
+            </h4>
+            <ImageFitDropdown
+                value={fit}
+                onChange={(next) => onChange({image_fit: next})}
+                testid="image-full-no-text-image-fit"
             />
         </div>
     )

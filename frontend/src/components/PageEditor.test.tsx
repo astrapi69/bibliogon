@@ -403,8 +403,8 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         await waitFor(() =>
             expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
         )
-        // image_full_text_overlay sits behind the "More layouts" disclosure.
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
+        // Phase 1 C4 (2026-05-28): all 8 layouts live in
+        // category-grouped sections; no "More layouts" toggle.
         fireEvent.click(
             screen.getByTestId("page-editor-layout-option-image_full_text_overlay"),
         )
@@ -538,7 +538,6 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
             expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy(),
         )
         // text_only sits behind the "More layouts" disclosure.
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
         fireEvent.click(screen.getByTestId("page-editor-layout-option-text_only"))
         await waitFor(() =>
             expect(mockUpdate).toHaveBeenCalledWith("b1", "p1", {
@@ -640,7 +639,6 @@ describe("PageEditor + LayoutPicker wiring (Commit 4)", () => {
         // Switch to p2 (text_only sits behind "More layouts", but the
         // picker still tracks the selected value internally).
         fireEvent.click(screen.getByTestId("page-editor-page-row-p2"))
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
         await waitFor(() =>
             expect(
                 screen
@@ -778,7 +776,6 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
         // Step 1: switch to image_full_text_overlay.
         // image_full_text_overlay sits behind the "More layouts"
         // disclosure.
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
         fireEvent.click(
             screen.getByTestId("page-editor-layout-option-image_full_text_overlay"),
         )
@@ -883,7 +880,6 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
         // Step 1: switch to image_left_text_right.
         // image_left_text_right sits behind the "More layouts"
         // disclosure (not in the DEFAULT_LAYOUTS primary set).
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
         fireEvent.click(
             screen.getByTestId("page-editor-layout-option-image_left_text_right"),
         )

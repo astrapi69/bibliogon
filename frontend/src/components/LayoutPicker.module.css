@@ -15,6 +15,26 @@
     color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
 }
 
+/* Phase 1 C4 (2026-05-28). Category-grouped picker. Lighter
+ * visual weight than the main ``.heading`` so the "Layout"
+ * title stays the dominant header; categories read as section
+ * labels under it. */
+.category {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.categoryHeading {
+    margin: 6px 0 2px 0;
+    font-family: var(--font-display);
+    font-size: 0.6875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: color-mix(in srgb, var(--text-sidebar) 55%, transparent);
+}
+
 .options {
     display: flex;
     flex-direction: column;

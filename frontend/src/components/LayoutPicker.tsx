@@ -1,5 +1,5 @@
-import React, {useState} from "react"
-import {ChevronDown, ChevronRight, Check} from "lucide-react"
+import React from "react"
+import {Check} from "lucide-react"
 import type {PageLayout} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import styles from "./LayoutPicker.module.css"
@@ -10,14 +10,55 @@ interface Props {
     disabled?: boolean
 }
 
-// Layout A + Layout B are the two default-visible options. The
-// remaining three sit behind the "More layouts" disclosure to keep
-// the properties pane lean for the common case.
-const DEFAULT_LAYOUTS: PageLayout[] = ["speech_bubble", "image_top_text_bottom"]
-const ADDITIONAL_LAYOUTS: PageLayout[] = [
-    "image_left_text_right",
-    "image_full_text_overlay",
-    "text_only",
+// Picture-Book Layout Expansion Phase 1 C4 (2026-05-28). The
+// 5 historical layouts + the 3 new Phase 1 entries are grouped
+// into 4 user-facing categories per the adjudicated Q3. Two more
+// categories ("Mehrere Bilder", further "Spezial" entries) arrive
+// with Phase 2 + Phase 3. The pre-C4 ``DEFAULT_LAYOUTS`` /
+// ``ADDITIONAL_LAYOUTS`` + ``More layouts`` disclosure is gone:
+// 8 grouped entries fit comfortably without a disclosure.
+//
+// ``comic_panel_grid`` stays out of the picture-book picker
+// entirely; it's the comic-book canvas's own discriminator and
+// has its own picker (``ComicGridTemplatePicker``).
+interface LayoutCategory {
+    id: string
+    labelKey: string
+    labelFallback: string
+    layouts: PageLayout[]
+}
+
+const LAYOUT_CATEGORIES: ReadonlyArray<LayoutCategory> = [
+    {
+        id: "bild_mit_text",
+        labelKey: "ui.page_editor.layout_category.bild_mit_text",
+        labelFallback: "Bild mit Text",
+        layouts: [
+            "image_top_text_bottom",
+            "image_bottom_text_top",
+            "image_left_text_right",
+            "image_right_text_left",
+            "image_full_text_overlay",
+        ],
+    },
+    {
+        id: "nur_bild",
+        labelKey: "ui.page_editor.layout_category.nur_bild",
+        labelFallback: "Nur Bild",
+        layouts: ["image_full_no_text"],
+    },
+    {
+        id: "nur_text",
+        labelKey: "ui.page_editor.layout_category.nur_text",
+        labelFallback: "Nur Text",
+        layouts: ["text_only"],
+    },
+    {
+        id: "spezial",
+        labelKey: "ui.page_editor.layout_category.spezial",
+        labelFallback: "Spezial",
+        layouts: ["speech_bubble"],
+    },
 ]
 
 const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
@@ -26,14 +67,15 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
     image_left_text_right: "Image left, text right",
     image_full_text_overlay: "Full image with text overlay",
     text_only: "Text only",
-    // Comic-book layout. Picture-book authors do not pick this from
-    // LayoutPicker (kept out of DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS);
-    // present only to satisfy the exhaustive Record<PageLayout, …> type.
+    // Comic-book layout. Picture-book authors do not pick this
+    // from LayoutPicker; present only for the exhaustive Record
+    // type. Filtered out of every category above.
     comic_panel_grid: "Comic panel grid",
-    // Picture-Book Layout Expansion Phase 1 (2026-05-28). Labels
-    // present so the exhaustive Record<PageLayout, string> type
-    // holds; UI surfacing (DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS) +
-    // category grouping arrive in C4.
+    // Phase 1 (2026-05-28). Labels for the new single-image
+    // layouts. Mirrors keep parents' field semantics (split-
+    // ratio, image-position) — only the visual orientation
+    // flips. The label strings reflect the user-facing
+    // orientation per the adjudicated Q3 category grouping.
     image_bottom_text_top: "Image bottom, text top",
     image_right_text_left: "Image right, text left",
     image_full_no_text: "Full image (no text)",
@@ -41,7 +83,6 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
 
 export default function LayoutPicker({selected, onChange, disabled}: Props) {
     const {t} = useI18n()
-    const [expanded, setExpanded] = useState(false)
 
     const renderOption = (layout: PageLayout) => {
         const isSelected = layout === selected
@@ -78,30 +119,23 @@ export default function LayoutPicker({selected, onChange, disabled}: Props) {
             <h3 className={styles.heading}>
                 {t("ui.page_editor.layout_heading", "Layout")}
             </h3>
-            <div className={styles.options} data-testid="page-editor-layout-options-default">
-                {DEFAULT_LAYOUTS.map(renderOption)}
-            </div>
-            <button
-                type="button"
-                className={styles.moreToggle}
-                onClick={() => setExpanded((prev) => !prev)}
-                data-testid="page-editor-layout-more-toggle"
-                data-expanded={expanded ? "true" : "false"}
-                aria-expanded={expanded}
-                aria-controls="page-editor-layout-more-options"
-            >
-                {expanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                <span>{t("ui.page_editor.more_layouts", "More layouts")}</span>
-            </button>
-            {expanded && (
+            {LAYOUT_CATEGORIES.map((category) => (
                 <div
-                    id="page-editor-layout-more-options"
-                    className={styles.options}
-                    data-testid="page-editor-layout-options-more"
+                    key={category.id}
+                    className={styles.category}
+                    data-testid={`page-editor-layout-category-${category.id}`}
                 >
-                    {ADDITIONAL_LAYOUTS.map(renderOption)}
+                    <h4
+                        className={styles.categoryHeading}
+                        data-testid={`page-editor-layout-category-heading-${category.id}`}
+                    >
+                        {t(category.labelKey, category.labelFallback)}
+                    </h4>
+                    <div className={styles.options}>
+                        {category.layouts.map(renderOption)}
+                    </div>
                 </div>
-            )}
+            ))}
         </div>
     )
 }

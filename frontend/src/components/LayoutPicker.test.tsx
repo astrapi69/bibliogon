@@ -1,8 +1,11 @@
 /**
- * Tests for LayoutPicker (PB-PHASE4 Session 3 Commit 4).
+ * Tests for LayoutPicker.
  *
- * Covers: 2 default-visible options, 3 behind the "More layouts"
- * disclosure, selected marking, onChange wiring, disabled state.
+ * Phase 1 C4 (2026-05-28) restructured the picker from a 2-default
+ * + "More layouts" disclosure into 4 category groups
+ * ("Bild mit Text" / "Nur Bild" / "Nur Text" / "Spezial") covering
+ * the 5 historical layouts + 3 new Phase 1 entries. Two more
+ * categories arrive with Phase 2 + Phase 3.
  */
 
 import React from "react"
@@ -25,45 +28,85 @@ describe("LayoutPicker", () => {
         expect(screen.getByTestId("page-editor-layout-picker")).toBeTruthy()
     })
 
-    it("shows the 2 default-visible layout options (A + B)", () => {
+    it("renders all 8 layout options across the 4 categories", () => {
         render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
-        expect(screen.getByTestId("page-editor-layout-option-speech_bubble")).toBeTruthy()
-        expect(
-            screen.getByTestId("page-editor-layout-option-image_top_text_bottom"),
-        ).toBeTruthy()
+        for (const layout of [
+            "image_top_text_bottom",
+            "image_bottom_text_top",
+            "image_left_text_right",
+            "image_right_text_left",
+            "image_full_text_overlay",
+            "image_full_no_text",
+            "text_only",
+            "speech_bubble",
+        ]) {
+            expect(
+                screen.getByTestId(`page-editor-layout-option-${layout}`),
+            ).toBeTruthy()
+        }
     })
 
-    it("hides the 3 additional layouts by default", () => {
+    it("renders the 4 category sections with their headings", () => {
         render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
-        expect(screen.queryByTestId("page-editor-layout-options-more")).toBeNull()
+        for (const category of [
+            "bild_mit_text",
+            "nur_bild",
+            "nur_text",
+            "spezial",
+        ]) {
+            expect(
+                screen.getByTestId(`page-editor-layout-category-${category}`),
+            ).toBeTruthy()
+            expect(
+                screen.getByTestId(
+                    `page-editor-layout-category-heading-${category}`,
+                ),
+            ).toBeTruthy()
+        }
+    })
+
+    it("groups image-with-text layouts (5 entries) under 'Bild mit Text'", () => {
+        render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
+        const section = screen.getByTestId(
+            "page-editor-layout-category-bild_mit_text",
+        )
+        for (const layout of [
+            "image_top_text_bottom",
+            "image_bottom_text_top",
+            "image_left_text_right",
+            "image_right_text_left",
+            "image_full_text_overlay",
+        ]) {
+            expect(
+                section.querySelector(
+                    `[data-testid="page-editor-layout-option-${layout}"]`,
+                ),
+            ).not.toBeNull()
+        }
+    })
+
+    it("groups image_full_no_text alone under 'Nur Bild'", () => {
+        render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
+        const section = screen.getByTestId(
+            "page-editor-layout-category-nur_bild",
+        )
         expect(
-            screen.queryByTestId("page-editor-layout-option-image_left_text_right"),
+            section.querySelector(
+                '[data-testid="page-editor-layout-option-image_full_no_text"]',
+            ),
+        ).not.toBeNull()
+        // No other options inside the category.
+        expect(
+            section.querySelectorAll("[data-testid^='page-editor-layout-option-']")
+                .length,
+        ).toBe(1)
+    })
+
+    it("does NOT render the comic_panel_grid option (picture-book picker only)", () => {
+        render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
+        expect(
+            screen.queryByTestId("page-editor-layout-option-comic_panel_grid"),
         ).toBeNull()
-        expect(
-            screen.queryByTestId("page-editor-layout-option-image_full_text_overlay"),
-        ).toBeNull()
-        expect(screen.queryByTestId("page-editor-layout-option-text_only")).toBeNull()
-    })
-
-    it("expands the 3 additional layouts when 'More layouts' is clicked", () => {
-        render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
-        expect(screen.getByTestId("page-editor-layout-options-more")).toBeTruthy()
-        expect(
-            screen.getByTestId("page-editor-layout-option-image_left_text_right"),
-        ).toBeTruthy()
-        expect(
-            screen.getByTestId("page-editor-layout-option-image_full_text_overlay"),
-        ).toBeTruthy()
-        expect(screen.getByTestId("page-editor-layout-option-text_only")).toBeTruthy()
-    })
-
-    it("flips the data-expanded attribute on the toggle button", () => {
-        render(<LayoutPicker selected="speech_bubble" onChange={vi.fn()} />)
-        const toggle = screen.getByTestId("page-editor-layout-more-toggle")
-        expect(toggle.getAttribute("data-expanded")).toBe("false")
-        fireEvent.click(toggle)
-        expect(toggle.getAttribute("data-expanded")).toBe("true")
     })
 
     it("marks the selected option via data-selected='true' (others 'false')", () => {
@@ -110,17 +153,29 @@ describe("LayoutPicker", () => {
                 disabled
             />,
         )
-        const option = screen.getByTestId("page-editor-layout-option-image_top_text_bottom")
+        const option = screen.getByTestId(
+            "page-editor-layout-option-image_top_text_bottom",
+        )
         expect((option as HTMLButtonElement).disabled).toBe(true)
         fireEvent.click(option)
         expect(onChange).not.toHaveBeenCalled()
     })
 
-    it("invokes onChange with a layout from the expanded set after toggling 'More'", () => {
+    it("invokes onChange when a Phase 1 mirror layout is picked", () => {
         const onChange = vi.fn()
         render(<LayoutPicker selected="speech_bubble" onChange={onChange} />)
-        fireEvent.click(screen.getByTestId("page-editor-layout-more-toggle"))
-        fireEvent.click(screen.getByTestId("page-editor-layout-option-text_only"))
-        expect(onChange).toHaveBeenCalledWith("text_only")
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_bottom_text_top"),
+        )
+        expect(onChange).toHaveBeenCalledWith("image_bottom_text_top")
+    })
+
+    it("invokes onChange when image_full_no_text is picked", () => {
+        const onChange = vi.fn()
+        render(<LayoutPicker selected="speech_bubble" onChange={onChange} />)
+        fireEvent.click(
+            screen.getByTestId("page-editor-layout-option-image_full_no_text"),
+        )
+        expect(onChange).toHaveBeenCalledWith("image_full_no_text")
     })
 })
