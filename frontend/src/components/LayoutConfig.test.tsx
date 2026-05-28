@@ -51,6 +51,7 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         // Phase 2 layouts (C2..C5, 2026-05-28).
         "two_images_text_center",
         "split_horizontal",
+        "split_vertical",
     ]
 
     it.each(LAYOUTS)("mounts for layout '%s' (no crash)", (layout) => {
@@ -124,6 +125,19 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         )
         expect(
             screen.getByTestId("layout-config-split-horizontal"),
+        ).toBeInTheDocument()
+    })
+
+    it("dispatches the split_vertical body for the multi-image layout", () => {
+        // Phase 2 C4: dispatcher routes split_vertical to its body.
+        render(
+            <LayoutConfig
+                page={makePage({layout: "split_vertical"})}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("layout-config-split-vertical"),
         ).toBeInTheDocument()
     })
 })

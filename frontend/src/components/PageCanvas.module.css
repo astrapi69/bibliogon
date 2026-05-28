@@ -129,6 +129,22 @@
     grid-template-rows: 75% 25%;
 }
 
+/* Phase 2 C4 (2026-05-28). split_vertical: two equal-height images
+ * directly stacked (no text band between them), optional thin
+ * caption strip at the bottom (10 %). Distinct from
+ * two_images_text_center which puts a prominent text band BETWEEN
+ * the images (40/20/40); split_vertical keeps the images adjacent
+ * (45/45) so a 2-photo spread reads as a single visual unit. */
+
+.canvasLayoutSplitVertical {
+    grid-template-areas:
+        "image"
+        "imageSecondary"
+        "text";
+    grid-template-columns: 1fr;
+    grid-template-rows: 45% 45% 10%;
+}
+
 /* --- Region defaults --- */
 
 .region {

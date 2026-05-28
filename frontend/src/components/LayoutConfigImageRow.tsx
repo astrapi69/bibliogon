@@ -401,6 +401,52 @@ export function LayoutConfigSplitHorizontal({config, onChange}: BaseProps) {
     )
 }
 
+/** split_vertical config (Picture-Book Layout Expansion
+ *  Phase 2 C4, 2026-05-28).
+ *
+ *  Multi-image layout: two equal-height images directly stacked,
+ *  with an optional thin Tier-Property caption strip at the
+ *  bottom (45 / 45 / 10 row split). Distinct from
+ *  two_images_text_center (40 / 20 / 40) — the images are
+ *  adjacent here, so a 2-photo spread reads as one visual unit
+ *  with a quiet footer instead of two halves split by text.
+ *  Same body shape as the other multi-image bodies: image_fit +
+ *  Tier 1+2 for the caption. */
+export function LayoutConfigSplitVertical({config, onChange}: BaseProps) {
+    const {t} = useI18n()
+    const fit = readImageFit(config)
+    return (
+        <div
+            className={styles.container}
+            data-testid="layout-config-split-vertical"
+        >
+            <h4 className={styles.heading}>
+                {t(
+                    "ui.page_editor.config.split_vertical.heading",
+                    "Zwei Bilder gestapelt",
+                )}
+            </h4>
+            <ImageFitDropdown
+                value={fit}
+                onChange={(next) => onChange({image_fit: next})}
+                testid="split-vertical-image-fit"
+            />
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="split-vertical"
+                i18nKeyPrefix="ui.page_editor.config.split_vertical"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="split-vertical"
+                i18nKeyPrefix="ui.page_editor.config.split_vertical"
+            />
+        </div>
+    )
+}
+
 /** image_full_no_text config (Phase 1 C4, 2026-05-28).
  *
  *  Minimal body: image_fit only (no text region → no Tier1/2,

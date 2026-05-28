@@ -8,6 +8,7 @@ import {
     LayoutConfigImageFullTextOverlay,
     LayoutConfigImageFullNoText,
     LayoutConfigSplitHorizontal,
+    LayoutConfigSplitVertical,
     LayoutConfigTwoImagesTextCenter,
 } from "./LayoutConfigImageRow"
 
@@ -118,6 +119,14 @@ export default function LayoutConfig({page, onChange}: Props) {
              *  side by side; Tier-Property caption below. */}
             {page.layout === "split_horizontal" && (
                 <LayoutConfigSplitHorizontal
+                    config={layoutNamespace}
+                    onChange={onChange}
+                />
+            )}
+            {/* Phase 2 C4 (2026-05-28). Two equal-height images
+             *  stacked; thin Tier-Property caption strip below. */}
+            {page.layout === "split_vertical" && (
+                <LayoutConfigSplitVertical
                     config={layoutNamespace}
                     onChange={onChange}
                 />

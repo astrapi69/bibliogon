@@ -2841,4 +2841,19 @@ describe("PageCanvas - two_images_text_center (Phase 2 C2)", () => {
             screen.getByTestId("page-canvas-image-secondary-placeholder"),
         ).toBeInTheDocument()
     })
+
+    it("renders the secondary image region for split_vertical (Phase 2 C4)", () => {
+        // Phase 2 C4 (2026-05-28): split_vertical is also in
+        // MULTI_IMAGE_LAYOUTS.
+        render(
+            <PageCanvas
+                page={makeMultiImagePage({layout: "split_vertical"})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-image-area-secondary"),
+        ).toBeInTheDocument()
+    })
 })

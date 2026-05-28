@@ -544,13 +544,13 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     image_bottom_text_top: styles.canvasLayoutImageBottomTextTop,
     image_right_text_left: styles.canvasLayoutImageRightTextLeft,
     image_full_no_text: styles.canvasLayoutImageFullNoText,
-    // Picture-Book Layout Expansion Phase 2 C2 (2026-05-28) +
-    // C3 (split_horizontal). Each layout swaps in its dedicated
-    // class as that commit ships; the remaining 2 keep the
-    // placeholder fallback until C4 + C5.
+    // Picture-Book Layout Expansion Phase 2 C2..C4 (2026-05-28).
+    // Each layout swaps in its dedicated class as that commit ships;
+    // image_border_text_center keeps the placeholder fallback until
+    // C5.
     two_images_text_center: styles.canvasLayoutTwoImagesTextCenter,
     split_horizontal: styles.canvasLayoutSplitHorizontal,
-    split_vertical: styles.canvasLayoutImageTopTextBottom,
+    split_vertical: styles.canvasLayoutSplitVertical,
     image_border_text_center: styles.canvasLayoutImageTopTextBottom,
 }
 
@@ -568,6 +568,7 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
 const MULTI_IMAGE_LAYOUTS = new Set<PageLayout>([
     "two_images_text_center",
     "split_horizontal",
+    "split_vertical",
 ])
 
 function isMultiImageLayout(layout: PageLayout): boolean {

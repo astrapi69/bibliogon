@@ -1371,6 +1371,54 @@ def test_image_layout_style_split_horizontal_returns_text_style() -> None:
     assert styles["region_text_style"] == ""
 
 
+# Phase 2 C4 (2026-05-28). split_vertical walker pins. Two equal-
+# height images directly stacked + thin caption strip (45/45/10).
+# Distinct from two_images_text_center (40/20/40) — the images are
+# adjacent here.
+
+
+def test_render_page_split_vertical_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="split_vertical"), {})
+    assert "page--split_vertical" in html
+
+
+def test_render_page_split_vertical_renders_both_images() -> None:
+    html = _render_page(
+        _make_page(
+            layout="split_vertical",
+            image_asset_id="a-primary",
+            layout_config={
+                "split_vertical": {
+                    "secondary_image_asset_id": "a-secondary",
+                }
+            },
+        ),
+        {
+            "a-primary": "file:///tmp/primary.png",
+            "a-secondary": "file:///tmp/secondary.png",
+        },
+    )
+    assert "file:///tmp/primary.png" in html
+    assert "file:///tmp/secondary.png" in html
+    assert 'class="region region-image-secondary"' in html
+
+
+def test_render_page_split_vertical_text_region_present() -> None:
+    """Thin caption strip renders by default; text_content surfaces
+    when set."""
+    html = _render_page(
+        _make_page(layout="split_vertical", text_content="Bottom caption"),
+        {},
+    )
+    assert 'class="region region-text"' in html
+    assert "Bottom caption" in html
+
+
+def test_image_layout_style_split_vertical_returns_image_fit() -> None:
+    styles = _image_layout_style("split_vertical", {"image_fit": "contain"})
+    assert "object-fit: contain" in styles["image_style"]
+
+
 def test_render_page_image_full_text_overlay_position_top() -> None:
     html = _render_page(
         _make_page(

@@ -404,6 +404,40 @@ html, body {
 .page--split_horizontal .region-text {
     border-top: 1pt solid #ccc;
 }
+
+/* Phase 2 C4 (2026-05-28). split_vertical: two equal-height
+ * images directly stacked + thin caption strip at the bottom.
+ * Images render adjacent (no separator border) so the spread
+ * reads as a single visual unit. */
+
+.page--split_vertical {
+    grid-template-areas:
+        "image"
+        "imageSecondary"
+        "text";
+    grid-template-columns: 1fr;
+    grid-template-rows: 45% 45% 10%;
+}
+
+.page--split_vertical .region-image-secondary {
+    grid-area: imageSecondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+}
+
+.page--split_vertical .region-image-secondary img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.page--split_vertical .region-text {
+    border-top: 1pt solid #ccc;
+}
 """
 
 
@@ -423,6 +457,8 @@ def _layout_class(layout: str) -> str:
         "two_images_text_center",
         # Phase 2 C3 (2026-05-28). split_horizontal.
         "split_horizontal",
+        # Phase 2 C4 (2026-05-28). split_vertical.
+        "split_vertical",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
@@ -443,6 +479,8 @@ _MULTI_IMAGE_LAYOUTS: frozenset[str] = frozenset(
         "two_images_text_center",
         # Phase 2 C3 (2026-05-28). split_horizontal.
         "split_horizontal",
+        # Phase 2 C4 (2026-05-28). split_vertical.
+        "split_vertical",
     }
 )
 
@@ -952,6 +990,18 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         # side (50 / 50 columns), Tier-Property caption below
         # spanning both columns (75 / 25 row split). Both images
         # share the same image_fit field per the M1 design.
+        fit = config.get("image_fit")
+        if fit in ("contain", "cover"):
+            image_style = f"object-fit: {fit};"
+        region_text_style = _compute_tier_text_style(config)
+
+    elif layout == "split_vertical":
+        # Phase 2 C4 (2026-05-28): two equal-height images directly
+        # stacked + thin Tier-Property caption strip at the bottom
+        # (45 / 45 / 10 row split). Distinct from
+        # two_images_text_center which separates the images with a
+        # prominent text band (40 / 20 / 40). Shared image_fit per
+        # the M1 design.
         fit = config.get("image_fit")
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
