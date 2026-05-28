@@ -181,3 +181,76 @@
 .fileInput {
     display: none;
 }
+
+/* Phase 3 C4 (2026-05-28). Text region edit affordances.
+ * Drag handle at the top, editable textarea below. Handle
+ * is the ONLY surface that triggers the drag — the textarea
+ * stays focusable + editable without competing with pointer
+ * events. Per-region delete + style controls live on a top-
+ * right hover-revealed overlay (mirrors the image-controls
+ * pattern). */
+
+.textRegionDragHandle {
+    height: 16px;
+    background: rgba(0, 0, 0, 0.05);
+    cursor: grab;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.textRegionDragHandle:active {
+    cursor: grabbing;
+}
+
+/* Edit-mode container: full-region flex column. Replaces the
+ * read-only ``.textRegion`` styling with a stacked layout
+ * (handle + textarea). */
+.textRegionEditable {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: stretch;
+    padding: 0;
+    /* Allow the children (handle, textarea, controls) to use
+     * their full box without the .textRegion's centered flex. */
+}
+
+.textRegionTextarea {
+    flex: 1;
+    width: 100%;
+    border: none;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    padding: 8px;
+    resize: none;
+    outline: none;
+    /* Match the read-only div's text shape. */
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.textRegionTextarea:focus {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+/* Per-text-region controls overlay. Same shape as
+ * .imageControls but positioned outside the textarea's tab
+ * order so keyboard navigation is sane. */
+.textRegionControls {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+    z-index: 2;
+}
+
+.textRegion:hover .textRegionControls,
+.textRegion:focus-within .textRegionControls {
+    opacity: 1;
+    pointer-events: auto;
+}

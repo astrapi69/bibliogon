@@ -776,9 +776,9 @@ describe("CollageCanvas — C3 z-index controls", () => {
 });
 
 describe("CollageCanvas — C3 add image upload flow", () => {
+    // Mock at module load (hoisted by vi.mock).
     it("file upload appends a new image entry with default geometry + sane z_index", async () => {
         const onUpdate = vi.fn().mockResolvedValue(undefined);
-        // Mock the api.assets.upload to return a known asset.
         vi.mock("../api/client", async () => {
             const actual = (await vi.importActual(
                 "../api/client",
@@ -831,5 +831,173 @@ describe("CollageCanvas — C3 add image upload flow", () => {
         expect(newImages[1].height_pct).toBe(30);
         expect(newImages[1].z_index).toBe(6);
         expect(newImages[1].fit).toBe("cover");
+    });
+});
+
+// Phase 3 C4 (2026-05-28). Text region CRUD.
+
+describe("CollageCanvas — C4 text region read-only mode", () => {
+    it("renders text region content as a static div in read-only mode", () => {
+        // Read-only mode (no onUpdate): the C1 path renders a
+        // static div containing the content.
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [
+                            {id: "t-1", content: "Static caption"},
+                        ],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        const region = screen.getByTestId("collage-text-region-t-1");
+        expect(region).toHaveTextContent("Static caption");
+        // No textarea in read-only mode.
+        expect(
+            screen.queryByTestId("collage-text-region-input-t-1"),
+        ).not.toBeInTheDocument();
+        // No drag handle.
+        expect(
+            screen.queryByTestId("collage-text-region-drag-t-1"),
+        ).not.toBeInTheDocument();
+    });
+});
+
+describe("CollageCanvas — C4 text region edit mode", () => {
+    it("renders textarea + drag handle + delete in edit mode", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [{id: "t-1", content: "Hi"}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        expect(
+            screen.getByTestId("collage-text-region-input-t-1"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-text-region-drag-t-1"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-text-region-delete-t-1"),
+        ).toBeInTheDocument();
+    });
+
+    it("typing in the textarea + blur persists content via onUpdate", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [{id: "t-1", content: "old"}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        const textarea = screen.getByTestId(
+            "collage-text-region-input-t-1",
+        ) as HTMLTextAreaElement;
+        fireEvent.change(textarea, {target: {value: "new content"}});
+        fireEvent.blur(textarea);
+        expect(onUpdate).toHaveBeenCalledTimes(1);
+        const call = onUpdate.mock.calls[0][0];
+        expect(call.layout_config.collage.text_regions[0].content).toBe(
+            "new content",
+        );
+    });
+
+    it("blur with unchanged content does NOT fire onUpdate", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [{id: "t-1", content: "same"}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        const textarea = screen.getByTestId(
+            "collage-text-region-input-t-1",
+        ) as HTMLTextAreaElement;
+        fireEvent.blur(textarea);
+        expect(onUpdate).not.toHaveBeenCalled();
+    });
+});
+
+describe("CollageCanvas — C4 delete text region", () => {
+    it("delete removes the region; siblings preserved", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [
+                            {id: "t-1", content: "first"},
+                            {id: "t-2", content: "second"},
+                            {id: "t-3", content: "third"},
+                        ],
+                        background_color: "#abcdef",
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("collage-text-region-delete-t-2"));
+        const call = onUpdate.mock.calls[0][0];
+        expect(call.layout_config.collage.text_regions).toHaveLength(2);
+        expect(call.layout_config.collage.text_regions[0].id).toBe("t-1");
+        expect(call.layout_config.collage.text_regions[1].id).toBe("t-3");
+        // Background preserved.
+        expect(call.layout_config.collage.background_color).toBe("#abcdef");
+    });
+});
+
+describe("CollageCanvas — C4 add text region", () => {
+    it("clicking Add text region appends a new entry with default geometry", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage(null)}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("collage-add-text-region"));
+        expect(onUpdate).toHaveBeenCalledTimes(1);
+        const call = onUpdate.mock.calls[0][0];
+        const newRegions = call.layout_config.collage.text_regions;
+        expect(newRegions).toHaveLength(1);
+        expect(typeof newRegions[0].id).toBe("string");
+        expect(newRegions[0].id).toMatch(/^text-\d+$/);
+        expect(newRegions[0].x_pct).toBe(10);
+        expect(newRegions[0].y_pct).toBe(10);
+        expect(newRegions[0].width_pct).toBe(40);
+        expect(newRegions[0].height_pct).toBe(15);
+        expect(newRegions[0].content).toBe("");
+    });
+
+    it("add text region in read-only mode: button NOT rendered", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage(null)}
+                bookId="b1"
+            />,
+        );
+        expect(
+            screen.queryByTestId("collage-add-text-region"),
+        ).not.toBeInTheDocument();
     });
 });

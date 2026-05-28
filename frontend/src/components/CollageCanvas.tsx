@@ -25,13 +25,14 @@
  * version.
  */
 
-import React, {useRef, useState} from "react";
+import React, {useEffect, useRef, useState} from "react";
 import {
     ChevronsDown,
     ChevronsUp,
     Image as ImageIcon,
     Plus,
     Trash2,
+    Type as TypeIcon,
     Upload,
 } from "lucide-react";
 import {api, type Page, type PageUpdate} from "../api/client";
@@ -374,6 +375,143 @@ function CollageImageItem({
     );
 }
 
+/** Phase 3 C4 (2026-05-28). Per-text-region wrapper. Lifted out
+ *  of the parent's text_regions.map so each region can host its
+ *  own useDragPosition + local-state textarea draft without
+ *  violating the Rules of Hooks. Read-only mode (no onUpdate)
+ *  renders a static div for parity with C1's shape. */
+function CollageTextRegionItem({
+    region,
+    onDragEnd,
+    onContentChange,
+    onDelete,
+}: {
+    region: CollageTextRegion;
+    onDragEnd?: (x_pct: number, y_pct: number) => void;
+    onContentChange?: (content: string) => void;
+    onDelete?: () => void;
+}) {
+    const {t} = useI18n();
+    const editable = Boolean(onContentChange);
+
+    // Local draft so keystrokes don't trigger a per-character
+    // network round-trip. Commit on blur (matches the existing
+    // PageCanvas textarea pattern).
+    const [draft, setDraft] = useState(region.content ?? "");
+    useEffect(() => {
+        setDraft(region.content ?? "");
+    }, [region.content]);
+
+    const {handlers, draftPosition, isDragging} = useDragPosition({
+        x_pct: region.x_pct ?? 0,
+        y_pct: region.y_pct ?? 0,
+        width_pct: region.width_pct ?? DEFAULT_TEXT_WIDTH_PCT,
+        height_pct: region.height_pct ?? DEFAULT_TEXT_HEIGHT_PCT,
+        onDragEnd,
+    });
+    const effectiveX = draftPosition?.x_pct ?? region.x_pct ?? 0;
+    const effectiveY = draftPosition?.y_pct ?? region.y_pct ?? 0;
+    const style: React.CSSProperties = {
+        left: `${effectiveX}%`,
+        top: `${effectiveY}%`,
+        width: `${region.width_pct}%`,
+        height: `${region.height_pct}%`,
+        zIndex: region.z_index,
+    };
+
+    const handleBlur = () => {
+        if (!onContentChange) return;
+        const trimmed = draft;
+        if (trimmed === (region.content ?? "")) return;
+        onContentChange(trimmed);
+    };
+
+    if (!editable) {
+        // Read-only mode (C1 parity): static div, no drag, no
+        // textarea.
+        return (
+            <div
+                data-testid={`collage-text-region-${region.id}`}
+                data-region-id={region.id}
+                data-x-pct={region.x_pct}
+                data-y-pct={region.y_pct}
+                data-z-index={region.z_index}
+                className={styles.textRegion}
+                style={style}
+            >
+                {region.content}
+            </div>
+        );
+    }
+
+    return (
+        <div
+            data-testid={`collage-text-region-${region.id}`}
+            data-region-id={region.id}
+            data-x-pct={region.x_pct}
+            data-y-pct={region.y_pct}
+            data-z-index={region.z_index}
+            data-dragging={isDragging ? "true" : "false"}
+            className={`${styles.textRegion} ${styles.textRegionEditable}`}
+            style={style}
+        >
+            {/* Top drag handle — the ONLY surface that triggers
+             *  the drag handlers. The textarea below stays
+             *  focusable + editable without competing pointer
+             *  events. */}
+            <div
+                className={styles.textRegionDragHandle}
+                data-testid={`collage-text-region-drag-${region.id}`}
+                onPointerDown={onDragEnd ? handlers.onPointerDown : undefined}
+                onPointerMove={onDragEnd ? handlers.onPointerMove : undefined}
+                onPointerUp={onDragEnd ? handlers.onPointerUp : undefined}
+                onPointerCancel={
+                    onDragEnd ? handlers.onPointerCancel : undefined
+                }
+                aria-hidden
+            />
+            <textarea
+                className={styles.textRegionTextarea}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                onBlur={handleBlur}
+                placeholder={t(
+                    "ui.page_editor.collage.text_placeholder",
+                    "Text eingeben...",
+                )}
+                data-testid={`collage-text-region-input-${region.id}`}
+            />
+            {onDelete && (
+                <div
+                    className={styles.textRegionControls}
+                    data-testid={`collage-text-region-controls-${region.id}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    <button
+                        type="button"
+                        className={styles.controlBtn}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            onDelete();
+                        }}
+                        data-testid={`collage-text-region-delete-${region.id}`}
+                        title={t(
+                            "ui.page_editor.collage.delete_text_region",
+                            "Textbereich entfernen",
+                        )}
+                        aria-label={t(
+                            "ui.page_editor.collage.delete_text_region",
+                            "Textbereich entfernen",
+                        )}
+                    >
+                        <Trash2 size={14} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+}
+
 export default function CollageCanvas({page, bookId, onUpdate}: Props) {
     const {t} = useI18n();
 
@@ -518,6 +656,64 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
     const minZ = sortedZ[0];
     const maxZ = sortedZ[sortedZ.length - 1];
 
+    /** Phase 3 C4 (2026-05-28). Text region handlers — drag, edit,
+     *  delete, add. All compose via the shared ``updateNamespace``
+     *  path so sibling images + background stay untouched. */
+    const handleTextRegionDragEnd = (regionIndex: number) =>
+        onUpdate
+            ? (newX: number, newY: number) => {
+                  const nextRegions = textRegions.map((region, i) =>
+                      i === regionIndex
+                          ? {...region, x_pct: newX, y_pct: newY}
+                          : region,
+                  );
+                  updateNamespace({text_regions: nextRegions});
+              }
+            : undefined;
+
+    const handleTextRegionContentChange = (regionIndex: number) =>
+        onUpdate
+            ? (content: string) => {
+                  const nextRegions = textRegions.map((region, i) =>
+                      i === regionIndex ? {...region, content} : region,
+                  );
+                  updateNamespace({text_regions: nextRegions});
+              }
+            : undefined;
+
+    const handleDeleteTextRegion = (regionIndex: number) =>
+        onUpdate
+            ? () => {
+                  const nextRegions = textRegions.filter(
+                      (_, i) => i !== regionIndex,
+                  );
+                  updateNamespace({text_regions: nextRegions});
+              }
+            : undefined;
+
+    const handleAddTextRegion = () => {
+        if (!onUpdate) return;
+        // Append a new region with a unique id + default geometry.
+        // ``text-${timestamp}`` is sufficient for client-side
+        // uniqueness; the field is a free-form string per the M1
+        // schema. Default position (10, 10), size (40, 15) — small
+        // band the user can drag/edit immediately.
+        const newId = `text-${Date.now()}`;
+        const nextRegions: CollageTextRegion[] = [
+            ...textRegions,
+            {
+                id: newId,
+                x_pct: 10,
+                y_pct: 10,
+                width_pct: DEFAULT_TEXT_WIDTH_PCT,
+                height_pct: DEFAULT_TEXT_HEIGHT_PCT,
+                z_index: 1,
+                content: "",
+            },
+        ];
+        updateNamespace({text_regions: nextRegions});
+    };
+
     const canvasStyle: React.CSSProperties = {};
     if (backgroundColor) {
         canvasStyle.background = backgroundColor;
@@ -554,29 +750,17 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
                         />
                     );
                 })}
-                {textRegions.map((region) => {
-                    const style: React.CSSProperties = {
-                        left: `${region.x_pct}%`,
-                        top: `${region.y_pct}%`,
-                        width: `${region.width_pct}%`,
-                        height: `${region.height_pct}%`,
-                        zIndex: region.z_index,
-                    };
-                    return (
-                        <div
-                            key={`collage-text-${region.id}`}
-                            data-testid={`collage-text-region-${region.id}`}
-                            data-region-id={region.id}
-                            data-x-pct={region.x_pct}
-                            data-y-pct={region.y_pct}
-                            data-z-index={region.z_index}
-                            className={styles.textRegion}
-                            style={style}
-                        >
-                            {region.content}
-                        </div>
-                    );
-                })}
+                {textRegions.map((region, regionIndex) => (
+                    <CollageTextRegionItem
+                        key={`collage-text-${region.id}`}
+                        region={region}
+                        onDragEnd={handleTextRegionDragEnd(regionIndex)}
+                        onContentChange={handleTextRegionContentChange(
+                            regionIndex,
+                        )}
+                        onDelete={handleDeleteTextRegion(regionIndex)}
+                    />
+                ))}
                 {isEmpty && (
                     <div
                         className={styles.emptyHint}
@@ -633,6 +817,24 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
                         className={styles.fileInput}
                         data-testid="collage-add-image-file-input"
                     />
+                    {/* Phase 3 C4 (2026-05-28). Add text region.
+                     *  Appends a new entry to text_regions with
+                     *  default geometry; the user can drag/resize/
+                     *  edit it immediately. */}
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleAddTextRegion}
+                        data-testid="collage-add-text-region"
+                    >
+                        <TypeIcon size={14} />
+                        <span style={{marginLeft: 6}}>
+                            {t(
+                                "ui.page_editor.collage.add_text_region",
+                                "Textbereich hinzufügen",
+                            )}
+                        </span>
+                    </button>
                     {uploadError && (
                         <span
                             className={styles.uploadError}
