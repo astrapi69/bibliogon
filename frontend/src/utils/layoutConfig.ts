@@ -55,6 +55,10 @@ const KNOWN_LAYOUTS: readonly string[] = [
     "image_full_text_overlay",
     "text_only",
     "comic_panel_grid",
+    // Picture-Book Layout Expansion Phase 1 (2026-05-28).
+    "image_bottom_text_top",
+    "image_right_text_left",
+    "image_full_no_text",
 ]
 
 /** Detect whether a layout_config is in namespaced shape.

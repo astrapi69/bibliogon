@@ -30,6 +30,13 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
     // LayoutPicker (kept out of DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS);
     // present only to satisfy the exhaustive Record<PageLayout, …> type.
     comic_panel_grid: "Comic panel grid",
+    // Picture-Book Layout Expansion Phase 1 (2026-05-28). Labels
+    // present so the exhaustive Record<PageLayout, string> type
+    // holds; UI surfacing (DEFAULT_LAYOUTS + ADDITIONAL_LAYOUTS) +
+    // category grouping arrive in C4.
+    image_bottom_text_top: "Image bottom, text top",
+    image_right_text_left: "Image right, text left",
+    image_full_no_text: "Full image (no text)",
 }
 
 export default function LayoutPicker({selected, onChange, disabled}: Props) {

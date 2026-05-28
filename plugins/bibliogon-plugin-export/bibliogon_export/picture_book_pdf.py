@@ -331,6 +331,15 @@ _KNOWN_LAYOUTS: frozenset[str] = frozenset(
         "image_full_text_overlay",
         "text_only",
         "comic_panel_grid",
+        # Picture-Book Layout Expansion Phase 1 (2026-05-28).
+        # Per-layout CSS rules + ``_render_page`` branches arrive
+        # in C3; this commit only extends the namespace whitelist
+        # so layout_config namespaces survive layout switches into
+        # these new layouts without the legacy-flat back-compat
+        # path treating them as unknown.
+        "image_bottom_text_top",
+        "image_right_text_left",
+        "image_full_no_text",
     }
 )
 

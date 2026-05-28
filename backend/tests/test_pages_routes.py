@@ -248,6 +248,31 @@ class TestPagesCRUD:
         )
         assert r.status_code == 422
 
+    @pytest.mark.parametrize(
+        "layout",
+        [
+            "image_bottom_text_top",
+            "image_right_text_left",
+            "image_full_no_text",
+        ],
+    )
+    def test_phase1_new_layouts_accepted(self, client, layout):
+        """Picture-Book Layout Expansion Phase 1 C1 (2026-05-28).
+
+        The 3 new single-image layouts must pass Pydantic
+        validation. Per-layout rendering branches + walker CSS +
+        picker entries land in subsequent commits; this pin asserts
+        the validation surface is open before any of those land so
+        downstream commits can ship independently.
+        """
+        book = _create_book(client, f"phase1-{layout}", book_type="picture_book")
+        r = client.post(
+            f"/api/books/{book['id']}/pages",
+            json={"layout": layout},
+        )
+        assert r.status_code == 201, r.text
+        assert r.json()["layout"] == layout
+
     def test_list_pages_returns_position_order(self, client):
         book = _create_book(client, "CRUD5", book_type="picture_book")
         for _ in range(3):

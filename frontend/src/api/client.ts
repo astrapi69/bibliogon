@@ -177,6 +177,14 @@ export type PageLayout =
     | "image_full_text_overlay"
     | "text_only"
     | "comic_panel_grid"
+    // Picture-Book Layout Expansion Phase 1 (2026-05-28). Single-
+    // image layouts mirror existing geometry; multi-image layouts
+    // (Phase 2) + collage (Phase 3) extend this union in later
+    // commits. PageCanvas branches + walker + picker + i18n land
+    // in subsequent Phase 1 commits.
+    | "image_bottom_text_top"
+    | "image_right_text_left"
+    | "image_full_no_text"
 
 /** Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
  *  STORYBOARD-VIEW-01). 6 fixed values constrain future beat-sheet

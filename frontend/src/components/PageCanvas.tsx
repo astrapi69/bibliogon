@@ -526,6 +526,15 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     // class. Reached only via the ``LAYOUT_CLASS[page.layout] ?? …``
     // safety net, never in practice.
     comic_panel_grid: styles.canvasLayoutImageTopTextBottom,
+    // Picture-Book Layout Expansion Phase 1 (2026-05-28).
+    // Temporary placeholder mappings — the dedicated CSS classes
+    // arrive in C2 (PageCanvas branches + module styles). Today
+    // these new layouts visually render as their mirror parent;
+    // the enum union is extended so the validation surface accepts
+    // the strings and downstream commits can land independently.
+    image_bottom_text_top: styles.canvasLayoutImageTopTextBottom,
+    image_right_text_left: styles.canvasLayoutImageLeftTextRight,
+    image_full_no_text: styles.canvasLayoutImageFullTextOverlay,
 }
 
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {

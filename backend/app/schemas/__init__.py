@@ -1001,6 +1001,14 @@ PageLayout = Literal[
     "image_full_text_overlay",
     "text_only",
     "comic_panel_grid",
+    # Picture-Book Layout Expansion Phase 1 (2026-05-28). Single-
+    # image layouts that mirror existing geometry. Subsequent
+    # commits add the PageCanvas branches, walker CSS, picker
+    # entries, and i18n; this commit only extends the Literal so
+    # the validation surface accepts the new strings.
+    "image_bottom_text_top",
+    "image_right_text_left",
+    "image_full_no_text",
 ]
 
 
