@@ -54,6 +54,7 @@ plugins:
         Git-Repository-URL: Git repository URL
         Storyboard-Ansicht: Storyboard view
         Text-Konfiguration (Bilderbuch): Text configuration (picture-book)
+        Sprechblasen-Typen (Comic): Comic bubble types
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
         Formatierung: Formatting
@@ -122,6 +123,7 @@ nav:
   - Git-Repository-URL: de/books/repository-url.md
   - Storyboard-Ansicht: de/books/storyboard.md
   - Text-Konfiguration (Bilderbuch): de/books/text-configuration.md
+  - Sprechblasen-Typen (Comic): de/books/comic-bubbles.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md

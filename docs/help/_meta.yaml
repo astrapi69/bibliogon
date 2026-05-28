@@ -57,6 +57,10 @@ navigation:
           de: Text-Konfiguration (Bilderbuch)
           en: Text configuration (picture-book)
         slug: books/text-configuration
+      - title:
+          de: Sprechblasen-Typen (Comic)
+          en: Comic bubble types
+        slug: books/comic-bubbles
 
   - title:
       de: Dashboard
