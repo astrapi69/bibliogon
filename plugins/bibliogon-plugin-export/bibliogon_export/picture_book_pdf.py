@@ -438,6 +438,34 @@ html, body {
 .page--split_vertical .region-text {
     border-top: 1pt solid #ccc;
 }
+
+/* Phase 2 C5 (2026-05-28). image_border_text_center: PRIMARY image
+ * fills the entire page (single-image layout, NOT in
+ * _MULTI_IMAGE_LAYOUTS); text region is an absolutely-positioned
+ * centred panel with semi-transparent backdrop. The image showing
+ * around the panel produces the "frame / border" visual. Mirrors
+ * the editor's .canvasLayoutImageBorderTextCenter. */
+
+.page--image_border_text_center {
+    grid-template-areas: "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.page--image_border_text_center .region-text {
+    position: absolute;
+    top: 15%;
+    bottom: 15%;
+    left: 15%;
+    right: 15%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1em;
+    border-radius: 4pt;
+    color: white;
+}
 """
 
 
@@ -459,6 +487,8 @@ def _layout_class(layout: str) -> str:
         "split_horizontal",
         # Phase 2 C4 (2026-05-28). split_vertical.
         "split_vertical",
+        # Phase 2 C5 (2026-05-28). image_border_text_center.
+        "image_border_text_center",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
@@ -1006,6 +1036,34 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
         region_text_style = _compute_tier_text_style(config)
+
+    elif layout == "image_border_text_center":
+        # Phase 2 C5 (2026-05-28): PRIMARY image fills the page as a
+        # decorative frame; centred text panel with semi-transparent
+        # backdrop. Single-image layout (NOT in _MULTI_IMAGE_LAYOUTS).
+        # The CSS rule handles absolute positioning + default
+        # rgba(0,0,0,0.5) backdrop; this branch composes the inline-
+        # style overrides for text_backdrop_opacity tuning + Tier 1+2
+        # text styles (mirrors image_full_text_overlay's background
+        # composition).
+        fit = config.get("image_fit")
+        if fit in ("contain", "cover"):
+            image_style = f"object-fit: {fit};"
+        bg_rgb = _hex_to_rgb(config.get("background_color")) or (0, 0, 0)
+        opacity_raw = config.get("text_backdrop_opacity")
+        # Default 0.5 matches the CSS module's rgba(0,0,0,0.5).
+        opacity = (
+            max(0.3, min(0.8, float(opacity_raw)))
+            if isinstance(opacity_raw, (int, float))
+            else 0.5
+        )
+        bg_parts = [
+            f"background: rgba({bg_rgb[0]}, {bg_rgb[1]}, {bg_rgb[2]}, {opacity});"
+        ]
+        tier_style = _compute_tier_text_style(config)
+        if tier_style:
+            bg_parts.append(tier_style)
+        region_text_style = " ".join(bg_parts)
 
     elif layout == "image_full_text_overlay":
         pos = config.get("text_position")

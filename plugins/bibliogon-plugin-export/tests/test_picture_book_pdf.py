@@ -1419,6 +1419,81 @@ def test_image_layout_style_split_vertical_returns_image_fit() -> None:
     assert "object-fit: contain" in styles["image_style"]
 
 
+# Phase 2 C5 (2026-05-28). image_border_text_center walker pins.
+# SINGLE-image layout — PRIMARY image fills the page as a
+# decorative frame; centred text panel with semi-transparent
+# backdrop. NOT in _MULTI_IMAGE_LAYOUTS — no secondary asset
+# affordance.
+
+
+def test_render_page_image_border_text_center_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="image_border_text_center"), {})
+    assert "page--image_border_text_center" in html
+
+
+def test_render_page_image_border_text_center_no_secondary_region() -> None:
+    """Single-image layout: NOT in _MULTI_IMAGE_LAYOUTS, so the
+    walker MUST NOT emit a .region-image-secondary block (even when
+    a stray secondary asset id is in the namespace)."""
+    html = _render_page(
+        _make_page(
+            layout="image_border_text_center",
+            layout_config={
+                "image_border_text_center": {
+                    # Stray field — must be silently ignored at the
+                    # walker level since this layout is single-image.
+                    "secondary_image_asset_id": "asset-stray",
+                }
+            },
+        ),
+        {"asset-stray": "file:///tmp/stray.png"},
+    )
+    assert "region-image-secondary" not in html
+
+
+def test_render_page_image_border_text_center_text_region_inline_style_present() -> None:
+    """The walker emits inline background+opacity on the text region
+    (mirrors the editor's borderTextStyle composition)."""
+    html = _render_page(
+        _make_page(
+            layout="image_border_text_center",
+            text_content="Frame caption",
+            layout_config={
+                "image_border_text_center": {
+                    "text_backdrop_opacity": 0.7,
+                }
+            },
+        ),
+        {},
+    )
+    # Default background_color = #000000 → rgba(0, 0, 0, 0.7).
+    assert "rgba(0, 0, 0, 0.7)" in html
+    assert "Frame caption" in html
+
+
+def test_image_layout_style_image_border_text_center_image_fit() -> None:
+    styles = _image_layout_style(
+        "image_border_text_center", {"image_fit": "cover"}
+    )
+    assert "object-fit: cover" in styles["image_style"]
+
+
+def test_image_layout_style_image_border_text_center_default_backdrop() -> None:
+    """Default text_backdrop_opacity is 0.5 (matches CSS module
+    fallback)."""
+    styles = _image_layout_style("image_border_text_center", {})
+    assert "rgba(0, 0, 0, 0.5)" in styles["region_text_style"]
+
+
+def test_image_layout_style_image_border_text_center_background_color_override() -> None:
+    """A non-default background_color tints the backdrop."""
+    styles = _image_layout_style(
+        "image_border_text_center",
+        {"background_color": "#FFC857", "text_backdrop_opacity": 0.6},
+    )
+    assert "rgba(255, 200, 87, 0.6)" in styles["region_text_style"]
+
+
 def test_render_page_image_full_text_overlay_position_top() -> None:
     html = _render_page(
         _make_page(

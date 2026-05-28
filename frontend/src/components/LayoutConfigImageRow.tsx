@@ -447,6 +447,101 @@ export function LayoutConfigSplitVertical({config, onChange}: BaseProps) {
     )
 }
 
+/** image_border_text_center config (Picture-Book Layout Expansion
+ *  Phase 2 C5, 2026-05-28).
+ *
+ *  Single-image layout (NOT in MULTI_IMAGE_LAYOUTS — no secondary
+ *  image affordance): the PRIMARY image fills the page; a centred,
+ *  semi-transparent text panel sits on top. Visual effect: the
+ *  image showing around the panel reads as a decorative "frame /
+ *  border". Per the adjudicated Q4 it's a Tier-Property layout
+ *  (text band carries Tier 1+2 styles).
+ *
+ *  Body controls: ``image_fit`` (contain vs cover for the frame)
+ *  + ``text_backdrop_opacity`` (mirrors image_full_text_overlay
+ *  but defaults to 0.5 not 0.45 so the frame visual is more
+ *  prominent) + Tier 1+2 sections for the text panel content. */
+export function LayoutConfigImageBorderTextCenter({
+    config,
+    onChange,
+}: BaseProps) {
+    const {t} = useI18n()
+    const fit = readImageFit(config)
+    const backdropOpacity =
+        typeof config?.text_backdrop_opacity === "number" &&
+        Number.isFinite(config.text_backdrop_opacity)
+            ? Math.max(
+                  BACKDROP_OPACITY_MIN,
+                  Math.min(
+                      BACKDROP_OPACITY_MAX,
+                      config.text_backdrop_opacity as number,
+                  ),
+              )
+            : 0.5
+    const debouncedBackdropChange = useDebouncedCallback((value: number) => {
+        onChange({text_backdrop_opacity: value})
+    }, 300)
+    return (
+        <div
+            className={styles.container}
+            data-testid="layout-config-image-border-text-center"
+        >
+            <h4 className={styles.heading}>
+                {t(
+                    "ui.page_editor.config.image_border_text_center.heading",
+                    "Bild als Rahmen, zentrierter Text",
+                )}
+            </h4>
+            <ImageFitDropdown
+                value={fit}
+                onChange={(next) => onChange({image_fit: next})}
+                testid="image-border-text-center-image-fit"
+            />
+            <label className={styles.fieldLabel}>
+                <span className={styles.legend}>
+                    {t(
+                        "ui.page_editor.config.text_backdrop_opacity",
+                        "Text-Hintergrund Deckkraft",
+                    )}
+                </span>
+                <input
+                    type="range"
+                    min={BACKDROP_OPACITY_MIN}
+                    max={BACKDROP_OPACITY_MAX}
+                    step={BACKDROP_OPACITY_STEP}
+                    defaultValue={backdropOpacity}
+                    onChange={(e) =>
+                        debouncedBackdropChange(parseFloat(e.target.value))
+                    }
+                    data-testid="image-border-text-center-backdrop-opacity-slider"
+                    aria-label={t(
+                        "ui.page_editor.config.text_backdrop_opacity",
+                        "Text-Hintergrund Deckkraft",
+                    )}
+                />
+                <span
+                    className={styles.sliderValue}
+                    data-testid="image-border-text-center-backdrop-opacity-value"
+                >
+                    {backdropOpacity.toFixed(2)}
+                </span>
+            </label>
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-border-text-center"
+                i18nKeyPrefix="ui.page_editor.config.image_border_text_center"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="image-border-text-center"
+                i18nKeyPrefix="ui.page_editor.config.image_border_text_center"
+            />
+        </div>
+    )
+}
+
 /** image_full_no_text config (Phase 1 C4, 2026-05-28).
  *
  *  Minimal body: image_fit only (no text region → no Tier1/2,

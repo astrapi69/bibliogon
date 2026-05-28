@@ -544,14 +544,15 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     image_bottom_text_top: styles.canvasLayoutImageBottomTextTop,
     image_right_text_left: styles.canvasLayoutImageRightTextLeft,
     image_full_no_text: styles.canvasLayoutImageFullNoText,
-    // Picture-Book Layout Expansion Phase 2 C2..C4 (2026-05-28).
-    // Each layout swaps in its dedicated class as that commit ships;
-    // image_border_text_center keeps the placeholder fallback until
-    // C5.
+    // Picture-Book Layout Expansion Phase 2 C2..C5 (2026-05-28).
+    // All 4 Phase 2 layouts swap in their dedicated CSS module
+    // classes; the placeholder fallback for image_border_text_center
+    // (a single-image layout, NOT in MULTI_IMAGE_LAYOUTS) lands in
+    // C5 with the centered-text-panel-over-image visual.
     two_images_text_center: styles.canvasLayoutTwoImagesTextCenter,
     split_horizontal: styles.canvasLayoutSplitHorizontal,
     split_vertical: styles.canvasLayoutSplitVertical,
-    image_border_text_center: styles.canvasLayoutImageTopTextBottom,
+    image_border_text_center: styles.canvasLayoutImageBorderTextCenter,
 }
 
 /** Picture-Book Layout Expansion Phase 2 (2026-05-28).
@@ -827,7 +828,11 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         page.layout === "image_left_text_right" ||
         page.layout === "image_bottom_text_top" ||
         page.layout === "image_right_text_left" ||
-        page.layout === "image_full_no_text"
+        page.layout === "image_full_no_text" ||
+        // Phase 2 C5 (2026-05-28): image_border_text_center renders
+        // the primary image full-bleed; image_fit lets authors pick
+        // contain vs cover for the frame visual.
+        page.layout === "image_border_text_center"
     ) {
         imageInlineStyle.objectFit = imageFit
     }
@@ -849,6 +854,31 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         page.layout === "image_right_text_left"
             ? computeTierTextStyles(layoutNamespace)
             : {}
+
+    // Phase 2 C5 (2026-05-28): image_border_text_center text panel
+    // style. CSS module class handles the absolute positioning +
+    // default backdrop; this block lets the user tune
+    // text_backdrop_opacity + composes the Tier 1+2 inline styles
+    // on top. Background composition mirrors image_full_text_overlay:
+    // hex background_color × text_backdrop_opacity slider (default
+    // black × 0.5 to match the CSS module fallback).
+    const borderTextStyle: React.CSSProperties = {}
+    if (page.layout === "image_border_text_center") {
+        const tierConfig = layoutConfig as Record<string, unknown>
+        const bgRgb =
+            hexToRgb(tierConfig.background_color) ?? {r: 0, g: 0, b: 0}
+        // Default 0.5 matches the CSS module rgba(0,0,0,0.5).
+        const opacity =
+            typeof tierConfig.text_backdrop_opacity === "number"
+                ? Math.max(
+                      0.3,
+                      Math.min(0.8, tierConfig.text_backdrop_opacity),
+                  )
+                : 0.5
+        borderTextStyle.background = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${opacity})`
+        // Tier 1+2 (color, font, weight, etc.) overlay on top.
+        Object.assign(borderTextStyle, computeTierTextStyles(tierConfig))
+    }
 
     const overlayTextStyle: React.CSSProperties = {}
     if (page.layout === "image_full_text_overlay") {
@@ -1051,12 +1081,14 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                                 ? speechBubbleStyle
                                 : page.layout === "image_full_text_overlay"
                                   ? overlayTextStyle
-                                  : page.layout === "image_top_text_bottom" ||
-                                      page.layout === "image_left_text_right" ||
-                                      page.layout === "image_bottom_text_top" ||
-                                      page.layout === "image_right_text_left"
-                                    ? imageLayoutTierStyle
-                                    : undefined
+                                  : page.layout === "image_border_text_center"
+                                    ? borderTextStyle
+                                    : page.layout === "image_top_text_bottom" ||
+                                        page.layout === "image_left_text_right" ||
+                                        page.layout === "image_bottom_text_top" ||
+                                        page.layout === "image_right_text_left"
+                                      ? imageLayoutTierStyle
+                                      : undefined
                         }
                     >
                         {isTipTapLayout(page.layout as PageLayout) ? (

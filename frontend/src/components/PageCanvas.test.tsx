@@ -2856,4 +2856,31 @@ describe("PageCanvas - two_images_text_center (Phase 2 C2)", () => {
             screen.getByTestId("page-canvas-image-area-secondary"),
         ).toBeInTheDocument()
     })
+
+    it("does NOT render the secondary image region for image_border_text_center (Phase 2 C5)", () => {
+        // Phase 2 C5 (2026-05-28): image_border_text_center is a
+        // SINGLE-image layout, intentionally NOT in
+        // MULTI_IMAGE_LAYOUTS. The text panel is centred over the
+        // primary image (visual frame effect); there's no secondary
+        // asset slot.
+        render(
+            <PageCanvas
+                page={makeMultiImagePage({
+                    layout: "image_border_text_center",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.queryByTestId("page-canvas-image-area-secondary"),
+        ).not.toBeInTheDocument()
+        // Primary image region + text region still present.
+        expect(
+            screen.getByTestId("page-canvas-image-area"),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByTestId("page-canvas-region-text"),
+        ).toBeInTheDocument()
+    })
 })

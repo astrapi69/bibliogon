@@ -52,6 +52,7 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         "two_images_text_center",
         "split_horizontal",
         "split_vertical",
+        "image_border_text_center",
     ]
 
     it.each(LAYOUTS)("mounts for layout '%s' (no crash)", (layout) => {
@@ -138,6 +139,21 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         )
         expect(
             screen.getByTestId("layout-config-split-vertical"),
+        ).toBeInTheDocument()
+    })
+
+    it("dispatches the image_border_text_center body for the single-image layout", () => {
+        // Phase 2 C5: dispatcher routes image_border_text_center to
+        // its body. Single-image layout — no secondary asset region
+        // on the canvas.
+        render(
+            <LayoutConfig
+                page={makePage({layout: "image_border_text_center"})}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("layout-config-image-border-text-center"),
         ).toBeInTheDocument()
     })
 })

@@ -145,6 +145,40 @@
     grid-template-rows: 45% 45% 10%;
 }
 
+/* Phase 2 C5 (2026-05-28). image_border_text_center: PRIMARY image
+ * fills the entire canvas as a decorative frame; text region is
+ * an absolutely-positioned, centred panel with a semi-transparent
+ * backdrop. The image-showing-around-the-text-panel produces the
+ * "border / frame" visual effect. Single-image layout — does NOT
+ * use the secondary image affordance (image_border_text_center is
+ * intentionally NOT in MULTI_IMAGE_LAYOUTS). Tier-Property text
+ * region per the adjudicated Q4. */
+
+.canvasLayoutImageBorderTextCenter {
+    grid-template-areas: "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+/* Centred text panel: 15 % margin from every edge so the image
+ * shows as a frame around it. Default backdrop is rgba(0,0,0,0.5);
+ * the body's text_backdrop_opacity slider can tune it (mirrors
+ * image_full_text_overlay's existing backdrop control). */
+.canvasLayoutImageBorderTextCenter .regionText {
+    position: absolute;
+    top: 15%;
+    bottom: 15%;
+    left: 15%;
+    right: 15%;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1em;
+    border-radius: 4px;
+    color: white;
+}
+
 /* --- Region defaults --- */
 
 .region {

@@ -3,6 +3,7 @@ import type {Page, PageLayout} from "../api/client"
 import {readLayoutNamespace} from "../utils/layoutConfig"
 import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
 import {
+    LayoutConfigImageBorderTextCenter,
     LayoutConfigImageTopTextBottom,
     LayoutConfigImageLeftTextRight,
     LayoutConfigImageFullTextOverlay,
@@ -127,6 +128,15 @@ export default function LayoutConfig({page, onChange}: Props) {
              *  stacked; thin Tier-Property caption strip below. */}
             {page.layout === "split_vertical" && (
                 <LayoutConfigSplitVertical
+                    config={layoutNamespace}
+                    onChange={onChange}
+                />
+            )}
+            {/* Phase 2 C5 (2026-05-28). Single-image layout: image
+             *  fills the page as a decorative frame; centred text
+             *  panel with semi-transparent backdrop. */}
+            {page.layout === "image_border_text_center" && (
+                <LayoutConfigImageBorderTextCenter
                     config={layoutNamespace}
                     onChange={onChange}
                 />
