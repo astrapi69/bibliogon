@@ -191,6 +191,56 @@ class TestComicPanelUpdate:
         assert resp.status_code == 200
         assert resp.json()["bounds"] == {"x_pct": 10, "y_pct": 10, "width_pct": 80, "height_pct": 80}
 
+    def test_update_supports_page_id_for_cross_page_move(
+        self, client: TestClient
+    ) -> None:
+        """COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28). PATCHing
+        a panel's page_id moves it to a different page within the
+        same book. Used by the panel-overflow dialog's
+        "Move to new pages" path."""
+        book_id = _create_comic_book(client)
+        page_a = _add_comic_page(client, book_id)
+        page_b = _add_comic_page(client, book_id)
+        create = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_a}/panels",
+            json={"bounds": {"x_pct": 0}},
+        )
+        panel_id = create.json()["id"]
+        # Move the panel from page_a to page_b.
+        resp = client.patch(
+            f"/api/books/{book_id}/comic-panels/{panel_id}",
+            json={"page_id": page_b, "position": 1},
+        )
+        assert resp.status_code == 200, resp.text
+        # Panel now lives on page_b.
+        list_a = client.get(
+            f"/api/books/{book_id}/comic-pages/{page_a}/panels"
+        ).json()
+        list_b = client.get(
+            f"/api/books/{book_id}/comic-pages/{page_b}/panels"
+        ).json()
+        assert all(p["id"] != panel_id for p in list_a)
+        assert any(p["id"] == panel_id for p in list_b)
+
+    def test_update_rejects_page_id_from_different_book(
+        self, client: TestClient
+    ) -> None:
+        """Cross-book panel migrations rejected with 400."""
+        book_a = _create_comic_book(client, title="A")
+        book_b = _create_comic_book(client, title="B")
+        page_a = _add_comic_page(client, book_a)
+        page_b = _add_comic_page(client, book_b)
+        create = client.post(
+            f"/api/books/{book_a}/comic-pages/{page_a}/panels",
+            json={"bounds": {"x_pct": 0}},
+        )
+        panel_id = create.json()["id"]
+        resp = client.patch(
+            f"/api/books/{book_a}/comic-panels/{panel_id}",
+            json={"page_id": page_b},
+        )
+        assert resp.status_code == 400
+
     def test_update_rejects_cross_book_id(self, client: TestClient) -> None:
         # Panel A on book A. Try to PATCH via book B's URL.
         book_a = _create_comic_book(client, title="Book A")

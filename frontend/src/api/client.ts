@@ -4009,6 +4009,13 @@ export interface ComicPanelUpdate {
     bounds?: Record<string, unknown>
     image_asset_id?: string | null
     panel_config?: Record<string, unknown> | null
+    // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28). Cross-page move
+    // support: when the user picks "Move to new pages" in the
+    // panel-overflow dialog, excess panels migrate by PATCHing
+    // page_id (+ position for the panel's new index within the
+    // receiving page).
+    page_id?: string
+    position?: number
 }
 
 export interface ComicBubbleOut {

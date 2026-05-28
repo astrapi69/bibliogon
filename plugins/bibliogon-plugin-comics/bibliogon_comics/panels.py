@@ -174,6 +174,24 @@ def update_panel(
         update_data["panel_config"] = _serialize_json_field(
             update_data["panel_config"]
         )
+    # COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28): cross-page move
+    # support. The receiving page MUST belong to the same book;
+    # otherwise the migration would break the page→book chain that
+    # this router's existence-check enforces.
+    if "page_id" in update_data and update_data["page_id"] is not None:
+        target_page = (
+            db.query(Page)
+            .filter(Page.id == update_data["page_id"], Page.book_id == book_id)
+            .first()
+        )
+        if not target_page:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    f"Target page {update_data['page_id']} not found in "
+                    f"book {book_id}"
+                ),
+            )
     for field, value in update_data.items():
         setattr(panel, field, value)
     db.commit()

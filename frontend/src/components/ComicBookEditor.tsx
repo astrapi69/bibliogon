@@ -39,6 +39,7 @@ import {
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
 import {useI18n} from "../hooks/useI18n";
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
+import {notify} from "../utils/notify";
 
 import {
     ComicPanelGrid,
@@ -247,34 +248,6 @@ export default function ComicBookEditor({
         [bookId, dialog, t, activePageId],
     );
 
-    // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
-    // into the active page's ``layout_config`` while preserving any
-    // sibling keys (future Phase 3 #6 panel-gutter, etc.).
-    const handleChangeGridTemplate = useCallback(
-        async (template: ComicGridTemplate) => {
-            if (!activePageId) return;
-            const activePage = pages.find((p) => p.id === activePageId);
-            if (!activePage) return;
-            const priorConfig =
-                (activePage.layout_config as Record<string, unknown> | null) ??
-                {};
-            try {
-                await api.pages.update(bookId, activePageId, {
-                    layout_config: {
-                        ...priorConfig,
-                        comic_grid_template: template,
-                    },
-                });
-                await refreshPages();
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [activePageId, bookId, pages, refreshPages],
-    );
-
     const refreshPanelsAndBubbles = useCallback(
         async (pageId: string) => {
             try {
@@ -297,6 +270,195 @@ export default function ComicBookEditor({
             }
         },
         [bookId],
+    );
+
+    // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
+    // into the active page's ``layout_config`` while preserving any
+    // sibling keys (future Phase 3 #6 panel-gutter, etc.).
+    //
+    // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28): when the target
+    // template's panel cap is BELOW the current panel count, the
+    // user is asked to choose between (A) "Move excess panels to
+    // new automatically-created pages" (each new page inherits the
+    // target template; panel content — bubbles, images — follows
+    // via the PATCH-page_id path), (B) "Delete excess panels
+    // permanently" (destructive, confirmed), or (C) cancel the
+    // layout switch entirely. No silent hiding — data ghosts are
+    // forbidden per the user-stated discipline.
+    const handleChangeGridTemplate = useCallback(
+        async (template: ComicGridTemplate) => {
+            if (!activePageId) return;
+            const activePage = pages.find((p) => p.id === activePageId);
+            if (!activePage) return;
+            const priorConfig =
+                (activePage.layout_config as Record<string, unknown> | null) ??
+                {};
+
+            // Count current panels on the active page; compare
+            // against the target template's max.
+            const currentPanelCount = panels.length;
+            const targetMax = COMIC_GRID_MAX_PANELS[template];
+            const excess = Math.max(0, currentPanelCount - targetMax);
+
+            // Persists the new template (and optionally refreshes
+            // panels) without re-checking overflow. Used after the
+            // overflow has been resolved (or there was no overflow).
+            const persistTemplateChange = async () => {
+                await api.pages.update(bookId, activePageId, {
+                    layout_config: {
+                        ...priorConfig,
+                        comic_grid_template: template,
+                    },
+                });
+                await refreshPages();
+                if (activePageId) {
+                    await refreshPanelsAndBubbles(activePageId);
+                }
+            };
+
+            try {
+                if (excess === 0) {
+                    await persistTemplateChange();
+                    return;
+                }
+
+                // Build the confirmation choice. dialog.choose
+                // returns the chosen value's string, or null on
+                // cancel.
+                const message = t(
+                    "ui.comic_book_editor.overflow_message",
+                    `Die ausgewählte Vorlage erlaubt nur ${targetMax} Panel(s), aber die Seite hat ${currentPanelCount}. ${excess} überzählige Panel(s) müssen verschoben oder gelöscht werden.`,
+                )
+                    .replace("{target}", String(targetMax))
+                    .replace("{current}", String(currentPanelCount))
+                    .replace("{excess}", String(excess));
+
+                const choice = await dialog.choose(
+                    t(
+                        "ui.comic_book_editor.overflow_title",
+                        "Zu viele Panels für diese Vorlage",
+                    ),
+                    message,
+                    [
+                        {
+                            value: "move",
+                            label: t(
+                                "ui.comic_book_editor.overflow_move",
+                                "Auf neue Seiten verschieben",
+                            ),
+                        },
+                        {
+                            value: "delete",
+                            label: t(
+                                "ui.comic_book_editor.overflow_delete",
+                                "Löschen",
+                            ),
+                            variant: "danger",
+                        },
+                    ],
+                    t("ui.common.cancel", "Abbrechen"),
+                );
+
+                if (choice === null) {
+                    // Cancel: layout switch not performed.
+                    return;
+                }
+
+                // Sort panels by position so "excess" picks the
+                // LAST N panels — most recently added — and keeps
+                // the earliest panels in their place.
+                const sortedPanels = [...panels].sort(
+                    (a, b) => (a.position ?? 0) - (b.position ?? 0),
+                );
+                const excessPanels = sortedPanels.slice(targetMax);
+
+                if (choice === "delete") {
+                    // Explicit destructive confirmation per the
+                    // spec — second prompt with explicit warning
+                    // about bubbles + images being permanently
+                    // lost.
+                    const reallyDelete = await dialog.confirm(
+                        t(
+                            "ui.comic_book_editor.overflow_delete_confirm_title",
+                            "Wirklich endgültig löschen?",
+                        ),
+                        t(
+                            "ui.comic_book_editor.overflow_delete_confirm_message",
+                            `${excess} Panels mit allen Inhalten (Sprechblasen, Bilder) werden endgültig gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.`,
+                        ).replace("{excess}", String(excess)),
+                        "danger",
+                    );
+                    if (!reallyDelete) return;
+                    // Sequential delete preserves error visibility
+                    // per panel; parallel would mask which panel
+                    // failed.
+                    for (const p of excessPanels) {
+                        await api.comics.deletePanel(bookId, p.id);
+                    }
+                    notify.success(
+                        t(
+                            "ui.comic_book_editor.overflow_delete_toast",
+                            `${excess} Panels gelöscht.`,
+                        ).replace("{excess}", String(excess)),
+                    );
+                } else {
+                    // Move path: distribute excess across new
+                    // pages, each with target template, filling
+                    // targetMax per page.
+                    const newPagesCount = Math.ceil(excess / targetMax);
+                    const newPageIds: string[] = [];
+                    for (let i = 0; i < newPagesCount; i++) {
+                        const newPage = await api.pages.create(bookId, {
+                            layout: "comic_panel_grid",
+                            layout_config: {
+                                comic_grid_template: template,
+                            },
+                        });
+                        newPageIds.push(newPage.id);
+                    }
+                    // For each excess panel, PATCH page_id +
+                    // position to its slot on the new page.
+                    for (let i = 0; i < excessPanels.length; i++) {
+                        const targetPageIndex = Math.floor(i / targetMax);
+                        const positionInTargetPage = i % targetMax;
+                        await api.comics.updatePanel(
+                            bookId,
+                            excessPanels[i].id,
+                            {
+                                page_id: newPageIds[targetPageIndex],
+                                position: positionInTargetPage,
+                            },
+                        );
+                    }
+                    notify.success(
+                        t(
+                            "ui.comic_book_editor.overflow_move_toast",
+                            `${excess} Panels auf ${newPagesCount} neue Seite(n) verschoben.`,
+                        )
+                            .replace("{excess}", String(excess))
+                            .replace("{pages}", String(newPagesCount)),
+                    );
+                }
+
+                // Either path: now persist the layout switch on
+                // the active page + refresh.
+                await persistTemplateChange();
+            } catch (err) {
+                const detail =
+                    err instanceof ApiError ? err.detail : String(err);
+                setPagesError(detail);
+            }
+        },
+        [
+            activePageId,
+            bookId,
+            pages,
+            panels,
+            refreshPages,
+            refreshPanelsAndBubbles,
+            dialog,
+            t,
+        ],
     );
 
     // PHASE-2-PANEL-CONFIG-01 C4: close the Half-Wired gap on

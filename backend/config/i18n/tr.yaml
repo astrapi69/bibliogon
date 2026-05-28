@@ -2667,6 +2667,14 @@ ui:
       gentle: "Yumuşak"
   comic_book_editor:
     back: "Back"
+    overflow_title: "Too many panels for this template"
+    overflow_message: "The selected template allows only {target} panel(s) but this page has {current}. {excess} extra panel(s) must be moved or deleted."
+    overflow_move: "Move to new pages"
+    overflow_delete: "Delete"
+    overflow_delete_confirm_title: "Really delete permanently?"
+    overflow_delete_confirm_message: "{excess} panels with all their content (speech bubbles, images) will be permanently deleted. This action cannot be undone."
+    overflow_move_toast: "{excess} panels moved to {pages} new page(s)."
+    overflow_delete_toast: "{excess} panels deleted."
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button (passthrough-EN per LL I18N-DIACRITICS-01).
     show_metadata: "Open book metadata"
     plugin_label: "Plugin"

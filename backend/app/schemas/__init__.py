@@ -1228,14 +1228,26 @@ class ComicPanelCreate(BaseModel):
 class ComicPanelUpdate(BaseModel):
     """Payload for PATCH .../comic-panels/{panel_id}.
 
-    Position is NOT mutable through this schema; a future reorder
-    endpoint will handle bulk position changes atomically (mirrors
-    PagesReorder convention).
+    Position-bulk-reorder still goes through a future bulk endpoint
+    (mirrors PagesReorder convention); but ``position`` IS accepted
+    in single-panel update path to support the panel-overflow
+    handler (COMIC-PANEL-OVERFLOW-HANDLER-01, 2026-05-28) — when a
+    panel moves from one page to another, the receiving page may
+    need to assign the panel a fresh position index. Bulk reorder
+    of multiple panels at once stays out of scope.
+
+    ``page_id`` is also accepted to enable the same overflow
+    handler's "Move to new pages" path: the panel migrates to a
+    new page (same book), bubbles + image_asset_id follow via the
+    ORM relationship. Router validates page_id belongs to the same
+    book to prevent cross-book panel migrations.
     """
 
     bounds: dict[str, Any] | None = None
     image_asset_id: str | None = None
     panel_config: dict[str, Any] | None = None
+    page_id: str | None = None
+    position: int | None = None
 
 
 class ComicPanelOut(BaseModel):

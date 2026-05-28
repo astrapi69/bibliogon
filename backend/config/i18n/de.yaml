@@ -2662,6 +2662,14 @@ ui:
       gentle: "Sanft"
   comic_book_editor:
     back: "Zurück"
+    overflow_title: "Zu viele Panels für diese Vorlage"
+    overflow_message: "Die ausgewählte Vorlage erlaubt nur {target} Panel(s), aber die Seite hat {current}. {excess} überzählige Panel(s) müssen verschoben oder gelöscht werden."
+    overflow_move: "Auf neue Seiten verschieben"
+    overflow_delete: "Löschen"
+    overflow_delete_confirm_title: "Wirklich endgültig löschen?"
+    overflow_delete_confirm_message: "{excess} Panels mit allen Inhalten (Sprechblasen, Bilder) werden endgültig gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden."
+    overflow_move_toast: "{excess} Panels auf {pages} neue Seite(n) verschoben."
+    overflow_delete_toast: "{excess} Panels gelöscht."
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.
     show_metadata: "Buch-Metadaten öffnen"
     plugin_label: "Plugin"
