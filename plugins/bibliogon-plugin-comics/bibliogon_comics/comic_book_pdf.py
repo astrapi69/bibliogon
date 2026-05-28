@@ -766,8 +766,12 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
     Bubble row shape (matches ``ComicBubbleOut`` Pydantic schema):
     - id, panel_id, position
     - bubble_type (one of 6 enum values)
-    - anchor: {x_pct, y_pct} (position within the panel as
-      percentages 0-100)
+    - anchor: {x_pct, y_pct} — the bubble's TOP-LEFT corner within
+      the panel as percentages 0-100. Matches the editor's
+      ``frontend/src/components/comics/ComicBubble.tsx`` convention:
+      no ``transform: translate(...)`` is applied; ``left`` + ``top``
+      put the top-left of the bubble at ``(x_pct%, y_pct%)`` of
+      the panel.
     - width_pct, height_pct (bubble dimensions as % of panel)
     - tail_direction, tail_position_pct, tail_length_px
     - bubble_config: optional Tier 1+2 JSON properties (color,
@@ -871,13 +875,23 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
     text = bubble.get("text_content") or ""
     text_html = escape(str(text))
 
+    # Anchor convention: ``(x_pct, y_pct)`` is the bubble's TOP-LEFT
+    # corner in % of the parent panel, mirroring
+    # ``frontend/src/components/comics/ComicBubble.tsx``'s
+    # ``baseStyle``. No ``transform: translate(-50%, -50%)`` here:
+    # that was a bug shipped with Approach A — the editor canvas
+    # placed bubbles at top-left while the walker treated the same
+    # coords as centre, shifting bubbles up-left by
+    # ``(width_pct/2, height_pct/2)`` in the rendered PDF. The
+    # ``_clampAnchor`` math in the editor uses
+    # ``maxX = 100 - width_pct``, which only holds for the top-left
+    # interpretation; the walker now matches.
     container_style = (
         f"position: absolute;"
         f" left: {x_pct}%;"
         f" top: {y_pct}%;"
         f" width: {width_pct}%;"
         f" height: {height_pct}%;"
-        f" transform: translate(-50%, -50%);"
         f" overflow: visible;"
     )
 

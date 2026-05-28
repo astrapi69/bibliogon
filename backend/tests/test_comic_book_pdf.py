@@ -264,6 +264,77 @@ def test_render_comic_bubble_positions_via_anchor() -> None:
     assert "top: 75%" in html
 
 
+def test_render_comic_bubble_anchor_is_top_left_no_centre_translate() -> None:
+    """Editor / walker positioning parity (2026-05-28).
+
+    Before this commit the walker carried ``transform:
+    translate(-50%, -50%)`` on the bubble container, treating the
+    stored ``anchor`` as the bubble's CENTRE. The editor canvas
+    (``frontend/src/components/comics/ComicBubble.tsx::baseStyle``)
+    has always treated it as the TOP-LEFT corner — that's the
+    convention the ``_clampAnchor`` math at the JS side encodes
+    (``maxX = 100 - width_pct`` only holds for top-left). The
+    walker now matches: ``left``/``top`` place the bubble's
+    top-left corner; no ``translate(-50%, -50%)`` should appear in
+    the rendered HTML for the bubble container.
+
+    Regression pin: a bubble at (25, 75) with width 30 × height 20
+    occupies the rectangle (25..55, 75..95) of the panel in both
+    renderers. Mismatch would shift the PDF render up-left by
+    (width/2, height/2) = (15%, 10%).
+    """
+    html = _render_comic_bubble(
+        _make_bubble(
+            anchor={"x_pct": 25, "y_pct": 75},
+            width_pct=30,
+            height_pct=20,
+        )
+    )
+    # The exact CSS the editor emits for the same bubble:
+    assert "left: 25%" in html
+    assert "top: 75%" in html
+    assert "width: 30%" in html
+    assert "height: 20%" in html
+    # The container must NOT carry the centre-anchored translate.
+    # Inner SVG / text-overlay elements use their own ``transform``s
+    # at most for inner geometry; the bubble container itself does
+    # not. Assert at the container-style scope by grepping for the
+    # exact stray rule.
+    assert "translate(-50%, -50%)" not in html
+
+
+@pytest.mark.parametrize(
+    "x_pct,y_pct,width_pct,height_pct",
+    [
+        (0, 0, 30, 20),
+        (50, 50, 25, 25),
+        (70, 80, 30, 20),
+        (12, 34, 40, 30),
+    ],
+)
+def test_render_comic_bubble_anchor_top_left_parametric(
+    x_pct: int,
+    y_pct: int,
+    width_pct: int,
+    height_pct: int,
+) -> None:
+    """Parametric pin on the editor-PDF parity at a range of
+    anchor + size combos. Each renders the bubble at the exact
+    rectangle the editor would, with no centre-translate."""
+    html = _render_comic_bubble(
+        _make_bubble(
+            anchor={"x_pct": x_pct, "y_pct": y_pct},
+            width_pct=width_pct,
+            height_pct=height_pct,
+        )
+    )
+    assert f"left: {x_pct}%" in html
+    assert f"top: {y_pct}%" in html
+    assert f"width: {width_pct}%" in html
+    assert f"height: {height_pct}%" in html
+    assert "translate(-50%, -50%)" not in html
+
+
 def test_render_comic_bubble_carries_bubble_type_in_data_attr() -> None:
     html = _render_comic_bubble(_make_bubble(bubble_type="thought"))
     assert 'data-bubble-type="thought"' in html
