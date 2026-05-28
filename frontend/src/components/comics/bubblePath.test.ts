@@ -60,7 +60,7 @@ describe("buildBubblePath", () => {
     });
 
     describe("tail diversion uses cubic beziers", () => {
-        it.each(["speech", "thought", "narration", "whisper", "shout"] as const)(
+        it.each(["speech", "narration", "whisper", "shout"] as const)(
             "%s with a tail emits cubic curves for the tail subpath",
             (shape) => {
                 const noTail = buildBubblePath({
@@ -92,6 +92,105 @@ describe("buildBubblePath", () => {
             // The path must contain at least one cubic bezier
             // segment (C ...) — the tail's curved edges.
             expect(out.d).toContain("C ");
+        });
+    });
+
+    describe("thought tail = circle-chain (concept doc)", () => {
+        // The thought tail is a chain of 1-3 shrinking circles
+        // drifting outward, NOT a bezier balloon-tail.
+        it("emits NO cubic beziers for its tail (only arcs)", () => {
+            const noTail = buildBubblePath({...BASE_INPUT, shape: "thought"});
+            const withTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "S",
+                tailLengthPx: 35,
+            });
+            // Rounded-rect outline alone uses 4 A commands and 0
+            // C commands. The tail must not introduce any cubics.
+            expect((noTail.d.match(/C /g) ?? []).length).toBe(0);
+            expect((withTail.d.match(/C /g) ?? []).length).toBe(0);
+        });
+
+        it("count scales with tail_length_px (3/2/1)", () => {
+            const sub15 = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "S",
+                tailLengthPx: 10,
+            });
+            const mid = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "S",
+                tailLengthPx: 20,
+            });
+            const long = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "S",
+                tailLengthPx: 35,
+            });
+            // Each circle is one sub-path with two A commands +
+            // 1 M + 1 Z. Outline contributes 4 A commands.
+            const arcsOf = (d: string) => (d.match(/A /g) ?? []).length;
+            expect(arcsOf(sub15.d)).toBe(4 + 2 * 1); // outline + 1 circle
+            expect(arcsOf(mid.d)).toBe(4 + 2 * 2); // outline + 2 circles
+            expect(arcsOf(long.d)).toBe(4 + 2 * 3); // outline + 3 circles
+        });
+
+        it("no chain when tail_direction is none", () => {
+            const out = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "none",
+                tailLengthPx: 40,
+            });
+            // Just the rounded-rect outline (4 arcs).
+            expect((out.d.match(/A /g) ?? []).length).toBe(4);
+        });
+
+        it("direction drives chain offset (S vs N)", () => {
+            const south = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "S",
+                tailLengthPx: 40,
+            });
+            const north = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "thought",
+                tailDirection: "N",
+                tailLengthPx: 40,
+            });
+            // S chain has cy values past y=100; N chain has cy
+            // values past y=0 (i.e. negative).
+            expect(south.d).toMatch(/\b1[0-3][0-9](\.\d)?\b/); // 100-139
+            expect(north.d).toMatch(/-[0-9]+(\.\d)?\b/);
+        });
+
+        // Cross-language snapshot pin. Mirrors
+        // ``plugins/bibliogon-plugin-comics/tests/test_bubble_path.py``
+        // — same input must produce a byte-identical ``d`` string
+        // in both TS and Python.
+        it("cross-language snapshot pin (thought, S, 35px)", () => {
+            const out = buildBubblePath({
+                shape: "thought",
+                width: 100,
+                height: 100,
+                tailDirection: "S",
+                tailPositionPct: 50,
+                tailLengthPx: 35,
+            });
+            expect(out.d).toBe(
+                "M 30 0 L 70 0 A 30 30 0 0 1 100 30 " +
+                    "L 100 70 A 30 30 0 0 1 70 100 " +
+                    "L 30 100 A 30 30 0 0 1 0 70 " +
+                    "L 0 30 A 30 30 0 0 1 30 0 Z " +
+                    "M 44 108.8 A 6 6 0 1 0 56 108.8 A 6 6 0 1 0 44 108.8 Z " +
+                    "M 46.4 121 A 3.6 3.6 0 1 0 53.6 121 A 3.6 3.6 0 1 0 46.4 121 Z " +
+                    "M 47.8 135 A 2.2 2.2 0 1 0 52.2 135 A 2.2 2.2 0 1 0 47.8 135 Z",
+            );
         });
     });
 

@@ -611,6 +611,58 @@ def _shout_path(
     return f"{star} {tail_path}"
 
 
+def _thought_circle_chain_suffix(
+    bubble_left: float,
+    bubble_top: float,
+    bubble_width: float,
+    bubble_height: float,
+    tail_direction: str,
+    tail_position_pct: int,
+    tail_length_px: int,
+) -> str:
+    """Chain of 1-3 progressively smaller circles for the
+    thought-bubble tail. Mirrors thoughtCircleChainSuffix in
+    frontend/src/components/comics/bubblePath.ts."""
+    if tail_direction == "none":
+        return ""
+    direction = "S" if tail_direction == "auto" else tail_direction
+    vec = _TAIL_DIRECTION_VECTORS.get(direction)
+    if vec is None:
+        return ""
+    vx, vy = vec
+    pct = max(0, min(100, tail_position_pct)) / 100.0
+    if direction in ("S", "SE", "SW"):
+        base_x = bubble_left + pct * bubble_width
+        base_y = bubble_top + bubble_height
+    elif direction in ("N", "NE", "NW"):
+        base_x = bubble_left + pct * bubble_width
+        base_y = bubble_top
+    elif direction == "E":
+        base_x = bubble_left + bubble_width
+        base_y = bubble_top + pct * bubble_height
+    else:  # W
+        base_x = bubble_left
+        base_y = bubble_top + pct * bubble_height
+    # Concept doc: 3 circles for long tails, 2 medium, 1 short.
+    # Cumulative spacing fractions place centres at 25 %, 60 %,
+    # 100 % of the requested tail extent regardless of count.
+    count = 3 if tail_length_px > 30 else 2 if tail_length_px > 15 else 1
+    offsets = (0.25, 0.6, 1.0)
+    diameter = max(12.0, bubble_height * 0.12)
+    parts: list[str] = []
+    for i in range(count):
+        cx = base_x + vx * tail_length_px * offsets[i]
+        cy = base_y + vy * tail_length_px * offsets[i]
+        r = diameter / 2
+        parts.append(
+            f"M {_fmt(cx - r)} {_fmt(cy)} "
+            f"A {_fmt(r)} {_fmt(r)} 0 1 0 {_fmt(cx + r)} {_fmt(cy)} "
+            f"A {_fmt(r)} {_fmt(r)} 0 1 0 {_fmt(cx - r)} {_fmt(cy)} Z"
+        )
+        diameter *= 0.6
+    return (" " + " ".join(parts)) if parts else ""
+
+
 def _build_bubble_path(
     shape: str,
     width: float,
@@ -628,7 +680,13 @@ def _build_bubble_path(
         return ""
     if shape == "narration":
         return _rounded_rect_path(0, 0, width, height, 0, 0, tail, tail_direction)
-    if shape in ("thought", "whisper"):
+    if shape == "thought":
+        rx = min(width, height) * 0.3
+        outline = _rounded_rect_path(0, 0, width, height, rx, rx, None, tail_direction)
+        return outline + _thought_circle_chain_suffix(
+            0, 0, width, height, tail_direction, tail_position_pct, tail_length_px
+        )
+    if shape == "whisper":
         rx = min(width, height) * 0.3
         return _rounded_rect_path(0, 0, width, height, rx, rx, tail, tail_direction)
     if shape == "speech":

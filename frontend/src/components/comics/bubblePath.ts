@@ -407,6 +407,64 @@ function roundedRectPath(
     return segments.join(" ");
 }
 
+/** Thought-bubble tail: a chain of 1-3 progressively smaller
+ *  circles drifting away from the bubble in the tail direction.
+ *  Each circle renders as a sub-path (M + 2 arcs + Z) within the
+ *  same single ``d`` attribute so the bubble stays one SVG path.
+ *  When ``tailDirection === "none"``, returns an empty string —
+ *  the caller's outline path is unchanged. */
+function thoughtCircleChainSuffix(
+    bubbleLeft: number,
+    bubbleTop: number,
+    bubbleWidth: number,
+    bubbleHeight: number,
+    tailDirection: BubbleTailDirection,
+    tailPositionPct: number,
+    tailLengthPx: number,
+): string {
+    if (tailDirection === "none") return "";
+    const direction = tailDirection === "auto" ? "S" : tailDirection;
+    const vec = TAIL_VECTORS[direction];
+    if (!vec) return "";
+    const [vx, vy] = vec;
+    const pct = Math.max(0, Math.min(100, tailPositionPct)) / 100;
+    let baseX: number;
+    let baseY: number;
+    if (direction === "S" || direction === "SE" || direction === "SW") {
+        baseX = bubbleLeft + pct * bubbleWidth;
+        baseY = bubbleTop + bubbleHeight;
+    } else if (direction === "N" || direction === "NE" || direction === "NW") {
+        baseX = bubbleLeft + pct * bubbleWidth;
+        baseY = bubbleTop;
+    } else if (direction === "E") {
+        baseX = bubbleLeft + bubbleWidth;
+        baseY = bubbleTop + pct * bubbleHeight;
+    } else {
+        baseX = bubbleLeft;
+        baseY = bubbleTop + pct * bubbleHeight;
+    }
+    // Per the concept doc: 3 circles for long tails, 2 medium, 1
+    // short. Cumulative spacing fractions (0.25 + 0.35 + 0.40 = 1)
+    // place the chain's centres at 25 %, 60 %, 100 % of the
+    // requested tail extent regardless of count.
+    const count = tailLengthPx > 30 ? 3 : tailLengthPx > 15 ? 2 : 1;
+    const offsets = [0.25, 0.6, 1];
+    let diameter = Math.max(12, bubbleHeight * 0.12);
+    const parts: string[] = [];
+    for (let i = 0; i < count; i++) {
+        const cx = baseX + vx * tailLengthPx * offsets[i];
+        const cy = baseY + vy * tailLengthPx * offsets[i];
+        const r = diameter / 2;
+        parts.push(
+            `M ${fmt(cx - r)} ${fmt(cy)} ` +
+                `A ${fmt(r)} ${fmt(r)} 0 1 0 ${fmt(cx + r)} ${fmt(cy)} ` +
+                `A ${fmt(r)} ${fmt(r)} 0 1 0 ${fmt(cx - r)} ${fmt(cy)} Z`,
+        );
+        diameter *= 0.6;
+    }
+    return parts.length ? " " + parts.join(" ") : "";
+}
+
 /** Star polygon for ``shout`` — 20-vertex jagged outline matching
  *  the CSS clip-path constants. Tail integration is approximated:
  *  the star path is closed and the tail is drawn as a separate
@@ -491,8 +549,35 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
             tail,
             tailDirection,
         );
-    } else if (shape === "thought" || shape === "whisper") {
-        // Rounded rect with ~30% radius matching the existing CSS.
+    } else if (shape === "thought") {
+        // Rounded rect outline (no tail diversion) + an external
+        // chain of 1-3 shrinking circles as the tail.
+        const rx = Math.min(width, height) * 0.3;
+        const outline = roundedRectPath(
+            bubbleLeft,
+            bubbleTop,
+            width,
+            height,
+            rx,
+            rx,
+            null,
+            tailDirection,
+        );
+        d =
+            outline +
+            thoughtCircleChainSuffix(
+                bubbleLeft,
+                bubbleTop,
+                width,
+                height,
+                tailDirection,
+                tailPositionPct,
+                tailLengthPx,
+            );
+    } else if (shape === "whisper") {
+        // Rounded rect with ~30% radius matching the existing CSS,
+        // dashed via SVG stroke-dasharray at the caller. Tail uses
+        // the same curved-bezier shape as speech.
         const rx = Math.min(width, height) * 0.3;
         d = roundedRectPath(
             bubbleLeft,

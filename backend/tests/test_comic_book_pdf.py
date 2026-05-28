@@ -35,6 +35,7 @@ from bibliogon_comics.comic_book_pdf import (
     _BUBBLE_TYPE_CSS,
     _GRID_TEMPLATE_CSS,
     _build_assets_map,
+    _build_bubble_path,
     _build_comic_html,
     _bubble_type_style,
     _render_bubble_tail_svg,
@@ -616,3 +617,123 @@ def test_generate_comic_book_pdf_writes_pdf_file(tmp_path: Path) -> None:
     assert output.exists()
     # PDFs start with the magic bytes %PDF.
     assert output.read_bytes()[:4] == b"%PDF"
+
+
+
+# --- Single-SVG-path bubble generator (mirror of bubblePath.ts) ---
+
+
+_BUBBLE_PATH_BASE = dict(
+    width=100,
+    height=100,
+    tail_direction="none",
+    tail_position_pct=50,
+    tail_length_px=16,
+)
+
+
+class TestThoughtCircleChain:
+    """Thought tail = chain of 1-3 shrinking circles (concept doc).
+    Mirrors ``frontend/src/components/comics/bubblePath.test.ts``."""
+
+    def test_emits_no_cubic_beziers_for_tail(self) -> None:
+        no_tail = _build_bubble_path(shape="thought", **_BUBBLE_PATH_BASE)
+        with_tail = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=35,
+        )
+        assert no_tail.count("C ") == 0
+        assert with_tail.count("C ") == 0
+
+    def test_count_scales_with_tail_length(self) -> None:
+        sub15 = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=10,
+        )
+        mid = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=20,
+        )
+        long = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=35,
+        )
+        # Outline = 4 A commands; each circle adds 2 A commands.
+        assert sub15.count("A ") == 4 + 2 * 1
+        assert mid.count("A ") == 4 + 2 * 2
+        assert long.count("A ") == 4 + 2 * 3
+
+    def test_no_chain_when_direction_none(self) -> None:
+        out = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="none",
+            tail_position_pct=50,
+            tail_length_px=40,
+        )
+        assert out.count("A ") == 4
+
+    def test_direction_drives_chain_offset(self) -> None:
+        south = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=40,
+        )
+        north = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="N",
+            tail_position_pct=50,
+            tail_length_px=40,
+        )
+        # S chain has cy values past y=100; N chain has cy values
+        # past y=0 (negative numbers).
+        assert any(
+            tok and tok.lstrip("-").replace(".", "").isdigit() and float(tok) > 100
+            for tok in south.split()
+        )
+        assert "-" in north
+
+    def test_cross_language_snapshot_pin(self) -> None:
+        """Same inputs as the TS test in bubblePath.test.ts. The
+        two implementations must produce a byte-identical ``d``
+        string. Drift here breaks the pin on at least one side."""
+        out = _build_bubble_path(
+            shape="thought",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=35,
+        )
+        expected = (
+            "M 30 0 L 70 0 A 30 30 0 0 1 100 30 "
+            "L 100 70 A 30 30 0 0 1 70 100 "
+            "L 30 100 A 30 30 0 0 1 0 70 "
+            "L 0 30 A 30 30 0 0 1 30 0 Z "
+            "M 44 108.8 A 6 6 0 1 0 56 108.8 A 6 6 0 1 0 44 108.8 Z "
+            "M 46.4 121 A 3.6 3.6 0 1 0 53.6 121 A 3.6 3.6 0 1 0 46.4 121 Z "
+            "M 47.8 135 A 2.2 2.2 0 1 0 52.2 135 A 2.2 2.2 0 1 0 47.8 135 Z"
+        )
+        assert out == expected
