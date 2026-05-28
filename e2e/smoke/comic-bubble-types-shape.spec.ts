@@ -140,15 +140,17 @@ test.describe("Comic bubble types — visual shape contract", () => {
             const lineCount = (d!.match(/L /g) ?? []).length;
 
             if (spec.bubble_type === "speech") {
-                // Ellipse via 4 cubic beziers + bezier tail. At
-                // least 6 cubic commands.
-                expect(cubicCount).toBeGreaterThanOrEqual(6);
+                // Post-swap (2026-05-28): rounded-rect outline
+                // (4 arcs) + bezier S-curve tail (>= 2 cubics).
+                expect(cubicCount).toBeGreaterThanOrEqual(2);
+                expect(arcCount).toBeGreaterThanOrEqual(4);
             } else if (spec.bubble_type === "thought") {
-                // Rounded-rect outline (4 arcs) + 3 shrinking
-                // circles (2 arcs each, count > 30 px). NO
-                // cubics — the chain uses arcs, not beziers.
-                expect(cubicCount).toBe(0);
-                expect(arcCount).toBe(4 + 2 * 3);
+                // Post-swap: ellipse outline (4 cubics) + 3
+                // shrinking circles (2 arcs each at tail_length_px
+                // > 30). The chain uses arcs, not cubics — so the
+                // outline's 4 cubics are the total cubic count.
+                expect(cubicCount).toBe(4);
+                expect(arcCount).toBe(2 * 3);
             } else if (spec.bubble_type === "narration") {
                 // Force-ignored tail_direction = no tail. Simple
                 // zero-radius "rounded" rect (4 L + 4 A all

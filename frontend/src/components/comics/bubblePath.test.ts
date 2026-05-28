@@ -33,23 +33,29 @@ describe("buildBubblePath", () => {
         expect(out.d).toMatch(/Z$/);
     });
 
-    it("speech emits cubic beziers for the ellipse", () => {
+    it("speech emits arcs for rounded corners (rounded-rect outline)", () => {
         const out = buildBubblePath({...BASE_INPUT, shape: "speech"});
-        // 4 cubic beziers around the ellipse.
-        expect((out.d.match(/C /g) ?? []).length).toBeGreaterThanOrEqual(4);
-        expect(out.d).toMatch(/Z/);
-    });
-
-    it("thought emits arcs for rounded corners", () => {
-        const out = buildBubblePath({...BASE_INPUT, shape: "thought"});
-        // 4 arc commands for rounded corners.
+        // 4 arc commands for the rounded-rect corners. No tail in
+        // BASE_INPUT so no bezier-tail cubics.
         expect((out.d.match(/A /g) ?? []).length).toBe(4);
+        expect((out.d.match(/C /g) ?? []).length).toBe(0);
     });
 
-    it("whisper uses the same rounded-rect shape as thought", () => {
-        const thought = buildBubblePath({...BASE_INPUT, shape: "thought"});
+    it("thought emits cubic beziers for the ellipse outline", () => {
+        const out = buildBubblePath({...BASE_INPUT, shape: "thought"});
+        // 4 cubic beziers around the ellipse outline. No tail in
+        // BASE_INPUT so no circle-chain arcs.
+        expect((out.d.match(/C /g) ?? []).length).toBe(4);
+        expect((out.d.match(/A /g) ?? []).length).toBe(0);
+    });
+
+    it("whisper uses the same rounded-rect shape as speech", () => {
+        // After the speech/thought shape swap, whisper and speech
+        // share the rounded-rect outline + bezier-tail behaviour;
+        // only the stroke-dasharray differs at render time.
+        const speech = buildBubblePath({...BASE_INPUT, shape: "speech"});
         const whisper = buildBubblePath({...BASE_INPUT, shape: "whisper"});
-        expect(whisper.d).toBe(thought.d);
+        expect(whisper.d).toBe(speech.d);
     });
 
     it("shout uses the 20-vertex star polygon", () => {
@@ -97,8 +103,10 @@ describe("buildBubblePath", () => {
 
     describe("thought tail = circle-chain (concept doc)", () => {
         // The thought tail is a chain of 1-3 shrinking circles
-        // drifting outward, NOT a bezier balloon-tail.
-        it("emits NO cubic beziers for its tail (only arcs)", () => {
+        // drifting outward, NOT a bezier balloon-tail. Post-swap
+        // (2026-05-28), thought's outline is an ellipse (4 cubic
+        // beziers); the circle chain only adds arcs.
+        it("tail uses arcs only, never cubic beziers", () => {
             const noTail = buildBubblePath({...BASE_INPUT, shape: "thought"});
             const withTail = buildBubblePath({
                 ...BASE_INPUT,
@@ -106,10 +114,10 @@ describe("buildBubblePath", () => {
                 tailDirection: "S",
                 tailLengthPx: 35,
             });
-            // Rounded-rect outline alone uses 4 A commands and 0
-            // C commands. The tail must not introduce any cubics.
-            expect((noTail.d.match(/C /g) ?? []).length).toBe(0);
-            expect((withTail.d.match(/C /g) ?? []).length).toBe(0);
+            // Ellipse outline contributes 4 cubics. The tail does
+            // NOT introduce additional cubics — circles are arcs.
+            expect((noTail.d.match(/C /g) ?? []).length).toBe(4);
+            expect((withTail.d.match(/C /g) ?? []).length).toBe(4);
         });
 
         it("count scales with tail_length_px (3/2/1)", () => {
@@ -131,12 +139,13 @@ describe("buildBubblePath", () => {
                 tailDirection: "S",
                 tailLengthPx: 35,
             });
-            // Each circle is one sub-path with two A commands +
-            // 1 M + 1 Z. Outline contributes 4 A commands.
+            // Each circle is one sub-path with two A commands.
+            // The ellipse outline contributes 0 arcs (only cubics),
+            // so the total arc count = 2 × circle count.
             const arcsOf = (d: string) => (d.match(/A /g) ?? []).length;
-            expect(arcsOf(sub15.d)).toBe(4 + 2 * 1); // outline + 1 circle
-            expect(arcsOf(mid.d)).toBe(4 + 2 * 2); // outline + 2 circles
-            expect(arcsOf(long.d)).toBe(4 + 2 * 3); // outline + 3 circles
+            expect(arcsOf(sub15.d)).toBe(2 * 1); // 1 circle
+            expect(arcsOf(mid.d)).toBe(2 * 2); // 2 circles
+            expect(arcsOf(long.d)).toBe(2 * 3); // 3 circles
         });
 
         it("no chain when tail_direction is none", () => {
@@ -146,8 +155,9 @@ describe("buildBubblePath", () => {
                 tailDirection: "none",
                 tailLengthPx: 40,
             });
-            // Just the rounded-rect outline (4 arcs).
-            expect((out.d.match(/A /g) ?? []).length).toBe(4);
+            // Just the ellipse outline: 4 cubics, 0 arcs.
+            expect((out.d.match(/A /g) ?? []).length).toBe(0);
+            expect((out.d.match(/C /g) ?? []).length).toBe(4);
         });
 
         it("direction drives chain offset (S vs N)", () => {
@@ -183,10 +193,10 @@ describe("buildBubblePath", () => {
                 tailLengthPx: 35,
             });
             expect(out.d).toBe(
-                "M 30 0 L 70 0 A 30 30 0 0 1 100 30 " +
-                    "L 100 70 A 30 30 0 0 1 70 100 " +
-                    "L 30 100 A 30 30 0 0 1 0 70 " +
-                    "L 0 30 A 30 30 0 0 1 30 0 Z " +
+                "M 0 50 C 0 22.4 22.4 0 50 0 " +
+                    "C 77.6 0 100 22.4 100 50 " +
+                    "C 100 77.6 77.6 100 50 100 " +
+                    "C 22.4 100 0 77.6 0 50 Z " +
                     "M 44 108.8 A 6 6 0 1 0 56 108.8 A 6 6 0 1 0 44 108.8 Z " +
                     "M 46.4 121 A 3.6 3.6 0 1 0 53.6 121 A 3.6 3.6 0 1 0 46.4 121 Z " +
                     "M 47.8 135 A 2.2 2.2 0 1 0 52.2 135 A 2.2 2.2 0 1 0 47.8 135 Z",

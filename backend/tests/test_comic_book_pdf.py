@@ -634,9 +634,11 @@ _BUBBLE_PATH_BASE = dict(
 
 class TestThoughtCircleChain:
     """Thought tail = chain of 1-3 shrinking circles (concept doc).
-    Mirrors ``frontend/src/components/comics/bubblePath.test.ts``."""
+    Mirrors ``frontend/src/components/comics/bubblePath.test.ts``.
+    Post-swap (2026-05-28), thought's OUTLINE is an ellipse
+    (4 cubic beziers); the chain still adds only arc commands."""
 
-    def test_emits_no_cubic_beziers_for_tail(self) -> None:
+    def test_tail_uses_arcs_only_never_cubic_beziers(self) -> None:
         no_tail = _build_bubble_path(shape="thought", **_BUBBLE_PATH_BASE)
         with_tail = _build_bubble_path(
             shape="thought",
@@ -646,8 +648,10 @@ class TestThoughtCircleChain:
             tail_position_pct=50,
             tail_length_px=35,
         )
-        assert no_tail.count("C ") == 0
-        assert with_tail.count("C ") == 0
+        # Ellipse outline contributes 4 cubics. The tail does NOT
+        # introduce additional cubics — circles are arcs.
+        assert no_tail.count("C ") == 4
+        assert with_tail.count("C ") == 4
 
     def test_count_scales_with_tail_length(self) -> None:
         sub15 = _build_bubble_path(
@@ -674,10 +678,10 @@ class TestThoughtCircleChain:
             tail_position_pct=50,
             tail_length_px=35,
         )
-        # Outline = 4 A commands; each circle adds 2 A commands.
-        assert sub15.count("A ") == 4 + 2 * 1
-        assert mid.count("A ") == 4 + 2 * 2
-        assert long.count("A ") == 4 + 2 * 3
+        # Ellipse outline contributes 0 arcs; each circle adds 2.
+        assert sub15.count("A ") == 2 * 1
+        assert mid.count("A ") == 2 * 2
+        assert long.count("A ") == 2 * 3
 
     def test_no_chain_when_direction_none(self) -> None:
         out = _build_bubble_path(
@@ -688,7 +692,9 @@ class TestThoughtCircleChain:
             tail_position_pct=50,
             tail_length_px=40,
         )
-        assert out.count("A ") == 4
+        # Pure ellipse outline: 0 arcs, 4 cubics.
+        assert out.count("A ") == 0
+        assert out.count("C ") == 4
 
     def test_direction_drives_chain_offset(self) -> None:
         south = _build_bubble_path(
@@ -728,10 +734,10 @@ class TestThoughtCircleChain:
             tail_length_px=35,
         )
         expected = (
-            "M 30 0 L 70 0 A 30 30 0 0 1 100 30 "
-            "L 100 70 A 30 30 0 0 1 70 100 "
-            "L 30 100 A 30 30 0 0 1 0 70 "
-            "L 0 30 A 30 30 0 0 1 30 0 Z "
+            "M 0 50 C 0 22.4 22.4 0 50 0 "
+            "C 77.6 0 100 22.4 100 50 "
+            "C 100 77.6 77.6 100 50 100 "
+            "C 22.4 100 0 77.6 0 50 Z "
             "M 44 108.8 A 6 6 0 1 0 56 108.8 A 6 6 0 1 0 44 108.8 Z "
             "M 46.4 121 A 3.6 3.6 0 1 0 53.6 121 A 3.6 3.6 0 1 0 46.4 121 Z "
             "M 47.8 135 A 2.2 2.2 0 1 0 52.2 135 A 2.2 2.2 0 1 0 47.8 135 Z"

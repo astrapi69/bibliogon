@@ -578,16 +578,15 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
             "none",
         );
     } else if (shape === "thought") {
-        // Rounded rect outline (no tail diversion) + an external
-        // chain of 1-3 shrinking circles as the tail.
-        const rx = Math.min(width, height) * 0.3;
-        const outline = roundedRectPath(
-            bubbleLeft,
-            bubbleTop,
-            width,
-            height,
-            rx,
-            rx,
+        // Ellipse outline (no tail diversion in the outline) +
+        // an external chain of 1-3 shrinking circles as the tail.
+        // The tail rendering is tied to ``bubble_type``, not to
+        // the outline shape.
+        const outline = ellipsePath(
+            bubbleLeft + width / 2,
+            bubbleTop + height / 2,
+            width / 2,
+            height / 2,
             null,
             tailDirection,
         );
@@ -603,9 +602,9 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
                 tailLengthPx,
             );
     } else if (shape === "whisper") {
-        // Rounded rect with ~30% radius matching the existing CSS,
-        // dashed via SVG stroke-dasharray at the caller. Tail uses
-        // the same curved-bezier shape as speech.
+        // Rounded rect with ~30% radius, dashed via SVG
+        // stroke-dasharray at the caller. Tail uses the same
+        // curved-bezier shape as speech (the visual cousin).
         const rx = Math.min(width, height) * 0.3;
         d = roundedRectPath(
             bubbleLeft,
@@ -618,11 +617,17 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
             tailDirection,
         );
     } else if (shape === "speech") {
-        d = ellipsePath(
-            bubbleLeft + width / 2,
-            bubbleTop + height / 2,
-            width / 2,
-            height / 2,
+        // Rounded rectangle outline + bezier S-curve tail. The
+        // tail rendering stays tied to ``bubble_type=speech``,
+        // not to any specific outline geometry.
+        const rx = Math.min(width, height) * 0.3;
+        d = roundedRectPath(
+            bubbleLeft,
+            bubbleTop,
+            width,
+            height,
+            rx,
+            rx,
             tail,
             tailDirection,
         );

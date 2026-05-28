@@ -701,8 +701,11 @@ def _build_bubble_path(
         # value never produces a tail.
         return _rounded_rect_path(0, 0, width, height, 0, 0, None, "none")
     if shape == "thought":
-        rx = min(width, height) * 0.3
-        outline = _rounded_rect_path(0, 0, width, height, rx, rx, None, tail_direction)
+        # Ellipse outline (no tail diversion) + circle-chain tail.
+        # Tail rendering tied to bubble_type, not outline geometry.
+        outline = _ellipse_path(
+            width / 2, height / 2, width / 2, height / 2, None, tail_direction
+        )
         return outline + _thought_circle_chain_suffix(
             0, 0, width, height, tail_direction, tail_position_pct, tail_length_px
         )
@@ -710,9 +713,9 @@ def _build_bubble_path(
         rx = min(width, height) * 0.3
         return _rounded_rect_path(0, 0, width, height, rx, rx, tail, tail_direction)
     if shape == "speech":
-        return _ellipse_path(
-            width / 2, height / 2, width / 2, height / 2, tail, tail_direction
-        )
+        # Rounded rectangle outline + bezier S-curve tail.
+        rx = min(width, height) * 0.3
+        return _rounded_rect_path(0, 0, width, height, rx, rx, tail, tail_direction)
     if shape == "shout":
         return _shout_path(0, 0, width, height, tail_direction, tail_length_px)
     return ""
