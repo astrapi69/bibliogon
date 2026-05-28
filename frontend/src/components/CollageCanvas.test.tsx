@@ -579,3 +579,257 @@ describe("CollageCanvas — image drag-to-position", () => {
         }
     });
 });
+
+// Phase 3 C3 (2026-05-28). Image add / delete / z-index controls.
+// The toolbar's "Add image" button uploads + appends; per-image
+// controls (delete + bring-forward + send-back) update the
+// namespace via writeLayoutNamespace.
+
+describe("CollageCanvas — C3 controls visibility (read-only vs editable)", () => {
+    it("does NOT render the toolbar in read-only mode (no onUpdate)", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {images: [{asset_id: "a-1"}]},
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(screen.queryByTestId("collage-toolbar")).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId("collage-add-image"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders the toolbar with Add image button in edit mode", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage(null)}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        expect(screen.getByTestId("collage-toolbar")).toBeInTheDocument();
+        expect(screen.getByTestId("collage-add-image")).toBeInTheDocument();
+    });
+
+    it("does NOT render per-image controls in read-only mode", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {images: [{asset_id: "a-1"}]},
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(
+            screen.queryByTestId("collage-image-controls-0"),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId("collage-image-delete-0"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders per-image controls (delete + z-index) in edit mode", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {images: [{asset_id: "a-1"}, {asset_id: "a-2"}]},
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        expect(
+            screen.getByTestId("collage-image-controls-0"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-image-delete-0"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-image-move-forward-0"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-image-move-backward-0"),
+        ).toBeInTheDocument();
+    });
+});
+
+describe("CollageCanvas — C3 delete image", () => {
+    it("clicking delete removes that image + preserves others", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1", x_pct: 10},
+                            {asset_id: "a-2", x_pct: 50},
+                            {asset_id: "a-3", x_pct: 80},
+                        ],
+                        background_color: "#abcdef",
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("collage-image-delete-1"));
+        expect(onUpdate).toHaveBeenCalledTimes(1);
+        const call = onUpdate.mock.calls[0][0];
+        expect(call.layout_config.collage.images).toHaveLength(2);
+        expect(call.layout_config.collage.images[0].asset_id).toBe("a-1");
+        expect(call.layout_config.collage.images[1].asset_id).toBe("a-3");
+        // Background preserved.
+        expect(call.layout_config.collage.background_color).toBe("#abcdef");
+    });
+});
+
+describe("CollageCanvas — C3 z-index controls", () => {
+    it("move-forward increments z_index; sibling preserved", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1", z_index: 1},
+                            {asset_id: "a-2", z_index: 2},
+                            {asset_id: "a-3", z_index: 3},
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        // Move image 0 forward (1 → 2).
+        fireEvent.click(screen.getByTestId("collage-image-move-forward-0"));
+        const call = onUpdate.mock.calls[0][0];
+        expect(call.layout_config.collage.images[0].z_index).toBe(2);
+        expect(call.layout_config.collage.images[1].z_index).toBe(2);
+        expect(call.layout_config.collage.images[2].z_index).toBe(3);
+    });
+
+    it("move-backward decrements z_index", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1", z_index: 1},
+                            {asset_id: "a-2", z_index: 2},
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("collage-image-move-backward-1"));
+        const call = onUpdate.mock.calls[0][0];
+        expect(call.layout_config.collage.images[1].z_index).toBe(1);
+    });
+
+    it("move-forward is disabled for the top-most image", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1", z_index: 1},
+                            {asset_id: "a-2", z_index: 2},
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        const btn = screen.getByTestId("collage-image-move-forward-1");
+        expect(btn).toBeDisabled();
+    });
+
+    it("move-backward is disabled for the bottom-most image", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1", z_index: 1},
+                            {asset_id: "a-2", z_index: 2},
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        const btn = screen.getByTestId("collage-image-move-backward-0");
+        expect(btn).toBeDisabled();
+    });
+});
+
+describe("CollageCanvas — C3 add image upload flow", () => {
+    it("file upload appends a new image entry with default geometry + sane z_index", async () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        // Mock the api.assets.upload to return a known asset.
+        vi.mock("../api/client", async () => {
+            const actual = (await vi.importActual(
+                "../api/client",
+            )) as Record<string, unknown>;
+            return {
+                ...actual,
+                api: {
+                    assets: {
+                        upload: vi
+                            .fn()
+                            .mockResolvedValue({id: "asset-new-1"}),
+                    },
+                },
+            };
+        });
+
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-existing", z_index: 5},
+                        ],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        const input = screen.getByTestId(
+            "collage-add-image-file-input",
+        ) as HTMLInputElement;
+        const file = new File(["x"], "img.png", {type: "image/png"});
+        await act(async () => {
+            fireEvent.change(input, {target: {files: [file]}});
+        });
+        expect(onUpdate).toHaveBeenCalledTimes(1);
+        const call = onUpdate.mock.calls[0][0];
+        const newImages = call.layout_config.collage.images;
+        expect(newImages).toHaveLength(2);
+        // First image preserved.
+        expect(newImages[0].asset_id).toBe("a-existing");
+        expect(newImages[0].z_index).toBe(5);
+        // New image at default position + size + z_index above
+        // the previous max.
+        expect(newImages[1].asset_id).toBe("asset-new-1");
+        expect(newImages[1].x_pct).toBe(10);
+        expect(newImages[1].y_pct).toBe(10);
+        expect(newImages[1].width_pct).toBe(30);
+        expect(newImages[1].height_pct).toBe(30);
+        expect(newImages[1].z_index).toBe(6);
+        expect(newImages[1].fit).toBe("cover");
+    });
+});

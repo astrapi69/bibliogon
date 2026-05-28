@@ -25,9 +25,16 @@
  * version.
  */
 
-import React from "react";
-import {Image as ImageIcon} from "lucide-react";
-import type {Page, PageUpdate} from "../api/client";
+import React, {useRef, useState} from "react";
+import {
+    ChevronsDown,
+    ChevronsUp,
+    Image as ImageIcon,
+    Plus,
+    Trash2,
+    Upload,
+} from "lucide-react";
+import {api, type Page, type PageUpdate} from "../api/client";
 import {useDragPosition} from "../hooks/useDragPosition";
 import {useI18n} from "../hooks/useI18n";
 import {
@@ -36,6 +43,8 @@ import {
 } from "../utils/layoutConfig";
 import {imageUrlFor} from "../utils/imageUrl";
 import styles from "./CollageCanvas.module.css";
+
+const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif";
 
 interface Props {
     /** The active page. Its ``layout`` MUST be ``"collage"`` —
@@ -198,21 +207,33 @@ export function readCollageBackgroundColor(
     return readBackgroundColor(namespace.background_color);
 }
 
-/** Phase 3 C2 (2026-05-28). Per-image draggable wrapper. Lifted
- *  out of the parent's render loop so each image can host a
- *  ``useDragPosition`` call without violating the Rules of Hooks
- *  (hooks can't fire inside .map). */
+/** Phase 3 C2 + C3 (2026-05-28). Per-image draggable wrapper.
+ *  Lifted out of the parent's render loop so each image can host
+ *  a ``useDragPosition`` call without violating the Rules of
+ *  Hooks (hooks can't fire inside .map). C3 adds the per-image
+ *  controls overlay (delete + bring-forward + send-back). */
 function CollageImageItem({
     image,
     index,
     bookId,
     onDragEnd,
+    onDelete,
+    onMoveForward,
+    onMoveBackward,
+    canMoveForward,
+    canMoveBackward,
 }: {
     image: CollageImage;
     index: number;
     bookId: string;
     onDragEnd?: (x_pct: number, y_pct: number) => void;
+    onDelete?: () => void;
+    onMoveForward?: () => void;
+    onMoveBackward?: () => void;
+    canMoveForward?: boolean;
+    canMoveBackward?: boolean;
 }) {
+    const {t} = useI18n();
     const {handlers, draftPosition, isDragging} = useDragPosition({
         x_pct: image.x_pct ?? 0,
         y_pct: image.y_pct ?? 0,
@@ -271,6 +292,84 @@ function CollageImageItem({
                     <ImageIcon size={28} aria-hidden />
                 </div>
             )}
+            {/* Phase 3 C3 (2026-05-28). Per-image controls overlay.
+             *  Hover-revealed, top-right of the image. The overlay
+             *  is suppressed when no edit handlers are wired (read-
+             *  only mode). pointer-events on the buttons themselves
+             *  block the drag-handler from claiming the click. */}
+            {(onDelete || onMoveForward || onMoveBackward) && (
+                <div
+                    className={styles.imageControls}
+                    data-testid={`collage-image-controls-${index}`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                >
+                    {onMoveBackward && (
+                        <button
+                            type="button"
+                            className={styles.controlBtn}
+                            disabled={canMoveBackward === false}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onMoveBackward();
+                            }}
+                            data-testid={`collage-image-move-backward-${index}`}
+                            title={t(
+                                "ui.page_editor.collage.move_backward",
+                                "Nach hinten",
+                            )}
+                            aria-label={t(
+                                "ui.page_editor.collage.move_backward",
+                                "Nach hinten",
+                            )}
+                        >
+                            <ChevronsDown size={14} />
+                        </button>
+                    )}
+                    {onMoveForward && (
+                        <button
+                            type="button"
+                            className={styles.controlBtn}
+                            disabled={canMoveForward === false}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onMoveForward();
+                            }}
+                            data-testid={`collage-image-move-forward-${index}`}
+                            title={t(
+                                "ui.page_editor.collage.move_forward",
+                                "Nach vorne",
+                            )}
+                            aria-label={t(
+                                "ui.page_editor.collage.move_forward",
+                                "Nach vorne",
+                            )}
+                        >
+                            <ChevronsUp size={14} />
+                        </button>
+                    )}
+                    {onDelete && (
+                        <button
+                            type="button"
+                            className={styles.controlBtn}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onDelete();
+                            }}
+                            data-testid={`collage-image-delete-${index}`}
+                            title={t(
+                                "ui.page_editor.collage.delete_image",
+                                "Bild entfernen",
+                            )}
+                            aria-label={t(
+                                "ui.page_editor.collage.delete_image",
+                                "Bild entfernen",
+                            )}
+                        >
+                            <Trash2 size={14} />
+                        </button>
+                    )}
+                </div>
+            )}
         </div>
     );
 }
@@ -283,32 +382,141 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
     const backgroundColor = readCollageBackgroundColor(page.layout_config);
     const isEmpty = images.length === 0 && textRegions.length === 0;
 
+    /** Phase 3 C3 (2026-05-28). Upload state + handlers for the
+     *  "Add image" affordance. Same shape as PageCanvas's
+     *  handleFileChange but writes a NEW image entry into the
+     *  collage namespace's ``images`` array. */
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [uploadError, setUploadError] = useState<string | null>(null);
+
+    /** Apply a partial update to the collage namespace via
+     *  ``writeLayoutNamespace``. Preserves background_color +
+     *  text_regions + sibling layouts' configs automatically. */
+    const updateNamespace = (
+        next: Partial<{
+            images: CollageImage[];
+            text_regions: CollageTextRegion[];
+            background_color: string;
+        }>,
+    ) => {
+        if (!onUpdate) return;
+        const current = readLayoutNamespace(page.layout_config, "collage") ?? {};
+        const nextConfig = writeLayoutNamespace(page.layout_config, "collage", {
+            ...current,
+            ...next,
+        });
+        void onUpdate({layout_config: nextConfig});
+    };
+
     /** Phase 3 C2 (2026-05-28). On drag-end: persist new coords
-     *  for the dragged image. Uses ``writeLayoutNamespace`` so
-     *  sibling layout namespaces survive (M1 Fix B namespace
-     *  preservation discipline). The current images array is the
-     *  normalised view from ``readCollageImages``; we update
-     *  the entry at ``index`` with the new x_pct/y_pct + persist
-     *  the whole collage namespace back. */
+     *  for the dragged image. */
     const handleImageDragEnd = (index: number) =>
         onUpdate
             ? (newX: number, newY: number) => {
-                  const currentImages = images.map((img, i) =>
+                  const nextImages = images.map((img, i) =>
                       i === index ? {...img, x_pct: newX, y_pct: newY} : img,
                   );
-                  const currentNamespace =
-                      readLayoutNamespace(page.layout_config, "collage") ?? {};
-                  const nextConfig = writeLayoutNamespace(
-                      page.layout_config,
-                      "collage",
-                      {
-                          ...currentNamespace,
-                          images: currentImages,
-                      },
-                  );
-                  void onUpdate({layout_config: nextConfig});
+                  updateNamespace({images: nextImages});
               }
             : undefined;
+
+    /** Phase 3 C3 (2026-05-28). Delete the image at ``index``.
+     *  Filters the array down + writes back; sibling
+     *  text_regions + background stay untouched via the shared
+     *  updateNamespace path. */
+    const handleDeleteImage = (index: number) =>
+        onUpdate
+            ? () => {
+                  const nextImages = images.filter((_, i) => i !== index);
+                  updateNamespace({images: nextImages});
+              }
+            : undefined;
+
+    /** Phase 3 C3 (2026-05-28). Bring forward / send back.
+     *  Increments / decrements z_index by 1. Bounded by the
+     *  current min/max z_index across all images so the value
+     *  doesn't grow unbounded across many invocations. */
+    const handleMoveForward = (index: number) =>
+        onUpdate
+            ? () => {
+                  const maxZ = Math.max(...images.map((img) => img.z_index ?? 1));
+                  const nextImages = images.map((img, i) =>
+                      i === index
+                          ? {...img, z_index: (img.z_index ?? 1) + 1}
+                          : img,
+                  );
+                  // No-op if already at the top.
+                  if ((images[index].z_index ?? 1) >= maxZ) return;
+                  updateNamespace({images: nextImages});
+              }
+            : undefined;
+
+    const handleMoveBackward = (index: number) =>
+        onUpdate
+            ? () => {
+                  const minZ = Math.min(...images.map((img) => img.z_index ?? 1));
+                  const nextImages = images.map((img, i) =>
+                      i === index
+                          ? {...img, z_index: (img.z_index ?? 1) - 1}
+                          : img,
+                  );
+                  if ((images[index].z_index ?? 1) <= minZ) return;
+                  updateNamespace({images: nextImages});
+              }
+            : undefined;
+
+    /** Phase 3 C3 (2026-05-28). Add a new image entry. Triggered
+     *  by the "Bild hinzufügen" button: opens the hidden file
+     *  input → on change uploads the asset → appends an entry
+     *  with default position (10/10) + size (30/30) + the next
+     *  available z_index. */
+    const handleAddImageClick = () => {
+        if (!onUpdate || uploading) return;
+        fileInputRef.current?.click();
+    };
+
+    const handleAddImageFile = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploading(true);
+        setUploadError(null);
+        try {
+            const asset = await api.assets.upload(bookId, file, "figure");
+            const nextZ =
+                images.length === 0
+                    ? 1
+                    : Math.max(...images.map((img) => img.z_index ?? 1)) + 1;
+            const nextImages: CollageImage[] = [
+                ...images,
+                {
+                    asset_id: asset.id,
+                    x_pct: 10,
+                    y_pct: 10,
+                    width_pct: 30,
+                    height_pct: 30,
+                    z_index: nextZ,
+                    rotation_deg: 0,
+                    fit: "cover",
+                },
+            ];
+            updateNamespace({images: nextImages});
+        } catch (err: unknown) {
+            setUploadError(err instanceof Error ? err.message : String(err));
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = "";
+        }
+    };
+
+    // Sort z_index-ordered for canMoveForward/Backward checks.
+    const sortedZ = [...images.map((img) => img.z_index ?? 1)].sort(
+        (a, b) => a - b,
+    );
+    const minZ = sortedZ[0];
+    const maxZ = sortedZ[sortedZ.length - 1];
 
     const canvasStyle: React.CSSProperties = {};
     if (backgroundColor) {
@@ -329,15 +537,23 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
                 className={styles.canvas}
                 style={canvasStyle}
             >
-                {images.map((image, index) => (
-                    <CollageImageItem
-                        key={`collage-image-${index}`}
-                        image={image}
-                        index={index}
-                        bookId={bookId}
-                        onDragEnd={handleImageDragEnd(index)}
-                    />
-                ))}
+                {images.map((image, index) => {
+                    const z = image.z_index ?? 1;
+                    return (
+                        <CollageImageItem
+                            key={`collage-image-${index}`}
+                            image={image}
+                            index={index}
+                            bookId={bookId}
+                            onDragEnd={handleImageDragEnd(index)}
+                            onDelete={handleDeleteImage(index)}
+                            onMoveForward={handleMoveForward(index)}
+                            onMoveBackward={handleMoveBackward(index)}
+                            canMoveForward={z < maxZ}
+                            canMoveBackward={z > minZ}
+                        />
+                    );
+                })}
                 {textRegions.map((region) => {
                     const style: React.CSSProperties = {
                         left: `${region.x_pct}%`,
@@ -373,6 +589,61 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
                     </div>
                 )}
             </div>
+            {/* Phase 3 C3 (2026-05-28). Toolbar with the Add image
+             *  button. Hidden in read-only mode (no onUpdate).
+             *  Sits below the canvas so the drag-affordance has
+             *  the canvas's full surface; placement mirrors
+             *  PageEditor's existing footer-affordance pattern. */}
+            {onUpdate && (
+                <div className={styles.toolbar} data-testid="collage-toolbar">
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled={uploading}
+                        onClick={handleAddImageClick}
+                        data-testid="collage-add-image"
+                    >
+                        {uploading ? (
+                            <>
+                                <Upload size={14} />
+                                <span style={{marginLeft: 6}}>
+                                    {t(
+                                        "ui.page_editor.uploading",
+                                        "Lade hoch ...",
+                                    )}
+                                </span>
+                            </>
+                        ) : (
+                            <>
+                                <Plus size={14} />
+                                <span style={{marginLeft: 6}}>
+                                    {t(
+                                        "ui.page_editor.collage.add_image",
+                                        "Bild hinzufügen",
+                                    )}
+                                </span>
+                            </>
+                        )}
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept={ACCEPT}
+                        onChange={handleAddImageFile}
+                        className={styles.fileInput}
+                        data-testid="collage-add-image-file-input"
+                    />
+                    {uploadError && (
+                        <span
+                            className={styles.uploadError}
+                            role="alert"
+                            data-testid="collage-upload-error"
+                        >
+                            {uploadError}
+                        </span>
+                    )}
+                </div>
+            )}
         </div>
     );
 }

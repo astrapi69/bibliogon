@@ -110,3 +110,74 @@
     text-align: center;
     pointer-events: none;
 }
+
+/* Phase 3 C3 (2026-05-28). Per-image controls overlay. Hidden
+ * by default + revealed on hover/focus-within. Same pattern as
+ * PageCanvas's image-replace-button overlay so authors get a
+ * consistent affordance for image-level actions. */
+.imageControls {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+    z-index: 2;
+}
+
+.imageWrapper:hover .imageControls,
+.imageWrapper:focus-within .imageControls {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.controlBtn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    color: white;
+    cursor: pointer;
+    font-size: 0.75rem;
+    transition: background 120ms ease;
+}
+
+.controlBtn:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.controlBtn:focus-visible {
+    outline: 2px solid var(--accent, white);
+    outline-offset: 2px;
+}
+
+.controlBtn:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+/* Phase 3 C3 footer toolbar with the Add Image button + upload
+ * error display. Sits below the canvas so it doesn't compete
+ * with the on-canvas drag affordance. */
+.toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.uploadError {
+    color: var(--danger, #b00);
+    font-size: 0.875rem;
+}
+
+.fileInput {
+    display: none;
+}
