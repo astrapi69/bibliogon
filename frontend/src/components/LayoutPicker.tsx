@@ -64,6 +64,10 @@ const LAYOUT_CATEGORIES: ReadonlyArray<LayoutCategory> = [
             "two_images_text_center",
             "split_horizontal",
             "split_vertical",
+            // Phase 3 C1 (2026-05-28). Collage: N freely-positioned
+            // images. Joins ``mehrere_bilder`` alongside the
+            // structured multi-image layouts.
+            "collage",
         ],
     },
     {
@@ -106,6 +110,10 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
     split_horizontal: "Split horizontal (two images side by side)",
     split_vertical: "Split vertical (two images stacked)",
     image_border_text_center: "Image as border with centered text",
+    // Phase 3 C1 (2026-05-28). Collage: N freely-positioned
+    // images + text regions. C1 ships read-only rendering;
+    // interactivity in C2..C4.
+    collage: "Collage",
 }
 
 export default function LayoutPicker({selected, onChange, disabled}: Props) {

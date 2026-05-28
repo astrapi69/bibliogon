@@ -466,6 +466,23 @@ html, body {
     border-radius: 4pt;
     color: white;
 }
+
+/* Phase 3 C1 (2026-05-28). Collage layout: N freely-positioned
+ * images + N optional text regions at absolute percentage-based
+ * coords. C1 ships the page container class only — the per-image
+ * + per-text-region rendering branches (with absolute positioning
+ * + rotation + z-index ordering) land in C5 alongside the
+ * walker's ``_render_page`` collage branch.
+ *
+ * Distinct from the grid-based picture-book layouts: position
+ * relative on the page container, every collage child
+ * absolutely positioned inside it. The grid-template-* rules
+ * intentionally omitted — the children use top/left/width/height
+ * percentages instead. */
+
+.page--collage {
+    position: relative;
+}
 """
 
 
@@ -489,6 +506,12 @@ def _layout_class(layout: str) -> str:
         "split_vertical",
         # Phase 2 C5 (2026-05-28). image_border_text_center.
         "image_border_text_center",
+        # Phase 3 C1 (2026-05-28). Collage layout. Walker
+        # rendering branch (absolute-positioned images + text
+        # regions) lands in C5. C1 only registers the layout
+        # class so the namespace whitelist + ``_layout_class``
+        # accept the new string.
+        "collage",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
@@ -558,6 +581,10 @@ _KNOWN_LAYOUTS: frozenset[str] = frozenset(
         "split_horizontal",
         "split_vertical",
         "image_border_text_center",
+        # Phase 3 C1 (2026-05-28). Collage namespace whitelist
+        # so layout_config.collage survives namespace switches.
+        # Walker rendering branch arrives in C5.
+        "collage",
     }
 )
 

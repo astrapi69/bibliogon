@@ -3,11 +3,13 @@ import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {imageUrlFor} from "../utils/imageUrl"
 import {
     readLayoutNamespace,
     readSecondaryImageAssetId,
     writeSecondaryImageAssetId,
 } from "../utils/layoutConfig"
+import CollageCanvas from "./CollageCanvas"
 import {useI18n} from "../hooks/useI18n"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import RichTextEditor from "./RichTextEditor"
@@ -180,9 +182,10 @@ interface Props {
 
 const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif"
 
-function imageUrlFor(bookId: string, assetId: string): string {
-    return `/api/books/${bookId}/assets/${assetId}/file`
-}
+// Phase 3 C1 (2026-05-28). imageUrlFor extracted to
+// ``../utils/imageUrl.ts`` for cross-surface reuse (RCU rule —
+// PageCanvas + Storyboard + CollageCanvas). Re-import here from
+// the new module location.
 
 /** 4c-B-2 C1: read-path shim. ``layout_config.bubbles[0]`` takes
  *  precedence over flat top-level keys (legacy fallback). Mirrors
@@ -553,6 +556,12 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     split_horizontal: styles.canvasLayoutSplitHorizontal,
     split_vertical: styles.canvasLayoutSplitVertical,
     image_border_text_center: styles.canvasLayoutImageBorderTextCenter,
+    // Phase 3 C1 (2026-05-28). Collage dispatches to its own
+    // ``CollageCanvas`` component before this Record's class is
+    // applied — see the early return below. Fallback to the same
+    // ``image_top_text_bottom`` class as a defensive default,
+    // matching the comic_panel_grid pattern.
+    collage: styles.canvasLayoutImageTopTextBottom,
 }
 
 /** Picture-Book Layout Expansion Phase 2 (2026-05-28).
@@ -952,6 +961,18 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
             overlayTextStyle.bottom = 0
             if (heightPct !== null) overlayTextStyle.maxHeight = `${heightPct}%`
         }
+    }
+
+    // Phase 3 C1 (2026-05-28). Collage layout dispatches to its
+    // dedicated component. The dispatch lives in the JSX return
+    // (not as an early-return at the function top) so ALL hooks
+    // above still fire on every render — even when the active
+    // layout is collage — keeping the hook order stable per
+    // React's Rules of Hooks. The grid-based default canvas
+    // (everything else in the return below) shares no state with
+    // CollageCanvas, so the inert hook calls are harmless.
+    if (page.layout === "collage") {
+        return <CollageCanvas page={page} bookId={bookId} />
     }
 
     return (

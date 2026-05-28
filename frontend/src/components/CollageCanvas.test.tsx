@@ -1,0 +1,402 @@
+/**
+ * Tests for CollageCanvas (Picture-Book Layout Expansion Phase 3
+ * C1, 2026-05-28).
+ *
+ * Coverage:
+ * - Empty collage: renders empty hint, zero images, zero text
+ *   regions.
+ * - Single image: renders <img> with the correct percentage-based
+ *   positioning + size + z-index.
+ * - Multiple images: renders all of them in document order;
+ *   data-image-count reflects the array length.
+ * - Image with no asset_id: renders a placeholder div instead of
+ *   <img>.
+ * - Text regions: renders absolute-positioned divs with content
+ *   + percentage coords.
+ * - Background color from layout_config.collage.background_color
+ *   applies as canvas inline style.
+ * - Defensive shape-guards: invalid coords clamp to 0..100;
+ *   non-string asset_id treated as null; out-of-range rotation
+ *   normalises.
+ * - readCollageImages / readCollageTextRegions helpers exposed
+ *   for downstream consumers (C2 will use these to compute drag
+ *   targets).
+ */
+
+import {describe, it, expect} from "vitest";
+import {render, screen} from "@testing-library/react";
+import CollageCanvas, {
+    readCollageImages,
+    readCollageTextRegions,
+    readCollageBackgroundColor,
+} from "./CollageCanvas";
+import type {Page} from "../api/client";
+
+function makeCollagePage(layoutConfig: Record<string, unknown> | null): Page {
+    return {
+        id: "p-collage",
+        book_id: "b1",
+        position: 1,
+        layout: "collage",
+        text_content: null,
+        image_asset_id: null,
+        layout_config: layoutConfig,
+        notes: null,
+        story_beat: null,
+        mood_color: null,
+        act_group: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+    };
+}
+
+describe("CollageCanvas — empty state", () => {
+    it("renders the empty hint when no images + no text regions", () => {
+        render(<CollageCanvas page={makeCollagePage(null)} bookId="b1" />);
+        expect(screen.getByTestId("collage-empty-hint")).toBeInTheDocument();
+    });
+
+    it("data-image-count + data-text-region-count both 0 on empty config", () => {
+        render(<CollageCanvas page={makeCollagePage(null)} bookId="b1" />);
+        const root = screen.getByTestId("page-canvas-root");
+        expect(root.getAttribute("data-image-count")).toBe("0");
+        expect(root.getAttribute("data-text-region-count")).toBe("0");
+    });
+
+    it("data-layout attribute is 'collage' on the canvas root", () => {
+        render(<CollageCanvas page={makeCollagePage(null)} bookId="b1" />);
+        expect(
+            screen.getByTestId("page-canvas-root").getAttribute("data-layout"),
+        ).toBe("collage");
+    });
+});
+
+describe("CollageCanvas — images", () => {
+    it("renders one image at the stored percentage coords", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {
+                                asset_id: "asset-A",
+                                x_pct: 10,
+                                y_pct: 20,
+                                width_pct: 40,
+                                height_pct: 30,
+                                z_index: 3,
+                            },
+                        ],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        const wrapper = screen.getByTestId("collage-image-0");
+        expect(wrapper.getAttribute("data-x-pct")).toBe("10");
+        expect(wrapper.getAttribute("data-y-pct")).toBe("20");
+        expect(wrapper.getAttribute("data-width-pct")).toBe("40");
+        expect(wrapper.getAttribute("data-height-pct")).toBe("30");
+        expect(wrapper.getAttribute("data-z-index")).toBe("3");
+        // Inline style: percentages applied directly.
+        expect(wrapper.style.left).toBe("10%");
+        expect(wrapper.style.top).toBe("20%");
+        expect(wrapper.style.width).toBe("40%");
+        expect(wrapper.style.height).toBe("30%");
+        // The <img> renders the asset URL.
+        const img = screen.getByTestId("collage-image-img-0");
+        expect(img.getAttribute("src")).toContain("asset-A");
+    });
+
+    it("renders multiple images in array order", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [
+                            {asset_id: "a-1"},
+                            {asset_id: "a-2"},
+                            {asset_id: "a-3"},
+                        ],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(screen.getByTestId("collage-image-0")).toBeInTheDocument();
+        expect(screen.getByTestId("collage-image-1")).toBeInTheDocument();
+        expect(screen.getByTestId("collage-image-2")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("page-canvas-root").getAttribute("data-image-count"),
+        ).toBe("3");
+    });
+
+    it("renders the placeholder for an image with no asset_id", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [{x_pct: 10, y_pct: 10}],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(
+            screen.getByTestId("collage-image-placeholder-0"),
+        ).toBeInTheDocument();
+        // No <img> for this entry.
+        expect(
+            screen.queryByTestId("collage-image-img-0"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("does NOT render the empty-hint when at least one image is present", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {images: [{asset_id: "a-1"}]},
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(
+            screen.queryByTestId("collage-empty-hint"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("applies rotation_deg as a CSS transform when non-zero", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [{asset_id: "a-1", rotation_deg: 45}],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(screen.getByTestId("collage-image-0").style.transform).toBe(
+            "rotate(45deg)",
+        );
+    });
+
+    it("rotation_deg === 0 produces NO transform inline style", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [{asset_id: "a-1", rotation_deg: 0}],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(screen.getByTestId("collage-image-0").style.transform).toBe("");
+    });
+});
+
+describe("CollageCanvas — text regions", () => {
+    it("renders a text region with content + position", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [
+                            {
+                                id: "caption-1",
+                                x_pct: 5,
+                                y_pct: 70,
+                                width_pct: 90,
+                                height_pct: 20,
+                                content: "Hello, collage!",
+                            },
+                        ],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        const region = screen.getByTestId("collage-text-region-caption-1");
+        expect(region).toHaveTextContent("Hello, collage!");
+        expect(region.style.left).toBe("5%");
+        expect(region.style.top).toBe("70%");
+        expect(region.style.width).toBe("90%");
+        expect(region.style.height).toBe("20%");
+    });
+
+    it("renders multiple text regions", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        text_regions: [
+                            {id: "t-1", content: "Region one"},
+                            {id: "t-2", content: "Region two"},
+                        ],
+                    },
+                })}
+                bookId="b1"
+            />,
+        );
+        expect(
+            screen.getByTestId("collage-text-region-t-1"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("collage-text-region-t-2"),
+        ).toBeInTheDocument();
+        expect(
+            screen
+                .getByTestId("page-canvas-root")
+                .getAttribute("data-text-region-count"),
+        ).toBe("2");
+    });
+
+    it("falls back to text-N id when entry's id is missing", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {text_regions: [{content: "no id here"}]},
+                })}
+                bookId="b1"
+            />,
+        );
+        // First entry gets id "text-0" per the helper.
+        expect(
+            screen.getByTestId("collage-text-region-text-0"),
+        ).toBeInTheDocument();
+    });
+});
+
+describe("CollageCanvas — background color", () => {
+    it("applies a valid #rrggbb background color from the namespace", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {background_color: "#ffcc00"},
+                })}
+                bookId="b1"
+            />,
+        );
+        // jsdom normalizes hex colors to rgb() in some cases.
+        const bg = screen.getByTestId("page-canvas-root").style.background;
+        expect(bg.toLowerCase()).toMatch(/#ffcc00|rgb\(255,\s*204,\s*0\)/);
+    });
+
+    it("ignores a malformed background color", () => {
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {background_color: "not-a-hex"},
+                })}
+                bookId="b1"
+            />,
+        );
+        // No inline background — CSS module default applies.
+        expect(screen.getByTestId("page-canvas-root").style.background).toBe("");
+    });
+});
+
+describe("CollageCanvas helpers — defensive shape-guards", () => {
+    it("readCollageImages: returns [] for null / undefined config", () => {
+        expect(readCollageImages(null)).toEqual([]);
+        expect(readCollageImages(undefined)).toEqual([]);
+    });
+
+    it("readCollageImages: returns [] when namespace has no images key", () => {
+        expect(readCollageImages({collage: {}})).toEqual([]);
+    });
+
+    it("readCollageImages: returns [] when images is not an array", () => {
+        expect(
+            readCollageImages({collage: {images: "not an array"}}),
+        ).toEqual([]);
+    });
+
+    it("readCollageImages: clamps out-of-range pct values to 0..100", () => {
+        const result = readCollageImages({
+            collage: {
+                images: [
+                    {asset_id: "a-1", x_pct: -50, y_pct: 200, width_pct: 150},
+                ],
+            },
+        });
+        expect(result[0].x_pct).toBe(0);
+        expect(result[0].y_pct).toBe(100);
+        expect(result[0].width_pct).toBe(100);
+    });
+
+    it("readCollageImages: normalises out-of-range rotation_deg to -180..180", () => {
+        const result = readCollageImages({
+            collage: {
+                images: [{asset_id: "a-1", rotation_deg: 540}],
+            },
+        });
+        // 540 % 360 = 180 → stays at 180 (boundary).
+        expect(result[0].rotation_deg).toBe(180);
+        const result2 = readCollageImages({
+            collage: {
+                images: [{asset_id: "a-1", rotation_deg: -450}],
+            },
+        });
+        // -450 % 360 = -90 → -90 stays in range.
+        expect(result2[0].rotation_deg).toBe(-90);
+    });
+
+    it("readCollageImages: filters out non-object entries", () => {
+        const result = readCollageImages({
+            collage: {
+                images: [null, "string", 42, {asset_id: "good"}],
+            },
+        });
+        expect(result.length).toBe(1);
+        expect(result[0].asset_id).toBe("good");
+    });
+
+    it("readCollageImages: non-string asset_id becomes null", () => {
+        const result = readCollageImages({
+            collage: {
+                images: [{asset_id: 12345 as unknown}],
+            },
+        });
+        expect(result[0].asset_id).toBe(null);
+    });
+
+    it("readCollageImages: invalid fit value falls back to 'cover'", () => {
+        const result = readCollageImages({
+            collage: {images: [{asset_id: "a-1", fit: "bogus"}]},
+        });
+        expect(result[0].fit).toBe("cover");
+    });
+
+    it("readCollageTextRegions: returns [] for null / undefined config", () => {
+        expect(readCollageTextRegions(null)).toEqual([]);
+        expect(readCollageTextRegions(undefined)).toEqual([]);
+    });
+
+    it("readCollageTextRegions: filters non-object entries + clamps coords", () => {
+        const result = readCollageTextRegions({
+            collage: {
+                text_regions: [
+                    null,
+                    {id: "t-1", x_pct: -10, y_pct: 105, content: "ok"},
+                ],
+            },
+        });
+        expect(result.length).toBe(1);
+        expect(result[0].x_pct).toBe(0);
+        expect(result[0].y_pct).toBe(100);
+    });
+
+    it("readCollageBackgroundColor: accepts only #rrggbb shape", () => {
+        expect(
+            readCollageBackgroundColor({collage: {background_color: "#ffcc00"}}),
+        ).toBe("#ffcc00");
+        expect(
+            readCollageBackgroundColor({collage: {background_color: "ffcc00"}}),
+        ).toBeUndefined();
+        expect(
+            readCollageBackgroundColor({collage: {background_color: "rgb(255,0,0)"}}),
+        ).toBeUndefined();
+    });
+});

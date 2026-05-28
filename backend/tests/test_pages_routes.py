@@ -273,6 +273,60 @@ class TestPagesCRUD:
         assert r.status_code == 201, r.text
         assert r.json()["layout"] == layout
 
+    def test_phase3_collage_layout_accepted(self, client):
+        """Picture-Book Layout Expansion Phase 3 C1 (2026-05-28).
+
+        Collage layout uses M1 rich-JSON storage in
+        ``layout_config.collage`` — N freely-positioned images +
+        N optional text regions + optional background_color. C1
+        ships read-only rendering on the frontend; this pin
+        asserts the validation surface is open AND that a
+        non-trivial collage namespace round-trips through the
+        Pydantic schema unchanged.
+        """
+        book = _create_book(client, "phase3-collage", book_type="picture_book")
+        collage_config = {
+            "collage": {
+                "background_color": "#ffcc00",
+                "images": [
+                    {
+                        "asset_id": "asset-A",
+                        "x_pct": 10,
+                        "y_pct": 20,
+                        "width_pct": 40,
+                        "height_pct": 30,
+                        "z_index": 1,
+                        "rotation_deg": -5,
+                        "fit": "cover",
+                    },
+                ],
+                "text_regions": [
+                    {
+                        "id": "caption-1",
+                        "x_pct": 5,
+                        "y_pct": 70,
+                        "width_pct": 90,
+                        "height_pct": 15,
+                        "z_index": 2,
+                        "content": "Collage caption",
+                    },
+                ],
+            }
+        }
+        r = client.post(
+            f"/api/books/{book['id']}/pages",
+            json={
+                "layout": "collage",
+                "layout_config": collage_config,
+            },
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["layout"] == "collage"
+        # M1 round-trip pin: the rich-JSON namespace survives
+        # create-and-read through the schema unchanged.
+        assert body["layout_config"] == collage_config
+
     @pytest.mark.parametrize(
         "layout",
         [

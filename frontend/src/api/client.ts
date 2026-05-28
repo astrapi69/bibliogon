@@ -195,6 +195,11 @@ export type PageLayout =
     | "split_horizontal"
     | "split_vertical"
     | "image_border_text_center"
+    // Picture-Book Layout Expansion Phase 3 (2026-05-28). Collage:
+    // N freely-positioned images + N optional text regions. M1
+    // rich-JSON storage in layout_config.collage.{images,
+    // text_regions, background_color}; zero schema migration.
+    | "collage"
 
 /** Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
  *  STORYBOARD-VIEW-01). 6 fixed values constrain future beat-sheet

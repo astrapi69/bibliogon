@@ -1,0 +1,112 @@
+/* Picture-Book Layout Expansion Phase 3 C1 (2026-05-28).
+ *
+ * Collage layout: N freely-positioned images + N optional text
+ * regions at absolute percentage-based coords. Distinct from the
+ * grid-based picture-book layouts (PageCanvas's LAYOUT_CLASS
+ * record + per-layout grid templates) because the absolute-
+ * positioning + per-element coords don't fit the CSS Grid model.
+ *
+ * CollageCanvas is mounted by PageCanvas via an early-return
+ * dispatch when ``page.layout === "collage"``.
+ *
+ * C1 ships read-only rendering. C2 adds drag-to-position (pointer
+ * events). C3 adds resize handles + z-index controls. C4 adds
+ * text-region CRUD + Tier-Property styling controls.
+ */
+
+.canvasWrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 720px;
+    margin: 0 auto;
+}
+
+.canvas {
+    position: relative;
+    aspect-ratio: 4 / 3;
+    width: 100%;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--text) 14%, transparent);
+    /* Default background; overridable per-page via
+     * layout_config.collage.background_color. */
+    background: color-mix(in srgb, var(--text) 4%, transparent);
+}
+
+/* Individual collage images. Each rendered as a positioned div
+ * with the <img> inside. The wrapping div carries the position +
+ * size + rotation; the img stretches to 100% of the wrapper.
+ * Wrapper-based positioning means future drag-to-position
+ * (C2) can attach handlers to the wrapper without coupling to
+ * the img's intrinsic dimensions. */
+.imageWrapper {
+    position: absolute;
+    overflow: hidden;
+    /* Sane defaults that the wrapper's inline style overrides per
+     * element (x_pct, y_pct, width_pct, height_pct, z_index,
+     * rotation_deg). */
+    transform-origin: center center;
+}
+
+.image {
+    width: 100%;
+    height: 100%;
+    display: block;
+    /* fit defaults to "cover" per CollageImage shape; can be
+     * overridden via inline style. */
+    object-fit: cover;
+}
+
+/* Per-image placeholder (no asset assigned). Renders as a dashed
+ * outline with a centered icon so the slot is visible during
+ * C1's read-only state. Replaces with <img> in C3 when the user
+ * uploads via the asset picker. */
+.imagePlaceholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: color-mix(in srgb, var(--text) 8%, transparent);
+    border: 2px dashed color-mix(in srgb, var(--text) 30%, transparent);
+    color: color-mix(in srgb, var(--text) 50%, transparent);
+    font-size: 0.875rem;
+    box-sizing: border-box;
+}
+
+/* Text regions. Same absolute-positioning shape as images;
+ * content is rendered as a div with Tier1/2 inline styles
+ * applied. C4 adds inline editing (contenteditable or input).
+ */
+.textRegion {
+    position: absolute;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    padding: 8px;
+    /* Default backdrop so the text reads against arbitrary
+     * background colors. Tier 1 background_color override
+     * supersedes via inline style. */
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text);
+    font-size: 0.875rem;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+/* Empty-collage state: no images, no text regions. Centered
+ * hint so the editor surface reads as "add something" rather
+ * than as a rendering bug. */
+.emptyHint {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: color-mix(in srgb, var(--text) 50%, transparent);
+    font-size: 0.875rem;
+    text-align: center;
+    pointer-events: none;
+}

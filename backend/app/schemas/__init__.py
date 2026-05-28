@@ -1023,6 +1023,14 @@ PageLayout = Literal[
     "split_horizontal",
     "split_vertical",
     "image_border_text_center",
+    # Picture-Book Layout Expansion Phase 3 (2026-05-28). Collage:
+    # N freely-positioned images + N optional text regions, each
+    # at absolute percentage-based coords. M1 rich-JSON storage in
+    # ``layout_config.collage.{images, text_regions, background_color}``;
+    # zero schema migration. C1 ships read-only rendering;
+    # interactivity (drag-to-position, CRUD, z-index) follows in
+    # C2..C4. C5 adds the PDF walker branch; C6 i18n + smoke.
+    "collage",
 ]
 
 

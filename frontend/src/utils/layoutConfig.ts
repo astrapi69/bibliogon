@@ -70,6 +70,9 @@ const KNOWN_LAYOUTS: readonly string[] = [
     "split_horizontal",
     "split_vertical",
     "image_border_text_center",
+    // Phase 3 (2026-05-28). Collage layout with rich-JSON
+    // namespace shape (background_color + images[] + text_regions[]).
+    "collage",
 ]
 
 /** Detect whether a layout_config is in namespaced shape.

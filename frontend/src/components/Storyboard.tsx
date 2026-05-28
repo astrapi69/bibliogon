@@ -40,6 +40,7 @@ import {
 import {CSS} from "@dnd-kit/utilities"
 
 import {api, type Page, type PageUpdate, type StoryBeat} from "../api/client"
+import {imageUrlFor} from "../utils/imageUrl"
 
 /** 6 story-beat values per Pre-Inspection A2 (Setup / Inciting /
  *  Rising / Climax / Falling / Resolution). The order matters for
@@ -707,9 +708,9 @@ function NotesEditor({page, onPatch, testidNamespace}: NotesEditorProps) {
 
 // --- Helpers ---------------------------------------------------------
 
-function imageUrlFor(bookId: string, assetId: string): string {
-    return `/api/books/${bookId}/assets/${assetId}/file`
-}
+// Phase 3 C1 (2026-05-28). imageUrlFor extracted to
+// ``../utils/imageUrl.ts`` for cross-surface reuse (RCU rule —
+// Storyboard + PageCanvas + CollageCanvas).
 
 /** First non-empty line from ``page.text_content``. Handles both
  *  plain-string layouts (speech_bubble / image_full_text_overlay)
