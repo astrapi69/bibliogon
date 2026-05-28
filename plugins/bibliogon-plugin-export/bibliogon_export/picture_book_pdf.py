@@ -292,6 +292,43 @@ html, body {
     text-align: center;
     padding: 24pt 32pt;
 }
+
+/* Picture-Book Layout Expansion Phase 1 C3 (2026-05-28). Mirror
+ * grids + full-bleed-no-text. Geometry mirrors the editor's
+ * PageCanvas.module.css C2 entries so what you see in the editor
+ * is what WeasyPrint embeds in the PDF. */
+
+.page--image_bottom_text_top {
+    grid-template-areas:
+        "text"
+        "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 30% 70%;
+}
+
+.page--image_bottom_text_top .region-image {
+    border-top: 1pt solid #ccc;
+}
+
+.page--image_right_text_left {
+    grid-template-areas: "text image";
+    grid-template-columns: 40% 60%;
+    grid-template-rows: 1fr;
+}
+
+.page--image_right_text_left .region-image {
+    border-left: 1pt solid #ccc;
+}
+
+.page--image_full_no_text {
+    grid-template-areas: "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
+.page--image_full_no_text .region-image img {
+    object-fit: cover;
+}
 """
 
 
@@ -303,6 +340,10 @@ def _layout_class(layout: str) -> str:
         "image_left_text_right",
         "image_full_text_overlay",
         "text_only",
+        # Phase 1 C3 (2026-05-28). Mirrors + full-bleed-no-text.
+        "image_bottom_text_top",
+        "image_right_text_left",
+        "image_full_no_text",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
@@ -705,7 +746,11 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
     image_style = ""
     region_text_style = ""
 
-    if layout == "image_top_text_bottom":
+    if layout in ("image_top_text_bottom", "image_bottom_text_top"):
+        # Phase 1 C3 mirror: image_bottom_text_top shares the
+        # image_position + image_fit + Tier1/2 wiring with its
+        # parent. The grid-template-rows swap (70/30 vs 30/70)
+        # lives in the CSS rule, not here.
         pos = config.get("image_position")
         if pos == "left":
             region_image_style = "justify-content: flex-start;"
@@ -718,19 +763,36 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         # Mirrors PageCanvas.tsx computeTierTextStyles wiring.
         region_text_style = _compute_tier_text_style(config)
 
-    elif layout == "image_left_text_right":
+    elif layout in ("image_left_text_right", "image_right_text_left"):
+        # Phase 1 C3 mirror: image_right_text_left flips the column
+        # order so the IMAGE stays at its dominant ``split_ratio``
+        # share (default 60 %) but lives on the right side. Same
+        # stored field; emit ``${100 - ratio}% ${ratio}%`` for the
+        # mirror so the text column comes first.
         ratio_raw = config.get("split_ratio")
         ratio = (
             max(50, min(70, int(ratio_raw)))
             if isinstance(ratio_raw, (int, float))
             else 60
         )
-        canvas_style = f"grid-template-columns: {ratio}% {100 - ratio}%;"
+        if layout == "image_left_text_right":
+            canvas_style = f"grid-template-columns: {ratio}% {100 - ratio}%;"
+        else:
+            canvas_style = f"grid-template-columns: {100 - ratio}% {ratio}%;"
         fit = config.get("image_fit")
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
         # Session 2 C3: Tier 1+2 inline-style on the text region.
         region_text_style = _compute_tier_text_style(config)
+
+    elif layout == "image_full_no_text":
+        # Phase 1 C3: full-bleed image, no text region. Only
+        # image_fit applies; the text region is suppressed at the
+        # ``_render_page`` level (mirror of how text_only
+        # suppresses the image region).
+        fit = config.get("image_fit")
+        if fit in ("contain", "cover"):
+            image_style = f"object-fit: {fit};"
 
     elif layout == "image_full_text_overlay":
         pos = config.get("text_position")
@@ -1140,12 +1202,23 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
         f' style="{region_text_style}"' if region_text_style else ""
     )
 
+    # Phase 1 C3 (2026-05-28): image_full_no_text suppresses the
+    # TEXT region entirely (mirror of text_only suppressing the
+    # image region). Per adjudicated Q5: text_content stays in
+    # storage but does NOT render for this layout — switching back
+    # to a text-bearing layout restores the text.
+    text_region_html = ""
+    if layout != "image_full_no_text":
+        text_region_html = (
+            f'<div class="region region-text"{text_attr}>'
+            f'{text_html}'
+            f'</div>'
+        )
+
     return (
         f'<section class="page {css_class}"{canvas_attr}>'
         f'{image_region_html}'
-        f'<div class="region region-text"{text_attr}>'
-        f'{text_html}'
-        f'</div>'
+        f'{text_region_html}'
         f'</section>'
     )
 

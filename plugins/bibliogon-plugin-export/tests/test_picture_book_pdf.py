@@ -49,6 +49,10 @@ from bibliogon_export.picture_book_pdf import (
         ("image_left_text_right", "page--image_left_text_right"),
         ("image_full_text_overlay", "page--image_full_text_overlay"),
         ("text_only", "page--text_only"),
+        # Phase 1 C3 (2026-05-28): mirrors + full-bleed-no-text.
+        ("image_bottom_text_top", "page--image_bottom_text_top"),
+        ("image_right_text_left", "page--image_right_text_left"),
+        ("image_full_no_text", "page--image_full_no_text"),
     ],
 )
 def test_layout_class_maps_each_valid_layout(layout: str, expected: str) -> None:
@@ -1063,6 +1067,96 @@ def test_render_page_image_left_text_right_split_ratio_inline() -> None:
         {},
     )
     assert "grid-template-columns: 65% 35%" in html
+
+
+# --- Picture-Book Layout Expansion Phase 1 C3 (2026-05-28) ---
+
+
+def test_render_page_image_bottom_text_top_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="image_bottom_text_top"), {})
+    assert "page--image_bottom_text_top" in html
+    # Mirror inherits image_position + image_fit + Tier1/2 wiring.
+    # Still emits BOTH regions (text region not suppressed).
+    assert 'class="region region-image"' in html
+    assert 'class="region region-text"' in html
+
+
+def test_render_page_image_bottom_text_top_image_position_left() -> None:
+    """Mirror picks up the same image_position semantics as
+    image_top_text_bottom. ``object-fit`` only wraps the rendered
+    ``<img>``, so this test attaches an asset that resolves through
+    ``assets_map``."""
+    html = _render_page(
+        _make_page(
+            layout="image_bottom_text_top",
+            image_asset_id="a1",
+            layout_config={"image_position": "left", "image_fit": "cover"},
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    assert "justify-content: flex-start" in html
+    assert "object-fit: cover" in html
+
+
+def test_render_page_image_right_text_left_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="image_right_text_left"), {})
+    assert "page--image_right_text_left" in html
+    assert 'class="region region-image"' in html
+    assert 'class="region region-text"' in html
+
+
+def test_render_page_image_right_text_left_inverts_split_ratio() -> None:
+    """Mirror keeps the IMAGE at split_ratio (60 % default) but
+    on the RIGHT — emits ``${100-ratio}% ${ratio}%`` so the text
+    column comes first."""
+    html = _render_page(
+        _make_page(
+            layout="image_right_text_left",
+            layout_config={"split_ratio": 65},
+        ),
+        {},
+    )
+    # Text column 35% + image column 65% — mirror of the parent's
+    # 65/35.
+    assert "grid-template-columns: 35% 65%" in html
+
+
+def test_render_page_image_full_no_text_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="image_full_no_text"), {})
+    assert "page--image_full_no_text" in html
+
+
+def test_render_page_image_full_no_text_suppresses_text_region() -> None:
+    """Per adjudicated Q5: when layout == image_full_no_text the
+    text region must NOT render, even if text_content is set.
+    Mirror of how text_only suppresses the image region."""
+    html = _render_page(
+        _make_page(
+            layout="image_full_no_text",
+            text_content="This text must not appear in the PDF",
+        ),
+        {},
+    )
+    # Image region renders.
+    assert 'class="region region-image"' in html
+    # Text region does NOT render.
+    assert 'class="region region-text"' not in html
+    # Stored text_content must not leak into the output HTML.
+    assert "This text must not appear in the PDF" not in html
+
+
+def test_render_page_image_full_no_text_image_fit_inline() -> None:
+    """image_full_no_text still respects image_fit so authors can
+    pick contain vs cover for the panorama."""
+    html = _render_page(
+        _make_page(
+            layout="image_full_no_text",
+            image_asset_id="a1",
+            layout_config={"image_fit": "contain"},
+        ),
+        {"a1": "file:///tmp/img.png"},
+    )
+    assert "object-fit: contain" in html
 
 
 def test_render_page_image_full_text_overlay_position_top() -> None:
