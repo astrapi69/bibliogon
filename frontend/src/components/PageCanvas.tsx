@@ -21,6 +21,14 @@ const TIPTAP_LAYOUTS: ReadonlySet<PageLayout> = new Set([
     "image_top_text_bottom",
     "image_left_text_right",
     "text_only",
+    // Phase 1 C2 (2026-05-28). Mirror layouts inherit the
+    // TipTap text-content shape from their geometric parents
+    // (image_top_text_bottom → image_bottom_text_top;
+    // image_left_text_right → image_right_text_left) per the
+    // adjudicated Q4. image_full_no_text has NO text region —
+    // it doesn't belong in this set at all.
+    "image_bottom_text_top",
+    "image_right_text_left",
 ])
 
 export function isTipTapLayout(layout: PageLayout): boolean {
@@ -526,15 +534,12 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     // class. Reached only via the ``LAYOUT_CLASS[page.layout] ?? …``
     // safety net, never in practice.
     comic_panel_grid: styles.canvasLayoutImageTopTextBottom,
-    // Picture-Book Layout Expansion Phase 1 (2026-05-28).
-    // Temporary placeholder mappings — the dedicated CSS classes
-    // arrive in C2 (PageCanvas branches + module styles). Today
-    // these new layouts visually render as their mirror parent;
-    // the enum union is extended so the validation surface accepts
-    // the strings and downstream commits can land independently.
-    image_bottom_text_top: styles.canvasLayoutImageTopTextBottom,
-    image_right_text_left: styles.canvasLayoutImageLeftTextRight,
-    image_full_no_text: styles.canvasLayoutImageFullTextOverlay,
+    // Picture-Book Layout Expansion Phase 1 C2 (2026-05-28).
+    // Dedicated CSS module classes; geometry per the mirror /
+    // full-bleed-no-text plan in the Pre-Inspection report.
+    image_bottom_text_top: styles.canvasLayoutImageBottomTextTop,
+    image_right_text_left: styles.canvasLayoutImageRightTextLeft,
+    image_full_no_text: styles.canvasLayoutImageFullNoText,
 }
 
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {
@@ -660,6 +665,13 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
     const isSpeechBubble = page.layout === "speech_bubble"
     const isTextOnly = page.layout === "text_only"
+    // Phase 1 C2 (2026-05-28): full-bleed image with no text
+    // region. Mirror of ``isTextOnly`` (which suppresses the
+    // image region). Per Q5: silently ignore ``text_content``
+    // when this layout is active — the value stays in storage
+    // and re-surfaces on the next layout switch back to a
+    // text-bearing layout.
+    const isImageFullNoText = page.layout === "image_full_no_text"
     // Fix B (4c-B sub-item): extract the active layout's namespace
     // before reading per-key fields. Legacy-flat configs return the
     // whole dict (transparent backward-compat). Namespaced configs
@@ -706,15 +718,31 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     const canvasInlineStyle: React.CSSProperties = {}
     if (page.layout === "image_left_text_right") {
         canvasInlineStyle.gridTemplateColumns = `${splitRatio}% ${100 - splitRatio}%`
+    } else if (page.layout === "image_right_text_left") {
+        // Mirror: text column on the LEFT, image column on the
+        // RIGHT. Split ratio is the IMAGE percentage (same field
+        // name as the parent layout for storage compatibility);
+        // emit ``text% image%`` so the columns sum to 100 with
+        // image on the right.
+        canvasInlineStyle.gridTemplateColumns = `${100 - splitRatio}% ${splitRatio}%`
     }
     const regionImageInlineStyle: React.CSSProperties = {}
-    if (page.layout === "image_top_text_bottom") {
+    if (
+        page.layout === "image_top_text_bottom" ||
+        page.layout === "image_bottom_text_top"
+    ) {
         if (imagePosition === "left") regionImageInlineStyle.justifyContent = "flex-start"
         else if (imagePosition === "right") regionImageInlineStyle.justifyContent = "flex-end"
         else regionImageInlineStyle.justifyContent = "center"
     }
     const imageInlineStyle: React.CSSProperties = {}
-    if (page.layout === "image_top_text_bottom" || page.layout === "image_left_text_right") {
+    if (
+        page.layout === "image_top_text_bottom" ||
+        page.layout === "image_left_text_right" ||
+        page.layout === "image_bottom_text_top" ||
+        page.layout === "image_right_text_left" ||
+        page.layout === "image_full_no_text"
+    ) {
         imageInlineStyle.objectFit = imageFit
     }
     // PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1: shared
@@ -730,7 +758,9 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     // are sites 3 + 4 of the same conceptual style derivation).
     const imageLayoutTierStyle: React.CSSProperties =
         page.layout === "image_top_text_bottom" ||
-        page.layout === "image_left_text_right"
+        page.layout === "image_left_text_right" ||
+        page.layout === "image_bottom_text_top" ||
+        page.layout === "image_right_text_left"
             ? computeTierTextStyles(layoutNamespace)
             : {}
 
@@ -914,59 +944,63 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                         />
                     </div>
                 )}
-                <div
-                    data-testid={
-                        isSpeechBubble
-                            ? "page-canvas-speech-bubble"
-                            : "page-canvas-region-text"
-                    }
-                    data-region="text"
-                    data-anchor={
-                        isSpeechBubble
-                            ? ((readBubbleConfig(
-                                  layoutNamespace,
-                              ).anchor_position as string) ?? "bottom-center")
-                            : undefined
-                    }
-                    className={`${styles.region} ${styles.regionText}`}
-                    style={
-                        isSpeechBubble
-                            ? speechBubbleStyle
-                            : page.layout === "image_full_text_overlay"
-                              ? overlayTextStyle
-                              : page.layout === "image_top_text_bottom" ||
-                                  page.layout === "image_left_text_right"
-                                ? imageLayoutTierStyle
+                {!isImageFullNoText && (
+                    <div
+                        data-testid={
+                            isSpeechBubble
+                                ? "page-canvas-speech-bubble"
+                                : "page-canvas-region-text"
+                        }
+                        data-region="text"
+                        data-anchor={
+                            isSpeechBubble
+                                ? ((readBubbleConfig(
+                                      layoutNamespace,
+                                  ).anchor_position as string) ?? "bottom-center")
                                 : undefined
-                    }
-                >
-                    {isTipTapLayout(page.layout as PageLayout) ? (
-                        <RichTextEditor
-                            content={textJson}
-                            onChange={handleRichTextChange}
-                            onEditorReady={onEditorReady}
-                            placeholder={t(
-                                "ui.page_editor.text_placeholder",
-                                "Write the page text here...",
-                            )}
-                            testidNamespace={`page-canvas-richtext-${page.id}`}
-                            className={styles.textInput}
-                        />
-                    ) : (
-                        <textarea
-                            id={`page-canvas-text-${page.id}`}
-                            className={styles.textInput}
-                            value={textDraft}
-                            onChange={(e) => setTextDraft(e.target.value)}
-                            onBlur={handleTextBlur}
-                            placeholder={t(
-                                "ui.page_editor.text_placeholder",
-                                "Write the page text here...",
-                            )}
-                            data-testid="page-canvas-text-input"
-                        />
-                    )}
-                </div>
+                        }
+                        className={`${styles.region} ${styles.regionText}`}
+                        style={
+                            isSpeechBubble
+                                ? speechBubbleStyle
+                                : page.layout === "image_full_text_overlay"
+                                  ? overlayTextStyle
+                                  : page.layout === "image_top_text_bottom" ||
+                                      page.layout === "image_left_text_right" ||
+                                      page.layout === "image_bottom_text_top" ||
+                                      page.layout === "image_right_text_left"
+                                    ? imageLayoutTierStyle
+                                    : undefined
+                        }
+                    >
+                        {isTipTapLayout(page.layout as PageLayout) ? (
+                            <RichTextEditor
+                                content={textJson}
+                                onChange={handleRichTextChange}
+                                onEditorReady={onEditorReady}
+                                placeholder={t(
+                                    "ui.page_editor.text_placeholder",
+                                    "Write the page text here...",
+                                )}
+                                testidNamespace={`page-canvas-richtext-${page.id}`}
+                                className={styles.textInput}
+                            />
+                        ) : (
+                            <textarea
+                                id={`page-canvas-text-${page.id}`}
+                                className={styles.textInput}
+                                value={textDraft}
+                                onChange={(e) => setTextDraft(e.target.value)}
+                                onBlur={handleTextBlur}
+                                placeholder={t(
+                                    "ui.page_editor.text_placeholder",
+                                    "Write the page text here...",
+                                )}
+                                data-testid="page-canvas-text-input"
+                            />
+                        )}
+                    </div>
+                )}
             </div>
             {uploadError && (
                 <div

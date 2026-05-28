@@ -570,13 +570,14 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
     })
 
     it("standard layouts: text region has a background tint to separate from image", () => {
-        // Post-Fix-B (4c-B-1 manual smoke): the 2 image+text-coexist
-        // layouts (image_top_text_bottom + image_left_text_right) share
-        // one rule with the BUMPED 10% background tint (was 5%). The
-        // text_only layout keeps the original 5% tint in its own rule.
-        // Both rules must carry a ``background:`` declaration.
+        // Post-Fix-B (4c-B-1 manual smoke): the 4 image+text-coexist
+        // layouts (image_top_text_bottom + image_left_text_right +
+        // their Phase 1 C2 mirrors image_bottom_text_top +
+        // image_right_text_left) share one rule with the BUMPED 10%
+        // background tint (was 5%). The text_only layout keeps the
+        // original 5% tint in its own rule. All carry ``background:``.
         const imageTextGroup = css.match(
-            /\.canvasLayoutImageTopTextBottom \.regionText,\s*\.canvasLayoutImageLeftTextRight \.regionText\s*\{[^}]*\}/,
+            /\.canvasLayoutImageTopTextBottom \.regionText,\s*\.canvasLayoutImageLeftTextRight \.regionText,\s*\.canvasLayoutImageBottomTextTop \.regionText,\s*\.canvasLayoutImageRightTextLeft \.regionText\s*\{[^}]*\}/,
         )
         expect(imageTextGroup).not.toBeNull()
         expect(imageTextGroup![0]).toMatch(/background:/)
@@ -658,6 +659,86 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
         // refactor that drops the bubble metaphor.
         expect(block).toMatch(/border-radius:/)
         expect(block).toMatch(/box-shadow:/)
+    })
+
+    // --- Picture-Book Layout Expansion Phase 1 C2 (2026-05-28) ---
+
+    it("image_bottom_text_top mirrors image_top_text_bottom (row order swapped)", () => {
+        const parent = css.match(
+            /\.canvasLayoutImageTopTextBottom\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        const mirror = css.match(
+            /\.canvasLayoutImageBottomTextTop\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        // Both layouts use the same 70/30 image-dominant ratio; only
+        // the row order differs ("image"/"text" vs "text"/"image").
+        expect(parent).toMatch(/70%\s+30%/)
+        expect(mirror).toMatch(/30%\s+70%/)
+        // The grid-template-areas string carries the visual swap.
+        expect(parent).toMatch(/"image"\s*"text"/)
+        expect(mirror).toMatch(/"text"\s*"image"/)
+    })
+
+    it("image_right_text_left mirrors image_left_text_right (columns swapped)", () => {
+        const parent = css.match(
+            /\.canvasLayoutImageLeftTextRight\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        const mirror = css.match(
+            /\.canvasLayoutImageRightTextLeft\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        // Parent: image 60% + text 40% in "image text" order.
+        // Mirror: text 40% + image 60% in "text image" order. The
+        // image keeps its dominant 60% in both — only the side flips.
+        expect(parent).toMatch(/60%\s+40%/)
+        expect(parent).toMatch(/"image text"/)
+        expect(mirror).toMatch(/40%\s+60%/)
+        expect(mirror).toMatch(/"text image"/)
+    })
+
+    it("image_bottom_text_top puts the divider on the top of the image region", () => {
+        // Parent puts border-bottom on the image (image is above, divider
+        // is on the seam between image-above and text-below). Mirror has
+        // image below text, so the divider lives on the IMAGE's TOP edge.
+        const parentRule = css.match(
+            /\.canvasLayoutImageTopTextBottom \.regionImage\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        const mirrorRule = css.match(
+            /\.canvasLayoutImageBottomTextTop \.regionImage\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        expect(parentRule).toMatch(/border-bottom:/)
+        expect(mirrorRule).toMatch(/border-top:/)
+        // Both use the same divider style for visual consistency.
+        expect(mirrorRule).toMatch(/var\(--border-strong\)/)
+    })
+
+    it("image_right_text_left puts the divider on the left of the image region", () => {
+        // Same mirror logic as the bottom_top pair: the image's own
+        // perimeter side facing the text region carries the divider.
+        const parentRule = css.match(
+            /\.canvasLayoutImageLeftTextRight \.regionImage\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        const mirrorRule = css.match(
+            /\.canvasLayoutImageRightTextLeft \.regionImage\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        expect(parentRule).toMatch(/border-right:/)
+        expect(mirrorRule).toMatch(/border-left:/)
+        expect(mirrorRule).toMatch(/var\(--border-strong\)/)
+    })
+
+    it("image_full_no_text uses a single-cell grid with NO text-region rule", () => {
+        // Full-bleed image. Single grid cell named "image"; no text
+        // region renders at all (gated in PageCanvas.tsx via
+        // !isImageFullNoText), so a CSS rule for the text region
+        // isn't necessary AND must not introduce surprise styling.
+        const grid = css.match(
+            /\.canvasLayoutImageFullNoText\s*\{[^}]*\}/,
+        )?.[0] ?? ""
+        expect(grid).toMatch(/grid-template-areas:\s*"image"/)
+        // No dedicated regionText rule — the render is gated.
+        const textRule = css.match(
+            /\.canvasLayoutImageFullNoText \.regionText\s*\{/,
+        )
+        expect(textRule).toBeNull()
     })
 })
 
@@ -2543,5 +2624,82 @@ describe("PageCanvas cross-layout Tier consistency (Session 2 C4)", () => {
         expect(overlayTier).toEqual([])
         expect(topTier).toEqual([])
         expect(leftTier).toEqual([])
+    })
+})
+
+// --- Picture-Book Layout Expansion Phase 1 C2 (2026-05-28) ---
+
+describe("PageCanvas - image_full_no_text suppresses the text region", () => {
+    // Per the adjudicated Q5: when ``layout === "image_full_no_text"``
+    // the text region is silently NOT rendered. ``text_content`` stays
+    // in storage; switching back to a text-bearing layout restores
+    // the text. The PageCanvas render gate is ``!isImageFullNoText``
+    // wrapped around the entire ``<div data-region="text">`` block.
+
+    function makeNoTextPage(): Page {
+        return {
+            id: "p-no-text",
+            book_id: "b1",
+            position: 1,
+            layout: "image_full_no_text",
+            // Storage carries text the previous layout produced; the
+            // gate must silently ignore it for this layout.
+            text_content: "This text must not appear in the DOM",
+            image_asset_id: null,
+            layout_config: null,
+            notes: null,
+            story_beat: null,
+            mood_color: null,
+            act_group: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        }
+    }
+
+    it("does not render the text region testid", () => {
+        render(
+            <PageCanvas
+                page={makeNoTextPage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        // Neither variant of the text-region testid should appear.
+        expect(
+            screen.queryByTestId("page-canvas-region-text"),
+        ).not.toBeInTheDocument()
+        expect(
+            screen.queryByTestId("page-canvas-speech-bubble"),
+        ).not.toBeInTheDocument()
+    })
+
+    it("does not render the textarea or rich-text editor", () => {
+        render(
+            <PageCanvas
+                page={makeNoTextPage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.queryByTestId("page-canvas-text-input"),
+        ).not.toBeInTheDocument()
+        // The stored text_content must NOT leak into the DOM.
+        expect(
+            screen.queryByText("This text must not appear in the DOM"),
+        ).not.toBeInTheDocument()
+    })
+
+    it("still renders the image region (this is an image-only layout)", () => {
+        render(
+            <PageCanvas
+                page={makeNoTextPage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-image-area"),
+        ).toBeInTheDocument()
     })
 })

@@ -67,6 +67,32 @@
     grid-template-rows: 1fr;
 }
 
+/* Picture-Book Layout Expansion Phase 1 C2 (2026-05-28). The
+ * 3 new single-image layouts: 2 mirrors of existing geometry
+ * + 1 full-bleed-no-text variant. Mirrors share the parent's
+ * 70/30 + 60/40 ratios so author-set page rhythm survives a
+ * layout-direction swap. */
+
+.canvasLayoutImageBottomTextTop {
+    grid-template-areas:
+        "text"
+        "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 30% 70%;
+}
+
+.canvasLayoutImageRightTextLeft {
+    grid-template-areas: "text image";
+    grid-template-columns: 40% 60%;
+    grid-template-rows: 1fr;
+}
+
+.canvasLayoutImageFullNoText {
+    grid-template-areas: "image";
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+}
+
 /* --- Region defaults --- */
 
 .region {
@@ -132,8 +158,21 @@
     border-right: 2px solid var(--border-strong);
 }
 
+/* Phase 1 C2 mirrors: dividers on the swapped axis so the
+ * spatial cue follows the image region (border lives on the
+ * edge between the two regions, not on the canvas perimeter). */
+.canvasLayoutImageBottomTextTop .regionImage {
+    border-top: 2px solid var(--border-strong);
+}
+
+.canvasLayoutImageRightTextLeft .regionImage {
+    border-left: 2px solid var(--border-strong);
+}
+
 .canvasLayoutImageTopTextBottom .regionText,
-.canvasLayoutImageLeftTextRight .regionText {
+.canvasLayoutImageLeftTextRight .regionText,
+.canvasLayoutImageBottomTextTop .regionText,
+.canvasLayoutImageRightTextLeft .regionText {
     background: color-mix(in srgb, var(--text) 10%, transparent);
 }
 
