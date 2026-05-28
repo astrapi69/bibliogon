@@ -24,6 +24,7 @@ Coverage scope (pre-WeasyPrint, no actual PDF render):
 
 from __future__ import annotations
 
+import re
 from pathlib import Path
 from typing import Any
 
@@ -372,6 +373,173 @@ def test_render_comic_bubble_svg_carries_explicit_css_width_and_height() -> None
     # renderer-specific SVG attribute handling.
     assert "width: 100%" in html
     assert "height: 100%" in html
+
+
+# --- Editor↔PDF position parity (regression pins for
+# 7b30a325 + 3f78ce19, per user direction 2026-05-28) ---
+#
+# Parse the walker's emitted HTML to extract the bubble
+# container's percentage coordinates + assert they match the
+# input within ±1 %. Backend pytest is the authoritative
+# editor↔PDF parity check: if the walker emits the exact
+# percentage the editor uses, WeasyPrint renders both at the
+# same proportional position on the page (modulo aspect-ratio
+# considerations the editor + PDF page setup handle separately).
+#
+# A future Playwright visual comparison (editor screenshot ↔ PDF
+# render via pdf2image) is filed as
+# BUBBLE-PDF-VISUAL-COMPARISON-PLAYWRIGHT (P3 backlog).
+
+
+def _extract_container_style_pcts(
+    html: str,
+) -> dict[str, float] | None:
+    """Parse the bubble container ``<div class="comic-bubble" style="...">``
+    and return ``{left, top, width, height}`` as floats (in
+    percent). Returns None if the container is missing or any
+    field can't be parsed.
+
+    The container is always the OUTER ``<div>`` of the bubble
+    HTML — we anchor the regex on ``class="comic-bubble"`` to
+    avoid matching the inner SVG / textarea / overlay divs.
+    """
+    match = re.search(
+        r'<div class="comic-bubble"[^>]*style="([^"]+)"',
+        html,
+    )
+    if not match:
+        return None
+    style = match.group(1)
+
+    def _read(prop: str) -> float | None:
+        m = re.search(rf"{prop}:\s*([\d.]+)%", style)
+        if not m:
+            return None
+        return float(m.group(1))
+
+    left = _read("left")
+    top = _read("top")
+    width = _read("width")
+    height = _read("height")
+    if left is None or top is None or width is None or height is None:
+        return None
+    return {"left": left, "top": top, "width": width, "height": height}
+
+
+@pytest.mark.parametrize(
+    "x_pct,y_pct,width_pct,height_pct",
+    [
+        # Corners.
+        (0, 0, 30, 20),
+        (70, 0, 30, 20),
+        (0, 80, 30, 20),
+        (70, 80, 30, 20),
+        # Center.
+        (50, 50, 25, 25),
+        # User's reported diagnostic positions.
+        (10, 10, 30, 20),
+        (80, 20, 30, 20),
+        # Asymmetric.
+        (12, 34, 40, 30),
+        (33, 67, 22, 18),
+    ],
+)
+def test_walker_bubble_position_parity_within_one_percent(
+    x_pct: int,
+    y_pct: int,
+    width_pct: int,
+    height_pct: int,
+) -> None:
+    """Editor↔PDF parity (user direction 2026-05-28). The walker
+    MUST emit the same percentage coordinates the editor uses,
+    within ±1 %. Both sides store the anchor as
+    ``{x_pct, y_pct}`` representing the TOP-LEFT corner (per
+    the convention enforced in 7b30a325). The walker takes the
+    stored value and emits it verbatim into ``left: X%`` and
+    ``top: Y%`` — no math, no transformation — so exact match
+    is achievable. The 1 % tolerance is for float-precision
+    safety, not for a real position transformation.
+    """
+    html = _render_comic_bubble(
+        _make_bubble(
+            anchor={"x_pct": x_pct, "y_pct": y_pct},
+            width_pct=width_pct,
+            height_pct=height_pct,
+        )
+    )
+    pcts = _extract_container_style_pcts(html)
+    assert pcts is not None, (
+        "Could not parse the bubble container's style attribute. "
+        "Walker output likely changed shape; regression in "
+        "_render_comic_bubble."
+    )
+    assert abs(pcts["left"] - x_pct) <= 1.0, (
+        f"Walker emitted left={pcts['left']}% but input was {x_pct}%. "
+        "Editor renders the bubble at left: {x_pct}% (top-left "
+        "convention); a divergence here means PDF + editor "
+        "position the bubble at different x coords."
+    )
+    assert abs(pcts["top"] - y_pct) <= 1.0, (
+        f"Walker emitted top={pcts['top']}% but input was {y_pct}%. "
+        "y-axis divergence between editor + PDF."
+    )
+    assert abs(pcts["width"] - width_pct) <= 1.0
+    assert abs(pcts["height"] - height_pct) <= 1.0
+
+
+def test_walker_bubble_position_parity_no_centre_translate_at_zero_zero() -> None:
+    """Bubble at the exact origin (0, 0) is a sentinel for the
+    centre-translate regression — if the walker were applying
+    ``translate(-50%, -50%)`` again, the bubble at (0, 0) would
+    render at (-width/2, -height/2) which would be OFF the
+    panel. The walker MUST emit ``left: 0%`` + ``top: 0%`` with
+    NO transform.
+    """
+    html = _render_comic_bubble(
+        _make_bubble(
+            anchor={"x_pct": 0, "y_pct": 0},
+            width_pct=30,
+            height_pct=20,
+        )
+    )
+    # No translate transform on the bubble container.
+    container_match = re.search(
+        r'<div class="comic-bubble"[^>]*style="([^"]+)"', html,
+    )
+    assert container_match is not None
+    container_style = container_match.group(1)
+    assert "transform" not in container_style, (
+        "Container style MUST NOT carry any transform. The "
+        "translate(-50%, -50%) bug was the original cause of the "
+        "editor↔PDF position mismatch."
+    )
+    assert "left: 0%" in container_style
+    assert "top: 0%" in container_style
+
+
+def test_walker_bubble_container_style_explicit_all_four_dimensions() -> None:
+    """The container MUST set left + top + width + height
+    explicitly (in percent). A future refactor that drops any of
+    the four breaks the position parity contract.
+    """
+    html = _render_comic_bubble(
+        _make_bubble(
+            anchor={"x_pct": 25, "y_pct": 35},
+            width_pct=40,
+            height_pct=30,
+        )
+    )
+    container_match = re.search(
+        r'<div class="comic-bubble"[^>]*style="([^"]+)"', html,
+    )
+    assert container_match is not None
+    container_style = container_match.group(1)
+    for prop in ["left:", "top:", "width:", "height:"]:
+        assert prop in container_style, (
+            f"Container style is missing {prop} — position parity "
+            "with the editor requires all four percentage "
+            "dimensions explicitly set."
+        )
 
 
 def test_render_comic_bubble_no_tail_for_direction_none() -> None:
