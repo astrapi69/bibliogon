@@ -147,6 +147,9 @@ ui:
     line_normal: "標準"
     line_relaxed: "ゆったり"
   editor:
+    fullscreen: "Fullscreen"
+    exit_fullscreen: "Exit fullscreen"
+    fullscreen_exit_hint: "Esc or F11 to exit"
     new_chapter: "新しい章"
     empty_title: "最初の章を作成して始めましょう。"
     empty_hint: "下の「新しい章」をクリックするか、サイドバーから別の章タイプを選んでください。"

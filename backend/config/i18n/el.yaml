@@ -147,6 +147,9 @@ ui:
     line_normal: "Κανονικό"
     line_relaxed: "Χαλαρό"
   editor:
+    fullscreen: "Fullscreen"
+    exit_fullscreen: "Exit fullscreen"
+    fullscreen_exit_hint: "Esc or F11 to exit"
     new_chapter: "Νέο κεφάλαιο"
     empty_title: "Δημιούργησε το πρώτο σου κεφάλαιο για να ξεκινήσεις."
     empty_hint: "Κάνε κλικ στο \"Νέο κεφάλαιο\" παρακάτω ή διάλεξε έναν άλλο τύπο κεφαλαίου από την πλαϊνή στήλη."

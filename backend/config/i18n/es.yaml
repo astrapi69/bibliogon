@@ -147,6 +147,9 @@ ui:
     line_normal: "Normal"
     line_relaxed: "Relajada"
   editor:
+    fullscreen: "Fullscreen"
+    exit_fullscreen: "Exit fullscreen"
+    fullscreen_exit_hint: "Esc or F11 to exit"
     new_chapter: "Nuevo capitulo"
     empty_title: "Crea tu primer capítulo para comenzar."
     empty_hint: "Haz clic en \"Nuevo capítulo\" abajo, o elige otro tipo de capítulo en la barra lateral."

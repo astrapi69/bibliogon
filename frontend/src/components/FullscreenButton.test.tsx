@@ -112,4 +112,31 @@ describe("FullscreenButton", () => {
             screen.getByTestId("dashboard-fullscreen").getAttribute("aria-label"),
         ).toBe("Vollbild verlassen");
     });
+
+    it("title includes the Esc/F11 exit hint when in fullscreen mode", () => {
+        // User direction (2026-05-28): the exit tooltip MUST
+        // mention both Esc and F11 so users know the shortcuts.
+        // Regression pin so a future refactor cannot silently
+        // drop the hint and reintroduce the discoverability gap.
+        mockState.isFullscreen = true;
+        render(<FullscreenButton testidPrefix="dashboard" />);
+        const title = screen
+            .getByTestId("dashboard-fullscreen")
+            .getAttribute("title");
+        expect(title).toContain("Vollbild verlassen");
+        expect(title).toContain("Esc oder F11 zum Beenden");
+    });
+
+    it("title does NOT include the exit hint when NOT in fullscreen", () => {
+        // Esc / F11 only apply on the EXIT path. Mentioning them
+        // before the user has entered fullscreen would be noise.
+        mockState.isFullscreen = false;
+        render(<FullscreenButton testidPrefix="dashboard" />);
+        const title = screen
+            .getByTestId("dashboard-fullscreen")
+            .getAttribute("title");
+        expect(title).toBe("Vollbild");
+        expect(title).not.toContain("Esc");
+        expect(title).not.toContain("F11");
+    });
 });
