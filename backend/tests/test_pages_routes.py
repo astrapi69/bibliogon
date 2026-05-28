@@ -273,6 +273,48 @@ class TestPagesCRUD:
         assert r.status_code == 201, r.text
         assert r.json()["layout"] == layout
 
+    @pytest.mark.parametrize(
+        "layout",
+        [
+            "two_images_text_center",
+            "split_horizontal",
+            "split_vertical",
+            "image_border_text_center",
+        ],
+    )
+    def test_phase2_new_layouts_accepted(self, client, layout):
+        """Picture-Book Layout Expansion Phase 2 C1 (2026-05-28).
+
+        The 4 new multi-image layouts must pass Pydantic validation.
+        Per-layout PageCanvas branches + walker CSS + LayoutConfig
+        bodies + picker entries land in C2..C5; this pin asserts
+        the validation surface is open from C1 forward so the
+        downstream commits can land independently.
+
+        M1 storage shape: SECONDARY image asset id lives at
+        layout_config[layout].secondary_image_asset_id. This test
+        sets a value through the create path and verifies the
+        round-trip preserves the namespaced shape.
+        """
+        book = _create_book(client, f"phase2-{layout}", book_type="picture_book")
+        r = client.post(
+            f"/api/books/{book['id']}/pages",
+            json={
+                "layout": layout,
+                "layout_config": {
+                    layout: {"secondary_image_asset_id": "asset-X"}
+                },
+            },
+        )
+        assert r.status_code == 201, r.text
+        body = r.json()
+        assert body["layout"] == layout
+        # M1 round-trip pin: the namespaced secondary asset id
+        # survives create-and-read through the schema unchanged.
+        assert body["layout_config"] == {
+            layout: {"secondary_image_asset_id": "asset-X"}
+        }
+
     def test_list_pages_returns_position_order(self, client):
         book = _create_book(client, "CRUD5", book_type="picture_book")
         for _ in range(3):

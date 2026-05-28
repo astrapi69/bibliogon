@@ -79,6 +79,14 @@ const LAYOUT_LABEL_FALLBACKS: Record<PageLayout, string> = {
     image_bottom_text_top: "Image bottom, text top",
     image_right_text_left: "Image right, text left",
     image_full_no_text: "Full image (no text)",
+    // Phase 2 C1 (2026-05-28). Labels for the 4 multi-image layouts;
+    // each layout's LayoutConfig body + category placement + walker
+    // CSS arrive in C2..C5. The labels here are the user-facing
+    // fallbacks behind the i18n keys (C6 ships translations).
+    two_images_text_center: "Two images with centered text",
+    split_horizontal: "Split horizontal (two images side by side)",
+    split_vertical: "Split vertical (two images stacked)",
+    image_border_text_center: "Image as border with centered text",
 }
 
 export default function LayoutPicker({selected, onChange, disabled}: Props) {

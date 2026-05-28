@@ -381,6 +381,19 @@ _KNOWN_LAYOUTS: frozenset[str] = frozenset(
         "image_bottom_text_top",
         "image_right_text_left",
         "image_full_no_text",
+        # Picture-Book Layout Expansion Phase 2 C1 (2026-05-28).
+        # Multi-image layouts using the M1 storage strategy: PRIMARY
+        # image stays on Page.image_asset_id (unchanged); SECONDARY
+        # image lives in layout_config[layout].secondary_image_asset_id
+        # via _read_secondary_image_asset_id (below). Subsequent
+        # commits add the per-layout CSS rules + _image_layout_style
+        # branches + _render_page branches; this commit only extends
+        # the namespace whitelist so layout_config namespaces survive
+        # layout switches into these new layouts.
+        "two_images_text_center",
+        "split_horizontal",
+        "split_vertical",
+        "image_border_text_center",
     }
 )
 
@@ -421,6 +434,35 @@ def _read_layout_namespace(
     # layout's namespace. The frontend's writeLayoutNamespace
     # migrates it on next write.
     return config
+
+
+def _read_secondary_image_asset_id(
+    config: dict[str, Any] | None,
+    layout: str,
+) -> str | None:
+    """Extract the SECONDARY image asset id from a multi-image
+    layout's namespace (Picture-Book Layout Expansion Phase 2 — M1
+    storage). Mirrors the TypeScript ``readSecondaryImageAssetId`` in
+    ``frontend/src/utils/layoutConfig.ts``.
+
+    Phase 2 multi-image layouts (``two_images_text_center``,
+    ``split_horizontal``, ``split_vertical``,
+    ``image_border_text_center``) keep the PRIMARY image on
+    ``Page.image_asset_id`` (unchanged from single-image layouts) and
+    store the SECONDARY image's asset id under
+    ``layout_config[layout].secondary_image_asset_id``.
+
+    Returns ``None`` when:
+    - config is None or not a dict
+    - layout has no namespace
+    - namespace has no ``secondary_image_asset_id`` key
+    - the stored value is not a string (defensive shape-drift guard)
+    """
+    namespace = _read_layout_namespace(config, layout)
+    if namespace is None:
+        return None
+    value = namespace.get("secondary_image_asset_id")
+    return value if isinstance(value, str) else None
 
 
 def _read_bubble_config(config: dict[str, Any] | None) -> dict[str, Any]:

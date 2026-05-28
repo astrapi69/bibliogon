@@ -31,6 +31,7 @@ from bibliogon_export.picture_book_pdf import (
     _layout_class,
     _looks_namespaced,
     _read_layout_namespace,
+    _read_secondary_image_asset_id,
     _render_page,
     _resolve_picture_book_format,
     _speech_bubble_style,
@@ -2451,6 +2452,66 @@ def test_read_layout_namespace_returns_whole_flat_dict_for_legacy_configs() -> N
     # thing (legacy fallback). The frontend's writeLayoutNamespace
     # migrates it on first write.
     assert _read_layout_namespace(config, "image_top_text_bottom") == config
+
+
+# --- Phase 2 M1: _read_secondary_image_asset_id walker-side mirror
+# of the TypeScript readSecondaryImageAssetId. Round-trip parity is
+# the load-bearing contract: the walker MUST resolve the same
+# secondary asset id from the same layout_config that the editor
+# wrote. ---
+
+
+def test_read_secondary_image_asset_id_returns_none_for_none_config() -> None:
+    assert _read_secondary_image_asset_id(None, "split_horizontal") is None
+
+
+def test_read_secondary_image_asset_id_returns_none_when_layout_absent() -> None:
+    config = {"speech_bubble": {"anchor_position": "top-left"}}
+    # split_horizontal has no namespace at all.
+    assert _read_secondary_image_asset_id(config, "split_horizontal") is None
+
+
+def test_read_secondary_image_asset_id_returns_none_when_key_absent() -> None:
+    config = {"split_horizontal": {"split_ratio": 60}}
+    assert _read_secondary_image_asset_id(config, "split_horizontal") is None
+
+
+def test_read_secondary_image_asset_id_returns_stored_value() -> None:
+    config = {"split_horizontal": {"secondary_image_asset_id": "asset-42"}}
+    assert (
+        _read_secondary_image_asset_id(config, "split_horizontal") == "asset-42"
+    )
+
+
+def test_read_secondary_image_asset_id_defensive_for_non_string_value() -> None:
+    # Shape-drift guard: a malformed value (int, list, dict) must
+    # NOT crash the walker. The walker falls back to "no secondary".
+    config = {"split_horizontal": {"secondary_image_asset_id": 42}}
+    assert _read_secondary_image_asset_id(config, "split_horizontal") is None
+    config2 = {"split_vertical": {"secondary_image_asset_id": ["x"]}}
+    assert _read_secondary_image_asset_id(config2, "split_vertical") is None
+
+
+def test_read_secondary_image_asset_id_isolates_sibling_layouts() -> None:
+    # Two Phase 2 layouts each carry their own secondary asset id.
+    # Reading one MUST NOT return the other.
+    config = {
+        "split_horizontal": {"secondary_image_asset_id": "asset-A"},
+        "split_vertical": {"secondary_image_asset_id": "asset-B"},
+    }
+    assert _read_secondary_image_asset_id(config, "split_horizontal") == "asset-A"
+    assert _read_secondary_image_asset_id(config, "split_vertical") == "asset-B"
+
+
+def test_read_secondary_image_asset_id_through_legacy_flat_back_compat() -> None:
+    # Legacy-flat config: treated as the current layout's namespace
+    # (mirrors _read_layout_namespace fallback). Frontend's
+    # writeSecondaryImageAssetId migrates on first write.
+    config = {"secondary_image_asset_id": "asset-legacy"}
+    assert (
+        _read_secondary_image_asset_id(config, "split_horizontal")
+        == "asset-legacy"
+    )
 
 
 # --- _render_page with namespaced configs (Fix B) ---

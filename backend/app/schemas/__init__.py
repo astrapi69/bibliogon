@@ -1009,6 +1009,20 @@ PageLayout = Literal[
     "image_bottom_text_top",
     "image_right_text_left",
     "image_full_no_text",
+    # Picture-Book Layout Expansion Phase 2 (2026-05-28). Multi-
+    # image layouts using the M1 storage strategy: PRIMARY image
+    # stays on Page.image_asset_id (zero migration); SECONDARY
+    # image lives in layout_config[layout].secondary_image_asset_id
+    # via the readSecondaryImageAssetId / writeSecondaryImageAssetId
+    # helpers (frontend) + _read_secondary_image_asset_id (walker).
+    # Subsequent commits (C2..C5) add per-layout PageCanvas
+    # branches, walker CSS, picker entries, and LayoutConfig
+    # bodies; this commit only extends the Literal so the
+    # validation surface accepts the new strings.
+    "two_images_text_center",
+    "split_horizontal",
+    "split_vertical",
+    "image_border_text_center",
 ]
 
 

@@ -14,7 +14,9 @@ import {describe, it, expect} from "vitest"
 import {
     looksNamespaced,
     readLayoutNamespace,
+    readSecondaryImageAssetId,
     writeLayoutNamespace,
+    writeSecondaryImageAssetId,
 } from "./layoutConfig"
 
 describe("looksNamespaced", () => {
@@ -239,6 +241,22 @@ describe("writeLayoutNamespace", () => {
         })
     })
 
+    it("preserves a sibling Phase 2 layout's secondary_image_asset_id across a primary-layout write", () => {
+        // Phase 2 M1: secondary_image_asset_id lives inside the
+        // namespace. A write to another layout's namespace must NOT
+        // touch the secondary's home namespace.
+        const config = {
+            split_horizontal: {secondary_image_asset_id: "asset-X"},
+        }
+        const result = writeLayoutNamespace(config, "speech_bubble", {
+            anchor_position: "top-left",
+        })
+        expect(result).toEqual({
+            split_horizontal: {secondary_image_asset_id: "asset-X"},
+            speech_bubble: {anchor_position: "top-left"},
+        })
+    })
+
     it("switch-→-switch-back: a write to speech_bubble preserves an existing image_full_text_overlay namespace", () => {
         // Fix B preservation pin: this is the load-bearing test
         // per backlog "Tests must include a switch → switch-back
@@ -261,5 +279,162 @@ describe("writeLayoutNamespace", () => {
         expect(
             readLayoutNamespace(result, "image_full_text_overlay"),
         ).toEqual({text_position: "top"})
+    })
+})
+
+// --- Phase 2 M1: secondary_image_asset_id helpers ---
+//
+// Picture-Book Layout Expansion Phase 2 ships 4 multi-image layouts.
+// The PRIMARY image stays on Page.image_asset_id; the SECONDARY
+// image lives in layout_config[layout].secondary_image_asset_id.
+// readSecondaryImageAssetId + writeSecondaryImageAssetId compose
+// readLayoutNamespace + writeLayoutNamespace so sibling layouts'
+// namespaces survive a secondary-asset write, and legacy-flat
+// configs migrate transparently.
+
+describe("readSecondaryImageAssetId", () => {
+    it("returns null for null + undefined config", () => {
+        expect(readSecondaryImageAssetId(null, "split_horizontal")).toBe(null)
+        expect(readSecondaryImageAssetId(undefined, "split_horizontal")).toBe(
+            null,
+        )
+    })
+
+    it("returns null when the layout has no namespace yet", () => {
+        const config = {
+            speech_bubble: {anchor_position: "top-left"},
+        }
+        // split_horizontal has no namespace at all.
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(null)
+    })
+
+    it("returns null when the namespace has no secondary_image_asset_id", () => {
+        const config = {
+            split_horizontal: {split_ratio: 60},
+        }
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(null)
+    })
+
+    it("returns the stored asset id from a namespaced config", () => {
+        const config = {
+            split_horizontal: {secondary_image_asset_id: "asset-42"},
+        }
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(
+            "asset-42",
+        )
+    })
+
+    it("returns null when the stored value is not a string (defensive)", () => {
+        // Shape-drift guard: a malformed value should not crash the
+        // caller. Walker + frontend both fall back to "no secondary".
+        const config = {
+            split_horizontal: {secondary_image_asset_id: 42},
+        }
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(null)
+    })
+
+    it("isolates secondary asset ids between sibling layouts", () => {
+        // Two Phase 2 layouts each carry their own secondary asset id.
+        // Reading one MUST NOT return the other.
+        const config = {
+            split_horizontal: {secondary_image_asset_id: "asset-A"},
+            split_vertical: {secondary_image_asset_id: "asset-B"},
+        }
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(
+            "asset-A",
+        )
+        expect(readSecondaryImageAssetId(config, "split_vertical")).toBe(
+            "asset-B",
+        )
+    })
+
+    it("reads through the legacy-flat back-compat fallback", () => {
+        // A legacy-flat config with secondary_image_asset_id is
+        // treated as the current layout's namespace. The next write
+        // through writeSecondaryImageAssetId migrates it.
+        const config = {secondary_image_asset_id: "asset-legacy"}
+        expect(readSecondaryImageAssetId(config, "split_horizontal")).toBe(
+            "asset-legacy",
+        )
+    })
+})
+
+describe("writeSecondaryImageAssetId", () => {
+    it("creates a fresh namespace when config is null", () => {
+        const result = writeSecondaryImageAssetId(
+            null,
+            "split_horizontal",
+            "asset-1",
+        )
+        expect(result).toEqual({
+            split_horizontal: {secondary_image_asset_id: "asset-1"},
+        })
+    })
+
+    it("merges into existing namespace; preserves siblings", () => {
+        const config = {
+            speech_bubble: {anchor_position: "top-left"},
+            split_horizontal: {split_ratio: 60},
+        }
+        const result = writeSecondaryImageAssetId(
+            config,
+            "split_horizontal",
+            "asset-X",
+        )
+        expect(result).toEqual({
+            speech_bubble: {anchor_position: "top-left"},
+            split_horizontal: {
+                split_ratio: 60,
+                secondary_image_asset_id: "asset-X",
+            },
+        })
+    })
+
+    it("clears the secondary asset id when passed null", () => {
+        // Clearing writes the key with a null value, NOT deleting it.
+        // The walker reads through readSecondaryImageAssetId which
+        // returns null for both "key missing" and "key present but
+        // non-string" — the contract is uniform.
+        const config = {
+            split_horizontal: {secondary_image_asset_id: "asset-1"},
+        }
+        const result = writeSecondaryImageAssetId(
+            config,
+            "split_horizontal",
+            null,
+        )
+        expect(result).toEqual({
+            split_horizontal: {secondary_image_asset_id: null},
+        })
+        expect(readSecondaryImageAssetId(result, "split_horizontal")).toBe(null)
+    })
+
+    it("round-trip: read returns what write stored", () => {
+        const written = writeSecondaryImageAssetId(
+            null,
+            "two_images_text_center",
+            "asset-Y",
+        )
+        expect(
+            readSecondaryImageAssetId(written, "two_images_text_center"),
+        ).toBe("asset-Y")
+    })
+
+    it("migrates legacy-flat config on first write", () => {
+        const legacy = {anchor_position: "center", opacity: 0.6}
+        const result = writeSecondaryImageAssetId(
+            legacy,
+            "split_horizontal",
+            "asset-1",
+        )
+        // Whole flat dict folded into split_horizontal namespace;
+        // secondary_image_asset_id added.
+        expect(result).toEqual({
+            split_horizontal: {
+                anchor_position: "center",
+                opacity: 0.6,
+                secondary_image_asset_id: "asset-1",
+            },
+        })
     })
 })

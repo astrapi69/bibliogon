@@ -540,6 +540,16 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     image_bottom_text_top: styles.canvasLayoutImageBottomTextTop,
     image_right_text_left: styles.canvasLayoutImageRightTextLeft,
     image_full_no_text: styles.canvasLayoutImageFullNoText,
+    // Picture-Book Layout Expansion Phase 2 C1 (2026-05-28).
+    // Placeholder fallbacks keep the Record<PageLayout, string>
+    // exhaustive while the M1 utilities ship. C2..C5 swap each
+    // entry in for a dedicated class as the per-layout PageCanvas
+    // branch + CSS module class lands. Same pattern as the
+    // comic_panel_grid fallback above.
+    two_images_text_center: styles.canvasLayoutImageTopTextBottom,
+    split_horizontal: styles.canvasLayoutImageTopTextBottom,
+    split_vertical: styles.canvasLayoutImageTopTextBottom,
+    image_border_text_center: styles.canvasLayoutImageTopTextBottom,
 }
 
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {

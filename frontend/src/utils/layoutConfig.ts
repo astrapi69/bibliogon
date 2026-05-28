@@ -59,6 +59,17 @@ const KNOWN_LAYOUTS: readonly string[] = [
     "image_bottom_text_top",
     "image_right_text_left",
     "image_full_no_text",
+    // Picture-Book Layout Expansion Phase 2 (2026-05-28). Multi-
+    // image layouts using M1 storage (secondary asset id inside the
+    // namespace). KNOWN_LAYOUTS lists every name that can appear as
+    // a namespace key — extending it here lets sibling-layout
+    // configs survive switches into the new Phase 2 layouts before
+    // the per-layout PageCanvas branches + walker CSS land in
+    // C2..C5.
+    "two_images_text_center",
+    "split_horizontal",
+    "split_vertical",
+    "image_border_text_center",
 ]
 
 /** Detect whether a layout_config is in namespaced shape.
@@ -155,4 +166,52 @@ export function writeLayoutNamespace(
     // flat keys that don't belong to the current layout (acceptable
     // per Fix A history; Fix A already purged most stale-key cases).
     return {[layout]: {...config, ...partial}}
+}
+
+/** Read the SECONDARY image asset id from a multi-image layout's
+ *  namespace (Picture-Book Layout Expansion Phase 2 — M1 storage).
+ *
+ *  Phase 2 introduces 4 multi-image layouts (``two_images_text_center``,
+ *  ``split_horizontal``, ``split_vertical``, ``image_border_text_center``)
+ *  where the PRIMARY image stays on ``Page.image_asset_id`` (zero
+ *  migration for existing rows) and the SECONDARY image lives in the
+ *  per-layout namespace under ``secondary_image_asset_id``.
+ *
+ *  Returns ``null`` when:
+ *  - The config is null/undefined.
+ *  - The layout has no namespace yet.
+ *  - The namespace has no ``secondary_image_asset_id`` key.
+ *  - The stored value is not a string (defensive against shape drift).
+ */
+export function readSecondaryImageAssetId(
+    config: Record<string, unknown> | null | undefined,
+    layout: PageLayout,
+): string | null {
+    const namespace = readLayoutNamespace(config, layout)
+    if (!namespace) return null
+    const value = namespace.secondary_image_asset_id
+    return typeof value === "string" ? value : null
+}
+
+/** Write the SECONDARY image asset id into a multi-image layout's
+ *  namespace (Picture-Book Layout Expansion Phase 2 — M1 storage).
+ *
+ *  Returns the new top-level layout_config dict to persist via
+ *  ``api.pages.update({layout_config: ...})``. Preserves sibling
+ *  layouts' namespaces and other fields within the active layout's
+ *  namespace.
+ *
+ *  Passing ``null`` clears the secondary asset id (writes the key
+ *  with a ``null`` value, NOT deleting it — keeps the dispatcher
+ *  shape stable and avoids "key missing vs null" ambiguity in the
+ *  walker).
+ */
+export function writeSecondaryImageAssetId(
+    config: Record<string, unknown> | null | undefined,
+    layout: PageLayout,
+    assetId: string | null,
+): Record<string, unknown> {
+    return writeLayoutNamespace(config, layout, {
+        secondary_image_asset_id: assetId,
+    })
 }

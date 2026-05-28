@@ -185,6 +185,16 @@ export type PageLayout =
     | "image_bottom_text_top"
     | "image_right_text_left"
     | "image_full_no_text"
+    // Picture-Book Layout Expansion Phase 2 (2026-05-28). Multi-
+    // image layouts using M1 storage (PRIMARY on Page.image_asset_id
+    // unchanged; SECONDARY in layout_config[layout].secondary_image
+    // _asset_id via the readSecondaryImageAssetId helper). Subsequent
+    // Phase 2 commits add per-layout PageCanvas branches, walker
+    // CSS, LayoutConfig bodies, picker entries, and i18n.
+    | "two_images_text_center"
+    | "split_horizontal"
+    | "split_vertical"
+    | "image_border_text_center"
 
 /** Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
  *  STORYBOARD-VIEW-01). 6 fixed values constrain future beat-sheet
