@@ -113,6 +113,45 @@ describe("ComicBubble", () => {
         expect(el.style.left).toBe("0%");
         expect(el.style.top).toBe("100%");
     });
+
+    it("text overlay carries an explicit black color by default (2026-05-28 regression pin)", () => {
+        // Approach A migration (2026-05-27) moved typography defaults
+        // from CSS classes onto inline-style on the text-overlay div,
+        // but missed the ``color`` default. Without an explicit value
+        // the overlay inherited the ancestor's muted ``--text-sidebar``
+        // and rendered as faded grey against the bubble's white
+        // interior. The walker has always emitted ``color: black;``
+        // explicitly; this pin keeps the editor's renderer matching.
+        render(
+            <ComicBubble bubble={makeBubble({text_content: "Hello"})} />,
+        );
+        const bubbleRoot = screen.getByTestId("comic-bubble-b1");
+        // Find the text-overlay div (the inner <div> with the text).
+        // It's the last <div> child of the bubble root.
+        const overlay = bubbleRoot.querySelector("div:last-child") as HTMLElement;
+        expect(overlay).not.toBeNull();
+        expect(overlay.style.color).toBe("black");
+    });
+
+    it("bubble_config.text_color still overrides the black default", () => {
+        // The explicit black default does not block per-bubble
+        // overrides. A user-set ``bubble_config.text_color`` flows
+        // through to the rendered inline-style as before.
+        render(
+            <ComicBubble
+                bubble={makeBubble({
+                    text_content: "Hello",
+                    bubble_config: {text_color: "#ff8800"},
+                })}
+            />,
+        );
+        const bubbleRoot = screen.getByTestId("comic-bubble-b1");
+        const overlay = bubbleRoot.querySelector("div:last-child") as HTMLElement;
+        // happy-dom returns the value as written ("#ff8800");
+        // production browsers normalise to "rgb(255, 136, 0)".
+        // Match either form.
+        expect(["#ff8800", "rgb(255, 136, 0)"]).toContain(overlay.style.color);
+    });
 });
 
 /** Helper that mounts the bubble inside a fake parent with a fixed

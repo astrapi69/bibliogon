@@ -383,6 +383,18 @@ export function ComicBubble({
         padding: "4px 8px",
         boxSizing: "border-box",
         pointerEvents: "none",
+        // Explicit black default. Mirror of the walker's
+        // ``color: black;`` in ``_render_comic_bubble`` of
+        // ``plugins/bibliogon-plugin-comics/bibliogon_comics/
+        // comic_book_pdf.py``. Without this, the overlay text
+        // inherits the editor-canvas color from the ancestor
+        // chain — that's typically a muted ``--text-sidebar``
+        // value that reads as faded / transparent against the
+        // bubble's white interior. The Approach A migration
+        // (2026-05-27) moved every other typography default
+        // here but missed this one. ``config.text_color`` from
+        // ``bubble_config`` still overrides below.
+        color: "black",
     };
     if (typeof config.opacity === "number") {
         textOverlayStyle.opacity = config.opacity;
