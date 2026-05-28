@@ -564,6 +564,9 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
         // is the text overlay only.
         d = "";
     } else if (shape === "narration") {
+        // Narration boxes are narrator voice — they don't point
+        // at a speaker. Force-ignore stored tail_direction so a
+        // legacy value never produces a tail.
         d = roundedRectPath(
             bubbleLeft,
             bubbleTop,
@@ -571,8 +574,8 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
             height,
             0,
             0,
-            tail,
-            tailDirection,
+            null,
+            "none",
         );
     } else if (shape === "thought") {
         // Rounded rect outline (no tail diversion) + an external

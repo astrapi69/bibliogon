@@ -833,3 +833,61 @@ class TestShoutSpikeExtension:
             "L 15 100 L 0 80 L 10 60 L 0 40 Z"
         )
         assert out == expected
+
+
+class TestNarrationForceNoTail:
+    """Narration ignores stored tail_direction (concept doc).
+    Mirrors ``frontend/src/components/comics/bubblePath.test.ts``."""
+
+    @pytest.mark.parametrize(
+        "direction",
+        ["N", "NE", "E", "SE", "S", "SW", "W", "NW", "auto"],
+    )
+    def test_ignores_each_stored_direction(self, direction: str) -> None:
+        ignored = _build_bubble_path(
+            shape="narration",
+            width=100,
+            height=100,
+            tail_direction=direction,
+            tail_position_pct=50,
+            tail_length_px=30,
+        )
+        no_tail = _build_bubble_path(
+            shape="narration",
+            width=100,
+            height=100,
+            tail_direction="none",
+            tail_position_pct=50,
+            tail_length_px=30,
+        )
+        assert ignored == no_tail
+
+    def test_emits_no_cubic_beziers_regardless_of_direction(self) -> None:
+        out = _build_bubble_path(
+            shape="narration",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=30,
+        )
+        assert out.count("C ") == 0
+
+    def test_cross_language_snapshot_pin(self) -> None:
+        """Mirrors the TS snapshot pin. Same input → byte-identical
+        ``d``."""
+        out = _build_bubble_path(
+            shape="narration",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=25,
+        )
+        expected = (
+            "M 0 0 L 100 0 A 0 0 0 0 1 100 0 "
+            "L 100 100 A 0 0 0 0 1 100 100 "
+            "L 0 100 A 0 0 0 0 1 0 100 "
+            "L 0 0 A 0 0 0 0 1 0 0 Z"
+        )
+        assert out == expected

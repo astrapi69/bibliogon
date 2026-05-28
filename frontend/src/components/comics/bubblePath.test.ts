@@ -60,7 +60,7 @@ describe("buildBubblePath", () => {
     });
 
     describe("tail diversion uses cubic beziers", () => {
-        it.each(["speech", "narration", "whisper"] as const)(
+        it.each(["speech", "whisper"] as const)(
             "%s with a tail emits cubic curves for the tail subpath",
             (shape) => {
                 const noTail = buildBubblePath({
@@ -83,10 +83,10 @@ describe("buildBubblePath", () => {
             },
         );
 
-        it("does NOT emit straight lines for the tail edges (S direction, narration)", () => {
+        it("does NOT emit straight lines for the tail edges (S direction, speech)", () => {
             const out = buildBubblePath({
                 ...BASE_INPUT,
-                shape: "narration",
+                shape: "speech",
                 tailDirection: "S",
             });
             // The path must contain at least one cubic bezier
@@ -208,7 +208,7 @@ describe("buildBubblePath", () => {
         it("S direction tail emits path coords past y=100", () => {
             const out = buildBubblePath({
                 ...BASE_INPUT,
-                shape: "narration",
+                shape: "speech",
                 tailDirection: "S",
                 tailLengthPx: 25,
             });
@@ -220,12 +220,71 @@ describe("buildBubblePath", () => {
         it("E direction tail emits path coords past x=width", () => {
             const out = buildBubblePath({
                 ...BASE_INPUT,
-                shape: "narration",
+                shape: "speech",
                 tailDirection: "E",
                 tailLengthPx: 18,
             });
             // Tip x = width + length = 118.
             expect(out.d).toMatch(/\b11[78]\b/);
+        });
+    });
+
+    describe("narration force no-tail (concept doc)", () => {
+        // Narration boxes are narrator voice and don't point at
+        // a speaker. The walker must IGNORE any stored
+        // tail_direction and render no tail regardless.
+        it.each(["N", "NE", "E", "SE", "S", "SW", "W", "NW", "auto"] as const)(
+            "ignores tail_direction=%s and produces the no-tail rect",
+            (dir) => {
+                const ignored = buildBubblePath({
+                    shape: "narration",
+                    width: 100,
+                    height: 100,
+                    tailDirection: dir,
+                    tailPositionPct: 50,
+                    tailLengthPx: 30,
+                });
+                const noTail = buildBubblePath({
+                    shape: "narration",
+                    width: 100,
+                    height: 100,
+                    tailDirection: "none",
+                    tailPositionPct: 50,
+                    tailLengthPx: 30,
+                });
+                expect(ignored.d).toBe(noTail.d);
+            },
+        );
+
+        it("emits NO cubic beziers regardless of stored direction", () => {
+            const out = buildBubblePath({
+                shape: "narration",
+                width: 100,
+                height: 100,
+                tailDirection: "S",
+                tailPositionPct: 50,
+                tailLengthPx: 30,
+            });
+            expect((out.d.match(/C /g) ?? []).length).toBe(0);
+        });
+
+        // Cross-language snapshot pin. Mirrors
+        // ``backend/tests/test_comic_book_pdf.py::TestNarrationForceNoTail``.
+        it("cross-language snapshot pin (narration, S, 25px)", () => {
+            const out = buildBubblePath({
+                shape: "narration",
+                width: 100,
+                height: 100,
+                tailDirection: "S",
+                tailPositionPct: 50,
+                tailLengthPx: 25,
+            });
+            expect(out.d).toBe(
+                "M 0 0 L 100 0 A 0 0 0 0 1 100 0 " +
+                    "L 100 100 A 0 0 0 0 1 100 100 " +
+                    "L 0 100 A 0 0 0 0 1 0 100 " +
+                    "L 0 0 A 0 0 0 0 1 0 0 Z",
+            );
         });
     });
 

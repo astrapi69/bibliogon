@@ -696,7 +696,10 @@ def _build_bubble_path(
     if shape == "sound_effect":
         return ""
     if shape == "narration":
-        return _rounded_rect_path(0, 0, width, height, 0, 0, tail, tail_direction)
+        # Narration boxes are narrator voice — they don't point at
+        # a speaker. Force-ignore stored tail_direction so a legacy
+        # value never produces a tail.
+        return _rounded_rect_path(0, 0, width, height, 0, 0, None, "none")
     if shape == "thought":
         rx = min(width, height) * 0.3
         outline = _rounded_rect_path(0, 0, width, height, rx, rx, None, tail_direction)
