@@ -1294,6 +1294,83 @@ def test_image_layout_style_two_images_text_center_tier_text_style_present() -> 
     assert styles["region_text_style"] == ""
 
 
+# Phase 2 C3 (2026-05-28). split_horizontal walker pins. Two
+# equal-width images side by side (50/50 columns) + Tier-Property
+# caption row below (75/25 rows). Same M1 storage shape as
+# two_images_text_center; the structural difference is the grid
+# template.
+
+
+def test_render_page_split_horizontal_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="split_horizontal"), {})
+    assert "page--split_horizontal" in html
+
+
+def test_render_page_split_horizontal_renders_both_images() -> None:
+    """split_horizontal emits BOTH the primary and secondary image
+    regions; the editor canvas mirrors the same shape."""
+    html = _render_page(
+        _make_page(
+            layout="split_horizontal",
+            image_asset_id="a-primary",
+            layout_config={
+                "split_horizontal": {
+                    "secondary_image_asset_id": "a-secondary",
+                }
+            },
+        ),
+        {
+            "a-primary": "file:///tmp/primary.png",
+            "a-secondary": "file:///tmp/secondary.png",
+        },
+    )
+    assert "file:///tmp/primary.png" in html
+    assert "file:///tmp/secondary.png" in html
+    assert 'class="region region-image"' in html
+    assert 'class="region region-image-secondary"' in html
+
+
+def test_render_page_split_horizontal_text_region_present() -> None:
+    """Tier-Property caption row renders even when text_content is
+    empty (the slot is reserved by the grid template)."""
+    html = _render_page(
+        _make_page(layout="split_horizontal", text_content="Caption text"),
+        {},
+    )
+    assert 'class="region region-text"' in html
+    assert "Caption text" in html
+
+
+def test_image_layout_style_split_horizontal_image_fit_propagates() -> None:
+    """image_fit applies to both images (M1 shared-fit design)."""
+    html = _render_page(
+        _make_page(
+            layout="split_horizontal",
+            image_asset_id="a-primary",
+            layout_config={
+                "split_horizontal": {
+                    "secondary_image_asset_id": "a-secondary",
+                    "image_fit": "contain",
+                }
+            },
+        ),
+        {
+            "a-primary": "file:///tmp/primary.png",
+            "a-secondary": "file:///tmp/secondary.png",
+        },
+    )
+    assert html.count("object-fit: contain") == 2
+
+
+def test_image_layout_style_split_horizontal_returns_text_style() -> None:
+    """split_horizontal's _image_layout_style branch computes the
+    Tier 1+2 text style (same as two_images_text_center)."""
+    styles = _image_layout_style("split_horizontal", {"image_fit": "cover"})
+    assert "object-fit: cover" in styles["image_style"]
+    # No Tier fields set → empty text style.
+    assert styles["region_text_style"] == ""
+
+
 def test_render_page_image_full_text_overlay_position_top() -> None:
     html = _render_page(
         _make_page(

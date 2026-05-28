@@ -356,6 +356,51 @@ export function LayoutConfigTwoImagesTextCenter({
     )
 }
 
+/** split_horizontal config (Picture-Book Layout Expansion
+ *  Phase 2 C3, 2026-05-28).
+ *
+ *  Multi-image layout: two equal-width images side by side, with
+ *  an optional Tier-Property caption row below (spanning both
+ *  columns). Same body shape as two_images_text_center
+ *  (``image_fit`` + Tier 1+2 for the caption) — both layouts
+ *  share the M1 design where both images use a single image_fit
+ *  field. The structural difference is purely in the grid
+ *  template (CSS module); the controls are identical. */
+export function LayoutConfigSplitHorizontal({config, onChange}: BaseProps) {
+    const {t} = useI18n()
+    const fit = readImageFit(config)
+    return (
+        <div
+            className={styles.container}
+            data-testid="layout-config-split-horizontal"
+        >
+            <h4 className={styles.heading}>
+                {t(
+                    "ui.page_editor.config.split_horizontal.heading",
+                    "Zwei Bilder nebeneinander",
+                )}
+            </h4>
+            <ImageFitDropdown
+                value={fit}
+                onChange={(next) => onChange({image_fit: next})}
+                testid="split-horizontal-image-fit"
+            />
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="split-horizontal"
+                i18nKeyPrefix="ui.page_editor.config.split_horizontal"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="split-horizontal"
+                i18nKeyPrefix="ui.page_editor.config.split_horizontal"
+            />
+        </div>
+    )
+}
+
 /** image_full_no_text config (Phase 1 C4, 2026-05-28).
  *
  *  Minimal body: image_fit only (no text region → no Tier1/2,

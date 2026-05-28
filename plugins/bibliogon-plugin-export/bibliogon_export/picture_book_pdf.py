@@ -366,6 +366,44 @@ html, body {
     max-width: 100%;
     max-height: 100%;
 }
+
+/* Phase 2 C3 (2026-05-28). split_horizontal: two equal-width
+ * images side by side (50 / 50), Tier-Property caption below
+ * spanning both columns. The grid template mirrors the editor's
+ * .canvasLayoutSplitHorizontal so the in-editor view + PDF
+ * render the same content. */
+
+.page--split_horizontal {
+    grid-template-areas:
+        "image imageSecondary"
+        "text text";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 75% 25%;
+}
+
+.page--split_horizontal .region-image {
+    border-right: 1pt solid #ccc;
+}
+
+.page--split_horizontal .region-image-secondary {
+    grid-area: imageSecondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+}
+
+.page--split_horizontal .region-image-secondary img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
+.page--split_horizontal .region-text {
+    border-top: 1pt solid #ccc;
+}
 """
 
 
@@ -383,6 +421,8 @@ def _layout_class(layout: str) -> str:
         "image_full_no_text",
         # Phase 2 C2 (2026-05-28). Multi-image layout.
         "two_images_text_center",
+        # Phase 2 C3 (2026-05-28). split_horizontal.
+        "split_horizontal",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
@@ -401,6 +441,8 @@ def _layout_class(layout: str) -> str:
 _MULTI_IMAGE_LAYOUTS: frozenset[str] = frozenset(
     {
         "two_images_text_center",
+        # Phase 2 C3 (2026-05-28). split_horizontal.
+        "split_horizontal",
     }
 )
 
@@ -900,6 +942,16 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         # for both images. Per the M1 plan, both images share the
         # same image_fit field — splitting per-image_fit is a Phase 3
         # decision.
+        fit = config.get("image_fit")
+        if fit in ("contain", "cover"):
+            image_style = f"object-fit: {fit};"
+        region_text_style = _compute_tier_text_style(config)
+
+    elif layout == "split_horizontal":
+        # Phase 2 C3 (2026-05-28): two equal-width images side by
+        # side (50 / 50 columns), Tier-Property caption below
+        # spanning both columns (75 / 25 row split). Both images
+        # share the same image_fit field per the M1 design.
         fit = config.get("image_fit")
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"

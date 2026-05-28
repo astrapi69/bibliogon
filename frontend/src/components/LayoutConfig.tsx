@@ -7,6 +7,7 @@ import {
     LayoutConfigImageLeftTextRight,
     LayoutConfigImageFullTextOverlay,
     LayoutConfigImageFullNoText,
+    LayoutConfigSplitHorizontal,
     LayoutConfigTwoImagesTextCenter,
 } from "./LayoutConfigImageRow"
 
@@ -109,6 +110,14 @@ export default function LayoutConfig({page, onChange}: Props) {
              *  upload affordance), not here. */}
             {page.layout === "two_images_text_center" && (
                 <LayoutConfigTwoImagesTextCenter
+                    config={layoutNamespace}
+                    onChange={onChange}
+                />
+            )}
+            {/* Phase 2 C3 (2026-05-28). Two equal-width images
+             *  side by side; Tier-Property caption below. */}
+            {page.layout === "split_horizontal" && (
+                <LayoutConfigSplitHorizontal
                     config={layoutNamespace}
                     onChange={onChange}
                 />

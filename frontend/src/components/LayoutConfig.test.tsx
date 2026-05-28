@@ -48,9 +48,9 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         "image_bottom_text_top",
         "image_right_text_left",
         "image_full_no_text",
-        // Phase 2 layouts (C2, 2026-05-28). C2 dispatches
-        // two_images_text_center; C3..C5 land the other 3.
+        // Phase 2 layouts (C2..C5, 2026-05-28).
         "two_images_text_center",
+        "split_horizontal",
     ]
 
     it.each(LAYOUTS)("mounts for layout '%s' (no crash)", (layout) => {
@@ -111,6 +111,19 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         )
         expect(
             screen.getByTestId("layout-config-two-images-text-center"),
+        ).toBeInTheDocument()
+    })
+
+    it("dispatches the split_horizontal body for the multi-image layout", () => {
+        // Phase 2 C3: dispatcher routes split_horizontal to its body.
+        render(
+            <LayoutConfig
+                page={makePage({layout: "split_horizontal"})}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("layout-config-split-horizontal"),
         ).toBeInTheDocument()
     })
 })

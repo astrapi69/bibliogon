@@ -116,6 +116,19 @@
     grid-template-rows: 40% 20% 40%;
 }
 
+/* Phase 2 C3 (2026-05-28). split_horizontal: two equal-width
+ * images side by side (50 / 50), optional Tier-Property caption
+ * below spanning both columns. Default to 75 / 25 row split so
+ * the image strip dominates and the caption is a quiet footer. */
+
+.canvasLayoutSplitHorizontal {
+    grid-template-areas:
+        "image imageSecondary"
+        "text text";
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 75% 25%;
+}
+
 /* --- Region defaults --- */
 
 .region {

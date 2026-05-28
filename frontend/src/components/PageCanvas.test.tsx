@@ -2822,4 +2822,23 @@ describe("PageCanvas - two_images_text_center (Phase 2 C2)", () => {
             screen.getByTestId("page-canvas-image-secondary-replace"),
         ).toBeInTheDocument()
     })
+
+    it("renders the secondary image region for split_horizontal (Phase 2 C3)", () => {
+        // Phase 2 C3 (2026-05-28): split_horizontal is also in
+        // MULTI_IMAGE_LAYOUTS. Same secondary region + upload
+        // affordance as two_images_text_center.
+        render(
+            <PageCanvas
+                page={makeMultiImagePage({layout: "split_horizontal"})}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-image-area-secondary"),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByTestId("page-canvas-image-secondary-placeholder"),
+        ).toBeInTheDocument()
+    })
 })
