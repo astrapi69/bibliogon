@@ -27,9 +27,13 @@
 
 import React from "react";
 import {Image as ImageIcon} from "lucide-react";
-import type {Page} from "../api/client";
+import type {Page, PageUpdate} from "../api/client";
+import {useDragPosition} from "../hooks/useDragPosition";
 import {useI18n} from "../hooks/useI18n";
-import {readLayoutNamespace} from "../utils/layoutConfig";
+import {
+    readLayoutNamespace,
+    writeLayoutNamespace,
+} from "../utils/layoutConfig";
 import {imageUrlFor} from "../utils/imageUrl";
 import styles from "./CollageCanvas.module.css";
 
@@ -42,6 +46,13 @@ interface Props {
      *  ``imageUrlFor`` (same helper PageCanvas's primary image
      *  uses). */
     bookId: string;
+    /** Phase 3 C2 (2026-05-28): persist a partial update to the
+     *  active page. CollageCanvas calls this on pointer-up when
+     *  an image drag commits new coords. Optional so C1's read-
+     *  only Vitest cases still pass without wiring it; future C3
+     *  CRUD work will require it. Return type matches PageCanvas's
+     *  prop shape (sync or async). */
+    onUpdate?: (update: PageUpdate) => void | Promise<void>;
 }
 
 /** M1 storage shape — one image entry in the collage namespace's
@@ -187,13 +198,117 @@ export function readCollageBackgroundColor(
     return readBackgroundColor(namespace.background_color);
 }
 
-export default function CollageCanvas({page, bookId}: Props) {
+/** Phase 3 C2 (2026-05-28). Per-image draggable wrapper. Lifted
+ *  out of the parent's render loop so each image can host a
+ *  ``useDragPosition`` call without violating the Rules of Hooks
+ *  (hooks can't fire inside .map). */
+function CollageImageItem({
+    image,
+    index,
+    bookId,
+    onDragEnd,
+}: {
+    image: CollageImage;
+    index: number;
+    bookId: string;
+    onDragEnd?: (x_pct: number, y_pct: number) => void;
+}) {
+    const {handlers, draftPosition, isDragging} = useDragPosition({
+        x_pct: image.x_pct ?? 0,
+        y_pct: image.y_pct ?? 0,
+        width_pct: image.width_pct ?? DEFAULT_IMAGE_WIDTH_PCT,
+        height_pct: image.height_pct ?? DEFAULT_IMAGE_HEIGHT_PCT,
+        onDragEnd,
+    });
+    const effectiveX = draftPosition?.x_pct ?? image.x_pct ?? 0;
+    const effectiveY = draftPosition?.y_pct ?? image.y_pct ?? 0;
+    const wrapperStyle: React.CSSProperties = {
+        left: `${effectiveX}%`,
+        top: `${effectiveY}%`,
+        width: `${image.width_pct}%`,
+        height: `${image.height_pct}%`,
+        zIndex: image.z_index,
+        cursor: onDragEnd ? (isDragging ? "grabbing" : "grab") : undefined,
+    };
+    if (image.rotation_deg !== 0) {
+        wrapperStyle.transform = `rotate(${image.rotation_deg}deg)`;
+    }
+    const imageStyle: React.CSSProperties = {
+        objectFit: image.fit,
+    };
+    return (
+        <div
+            data-testid={`collage-image-${index}`}
+            data-image-index={index}
+            data-x-pct={image.x_pct}
+            data-y-pct={image.y_pct}
+            data-width-pct={image.width_pct}
+            data-height-pct={image.height_pct}
+            data-z-index={image.z_index}
+            data-rotation-deg={image.rotation_deg}
+            data-dragging={isDragging ? "true" : "false"}
+            className={styles.imageWrapper}
+            style={wrapperStyle}
+            onPointerDown={onDragEnd ? handlers.onPointerDown : undefined}
+            onPointerMove={onDragEnd ? handlers.onPointerMove : undefined}
+            onPointerUp={onDragEnd ? handlers.onPointerUp : undefined}
+            onPointerCancel={onDragEnd ? handlers.onPointerCancel : undefined}
+        >
+            {image.asset_id ? (
+                <img
+                    src={imageUrlFor(bookId, image.asset_id)}
+                    alt=""
+                    className={styles.image}
+                    style={imageStyle}
+                    data-testid={`collage-image-img-${index}`}
+                    draggable={false}
+                />
+            ) : (
+                <div
+                    className={styles.imagePlaceholder}
+                    data-testid={`collage-image-placeholder-${index}`}
+                >
+                    <ImageIcon size={28} aria-hidden />
+                </div>
+            )}
+        </div>
+    );
+}
+
+export default function CollageCanvas({page, bookId, onUpdate}: Props) {
     const {t} = useI18n();
 
     const images = readCollageImages(page.layout_config);
     const textRegions = readCollageTextRegions(page.layout_config);
     const backgroundColor = readCollageBackgroundColor(page.layout_config);
     const isEmpty = images.length === 0 && textRegions.length === 0;
+
+    /** Phase 3 C2 (2026-05-28). On drag-end: persist new coords
+     *  for the dragged image. Uses ``writeLayoutNamespace`` so
+     *  sibling layout namespaces survive (M1 Fix B namespace
+     *  preservation discipline). The current images array is the
+     *  normalised view from ``readCollageImages``; we update
+     *  the entry at ``index`` with the new x_pct/y_pct + persist
+     *  the whole collage namespace back. */
+    const handleImageDragEnd = (index: number) =>
+        onUpdate
+            ? (newX: number, newY: number) => {
+                  const currentImages = images.map((img, i) =>
+                      i === index ? {...img, x_pct: newX, y_pct: newY} : img,
+                  );
+                  const currentNamespace =
+                      readLayoutNamespace(page.layout_config, "collage") ?? {};
+                  const nextConfig = writeLayoutNamespace(
+                      page.layout_config,
+                      "collage",
+                      {
+                          ...currentNamespace,
+                          images: currentImages,
+                      },
+                  );
+                  void onUpdate({layout_config: nextConfig});
+              }
+            : undefined;
 
     const canvasStyle: React.CSSProperties = {};
     if (backgroundColor) {
@@ -214,53 +329,15 @@ export default function CollageCanvas({page, bookId}: Props) {
                 className={styles.canvas}
                 style={canvasStyle}
             >
-                {images.map((image, index) => {
-                    const wrapperStyle: React.CSSProperties = {
-                        left: `${image.x_pct}%`,
-                        top: `${image.y_pct}%`,
-                        width: `${image.width_pct}%`,
-                        height: `${image.height_pct}%`,
-                        zIndex: image.z_index,
-                    };
-                    if (image.rotation_deg !== 0) {
-                        wrapperStyle.transform = `rotate(${image.rotation_deg}deg)`;
-                    }
-                    const imageStyle: React.CSSProperties = {
-                        objectFit: image.fit,
-                    };
-                    return (
-                        <div
-                            key={`collage-image-${index}`}
-                            data-testid={`collage-image-${index}`}
-                            data-image-index={index}
-                            data-x-pct={image.x_pct}
-                            data-y-pct={image.y_pct}
-                            data-width-pct={image.width_pct}
-                            data-height-pct={image.height_pct}
-                            data-z-index={image.z_index}
-                            data-rotation-deg={image.rotation_deg}
-                            className={styles.imageWrapper}
-                            style={wrapperStyle}
-                        >
-                            {image.asset_id ? (
-                                <img
-                                    src={imageUrlFor(bookId, image.asset_id)}
-                                    alt=""
-                                    className={styles.image}
-                                    style={imageStyle}
-                                    data-testid={`collage-image-img-${index}`}
-                                />
-                            ) : (
-                                <div
-                                    className={styles.imagePlaceholder}
-                                    data-testid={`collage-image-placeholder-${index}`}
-                                >
-                                    <ImageIcon size={28} aria-hidden />
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                {images.map((image, index) => (
+                    <CollageImageItem
+                        key={`collage-image-${index}`}
+                        image={image}
+                        index={index}
+                        bookId={bookId}
+                        onDragEnd={handleImageDragEnd(index)}
+                    />
+                ))}
                 {textRegions.map((region) => {
                     const style: React.CSSProperties = {
                         left: `${region.x_pct}%`,

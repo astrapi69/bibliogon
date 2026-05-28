@@ -23,8 +23,8 @@
  *   targets).
  */
 
-import {describe, it, expect} from "vitest";
-import {render, screen} from "@testing-library/react";
+import {describe, it, expect, vi} from "vitest";
+import {render, screen, fireEvent, act} from "@testing-library/react";
 import CollageCanvas, {
     readCollageImages,
     readCollageTextRegions,
@@ -398,5 +398,184 @@ describe("CollageCanvas helpers — defensive shape-guards", () => {
         expect(
             readCollageBackgroundColor({collage: {background_color: "rgb(255,0,0)"}}),
         ).toBeUndefined();
+    });
+});
+
+// Phase 3 C2 (2026-05-28). Image drag-to-position. Each collage
+// image wraps in a CollageImageItem that owns a useDragPosition
+// hook. Drag-end calls onUpdate with a writeLayoutNamespace-
+// updated layout_config preserving sibling-layout namespaces.
+
+function stubParentRect(width: number, height: number) {
+    // Spy getBoundingClientRect on every wrapper's parent so the
+    // hook's coord math gets a non-zero rect (happy-dom defaults
+    // to zero for unmounted parents). Returns a teardown.
+    const original = HTMLElement.prototype.getBoundingClientRect;
+    HTMLElement.prototype.getBoundingClientRect = function () {
+        return {
+            width,
+            height,
+            left: 0,
+            top: 0,
+            right: width,
+            bottom: height,
+            x: 0,
+            y: 0,
+            toJSON: () => ({}),
+        };
+    };
+    return () => {
+        HTMLElement.prototype.getBoundingClientRect = original;
+    };
+}
+
+describe("CollageCanvas — image drag-to-position", () => {
+    it("does NOT attach pointer handlers when onUpdate is omitted (read-only mode)", () => {
+        // Phase 3 C1 read-only path: omitting onUpdate keeps the
+        // canvas immutable. The CollageImageItem renders the
+        // wrapper without onPointerDown so any pointer interaction
+        // is a no-op.
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {images: [{asset_id: "a-1"}]},
+                })}
+                bookId="b1"
+            />,
+        );
+        // The data-dragging attr stays "false".
+        expect(
+            screen.getByTestId("collage-image-0").getAttribute("data-dragging"),
+        ).toBe("false");
+        // The cursor: grab indicator should NOT appear.
+        expect(screen.getByTestId("collage-image-0").style.cursor).toBe("");
+    });
+
+    it("attaches grab cursor when onUpdate is provided (drag-enabled mode)", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        render(
+            <CollageCanvas
+                page={makeCollagePage({
+                    collage: {
+                        images: [{asset_id: "a-1", x_pct: 10, y_pct: 20}],
+                    },
+                })}
+                bookId="b1"
+                onUpdate={onUpdate}
+            />,
+        );
+        expect(screen.getByTestId("collage-image-0").style.cursor).toBe("grab");
+    });
+
+    it("drag-end fires onUpdate with the new x_pct/y_pct preserved in the namespace", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        const restore = stubParentRect(400, 300);
+        try {
+            render(
+                <CollageCanvas
+                    page={makeCollagePage({
+                        collage: {
+                            images: [
+                                {
+                                    asset_id: "a-1",
+                                    x_pct: 10,
+                                    y_pct: 20,
+                                    width_pct: 30,
+                                    height_pct: 30,
+                                },
+                                {asset_id: "a-2", x_pct: 50, y_pct: 50},
+                            ],
+                            background_color: "#ffcc00",
+                        },
+                    })}
+                    bookId="b1"
+                    onUpdate={onUpdate}
+                />,
+            );
+            const wrapper = screen.getByTestId("collage-image-0");
+            // Simulate a drag from (100, 100) → (180, 160) — 80 px
+            // right + 60 px down on a 400x300 parent → 20 % + 20 %.
+            act(() => {
+                fireEvent.pointerDown(wrapper, {
+                    clientX: 100,
+                    clientY: 100,
+                    pointerId: 1,
+                    button: 0,
+                    pointerType: "mouse",
+                });
+            });
+            act(() => {
+                fireEvent.pointerMove(wrapper, {
+                    clientX: 180,
+                    clientY: 160,
+                    pointerId: 1,
+                });
+            });
+            act(() => {
+                fireEvent.pointerUp(wrapper, {
+                    clientX: 180,
+                    clientY: 160,
+                    pointerId: 1,
+                });
+            });
+            // onUpdate fires with the namespace updated for the
+            // first image only — the second image's coords are
+            // preserved untouched (sibling preservation).
+            expect(onUpdate).toHaveBeenCalledTimes(1);
+            const call = onUpdate.mock.calls[0][0];
+            expect(call.layout_config.collage.images[0].x_pct).toBe(30);
+            expect(call.layout_config.collage.images[0].y_pct).toBe(40);
+            // Second image untouched.
+            expect(call.layout_config.collage.images[1].x_pct).toBe(50);
+            expect(call.layout_config.collage.images[1].y_pct).toBe(50);
+            // Background color preserved.
+            expect(call.layout_config.collage.background_color).toBe("#ffcc00");
+        } finally {
+            restore();
+        }
+    });
+
+    it("small movement does NOT fire onUpdate (treated as a click)", () => {
+        const onUpdate = vi.fn().mockResolvedValue(undefined);
+        const restore = stubParentRect(400, 300);
+        try {
+            render(
+                <CollageCanvas
+                    page={makeCollagePage({
+                        collage: {images: [{asset_id: "a-1"}]},
+                    })}
+                    bookId="b1"
+                    onUpdate={onUpdate}
+                />,
+            );
+            const wrapper = screen.getByTestId("collage-image-0");
+            act(() => {
+                fireEvent.pointerDown(wrapper, {
+                    clientX: 100,
+                    clientY: 100,
+                    pointerId: 1,
+                    button: 0,
+                    pointerType: "mouse",
+                });
+            });
+            // Move 2 px (below the 5 px threshold).
+            act(() => {
+                fireEvent.pointerMove(wrapper, {
+                    clientX: 102,
+                    clientY: 101,
+                    pointerId: 1,
+                });
+            });
+            act(() => {
+                fireEvent.pointerUp(wrapper, {
+                    clientX: 102,
+                    clientY: 101,
+                    pointerId: 1,
+                });
+            });
+            expect(onUpdate).not.toHaveBeenCalled();
+        } finally {
+            restore();
+        }
     });
 });

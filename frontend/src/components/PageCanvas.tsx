@@ -971,8 +971,17 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     // React's Rules of Hooks. The grid-based default canvas
     // (everything else in the return below) shares no state with
     // CollageCanvas, so the inert hook calls are harmless.
+    //
+    // Phase 3 C2 (2026-05-28): forward ``onUpdate`` so the
+    // collage's image drag-to-position handlers can persist.
     if (page.layout === "collage") {
-        return <CollageCanvas page={page} bookId={bookId} />
+        return (
+            <CollageCanvas
+                page={page}
+                bookId={bookId}
+                onUpdate={onUpdate}
+            />
+        )
     }
 
     return (
