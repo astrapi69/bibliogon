@@ -891,3 +891,120 @@ class TestNarrationForceNoTail:
             "L 0 0 A 0 0 0 0 1 0 0 Z"
         )
         assert out == expected
+
+
+def test_generate_comic_book_pdf_renders_all_6_bubble_types(tmp_path: Path) -> None:
+    """Visual verification (F2 close-out, 2026-05-28).
+
+    Generates a comic_book PDF with all 6 bubble types in a 2×3
+    grid panel + uses ``pdftoppm`` to rasterise page 1 to PNG +
+    asserts the PNG contains non-white pixels. Pins the
+    "approach-A SVG paths actually survive the WeasyPrint
+    pipeline" contract end-to-end.
+
+    Skipped if either ``weasyprint`` or ``pdftoppm`` is missing
+    on the host (the latter is a poppler-utils binary; not in
+    Poetry's dependency tree).
+    """
+    pytest.importorskip("weasyprint")
+    import shutil
+    import subprocess
+
+    pdftoppm = shutil.which("pdftoppm")
+    if not pdftoppm:
+        pytest.skip("pdftoppm (poppler-utils) not available on host")
+
+    book_data = {
+        "id": "b-6types",
+        "title": "All Bubble Types",
+        "language": "en",
+    }
+    pages = [_make_page(id="page-1")]
+    panels = [_make_panel(id="panel-1", page_id="page-1")]
+
+    # Six bubbles, one per type, arranged in a 3×2 grid inside
+    # the single panel. Each carries text + an outward-pointing
+    # tail so the per-type renderer is fully exercised.
+    bubble_types = ["speech", "thought", "narration", "shout", "whisper", "sound_effect"]
+    bubbles = []
+    for i, btype in enumerate(bubble_types):
+        col = i % 3
+        row = i // 3
+        bubbles.append(
+            _make_bubble(
+                id=f"b-{btype}",
+                panel_id="panel-1",
+                position=i + 1,
+                bubble_type=btype,
+                anchor={"x_pct": 20 + col * 30, "y_pct": 25 + row * 45},
+                width_pct=22,
+                height_pct=22,
+                tail_direction="none" if btype == "sound_effect" else "S",
+                tail_position_pct=50,
+                tail_length_px=20,
+                text_content=btype,
+            )
+        )
+
+    output = tmp_path / "all-types.pdf"
+    upload_dir = tmp_path / "uploads"
+    upload_dir.mkdir()
+    generate_comic_book_pdf(
+        book_data=book_data,
+        pages=pages,
+        panels=panels,
+        bubbles=bubbles,
+        assets=[],
+        upload_dir=upload_dir,
+        output_path=output,
+    )
+    assert output.exists()
+    assert output.read_bytes()[:4] == b"%PDF"
+
+    # Rasterise page 1 to PNG via pdftoppm + count non-white
+    # pixels. PDF byte-size is an unreliable visual-content proxy
+    # because WeasyPrint produces efficient vector PDFs (6 small
+    # bubbles fit in ~4 KB even when rendered correctly). The
+    # actual visual contract is "the rasterised page has the
+    # bubble strokes + text in it", which means non-white pixels.
+    png_prefix = tmp_path / "page"
+    result = subprocess.run(
+        [
+            pdftoppm,
+            "-r",
+            "150",
+            "-png",
+            "-f",
+            "1",
+            "-l",
+            "1",
+            str(output),
+            str(png_prefix),
+        ],
+        capture_output=True,
+        check=False,
+    )
+    assert result.returncode == 0, (
+        f"pdftoppm failed: {result.stderr.decode(errors='replace')}"
+    )
+    png_file = tmp_path / "page-1.png"
+    assert png_file.exists(), f"pdftoppm did not write {png_file}"
+    assert png_file.read_bytes()[:8] == b"\x89PNG\r\n\x1a\n"
+
+    from PIL import Image
+
+    img = Image.open(png_file).convert("RGB")
+    raw = img.tobytes()
+    non_white = sum(
+        1 for i in range(0, len(raw), 3) if raw[i : i + 3] != b"\xff\xff\xff"
+    )
+    # An empty-canvas PNG at 150 DPI / A4 has 0 non-white pixels.
+    # Six rendered bubbles (outlines + tails + text labels) on
+    # the same canvas produce in the tens of thousands. The
+    # threshold of 10_000 is a comfortable floor that catches
+    # the regression class "WeasyPrint silently failed to render
+    # the SVG paths".
+    assert non_white > 10_000, (
+        f"only {non_white} non-white pixels in the rendered PNG; "
+        "WeasyPrint likely failed to render some/all bubble paths"
+    )

@@ -830,10 +830,13 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
         tail_length_px=bubble.get("tail_length_px", 16),
     )
 
-    # Text-overlay style (typography + padding + opacity).
+    # Text-overlay style (typography + padding + opacity). The
+    # CSS ``inset`` shorthand is unknown to WeasyPrint v66; emit
+    # the four longhand offsets instead so the overlay actually
+    # fills the bubble's bounding box.
     text_css_parts: list[str] = [
         "position: absolute;",
-        "inset: 0;",
+        "top: 0; left: 0; right: 0; bottom: 0;",
         "display: flex;",
         "align-items: center;",
         "justify-content: center;",
@@ -884,8 +887,8 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
         svg = (
             f'<svg width="100%" height="100%" viewBox="0 0 100 100" '
             f'preserveAspectRatio="none" '
-            f'style="position: absolute; inset: 0; overflow: visible; '
-            f'pointer-events: none;">'
+            f'style="position: absolute; top: 0; left: 0; '
+            f'overflow: visible; pointer-events: none;">'
             f'<path d="{path_d}" fill="{fill}" stroke="{stroke}" '
             f'stroke-width="{stroke_width}"{dasharray_attr} '
             f'stroke-linejoin="round" />'
