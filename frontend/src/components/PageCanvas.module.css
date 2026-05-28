@@ -93,6 +93,29 @@
     grid-template-rows: 1fr;
 }
 
+/* Picture-Book Layout Expansion Phase 2 C2 (2026-05-28). The
+ * 4 multi-image layouts use the M1 storage strategy: PRIMARY
+ * image stays on Page.image_asset_id and renders in the
+ * .regionImage area (grid-area: image); SECONDARY image lives
+ * in layout_config[layout].secondary_image_asset_id and renders
+ * in the .regionImageSecondary area (grid-area: imageSecondary)
+ * via writeSecondaryImageAssetId. Phase 2 C2 ships the first of
+ * the four — two_images_text_center — with a 3-row grid:
+ * primary image on top (40 %), centred text band (20 %), and
+ * secondary image on the bottom (40 %). The remaining 3 layouts
+ * (split_horizontal, split_vertical, image_border_text_center)
+ * land in C3..C5, each adding its own grid template that uses
+ * the same .regionImage + .regionImageSecondary areas. */
+
+.canvasLayoutTwoImagesTextCenter {
+    grid-template-areas:
+        "image"
+        "text"
+        "imageSecondary";
+    grid-template-columns: 1fr;
+    grid-template-rows: 40% 20% 40%;
+}
+
 /* --- Region defaults --- */
 
 .region {
@@ -115,6 +138,21 @@
     grid-area: text;
     display: flex;
     flex-direction: column;
+}
+
+/* Phase 2 C2 (2026-05-28). Secondary image region for the
+ * multi-image layouts (two_images_text_center, split_horizontal,
+ * split_vertical, image_border_text_center). Mirrors .regionImage
+ * — same flex centring, same position: relative so the on-image
+ * replace-button overlay anchors correctly. Per-layout CSS picks
+ * the grid-area: imageSecondary for the slot's position. */
+
+.regionImageSecondary {
+    grid-area: imageSecondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
 }
 
 /* Session 4 Commit 2: visual containers (D+E hybrid — borders +

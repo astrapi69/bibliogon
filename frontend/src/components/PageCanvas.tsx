@@ -3,7 +3,11 @@ import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
-import {readLayoutNamespace} from "../utils/layoutConfig"
+import {
+    readLayoutNamespace,
+    readSecondaryImageAssetId,
+    writeSecondaryImageAssetId,
+} from "../utils/layoutConfig"
 import {useI18n} from "../hooks/useI18n"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import RichTextEditor from "./RichTextEditor"
@@ -540,16 +544,33 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     image_bottom_text_top: styles.canvasLayoutImageBottomTextTop,
     image_right_text_left: styles.canvasLayoutImageRightTextLeft,
     image_full_no_text: styles.canvasLayoutImageFullNoText,
-    // Picture-Book Layout Expansion Phase 2 C1 (2026-05-28).
-    // Placeholder fallbacks keep the Record<PageLayout, string>
-    // exhaustive while the M1 utilities ship. C2..C5 swap each
-    // entry in for a dedicated class as the per-layout PageCanvas
-    // branch + CSS module class lands. Same pattern as the
-    // comic_panel_grid fallback above.
-    two_images_text_center: styles.canvasLayoutImageTopTextBottom,
+    // Picture-Book Layout Expansion Phase 2 C2 (2026-05-28).
+    // two_images_text_center swaps in its dedicated class; the
+    // remaining 3 multi-image layouts keep the placeholder fallback
+    // until C3..C5 ship their dedicated CSS module classes.
+    two_images_text_center: styles.canvasLayoutTwoImagesTextCenter,
     split_horizontal: styles.canvasLayoutImageTopTextBottom,
     split_vertical: styles.canvasLayoutImageTopTextBottom,
     image_border_text_center: styles.canvasLayoutImageTopTextBottom,
+}
+
+/** Picture-Book Layout Expansion Phase 2 (2026-05-28).
+ *
+ *  Multi-image layouts (M1 storage): the PRIMARY image stays on
+ *  ``Page.image_asset_id`` (unchanged from single-image layouts);
+ *  the SECONDARY image lives in
+ *  ``layout_config[layout].secondary_image_asset_id``. This set
+ *  drives the conditional rendering of the secondary image region
+ *  + its upload affordance in the canvas.
+ *
+ *  C2 ships ``two_images_text_center``; C3..C5 add the other 3
+ *  layouts to this set as each ships its CSS + walker branches. */
+const MULTI_IMAGE_LAYOUTS = new Set<PageLayout>([
+    "two_images_text_center",
+])
+
+function isMultiImageLayout(layout: PageLayout): boolean {
+    return MULTI_IMAGE_LAYOUTS.has(layout)
 }
 
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {
@@ -557,6 +578,17 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     const fileInputRef = useRef<HTMLInputElement>(null)
     const [uploading, setUploading] = useState(false)
     const [uploadError, setUploadError] = useState<string | null>(null)
+    // Phase 2 C2 (2026-05-28): multi-image layouts need a separate
+    // upload affordance for the SECONDARY image. State + ref are
+    // mounted in every render to keep the hook order stable; the
+    // JSX block that reads them is conditionally rendered only for
+    // multi-image layouts. Empty state on non-multi-image layouts
+    // is harmless.
+    const secondaryFileInputRef = useRef<HTMLInputElement>(null)
+    const [uploadingSecondary, setUploadingSecondary] = useState(false)
+    const [uploadSecondaryError, setUploadSecondaryError] = useState<
+        string | null
+    >(null)
     // PB-PHASE4 Session 4c-B-1 fix C: defensive plain-text
     // extraction. Switching a page from a TipTap layout to a
     // Tier-Property layout preserves text_content (per v0.34.0
@@ -596,6 +628,37 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         } finally {
             setUploading(false)
             if (fileInputRef.current) fileInputRef.current.value = ""
+        }
+    }
+
+    /** Phase 2 C2 (2026-05-28): upload + persist the SECONDARY image
+     *  for multi-image layouts. Mirrors handleFileChange but stores
+     *  the asset id at ``layout_config[layout].secondary_image_asset_id``
+     *  via writeSecondaryImageAssetId — preserving the namespaced
+     *  shape + sibling layouts' configs. */
+    const handleSecondaryFileChange = async (
+        e: React.ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        setUploadingSecondary(true)
+        setUploadSecondaryError(null)
+        try {
+            const asset = await api.assets.upload(bookId, file, "figure")
+            const nextConfig = writeSecondaryImageAssetId(
+                page.layout_config,
+                page.layout as PageLayout,
+                asset.id,
+            )
+            await onUpdate({layout_config: nextConfig})
+        } catch (err: unknown) {
+            setUploadSecondaryError(
+                err instanceof Error ? err.message : String(err),
+            )
+        } finally {
+            setUploadingSecondary(false)
+            if (secondaryFileInputRef.current)
+                secondaryFileInputRef.current.value = ""
         }
     }
 
@@ -672,6 +735,17 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
     }, [page.layout, onEditorReady])
 
     const hasImage = Boolean(page.image_asset_id)
+    // Phase 2 C2 (2026-05-28): multi-image layouts read the SECONDARY
+    // image asset id from layout_config[layout].secondary_image_asset_id
+    // via the M1 helper. isMultiImage gates the secondary image region
+    // rendering; hasSecondaryImage gates the on-region affordance
+    // (placeholder vs <img> + replace button).
+    const isMultiImage = isMultiImageLayout(page.layout as PageLayout)
+    const secondaryImageAssetId = readSecondaryImageAssetId(
+        page.layout_config,
+        page.layout as PageLayout,
+    )
+    const hasSecondaryImage = Boolean(secondaryImageAssetId)
     const layoutClass = LAYOUT_CLASS[page.layout as PageLayout] ?? LAYOUT_CLASS.image_top_text_bottom
     const isSpeechBubble = page.layout === "speech_bubble"
     const isTextOnly = page.layout === "text_only"
@@ -1011,6 +1085,99 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                         )}
                     </div>
                 )}
+                {/* Phase 2 C2 (2026-05-28): SECONDARY image region for
+                 *  multi-image layouts. Mounted only when the active
+                 *  layout is in MULTI_IMAGE_LAYOUTS. Mirrors the
+                 *  primary image region above — same placeholder /
+                 *  upload-button / replace-button affordance, just
+                 *  bound to layout_config[layout].secondary_image_asset_id
+                 *  via writeSecondaryImageAssetId. */}
+                {isMultiImage && (
+                    <div
+                        data-testid="page-canvas-image-area-secondary"
+                        data-region="image-secondary"
+                        className={`${styles.region} ${styles.regionImageSecondary}`}
+                    >
+                        {hasSecondaryImage ? (
+                            <img
+                                key={secondaryImageAssetId ?? ""}
+                                src={imageUrlFor(
+                                    bookId,
+                                    secondaryImageAssetId!,
+                                )}
+                                alt=""
+                                className={styles.image}
+                                style={imageInlineStyle}
+                                data-testid="page-canvas-image-secondary"
+                            />
+                        ) : (
+                            <div
+                                className={styles.imagePlaceholder}
+                                data-testid="page-canvas-image-secondary-placeholder"
+                            >
+                                <ImageIcon size={40} aria-hidden />
+                                <span>
+                                    {t(
+                                        "ui.page_editor.no_secondary_image",
+                                        "No secondary image yet",
+                                    )}
+                                </span>
+                            </div>
+                        )}
+                        <button
+                            type="button"
+                            className={styles.imageReplaceBtn}
+                            onClick={() =>
+                                secondaryFileInputRef.current?.click()
+                            }
+                            disabled={uploadingSecondary}
+                            data-testid="page-canvas-image-secondary-replace"
+                            title={
+                                hasSecondaryImage
+                                    ? t(
+                                          "ui.page_editor.replace_secondary_image",
+                                          "Replace secondary image",
+                                      )
+                                    : t(
+                                          "ui.page_editor.upload_secondary_image",
+                                          "Upload secondary image",
+                                      )
+                            }
+                            aria-label={
+                                hasSecondaryImage
+                                    ? t(
+                                          "ui.page_editor.replace_secondary_image",
+                                          "Replace secondary image",
+                                      )
+                                    : t(
+                                          "ui.page_editor.upload_secondary_image",
+                                          "Upload secondary image",
+                                      )
+                            }
+                        >
+                            {uploadingSecondary ? (
+                                <span className={styles.imageReplaceLabel}>
+                                    {t(
+                                        "ui.page_editor.uploading",
+                                        "Uploading...",
+                                    )}
+                                </span>
+                            ) : hasSecondaryImage ? (
+                                <RefreshCw size={14} />
+                            ) : (
+                                <Upload size={14} />
+                            )}
+                        </button>
+                        <input
+                            ref={secondaryFileInputRef}
+                            type="file"
+                            accept={ACCEPT}
+                            onChange={handleSecondaryFileChange}
+                            className={styles.fileInput}
+                            data-testid="page-canvas-file-input-secondary"
+                        />
+                    </div>
+                )}
             </div>
             {uploadError && (
                 <div
@@ -1019,6 +1186,15 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                     data-testid="page-canvas-upload-error"
                 >
                     {uploadError}
+                </div>
+            )}
+            {uploadSecondaryError && (
+                <div
+                    className={styles.uploadError}
+                    role="alert"
+                    data-testid="page-canvas-upload-secondary-error"
+                >
+                    {uploadSecondaryError}
                 </div>
             )}
         </div>

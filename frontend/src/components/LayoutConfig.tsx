@@ -7,6 +7,7 @@ import {
     LayoutConfigImageLeftTextRight,
     LayoutConfigImageFullTextOverlay,
     LayoutConfigImageFullNoText,
+    LayoutConfigTwoImagesTextCenter,
 } from "./LayoutConfigImageRow"
 
 interface Props {
@@ -97,6 +98,17 @@ export default function LayoutConfig({page, onChange}: Props) {
             )}
             {page.layout === "image_full_no_text" && (
                 <LayoutConfigImageFullNoText
+                    config={layoutNamespace}
+                    onChange={onChange}
+                />
+            )}
+            {/* Phase 2 C2 (2026-05-28). Multi-image layout body —
+             *  Tier 1+2 for the centred text band + image_fit
+             *  shared across both images. The SECONDARY image
+             *  picker lives on the canvas (mirrors the primary
+             *  upload affordance), not here. */}
+            {page.layout === "two_images_text_center" && (
+                <LayoutConfigTwoImagesTextCenter
                     config={layoutNamespace}
                     onChange={onChange}
                 />

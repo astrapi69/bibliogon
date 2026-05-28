@@ -2703,3 +2703,123 @@ describe("PageCanvas - image_full_no_text suppresses the text region", () => {
         ).toBeInTheDocument()
     })
 })
+
+describe("PageCanvas - two_images_text_center (Phase 2 C2)", () => {
+    // M1 storage: PRIMARY on Page.image_asset_id (unchanged);
+    // SECONDARY in layout_config[layout].secondary_image_asset_id.
+    // The secondary image region renders ONLY for multi-image layouts;
+    // single-image layouts must NOT render it. The secondary upload
+    // affordance writes via writeSecondaryImageAssetId so sibling
+    // layouts' configs survive a write.
+
+    function makeMultiImagePage(overrides: Partial<Page> = {}): Page {
+        return {
+            id: "p-multi",
+            book_id: "b1",
+            position: 1,
+            layout: "two_images_text_center",
+            text_content: null,
+            image_asset_id: null,
+            layout_config: null,
+            notes: null,
+            story_beat: null,
+            mood_color: null,
+            act_group: null,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            ...overrides,
+        }
+    }
+
+    it("renders the secondary image region for the multi-image layout", () => {
+        render(
+            <PageCanvas
+                page={makeMultiImagePage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-image-area-secondary"),
+        ).toBeInTheDocument()
+        // No secondary asset id yet → placeholder is shown.
+        expect(
+            screen.getByTestId("page-canvas-image-secondary-placeholder"),
+        ).toBeInTheDocument()
+    })
+
+    it("renders the secondary <img> when secondary_image_asset_id is set", () => {
+        render(
+            <PageCanvas
+                page={makeMultiImagePage({
+                    layout_config: {
+                        two_images_text_center: {
+                            secondary_image_asset_id: "asset-secondary-1",
+                        },
+                    },
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        const img = screen.getByTestId("page-canvas-image-secondary")
+        expect(img).toBeInTheDocument()
+        // The src attribute must include the asset id (routed through
+        // imageUrlFor; the exact URL shape is asserted in the
+        // primary-image tests).
+        expect(img.getAttribute("src")).toContain("asset-secondary-1")
+    })
+
+    it("does NOT render the secondary image region for single-image layouts", () => {
+        render(
+            <PageCanvas
+                page={makeMultiImagePage({
+                    layout: "image_top_text_bottom",
+                })}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.queryByTestId("page-canvas-image-area-secondary"),
+        ).not.toBeInTheDocument()
+        expect(
+            screen.queryByTestId("page-canvas-image-secondary-placeholder"),
+        ).not.toBeInTheDocument()
+    })
+
+    it("still renders the primary image region + text region for multi-image", () => {
+        // Multi-image layouts have a TEXT region (Tier-Property text
+        // band per Q4) and BOTH image regions. Only image_full_no_text
+        // suppresses the text region (Phase 1 Q5).
+        render(
+            <PageCanvas
+                page={makeMultiImagePage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-image-area"),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByTestId("page-canvas-region-text"),
+        ).toBeInTheDocument()
+    })
+
+    it("renders the secondary file input + replace button", () => {
+        render(
+            <PageCanvas
+                page={makeMultiImagePage()}
+                bookId="b1"
+                onUpdate={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("page-canvas-file-input-secondary"),
+        ).toBeInTheDocument()
+        expect(
+            screen.getByTestId("page-canvas-image-secondary-replace"),
+        ).toBeInTheDocument()
+    })
+})

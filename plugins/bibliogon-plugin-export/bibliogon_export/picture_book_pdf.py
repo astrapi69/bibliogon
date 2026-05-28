@@ -329,6 +329,43 @@ html, body {
 .page--image_full_no_text .region-image img {
     object-fit: cover;
 }
+
+/* Picture-Book Layout Expansion Phase 2 C2 (2026-05-28).
+ * two_images_text_center: PRIMARY image on top (40 %), centred
+ * text band (20 %), SECONDARY image on the bottom (40 %). The
+ * SECONDARY image lives in layout_config[layout].secondary_image
+ * _asset_id (M1 storage); the walker resolves it via
+ * _read_secondary_image_asset_id and emits a second
+ * .region-image-secondary block after the text region. The
+ * primary image keeps its .region-image rules + objectFit
+ * handling; the secondary image mirrors the same shape so PDF +
+ * editor render the same content. */
+
+.page--two_images_text_center {
+    grid-template-areas:
+        "image"
+        "text"
+        "imageSecondary";
+    grid-template-columns: 1fr;
+    grid-template-rows: 40% 20% 40%;
+}
+
+.page--two_images_text_center .region-image-secondary {
+    grid-area: imageSecondary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+    min-height: 0;
+    border-top: 1pt solid #ccc;
+}
+
+.page--two_images_text_center .region-image-secondary img {
+    max-width: 100%;
+    max-height: 100%;
+}
 """
 
 
@@ -344,11 +381,28 @@ def _layout_class(layout: str) -> str:
         "image_bottom_text_top",
         "image_right_text_left",
         "image_full_no_text",
+        # Phase 2 C2 (2026-05-28). Multi-image layout.
+        "two_images_text_center",
     }
     if layout not in valid:
         # Defensive default: fall back to the most generic layout.
         return "page--image_top_text_bottom"
     return f"page--{layout}"
+
+
+# Picture-Book Layout Expansion Phase 2 C2 (2026-05-28). Multi-image
+# layouts use the M1 storage strategy: PRIMARY image stays on
+# Page.image_asset_id; SECONDARY image lives in
+# layout_config[layout].secondary_image_asset_id via
+# _read_secondary_image_asset_id. The walker emits a second
+# .region-image-secondary block after the text region for these
+# layouts. C2 ships two_images_text_center; C3..C5 extend this set
+# as each layout's CSS + dispatch lands.
+_MULTI_IMAGE_LAYOUTS: frozenset[str] = frozenset(
+    {
+        "two_images_text_center",
+    }
+)
 
 
 # --- Fix B (PICTURE-BOOK-TEXT-CONFIGURATION-01, 4c-B sub-item) ---
@@ -836,6 +890,21 @@ def _image_layout_style(layout: str, config: dict[str, Any] | None) -> dict[str,
         if fit in ("contain", "cover"):
             image_style = f"object-fit: {fit};"
 
+    elif layout == "two_images_text_center":
+        # Phase 2 C2 (2026-05-28): multi-image layout. Tier-Property
+        # text band in the centre (40/20/40 grid rows). The secondary
+        # image region is rendered separately in ``_render_page``;
+        # this branch only contributes the text region's Tier 1+2
+        # style (mirrors the existing image_top_text_bottom +
+        # image_left_text_right wiring) and any image_fit override
+        # for both images. Per the M1 plan, both images share the
+        # same image_fit field — splitting per-image_fit is a Phase 3
+        # decision.
+        fit = config.get("image_fit")
+        if fit in ("contain", "cover"):
+            image_style = f"object-fit: {fit};"
+        region_text_style = _compute_tier_text_style(config)
+
     elif layout == "image_full_text_overlay":
         pos = config.get("text_position")
         opacity_raw = config.get("text_backdrop_opacity")
@@ -1257,10 +1326,47 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
             f'</div>'
         )
 
+    # Phase 2 C2 (2026-05-28): multi-image layouts emit a SECONDARY
+    # image region after the text region. The secondary asset id
+    # lives in layout_config[layout].secondary_image_asset_id via
+    # _read_secondary_image_asset_id (M1 storage). When the asset is
+    # missing OR the asset id doesn't resolve to a URL, the region
+    # still renders as an empty div so the grid template's third
+    # row stays present (mirrors the editor's placeholder pattern).
+    image_secondary_region_html = ""
+    if layout in _MULTI_IMAGE_LAYOUTS:
+        secondary_asset_id = _read_secondary_image_asset_id(
+            raw_config, layout
+        )
+        image_secondary_html = ""
+        if secondary_asset_id:
+            secondary_url = assets_map.get(str(secondary_asset_id))
+            if secondary_url:
+                # Both images share the same image_style override
+                # (image_fit). C3 + C4 + C5 may differentiate per
+                # image-slot if the per-layout config plan calls for
+                # it; C2's two_images_text_center treats both images
+                # uniformly.
+                if image_style:
+                    image_secondary_html = (
+                        f'<img style="{image_style}" '
+                        f'src="{escape(secondary_url)}" alt="" />'
+                    )
+                else:
+                    image_secondary_html = (
+                        f'<img src="{escape(secondary_url)}" alt="" />'
+                    )
+        image_secondary_region_html = (
+            f'<div class="region region-image-secondary">'
+            f'{image_secondary_html}'
+            f'</div>'
+        )
+
     return (
         f'<section class="page {css_class}"{canvas_attr}>'
         f'{image_region_html}'
         f'{text_region_html}'
+        f'{image_secondary_region_html}'
         f'</section>'
     )
 

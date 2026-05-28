@@ -298,6 +298,64 @@ export function LayoutConfigImageLeftTextRight({
     )
 }
 
+/** two_images_text_center config (Picture-Book Layout Expansion
+ *  Phase 2 C2, 2026-05-28).
+ *
+ *  Multi-image layout: 3-row grid — primary image on top, centred
+ *  text band, secondary image on bottom. M1 storage: PRIMARY image
+ *  stays on Page.image_asset_id (uploaded via PageCanvas's primary
+ *  image affordance, unchanged); SECONDARY image lives in
+ *  layout_config[layout].secondary_image_asset_id (uploaded via
+ *  PageCanvas's secondary image affordance, which mirrors the
+ *  primary's CTA but writes through writeSecondaryImageAssetId).
+ *
+ *  Body controls: ``image_fit`` (shared across both images per the
+ *  M1 design — both images share the same fit; differentiating per
+ *  image-slot is a Phase 3 collage decision) + Tier 1+2 sections
+ *  for the central text band (Tier-Property layout per the
+ *  adjudicated Q4).
+ *
+ *  The body does NOT carry a secondary-asset picker — the asset
+ *  upload affordance is on the canvas itself (mirrors the primary
+ *  image upload), not in the properties pane. */
+export function LayoutConfigTwoImagesTextCenter({
+    config,
+    onChange,
+}: BaseProps) {
+    const {t} = useI18n()
+    const fit = readImageFit(config)
+    return (
+        <div
+            className={styles.container}
+            data-testid="layout-config-two-images-text-center"
+        >
+            <h4 className={styles.heading}>
+                {t(
+                    "ui.page_editor.config.two_images_text_center.heading",
+                    "Zwei Bilder mit zentriertem Text",
+                )}
+            </h4>
+            <ImageFitDropdown
+                value={fit}
+                onChange={(next) => onChange({image_fit: next})}
+                testid="two-images-text-center-image-fit"
+            />
+            <Tier1Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="two-images-text-center"
+                i18nKeyPrefix="ui.page_editor.config.two_images_text_center"
+            />
+            <Tier2Section
+                config={config}
+                onChange={onChange}
+                testidPrefix="two-images-text-center"
+                i18nKeyPrefix="ui.page_editor.config.two_images_text_center"
+            />
+        </div>
+    )
+}
+
 /** image_full_no_text config (Phase 1 C4, 2026-05-28).
  *
  *  Minimal body: image_fit only (no text region → no Tier1/2,

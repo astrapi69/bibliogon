@@ -1160,6 +1160,140 @@ def test_render_page_image_full_no_text_image_fit_inline() -> None:
     assert "object-fit: contain" in html
 
 
+# Picture-Book Layout Expansion Phase 2 C2 (2026-05-28).
+# two_images_text_center walker pins. Multi-image layout: PRIMARY
+# image on top, centred text band, SECONDARY image on bottom. M1
+# storage shape: secondary asset id lives in
+# layout_config[layout].secondary_image_asset_id. The walker MUST
+# render the same secondary image the editor renders for the same
+# row (parity contract).
+
+
+def test_render_page_two_images_text_center_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="two_images_text_center"), {})
+    assert "page--two_images_text_center" in html
+
+
+def test_render_page_two_images_text_center_emits_secondary_region_when_empty() -> None:
+    """Even when no secondary asset is set, the walker emits the
+    secondary region <div> so the 3-row grid stays present (mirror
+    of how the editor renders an empty placeholder in the same
+    slot)."""
+    html = _render_page(_make_page(layout="two_images_text_center"), {})
+    assert 'class="region region-image-secondary"' in html
+
+
+def test_render_page_two_images_text_center_renders_secondary_image() -> None:
+    """When secondary_image_asset_id is set + resolves to a URL,
+    the walker emits an <img> inside the secondary region."""
+    html = _render_page(
+        _make_page(
+            layout="two_images_text_center",
+            image_asset_id="a-primary",
+            layout_config={
+                "two_images_text_center": {
+                    "secondary_image_asset_id": "a-secondary",
+                }
+            },
+        ),
+        {
+            "a-primary": "file:///tmp/primary.png",
+            "a-secondary": "file:///tmp/secondary.png",
+        },
+    )
+    # Primary in the regular region.
+    assert 'class="region region-image"' in html
+    assert "file:///tmp/primary.png" in html
+    # Secondary in the dedicated region.
+    assert 'class="region region-image-secondary"' in html
+    assert "file:///tmp/secondary.png" in html
+    # Text region still renders (Tier-Property text band per Q4).
+    assert 'class="region region-text"' in html
+
+
+def test_render_page_two_images_text_center_text_region_present() -> None:
+    """Unlike image_full_no_text, multi-image layouts DO render
+    the text region (Tier-Property text band in the centre)."""
+    html = _render_page(
+        _make_page(
+            layout="two_images_text_center",
+            text_content="Centred text",
+        ),
+        {},
+    )
+    assert 'class="region region-text"' in html
+    assert "Centred text" in html
+
+
+def test_render_page_two_images_text_center_silently_handles_missing_asset() -> None:
+    """If the secondary asset id points at an asset NOT in the map
+    (orphan reference), the walker emits the empty region <div>
+    instead of crashing — same defensive shape as the primary
+    image-missing path."""
+    html = _render_page(
+        _make_page(
+            layout="two_images_text_center",
+            layout_config={
+                "two_images_text_center": {
+                    "secondary_image_asset_id": "a-missing",
+                }
+            },
+        ),
+        # Empty assets_map: 'a-missing' doesn't resolve.
+        {},
+    )
+    # Region present.
+    assert 'class="region region-image-secondary"' in html
+    # No <img> inside (asset unresolved).
+    secondary_block = html[
+        html.index('region-image-secondary'):
+    ]
+    assert "<img" not in secondary_block.split("</div>")[0]
+
+
+def test_render_page_two_images_text_center_image_fit_propagates_to_secondary() -> None:
+    """image_fit is shared across both images (M1 design — both
+    images use the same fit value). Setting fit=cover applies to
+    BOTH the primary and the secondary <img>."""
+    html = _render_page(
+        _make_page(
+            layout="two_images_text_center",
+            image_asset_id="a-primary",
+            layout_config={
+                "two_images_text_center": {
+                    "secondary_image_asset_id": "a-secondary",
+                    "image_fit": "cover",
+                }
+            },
+        ),
+        {
+            "a-primary": "file:///tmp/primary.png",
+            "a-secondary": "file:///tmp/secondary.png",
+        },
+    )
+    # Both <img> tags carry object-fit: cover.
+    assert html.count("object-fit: cover") == 2
+
+
+# --- _image_layout_style branch for two_images_text_center ---
+
+
+def test_image_layout_style_two_images_text_center_image_fit() -> None:
+    styles = _image_layout_style(
+        "two_images_text_center", {"image_fit": "cover"}
+    )
+    assert "object-fit: cover" in styles["image_style"]
+
+
+def test_image_layout_style_two_images_text_center_tier_text_style_present() -> None:
+    """The text band gets the Tier 1+2 inline style (same shape as
+    image_top_text_bottom + image_left_text_right). With no Tier
+    fields set, the style is empty."""
+    styles = _image_layout_style("two_images_text_center", {})
+    # No tier overrides → empty string is fine.
+    assert styles["region_text_style"] == ""
+
+
 def test_render_page_image_full_text_overlay_position_top() -> None:
     html = _render_page(
         _make_page(

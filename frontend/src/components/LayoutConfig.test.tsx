@@ -43,6 +43,14 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
         "image_left_text_right",
         "image_full_text_overlay",
         "text_only",
+        // Phase 1 layouts (C4, 2026-05-28). Each must mount without
+        // crash and surface data-layout on the root.
+        "image_bottom_text_top",
+        "image_right_text_left",
+        "image_full_no_text",
+        // Phase 2 layouts (C2, 2026-05-28). C2 dispatches
+        // two_images_text_center; C3..C5 land the other 3.
+        "two_images_text_center",
     ]
 
     it.each(LAYOUTS)("mounts for layout '%s' (no crash)", (layout) => {
@@ -89,5 +97,20 @@ describe("LayoutConfig dispatcher (Session 4c Commit 3)", () => {
             .split(",")
             .sort()
         expect(keys).toEqual(["anchor_position", "opacity"])
+    })
+
+    it("dispatches the two_images_text_center body for the multi-image layout", () => {
+        // Phase 2 C2: the dispatcher routes two_images_text_center to
+        // its dedicated body. The body's testid pins the contract
+        // (the dispatcher MUST mount the right body component).
+        render(
+            <LayoutConfig
+                page={makePage({layout: "two_images_text_center"})}
+                onChange={vi.fn()}
+            />,
+        )
+        expect(
+            screen.getByTestId("layout-config-two-images-text-center"),
+        ).toBeInTheDocument()
     })
 })
