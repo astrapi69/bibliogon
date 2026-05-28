@@ -440,7 +440,29 @@
 
 .regionImage:hover .imageReplaceBtn,
 .regionImage:focus-within .imageReplaceBtn,
+/* Phase 2 multi-image fix (2026-05-28): the secondary image
+ * region was invisible to the hover-reveal rule because the
+ * selector was scoped to .regionImage only. Add .regionImageSecondary
+ * so the secondary upload button is reachable via mouse hover +
+ * keyboard tab. */
+.regionImageSecondary:hover .imageReplaceBtn,
+.regionImageSecondary:focus-within .imageReplaceBtn,
 .imageReplaceBtn:focus-visible {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Phase 2 multi-image fix (2026-05-28): always-visible upload
+ * affordance when no image is present. The hover-reveal pattern
+ * is great for replace-existing-image (less visual clutter)
+ * but hides the upload affordance entirely on empty slots. When
+ * the placeholder is showing — which it always is for new
+ * multi-image layouts before the user uploads a secondary
+ * asset — the upload button stays visible. Same rule applies to
+ * the primary image region's empty state, addressing the same
+ * discoverability gap there. */
+.regionImage:has(.imagePlaceholder) .imageReplaceBtn,
+.regionImageSecondary:has(.imagePlaceholder) .imageReplaceBtn {
     opacity: 1;
     pointer-events: auto;
 }

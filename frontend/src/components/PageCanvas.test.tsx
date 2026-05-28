@@ -801,17 +801,43 @@ describe("PageCanvas - on-image replace button overlay (Session 4c Commit 2)", (
         expect(overlayBlock![0]).toMatch(/opacity:\s*0/)
     })
 
-    it("CSS source pins the hover + focus-within reveal rule", () => {
-        // The reveal rule's three triggers — hover, focus-within,
+    it("CSS source pins the hover + focus-within reveal rule (covers both image regions)", () => {
+        // The reveal rule's triggers — hover, focus-within,
         // focus-visible — are the keyboard-accessibility contract.
-        // Without focus-within, a keyboard user tabbing to the
-        // button could never see it.
+        // Phase 2 multi-image fix (2026-05-28): the selector list
+        // MUST cover BOTH .regionImage AND .regionImageSecondary.
+        // Pre-fix, the secondary upload button stayed invisible
+        // because the reveal rule was scoped to .regionImage only.
         const revealBlock = css.match(
-            /\.regionImage:hover \.imageReplaceBtn,\s*\.regionImage:focus-within \.imageReplaceBtn,\s*\.imageReplaceBtn:focus-visible\s*\{[^}]*\}/,
+            /\.regionImage:hover \.imageReplaceBtn,[^{]*\.imageReplaceBtn:focus-visible\s*\{[^}]*\}/,
         )
         expect(revealBlock).not.toBeNull()
         expect(revealBlock![0]).toMatch(/opacity:\s*1/)
         expect(revealBlock![0]).toMatch(/pointer-events:\s*auto/)
+        // Phase 2 multi-image fix regression pin: the secondary
+        // region selectors MUST be present in the reveal block. A
+        // future refactor that drops them brings the bug back.
+        expect(revealBlock![0]).toMatch(
+            /\.regionImageSecondary:hover \.imageReplaceBtn/,
+        )
+        expect(revealBlock![0]).toMatch(
+            /\.regionImageSecondary:focus-within \.imageReplaceBtn/,
+        )
+    })
+
+    it("CSS source pins the always-visible-on-empty rule for the upload button", () => {
+        // Phase 2 multi-image fix (2026-05-28): when the
+        // placeholder is showing (no asset uploaded yet), the
+        // upload button must be visible WITHOUT requiring hover.
+        // Otherwise the upload affordance is undiscoverable for
+        // empty slots — which was the original user-reported bug.
+        // Same rule applies to BOTH primary + secondary regions.
+        const emptyBlock = css.match(
+            /\.regionImage:has\(\.imagePlaceholder\) \.imageReplaceBtn,\s*\.regionImageSecondary:has\(\.imagePlaceholder\) \.imageReplaceBtn\s*\{[^}]*\}/,
+        )
+        expect(emptyBlock).not.toBeNull()
+        expect(emptyBlock![0]).toMatch(/opacity:\s*1/)
+        expect(emptyBlock![0]).toMatch(/pointer-events:\s*auto/)
     })
 
     it("upload flow still calls api.assets.upload + onUpdate (regression after overlay refactor)", async () => {
