@@ -573,9 +573,15 @@ def _shout_path(
     top: float,
     width: float,
     height: float,
-    tail: dict[str, Any] | None,
     tail_direction: str,
+    tail_length_px: int,
 ) -> str:
+    """20-vertex star polygon. When a tail is requested, the outer
+    spike whose angle is closest to ``tail_direction`` is extended
+    outward by ``tail_length_px`` along the direction unit-vector.
+    Adjacent vertices stay put and form the natural tail base —
+    no separate sub-path. Mirrors shoutPath() in
+    frontend/src/components/comics/bubblePath.ts."""
     star_pcts: tuple[tuple[float, float], ...] = (
         (0, 20), (10, 0), (25, 15), (40, 0), (55, 15),
         (70, 0), (85, 15), (100, 20), (90, 40),
@@ -586,29 +592,40 @@ def _shout_path(
     points = [
         (left + (px / 100) * width, top + (py / 100) * height) for px, py in star_pcts
     ]
+    # Outer spikes sit on the bbox edge; inner points sit off-edge.
+    # Only outer points are eligible for extension.
+    is_outer = [px in (0, 100) or py in (0, 100) for px, py in star_pcts]
+
+    if tail_direction != "none" and tail_length_px > 0:
+        direction = "S" if tail_direction == "auto" else tail_direction
+        vec = _TAIL_DIRECTION_VECTORS.get(direction)
+        if vec is not None:
+            vx, vy = vec
+            cx = left + width / 2
+            cy = top + height / 2
+            best_idx = -1
+            best_dot = float("-inf")
+            for i, (x, y) in enumerate(points):
+                if not is_outer[i]:
+                    continue
+                dx = x - cx
+                dy = y - cy
+                dist = math.hypot(dx, dy)
+                if dist == 0:
+                    continue
+                dot = (dx * vx + dy * vy) / dist
+                if dot > best_dot:
+                    best_dot = dot
+                    best_idx = i
+            if best_idx >= 0:
+                ox, oy = points[best_idx]
+                points[best_idx] = (ox + vx * tail_length_px, oy + vy * tail_length_px)
+
     star = f"M {_fmt(points[0][0])} {_fmt(points[0][1])}"
     for x, y in points[1:]:
         star += f" L {_fmt(x)} {_fmt(y)}"
     star += " Z"
-    if tail is None:
-        return star
-    vec = _TAIL_DIRECTION_VECTORS.get(
-        "S" if tail_direction == "auto" else tail_direction
-    )
-    if vec is None:
-        return star
-    vx, vy = vec
-    overlap = 3.0
-    base_left = tail["base_left"]
-    base_right = tail["base_right"]
-    inset_left = (base_left[0] - vx * overlap, base_left[1] - vy * overlap)
-    inset_right = (base_right[0] - vx * overlap, base_right[1] - vy * overlap)
-    tail_path = (
-        f"M {_fmt(inset_left[0])} {_fmt(inset_left[1])}"
-        f"{_tail_subpath(inset_left, inset_right, tail['tip'], tail_direction)}"
-        f" L {_fmt(inset_left[0])} {_fmt(inset_left[1])} Z"
-    )
-    return f"{star} {tail_path}"
+    return star
 
 
 def _thought_circle_chain_suffix(
@@ -694,7 +711,7 @@ def _build_bubble_path(
             width / 2, height / 2, width / 2, height / 2, tail, tail_direction
         )
     if shape == "shout":
-        return _shout_path(0, 0, width, height, tail, tail_direction)
+        return _shout_path(0, 0, width, height, tail_direction, tail_length_px)
     return ""
 
 

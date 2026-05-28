@@ -466,16 +466,20 @@ function thoughtCircleChainSuffix(
 }
 
 /** Star polygon for ``shout`` — 20-vertex jagged outline matching
- *  the CSS clip-path constants. Tail integration is approximated:
- *  the star path is closed and the tail is drawn as a separate
- *  sub-path overlapping the nearest vertex. */
+ *  the CSS clip-path constants. When a tail is requested, the
+ *  vertex whose angle is closest to ``tailDirection`` is extended
+ *  outward by ``tailLengthPx`` along the direction unit-vector.
+ *  Its two neighbours stay put, so they form the natural tail
+ *  base — no separate sub-path needed (concept doc section
+ *  "Shout"). The shout shape absorbs the tail into its own
+ *  outline. */
 function shoutPath(
     left: number,
     top: number,
     width: number,
     height: number,
-    tail: TailGeometry | null,
-    tailDirection: string,
+    tailDirection: BubbleTailDirection,
+    tailLengthPx: number,
 ): string {
     // Match the CSS clip-path vertices from
     // ``bubble-types.module.css``.
@@ -490,29 +494,50 @@ function shoutPath(
         x: left + (px / 100) * width,
         y: top + (py / 100) * height,
     }));
+    // Outer spikes sit on the bbox edge; inner points sit
+    // off-edge. Only outer points are eligible for extension —
+    // an inner point would protrude out of the star's gap between
+    // two spikes and produce a non-stellar shape.
+    const isOuter = STAR_PERCENTS.map(
+        ([px, py]) => px === 0 || px === 100 || py === 0 || py === 100,
+    );
+
+    if (tailDirection !== "none" && tailLengthPx > 0) {
+        const direction = tailDirection === "auto" ? "S" : tailDirection;
+        const vec = TAIL_VECTORS[direction];
+        if (vec) {
+            const [vx, vy] = vec;
+            const cx = left + width / 2;
+            const cy = top + height / 2;
+            let bestIdx = -1;
+            let bestDot = -Infinity;
+            for (let i = 0; i < points.length; i++) {
+                if (!isOuter[i]) continue;
+                const dx = points[i].x - cx;
+                const dy = points[i].y - cy;
+                const dist = Math.hypot(dx, dy);
+                if (dist === 0) continue;
+                const dot = (dx * vx + dy * vy) / dist;
+                if (dot > bestDot) {
+                    bestDot = dot;
+                    bestIdx = i;
+                }
+            }
+            if (bestIdx >= 0) {
+                points[bestIdx] = {
+                    x: points[bestIdx].x + vx * tailLengthPx,
+                    y: points[bestIdx].y + vy * tailLengthPx,
+                };
+            }
+        }
+    }
+
     let starPath = `M ${fmt(points[0].x)} ${fmt(points[0].y)}`;
     for (let i = 1; i < points.length; i++) {
         starPath += ` L ${fmt(points[i].x)} ${fmt(points[i].y)}`;
     }
     starPath += " Z";
-    if (!tail) return starPath;
-    const vec = TAIL_VECTORS[tailDirection === "auto" ? "S" : tailDirection];
-    if (!vec) return starPath;
-    const [vx, vy] = vec;
-    const overlap = 3;
-    const insetLeft = {
-        x: tail.baseLeft.x - vx * overlap,
-        y: tail.baseLeft.y - vy * overlap,
-    };
-    const insetRight = {
-        x: tail.baseRight.x - vx * overlap,
-        y: tail.baseRight.y - vy * overlap,
-    };
-    const tailPath =
-        `M ${fmt(insetLeft.x)} ${fmt(insetLeft.y)}` +
-        tailSubpath(insetLeft, insetRight, tail.tip, tailDirection) +
-        ` L ${fmt(insetLeft.x)} ${fmt(insetLeft.y)} Z`;
-    return `${starPath} ${tailPath}`;
+    return starPath;
 }
 
 /** Build the complete SVG path for a bubble + tail. */
@@ -604,8 +629,8 @@ export function buildBubblePath(input: BubblePathInput): BubblePathOutput {
             bubbleTop,
             width,
             height,
-            tail,
             tailDirection,
+            tailLengthPx,
         );
     } else {
         d = "";

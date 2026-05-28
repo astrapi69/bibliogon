@@ -737,3 +737,99 @@ class TestThoughtCircleChain:
             "M 47.8 135 A 2.2 2.2 0 1 0 52.2 135 A 2.2 2.2 0 1 0 47.8 135 Z"
         )
         assert out == expected
+
+
+class TestShoutSpikeExtension:
+    """Shout tail = extended star spike (concept doc). Mirrors
+    ``frontend/src/components/comics/bubblePath.test.ts``."""
+
+    def test_no_spike_extension_when_direction_none(self) -> None:
+        no_tail = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="none",
+            tail_position_pct=50,
+            tail_length_px=30,
+        )
+        # Star = 1 M + 19 L + 1 Z, no other commands.
+        assert no_tail.count("L ") == 19
+        # No vertex extended past y=100 (all stay inside bbox).
+        for tok in no_tail.split():
+            stripped = tok.lstrip("-").replace(".", "")
+            if stripped.isdigit() and "." not in tok and 100 < int(tok) < 200:
+                raise AssertionError(
+                    f"vertex coord {tok} outside bbox unexpectedly: {no_tail}"
+                )
+
+    def test_s_direction_extends_bottom_most_spike(self) -> None:
+        with_tail = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=20,
+        )
+        # bottom-most outer vertex [45, 100] pushed to y=120.
+        assert "120" in with_tail.split()
+        assert with_tail.count("L ") == 19
+
+    def test_n_direction_extends_top_most_spike(self) -> None:
+        with_tail = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="N",
+            tail_position_pct=50,
+            tail_length_px=25,
+        )
+        # Closest outer spike to N at center-x is [40, 0]; pushed
+        # to y = -25.
+        assert "-25" in with_tail.split()
+
+    def test_e_direction_extends_right_most_spike(self) -> None:
+        with_tail = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="E",
+            tail_position_pct=50,
+            tail_length_px=18,
+        )
+        # Right-edge outer spike pushed to x=118.
+        assert "118" in with_tail.split()
+
+    def test_no_separate_cubic_bezier_tail_subpath(self) -> None:
+        with_tail = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=20,
+        )
+        # Spike-extension uses the star's existing L commands; no
+        # curves and no extra M.
+        assert with_tail.count("C ") == 0
+        assert with_tail.count("M ") == 1
+        assert with_tail.count("Z") == 1
+
+    def test_cross_language_snapshot_pin(self) -> None:
+        """Mirrors the TS snapshot pin. Same input → byte-identical
+        ``d``."""
+        out = _build_bubble_path(
+            shape="shout",
+            width=100,
+            height=100,
+            tail_direction="S",
+            tail_position_pct=50,
+            tail_length_px=20,
+        )
+        expected = (
+            "M 0 20 L 10 0 L 25 15 L 40 0 L 55 15 L 70 0 "
+            "L 85 15 L 100 20 L 90 40 L 100 60 L 85 75 "
+            "L 100 90 L 75 100 L 60 85 L 45 120 L 30 85 "
+            "L 15 100 L 0 80 L 10 60 L 0 40 Z"
+        )
+        assert out == expected

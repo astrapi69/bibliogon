@@ -60,7 +60,7 @@ describe("buildBubblePath", () => {
     });
 
     describe("tail diversion uses cubic beziers", () => {
-        it.each(["speech", "narration", "whisper", "shout"] as const)(
+        it.each(["speech", "narration", "whisper"] as const)(
             "%s with a tail emits cubic curves for the tail subpath",
             (shape) => {
                 const noTail = buildBubblePath({
@@ -170,7 +170,7 @@ describe("buildBubblePath", () => {
         });
 
         // Cross-language snapshot pin. Mirrors
-        // ``plugins/bibliogon-plugin-comics/tests/test_bubble_path.py``
+        // ``backend/tests/test_comic_book_pdf.py::TestThoughtCircleChain``
         // — same input must produce a byte-identical ``d`` string
         // in both TS and Python.
         it("cross-language snapshot pin (thought, S, 35px)", () => {
@@ -226,6 +226,98 @@ describe("buildBubblePath", () => {
             });
             // Tip x = width + length = 118.
             expect(out.d).toMatch(/\b11[78]\b/);
+        });
+    });
+
+    describe("shout tail = extended spike (concept doc)", () => {
+        // The shout tail is one of the star's existing spikes
+        // lengthened in the requested direction. Adjacent vertices
+        // (unchanged) form the natural tail base — no separate
+        // sub-path.
+        it("no spike extension when tail_direction is none", () => {
+            const noTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "shout",
+                tailDirection: "none",
+                tailLengthPx: 30,
+            });
+            // Star = 1 M + 19 L + 1 Z, no other commands.
+            const lCount = (noTail.d.match(/L /g) ?? []).length;
+            expect(lCount).toBe(19);
+            // 20 vertices' worth of coordinates; max y stays <= 100
+            // because no vertex is pushed outside the bbox.
+            expect(noTail.d).not.toMatch(/\b1[2-9][0-9](\.\d)?\b/);
+        });
+
+        it("S direction extends the bottom-most spike past y=100", () => {
+            const withTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "shout",
+                tailDirection: "S",
+                tailLengthPx: 20,
+            });
+            // bottom-most vertex [45, 100] gets pushed to y=120.
+            expect(withTail.d).toMatch(/\b120\b/);
+            // still exactly 19 L commands — same vertex count.
+            const lCount = (withTail.d.match(/L /g) ?? []).length;
+            expect(lCount).toBe(19);
+        });
+
+        it("N direction extends the top-most spike past y=0 (negative)", () => {
+            const withTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "shout",
+                tailDirection: "N",
+                tailLengthPx: 25,
+            });
+            // Closest spike to N at center-x is [40, 0]; pushed to
+            // y = -25.
+            expect(withTail.d).toMatch(/-25\b/);
+        });
+
+        it("E direction extends the right-most spike past x=100", () => {
+            const withTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "shout",
+                tailDirection: "E",
+                tailLengthPx: 18,
+            });
+            // Right-edge vertex pushed to x=118.
+            expect(withTail.d).toMatch(/\b118\b/);
+        });
+
+        it("no separate cubic-bezier tail sub-path is appended", () => {
+            const withTail = buildBubblePath({
+                ...BASE_INPUT,
+                shape: "shout",
+                tailDirection: "S",
+                tailLengthPx: 20,
+            });
+            // Spike-extension uses the star's existing L commands;
+            // no curves and no extra M (only the opening one).
+            expect((withTail.d.match(/C /g) ?? []).length).toBe(0);
+            expect((withTail.d.match(/M /g) ?? []).length).toBe(1);
+            // Single Z at the close.
+            expect((withTail.d.match(/Z/g) ?? []).length).toBe(1);
+        });
+
+        // Cross-language snapshot pin. Mirrors
+        // ``backend/tests/test_comic_book_pdf.py::TestShoutSpikeExtension``.
+        it("cross-language snapshot pin (shout, S, 20px)", () => {
+            const out = buildBubblePath({
+                shape: "shout",
+                width: 100,
+                height: 100,
+                tailDirection: "S",
+                tailPositionPct: 50,
+                tailLengthPx: 20,
+            });
+            expect(out.d).toBe(
+                "M 0 20 L 10 0 L 25 15 L 40 0 L 55 15 L 70 0 " +
+                    "L 85 15 L 100 20 L 90 40 L 100 60 L 85 75 " +
+                    "L 100 90 L 75 100 L 60 85 L 45 120 L 30 85 " +
+                    "L 15 100 L 0 80 L 10 60 L 0 40 Z",
+            );
         });
     });
 });
