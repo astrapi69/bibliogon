@@ -46,6 +46,7 @@ import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
 import { formatLocaleDate } from "../utils/formatDate";
 import CoverPlaceholder from "../components/CoverPlaceholder";
+import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
@@ -806,6 +807,7 @@ export default function ArticleList() {
                                     </span>
                                 )}
                             </button>
+                            <FullscreenButton testidPrefix="article-list" />
                             <ThemeToggle />
                         </div>
 

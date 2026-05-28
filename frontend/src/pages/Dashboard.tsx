@@ -33,6 +33,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import TrashCard from "../components/trash/TrashCard";
 import styles from "./Dashboard.module.css";
+import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import {useTheme} from "../hooks/useTheme";
 import {Moon, Sun} from "lucide-react";
@@ -604,6 +605,7 @@ export default function Dashboard() {
                                     </span>
                                 )}
                             </button>
+                            <FullscreenButton testidPrefix="dashboard"/>
                             <ThemeToggle/>
                         </div>
 

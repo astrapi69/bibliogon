@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from "react";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {api} from "../api/client";
+import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Home} from "lucide-react";
 import {notify} from "../utils/notify";
@@ -218,6 +219,7 @@ export default function Settings() {
                         >
                             <Home size={18}/>
                         </button>
+                        <FullscreenButton testidPrefix="settings"/>
                         <ThemeToggle/>
                     </div>
                 </div>
