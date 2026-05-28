@@ -383,6 +383,66 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         });
     });
 
+    it("Add Panel disables once page has reached the layout's panel capacity", async () => {
+        // Single-panel template (max=1) + 1 existing panel → at
+        // capacity. The button must be disabled AND carry the
+        // i18n "at capacity" tooltip with the cell count.
+        vi.mocked(api.pages.list).mockImplementationOnce(async () => [
+            {
+                ...fakePage,
+                layout_config: {comic_grid_template: "single_panel"},
+            },
+        ]);
+        // The default listPanels mock already returns [fakePanel] (1
+        // panel), which equals the single_panel capacity.
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.comics.listPanels).toHaveBeenCalled();
+        });
+        const addPanelBtn = screen.getByTestId("comic-book-editor-add-panel");
+        expect(addPanelBtn).toBeDisabled();
+        expect(addPanelBtn.getAttribute("data-at-capacity")).toBe("true");
+        // Tooltip text includes the capacity number (1 for
+        // single_panel) so the user knows the gate is real.
+        expect(addPanelBtn.getAttribute("title")).toMatch(/\(1\)$/);
+    });
+
+    it("Add Panel handler is a no-op when at capacity (defense-in-depth)", async () => {
+        // Same scenario as the disabled-state test, but exercises
+        // the click handler directly to confirm it short-circuits
+        // even if the disabled attr is bypassed (keyboard shortcut,
+        // a11y assistive tool, etc.).
+        vi.mocked(api.pages.list).mockImplementationOnce(async () => [
+            {
+                ...fakePage,
+                layout_config: {comic_grid_template: "single_panel"},
+            },
+        ]);
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+            />,
+        );
+        await waitFor(() => {
+            expect(api.comics.listPanels).toHaveBeenCalled();
+        });
+        const addPanelBtn = screen.getByTestId("comic-book-editor-add-panel");
+        // Force the click past the disabled gate; the handler
+        // itself must refuse to call createPanel.
+        fireEvent.click(addPanelBtn);
+        // Brief flush to let any handler microtask run.
+        await new Promise((r) => setTimeout(r, 0));
+        expect(api.comics.createPanel).not.toHaveBeenCalled();
+    });
+
     it("Add Panel auto-selects the new panel (Add-Bubble enables)", async () => {
         // Perception-lag fix: after a successful createPanel, the
         // editor sets selectedPanelId to the new panel's id. The

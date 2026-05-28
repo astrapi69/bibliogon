@@ -60,6 +60,22 @@ export const COMIC_GRID_TEMPLATE_PICKER_OPTIONS: readonly ComicGridTemplate[] = 
 
 export const DEFAULT_COMIC_GRID_TEMPLATE: ComicGridTemplate = "single_panel";
 
+// Maximum panel count per grid template. Each template defines a
+// fixed cell count; the editor disables ``Add panel`` once the
+// page has that many panels. Mirrors the comment hints next to
+// COMIC_GRID_TEMPLATES above. Must mirror the walker's expected
+// counts in ``plugins/bibliogon-plugin-comics/bibliogon_comics/
+// comic_book_pdf.py``.
+export const COMIC_GRID_MAX_PANELS: Record<ComicGridTemplate, number> = {
+    single_panel: 1,
+    grid_1x2: 2,
+    grid_2x1: 2,
+    grid_2x2: 4,
+    grid_2x3: 6,
+    grid_3x2: 6,
+    grid_3x3: 9,
+};
+
 const GRID_TEMPLATE_CSS: Record<ComicGridTemplate, CSSProperties> = {
     single_panel: {
         gridTemplateColumns: "1fr",

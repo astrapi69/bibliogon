@@ -42,6 +42,7 @@ import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
 
 import {
     ComicPanelGrid,
+    COMIC_GRID_MAX_PANELS,
     DEFAULT_COMIC_GRID_TEMPLATE,
     resolveComicGridTemplate,
     type ComicGridTemplate,
@@ -338,6 +339,14 @@ export default function ComicBookEditor({
 
     const handleAddPanel = useCallback(async () => {
         if (!activePageId) return;
+        // Defense-in-depth against keyboard shortcuts or DOM-
+        // manipulation that bypass the button's disabled attr: the
+        // capacity check is also enforced here.
+        const activePageRow = pages.find((p) => p.id === activePageId);
+        const template = resolveComicGridTemplate(
+            (activePageRow?.layout_config ?? null) as Record<string, unknown> | null,
+        );
+        if (panels.length >= COMIC_GRID_MAX_PANELS[template]) return;
         try {
             const newPanel = await api.comics.createPanel(bookId, activePageId, {
                 bounds: {x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100},
@@ -354,7 +363,7 @@ export default function ComicBookEditor({
             const detail = err instanceof ApiError ? err.detail : String(err);
             setPagesError(detail);
         }
-    }, [activePageId, bookId, refreshPanelsAndBubbles]);
+    }, [activePageId, bookId, pages, panels.length, refreshPanelsAndBubbles]);
 
     const handleDeletePanel = useCallback(async () => {
         if (!selectedPanelId || !activePageId) return;
@@ -518,6 +527,16 @@ export default function ComicBookEditor({
     }, [bubblesByPanel, selectedBubbleId]);
 
     const activePage = pages.find((p) => p.id === activePageId) ?? null;
+    // Panel-capacity gate: each grid template has a fixed cell count
+    // (single_panel = 1, grid_1x2 / grid_2x1 = 2, grid_2x2 = 4,
+    // grid_2x3 / grid_3x2 = 6, grid_3x3 = 9). The Add-Panel button
+    // disables once the page already has that many panels so the
+    // user can't append beyond the layout's capacity.
+    const activeGridTemplate = resolveComicGridTemplate(
+        (activePage?.layout_config ?? null) as Record<string, unknown> | null,
+    );
+    const maxPanels = COMIC_GRID_MAX_PANELS[activeGridTemplate];
+    const atPanelCapacity = panels.length >= maxPanels;
     const panelData = panels as unknown as ComicPanelData[];
     const selectedPanel = useMemo<ComicPanelData | null>(() => {
         if (!selectedPanelId) return null;
@@ -770,7 +789,18 @@ export default function ComicBookEditor({
                                     className="btn btn-primary btn-sm"
                                     data-testid="comic-book-editor-add-panel"
                                     onClick={handleAddPanel}
-                                    disabled={!activePageId}
+                                    disabled={!activePageId || atPanelCapacity}
+                                    title={
+                                        atPanelCapacity
+                                            ? `${t(
+                                                  "ui.comic_book_editor.add_panel_at_capacity",
+                                                  "Maximale Panelanzahl für dieses Layout erreicht",
+                                              )} (${maxPanels})`
+                                            : undefined
+                                    }
+                                    data-at-capacity={
+                                        atPanelCapacity ? "true" : "false"
+                                    }
                                 >
                                     {t(
                                         "ui.comic_book_editor.add_panel",

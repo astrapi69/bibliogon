@@ -2465,6 +2465,7 @@ ui:
     create_first_page: "Erste Comic-Seite erstellen"
     page_chip: "Seite"
     add_panel: "Panel hinzufügen"
+    add_panel_at_capacity: "Maximale Panelanzahl für dieses Layout erreicht"
     delete_panel: "Panel löschen"
     add_bubble: "Sprechblase hinzufügen"
     delete_bubble: "Sprechblase löschen"

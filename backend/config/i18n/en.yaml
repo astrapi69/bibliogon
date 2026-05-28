@@ -2466,6 +2466,7 @@ ui:
     create_first_page: "Create first comic page"
     page_chip: "Page"
     add_panel: "Add panel"
+    add_panel_at_capacity: "Maximum panel count for this layout reached"
     delete_panel: "Delete panel"
     add_bubble: "Add bubble"
     delete_bubble: "Delete bubble"
