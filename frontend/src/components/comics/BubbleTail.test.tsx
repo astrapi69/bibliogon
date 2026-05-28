@@ -2,14 +2,15 @@
  * BubbleTail + bubbleTypeClassName tests (Comics-Session-2 C4).
  *
  * Pins:
- * - The 6 bubble-type → CSS-class mapping (with gamma-shim
- *   fallback to ``speech`` for unknown values).
  * - The 8 octant directions render an svg with the correct
  *   ``data-direction`` attribute.
  * - ``none`` returns null.
  * - ``auto`` maps to ``S`` (matches the walker's gamma-shim
  *   default until Session 3 nearest-edge auto-pick lands).
  * - positionPct clamps to [0, 100].
+ * - ``bubbleTypeClassName`` returns the soundEffect text-styling
+ *   class for ``sound_effect`` and an empty string for the other
+ *   five types (approach A moved shape rendering off CSS classes).
  *
  * Field-name + math parity with the walker's ``_TAIL_DIRECTION_VECTORS``
  * + ``_render_bubble_tail_svg`` in
@@ -178,34 +179,25 @@ describe("BubbleTail", () => {
 });
 
 describe("bubbleTypeClassName", () => {
-    it.each([
-        "speech",
-        "thought",
-        "narration",
-        "shout",
-        "whisper",
-        "sound_effect",
-    ])("returns a non-empty class for canonical bubble_type=%s", (value) => {
-        const result = bubbleTypeClassName(value);
+    // Approach A moved shape rendering off CSS classes onto the
+    // single SVG ``<path>``. Only ``sound_effect`` retains a
+    // per-type text-styling CSS rule (font-weight + italic +
+    // text-shadow); every other canonical type returns an empty
+    // class string.
+    it("returns a non-empty class for sound_effect", () => {
+        const result = bubbleTypeClassName("sound_effect");
         expect(typeof result).toBe("string");
         expect(result.length).toBeGreaterThan(0);
     });
 
-    it("falls back to the speech class for unknown bubble_type", () => {
-        const speechClass = bubbleTypeClassName("speech");
-        const unknownClass = bubbleTypeClassName("nonsense_bubble");
-        expect(unknownClass).toBe(speechClass);
-    });
+    it.each(["speech", "thought", "narration", "shout", "whisper"])(
+        "returns an empty class for shape-only type=%s",
+        (value) => {
+            expect(bubbleTypeClassName(value)).toBe("");
+        },
+    );
 
-    it("maps the six canonical types to six distinct class names", () => {
-        const classNames = new Set([
-            bubbleTypeClassName("speech"),
-            bubbleTypeClassName("thought"),
-            bubbleTypeClassName("narration"),
-            bubbleTypeClassName("shout"),
-            bubbleTypeClassName("whisper"),
-            bubbleTypeClassName("sound_effect"),
-        ]);
-        expect(classNames.size).toBe(6);
+    it("returns an empty class for unknown bubble_type", () => {
+        expect(bubbleTypeClassName("nonsense_bubble")).toBe("");
     });
 });

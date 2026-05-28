@@ -4,7 +4,8 @@
  * Pins:
  * - Anchor → CSS left/top.
  * - width_pct / height_pct → CSS width/height as %.
- * - bubble_type → CSS-Module class name (via bubbleTypeClassName).
+ * - bubble_type → SVG path attributes (approach A; CSS-Module
+ *   class application moved to text-styling only for sound_effect).
  * - bubble_config Tier-1/Tier-2 overrides cascade as inline style.
  * - BubbleTail child renders when tail_direction is not 'none'.
  */

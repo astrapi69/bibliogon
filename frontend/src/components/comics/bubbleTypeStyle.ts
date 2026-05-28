@@ -1,9 +1,13 @@
 /**
- * Helper to pick the CSS-module class for a comic bubble_type.
+ * Helper to pick the text-styling CSS-module class for a comic
+ * ``bubble_type``.
  *
- * Comics-Session-2 C4 (plugin-comics). Mirrors the walker's
- * ``_bubble_type_style`` gamma-shim default-on-read: unknown
- * values fall back to ``speech`` (the canonical default).
+ * Approach A (2026-05-27 → 2026-05-28) moved shape rendering off
+ * CSS classes onto a single SVG ``<path>`` per bubble. The only
+ * remaining per-type CSS rule is ``sound_effect``'s
+ * typography-as-illustration block in ``bubble-types.module.css``;
+ * the other five types render their text with the bubble's
+ * default typography and return an empty class.
  */
 
 import styles from "./bubble-types.module.css";
@@ -16,18 +20,8 @@ export type BubbleType =
     | "whisper"
     | "sound_effect";
 
-const BUBBLE_TYPE_CLASS: Record<BubbleType, string> = {
-    speech: styles.speech,
-    thought: styles.thought,
-    narration: styles.narration,
-    shout: styles.shout,
-    whisper: styles.whisper,
-    sound_effect: styles.soundEffect,
-};
-
+/** Returns the CSS-module class for the given bubble_type, or an
+ *  empty string when no text-styling CSS applies. */
 export function bubbleTypeClassName(bubbleType: string): string {
-    const key = bubbleType as BubbleType;
-    return BUBBLE_TYPE_CLASS[key] ?? styles.speech;
+    return bubbleType === "sound_effect" ? (styles.soundEffect ?? "") : "";
 }
-
-export const BUBBLE_BASE_CLASS = styles.bubble;
