@@ -1426,6 +1426,157 @@ def _text_align_attr(value: Any) -> str:
     return f' style="text-align: {value}"'
 
 
+def _render_collage_page(
+    page: dict[str, Any], assets_map: dict[str, str]
+) -> str:
+    """Phase 3 C5 (2026-05-28). Render a collage page: N freely-
+    positioned images + N text regions at absolute percentage
+    coords. M1 rich-JSON storage in
+    ``layout_config.collage.{images, text_regions, background_color}``.
+
+    Mirrors the editor's ``frontend/src/components/CollageCanvas.tsx``
+    rendering 1:1 — same coord system, same field shape, same
+    optional-field fallbacks. The walker is the source of truth for
+    PDF output; this function MUST emit pixel-equivalent geometry to
+    what the editor canvas renders for the same row.
+    """
+    raw_config = page.get("layout_config")
+    namespace = _read_layout_namespace(raw_config, "collage") or {}
+    images_raw = namespace.get("images")
+    text_regions_raw = namespace.get("text_regions")
+    background_color = namespace.get("background_color")
+
+    images_list: list[dict[str, Any]] = (
+        [img for img in images_raw if isinstance(img, dict)]
+        if isinstance(images_raw, list)
+        else []
+    )
+    text_regions_list: list[dict[str, Any]] = (
+        [tr for tr in text_regions_raw if isinstance(tr, dict)]
+        if isinstance(text_regions_raw, list)
+        else []
+    )
+
+    # Canvas style: position relative (set in CSS), optional
+    # background_color override.
+    canvas_style_parts: list[str] = []
+    if isinstance(background_color, str) and re.match(
+        r"^#[0-9a-fA-F]{6}$", background_color
+    ):
+        canvas_style_parts.append(f"background: {background_color};")
+    canvas_style = " ".join(canvas_style_parts)
+    canvas_attr = f' style="{canvas_style}"' if canvas_style else ""
+
+    # Per-image rendering: positioned wrapper + <img> with
+    # object-fit. Mirrors the editor's CollageImageItem.
+    def _clamp_pct(value: Any, fallback: float) -> float:
+        if isinstance(value, (int, float)):
+            v = float(value)
+            if v != v:  # NaN guard
+                return fallback
+            return max(0.0, min(100.0, v))
+        return fallback
+
+    def _clamp_rotation(value: Any) -> float:
+        if not isinstance(value, (int, float)):
+            return 0.0
+        v = float(value) % 360.0
+        if v > 180.0:
+            v -= 360.0
+        if v < -180.0:
+            v += 360.0
+        return v
+
+    images_html_parts: list[str] = []
+    for image in images_list:
+        x_pct = _clamp_pct(image.get("x_pct"), 0.0)
+        y_pct = _clamp_pct(image.get("y_pct"), 0.0)
+        width_pct = _clamp_pct(image.get("width_pct"), 30.0)
+        height_pct = _clamp_pct(image.get("height_pct"), 30.0)
+        z_index = (
+            int(image["z_index"])
+            if isinstance(image.get("z_index"), (int, float))
+            else 1
+        )
+        rotation_deg = _clamp_rotation(image.get("rotation_deg"))
+        fit = image["fit"] if image.get("fit") == "contain" else "cover"
+
+        wrapper_style_parts = [
+            "position: absolute;",
+            f"left: {x_pct}%;",
+            f"top: {y_pct}%;",
+            f"width: {width_pct}%;",
+            f"height: {height_pct}%;",
+            f"z-index: {z_index};",
+            "overflow: hidden;",
+        ]
+        if rotation_deg != 0.0:
+            wrapper_style_parts.append(f"transform: rotate({rotation_deg}deg);")
+        wrapper_style = " ".join(wrapper_style_parts)
+
+        asset_id = image.get("asset_id")
+        inner_html = ""
+        if isinstance(asset_id, str):
+            img_url = assets_map.get(asset_id)
+            if img_url:
+                img_style = (
+                    f"width: 100%; height: 100%; display: block; "
+                    f"object-fit: {fit};"
+                )
+                inner_html = (
+                    f'<img src="{escape(img_url)}" alt="" '
+                    f'style="{img_style}" />'
+                )
+        # Missing asset_id or unresolved URL: empty wrapper (the
+        # grid slot still occupies its position; user can fix in
+        # the editor).
+        images_html_parts.append(
+            f'<div class="collage-image" style="{wrapper_style}">'
+            f"{inner_html}</div>"
+        )
+
+    # Per-text-region rendering: absolute-positioned div with
+    # content. Tier1/Tier2 styling fields are accepted in the M1
+    # schema; full styling-derivation deferred to a follow-up.
+    text_regions_html_parts: list[str] = []
+    for region in text_regions_list:
+        rx = _clamp_pct(region.get("x_pct"), 0.0)
+        ry = _clamp_pct(region.get("y_pct"), 0.0)
+        rw = _clamp_pct(region.get("width_pct"), 40.0)
+        rh = _clamp_pct(region.get("height_pct"), 15.0)
+        rz = (
+            int(region["z_index"])
+            if isinstance(region.get("z_index"), (int, float))
+            else 1
+        )
+        content = (
+            region["content"]
+            if isinstance(region.get("content"), str)
+            else ""
+        )
+        text_style = (
+            f"position: absolute; left: {rx}%; top: {ry}%; "
+            f"width: {rw}%; height: {rh}%; z-index: {rz}; "
+            f"overflow: hidden; display: flex; "
+            f"align-items: center; justify-content: center; "
+            f"box-sizing: border-box; padding: 8pt; "
+            f"background: rgba(255, 255, 255, 0.8); color: black; "
+            f"font-size: 10pt; white-space: pre-wrap; "
+            f"word-break: break-word;"
+        )
+        text_regions_html_parts.append(
+            f'<div class="collage-text-region" style="{text_style}">'
+            f"{escape(content)}</div>"
+        )
+
+    return (
+        f'<section class="page page--collage"{canvas_attr}>'
+        f'{"".join(images_html_parts)}'
+        f'{"".join(text_regions_html_parts)}'
+        f"</section>"
+    )
+
+
 def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     """Render one picture-book page as an HTML <section>.
 
@@ -1446,6 +1597,12 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     those layouts continue to hold.
     """
     layout = page.get("layout", "image_top_text_bottom")
+    # Phase 3 C5 (2026-05-28). Collage early-dispatches to its
+    # dedicated renderer — the per-element absolute positioning
+    # doesn't fit the grid-based pipeline the other layouts share.
+    if layout == "collage":
+        return _render_collage_page(page, assets_map)
+
     text_html = _render_tiptap_doc(page.get("text_content"))
     image_asset_id = page.get("image_asset_id")
     raw_config = page.get("layout_config")

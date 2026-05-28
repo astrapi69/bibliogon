@@ -1494,6 +1494,238 @@ def test_image_layout_style_image_border_text_center_background_color_override()
     assert "rgba(255, 200, 87, 0.6)" in styles["region_text_style"]
 
 
+# Phase 3 C5 (2026-05-28). Collage walker pins. Renders N freely-
+# positioned images + N text regions at absolute percentage coords
+# (M1 rich-JSON storage). The walker MUST emit pixel-equivalent
+# geometry to what the editor's CollageCanvas renders for the same
+# row.
+
+
+def test_render_page_collage_emits_layout_class() -> None:
+    html = _render_page(_make_page(layout="collage"), {})
+    assert "page--collage" in html
+
+
+def test_render_page_collage_empty_emits_section() -> None:
+    """Empty collage (no images, no text regions): section still
+    renders so the page doesn't disappear."""
+    html = _render_page(_make_page(layout="collage"), {})
+    assert '<section class="page page--collage"' in html
+
+
+def test_render_page_collage_renders_image_at_correct_position() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [
+                        {
+                            "asset_id": "a-1",
+                            "x_pct": 10,
+                            "y_pct": 20,
+                            "width_pct": 40,
+                            "height_pct": 30,
+                            "z_index": 3,
+                        }
+                    ]
+                }
+            },
+        ),
+        {"a-1": "file:///tmp/img.png"},
+    )
+    # Wrapper carries the position + size.
+    assert "left: 10" in html  # Percent value will be 10.0
+    assert "top: 20" in html
+    assert "width: 40" in html
+    assert "height: 30" in html
+    assert "z-index: 3" in html
+    # Image source resolves.
+    assert "file:///tmp/img.png" in html
+
+
+def test_render_page_collage_renders_multiple_images() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [
+                        {"asset_id": "a-1"},
+                        {"asset_id": "a-2"},
+                        {"asset_id": "a-3"},
+                    ]
+                }
+            },
+        ),
+        {
+            "a-1": "file:///tmp/1.png",
+            "a-2": "file:///tmp/2.png",
+            "a-3": "file:///tmp/3.png",
+        },
+    )
+    assert "file:///tmp/1.png" in html
+    assert "file:///tmp/2.png" in html
+    assert "file:///tmp/3.png" in html
+    assert html.count("collage-image") == 3
+
+
+def test_render_page_collage_handles_missing_asset_gracefully() -> None:
+    """Unresolved asset id: wrapper renders empty (no <img>) but
+    keeps its absolute position in the layout."""
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [{"asset_id": "a-missing", "x_pct": 50}]
+                }
+            },
+        ),
+        {},
+    )
+    assert "collage-image" in html
+    assert "left: 50" in html
+    # No <img> tag for the missing asset.
+    assert "<img" not in html
+
+
+def test_render_page_collage_applies_rotation_when_non_zero() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [{"asset_id": "a-1", "rotation_deg": 45}]
+                }
+            },
+        ),
+        {"a-1": "file:///tmp/r.png"},
+    )
+    assert "transform: rotate(45" in html
+
+
+def test_render_page_collage_renders_text_regions() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "text_regions": [
+                        {
+                            "id": "t-1",
+                            "x_pct": 10,
+                            "y_pct": 70,
+                            "width_pct": 80,
+                            "height_pct": 20,
+                            "content": "Caption text",
+                        }
+                    ]
+                }
+            },
+        ),
+        {},
+    )
+    assert "collage-text-region" in html
+    assert "Caption text" in html
+    assert "left: 10" in html
+    assert "top: 70" in html
+
+
+def test_render_page_collage_escapes_text_content() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "text_regions": [
+                        {"id": "t-1", "content": "<script>alert(1)</script>"}
+                    ]
+                }
+            },
+        ),
+        {},
+    )
+    assert "<script>alert(1)</script>" not in html
+    assert "&lt;script&gt;" in html
+
+
+def test_render_page_collage_background_color_applies() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={"collage": {"background_color": "#ffcc00"}},
+        ),
+        {},
+    )
+    assert "background: #ffcc00" in html
+
+
+def test_render_page_collage_invalid_background_color_ignored() -> None:
+    """Defensive: malformed background_color string MUST NOT
+    appear in the output."""
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={"collage": {"background_color": "not-a-color"}},
+        ),
+        {},
+    )
+    assert "not-a-color" not in html
+
+
+def test_render_page_collage_image_fit_propagates_to_img_object_fit() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [{"asset_id": "a-1", "fit": "contain"}]
+                }
+            },
+        ),
+        {"a-1": "file:///tmp/x.png"},
+    )
+    assert "object-fit: contain" in html
+
+
+def test_render_page_collage_image_fit_defaults_to_cover() -> None:
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {"images": [{"asset_id": "a-1"}]}
+            },
+        ),
+        {"a-1": "file:///tmp/x.png"},
+    )
+    assert "object-fit: cover" in html
+
+
+def test_render_page_collage_filters_non_dict_image_entries() -> None:
+    """Defensive: non-object entries in images[] are silently
+    filtered (mirrors the editor's shape-guard)."""
+    html = _render_page(
+        _make_page(
+            layout="collage",
+            layout_config={
+                "collage": {
+                    "images": [
+                        None,
+                        "string-entry",
+                        42,
+                        {"asset_id": "good"},
+                    ]
+                }
+            },
+        ),
+        {"good": "file:///tmp/g.png"},
+    )
+    # Only one image-wrapper div rendered.
+    assert html.count("collage-image") == 1
+    assert "file:///tmp/g.png" in html
+
+
 def test_render_page_image_full_text_overlay_position_top() -> None:
     html = _render_page(
         _make_page(
