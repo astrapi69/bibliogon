@@ -351,6 +351,29 @@ def test_render_comic_bubble_emits_svg_path_when_tail_direction_set() -> None:
     assert " C " in html
 
 
+def test_render_comic_bubble_svg_carries_explicit_css_width_and_height() -> None:
+    """Position-mismatch fix attempt #2 (2026-05-28). The SVG
+    inside the bubble container MUST set explicit CSS
+    ``width: 100%; height: 100%`` (in addition to the SVG width/
+    height attributes) so WeasyPrint sizes the SVG to fill its
+    container regardless of how it treats SVG percentage
+    attributes. The original fix (7b30a325) corrected the
+    container's translate bug but left the SVG sized by the
+    SVG attribute alone — a residual mismatch surfaced when
+    WeasyPrint's SVG-attribute handling deviated from the
+    browser's. Regression pin so a future refactor cannot
+    silently drop the explicit CSS dimensions and reintroduce
+    the bug.
+    """
+    html = _render_comic_bubble(_make_bubble(tail_direction="S"))
+    # The SVG style attribute must include CSS width + height
+    # set to 100%. Both the SVG attribute "width=100%" AND the
+    # CSS "width: 100%" are present — defense in depth against
+    # renderer-specific SVG attribute handling.
+    assert "width: 100%" in html
+    assert "height: 100%" in html
+
+
 def test_render_comic_bubble_no_tail_for_direction_none() -> None:
     """Bubble outline still renders without the tail diversion when
     tail_direction='none'; the path's d attr just closes the

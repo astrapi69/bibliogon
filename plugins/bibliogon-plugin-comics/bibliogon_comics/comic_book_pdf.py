@@ -901,10 +901,30 @@ def _render_comic_bubble(bubble: dict[str, Any]) -> str:
             if stroke_dasharray
             else ""
         )
+        # Position-mismatch fix attempt #2 (2026-05-28). The
+        # original fix in 7b30a325 corrected the
+        # ``translate(-50%, -50%)`` bug on the bubble container,
+        # but a user-reported visual mismatch persisted after the
+        # ship. Diagnostic: editor + walker generate identical
+        # path d + viewBox + container left/top/width/height. The
+        # remaining cause is here — the SVG only set ``top: 0;
+        # left: 0`` and relied on the ``width="100%" height="100%"``
+        # SVG attributes to fill the bubble container. WeasyPrint's
+        # SVG-attribute handling for percentage values is less
+        # forgiving than the browser's; if the attribute width
+        # falls back to the SVG's intrinsic viewBox size (100x100
+        # CSS pixels), the bubble shape renders at the wrong
+        # scale + the wrong offset within its container.
+        #
+        # Fix: set explicit ``width: 100%; height: 100%`` in CSS
+        # (matches the editor's ``inset: 0`` shorthand effect —
+        # the SVG fills its container regardless of how the
+        # renderer treats SVG width/height attributes).
         svg = (
             f'<svg width="100%" height="100%" viewBox="0 0 100 100" '
             f'preserveAspectRatio="none" '
             f'style="position: absolute; top: 0; left: 0; '
+            f'width: 100%; height: 100%; '
             f'overflow: visible; pointer-events: none;">'
             f'<path d="{path_d}" fill="{fill}" stroke="{stroke}" '
             f'stroke-width="{stroke_width}"{dasharray_attr} '
