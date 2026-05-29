@@ -72,6 +72,51 @@ export interface BookTypeDef {
     default_page_size: string | null;
 }
 
+/** ARTICLE-TYPES-SSOT-01 (2026-05-29). The 5 article-types
+ *  reserved in backend/config/article-types.yaml. Adding a new
+ *  article_type requires updating BOTH this Literal AND the YAML;
+ *  the backend drift-detector test
+ *  (test_article_type_registry.py::test_literal_matches_registry)
+ *  pins the parity. Mirrors the BookType pattern. */
+export type ArticleType =
+    | "blogpost"
+    | "tutorial"
+    | "review"
+    | "essay"
+    | "newsletter";
+
+/** ARTICLE-TYPES-SSOT-01: one per-type extra field declaration
+ *  inside ArticleTypeDef.extra_fields. The frontend ArticleEditor
+ *  uses ``type`` to pick the right input shape (text input /
+ *  number input / enum select / date picker) and writes the value
+ *  into ``Article.article_metadata[name]``. */
+export interface ArticleTypeExtraField {
+    name: string;
+    /** "text" | "number" | "enum" | "date" */
+    type: string;
+    label_key: string;
+    /** Enum-specific list of allowed values. Undefined for
+     *  non-enum types. */
+    values?: string[];
+    /** Number-specific bounds. Undefined for non-number types. */
+    min?: number;
+    max?: number;
+}
+
+/** ARTICLE-TYPES-SSOT-01: one article-type's full metadata bundle
+ *  served by GET /api/article-types. Mirrors the backend
+ *  ArticleTypeDef Pydantic model. */
+export interface ArticleTypeDef {
+    id: ArticleType;
+    label_key: string;
+    description_key: string;
+    icon: string;
+    /** Marks the canonical default for new articles. Exactly one
+     *  entry in the YAML registry is ``default: true``. */
+    default: boolean;
+    extra_fields: ArticleTypeExtraField[];
+}
+
 export interface Book {
     id: string;
     /** ``prose`` for the existing chapter-based authoring flow;
@@ -319,9 +364,23 @@ export interface Article {
     subtitle: string | null
     author: string | null
     language: string
-    /** Phase 1 always emits ``"article"``. The column exists for a
-     *  future Blogpost / Tweet differentiation. */
+    /** ARTICLE-TYPES-SSOT-01 (2026-05-29). Article-type
+     *  discriminator. Values come from the registry served by
+     *  GET /api/article-types: blogpost (default) / tutorial /
+     *  review / essay / newsletter. ``string`` rather than
+     *  ``ArticleType`` because legacy backups may still carry
+     *  unknown values until restored through the migration. */
     content_type: string
+    /** ARTICLE-TYPES-SSOT-01. Per-type extra fields (e.g.
+     *  tutorial ``difficulty_level``, review ``rating``). Defined
+     *  in article-types.yaml under each type's ``extra_fields``.
+     *  Empty object for blogpost + essay (no per-type fields).
+     *  Optional in the type contract because legacy test fixtures
+     *  predating ARTICLE-TYPES-SSOT-01 don't seed it; consumers
+     *  must treat ``undefined`` as ``{}``. Real API responses
+     *  always populate it via the ``ArticleOut`` Pydantic
+     *  decoder. */
+    article_metadata?: Record<string, unknown>
     content_json: string
     status: ArticleStatus
     /** AR-02 Phase 2 SEO defaults. Publications inherit these unless
@@ -390,6 +449,10 @@ export interface ArticleCreate {
     subtitle?: string | null
     author?: string | null
     language?: string
+    /** ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
+     *  "blogpost" via the backend column default when omitted. */
+    content_type?: ArticleType
+    article_metadata?: Record<string, unknown>
 }
 
 // --- Author (Bug 8 Phase 1) ---
@@ -443,6 +506,13 @@ export interface ArticleUpdate {
     seo_title?: string | null
     seo_description?: string | null
     series?: string | null
+    /** ARTICLE-TYPES-SSOT-01. Article-type discriminator
+     *  (blogpost / tutorial / review / essay / newsletter) +
+     *  per-type extra fields (e.g. tutorial difficulty_level).
+     *  Both optional on PATCH; the backend only writes provided
+     *  keys. */
+    content_type?: ArticleType
+    article_metadata?: Record<string, unknown>
 }
 
 // --- Publication (AR-02 Phase 2) ---
@@ -844,13 +914,19 @@ export interface BookFromArticlesCreate {
 
 /** Shape of the 422 ``detail`` body when the validation gates reject
  *  one or more article ids. Every list surfaces in a single response
- *  so the wizard can show the user every offending row at once. */
+ *  so the wizard can show the user every offending row at once.
+ *
+ *  ARTICLE-TYPES-SSOT-01 (2026-05-29): the ``non_article`` facet
+ *  was dropped when content_type became the article-type
+ *  discriminator. Every row in the articles table is now by
+ *  definition an article (sub-classified into blogpost / tutorial
+ *  / review / essay / newsletter). The wizard surface no longer
+ *  needs to handle a "wrong content_type" rejection. */
 export interface BookFromArticlesValidationError {
     code: "invalid_articles" | "manual_order_required" | "manual_order_mismatch";
     message: string;
     not_found_ids?: string[];
     trashed?: Array<{id: string; title: string}>;
-    non_article?: Array<{id: string; title: string; content_type: string}>;
     expected_ids?: string[];
     received_ids?: string[];
 }
@@ -1936,6 +2012,16 @@ export const api = {
     bookTypes: {
         list: () =>
             request<Record<string, BookTypeDef>>("/book-types"),
+    },
+
+    /** ARTICLE-TYPES-SSOT-01: article-type registry loaded from
+     *  backend/config/article-types.yaml. Returns the
+     *  {id: ArticleTypeDef} mapping. Frontend's useArticleTypes()
+     *  hook + ArticleTypesProvider consume this; mirrors the
+     *  bookTypes shape exactly. */
+    articleTypes: {
+        list: () =>
+            request<Record<string, ArticleTypeDef>>("/article-types"),
     },
 
     /** AR-01 Phase 1: standalone Article CRUD. Article is its own

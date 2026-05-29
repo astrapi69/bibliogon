@@ -586,7 +586,6 @@ export default function ConvertToBookWizard({
     const renderValidationBanner = () => {
         if (!validationError) return null
         const trashed = validationError.trashed ?? []
-        const nonArticle = validationError.non_article ?? []
         const notFound = validationError.not_found_ids ?? []
         return (
             <div
@@ -607,15 +606,6 @@ export default function ConvertToBookWizard({
                             "Im Papierkorb",
                         )}
                         : {trashed.map((it) => it.title).join(", ")}
-                    </div>
-                )}
-                {nonArticle.length > 0 && (
-                    <div>
-                        {t(
-                            "ui.convert_to_book.validation_non_article",
-                            "Falscher Inhaltstyp",
-                        )}
-                        : {nonArticle.map((it) => it.title).join(", ")}
                     </div>
                 )}
                 {notFound.length > 0 && (

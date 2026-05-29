@@ -561,7 +561,6 @@ describe("ConvertToBookWizard submit", () => {
                     code: "invalid_articles",
                     message: "Some articles cannot be converted.",
                     trashed: [{id: "trashed-1", title: "Trashed One"}],
-                    non_article: [],
                     not_found_ids: [],
                 },
             ),
