@@ -136,6 +136,22 @@ trigger-gated.
   toggle, z-order controls, panel gutter UI, full E2E matrix.
   8-12 commits; trigger: at least one user-report against the
   missing affordances.
+- `COMIC-PANEL-CROSS-PAGE-MOVE-01` — panel reorder + cross-page
+  move (2 phases). **Phase 1: same-page panel reorder** via
+  dnd-kit ``<SortablePanel>`` wrapper on ``ComicPanelGrid`` +
+  new ``POST /api/books/{book_id}/comic-pages/{page_id}/panels/reorder``
+  bulk-atomic endpoint mirroring the existing PagesReorder
+  shape. **Phase 2: cross-page panel move** via drop-target
+  zones on ``PageThumbnails`` sidebar with target-page
+  validation (layout max-panel-count, grey out full pages,
+  warning if target is at capacity). Backend cross-page move
+  is **already wired** (``ComicPanelUpdate.page_id`` + same-
+  book validation shipped in
+  ``COMIC-PANEL-OVERFLOW-HANDLER-01`` commit ``abfbb5d0``);
+  Phase 2 is pure-frontend drop-zones plus the visual
+  feedback layer. M-L effort: 8-10 commits across both
+  phases. Trigger: user-directed (P3 default; bump to P2 if
+  Aster's own comic-book authoring blocks on it).
 
 Also referenced from explorations (not yet in active backlog):
 `PICTURE-BOOK-EPUB3-FIXED-LAYOUT-EXPORT-01`,
