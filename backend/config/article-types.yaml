@@ -82,3 +82,27 @@ article_types:
       - name: send_date
         type: date
         label_key: ui.article_types.newsletter_field_send_date
+
+  - id: interview
+    label_key: ui.article_types.interview
+    description_key: ui.article_types.interview_description
+    icon: Users
+    extra_fields:
+      - name: interview_partner_name
+        type: text
+        label_key: ui.article_types.interview_field_partner_name
+      - name: interview_partner_role
+        type: text
+        label_key: ui.article_types.interview_field_partner_role
+
+  - id: listicle
+    label_key: ui.article_types.listicle
+    description_key: ui.article_types.listicle_description
+    icon: ListOrdered
+    extra_fields: []
+
+  - id: short_story
+    label_key: ui.article_types.short_story
+    description_key: ui.article_types.short_story_description
+    icon: BookOpen
+    extra_fields: []

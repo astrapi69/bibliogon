@@ -15,20 +15,26 @@
  */
 
 import {
+    BookOpen,
     FileText,
     Feather,
     GraduationCap,
+    ListOrdered,
     Mail,
     Star,
+    Users,
     type LucideIcon,
 } from "lucide-react";
 
 const ICON_MAP: Record<string, LucideIcon> = {
+    BookOpen,
     FileText,
     Feather,
     GraduationCap,
+    ListOrdered,
     Mail,
     Star,
+    Users,
 };
 
 interface Props {

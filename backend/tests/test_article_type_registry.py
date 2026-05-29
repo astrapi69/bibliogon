@@ -51,7 +51,7 @@ def fake_registry_path(
 class TestRealRegistry:
     """Sanity tests against the actual article-types.yaml on disk."""
 
-    def test_real_registry_loads_all_five_types(self) -> None:
+    def test_real_registry_loads_all_eight_types(self) -> None:
         types = load_article_types()
         assert set(types.keys()) == {
             "blogpost",
@@ -59,6 +59,9 @@ class TestRealRegistry:
             "review",
             "essay",
             "newsletter",
+            "interview",
+            "listicle",
+            "short_story",
         }
 
     def test_each_type_is_a_validated_ArticleTypeDef(self) -> None:
@@ -112,7 +115,16 @@ class TestRealRegistry:
         ids = article_type_ids()
         assert isinstance(ids, frozenset)
         assert ids == frozenset(
-            {"blogpost", "tutorial", "review", "essay", "newsletter"}
+            {
+                "blogpost",
+                "tutorial",
+                "review",
+                "essay",
+                "newsletter",
+                "interview",
+                "listicle",
+                "short_story",
+            }
         )
 
     def test_article_type_extra_field_names_for_tutorial(self) -> None:

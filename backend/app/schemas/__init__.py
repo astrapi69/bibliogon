@@ -764,6 +764,9 @@ ArticleType = Literal[
     "review",
     "essay",
     "newsletter",
+    "interview",
+    "listicle",
+    "short_story",
 ]
 
 

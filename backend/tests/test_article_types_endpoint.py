@@ -29,7 +29,7 @@ def _clear_cache():
     load_article_types.cache_clear()
 
 
-def test_endpoint_returns_five_real_article_types() -> None:
+def test_endpoint_returns_eight_real_article_types() -> None:
     with TestClient(app) as client:
         resp = client.get("/api/article-types")
     assert resp.status_code == 200
@@ -40,7 +40,34 @@ def test_endpoint_returns_five_real_article_types() -> None:
         "review",
         "essay",
         "newsletter",
+        "interview",
+        "listicle",
+        "short_story",
     }
+
+
+def test_endpoint_includes_interview_extra_fields() -> None:
+    with TestClient(app) as client:
+        resp = client.get("/api/article-types")
+    body = resp.json()
+    interview = body["interview"]
+    assert interview["icon"] == "Users"
+    fields = interview["extra_fields"]
+    assert [f["name"] for f in fields] == [
+        "interview_partner_name",
+        "interview_partner_role",
+    ]
+    assert all(f["type"] == "text" for f in fields)
+
+
+def test_endpoint_listicle_and_short_story_have_no_extra_fields() -> None:
+    with TestClient(app) as client:
+        resp = client.get("/api/article-types")
+    body = resp.json()
+    assert body["listicle"]["icon"] == "ListOrdered"
+    assert body["listicle"]["extra_fields"] == []
+    assert body["short_story"]["icon"] == "BookOpen"
+    assert body["short_story"]["extra_fields"] == []
 
 
 def test_endpoint_shape_matches_ArticleTypeDef() -> None:

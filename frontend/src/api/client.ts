@@ -72,10 +72,10 @@ export interface BookTypeDef {
     default_page_size: string | null;
 }
 
-/** ARTICLE-TYPES-SSOT-01 (2026-05-29). The 5 article-types
- *  reserved in backend/config/article-types.yaml. Adding a new
- *  article_type requires updating BOTH this Literal AND the YAML;
- *  the backend drift-detector test
+/** ARTICLE-TYPES-SSOT-01 (2026-05-29). The 8 article-types in
+ *  backend/config/article-types.yaml. Adding a new article_type
+ *  requires updating BOTH this Literal AND the YAML; the backend
+ *  drift-detector test
  *  (test_article_type_registry.py::test_literal_matches_registry)
  *  pins the parity. Mirrors the BookType pattern. */
 export type ArticleType =
@@ -83,7 +83,10 @@ export type ArticleType =
     | "tutorial"
     | "review"
     | "essay"
-    | "newsletter";
+    | "newsletter"
+    | "interview"
+    | "listicle"
+    | "short_story";
 
 /** ARTICLE-TYPES-SSOT-01: one per-type extra field declaration
  *  inside ArticleTypeDef.extra_fields. The frontend ArticleEditor
