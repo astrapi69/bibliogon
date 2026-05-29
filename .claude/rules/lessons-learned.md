@@ -4844,3 +4844,37 @@ to either both-German or both-ASCII-escaped.
   Umlauts are about character correctness; quotation marks add
   the YAML-syntactic dimension where wrong codepoints don't
   just look ugly but actively break the parse.
+
+## Piping a gate through `| tail` masks its exit code (false green)
+
+Surfaced twice in the 2026-05-30 theme/release session. Running a
+gate command piped into `tail` (or any pipe) reports the PIPE's exit
+status, not the command's. `tail` almost always exits 0, so a
+**failed** `make release-test`, `make test`, or
+`npx playwright test` looks green:
+
+```bash
+# WRONG — exit code is tail's (0), even when release-test FAILED
+make release-test 2>&1 | tail -40
+# (also true for run_in_background wrappers ending in `| tail`)
+```
+
+Both incidents this session showed a background task "completed
+(exit code 0)" while the actual command had failed — the
+`--project=screenshots` run (browser not installed; 30 failed) and
+`make release-test` (verify-docs-completeness FAIL on stale version
+headers). In both cases the real failure was only visible by reading
+the full output, not the reported exit.
+
+For any GATE whose pass/fail matters (tests, release-test, lint,
+playwright), capture the real exit code:
+
+- zsh: `cmd ... | tail -40; echo "EXIT=${pipestatus[1]}"` (note
+  `pipestatus`, not bash's `PIPESTATUS`; this shell is zsh).
+- Or redirect to a file and check `$?` directly, then tail the file:
+  `cmd > /tmp/out.log 2>&1; echo "EXIT=$?"; tail -40 /tmp/out.log`.
+- Or grep the output for the failure markers (`FAIL`, `failed`,
+  `Fehler`, `Error`) in addition to trusting the exit.
+
+Never declare a gate green on the strength of a `| tail`-piped run
+alone. The cost is a released tag built on a failed gate.
