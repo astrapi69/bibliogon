@@ -192,9 +192,16 @@
 
 .textRegionDragHandle {
     height: 16px;
-    background: rgba(0, 0, 0, 0.05);
+    /* Image-relative, NOT theme-relative: the text region's backdrop
+     * is a fixed white-ish overlay (rgba(255,255,255,0.8)) so text
+     * stays legible over arbitrary photos in any app theme. The grab
+     * handle therefore stays a dark tint in BOTH light + dark themes
+     * (a var(--text) tint would go light in dark mode and vanish on
+     * the white region). Bumped from 0.05/0.08 to 0.12/0.18 so it
+     * reads as an affordance. */
+    background: rgba(0, 0, 0, 0.12);
     cursor: grab;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.18);
     flex-shrink: 0;
     user-select: none;
 }

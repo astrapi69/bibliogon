@@ -237,7 +237,7 @@
     width: 18px;
     height: 18px;
     padding: 0;
-    border: 1.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--text) 25%, transparent);
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.12s, border-color 0.12s, box-shadow 0.12s;
@@ -266,7 +266,7 @@
     width: 18px;
     height: 18px;
     padding: 0;
-    border: 1.5px solid color-mix(in srgb, var(--text) 12%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--text) 25%, transparent);
     border-radius: 50%;
     background: transparent;
     color: color-mix(in srgb, var(--text) 60%, transparent);
