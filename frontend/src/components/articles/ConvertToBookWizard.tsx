@@ -1241,7 +1241,7 @@ const styles: Record<string, React.CSSProperties> = {
         padding: "6px 8px",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-sm, 4px)",
-        background: "var(--bg-input, var(--bg-card))",
+        background: "var(--bg-card)",
         color: "var(--text-primary)",
         fontSize: "0.875rem",
     },

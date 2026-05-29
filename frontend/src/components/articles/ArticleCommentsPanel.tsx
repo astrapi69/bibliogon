@@ -174,7 +174,7 @@ export default function ArticleCommentsPanel({articleId}: Props) {
                                 style={{
                                     whiteSpace: "pre-wrap",
                                     wordBreak: "break-word",
-                                    color: "var(--text-body, inherit)",
+                                    color: "var(--text)",
                                 }}
                             >
                                 {c.body_text}

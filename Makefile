@@ -11,7 +11,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
-       lock-all-plugins verify-plugin-locks \
+       lock-all-plugins verify-plugin-locks verify-theme \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -509,6 +509,15 @@ verify-plugin-locks: ## Detect drift between each plugin's pyproject.toml and it
 	fi; \
 	echo "OK: all plugin pyproject.toml/poetry.lock pairs in sync."
 
+verify-theme: ## Theme-system gates: token completeness/undefined refs + WCAG contrast + no hardcoded hex
+	@echo "=== theme-token completeness + undefined-token refs ==="
+	@python3 scripts/audit_theme_tokens.py --enforce --quiet
+	@echo "=== WCAG contrast across 12 variants ==="
+	@python3 scripts/check_theme_contrast.py --enforce --quiet
+	@echo "=== no hardcoded hex outside the allowed set ==="
+	@python3 scripts/check_hardcoded_colors.py --enforce
+	@echo "Theme gates green."
+
 # --- Release ---
 # Aggregate Makefile targets for the release-workflow.md mechanical steps
 # (Step 1 state capture, Step 4b dep currency, Step 5 test gate, Step 6
@@ -563,6 +572,9 @@ release-test: test ## Aggregate pre-tag test gate (release-workflow.md Step 5)
 	@$(MAKE) verify-docs-discipline
 	@$(MAKE) verify-docs-completeness
 	@$(MAKE) verify-plugin-locks
+	@echo ""
+	@echo "=== Theme-system gates (tokens + contrast + hardcoded colors) ==="
+	@$(MAKE) verify-theme
 	@echo ""
 	@echo "=== Launcher PyInstaller build smoke ==="
 	@cd launcher && poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm > /tmp/launcher-build.log 2>&1 && echo "Launcher build OK" || (tail -20 /tmp/launcher-build.log && exit 1)

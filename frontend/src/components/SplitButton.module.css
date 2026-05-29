@@ -34,7 +34,7 @@
  * surface. */
 .chevron.variantPrimary {
     border-left: 1px solid
-        color-mix(in srgb, var(--text-on-accent, white) 25%, transparent);
+        color-mix(in srgb, var(--text-inverse) 25%, transparent);
 }
 
 /* Secondary / outline variant: divider follows the button's own

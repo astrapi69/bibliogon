@@ -43,7 +43,7 @@
     min-width: 0;
     font: inherit;
     color: inherit;
-    background: var(--bg-input, var(--bg-card));
+    background: var(--bg-card);
     border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
     padding: 2px 6px;
@@ -66,7 +66,7 @@
     font-weight: 400;
     line-height: 1.4;
     white-space: normal;
-    color: var(--warning-text, var(--text));
+    color: var(--text);
     background: var(--warning-bg, #fef9c3);
     border: 1px solid var(--warning, #eab308);
     border-radius: var(--radius-sm);

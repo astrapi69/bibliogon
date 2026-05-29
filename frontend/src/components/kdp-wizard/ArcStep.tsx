@@ -356,7 +356,7 @@ const styles: Record<string, React.CSSProperties> = {
         minWidth: "8em",
         padding: "6px 8px",
         fontSize: "0.875rem",
-        background: "var(--bg-input, var(--bg-card))",
+        background: "var(--bg-card)",
         color: "var(--text-primary)",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-sm, 4px)",

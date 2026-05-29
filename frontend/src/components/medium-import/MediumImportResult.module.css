@@ -43,7 +43,7 @@
 }
 
 .sectionImported {
-    border-color: var(--success-border, var(--border));
+    border-color: var(--border);
 }
 
 .sectionSkipped {

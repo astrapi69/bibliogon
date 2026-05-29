@@ -298,7 +298,7 @@ export function EnhancedTextarea({
                             borderRadius: 4,
                             background:
                                 copyState === "ok"
-                                    ? "var(--success-bg, var(--bg-hover))"
+                                    ? "var(--success-light)"
                                     : "var(--bg-card)",
                             color: "var(--text-secondary)",
                             cursor:

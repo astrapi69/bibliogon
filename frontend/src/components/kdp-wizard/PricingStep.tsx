@@ -519,7 +519,7 @@ const styles: Record<string, React.CSSProperties> = {
         width: "5em",
         padding: "2px 6px",
         fontSize: "0.8125rem",
-        background: "var(--bg-input, var(--bg-card))",
+        background: "var(--bg-card)",
         color: "var(--text-primary)",
         border: "1px solid var(--border)",
         borderRadius: "var(--radius-sm, 4px)",

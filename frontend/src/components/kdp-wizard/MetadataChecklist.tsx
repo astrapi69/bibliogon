@@ -324,7 +324,7 @@ const styles: Record<string, React.CSSProperties> = {
         gap: 8,
         padding: "10px 12px",
         borderRadius: "var(--radius-sm, 4px)",
-        background: "var(--success-bg, rgba(34,197,94,0.1))",
+        background: "var(--success-light)",
         color: "var(--success, #15803d)",
         marginBottom: 12,
         fontSize: "0.875rem",

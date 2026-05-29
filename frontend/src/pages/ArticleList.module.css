@@ -403,5 +403,5 @@
 }
 
 .rowSelected {
-    background: var(--accent-bg-subtle, var(--bg-secondary));
+    background: var(--bg-secondary);
 }

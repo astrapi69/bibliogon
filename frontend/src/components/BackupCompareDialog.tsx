@@ -61,7 +61,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                         {t("ui.backup.compare.title", "Backups vergleichen")}
                     </Dialog.Title>
                     <Dialog.Description className="dialog-description" asChild>
-                        <div style={{display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px", marginBottom: "1rem"}}>
+                        <div style={{display: "flex", gap: "0.5rem", alignItems: "flex-start", padding: "0.75rem", background: "var(--surface-2)", borderRadius: "6px", marginBottom: "1rem"}}>
                             <Info size={16} style={{marginTop: "2px", flexShrink: 0}} />
                             <span style={{fontSize: "0.9em"}}>
                                 {t("ui.backup.compare.transition_note", "Eine integrierte Versionsverwaltung mit automatischen Speicherpunkten ist in Planung. Für jetzt kannst du zwei beliebige .bgb-Backups aus deinem Dateisystem miteinander vergleichen.")}
@@ -112,7 +112,7 @@ export default function BackupCompareDialog({open, onClose}: Props) {
                                     marginTop: "0.75rem",
                                     paddingTop: "0.75rem",
                                     paddingBottom: "0.25rem",
-                                    borderTop: "1px solid var(--color-border)",
+                                    borderTop: "1px solid var(--border)",
                                     background: "var(--bg-card)",
                                     position: "sticky",
                                     bottom: 0,
@@ -139,7 +139,7 @@ function FilePickerRow({label, file, onChange}: {label: string; file: File | nul
     return (
         <label style={{display: "flex", flexDirection: "column", gap: "0.25rem"}}>
             <span style={{fontWeight: 500}}>{label}</span>
-            <div style={{display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.5rem", border: "1px dashed var(--color-border)", borderRadius: "4px"}}>
+            <div style={{display: "flex", gap: "0.5rem", alignItems: "center", padding: "0.5rem", border: "1px dashed var(--border)", borderRadius: "4px"}}>
                 <Upload size={16} />
                 <input
                     type="file"
@@ -147,7 +147,7 @@ function FilePickerRow({label, file, onChange}: {label: string; file: File | nul
                     onChange={(e) => onChange(e.target.files?.[0] ?? null)}
                     style={{flex: 1}}
                 />
-                {file && <span style={{fontSize: "0.85em", color: "var(--color-text-muted)"}}>{formatBytes(file.size)}</span>}
+                {file && <span style={{fontSize: "0.85em", color: "var(--text-muted)"}}>{formatBytes(file.size)}</span>}
             </div>
         </label>
     );
@@ -160,11 +160,11 @@ function CompareResultView({result}: {result: BackupCompareResult}) {
 
     return (
         <div style={{display: "flex", flexDirection: "column", gap: "1rem"}}>
-            <div style={{padding: "0.75rem", background: "var(--color-bg-subtle)", borderRadius: "6px"}}>
+            <div style={{padding: "0.75rem", background: "var(--surface-2)", borderRadius: "6px"}}>
                 <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>
                     {t("ui.backup.compare.summary_title", "Übersicht")}
                 </div>
-                <div style={{fontSize: "0.9em", color: "var(--color-text-muted)"}}>
+                <div style={{fontSize: "0.9em", color: "var(--text-muted)"}}>
                     {t("ui.backup.compare.summary_books", "Gemeinsame Bücher:")} {summary.books_in_both}
                     {summary.books_only_in_a.length > 0 && (
                         <> &middot; {t("ui.backup.compare.only_in_a", "Nur in A:")} {summary.books_only_in_a.length}</>
@@ -196,16 +196,16 @@ function BookDiffView({book}: {book: {
     const noChanges = book.metadata_changes.length === 0 && book.chapters.length === 0;
 
     return (
-        <section style={{border: "1px solid var(--color-border)", borderRadius: "6px", padding: "0.75rem"}}>
+        <section style={{border: "1px solid var(--border)", borderRadius: "6px", padding: "0.75rem"}}>
             <header style={{marginBottom: "0.5rem"}}>
                 <strong>{book.title_b || book.title_a || book.book_id}</strong>
-                <div style={{fontSize: "0.8em", color: "var(--color-text-muted)"}}>
+                <div style={{fontSize: "0.8em", color: "var(--text-muted)"}}>
                     {t("ui.backup.compare.chapters_count", "Kapitel:")} {book.chapter_count_a} &rarr; {book.chapter_count_b}
                 </div>
             </header>
 
             {noChanges && (
-                <div style={{padding: "0.5rem", color: "var(--color-text-muted)", fontStyle: "italic"}}>
+                <div style={{padding: "0.5rem", color: "var(--text-muted)", fontStyle: "italic"}}>
                     {t("ui.backup.compare.no_changes", "Keine Änderungen")}
                 </div>
             )}
@@ -215,7 +215,7 @@ function BookDiffView({book}: {book: {
                     <div style={{fontWeight: 500, marginBottom: "0.25rem"}}>{t("ui.backup.compare.metadata_heading", "Metadaten")}</div>
                     <table style={{width: "100%", borderCollapse: "collapse", fontSize: "0.85em"}}>
                         <thead>
-                            <tr style={{background: "var(--color-bg-subtle)"}}>
+                            <tr style={{background: "var(--surface-2)"}}>
                                 <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.field", "Feld")}</th>
                                 <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.before", "Vorher")}</th>
                                 <th style={{textAlign: "left", padding: "0.25rem 0.5rem"}}>{t("ui.backup.compare.after", "Nachher")}</th>
@@ -223,7 +223,7 @@ function BookDiffView({book}: {book: {
                         </thead>
                         <tbody>
                             {book.metadata_changes.map((c) => (
-                                <tr key={c.field} style={{borderTop: "1px solid var(--color-border)"}}>
+                                <tr key={c.field} style={{borderTop: "1px solid var(--border)"}}>
                                     <td style={{padding: "0.25rem 0.5rem", fontFamily: "monospace"}}>{c.field}</td>
                                     <td style={{padding: "0.25rem 0.5rem"}}>{formatValue(c.before)}</td>
                                     <td style={{padding: "0.25rem 0.5rem"}}>{formatValue(c.after)}</td>
@@ -251,14 +251,14 @@ function ChapterDiffView({chapter}: {chapter: BackupChapterDiff}) {
     }[chapter.change_type];
 
     return (
-        <details style={{marginTop: "0.75rem", borderTop: "1px solid var(--color-border)", paddingTop: "0.5rem"}}>
+        <details style={{marginTop: "0.75rem", borderTop: "1px solid var(--border)", paddingTop: "0.5rem"}}>
             <summary style={{cursor: "pointer", display: "flex", alignItems: "center", gap: "0.5rem"}}>
                 <span style={{background: badge.color, color: "white", padding: "0.1rem 0.4rem", borderRadius: "3px", fontSize: "0.75em"}}>
                     {badge.label}
                 </span>
                 <strong>{chapter.title_b || chapter.title_a || chapter.chapter_id}</strong>
                 {chapter.title_changed && chapter.title_a && chapter.title_b && (
-                    <span style={{fontSize: "0.8em", color: "var(--color-text-muted)"}}>
+                    <span style={{fontSize: "0.8em", color: "var(--text-muted)"}}>
                         ({chapter.title_a} &rarr; {chapter.title_b})
                     </span>
                 )}
@@ -279,8 +279,8 @@ function DiffColumn({title, lines, side}: {title: string; lines: BackupDiffLine[
             <pre style={{
                 margin: 0,
                 padding: "0.5rem",
-                background: "var(--color-bg-subtle)",
-                border: "1px solid var(--color-border)",
+                background: "var(--surface-2)",
+                border: "1px solid var(--border)",
                 borderRadius: "4px",
                 fontSize: "0.8em",
                 whiteSpace: "pre-wrap",

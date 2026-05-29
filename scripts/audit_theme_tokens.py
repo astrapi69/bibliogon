@@ -151,6 +151,76 @@ def inventory_definitions() -> dict[tuple[str, str], set[str]]:
     return result
 
 
+# --- Undefined-token check (closes the hex-fallback blind spot) ---
+#
+# The coverage check above only sees ``var(--token, #hex)`` callsites.
+# A bare ``var(--token)`` (no hex fallback) referencing a token that is
+# defined in NO palette block resolves to nothing and silently falls to
+# the initial/inherited value — invisible to the coverage check. This
+# pass flags any referenced custom property that is defined nowhere.
+
+# Custom properties injected at runtime (not defined in source):
+#   --radix-*  : Radix UI writes these on its own elements.
+RUNTIME_TOKEN_PREFIXES = ("--radix-",)
+
+_DEF_CSS_RE = re.compile(r"(?<![\w-])(--[a-z0-9-]+)\s*:")
+_DEF_TSX_RE = re.compile(r"""["'](--[a-z0-9-]+)["']\s*:""")
+_SETPROP_RE = re.compile(r"""setProperty\(\s*["'](--[a-z0-9-]+)["']""")
+_VAR_REF_RE = re.compile(r"var\(\s*(--[a-z0-9-]+)")
+
+
+def _frontend_source_files() -> list[Path]:
+    return sorted(
+        list(FRONTEND_SRC.glob("**/*.ts"))
+        + list(FRONTEND_SRC.glob("**/*.tsx"))
+        + list(FRONTEND_SRC.glob("**/*.css"))
+    )
+
+
+def inventory_defined_anywhere() -> set[str]:
+    """Every custom property defined anywhere in ``frontend/src``:
+    as ``--x:`` in CSS, as ``"--x":`` in a TSX inline-style object, or
+    set at runtime via ``element.style.setProperty("--x", ...)``."""
+    defined: set[str] = set()
+    for path in _frontend_source_files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for rx in (_DEF_CSS_RE, _DEF_TSX_RE, _SETPROP_RE):
+            defined.update(m.group(1) for m in rx.finditer(text))
+    return defined
+
+
+def inventory_all_var_refs() -> dict[str, list[tuple[str, int]]]:
+    """Every ``var(--token`` reference (any fallback shape)."""
+    refs: dict[str, list[tuple[str, int]]] = {}
+    for path in _frontend_source_files():
+        try:
+            text = path.read_text(encoding="utf-8")
+        except Exception:
+            continue
+        for m in _VAR_REF_RE.finditer(text):
+            line = text[: m.start()].count("\n") + 1
+            refs.setdefault(m.group(1), []).append(
+                (str(path.relative_to(REPO_ROOT)), line)
+            )
+    return refs
+
+
+def find_undefined_refs(
+    defined: set[str],
+    refs: dict[str, list[tuple[str, int]]],
+) -> dict[str, list[tuple[str, int]]]:
+    """Referenced tokens defined nowhere and not runtime-injected."""
+    return {
+        token: sites
+        for token, sites in refs.items()
+        if token not in defined
+        and not token.startswith(RUNTIME_TOKEN_PREFIXES)
+    }
+
+
 def find_gaps(
     callsites: dict[str, list[tuple[str, int]]],
     defs: dict[tuple[str, str], set[str]],
@@ -233,10 +303,41 @@ def main() -> int:
         print_coverage_table(callsites, defs)
         print()
 
+    # Undefined-token check (bare var(--token) referencing a token
+    # defined in no palette block — the hex-fallback blind spot).
+    defined_anywhere = inventory_defined_anywhere()
+    all_refs = inventory_all_var_refs()
+    undefined = find_undefined_refs(defined_anywhere, all_refs)
+
     gaps = find_gaps(callsites, defs)
-    if not gaps:
+
+    if not gaps and not undefined:
         if not args.quiet:
-            print("ALL TOKENS COVERED.")
+            print("ALL TOKENS COVERED. No undefined token references.")
+        return 0
+
+    if undefined:
+        print(f"{len(undefined)} referenced token(s) defined in NO palette:")
+        print()
+        for token in sorted(undefined):
+            sites = undefined[token]
+            print(f"  {token}: {len(sites)} callsite(s)")
+            for f, ln in sites[:3]:
+                print(f"      {f}:{ln}")
+            if len(sites) > 3:
+                print(f"      ... +{len(sites) - 3} more")
+        print()
+        print(
+            "Fix: point each at a defined semantic token, or define the\n"
+            "token in global.css. Runtime-injected tokens (--radix-*) and\n"
+            "JS-set custom props (setProperty) are exempt automatically.\n"
+            "See the lessons-learned 'theme-token completeness' entry."
+        )
+        print()
+
+    if not gaps:
+        if args.enforce and undefined:
+            return 1
         return 0
 
     print(f"{len(gaps)} token(s) have palette × mode gaps:")

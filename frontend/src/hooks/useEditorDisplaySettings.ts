@@ -81,7 +81,7 @@ const WIDTH_VALUE: Record<EditorWidth, string> = {
 // the app's UI font; "mono" picks the code-font variable.
 const FONT_VALUE: Record<EditorFontFamily, string> = {
     serif: "var(--font-display)",
-    sans: "var(--font-ui)",
+    sans: "var(--font-body)",
     mono: "var(--font-mono)",
 };
 

@@ -78,7 +78,7 @@ const backupCalloutStyle: React.CSSProperties = {
     margin: "12px 0",
     border: "1px solid var(--border)",
     borderRadius: 6,
-    backgroundColor: "var(--surface)",
+    backgroundColor: "var(--bg-card)",
     fontSize: 14,
 };
 
