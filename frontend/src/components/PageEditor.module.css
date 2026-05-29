@@ -18,22 +18,11 @@
     flex-shrink: 0;
 }
 
-.backBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    width: 30px;
-    height: 30px;
-    border: none;
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-sidebar);
-    cursor: pointer;
-}
-
-.backBtn:hover {
-    background: color-mix(in srgb, var(--text-sidebar) 10%, transparent);
-}
+/* Header buttons (back, metadata, storyboard, fullscreen, PDF
+ * export) migrated to the global ``.btn`` / ``.btn-icon`` system
+ * (2026-05-30 cross-editor button unification) so every editor
+ * shares one button look + hover/focus/disabled treatment. The
+ * old per-editor .backBtn / .metadataBtn classes were removed. */
 
 .title {
     margin: 0;
@@ -44,28 +33,6 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-.metadataBtn {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border: 1px solid color-mix(in srgb, var(--text-sidebar) 14%, transparent);
-    border-radius: 6px;
-    background: transparent;
-    color: var(--text-sidebar);
-    cursor: pointer;
-    font-size: 0.8125rem;
-}
-
-.metadataBtn:hover {
-    background: color-mix(in srgb, var(--text-sidebar) 8%, transparent);
-}
-
-.metadataBtn:disabled {
-    cursor: not-allowed;
-    opacity: 0.6;
 }
 
 /* PB-PHASE4 Session 6 Commit 4: spinner for the Export PDF

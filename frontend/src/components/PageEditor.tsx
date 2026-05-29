@@ -307,7 +307,7 @@ export default function PageEditor({
                     type="button"
                     onClick={onBack}
                     data-testid="page-editor-back"
-                    className={styles.backBtn}
+                    className="btn-icon"
                     aria-label={t("ui.page_editor.back", "Back to dashboard")}
                     title={t("ui.page_editor.back", "Back to dashboard")}
                 >
@@ -329,7 +329,7 @@ export default function PageEditor({
                         type="button"
                         onClick={onShowMetadata}
                         data-testid="page-editor-show-metadata"
-                        className={styles.metadataBtn}
+                        className="btn btn-secondary btn-sm"
                         title={t(
                             "ui.page_editor.show_metadata",
                             "Open book metadata",
@@ -349,7 +349,7 @@ export default function PageEditor({
                         type="button"
                         onClick={onShowStoryboard}
                         data-testid="page-editor-show-storyboard"
-                        className={styles.metadataBtn}
+                        className="btn btn-secondary btn-sm"
                         title={t(
                             "ui.page_editor.show_storyboard",
                             "Open storyboard",
@@ -369,7 +369,7 @@ export default function PageEditor({
                         type="button"
                         onClick={() => void fullscreen.toggle()}
                         data-testid="page-editor-fullscreen"
-                        className={styles.metadataBtn}
+                        className="btn btn-secondary btn-sm"
                         aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
                         aria-keyshortcuts="F11 Control+Shift+F"
                         title={
@@ -405,7 +405,7 @@ export default function PageEditor({
                 <PdfExportControls
                     bookId={bookId}
                     testidPrefix="page-editor"
-                    controlClassName={styles.metadataBtn}
+                    controlClassName="btn btn-secondary btn-sm"
                     spinnerClassName={styles.spinner}
                 />
                 {/* Cross-editor convention (2026-05-28): ThemeToggle
