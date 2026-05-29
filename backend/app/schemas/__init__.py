@@ -1656,3 +1656,83 @@ class ArcReviewerOut(BaseModel):
     reviewed_at: datetime | None
     created_at: datetime
     updated_at: datetime
+
+
+# --- Story Bible (STORY-BIBLE-PLUGIN-01 Session 2) ---
+
+# The five Story Bible entity types. Discriminator for the single
+# StoryEntity table; the per-type metadata fields live in the SSoT
+# at backend/config/story-bible-entities.yaml. Keep this Literal in
+# sync with the yaml — test_story_entity_registry.py
+# ::test_literal_matches_registry fails loudly on drift.
+STORY_ENTITY_TYPES: tuple[str, ...] = (
+    "character",
+    "setting",
+    "plot_point",
+    "item",
+    "lore",
+)
+StoryEntityType = Literal["character", "setting", "plot_point", "item", "lore"]
+
+
+def _decode_entity_metadata(value: Any) -> dict[str, Any] | None:
+    """Decode the JSON-as-Text ``entity_metadata`` column on read."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, dict):
+        return value
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+        return parsed if isinstance(parsed, dict) else None
+    return None
+
+
+class StoryEntityCreate(BaseModel):
+    """Payload for POST .../story-bible/books/{book_id}/entities.
+
+    Position is server-assigned (appended within the entity_type).
+    ``description`` is the TipTap JSON document serialised as a
+    string; ``entity_metadata`` is the per-type extra-field object.
+    """
+
+    entity_type: StoryEntityType
+    name: str = Field(..., min_length=1, max_length=300)
+    description: str | None = None
+    entity_metadata: dict[str, Any] | None = None
+    image_asset_id: str | None = None
+
+
+class StoryEntityUpdate(BaseModel):
+    """Partial update for a Story Bible entity."""
+
+    entity_type: StoryEntityType | None = None
+    name: str | None = Field(default=None, min_length=1, max_length=300)
+    description: str | None = None
+    entity_metadata: dict[str, Any] | None = None
+    image_asset_id: str | None = None
+    position: int | None = None
+
+
+class StoryEntityOut(BaseModel):
+    """Response shape for ``story_entities`` rows."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    book_id: str
+    entity_type: str
+    name: str
+    description: str | None = None
+    entity_metadata: dict[str, Any] | None = None
+    image_asset_id: str | None = None
+    position: int
+    created_at: datetime
+    updated_at: datetime
+
+    @field_validator("entity_metadata", mode="before")
+    @classmethod
+    def _decode_metadata(cls, value: Any) -> dict[str, Any] | None:
+        return _decode_entity_metadata(value)

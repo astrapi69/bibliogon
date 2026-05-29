@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Integer, String, Text
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -1114,6 +1114,77 @@ class ComicBubble(Base):
         return (
             f"<ComicBubble {self.id!r} panel_id={self.panel_id!r} "
             f"type={self.bubble_type!r} pos={self.position}>"
+        )
+
+
+class StoryEntity(Base):
+    """A single Story Bible entity scoped to one book
+    (STORY-BIBLE-PLUGIN-01 Session 2).
+
+    A per-book database of fiction-writing entities. One table with
+    an ``entity_type`` discriminator (character / setting /
+    plot_point / item / lore) + a per-type ``entity_metadata`` JSON
+    column, mirroring the ``Article.content_type`` /
+    ``article_metadata`` pattern. The valid entity_type values + each
+    type's metadata fields are the SSoT in
+    ``backend/config/story-bible-entities.yaml`` (loaded by
+    ``app.services.story_entity_registry``); entity_type is validated
+    at the Pydantic schema layer via the ``StoryEntityType`` Literal,
+    NOT at the DB layer (matches ``Chapter.chapter_type`` /
+    ``Page.layout``).
+
+    Per-book scope (v1, adjudicated 2026-05-30): every entity carries
+    a ``book_id`` FK. Cross-book / series-spanning is a deferred
+    follow-up; rows migrate forward losslessly when it lands.
+
+    Identity fields (``name`` + rich-text ``description`` as TipTap
+    JSON) are shared by every type. ``image_asset_id`` is the
+    optional cover image. ``entity_metadata`` is JSON-encoded as Text
+    (same pattern as ``Page.layout_config`` / ``ComicPanel.bounds``).
+
+    Plugin-architecture note: this model lives in
+    ``backend/app/models/`` alongside the others because Bibliogon's
+    Alembic + ``Base.metadata`` are centralised; plugin-story-bible
+    owns the ROUTES + business logic, not the table declaration
+    (same convention as plugin-comics' ComicPanel / ComicBubble).
+    """
+
+    __tablename__ = "story_entities"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(
+        ForeignKey("books.id", ondelete="CASCADE"), nullable=False
+    )
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    name: Mapped[str] = mapped_column(String(300), nullable=False)
+    # Rich-text description as TipTap JSON (serialised string, same
+    # storage convention as Chapter.content).
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Per-type extra fields as a JSON object (keys per the SSoT yaml).
+    entity_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_asset_id: Mapped[str | None] = mapped_column(
+        ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
+    )
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=_utcnow, onupdate=_utcnow
+    )
+
+    __table_args__ = (
+        # Dominant query: list a book's entities of one type, ordered.
+        Index(
+            "ix_story_entities_book_type_position",
+            "book_id",
+            "entity_type",
+            "position",
+        ),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<StoryEntity {self.id!r} book_id={self.book_id!r} "
+            f"type={self.entity_type!r} name={self.name!r}>"
         )
 
 

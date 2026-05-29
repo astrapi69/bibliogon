@@ -1,0 +1,113 @@
+# Single source of truth for the StoryEntity.entity_type enum +
+# per-type metadata fields. Both backend (StoryEntityRegistry) and
+# frontend (via the /api/story-bible/entity-types endpoint, Session 3)
+# consume this file.
+#
+# Filed by STORY-BIBLE-PLUGIN-01 Session 2 (2026-05-30). Mirrors the
+# content-types.yaml pattern (ARTICLE-TYPES-SSOT-01).
+#
+# Adding a new entity_type:
+#   1. Append a new entry to ``entity_types`` below.
+#   2. Add the corresponding i18n keys in
+#      backend/config/i18n/<lang>.yaml under ui.story_bible
+#      (Session 4 wires the catalogs + the editor UI).
+#   3. Bump the StoryEntityType Literal in
+#      backend/app/schemas/__init__.py. The verification test
+#      (test_story_entity_registry.py::test_literal_matches_registry)
+#      fails loudly on drift.
+#
+# extra_fields semantics: each entry names a per-type metadata field
+# stored in ``StoryEntity.entity_metadata`` (a JSON object on the
+# column). The Session-2+ StoryBibleSidebar / entity editor renders
+# one input per entry, keyed by the field name. The entity's rich
+# ``description`` (TipTap JSON) + ``name`` are identity fields shared
+# by every type and are NOT listed here.
+
+entity_types:
+  - id: character
+    label_key: ui.story_bible.character
+    description_key: ui.story_bible.character_description
+    icon: User
+    default: true
+    extra_fields:
+      - name: aliases
+        type: text
+        label_key: ui.story_bible.character_field_aliases
+      - name: role
+        type: text
+        label_key: ui.story_bible.character_field_role
+      - name: traits
+        type: text
+        label_key: ui.story_bible.character_field_traits
+      - name: arc_notes
+        type: text
+        label_key: ui.story_bible.character_field_arc_notes
+      - name: relationships
+        type: text
+        label_key: ui.story_bible.character_field_relationships
+
+  - id: setting
+    label_key: ui.story_bible.setting
+    description_key: ui.story_bible.setting_description
+    icon: MapPin
+    extra_fields:
+      - name: setting_type
+        type: text
+        label_key: ui.story_bible.setting_field_type
+      - name: geography
+        type: text
+        label_key: ui.story_bible.setting_field_geography
+      - name: significance
+        type: text
+        label_key: ui.story_bible.setting_field_significance
+
+  - id: plot_point
+    label_key: ui.story_bible.plot_point
+    description_key: ui.story_bible.plot_point_description
+    icon: Milestone
+    extra_fields:
+      - name: timeline_position
+        type: number
+        label_key: ui.story_bible.plot_point_field_timeline_position
+      - name: story_beat
+        type: enum
+        values:
+          - setup
+          - inciting_incident
+          - rising_action
+          - climax
+          - falling_action
+          - resolution
+        label_key: ui.story_bible.plot_point_field_beat
+      - name: involved_characters
+        type: text
+        label_key: ui.story_bible.plot_point_field_involved
+
+  - id: item
+    label_key: ui.story_bible.item
+    description_key: ui.story_bible.item_description
+    icon: Package
+    extra_fields:
+      - name: significance
+        type: text
+        label_key: ui.story_bible.item_field_significance
+      - name: current_holder
+        type: text
+        label_key: ui.story_bible.item_field_current_holder
+
+  - id: lore
+    label_key: ui.story_bible.lore
+    description_key: ui.story_bible.lore_description
+    icon: BookMarked
+    extra_fields:
+      - name: category
+        type: enum
+        values:
+          - magic
+          - technology
+          - culture
+          - history
+          - religion
+          - language
+          - other
+        label_key: ui.story_bible.lore_field_category
