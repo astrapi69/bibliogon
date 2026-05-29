@@ -378,3 +378,47 @@ in Phase E.
 - **Doc drift to fix (not code):** `audit_theme_tokens.py` docstring,
   `CLAUDE.md`, and `architecture.md` say "5 palettes / 10 variants";
   reality is 6 / 12. Correct alongside Phase E or Phase H.
+
+---
+
+## Resolution (Phases B–H, shipped 2026-05-30)
+
+All fix phases landed as atomic, individually-green commits on `main`.
+
+| Phase | Commit | What shipped |
+|---|---|---|
+| P1 (AD header) | `fa5ff138` | Folded "Backup" into the Import chevron → AD header single-line at 900px+ with margin; regression-pin E2E. |
+| B | `1474dcdd` | All undefined-token refs from §2 → defined tokens; all hardcoded status colors → `var(--success/danger/accent/warning)`. |
+| C | `fdd2d7e3` | Dark `--text-muted` brightened (≥4.5 on card+surface-2, all 6 dark variants); nord dark `--danger` 2.46→3.22; `EditableTitle .warningAck` → `--text-inverse`. |
+| C2 | `0a151ee1` | Comic bubble + tail keyboard operation (Enter/Space select, arrow-key reposition) + 6 Vitest pins. |
+| E | `8d1b0e66` | `make verify-theme` (token-undefined gate + 96-check WCAG contrast gate + hardcoded-hex lint), wired into `release-test`; **+12 more undefined tokens** closed (see open-set note below). |
+| F | `7ccdd7f9` | Comic editor chrome themed (panel/grid bg+border, tail-handle ring, PB speech_bubble); bubble defaults kept comic-convention per adjudication. |
+| G | `408d5d12` | Storyboard mood-dot ring 12%→25% for dark visibility; collage drag-handle affordance bump (kept image-relative by design). |
+| H | this commit | 6/12 drift corrected in CLAUDE.md + architecture.md + the audit script; `docs/development/theming.md` dev guide; this section. |
+
+### Open-set correction (important)
+
+Phase A reported **6** undefined tokens. The Phase E bare-`var()`
+scan — the very blind-spot detector this work added — found **18**
+(2 runtime-exempt, 16 real). This audit's manual grep under-counted;
+the §2 list was the subset reachable from the `var(--token,#hex)`
+pattern + a few bare ones. The full set was closed in Phase E and the
+`audit_theme_tokens.py` undefined-token gate now prevents recurrence.
+This is the canonical "closed-set vs open-set drift" lesson: a manual
+audit finds what it greps for; the automated gate finds the rest.
+
+### Deferred (tracked follow-ups, not regressions)
+
+- **Dynamic axe-core run** per page (§8c) — needs a running app +
+  browser; an Aster-run step. Static a11y (§8a/§8b) is done; comic
+  bubble/tail keyboard shipped in C2.
+- **Collage image drag/resize keyboard repositioning** — pointer-only;
+  a feature-sized follow-up (the regions are plain divs, no role, so
+  not an axe button-name violation today).
+- **Playwright screenshot regen** + 4-variant visual spot-check —
+  Aster-run (no app in the implementing session).
+- **Phase D (new palettes)** — skipped by adjudication; baseline for
+  any future expansion is 6 palettes.
+- Unused `--btn-primary-text` token definition remains in `:root` /
+  `[data-theme="dark"]` (its sole consumer moved to `--text-inverse`
+  in Phase C); harmless, no gate flags it. Remove in a future sweep.

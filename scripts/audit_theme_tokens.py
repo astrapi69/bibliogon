@@ -7,8 +7,12 @@ in ``--enforce`` mode.
 
 Why this exists
 ---------------
-Bibliogon ships 5 palettes (`classic`, `cool-modern`, `nord`,
-`notebook`, `studio`) × light + dark = 10 theme variants. Every
+Bibliogon ships 6 palettes × light + dark = 12 theme variants. Five
+carry an explicit ``[data-app-theme="…"]`` block (`classic`,
+`cool-modern`, `nord`, `notebook`, `studio`); the 6th, `warm-literary`,
+is the default and lives in ``:root`` + ``[data-theme="dark"]``. This
+script checks the 5 explicit palettes directly and `warm-literary`
+via those two default-inheritance blocks (see SELECTORS below). Every
 CSS custom property referenced via ``var(--token, #fallback)``
 silently falls through to the hex value when ``--token`` is not
 defined in the active palette × mode combination. Symptom: one
@@ -34,7 +38,7 @@ For each unique ``--token`` referenced via ``var(--token, #hex)``:
 - Inventory every palette × mode block in ``global.css``:
   ``[data-app-theme="<p>"]`` (light) and
   ``[data-app-theme="<p>"][data-theme="dark"]`` (dark) for each
-  of the 5 palettes, plus the two default-inheritance blocks
+  of the 5 explicit palettes, plus the two default-inheritance blocks
   ``:root`` (default light) and ``[data-theme="dark"]`` (default
   dark).
 - A token is "covered" for a palette × mode iff it is defined
@@ -82,7 +86,7 @@ VAR_FALLBACK_RE = re.compile(r"var\(\s*(--[a-z0-9-]+)\s*,\s*#[0-9a-fA-F]+")
 # Match ``--token: value;`` inside a CSS block.
 DEF_RE = re.compile(r"^\s*(--[a-z0-9-]+)\s*:\s*([^;]+);", re.MULTILINE)
 
-# 5 palettes × 2 modes = 10 theme variants. Plus two default-
+# 5 explicit palettes × 2 modes, plus the two default-inheritance
 # inheritance blocks (``:root`` and ``[data-theme="dark"]``) that
 # every palette falls back to when it has not overridden a token.
 PALETTES = ["classic", "cool-modern", "nord", "notebook", "studio"]

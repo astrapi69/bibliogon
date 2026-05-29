@@ -102,9 +102,10 @@ Rejected: shadcn/ui (requires Tailwind), MUI (too opinionated), Ant Design (too 
 
 ### Theming
 
-- 5 themes: Classic, Cool Modern, Nord, Notebook, Studio (each with Light + Dark = 10 variants). Notebook + Studio were added after the original "3 themes" doc. Audit recipe to verify the current count: `grep -oE 'data-app-theme="[a-z-]+"' frontend/src/styles/global.css | sort -u`.
-- Everything via CSS variables. New UI elements MUST use CSS variables.
+- **6 palettes** × Light + Dark = **12 variants**: Warm Literary (the default, defined in `:root`), Cool Modern, Nord, Classic, Studio, Notebook. The canonical registry is `frontend/src/themes/palettes.ts`; the 5 non-default palettes carry a `[data-app-theme="…"]` block in `global.css` while Warm Literary lives in `:root` + `[data-theme="dark"]`. The `data-app-theme` grep recipe (`grep -oE 'data-app-theme="[a-z-]+"' …`) returns only the **5** explicit overrides — it does NOT see Warm Literary (which has no attribute). Count from `palettes.ts` (6), not that grep.
+- Everything via CSS variables. New UI elements MUST use CSS variables, never hardcoded hex/rgb (the data exceptions — Storyboard mood presets, comic-bubble convention defaults — are allowlisted in `scripts/check_hardcoded_colors.py`).
 - No Tailwind. Custom properties in frontend/src/styles/global.css.
+- **Theme gates** (`make verify-theme`, in `make release-test`): `scripts/audit_theme_tokens.py` (every referenced token defined in every variant + no bare `var(--token)` to an undefined token), `scripts/check_theme_contrast.py` (WCAG AA across all 12 variants), `scripts/check_hardcoded_colors.py` (no stray hardcoded hex). How to add a palette / the full token vocabulary: [docs/development/theming.md](../../docs/development/theming.md).
 
 ### Plugin UI (manifest-driven)
 
