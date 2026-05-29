@@ -99,11 +99,42 @@ CI had been red on `main` since the pre-session `ad83cda0`
   release. TipTap v3 / `@types/node` 25 / `@vitejs/plugin-react` 6
   majors remain deliberately pinned.
 
+## 3. Post-release comprehensive documentation pass
+
+User-directed after the release: build a doc gate first, then bring
+all docs to v0.40.0 state.
+
+- **C0** `41a5427c` — new `scripts/verify_docs_completeness.py`
+  release gate (8 checks; FAIL=block / WARN=advisory) wired into
+  `make release-test` + a manual-stage pre-commit hook. mkdocs-nav
+  completeness delegated to the existing `verify-docs-discipline`
+  (no duplicate). First run found one real FAIL — the stale v0.39.0
+  ROADMAP header — fixed here (ROADMAP + backlog headers → v0.40.0,
+  which also covered the planned "C4").
+- **C1** `a6c1959a` — README + README-de v0.38.0 → v0.40.0 (5→13
+  picture-book layouts incl. collage, 3→7 comic grid templates,
+  corrected 6 bubble types, 8 content types, title-editing,
+  publication-status); CLAUDE.md data-model (Book.status, 13
+  layouts). CONTRIBUTING unchanged (already correct). Layout count
+  verified at 13 from LayoutPicker (not the "12" in the brief).
+- **C2** `9634c756` — new `books/page-layouts` help pair (DE+EN)
+  documenting all 13 layouts + the previously-undocumented collage;
+  nav regenerated.
+- **C2b** `07b12dbc` — fullscreen toggle (→ editor/display-settings)
+  + per-field search-clear (→ dashboard/pagination) mentions, DE+EN.
+- **C3 (screenshots)** — NOT done here: regeneration needs the live
+  app (`make dev` + the manual-only `--project=screenshots`); Aster
+  runs it. The gate confirms no broken image refs; one advisory
+  36d-old screenshot.
+
+Both doc gates green; help i18n parity 58/58.
+
 ## Stats
 
-- Commits this session: 13 (8 feature + 5 release/fix).
+- Commits this session: 18 (8 feature + 5 release/fix + 5 docs).
 - Backend pytest 2294 → 2394 (+100, 1 skipped).
 - Vitest 2190 → 2477 (+287).
 - New: 1 backend endpoint, 2 frontend components
   (`MovePanelToPageMenu` + reorder mode on `ComicPanelGrid`),
-  5 i18n keys × 8 catalogs, 2 Playwright smokes, 1 help-doc pair.
+  5 i18n keys × 8 catalogs, 2 Playwright smokes, 2 help-doc pairs
+  (comic-panels + page-layouts), 1 release-gate script.
