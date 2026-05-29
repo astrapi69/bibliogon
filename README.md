@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.38.0**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.40.0**
 
 ## Features
 
@@ -41,24 +41,29 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Per-search clear button (X) on every search/filter input across Articles, Books, Authors-Database, and Help so a single field can be cleared without resetting other filters
 - Collapsible-section open-state persistence in the picture-book and comic-book editor sidebar (Tier 1 Visual Style and Tier 2 Typography sections remember their state per surface across navigation and reload)
 - White-label feature flag (`features.white_label` in `app.yaml`) gates the Settings > Erweitert tab; off by default so power-user surfaces stay accessible via YAML edits without cluttering the sidebar
+- In-place title editing on every editor (book, article, picture-book, comic-book) via a shared pencil-toggle component; published or archived works gate the edit behind a warning banner so a title change is consciously carried over to the publishing platform
+- Publication-status lifecycle (Draft / Ready / Published / Archived) shared by books and articles, with a status badge on every dashboard card and list row
+- Locale-aware date formatting that follows the active UI language across every surface
 
 ## Picture Book Authoring
 
 Bibliogon supports a dedicated picture-book authoring flow with per-page image + text layouts, a Storyboard grid view, and a direct WeasyPrint PDF pipeline.
 
-- **5 page layouts:** Image-Top / Image-Left / Image-Full-Text-Overlay / Speech-Bubble / Text-Only — each with its own per-layout `layout_config` namespace so switching layouts preserves prior settings.
-- **Tier 1 + Tier 2 properties** per layout (Visual-Style and Typography sections in the editor properties pane): text alignment, vertical centering, padding, font family, font size, line-height, text color, font weight, container width/height.
+- **13 page layouts in 5 categories** (chosen from a categorised LayoutPicker): single-image-with-text (image top / bottom / left / right, full-image overlay, image-border with centered text), image-only, multi-image (two-images-with-centered-text, split-horizontal, split-vertical, and a free-form **collage** of N drag-positioned image + text regions), text-only, and the speech-bubble special layout. Each layout has its own per-layout `layout_config` namespace so switching layouts preserves prior settings.
+- **Collage layout** (Phase 3): freely drag-and-resize image and text regions on the page with z-index ordering (`useDragPosition` hook + `CollageCanvas`); the WeasyPrint walker mirrors the editor geometry so the PDF matches the canvas.
+- **Tier 1 + Tier 2 properties** per layout (Visual-Style and Typography sections in the editor properties pane): text alignment, vertical centering, padding, font family, font size, line-height, text color, font weight, container width/height. A shared `computeTierTextStyles` helper (TS + Python mirror) keeps the editor preview and the PDF walker in sync.
 - **Storyboard View** (drag-reorder grid): annotate each page with notes, a story-beat tag (Exposition / Inciting / Rising / Climax / Falling / Resolution), a mood color (10-preset palette), and an act-group label for visual chapter boundaries.
 - **PDF export** via WeasyPrint with KDP-aligned format dropdown (square 8.5x8.5, landscape 8.5x11) + bleed and crop marks controls.
-- **Layout-switch hygiene:** active text-conversion between TipTap-based and Tier-Property-based layouts so the DB shape always matches the active layout.
+- **Layout-switch hygiene:** the per-layout `layout_config` namespace (Fix B) means switching away from and back to a layout preserves its configuration; active text-conversion between TipTap-based and Tier-Property-based layouts keeps the DB shape matching the active layout.
 
 ## Comic Book Authoring
 
 A dedicated comic-book editor (`book_type='comic_book'`) ships multi-panel page layouts with multi-bubble per-panel speech-bubble support.
 
-- **Comic panel grid** with 3 grid templates (1x1, 2x1, 2x2) selectable per page.
-- **Multi-bubble per panel:** position bubbles via anchor presets (top-left through bottom-right, plus center) with opacity and size controls.
-- **6 bubble-type CSS variants** (speech, thought, shout, whisper, narration, off-screen) + an SVG triangle tail with 8 directional anchors plus an `auto` mode.
+- **Comic panel grid** with 7 grid templates (single-panel splash, 1x2, 2x1, 2x2, 2x3, 3x2, 3x3) selectable per page; Add-Panel disables at the template's cell capacity, and a switch to a smaller template triggers an overflow handler (move excess panels to new pages, delete them, or cancel).
+- **Panel arranging:** drag a panel by its handle to reorder it within the page (dnd-kit), or use the "Move to page" menu to send it to another page — the menu shows each target's capacity (`Seite N - count/max`) and disables full pages.
+- **Multi-bubble per panel:** position bubbles via anchor presets (top-left through bottom-right, plus center) with opacity and size controls, or drag a bubble (and its tail tip) directly on the canvas.
+- **6 bubble types** (speech, thought, narration, shout, whisper, sound-effect), each rendered as a single continuous SVG path (outline + tail in one shape, no CSS-shape-plus-polygon-tail seam) with type-specific tail behaviour — thought circle-chain, shout spike-absorption, narration forced no-tail. The same path generator runs in the editor preview and the WeasyPrint PDF walker.
 - **PDF export** via the shared WeasyPrint pipeline; comics dispatch through the `export_execute` hookspec to keep core decoupled from plugin code.
 
 ## KDP Publishing Wizard
@@ -75,6 +80,7 @@ A 5-step XState-driven wizard for Amazon KDP publishing prep with server-side pe
 Beyond books, Bibliogon supports article authoring with multi-platform publication tracking.
 
 - Dedicated article editor with TipTap (separate from the book editor, single-document, no chapter sidebar)
+- **8 content types** (Blog post, Tutorial, Review, Essay, Newsletter, Interview, Listicle, Short story) from a `content-types.yaml` registry, chosen via a split-button on the Article Dashboard (default click creates a Blog post; the chevron exposes the other 7). Each type has its own extra metadata fields (e.g. tutorial difficulty / prerequisites / duration, review work + rating, newsletter issue + send date, interview partner + role) stored in a per-article `article_metadata` JSON column and edited inline in the metadata sidebar
 - Article-level metadata: topic (settings-managed), SEO title / description, tags, excerpt, canonical URL, featured image
 - Per-platform publication tracking (Medium, Substack, X, LinkedIn, dev.to, Mastodon, Bluesky, custom)
 - Drift detection: the editor flags out-of-sync publications when article content changes after publish; a "Verify live" action re-snapshots the baseline

@@ -77,9 +77,9 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 
 ## Data model (short)
 
-- **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css), book_type (from BookTypeRegistry YAML SSoT)
+- **Book:** id, title, subtitle, author, language, series, series_index, description, publishing (ISBN/ASIN/publisher/edition), marketing (keywords, html_description, backpage), design (cover_image, custom_css), book_type (from BookTypeRegistry YAML SSoT), status (shared `PublicationStatus` Literal: draft/ready/published/archived — same enum as Article.status via `_PUBLISHING_LIFECYCLE`)
 - **Chapter:** id, book_id, title, content (TipTap JSON), position, chapter_type. Used by prose books (`content_model="chapters"`).
-- **Page:** id, book_id, position, layout (5 picture-book layouts + `comic_panel_grid`), text_content (string), image_asset_id, layout_config (per-layout namespaced JSON via Fix B), plus 4 Storyboard columns (notes, story_beat, mood_color, act_group). Used by picture-books + comic-books (`content_model="pages"`).
+- **Page:** id, book_id, position, layout (13 picture-book layouts in 5 LayoutPicker categories — incl. split/two-image/`collage` + the original image/overlay/speech_bubble/text_only — plus `comic_panel_grid` for comics), text_content (string), image_asset_id, layout_config (per-layout namespaced JSON via Fix B; collage stores per-region drag geometry here), plus 4 Storyboard columns (notes, story_beat, mood_color, act_group). Used by picture-books + comic-books (`content_model="pages"`).
 - **ComicPanel / ComicBubble:** plugin-comics tables for comic_book pages (panel grid templates + multi-bubble per-panel speech bubbles).
 - **Asset:** id, book_id, filename, asset_type (cover/figure/diagram/table), path
 - **BookTemplate / BookTemplateChapter:** reusable book structures; 5 builtins seeded at startup. `/api/templates/`, `POST /api/books/from-template`.

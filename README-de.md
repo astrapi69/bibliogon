@@ -6,7 +6,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
 
-**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.38.0**
+**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.40.0**
 
 ## Funktionen
 
@@ -41,24 +41,29 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 - Eingabe-Leeren-Knopf (X) an jedem Suchen/Filtern-Feld in Artikeln, Büchern, Autoren-Datenbank und Hilfe — einzelnes Feld leeren, ohne andere Filter zurückzusetzen
 - Persistenz von ein-/ausgeklappten Bereichen im Bilderbuch- und Comic-Editor-Sidebar (Tier 1 Visueller Stil und Tier 2 Typografie merken sich ihren Zustand pro Surface über Navigation und Reload hinweg)
 - White-Label-Feature-Flag (`features.white_label` in `app.yaml`) gattet den Einstellungs-Reiter "Erweitert"; standardmäßig aus, damit Power-User-Surfaces über YAML-Bearbeitung zugänglich bleiben ohne die Sidebar zu überladen
+- Titel direkt im Editor bearbeiten (Buch, Artikel, Bilderbuch, Comic) über eine gemeinsame Stift-Umschalt-Komponente; bei veröffentlichten oder archivierten Werken erscheint zuerst ein Warnbanner, damit eine Titeländerung bewusst auf der Veröffentlichungsplattform nachgezogen wird
+- Veröffentlichungs-Status-Lebenszyklus (Entwurf / Bereit / Veröffentlicht / Archiviert), geteilt von Büchern und Artikeln, mit Status-Badge auf jeder Dashboard-Karte und Listenzeile
+- Sprachabhängige Datumsformatierung, die der aktiven UI-Sprache auf allen Surfaces folgt
 
 ## Bilderbuch-Autorenschaft
 
 Bibliogon unterstützt einen dedizierten Bilderbuch-Workflow mit pro-Seite Bild- und Text-Layouts, einer Storyboard-Rasteransicht und einer direkten WeasyPrint-PDF-Pipeline.
 
-- **5 Seitenlayouts:** Image-Top / Image-Left / Image-Full-Text-Overlay / Speech-Bubble / Text-Only — jedes mit eigenem `layout_config`-Namensraum, damit Layout-Wechsel die vorherigen Einstellungen erhalten.
-- **Tier 1 + Tier 2 Eigenschaften** pro Layout (Visual-Style- und Typografie-Sektionen im Editor): Textausrichtung, vertikale Zentrierung, Padding, Schriftart, Schriftgröße, Zeilenhöhe, Textfarbe, Schriftgewicht, Container-Breite/-Höhe.
+- **13 Seitenlayouts in 5 Kategorien** (über einen kategorisierten LayoutPicker wählbar): Einzelbild-mit-Text (Bild oben / unten / links / rechts, Vollbild-Overlay, Bild-als-Rahmen mit zentriertem Text), Nur-Bild, Mehrere-Bilder (zwei-Bilder-mit-zentriertem-Text, Split-horizontal, Split-vertikal sowie eine frei anordenbare **Collage** aus N per Drag positionierten Bild- und Text-Regionen), Nur-Text und das Spezial-Layout Sprechblase. Jedes Layout hat seinen eigenen `layout_config`-Namensraum, damit Layout-Wechsel die vorherigen Einstellungen erhalten.
+- **Collage-Layout** (Phase 3): Bild- und Text-Regionen frei auf der Seite ziehen und in der Größe ändern, mit z-Index-Reihenfolge (`useDragPosition`-Hook + `CollageCanvas`); der WeasyPrint-Walker spiegelt die Editor-Geometrie, sodass das PDF zur Arbeitsfläche passt.
+- **Tier 1 + Tier 2 Eigenschaften** pro Layout (Visual-Style- und Typografie-Sektionen im Editor): Textausrichtung, vertikale Zentrierung, Padding, Schriftart, Schriftgröße, Zeilenhöhe, Textfarbe, Schriftgewicht, Container-Breite/-Höhe. Ein gemeinsamer `computeTierTextStyles`-Helfer (TS + Python-Spiegel) hält Editor-Vorschau und PDF-Walker synchron.
 - **Storyboard-Ansicht** (Drag-Reorder-Raster): Notizen pro Seite, Story-Beat-Tag (Exposition / Auslösendes Ereignis / Steigende Handlung / Höhepunkt / Fallende Handlung / Auflösung), Stimmungsfarbe (10-Preset-Palette) und Akt-Gruppen-Label für visuelle Kapitelgrenzen.
 - **PDF-Export** via WeasyPrint mit KDP-kompatiblem Format-Dropdown (Quadrat 8.5x8.5, Querformat 8.5x11) plus Bleed- und Schnittmarken-Optionen.
-- **Layout-Wechsel-Hygiene:** aktive Text-Konvertierung zwischen TipTap- und Tier-Property-Layouts, damit die DB-Form immer zum aktiven Layout passt.
+- **Layout-Wechsel-Hygiene:** der pro-Layout `layout_config`-Namensraum (Fix B) sorgt dafür, dass ein Wechsel weg von und zurück zu einem Layout dessen Konfiguration erhält; aktive Text-Konvertierung zwischen TipTap- und Tier-Property-Layouts hält die DB-Form passend zum aktiven Layout.
 
 ## Comic-Autorenschaft
 
 Ein dedizierter Comic-Editor (`book_type='comic_book'`) liefert mehrteilige Panel-Layouts mit Multi-Bubble-Unterstützung pro Panel.
 
-- **Comic-Panel-Raster** mit 3 Templates (1x1, 2x1, 2x2) pro Seite wählbar.
-- **Multi-Bubble pro Panel:** Bubbles über Anker-Presets positionieren (Top-Left bis Bottom-Right plus Center) mit Deckkraft- und Größenreglern.
-- **6 Bubble-Typen-CSS-Varianten** (Speech, Thought, Shout, Whisper, Narration, Off-Screen) plus SVG-Dreiecks-Schwanz mit 8 Richtungsankern plus `auto`-Modus.
+- **Comic-Panel-Raster** mit 7 Templates (Einzel-Panel-Splash, 1x2, 2x1, 2x2, 2x3, 3x2, 3x3) pro Seite wählbar; "Panel hinzufügen" deaktiviert bei Erreichen der Zellenkapazität, und der Wechsel zu einem kleineren Template löst einen Overflow-Handler aus (überzählige Panels auf neue Seiten verschieben, löschen oder abbrechen).
+- **Panels anordnen:** ein Panel am Griff ziehen, um es innerhalb der Seite umzusortieren (dnd-kit), oder über das Menü "Auf andere Seite verschieben" auf eine andere Seite senden — das Menü zeigt die Kapazität jedes Ziels (`Seite N - Anzahl/Max`) und deaktiviert volle Seiten.
+- **Multi-Bubble pro Panel:** Bubbles über Anker-Presets positionieren (Top-Left bis Bottom-Right plus Center) mit Deckkraft- und Größenreglern, oder eine Bubble (samt Schwanzspitze) direkt auf der Arbeitsfläche ziehen.
+- **6 Bubble-Typen** (Speech, Thought, Narration, Shout, Whisper, Sound-Effect), jeweils als einzelner durchgehender SVG-Pfad gerendert (Umriss + Schwanz in einer Form, ohne CSS-Form-plus-Polygon-Schwanz-Naht) mit typ-spezifischem Schwanzverhalten — Gedanken-Kreiskette, Schrei-Spitzen-Absorption, Narration ohne Schwanz. Derselbe Pfad-Generator läuft in der Editor-Vorschau und im WeasyPrint-PDF-Walker.
 - **PDF-Export** über die gemeinsame WeasyPrint-Pipeline; Comics dispatchen via `export_execute`-Hookspec, damit der Kern vom Plugin-Code entkoppelt bleibt.
 
 ## KDP-Veröffentlichungs-Wizard
@@ -75,6 +80,7 @@ Ein 5-Schritt-Wizard auf XState-Basis für die Amazon-KDP-Veröffentlichungsvorb
 Neben Büchern unterstützt Bibliogon Artikel-Autorenschaft mit Multi-Plattform-Publikations-Tracking.
 
 - Dedizierter Artikel-Editor mit TipTap (getrennt vom Buch-Editor, Einzeldokument, ohne Kapitel-Sidebar)
+- **8 Textarten** (Blogbeitrag, Tutorial, Rezension, Essay, Newsletter, Interview, Listicle, Kurzgeschichte) aus einer `content-types.yaml`-Registry, über einen Split-Button im Artikel-Dashboard wählbar (Standardklick erstellt einen Blogbeitrag; das Chevron öffnet die anderen 7). Jede Textart hat eigene Zusatz-Metadatenfelder (z. B. Tutorial-Schwierigkeit / Voraussetzungen / Dauer, Rezension Werk + Bewertung, Newsletter Ausgabe + Versanddatum, Interview Partner + Rolle), gespeichert in einer pro-Artikel `article_metadata`-JSON-Spalte und inline in der Metadaten-Sidebar bearbeitet
 - Artikel-Metadaten: Thema (einstellungsverwaltet), SEO-Titel / -Beschreibung, Tags, Auszug, kanonische URL, Featured Image
 - Pro-Plattform-Publikations-Tracking (Medium, Substack, X, LinkedIn, dev.to, Mastodon, Bluesky, custom)
 - Drift-Erkennung: der Editor markiert nicht-synchronisierte Publikationen, wenn der Artikel-Inhalt nach der Veröffentlichung geändert wurde; eine "Live bestätigen"-Aktion setzt den Vergleich zurück
