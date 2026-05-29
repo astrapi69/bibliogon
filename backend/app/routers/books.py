@@ -252,9 +252,15 @@ def _resolve_articles_or_422(article_ids: list[str], db: Session) -> list[Articl
 
     not_found_ids = [aid for aid in article_ids if aid not in by_id]
     trashed = [a for a in rows if a.deleted_at is not None]
-    non_article = [a for a in rows if a.content_type != "article"]
 
-    if not_found_ids or trashed or non_article:
+    # ARTICLE-TYPES-SSOT-01: the legacy ``content_type != "article"``
+    # gate was a reservation for a future Tweet / Newsletter
+    # differentiation. With content_type now repurposed as the
+    # article-type discriminator (blogpost / tutorial / review /
+    # essay / newsletter), every row in the articles table is by
+    # definition an article and can be converted. The non_article
+    # filter is therefore dropped.
+    if not_found_ids or trashed:
         raise HTTPException(
             status_code=422,
             detail={
@@ -262,14 +268,6 @@ def _resolve_articles_or_422(article_ids: list[str], db: Session) -> list[Articl
                 "message": "Some articles cannot be converted.",
                 "not_found_ids": not_found_ids,
                 "trashed": [{"id": a.id, "title": a.title} for a in trashed],
-                "non_article": [
-                    {
-                        "id": a.id,
-                        "title": a.title,
-                        "content_type": a.content_type,
-                    }
-                    for a in non_article
-                ],
             },
         )
 
@@ -502,7 +500,6 @@ def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Dep
 
     - 404-ish "not found" article ids,
     - articles in the trash (``deleted_at IS NOT NULL``),
-    - articles with ``content_type != "article"``,
     - ``sort_strategy=manual`` with missing / mismatched
       ``manual_order``.
 

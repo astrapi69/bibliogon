@@ -154,7 +154,10 @@ def comment_to_article(comment: ArticleComment, db: Session) -> Article:
         subtitle=None,
         author=comment.author,
         language=comment.language,
-        content_type="article",
+        # ARTICLE-TYPES-SSOT-01. Reclassified comments become
+        # blogposts by default — the most-common article type and
+        # the natural shape for prose lifted out of comment form.
+        content_type="blogpost",
         content_json=comment.body_json or "",
         status="draft",
         canonical_url=comment.canonical_url,

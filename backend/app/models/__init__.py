@@ -546,9 +546,19 @@ class Article(Base):
     inherited by per-platform Publications, plus a one-to-many
     relationship to Publication.
 
-    `content_type` defaults to `"article"`; the column exists so a
-    future Blogpost / Tweet differentiation can land without a
-    schema change. Phase 1+2 only writes `"article"`.
+    ``content_type`` is the article-type discriminator
+    (ARTICLE-TYPES-SSOT-01, 2026-05-29). Values come from the
+    article-types.yaml registry: ``blogpost`` (default),
+    ``tutorial``, ``review``, ``essay``, ``newsletter``. Migration
+    ``u0e1f2345678`` repurposed the column from the legacy
+    ``"article"`` default per the original "exists so a future
+    Blogpost / Tweet differentiation can land without a schema
+    change" intent.
+
+    ``article_metadata`` carries per-type extra fields (e.g.
+    tutorial ``difficulty_level``, review ``rating``). JSON-text
+    shape, nullable. Mirrors the ``Page.layout_config`` precedent
+    for per-shape extra data attached to a discriminator column.
     """
 
     __tablename__ = "articles"
@@ -558,7 +568,8 @@ class Article(Base):
     subtitle: Mapped[str | None] = mapped_column(String(500), nullable=True)
     author: Mapped[str | None] = mapped_column(String(300), nullable=True)
     language: Mapped[str] = mapped_column(String(10), nullable=False, default="en")
-    content_type: Mapped[str] = mapped_column(String(20), nullable=False, default="article")
+    content_type: Mapped[str] = mapped_column(String(20), nullable=False, default="blogpost")
+    article_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)
     # TipTap JSON serialised to a string. Matches the Chapter.content
     # convention (Bibliogon stores TipTap JSON as Text rather than the
     # SQLAlchemy JSON type so the diff/version-history paths work the

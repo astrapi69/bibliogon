@@ -46,7 +46,7 @@ def _create_article(
     featured_image_url: str | None = None,
     created_at: datetime | None = None,
     deleted_at: datetime | None = None,
-    content_type: str = "article",
+    content_type: str = "blogpost",
 ) -> str:
     """Insert an Article directly via SQLAlchemy.
 
@@ -320,19 +320,23 @@ def test_front_and_back_matter_together() -> None:
 # --- Q10 + Q11 validation gates ------------------------------------------
 
 
-def test_rejects_non_article_content_type_with_422() -> None:
-    a_ok = _create_article("OK")
-    a_bad = _create_article("Tweet", content_type="tweet")
-    resp = client.post(
-        "/api/books/from-articles",
-        json={"title": "X", "author": "T", "article_ids": [a_ok, a_bad]},
+def test_accepts_every_article_type_for_conversion() -> None:
+    """ARTICLE-TYPES-SSOT-01. Every row in the articles table is by
+    definition an article — content_type is the article-type
+    discriminator (blogpost / tutorial / review / essay / newsletter),
+    not an article-vs-non-article gate. All 5 types convert
+    successfully; legacy "tweet" content_type also converts (the
+    previous non_article filter is dropped)."""
+    a_blogpost = _create_article("Blog")
+    a_tutorial = _create_article("Tutorial", content_type="tutorial")
+    a_review = _create_article("Review", content_type="review")
+    a_essay = _create_article("Essay", content_type="essay")
+    a_newsletter = _create_article("Newsletter", content_type="newsletter")
+    body = _convert(
+        [a_blogpost, a_tutorial, a_review, a_essay, a_newsletter],
+        title="Multi-Type Book",
     )
-    assert resp.status_code == 422
-    detail = resp.json()["detail"]
-    assert detail["code"] == "invalid_articles"
-    bad_ids = [item["id"] for item in detail["non_article"]]
-    assert bad_ids == [a_bad]
-    assert detail["non_article"][0]["content_type"] == "tweet"
+    assert len(body["chapters"]) == 5
 
 
 def test_rejects_trashed_article_with_422() -> None:
@@ -366,21 +370,24 @@ def test_rejects_unknown_article_id_with_422() -> None:
 def test_collects_all_offending_ids_in_single_response() -> None:
     """User's meta-point 3: surface ALL offending IDs in single response.
 
-    Trashed + non-article + not-found should ALL be listed in the
-    same 422 so the user can fix the entire selection in one pass.
+    Trashed + not-found should ALL be listed in the same 422 so
+    the user can fix the entire selection in one pass.
+
+    ARTICLE-TYPES-SSOT-01: the non_article facet was dropped when
+    content_type became the article-type discriminator. Every row
+    in the articles table is by definition an article.
     """
     a_ok = _create_article("OK")
     a_trash = _create_article("Trash", deleted_at=datetime.now(UTC))
-    a_tweet = _create_article("Tweet", content_type="tweet")
     unknown = "0123456789abcdef0123456789abcdef"
     resp = client.post(
         "/api/books/from-articles",
-        json={"title": "X", "author": "T", "article_ids": [a_ok, a_trash, a_tweet, unknown]},
+        json={"title": "X", "author": "T", "article_ids": [a_ok, a_trash, unknown]},
     )
     assert resp.status_code == 422
     detail = resp.json()["detail"]
     assert {item["id"] for item in detail["trashed"]} == {a_trash}
-    assert {item["id"] for item in detail["non_article"]} == {a_tweet}
+    assert "non_article" not in detail
     assert detail["not_found_ids"] == [unknown]
 
 

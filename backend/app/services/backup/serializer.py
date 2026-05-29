@@ -70,6 +70,9 @@ def serialize_article_for_backup(article: Article) -> dict[str, Any]:
         "author": article.author,
         "language": article.language,
         "content_type": article.content_type,
+        # ARTICLE-TYPES-SSOT-01. JSON-text column round-tripped as a
+        # raw string; restore decodes back through the column.
+        "article_metadata": article.article_metadata,
         "content_json": article.content_json,
         "status": article.status,
         "canonical_url": article.canonical_url,
@@ -98,13 +101,23 @@ def restore_article_from_data(article_data: dict[str, Any]) -> Article:
         if isinstance(deleted_raw, str) and deleted_raw
         else None
     )
+    # ARTICLE-TYPES-SSOT-01. Legacy .bgb backups (pre-2026-05-29)
+    # carry ``content_type == "article"`` as the universal default;
+    # rewrite to ``"blogpost"`` so the restored row matches the new
+    # registry shape. Same backfill semantics as the
+    # ``u0e1f2345678`` migration.
+    content_type = article_data.get("content_type", "blogpost")
+    if content_type == "article":
+        content_type = "blogpost"
+
     return Article(
         id=article_data["id"],
         title=article_data["title"],
         subtitle=article_data.get("subtitle"),
         author=article_data.get("author"),
         language=article_data.get("language", "en"),
-        content_type=article_data.get("content_type", "article"),
+        content_type=content_type,
+        article_metadata=article_data.get("article_metadata"),
         content_json=article_data.get("content_json", ""),
         status=article_data.get("status", "draft"),
         canonical_url=article_data.get("canonical_url"),

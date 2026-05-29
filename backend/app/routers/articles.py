@@ -12,6 +12,7 @@ import logging
 import shutil
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
+from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -117,15 +118,25 @@ def cleanup_expired_article_trash() -> int:
 @router.post("", response_model=ArticleOut, status_code=status.HTTP_201_CREATED)
 def create_article(payload: ArticleCreate, db: Session = Depends(get_db)) -> Article:
     """Create a draft article. ``status`` always starts at ``draft`` -
-    publish via PATCH after the user is happy with the content."""
-    article = Article(
-        title=payload.title,
-        subtitle=payload.subtitle,
-        author=payload.author,
-        language=payload.language,
-        # content_json defaults to "" via the column server_default;
-        # the editor populates it on first save.
-    )
+    publish via PATCH after the user is happy with the content.
+
+    ``content_type`` (article-type discriminator) defaults to
+    ``"blogpost"`` via the column default when the payload omits it.
+    ``article_metadata`` is JSON-text on the column; the payload
+    sends a dict which is encoded here.
+    """
+    kwargs: dict[str, Any] = {
+        "title": payload.title,
+        "subtitle": payload.subtitle,
+        "author": payload.author,
+        "language": payload.language,
+    }
+    if payload.content_type is not None:
+        kwargs["content_type"] = payload.content_type
+    if payload.article_metadata is not None:
+        kwargs["article_metadata"] = json.dumps(payload.article_metadata)
+
+    article = Article(**kwargs)
     db.add(article)
     db.commit()
     db.refresh(article)
@@ -419,6 +430,11 @@ def update_article(
     # before assignment.
     if "tags" in updates and updates["tags"] is not None:
         updates["tags"] = json.dumps(updates["tags"])
+    # ARTICLE-TYPES-SSOT-01. article_metadata is exposed as dict on
+    # the API; stored as JSON-text on the column. Same encode-on-write
+    # convention as tags above.
+    if "article_metadata" in updates and updates["article_metadata"] is not None:
+        updates["article_metadata"] = json.dumps(updates["article_metadata"])
     for key, value in updates.items():
         setattr(article, key, value)
     db.commit()

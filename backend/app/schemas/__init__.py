@@ -754,12 +754,28 @@ class ChapterTemplateRead(BaseModel):
 
 _ARTICLE_STATUSES = ("draft", "ready", "published", "archived")
 
+# ARTICLE-TYPES-SSOT-01: must stay in sync with
+# backend/config/article-types.yaml. The verification test
+# (test_article_type_registry.py::test_literal_matches_registry)
+# fails loudly on drift.
+ArticleType = Literal[
+    "blogpost",
+    "tutorial",
+    "review",
+    "essay",
+    "newsletter",
+]
+
 
 class ArticleCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     subtitle: str | None = Field(default=None, max_length=500)
     author: str | None = Field(default=None, max_length=300)
     language: str = Field(default="en", min_length=2, max_length=10)
+    # ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
+    # "blogpost" via the column default when omitted.
+    content_type: ArticleType | None = None
+    article_metadata: dict[str, Any] | None = None
 
 
 class ArticleUpdate(BaseModel):
@@ -783,6 +799,13 @@ class ArticleUpdate(BaseModel):
     seo_description: str | None = None
     # Bulk-export filter; flat free-string per Book.series convention.
     series: str | None = Field(default=None, max_length=300)
+    # ARTICLE-TYPES-SSOT-01. Article-type discriminator + per-type
+    # extra fields. ``content_type`` validated against the
+    # registry via Pydantic Literal; ``article_metadata`` is a free
+    # JSON object (per-type extra fields defined in
+    # article-types.yaml).
+    content_type: ArticleType | None = None
+    article_metadata: dict[str, Any] | None = None
 
     @field_validator("status")
     @classmethod
@@ -801,6 +824,9 @@ class ArticleOut(BaseModel):
     author: str | None
     language: str
     content_type: str
+    # ARTICLE-TYPES-SSOT-01. Per-type extra fields. Stored as
+    # JSON-text on the column; decoded to a dict for the API.
+    article_metadata: dict[str, Any] = {}
     content_json: str
     status: str
     canonical_url: str | None = None
@@ -855,6 +881,25 @@ class ArticleOut(BaseModel):
                 return [str(v) for v in parsed]
             return []
         return []
+
+    @field_validator("article_metadata", mode="before")
+    @classmethod
+    def _decode_article_metadata(cls, value: Any) -> dict[str, Any]:
+        """``article_metadata`` is JSON-text on the column. Decode to
+        dict for the API. NULL / empty-string / malformed all
+        collapse to an empty dict so consumers never have to
+        defensively check for None."""
+        if value is None or value == "":
+            return {}
+        if isinstance(value, dict):
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = json.loads(value)
+            except json.JSONDecodeError:
+                return {}
+            return parsed if isinstance(parsed, dict) else {}
+        return {}
 
     @field_validator("inline_image_prompts", mode="before")
     @classmethod

@@ -26,7 +26,11 @@ def test_create_article_minimal() -> None:
     assert article["subtitle"] is None
     assert article["author"] is None
     assert article["language"] == "en"
-    assert article["content_type"] == "article"
+    # ARTICLE-TYPES-SSOT-01: default article-type is "blogpost"
+    # (previously "article" before content_type became the
+    # article-type discriminator).
+    assert article["content_type"] == "blogpost"
+    assert article["article_metadata"] == {}
     assert article["status"] == "draft"
     assert article["content_json"] == ""
     assert article["id"]

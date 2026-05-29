@@ -484,7 +484,10 @@ def _import_one_post(
             author=parsed.author or None,
             language=language,
             status=default_status,
-            content_type="article",
+            # ARTICLE-TYPES-SSOT-01. Medium posts import as blogposts
+            # by default — the most natural shape for the prose
+            # Medium publishes.
+            content_type="blogpost",
             canonical_url=parsed.canonical_url,
             content_json=json.dumps(parsed.content_doc),
             tags="[]",
