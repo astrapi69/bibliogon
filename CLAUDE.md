@@ -85,6 +85,7 @@ E2E tests: `npx playwright test --project=smoke` (fast, per feature) or `--proje
 - **BookTemplate / BookTemplateChapter:** reusable book structures; 5 builtins seeded at startup. `/api/templates/`, `POST /api/books/from-template`.
 - **ChapterTemplate:** reusable single-chapter structures with TipTap JSON content; 4 builtins (Interview, FAQ, Recipe, Photo Report). `/api/chapter-templates/`.
 - **BookPublishingState:** server-side persistence for the KDP Publishing Wizard (pricing + ARC choices + last visited step).
+- **Article:** id, title, subtitle, author, language, content_type (article-type discriminator from ArticleTypeRegistry YAML SSoT — 8 types: blogpost/tutorial/review/essay/newsletter/interview/listicle/short_story), article_metadata (per-type extra fields JSON), content_json, status, SEO fields, topic, tags, series, plus AI + publication relations.
 
 **ChapterType (31):** chapter, preface, foreword, acknowledgments, about_author, appendix, bibliography, glossary, epilogue, imprint, next_in_series, part, part_intro, interlude, toc, dedication, prologue, introduction, afterword, final_thoughts, index, epigraph, endnotes, also_by_author, excerpt, call_to_action, half_title, title_page, copyright, section, conclusion. Marketing types (also_by_author, excerpt, call_to_action) are in the audiobook-export skip list by default. Per-book override via Book.audiobook_skip_chapter_types.
 

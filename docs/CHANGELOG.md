@@ -4,6 +4,72 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Added
+
+- **Article-Types SSoT (8 types)** (``ARTICLE-TYPES-SSOT-01``,
+  2026-05-29). The reserved ``Article.content_type`` column is
+  repurposed as the article-type discriminator per the original
+  model intent ("exists so a future Blogpost / Tweet
+  differentiation can land without a schema change"). New
+  ``backend/config/article-types.yaml`` registry ships **8
+  types**: Blog post (default), Tutorial, Review, Essay,
+  Newsletter, Interview, Listicle, Short story. Per-type
+  extra-fields (tutorial difficulty + prerequisites + duration,
+  review work + author + rating, newsletter issue + send date,
+  interview partner + role) live in a new ``article_metadata``
+  JSON column.
+- **GET /api/article-types** endpoint serving the registry +
+  drift-detector test (Pydantic Literal kept in sync with the
+  YAML).
+- **AD split-button** (``new-article-chevron`` + dropdown
+  items): default click creates a blog post; chevron exposes
+  the other 7 types. Mirrors the Book Dashboard
+  ``new-book-group`` split-button shape via the new shared
+  **SplitButton** primitive (RCU 2-surface extraction).
+- **ArticleEditor type selector + per-type fields** in the
+  metadata sidebar. Switching the type reveals the right
+  extra-field inputs (text / number / enum / date) for that
+  type; values persist into ``article_metadata``.
+- **Article-type badge** in AD card + list row footers.
+- **8 i18n catalog updates** (de / en / es / fr / el / pt / tr /
+  ja): labels + descriptions for all 8 types + 10 per-type
+  extra-field labels + AD split-button tooltips.
+- **Playwright smoke** (``e2e/smoke/article-types.spec.ts``)
+  covering create-via-primary, chevron-dropdown contents,
+  create-via-menu-item, editor type-switch + extra-fields
+  persist, AD badge rendering.
+- **Help doc pair** (DE + EN) at
+  ``docs/help/{de,en}/articles/article-types.md``.
+
+### Changed
+
+- ``backend/app/services/reclassify.py``: comment→article
+  reclassify defaults to ``"blogpost"`` (was hardcoded
+  ``"article"``).
+- ``backend/app/routers/books.py:_resolve_articles_or_422``:
+  dropped the ``content_type != "article"`` filter and the
+  ``non_article`` 422 facet. Every row in the articles table is
+  by definition an article — sub-classification is the new
+  semantic.
+- ``backend/app/services/backup/serializer.py``:
+  ``restore_article_from_data`` auto-rewrites legacy
+  ``content_type == "article"`` → ``"blogpost"`` on restore
+  (same backfill semantics as the migration). New
+  ``article_metadata`` round-trips through .bgb backups.
+- **medium-import** plugin: imports default to ``"blogpost"``.
+- **Dashboard** ``newBookGroup`` block migrated to the shared
+  ``<SplitButton>`` primitive. All ``new-book-*`` testids
+  preserved for E2E spec stability.
+- **Dashboard.module.css**: ``.newBookGroup`` /
+  ``.newBookChevron`` classes removed (superseded by
+  ``SplitButton.module.css``).
+
+### Database
+
+- Alembic migration ``u0e1f2345678``: backfill
+  ``Article.content_type == "article"`` → ``"blogpost"``; new
+  nullable ``article_metadata`` Text column.
+
 ## [0.39.0] - 2026-05-27
 
 A Picture-Book authoring depth release. 49 commits since v0.38.0
