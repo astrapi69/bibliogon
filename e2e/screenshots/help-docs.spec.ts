@@ -131,12 +131,13 @@ test.describe("Help-doc screenshot generator", () => {
         await page.screenshot({path: `${OUT_DIR}/settings-backups.png`});
     });
 
-    test("settings-erweitert — Advanced tab", async ({page}) => {
-        await page.goto("/settings?tab=erweitert");
-        await page.getByTestId("erweitert-settings").waitFor({state: "visible"});
-        await page.waitForTimeout(200);
-        await page.screenshot({path: `${OUT_DIR}/settings-erweitert.png`});
-    });
+    // NOTE: the "Erweitert" (Advanced / white-label) tab is gated
+    // behind hasWhiteLabel (Settings.tsx) since v0.40.0 — a clean
+    // screenshot environment has white-label OFF, so /settings?tab=
+    // erweitert redirects away and no screenshot can be captured. The
+    // screenshot was also unreferenced by any help page. Removed
+    // 2026-05-30; re-add with an explicit white-label seed if a
+    // white-label help page ever needs it.
 
     test("settings-gefahrenzone — Danger Zone tab", async ({page}) => {
         await page.goto("/settings?tab=danger_zone");
