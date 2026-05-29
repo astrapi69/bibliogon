@@ -21,6 +21,7 @@ import {MemoryRouter, Route, Routes} from "react-router-dom";
 import BookEditor from "./BookEditor";
 import type {BookDetail, BookTypeDef} from "../api/client";
 import {BookTypesProvider} from "../hooks/useBookTypes";
+import {expectNoA11yViolations} from "../test-utils/a11y";
 
 // BOOK-TYPES-SSOT-YAML-01 C6: BookEditor now reads the registry
 // to dispatch the editor component. Static snapshot covers
@@ -481,5 +482,22 @@ describe("BookEditor - comic-book metadata routing (COMIC-BOOK-EDITOR-METADATA-B
         // Picture-book still mounts PageEditor (NOT ComicBookEditor)
         // — confirms the branch ordering didn't fall through.
         expect(screen.queryByTestId("comic-book-editor-root")).toBeNull();
+    });
+});
+
+describe("BookEditor — accessibility (axe)", () => {
+    it("has no critical/serious axe violations (picture-book)", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({
+                id: "pb1",
+                book_type: "picture_book",
+                title: "My Picture Book",
+            }),
+        );
+        const {container} = renderEditor("pb1");
+        await waitFor(() =>
+            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
+        );
+        await expectNoA11yViolations(container);
     });
 });

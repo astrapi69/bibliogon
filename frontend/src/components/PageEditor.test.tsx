@@ -14,6 +14,7 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import PageEditor from "./PageEditor"
 import type {Page} from "../api/client"
+import {expectNoA11yViolations} from "../test-utils/a11y"
 
 class ResizeObserverStub {
     observe() {}
@@ -1456,5 +1457,19 @@ describe("PageEditor handleDeletePage (PAGES-DELETE-EDITOR-UI-01 C2)", () => {
                 .getByTestId("page-editor-canvas")
                 .getAttribute("data-active-page-id"),
         ).toBe("p2")
+    })
+
+    describe("accessibility (axe)", () => {
+        it("has no axe violations on initial render", async () => {
+            const {container} = render(
+                <PageEditor
+                    bookId="b1"
+                    bookTitle="My Picture Book"
+                    onBack={vi.fn()}
+                    onShowMetadata={vi.fn()}
+                />,
+            )
+            await expectNoA11yViolations(container)
+        })
     })
 })

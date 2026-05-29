@@ -16,6 +16,7 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import ComicBookEditor from "./ComicBookEditor";
+import {expectNoA11yViolations} from "../test-utils/a11y";
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -946,6 +947,20 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             expect(
                 screen.getByTestId("comic-book-editor-thumbnails-empty"),
             ).toBeInTheDocument();
+        });
+    });
+
+    describe("accessibility (axe)", () => {
+        it("has no axe violations in the empty state", async () => {
+            const {container} = render(
+                <ComicBookEditor
+                    bookId="book-1"
+                    bookTitle="My Comic"
+                    onBack={vi.fn()}
+                    onShowMetadata={vi.fn()}
+                />,
+            );
+            await expectNoA11yViolations(container);
         });
     });
 });
