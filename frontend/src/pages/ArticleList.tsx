@@ -29,8 +29,11 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-import { api, ApiError, Article, ArticleStatus, BookDetail } from "../api/client";
+import { api, ApiError, Article, ArticleStatus, ArticleType, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { useArticleTypes } from "../hooks/useArticleTypes";
+import { ArticleTypeIcon } from "../utils/articleTypeIcon";
+import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
@@ -68,6 +71,7 @@ import { EmptyState } from "../components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    const articleTypesSnapshot = useArticleTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
@@ -596,7 +600,7 @@ export default function ArticleList() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    async function handleCreate(): Promise<void> {
+    async function handleCreate(articleType?: ArticleType): Promise<void> {
         setCreating(true);
         try {
             // Default author from app settings - mirrors CreateBookModal.
@@ -614,10 +618,14 @@ export default function ArticleList() {
             } catch {
                 // ignore; create with empty author
             }
+            // ARTICLE-TYPES-SSOT-01 C5: optional content_type wired
+            // from the split-button selection. When omitted, the
+            // backend's column default ("blogpost") applies.
             const fresh = await api.articles.create({
                 title: t("ui.articles.default_title", "Neuer Artikel"),
                 language: "de",
                 author: defaultAuthor,
+                ...(articleType ? {content_type: articleType} : {}),
             });
             navigate(`/articles/${fresh.id}`);
         } catch (err) {
@@ -650,17 +658,65 @@ export default function ArticleList() {
                         <h1 className={layout.logoText}>Bibliogon</h1>
                     </div>
                     <div className={layout.headerActions}>
-                        <button
-                            className="btn btn-primary"
-                            onClick={() => void handleCreate()}
+                        {/* ARTICLE-TYPES-SSOT-01 C5 (2026-05-29):
+                         *  shared SplitButton primitive (extracted in
+                         *  C4) replaces the plain "Neuer Artikel"
+                         *  button. Default action creates a blogpost
+                         *  (the registry's ``default: true`` type);
+                         *  chevron exposes the other 4 types.
+                         *  Mirrors the Book Dashboard split-button
+                         *  shape exactly. Testid pattern follows the
+                         *  ``new-book-menu-item-*`` convention from
+                         *  the Book Dashboard side. */}
+                        <SplitButton
+                            buttonClass="btn btn-primary"
+                            variant="primary"
                             disabled={creating}
-                            data-testid="article-list-new"
-                        >
-                            <Plus size={16} />
-                            <span className="hide-mobile">
-                                {t("ui.articles.new", "Neuer Artikel")}
-                            </span>
-                        </button>
+                            primaryContent={
+                                <>
+                                    <Plus size={16} />
+                                    <span className="hide-mobile">
+                                        {t("ui.articles.new", "Neuer Artikel")}
+                                    </span>
+                                </>
+                            }
+                            onPrimaryClick={() => void handleCreate()}
+                            chevronTooltip={t(
+                                "ui.articles.new_more_tooltip",
+                                "Weitere Artikel-Arten",
+                            )}
+                            dropdownItems={articleTypesSnapshot.ordered
+                                .filter(
+                                    (at) =>
+                                        at.id !== articleTypesSnapshot.defaultId,
+                                )
+                                .map(
+                                    (at): SplitButtonDropdownItem => ({
+                                        id: at.id,
+                                        content: (
+                                            <>
+                                                <ArticleTypeIcon
+                                                    iconName={at.icon}
+                                                    size={14}
+                                                />
+                                                <span
+                                                    style={{ marginLeft: 6 }}
+                                                >
+                                                    {t(at.label_key, at.id)}
+                                                </span>
+                                            </>
+                                        ),
+                                        onSelect: () =>
+                                            void handleCreate(
+                                                at.id as ArticleType,
+                                            ),
+                                    }),
+                                )}
+                            groupTestId="new-article-group"
+                            primaryTestId="article-list-new"
+                            chevronTestId="new-article-chevron"
+                            itemTestIdPrefix="new-article-menu-item"
+                        />
                         <NewFromTemplateButton
                             kind="article"
                             defaultLanguage="de"
