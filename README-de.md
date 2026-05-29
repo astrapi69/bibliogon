@@ -6,7 +6,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
 
-**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.40.0**
+**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.41.0**
 
 ## Funktionen
 

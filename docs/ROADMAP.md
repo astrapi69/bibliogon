@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-29 (v0.40.0 released — Comic-book + picture-book authoring depth + articles content-model expansion; ~100 commits since v0.39.0 across five streams (Content-Types SSoT, Publication-status parity, Title editing, Comic-book depth incl. panel reorder + cross-page move, Picture-book layout expansion Phases 1-3) + a Settings-Completeness batch. Backend pytest 2394, Vitest 2477, all green.)
-Latest release: v0.40.0 (2026-05-29) — see [changelog/releases/v0.40.0.md](../changelog/releases/v0.40.0.md) for the full per-release notes.
+Last updated: 2026-05-30 (v0.41.0 released — UX/UI theme + accessibility hardening + per-content-type field visibility; 24 commits since v0.40.0. Full 12-variant theme audit (6 palettes × light/dark), 18 undefined-token fixes + 31 hardcoded-color replacements + dark-mode contrast fixes, new `make verify-theme` gate, AD single-line header, comic bubble/tail keyboard ops, per-type `core_fields` field gating, 35 screenshots regenerated + content-types help expansion. Backend pytest 2399, Vitest 2487, all green.)
+Latest release: v0.41.0 (2026-05-30) — see [changelog/releases/v0.41.0.md](../changelog/releases/v0.41.0.md) for the full per-release notes.
 Previous release: v0.39.0 (2026-05-27) — Picture-Book authoring depth; Storyboard View + Picture-Book Text-Stack arcs + LAYOUT-SWITCH-TEXT-CONVERSION.
 
 This file is a **thematic overview** of open work. Detailed scope,
