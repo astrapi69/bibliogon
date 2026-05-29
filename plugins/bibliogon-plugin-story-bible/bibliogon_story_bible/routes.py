@@ -28,6 +28,21 @@ from fastapi import APIRouter
 router = APIRouter(tags=["story-bible"])
 
 
+# Session 2 C3 entity CRUD + entity-types sub-router. Nested INSIDE
+# this single top-level router (Single-Router-Per-Plugin convention)
+# so the plugin manager mounts exactly one router. Imported lazily +
+# guarded so the plugin's isolated venv (no sqlalchemy / app.models)
+# can still import this module for the Session-1 /info smoke; the
+# CRUD routes only mount inside the full backend app context.
+def _include_crud_router() -> None:
+    try:
+        from .entities import router as entities_router
+
+        router.include_router(entities_router)
+    except ImportError:
+        pass
+
+
 @router.get("/story-bible/info")
 def story_bible_info() -> dict[str, Any]:
     """Identity probe for the Story Bible plugin.
@@ -39,5 +54,8 @@ def story_bible_info() -> dict[str, Any]:
     return {
         "plugin": "story-bible",
         "version": "1.0.0",
-        "phase": "session-1-scaffolding",
+        "phase": "session-2-entity-crud",
     }
+
+
+_include_crud_router()
