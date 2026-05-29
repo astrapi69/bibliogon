@@ -309,3 +309,90 @@ describe("ComicBubble - drag-to-position", () => {
         expect(el.style.touchAction).toBe("none");
     });
 });
+
+describe("ComicBubble - keyboard a11y (Phase C2)", () => {
+    it("Enter activates the role=button bubble (selects)", () => {
+        const onClick = vi.fn();
+        render(<ComicBubble bubble={makeBubble()} onClick={onClick} />);
+        const el = screen.getByTestId("comic-bubble-b1");
+        expect(el.getAttribute("role")).toBe("button");
+        expect(el.getAttribute("tabindex")).toBe("0");
+        fireEvent.keyDown(el, {key: "Enter"});
+        expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("Space activates the bubble (selects)", () => {
+        const onClick = vi.fn();
+        render(<ComicBubble bubble={makeBubble()} onClick={onClick} />);
+        fireEvent.keyDown(screen.getByTestId("comic-bubble-b1"), {key: " "});
+        expect(onClick).toHaveBeenCalledTimes(1);
+    });
+
+    it("ArrowRight nudges the anchor right by 1pct via onDragEnd", () => {
+        const onDragEnd = vi.fn();
+        render(
+            <ComicBubble
+                bubble={makeBubble({anchor: {x_pct: 10, y_pct: 20}})}
+                onDragEnd={onDragEnd}
+            />,
+        );
+        fireEvent.keyDown(screen.getByTestId("comic-bubble-b1"), {
+            key: "ArrowRight",
+        });
+        expect(onDragEnd).toHaveBeenCalledTimes(1);
+        const [x_pct, y_pct] = onDragEnd.mock.calls[0];
+        expect(x_pct).toBe(11);
+        expect(y_pct).toBe(20);
+    });
+
+    it("Shift+ArrowDown nudges by the coarse 5pct step", () => {
+        const onDragEnd = vi.fn();
+        render(
+            <ComicBubble
+                bubble={makeBubble({anchor: {x_pct: 10, y_pct: 20}})}
+                onDragEnd={onDragEnd}
+            />,
+        );
+        fireEvent.keyDown(screen.getByTestId("comic-bubble-b1"), {
+            key: "ArrowDown",
+            shiftKey: true,
+        });
+        const [, y_pct] = onDragEnd.mock.calls[0];
+        expect(y_pct).toBe(25);
+    });
+
+    it("arrow nudge clamps the anchor inside the panel (width/height)", () => {
+        const onDragEnd = vi.fn();
+        // width 30 -> max x anchor 70; start at 70, ArrowRight must stay 70.
+        render(
+            <ComicBubble
+                bubble={makeBubble({anchor: {x_pct: 70, y_pct: 20}})}
+                onDragEnd={onDragEnd}
+            />,
+        );
+        fireEvent.keyDown(screen.getByTestId("comic-bubble-b1"), {
+            key: "ArrowRight",
+            shiftKey: true,
+        });
+        const [x_pct] = onDragEnd.mock.calls[0];
+        expect(x_pct).toBe(70);
+    });
+
+    it("tail handle: ArrowRight nudges tail_position via onTailDragEnd", () => {
+        const onTailDragEnd = vi.fn();
+        render(
+            <ComicBubble
+                bubble={makeBubble({tail_direction: "S", tail_position_pct: 50})}
+                selected
+                onTailDragEnd={onTailDragEnd}
+            />,
+        );
+        const handle = screen.getByTestId("comic-bubble-tail-handle-b1");
+        expect(handle.getAttribute("role")).toBe("button");
+        fireEvent.keyDown(handle, {key: "ArrowRight"});
+        expect(onTailDragEnd).toHaveBeenCalledTimes(1);
+        const [direction, positionPct] = onTailDragEnd.mock.calls[0];
+        expect(direction).toBe("S");
+        expect(positionPct).toBe(54);
+    });
+});

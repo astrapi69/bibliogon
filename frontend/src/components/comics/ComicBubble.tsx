@@ -29,7 +29,7 @@
  * height_pct]).
  */
 
-import {useCallback, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent} from "react";
+import {useCallback, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type PointerEvent as ReactPointerEvent} from "react";
 
 import {buildBubblePath, type BubbleShape} from "./bubblePath";
 import type {BubbleTailDirection} from "./BubbleTail";
@@ -356,6 +356,91 @@ export function ComicBubble({
         setTailDraft(null);
     }, []);
 
+    /** Keyboard fallback for the pointer-drag bubble interaction.
+     *  The bubble is a role="button" div, so Enter/Space must be
+     *  wired explicitly (a plain div does not activate on key like
+     *  a native <button>). Arrow keys nudge the anchor — the
+     *  keyboard equivalent of dragging — committing through the
+     *  same onDragEnd + clampAnchorWithin path as the pointer
+     *  handler. Shift = coarse (5%), default = fine (1%). */
+    const handleKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLDivElement>) => {
+            if (event.key === "Enter" || event.key === " ") {
+                if (onClick) {
+                    event.preventDefault();
+                    onClick();
+                }
+                return;
+            }
+            if (!onDragEnd) return;
+            const step = event.shiftKey ? 5 : 1;
+            let dx = 0;
+            let dy = 0;
+            switch (event.key) {
+                case "ArrowLeft":
+                    dx = -step;
+                    break;
+                case "ArrowRight":
+                    dx = step;
+                    break;
+                case "ArrowUp":
+                    dy = -step;
+                    break;
+                case "ArrowDown":
+                    dy = step;
+                    break;
+                default:
+                    return;
+            }
+            event.preventDefault();
+            const clamped = clampAnchorWithin(x + dx, y + dy, w, h);
+            onDragEnd(clamped.x_pct, clamped.y_pct);
+        },
+        [onClick, onDragEnd, x, y, w, h],
+    );
+
+    /** Keyboard fallback for the tail-handle pointer drag. Left/
+     *  Right nudge the tail's position along the bubble edge;
+     *  Up/Down lengthen/shorten it. Direction is preserved. These
+     *  are the canonical persisted params that onTailDragEnd
+     *  accepts directly, so no pixel-geometry derivation is needed.
+     */
+    const handleTailKeyDown = useCallback(
+        (event: ReactKeyboardEvent<HTMLDivElement>) => {
+            if (!onTailDragEnd) return;
+            const posStep = event.shiftKey ? 10 : 4;
+            const lenStep = event.shiftKey ? 8 : 4;
+            let pos = renderTailPositionPct;
+            let len = renderTailLengthPx;
+            switch (event.key) {
+                case "ArrowLeft":
+                    pos -= posStep;
+                    break;
+                case "ArrowRight":
+                    pos += posStep;
+                    break;
+                case "ArrowUp":
+                    len += lenStep;
+                    break;
+                case "ArrowDown":
+                    len -= lenStep;
+                    break;
+                default:
+                    return;
+            }
+            event.preventDefault();
+            pos = Math.max(0, Math.min(100, pos));
+            len = Math.max(10, Math.min(100, len));
+            onTailDragEnd(renderTailDirection, pos, len);
+        },
+        [
+            onTailDragEnd,
+            renderTailDirection,
+            renderTailPositionPct,
+            renderTailLengthPx,
+        ],
+    );
+
     const baseStyle: CSSProperties = {
         position: "absolute",
         left: `${renderX}%`,
@@ -518,6 +603,7 @@ export function ComicBubble({
             }
             role={interactive ? "button" : undefined}
             tabIndex={interactive ? 0 : undefined}
+            onKeyDown={interactive ? handleKeyDown : undefined}
         >
             {pathOutput.d ? (
                 <svg
@@ -581,7 +667,8 @@ export function ComicBubble({
                             data-testid={`comic-bubble-tail-handle-${bubble.id}`}
                             role="button"
                             tabIndex={0}
-                            aria-label="Drag the tail tip to reposition"
+                            aria-label="Drag the tail tip to reposition (arrow keys: position; up/down: length)"
+                            onKeyDown={handleTailKeyDown}
                             onPointerDown={handleTailPointerDown}
                             onPointerMove={handleTailPointerMove}
                             onPointerUp={handleTailPointerUp}
