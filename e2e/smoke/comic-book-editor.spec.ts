@@ -35,7 +35,7 @@ test.describe("Comic-book editor smoke", () => {
             page.getByTestId("comic-book-editor-root"),
         ).toBeVisible();
         await expect(
-            page.getByTestId("comic-book-editor-title"),
+            page.getByTestId("comic-book-editor-title-text"),
         ).toContainText("My Comic Book");
 
         // Empty-state surfaced through PageThumbnails sidebar; the

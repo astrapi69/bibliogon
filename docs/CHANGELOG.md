@@ -6,6 +6,17 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **In-place title editing** (Title Editing C1-C4, 2026-05-29).
+  Click-the-pencil inline title editing on all four editor
+  surfaces (Article, prose Book via the chapter sidebar,
+  picture-book PageEditor, comic-book ComicBookEditor) via a new
+  shared ``EditableTitle`` component. Published or archived works
+  gate the edit behind a yellow warning banner (a title change
+  must be carried over to the publishing platform manually) with
+  an acknowledgment button; drafts edit directly. Detection is
+  status-based on both surfaces (``status`` published / archived).
+  i18n in all 8 catalogs (``ui.editor.edit_title_tooltip`` /
+  ``published_warning_body`` / ``acknowledge_warning_button``).
 - **Publication-status parity** (``PUBLICATION-STATUS-BOOK-PARITY-01``,
   2026-05-29). Article had ``status`` (draft / ready / published /
   archived) since AR-01 Phase 1; Book gains the same column at

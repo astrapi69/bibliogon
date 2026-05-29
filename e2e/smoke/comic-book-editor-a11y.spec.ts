@@ -20,7 +20,7 @@ test.describe("Comic-book editor a11y smoke", () => {
 
         // Single page-level heading.
         await expect(
-            page.getByTestId("comic-book-editor-title"),
+            page.getByTestId("comic-book-editor-title-text"),
         ).toBeVisible();
         await expect(
             page.getByRole("heading", {level: 1}),

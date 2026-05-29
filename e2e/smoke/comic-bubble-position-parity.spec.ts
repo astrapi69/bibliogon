@@ -51,7 +51,7 @@ test.describe("Comic bubble editor↔PDF position parity", () => {
     }) => {
         const book = await createComicBook("Parity Test 10-10", "E2E Author")
         await page.goto(`/book/${book.id}`)
-        await expect(page.getByTestId("comic-book-editor-title")).toBeVisible()
+        await expect(page.getByTestId("comic-book-editor-title-text")).toBeVisible()
 
         // Add a single-panel page + a bubble at (10, 10).
         await page.getByTestId("comic-book-editor-add-page").click()
