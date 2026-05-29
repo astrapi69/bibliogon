@@ -1017,7 +1017,7 @@ ui:
     new_more_tooltip: "Diger makale tipleri"
     content_type: "Icerik tipi"
     content_type_tooltip: "Makalenin tipi: Blog yazisi / Egitim / Inceleme / Deneme / Bulten / Roportaj / Liste yazisi / Kisa hikaye."
-    import_more_tooltip: "Diğer içe aktarma kaynakları"
+    import_more_tooltip: "İçe aktarma ve yedekleme seçenekleri"
     default_title: "Yeni makale"
     create_error: "Makale olusturulamadi."
     empty_heading: "Henuz makale yok"

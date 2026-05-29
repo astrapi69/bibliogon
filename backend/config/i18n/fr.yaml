@@ -1017,7 +1017,7 @@ ui:
     new_more_tooltip: "Plus de types d'article"
     content_type: "Type de contenu"
     content_type_tooltip: "Type de l'article: Article de blog / Tutoriel / Critique / Essai / Newsletter / Interview / Listicle / Nouvelle."
-    import_more_tooltip: "Plus de sources d'import"
+    import_more_tooltip: "Options d'import et de sauvegarde"
     default_title: "Nouvel article"
     create_error: "Impossible de creer l'article."
     empty_heading: "Aucun article pour l'instant"

@@ -981,7 +981,7 @@ ui:
     new_more_tooltip: "他の記事タイプ"
     content_type: "コンテンツタイプ"
     content_type_tooltip: "記事のタイプ:ブログ記事 / チュートリアル / レビュー / エッセイ / ニュースレター / インタビュー / リスト記事 / 短編小説。"
-    import_more_tooltip: "他のインポート元"
+    import_more_tooltip: "インポートとバックアップのオプション"
     default_title: "新しい記事"
     create_error: "記事を作成できませんでした。"
     empty_heading: "まだ記事がありません"

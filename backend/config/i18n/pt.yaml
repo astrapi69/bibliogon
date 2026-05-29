@@ -981,7 +981,7 @@ ui:
     new_more_tooltip: "Mais tipos de artigo"
     content_type: "Tipo de conteudo"
     content_type_tooltip: "Tipo do artigo: Blog post / Tutorial / Resenha / Ensaio / Boletim / Entrevista / Listicle / Conto."
-    import_more_tooltip: "Mais fontes de importação"
+    import_more_tooltip: "Opções de importação e backup"
     default_title: "Novo artigo"
     create_error: "Nao foi possivel criar o artigo."
     empty_heading: "Ainda sem artigos"

@@ -972,7 +972,7 @@ ui:
     new_more_tooltip: "Weitere Artikel-Arten"
     content_type: "Textart"
     content_type_tooltip: "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter / Interview / Listicle / Kurzgeschichte."
-    import_more_tooltip: "Weitere Import-Quellen"
+    import_more_tooltip: "Import- und Backup-Optionen"
     default_title: "Neuer Artikel"
     create_error: "Konnte Artikel nicht erstellen."
     empty_heading: "Noch keine Artikel"

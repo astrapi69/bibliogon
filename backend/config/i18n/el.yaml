@@ -981,7 +981,7 @@ ui:
     new_more_tooltip: "Περισσότεροι τύποι άρθρου"
     content_type: "Τύπος περιεχομένου"
     content_type_tooltip: "Τύπος του άρθρου: Δημοσίευση blog / Οδηγός / Κριτική / Δοκίμιο / Newsletter / Συνέντευξη / Listicle / Διήγημα."
-    import_more_tooltip: "Περισσότερες πηγές εισαγωγής"
+    import_more_tooltip: "Επιλογές εισαγωγής και αντιγράφων ασφαλείας"
     default_title: "Νέο άρθρο"
     create_error: "Δεν ήταν δυνατή η δημιουργία άρθρου."
     empty_heading: "Δεν υπάρχουν άρθρα ακόμη"

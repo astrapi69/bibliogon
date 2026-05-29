@@ -646,7 +646,7 @@ export default function ArticleList() {
 
     return (
         <div data-testid="article-list-page" className={layout.page}>
-            <header className={layout.appHeader}>
+            <header className={layout.appHeader} data-testid="article-list-header">
                 <div className={layout.appHeaderInner}>
                     <div
                         className={layout.logo}
@@ -752,24 +752,23 @@ export default function ArticleList() {
                                 cluster — Book Dashboard ships the same
                                 separator at the same position. */}
                             <div className={layout.headerSeparator} />
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                data-testid="article-backup-export-btn"
-                                onClick={handleBackupExport}
-                                disabled={articles.length === 0}
-                                title={t("ui.dashboard.backup", "Backup")}
-                            >
-                                <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
-                            </button>
-                            {/* Import-Group split-button: the primary
-                                ``Importieren`` button keeps the existing
-                                article-import-wizard flow; the chevron
-                                exposes the article-specific
-                                ``Aus Medium importieren`` flow so it
-                                doesn't widen the top nav with a third
-                                button. Mirrors the
-                                ``newBookGroup`` split-button on
-                                Dashboard.tsx. */}
+                            {/* AD-HEADER-SINGLE-LINE-01 (2026-05-30):
+                                the standalone "Backup" button was folded
+                                into this Import-group chevron dropdown to
+                                keep the Article-Dashboard header on a
+                                single line at 900px+. The ARTICLE-TYPES-
+                                SSOT-01 C5 "Neuer Artikel" SplitButton
+                                (commit 76737700) had added a second
+                                chevron to the cluster, pushing AD wider
+                                than the Book Dashboard and re-triggering
+                                the two-line wrap. The chevron now exposes
+                                secondary data actions — other import
+                                sources + Backup export — so the cluster is
+                                ~one button narrower than the Book
+                                Dashboard, with margin for future
+                                additions. ``handleBackupExport`` +
+                                ``article-backup-export-btn`` testid are
+                                preserved on the dropdown item. */}
                             <div className={layout.importGroup} data-testid="article-import-group">
                                 <button
                                     className="btn btn-secondary btn-sm"
@@ -787,11 +786,11 @@ export default function ArticleList() {
                                             data-testid="article-import-chevron"
                                             title={t(
                                                 "ui.articles.import_more_tooltip",
-                                                "Weitere Import-Quellen",
+                                                "Import- und Backup-Optionen",
                                             )}
                                             aria-label={t(
                                                 "ui.articles.import_more_tooltip",
-                                                "Weitere Import-Quellen",
+                                                "Import- und Backup-Optionen",
                                             )}
                                         >
                                             <ChevronDown size={14} />
@@ -811,6 +810,18 @@ export default function ArticleList() {
                                                 <Upload size={14} />
                                                 <span style={{ marginLeft: 6 }}>
                                                     {t("ui.medium_import.nav_label", "Aus Medium importieren")}
+                                                </span>
+                                            </DropdownMenu.Item>
+                                            <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                data-testid="article-backup-export-btn"
+                                                disabled={articles.length === 0}
+                                                onSelect={handleBackupExport}
+                                            >
+                                                <Download size={14} />
+                                                <span style={{ marginLeft: 6 }}>
+                                                    {t("ui.dashboard.backup", "Backup")}
                                                 </span>
                                             </DropdownMenu.Item>
                                         </DropdownMenu.Content>
