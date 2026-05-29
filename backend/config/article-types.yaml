@@ -1,0 +1,84 @@
+# Single source of truth for the Article.content_type enum + per-
+# type metadata. Both backend (ArticleTypeRegistry) and frontend
+# (via the /api/article-types endpoint) consume this file.
+#
+# Filed by ARTICLE-TYPES-SSOT-01 (2026-05-29). Mirrors the
+# book-types.yaml pattern shipped by BOOK-TYPES-SSOT-YAML-01
+# (2026-05-24).
+#
+# Adding a new article_type:
+#   1. Append a new entry to ``article_types`` below.
+#   2. Add the corresponding i18n keys in
+#      backend/config/i18n/<lang>.yaml under ui.article_types.
+#   3. Bump the ArticleType Literal in
+#      backend/app/schemas/__init__.py + frontend/src/api/client.ts.
+#      The verification test (test_article_type_registry.py
+#      ::test_literal_matches_registry) fails loudly on drift.
+#
+# extra_fields semantics: each entry names a per-type metadata
+# field stored in ``Article.article_metadata`` (a JSON object on
+# the column). The ArticleEditor sidebar renders one input per
+# entry, keyed by the field name. Types with empty extra_fields
+# (blogpost, essay) render no per-type section.
+
+article_types:
+  - id: blogpost
+    label_key: ui.article_types.blogpost
+    description_key: ui.article_types.blogpost_description
+    icon: FileText
+    default: true
+    extra_fields: []
+
+  - id: tutorial
+    label_key: ui.article_types.tutorial
+    description_key: ui.article_types.tutorial_description
+    icon: GraduationCap
+    extra_fields:
+      - name: difficulty_level
+        type: enum
+        values:
+          - beginner
+          - intermediate
+          - advanced
+        label_key: ui.article_types.tutorial_field_difficulty
+      - name: prerequisites
+        type: text
+        label_key: ui.article_types.tutorial_field_prerequisites
+      - name: estimated_duration_minutes
+        type: number
+        label_key: ui.article_types.tutorial_field_duration
+
+  - id: review
+    label_key: ui.article_types.review
+    description_key: ui.article_types.review_description
+    icon: Star
+    extra_fields:
+      - name: reviewed_work
+        type: text
+        label_key: ui.article_types.review_field_work
+      - name: reviewed_work_author
+        type: text
+        label_key: ui.article_types.review_field_work_author
+      - name: rating
+        type: number
+        min: 1
+        max: 5
+        label_key: ui.article_types.review_field_rating
+
+  - id: essay
+    label_key: ui.article_types.essay
+    description_key: ui.article_types.essay_description
+    icon: Feather
+    extra_fields: []
+
+  - id: newsletter
+    label_key: ui.article_types.newsletter
+    description_key: ui.article_types.newsletter_description
+    icon: Mail
+    extra_fields:
+      - name: issue_number
+        type: number
+        label_key: ui.article_types.newsletter_field_issue
+      - name: send_date
+        type: date
+        label_key: ui.article_types.newsletter_field_send_date

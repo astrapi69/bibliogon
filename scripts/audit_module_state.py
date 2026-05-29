@@ -105,6 +105,17 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "each test, preventing cross-file cache poisoning. Verified "
         "2026-05-22 (BOOK-TYPES-SSOT-YAML-01).",
     ),
+    (
+        "backend/app/services/article_type_registry.py",
+        "load_article_types",
+        "Cache lifetime: process. Tests in "
+        "test_article_type_registry.py and "
+        "test_article_types_endpoint.py monkeypatch _REGISTRY_PATH; "
+        "both test files have an autouse yield-based fixture that "
+        "calls cache_clear() before AND after each test, preventing "
+        "cross-file cache poisoning. Verified 2026-05-29 "
+        "(ARTICLE-TYPES-SSOT-01).",
+    ),
 ]
 
 
