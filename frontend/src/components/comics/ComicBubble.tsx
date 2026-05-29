@@ -684,7 +684,7 @@ export function ComicBubble({
                                 borderRadius: "50%",
                                 background:
                                     "var(--accent, #b45309)",
-                                border: "2px solid white",
+                                border: "2px solid var(--bg-card)",
                                 boxShadow:
                                     "0 1px 3px rgba(0, 0, 0, 0.4)",
                                 cursor: "grab",

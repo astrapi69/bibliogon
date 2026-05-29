@@ -66,10 +66,13 @@ export function ComicPanel({
 
     const style: CSSProperties = {
         position: "relative",
-        border: `1px ${borderStyle} black`,
+        // Editor chrome (NOT the printed comic — the PDF walker keeps
+        // black-framed white panels). Theme-aware so empty panels +
+        // the panel frame stay visible/legible in all 12 variants.
+        border: `1px ${borderStyle} var(--border-strong)`,
         overflow: "hidden",
         boxSizing: "border-box",
-        background: "white",
+        background: "var(--bg-card)",
         outline: selected ? "2px solid var(--accent, #b45309)" : "none",
         outlineOffset: "2px",
         cursor: onClick ? "pointer" : "default",

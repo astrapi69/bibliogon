@@ -206,7 +206,7 @@ export function ComicPanelGrid({
     width: "100%",
     height: "100%",
     aspectRatio: "1 / 1",
-    background: "white",
+    background: "var(--bg-card)",
     padding: "0",
     boxSizing: "border-box",
   };
