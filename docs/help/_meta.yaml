@@ -65,6 +65,10 @@ navigation:
           de: Sprechblasen-Typen (Comic)
           en: Comic bubble types
         slug: books/comic-bubbles
+      - title:
+          de: Comic-Panels anordnen
+          en: Arranging comic panels
+        slug: books/comic-panels
 
   - title:
       de: Dashboard

@@ -56,6 +56,7 @@ plugins:
         Storyboard-Ansicht: Storyboard view
         Text-Konfiguration (Bilderbuch): Text configuration (picture-book)
         Sprechblasen-Typen (Comic): Comic bubble types
+        Comic-Panels anordnen: Arranging comic panels
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
         Formatierung: Formatting
@@ -127,6 +128,7 @@ nav:
   - Storyboard-Ansicht: de/books/storyboard.md
   - Text-Konfiguration (Bilderbuch): de/books/text-configuration.md
   - Sprechblasen-Typen (Comic): de/books/comic-bubbles.md
+  - Comic-Panels anordnen: de/books/comic-panels.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md

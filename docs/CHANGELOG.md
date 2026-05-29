@@ -6,6 +6,26 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
+- **Comic panel arranging** (``COMIC-PANEL-CROSS-PAGE-MOVE-01``,
+  2026-05-29). Two ways to organise a comic page's panels.
+  **Same-page reorder**: each panel carries a drag handle
+  (dnd-kit ``SortableContext`` over ``ComicPanelGrid``); dropping
+  it onto another grid cell reorders the panels via a new bulk
+  ``POST /api/books/{id}/comic-pages/{page_id}/panels/reorder``
+  endpoint that mirrors the picture-book PagesReorder two-phase
+  position update. The drag handle (not the panel body) carries
+  the listeners, so in-panel bubble drag + panel-select click are
+  unaffected. **Cross-page move**: a "Move to page" action menu on
+  the selected panel lists the book's other pages with their
+  capacity (``Seite N - count/max Panels``); full pages are
+  disabled with a ``(voll)`` hint. Selecting a target reuses the
+  already-shipped ``ComicPanelUpdate.page_id`` PATCH (append
+  position) and re-normalises the source page's positions via the
+  reorder endpoint, then toasts ``Panel auf Seite N verschoben``.
+  Cross-page move is a menu rather than drag-to-thumbnail by
+  design: a shared canvas+sidebar drag context would have forced a
+  refactor of the PageThumbnails the picture-book editor also uses.
+  i18n in all 8 catalogs.
 - **In-place title editing** (Title Editing C1-C4, 2026-05-29).
   Click-the-pencil inline title editing on all four editor
   surfaces (Article, prose Book via the chapter sidebar,
