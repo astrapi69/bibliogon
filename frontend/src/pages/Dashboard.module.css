@@ -194,25 +194,10 @@
     outline-offset: -1px;
 }
 
-/* PB-PHASE4 Session 3 Commit 9: split-button for the create-book
- * action. Primary "Neues Buch" + chevron dropdown with future
- * book-types. Matches the Toolbar Copy split-button pattern. */
-.newBookGroup {
-    display: inline-flex;
-    align-items: stretch;
-    gap: 0;
-}
-
-.newBookGroup > :first-child {
-    border-top-right-radius: 0;
-    border-bottom-right-radius: 0;
-}
-
-.newBookChevron {
-    border-top-left-radius: 0;
-    border-bottom-left-radius: 0;
-    border-left: 1px solid color-mix(in srgb, var(--text-on-accent, white) 25%, transparent);
-    padding-left: 8px;
-    padding-right: 8px;
-    min-width: auto;
-}
+/* PB-PHASE4 Session 3 Commit 9 + ARTICLE-TYPES-SSOT-01 C4
+ * (2026-05-29): the inline ``newBookGroup`` + ``newBookChevron``
+ * classes that formerly lived here were extracted into
+ * ``frontend/src/components/SplitButton.module.css`` per the
+ * Recurring-Component-Unification Rule (RCU). The shared
+ * SplitButton primitive serves both this Dashboard and the
+ * Article Dashboard (C5 of the article-types arc). */

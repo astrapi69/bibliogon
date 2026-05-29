@@ -24,10 +24,11 @@ import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import {BookTypeIcon} from "../utils/bookTypeIcon";
+import SplitButton, {type SplitButtonDropdownItem} from "../components/SplitButton";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, ChevronDown, SlidersHorizontal,
+    Menu, Search, SlidersHorizontal,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
@@ -471,83 +472,65 @@ export default function Dashboard() {
                          *  mirrors the Toolbar Copy split-button per
                          *  the 'split-button (default + chevron
                          *  disclosure)' lessons-learned rule. */}
-                        <div className={styles.newBookGroup} data-testid="new-book-group">
-                            <button
-                                className="btn btn-primary"
-                                onClick={() => openCreate("prose")}
-                                data-testid="new-book-btn"
-                            >
-                                <Plus size={16}/> <span className="hide-mobile">{t("ui.dashboard.new_book", "Neues Buch")}</span>
-                            </button>
-                            <DropdownMenu.Root>
-                                <DropdownMenu.Trigger asChild>
-                                    <button
-                                        type="button"
-                                        className={`btn btn-primary ${styles.newBookChevron}`}
-                                        data-testid="new-book-chevron"
-                                        title={t(
-                                            "ui.dashboard.new_book_more_tooltip",
-                                            "Weitere Buch-Arten",
-                                        )}
-                                        aria-label={t(
-                                            "ui.dashboard.new_book_more_tooltip",
-                                            "Weitere Buch-Arten",
-                                        )}
-                                    >
-                                        <ChevronDown size={14}/>
-                                    </button>
-                                </DropdownMenu.Trigger>
-                                <DropdownMenu.Portal>
-                                    <DropdownMenu.Content
-                                        className="hamburger-menu-content"
-                                        align="end"
-                                        sideOffset={4}
-                                    >
-                                        {/* BOOK-TYPES-SSOT-YAML-01 C5:
-                                         *  menu items now driven by the
-                                         *  BookTypeRegistry (every type
-                                         *  except prose with
-                                         *  dashboard_create_visible=true).
-                                         *  Adding a 4th creatable type =
-                                         *  one YAML entry, NOT a new
-                                         *  hardcoded item here. Testid
-                                         *  pattern preserves the existing
-                                         *  hyphenated kebab-case shape
-                                         *  used by E2E specs. */}
-                                        {bookTypesSnapshot.ordered
-                                            .filter(
-                                                (bt) =>
-                                                    bt.id !== "prose" &&
-                                                    bt.dashboard_create_visible,
-                                            )
-                                            .map((bt) => (
-                                                <DropdownMenu.Item
-                                                    key={bt.id}
-                                                    className="hamburger-menu-item"
-                                                    data-testid={`new-book-menu-item-${bt.id.replace(/_/g, "-")}`}
-                                                    onSelect={() =>
-                                                        openCreate(
-                                                            bt.id as BookType,
-                                                        )
-                                                    }
+                        {/* ARTICLE-TYPES-SSOT-01 C4 (2026-05-29):
+                         *  migrated from inline ``newBookGroup`` to
+                         *  the shared SplitButton primitive. RCU
+                         *  2-surface threshold fires when C5 lands
+                         *  the same shape on the Article Dashboard.
+                         *  Existing testids preserved
+                         *  (new-book-group / new-book-btn /
+                         *  new-book-chevron / new-book-menu-item-*)
+                         *  so E2E specs keep working without
+                         *  modification. */}
+                        <SplitButton
+                            buttonClass="btn btn-primary"
+                            variant="primary"
+                            primaryContent={
+                                <>
+                                    <Plus size={16} />{" "}
+                                    <span className="hide-mobile">
+                                        {t("ui.dashboard.new_book", "Neues Buch")}
+                                    </span>
+                                </>
+                            }
+                            onPrimaryClick={() => openCreate("prose")}
+                            chevronTooltip={t(
+                                "ui.dashboard.new_book_more_tooltip",
+                                "Weitere Buch-Arten",
+                            )}
+                            dropdownItems={bookTypesSnapshot.ordered
+                                .filter(
+                                    (bt) =>
+                                        bt.id !== "prose" &&
+                                        bt.dashboard_create_visible,
+                                )
+                                .map(
+                                    (bt): SplitButtonDropdownItem => ({
+                                        id: bt.id,
+                                        content: (
+                                            <>
+                                                <BookTypeIcon
+                                                    iconName={bt.icon}
+                                                    size={14}
+                                                />
+                                                <span
+                                                    style={{
+                                                        marginLeft: 6,
+                                                    }}
                                                 >
-                                                    <BookTypeIcon
-                                                        iconName={bt.icon}
-                                                        size={14}
-                                                    />
-                                                    <span
-                                                        style={{
-                                                            marginLeft: 6,
-                                                        }}
-                                                    >
-                                                        {t(bt.label_key, bt.id)}
-                                                    </span>
-                                                </DropdownMenu.Item>
-                                            ))}
-                                    </DropdownMenu.Content>
-                                </DropdownMenu.Portal>
-                            </DropdownMenu.Root>
-                        </div>
+                                                    {t(bt.label_key, bt.id)}
+                                                </span>
+                                            </>
+                                        ),
+                                        onSelect: () =>
+                                            openCreate(bt.id as BookType),
+                                    }),
+                                )}
+                            groupTestId="new-book-group"
+                            primaryTestId="new-book-btn"
+                            chevronTestId="new-book-chevron"
+                            itemTestIdPrefix="new-book-menu-item"
+                        />
                         <NewFromTemplateButton
                             kind="book"
                             defaultLanguage="de"

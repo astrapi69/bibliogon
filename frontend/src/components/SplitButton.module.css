@@ -1,0 +1,45 @@
+/* ARTICLE-TYPES-SSOT-01 C4 (2026-05-29). Shared split-button
+ * primitive extracted from Dashboard's newBookGroup +
+ * ArticleList's Importieren split-button. RCU 2-surface
+ * threshold per coding-standards.md.
+ *
+ * Visual contract: primary button + chevron rendered as a single
+ * flex group with shared border / radius. The chevron carries a
+ * subtle 25%-opacity left-border to read as a divider on filled
+ * buttons; on outline variants the divider follows the button's
+ * own border color via currentColor.
+ */
+
+.splitButtonGroup {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 0;
+}
+
+.splitButtonGroup > :first-child {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+}
+
+.chevron {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-left: 8px;
+    padding-right: 8px;
+    min-width: auto;
+}
+
+/* Primary (btn btn-primary) variant: 25% white-overlay divider
+ * so the chevron reads as a sub-segment of the same colored
+ * surface. */
+.chevron.variantPrimary {
+    border-left: 1px solid
+        color-mix(in srgb, var(--text-on-accent, white) 25%, transparent);
+}
+
+/* Secondary / outline variant: divider follows the button's own
+ * border color via currentColor at 35% opacity. */
+.chevron.variantSecondary {
+    border-left: 1px solid
+        color-mix(in srgb, currentColor 35%, transparent);
+}
