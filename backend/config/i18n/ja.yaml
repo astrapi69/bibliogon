@@ -2724,6 +2724,11 @@ ui:
     delete_panel: "Delete panel"
     add_bubble: "Add bubble"
     delete_bubble: "Delete bubble"
+    move_panel: "別のページに移動"
+    move_panel_target: "ページ {n} - {count}/{max} コマ"
+    move_panel_full: "(満杯)"
+    move_panel_no_targets: "他のページがありません"
+    move_panel_success: "コマをページ {n} に移動しました"
     side_pane_default: "Click a panel or a bubble to edit it."
     layout_picker:
       heading: "Layout"

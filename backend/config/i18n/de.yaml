@@ -2722,6 +2722,11 @@ ui:
     delete_panel: "Panel löschen"
     add_bubble: "Sprechblase hinzufügen"
     delete_bubble: "Sprechblase löschen"
+    move_panel: "Auf andere Seite verschieben"
+    move_panel_target: "Seite {n} - {count}/{max} Panels"
+    move_panel_full: "(voll)"
+    move_panel_no_targets: "Keine weiteren Seiten vorhanden"
+    move_panel_success: "Panel auf Seite {n} verschoben"
     side_pane_default: "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten."
     layout_picker:
       heading: "Layout"

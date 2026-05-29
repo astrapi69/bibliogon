@@ -1,5 +1,5 @@
 /**
- * MovePanelToPageMenu — cross-page panel move via an action menu
+ * MovePanelToPageMenu - cross-page panel move via an action menu
  * (COMIC-PANEL-CROSS-PAGE-MOVE-01 Phase 2).
  *
  * The user-adjudicated alternative to drag-to-thumbnail: dragging a
@@ -11,7 +11,7 @@
  * instead.
  *
  * Self-contained dropdown: the trigger button toggles a small menu
- * of the book's OTHER pages, each showing its capacity ("Seite 3 —
+ * of the book's OTHER pages, each showing its capacity ("Seite 3 -
  * 2/4 Panels"). Full pages are disabled with a "(voll)" hint.
  * Entries are loaded lazily on open via ``loadEntries`` (the parent
  * fetches each page's panel count), so a stale count can't gate the
@@ -39,7 +39,7 @@ export interface MovePageEntry {
 
 interface Props {
   disabled?: boolean;
-  /** Loaded lazily on open — the parent fetches each other-page's
+  /** Loaded lazily on open - the parent fetches each other-page's
    *  panel count + resolves its template max. */
   loadEntries: () => Promise<MovePageEntry[]>;
   onMove: (pageId: string) => void | Promise<void>;
@@ -135,7 +135,7 @@ export function MovePanelToPageMenu({ disabled, loadEntries, onMove }: Props) {
               const full = entry.count >= entry.max;
               const label = t(
                 "ui.comic_book_editor.move_panel_target",
-                "Seite {n} — {count}/{max} Panels",
+                "Seite {n} - {count}/{max} Panels",
               )
                 .replace("{n}", String(entry.position))
                 .replace("{count}", String(entry.count))
