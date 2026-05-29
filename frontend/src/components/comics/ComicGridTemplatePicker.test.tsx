@@ -114,4 +114,17 @@ describe("ComicGridTemplatePicker", () => {
         ) as HTMLSelectElement;
         expect(select.disabled).toBe(true);
     });
+
+    it("sets an explicit text color on the select (dark-mode readability pin)", () => {
+        // Regression pin: a native <select> with a background but no
+        // color rendered default black text on the dark --bg-card in
+        // dark mode (unreadable). The fix sets color explicitly.
+        render(
+            <ComicGridTemplatePicker value="single_panel" onChange={() => {}} />,
+        );
+        const select = screen.getByTestId(
+            "comic-grid-template-picker-select",
+        ) as HTMLSelectElement;
+        expect(select.style.color).toBe("var(--text-primary)");
+    });
 });

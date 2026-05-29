@@ -868,15 +868,16 @@ export default function ComicBookEditor({
             className="btn btn-secondary btn-sm"
             data-testid="comic-book-editor-show-metadata"
             onClick={onShowMetadata}
+            aria-label={t(
+              "ui.comic_book_editor.show_metadata",
+              "Buch-Metadaten öffnen",
+            )}
             title={t(
               "ui.comic_book_editor.show_metadata",
               "Buch-Metadaten öffnen",
             )}
           >
             <FileText size={14} />
-            <span style={{ marginLeft: 6 }}>
-              {t("ui.comic_book_editor.show_metadata", "Buch-Metadaten öffnen")}
-            </span>
           </button>
         )}
         {activePageId && (
@@ -888,7 +889,7 @@ export default function ComicBookEditor({
             onChange={handleChangeGridTemplate}
           />
         )}
-        <PdfExportControls bookId={bookId} testidPrefix="comic-book-editor" />
+        <PdfExportControls bookId={bookId} testidPrefix="comic-book-editor" compact />
         {fullscreen.isSupported && (
           <button
             type="button"

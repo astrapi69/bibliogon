@@ -133,6 +133,7 @@ export function LayoutConfigComicPanel({
                 {hasImage ? (
                     <button
                         type="button"
+                        className="btn btn-secondary btn-sm"
                         onClick={handleClearImage}
                         disabled={uploading}
                         data-testid="comic-panel-image-clear"

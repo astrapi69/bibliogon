@@ -24,6 +24,7 @@ import {
     DEFAULT_COMIC_GRID_TEMPLATE,
     type ComicGridTemplate,
 } from "./ComicPanelGrid";
+import {COMIC_HEADER_SELECT_STYLE} from "./headerSelectStyle";
 
 interface ComicGridTemplatePickerProps {
     value: ComicGridTemplate | null;
@@ -73,13 +74,7 @@ export function ComicGridTemplatePicker({
                     "ui.comic_book_editor.layout_picker.heading",
                     "Layout",
                 )}
-                style={{
-                    padding: "4px 8px",
-                    border: "1px solid var(--border, #ddd)",
-                    borderRadius: 4,
-                    background: "var(--bg-card)",
-                    fontSize: "0.85rem",
-                }}
+                style={COMIC_HEADER_SELECT_STYLE}
             >
                 {COMIC_GRID_TEMPLATE_PICKER_OPTIONS.map((template) => (
                     <option

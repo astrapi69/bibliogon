@@ -385,3 +385,45 @@ describe("PdfExportControls - exporting state + error handling", () => {
         await waitFor(() => expect(btn.disabled).toBe(false))
     })
 })
+
+describe("PdfExportControls - compact (comic header variant)", () => {
+    it("renders an icon-only Export button with aria-label + title, no visible text", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        const btn = (await screen.findByTestId(
+            "cb-export-pdf",
+        )) as HTMLButtonElement
+        // Icon-only utility button (matches the Fullscreen header
+        // convention); the action name lives in aria-label + title.
+        expect(btn.textContent ?? "").not.toContain("Export as PDF")
+        expect(btn.getAttribute("aria-label")).toBe("Export as PDF")
+        expect(btn.getAttribute("title")).toBe("Export as PDF")
+        // Matches the other header utility buttons (global btn system).
+        expect(btn.className).toContain("btn")
+    })
+
+    it("gives the format dropdown a VISIBLE label (mirrors the Layout picker)", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        await screen.findByTestId("cb-pdf-format-select")
+        expect(screen.getByText("PDF format")).toBeTruthy()
+    })
+
+    it("renders the bleed control via the shared Toggle, testid preserved", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        const toggle = (await screen.findByTestId(
+            "cb-pdf-bleed-toggle",
+        )) as HTMLInputElement
+        // Shared Toggle renders a sized, accent-themed checkbox
+        // (the bare non-compact checkbox carries no width style).
+        expect(toggle.getAttribute("type")).toBe("checkbox")
+        expect(toggle.style.width).toBe("16px")
+    })
+
+    it("non-compact (default) still shows the visible Export button text", async () => {
+        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        expect(btn.textContent ?? "").toContain("Export as PDF")
+        expect(btn.getAttribute("aria-label")).toBeNull()
+    })
+})

@@ -40,6 +40,8 @@ import {Download, Loader2} from "lucide-react"
 import {api, ApiError} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
+import {Toggle} from "./settings/Toggle"
+import {COMIC_HEADER_SELECT_STYLE} from "./comics/headerSelectStyle"
 
 // PDF-KDP-FORMATS-01: 5 KDP picture-book trim sizes. Kept in sync
 // with the Python PICTURE_BOOK_FORMATS constant in
@@ -118,6 +120,16 @@ interface Props {
      *  two parent surfaces define their own keyframes; the
      *  component just routes the class. */
     spinnerClassName?: string
+    /** Comic-editor header variant (plugin-comics, adjudicated
+     *  2026-05-30): icon-only Export-PDF button (matches the
+     *  Fullscreen icon-button + tooltip header convention), a
+     *  VISIBLE label on the format dropdown (mirrors the Layout
+     *  picker), and the bleed control rendered via the shared
+     *  ``Toggle`` (accent-themed) instead of a bare checkbox.
+     *  Scoped to the comic editor only so PageEditor +
+     *  BookMetadataEditor keep their current labeled-button style
+     *  (no parallel-surface regression). */
+    compact?: boolean
 }
 
 export default function PdfExportControls({
@@ -126,6 +138,7 @@ export default function PdfExportControls({
     controlClassName,
     exportButtonClassName,
     spinnerClassName,
+    compact = false,
 }: Props) {
     const {t} = useI18n()
     const [format, setFormat] = useState<PictureBookFormat>(
@@ -248,62 +261,115 @@ export default function PdfExportControls({
         }
     }, [bookId, exporting, format, bleed, t])
 
+    const formatLabel = t("ui.page_editor.pdf_format_label", "PDF format")
+    const formatSelect = (
+        <select
+            value={format}
+            onChange={(e) =>
+                handleFormatChange(e.target.value as PictureBookFormat)
+            }
+            data-testid={`${testidPrefix}-pdf-format-select`}
+            className={controlClassName}
+            // Comic header: identical styling to the Layout picker's
+            // dropdown via the shared COMIC_HEADER_SELECT_STYLE (the
+            // two header dropdowns must look the same). Other surfaces
+            // keep their controlClassName-driven look.
+            style={compact ? COMIC_HEADER_SELECT_STYLE : undefined}
+            aria-label={formatLabel}
+            title={formatLabel}
+        >
+            {PICTURE_BOOK_FORMATS.map((fmt) => (
+                <option key={fmt} value={fmt}>
+                    {t(
+                        `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
+                        fmt,
+                    )}
+                </option>
+            ))}
+        </select>
+    )
+
     return (
         <>
-            <select
-                value={format}
-                onChange={(e) =>
-                    handleFormatChange(e.target.value as PictureBookFormat)
-                }
-                data-testid={`${testidPrefix}-pdf-format-select`}
-                className={controlClassName}
-                aria-label={t(
-                    "ui.page_editor.pdf_format_label",
-                    "PDF format",
-                )}
-                title={t("ui.page_editor.pdf_format_label", "PDF format")}
-            >
-                {PICTURE_BOOK_FORMATS.map((fmt) => (
-                    <option key={fmt} value={fmt}>
-                        {t(
-                            `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
-                            fmt,
-                        )}
-                    </option>
-                ))}
-            </select>
-            <label
-                className={controlClassName}
-                style={{display: "inline-flex", alignItems: "center", gap: 6}}
-                title={t(
-                    "ui.page_editor.pdf_bleed_hint",
-                    "Adds 3 mm bleed + crop marks for print-shop submission",
-                )}
-            >
-                <input
-                    type="checkbox"
+            {compact ? (
+                // Comic header: the dropdown carries a VISIBLE label
+                // (mirrors the Layout picker) instead of relying only
+                // on aria-label/title.
+                <label
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                        fontSize: "0.85rem",
+                    }}
+                >
+                    <span>{formatLabel}</span>
+                    {formatSelect}
+                </label>
+            ) : (
+                formatSelect
+            )}
+            {compact ? (
+                // Comic header: accent-themed shared Toggle instead of
+                // a bare checkbox (consistent on/off styling).
+                <Toggle
+                    label={t("ui.page_editor.pdf_bleed_label", "Bleed marks")}
                     checked={bleed}
-                    onChange={(e) => handleBleedChange(e.target.checked)}
-                    data-testid={`${testidPrefix}-pdf-bleed-toggle`}
-                    aria-label={t(
-                        "ui.page_editor.pdf_bleed_label",
-                        "Bleed marks",
-                    )}
+                    onChange={handleBleedChange}
+                    testId={`${testidPrefix}-pdf-bleed-toggle`}
                 />
-                <span>
-                    {t(
-                        "ui.page_editor.pdf_bleed_label",
-                        "Bleed marks",
+            ) : (
+                <label
+                    className={controlClassName}
+                    style={{
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 6,
+                    }}
+                    title={t(
+                        "ui.page_editor.pdf_bleed_hint",
+                        "Adds 3 mm bleed + crop marks for print-shop submission",
                     )}
-                </span>
-            </label>
+                >
+                    <input
+                        type="checkbox"
+                        checked={bleed}
+                        onChange={(e) => handleBleedChange(e.target.checked)}
+                        data-testid={`${testidPrefix}-pdf-bleed-toggle`}
+                        aria-label={t(
+                            "ui.page_editor.pdf_bleed_label",
+                            "Bleed marks",
+                        )}
+                    />
+                    <span>
+                        {t("ui.page_editor.pdf_bleed_label", "Bleed marks")}
+                    </span>
+                </label>
+            )}
             <button
                 type="button"
                 onClick={handleExport}
                 disabled={exporting}
                 data-testid={`${testidPrefix}-export-pdf`}
-                className={exportButtonClassName ?? controlClassName}
+                // Comic header: match the other utility header buttons
+                // (Back/Metadata/Fullscreen) which all use the global
+                // ``btn btn-secondary btn-sm`` system, so hover/focus/
+                // active states + sizing are identical. Other surfaces
+                // keep their parent-provided button class.
+                className={
+                    compact
+                        ? "btn btn-secondary btn-sm"
+                        : (exportButtonClassName ?? controlClassName)
+                }
                 title={t("ui.page_editor.export_pdf", "Export as PDF")}
+                // Comic header: icon-only utility button (matches the
+                // Fullscreen icon-button + tooltip convention); the
+                // tooltip + aria-label carry the action name.
+                aria-label={
+                    compact
+                        ? t("ui.page_editor.export_pdf", "Export as PDF")
+                        : undefined
+                }
                 style={{display: "inline-flex", alignItems: "center", gap: 6}}
             >
                 {exporting ? (
@@ -311,11 +377,13 @@ export default function PdfExportControls({
                 ) : (
                     <Download size={14} />
                 )}
-                <span>
-                    {exporting
-                        ? t("ui.page_editor.exporting_pdf", "Exporting...")
-                        : t("ui.page_editor.export_pdf", "Export as PDF")}
-                </span>
+                {!compact && (
+                    <span>
+                        {exporting
+                            ? t("ui.page_editor.exporting_pdf", "Exporting...")
+                            : t("ui.page_editor.export_pdf", "Export as PDF")}
+                    </span>
+                )}
             </button>
         </>
     )

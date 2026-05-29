@@ -103,11 +103,25 @@
     font-size: 0.85rem;
 }
 
+/* Tier-section on/off controls (shadow, italic). Design-intent
+ * exemption from the shared settings ``Toggle``: these are dense
+ * side-by-side property toggles inside a collapsible properties
+ * pane, NOT settings rows with a label+description shape (per the
+ * SETT-PHASE-3-TOGGLE-COMPONENT-01 non-migration rationale). They
+ * stay a labeled checkbox but carry consistent styling: the accent
+ * color + an adequate hit size matching the shared Toggle's 16px. */
 .checkboxLabel {
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 0.85rem;
     color: var(--text-sidebar);
+    cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent);
     cursor: pointer;
 }
