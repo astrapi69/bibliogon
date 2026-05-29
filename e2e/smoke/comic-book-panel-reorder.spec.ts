@@ -15,8 +15,8 @@
  * real browser, while Vitest covers the reorderable-mode contract
  * (handles present, sortable wrappers, read-only fallback).
  *
- * Testid namespace (Phase 1 C2): comic-panel-sortable-{id} +
- * comic-panel-drag-handle-{id}; the grid root carries
+ * Testid namespace (Phase 1 C2): comic-reorder-item-{id} +
+ * comic-reorder-handle-{id}; the grid root carries
  * data-reorderable="true" in editor mode.
  */
 
@@ -46,10 +46,10 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
       "true",
     );
     await expect(
-      page.locator('[data-testid^="comic-panel-drag-handle-"]'),
+      page.locator('[data-testid^="comic-reorder-handle-"]'),
     ).toHaveCount(3);
     await expect(
-      page.locator('[data-testid^="comic-panel-sortable-"]'),
+      page.locator('[data-testid^="comic-reorder-item-"]'),
     ).toHaveCount(3);
   });
 
@@ -66,7 +66,7 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
 
     await addPanels(page, 3);
 
-    const sortables = page.locator('[data-testid^="comic-panel-sortable-"]');
+    const sortables = page.locator('[data-testid^="comic-reorder-item-"]');
     await expect(sortables).toHaveCount(3);
 
     const idsBefore = await sortables.evaluateAll((els) =>
@@ -76,7 +76,7 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
 
     // Drag the first panel's handle onto the last panel's cell.
     const firstHandle = page
-      .locator('[data-testid^="comic-panel-drag-handle-"]')
+      .locator('[data-testid^="comic-reorder-handle-"]')
       .first();
     const lastSortable = sortables.last();
     const handleBox = await firstHandle.boundingBox();

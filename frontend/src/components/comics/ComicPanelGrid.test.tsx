@@ -167,8 +167,8 @@ describe("ComicPanelGrid same-page reorder (Phase 1)", () => {
         onPanelReorder={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("comic-panel-drag-handle-p1")).toBeTruthy();
-    expect(screen.getByTestId("comic-panel-drag-handle-p2")).toBeTruthy();
+    expect(screen.getByTestId("comic-reorder-handle-p1")).toBeTruthy();
+    expect(screen.getByTestId("comic-reorder-handle-p2")).toBeTruthy();
     expect(
       screen.getByTestId("comic-page-grid").getAttribute("data-reorderable"),
     ).toBe("true");
@@ -183,8 +183,8 @@ describe("ComicPanelGrid same-page reorder (Phase 1)", () => {
         onPanelReorder={vi.fn()}
       />,
     );
-    expect(screen.getByTestId("comic-panel-sortable-p1")).toBeTruthy();
-    expect(screen.getByTestId("comic-panel-sortable-p2")).toBeTruthy();
+    expect(screen.getByTestId("comic-reorder-item-p1")).toBeTruthy();
+    expect(screen.getByTestId("comic-reorder-item-p2")).toBeTruthy();
   });
 
   it("renders read-only (no drag handle, no reorderable flag) when onPanelReorder is absent", () => {
@@ -195,7 +195,7 @@ describe("ComicPanelGrid same-page reorder (Phase 1)", () => {
         panelBubblesMap={{}}
       />,
     );
-    expect(screen.queryByTestId("comic-panel-drag-handle-p1")).toBeNull();
+    expect(screen.queryByTestId("comic-reorder-handle-p1")).toBeNull();
     expect(
       screen.getByTestId("comic-page-grid").getAttribute("data-reorderable"),
     ).toBeNull();
@@ -211,12 +211,12 @@ describe("ComicPanelGrid same-page reorder (Phase 1)", () => {
       />,
     );
     const sortables = Array.from(
-      container.querySelectorAll("[data-testid^='comic-panel-sortable-']"),
+      container.querySelectorAll("[data-testid^='comic-reorder-item-']"),
     );
     expect(sortables.map((el) => el.getAttribute("data-testid"))).toEqual([
-      "comic-panel-sortable-p1",
-      "comic-panel-sortable-p2",
-      "comic-panel-sortable-p3",
+      "comic-reorder-item-p1",
+      "comic-reorder-item-p2",
+      "comic-reorder-item-p3",
     ]);
   });
 });

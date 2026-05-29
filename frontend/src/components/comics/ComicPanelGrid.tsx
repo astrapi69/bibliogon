@@ -301,13 +301,13 @@ function SortablePanel({ panelId, children }: SortablePanelProps) {
     <div
       ref={setNodeRef}
       style={style}
-      data-testid={`comic-panel-sortable-${panelId}`}
+      data-testid={`comic-reorder-item-${panelId}`}
     >
       <button
         type="button"
         {...attributes}
         {...listeners}
-        data-testid={`comic-panel-drag-handle-${panelId}`}
+        data-testid={`comic-reorder-handle-${panelId}`}
         aria-label="Drag handle"
         style={{
           position: "absolute",
