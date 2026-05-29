@@ -147,6 +147,9 @@ ui:
     line_normal: "Normal"
     line_relaxed: "Geniş"
   editor:
+    edit_title_tooltip: "Başlığı düzenle"
+    published_warning_body: "Dikkat: Bu eser zaten yayımlandı. Bir başlık değişikliği yayın platformunda (ör. KDP) elle güncellenmelidir."
+    acknowledge_warning_button: "Anladım, başlığı düzenle"
     fullscreen: "Fullscreen"
     exit_fullscreen: "Exit fullscreen"
     fullscreen_exit_hint: "Esc or F11 to exit"

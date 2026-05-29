@@ -147,6 +147,9 @@ ui:
     line_normal: "標準"
     line_relaxed: "ゆったり"
   editor:
+    edit_title_tooltip: "タイトルを編集"
+    published_warning_body: "注意：この作品はすでに公開されています。タイトルの変更は、出版プラットフォーム（KDPなど）で手動で更新する必要があります。"
+    acknowledge_warning_button: "了解、タイトルを編集"
     fullscreen: "Fullscreen"
     exit_fullscreen: "Exit fullscreen"
     fullscreen_exit_hint: "Esc or F11 to exit"

@@ -147,6 +147,9 @@ ui:
     line_normal: "Normale"
     line_relaxed: "Détendue"
   editor:
+    edit_title_tooltip: "Modifier le titre"
+    published_warning_body: "Attention : cette oeuvre a déjà été publiée. Un changement de titre doit être reporté manuellement sur la plateforme de publication (p. ex. KDP)."
+    acknowledge_warning_button: "Compris, modifier le titre"
     fullscreen: "Fullscreen"
     exit_fullscreen: "Exit fullscreen"
     fullscreen_exit_hint: "Esc or F11 to exit"

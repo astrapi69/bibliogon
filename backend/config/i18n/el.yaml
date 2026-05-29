@@ -147,6 +147,9 @@ ui:
     line_normal: "Κανονικό"
     line_relaxed: "Χαλαρό"
   editor:
+    edit_title_tooltip: "Επεξεργασία τίτλου"
+    published_warning_body: "Προσοχή: Αυτό το έργο έχει ήδη δημοσιευτεί. Μια αλλαγή τίτλου πρέπει να ενημερωθεί χειροκίνητα στην πλατφόρμα δημοσίευσης (π.χ. KDP)."
+    acknowledge_warning_button: "Κατανοητό, επεξεργασία τίτλου"
     fullscreen: "Fullscreen"
     exit_fullscreen: "Exit fullscreen"
     fullscreen_exit_hint: "Esc or F11 to exit"

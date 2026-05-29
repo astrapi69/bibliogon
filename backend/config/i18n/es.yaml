@@ -147,6 +147,9 @@ ui:
     line_normal: "Normal"
     line_relaxed: "Relajada"
   editor:
+    edit_title_tooltip: "Editar título"
+    published_warning_body: "Atención: Esta obra ya ha sido publicada. Un cambio de título debe actualizarse manualmente en la plataforma de publicación (p. ej. KDP)."
+    acknowledge_warning_button: "Entendido, editar título"
     fullscreen: "Fullscreen"
     exit_fullscreen: "Exit fullscreen"
     fullscreen_exit_hint: "Esc or F11 to exit"
