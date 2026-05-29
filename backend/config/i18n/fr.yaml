@@ -421,7 +421,7 @@ ui:
     also_by_author: "Du meme auteur"
     excerpt: "Extrait"
     call_to_action: "Appel a l'action"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "Champs specifiques au type"
     blogpost: "Article de blog"
@@ -1012,8 +1012,8 @@ ui:
     list_error: "Impossible de charger la liste des articles."
     new: "Nouvel article"
     new_more_tooltip: "Plus de types d'article"
-    article_type: "Type d'article"
-    article_type_tooltip: "Type de l'article: Article de blog / Tutoriel / Critique / Essai / Newsletter / Interview / Listicle / Nouvelle."
+    content_type: "Type de contenu"
+    content_type_tooltip: "Type de l'article: Article de blog / Tutoriel / Critique / Essai / Newsletter / Interview / Listicle / Nouvelle."
     import_more_tooltip: "Plus de sources d'import"
     default_title: "Nouvel article"
     create_error: "Impossible de creer l'article."

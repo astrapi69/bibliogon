@@ -1,6 +1,6 @@
-# Article types
+# Content types
 
-Bibliogon supports 8 article types so you can capture every long-form
+Bibliogon supports 8 content types so you can capture every long-form
 writing shape in the right structure. The type is picked at creation
 and can be changed any time in the ArticleEditor.
 

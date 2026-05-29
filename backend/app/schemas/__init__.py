@@ -793,10 +793,10 @@ class ChapterTemplateRead(BaseModel):
 _ARTICLE_STATUSES = _PUBLISHING_LIFECYCLE
 
 # ARTICLE-TYPES-SSOT-01: must stay in sync with
-# backend/config/article-types.yaml. The verification test
-# (test_article_type_registry.py::test_literal_matches_registry)
+# backend/config/content-types.yaml. The verification test
+# (test_content_type_registry.py::test_literal_matches_registry)
 # fails loudly on drift.
-ArticleType = Literal[
+ContentType = Literal[
     "blogpost",
     "tutorial",
     "review",
@@ -815,7 +815,7 @@ class ArticleCreate(BaseModel):
     language: str = Field(default="en", min_length=2, max_length=10)
     # ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
     # "blogpost" via the column default when omitted.
-    content_type: ArticleType | None = None
+    content_type: ContentType | None = None
     article_metadata: dict[str, Any] | None = None
 
 
@@ -844,8 +844,8 @@ class ArticleUpdate(BaseModel):
     # extra fields. ``content_type`` validated against the
     # registry via Pydantic Literal; ``article_metadata`` is a free
     # JSON object (per-type extra fields defined in
-    # article-types.yaml).
-    content_type: ArticleType | None = None
+    # content-types.yaml).
+    content_type: ContentType | None = None
     article_metadata: dict[str, Any] | None = None
 
     @field_validator("status")

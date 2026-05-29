@@ -13,7 +13,7 @@ import { useI18n } from "../../hooks/useI18n";
 import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
-import ArticleTypeBadge from "./ArticleTypeBadge";
+import ContentTypeBadge from "./ContentTypeBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -92,7 +92,7 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                      *  per-type badge mirrors the status/lang/date
                      *  badges; user can tell article-type at a glance
                      *  without opening the editor. */}
-                    <ArticleTypeBadge
+                    <ContentTypeBadge
                         contentType={article.content_type}
                         testId={`article-card-type-${article.id}`}
                         className={styles.status}

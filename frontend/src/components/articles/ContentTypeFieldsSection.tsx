@@ -18,15 +18,15 @@
 
 import {useCallback, type ChangeEvent} from "react";
 
-import type {ArticleType, ArticleTypeExtraField} from "../../api/client";
-import {useArticleTypes} from "../../hooks/useArticleTypes";
+import type {ContentType, ContentTypeExtraField} from "../../api/client";
+import {useContentTypes} from "../../hooks/useContentTypes";
 import {useI18n} from "../../hooks/useI18n";
 
-interface ArticleTypeFieldsSectionProps {
+interface ContentTypeFieldsSectionProps {
     contentType: string;
     metadata: Record<string, unknown>;
     onChange: (
-        contentType: ArticleType,
+        contentType: ContentType,
         nextMetadata: Record<string, unknown>,
     ) => void;
     /** Disable every input (e.g. during persist-in-flight). */
@@ -35,15 +35,15 @@ interface ArticleTypeFieldsSectionProps {
     testId?: string;
 }
 
-export function ArticleTypeFieldsSection({
+export function ContentTypeFieldsSection({
     contentType,
     metadata,
     onChange,
     disabled = false,
     testId = "article-type-fields-section",
-}: ArticleTypeFieldsSectionProps) {
+}: ContentTypeFieldsSectionProps) {
     const {t} = useI18n();
-    const snapshot = useArticleTypes();
+    const snapshot = useContentTypes();
 
     const at = snapshot.types[contentType];
     const fields = at?.extra_fields ?? [];
@@ -51,7 +51,7 @@ export function ArticleTypeFieldsSection({
     const handleFieldChange = useCallback(
         (fieldName: string, nextValue: unknown) => {
             const nextMetadata = {...metadata, [fieldName]: nextValue};
-            onChange(contentType as ArticleType, nextMetadata);
+            onChange(contentType as ContentType, nextMetadata);
         },
         [contentType, metadata, onChange],
     );
@@ -62,7 +62,7 @@ export function ArticleTypeFieldsSection({
         <div data-testid={testId} style={{marginTop: 16}}>
             <h3 style={{fontSize: 14, fontWeight: 600, marginBottom: 8}}>
                 {t(
-                    "ui.article_types.fields_section_heading",
+                    "ui.content_types.fields_section_heading",
                     "Typ-spezifische Felder",
                 )}
             </h3>
@@ -80,7 +80,7 @@ export function ArticleTypeFieldsSection({
 }
 
 interface FieldInputProps {
-    field: ArticleTypeExtraField;
+    field: ContentTypeExtraField;
     value: unknown;
     onChange: (next: unknown) => void;
     disabled: boolean;
@@ -172,4 +172,4 @@ function FieldInput({field, value, onChange, disabled}: FieldInputProps) {
     );
 }
 
-export default ArticleTypeFieldsSection;
+export default ContentTypeFieldsSection;

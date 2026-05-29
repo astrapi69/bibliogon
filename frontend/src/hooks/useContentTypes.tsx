@@ -1,14 +1,14 @@
 /**
- * useArticleTypes — React Context-backed hook for the
+ * useContentTypes — React Context-backed hook for the
  * ArticleTypeRegistry.
  *
  * Filed by ARTICLE-TYPES-SSOT-01 (2026-05-29). Mirrors the
  * BOOK-TYPES-SSOT-YAML-01 useBookTypes shape exactly: fetches
- * GET /api/article-types ONCE on app mount + caches in React
+ * GET /api/content-types ONCE on app mount + caches in React
  * context; consumers across the app (ArticleList split-button,
  * ArticleEditor type-specific section, AD article-type filter,
  * future surfaces) read from the same cached snapshot via the
- * ``useArticleTypes()`` hook.
+ * ``useContentTypes()`` hook.
  *
  * Error policy: silent on fetch failure (the app must still boot
  * if the backend is unreachable for one second). Consumers that
@@ -25,17 +25,17 @@ import {
     type ReactNode,
 } from "react";
 
-import {api, type ArticleTypeDef} from "../api/client";
+import {api, type ContentTypeDef} from "../api/client";
 
 type Status = "loading" | "ready" | "error";
 
 interface ArticleTypesSnapshot {
-    /** {id: ArticleTypeDef} mapping. Empty during initial load
+    /** {id: ContentTypeDef} mapping. Empty during initial load
      *  + on fetch error. */
-    types: Record<string, ArticleTypeDef>;
+    types: Record<string, ContentTypeDef>;
     /** Ordered list of types (preserves YAML order from the
      *  backend response). Computed from `types`. */
-    ordered: ArticleTypeDef[];
+    ordered: ContentTypeDef[];
     /** The id of the article-type marked ``default: true`` in
      *  the registry. Falls back to the first registered id, or
      *  ``"blogpost"`` if the registry is empty (matches the
@@ -46,16 +46,16 @@ interface ArticleTypesSnapshot {
     refresh: () => void;
 }
 
-const ArticleTypesContext = createContext<ArticleTypesSnapshot | null>(null);
+const ContentTypesContext = createContext<ArticleTypesSnapshot | null>(null);
 
 interface ProviderProps {
     children: ReactNode;
     /** Test-only: skip the fetch + use this static snapshot. */
-    initialTypes?: Record<string, ArticleTypeDef>;
+    initialTypes?: Record<string, ContentTypeDef>;
 }
 
-export function ArticleTypesProvider({children, initialTypes}: ProviderProps) {
-    const [types, setTypes] = useState<Record<string, ArticleTypeDef>>(
+export function ContentTypesProvider({children, initialTypes}: ProviderProps) {
+    const [types, setTypes] = useState<Record<string, ContentTypeDef>>(
         initialTypes ?? {},
     );
     const [status, setStatus] = useState<Status>(
@@ -64,7 +64,7 @@ export function ArticleTypesProvider({children, initialTypes}: ProviderProps) {
 
     const fetchTypes = useCallback(async () => {
         try {
-            const result = await api.articleTypes.list();
+            const result = await api.contentTypes.list();
             setTypes(result);
             setStatus("ready");
         } catch {
@@ -96,21 +96,21 @@ export function ArticleTypesProvider({children, initialTypes}: ProviderProps) {
     );
 
     return (
-        <ArticleTypesContext.Provider value={value}>
+        <ContentTypesContext.Provider value={value}>
             {children}
-        </ArticleTypesContext.Provider>
+        </ContentTypesContext.Provider>
     );
 }
 
 /**
  * Consume the ArticleTypeRegistry snapshot from the surrounding
- * ``ArticleTypesProvider``. Throws if used outside a provider.
+ * ``ContentTypesProvider``. Throws if used outside a provider.
  */
-export function useArticleTypes(): ArticleTypesSnapshot {
-    const ctx = useContext(ArticleTypesContext);
+export function useContentTypes(): ArticleTypesSnapshot {
+    const ctx = useContext(ContentTypesContext);
     if (ctx === null) {
         throw new Error(
-            "useArticleTypes must be used within an <ArticleTypesProvider>",
+            "useContentTypes must be used within an <ContentTypesProvider>",
         );
     }
     return ctx;
@@ -120,7 +120,7 @@ export function useArticleTypes(): ArticleTypesSnapshot {
  *  a given id. Returns the bare id as the fallback so the UI
  *  never crashes on an unknown value (e.g. legacy backups with
  *  pre-registry content_type strings). */
-export function articleTypeLabelKey(
+export function contentTypeLabelKey(
     snapshot: ArticleTypesSnapshot,
     typeId: string,
 ): string {
@@ -130,7 +130,7 @@ export function articleTypeLabelKey(
 /** Convenience selector: the article-type's icon name for a
  *  given id. Returns "FileText" as the fallback so the badge
  *  surfaces SOMETHING for an unknown value. */
-export function articleTypeIcon(
+export function contentTypeIcon(
     snapshot: ArticleTypesSnapshot,
     typeId: string,
 ): string {

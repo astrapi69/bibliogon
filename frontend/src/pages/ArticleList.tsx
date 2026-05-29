@@ -29,15 +29,15 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-import { api, ApiError, Article, ArticleStatus, ArticleType, BookDetail } from "../api/client";
+import { api, ApiError, Article, ArticleStatus, ContentType, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import { useArticleTypes } from "../hooks/useArticleTypes";
-import { ArticleTypeIcon } from "../utils/articleTypeIcon";
+import { useContentTypes } from "../hooks/useContentTypes";
+import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
-import ArticleTypeBadge from "../components/articles/ArticleTypeBadge";
+import ContentTypeBadge from "../components/articles/ContentTypeBadge";
 import CommentsCountBadge from "../components/articles/CommentsCountBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
@@ -72,7 +72,7 @@ import { EmptyState } from "../components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
-    const articleTypesSnapshot = useArticleTypes();
+    const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
@@ -601,7 +601,7 @@ export default function ArticleList() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    async function handleCreate(articleType?: ArticleType): Promise<void> {
+    async function handleCreate(articleType?: ContentType): Promise<void> {
         setCreating(true);
         try {
             // Default author from app settings - mirrors CreateBookModal.
@@ -696,7 +696,7 @@ export default function ArticleList() {
                                         id: at.id,
                                         content: (
                                             <>
-                                                <ArticleTypeIcon
+                                                <ContentTypeIcon
                                                     iconName={at.icon}
                                                     size={14}
                                                 />
@@ -709,7 +709,7 @@ export default function ArticleList() {
                                         ),
                                         onSelect: () =>
                                             void handleCreate(
-                                                at.id as ArticleType,
+                                                at.id as ContentType,
                                             ),
                                     }),
                                 )}
@@ -1529,7 +1529,7 @@ function ArticleRow({
                  *  the publication status. Same visual weight as
                  *  the status badge so users see "tutorial / draft"
                  *  rather than just "draft" in the list view. */}
-                <ArticleTypeBadge
+                <ContentTypeBadge
                     contentType={article.content_type}
                     testId={`article-list-row-type-${article.id}`}
                     className={layout.statusBadge}

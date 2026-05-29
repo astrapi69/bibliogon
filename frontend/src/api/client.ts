@@ -73,12 +73,12 @@ export interface BookTypeDef {
 }
 
 /** ARTICLE-TYPES-SSOT-01 (2026-05-29). The 8 article-types in
- *  backend/config/article-types.yaml. Adding a new article_type
+ *  backend/config/content-types.yaml. Adding a new article_type
  *  requires updating BOTH this Literal AND the YAML; the backend
  *  drift-detector test
  *  (test_article_type_registry.py::test_literal_matches_registry)
  *  pins the parity. Mirrors the BookType pattern. */
-export type ArticleType =
+export type ContentType =
     | "blogpost"
     | "tutorial"
     | "review"
@@ -89,11 +89,11 @@ export type ArticleType =
     | "short_story";
 
 /** ARTICLE-TYPES-SSOT-01: one per-type extra field declaration
- *  inside ArticleTypeDef.extra_fields. The frontend ArticleEditor
+ *  inside ContentTypeDef.extra_fields. The frontend ArticleEditor
  *  uses ``type`` to pick the right input shape (text input /
  *  number input / enum select / date picker) and writes the value
  *  into ``Article.article_metadata[name]``. */
-export interface ArticleTypeExtraField {
+export interface ContentTypeExtraField {
     name: string;
     /** "text" | "number" | "enum" | "date" */
     type: string;
@@ -107,17 +107,17 @@ export interface ArticleTypeExtraField {
 }
 
 /** ARTICLE-TYPES-SSOT-01: one article-type's full metadata bundle
- *  served by GET /api/article-types. Mirrors the backend
- *  ArticleTypeDef Pydantic model. */
-export interface ArticleTypeDef {
-    id: ArticleType;
+ *  served by GET /api/content-types. Mirrors the backend
+ *  ContentTypeDef Pydantic model. */
+export interface ContentTypeDef {
+    id: ContentType;
     label_key: string;
     description_key: string;
     icon: string;
     /** Marks the canonical default for new articles. Exactly one
      *  entry in the YAML registry is ``default: true``. */
     default: boolean;
-    extra_fields: ArticleTypeExtraField[];
+    extra_fields: ContentTypeExtraField[];
 }
 
 /** PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Publication-
@@ -385,9 +385,9 @@ export interface Article {
     language: string
     /** ARTICLE-TYPES-SSOT-01 (2026-05-29). Article-type
      *  discriminator. Values come from the registry served by
-     *  GET /api/article-types: blogpost (default) / tutorial /
+     *  GET /api/content-types: blogpost (default) / tutorial /
      *  review / essay / newsletter. ``string`` rather than
-     *  ``ArticleType`` because legacy backups may still carry
+     *  ``ContentType`` because legacy backups may still carry
      *  unknown values until restored through the migration. */
     content_type: string
     /** ARTICLE-TYPES-SSOT-01. Per-type extra fields (e.g.
@@ -470,7 +470,7 @@ export interface ArticleCreate {
     language?: string
     /** ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
      *  "blogpost" via the backend column default when omitted. */
-    content_type?: ArticleType
+    content_type?: ContentType
     article_metadata?: Record<string, unknown>
 }
 
@@ -530,7 +530,7 @@ export interface ArticleUpdate {
      *  per-type extra fields (e.g. tutorial difficulty_level).
      *  Both optional on PATCH; the backend only writes provided
      *  keys. */
-    content_type?: ArticleType
+    content_type?: ContentType
     article_metadata?: Record<string, unknown>
 }
 
@@ -2038,13 +2038,13 @@ export const api = {
     },
 
     /** ARTICLE-TYPES-SSOT-01: article-type registry loaded from
-     *  backend/config/article-types.yaml. Returns the
-     *  {id: ArticleTypeDef} mapping. Frontend's useArticleTypes()
-     *  hook + ArticleTypesProvider consume this; mirrors the
+     *  backend/config/content-types.yaml. Returns the
+     *  {id: ContentTypeDef} mapping. Frontend's useContentTypes()
+     *  hook + ContentTypesProvider consume this; mirrors the
      *  bookTypes shape exactly. */
-    articleTypes: {
+    contentTypes: {
         list: () =>
-            request<Record<string, ArticleTypeDef>>("/article-types"),
+            request<Record<string, ContentTypeDef>>("/content-types"),
     },
 
     /** AR-01 Phase 1: standalone Article CRUD. Article is its own

@@ -6,19 +6,31 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ### Added
 
-- **Article-Types SSoT (8 types)** (``ARTICLE-TYPES-SSOT-01``,
-  2026-05-29). The reserved ``Article.content_type`` column is
+- **Publication-status parity** (``PUBLICATION-STATUS-BOOK-PARITY-01``,
+  2026-05-29). Article had ``status`` (draft / ready / published /
+  archived) since AR-01 Phase 1; Book gains the same column at
+  Alembic migration ``v1f2345678abc`` (backfilled "draft" for
+  existing rows). Shared ``PublicationStatus`` Pydantic Literal
+  + ``_PUBLISHING_LIFECYCLE`` tuple in
+  ``backend/app/schemas/__init__.py`` so a future status change
+  propagates to both surfaces in one edit. ``ArticleStatus``
+  becomes a back-compat alias. BookCard + BookListView gain a
+  status badge mirroring the AD card/row footer pattern.
+
+- **Content-Types SSoT (8 types)** (``ARTICLE-TYPES-SSOT-01``,
+  renamed mid-arc to ``CONTENT-TYPES-SSOT-01`` per user
+  direction, 2026-05-29). The reserved ``Article.content_type`` column is
   repurposed as the article-type discriminator per the original
   model intent ("exists so a future Blogpost / Tweet
   differentiation can land without a schema change"). New
-  ``backend/config/article-types.yaml`` registry ships **8
+  ``backend/config/content-types.yaml`` registry ships **8
   types**: Blog post (default), Tutorial, Review, Essay,
   Newsletter, Interview, Listicle, Short story. Per-type
   extra-fields (tutorial difficulty + prerequisites + duration,
   review work + author + rating, newsletter issue + send date,
   interview partner + role) live in a new ``article_metadata``
   JSON column.
-- **GET /api/article-types** endpoint serving the registry +
+- **GET /api/content-types** endpoint serving the registry +
   drift-detector test (Pydantic Literal kept in sync with the
   YAML).
 - **AD split-button** (``new-article-chevron`` + dropdown
@@ -34,12 +46,12 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 - **8 i18n catalog updates** (de / en / es / fr / el / pt / tr /
   ja): labels + descriptions for all 8 types + 10 per-type
   extra-field labels + AD split-button tooltips.
-- **Playwright smoke** (``e2e/smoke/article-types.spec.ts``)
+- **Playwright smoke** (``e2e/smoke/content-types.spec.ts``)
   covering create-via-primary, chevron-dropdown contents,
   create-via-menu-item, editor type-switch + extra-fields
   persist, AD badge rendering.
 - **Help doc pair** (DE + EN) at
-  ``docs/help/{de,en}/articles/article-types.md``.
+  ``docs/help/{de,en}/articles/content-types.md``.
 
 ### Changed
 

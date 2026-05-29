@@ -1,5 +1,5 @@
 /**
- * Vitest cases for ArticleTypeBadge.
+ * Vitest cases for ContentTypeBadge.
  *
  * Filed by ARTICLE-TYPES-SSOT-01 C7 (2026-05-29).
  */
@@ -7,9 +7,9 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen} from "@testing-library/react";
 
-import {ArticleTypeBadge} from "./ArticleTypeBadge";
-import {ArticleTypesProvider} from "../../hooks/useArticleTypes";
-import type {ArticleTypeDef} from "../../api/client";
+import {ContentTypeBadge} from "./ContentTypeBadge";
+import {ContentTypesProvider} from "../../hooks/useContentTypes";
+import type {ContentTypeDef} from "../../api/client";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -19,19 +19,19 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-const TYPES: Record<string, ArticleTypeDef> = {
+const TYPES: Record<string, ContentTypeDef> = {
     blogpost: {
         id: "blogpost",
-        label_key: "ui.article_types.blogpost",
-        description_key: "ui.article_types.blogpost_description",
+        label_key: "ui.content_types.blogpost",
+        description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: true,
         extra_fields: [],
     },
     tutorial: {
         id: "tutorial",
-        label_key: "ui.article_types.tutorial",
-        description_key: "ui.article_types.tutorial_description",
+        label_key: "ui.content_types.tutorial",
+        description_key: "ui.content_types.tutorial_description",
         icon: "GraduationCap",
         default: false,
         extra_fields: [],
@@ -40,16 +40,16 @@ const TYPES: Record<string, ArticleTypeDef> = {
 
 function renderBadge(contentType: string) {
     return render(
-        <ArticleTypesProvider initialTypes={TYPES}>
-            <ArticleTypeBadge
+        <ContentTypesProvider initialTypes={TYPES}>
+            <ContentTypeBadge
                 contentType={contentType}
                 testId="badge"
             />
-        </ArticleTypesProvider>,
+        </ContentTypesProvider>,
     );
 }
 
-describe("ArticleTypeBadge", () => {
+describe("ContentTypeBadge", () => {
     it("renders the registry's label_key fallback for a known content_type", () => {
         // Our i18n mock returns the fallback (2nd arg) — the
         // component passes ``contentType`` as the fallback when

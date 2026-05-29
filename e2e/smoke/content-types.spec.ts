@@ -1,7 +1,7 @@
 /**
- * ARTICLE-TYPES-SSOT-01 C9 (2026-05-29).
+ * ARTICLE-TYPES-SSOT-01 (renamed to ContentType) C9 (2026-05-29).
  *
- * Playwright smoke covering the article-types arc end-to-end in
+ * Playwright smoke covering the content-types arc end-to-end in
  * a real browser:
  *
  * 1. The AD split-button's chevron opens a dropdown listing the
@@ -47,7 +47,7 @@ interface ArticleResponse {
     article_metadata: Record<string, unknown>;
 }
 
-test.describe("ARTICLE-TYPES-SSOT-01 article-types arc", () => {
+test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc", () => {
     test("primary 'Neuer Artikel' click creates a blogpost", async ({page}) => {
         await page.goto("/articles");
         await expect(page.getByTestId("article-list-page")).toBeVisible();

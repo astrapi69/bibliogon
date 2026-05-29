@@ -50,7 +50,7 @@ plugins:
         Massen-Export: Bulk export
         Medium-Import: Medium import
         Als Buch zusammenfassen: Convert to book
-        Artikel-Typen: Article types
+        Textarten: Content types
         Bücher: Books
         Git-Repository-URL: Git repository URL
         Storyboard-Ansicht: Storyboard view
@@ -119,7 +119,7 @@ nav:
   - Massen-Export: de/articles/bulk-export.md
   - Medium-Import: de/articles/medium-import.md
   - Als Buch zusammenfassen: de/articles/convert-to-book.md
-  - Artikel-Typen: de/articles/article-types.md
+  - Textarten: de/articles/content-types.md
 - Bücher:
   - Massen-Export: de/books/bulk-export.md
   - Git-Repository-URL: de/books/repository-url.md

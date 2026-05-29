@@ -421,7 +421,7 @@ ui:
     also_by_author: "Tambem do autor"
     excerpt: "Trecho"
     call_to_action: "Chamada para acao"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "Campos especificos do tipo"
     blogpost: "Blog post"
@@ -976,8 +976,8 @@ ui:
     list_error: "Nao foi possivel carregar a lista de artigos."
     new: "Novo artigo"
     new_more_tooltip: "Mais tipos de artigo"
-    article_type: "Tipo de artigo"
-    article_type_tooltip: "Tipo do artigo: Blog post / Tutorial / Resenha / Ensaio / Boletim / Entrevista / Listicle / Conto."
+    content_type: "Tipo de conteudo"
+    content_type_tooltip: "Tipo do artigo: Blog post / Tutorial / Resenha / Ensaio / Boletim / Entrevista / Listicle / Conto."
     import_more_tooltip: "Mais fontes de importação"
     default_title: "Novo artigo"
     create_error: "Nao foi possivel criar o artigo."

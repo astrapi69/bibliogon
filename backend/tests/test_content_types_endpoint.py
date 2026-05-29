@@ -1,8 +1,8 @@
-"""Endpoint tests for GET /api/article-types.
+"""Endpoint tests for GET /api/content-types.
 
 Filed by ARTICLE-TYPES-SSOT-01 (2026-05-29). The endpoint exposes
-the ArticleTypeRegistry mapping so the frontend's
-``useArticleTypes()`` hook can hydrate the React Context. Mirrors
+the ContentTypeRegistry mapping so the frontend's
+``useContentTypes()`` hook can hydrate the React Context. Mirrors
 the test_book_types_endpoint.py shape.
 
 LRU cache discipline: same yield-based autouse fixture as the
@@ -18,20 +18,20 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import article_type_registry
-from app.services.article_type_registry import load_article_types
+from app.services import content_type_registry
+from app.services.content_type_registry import load_content_types
 
 
 @pytest.fixture(autouse=True)
 def _clear_cache():
-    load_article_types.cache_clear()
+    load_content_types.cache_clear()
     yield
-    load_article_types.cache_clear()
+    load_content_types.cache_clear()
 
 
-def test_endpoint_returns_eight_real_article_types() -> None:
+def test_endpoint_returns_eight_real_content_types() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     assert resp.status_code == 200
     body = resp.json()
     assert set(body.keys()) == {
@@ -48,7 +48,7 @@ def test_endpoint_returns_eight_real_article_types() -> None:
 
 def test_endpoint_includes_interview_extra_fields() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     body = resp.json()
     interview = body["interview"]
     assert interview["icon"] == "Users"
@@ -62,7 +62,7 @@ def test_endpoint_includes_interview_extra_fields() -> None:
 
 def test_endpoint_listicle_and_short_story_have_no_extra_fields() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     body = resp.json()
     assert body["listicle"]["icon"] == "ListOrdered"
     assert body["listicle"]["extra_fields"] == []
@@ -70,15 +70,15 @@ def test_endpoint_listicle_and_short_story_have_no_extra_fields() -> None:
     assert body["short_story"]["extra_fields"] == []
 
 
-def test_endpoint_shape_matches_ArticleTypeDef() -> None:
+def test_endpoint_shape_matches_ContentTypeDef() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     assert resp.status_code == 200
     body = resp.json()
     blogpost = body["blogpost"]
     assert blogpost["id"] == "blogpost"
-    assert blogpost["label_key"] == "ui.article_types.blogpost"
-    assert blogpost["description_key"] == "ui.article_types.blogpost_description"
+    assert blogpost["label_key"] == "ui.content_types.blogpost"
+    assert blogpost["description_key"] == "ui.content_types.blogpost_description"
     assert blogpost["icon"] == "FileText"
     assert blogpost["default"] is True
     assert blogpost["extra_fields"] == []
@@ -86,7 +86,7 @@ def test_endpoint_shape_matches_ArticleTypeDef() -> None:
 
 def test_tutorial_extra_fields_serialised_correctly() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     body = resp.json()
     tutorial = body["tutorial"]
     assert tutorial["icon"] == "GraduationCap"
@@ -104,7 +104,7 @@ def test_tutorial_extra_fields_serialised_correctly() -> None:
 
 def test_review_rating_bounds_present_in_response() -> None:
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     body = resp.json()
     rating = next(
         f for f in body["review"]["extra_fields"] if f["name"] == "rating"
@@ -117,12 +117,12 @@ def test_endpoint_returns_empty_dict_when_registry_missing(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setattr(
-        article_type_registry,
+        content_type_registry,
         "_REGISTRY_PATH",
         tmp_path / "missing.yaml",
     )
-    load_article_types.cache_clear()
+    load_content_types.cache_clear()
     with TestClient(app) as client:
-        resp = client.get("/api/article-types")
+        resp = client.get("/api/content-types")
     assert resp.status_code == 200
     assert resp.json() == {}

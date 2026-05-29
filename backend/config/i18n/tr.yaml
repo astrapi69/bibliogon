@@ -421,7 +421,7 @@ ui:
     also_by_author: "Ayni yazardan"
     excerpt: "Alinti"
     call_to_action: "Eylem cagrisi"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "Tipe ozgu alanlar"
     blogpost: "Blog yazisi"
@@ -1012,8 +1012,8 @@ ui:
     list_error: "Makale listesi yuklenemedi."
     new: "Yeni makale"
     new_more_tooltip: "Diger makale tipleri"
-    article_type: "Makale tipi"
-    article_type_tooltip: "Makalenin tipi: Blog yazisi / Egitim / Inceleme / Deneme / Bulten / Roportaj / Liste yazisi / Kisa hikaye."
+    content_type: "Icerik tipi"
+    content_type_tooltip: "Makalenin tipi: Blog yazisi / Egitim / Inceleme / Deneme / Bulten / Roportaj / Liste yazisi / Kisa hikaye."
     import_more_tooltip: "Diğer içe aktarma kaynakları"
     default_title: "Yeni makale"
     create_error: "Makale olusturulamadi."

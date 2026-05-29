@@ -421,7 +421,7 @@ ui:
     also_by_author: "同じ著者の他の本"
     excerpt: "抜粋"
     call_to_action: "行動の呼びかけ"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "タイプ固有のフィールド"
     blogpost: "ブログ記事"
@@ -976,8 +976,8 @@ ui:
     list_error: "記事リストを読み込めませんでした。"
     new: "新しい記事"
     new_more_tooltip: "他の記事タイプ"
-    article_type: "記事タイプ"
-    article_type_tooltip: "記事のタイプ:ブログ記事 / チュートリアル / レビュー / エッセイ / ニュースレター / インタビュー / リスト記事 / 短編小説。"
+    content_type: "コンテンツタイプ"
+    content_type_tooltip: "記事のタイプ:ブログ記事 / チュートリアル / レビュー / エッセイ / ニュースレター / インタビュー / リスト記事 / 短編小説。"
     import_more_tooltip: "他のインポート元"
     default_title: "新しい記事"
     create_error: "記事を作成できませんでした。"

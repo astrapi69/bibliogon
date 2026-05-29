@@ -558,7 +558,7 @@ class Article(Base):
 
     ``content_type`` is the article-type discriminator
     (ARTICLE-TYPES-SSOT-01, 2026-05-29). Values come from the
-    article-types.yaml registry: ``blogpost`` (default),
+    content-types.yaml registry: ``blogpost`` (default),
     ``tutorial``, ``review``, ``essay``, ``newsletter``. Migration
     ``u0e1f2345678`` repurposed the column from the legacy
     ``"article"`` default per the original "exists so a future

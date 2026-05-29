@@ -44,7 +44,7 @@ interface Props {
 
 /** Render the named Lucide icon at the given size, falling back
  *  to FileText for unmapped names. */
-export function ArticleTypeIcon({iconName, size = 24}: Props) {
+export function ContentTypeIcon({iconName, size = 24}: Props) {
     const Icon = ICON_MAP[iconName] ?? FileText;
     return <Icon size={size} />;
 }

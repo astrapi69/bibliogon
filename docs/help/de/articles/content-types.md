@@ -1,6 +1,6 @@
-# Artikel-Typen
+# Textarten
 
-Bibliogon unterstützt 8 Artikel-Typen, damit du jede lange Schreibform
+Bibliogon unterstützt 8 Textarten, damit du jede lange Schreibform
 in der passenden Struktur erfassen kannst. Der Typ wird beim Anlegen
 gewählt und kann jederzeit im ArticleEditor geändert werden.
 
@@ -30,7 +30,7 @@ die häufigste Wahl, daher ohne Umweg über das Menü.
 ## Typ später ändern
 
 Im ArticleEditor zeigt die rechte Seitenleiste einen
-**Artikel-Typ**-Dropdown direkt unter dem Status-Feld. Den Typ zu
+**Textart**-Dropdown direkt unter dem Status-Feld. Den Typ zu
 ändern setzt die typ-spezifischen Felder zurück (z. B. von Tutorial
 auf Rezension werden die Tutorial-Felder geleert und die
 Rezensions-Felder erscheinen).

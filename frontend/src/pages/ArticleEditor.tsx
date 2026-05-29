@@ -38,10 +38,10 @@ import {
     MoreVertical,
 } from "lucide-react";
 
-import { api, ApiError, Article, ArticleStatus, ArticleType, Author } from "../api/client";
-import { useArticleTypes } from "../hooks/useArticleTypes";
-import { ArticleTypeIcon } from "../utils/articleTypeIcon";
-import ArticleTypeFieldsSection from "../components/articles/ArticleTypeFieldsSection";
+import { api, ApiError, Article, ArticleStatus, ContentType, Author } from "../api/client";
+import { useContentTypes } from "../hooks/useContentTypes";
+import { ContentTypeIcon } from "../utils/contentTypeIcon";
+import ContentTypeFieldsSection from "../components/articles/ContentTypeFieldsSection";
 import Editor from "../components/Editor";
 import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
@@ -81,7 +81,7 @@ export default function ArticleEditor() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const { confirm } = useDialog();
-    const articleTypesSnapshot = useArticleTypes();
+    const articleTypesSnapshot = useContentTypes();
 
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
@@ -283,7 +283,7 @@ export default function ArticleEditor() {
                     // ARTICLE-TYPES-SSOT-01 C6: thread the article-
                     // type + extra-fields PATCH through.
                     content_type: patch.content_type as
-                        | import("../api/client").ArticleType
+                        | import("../api/client").ContentType
                         | undefined,
                     article_metadata: patch.article_metadata,
                 });
@@ -800,7 +800,7 @@ export default function ArticleEditor() {
                      *  which is immutable_after_create); changing it
                      *  reveals a different per-type extra_fields set.
                      *  Blogpost + essay have no extra fields, so the
-                     *  ArticleTypeFieldsSection renders null for them.
+                     *  ContentTypeFieldsSection renders null for them.
                      */}
                     <FieldLabel
                         label={t("ui.articles.article_type", "Artikel-Typ")}
@@ -813,7 +813,7 @@ export default function ArticleEditor() {
                         data-testid="article-editor-content-type"
                         value={article.content_type}
                         onChange={(e) => {
-                            const next = e.target.value as ArticleType;
+                            const next = e.target.value as ContentType;
                             // Auto-reset article_metadata when type
                             // changes; the new type's extra_fields are
                             // likely a different shape from the old.
@@ -845,7 +845,7 @@ export default function ArticleEditor() {
                             }}
                             data-testid="article-editor-content-type-description"
                         >
-                            <ArticleTypeIcon
+                            <ContentTypeIcon
                                 iconName={
                                     articleTypesSnapshot.types[
                                         article.content_type
@@ -863,7 +863,7 @@ export default function ArticleEditor() {
                             </span>
                         </div>
                     ) : null}
-                    <ArticleTypeFieldsSection
+                    <ContentTypeFieldsSection
                         contentType={article.content_type}
                         metadata={article.article_metadata ?? {}}
                         onChange={(nextType, nextMetadata) => {

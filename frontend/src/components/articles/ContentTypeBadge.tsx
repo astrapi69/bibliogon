@@ -10,8 +10,8 @@
 
 import type {CSSProperties} from "react";
 
-import {ArticleTypeIcon} from "../../utils/articleTypeIcon";
-import {useArticleTypes, articleTypeLabelKey, articleTypeIcon} from "../../hooks/useArticleTypes";
+import {ContentTypeIcon} from "../../utils/contentTypeIcon";
+import {useContentTypes, contentTypeLabelKey, contentTypeIcon} from "../../hooks/useContentTypes";
 import {useI18n} from "../../hooks/useI18n";
 
 interface Props {
@@ -27,7 +27,7 @@ interface Props {
     iconSize?: number;
 }
 
-export function ArticleTypeBadge({
+export function ContentTypeBadge({
     contentType,
     testId,
     style,
@@ -35,9 +35,9 @@ export function ArticleTypeBadge({
     iconSize = 12,
 }: Props) {
     const {t} = useI18n();
-    const snapshot = useArticleTypes();
-    const labelKey = articleTypeLabelKey(snapshot, contentType);
-    const iconName = articleTypeIcon(snapshot, contentType);
+    const snapshot = useContentTypes();
+    const labelKey = contentTypeLabelKey(snapshot, contentType);
+    const iconName = contentTypeIcon(snapshot, contentType);
 
     return (
         <span
@@ -50,10 +50,10 @@ export function ArticleTypeBadge({
                 ...style,
             }}
         >
-            <ArticleTypeIcon iconName={iconName} size={iconSize} />
+            <ContentTypeIcon iconName={iconName} size={iconSize} />
             <span>{t(labelKey, contentType)}</span>
         </span>
     );
 }
 
-export default ArticleTypeBadge;
+export default ContentTypeBadge;

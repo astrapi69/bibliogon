@@ -1,5 +1,5 @@
 /**
- * Vitest cases for ArticleTypeFieldsSection.
+ * Vitest cases for ContentTypeFieldsSection.
  *
  * Filed by ARTICLE-TYPES-SSOT-01 C6 (2026-05-29).
  */
@@ -7,9 +7,9 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
-import {ArticleTypeFieldsSection} from "./ArticleTypeFieldsSection";
-import {ArticleTypesProvider} from "../../hooks/useArticleTypes";
-import type {ArticleType, ArticleTypeDef} from "../../api/client";
+import {ContentTypeFieldsSection} from "./ContentTypeFieldsSection";
+import {ContentTypesProvider} from "../../hooks/useContentTypes";
+import type {ContentType, ContentTypeDef} from "../../api/client";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -19,51 +19,51 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-const TYPES: Record<string, ArticleTypeDef> = {
+const TYPES: Record<string, ContentTypeDef> = {
     blogpost: {
         id: "blogpost",
-        label_key: "ui.article_types.blogpost",
-        description_key: "ui.article_types.blogpost_description",
+        label_key: "ui.content_types.blogpost",
+        description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: true,
         extra_fields: [],
     },
     tutorial: {
         id: "tutorial",
-        label_key: "ui.article_types.tutorial",
-        description_key: "ui.article_types.tutorial_description",
+        label_key: "ui.content_types.tutorial",
+        description_key: "ui.content_types.tutorial_description",
         icon: "GraduationCap",
         default: false,
         extra_fields: [
             {
                 name: "difficulty_level",
                 type: "enum",
-                label_key: "ui.article_types.tutorial_field_difficulty",
+                label_key: "ui.content_types.tutorial_field_difficulty",
                 values: ["beginner", "intermediate", "advanced"],
             },
             {
                 name: "prerequisites",
                 type: "text",
-                label_key: "ui.article_types.tutorial_field_prerequisites",
+                label_key: "ui.content_types.tutorial_field_prerequisites",
             },
             {
                 name: "estimated_duration_minutes",
                 type: "number",
-                label_key: "ui.article_types.tutorial_field_duration",
+                label_key: "ui.content_types.tutorial_field_duration",
             },
         ],
     },
     review: {
         id: "review",
-        label_key: "ui.article_types.review",
-        description_key: "ui.article_types.review_description",
+        label_key: "ui.content_types.review",
+        description_key: "ui.content_types.review_description",
         icon: "Star",
         default: false,
         extra_fields: [
             {
                 name: "rating",
                 type: "number",
-                label_key: "ui.article_types.review_field_rating",
+                label_key: "ui.content_types.review_field_rating",
                 min: 1,
                 max: 5,
             },
@@ -71,22 +71,22 @@ const TYPES: Record<string, ArticleTypeDef> = {
     },
     newsletter: {
         id: "newsletter",
-        label_key: "ui.article_types.newsletter",
-        description_key: "ui.article_types.newsletter_description",
+        label_key: "ui.content_types.newsletter",
+        description_key: "ui.content_types.newsletter_description",
         icon: "Mail",
         default: false,
         extra_fields: [
             {
                 name: "send_date",
                 type: "date",
-                label_key: "ui.article_types.newsletter_field_send_date",
+                label_key: "ui.content_types.newsletter_field_send_date",
             },
         ],
     },
     essay: {
         id: "essay",
-        label_key: "ui.article_types.essay",
-        description_key: "ui.article_types.essay_description",
+        label_key: "ui.content_types.essay",
+        description_key: "ui.content_types.essay_description",
         icon: "Feather",
         default: false,
         extra_fields: [],
@@ -97,22 +97,22 @@ function renderSection(
     contentType: string,
     metadata: Record<string, unknown> = {},
     onChange: (
-        contentType: ArticleType,
+        contentType: ContentType,
         next: Record<string, unknown>,
     ) => void = vi.fn(),
 ) {
     return render(
-        <ArticleTypesProvider initialTypes={TYPES}>
-            <ArticleTypeFieldsSection
+        <ContentTypesProvider initialTypes={TYPES}>
+            <ContentTypeFieldsSection
                 contentType={contentType}
                 metadata={metadata}
                 onChange={onChange}
             />
-        </ArticleTypesProvider>,
+        </ContentTypesProvider>,
     );
 }
 
-describe("ArticleTypeFieldsSection — empty cases", () => {
+describe("ContentTypeFieldsSection — empty cases", () => {
     it("renders nothing for blogpost (no extra_fields)", () => {
         const {container} = renderSection("blogpost");
         expect(container.textContent).toBe("");
@@ -129,7 +129,7 @@ describe("ArticleTypeFieldsSection — empty cases", () => {
     });
 });
 
-describe("ArticleTypeFieldsSection — tutorial fields", () => {
+describe("ContentTypeFieldsSection — tutorial fields", () => {
     it("renders all 3 tutorial fields", () => {
         renderSection("tutorial");
         expect(screen.getByTestId("article-type-field-difficulty_level")).toBeTruthy();
@@ -173,7 +173,7 @@ describe("ArticleTypeFieldsSection — tutorial fields", () => {
     });
 });
 
-describe("ArticleTypeFieldsSection — review fields with bounds", () => {
+describe("ContentTypeFieldsSection — review fields with bounds", () => {
     it("rating input carries min + max attributes", () => {
         renderSection("review", {rating: 4});
         const input = screen.getByTestId(
@@ -186,7 +186,7 @@ describe("ArticleTypeFieldsSection — review fields with bounds", () => {
     });
 });
 
-describe("ArticleTypeFieldsSection — newsletter date field", () => {
+describe("ContentTypeFieldsSection — newsletter date field", () => {
     it("send_date renders as a date input", () => {
         renderSection("newsletter", {send_date: "2026-06-01"});
         const input = screen.getByTestId(
@@ -197,7 +197,7 @@ describe("ArticleTypeFieldsSection — newsletter date field", () => {
     });
 });
 
-describe("ArticleTypeFieldsSection — onChange", () => {
+describe("ContentTypeFieldsSection — onChange", () => {
     it("text input fires onChange with merged metadata", () => {
         const onChange = vi.fn();
         renderSection("tutorial", {difficulty_level: "beginner"}, onChange);

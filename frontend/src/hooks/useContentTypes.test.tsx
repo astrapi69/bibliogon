@@ -1,5 +1,5 @@
 /**
- * Vitest cases for the useArticleTypes() hook + ArticleTypesProvider.
+ * Vitest cases for the useContentTypes() hook + ContentTypesProvider.
  *
  * Filed by ARTICLE-TYPES-SSOT-01 C3 (2026-05-29). Mirrors the
  * useBookTypes.test.tsx shape.
@@ -10,99 +10,99 @@ import {render, screen, waitFor, renderHook} from "@testing-library/react";
 import type {ReactNode} from "react";
 
 import {
-    ArticleTypesProvider,
-    articleTypeIcon,
-    articleTypeLabelKey,
-    useArticleTypes,
-} from "./useArticleTypes";
-import type {ArticleTypeDef} from "../api/client";
+    ContentTypesProvider,
+    contentTypeIcon,
+    contentTypeLabelKey,
+    useContentTypes,
+} from "./useContentTypes";
+import type {ContentTypeDef} from "../api/client";
 
 vi.mock("../api/client", () => ({
     api: {
-        articleTypes: {
+        contentTypes: {
             list: vi.fn(),
         },
     },
-    ArticleType: undefined,
+    ContentType: undefined,
 }));
 
 import {api} from "../api/client";
 
-function makeArticleType(overrides: Partial<ArticleTypeDef> = {}): ArticleTypeDef {
+function makeContentType(overrides: Partial<ContentTypeDef> = {}): ContentTypeDef {
     return {
         id: overrides.id ?? "blogpost",
-        label_key: "ui.article_types.blogpost",
-        description_key: "ui.article_types.blogpost_description",
+        label_key: "ui.content_types.blogpost",
+        description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: false,
         extra_fields: [],
         ...overrides,
-    } as ArticleTypeDef;
+    } as ContentTypeDef;
 }
 
-const SAMPLE_REGISTRY: Record<string, ArticleTypeDef> = {
-    blogpost: makeArticleType({id: "blogpost", default: true}),
-    tutorial: makeArticleType({
+const SAMPLE_REGISTRY: Record<string, ContentTypeDef> = {
+    blogpost: makeContentType({id: "blogpost", default: true}),
+    tutorial: makeContentType({
         id: "tutorial",
-        label_key: "ui.article_types.tutorial",
+        label_key: "ui.content_types.tutorial",
         icon: "GraduationCap",
         extra_fields: [
             {
                 name: "difficulty_level",
                 type: "enum",
-                label_key: "ui.article_types.tutorial_field_difficulty",
+                label_key: "ui.content_types.tutorial_field_difficulty",
                 values: ["beginner", "intermediate", "advanced"],
             },
         ],
     }),
-    review: makeArticleType({
+    review: makeContentType({
         id: "review",
-        label_key: "ui.article_types.review",
+        label_key: "ui.content_types.review",
         icon: "Star",
         extra_fields: [
             {
                 name: "rating",
                 type: "number",
-                label_key: "ui.article_types.review_field_rating",
+                label_key: "ui.content_types.review_field_rating",
                 min: 1,
                 max: 5,
             },
         ],
     }),
-    essay: makeArticleType({
+    essay: makeContentType({
         id: "essay",
-        label_key: "ui.article_types.essay",
+        label_key: "ui.content_types.essay",
         icon: "Feather",
     }),
-    newsletter: makeArticleType({
+    newsletter: makeContentType({
         id: "newsletter",
-        label_key: "ui.article_types.newsletter",
+        label_key: "ui.content_types.newsletter",
         icon: "Mail",
         extra_fields: [
             {
                 name: "issue_number",
                 type: "number",
-                label_key: "ui.article_types.newsletter_field_issue",
+                label_key: "ui.content_types.newsletter_field_issue",
             },
         ],
     }),
 };
 
-function wrapper(initialTypes?: Record<string, ArticleTypeDef>) {
+function wrapper(initialTypes?: Record<string, ContentTypeDef>) {
     return ({children}: {children: ReactNode}) => (
-        <ArticleTypesProvider initialTypes={initialTypes}>
+        <ContentTypesProvider initialTypes={initialTypes}>
             {children}
-        </ArticleTypesProvider>
+        </ContentTypesProvider>
     );
 }
 
 beforeEach(() => {
-    vi.mocked(api.articleTypes.list).mockReset();
+    vi.mocked(api.contentTypes.list).mockReset();
 });
 
-describe("useArticleTypes() — Provider with initialTypes", () => {
+describe("useContentTypes() — Provider with initialTypes", () => {
     it("exposes the snapshot via the hook", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
         expect(result.current.types).toEqual(SAMPLE_REGISTRY);
@@ -110,7 +110,7 @@ describe("useArticleTypes() — Provider with initialTypes", () => {
     });
 
     it("ordered array reflects YAML order from the response", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
         expect(result.current.ordered.map((at) => at.id)).toEqual([
@@ -123,42 +123,42 @@ describe("useArticleTypes() — Provider with initialTypes", () => {
     });
 
     it("skips the network fetch when initialTypes is provided", () => {
-        renderHook(() => useArticleTypes(), {
+        renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
-        expect(api.articleTypes.list).not.toHaveBeenCalled();
+        expect(api.contentTypes.list).not.toHaveBeenCalled();
     });
 
     it("defaultId resolves to the type marked default: true", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
         expect(result.current.defaultId).toBe("blogpost");
     });
 
     it("defaultId falls back to first registered id when none marked", () => {
-        const noDefault: Record<string, ArticleTypeDef> = {
-            essay: makeArticleType({id: "essay", default: false}),
-            review: makeArticleType({id: "review", default: false}),
+        const noDefault: Record<string, ContentTypeDef> = {
+            essay: makeContentType({id: "essay", default: false}),
+            review: makeContentType({id: "review", default: false}),
         };
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(noDefault),
         });
         expect(result.current.defaultId).toBe("essay");
     });
 
     it("defaultId falls back to 'blogpost' when registry empty", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper({}),
         });
         expect(result.current.defaultId).toBe("blogpost");
     });
 });
 
-describe("useArticleTypes() — Provider fetch-on-mount", () => {
+describe("useContentTypes() — Provider fetch-on-mount", () => {
     it("status='loading' before the fetch resolves, then 'ready'", async () => {
-        vi.mocked(api.articleTypes.list).mockResolvedValue(SAMPLE_REGISTRY);
-        const {result} = renderHook(() => useArticleTypes(), {
+        vi.mocked(api.contentTypes.list).mockResolvedValue(SAMPLE_REGISTRY);
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(),
         });
         expect(result.current.status).toBe("loading");
@@ -168,10 +168,10 @@ describe("useArticleTypes() — Provider fetch-on-mount", () => {
     });
 
     it("status='error' on fetch failure; types stay empty", async () => {
-        vi.mocked(api.articleTypes.list).mockRejectedValue(
+        vi.mocked(api.contentTypes.list).mockRejectedValue(
             new Error("network down"),
         );
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(),
         });
         await waitFor(() => expect(result.current.status).toBe("error"));
@@ -179,10 +179,10 @@ describe("useArticleTypes() — Provider fetch-on-mount", () => {
     });
 
     it("refresh() re-triggers the fetch", async () => {
-        vi.mocked(api.articleTypes.list)
+        vi.mocked(api.contentTypes.list)
             .mockResolvedValueOnce({})
             .mockResolvedValueOnce(SAMPLE_REGISTRY);
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(),
         });
         await waitFor(() => expect(result.current.status).toBe("ready"));
@@ -194,62 +194,62 @@ describe("useArticleTypes() — Provider fetch-on-mount", () => {
     });
 });
 
-describe("useArticleTypes() outside a provider", () => {
+describe("useContentTypes() outside a provider", () => {
     it("throws a clear error", () => {
         const spy = vi.spyOn(console, "error").mockImplementation(() => {});
         function Bad() {
-            useArticleTypes();
+            useContentTypes();
             return null;
         }
         expect(() => render(<Bad />)).toThrow(
-            /useArticleTypes must be used within an <ArticleTypesProvider>/,
+            /useContentTypes must be used within an <ContentTypesProvider>/,
         );
         spy.mockRestore();
     });
 });
 
-describe("articleTypeLabelKey selector", () => {
+describe("contentTypeLabelKey selector", () => {
     it("returns the type's label_key for a known id", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
-        expect(articleTypeLabelKey(result.current, "tutorial")).toBe(
-            "ui.article_types.tutorial",
+        expect(contentTypeLabelKey(result.current, "tutorial")).toBe(
+            "ui.content_types.tutorial",
         );
     });
 
     it("falls back to the bare id for an unknown value", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
-        expect(articleTypeLabelKey(result.current, "unknown_type")).toBe(
+        expect(contentTypeLabelKey(result.current, "unknown_type")).toBe(
             "unknown_type",
         );
     });
 });
 
-describe("articleTypeIcon selector", () => {
+describe("contentTypeIcon selector", () => {
     it("returns the type's icon for a known id", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
-        expect(articleTypeIcon(result.current, "review")).toBe("Star");
+        expect(contentTypeIcon(result.current, "review")).toBe("Star");
     });
 
     it("falls back to 'FileText' for an unknown value", () => {
-        const {result} = renderHook(() => useArticleTypes(), {
+        const {result} = renderHook(() => useContentTypes(), {
             wrapper: wrapper(SAMPLE_REGISTRY),
         });
-        expect(articleTypeIcon(result.current, "unknown_type")).toBe(
+        expect(contentTypeIcon(result.current, "unknown_type")).toBe(
             "FileText",
         );
     });
 });
 
-describe("ArticleTypesProvider — rendering children", () => {
+describe("ContentTypesProvider — rendering children", () => {
     it("passes the snapshot to consuming components", () => {
         function Consumer() {
-            const {ordered, status, defaultId} = useArticleTypes();
+            const {ordered, status, defaultId} = useContentTypes();
             return (
                 <div>
                     <span data-testid="status">{status}</span>
@@ -259,9 +259,9 @@ describe("ArticleTypesProvider — rendering children", () => {
             );
         }
         render(
-            <ArticleTypesProvider initialTypes={SAMPLE_REGISTRY}>
+            <ContentTypesProvider initialTypes={SAMPLE_REGISTRY}>
                 <Consumer />
-            </ArticleTypesProvider>,
+            </ContentTypesProvider>,
         );
         expect(screen.getByTestId("status").textContent).toBe("ready");
         expect(screen.getByTestId("count").textContent).toBe("5");

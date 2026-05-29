@@ -35,9 +35,9 @@ navigation:
           en: Convert to book
         slug: articles/convert-to-book
       - title:
-          de: Artikel-Typen
-          en: Article types
-        slug: articles/article-types
+          de: Textarten
+          en: Content types
+        slug: articles/content-types
 
   - title:
       de: Bücher

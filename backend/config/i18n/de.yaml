@@ -409,7 +409,7 @@ ui:
     also_by_author: "Weitere Bücher des Autors"
     excerpt: "Leseprobe"
     call_to_action: "Aufruf zur Aktion"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29). Labels + descriptions
     # for the 5 article-types in backend/config/article-types.yaml,
     # plus per-type extra_field labels rendered by the
@@ -967,8 +967,8 @@ ui:
     list_error: "Konnte Artikelliste nicht laden."
     new: "Neuer Artikel"
     new_more_tooltip: "Weitere Artikel-Arten"
-    article_type: "Artikel-Typ"
-    article_type_tooltip: "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter / Interview / Listicle / Kurzgeschichte."
+    content_type: "Textart"
+    content_type_tooltip: "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter / Interview / Listicle / Kurzgeschichte."
     import_more_tooltip: "Weitere Import-Quellen"
     default_title: "Neuer Artikel"
     create_error: "Konnte Artikel nicht erstellen."

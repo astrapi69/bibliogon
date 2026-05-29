@@ -13,46 +13,46 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom";
 
 import ArticleList from "./ArticleList";
-import type { Article, ArticleTypeDef } from "../api/client";
-import { ArticleTypesProvider } from "../hooks/useArticleTypes";
+import type { Article, ContentTypeDef } from "../api/client";
+import { ContentTypesProvider } from "../hooks/useContentTypes";
 
-const TEST_ARTICLE_TYPES: Record<string, ArticleTypeDef> = {
+const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
     blogpost: {
         id: "blogpost",
-        label_key: "ui.article_types.blogpost",
-        description_key: "ui.article_types.blogpost_description",
+        label_key: "ui.content_types.blogpost",
+        description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: true,
         extra_fields: [],
     },
     tutorial: {
         id: "tutorial",
-        label_key: "ui.article_types.tutorial",
-        description_key: "ui.article_types.tutorial_description",
+        label_key: "ui.content_types.tutorial",
+        description_key: "ui.content_types.tutorial_description",
         icon: "GraduationCap",
         default: false,
         extra_fields: [],
     },
     review: {
         id: "review",
-        label_key: "ui.article_types.review",
-        description_key: "ui.article_types.review_description",
+        label_key: "ui.content_types.review",
+        description_key: "ui.content_types.review_description",
         icon: "Star",
         default: false,
         extra_fields: [],
     },
     essay: {
         id: "essay",
-        label_key: "ui.article_types.essay",
-        description_key: "ui.article_types.essay_description",
+        label_key: "ui.content_types.essay",
+        description_key: "ui.content_types.essay_description",
         icon: "Feather",
         default: false,
         extra_fields: [],
     },
     newsletter: {
         id: "newsletter",
-        label_key: "ui.article_types.newsletter",
-        description_key: "ui.article_types.newsletter_description",
+        label_key: "ui.content_types.newsletter",
+        description_key: "ui.content_types.newsletter_description",
         icon: "Mail",
         default: false,
         extra_fields: [],
@@ -90,7 +90,7 @@ vi.mock("../api/client", () => ({
             create: (...args: unknown[]) => mockCreate(...args),
             listTrash: (...args: unknown[]) => mockListTrash(...args),
         },
-        articleTypes: {
+        contentTypes: {
             list: vi.fn().mockResolvedValue({}),
         },
         settings: {
@@ -195,9 +195,9 @@ async function renderList(rows: Article[] = []) {
     await act(async () => {
         render(
             <MemoryRouter>
-                <ArticleTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
+                <ContentTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
                     <ArticleList />
-                </ArticleTypesProvider>
+                </ContentTypesProvider>
             </MemoryRouter>,
         );
     });

@@ -10,8 +10,8 @@ import { describe, expect, it, vi } from "vitest";
 import { render as rawRender, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import ArticleCard from "./ArticleCard";
-import type { Article, ArticleTypeDef } from "../../api/client";
-import { ArticleTypesProvider } from "../../hooks/useArticleTypes";
+import type { Article, ContentTypeDef } from "../../api/client";
+import { ContentTypesProvider } from "../../hooks/useContentTypes";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -21,11 +21,11 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-const TEST_ARTICLE_TYPES: Record<string, ArticleTypeDef> = {
+const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
     blogpost: {
         id: "blogpost",
-        label_key: "ui.article_types.blogpost",
-        description_key: "ui.article_types.blogpost_description",
+        label_key: "ui.content_types.blogpost",
+        description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: true,
         extra_fields: [],
@@ -34,9 +34,9 @@ const TEST_ARTICLE_TYPES: Record<string, ArticleTypeDef> = {
 
 function render(ui: ReactElement) {
     return rawRender(
-        <ArticleTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
+        <ContentTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
             {ui}
-        </ArticleTypesProvider>,
+        </ContentTypesProvider>,
     );
 }
 

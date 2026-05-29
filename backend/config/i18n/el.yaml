@@ -421,7 +421,7 @@ ui:
     also_by_author: "Επίσης από τον συγγραφέα"
     excerpt: "Απόσπασμα"
     call_to_action: "Πρόσκληση σε δράση"
-  article_types:
+  content_types:
     # ARTICLE-TYPES-SSOT-01 (2026-05-29).
     fields_section_heading: "Πεδία ειδικά για τον τύπο"
     blogpost: "Δημοσίευση blog"
@@ -976,8 +976,8 @@ ui:
     list_error: "Δεν ήταν δυνατή η φόρτωση της λίστας άρθρων."
     new: "Νέο άρθρο"
     new_more_tooltip: "Περισσότεροι τύποι άρθρου"
-    article_type: "Τύπος άρθρου"
-    article_type_tooltip: "Τύπος του άρθρου: Δημοσίευση blog / Οδηγός / Κριτική / Δοκίμιο / Newsletter / Συνέντευξη / Listicle / Διήγημα."
+    content_type: "Τύπος περιεχομένου"
+    content_type_tooltip: "Τύπος του άρθρου: Δημοσίευση blog / Οδηγός / Κριτική / Δοκίμιο / Newsletter / Συνέντευξη / Listicle / Διήγημα."
     import_more_tooltip: "Περισσότερες πηγές εισαγωγής"
     default_title: "Νέο άρθρο"
     create_error: "Δεν ήταν δυνατή η δημιουργία άρθρου."

@@ -9,7 +9,7 @@
 # Adding a new article_type:
 #   1. Append a new entry to ``article_types`` below.
 #   2. Add the corresponding i18n keys in
-#      backend/config/i18n/<lang>.yaml under ui.article_types.
+#      backend/config/i18n/<lang>.yaml under ui.content_types.
 #   3. Bump the ArticleType Literal in
 #      backend/app/schemas/__init__.py + frontend/src/api/client.ts.
 #      The verification test (test_article_type_registry.py
@@ -21,17 +21,17 @@
 # entry, keyed by the field name. Types with empty extra_fields
 # (blogpost, essay) render no per-type section.
 
-article_types:
+content_types:
   - id: blogpost
-    label_key: ui.article_types.blogpost
-    description_key: ui.article_types.blogpost_description
+    label_key: ui.content_types.blogpost
+    description_key: ui.content_types.blogpost_description
     icon: FileText
     default: true
     extra_fields: []
 
   - id: tutorial
-    label_key: ui.article_types.tutorial
-    description_key: ui.article_types.tutorial_description
+    label_key: ui.content_types.tutorial
+    description_key: ui.content_types.tutorial_description
     icon: GraduationCap
     extra_fields:
       - name: difficulty_level
@@ -40,69 +40,69 @@ article_types:
           - beginner
           - intermediate
           - advanced
-        label_key: ui.article_types.tutorial_field_difficulty
+        label_key: ui.content_types.tutorial_field_difficulty
       - name: prerequisites
         type: text
-        label_key: ui.article_types.tutorial_field_prerequisites
+        label_key: ui.content_types.tutorial_field_prerequisites
       - name: estimated_duration_minutes
         type: number
-        label_key: ui.article_types.tutorial_field_duration
+        label_key: ui.content_types.tutorial_field_duration
 
   - id: review
-    label_key: ui.article_types.review
-    description_key: ui.article_types.review_description
+    label_key: ui.content_types.review
+    description_key: ui.content_types.review_description
     icon: Star
     extra_fields:
       - name: reviewed_work
         type: text
-        label_key: ui.article_types.review_field_work
+        label_key: ui.content_types.review_field_work
       - name: reviewed_work_author
         type: text
-        label_key: ui.article_types.review_field_work_author
+        label_key: ui.content_types.review_field_work_author
       - name: rating
         type: number
         min: 1
         max: 5
-        label_key: ui.article_types.review_field_rating
+        label_key: ui.content_types.review_field_rating
 
   - id: essay
-    label_key: ui.article_types.essay
-    description_key: ui.article_types.essay_description
+    label_key: ui.content_types.essay
+    description_key: ui.content_types.essay_description
     icon: Feather
     extra_fields: []
 
   - id: newsletter
-    label_key: ui.article_types.newsletter
-    description_key: ui.article_types.newsletter_description
+    label_key: ui.content_types.newsletter
+    description_key: ui.content_types.newsletter_description
     icon: Mail
     extra_fields:
       - name: issue_number
         type: number
-        label_key: ui.article_types.newsletter_field_issue
+        label_key: ui.content_types.newsletter_field_issue
       - name: send_date
         type: date
-        label_key: ui.article_types.newsletter_field_send_date
+        label_key: ui.content_types.newsletter_field_send_date
 
   - id: interview
-    label_key: ui.article_types.interview
-    description_key: ui.article_types.interview_description
+    label_key: ui.content_types.interview
+    description_key: ui.content_types.interview_description
     icon: Users
     extra_fields:
       - name: interview_partner_name
         type: text
-        label_key: ui.article_types.interview_field_partner_name
+        label_key: ui.content_types.interview_field_partner_name
       - name: interview_partner_role
         type: text
-        label_key: ui.article_types.interview_field_partner_role
+        label_key: ui.content_types.interview_field_partner_role
 
   - id: listicle
-    label_key: ui.article_types.listicle
-    description_key: ui.article_types.listicle_description
+    label_key: ui.content_types.listicle
+    description_key: ui.content_types.listicle_description
     icon: ListOrdered
     extra_fields: []
 
   - id: short_story
-    label_key: ui.article_types.short_story
-    description_key: ui.article_types.short_story_description
+    label_key: ui.content_types.short_story
+    description_key: ui.content_types.short_story_description
     icon: BookOpen
     extra_fields: []
