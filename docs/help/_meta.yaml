@@ -103,6 +103,10 @@ navigation:
           de: Zeilenumbruch
           en: Word wrap
         slug: editor/word-wrap
+      - title:
+          de: Titel bearbeiten
+          en: Editing the title
+        slug: editor/title-editing
 
   - title:
       de: Export

@@ -61,6 +61,7 @@ plugins:
         Formatierung: Formatting
         Anzeige-Einstellungen: Display settings
         Zeilenumbruch: Word wrap
+        Titel bearbeiten: Editing the title
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
@@ -134,6 +135,7 @@ nav:
   - Formatierung: de/editor/formatierung.md
   - Anzeige-Einstellungen: de/editor/display-settings.md
   - Zeilenumbruch: de/editor/word-wrap.md
+  - Titel bearbeiten: de/editor/title-editing.md
 - Export:
   - EPUB: de/export/epub.md
   - PDF: de/export/pdf.md
