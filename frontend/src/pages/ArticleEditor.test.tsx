@@ -26,7 +26,77 @@ import { render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
 
 import ArticleEditor from "./ArticleEditor";
-import type { Article } from "../api/client";
+import type { Article, ArticleTypeDef } from "../api/client";
+import { ArticleTypesProvider } from "../hooks/useArticleTypes";
+
+const TEST_ARTICLE_TYPES: Record<string, ArticleTypeDef> = {
+    blogpost: {
+        id: "blogpost",
+        label_key: "ui.article_types.blogpost",
+        description_key: "ui.article_types.blogpost_description",
+        icon: "FileText",
+        default: true,
+        extra_fields: [],
+    },
+    tutorial: {
+        id: "tutorial",
+        label_key: "ui.article_types.tutorial",
+        description_key: "ui.article_types.tutorial_description",
+        icon: "GraduationCap",
+        default: false,
+        extra_fields: [
+            {
+                name: "difficulty_level",
+                type: "enum",
+                label_key: "ui.article_types.tutorial_field_difficulty",
+                values: ["beginner", "intermediate", "advanced"],
+            },
+            {
+                name: "estimated_duration_minutes",
+                type: "number",
+                label_key: "ui.article_types.tutorial_field_duration",
+            },
+        ],
+    },
+    review: {
+        id: "review",
+        label_key: "ui.article_types.review",
+        description_key: "ui.article_types.review_description",
+        icon: "Star",
+        default: false,
+        extra_fields: [
+            {
+                name: "rating",
+                type: "number",
+                label_key: "ui.article_types.review_field_rating",
+                min: 1,
+                max: 5,
+            },
+        ],
+    },
+    essay: {
+        id: "essay",
+        label_key: "ui.article_types.essay",
+        description_key: "ui.article_types.essay_description",
+        icon: "Feather",
+        default: false,
+        extra_fields: [],
+    },
+    newsletter: {
+        id: "newsletter",
+        label_key: "ui.article_types.newsletter",
+        description_key: "ui.article_types.newsletter_description",
+        icon: "Mail",
+        default: false,
+        extra_fields: [
+            {
+                name: "issue_number",
+                type: "number",
+                label_key: "ui.article_types.newsletter_field_issue",
+            },
+        ],
+    },
+};
 
 // --- Mocks -----------------------------------------------------------------
 
@@ -176,7 +246,12 @@ const stubArticle: Article = {
     subtitle: null,
     author: "Asterios",
     language: "en",
-    content_type: "article",
+    // ARTICLE-TYPES-SSOT-01: content_type is now the article-type
+    // discriminator; default for new + restored articles is
+    // "blogpost". Migration u0e1f2345678 rewrites "article" →
+    // "blogpost".
+    content_type: "blogpost",
+    article_metadata: {},
     content_json: "",
     status: "draft",
     canonical_url: null,
@@ -207,9 +282,11 @@ afterEach(() => {
 function renderEditor() {
     return render(
         <MemoryRouter initialEntries={["/articles/art-1"]}>
-            <Routes>
-                <Route path="/articles/:id" element={<ArticleEditor />} />
-            </Routes>
+            <ArticleTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
+                <Routes>
+                    <Route path="/articles/:id" element={<ArticleEditor />} />
+                </Routes>
+            </ArticleTypesProvider>
         </MemoryRouter>,
     );
 }

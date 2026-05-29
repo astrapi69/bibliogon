@@ -38,7 +38,10 @@ import {
     MoreVertical,
 } from "lucide-react";
 
-import { api, ApiError, Article, ArticleStatus, Author } from "../api/client";
+import { api, ApiError, Article, ArticleStatus, ArticleType, Author } from "../api/client";
+import { useArticleTypes } from "../hooks/useArticleTypes";
+import { ArticleTypeIcon } from "../utils/articleTypeIcon";
+import ArticleTypeFieldsSection from "../components/articles/ArticleTypeFieldsSection";
 import Editor from "../components/Editor";
 import ArticleImageUpload from "../components/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
@@ -78,6 +81,7 @@ export default function ArticleEditor() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const { confirm } = useDialog();
+    const articleTypesSnapshot = useArticleTypes();
 
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
@@ -248,6 +252,12 @@ export default function ArticleEditor() {
                 topic: next.topic,
                 seo_title: next.seo_title,
                 seo_description: next.seo_description,
+                // ARTICLE-TYPES-SSOT-01 C6: include article-type
+                // discriminator + per-type metadata in the dedup
+                // key so type-changes + extra_field edits trigger
+                // saves.
+                content_type: next.content_type,
+                article_metadata: next.article_metadata,
             });
             if (meta === lastSavedMeta.current) return;
             try {
@@ -270,6 +280,12 @@ export default function ArticleEditor() {
                         | string
                         | null
                         | undefined,
+                    // ARTICLE-TYPES-SSOT-01 C6: thread the article-
+                    // type + extra-fields PATCH through.
+                    content_type: patch.content_type as
+                        | import("../api/client").ArticleType
+                        | undefined,
+                    article_metadata: patch.article_metadata,
                 });
                 setArticle(saved);
                 lastSavedMeta.current = meta;
@@ -777,6 +793,86 @@ export default function ArticleEditor() {
                             </option>
                         ))}
                     </select>
+
+                    {/* ARTICLE-TYPES-SSOT-01 C6 (2026-05-29):
+                     *  Article-type selector + type-specific fields.
+                     *  Type is mutable post-create (unlike Book.book_type
+                     *  which is immutable_after_create); changing it
+                     *  reveals a different per-type extra_fields set.
+                     *  Blogpost + essay have no extra fields, so the
+                     *  ArticleTypeFieldsSection renders null for them.
+                     */}
+                    <FieldLabel
+                        label={t("ui.articles.article_type", "Artikel-Typ")}
+                        tooltip={t(
+                            "ui.articles.article_type_tooltip",
+                            "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter.",
+                        )}
+                    />
+                    <select
+                        data-testid="article-editor-content-type"
+                        value={article.content_type}
+                        onChange={(e) => {
+                            const next = e.target.value as ArticleType;
+                            // Auto-reset article_metadata when type
+                            // changes; the new type's extra_fields are
+                            // likely a different shape from the old.
+                            // Per-field carry-over (when keys overlap)
+                            // can be added later if user-requested; for
+                            // v1 a clean reset is least-surprising.
+                            void persistMeta({
+                                content_type: next,
+                                article_metadata: {},
+                            });
+                        }}
+                        className={layout.fieldInput}
+                    >
+                        {articleTypesSnapshot.ordered.map((at) => (
+                            <option key={at.id} value={at.id}>
+                                {t(at.label_key, at.id)}
+                            </option>
+                        ))}
+                    </select>
+                    {articleTypesSnapshot.types[article.content_type] ? (
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                                fontSize: 12,
+                                marginTop: 4,
+                                color: "var(--text-muted)",
+                            }}
+                            data-testid="article-editor-content-type-description"
+                        >
+                            <ArticleTypeIcon
+                                iconName={
+                                    articleTypesSnapshot.types[
+                                        article.content_type
+                                    ].icon
+                                }
+                                size={14}
+                            />
+                            <span>
+                                {t(
+                                    articleTypesSnapshot.types[
+                                        article.content_type
+                                    ].description_key,
+                                    article.content_type,
+                                )}
+                            </span>
+                        </div>
+                    ) : null}
+                    <ArticleTypeFieldsSection
+                        contentType={article.content_type}
+                        metadata={article.article_metadata ?? {}}
+                        onChange={(nextType, nextMetadata) => {
+                            void persistMeta({
+                                content_type: nextType,
+                                article_metadata: nextMetadata,
+                            });
+                        }}
+                    />
 
                     <h4 className={layout.sectionHeading}>
                         {t("ui.articles.seo_section", "SEO")}
