@@ -18,45 +18,58 @@
  * count remain empty.
  */
 
-import type {CSSProperties} from "react";
+import type { CSSProperties, ReactNode } from "react";
 
-import {ComicPanel, type ComicPanelData} from "./ComicPanel";
-import type {ComicBubbleData} from "./ComicBubble";
+import { GripVertical } from "lucide-react";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+import { ComicPanel, type ComicPanelData } from "./ComicPanel";
+import type { ComicBubbleData } from "./ComicBubble";
 
 export type ComicGridTemplate =
-    | "single_panel"
-    | "grid_1x2"
-    | "grid_2x1"
-    | "grid_2x2"
-    | "grid_2x3"
-    | "grid_3x2"
-    | "grid_3x3";
+  | "single_panel"
+  | "grid_1x2"
+  | "grid_2x1"
+  | "grid_2x2"
+  | "grid_2x3"
+  | "grid_3x2"
+  | "grid_3x3";
 
 // Standard Layouts shipped in Phase 1 (PLUGIN-COMICS-PHASE-1-
 // MULTI-PANEL-LAYOUTS-01, 2026-05-20). Must mirror walker's
 // COMIC_GRID_TEMPLATES tuple in
 // plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py.
 export const COMIC_GRID_TEMPLATES: readonly ComicGridTemplate[] = [
-    "single_panel",  // 1 panel (Splash)
-    "grid_1x2",      // 2 panels side-by-side
-    "grid_2x1",      // 2 panels stacked
-    "grid_2x2",      // 4 panels standard grid
-    "grid_2x3",      // 6 panels two-tier (2 rows × 3 cols)
-    "grid_3x2",      // 6 panels three-tier (3 rows × 2 cols)
-    "grid_3x3",      // 9 panels (legacy / advanced; not in default picker)
+  "single_panel", // 1 panel (Splash)
+  "grid_1x2", // 2 panels side-by-side
+  "grid_2x1", // 2 panels stacked
+  "grid_2x2", // 4 panels standard grid
+  "grid_2x3", // 6 panels two-tier (2 rows × 3 cols)
+  "grid_3x2", // 6 panels three-tier (3 rows × 2 cols)
+  "grid_3x3", // 9 panels (legacy / advanced; not in default picker)
 ];
 
 // User-facing subset surfaced by ComicGridTemplatePicker. grid_3x3
 // stays available for backward-compat but is not in the default
 // picker (per Q4 audit decision).
-export const COMIC_GRID_TEMPLATE_PICKER_OPTIONS: readonly ComicGridTemplate[] = [
-    "single_panel",
-    "grid_1x2",
-    "grid_2x1",
-    "grid_2x2",
-    "grid_2x3",
-    "grid_3x2",
-];
+export const COMIC_GRID_TEMPLATE_PICKER_OPTIONS: readonly ComicGridTemplate[] =
+  ["single_panel", "grid_1x2", "grid_2x1", "grid_2x2", "grid_2x3", "grid_3x2"];
 
 export const DEFAULT_COMIC_GRID_TEMPLATE: ComicGridTemplate = "single_panel";
 
@@ -67,137 +80,257 @@ export const DEFAULT_COMIC_GRID_TEMPLATE: ComicGridTemplate = "single_panel";
 // counts in ``plugins/bibliogon-plugin-comics/bibliogon_comics/
 // comic_book_pdf.py``.
 export const COMIC_GRID_MAX_PANELS: Record<ComicGridTemplate, number> = {
-    single_panel: 1,
-    grid_1x2: 2,
-    grid_2x1: 2,
-    grid_2x2: 4,
-    grid_2x3: 6,
-    grid_3x2: 6,
-    grid_3x3: 9,
+  single_panel: 1,
+  grid_1x2: 2,
+  grid_2x1: 2,
+  grid_2x2: 4,
+  grid_2x3: 6,
+  grid_3x2: 6,
+  grid_3x3: 9,
 };
 
 const GRID_TEMPLATE_CSS: Record<ComicGridTemplate, CSSProperties> = {
-    single_panel: {
-        gridTemplateColumns: "1fr",
-        gridTemplateRows: "1fr",
-    },
-    grid_1x2: {
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gridTemplateRows: "1fr",
-    },
-    grid_2x1: {
-        gridTemplateColumns: "1fr",
-        gridTemplateRows: "repeat(2, 1fr)",
-    },
-    grid_2x2: {
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gridTemplateRows: "repeat(2, 1fr)",
-    },
-    grid_2x3: {
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridTemplateRows: "repeat(2, 1fr)",
-    },
-    grid_3x2: {
-        gridTemplateColumns: "repeat(2, 1fr)",
-        gridTemplateRows: "repeat(3, 1fr)",
-    },
-    grid_3x3: {
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridTemplateRows: "repeat(3, 1fr)",
-    },
+  single_panel: {
+    gridTemplateColumns: "1fr",
+    gridTemplateRows: "1fr",
+  },
+  grid_1x2: {
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gridTemplateRows: "1fr",
+  },
+  grid_2x1: {
+    gridTemplateColumns: "1fr",
+    gridTemplateRows: "repeat(2, 1fr)",
+  },
+  grid_2x2: {
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gridTemplateRows: "repeat(2, 1fr)",
+  },
+  grid_2x3: {
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateRows: "repeat(2, 1fr)",
+  },
+  grid_3x2: {
+    gridTemplateColumns: "repeat(2, 1fr)",
+    gridTemplateRows: "repeat(3, 1fr)",
+  },
+  grid_3x3: {
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gridTemplateRows: "repeat(3, 1fr)",
+  },
 };
 
 export function resolveComicGridTemplate(
-    layoutConfig: Record<string, unknown> | null,
+  layoutConfig: Record<string, unknown> | null,
 ): ComicGridTemplate {
-    if (layoutConfig && typeof layoutConfig === "object") {
-        const candidate = layoutConfig.comic_grid_template;
-        if (
-            typeof candidate === "string" &&
-            (COMIC_GRID_TEMPLATES as readonly string[]).includes(candidate)
-        ) {
-            return candidate as ComicGridTemplate;
-        }
+  if (layoutConfig && typeof layoutConfig === "object") {
+    const candidate = layoutConfig.comic_grid_template;
+    if (
+      typeof candidate === "string" &&
+      (COMIC_GRID_TEMPLATES as readonly string[]).includes(candidate)
+    ) {
+      return candidate as ComicGridTemplate;
     }
-    return DEFAULT_COMIC_GRID_TEMPLATE;
+  }
+  return DEFAULT_COMIC_GRID_TEMPLATE;
 }
 
 interface ComicPanelGridProps {
-    layoutConfig: Record<string, unknown> | null;
-    panels: ComicPanelData[];
-    panelBubblesMap: Record<string, ComicBubbleData[]>;
-    assetUrls?: Record<string, string>;
-    selectedPanelId?: string | null;
-    selectedBubbleId?: string | null;
-    onPanelClick?: (panelId: string) => void;
-    onBubbleClick?: (bubbleId: string) => void;
-    onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
-    onBubbleTailDragEnd?: (
-        bubbleId: string,
-        direction: string,
-        positionPct: number,
-        lengthPx: number,
-    ) => void;
+  layoutConfig: Record<string, unknown> | null;
+  panels: ComicPanelData[];
+  panelBubblesMap: Record<string, ComicBubbleData[]>;
+  assetUrls?: Record<string, string>;
+  selectedPanelId?: string | null;
+  selectedBubbleId?: string | null;
+  onPanelClick?: (panelId: string) => void;
+  onBubbleClick?: (bubbleId: string) => void;
+  onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
+  onBubbleTailDragEnd?: (
+    bubbleId: string,
+    direction: string,
+    positionPct: number,
+    lengthPx: number,
+  ) => void;
+  /** Same-page panel reorder (COMIC-PANEL-CROSS-PAGE-MOVE-01
+   *  Phase 1). When provided, each panel gains a drag handle and
+   *  the grid becomes a dnd-kit ``SortableContext`` (grid strategy);
+   *  on drop the callback receives the full ordered panel-id list.
+   *  When absent the grid renders read-only (PageCanvas preview +
+   *  ComicGridTemplatePicker both omit it). The handle — not the
+   *  whole panel — carries the drag listeners, so in-panel bubble
+   *  drag + panel-select click stay unaffected. */
+  onPanelReorder?: (panelIds: string[]) => void;
 }
 
 export function ComicPanelGrid({
-    layoutConfig,
-    panels,
-    panelBubblesMap,
-    assetUrls,
-    selectedPanelId,
-    selectedBubbleId,
-    onPanelClick,
-    onBubbleClick,
-    onBubbleDragEnd,
-    onBubbleTailDragEnd,
+  layoutConfig,
+  panels,
+  panelBubblesMap,
+  assetUrls,
+  selectedPanelId,
+  selectedBubbleId,
+  onPanelClick,
+  onBubbleClick,
+  onBubbleDragEnd,
+  onBubbleTailDragEnd,
+  onPanelReorder,
 }: ComicPanelGridProps) {
-    const templateId = resolveComicGridTemplate(layoutConfig);
-    const gridCss = GRID_TEMPLATE_CSS[templateId];
+  const templateId = resolveComicGridTemplate(layoutConfig);
+  const gridCss = GRID_TEMPLATE_CSS[templateId];
 
-    const sortedPanels = [...panels].sort(
-        (a, b) => (a.position ?? 0) - (b.position ?? 0),
-    );
+  const sortedPanels = [...panels].sort(
+    (a, b) => (a.position ?? 0) - (b.position ?? 0),
+  );
+  const panelIds = sortedPanels.map((p) => p.id);
 
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIndex = panelIds.indexOf(active.id as string);
+    const newIndex = panelIds.indexOf(over.id as string);
+    if (oldIndex === -1 || newIndex === -1) return;
+    onPanelReorder?.(arrayMove(panelIds, oldIndex, newIndex));
+  };
+
+  const gridStyle: CSSProperties = {
+    display: "grid",
+    ...gridCss,
+    gap: "6px",
+    width: "100%",
+    height: "100%",
+    aspectRatio: "1 / 1",
+    background: "white",
+    padding: "0",
+    boxSizing: "border-box",
+  };
+
+  const renderPanel = (panel: ComicPanelData): ReactNode => {
+    const imageUrl = panel.image_asset_id
+      ? (assetUrls?.[String(panel.image_asset_id)] ?? null)
+      : null;
     return (
-        <section
-            data-testid="comic-page-grid"
-            data-grid-template={templateId}
-            style={{
-                display: "grid",
-                ...gridCss,
-                gap: "6px",
-                width: "100%",
-                height: "100%",
-                aspectRatio: "1 / 1",
-                background: "white",
-                padding: "0",
-                boxSizing: "border-box",
-            }}
-        >
-            {sortedPanels.map((panel) => {
-                const imageUrl = panel.image_asset_id
-                    ? (assetUrls?.[String(panel.image_asset_id)] ?? null)
-                    : null;
-                return (
-                    <ComicPanel
-                        key={panel.id}
-                        panel={panel}
-                        bubbles={panelBubblesMap[panel.id] ?? []}
-                        imageUrl={imageUrl}
-                        selected={selectedPanelId === panel.id}
-                        selectedBubbleId={selectedBubbleId ?? null}
-                        onClick={
-                            onPanelClick ? () => onPanelClick(panel.id) : undefined
-                        }
-                        onBubbleClick={onBubbleClick}
-                        onBubbleDragEnd={onBubbleDragEnd}
-                        onBubbleTailDragEnd={onBubbleTailDragEnd}
-                    />
-                );
-            })}
-        </section>
+      <ComicPanel
+        panel={panel}
+        bubbles={panelBubblesMap[panel.id] ?? []}
+        imageUrl={imageUrl}
+        selected={selectedPanelId === panel.id}
+        selectedBubbleId={selectedBubbleId ?? null}
+        onClick={onPanelClick ? () => onPanelClick(panel.id) : undefined}
+        onBubbleClick={onBubbleClick}
+        onBubbleDragEnd={onBubbleDragEnd}
+        onBubbleTailDragEnd={onBubbleTailDragEnd}
+      />
     );
+  };
+
+  if (!onPanelReorder) {
+    // Read-only grid (preview / picker). No DnD wrapper.
+    return (
+      <section
+        data-testid="comic-page-grid"
+        data-grid-template={templateId}
+        style={gridStyle}
+      >
+        {sortedPanels.map((panel) => (
+          <div
+            key={panel.id}
+            style={{ position: "relative", minWidth: 0, minHeight: 0 }}
+          >
+            {renderPanel(panel)}
+          </div>
+        ))}
+      </section>
+    );
+  }
+
+  return (
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={panelIds} strategy={rectSortingStrategy}>
+        <section
+          data-testid="comic-page-grid"
+          data-grid-template={templateId}
+          data-reorderable="true"
+          style={gridStyle}
+        >
+          {sortedPanels.map((panel) => (
+            <SortablePanel key={panel.id} panelId={panel.id}>
+              {renderPanel(panel)}
+            </SortablePanel>
+          ))}
+        </section>
+      </SortableContext>
+    </DndContext>
+  );
+}
+
+interface SortablePanelProps {
+  panelId: string;
+  children: ReactNode;
+}
+
+function SortablePanel({ panelId, children }: SortablePanelProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: panelId });
+  const style: CSSProperties = {
+    position: "relative",
+    minWidth: 0,
+    minHeight: 0,
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.4 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      data-testid={`comic-panel-sortable-${panelId}`}
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        data-testid={`comic-panel-drag-handle-${panelId}`}
+        aria-label="Drag handle"
+        style={{
+          position: "absolute",
+          top: 2,
+          left: 2,
+          zIndex: 5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2px",
+          border: "none",
+          borderRadius: "3px",
+          background: "rgba(255, 255, 255, 0.85)",
+          color: "var(--text-secondary, #555)",
+          cursor: "grab",
+          touchAction: "none",
+        }}
+      >
+        <GripVertical size={14} />
+      </button>
+      {children}
+    </div>
+  );
 }
 
 export default ComicPanelGrid;

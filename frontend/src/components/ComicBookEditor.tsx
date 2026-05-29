@@ -25,1070 +25,1058 @@
  * + refreshes the pages list.
  */
 
-import {useCallback, useEffect, useMemo, useState} from "react";
-import {FileText, Maximize2, Minimize2} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { FileText, Maximize2, Minimize2 } from "lucide-react";
 
 import {
-    api,
-    ApiError,
-    type ComicBubbleOut,
-    type ComicPanelOut,
-    type ComicsPluginInfo,
-    type Page,
+  api,
+  ApiError,
+  type ComicBubbleOut,
+  type ComicPanelOut,
+  type ComicsPluginInfo,
+  type Page,
 } from "../api/client";
-import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
-import {useI18n} from "../hooks/useI18n";
-import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
-import {notify} from "../utils/notify";
+import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
+import { useI18n } from "../hooks/useI18n";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { notify } from "../utils/notify";
 
 import {
-    ComicPanelGrid,
-    COMIC_GRID_MAX_PANELS,
-    DEFAULT_COMIC_GRID_TEMPLATE,
-    resolveComicGridTemplate,
-    type ComicGridTemplate,
+  ComicPanelGrid,
+  COMIC_GRID_MAX_PANELS,
+  DEFAULT_COMIC_GRID_TEMPLATE,
+  resolveComicGridTemplate,
+  type ComicGridTemplate,
 } from "./comics/ComicPanelGrid";
-import {ComicGridTemplatePicker} from "./comics/ComicGridTemplatePicker";
-import {LayoutConfigComicBubble} from "./comics/LayoutConfigComicBubble";
-import {LayoutConfigComicPanel} from "./comics/LayoutConfigComicPanel";
-import type {ComicBubbleData} from "./comics/ComicBubble";
-import type {ComicPanelData} from "./comics/ComicPanel";
-import {useDialog} from "./AppDialog";
+import { ComicGridTemplatePicker } from "./comics/ComicGridTemplatePicker";
+import { LayoutConfigComicBubble } from "./comics/LayoutConfigComicBubble";
+import { LayoutConfigComicPanel } from "./comics/LayoutConfigComicPanel";
+import type { ComicBubbleData } from "./comics/ComicBubble";
+import type { ComicPanelData } from "./comics/ComicPanel";
+import { useDialog } from "./AppDialog";
 import PageThumbnails from "./PageThumbnails";
 import PdfExportControls from "./PdfExportControls";
 import EditableTitle from "./EditableTitle";
 import ThemeToggle from "./ThemeToggle";
 
 interface Props {
-    bookId: string;
-    bookTitle: string;
-    onBack: () => void;
-    /** COMIC-BOOK-EDITOR-METADATA-BUTTON-01: entry-point into
-     *  BookMetadataEditor. Mirrors PageEditor's onShowMetadata prop
-     *  (PB-PHASE4 Session 5 Commit 2). When provided, the header
-     *  shows a "Metadata" button that calls this callback; the
-     *  parent (BookEditor) flips its showMetadata state and
-     *  re-renders BookMetadataEditor in place of ComicBookEditor —
-     *  same URL-routed pattern as prose + picture-book flows.
-     *  Optional so ComicBookEditor stays unit-testable standalone
-     *  without a parent that wires it. */
-    onShowMetadata?: () => void;
-    /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title. When
-     *  provided, the header title becomes an EditableTitle
-     *  (pencil-toggle); the parent (BookEditor) runs api.books.update.
-     *  Optional so ComicBookEditor unit-tests standalone (falls back to
-     *  a static <h1>). */
-    onTitleSave?: (title: string) => void | Promise<void>;
-    /** C2: gate title edit behind a published-work warning when the
-     *  book's status is published or archived. */
-    isPublished?: boolean;
+  bookId: string;
+  bookTitle: string;
+  onBack: () => void;
+  /** COMIC-BOOK-EDITOR-METADATA-BUTTON-01: entry-point into
+   *  BookMetadataEditor. Mirrors PageEditor's onShowMetadata prop
+   *  (PB-PHASE4 Session 5 Commit 2). When provided, the header
+   *  shows a "Metadata" button that calls this callback; the
+   *  parent (BookEditor) flips its showMetadata state and
+   *  re-renders BookMetadataEditor in place of ComicBookEditor —
+   *  same URL-routed pattern as prose + picture-book flows.
+   *  Optional so ComicBookEditor stays unit-testable standalone
+   *  without a parent that wires it. */
+  onShowMetadata?: () => void;
+  /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title. When
+   *  provided, the header title becomes an EditableTitle
+   *  (pencil-toggle); the parent (BookEditor) runs api.books.update.
+   *  Optional so ComicBookEditor unit-tests standalone (falls back to
+   *  a static <h1>). */
+  onTitleSave?: (title: string) => void | Promise<void>;
+  /** C2: gate title edit behind a published-work warning when the
+   *  book's status is published or archived. */
+  isPublished?: boolean;
 }
 
 export default function ComicBookEditor({
-    bookId,
-    bookTitle,
-    onBack,
-    onShowMetadata,
-    onTitleSave,
-    isPublished,
+  bookId,
+  bookTitle,
+  onBack,
+  onShowMetadata,
+  onTitleSave,
+  isPublished,
 }: Props) {
-    const {t} = useI18n();
-    const dialog = useDialog();
-    const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
-    const [pluginError, setPluginError] = useState<string | null>(null);
-    const [pages, setPages] = useState<Page[]>([]);
-    const [pagesError, setPagesError] = useState<string | null>(null);
-    const [activePageId, setActivePageId] = useState<string | null>(null);
-    const [panels, setPanels] = useState<ComicPanelOut[]>([]);
-    const [bubblesByPanel, setBubblesByPanel] = useState<
-        Record<string, ComicBubbleOut[]>
-    >({});
-    const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
-    const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(
-        null,
-    );
+  const { t } = useI18n();
+  const dialog = useDialog();
+  const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
+  const [pluginError, setPluginError] = useState<string | null>(null);
+  const [pages, setPages] = useState<Page[]>([]);
+  const [pagesError, setPagesError] = useState<string | null>(null);
+  const [activePageId, setActivePageId] = useState<string | null>(null);
+  const [panels, setPanels] = useState<ComicPanelOut[]>([]);
+  const [bubblesByPanel, setBubblesByPanel] = useState<
+    Record<string, ComicBubbleOut[]>
+  >({});
+  const [selectedPanelId, setSelectedPanelId] = useState<string | null>(null);
+  const [selectedBubbleId, setSelectedBubbleId] = useState<string | null>(null);
 
-    const fullscreen = useFullscreenToggle();
-    useKeyboardShortcuts(
-        fullscreen.isSupported
-            ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
-            : [],
-    );
+  const fullscreen = useFullscreenToggle();
+  useKeyboardShortcuts(
+    fullscreen.isSupported
+      ? [{ keys: "ctrl+shift+f", handler: () => void fullscreen.toggle() }]
+      : [],
+  );
 
-    useEffect(() => {
-        let cancelled = false;
-        api.comics
-            .getInfo()
-            .then((info) => {
-                if (!cancelled) setPluginInfo(info);
-            })
-            .catch((err) => {
-                if (cancelled) return;
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPluginError(detail);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+  useEffect(() => {
+    let cancelled = false;
+    api.comics
+      .getInfo()
+      .then((info) => {
+        if (!cancelled) setPluginInfo(info);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPluginError(detail);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
-    // Load pages from the core /pages endpoint (relaxed in
-    // PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 to accept comic_book).
-    // Empty list is the normal first-time-author state; the empty-
-    // state action button creates the first page on click.
-    const refreshPages = useCallback(async () => {
-        try {
-            const rows = await api.pages.list(bookId);
-            setPages(rows);
-            return rows;
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
-            return [] as Page[];
-        }
-    }, [bookId]);
+  // Load pages from the core /pages endpoint (relaxed in
+  // PLUGIN-COMICS-SESSION-3-PAGES-CRUD-01 to accept comic_book).
+  // Empty list is the normal first-time-author state; the empty-
+  // state action button creates the first page on click.
+  const refreshPages = useCallback(async () => {
+    try {
+      const rows = await api.pages.list(bookId);
+      setPages(rows);
+      return rows;
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+      return [] as Page[];
+    }
+  }, [bookId]);
 
-    useEffect(() => {
-        let cancelled = false;
-        api.pages
-            .list(bookId)
-            .then((rows) => {
-                if (cancelled) return;
-                setPages(rows);
-                setActivePageId(rows[0]?.id ?? null);
-            })
-            .catch((err) => {
-                if (cancelled) return;
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [bookId]);
+  useEffect(() => {
+    let cancelled = false;
+    api.pages
+      .list(bookId)
+      .then((rows) => {
+        if (cancelled) return;
+        setPages(rows);
+        setActivePageId(rows[0]?.id ?? null);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [bookId]);
 
-    // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: unified Add-Page
-    // handler. Used for both first-page-creation AND adding pages
-    // after the first. Replaces the prior split handleCreateFirstPage
-    // (separate "Create first comic page" button in the empty state)
-    // — PageThumbnails' "+" button now handles both via the same
-    // onAddPage callback, closing the Half-Wired gap surfaced by
-    // 2026-05-23 user-real-test.
-    const handleAddPage = useCallback(async () => {
-        setPagesError(null);
-        try {
-            // Phase 1: set explicit default template at create-time
-            // so the page doesn't rely on the γ-shim fallback. The
-            // ComicGridTemplatePicker in the header lets the user
-            // change it afterwards.
-            const newPage = await api.pages.create(bookId, {
-                layout: "comic_panel_grid",
-                layout_config: {
-                    comic_grid_template: DEFAULT_COMIC_GRID_TEMPLATE,
-                },
-            });
-            const rows = await refreshPages();
-            // Auto-select the newly-created page so the user gets
-            // visible feedback that the click worked (sidebar row
-            // highlights + canvas switches to the new page). Mirrors
-            // the Add-Panel perception-lag-fix pattern from 2026-05-20.
-            setActivePageId(newPage.id ?? rows[0]?.id ?? null);
-            setSelectedPanelId(null);
-            setSelectedBubbleId(null);
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
-        }
-    }, [bookId, refreshPages]);
-
-    // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: drag-reorder pages
-    // via PageThumbnails. Mirrors PageEditor.tsx's handleReorder
-    // shape — the two surfaces share the same api.pages.reorder
-    // contract.
-    const handleReorderPages = useCallback(
-        async (pageIds: string[]) => {
-            try {
-                const next = await api.pages.reorder(bookId, pageIds);
-                setPages(next);
-            } catch (err) {
-                const detail = err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
+  // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: unified Add-Page
+  // handler. Used for both first-page-creation AND adding pages
+  // after the first. Replaces the prior split handleCreateFirstPage
+  // (separate "Create first comic page" button in the empty state)
+  // — PageThumbnails' "+" button now handles both via the same
+  // onAddPage callback, closing the Half-Wired gap surfaced by
+  // 2026-05-23 user-real-test.
+  const handleAddPage = useCallback(async () => {
+    setPagesError(null);
+    try {
+      // Phase 1: set explicit default template at create-time
+      // so the page doesn't rely on the γ-shim fallback. The
+      // ComicGridTemplatePicker in the header lets the user
+      // change it afterwards.
+      const newPage = await api.pages.create(bookId, {
+        layout: "comic_panel_grid",
+        layout_config: {
+          comic_grid_template: DEFAULT_COMIC_GRID_TEMPLATE,
         },
-        [bookId],
-    );
+      });
+      const rows = await refreshPages();
+      // Auto-select the newly-created page so the user gets
+      // visible feedback that the click worked (sidebar row
+      // highlights + canvas switches to the new page). Mirrors
+      // the Add-Panel perception-lag-fix pattern from 2026-05-20.
+      setActivePageId(newPage.id ?? rows[0]?.id ?? null);
+      setSelectedPanelId(null);
+      setSelectedBubbleId(null);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [bookId, refreshPages]);
 
-    // PAGES-DELETE-EDITOR-UI-01 C2: page-delete handler. Mirrors
-    // PageEditor.tsx's handleDeletePage shape — the two surfaces
-    // share the same api.pages.delete contract + the same
-    // PageThumbnails onDelete prop. Confirm dialog + state
-    // reconciliation per "Destructive row-actions must reconcile
-    // collection state" LL: filter from local pages, clear
-    // activePageId if it was the deleted page, also clear panel +
-    // bubble selection (those rows are scoped to the deleted page
-    // and become invalid once it's gone).
-    const handleDeletePage = useCallback(
-        async (pageId: string) => {
-            const confirmed = await dialog.confirm(
-                t("ui.page_editor.delete_page_title", "Delete page?"),
-                t(
-                    "ui.page_editor.delete_page_confirm",
-                    "Are you sure you want to delete this page? This cannot be undone.",
-                ),
-                "danger",
+  // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: drag-reorder pages
+  // via PageThumbnails. Mirrors PageEditor.tsx's handleReorder
+  // shape — the two surfaces share the same api.pages.reorder
+  // contract.
+  const handleReorderPages = useCallback(
+    async (pageIds: string[]) => {
+      try {
+        const next = await api.pages.reorder(bookId, pageIds);
+        setPages(next);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [bookId],
+  );
+
+  // PAGES-DELETE-EDITOR-UI-01 C2: page-delete handler. Mirrors
+  // PageEditor.tsx's handleDeletePage shape — the two surfaces
+  // share the same api.pages.delete contract + the same
+  // PageThumbnails onDelete prop. Confirm dialog + state
+  // reconciliation per "Destructive row-actions must reconcile
+  // collection state" LL: filter from local pages, clear
+  // activePageId if it was the deleted page, also clear panel +
+  // bubble selection (those rows are scoped to the deleted page
+  // and become invalid once it's gone).
+  const handleDeletePage = useCallback(
+    async (pageId: string) => {
+      const confirmed = await dialog.confirm(
+        t("ui.page_editor.delete_page_title", "Delete page?"),
+        t(
+          "ui.page_editor.delete_page_confirm",
+          "Are you sure you want to delete this page? This cannot be undone.",
+        ),
+        "danger",
+      );
+      if (!confirmed) return;
+      try {
+        await api.pages.delete(bookId, pageId);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+        return;
+      }
+      setPages((prev) => {
+        const remaining = prev.filter((p) => p.id !== pageId);
+        if (activePageId === pageId) {
+          setActivePageId(remaining[0]?.id ?? null);
+          setSelectedPanelId(null);
+          setSelectedBubbleId(null);
+        }
+        return remaining;
+      });
+    },
+    [bookId, dialog, t, activePageId],
+  );
+
+  const refreshPanelsAndBubbles = useCallback(
+    async (pageId: string) => {
+      try {
+        const panelRows = await api.comics.listPanels(bookId, pageId);
+        setPanels(panelRows);
+        const bubbleMap: Record<string, ComicBubbleOut[]> = {};
+        await Promise.all(
+          panelRows.map(async (panel) => {
+            bubbleMap[panel.id] = await api.comics.listBubbles(
+              bookId,
+              panel.id,
             );
-            if (!confirmed) return;
-            try {
-                await api.pages.delete(bookId, pageId);
-            } catch (err) {
-                const detail = err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-                return;
-            }
-            setPages((prev) => {
-                const remaining = prev.filter((p) => p.id !== pageId);
-                if (activePageId === pageId) {
-                    setActivePageId(remaining[0]?.id ?? null);
-                    setSelectedPanelId(null);
-                    setSelectedBubbleId(null);
-                }
-                return remaining;
-            });
-        },
-        [bookId, dialog, t, activePageId],
-    );
-
-    const refreshPanelsAndBubbles = useCallback(
-        async (pageId: string) => {
-            try {
-                const panelRows = await api.comics.listPanels(bookId, pageId);
-                setPanels(panelRows);
-                const bubbleMap: Record<string, ComicBubbleOut[]> = {};
-                await Promise.all(
-                    panelRows.map(async (panel) => {
-                        bubbleMap[panel.id] = await api.comics.listBubbles(
-                            bookId,
-                            panel.id,
-                        );
-                    }),
-                );
-                setBubblesByPanel(bubbleMap);
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [bookId],
-    );
-
-    // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
-    // into the active page's ``layout_config`` while preserving any
-    // sibling keys (future Phase 3 #6 panel-gutter, etc.).
-    //
-    // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28): when the target
-    // template's panel cap is BELOW the current panel count, the
-    // user is asked to choose between (A) "Move excess panels to
-    // new automatically-created pages" (each new page inherits the
-    // target template; panel content — bubbles, images — follows
-    // via the PATCH-page_id path), (B) "Delete excess panels
-    // permanently" (destructive, confirmed), or (C) cancel the
-    // layout switch entirely. No silent hiding — data ghosts are
-    // forbidden per the user-stated discipline.
-    const handleChangeGridTemplate = useCallback(
-        async (template: ComicGridTemplate) => {
-            if (!activePageId) return;
-            const activePage = pages.find((p) => p.id === activePageId);
-            if (!activePage) return;
-            const priorConfig =
-                (activePage.layout_config as Record<string, unknown> | null) ??
-                {};
-
-            // Count current panels on the active page; compare
-            // against the target template's max.
-            const currentPanelCount = panels.length;
-            const targetMax = COMIC_GRID_MAX_PANELS[template];
-            const excess = Math.max(0, currentPanelCount - targetMax);
-
-            // Persists the new template (and optionally refreshes
-            // panels) without re-checking overflow. Used after the
-            // overflow has been resolved (or there was no overflow).
-            const persistTemplateChange = async () => {
-                await api.pages.update(bookId, activePageId, {
-                    layout_config: {
-                        ...priorConfig,
-                        comic_grid_template: template,
-                    },
-                });
-                await refreshPages();
-                if (activePageId) {
-                    await refreshPanelsAndBubbles(activePageId);
-                }
-            };
-
-            try {
-                if (excess === 0) {
-                    await persistTemplateChange();
-                    return;
-                }
-
-                // Build the confirmation choice. dialog.choose
-                // returns the chosen value's string, or null on
-                // cancel.
-                const message = t(
-                    "ui.comic_book_editor.overflow_message",
-                    `Die ausgewählte Vorlage erlaubt nur ${targetMax} Panel(s), aber die Seite hat ${currentPanelCount}. ${excess} überzählige Panel(s) müssen verschoben oder gelöscht werden.`,
-                )
-                    .replace("{target}", String(targetMax))
-                    .replace("{current}", String(currentPanelCount))
-                    .replace("{excess}", String(excess));
-
-                const choice = await dialog.choose(
-                    t(
-                        "ui.comic_book_editor.overflow_title",
-                        "Zu viele Panels für diese Vorlage",
-                    ),
-                    message,
-                    [
-                        {
-                            value: "move",
-                            label: t(
-                                "ui.comic_book_editor.overflow_move",
-                                "Auf neue Seiten verschieben",
-                            ),
-                        },
-                        {
-                            value: "delete",
-                            label: t(
-                                "ui.comic_book_editor.overflow_delete",
-                                "Löschen",
-                            ),
-                            variant: "danger",
-                        },
-                    ],
-                    t("ui.common.cancel", "Abbrechen"),
-                );
-
-                if (choice === null) {
-                    // Cancel: layout switch not performed.
-                    return;
-                }
-
-                // Sort panels by position so "excess" picks the
-                // LAST N panels — most recently added — and keeps
-                // the earliest panels in their place.
-                const sortedPanels = [...panels].sort(
-                    (a, b) => (a.position ?? 0) - (b.position ?? 0),
-                );
-                const excessPanels = sortedPanels.slice(targetMax);
-
-                if (choice === "delete") {
-                    // Explicit destructive confirmation per the
-                    // spec — second prompt with explicit warning
-                    // about bubbles + images being permanently
-                    // lost.
-                    const reallyDelete = await dialog.confirm(
-                        t(
-                            "ui.comic_book_editor.overflow_delete_confirm_title",
-                            "Wirklich endgültig löschen?",
-                        ),
-                        t(
-                            "ui.comic_book_editor.overflow_delete_confirm_message",
-                            `${excess} Panels mit allen Inhalten (Sprechblasen, Bilder) werden endgültig gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.`,
-                        ).replace("{excess}", String(excess)),
-                        "danger",
-                    );
-                    if (!reallyDelete) return;
-                    // Sequential delete preserves error visibility
-                    // per panel; parallel would mask which panel
-                    // failed.
-                    for (const p of excessPanels) {
-                        await api.comics.deletePanel(bookId, p.id);
-                    }
-                    notify.success(
-                        t(
-                            "ui.comic_book_editor.overflow_delete_toast",
-                            `${excess} Panels gelöscht.`,
-                        ).replace("{excess}", String(excess)),
-                    );
-                } else {
-                    // Move path: distribute excess across new
-                    // pages, each with target template, filling
-                    // targetMax per page.
-                    const newPagesCount = Math.ceil(excess / targetMax);
-                    const newPageIds: string[] = [];
-                    for (let i = 0; i < newPagesCount; i++) {
-                        const newPage = await api.pages.create(bookId, {
-                            layout: "comic_panel_grid",
-                            layout_config: {
-                                comic_grid_template: template,
-                            },
-                        });
-                        newPageIds.push(newPage.id);
-                    }
-                    // For each excess panel, PATCH page_id +
-                    // position to its slot on the new page.
-                    for (let i = 0; i < excessPanels.length; i++) {
-                        const targetPageIndex = Math.floor(i / targetMax);
-                        const positionInTargetPage = i % targetMax;
-                        await api.comics.updatePanel(
-                            bookId,
-                            excessPanels[i].id,
-                            {
-                                page_id: newPageIds[targetPageIndex],
-                                position: positionInTargetPage,
-                            },
-                        );
-                    }
-                    notify.success(
-                        t(
-                            "ui.comic_book_editor.overflow_move_toast",
-                            `${excess} Panels auf ${newPagesCount} neue Seite(n) verschoben.`,
-                        )
-                            .replace("{excess}", String(excess))
-                            .replace("{pages}", String(newPagesCount)),
-                    );
-                }
-
-                // Either path: now persist the layout switch on
-                // the active page + refresh.
-                await persistTemplateChange();
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [
-            activePageId,
-            bookId,
-            pages,
-            panels,
-            refreshPages,
-            refreshPanelsAndBubbles,
-            dialog,
-            t,
-        ],
-    );
-
-    // PHASE-2-PANEL-CONFIG-01 C4: close the Half-Wired gap on
-    // assetUrls. ComicPanelGrid consumes ``assetUrls: Record<assetId,
-    // url>`` to render panel images; without it, an
-    // ``image_asset_id``-set panel renders blank. Built from
-    // ``api.assets.list(bookId)`` mapping ``asset.id ->
-    // /api/books/{bookId}/assets/file/{filename}``. Refreshed on
-    // bookId change AND after panel updates that touch
-    // ``image_asset_id`` (uploads change the asset set; see
-    // handleUpdatePanel).
-    const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
-
-    const refreshAssets = useCallback(async () => {
-        try {
-            const assets = await api.assets.list(bookId);
-            const urlMap: Record<string, string> = {};
-            for (const asset of assets) {
-                urlMap[asset.id] = `/api/books/${bookId}/assets/file/${asset.filename}`;
-            }
-            setAssetUrls(urlMap);
-        } catch (err) {
-            const detail =
-                err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
-        }
-    }, [bookId]);
-
-    useEffect(() => {
-        void refreshAssets();
-    }, [refreshAssets]);
-
-    useEffect(() => {
-        if (!activePageId) {
-            setPanels([]);
-            setBubblesByPanel({});
-            return;
-        }
-        void refreshPanelsAndBubbles(activePageId);
-    }, [activePageId, refreshPanelsAndBubbles]);
-
-    const handleAddPanel = useCallback(async () => {
-        if (!activePageId) return;
-        // Defense-in-depth against keyboard shortcuts or DOM-
-        // manipulation that bypass the button's disabled attr: the
-        // capacity check is also enforced here.
-        const activePageRow = pages.find((p) => p.id === activePageId);
-        const template = resolveComicGridTemplate(
-            (activePageRow?.layout_config ?? null) as Record<string, unknown> | null,
+          }),
         );
-        if (panels.length >= COMIC_GRID_MAX_PANELS[template]) return;
-        try {
-            const newPanel = await api.comics.createPanel(bookId, activePageId, {
-                bounds: {x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100},
-            });
-            await refreshPanelsAndBubbles(activePageId);
-            // Auto-select the new panel so (a) the user gets visible
-            // feedback that the click worked (outline highlight on
-            // the new panel) and (b) Add-Bubble immediately enables
-            // without a separate panel-click. Mirrors the design-tool
-            // "draw-shape-then-it's-selected" pattern.
-            setSelectedPanelId(newPanel.id);
-            setSelectedBubbleId(null);
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
+        setBubblesByPanel(bubbleMap);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [bookId],
+  );
+
+  // Handler for ComicGridTemplatePicker. Writes ``comic_grid_template``
+  // into the active page's ``layout_config`` while preserving any
+  // sibling keys (future Phase 3 #6 panel-gutter, etc.).
+  //
+  // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28): when the target
+  // template's panel cap is BELOW the current panel count, the
+  // user is asked to choose between (A) "Move excess panels to
+  // new automatically-created pages" (each new page inherits the
+  // target template; panel content — bubbles, images — follows
+  // via the PATCH-page_id path), (B) "Delete excess panels
+  // permanently" (destructive, confirmed), or (C) cancel the
+  // layout switch entirely. No silent hiding — data ghosts are
+  // forbidden per the user-stated discipline.
+  const handleChangeGridTemplate = useCallback(
+    async (template: ComicGridTemplate) => {
+      if (!activePageId) return;
+      const activePage = pages.find((p) => p.id === activePageId);
+      if (!activePage) return;
+      const priorConfig =
+        (activePage.layout_config as Record<string, unknown> | null) ?? {};
+
+      // Count current panels on the active page; compare
+      // against the target template's max.
+      const currentPanelCount = panels.length;
+      const targetMax = COMIC_GRID_MAX_PANELS[template];
+      const excess = Math.max(0, currentPanelCount - targetMax);
+
+      // Persists the new template (and optionally refreshes
+      // panels) without re-checking overflow. Used after the
+      // overflow has been resolved (or there was no overflow).
+      const persistTemplateChange = async () => {
+        await api.pages.update(bookId, activePageId, {
+          layout_config: {
+            ...priorConfig,
+            comic_grid_template: template,
+          },
+        });
+        await refreshPages();
+        if (activePageId) {
+          await refreshPanelsAndBubbles(activePageId);
         }
-    }, [activePageId, bookId, pages, panels.length, refreshPanelsAndBubbles]);
+      };
 
-    const handleDeletePanel = useCallback(async () => {
-        if (!selectedPanelId || !activePageId) return;
-        try {
-            await api.comics.deletePanel(bookId, selectedPanelId);
-            setSelectedPanelId(null);
-            setSelectedBubbleId(null);
-            await refreshPanelsAndBubbles(activePageId);
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
+      try {
+        if (excess === 0) {
+          await persistTemplateChange();
+          return;
         }
-    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
 
-    const handleAddBubble = useCallback(async () => {
-        if (!selectedPanelId || !activePageId) return;
-        try {
-            const newBubble = await api.comics.createBubble(
-                bookId,
-                selectedPanelId,
-                {
-                    bubble_type: "speech",
-                    anchor: {x_pct: 25, y_pct: 25},
-                },
-            );
-            await refreshPanelsAndBubbles(activePageId);
-            // Auto-select the new bubble — same rationale as
-            // handleAddPanel above: visible feedback + the side-pane
-            // LayoutConfigComicBubble immediately becomes available
-            // for editing.
-            setSelectedBubbleId(newBubble.id);
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
+        // Build the confirmation choice. dialog.choose
+        // returns the chosen value's string, or null on
+        // cancel.
+        const message = t(
+          "ui.comic_book_editor.overflow_message",
+          `Die ausgewählte Vorlage erlaubt nur ${targetMax} Panel(s), aber die Seite hat ${currentPanelCount}. ${excess} überzählige Panel(s) müssen verschoben oder gelöscht werden.`,
+        )
+          .replace("{target}", String(targetMax))
+          .replace("{current}", String(currentPanelCount))
+          .replace("{excess}", String(excess));
+
+        const choice = await dialog.choose(
+          t(
+            "ui.comic_book_editor.overflow_title",
+            "Zu viele Panels für diese Vorlage",
+          ),
+          message,
+          [
+            {
+              value: "move",
+              label: t(
+                "ui.comic_book_editor.overflow_move",
+                "Auf neue Seiten verschieben",
+              ),
+            },
+            {
+              value: "delete",
+              label: t("ui.comic_book_editor.overflow_delete", "Löschen"),
+              variant: "danger",
+            },
+          ],
+          t("ui.common.cancel", "Abbrechen"),
+        );
+
+        if (choice === null) {
+          // Cancel: layout switch not performed.
+          return;
         }
-    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
 
-    const handleDeleteBubble = useCallback(async () => {
-        if (!selectedBubbleId || !activePageId) return;
-        try {
-            await api.comics.deleteBubble(bookId, selectedBubbleId);
-            setSelectedBubbleId(null);
-            await refreshPanelsAndBubbles(activePageId);
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : String(err);
-            setPagesError(detail);
-        }
-    }, [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId]);
+        // Sort panels by position so "excess" picks the
+        // LAST N panels — most recently added — and keeps
+        // the earliest panels in their place.
+        const sortedPanels = [...panels].sort(
+          (a, b) => (a.position ?? 0) - (b.position ?? 0),
+        );
+        const excessPanels = sortedPanels.slice(targetMax);
 
-    const handleUpdateBubble = useCallback(
-        async (partial: Partial<ComicBubbleData>) => {
-            if (!selectedBubbleId || !activePageId) return;
-            try {
-                await api.comics.updateBubble(
-                    bookId,
-                    selectedBubbleId,
-                    partial as Record<string, unknown>,
-                );
-                await refreshPanelsAndBubbles(activePageId);
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId],
-    );
-
-    /** Bubble drag-end handler: persists the new anchor and selects
-     *  the dragged bubble (so the side-pane's anchor sliders update
-     *  to match the dragged position via the controlled-input
-     *  binding). Drag-end fires once per drag, AFTER the 5px
-     *  threshold has been crossed. */
-    const handleBubbleDragEnd = useCallback(
-        async (bubbleId: string, x_pct: number, y_pct: number) => {
-            if (!activePageId) return;
-            setSelectedBubbleId(bubbleId);
-            try {
-                await api.comics.updateBubble(bookId, bubbleId, {
-                    anchor: {x_pct, y_pct},
-                });
-                await refreshPanelsAndBubbles(activePageId);
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [activePageId, bookId, refreshPanelsAndBubbles],
-    );
-
-    /** Tail-handle drag-end handler: persists the derived
-     *  (tail_direction, tail_position_pct, tail_length_px) triple
-     *  for the dragged bubble. Same select-then-persist shape as
-     *  handleBubbleDragEnd so the side-pane tail sliders reflect
-     *  the new values via controlled-input binding. */
-    const handleBubbleTailDragEnd = useCallback(
-        async (
-            bubbleId: string,
-            direction: string,
-            positionPct: number,
-            lengthPx: number,
-        ) => {
-            if (!activePageId) return;
-            setSelectedBubbleId(bubbleId);
-            try {
-                await api.comics.updateBubble(bookId, bubbleId, {
-                    tail_direction: direction,
-                    tail_position_pct: positionPct,
-                    tail_length_px: lengthPx,
-                });
-                await refreshPanelsAndBubbles(activePageId);
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [activePageId, bookId, refreshPanelsAndBubbles],
-    );
-
-    const handleUpdatePanel = useCallback(
-        async (partial: Partial<ComicPanelData>) => {
-            if (!selectedPanelId || !activePageId) return;
-            try {
-                await api.comics.updatePanel(
-                    bookId,
-                    selectedPanelId,
-                    partial as Record<string, unknown>,
-                );
-                await refreshPanelsAndBubbles(activePageId);
-                // Image upload + clear paths change the asset set:
-                // refresh the URL map so the new image surfaces in
-                // the editor body (ComicPanelGrid) and the cleared
-                // image vanishes.
-                if ("image_asset_id" in partial) {
-                    await refreshAssets();
-                }
-            } catch (err) {
-                const detail =
-                    err instanceof ApiError ? err.detail : String(err);
-                setPagesError(detail);
-            }
-        },
-        [
-            activePageId,
-            bookId,
-            refreshAssets,
-            refreshPanelsAndBubbles,
-            selectedPanelId,
-        ],
-    );
-
-    const selectedBubble = useMemo<ComicBubbleData | null>(() => {
-        if (!selectedBubbleId) return null;
-        for (const panelBubbles of Object.values(bubblesByPanel)) {
-            const found = panelBubbles.find((b) => b.id === selectedBubbleId);
-            if (found) return found as unknown as ComicBubbleData;
-        }
-        return null;
-    }, [bubblesByPanel, selectedBubbleId]);
-
-    const activePage = pages.find((p) => p.id === activePageId) ?? null;
-    // Panel-capacity gate: each grid template has a fixed cell count
-    // (single_panel = 1, grid_1x2 / grid_2x1 = 2, grid_2x2 = 4,
-    // grid_2x3 / grid_3x2 = 6, grid_3x3 = 9). The Add-Panel button
-    // disables once the page already has that many panels so the
-    // user can't append beyond the layout's capacity.
-    const activeGridTemplate = resolveComicGridTemplate(
-        (activePage?.layout_config ?? null) as Record<string, unknown> | null,
-    );
-    const maxPanels = COMIC_GRID_MAX_PANELS[activeGridTemplate];
-    const atPanelCapacity = panels.length >= maxPanels;
-    const panelData = panels as unknown as ComicPanelData[];
-    const selectedPanel = useMemo<ComicPanelData | null>(() => {
-        if (!selectedPanelId) return null;
-        return panelData.find((p) => p.id === selectedPanelId) ?? null;
-    }, [panelData, selectedPanelId]);
-    const panelBubblesMap: Record<string, ComicBubbleData[]> = useMemo(
-        () =>
-            Object.fromEntries(
-                Object.entries(bubblesByPanel).map(([k, v]) => [
-                    k,
-                    v as unknown as ComicBubbleData[],
-                ]),
+        if (choice === "delete") {
+          // Explicit destructive confirmation per the
+          // spec — second prompt with explicit warning
+          // about bubbles + images being permanently
+          // lost.
+          const reallyDelete = await dialog.confirm(
+            t(
+              "ui.comic_book_editor.overflow_delete_confirm_title",
+              "Wirklich endgültig löschen?",
             ),
-        [bubblesByPanel],
-    );
+            t(
+              "ui.comic_book_editor.overflow_delete_confirm_message",
+              `${excess} Panels mit allen Inhalten (Sprechblasen, Bilder) werden endgültig gelöscht. Dieser Vorgang kann nicht rückgängig gemacht werden.`,
+            ).replace("{excess}", String(excess)),
+            "danger",
+          );
+          if (!reallyDelete) return;
+          // Sequential delete preserves error visibility
+          // per panel; parallel would mask which panel
+          // failed.
+          for (const p of excessPanels) {
+            await api.comics.deletePanel(bookId, p.id);
+          }
+          notify.success(
+            t(
+              "ui.comic_book_editor.overflow_delete_toast",
+              `${excess} Panels gelöscht.`,
+            ).replace("{excess}", String(excess)),
+          );
+        } else {
+          // Move path: distribute excess across new
+          // pages, each with target template, filling
+          // targetMax per page.
+          const newPagesCount = Math.ceil(excess / targetMax);
+          const newPageIds: string[] = [];
+          for (let i = 0; i < newPagesCount; i++) {
+            const newPage = await api.pages.create(bookId, {
+              layout: "comic_panel_grid",
+              layout_config: {
+                comic_grid_template: template,
+              },
+            });
+            newPageIds.push(newPage.id);
+          }
+          // For each excess panel, PATCH page_id +
+          // position to its slot on the new page.
+          for (let i = 0; i < excessPanels.length; i++) {
+            const targetPageIndex = Math.floor(i / targetMax);
+            const positionInTargetPage = i % targetMax;
+            await api.comics.updatePanel(bookId, excessPanels[i].id, {
+              page_id: newPageIds[targetPageIndex],
+              position: positionInTargetPage,
+            });
+          }
+          notify.success(
+            t(
+              "ui.comic_book_editor.overflow_move_toast",
+              `${excess} Panels auf ${newPagesCount} neue Seite(n) verschoben.`,
+            )
+              .replace("{excess}", String(excess))
+              .replace("{pages}", String(newPagesCount)),
+          );
+        }
 
-    return (
-        <div
-            data-testid="comic-book-editor-root"
-            data-book-id={bookId}
-            style={{
-                margin: "0 auto",
-                padding: 20,
-                display: "flex",
-                flexDirection: "column",
-                gap: 16,
-                maxWidth: 1400,
-            }}
+        // Either path: now persist the layout switch on
+        // the active page + refresh.
+        await persistTemplateChange();
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [
+      activePageId,
+      bookId,
+      pages,
+      panels,
+      refreshPages,
+      refreshPanelsAndBubbles,
+      dialog,
+      t,
+    ],
+  );
+
+  // PHASE-2-PANEL-CONFIG-01 C4: close the Half-Wired gap on
+  // assetUrls. ComicPanelGrid consumes ``assetUrls: Record<assetId,
+  // url>`` to render panel images; without it, an
+  // ``image_asset_id``-set panel renders blank. Built from
+  // ``api.assets.list(bookId)`` mapping ``asset.id ->
+  // /api/books/{bookId}/assets/file/{filename}``. Refreshed on
+  // bookId change AND after panel updates that touch
+  // ``image_asset_id`` (uploads change the asset set; see
+  // handleUpdatePanel).
+  const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+
+  const refreshAssets = useCallback(async () => {
+    try {
+      const assets = await api.assets.list(bookId);
+      const urlMap: Record<string, string> = {};
+      for (const asset of assets) {
+        urlMap[asset.id] = `/api/books/${bookId}/assets/file/${asset.filename}`;
+      }
+      setAssetUrls(urlMap);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [bookId]);
+
+  useEffect(() => {
+    void refreshAssets();
+  }, [refreshAssets]);
+
+  useEffect(() => {
+    if (!activePageId) {
+      setPanels([]);
+      setBubblesByPanel({});
+      return;
+    }
+    void refreshPanelsAndBubbles(activePageId);
+  }, [activePageId, refreshPanelsAndBubbles]);
+
+  const handleAddPanel = useCallback(async () => {
+    if (!activePageId) return;
+    // Defense-in-depth against keyboard shortcuts or DOM-
+    // manipulation that bypass the button's disabled attr: the
+    // capacity check is also enforced here.
+    const activePageRow = pages.find((p) => p.id === activePageId);
+    const template = resolveComicGridTemplate(
+      (activePageRow?.layout_config ?? null) as Record<string, unknown> | null,
+    );
+    if (panels.length >= COMIC_GRID_MAX_PANELS[template]) return;
+    try {
+      const newPanel = await api.comics.createPanel(bookId, activePageId, {
+        bounds: { x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100 },
+      });
+      await refreshPanelsAndBubbles(activePageId);
+      // Auto-select the new panel so (a) the user gets visible
+      // feedback that the click worked (outline highlight on
+      // the new panel) and (b) Add-Bubble immediately enables
+      // without a separate panel-click. Mirrors the design-tool
+      // "draw-shape-then-it's-selected" pattern.
+      setSelectedPanelId(newPanel.id);
+      setSelectedBubbleId(null);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [activePageId, bookId, pages, panels.length, refreshPanelsAndBubbles]);
+
+  const handleDeletePanel = useCallback(async () => {
+    if (!selectedPanelId || !activePageId) return;
+    try {
+      await api.comics.deletePanel(bookId, selectedPanelId);
+      setSelectedPanelId(null);
+      setSelectedBubbleId(null);
+      await refreshPanelsAndBubbles(activePageId);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
+
+  const handleAddBubble = useCallback(async () => {
+    if (!selectedPanelId || !activePageId) return;
+    try {
+      const newBubble = await api.comics.createBubble(bookId, selectedPanelId, {
+        bubble_type: "speech",
+        anchor: { x_pct: 25, y_pct: 25 },
+      });
+      await refreshPanelsAndBubbles(activePageId);
+      // Auto-select the new bubble — same rationale as
+      // handleAddPanel above: visible feedback + the side-pane
+      // LayoutConfigComicBubble immediately becomes available
+      // for editing.
+      setSelectedBubbleId(newBubble.id);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [activePageId, bookId, refreshPanelsAndBubbles, selectedPanelId]);
+
+  const handleDeleteBubble = useCallback(async () => {
+    if (!selectedBubbleId || !activePageId) return;
+    try {
+      await api.comics.deleteBubble(bookId, selectedBubbleId);
+      setSelectedBubbleId(null);
+      await refreshPanelsAndBubbles(activePageId);
+    } catch (err) {
+      const detail = err instanceof ApiError ? err.detail : String(err);
+      setPagesError(detail);
+    }
+  }, [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId]);
+
+  const handleUpdateBubble = useCallback(
+    async (partial: Partial<ComicBubbleData>) => {
+      if (!selectedBubbleId || !activePageId) return;
+      try {
+        await api.comics.updateBubble(
+          bookId,
+          selectedBubbleId,
+          partial as Record<string, unknown>,
+        );
+        await refreshPanelsAndBubbles(activePageId);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [activePageId, bookId, refreshPanelsAndBubbles, selectedBubbleId],
+  );
+
+  /** Bubble drag-end handler: persists the new anchor and selects
+   *  the dragged bubble (so the side-pane's anchor sliders update
+   *  to match the dragged position via the controlled-input
+   *  binding). Drag-end fires once per drag, AFTER the 5px
+   *  threshold has been crossed. */
+  const handleBubbleDragEnd = useCallback(
+    async (bubbleId: string, x_pct: number, y_pct: number) => {
+      if (!activePageId) return;
+      setSelectedBubbleId(bubbleId);
+      try {
+        await api.comics.updateBubble(bookId, bubbleId, {
+          anchor: { x_pct, y_pct },
+        });
+        await refreshPanelsAndBubbles(activePageId);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [activePageId, bookId, refreshPanelsAndBubbles],
+  );
+
+  /** Tail-handle drag-end handler: persists the derived
+   *  (tail_direction, tail_position_pct, tail_length_px) triple
+   *  for the dragged bubble. Same select-then-persist shape as
+   *  handleBubbleDragEnd so the side-pane tail sliders reflect
+   *  the new values via controlled-input binding. */
+  const handleBubbleTailDragEnd = useCallback(
+    async (
+      bubbleId: string,
+      direction: string,
+      positionPct: number,
+      lengthPx: number,
+    ) => {
+      if (!activePageId) return;
+      setSelectedBubbleId(bubbleId);
+      try {
+        await api.comics.updateBubble(bookId, bubbleId, {
+          tail_direction: direction,
+          tail_position_pct: positionPct,
+          tail_length_px: lengthPx,
+        });
+        await refreshPanelsAndBubbles(activePageId);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [activePageId, bookId, refreshPanelsAndBubbles],
+  );
+
+  const handleUpdatePanel = useCallback(
+    async (partial: Partial<ComicPanelData>) => {
+      if (!selectedPanelId || !activePageId) return;
+      try {
+        await api.comics.updatePanel(
+          bookId,
+          selectedPanelId,
+          partial as Record<string, unknown>,
+        );
+        await refreshPanelsAndBubbles(activePageId);
+        // Image upload + clear paths change the asset set:
+        // refresh the URL map so the new image surfaces in
+        // the editor body (ComicPanelGrid) and the cleared
+        // image vanishes.
+        if ("image_asset_id" in partial) {
+          await refreshAssets();
+        }
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [
+      activePageId,
+      bookId,
+      refreshAssets,
+      refreshPanelsAndBubbles,
+      selectedPanelId,
+    ],
+  );
+
+  // COMIC-PANEL-CROSS-PAGE-MOVE-01 Phase 1: same-page panel
+  // reorder. ``panelIds`` is the full ordered id-list emitted by
+  // ComicPanelGrid's dnd-kit SortableContext on drop. Optimistically
+  // re-index positions so the grid (which sorts by position)
+  // reflects the new order immediately, then reconcile with the
+  // server's two-phase reorder response. On failure, re-fetch.
+  const handlePanelReorder = useCallback(
+    async (panelIds: string[]) => {
+      if (!activePageId) return;
+      setPanels((prev) => {
+        const byId = new Map(prev.map((p) => [p.id, p]));
+        return panelIds
+          .map((id, idx) => {
+            const panel = byId.get(id);
+            return panel ? { ...panel, position: idx + 1 } : undefined;
+          })
+          .filter((p): p is ComicPanelOut => Boolean(p));
+      });
+      try {
+        const reordered = await api.comics.reorderPanels(
+          bookId,
+          activePageId,
+          panelIds,
+        );
+        setPanels(reordered);
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+        await refreshPanelsAndBubbles(activePageId);
+      }
+    },
+    [activePageId, bookId, refreshPanelsAndBubbles],
+  );
+
+  const selectedBubble = useMemo<ComicBubbleData | null>(() => {
+    if (!selectedBubbleId) return null;
+    for (const panelBubbles of Object.values(bubblesByPanel)) {
+      const found = panelBubbles.find((b) => b.id === selectedBubbleId);
+      if (found) return found as unknown as ComicBubbleData;
+    }
+    return null;
+  }, [bubblesByPanel, selectedBubbleId]);
+
+  const activePage = pages.find((p) => p.id === activePageId) ?? null;
+  // Panel-capacity gate: each grid template has a fixed cell count
+  // (single_panel = 1, grid_1x2 / grid_2x1 = 2, grid_2x2 = 4,
+  // grid_2x3 / grid_3x2 = 6, grid_3x3 = 9). The Add-Panel button
+  // disables once the page already has that many panels so the
+  // user can't append beyond the layout's capacity.
+  const activeGridTemplate = resolveComicGridTemplate(
+    (activePage?.layout_config ?? null) as Record<string, unknown> | null,
+  );
+  const maxPanels = COMIC_GRID_MAX_PANELS[activeGridTemplate];
+  const atPanelCapacity = panels.length >= maxPanels;
+  const panelData = panels as unknown as ComicPanelData[];
+  const selectedPanel = useMemo<ComicPanelData | null>(() => {
+    if (!selectedPanelId) return null;
+    return panelData.find((p) => p.id === selectedPanelId) ?? null;
+  }, [panelData, selectedPanelId]);
+  const panelBubblesMap: Record<string, ComicBubbleData[]> = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(bubblesByPanel).map(([k, v]) => [
+          k,
+          v as unknown as ComicBubbleData[],
+        ]),
+      ),
+    [bubblesByPanel],
+  );
+
+  return (
+    <div
+      data-testid="comic-book-editor-root"
+      data-book-id={bookId}
+      style={{
+        margin: "0 auto",
+        padding: 20,
+        display: "flex",
+        flexDirection: "column",
+        gap: 16,
+        maxWidth: 1400,
+      }}
+    >
+      <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <button
+          className="btn btn-secondary btn-sm"
+          data-testid="comic-book-editor-back"
+          onClick={onBack}
         >
-            <header style={{display: "flex", alignItems: "center", gap: 12}}>
-                <button
-                    className="btn btn-secondary btn-sm"
-                    data-testid="comic-book-editor-back"
-                    onClick={onBack}
-                >
-                    {t("ui.comic_book_editor.back", "Zurück")}
-                </button>
-                {onTitleSave ? (
-                    <EditableTitle
-                        value={bookTitle}
-                        onSave={onTitleSave}
-                        testIdPrefix="comic-book-editor-title"
-                        style={{margin: 0, fontSize: "1.4rem", flex: 1}}
-                        isPublished={isPublished}
-                    />
-                ) : (
-                    <h1
-                        data-testid="comic-book-editor-title"
-                        style={{margin: 0, fontSize: "1.4rem", flex: 1}}
-                    >
-                        {bookTitle}
-                    </h1>
-                )}
-                {/* COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header
-                  * metadata button. Inline mirror of PageEditor's
-                  * pattern (RCU 2-site adoption deferred per Q2
-                  * adjudication; METADATA-BUTTON-COMPONENT-EXTRACT-01
-                  * P5 pre-registered for 3rd surface). Closes the
-                  * Half-Wired-Visible-in-Production gap surfaced by
-                  * EXPOSE-BUCHIDEE-METADATA-01 Track 5. */}
-                {onShowMetadata && (
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        data-testid="comic-book-editor-show-metadata"
-                        onClick={onShowMetadata}
-                        title={t(
-                            "ui.comic_book_editor.show_metadata",
-                            "Buch-Metadaten öffnen",
-                        )}
-                    >
-                        <FileText size={14} />
-                        <span style={{marginLeft: 6}}>
-                            {t(
-                                "ui.comic_book_editor.show_metadata",
-                                "Buch-Metadaten öffnen",
-                            )}
-                        </span>
-                    </button>
-                )}
-                {activePageId && (
-                    <ComicGridTemplatePicker
-                        value={resolveComicGridTemplate(
-                            (pages.find((p) => p.id === activePageId)
-                                ?.layout_config as
-                                | Record<string, unknown>
-                                | null) ?? null,
-                        )}
-                        onChange={handleChangeGridTemplate}
-                    />
-                )}
-                <PdfExportControls
-                    bookId={bookId}
-                    testidPrefix="comic-book-editor"
-                />
-                {fullscreen.isSupported && (
-                    <button
-                        type="button"
-                        className="btn btn-secondary btn-sm"
-                        data-testid="comic-book-editor-fullscreen"
-                        onClick={() => void fullscreen.toggle()}
-                        aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
-                        aria-label={
-                            fullscreen.isFullscreen
-                                ? t(
-                                      "ui.editor.exit_fullscreen",
-                                      "Vollbild verlassen",
-                                  )
-                                : t("ui.editor.fullscreen", "Vollbild")
-                        }
-                        title={
-                            fullscreen.isFullscreen
-                                ? t(
-                                      "ui.editor.exit_fullscreen",
-                                      "Vollbild verlassen",
-                                  )
-                                : t("ui.editor.fullscreen", "Vollbild")
-                        }
-                    >
-                        {fullscreen.isFullscreen ? (
-                            <Minimize2 size={14} />
-                        ) : (
-                            <Maximize2 size={14} />
-                        )}
-                    </button>
-                )}
-                {/* Cross-editor convention: ThemeToggle is the LAST
-                  * header item. Matches Dashboard, ArticleEditor,
-                  * BookEditor (via ChapterSidebar), and PageEditor's
-                  * post-this-fix ordering. Closes the
-                  * Parallel-Surface-Asymmetry gap where
-                  * ComicBookEditor was the only editor without a
-                  * theme toggle in its header. */}
-                <ThemeToggle variant="dark" />
-            </header>
-
-            {pluginInfo && (
-                <div
-                    data-testid="comic-book-editor-plugin-info"
-                    style={{
-                        fontSize: "0.8rem",
-                        color: "var(--text-muted)",
-                    }}
-                >
-                    {pluginInfo.name} v{pluginInfo.version} (session{" "}
-                    {pluginInfo.session})
-                </div>
+          {t("ui.comic_book_editor.back", "Zurück")}
+        </button>
+        {onTitleSave ? (
+          <EditableTitle
+            value={bookTitle}
+            onSave={onTitleSave}
+            testIdPrefix="comic-book-editor-title"
+            style={{ margin: 0, fontSize: "1.4rem", flex: 1 }}
+            isPublished={isPublished}
+          />
+        ) : (
+          <h1
+            data-testid="comic-book-editor-title"
+            style={{ margin: 0, fontSize: "1.4rem", flex: 1 }}
+          >
+            {bookTitle}
+          </h1>
+        )}
+        {/* COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header
+         * metadata button. Inline mirror of PageEditor's
+         * pattern (RCU 2-site adoption deferred per Q2
+         * adjudication; METADATA-BUTTON-COMPONENT-EXTRACT-01
+         * P5 pre-registered for 3rd surface). Closes the
+         * Half-Wired-Visible-in-Production gap surfaced by
+         * EXPOSE-BUCHIDEE-METADATA-01 Track 5. */}
+        {onShowMetadata && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            data-testid="comic-book-editor-show-metadata"
+            onClick={onShowMetadata}
+            title={t(
+              "ui.comic_book_editor.show_metadata",
+              "Buch-Metadaten öffnen",
             )}
-            {pluginError && (
-                <div
-                    data-testid="comic-book-editor-plugin-error"
-                    role="alert"
-                    style={{color: "var(--danger, #c00)"}}
-                >
-                    {t(
-                        "ui.comic_book_editor.plugin_unreachable",
-                        "Comic-Plugin nicht erreichbar:",
-                    )}{" "}
-                    {pluginError}
-                </div>
+          >
+            <FileText size={14} />
+            <span style={{ marginLeft: 6 }}>
+              {t("ui.comic_book_editor.show_metadata", "Buch-Metadaten öffnen")}
+            </span>
+          </button>
+        )}
+        {activePageId && (
+          <ComicGridTemplatePicker
+            value={resolveComicGridTemplate(
+              (pages.find((p) => p.id === activePageId)
+                ?.layout_config as Record<string, unknown> | null) ?? null,
             )}
+            onChange={handleChangeGridTemplate}
+          />
+        )}
+        <PdfExportControls bookId={bookId} testidPrefix="comic-book-editor" />
+        {fullscreen.isSupported && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            data-testid="comic-book-editor-fullscreen"
+            onClick={() => void fullscreen.toggle()}
+            aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
+            aria-label={
+              fullscreen.isFullscreen
+                ? t("ui.editor.exit_fullscreen", "Vollbild verlassen")
+                : t("ui.editor.fullscreen", "Vollbild")
+            }
+            title={
+              fullscreen.isFullscreen
+                ? t("ui.editor.exit_fullscreen", "Vollbild verlassen")
+                : t("ui.editor.fullscreen", "Vollbild")
+            }
+          >
+            {fullscreen.isFullscreen ? (
+              <Minimize2 size={14} />
+            ) : (
+              <Maximize2 size={14} />
+            )}
+          </button>
+        )}
+        {/* Cross-editor convention: ThemeToggle is the LAST
+         * header item. Matches Dashboard, ArticleEditor,
+         * BookEditor (via ChapterSidebar), and PageEditor's
+         * post-this-fix ordering. Closes the
+         * Parallel-Surface-Asymmetry gap where
+         * ComicBookEditor was the only editor without a
+         * theme toggle in its header. */}
+        <ThemeToggle variant="dark" />
+      </header>
 
-            {/* PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: 3-column
-              * layout mirroring PageEditor's thumbnails | canvas |
-              * properties shape. PageThumbnails handles both the
-              * empty-state ("No pages yet. Click + to add the first
-              * page.") AND the populated list via a single unified
-              * surface — the prior split empty-state section + chip-
-              * nav is replaced. Closes the Half-Wired-Lifecycle-Cascade
-              * surfaced by PAGES-CRUD-01 (Add-Page-After-First was
-              * never wired). RCU 2-site adoption of PageThumbnails;
-              * testidNamespace="comic-book-editor" templates its
-              * testids for E2E namespace correctness. */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "220px 1fr 320px",
-                    gap: 16,
-                    minHeight: 480,
-                }}
-            >
-                <aside
-                    data-testid="comic-book-editor-thumbnails"
-                    style={{
-                        border: "1px solid var(--border, #ddd)",
-                        borderRadius: 8,
-                        background: "var(--surface-2, #fafafa)",
-                        minHeight: 400,
-                        overflow: "auto",
-                    }}
-                >
-                    <PageThumbnails
-                        pages={pages}
-                        activePageId={activePageId}
-                        onSelect={(pageId) => {
-                            setActivePageId(pageId);
-                            setSelectedPanelId(null);
-                            setSelectedBubbleId(null);
-                        }}
-                        onAddPage={handleAddPage}
-                        onReorder={handleReorderPages}
-                        onDelete={handleDeletePage}
-                        testidNamespace="comic-book-editor"
-                    />
-                </aside>
-
-                <section
-                    style={{
-                        display: "flex",
-                        flexDirection: "column",
-                        gap: 12,
-                        minWidth: 0,
-                    }}
-                >
-                    {pagesError && (
-                        <p
-                            data-testid="comic-book-editor-pages-error"
-                            role="alert"
-                            style={{
-                                color: "var(--danger, #c00)",
-                                margin: 0,
-                            }}
-                        >
-                            {pagesError}
-                        </p>
-                    )}
-                    {activePageId ? (
-                        <>
-                            <div
-                                data-testid="comic-book-editor-grid-wrapper"
-                                style={{
-                                    position: "relative",
-                                    aspectRatio: "1 / 1",
-                                    border: "1px solid var(--border, #ddd)",
-                                }}
-                            >
-                                <ComicPanelGrid
-                                    layoutConfig={
-                                        (activePage?.layout_config as
-                                            | Record<string, unknown>
-                                            | null) ?? null
-                                    }
-                                    panels={panelData}
-                                    panelBubblesMap={panelBubblesMap}
-                                    assetUrls={assetUrls}
-                                    selectedPanelId={selectedPanelId}
-                                    selectedBubbleId={selectedBubbleId}
-                                    onPanelClick={(panelId) => {
-                                        setSelectedPanelId(panelId);
-                                        setSelectedBubbleId(null);
-                                    }}
-                                    onBubbleClick={(bubbleId) => {
-                                        setSelectedBubbleId(bubbleId);
-                                    }}
-                                    onBubbleDragEnd={handleBubbleDragEnd}
-                                    onBubbleTailDragEnd={
-                                        handleBubbleTailDragEnd
-                                    }
-                                />
-                            </div>
-
-                            <div
-                                data-testid="comic-book-editor-actions"
-                                style={{display: "flex", gap: 8, flexWrap: "wrap"}}
-                            >
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm"
-                                    data-testid="comic-book-editor-add-panel"
-                                    onClick={handleAddPanel}
-                                    disabled={!activePageId || atPanelCapacity}
-                                    title={
-                                        atPanelCapacity
-                                            ? `${t(
-                                                  "ui.comic_book_editor.add_panel_at_capacity",
-                                                  "Maximale Panelanzahl für dieses Layout erreicht",
-                                              )} (${maxPanels})`
-                                            : undefined
-                                    }
-                                    data-at-capacity={
-                                        atPanelCapacity ? "true" : "false"
-                                    }
-                                >
-                                    {t(
-                                        "ui.comic_book_editor.add_panel",
-                                        "Panel hinzufügen",
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="comic-book-editor-delete-panel"
-                                    onClick={handleDeletePanel}
-                                    disabled={!selectedPanelId}
-                                >
-                                    {t(
-                                        "ui.comic_book_editor.delete_panel",
-                                        "Panel löschen",
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-primary btn-sm"
-                                    data-testid="comic-book-editor-add-bubble"
-                                    onClick={handleAddBubble}
-                                    disabled={!selectedPanelId}
-                                >
-                                    {t(
-                                        "ui.comic_book_editor.add_bubble",
-                                        "Sprechblase hinzufügen",
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="comic-book-editor-delete-bubble"
-                                    onClick={handleDeleteBubble}
-                                    disabled={!selectedBubbleId}
-                                >
-                                    {t(
-                                        "ui.comic_book_editor.delete_bubble",
-                                        "Sprechblase löschen",
-                                    )}
-                                </button>
-                            </div>
-                        </>
-                    ) : (
-                        <div
-                            data-testid="comic-book-editor-canvas-empty"
-                            style={{
-                                padding: 48,
-                                textAlign: "center",
-                                color: "var(--text-muted, #666)",
-                            }}
-                        >
-                            {t(
-                                "ui.comic_book_editor.canvas_empty",
-                                "Add a page from the sidebar to start authoring.",
-                            )}
-                        </div>
-                    )}
-                </section>
-
-                <aside
-                    data-testid="comic-book-editor-side-pane"
-                    style={{
-                        border: "1px solid var(--border, #ddd)",
-                        borderRadius: 8,
-                        background: "var(--surface-2, #fafafa)",
-                        minHeight: 400,
-                        overflow: "auto",
-                    }}
-                >
-                    {selectedBubble ? (
-                        <LayoutConfigComicBubble
-                            bubble={selectedBubble}
-                            onChange={handleUpdateBubble}
-                        />
-                    ) : selectedPanel ? (
-                        <LayoutConfigComicPanel
-                            panel={selectedPanel}
-                            bookId={bookId}
-                            onChange={handleUpdatePanel}
-                        />
-                    ) : (
-                        <div
-                            data-testid="comic-book-editor-side-pane-empty"
-                            style={{padding: 16}}
-                        >
-                            {t(
-                                "ui.comic_book_editor.side_pane_default",
-                                "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
-                            )}
-                        </div>
-                    )}
-                </aside>
-            </div>
+      {pluginInfo && (
+        <div
+          data-testid="comic-book-editor-plugin-info"
+          style={{
+            fontSize: "0.8rem",
+            color: "var(--text-muted)",
+          }}
+        >
+          {pluginInfo.name} v{pluginInfo.version} (session {pluginInfo.session})
         </div>
-    );
+      )}
+      {pluginError && (
+        <div
+          data-testid="comic-book-editor-plugin-error"
+          role="alert"
+          style={{ color: "var(--danger, #c00)" }}
+        >
+          {t(
+            "ui.comic_book_editor.plugin_unreachable",
+            "Comic-Plugin nicht erreichbar:",
+          )}{" "}
+          {pluginError}
+        </div>
+      )}
+
+      {/* PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: 3-column
+       * layout mirroring PageEditor's thumbnails | canvas |
+       * properties shape. PageThumbnails handles both the
+       * empty-state ("No pages yet. Click + to add the first
+       * page.") AND the populated list via a single unified
+       * surface — the prior split empty-state section + chip-
+       * nav is replaced. Closes the Half-Wired-Lifecycle-Cascade
+       * surfaced by PAGES-CRUD-01 (Add-Page-After-First was
+       * never wired). RCU 2-site adoption of PageThumbnails;
+       * testidNamespace="comic-book-editor" templates its
+       * testids for E2E namespace correctness. */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "220px 1fr 320px",
+          gap: 16,
+          minHeight: 480,
+        }}
+      >
+        <aside
+          data-testid="comic-book-editor-thumbnails"
+          style={{
+            border: "1px solid var(--border, #ddd)",
+            borderRadius: 8,
+            background: "var(--surface-2, #fafafa)",
+            minHeight: 400,
+            overflow: "auto",
+          }}
+        >
+          <PageThumbnails
+            pages={pages}
+            activePageId={activePageId}
+            onSelect={(pageId) => {
+              setActivePageId(pageId);
+              setSelectedPanelId(null);
+              setSelectedBubbleId(null);
+            }}
+            onAddPage={handleAddPage}
+            onReorder={handleReorderPages}
+            onDelete={handleDeletePage}
+            testidNamespace="comic-book-editor"
+          />
+        </aside>
+
+        <section
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 12,
+            minWidth: 0,
+          }}
+        >
+          {pagesError && (
+            <p
+              data-testid="comic-book-editor-pages-error"
+              role="alert"
+              style={{
+                color: "var(--danger, #c00)",
+                margin: 0,
+              }}
+            >
+              {pagesError}
+            </p>
+          )}
+          {activePageId ? (
+            <>
+              <div
+                data-testid="comic-book-editor-grid-wrapper"
+                style={{
+                  position: "relative",
+                  aspectRatio: "1 / 1",
+                  border: "1px solid var(--border, #ddd)",
+                }}
+              >
+                <ComicPanelGrid
+                  layoutConfig={
+                    (activePage?.layout_config as Record<
+                      string,
+                      unknown
+                    > | null) ?? null
+                  }
+                  panels={panelData}
+                  panelBubblesMap={panelBubblesMap}
+                  assetUrls={assetUrls}
+                  selectedPanelId={selectedPanelId}
+                  selectedBubbleId={selectedBubbleId}
+                  onPanelClick={(panelId) => {
+                    setSelectedPanelId(panelId);
+                    setSelectedBubbleId(null);
+                  }}
+                  onBubbleClick={(bubbleId) => {
+                    setSelectedBubbleId(bubbleId);
+                  }}
+                  onBubbleDragEnd={handleBubbleDragEnd}
+                  onBubbleTailDragEnd={handleBubbleTailDragEnd}
+                  onPanelReorder={handlePanelReorder}
+                />
+              </div>
+
+              <div
+                data-testid="comic-book-editor-actions"
+                style={{ display: "flex", gap: 8, flexWrap: "wrap" }}
+              >
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  data-testid="comic-book-editor-add-panel"
+                  onClick={handleAddPanel}
+                  disabled={!activePageId || atPanelCapacity}
+                  title={
+                    atPanelCapacity
+                      ? `${t(
+                          "ui.comic_book_editor.add_panel_at_capacity",
+                          "Maximale Panelanzahl für dieses Layout erreicht",
+                        )} (${maxPanels})`
+                      : undefined
+                  }
+                  data-at-capacity={atPanelCapacity ? "true" : "false"}
+                >
+                  {t("ui.comic_book_editor.add_panel", "Panel hinzufügen")}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  data-testid="comic-book-editor-delete-panel"
+                  onClick={handleDeletePanel}
+                  disabled={!selectedPanelId}
+                >
+                  {t("ui.comic_book_editor.delete_panel", "Panel löschen")}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm"
+                  data-testid="comic-book-editor-add-bubble"
+                  onClick={handleAddBubble}
+                  disabled={!selectedPanelId}
+                >
+                  {t(
+                    "ui.comic_book_editor.add_bubble",
+                    "Sprechblase hinzufügen",
+                  )}
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-sm"
+                  data-testid="comic-book-editor-delete-bubble"
+                  onClick={handleDeleteBubble}
+                  disabled={!selectedBubbleId}
+                >
+                  {t(
+                    "ui.comic_book_editor.delete_bubble",
+                    "Sprechblase löschen",
+                  )}
+                </button>
+              </div>
+            </>
+          ) : (
+            <div
+              data-testid="comic-book-editor-canvas-empty"
+              style={{
+                padding: 48,
+                textAlign: "center",
+                color: "var(--text-muted, #666)",
+              }}
+            >
+              {t(
+                "ui.comic_book_editor.canvas_empty",
+                "Add a page from the sidebar to start authoring.",
+              )}
+            </div>
+          )}
+        </section>
+
+        <aside
+          data-testid="comic-book-editor-side-pane"
+          style={{
+            border: "1px solid var(--border, #ddd)",
+            borderRadius: 8,
+            background: "var(--surface-2, #fafafa)",
+            minHeight: 400,
+            overflow: "auto",
+          }}
+        >
+          {selectedBubble ? (
+            <LayoutConfigComicBubble
+              bubble={selectedBubble}
+              onChange={handleUpdateBubble}
+            />
+          ) : selectedPanel ? (
+            <LayoutConfigComicPanel
+              panel={selectedPanel}
+              bookId={bookId}
+              onChange={handleUpdatePanel}
+            />
+          ) : (
+            <div
+              data-testid="comic-book-editor-side-pane-empty"
+              style={{ padding: 16 }}
+            >
+              {t(
+                "ui.comic_book_editor.side_pane_default",
+                "Klicke ein Panel oder eine Sprechblase, um sie zu bearbeiten.",
+              )}
+            </div>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
 }
