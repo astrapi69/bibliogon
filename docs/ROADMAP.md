@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-27 (v0.39.0 released — Picture-Book authoring depth release; 49 commits since v0.38.0 across two coordinated multi-session arcs (Storyboard View + Picture-Book Text-Stack) plus LAYOUT-SWITCH-TEXT-CONVERSION + a comprehensive doc-sweep. Backend pytest 2294, Vitest 2190, i18n 75/75 all green.)
-Latest release: v0.39.0 (2026-05-27) — see [changelog/releases/v0.39.0.md](../changelog/releases/v0.39.0.md) for the full per-release notes.
-Previous release: v0.38.0 (2026-05-26) — Settings-UX overhaul; 30 commits across SETT-PHASE-1 + SETT-PHASE-2 + SETT-PHASE-3 + SETT-AUTHORS + SETT-L-1 + Article Dashboard nav-jump fix.
+Last updated: 2026-05-29 (v0.40.0 released — Comic-book + picture-book authoring depth + articles content-model expansion; ~100 commits since v0.39.0 across five streams (Content-Types SSoT, Publication-status parity, Title editing, Comic-book depth incl. panel reorder + cross-page move, Picture-book layout expansion Phases 1-3) + a Settings-Completeness batch. Backend pytest 2394, Vitest 2477, all green.)
+Latest release: v0.40.0 (2026-05-29) — see [changelog/releases/v0.40.0.md](../changelog/releases/v0.40.0.md) for the full per-release notes.
+Previous release: v0.39.0 (2026-05-27) — Picture-Book authoring depth; Storyboard View + Picture-Book Text-Stack arcs + LAYOUT-SWITCH-TEXT-CONVERSION.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).

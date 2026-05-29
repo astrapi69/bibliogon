@@ -470,6 +470,11 @@ check-mkdocs-orphans: ## Adversarial check: fail if mkdocs reports orphan pages
 verify-docs-discipline: verify-mkdocs-nav check-mkdocs-orphans ## All docs-discipline gates (mandatory in pre-tag chain)
 	@echo "All docs-discipline checks passed."
 
+verify-docs-completeness: ## Release-time doc-completeness gate (version headers, help i18n parity, image/xref integrity). FAIL (exit 1) blocks; WARN (exit 2) is advisory.
+	@python3 scripts/verify_docs_completeness.py; ec=$$?; \
+	if [ $$ec -eq 1 ]; then exit 1; fi; \
+	if [ $$ec -eq 2 ]; then echo "(verify-docs-completeness: advisory warnings only — not blocking)"; fi
+
 # --- Plugin lockfile discipline (PLUGIN-LOCKFILE-DRIFT-01) ---
 # `make test` installs plugins from the backend's combined poetry.lock
 # (path-deps); CI installs each plugin from its OWN poetry.lock. The two
@@ -556,6 +561,7 @@ release-test: test ## Aggregate pre-tag test gate (release-workflow.md Step 5)
 	@echo "=== pre-commit run --all-files ==="
 	@cd backend && poetry run pre-commit run --all-files
 	@$(MAKE) verify-docs-discipline
+	@$(MAKE) verify-docs-completeness
 	@$(MAKE) verify-plugin-locks
 	@echo ""
 	@echo "=== Launcher PyInstaller build smoke ==="

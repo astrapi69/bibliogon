@@ -81,3 +81,15 @@ repos:
         files: ^backend/app/.*\.py$
         pass_filenames: false
         stages: [pre-commit]
+
+      # Release-only documentation-completeness gate. Manual stage so it
+      # does NOT run on normal commits or pushes (advisory WARNs would
+      # otherwise block them); `make release-test` enforces it at release
+      # time. The wrapper maps exit 2 (WARN-only) -> 0 so only a real
+      # FAIL (exit 1) trips the hook.
+      - id: verify-docs-completeness
+        name: documentation completeness (release gate)
+        entry: bash -c 'python3 scripts/verify_docs_completeness.py; ec=$?; [ $ec -eq 1 ] && exit 1; exit 0'
+        language: system
+        pass_filenames: false
+        stages: [manual]
