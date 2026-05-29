@@ -26,7 +26,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 - Multi-provider AI assistant (Anthropic, OpenAI, Gemini, Mistral, LM Studio) with chapter review, marketing text generation, and context-aware suggestions
 - Plugin system with ZIP installation for third-party plugins
 - Encrypted credential storage (Fernet) for API keys and service accounts
-- 5 themes (Classic, Cool Modern, Nord, Notebook, Studio) x Light/Dark
+- 6 color palettes (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) x Light/Dark = 12 theme variants
 - i18n: German, English, Spanish, French, Greek, Portuguese, Turkish, Japanese
 - Responsive layout with hamburger menu on mobile
 - Settings sidebar with 5 grouped sections (Darstellung, Inhalt, System, Info, Gefahrenzone) replacing the older horizontal-tabs layout

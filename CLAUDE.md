@@ -58,6 +58,7 @@ make test-coverage        # opt-in coverage run (heavy; CI runs this on every pu
 make test-backend         # backend only
 make test-plugins         # all plugin tests
 make test-frontend        # Vitest
+make verify-theme         # theme gates: token completeness/undefined-refs + WCAG contrast (12 variants) + no hardcoded hex
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
 make generate-trial-key   # 30-day trial key (dormant, licensing disabled)

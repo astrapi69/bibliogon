@@ -26,7 +26,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 - Multi-Provider-KI-Assistent (Anthropic, OpenAI, Gemini, Mistral, LM Studio) für Kapitel-Review, Marketing-Texte und kontextbewusste Vorschläge
 - Plugin-System mit ZIP-Installation für Drittanbieter-Plugins
 - Verschlüsselte Anmeldedaten-Ablage (Fernet) für API-Keys und Service-Account-Dateien
-- 5 Themes (Classic, Cool Modern, Nord, Notebook, Studio) x Hell/Dunkel
+- 6 Farbpaletten (Warm Literary, Cool Modern, Nord, Classic, Studio, Notebook) x Hell/Dunkel = 12 Theme-Varianten
 - i18n: Deutsch, Englisch, Spanisch, Französisch, Griechisch, Portugiesisch, Türkisch, Japanisch
 - Responsives Layout mit Hamburger-Menü auf Mobilgeräten
 - Einstellungs-Sidebar mit 5 Gruppen (Darstellung, Inhalt, System, Info, Gefahrenzone) löst das frühere horizontale Tab-Layout ab
