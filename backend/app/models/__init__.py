@@ -87,6 +87,16 @@ class Book(Base):
         String(30), nullable=False, default="prose", server_default="prose"
     )
 
+    # PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Publication
+    # lifecycle: draft → ready → published → archived. Mirrors
+    # ``Article.status`` exactly (same 4 values, same default).
+    # Drives the Books-Dashboard status badge + the Title-Editing
+    # arc's published-work warning. Migration ``v1f2345678abc``
+    # backfills the column to "draft" for all pre-existing rows.
+    status: Mapped[str] = mapped_column(
+        String(20), nullable=False, default="draft", server_default="draft"
+    )
+
     # Publishing metadata
     edition: Mapped[str | None] = mapped_column(String(100), nullable=True)
     publisher: Mapped[str | None] = mapped_column(String(300), nullable=True)

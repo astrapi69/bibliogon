@@ -73,6 +73,18 @@ class ChapterType(str, Enum):
 BookType = Literal["prose", "picture_book", "comic_book"]
 
 
+# PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Shared
+# publication-lifecycle enum. Both Article.status and Book.status
+# use the same 4 values; centralised here so a future status
+# change propagates to both surfaces in one edit. The name
+# ``_PUBLISHING_LIFECYCLE`` is deliberately distinct from
+# ``_PUBLICATION_STATUSES`` (per-platform Publication entity at
+# line 976) which has a 5-value Platform-publication enum
+# (planned / scheduled / published / out_of_sync / archived).
+_PUBLISHING_LIFECYCLE = ("draft", "ready", "published", "archived")
+PublicationStatus = Literal["draft", "ready", "published", "archived"]
+
+
 class BookCreate(BaseModel):
     title: str
     subtitle: str | None = None
@@ -91,6 +103,10 @@ class BookCreate(BaseModel):
     # Default "prose" keeps existing clients backward-compatible: any
     # caller that omits book_type creates a prose book.
     book_type: BookType = "prose"
+    # PUBLICATION-STATUS-BOOK-PARITY-01: optional on create;
+    # defaults to "draft" via the column default when omitted.
+    # Same 4 values as Article.status.
+    status: PublicationStatus | None = None
 
 
 class BookUpdate(BaseModel):
@@ -143,6 +159,18 @@ class BookUpdate(BaseModel):
     # AI-assisted content flag
     ai_assisted: bool | None = None
     ai_tokens_used: int | None = None
+    # PUBLICATION-STATUS-BOOK-PARITY-01: publication-lifecycle
+    # column. Optional on PATCH; backend only writes when provided.
+    status: PublicationStatus | None = None
+
+    @field_validator("status")
+    @classmethod
+    def _validate_status(cls, v: str | None) -> str | None:
+        if v is not None and v not in _PUBLISHING_LIFECYCLE:
+            raise ValueError(
+                f"status must be one of {_PUBLISHING_LIFECYCLE}, got {v!r}"
+            )
+        return v
 
     @field_validator("keywords", mode="before")
     @classmethod
@@ -414,6 +442,12 @@ class BookOut(BaseModel):
     # Phase-4 discriminator. Defaults to "prose" for back-compat with
     # existing pre-migration rows.
     book_type: str = "prose"
+    # PUBLICATION-STATUS-BOOK-PARITY-01. Publication-lifecycle
+    # column; mirrors Article.status. Defaults to "draft" for
+    # back-compat with pre-migration rows (the migration backfills
+    # the column server-side, but Pydantic needs a default for
+    # API responses constructed from non-DB sources).
+    status: str = "draft"
     edition: str | None = None
     publisher: str | None = None
     publisher_city: str | None = None
@@ -752,7 +786,11 @@ class ChapterTemplateRead(BaseModel):
 # --- Article schemas (AR-01 Phase 1) ---
 
 
-_ARTICLE_STATUSES = ("draft", "ready", "published", "archived")
+# Back-compat alias: existing call-sites grep for
+# ``_ARTICLE_STATUSES``. Points at the hoisted
+# ``_PUBLISHING_LIFECYCLE`` constant defined near the top of
+# the module.
+_ARTICLE_STATUSES = _PUBLISHING_LIFECYCLE
 
 # ARTICLE-TYPES-SSOT-01: must stay in sync with
 # backend/config/article-types.yaml. The verification test
