@@ -4,6 +4,99 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.41.0] - 2026-05-30
+
+A UX/UI theme + accessibility hardening release, plus per-content-type
+field visibility and a documentation refresh. 24 commits since
+v0.40.0. The headline is a full audit of all **12 theme variants**
+(6 palettes × light/dark) that corrected a long-standing "5 palettes /
+10 variants" miscount (Warm Literary, the default, was never counted),
+found and fixed a class of undefined-CSS-token bugs the existing
+completeness hook was structurally blind to, and shipped a new
+`make verify-theme` release gate. Backend pytest 2394 → 2399; Vitest
+2477 → 2487; theme tokens + 96 WCAG contrast checks + hardcoded-hex
+lint + verify-docs-discipline + verify-docs-completeness all green.
+
+### Added
+
+- **Per-content-type field visibility** (``ARTICLE-TYPES-FIELD-VISIBILITY-01``).
+  The ArticleEditor sidebar now shows only the fields relevant to the
+  article's content type instead of every field for every type. A new
+  per-type ``core_fields`` list in the SSoT
+  ``backend/config/content-types.yaml`` drives which optional fields
+  (Tags / Excerpt / SEO / Canonical URL / Featured image) each type
+  renders; identity fields (title, content, status, subtitle, author,
+  language, topic) are always shown. ``null``/omitted = show all
+  (backward-compatible); ``[]`` = none. A field-validator rejects
+  unknown field keys. E.g. a newsletter shows none of the optional
+  core fields (it has its own issue-number / send-date), a short
+  story shows only Tags, canonical URL is blog-post-only.
+- **`make verify-theme` release gate** (in `make release-test`). Three
+  scripts: `audit_theme_tokens.py` (extended to flag bare
+  `var(--token)` references to tokens defined in no palette — the
+  blind spot below), `check_theme_contrast.py` (96 WCAG-2.1 contrast
+  checks across all 12 variants, alpha-compositing translucent
+  backgrounds), and `check_hardcoded_colors.py` (no stray hardcoded
+  hex outside `var()` fallbacks / data allowlists).
+- **Comic bubble + tail keyboard operation**. The bubble and tail-tip
+  drag handles (`role="button"`) now respond to Enter/Space (select)
+  and Arrow keys (reposition — the keyboard equivalent of dragging),
+  with 6 Vitest regression pins. Closes the audit's highest-priority
+  accessibility gap.
+- **`verify_docs_completeness.py` release gate** — version-header /
+  help-i18n-parity / image + cross-reference integrity check, wired
+  into the release flow (it caught a broken help-image path during
+  this release).
+- **Developer theming guide** (`docs/development/theming.md`): the
+  6-palette / 12-variant matrix + cascade, the semantic token
+  vocabulary, how to add a palette, the three theme gates, and the
+  intentional non-themed colors (comic convention, image-relative
+  overlays, mood-preset data).
+
+### Changed
+
+- **Comic editor chrome is theme-aware** (panels, multi-panel grid,
+  bubble tail-handle ring, picture-book speech-bubble layout). Comic
+  bubble *defaults* deliberately stay comic-convention (white fill /
+  black stroke, mirrored in the PDF walker) — only the editor chrome
+  around them follows the app theme.
+- **Storyboard mood-dot ring** strengthened (12% → 25% of `--text`)
+  so preset mood colors stay distinguishable from the card in every
+  variant; **collage text-region drag handle** made a visible grab
+  affordance (kept image-relative by design).
+- Documentation refreshed: README + README-de + CLAUDE.md corrected to
+  6 palettes / 12 variants; the Articles content-types help page
+  gained a comparison table, a field-visibility matrix, and a per-type
+  detail section for all 8 types (DE + EN); 35 help screenshots
+  regenerated to the current UI; settings screenshots wired into their
+  help pages.
+- Dependency sweep: within-range backend / frontend / launcher /
+  e2e bumps; the Starlette v1 upstream blocker resolved.
+
+### Fixed
+
+- **6 undefined CSS tokens** used bare across the app (`--bg`,
+  `--accent-bg`, `--accent-text`, `--error`, `--bg-surface`,
+  `--accent-muted`, plus more found by the new gate — 18 in total)
+  resolved to defined semantic tokens. These rendered nothing
+  (falling to initial/inherited values) and were invisible to the
+  old hex-fallback-only completeness hook. Most visible effects:
+  Storyboard cards and the bulk-action-bar active state were not
+  rendering their intended surfaces.
+- **31 hardcoded status colors** (`#16a34a` green, `#ef4444`/`#dc2626`
+  red, etc.) replaced with `var(--success / --danger / --accent /
+  --warning)` so they flip correctly in dark mode.
+- **Dark-mode contrast**: `--text-muted` brightened in every dark
+  palette to clear WCAG AA on cards + soft surfaces; nord dark
+  `--danger` lightened from 2.46:1 to a legible ~3.2:1; the
+  EditableTitle published-work warning button switched from
+  always-white text to `--text-inverse` (white-on-light-accent failed
+  in all 6 dark variants).
+- **Article-Dashboard header** no longer wraps to two lines at 900px+
+  — the standalone Backup button was folded into the Import chevron
+  (the C5 content-type split-button had pushed the header past the
+  wrap threshold). Playwright regression pin added.
+
 ## [0.40.0] - 2026-05-29
 
 A large authoring-depth release across the comic-book and
