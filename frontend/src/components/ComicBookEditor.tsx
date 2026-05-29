@@ -51,6 +51,10 @@ import {
 import { ComicGridTemplatePicker } from "./comics/ComicGridTemplatePicker";
 import { LayoutConfigComicBubble } from "./comics/LayoutConfigComicBubble";
 import { LayoutConfigComicPanel } from "./comics/LayoutConfigComicPanel";
+import {
+  MovePanelToPageMenu,
+  type MovePageEntry,
+} from "./comics/MovePanelToPageMenu";
 import type { ComicBubbleData } from "./comics/ComicBubble";
 import type { ComicPanelData } from "./comics/ComicPanel";
 import { useDialog } from "./AppDialog";
@@ -703,6 +707,81 @@ export default function ComicBookEditor({
     [activePageId, bookId, refreshPanelsAndBubbles],
   );
 
+  // COMIC-PANEL-CROSS-PAGE-MOVE-01 Phase 2: cross-page move via the
+  // "Move to page" action menu (user-adjudicated alternative to
+  // drag-to-thumbnail; avoids a shared-DndContext refactor of the
+  // PageThumbnails the picture-book editor also uses). Capacity per
+  // OTHER page is fetched lazily on menu-open so a stale count can't
+  // gate the move.
+  const loadMoveEntries = useCallback(async (): Promise<MovePageEntry[]> => {
+    const otherPages = pages.filter((p) => p.id !== activePageId);
+    const entries = await Promise.all(
+      otherPages.map(async (p) => {
+        const targetPanels = await api.comics.listPanels(bookId, p.id);
+        const template = resolveComicGridTemplate(
+          (p.layout_config as Record<string, unknown> | null) ?? null,
+        );
+        return {
+          pageId: p.id,
+          position: p.position,
+          count: targetPanels.length,
+          max: COMIC_GRID_MAX_PANELS[template],
+        };
+      }),
+    );
+    return entries.sort((a, b) => a.position - b.position);
+  }, [pages, activePageId, bookId]);
+
+  // Move the selected panel to another page: PATCH page_id + append
+  // position (existing ComicPanelUpdate path), then re-normalise the
+  // source page's positions to 1..N via the C1 reorder endpoint so
+  // no gap survives the move. Refresh + toast on success.
+  const handleMovePanel = useCallback(
+    async (targetPageId: string) => {
+      if (!selectedPanelId || !activePageId) return;
+      const sourcePageId = activePageId;
+      const movedPanelId = selectedPanelId;
+      try {
+        const targetPanels = await api.comics.listPanels(bookId, targetPageId);
+        await api.comics.updatePanel(bookId, movedPanelId, {
+          page_id: targetPageId,
+          position: targetPanels.length + 1,
+        });
+        const remaining = panels
+          .filter((p) => p.id !== movedPanelId)
+          .sort((a, b) => a.position - b.position)
+          .map((p) => p.id);
+        if (remaining.length > 0) {
+          await api.comics.reorderPanels(bookId, sourcePageId, remaining);
+        }
+        setSelectedPanelId(null);
+        setSelectedBubbleId(null);
+        await refreshPanelsAndBubbles(sourcePageId);
+        const targetPosition =
+          pages.find((p) => p.id === targetPageId)?.position ?? "?";
+        notify.success(
+          t(
+            "ui.comic_book_editor.move_panel_success",
+            "Panel auf Seite {n} verschoben",
+          ).replace("{n}", String(targetPosition)),
+        );
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+        await refreshPanelsAndBubbles(sourcePageId);
+      }
+    },
+    [
+      selectedPanelId,
+      activePageId,
+      bookId,
+      panels,
+      pages,
+      refreshPanelsAndBubbles,
+      t,
+    ],
+  );
+
   const selectedBubble = useMemo<ComicBubbleData | null>(() => {
     if (!selectedBubbleId) return null;
     for (const panelBubbles of Object.values(bubblesByPanel)) {
@@ -1000,6 +1079,11 @@ export default function ComicBookEditor({
                 >
                   {t("ui.comic_book_editor.delete_panel", "Panel löschen")}
                 </button>
+                <MovePanelToPageMenu
+                  disabled={!selectedPanelId}
+                  loadEntries={loadMoveEntries}
+                  onMove={handleMovePanel}
+                />
                 <button
                   type="button"
                   className="btn btn-primary btn-sm"
