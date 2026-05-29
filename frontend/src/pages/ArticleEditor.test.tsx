@@ -36,6 +36,7 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
         description_key: "ui.content_types.blogpost_description",
         icon: "FileText",
         default: true,
+        core_fields: ["tags", "excerpt", "seo", "canonical_url", "featured_image"],
         extra_fields: [],
     },
     tutorial: {
@@ -44,6 +45,7 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
         description_key: "ui.content_types.tutorial_description",
         icon: "GraduationCap",
         default: false,
+        core_fields: ["tags", "excerpt", "seo", "featured_image"],
         extra_fields: [
             {
                 name: "difficulty_level",
@@ -88,6 +90,7 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
         description_key: "ui.content_types.newsletter_description",
         icon: "Mail",
         default: false,
+        core_fields: [],
         extra_fields: [
             {
                 name: "issue_number",
@@ -303,5 +306,47 @@ describe("ArticleEditor — kebab menu reclassify smoke (F2c)", () => {
         await waitFor(() => {
             expect(getArticleMock).toHaveBeenCalledWith("art-1");
         });
+    });
+});
+
+describe("ArticleEditor — per-content-type core-field visibility (ARTICLE-TYPES-FIELD-VISIBILITY-01)", () => {
+    it("blogpost shows all configurable core fields", async () => {
+        getArticleMock.mockResolvedValue({ ...stubArticle, content_type: "blogpost" });
+        renderEditor();
+        await screen.findByTestId("article-editor-actions-menu");
+        expect(screen.queryByTestId("article-editor-seo-title")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-canonical-url")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-excerpt")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-featured-image")).toBeTruthy();
+    });
+
+    it("tutorial hides Canonical URL but keeps SEO / Excerpt / Featured image", async () => {
+        getArticleMock.mockResolvedValue({ ...stubArticle, content_type: "tutorial" });
+        renderEditor();
+        await screen.findByTestId("article-editor-actions-menu");
+        expect(screen.queryByTestId("article-editor-canonical-url")).toBeNull();
+        expect(screen.queryByTestId("article-editor-seo-title")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-excerpt")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-featured-image")).toBeTruthy();
+    });
+
+    it("newsletter (core_fields: []) hides every optional core field", async () => {
+        getArticleMock.mockResolvedValue({ ...stubArticle, content_type: "newsletter" });
+        renderEditor();
+        // Editor still mounts (identity fields + actions menu remain).
+        await screen.findByTestId("article-editor-actions-menu");
+        expect(screen.queryByTestId("article-editor-seo-title")).toBeNull();
+        expect(screen.queryByTestId("article-editor-canonical-url")).toBeNull();
+        expect(screen.queryByTestId("article-editor-excerpt")).toBeNull();
+        expect(screen.queryByTestId("article-editor-featured-image")).toBeNull();
+    });
+
+    it("a type with no core_fields key (undefined) shows all (permissive default)", async () => {
+        // 'review' mock omits core_fields → showCore treats it as "show all".
+        getArticleMock.mockResolvedValue({ ...stubArticle, content_type: "review" });
+        renderEditor();
+        await screen.findByTestId("article-editor-actions-menu");
+        expect(screen.queryByTestId("article-editor-canonical-url")).toBeTruthy();
+        expect(screen.queryByTestId("article-editor-seo-title")).toBeTruthy();
     });
 });

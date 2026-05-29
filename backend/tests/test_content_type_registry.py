@@ -37,9 +37,7 @@ def _clear_cache():
 
 
 @pytest.fixture
-def fake_registry_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Path:
+def fake_registry_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "content-types.yaml"
     monkeypatch.setattr(content_type_registry, "_REGISTRY_PATH", path)
     return path
@@ -171,39 +169,23 @@ class TestFakedRegistry:
     """Tests against a tmpdir-backed YAML so we can exercise edge
     cases without touching the committed content-types.yaml."""
 
-    def test_missing_yaml_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_missing_yaml_returns_empty(self, fake_registry_path: Path) -> None:
         assert not fake_registry_path.exists()
         assert load_content_types() == {}
 
-    def test_non_mapping_root_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "- this is a list at root\n", encoding="utf-8"
-        )
+    def test_non_mapping_root_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("- this is a list at root\n", encoding="utf-8")
         assert load_content_types() == {}
 
-    def test_missing_content_types_key_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "unrelated_key: value\n", encoding="utf-8"
-        )
+    def test_missing_content_types_key_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("unrelated_key: value\n", encoding="utf-8")
         assert load_content_types() == {}
 
-    def test_content_types_not_list_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "content_types: not_a_list\n", encoding="utf-8"
-        )
+    def test_content_types_not_list_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("content_types: not_a_list\n", encoding="utf-8")
         assert load_content_types() == {}
 
-    def test_malformed_entry_logged_and_skipped(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_malformed_entry_logged_and_skipped(self, fake_registry_path: Path) -> None:
         # Entry missing required fields.
         fake_registry_path.write_text(
             (
@@ -245,9 +227,7 @@ class TestFakedRegistry:
         # File missing → registry empty → fallback string.
         assert default_content_type_id() == "blogpost"
 
-    def test_extra_field_extra_keys_forbidden(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_extra_field_extra_keys_forbidden(self, fake_registry_path: Path) -> None:
         # ``extra="forbid"`` on ContentTypeExtraField means a typo'd
         # key fails validation; the parent entry is then SKIPPED.
         fake_registry_path.write_text(
@@ -266,3 +246,87 @@ class TestFakedRegistry:
             encoding="utf-8",
         )
         assert get_content_type("bad_field") is None
+
+
+class TestCoreFields:
+    """ARTICLE-TYPES-FIELD-VISIBILITY-01: per-type ``core_fields``
+    visibility list (SSoT for which optional ArticleEditor sidebar
+    fields each content type shows)."""
+
+    def test_core_fields_match_the_approved_matrix(self) -> None:
+        types = load_content_types()
+        assert types["blogpost"].core_fields == [
+            "tags",
+            "excerpt",
+            "seo",
+            "canonical_url",
+            "featured_image",
+        ]
+        assert types["tutorial"].core_fields == [
+            "tags",
+            "excerpt",
+            "seo",
+            "featured_image",
+        ]
+        # newsletter shows NO optional core fields (only its
+        # type-specific issue_number / send_date extra_fields).
+        assert types["newsletter"].core_fields == []
+        assert types["short_story"].core_fields == ["tags"]
+        # canonical_url is blogpost-only.
+        for tid, defn in types.items():
+            if tid != "blogpost":
+                assert "canonical_url" not in (defn.core_fields or [])
+
+    def test_valid_core_fields_parse(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text(
+            (
+                "content_types:\n"
+                "  - id: custom\n"
+                "    label_key: ui.foo\n"
+                "    description_key: ui.bar\n"
+                "    icon: Star\n"
+                "    core_fields: [tags, seo]\n"
+                "    extra_fields: []\n"
+            ),
+            encoding="utf-8",
+        )
+        defn = get_content_type("custom")
+        assert defn is not None
+        assert defn.core_fields == ["tags", "seo"]
+
+    def test_omitted_core_fields_defaults_to_none_show_all(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text(
+            (
+                "content_types:\n"
+                "  - id: custom\n"
+                "    label_key: ui.foo\n"
+                "    description_key: ui.bar\n"
+                "    icon: Star\n"
+                "    extra_fields: []\n"
+            ),
+            encoding="utf-8",
+        )
+        defn = get_content_type("custom")
+        assert defn is not None
+        # None = "show all" (permissive default); the frontend's
+        # ``coreFields == null`` check renders every optional field.
+        assert defn.core_fields is None
+
+    def test_unknown_core_field_key_skips_the_entry(self, fake_registry_path: Path) -> None:
+        # The field_validator rejects unknown core-field names; the
+        # loader catches the ValueError and SKIPS the malformed entry
+        # (loud log, no import-time crash) — same shape as a bad
+        # extra_field.
+        fake_registry_path.write_text(
+            (
+                "content_types:\n"
+                "  - id: bad_core\n"
+                "    label_key: ui.foo\n"
+                "    description_key: ui.bar\n"
+                "    icon: Star\n"
+                "    core_fields: [tags, bogus_field]\n"
+                "    extra_fields: []\n"
+            ),
+            encoding="utf-8",
+        )
+        assert get_content_type("bad_core") is None

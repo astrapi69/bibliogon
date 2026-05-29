@@ -118,6 +118,17 @@ export interface ContentTypeDef {
    *  entry in the YAML registry is ``default: true``. */
   default: boolean;
   extra_fields: ContentTypeExtraField[];
+  /** Per-type visibility of the optional core sidebar fields
+   *  (ARTICLE-TYPES-FIELD-VISIBILITY-01). ``null`` (key omitted in
+   *  the YAML) = show ALL; an explicit list = show exactly those;
+   *  ``[]`` = show none. ArticleEditor gates Tags / Excerpt / SEO /
+   *  Canonical URL / Featured Image on this. Identity fields
+   *  (title/content/status/subtitle/author/language/topic) are
+   *  always shown and are NOT listed here. Mirrors backend
+   *  ContentTypeDef.core_fields. Optional in TS: the API always
+   *  sends it (list or null), but ``== null`` treats an absent value
+   *  identically to null ("show all"), so test fixtures may omit it. */
+  core_fields?: string[] | null;
 }
 
 /** PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Publication-

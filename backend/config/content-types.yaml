@@ -27,12 +27,14 @@ content_types:
     description_key: ui.content_types.blogpost_description
     icon: FileText
     default: true
+    core_fields: [tags, excerpt, seo, canonical_url, featured_image]
     extra_fields: []
 
   - id: tutorial
     label_key: ui.content_types.tutorial
     description_key: ui.content_types.tutorial_description
     icon: GraduationCap
+    core_fields: [tags, excerpt, seo, featured_image]
     extra_fields:
       - name: difficulty_level
         type: enum
@@ -52,6 +54,7 @@ content_types:
     label_key: ui.content_types.review
     description_key: ui.content_types.review_description
     icon: Star
+    core_fields: [tags, excerpt, seo, featured_image]
     extra_fields:
       - name: reviewed_work
         type: text
@@ -69,12 +72,14 @@ content_types:
     label_key: ui.content_types.essay
     description_key: ui.content_types.essay_description
     icon: Feather
+    core_fields: [tags, featured_image]
     extra_fields: []
 
   - id: newsletter
     label_key: ui.content_types.newsletter
     description_key: ui.content_types.newsletter_description
     icon: Mail
+    core_fields: []
     extra_fields:
       - name: issue_number
         type: number
@@ -87,6 +92,7 @@ content_types:
     label_key: ui.content_types.interview
     description_key: ui.content_types.interview_description
     icon: Users
+    core_fields: [tags, featured_image]
     extra_fields:
       - name: interview_partner_name
         type: text
@@ -99,10 +105,12 @@ content_types:
     label_key: ui.content_types.listicle
     description_key: ui.content_types.listicle_description
     icon: ListOrdered
+    core_fields: [tags, excerpt, seo, featured_image]
     extra_fields: []
 
   - id: short_story
     label_key: ui.content_types.short_story
     description_key: ui.content_types.short_story_description
     icon: BookOpen
+    core_fields: [tags]
     extra_fields: []

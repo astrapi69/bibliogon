@@ -598,6 +598,16 @@ export default function ArticleEditor() {
         );
     }
 
+    // ARTICLE-TYPES-FIELD-VISIBILITY-01: per-type visibility of the
+    // optional core sidebar fields, driven by the SSoT
+    // content-types.yaml ``core_fields`` list. ``null`` (key omitted)
+    // = show all (permissive default); an explicit list = show only
+    // those. Identity fields (title/subtitle/author/language/topic/
+    // status) are always shown and never gated here.
+    const coreFields = articleTypesSnapshot.types[article.content_type]?.core_fields;
+    const showCore = (field: string): boolean =>
+        coreFields == null || coreFields.includes(field);
+
     return (
         <div data-testid="article-editor" className={layout.page}>
             <h1 className="sr-only">{article.title || "Bibliogon"}</h1>
@@ -877,6 +887,7 @@ export default function ArticleEditor() {
                         }}
                     />
 
+                    {showCore("seo") && (<>
                     <h4 className={layout.sectionHeading}>
                         {t("ui.articles.seo_section", "SEO")}
                     </h4>
@@ -973,6 +984,8 @@ export default function ArticleEditor() {
                             lineHeight: 1.4,
                         }}
                     />
+                    </>)}
+                    {showCore("canonical_url") && (
                     <Field
                         label={t("ui.articles.canonical_url", "Canonical URL")}
                         tooltip={t(
@@ -993,6 +1006,8 @@ export default function ArticleEditor() {
                         }
                         testId="article-editor-canonical-url"
                     />
+                    )}
+                    {showCore("featured_image") && (<>
                     <FieldLabel
                         label={t(
                             "ui.articles.featured_image_label",
@@ -1035,6 +1050,8 @@ export default function ArticleEditor() {
                         testId="article-editor-featured-image"
                         placeholder="https://..."
                     />
+                    </>)}
+                    {showCore("excerpt") && (<>
                     <FieldLabel
                         label={t("ui.articles.excerpt", "Excerpt")}
                         tooltip={t(
@@ -1065,6 +1082,8 @@ export default function ArticleEditor() {
                             lineHeight: 1.4,
                         }}
                     />
+                    </>)}
+                    {showCore("tags") && (<>
                     <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
                         <FieldLabel
                             label={t("ui.articles.tags_label", "Tags")}
@@ -1095,6 +1114,7 @@ export default function ArticleEditor() {
                             void persistMeta({ tags: next });
                         }}
                     />
+                    </>)}
                     <PublicationsPanel articleId={article.id} />
 
                     <h4 className={layout.sectionHeading}>

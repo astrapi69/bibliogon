@@ -24,7 +24,7 @@ from pathlib import Path
 from typing import Any
 
 import yaml
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_validator
 
 logger = logging.getLogger(__name__)
 
@@ -51,6 +51,15 @@ class ContentTypeExtraField(BaseModel):
     max: float | None = None
 
 
+# The optional CORE fields whose per-type visibility is configurable
+# via ``core_fields``. Identity fields (title/content/status/subtitle/
+# author/language/topic) are always shown and are NOT in this set.
+# Each name maps to a section the ArticleEditor sidebar renders:
+#   tags / excerpt / seo (title+description) / canonical_url /
+#   featured_image. Mirrored in the frontend ContentTypeDef.core_fields.
+CONFIGURABLE_CORE_FIELDS = frozenset({"tags", "excerpt", "seo", "canonical_url", "featured_image"})
+
+
 class ContentTypeDef(BaseModel):
     """One article-type entry from the YAML registry."""
 
@@ -62,6 +71,25 @@ class ContentTypeDef(BaseModel):
     icon: str
     default: bool = False
     extra_fields: list[ContentTypeExtraField] = []
+    # Per-type visibility of the optional core sidebar fields.
+    # ``None`` (key omitted) = show ALL configurable core fields
+    # (backward-compatible permissive default for any future type
+    # added without the key). An explicit list = show exactly those;
+    # ``[]`` = show none. ArticleEditor reads this to gate the
+    # Tags / Excerpt / SEO / Canonical URL / Featured Image sections.
+    core_fields: list[str] | None = None
+
+    @field_validator("core_fields")
+    @classmethod
+    def _known_core_fields(cls, value: list[str] | None) -> list[str] | None:
+        if value is None:
+            return value
+        unknown = sorted(set(value) - CONFIGURABLE_CORE_FIELDS)
+        if unknown:
+            raise ValueError(
+                f"unknown core_fields {unknown}; allowed: {sorted(CONFIGURABLE_CORE_FIELDS)}"
+            )
+        return value
 
 
 @lru_cache(maxsize=1)
