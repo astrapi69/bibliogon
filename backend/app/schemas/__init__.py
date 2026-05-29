@@ -167,9 +167,7 @@ class BookUpdate(BaseModel):
     @classmethod
     def _validate_status(cls, v: str | None) -> str | None:
         if v is not None and v not in _PUBLISHING_LIFECYCLE:
-            raise ValueError(
-                f"status must be one of {_PUBLISHING_LIFECYCLE}, got {v!r}"
-            )
+            raise ValueError(f"status must be one of {_PUBLISHING_LIFECYCLE}, got {v!r}")
         return v
 
     @field_validator("keywords", mode="before")
@@ -1382,6 +1380,18 @@ class ComicPanelOut(BaseModel):
                 return None
             return parsed if isinstance(parsed, dict) else None
         return None
+
+
+class ComicPanelsReorder(BaseModel):
+    """List of panel IDs in the desired order for one comic page.
+
+    Mirrors ``PagesReorder`` (COMIC-PANEL-CROSS-PAGE-MOVE-01 Phase 1).
+    ``panel_ids`` must contain exactly the page's current panel IDs;
+    the route runs a two-phase position update in one transaction so a
+    partial failure leaves no panels half-reordered.
+    """
+
+    panel_ids: list[str]
 
 
 class ComicBubbleCreate(BaseModel):

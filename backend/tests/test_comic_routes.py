@@ -29,8 +29,6 @@ Coverage scope:
 
 from __future__ import annotations
 
-import json
-
 import pytest
 from fastapi.testclient import TestClient
 
@@ -156,9 +154,7 @@ class TestComicPanelList:
     def test_list_empty_for_new_comic_page(self, client: TestClient) -> None:
         book_id = _create_comic_book(client)
         page_id = _add_comic_page(client, book_id)
-        resp = client.get(
-            f"/api/books/{book_id}/comic-pages/{page_id}/panels"
-        )
+        resp = client.get(f"/api/books/{book_id}/comic-pages/{page_id}/panels")
         assert resp.status_code == 200
         assert resp.json() == []
 
@@ -189,11 +185,14 @@ class TestComicPanelUpdate:
             json={"bounds": {"x_pct": 10, "y_pct": 10, "width_pct": 80, "height_pct": 80}},
         )
         assert resp.status_code == 200
-        assert resp.json()["bounds"] == {"x_pct": 10, "y_pct": 10, "width_pct": 80, "height_pct": 80}
+        assert resp.json()["bounds"] == {
+            "x_pct": 10,
+            "y_pct": 10,
+            "width_pct": 80,
+            "height_pct": 80,
+        }
 
-    def test_update_supports_page_id_for_cross_page_move(
-        self, client: TestClient
-    ) -> None:
+    def test_update_supports_page_id_for_cross_page_move(self, client: TestClient) -> None:
         """COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28). PATCHing
         a panel's page_id moves it to a different page within the
         same book. Used by the panel-overflow dialog's
@@ -213,18 +212,12 @@ class TestComicPanelUpdate:
         )
         assert resp.status_code == 200, resp.text
         # Panel now lives on page_b.
-        list_a = client.get(
-            f"/api/books/{book_id}/comic-pages/{page_a}/panels"
-        ).json()
-        list_b = client.get(
-            f"/api/books/{book_id}/comic-pages/{page_b}/panels"
-        ).json()
+        list_a = client.get(f"/api/books/{book_id}/comic-pages/{page_a}/panels").json()
+        list_b = client.get(f"/api/books/{book_id}/comic-pages/{page_b}/panels").json()
         assert all(p["id"] != panel_id for p in list_a)
         assert any(p["id"] == panel_id for p in list_b)
 
-    def test_update_rejects_page_id_from_different_book(
-        self, client: TestClient
-    ) -> None:
+    def test_update_rejects_page_id_from_different_book(self, client: TestClient) -> None:
         """Cross-book panel migrations rejected with 400."""
         book_a = _create_comic_book(client, title="A")
         book_b = _create_comic_book(client, title="B")
@@ -299,13 +292,90 @@ class TestComicPanelDelete:
         session = SessionLocal()
         try:
             remaining = (
-                session.query(ComicBubble)
-                .filter(ComicBubble.panel_id == panel["id"])
-                .count()
+                session.query(ComicBubble).filter(ComicBubble.panel_id == panel["id"]).count()
             )
             assert remaining == 0
         finally:
             session.close()
+
+
+class TestComicPanelReorder:
+    @staticmethod
+    def _create_panels(client: TestClient, book_id: str, page_id: str, count: int) -> list[str]:
+        ids: list[str] = []
+        for _ in range(count):
+            resp = client.post(
+                f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+                json={"bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 50, "height_pct": 50}},
+            )
+            assert resp.status_code == 201, resp.text
+            ids.append(resp.json()["id"])
+        return ids
+
+    def test_reorder_applies_requested_order(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        ids = self._create_panels(client, book_id, page_id, 3)
+        reversed_ids = list(reversed(ids))
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels/reorder",
+            json={"panel_ids": reversed_ids},
+        )
+        assert resp.status_code == 200, resp.text
+        body = resp.json()
+        # Response is position-ascending; ids must follow the request.
+        assert [p["id"] for p in body] == reversed_ids
+        assert [p["position"] for p in body] == [1, 2, 3]
+
+    def test_reorder_persists_across_relist(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        ids = self._create_panels(client, book_id, page_id, 3)
+        target = [ids[1], ids[2], ids[0]]
+        client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels/reorder",
+            json={"panel_ids": target},
+        )
+        listing = client.get(f"/api/books/{book_id}/comic-pages/{page_id}/panels")
+        assert [p["id"] for p in listing.json()] == target
+
+    def test_reorder_400_on_missing_id(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        ids = self._create_panels(client, book_id, page_id, 3)
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels/reorder",
+            json={"panel_ids": ids[:2]},  # one short
+        )
+        assert resp.status_code == 400, resp.text
+        assert "does not match" in resp.json()["detail"]
+
+    def test_reorder_400_on_unknown_id(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        ids = self._create_panels(client, book_id, page_id, 2)
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels/reorder",
+            json={"panel_ids": [*ids, "ghost-panel"]},
+        )
+        assert resp.status_code == 400
+
+    def test_reorder_rejects_picture_book_400(self, client: TestClient) -> None:
+        book_id = _create_picture_book(client)
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/fake/panels/reorder",
+            json={"panel_ids": []},
+        )
+        assert resp.status_code == 400
+        assert "comic_book" in resp.json()["detail"]
+
+    def test_reorder_404_for_unknown_page(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/does-not-exist/panels/reorder",
+            json={"panel_ids": []},
+        )
+        assert resp.status_code == 404
 
 
 # --- Bubble routes ---
@@ -315,9 +385,7 @@ class TestComicBubbleList:
     """C6 Half-Wired-Lifecycle closure for the C2 missing-Read in
     the bubble CRUD. Pins the new GET endpoint contract."""
 
-    def test_list_bubbles_returns_empty_for_new_panel(
-        self, client: TestClient
-    ) -> None:
+    def test_list_bubbles_returns_empty_for_new_panel(self, client: TestClient) -> None:
         book_id = _create_comic_book(client)
         page_id = _add_comic_page(client, book_id)
         panel = client.post(
@@ -330,9 +398,7 @@ class TestComicBubbleList:
         assert resp.status_code == 200
         assert resp.json() == []
 
-    def test_list_bubbles_returns_position_ordered(
-        self, client: TestClient
-    ) -> None:
+    def test_list_bubbles_returns_position_ordered(self, client: TestClient) -> None:
         book_id = _create_comic_book(client)
         page_id = _add_comic_page(client, book_id)
         panel = client.post(
@@ -360,9 +426,7 @@ class TestComicBubbleList:
             "shout",
         ]
 
-    def test_list_bubbles_400_on_non_comic_book(
-        self, client: TestClient
-    ) -> None:
+    def test_list_bubbles_400_on_non_comic_book(self, client: TestClient) -> None:
         # Picture-book + prose books cannot host comic-panels;
         # the panel-resolution gate fires before bubble-list.
         pb_id = _create_picture_book(client)
@@ -387,9 +451,7 @@ class TestComicBubbleList:
         )
         assert resp.status_code == 400
 
-    def test_list_bubbles_404_on_unknown_panel(
-        self, client: TestClient
-    ) -> None:
+    def test_list_bubbles_404_on_unknown_panel(self, client: TestClient) -> None:
         book_id = _create_comic_book(client)
         resp = client.get(
             f"/api/books/{book_id}/comic-panels/unknown-panel/bubbles",
@@ -652,18 +714,14 @@ class TestComicBookExportDispatch:
         # some 200-status default body got returned.
         assert resp.content[:4] == b"%PDF"
 
-    def test_comic_book_export_rejects_non_pdf_format(
-        self, shared_client: TestClient
-    ) -> None:
+    def test_comic_book_export_rejects_non_pdf_format(self, shared_client: TestClient) -> None:
         client = shared_client
         book_id = _create_comic_book(client)
         resp = client.get(f"/api/books/{book_id}/export/epub")
         assert resp.status_code == 400
         assert "Comic-book" in resp.json()["detail"] or "comic" in resp.json()["detail"].lower()
 
-    def test_comic_book_export_filename_default_format(
-        self, shared_client: TestClient
-    ) -> None:
+    def test_comic_book_export_filename_default_format(self, shared_client: TestClient) -> None:
         client = shared_client
         pytest.importorskip("weasyprint")
         book_id = _create_comic_book(client, title="Filename Test")
@@ -683,23 +741,17 @@ class TestComicBookExportDispatch:
         pytest.importorskip("weasyprint")
         book_id = _create_comic_book(client, title="Bigger")
         _add_comic_page(client, book_id)
-        resp = client.get(
-            f"/api/books/{book_id}/export/pdf?picture_book_format=11x8.5"
-        )
+        resp = client.get(f"/api/books/{book_id}/export/pdf?picture_book_format=11x8.5")
         assert resp.status_code == 200
         cd = resp.headers.get("content-disposition", "")
         assert "bigger-11x8.5.pdf" in cd
 
-    def test_comic_book_export_filename_bleed_appended(
-        self, shared_client: TestClient
-    ) -> None:
+    def test_comic_book_export_filename_bleed_appended(self, shared_client: TestClient) -> None:
         client = shared_client
         pytest.importorskip("weasyprint")
         book_id = _create_comic_book(client, title="Marks")
         _add_comic_page(client, book_id)
-        resp = client.get(
-            f"/api/books/{book_id}/export/pdf?picture_book_bleed_marks=true"
-        )
+        resp = client.get(f"/api/books/{book_id}/export/pdf?picture_book_bleed_marks=true")
         assert resp.status_code == 200
         cd = resp.headers.get("content-disposition", "")
         assert "marks-bleed.pdf" in cd
@@ -777,16 +829,16 @@ class TestComicBookExportDispatch:
 
         def spy(hook_name: str, **kwargs):
             if hook_name == "export_execute":
-                observed.append({
-                    "fmt": kwargs.get("fmt"),
-                    "book_type": (kwargs.get("book") or {}).get("book_type"),
-                    "has_pages": "pages" in (kwargs.get("options") or {}),
-                    "has_panels": "panels" in (kwargs.get("options") or {}),
-                    "has_bubbles": "bubbles" in (kwargs.get("options") or {}),
-                    "has_output_path": "output_path" in (
-                        kwargs.get("options") or {}
-                    ),
-                })
+                observed.append(
+                    {
+                        "fmt": kwargs.get("fmt"),
+                        "book_type": (kwargs.get("book") or {}).get("book_type"),
+                        "has_pages": "pages" in (kwargs.get("options") or {}),
+                        "has_panels": "panels" in (kwargs.get("options") or {}),
+                        "has_bubbles": "bubbles" in (kwargs.get("options") or {}),
+                        "has_output_path": "output_path" in (kwargs.get("options") or {}),
+                    }
+                )
             return original_call_hook(hook_name, **kwargs)
 
         manager.call_hook = spy  # type: ignore[method-assign]
