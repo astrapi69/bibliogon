@@ -4,6 +4,26 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.40.0] - 2026-05-29
+
+A large authoring-depth release across the comic-book and
+picture-book surfaces plus an articles content-model expansion.
+~100 commits since v0.39.0 (210 files, +29390 / -5602). Five
+coordinated streams: (1) **Content-Types SSoT** — the reserved
+``Article.content_type`` column is repurposed as an 8-type
+discriminator with per-type metadata. (2) **Publication-status
+parity** — Book gains the Article status lifecycle behind a shared
+enum. (3) **In-place title editing** across all four editors.
+(4) **Comic-book depth** — a single-SVG-path bubble+tail overhaul
+with 6 bubble types and pointer-drag, multi-panel grid layouts
+with an overflow handler, and same-page reorder + cross-page move
+for panels. (5) **Picture-book layout expansion** — Phases 1-3
+adding split / multi-image / collage layouts with drag-positioned
+regions and matching PDF walkers. Plus a Settings-Completeness
+batch and a shared FullscreenButton. Backend pytest 2294 → 2394
+(+100, 1 skipped); Vitest 2190 → 2477 (+287); i18n parity green;
+tsc + ruff + mypy + verify-docs-discipline all green.
+
 ### Added
 
 - **Comic panel arranging** (``COMIC-PANEL-CROSS-PAGE-MOVE-01``,
@@ -83,6 +103,44 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   persist, AD badge rendering.
 - **Help doc pair** (DE + EN) at
   ``docs/help/{de,en}/articles/content-types.md``.
+- **Comic-book bubble overhaul** — all 6 bubble types (speech,
+  thought, narration, shout, whisper, sound-effect) render as a
+  single continuous SVG path (outline + tail in one shape), with
+  the same path generator running in the editor preview and the
+  WeasyPrint PDF walker (no CSS-shape-plus-polygon-tail seam).
+  Per-type tail behaviour (thought circle-chain, shout
+  spike-absorption, narration forced no-tail). Pointer-drag to
+  reposition a bubble and drag its tail tip on the canvas.
+  Speech/thought shape swap fix + a11y (button-name + contrast)
+  pass. Help-doc pair ``books/comic-bubbles`` (DE + EN) +
+  visual-regression baselines.
+- **Comic multi-panel grid layouts** — 7 grid templates
+  (single_panel through grid_3x3) selectable per page via
+  ``ComicGridTemplatePicker``; the editor disables Add-Panel at
+  the template's cell capacity. An overflow handler offers
+  Move-to-new-pages / Delete / Cancel when a layout switch would
+  exceed capacity (``COMIC-PANEL-OVERFLOW-HANDLER-01``).
+- **Picture-book layout expansion (Phases 1-3)** — new
+  ``PageLayout`` variants beyond the original one-image-per-page:
+  split_horizontal, split_vertical, two_images_text_center,
+  image_border_text_center (Phases 1-2) and a free-form
+  **collage** layout (Phase 3) with drag-positioned image +
+  text regions (``useDragPosition`` hook), z-index ordering, and
+  a matching collage PDF walker. LayoutPicker groups layouts into
+  categories; i18n for all new layouts in 8 catalogs.
+- **FullscreenButton** shared component adopted across the page
+  editors (picture-book + comic-book + storyboard), replacing the
+  per-surface inline fullscreen toggles.
+- **Settings-Completeness batch** — backup-history per-entry
+  delete + clear-all (new DELETE endpoints + Settings UI);
+  ``white_label`` feature flag gating the Erweitert tab;
+  per-field ``X`` clear button extracted (RCU) across 4 search
+  surfaces; KDP wizard default marketplace + Picture-Book PDF
+  defaults migrated from localStorage to ``app.yaml``;
+  confirmation-skip mode for non-destructive dialogs; Autoren tab
+  profile-vs-database clarification; persisted Tier1/Tier2
+  collapsible open-state per surface. New Settings > Backups
+  help page (DE + EN).
 
 ### Changed
 
@@ -107,11 +165,29 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
   ``.newBookChevron`` classes removed (superseded by
   ``SplitButton.module.css``).
 
+### Fixed
+
+- Comic bubble position mismatch between the editor and the PDF
+  export (SVG explicit width/height; CSS ``inset`` shorthand
+  WeasyPrint couldn't parse replaced).
+- Comic bubble text now reads as solid black by default instead
+  of inheriting a faded colour.
+- Picture-book secondary-image upload affordance now visible.
+- Date formatting follows the UI language across 8 surfaces
+  (locale-aware dates).
+- Fullscreen exit tooltip mentions both Esc and F11.
+
 ### Database
 
 - Alembic migration ``u0e1f2345678``: backfill
   ``Article.content_type == "article"`` → ``"blogpost"``; new
   nullable ``article_metadata`` Text column.
+- Alembic migration ``v1f2345678abc``: new ``Book.status`` column
+  (publication lifecycle), backfilled ``"draft"`` for existing
+  rows.
+- Picture-book collage + multi-image layouts persist their region
+  geometry through the existing ``Page.layout_config`` namespaced
+  JSON (no new columns).
 
 ## [0.39.0] - 2026-05-27
 
