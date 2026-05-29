@@ -28,6 +28,7 @@ import { MemoryRouter, Route, Routes } from "react-router-dom";
 import ArticleEditor from "./ArticleEditor";
 import type { Article, ContentTypeDef } from "../api/client";
 import { ContentTypesProvider } from "../hooks/useContentTypes";
+import { expectNoA11yViolations } from "../test-utils/a11y";
 
 const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
     blogpost: {
@@ -348,5 +349,14 @@ describe("ArticleEditor — per-content-type core-field visibility (ARTICLE-TYPE
         await screen.findByTestId("article-editor-actions-menu");
         expect(screen.queryByTestId("article-editor-canonical-url")).toBeTruthy();
         expect(screen.queryByTestId("article-editor-seo-title")).toBeTruthy();
+    });
+});
+
+describe("ArticleEditor — accessibility (axe)", () => {
+    it("has no critical/serious axe violations", async () => {
+        getArticleMock.mockResolvedValue(stubArticle);
+        const { container } = renderEditor();
+        await screen.findByTestId("article-editor-actions-menu");
+        await expectNoA11yViolations(container);
     });
 });

@@ -766,6 +766,7 @@ export default function ArticleEditor() {
                     />
                     <select
                         data-testid="article-editor-language"
+                        aria-label={t("ui.articles.language", "Sprache")}
                         value={article.language}
                         onChange={(e) => {
                             const v = e.target.value;
@@ -789,6 +790,7 @@ export default function ArticleEditor() {
                     />
                     <select
                         data-testid="article-editor-status"
+                        aria-label={t("ui.articles.status", "Status")}
                         value={article.status}
                         onChange={(e) =>
                             persistMeta({
@@ -824,6 +826,7 @@ export default function ArticleEditor() {
                     />
                     <select
                         data-testid="article-editor-content-type"
+                        aria-label={t("ui.articles.article_type", "Artikel-Typ")}
                         value={article.content_type}
                         onChange={(e) => {
                             const next = e.target.value as ContentType;
@@ -1415,6 +1418,7 @@ function Field({
                 onBlur={onBlur}
                 placeholder={placeholder}
                 className={layout.fieldInput}
+                aria-label={label}
             />
         </>
     );
@@ -1565,6 +1569,7 @@ function TopicSelect({
         <>
             <select
                 data-testid="article-editor-topic"
+                aria-label={t("ui.articles.topic", "Thema")}
                 value={value}
                 onChange={handleSelectChange}
                 className={layout.fieldInput}
