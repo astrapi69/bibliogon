@@ -2,6 +2,8 @@
 
 The Danger Zone in Settings lets you reset the entire app to its first-install state. This action is **irreversible** — make sure to create a backup before executing it.
 
+![Settings Danger Zone tab](../../assets/screenshots/settings-gefahrenzone.png)
+
 ## When do I need this?
 
 - You want to hand Bibliogon to someone else and remove all personal data.

@@ -117,4 +117,4 @@ zeigt einen kleinen Badge mit dem Typ-Icon und der Bezeichnung. So
 siehst du auf einen Blick, welche Artikel Tutorials, Rezensionen
 usw. sind, ohne den Editor zu öffnen.
 
-![Artikel-Dashboard mit Textart-Badges](../assets/screenshots/article-dashboard-grid.png)
+![Artikel-Dashboard mit Textart-Badges](../../assets/screenshots/article-dashboard-grid.png)

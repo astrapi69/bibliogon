@@ -2,6 +2,8 @@
 
 Die Gefahrenzone in den Einstellungen erlaubt es, die gesamte App auf den Erstinstallationszustand zurückzusetzen. Das ist unwiderruflich — vor der Ausführung sollte unbedingt ein Backup erstellt werden.
 
+![Einstellungen-Reiter Gefahrenzone](../../assets/screenshots/settings-gefahrenzone.png)
+
 ## Wann brauche ich das?
 
 - Du möchtest Bibliogon an jemand anderen weitergeben und alle persönlichen Daten entfernen.

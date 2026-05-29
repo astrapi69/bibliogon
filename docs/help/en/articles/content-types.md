@@ -111,4 +111,4 @@ small badge with the type's icon and label. You can see at a glance
 which articles are tutorials, reviews, etc. without opening the
 editor.
 
-![Article dashboard with article-type badges](../assets/screenshots/article-dashboard-grid.png)
+![Article dashboard with article-type badges](../../assets/screenshots/article-dashboard-grid.png)

@@ -2,6 +2,8 @@
 
 Der Reiter **Einstellungen > Backups** ist die zentrale Anlaufstelle für alle Backup-bezogenen Vorgänge. Hier siehst du die Versions-Historie deiner letzten Sicherungen und kannst zwei Backup-Stände miteinander vergleichen.
 
+![Einstellungen-Reiter Backups mit Versions-Historie und Backup-Vergleich](../../assets/screenshots/settings-backups.png)
+
 ## Versions-Historie
 
 Beim Öffnen des Reiters lädt die letzte Sicherungs-Historie automatisch (bis zu 20 Einträge). Jeder Eintrag zeigt:

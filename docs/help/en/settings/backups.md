@@ -2,6 +2,8 @@
 
 The **Settings > Backups** tab is the central place for backup-related operations. It shows the version history of recent backups and lets you compare two backup snapshots against each other.
 
+![Settings Backups tab with version history and backup comparison](../../assets/screenshots/settings-backups.png)
+
 ## Version history
 
 When the tab opens, the recent backup history loads automatically (up to 20 entries). Each entry shows:
