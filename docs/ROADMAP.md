@@ -348,10 +348,37 @@ unblock signal.
   SDK rewrite). Blocks on paid-API access for migration testing.
   Plan a focused session, not a side bump — the 0.2 → 2.x
   rewrite is too large to fold into a routine sweep.
-- **STARLETTE-V1-AWAIT-FASTAPI-01** — wait for FastAPI to
-  publish a release with starlette ^1.0 in its peer-dep range.
+- ~~**STARLETTE-V1-AWAIT-FASTAPI-01**~~ — **RESOLVED 2026-05-29**:
+  the within-range dep sweep moved starlette 1.0.0 → 1.2.0 under
+  fastapi 0.136.3, which now carries starlette ^1.x in its
+  peer-dep range. Archived to `docs/archive/roadmap/2026-05.md`.
 - **CLICK-V8-3-AWAIT-GTTS-01** — wait for gTTS to publish a
-  release with click ^8.3 in its peer-dep range.
+  release with click ^8.3 in its peer-dep range. Still blocked:
+  the 2026-05-29 sweep left click at 8.1.8 (gTTS pins click <8.3).
+- **DEP-DEFERRED-MAJORS-2026-05-29** — major / pin-blocked bumps
+  deliberately deferred from the 2026-05-29 within-range sweep,
+  each needing a dedicated, individually-validated session:
+  - **mypy 1.20 → 2.x** (dev): new diagnostics likely; run against
+    `mypy app/` in isolation, fix fallout, then bump the pin.
+  - **weasyprint 66 → 68** (export / comics / kinderbuch PDF):
+    rendering engine — needs visual PDF verification, not just unit
+    tests.
+  - **@types/node 24 → 25** (frontend): per lessons-learned,
+    `@types/node` majors cascade into tsconfig `lib`; bump with
+    `tsc --noEmit` in the same window.
+  - **@vitejs/plugin-react 5 → 6** (frontend build): major; bump +
+    `npm run build` verification.
+  - **uvicorn 0.46 → 0.48** + **python-multipart 0.0.27 → 0.0.29**
+    (backend): caret-pin-blocked (within-range sweep can't reach
+    them); a pin edit triggers the two-installation-paths
+    plugin-lock re-lock — fold into the per-plugin refresh below.
+  - **Per-plugin `poetry.lock` refresh**: the 12 plugin locks are
+    frozen ~v0.35 (pluginforge 0.5.0, fastapi 0.135.3, starlette
+    0.46.2), CI-green but stale. A bulk `poetry update` pulls
+    transitive majors (cryptography 46 → 48, rich 14 → 15) that
+    only the per-plugin CI matrix can validate — do it per-plugin
+    with CI verification, not as a routine bulk push. (The backend
+    *combined* lock is already current as of this sweep.)
 
 ---
 
