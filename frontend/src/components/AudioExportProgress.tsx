@@ -167,17 +167,17 @@ export default function AudioExportProgress() {
 }
 
 function PhaseIcon({phase}: {phase: AudiobookPhase}) {
-    if (phase === "completed") return <CheckCircle size={20} style={{color: "#16a34a"}} />;
-    if (phase === "failed") return <AlertCircle size={20} style={{color: "#ef4444"}} />;
+    if (phase === "completed") return <CheckCircle size={20} style={{color: "var(--success, #16a34a)"}} />;
+    if (phase === "failed") return <AlertCircle size={20} style={{color: "var(--danger, #ef4444)"}} />;
     if (phase === "cancelled") return <X size={20} className="muted" />;
     return <Loader size={20} style={{animation: "spin 1s linear infinite", color: "var(--accent)"}} />;
 }
 
 function ProgressBar({percent, phase}: {percent: number; phase: AudiobookPhase}) {
     const fill =
-        phase === "failed" ? "#ef4444" :
+        phase === "failed" ? "var(--danger, #ef4444)" :
         phase === "cancelled" ? "var(--text-muted)" :
-        phase === "completed" ? "#16a34a" :
+        phase === "completed" ? "var(--success, #16a34a)" :
         "var(--accent)";
     return (
         <div style={{marginTop: 16}}>
@@ -255,8 +255,8 @@ function ChapterFileList({files}: {files: {filename: string; url: string}[]}) {
 
 function eventColor(type: AudiobookEventType): string {
     if (type === "chapter_done" || type === "merge_done" || type === "done") return "var(--text-secondary)";
-    if (type === "chapter_reused") return "#16a34a";
-    if (type === "chapter_error" || type === "merge_error") return "#ef4444";
+    if (type === "chapter_reused") return "var(--success, #16a34a)";
+    if (type === "chapter_error" || type === "merge_error") return "var(--danger, #ef4444)";
     if (type === "chapter_skipped") return "var(--text-muted)";
     return "var(--text-primary)";
 }

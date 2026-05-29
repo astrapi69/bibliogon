@@ -1378,7 +1378,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     <div className={styles.goalProgress}>
                         <div className={styles.goalProgressFill} style={{
                             width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
-                            background: wordCount >= wordGoal ? "#16a34a" : "var(--accent)",
+                            background: wordCount >= wordGoal ? "var(--success, #16a34a)" : "var(--accent)",
                         }}/>
                     </div>
                 )}

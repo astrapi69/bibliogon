@@ -533,7 +533,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             <div style={{
                                 display: "flex", alignItems: "center", gap: 8,
                                 padding: "8px 12px", marginBottom: 12,
-                                background: "var(--bg-surface, var(--bg-card))", borderRadius: "var(--radius-sm)",
+                                background: "var(--surface-2)", borderRadius: "var(--radius-sm)",
                                 fontSize: "0.75rem", color: "var(--text-muted)",
                             }}>
                                 <Sparkles size={14}/>

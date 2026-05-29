@@ -99,7 +99,7 @@ export default function BulkAiFillDock() {
                         bottom: 16,
                         left: 16,
                         zIndex: 1000,
-                        background: "var(--surface-1, white)",
+                        background: "var(--bg-card)",
                         border: "1px solid var(--border, #d1d5db)",
                         borderRadius: 8,
                         padding: "10px 14px",

@@ -245,9 +245,9 @@ function BookDiffView({book}: {book: {
 function ChapterDiffView({chapter}: {chapter: BackupChapterDiff}) {
     const {t} = useI18n();
     const badge = {
-        added: {label: t("ui.backup.compare.badge_added", "Hinzugefügt"), color: "#16a34a"},
-        removed: {label: t("ui.backup.compare.badge_removed", "Entfernt"), color: "#dc2626"},
-        changed: {label: t("ui.backup.compare.badge_changed", "Geändert"), color: "#d97706"},
+        added: {label: t("ui.backup.compare.badge_added", "Hinzugefügt"), color: "var(--success, #16a34a)"},
+        removed: {label: t("ui.backup.compare.badge_removed", "Entfernt"), color: "var(--danger, #dc2626)"},
+        changed: {label: t("ui.backup.compare.badge_changed", "Geändert"), color: "var(--warning, #d97706)"},
     }[chapter.change_type];
 
     return (

@@ -130,8 +130,8 @@ export function PluginCard({name, displayName, description, version, enabled, se
                             {t("ui.settings.free", "Kostenlos")}
                         </span>
                         <span className={styles.badge} style={{
-                            background: enabled ? "rgba(34,197,94,0.12)" : "rgba(168,162,158,0.12)",
-                            color: enabled ? "#16a34a" : "var(--text-muted)",
+                            background: enabled ? "var(--success-light, rgba(34,197,94,0.12))" : "var(--surface-2)",
+                            color: enabled ? "var(--success, #16a34a)" : "var(--text-muted)",
                         }}>
                             {enabled ? t("ui.settings.active", "Aktiv") : t("ui.settings.inactive", "Inaktiv")}
                         </span>
@@ -140,8 +140,8 @@ export function PluginCard({name, displayName, description, version, enabled, se
                                 className={styles.badge}
                                 data-testid={`plugin-status-${name}`}
                                 style={{
-                                    background: "rgba(239,68,68,0.12)",
-                                    color: "#dc2626",
+                                    background: "var(--danger-bg, rgba(239,68,68,0.12))",
+                                    color: "var(--danger, #dc2626)",
                                 }}
                             >
                                 {t(FILTER_REASON_TO_I18N[filterReason], filterReason)}
@@ -149,8 +149,8 @@ export function PluginCard({name, displayName, description, version, enabled, se
                         )}
                         {isCore && (
                             <span className={styles.badge} style={{
-                                background: "rgba(59,130,246,0.12)",
-                                color: "#2563eb",
+                                background: "var(--accent-light, rgba(59,130,246,0.12))",
+                                color: "var(--accent, #2563eb)",
                             }}>
                                 {t("ui.settings.standard", "Standard")}
                             </span>
@@ -160,7 +160,7 @@ export function PluginCard({name, displayName, description, version, enabled, se
                     {loadErrorMessage && (
                         <p
                             data-testid={`plugin-status-detail-${name}`}
-                            style={{color: "#dc2626", fontSize: "0.8125rem", marginTop: 4}}
+                            style={{color: "var(--danger, #dc2626)", fontSize: "0.8125rem", marginTop: 4}}
                         >
                             {loadErrorMessage}
                         </p>

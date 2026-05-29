@@ -77,7 +77,7 @@ export function ComicGridTemplatePicker({
                     padding: "4px 8px",
                     border: "1px solid var(--border, #ddd)",
                     borderRadius: 4,
-                    background: "var(--surface-1, white)",
+                    background: "var(--bg-card)",
                     fontSize: "0.85rem",
                 }}
             >

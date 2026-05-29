@@ -16,7 +16,7 @@
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg);
+    background: var(--bg-card);
     color: var(--text-primary);
 }
 
@@ -30,6 +30,6 @@
 }
 
 .error {
-    color: var(--error);
+    color: var(--danger);
     font-size: 13px;
 }

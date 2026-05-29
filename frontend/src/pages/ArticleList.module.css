@@ -391,7 +391,7 @@
 
 .tileSelected > :global(.card),
 .tileSelected > :global([class*="card"]) {
-    outline: 2px solid var(--accent-bg);
+    outline: 2px solid var(--accent);
     outline-offset: -1px;
 }
 

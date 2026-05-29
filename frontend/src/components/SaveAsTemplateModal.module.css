@@ -74,7 +74,7 @@
     color: var(--text-muted);
     padding: 1px 6px;
     border-radius: 4px;
-    background: var(--bg-subtle, var(--bg-surface));
+    background: var(--surface-2);
 }
 
 .errorText {

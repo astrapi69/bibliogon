@@ -252,9 +252,9 @@ function dotBackground(state: DotState): string {
         case "current":
             return "var(--accent)"
         case "completed":
-            return "var(--success, #22c55e)"
+            return "var(--success, #16a34a)"
         case "visited":
-            return "var(--accent, var(--primary))"
+            return "var(--accent)"
         case "future":
             return "var(--border)"
     }

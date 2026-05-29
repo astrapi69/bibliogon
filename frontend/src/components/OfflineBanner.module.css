@@ -10,7 +10,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.5rem 1rem;
-    background: var(--bg-surface);
+    background: var(--surface-2);
     border-bottom: 1px solid var(--border);
     color: var(--text-muted);
     font-size: 0.875rem;

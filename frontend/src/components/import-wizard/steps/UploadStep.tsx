@@ -216,7 +216,7 @@ export function UploadStep({
                     marginBottom: 14,
                     border: "1px solid var(--border)",
                     borderRadius: 6,
-                    background: "var(--bg-subtle)",
+                    background: "var(--surface-2)",
                 }}
             >
                 <div

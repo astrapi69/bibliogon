@@ -181,7 +181,7 @@
     padding: 4px 6px;
     border: 1px solid color-mix(in srgb, var(--text-sidebar) 18%, transparent);
     border-radius: 4px;
-    background: var(--surface-1, transparent);
+    background: var(--bg-card);
     color: var(--text-sidebar);
     font-size: 0.85rem;
 }

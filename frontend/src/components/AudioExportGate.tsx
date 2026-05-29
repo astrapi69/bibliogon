@@ -245,8 +245,8 @@ function PhaseDot({phase}: {phase: ReturnType<typeof useAudiobookJob>["phase"]})
 }
 
 function badgeBackground(phase: ReturnType<typeof useAudiobookJob>["phase"]): string {
-    if (phase === "completed") return "#16a34a";
-    if (phase === "failed") return "#ef4444";
+    if (phase === "completed") return "var(--success, #16a34a)";
+    if (phase === "failed") return "var(--danger, #ef4444)";
     return "var(--accent)";
 }
 

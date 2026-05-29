@@ -149,7 +149,7 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
 
     const variant = dialog?.variant || "default";
     const icon = variant === "danger" ? <AlertTriangle size={22} style={{color: "var(--danger)"}}/>
-        : variant === "success" ? <CheckCircle size={22} style={{color: "#16a34a"}}/>
+        : variant === "success" ? <CheckCircle size={22} style={{color: "var(--success, #16a34a)"}}/>
         : variant === "info" ? <Info size={22} style={{color: "var(--accent)"}}/>
         : null;
 

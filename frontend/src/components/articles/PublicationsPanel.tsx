@@ -30,7 +30,7 @@ import { notify } from "../../utils/notify";
 const STATUS_PILL_COLORS: Record<PublicationStatus, { bg: string; fg: string }> = {
     planned: { bg: "var(--bg-card)", fg: "var(--text-muted)" },
     scheduled: { bg: "var(--bg-card)", fg: "var(--accent)" },
-    published: { bg: "var(--success-light, #dcfce7)", fg: "var(--success, #166534)" },
+    published: { bg: "var(--success-light, #dcfce7)", fg: "var(--success, #16a34a)" },
     out_of_sync: {
         bg: "var(--accent-light, #fff8e6)",
         fg: "var(--warning, #b45309)",
@@ -454,7 +454,7 @@ function AddPublicationModal({
                             <label style={modalStyles.fieldLabel}>
                                 {field}
                                 {required && (
-                                    <span style={{ color: "var(--error)" }}> *</span>
+                                    <span style={{ color: "var(--danger)" }}> *</span>
                                 )}
                             </label>
                             <input

@@ -189,11 +189,11 @@ export function BackupsSettings() {
                                         background:
                                             entry.action === "backup"
                                                 ? "var(--accent-light)"
-                                                : "rgba(34,197,94,0.12)",
+                                                : "var(--success-light, rgba(34,197,94,0.12))",
                                         color:
                                             entry.action === "backup"
                                                 ? "var(--accent)"
-                                                : "#16a34a",
+                                                : "var(--success, #16a34a)",
                                     }}
                                 >
                                     {entry.action}

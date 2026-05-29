@@ -15,7 +15,7 @@
     padding: 6px 10px;
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    background: var(--bg);
+    background: var(--bg-card);
     color: var(--text-primary);
 }
 
@@ -29,15 +29,15 @@
 .modeButton {
     padding: 6px 12px;
     border: 0;
-    background: var(--bg);
+    background: var(--bg-card);
     color: var(--text-primary);
     cursor: pointer;
     font-size: 13px;
 }
 
 .modeButton.active {
-    background: var(--accent-bg);
-    color: var(--accent-text);
+    background: var(--accent);
+    color: var(--text-inverse);
 }
 
 .spacer {
@@ -50,6 +50,6 @@
 }
 
 .error {
-    color: var(--error);
+    color: var(--danger);
     font-size: 13px;
 }

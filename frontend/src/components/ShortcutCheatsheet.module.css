@@ -69,7 +69,7 @@
     padding: 2px 8px;
     font-size: 0.75rem;
     font-family: var(--font-mono);
-    background: var(--bg-surface, var(--bg-primary));
+    background: var(--surface-2);
     border: 1px solid var(--border);
     border-radius: 4px;
     color: var(--text-primary);
