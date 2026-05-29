@@ -49,6 +49,7 @@ import AiGenerateButton from "../components/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import AuthorSelectInput from "../components/AuthorSelectInput";
 import Tooltip from "../components/Tooltip";
+import EditableTitle from "../components/EditableTitle";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import AITemplatePanel from "../components/AITemplatePanel";
@@ -621,18 +622,16 @@ export default function ArticleEditor() {
                     <Home size={14} />
                     {t("ui.articles.back_to_dashboard", "Dashboard")}
                 </button>
-                <input
-                    data-testid="article-editor-title"
-                    className={layout.titleInput}
+                <EditableTitle
                     value={article.title}
-                    onChange={(e) =>
-                        setArticle({ ...article, title: e.target.value })
-                    }
-                    onBlur={() => persistMeta({ title: article.title })}
+                    onSave={(newTitle) => persistMeta({title: newTitle})}
+                    testIdPrefix="article-editor-title"
                     placeholder={t(
                         "ui.articles.title_placeholder",
                         "Artikelüberschrift",
                     )}
+                    textClassName={layout.titleInput}
+                    inputClassName={layout.titleInput}
                 />
                 <SaveIndicator status={saveStatus} />
                 <DropdownMenu.Root>

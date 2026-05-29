@@ -56,6 +56,7 @@ import type {ComicPanelData} from "./comics/ComicPanel";
 import {useDialog} from "./AppDialog";
 import PageThumbnails from "./PageThumbnails";
 import PdfExportControls from "./PdfExportControls";
+import EditableTitle from "./EditableTitle";
 import ThemeToggle from "./ThemeToggle";
 
 interface Props {
@@ -72,6 +73,12 @@ interface Props {
      *  Optional so ComicBookEditor stays unit-testable standalone
      *  without a parent that wires it. */
     onShowMetadata?: () => void;
+    /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title. When
+     *  provided, the header title becomes an EditableTitle
+     *  (pencil-toggle); the parent (BookEditor) runs api.books.update.
+     *  Optional so ComicBookEditor unit-tests standalone (falls back to
+     *  a static <h1>). */
+    onTitleSave?: (title: string) => void | Promise<void>;
 }
 
 export default function ComicBookEditor({
@@ -79,6 +86,7 @@ export default function ComicBookEditor({
     bookTitle,
     onBack,
     onShowMetadata,
+    onTitleSave,
 }: Props) {
     const {t} = useI18n();
     const dialog = useDialog();
@@ -737,12 +745,21 @@ export default function ComicBookEditor({
                 >
                     {t("ui.comic_book_editor.back", "Zurück")}
                 </button>
-                <h1
-                    data-testid="comic-book-editor-title"
-                    style={{margin: 0, fontSize: "1.4rem", flex: 1}}
-                >
-                    {bookTitle}
-                </h1>
+                {onTitleSave ? (
+                    <EditableTitle
+                        value={bookTitle}
+                        onSave={onTitleSave}
+                        testIdPrefix="comic-book-editor-title"
+                        style={{margin: 0, fontSize: "1.4rem", flex: 1}}
+                    />
+                ) : (
+                    <h1
+                        data-testid="comic-book-editor-title"
+                        style={{margin: 0, fontSize: "1.4rem", flex: 1}}
+                    >
+                        {bookTitle}
+                    </h1>
+                )}
                 {/* COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C1: header
                   * metadata button. Inline mirror of PageEditor's
                   * pattern (RCU 2-site adoption deferred per Q2

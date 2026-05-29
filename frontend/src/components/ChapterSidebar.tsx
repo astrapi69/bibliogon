@@ -37,6 +37,7 @@ import {
     verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import {CSS} from "@dnd-kit/utilities";
+import EditableTitle from "./EditableTitle";
 import styles from "./ChapterSidebar.module.css";
 
 interface Props {
@@ -64,6 +65,12 @@ interface Props {
     gitSyncMapped?: boolean;
     showMetadata: boolean;
     hasToc: boolean;
+    /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title from
+     *  the sidebar header (prose flow). When provided, the book-title
+     *  h2 becomes an EditableTitle (pencil-toggle); the parent
+     *  (BookEditor) runs api.books.update. Optional so ChapterSidebar
+     *  unit-tests standalone (falls back to a static h2). */
+    onTitleSave?: (newTitle: string) => void | Promise<void>;
 }
 
 const FRONT_MATTER_TYPES: ChapterType[] = [
@@ -322,6 +329,7 @@ export default function ChapterSidebar({
                                            gitSyncMapped,
                                            showMetadata,
                                            hasToc,
+                                           onTitleSave,
                                        }: Props) {
     const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
     const mainChapters = chapters.filter((ch) =>
@@ -375,9 +383,18 @@ export default function ChapterSidebar({
                         <ChevronLeft size={18}/>
                     </button>
                 </Tooltip>
-                <h2 className={styles.bookTitle} title={bookTitle}>
-                    {bookTitle}
-                </h2>
+                {onTitleSave ? (
+                    <EditableTitle
+                        value={bookTitle}
+                        onSave={onTitleSave}
+                        testIdPrefix="book-editor-title"
+                        textClassName={styles.bookTitle}
+                    />
+                ) : (
+                    <h2 className={styles.bookTitle} title={bookTitle}>
+                        {bookTitle}
+                    </h2>
+                )}
                 <div style={{marginLeft: "auto"}}>
                     <ThemeToggle variant="dark"/>
                 </div>

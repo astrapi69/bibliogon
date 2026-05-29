@@ -11,6 +11,7 @@ import PageThumbnails from "./PageThumbnails"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas, {extractPlainText, isTipTapLayout} from "./PageCanvas"
+import EditableTitle from "./EditableTitle"
 import PdfExportControls from "./PdfExportControls"
 import RichTextToolbar from "./RichTextToolbar"
 import ThemeToggle from "./ThemeToggle"
@@ -35,6 +36,12 @@ interface Props {
      *  unit-tests standalone, and so BookEditor can withhold it for
      *  non-supported book_types (currently picture_book only per A4). */
     onShowStoryboard?: () => void
+    /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title. When
+     *  provided, the header title becomes an EditableTitle
+     *  (pencil-toggle); the parent (BookEditor) runs api.books.update.
+     *  Optional so PageEditor unit-tests standalone (falls back to a
+     *  static <h1>). */
+    onTitleSave?: (title: string) => void | Promise<void>
 }
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
@@ -53,6 +60,7 @@ export default function PageEditor({
     onBack,
     onShowMetadata,
     onShowStoryboard,
+    onTitleSave,
 }: Props) {
     const {t} = useI18n()
     const dialog = useDialog()
@@ -301,7 +309,16 @@ export default function PageEditor({
                 >
                     <ChevronLeft size={18} />
                 </button>
-                <h1 className={styles.title}>{bookTitle}</h1>
+                {onTitleSave ? (
+                    <EditableTitle
+                        value={bookTitle}
+                        onSave={onTitleSave}
+                        testIdPrefix="page-editor-title"
+                        textClassName={styles.title}
+                    />
+                ) : (
+                    <h1 className={styles.title}>{bookTitle}</h1>
+                )}
                 {onShowMetadata && (
                     <button
                         type="button"

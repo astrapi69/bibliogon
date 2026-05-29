@@ -592,6 +592,14 @@ export default function BookEditor() {
                             ? () => _setShowStoryboard(true)
                             : undefined
                     }
+                    onTitleSave={async (newTitle) => {
+                        const updated = await api.books.update(book.id, {
+                            title: newTitle,
+                        });
+                        setBook((prev) =>
+                            prev ? ({...prev, ...updated} as BookDetail) : prev,
+                        );
+                    }}
                 />
             );
         }
@@ -617,6 +625,14 @@ export default function BookEditor() {
             >
             <ChapterSidebar
                 bookTitle={book.title}
+                onTitleSave={async (newTitle) => {
+                    const updated = await api.books.update(book.id, {
+                        title: newTitle,
+                    });
+                    setBook((prev) =>
+                        prev ? ({...prev, ...updated} as BookDetail) : prev,
+                    );
+                }}
                 chapters={book.chapters}
                 activeChapterId={showMetadata ? null : activeChapterId}
                 onSelect={(id) => { setActiveChapterId(id); _setShowMetadata(false); setSidebarOpen(false); }}
