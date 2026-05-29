@@ -632,6 +632,10 @@ export default function ArticleEditor() {
                     )}
                     textClassName={layout.titleInput}
                     inputClassName={layout.titleInput}
+                    isPublished={
+                        article.status === "published" ||
+                        article.status === "archived"
+                    }
                 />
                 <SaveIndicator status={saveStatus} />
                 <DropdownMenu.Root>

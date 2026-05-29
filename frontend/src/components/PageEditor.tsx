@@ -42,6 +42,9 @@ interface Props {
      *  Optional so PageEditor unit-tests standalone (falls back to a
      *  static <h1>). */
     onTitleSave?: (title: string) => void | Promise<void>
+    /** C2: gate title edit behind a published-work warning when the
+     *  book's status is published or archived. */
+    isPublished?: boolean
 }
 
 const DEFAULT_NEW_PAGE_LAYOUT: PageLayout = "image_top_text_bottom"
@@ -61,6 +64,7 @@ export default function PageEditor({
     onShowMetadata,
     onShowStoryboard,
     onTitleSave,
+    isPublished,
 }: Props) {
     const {t} = useI18n()
     const dialog = useDialog()
@@ -315,6 +319,7 @@ export default function PageEditor({
                         onSave={onTitleSave}
                         testIdPrefix="page-editor-title"
                         textClassName={styles.title}
+                        isPublished={isPublished}
                     />
                 ) : (
                     <h1 className={styles.title}>{bookTitle}</h1>

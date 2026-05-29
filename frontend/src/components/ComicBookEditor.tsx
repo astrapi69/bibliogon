@@ -79,6 +79,9 @@ interface Props {
      *  Optional so ComicBookEditor unit-tests standalone (falls back to
      *  a static <h1>). */
     onTitleSave?: (title: string) => void | Promise<void>;
+    /** C2: gate title edit behind a published-work warning when the
+     *  book's status is published or archived. */
+    isPublished?: boolean;
 }
 
 export default function ComicBookEditor({
@@ -87,6 +90,7 @@ export default function ComicBookEditor({
     onBack,
     onShowMetadata,
     onTitleSave,
+    isPublished,
 }: Props) {
     const {t} = useI18n();
     const dialog = useDialog();
@@ -751,6 +755,7 @@ export default function ComicBookEditor({
                         onSave={onTitleSave}
                         testIdPrefix="comic-book-editor-title"
                         style={{margin: 0, fontSize: "1.4rem", flex: 1}}
+                        isPublished={isPublished}
                     />
                 ) : (
                     <h1

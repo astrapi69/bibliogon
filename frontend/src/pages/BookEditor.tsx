@@ -43,6 +43,8 @@ const EDITOR_COMPONENTS: Record<
          *  ComicBookEditor receives no value and renders nothing
          *  for it. */
         onShowStoryboard?: () => void;
+        onTitleSave?: (title: string) => void | Promise<void>;
+        isPublished?: boolean;
     }>
 > = {
     PageEditor,
@@ -600,6 +602,10 @@ export default function BookEditor() {
                             prev ? ({...prev, ...updated} as BookDetail) : prev,
                         );
                     }}
+                    isPublished={
+                        book.status === "published" ||
+                        book.status === "archived"
+                    }
                 />
             );
         }
@@ -633,6 +639,10 @@ export default function BookEditor() {
                         prev ? ({...prev, ...updated} as BookDetail) : prev,
                     );
                 }}
+                titlePublished={
+                    book.status === "published" ||
+                    book.status === "archived"
+                }
                 chapters={book.chapters}
                 activeChapterId={showMetadata ? null : activeChapterId}
                 onSelect={(id) => { setActiveChapterId(id); _setShowMetadata(false); setSidebarOpen(false); }}

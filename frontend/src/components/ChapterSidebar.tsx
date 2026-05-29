@@ -71,6 +71,9 @@ interface Props {
      *  (BookEditor) runs api.books.update. Optional so ChapterSidebar
      *  unit-tests standalone (falls back to a static h2). */
     onTitleSave?: (newTitle: string) => void | Promise<void>;
+    /** C2: when true (book status published/archived), the sidebar
+     *  title edit shows a published-work warning before editing. */
+    titlePublished?: boolean;
 }
 
 const FRONT_MATTER_TYPES: ChapterType[] = [
@@ -330,6 +333,7 @@ export default function ChapterSidebar({
                                            showMetadata,
                                            hasToc,
                                            onTitleSave,
+                                           titlePublished,
                                        }: Props) {
     const frontMatter = chapters.filter((ch) => FRONT_MATTER_TYPES.includes(ch.chapter_type));
     const mainChapters = chapters.filter((ch) =>
@@ -389,6 +393,7 @@ export default function ChapterSidebar({
                         onSave={onTitleSave}
                         testIdPrefix="book-editor-title"
                         textClassName={styles.bookTitle}
+                        isPublished={titlePublished}
                     />
                 ) : (
                     <h2 className={styles.bookTitle} title={bookTitle}>

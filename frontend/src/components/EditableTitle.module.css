@@ -4,6 +4,7 @@
     gap: 6px;
     flex: 1;
     min-width: 0;
+    position: relative;
 }
 
 .text {
@@ -46,4 +47,67 @@
     border: 1px solid var(--accent);
     border-radius: var(--radius-sm);
     padding: 2px 6px;
+}
+
+/* C2 published-work warning banner. Absolutely positioned below the
+ * title so it does not reflow the editor header. Spans only (no div)
+ * because the wrapper is an inline <span>. */
+.warning {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 420px;
+    padding: 10px 12px;
+    font-size: 0.85rem;
+    font-weight: 400;
+    line-height: 1.4;
+    white-space: normal;
+    color: var(--warning-text, var(--text));
+    background: var(--warning-bg, #fef9c3);
+    border: 1px solid var(--warning, #eab308);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-md);
+}
+
+.warningText {
+    display: block;
+}
+
+.warningActions {
+    display: flex;
+    gap: 8px;
+}
+
+.warningAck {
+    border: none;
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--btn-primary-text, #fff);
+    background: var(--accent);
+}
+
+.warningAck:hover {
+    filter: brightness(1.05);
+}
+
+.warningCancel {
+    border: 1px solid var(--border);
+    cursor: pointer;
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text);
+    background: transparent;
+}
+
+.warningCancel:hover {
+    background: var(--surface-2, var(--bg-hover));
 }

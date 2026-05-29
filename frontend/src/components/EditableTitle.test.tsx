@@ -156,4 +156,80 @@ describe("EditableTitle", () => {
             "Untitled",
         );
     });
+
+    // --- C2: published-work warning gate ---
+
+    it("published: pencil opens the warning instead of editing", () => {
+        const onSave = vi.fn();
+        render(
+            <EditableTitle
+                value="My Title"
+                onSave={onSave}
+                testIdPrefix={PREFIX}
+                isPublished
+            />,
+        );
+        fireEvent.click(screen.getByTestId(`${PREFIX}-edit`));
+        expect(screen.getByTestId(`${PREFIX}-warning`)).toBeInTheDocument();
+        // Not in edit mode yet.
+        expect(
+            screen.queryByTestId(`${PREFIX}-input`),
+        ).not.toBeInTheDocument();
+        expect(onSave).not.toHaveBeenCalled();
+    });
+
+    it("unpublished: pencil edits directly, no warning", () => {
+        render(
+            <EditableTitle
+                value="My Title"
+                onSave={vi.fn()}
+                testIdPrefix={PREFIX}
+                isPublished={false}
+            />,
+        );
+        fireEvent.click(screen.getByTestId(`${PREFIX}-edit`));
+        expect(
+            screen.queryByTestId(`${PREFIX}-warning`),
+        ).not.toBeInTheDocument();
+        expect(screen.getByTestId(`${PREFIX}-input`)).toBeInTheDocument();
+    });
+
+    it("published: acknowledging the warning enters edit mode", () => {
+        render(
+            <EditableTitle
+                value="My Title"
+                onSave={vi.fn()}
+                testIdPrefix={PREFIX}
+                isPublished
+            />,
+        );
+        fireEvent.click(screen.getByTestId(`${PREFIX}-edit`));
+        fireEvent.click(screen.getByTestId(`${PREFIX}-warning-ack`));
+        expect(
+            screen.queryByTestId(`${PREFIX}-warning`),
+        ).not.toBeInTheDocument();
+        expect(screen.getByTestId(`${PREFIX}-input`)).toBeInTheDocument();
+    });
+
+    it("published: cancelling the warning returns to display mode", () => {
+        const onSave = vi.fn();
+        render(
+            <EditableTitle
+                value="My Title"
+                onSave={onSave}
+                testIdPrefix={PREFIX}
+                isPublished
+            />,
+        );
+        fireEvent.click(screen.getByTestId(`${PREFIX}-edit`));
+        fireEvent.click(screen.getByTestId(`${PREFIX}-warning-cancel`));
+        expect(
+            screen.queryByTestId(`${PREFIX}-warning`),
+        ).not.toBeInTheDocument();
+        expect(
+            screen.queryByTestId(`${PREFIX}-input`),
+        ).not.toBeInTheDocument();
+        expect(screen.getByTestId(`${PREFIX}-text`)).toBeInTheDocument();
+        expect(onSave).not.toHaveBeenCalled();
+    });
 });

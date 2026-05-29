@@ -41,6 +41,12 @@ interface EditableTitleProps {
     /** Applied to the edit-mode input (so the input matches the
      *  surface's title typography). */
     inputClassName?: string;
+    /** C2: when true (book/article status is published or archived),
+     *  the pencil opens a warning banner + acknowledgment gate before
+     *  edit mode, instead of editing directly. Detection is
+     *  status-based on both surfaces (``status === "published" ||
+     *  "archived"``) for parallel-surface symmetry. */
+    isPublished?: boolean;
     /** Inline style on the persistent wrapper. ComicBookEditor styles
      *  its title inline (no CSS module), so it passes font sizing here;
      *  the text + input inherit the font from the wrapper. */
@@ -54,10 +60,12 @@ export default function EditableTitle({
     placeholder,
     textClassName,
     inputClassName,
+    isPublished = false,
     style,
 }: EditableTitleProps) {
     const {t} = useI18n();
     const [editing, setEditing] = useState(false);
+    const [warning, setWarning] = useState(false);
     const [draft, setDraft] = useState(value);
     const inputRef = useRef<HTMLInputElement>(null);
 
@@ -75,6 +83,19 @@ export default function EditableTitle({
     }, [editing]);
 
     const startEdit = () => {
+        // Published works gate edit behind an acknowledgment banner so
+        // the author knows a title change must be carried over to the
+        // publishing platform (KDP etc.) manually.
+        if (isPublished) {
+            setWarning(true);
+            return;
+        }
+        setDraft(value);
+        setEditing(true);
+    };
+
+    const acknowledgeWarning = () => {
+        setWarning(false);
         setDraft(value);
         setEditing(true);
     };
@@ -138,6 +159,44 @@ export default function EditableTitle({
                         <Pencil size={14} />
                     </button>
                 </>
+            )}
+            {warning && (
+                <span
+                    className={styles.warning}
+                    role="alert"
+                    data-testid={`${testIdPrefix}-warning`}
+                >
+                    <span
+                        className={styles.warningText}
+                        data-testid={`${testIdPrefix}-warning-text`}
+                    >
+                        {t(
+                            "ui.editor.published_warning_body",
+                            "Achtung: Dieses Werk wurde bereits veröffentlicht. Eine Titeländerung muss manuell auf der Veröffentlichungsplattform (z.B. KDP) nachgezogen werden.",
+                        )}
+                    </span>
+                    <span className={styles.warningActions}>
+                        <button
+                            type="button"
+                            className={styles.warningAck}
+                            data-testid={`${testIdPrefix}-warning-ack`}
+                            onClick={acknowledgeWarning}
+                        >
+                            {t(
+                                "ui.editor.acknowledge_warning_button",
+                                "Verstanden, Titel ändern",
+                            )}
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.warningCancel}
+                            data-testid={`${testIdPrefix}-warning-cancel`}
+                            onClick={() => setWarning(false)}
+                        >
+                            {t("ui.common.cancel", "Abbrechen")}
+                        </button>
+                    </span>
+                </span>
             )}
         </span>
     );
