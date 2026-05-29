@@ -58,6 +58,10 @@ navigation:
           en: Storyboard view
         slug: books/storyboard
       - title:
+          de: Seitenlayouts (Bilderbuch)
+          en: Page layouts (picture-book)
+        slug: books/page-layouts
+      - title:
           de: Text-Konfiguration (Bilderbuch)
           en: Text configuration (picture-book)
         slug: books/text-configuration
