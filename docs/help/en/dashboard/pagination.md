@@ -19,6 +19,10 @@ The per-page choice lives in the app settings under `ui.dashboard.books_page_siz
 
 "Select all" always operates on the **full filtered set**, not just the currently visible page. That makes sure bulk export or bulk delete doesn't silently skip entries the filter just made visible.
 
+## Clearing a search field
+
+Every search and filter input across the Books and Articles dashboards (and the Authors database and the Help panel) shows a small **clear (X) button** at the right edge once it has text in it. Clicking it empties that one field without touching the others — so you can drop a title search while keeping a status or content-type filter applied. The list re-filters immediately.
+
 ## Related
 
 - [Trash and restore](trash-and-restore.md) — paginated trash view with bulk restore

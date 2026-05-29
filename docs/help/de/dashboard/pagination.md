@@ -19,6 +19,10 @@ Die Pro-Seite-Auswahl liegt in den App-Einstellungen unter `ui.dashboard.books_p
 
 "Alle auswählen" bezieht sich immer auf den **gesamten gefilterten Satz**, nicht nur auf die gerade sichtbare Seite. Das stellt sicher, dass Massen-Export oder Massen-Löschen nicht versehentlich Einträge auslässt, die der Filter eigentlich freigibt.
 
+## Ein Suchfeld leeren
+
+Jedes Such- und Filterfeld in den Bücher- und Artikel-Dashboards (sowie in der Autoren-Datenbank und im Hilfe-Panel) zeigt am rechten Rand einen kleinen **Leeren-Knopf (X)**, sobald Text darin steht. Ein Klick darauf leert genau dieses eine Feld, ohne die anderen anzutasten — so kannst du eine Titelsuche verwerfen und einen Status- oder Textart-Filter trotzdem behalten. Die Liste filtert sofort neu.
+
 ## Verwandte Themen
 
 - [Papierkorb und Wiederherstellen](trash-and-restore.md) — paginierte Trash-Ansicht mit Bulk-Restore

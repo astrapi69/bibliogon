@@ -17,6 +17,10 @@ The settings are stored in `localStorage` under the key `bibliogon-editor-displa
 
 The settings apply to both the book editor and the article editor — both share the same underlying editor.
 
+## Fullscreen mode
+
+The page editors (picture-book, comic-book) and the Storyboard view carry a **fullscreen toggle** in the header — the expand icon among the other header controls. It uses the browser's native fullscreen so the editing canvas fills the whole screen with no app chrome; press the icon again, **Esc**, or **F11** to exit. Fullscreen is handy when arranging comic panels or laying out a collage, where every pixel of canvas helps.
+
 ## Related
 
 - [Word wrap (Alt+Z)](word-wrap.md) — keyboard shortcut for long-line layout in Markdown mode

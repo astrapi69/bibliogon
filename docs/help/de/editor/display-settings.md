@@ -17,6 +17,10 @@ Die Einstellungen werden in `localStorage` gespeichert (Schlüssel `bibliogon-ed
 
 Die Einstellungen wirken sowohl im Buch- als auch im Artikel-Editor — beide nutzen denselben Editor-Code.
 
+## Vollbildmodus
+
+Die Seiteneditoren (Bilderbuch, Comic) und die Storyboard-Ansicht haben einen **Vollbild-Umschalter** im Kopfbereich — das Vergrößern-Symbol bei den übrigen Kopf-Steuerelementen. Er nutzt den nativen Vollbildmodus des Browsers, sodass die Arbeitsfläche den ganzen Bildschirm ohne App-Rahmen füllt; zum Beenden das Symbol erneut anklicken, **Esc** oder **F11** drücken. Vollbild ist praktisch beim Anordnen von Comic-Panels oder beim Gestalten einer Collage, wo jeder Pixel Arbeitsfläche zählt.
+
 ## Verwandte Themen
 
 - [Zeilenumbruch (Alt+Z)](word-wrap.md) — Tastenkürzel für langes-Zeile-Layout im Markdown-Modus
