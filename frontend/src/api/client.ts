@@ -120,6 +120,13 @@ export interface ArticleTypeDef {
     extra_fields: ArticleTypeExtraField[];
 }
 
+/** PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Publication-
+ *  lifecycle alias for Book; mirrors ``ArticleStatus`` exactly
+ *  (same 4 values shared via the backend's ``PublicationStatus``
+ *  Pydantic Literal). Distinct from the per-platform Publication
+ *  entity's 5-value status enum further down. */
+export type BookStatus = "draft" | "ready" | "published" | "archived";
+
 export interface Book {
     id: string;
     /** ``prose`` for the existing chapter-based authoring flow;
@@ -127,6 +134,15 @@ export interface Book {
      *  Defaults to ``prose`` for legacy rows (the backend's
      *  Pydantic default). */
     book_type: BookType;
+    /** PUBLICATION-STATUS-BOOK-PARITY-01. Publication-lifecycle
+     *  column. Defaults to "draft" on every new row + on
+     *  pre-migration legacy rows. Optional in the type contract
+     *  because legacy test fixtures predating
+     *  PUBLICATION-STATUS-BOOK-PARITY-01 don't seed it; consumers
+     *  must treat ``undefined`` as ``"draft"``. Real API
+     *  responses always populate it via the backend ``BookOut``
+     *  schema. */
+    status?: BookStatus;
     title: string;
     subtitle: string | null;
     /** Nullable when the user enabled
@@ -859,6 +875,10 @@ export interface BookCreate {
      *  'picture_book' from the dashboard's split-button menu to
      *  route the new book straight into PageEditor. */
     book_type?: "prose" | "picture_book" | "comic_book";
+    /** PUBLICATION-STATUS-BOOK-PARITY-01: optional on create;
+     *  defaults to "draft" via the backend column default when
+     *  omitted. */
+    status?: BookStatus;
 }
 
 export interface BookFromTemplateCreate extends BookCreate {

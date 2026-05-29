@@ -171,6 +171,24 @@ function BookListRow({
                     : t("ui.dashboard.book_no_author", "—")}
             </div>
             <div role="cell" className={styles.colLang}>
+                {/* PUBLICATION-STATUS-BOOK-PARITY-01 (T0 C2):
+                 *  publication-lifecycle badge mirrors the
+                 *  list-view article-list-row-status-{id}
+                 *  pattern. Reuses ``ui.articles.status_*``
+                 *  i18n keys (the labels are identical between
+                 *  the two surfaces). */}
+                <span
+                    data-testid={`book-list-row-status-${book.id}`}
+                    style={{ marginRight: 6, fontSize: 11, opacity: 0.8 }}
+                >
+                    {(() => {
+                        const status = book.status ?? "draft";
+                        return t(
+                            `ui.articles.status_${status}`,
+                            status,
+                        );
+                    })()}
+                </span>
                 {book.language.toUpperCase()}
             </div>
             <div role="cell" className={styles.colDate}>

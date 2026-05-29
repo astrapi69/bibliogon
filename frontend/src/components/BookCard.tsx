@@ -71,6 +71,24 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                     </p>
                 )}
                 <div className={styles.footer}>
+                    {/* PUBLICATION-STATUS-BOOK-PARITY-01 (T0 C2):
+                     *  publication-lifecycle badge mirrors the
+                     *  Article card pattern (article-card-status-{id})
+                     *  + reuses the existing ``ui.articles.status_*``
+                     *  i18n keys — the labels are identical between
+                     *  the two surfaces. */}
+                    <span
+                        data-testid={`book-card-status-${book.id}`}
+                        className={styles.lang}
+                    >
+                        {(() => {
+                            const status = book.status ?? "draft";
+                            return t(
+                                `ui.articles.status_${status}`,
+                                status,
+                            );
+                        })()}
+                    </span>
                     <span className={styles.date}>
                         <Clock size={12}/>
                         {updated}
