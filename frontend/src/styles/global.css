@@ -203,6 +203,11 @@
     --warning-light: #fef3c7;
     --warning-dark: #b45309;
     --bg-warning: #fff8e6;
+    /* Warning banner fill (e.g. the published-work title-edit
+       warning). Pale amber in light mode; dark override below. */
+    --warning-bg: #fef9c3;
+    /* Primary-button text color (white on the accent fill). */
+    --btn-primary-text: #ffffff;
 
     --shadow-sm: 0 1px 2px rgba(28, 25, 23, 0.05);
     --shadow-md: 0 4px 12px rgba(28, 25, 23, 0.08);
@@ -330,6 +335,8 @@
     --warning-light: rgba(251, 191, 36, 0.15);
     --warning-dark: #fbbf24;
     --bg-warning: rgba(251, 191, 36, 0.10);
+    --warning-bg: rgba(251, 191, 36, 0.15);
+    --btn-primary-text: #ffffff;
 
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.4);
