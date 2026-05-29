@@ -13,6 +13,7 @@ import { useI18n } from "../../hooks/useI18n";
 import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
+import ArticleTypeBadge from "./ArticleTypeBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -87,6 +88,15 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                     <span className={styles.topic}>{article.topic}</span>
                 ) : null}
                 <div className={styles.footer}>
+                    {/* ARTICLE-TYPES-SSOT-01 C7 (2026-05-29):
+                     *  per-type badge mirrors the status/lang/date
+                     *  badges; user can tell article-type at a glance
+                     *  without opening the editor. */}
+                    <ArticleTypeBadge
+                        contentType={article.content_type}
+                        testId={`article-card-type-${article.id}`}
+                        className={styles.status}
+                    />
                     <span data-testid={`article-card-status-${article.id}`} className={styles.status}>
                         {t(`ui.articles.status_${article.status}`, article.status)}
                     </span>

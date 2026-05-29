@@ -7,9 +7,11 @@
  * backend computed-field tests in test_articles.py.
  */
 import { describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render as rawRender, screen } from "@testing-library/react";
+import type { ReactElement } from "react";
 import ArticleCard from "./ArticleCard";
-import type { Article } from "../../api/client";
+import type { Article, ArticleTypeDef } from "../../api/client";
+import { ArticleTypesProvider } from "../../hooks/useArticleTypes";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -19,6 +21,25 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
+const TEST_ARTICLE_TYPES: Record<string, ArticleTypeDef> = {
+    blogpost: {
+        id: "blogpost",
+        label_key: "ui.article_types.blogpost",
+        description_key: "ui.article_types.blogpost_description",
+        icon: "FileText",
+        default: true,
+        extra_fields: [],
+    },
+};
+
+function render(ui: ReactElement) {
+    return rawRender(
+        <ArticleTypesProvider initialTypes={TEST_ARTICLE_TYPES}>
+            {ui}
+        </ArticleTypesProvider>,
+    );
+}
+
 function makeArticle(overrides: Partial<Article> = {}): Article {
     return {
         id: "art-1",
@@ -26,7 +47,7 @@ function makeArticle(overrides: Partial<Article> = {}): Article {
         subtitle: null,
         author: null,
         language: "en",
-        content_type: "article",
+        content_type: "blogpost",
         content_json: "",
         status: "draft",
         canonical_url: null,

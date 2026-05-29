@@ -37,6 +37,7 @@ import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitBu
 import { notify } from "../utils/notify";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
+import ArticleTypeBadge from "../components/articles/ArticleTypeBadge";
 import CommentsCountBadge from "../components/articles/CommentsCountBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
@@ -1523,6 +1524,17 @@ function ArticleRow({
                 {article.topic ?? "—"}
             </div>
             <div className={layout.gridCellStatus}>
+                {/* ARTICLE-TYPES-SSOT-01 C7 (2026-05-29): badge
+                 *  surfaces the article's content_type alongside
+                 *  the publication status. Same visual weight as
+                 *  the status badge so users see "tutorial / draft"
+                 *  rather than just "draft" in the list view. */}
+                <ArticleTypeBadge
+                    contentType={article.content_type}
+                    testId={`article-list-row-type-${article.id}`}
+                    className={layout.statusBadge}
+                    style={{marginRight: 6}}
+                />
                 <span
                     data-testid={`article-list-row-status-${article.id}`}
                     className={layout.statusBadge}
