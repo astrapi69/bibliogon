@@ -89,7 +89,11 @@
     border-radius: var(--radius-sm);
     font-size: 0.8rem;
     font-weight: 600;
-    color: var(--btn-primary-text, #fff);
+    /* --text-inverse flips with light/dark (like .btn-primary) so
+       the label stays legible on the mode-adjusted --accent;
+       --btn-primary-text was always #fff and failed on the
+       lightened dark-mode accent (studio dark ~1.48:1). */
+    color: var(--text-inverse);
     background: var(--accent);
 }
 

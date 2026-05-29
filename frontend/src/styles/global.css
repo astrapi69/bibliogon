@@ -310,7 +310,7 @@
 
     --text-primary: #e8e6e3;
     --text-secondary: #a8a29e;
-    --text-muted: #6b6560;
+    --text-muted: #96908a;
     --text-inverse: #1c1917;
     --text-sidebar: #d6d3d1;
 
@@ -356,7 +356,7 @@
 
     --text-primary: #e2e8f0;
     --text-secondary: #94a3b8;
-    --text-muted: #8290a4;
+    --text-muted: #a1acbb;
     --text-inverse: #0f172a;
     --text-sidebar: #cbd5e1;
 
@@ -384,7 +384,7 @@
 
     --text-primary: #eceff4;
     --text-secondary: #d8dee9;
-    --text-muted: #a1aec7;
+    --text-muted: #b1bcd1;
     --text-inverse: #2e3440;
     --text-sidebar: #d8dee9;
 
@@ -396,7 +396,10 @@
     --border: #434c5e;
     --border-strong: #4c566a;
 
-    --danger: #bf616a;
+    /* Brightened from #bf616a (cr 2.46 on the dark card — failed
+       even the 3:1 non-text bar) to #ca7c83 (cr ~3.2): still a Nord
+       Aurora red, now legible as an icon/badge in dark mode. */
+    --danger: #ca7c83;
     --danger-hover: #d08770;
     --danger-bg: rgba(191, 97, 106, 0.18);
 }
@@ -454,7 +457,7 @@
 
     --text-primary: #e8d8c0;
     --text-secondary: #b8a583;
-    --text-muted: #968360;
+    --text-muted: #9d8a66;
     --text-inverse: #1a140d;
     --text-sidebar: #b8a583;
 
@@ -529,7 +532,7 @@
 
     --text-primary: #e4e6eb;
     --text-secondary: #9ba3af;
-    --text-muted: #888f9d;
+    --text-muted: #9399a6;
     --text-inverse: #1c1e22;
     --text-sidebar: #9ba3af;
 
@@ -611,7 +614,7 @@
 
     --text-primary: #f0ede0;
     --text-secondary: #b8b29a;
-    --text-muted: #948e79;
+    --text-muted: #9f9986;
     --text-inverse: #1f1d18;
     --text-sidebar: #b8b29a;
 
