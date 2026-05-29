@@ -1,0 +1,26 @@
+[tool.poetry]
+name = "bibliogon-plugin-story-bible"
+version = "0.41.0"
+description = "Story Bible plugin for Bibliogon - per-book fiction-writing entity database (characters, settings, plot points, items, lore) with @-mention cross-references (Session 1: scaffolding)"
+authors = ["astrapi69"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "bibliogon_story_bible"}]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+pluginforge = "^0.10.0"
+fastapi = "^0.136.0"
+pyyaml = "^6.0"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^9.0"
+pytest-cov = "^7.1.0"
+httpx = "^0.28.0"
+
+[tool.poetry.plugins."bibliogon.plugins"]
+story-bible = "bibliogon_story_bible.plugin:StoryBiblePlugin"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

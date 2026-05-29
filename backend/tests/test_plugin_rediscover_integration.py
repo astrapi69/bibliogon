@@ -16,7 +16,7 @@ change? That cannot be answered with mocks; it requires actual
 Scenarios (5):
 
 1. ``rediscover_stable_no_diff_after_lifespan`` — baseline. The
-   12 first-party plugins activated by the lifespan; rediscover
+   13 first-party plugins activated by the lifespan; rediscover
    reports them all as unchanged with zero diff.
 2. ``rediscover_picks_up_newly_added_dist_info`` — the canonical
    real-world test. Stage a fixture ``.dist-info`` directory in
@@ -129,7 +129,7 @@ def sys_path_cleanup():
 
 
 def test_rediscover_stable_no_diff_after_lifespan(app_with_lifespan) -> None:
-    """Baseline: 12 first-party plugins active, entry-point set
+    """Baseline: 13 first-party plugins active, entry-point set
     unchanged since startup, rediscover reports zero diff."""
     _app, manager = app_with_lifespan
     diff = manager.rediscover()
@@ -149,6 +149,7 @@ def test_rediscover_stable_no_diff_after_lifespan(app_with_lifespan) -> None:
             "kinderbuch",
             "medium-import",
             "ms-tools",
+            "story-bible",
             "translation",
         ]
     )

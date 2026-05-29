@@ -1,0 +1,30 @@
+plugin:
+  name: story-bible
+  version: "1.0.0"
+  license_tier: core
+  depends_on: []
+  entry_point: bibliogon_story_bible.plugin:StoryBiblePlugin
+  display_name:
+    de: "Story-Bibel"
+    en: "Story Bible"
+    es: "Biblia de la historia"
+    fr: "Bible narrative"
+    el: "Βίβλος ιστορίας"
+    pt: "Bíblia da história"
+    tr: "Hikaye Kılavuzu"
+    ja: "ストーリーバイブル"
+  description:
+    de: "Datenbank für Romanwelt-Elemente (Figuren, Schauplätze, Handlungspunkte, Gegenstände, Lore) mit @-Erwähnungs-Querverweisen im Editor (Session 1: Grundgerüst)"
+    en: "Database for fiction-writing entities (characters, settings, plot points, items, lore) with @-mention cross-references in the editor (Session 1: scaffolding)"
+    es: "Base de datos de elementos de ficción (personajes, escenarios, puntos de la trama, objetos, lore) con referencias cruzadas mediante @-menciones en el editor (Fase 1: andamiaje)"
+    fr: "Base de données des éléments de fiction (personnages, lieux, points d'intrigue, objets, univers) avec références croisées par @-mentions dans l'éditeur (Phase 1 : échafaudage)"
+    el: "Βάση δεδομένων για στοιχεία μυθοπλασίας (χαρακτήρες, τοποθεσίες, σημεία πλοκής, αντικείμενα, μυθολογία) με παραπομπές @-αναφοράς στον επεξεργαστή (Φάση 1: σκαλωσιά)"
+    pt: "Banco de dados de elementos de ficção (personagens, cenários, pontos de enredo, itens, lore) com referências cruzadas por @-menções no editor (Fase 1: andaime)"
+    tr: "Kurgu öğeleri için veritabanı (karakterler, mekanlar, olay örgüsü noktaları, nesneler, lore) ile düzenleyicide @-bahsetme çapraz referansları (Aşama 1: iskelet)"
+    ja: "フィクション要素（キャラクター、舞台、プロットポイント、アイテム、世界設定）のデータベース。エディターで@メンションによる相互参照が可能（フェーズ1: 基盤）"
+
+# Session 1 ships no user-configurable settings. The empty block is
+# reserved so later sessions can hang per-plugin knobs (e.g. default
+# entity sort order, @-mention trigger char) off plugin config
+# without restructuring the YAML at that point.
+settings: {}

@@ -69,6 +69,7 @@ plugins:
   - git-sync
   - medium-import
   - comics
+  - story-bible
   entry_point_group: bibliogon.plugins
 ui:
   logo: assets/logo.svg
