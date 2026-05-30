@@ -1242,7 +1242,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
     it("renders the format dropdown next to Export PDF with the 5 KDP formats", () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         const values = Array.from(select.options).map((o) => o.value)
         expect(values).toEqual([
@@ -1257,7 +1257,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
     it("defaults to 8.5x8.5 when localStorage is empty (MVP back-compat)", () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         expect(select.value).toBe("8.5x8.5")
     })
@@ -1275,7 +1275,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
     it("changing format to a non-default value persists to React state (workspace default lives in app.yaml now)", () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "8.5x11"}})
         expect(select.value).toBe("8.5x11")
@@ -1288,7 +1288,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
     it("Export PDF with non-default format passes picture_book_format query param", async () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "11x8.5"}})
         fireEvent.click(screen.getByTestId("page-editor-export-pdf"))
@@ -1307,7 +1307,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
         localStorage.setItem("bibliogon-picture-book-format", "10x8")
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = (await screen.findByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         )) as HTMLSelectElement
         await waitFor(() => expect(select.value).toBe("10x8"))
     })
@@ -1316,7 +1316,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
         localStorage.setItem("bibliogon-picture-book-format", "garbage")
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         expect(select.value).toBe("8.5x8.5")
     })
@@ -1324,7 +1324,7 @@ describe("PageEditor PDF format dropdown (PDF-KDP-FORMATS-01 C2)", () => {
     it("changing back to default 8.5x8.5 returns to empty-params export", async () => {
         render(<PageEditor bookId="b1" bookTitle="Test" onBack={vi.fn()} />)
         const select = screen.getByTestId(
-            "page-editor-pdf-format-select",
+            "page-editor-pdf-format-trigger",
         ) as HTMLSelectElement
         // Flip away from default + back.
         fireEvent.change(select, {target: {value: "8x10"}})

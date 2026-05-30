@@ -372,7 +372,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
             />,
         );
         expect(
-            screen.getByTestId("comic-book-editor-pdf-format-select"),
+            screen.getByTestId("comic-book-editor-pdf-format-trigger"),
         ).toBeInTheDocument();
         expect(
             screen.getByTestId("comic-book-editor-export-pdf"),

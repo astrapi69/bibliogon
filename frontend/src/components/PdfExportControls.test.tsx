@@ -82,7 +82,7 @@ describe("PdfExportControls - render", () => {
     it("renders the 5 KDP picture-book formats in the dropdown", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         const values = Array.from(select.options).map((o) => o.value)
         expect(values).toEqual([
@@ -103,7 +103,7 @@ describe("PdfExportControls - render", () => {
     it("testidPrefix scopes all 3 testids to the parent surface", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="metadata" />)
         expect(
-            await screen.findByTestId("metadata-pdf-format-select"),
+            await screen.findByTestId("metadata-pdf-format-trigger"),
         ).toBeTruthy()
         expect(screen.getByTestId("metadata-pdf-bleed-toggle")).toBeTruthy()
         expect(screen.getByTestId("metadata-export-pdf")).toBeTruthy()
@@ -114,7 +114,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
     it("defaults to 8.5x8.5 + bleed=false when app.yaml has no picture_book", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         const toggle = screen.getByTestId(
             "pe-pdf-bleed-toggle",
@@ -135,7 +135,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
         })
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         const toggle = screen.getByTestId(
             "pe-pdf-bleed-toggle",
@@ -148,7 +148,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
         localStorage.setItem("bibliogon-picture-book-format", "8x10")
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         await waitFor(() => expect(select.value).toBe("8x10"))
     })
@@ -169,7 +169,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
         localStorage.setItem("bibliogon-picture-book-format", "garbage")
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
         expect(select.value).toBe("8.5x8.5")
@@ -228,7 +228,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
     it("inline format change does NOT write to localStorage or app.yaml", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
-            "pe-pdf-format-select",
+            "pe-pdf-format-trigger",
         )) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "8x10"}})
         expect(
@@ -267,7 +267,7 @@ describe("PdfExportControls - export query-param emission", () => {
 
     it("non-default format alone passes picture_book_format only", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
-        const select = await screen.findByTestId("pe-pdf-format-select")
+        const select = await screen.findByTestId("pe-pdf-format-trigger")
         fireEvent.change(select, {target: {value: "8.5x11"}})
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
@@ -293,7 +293,7 @@ describe("PdfExportControls - export query-param emission", () => {
 
     it("format + bleed both non-default pass both query params", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
-        const select = await screen.findByTestId("pe-pdf-format-select")
+        const select = await screen.findByTestId("pe-pdf-format-trigger")
         fireEvent.change(select, {target: {value: "11x8.5"}})
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
@@ -403,7 +403,7 @@ describe("PdfExportControls - compact (comic header variant)", () => {
 
     it("gives the format dropdown a VISIBLE label (mirrors the Layout picker)", async () => {
         render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
-        await screen.findByTestId("cb-pdf-format-select")
+        await screen.findByTestId("cb-pdf-format-trigger")
         expect(screen.getByText("PDF format")).toBeTruthy()
     })
 

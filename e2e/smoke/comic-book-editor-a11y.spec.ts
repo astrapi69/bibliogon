@@ -36,7 +36,7 @@ test.describe("Comic-book editor a11y smoke", () => {
         // a future commit cannot silently drop it from the comic-
         // book namespace.
         const formatSelect = page.getByTestId(
-            "comic-book-editor-pdf-format-select",
+            "comic-book-editor-pdf-format-trigger",
         );
         await expect(formatSelect).toBeVisible();
         // Focus reaches the dropdown via keyboard.

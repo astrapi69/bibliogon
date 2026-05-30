@@ -814,28 +814,27 @@ test.describe("Picture-Book PageEditor smoke", () => {
 
         // Dropdown is visible next to Export-PDF in the header.
         await expect(
-            page.getByTestId("page-editor-pdf-format-select"),
+            page.getByTestId("page-editor-pdf-format-trigger"),
         ).toBeVisible()
 
         // Default-state assertion: 8.5x8.5 selected on fresh load.
         await expect(
-            page.getByTestId("page-editor-pdf-format-select"),
-        ).toHaveValue("8.5x8.5")
+            page.getByTestId("page-editor-pdf-format-trigger"),
+        ).toHaveAttribute("data-value", "8.5x8.5")
 
         // Switch to 11x8.5 (landscape).
-        await page
-            .getByTestId("page-editor-pdf-format-select")
-            .selectOption("11x8.5")
+        await page.getByTestId("page-editor-pdf-format-trigger").click()
+        await page.getByTestId("page-editor-pdf-format-item-11x8.5").click()
         await expect(
-            page.getByTestId("page-editor-pdf-format-select"),
-        ).toHaveValue("11x8.5")
+            page.getByTestId("page-editor-pdf-format-trigger"),
+        ).toHaveAttribute("data-value", "11x8.5")
 
         // Reload preserves selection via localStorage.
         await page.reload()
         await expect(page.getByTestId("page-canvas-root")).toBeVisible()
         await expect(
-            page.getByTestId("page-editor-pdf-format-select"),
-        ).toHaveValue("11x8.5")
+            page.getByTestId("page-editor-pdf-format-trigger"),
+        ).toHaveAttribute("data-value", "11x8.5")
 
         // Click Export — capture the download and confirm the
         // filename carries the non-default format suffix.
@@ -848,9 +847,8 @@ test.describe("Picture-Book PageEditor smoke", () => {
 
         // Switch back to default 8.5x8.5 — filename suffix drops
         // (back-compat for legacy export behavior).
-        await page
-            .getByTestId("page-editor-pdf-format-select")
-            .selectOption("8.5x8.5")
+        await page.getByTestId("page-editor-pdf-format-trigger").click()
+        await page.getByTestId("page-editor-pdf-format-item-8.5x8.5").click()
         const defaultDownloadPromise = page.waitForEvent("download")
         await page.getByTestId("page-editor-export-pdf").click()
         const defaultDownload = await defaultDownloadPromise
@@ -902,9 +900,8 @@ test.describe("Picture-Book PageEditor smoke", () => {
 
         // Combine with a non-default format (Q4 ordering pin:
         // format-first-then-bleed).
-        await page
-            .getByTestId("page-editor-pdf-format-select")
-            .selectOption("11x8.5")
+        await page.getByTestId("page-editor-pdf-format-trigger").click()
+        await page.getByTestId("page-editor-pdf-format-item-11x8.5").click()
         const comboPromise = page.waitForEvent("download")
         await page.getByTestId("page-editor-export-pdf").click()
         const comboDownload = await comboPromise
@@ -923,7 +920,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         // The shared component mounts here too: format dropdown +
         // bleed toggle + Export-PDF button all present.
         await expect(
-            page.getByTestId("metadata-pdf-format-select"),
+            page.getByTestId("metadata-pdf-format-trigger"),
         ).toBeVisible()
         await expect(
             page.getByTestId("metadata-pdf-bleed-toggle"),
@@ -932,8 +929,8 @@ test.describe("Picture-Book PageEditor smoke", () => {
         // State reflects what PageEditor wrote to localStorage:
         // 11x8.5 + bleed=true.
         await expect(
-            page.getByTestId("metadata-pdf-format-select"),
-        ).toHaveValue("11x8.5")
+            page.getByTestId("metadata-pdf-format-trigger"),
+        ).toHaveAttribute("data-value", "11x8.5")
         await expect(
             page.getByTestId("metadata-pdf-bleed-toggle"),
         ).toBeChecked()

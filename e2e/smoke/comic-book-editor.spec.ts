@@ -129,7 +129,7 @@ test.describe("Comic-book editor smoke", () => {
         // landed in C6. Both its format dropdown + export button
         // mount under the comic-book-editor testid prefix.
         await expect(
-            page.getByTestId("comic-book-editor-pdf-format-select"),
+            page.getByTestId("comic-book-editor-pdf-format-trigger"),
         ).toBeVisible();
         await expect(
             page.getByTestId("comic-book-editor-export-pdf"),

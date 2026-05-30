@@ -111,7 +111,7 @@ test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
         // for comic-book without updating the spec, this assertion
         // fires.
         const select = page.getByTestId(
-            "comic-book-editor-pdf-format-select",
+            "comic-book-editor-pdf-format-trigger",
         );
         await expect(select).toBeVisible();
         const options = await select

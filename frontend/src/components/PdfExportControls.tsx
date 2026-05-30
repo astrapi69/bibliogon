@@ -41,7 +41,7 @@ import {api, ApiError} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {Toggle} from "./settings/Toggle"
-import {COMIC_HEADER_SELECT_STYLE} from "./comics/headerSelectStyle"
+import {RadixSelect} from "./RadixSelect"
 
 // PDF-KDP-FORMATS-01: 5 KDP picture-book trim sizes. Kept in sync
 // with the Python PICTURE_BOOK_FORMATS constant in
@@ -263,30 +263,26 @@ export default function PdfExportControls({
 
     const formatLabel = t("ui.page_editor.pdf_format_label", "PDF format")
     const formatSelect = (
-        <select
+        // Comic header (compact): is-narrow trigger so it matches the
+        // Layout picker's dropdown look (both header dropdowns are
+        // RadixSelect + is-narrow). Other surfaces keep their
+        // controlClassName-driven width.
+        <RadixSelect
             value={format}
-            onChange={(e) =>
-                handleFormatChange(e.target.value as PictureBookFormat)
+            onValueChange={(next) =>
+                handleFormatChange(next as PictureBookFormat)
             }
-            data-testid={`${testidPrefix}-pdf-format-select`}
-            className={controlClassName}
-            // Comic header: identical styling to the Layout picker's
-            // dropdown via the shared COMIC_HEADER_SELECT_STYLE (the
-            // two header dropdowns must look the same). Other surfaces
-            // keep their controlClassName-driven look.
-            style={compact ? COMIC_HEADER_SELECT_STYLE : undefined}
-            aria-label={formatLabel}
-            title={formatLabel}
-        >
-            {PICTURE_BOOK_FORMATS.map((fmt) => (
-                <option key={fmt} value={fmt}>
-                    {t(
-                        `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
-                        fmt,
-                    )}
-                </option>
-            ))}
-        </select>
+            testId={`${testidPrefix}-pdf-format`}
+            className={compact ? "is-narrow" : controlClassName}
+            ariaLabel={formatLabel}
+            options={PICTURE_BOOK_FORMATS.map((fmt) => ({
+                value: fmt,
+                label: t(
+                    `ui.page_editor.pdf_format.${fmt.replace(/\./g, "_")}`,
+                    fmt,
+                ),
+            }))}
+        />
     )
 
     return (
