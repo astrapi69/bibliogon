@@ -456,3 +456,64 @@ checkboxes (29), badges (38), cards (~30), dialogs (32)** — i.e. 2B / 2C
   with `.select` → **deferred to 2B** (migrate input + select together).
   Remaining inline-style inputs → filed implicitly for a later
   inline-style cleanup; not blocking.
+
+---
+
+## Close-out (2026-05-30)
+
+The sweep ran ~45 commits across Phase 1 + Sessions 2A/2B/2C + the
+CSS-first rule + the Phase 4 advisory lint. Status by area:
+
+**Done (shipped):**
+- **2A** buttons (`.btn-icon.is-active`), sliders (global `.slider`,
+  all range inputs), inputs (Editor search).
+- **2B-1 selects:** EVERY native `<select>` migrated to the canonical
+  `RadixSelect` (test-mode native render + `data-value` + option
+  testids + `is-narrow`/`is-block` + `allOption` sentinel).
+  DashboardFilterBar's raw-Radix duplicate absorbed (RCU). Only
+  exemption: `AuthorPicker` (`<optgroup>` — flat RadixSelect has no
+  group support).
+- **2B-2 checkboxes:** global `input[type=checkbox] { accent-color }`
+  unified all 52; 7 settings-checkboxes -> `<Toggle>` (ExportDialog,
+  PdfExportControls, PublicationsPanel, AuthorSelectInput,
+  AITemplatePanel, GitSyncDialog, BulkTemplateImportDialog).
+- **2C badges:** `Badge` component + global `.badge-*` (color-mix
+  tints); PublicationsPanel + all 4 dashboard status pills +
+  PluginCard chips migrated; `publicationStatusVariant()` helper.
+- **2C cards:** global `.card` / `.card-interactive` / `.card-padded`;
+  BookCard + ArticleCard + TrashCard migrated.
+- **Rule + gate:** `coding-standards.md` "CSS-first for visual
+  consistency" + `lessons-learned.md` entry; advisory
+  `scripts/check_component_classes.py` + `make verify-components`.
+
+**Deferred (low-value or unverifiable-risk — tracked here, not lost):**
+- **Toolbar.button** (chapter-editor 32px icon-button system): a
+  THEMED structural duplication of `.btn-icon` (no hardcoded hex), on
+  the high-traffic main toolbar. Migrating risks an unverifiable
+  size/color delta across 17 buttons for marginal gain. Defer until a
+  Playwright visual pass can confirm.
+- **Inline-style inputs** (`kdp-wizard/PricingStep`, `ArcStep` price
+  fields): themed `React.CSSProperties` objects (compact 5em table
+  inputs). Forcing onto `.input` changes the pricing-table row height;
+  low value, defer.
+- **Broad card-surface sweep:** the advisory lint flags ~26 module
+  files using `bg-card + border-radius`, but most are panels / chrome
+  (Editor, Toolbar, banners, filter bars, dialogs) — NOT card tiles.
+  Forcing them onto `.card` would be wrong; only genuine card-grid
+  tiles belong on `.card` (those are done).
+- **~8 remaining inline checkboxes** (FieldClassDialog, ErrorReportDialog,
+  PreviewPanel, PreviewMultiBookStep, PricingStep, TranslationLinks,
+  CreateBookModal is-series, ConvertToBookWizard): structural-only
+  (accent already unified); migrate opportunistically.
+- **2D dialogs** (raw-Radix -> AppDialog, ~32 sites): lowest priority,
+  largest scope, seen one-at-a-time (low cross-surface drift). A
+  dedicated session.
+
+**Phase 3 (Playwright visual baselines): Aster-run.** ~17 E2E spec
+files were rewritten to the Radix interaction pattern, and several
+surfaces changed look (dashboard status -> colored Badge pills, cards
+gained a hover-lift). These need a Playwright run + a baseline
+regeneration (notably `article-editor-sidebar.png`).
+
+The `make verify-components` advisory inventory is the live to-do list
+for the deferred structural-duplication tail.
