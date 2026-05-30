@@ -818,13 +818,23 @@ export default function BookEditor() {
                     onClick={() => setStoryBibleOpen(true)}
                     aria-label={t("ui.story_bible.open", "Story-Bibel öffnen")}
                     title={t("ui.story_bible.open", "Story-Bibel öffnen")}
+                    // Vertically-centered right-edge tab — the "open the
+                    // right-side Story Bible panel" affordance. The
+                    // previous top:12/right:12 floated it over the editor
+                    // toolbar's right buttons (the Markdown toggle),
+                    // overlapping them; the toolbar flex-wraps on narrow
+                    // viewports so a fixed top-offset can't reliably clear
+                    // it. The edge tab never collides with the top toolbar.
                     style={{
                         position: "fixed",
-                        top: 12,
-                        right: 12,
+                        top: "50%",
+                        right: 0,
+                        transform: "translateY(-50%)",
                         zIndex: 100,
                         background: "var(--bg-card)",
-                        borderRadius: "var(--radius-sm)",
+                        border: "1px solid var(--border)",
+                        borderRight: "none",
+                        borderRadius: "var(--radius-sm) 0 0 var(--radius-sm)",
                         boxShadow: "var(--shadow-md)",
                     }}
                 >
