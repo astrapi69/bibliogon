@@ -315,32 +315,16 @@ export default function PdfExportControls({
                     testId={`${testidPrefix}-pdf-bleed-toggle`}
                 />
             ) : (
-                <label
-                    className={controlClassName}
-                    style={{
-                        display: "inline-flex",
-                        alignItems: "center",
-                        gap: 6,
-                    }}
-                    title={t(
+                <Toggle
+                    label={t("ui.page_editor.pdf_bleed_label", "Bleed marks")}
+                    checked={bleed}
+                    onChange={handleBleedChange}
+                    testId={`${testidPrefix}-pdf-bleed-toggle`}
+                    description={t(
                         "ui.page_editor.pdf_bleed_hint",
                         "Adds 3 mm bleed + crop marks for print-shop submission",
                     )}
-                >
-                    <input
-                        type="checkbox"
-                        checked={bleed}
-                        onChange={(e) => handleBleedChange(e.target.checked)}
-                        data-testid={`${testidPrefix}-pdf-bleed-toggle`}
-                        aria-label={t(
-                            "ui.page_editor.pdf_bleed_label",
-                            "Bleed marks",
-                        )}
-                    />
-                    <span>
-                        {t("ui.page_editor.pdf_bleed_label", "Bleed marks")}
-                    </span>
-                </label>
+                />
             )}
             <button
                 type="button"

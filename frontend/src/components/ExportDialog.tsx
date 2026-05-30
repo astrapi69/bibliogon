@@ -6,6 +6,7 @@ import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {RadixSelect} from "./RadixSelect";
+import {Toggle} from "./settings/Toggle";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -283,19 +284,16 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     {/* Manual TOC checkbox (not for project, audiobook) */}
                     {format !== "project" && format !== "audiobook" && hasManualToc && (
                         <div className="field" style={{marginTop: 8}}>
-                            <label style={{display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontSize: "0.875rem"}}>
-                                <input
-                                    type="checkbox"
-                                    checked={useManualToc}
-                                    onChange={(e) => setUseManualToc(e.target.checked)}
-                                />
-                                {t("ui.export_dialog.use_manual_toc", "Manuelles Inhaltsverzeichnis verwenden")}
-                            </label>
-                            <span style={{fontSize: "0.75rem", color: "var(--text-muted)", marginLeft: 26, display: "block"}}>
-                                {useManualToc
-                                    ? t("ui.export_dialog.manual_toc_hint", "Das vorhandene Inhaltsverzeichnis wird verwendet (kein automatisch generiertes).")
-                                    : t("ui.export_dialog.auto_toc_hint", "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert).")}
-                            </span>
+                            <Toggle
+                                label={t("ui.export_dialog.use_manual_toc", "Manuelles Inhaltsverzeichnis verwenden")}
+                                checked={useManualToc}
+                                onChange={setUseManualToc}
+                                description={
+                                    useManualToc
+                                        ? t("ui.export_dialog.manual_toc_hint", "Das vorhandene Inhaltsverzeichnis wird verwendet (kein automatisch generiertes).")
+                                        : t("ui.export_dialog.auto_toc_hint", "Ein Inhaltsverzeichnis wird automatisch generiert (das vorhandene wird ignoriert).")
+                                }
+                            />
                         </div>
                     )}
 
