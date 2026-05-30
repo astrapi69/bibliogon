@@ -972,6 +972,21 @@ body {
     background: var(--bg-hover);
 }
 
+/* Active/toggled state for icon buttons used as toolbar toggles
+ * (mark on/off, current heading level, current alignment). Shared
+ * by the picture-book RichTextToolbar and any future toolbar-toggle
+ * surface so the "pressed" look is identical across editors.
+ * 2026-05-30 component-consistency sweep (Session 2A). */
+.btn-icon.is-active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+}
+
+.btn-icon:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+}
+
 /* --- Sidebar button variants ---
  * The colored-sidebar (--bg-sidebar / --text-sidebar) parallel to
  * the .btn-icon / .btn system. They share the .btn sizing, radius

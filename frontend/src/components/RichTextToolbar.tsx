@@ -113,7 +113,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("bold")}
                 data-testid={`${testidNamespace}-bold`}
                 title={t("ui.page_editor.toolbar.bold", "Bold")}
-                className={`${styles.btn} ${isActive("bold") ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("bold") ? "is-active" : ""}`}
             >
                 <Bold size={14} />
             </button>
@@ -124,7 +124,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("italic")}
                 data-testid={`${testidNamespace}-italic`}
                 title={t("ui.page_editor.toolbar.italic", "Italic")}
-                className={`${styles.btn} ${isActive("italic") ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("italic") ? "is-active" : ""}`}
             >
                 <Italic size={14} />
             </button>
@@ -135,7 +135,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("underline")}
                 data-testid={`${testidNamespace}-underline`}
                 title={t("ui.page_editor.toolbar.underline", "Underline")}
-                className={`${styles.btn} ${isActive("underline") ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("underline") ? "is-active" : ""}`}
             >
                 <Underline size={14} />
             </button>
@@ -149,7 +149,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("heading", {level: 1})}
                 data-testid={`${testidNamespace}-h1`}
                 title={t("ui.page_editor.toolbar.h1", "Heading 1")}
-                className={`${styles.btn} ${isActive("heading", {level: 1}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("heading", {level: 1}) ? "is-active" : ""}`}
             >
                 <Heading1 size={14} />
             </button>
@@ -160,7 +160,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("heading", {level: 2})}
                 data-testid={`${testidNamespace}-h2`}
                 title={t("ui.page_editor.toolbar.h2", "Heading 2")}
-                className={`${styles.btn} ${isActive("heading", {level: 2}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("heading", {level: 2}) ? "is-active" : ""}`}
             >
                 <Heading2 size={14} />
             </button>
@@ -171,7 +171,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("heading", {level: 3})}
                 data-testid={`${testidNamespace}-h3`}
                 title={t("ui.page_editor.toolbar.h3", "Heading 3")}
-                className={`${styles.btn} ${isActive("heading", {level: 3}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("heading", {level: 3}) ? "is-active" : ""}`}
             >
                 <Heading3 size={14} />
             </button>
@@ -185,7 +185,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("bulletList")}
                 data-testid={`${testidNamespace}-bullet-list`}
                 title={t("ui.page_editor.toolbar.bullet_list", "Bullet list")}
-                className={`${styles.btn} ${isActive("bulletList") ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("bulletList") ? "is-active" : ""}`}
             >
                 <List size={14} />
             </button>
@@ -196,7 +196,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive("orderedList")}
                 data-testid={`${testidNamespace}-ordered-list`}
                 title={t("ui.page_editor.toolbar.ordered_list", "Ordered list")}
-                className={`${styles.btn} ${isActive("orderedList") ? styles.btnActive : ""}`}
+                className={`btn-icon ${isActive("orderedList") ? "is-active" : ""}`}
             >
                 <ListOrdered size={14} />
             </button>
@@ -210,7 +210,7 @@ export default function RichTextToolbar({
                 aria-pressed={isActive({textAlign: "left"} as never)}
                 data-testid={`${testidNamespace}-align-left`}
                 title={t("ui.page_editor.toolbar.align_left", "Align left")}
-                className={`${styles.btn} ${editor.isActive({textAlign: "left"}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${editor.isActive({textAlign: "left"}) ? "is-active" : ""}`}
             >
                 <AlignLeft size={14} />
             </button>
@@ -221,7 +221,7 @@ export default function RichTextToolbar({
                 aria-pressed={editor.isActive({textAlign: "center"})}
                 data-testid={`${testidNamespace}-align-center`}
                 title={t("ui.page_editor.toolbar.align_center", "Align center")}
-                className={`${styles.btn} ${editor.isActive({textAlign: "center"}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${editor.isActive({textAlign: "center"}) ? "is-active" : ""}`}
             >
                 <AlignCenter size={14} />
             </button>
@@ -232,7 +232,7 @@ export default function RichTextToolbar({
                 aria-pressed={editor.isActive({textAlign: "right"})}
                 data-testid={`${testidNamespace}-align-right`}
                 title={t("ui.page_editor.toolbar.align_right", "Align right")}
-                className={`${styles.btn} ${editor.isActive({textAlign: "right"}) ? styles.btnActive : ""}`}
+                className={`btn-icon ${editor.isActive({textAlign: "right"}) ? "is-active" : ""}`}
             >
                 <AlignRight size={14} />
             </button>
