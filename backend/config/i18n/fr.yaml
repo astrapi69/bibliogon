@@ -16,6 +16,8 @@ ui:
     close: "Close Story Bible"
     open: "Open Story Bible"
     sidebar_button: "Story Bible"
+    export: "Exporter la Story Bible"
+    export_error: "Echec de l'export."
     appearances: "Apparitions"
     no_appearances: "Aucune apparition. Glissez cette entree sur une page du Storyboard."
     appearance_page: "Page"

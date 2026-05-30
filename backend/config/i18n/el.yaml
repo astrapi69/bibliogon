@@ -16,6 +16,8 @@ ui:
     close: "Close Story Bible"
     open: "Open Story Bible"
     sidebar_button: "Story Bible"
+    export: "Εξαγωγή Story Bible"
+    export_error: "Η εξαγωγή απέτυχε."
     appearances: "Εμφανίσεις"
     no_appearances: "Καμία εμφάνιση ακόμη. Σύρετε αυτήν την καταχώριση σε μια σελίδα στο Storyboard."
     appearance_page: "Σελίδα"

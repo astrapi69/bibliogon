@@ -26,6 +26,7 @@ const mockListTypes = vi.fn();
 const mockListEntities = vi.fn();
 const mockCreate = vi.fn();
 const mockDelete = vi.fn();
+const mockExportBible = vi.fn();
 
 vi.mock("../api/client", async () => {
     const actual =
@@ -38,6 +39,7 @@ vi.mock("../api/client", async () => {
                 listEntities: (...a: unknown[]) => mockListEntities(...a),
                 createEntity: (...a: unknown[]) => mockCreate(...a),
                 deleteEntity: (...a: unknown[]) => mockDelete(...a),
+                exportBible: (...a: unknown[]) => mockExportBible(...a),
             },
         },
     };
@@ -98,6 +100,12 @@ beforeEach(() => {
     mockConfirm.mockReset();
     mockConfirm.mockResolvedValue(true);
     mockNotifyError.mockReset();
+    mockExportBible.mockReset();
+    mockExportBible.mockResolvedValue({
+        filename: "story-bible-b.md",
+        content: "# Story Bible: B",
+        format: "markdown",
+    });
 });
 
 describe("StoryBibleSidebar", () => {
@@ -174,5 +182,21 @@ describe("StoryBibleSidebar", () => {
         expect(onSelectEntity).toHaveBeenCalledWith(
             expect.objectContaining({id: "c1", name: "Alice"}),
         );
+    });
+
+    it("exports the Story Bible as a Markdown download", async () => {
+        const createObjectURL = vi.fn(() => "blob:x");
+        const revokeObjectURL = vi.fn();
+        vi.stubGlobal("URL", {...URL, createObjectURL, revokeObjectURL});
+        render(
+            <StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />,
+        );
+        const exportBtn = await screen.findByTestId("story-bible-export");
+        fireEvent.click(exportBtn);
+        await waitFor(() => {
+            expect(mockExportBible).toHaveBeenCalledWith("b1");
+        });
+        expect(createObjectURL).toHaveBeenCalled();
+        vi.unstubAllGlobals();
     });
 });

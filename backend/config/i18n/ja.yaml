@@ -16,6 +16,8 @@ ui:
     close: "Close Story Bible"
     open: "Open Story Bible"
     sidebar_button: "Story Bible"
+    export: "ストーリーバイブルをエクスポート"
+    export_error: "エクスポートに失敗しました。"
     appearances: "登場"
     no_appearances: "まだ登場がありません。ストーリーボードでこの項目をページにドラッグしてください。"
     appearance_page: "ページ"

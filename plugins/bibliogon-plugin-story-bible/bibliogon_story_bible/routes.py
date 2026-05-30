@@ -38,11 +38,13 @@ def _include_crud_router() -> None:
     try:
         from .continuity import router as continuity_router
         from .entities import router as entities_router
+        from .export import router as export_router
         from .links import router as links_router
 
         router.include_router(entities_router)
         router.include_router(links_router)
         router.include_router(continuity_router)
+        router.include_router(export_router)
     except ImportError:
         pass
 

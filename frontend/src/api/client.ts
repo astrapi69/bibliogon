@@ -4301,6 +4301,12 @@ export const api = {
       request<ContinuityWarning[]>(
         `/story-bible/books/${bookId}/continuity-check`,
       ),
+
+    /** Export the Story Bible as a downloadable Markdown payload (C12). */
+    exportBible: (bookId: string) =>
+      request<{ filename: string; content: string; format: string }>(
+        `/story-bible/books/${bookId}/export`,
+      ),
   },
 
   /** About-Dialog backend client. Single cohesive payload — app

@@ -16,6 +16,8 @@ ui:
     close: "Close Story Bible"
     open: "Open Story Bible"
     sidebar_button: "Story Bible"
+    export: "Story Bible'i disa aktar"
+    export_error: "Disa aktarma basarisiz."
     appearances: "Gorunumler"
     no_appearances: "Henuz gorunum yok. Bu ogeyi Storyboard'da bir sayfaya surukleyin."
     appearance_page: "Sayfa"

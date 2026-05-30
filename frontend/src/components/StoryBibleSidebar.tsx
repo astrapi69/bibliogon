@@ -17,7 +17,7 @@
  */
 
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {ChevronDown, ChevronRight, Plus, Trash2, X} from "lucide-react";
+import {ChevronDown, ChevronRight, Download, Plus, Trash2, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
 import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
@@ -175,6 +175,27 @@ export default function StoryBibleSidebar({
 
     const totalEntities = entities.length;
 
+    // C12: export the Story Bible as a downloadable Markdown file.
+    const handleExport = async () => {
+        try {
+            const {filename, content} = await api.storyBible.exportBible(bookId);
+            const blob = new Blob([content], {type: "text/markdown"});
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+        } catch (err) {
+            notify.error(
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.story_bible.export_error", "Export fehlgeschlagen."),
+                err,
+            );
+        }
+    };
+
     return (
         <aside
             className={styles.sidebar}
@@ -185,6 +206,16 @@ export default function StoryBibleSidebar({
                 <h2 className={styles.title}>
                     {t("ui.story_bible.title", "Story-Bibel")}
                 </h2>
+                <button
+                    type="button"
+                    className="btn-sidebar-icon"
+                    onClick={() => void handleExport()}
+                    data-testid="story-bible-export"
+                    aria-label={t("ui.story_bible.export", "Story-Bibel exportieren")}
+                    title={t("ui.story_bible.export", "Story-Bibel exportieren")}
+                >
+                    <Download size={16} />
+                </button>
                 <button
                     type="button"
                     className="btn-sidebar-icon"
