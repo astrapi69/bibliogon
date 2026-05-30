@@ -206,6 +206,36 @@ A broader `RECURRING-COMPONENT-AUDIT-01` (filed alongside this rule) sweeps the 
 
 The general system prompt rule "Don't add features, refactor, or introduce abstractions beyond what the task requires" still applies — but ONLY when there are zero existing usage-sites. The Recurring-Component Unification Rule fires when there ARE existing sites; in that case the "use what already exists" principle takes precedence over the "don't add abstractions" principle. The abstraction isn't speculative when 2+ concrete instances drive the API.
 
+## CSS-first for visual consistency
+
+Filed 2026-05-30 from the component-consistency sweep. **Visual consistency is a CSS concern, solved with global classes + tokens — not re-implemented per component.**
+
+When a control or surface needs a look (button, select, input, checkbox, slider, badge/status-pill, card), the source of truth is, in order:
+
+1. A **global class** in `frontend/src/styles/global.css` (`.btn*`, `.input`, `.slider`, `.radix-select-trigger`, `.badge*`, `.card*`) keyed off CSS custom-property tokens.
+2. A **shared component** that renders those classes (`Toggle`, `RadixSelect`, `Badge`, `AppDialog`, …).
+3. A **thin per-component supplement** (CSS-module class) for layout-only deltas the global class can't own (flex direction, fixed width, hover-reveal, grid placement).
+
+What this rule forbids:
+
+- **Re-declaring a shared surface in a CSS-module.** A module `.card` that sets `background/border/radius/shadow`, or a module `.btn`/`.select`/`.input` that re-states the global look, is duplication. Use the global class; keep only the layout delta in the module.
+- **Inline `style={{}}` for anything themable** (color, background, border, radius, padding-that-matches-a-token). Inline styles bypass the theme system, can't be audited by `make verify-theme`, and drift per surface. Inline `style` is acceptable ONLY for genuinely dynamic/computed values (a drag-positioned `transform`, a data-driven `width: ${pct}%`, an image `background-image: url(...)`).
+- **Hardcoded hex / rgb** (even as a `var(--token, #fallback)` fallback) in component CSS or inline styles. Reference the token bare; if the token doesn't exist, add it to every variant, don't fall back to hex. The data-color exemptions (storyboard mood presets, comic-bubble convention defaults) are allowlisted in `scripts/check_hardcoded_colors.py`.
+
+Why CSS-first (not "fix the colors per component"):
+
+- One global class changes all consumers at once; per-component overrides drift the moment two surfaces are edited separately.
+- `make verify-theme` can only audit tokens + global classes — inline styles and hex fallbacks are invisible to it, so they're where dark-mode/contrast regressions hide.
+- The accent-color one-liner (`input[type="checkbox"] { accent-color: var(--accent) }`) themed 52 checkboxes at once; the equivalent per-component fix would have been 52 edits that drift.
+
+How to apply when changing a visual:
+
+1. Is there a global class for this surface? Use it.
+2. No global class but the pattern appears on 2+ surfaces? Add the global class / shared component first (per the Recurring-Component Unification Rule), then apply.
+3. Truly one-off and non-themable? A thin module class is fine. Inline `style` only for computed values.
+
+This rule is the visual-layer counterpart of the Recurring-Component Unification Rule: that one unifies component *shape*; this one unifies component *look*.
+
 ## Boy Scout Rule
 
 - Leave code cleaner than you found it. Small improvements on every change.

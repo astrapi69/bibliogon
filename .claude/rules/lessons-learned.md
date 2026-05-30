@@ -4878,3 +4878,48 @@ playwright), capture the real exit code:
 
 Never declare a gate green on the strength of a `| tail`-piped run
 alone. The cost is a released tag built on a failed gate.
+
+## CSS-first beats per-component fixes for visual consistency
+
+Surfaced 2026-05-30 from the full component-consistency sweep
+(~40 commits unifying buttons / selects / inputs / checkboxes /
+sliders / badges / cards). The recurring finding: every "the
+same control looks different on screen X vs Y" bug traced back
+to the look being **re-implemented per component** — a CSS-module
+`.card`/`.btn`/`.select` re-declaring the shared surface, an
+inline `style={{background, color, padding}}`, or a
+`var(--token, #hex)` fallback — instead of a single global class
+keyed off tokens.
+
+Concrete proof points from the sweep:
+
+- A one-line `input[type="checkbox"] { accent-color: var(--accent) }`
+  themed **all 52 checkboxes** at once. The per-component
+  alternative was 52 inline `accentColor` edits that would drift
+  the next time any two were touched separately.
+- The audit over-counted "inconsistent" buttons/selects/inputs by
+  ~3x: most "duplicates" were actually thin layout supplements on
+  top of an already-global class (fine), OR genuine re-declarations
+  of the shared look (the real bug). The classifier that mattered
+  was "does this CSS-module class re-state background/border/
+  radius/color, or only layout?" — re-stated surface = duplication.
+- `verify-theme` (token completeness + 96 WCAG contrast checks +
+  hardcoded-hex lint) can only see tokens + global classes. Every
+  dark-mode/contrast regression the sweep fixed hid in an inline
+  `style` or a hex fallback — exactly the places the gate is
+  blind to. So inline-style/hex aren't just drift risk; they're
+  where the *un-auditable* bugs live.
+
+The discipline (now `coding-standards.md` "CSS-first for visual
+consistency"): a control's look comes from a global class
+(`.btn*`/`.input`/`.slider`/`.radix-select-trigger`/`.badge*`/
+`.card*`) or a shared component, with only layout deltas in a
+CSS-module supplement. Inline `style` is for computed/dynamic
+values only (drag transforms, `width: ${pct}%`, image URLs).
+Hardcoded hex — even as a `var(--token, #fallback)` — is
+forbidden outside the allowlisted data-color exemptions.
+
+Pairs with: the "Periodic theme-token completeness audit" rule
+(the gate this discipline keeps effective) and the
+Recurring-Component-Unification Rule in `coding-standards.md`
+(shape-level unification; this is the look-level counterpart).
