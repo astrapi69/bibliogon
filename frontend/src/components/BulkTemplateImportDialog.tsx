@@ -2,6 +2,7 @@ import {useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
+import {Toggle} from "./settings/Toggle"
 import {notify} from "../utils/notify"
 import {api, ApiError, type BulkAiTemplateImportResult} from "../api/client"
 import TemplateImportDropZone, {
@@ -152,28 +153,19 @@ export default function BulkTemplateImportDialog({
                             borderRadius: 6,
                         }}
                     >
-                        <label style={{display: "flex", alignItems: "center", gap: 8}}>
-                            <input
-                                type="checkbox"
-                                checked={force}
-                                onChange={(e) => setForce(e.target.checked)}
-                                data-testid="bulk-template-import-force"
-                            />
-                            <span>
-                                <div>
-                                    {t(
-                                        "ui.ai_template.bulk_import.force",
-                                        "Overwrite existing values",
-                                    )}
-                                </div>
-                                <div style={{fontSize: "0.75rem", color: "var(--text-muted, #6b7280)"}}>
-                                    {t(
-                                        "ui.ai_template.bulk_import.force_hint",
-                                        "Without this, populated fields on each target stay unchanged.",
-                                    )}
-                                </div>
-                            </span>
-                        </label>
+                        <Toggle
+                            checked={force}
+                            onChange={setForce}
+                            testId="bulk-template-import-force"
+                            label={t(
+                                "ui.ai_template.bulk_import.force",
+                                "Overwrite existing values",
+                            )}
+                            description={t(
+                                "ui.ai_template.bulk_import.force_hint",
+                                "Without this, populated fields on each target stay unchanged.",
+                            )}
+                        />
                     </div>
                     <div className="dialog-footer" style={{marginTop: 16}}>
                         <button

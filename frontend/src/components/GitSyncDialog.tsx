@@ -18,6 +18,7 @@ import {
     GitSyncUnifiedCommitResult,
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { Toggle } from "./settings/Toggle";
 import { notify } from "../utils/notify";
 
 /**
@@ -628,24 +629,14 @@ function CommitForm({
                     data-testid="git-sync-message"
                 />
             </div>
-            <label
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 6,
-                    marginTop: 8,
-                    fontSize: "0.8125rem",
-                    cursor: "pointer",
-                }}
-            >
-                <input
-                    type="checkbox"
+            <div style={{ marginTop: 8 }}>
+                <Toggle
                     checked={push}
-                    onChange={(e) => onPushChange(e.target.checked)}
-                    data-testid="git-sync-push-toggle"
+                    onChange={onPushChange}
+                    testId="git-sync-push-toggle"
+                    label={t("ui.git_sync.push_toggle", "Push ins Remote")}
                 />
-                {t("ui.git_sync.push_toggle", "Push ins Remote")}
-            </label>
+            </div>
             <div className="dialog-footer">
                 <button
                     type="button"
