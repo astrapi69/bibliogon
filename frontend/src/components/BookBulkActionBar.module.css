@@ -12,14 +12,6 @@
     margin-right: 4px;
 }
 
-.select {
-    padding: 6px 10px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    background: var(--bg-card);
-    color: var(--text-primary);
-}
-
 .spacer {
     flex: 1;
 }

@@ -21,6 +21,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import {BookOpen, ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import BulkActionBar from "../BulkActionBar"
+import {RadixSelect} from "../RadixSelect"
 import styles from "./ArticleBulkActionBar.module.css"
 
 export type BulkExportFormat = "markdown" | "html" | "pdf" | "docx"
@@ -113,18 +114,20 @@ export default function ArticleBulkActionBar({
             clearTestId="article-bulk-clear"
         >
             <span className={styles.label}>{t("ui.articles.bulk.format_label", "Format")}</span>
-            <select
-                data-testid="article-bulk-format"
-                className={styles.select}
+            <RadixSelect
+                testId="article-bulk-format"
+                className="is-narrow"
                 value={format}
-                onChange={(e) => setFormat(e.target.value as BulkExportFormat)}
+                onValueChange={(next) => setFormat(next as BulkExportFormat)}
                 disabled={disabled}
-            >
-                <option value="markdown">Markdown</option>
-                <option value="html">HTML</option>
-                <option value="pdf">PDF</option>
-                <option value="docx">DOCX</option>
-            </select>
+                ariaLabel={t("ui.articles.bulk.format_label", "Format")}
+                options={[
+                    {value: "markdown", label: "Markdown"},
+                    {value: "html", label: "HTML"},
+                    {value: "pdf", label: "PDF"},
+                    {value: "docx", label: "DOCX"},
+                ]}
+            />
 
             <span className={styles.label}>{t("ui.articles.bulk.mode_label", "Output")}</span>
             <div className={styles.modeGroup} role="group">

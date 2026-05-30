@@ -16,6 +16,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
 import {ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import BulkActionBar from "./BulkActionBar"
+import {RadixSelect} from "./RadixSelect"
 import styles from "./BookBulkActionBar.module.css"
 
 export type BookBulkExportFormat = "epub" | "pdf" | "docx"
@@ -89,17 +90,21 @@ export default function BookBulkActionBar({
             <span className={styles.label}>
                 {t("ui.dashboard.bulk.format_label", "Format")}
             </span>
-            <select
-                data-testid="book-bulk-format"
-                className={styles.select}
+            <RadixSelect
+                testId="book-bulk-format"
+                className="is-narrow"
                 value={format}
-                onChange={(e) => setFormat(e.target.value as BookBulkExportFormat)}
+                onValueChange={(next) =>
+                    setFormat(next as BookBulkExportFormat)
+                }
                 disabled={disabled}
-            >
-                <option value="epub">EPUB</option>
-                <option value="pdf">PDF</option>
-                <option value="docx">DOCX</option>
-            </select>
+                ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
+                options={[
+                    {value: "epub", label: "EPUB"},
+                    {value: "pdf", label: "PDF"},
+                    {value: "docx", label: "DOCX"},
+                ]}
+            />
 
             <div className={styles.spacer} />
 

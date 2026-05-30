@@ -63,7 +63,7 @@ describe("BookBulkActionBar", () => {
                 t={t}
             />,
         )
-        fireEvent.change(screen.getByTestId("book-bulk-format"), {
+        fireEvent.change(screen.getByTestId("book-bulk-format-trigger"), {
             target: {value: "pdf"},
         })
         fireEvent.click(screen.getByTestId("book-bulk-export"))

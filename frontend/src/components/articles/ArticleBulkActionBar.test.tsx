@@ -64,7 +64,7 @@ describe("ArticleBulkActionBar", () => {
         )
         // Switch to combined + pdf, then click Export.
         fireEvent.click(screen.getByTestId("article-bulk-mode-combined"))
-        fireEvent.change(screen.getByTestId("article-bulk-format"), {
+        fireEvent.change(screen.getByTestId("article-bulk-format-trigger"), {
             target: {value: "pdf"},
         })
         fireEvent.click(screen.getByTestId("article-bulk-export"))
