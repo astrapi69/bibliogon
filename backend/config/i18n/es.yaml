@@ -15,6 +15,7 @@ ui:
     title: "Story Bible"
     close: "Close Story Bible"
     open: "Open Story Bible"
+    sidebar_button: "Story Bible"
     loading: "Loading…"
     load_error: "Failed to load the Story Bible."
     create_error: "Could not create the entry."

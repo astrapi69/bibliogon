@@ -688,6 +688,8 @@ export default function BookEditor() {
                 onGitSync={() => setShowGitSync(true)}
                 gitSyncMapped={gitSyncMapped}
                 onMetadata={() => { setSelectedStoryEntityId(null); _setShowMetadata(true); }}
+                onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
+                storyBibleActive={storyBibleOpen}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
@@ -810,37 +812,10 @@ export default function BookEditor() {
                     refreshKey={storyBibleRefreshKey}
                 />
             )}
-            {storyBibleAvailable && !storyBibleOpen && (
-                <button
-                    type="button"
-                    className="btn-icon"
-                    data-testid="story-bible-toggle"
-                    onClick={() => setStoryBibleOpen(true)}
-                    aria-label={t("ui.story_bible.open", "Story-Bibel öffnen")}
-                    title={t("ui.story_bible.open", "Story-Bibel öffnen")}
-                    // Vertically-centered right-edge tab — the "open the
-                    // right-side Story Bible panel" affordance. The
-                    // previous top:12/right:12 floated it over the editor
-                    // toolbar's right buttons (the Markdown toggle),
-                    // overlapping them; the toolbar flex-wraps on narrow
-                    // viewports so a fixed top-offset can't reliably clear
-                    // it. The edge tab never collides with the top toolbar.
-                    style={{
-                        position: "fixed",
-                        top: "50%",
-                        right: 0,
-                        transform: "translateY(-50%)",
-                        zIndex: 100,
-                        background: "var(--bg-card)",
-                        border: "1px solid var(--border)",
-                        borderRight: "none",
-                        borderRadius: "var(--radius-sm) 0 0 var(--radius-sm)",
-                        boxShadow: "var(--shadow-md)",
-                    }}
-                >
-                    <BookOpen size={20} />
-                </button>
-            )}
+            {/* Story Bible toggle now lives in the ChapterSidebar
+                Actions footer (alongside Metadaten) via onStoryBible -
+                see BOOK-EDITOR-STORY-BIBLE-BUTTON-01. The old
+                free-floating right-edge tab was not UX-conformant. */}
 
             {bookId && (
                 <ExportDialog

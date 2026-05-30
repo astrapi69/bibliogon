@@ -3,6 +3,7 @@ ui:
     title: "Story-Bibel"
     close: "Story-Bibel schließen"
     open: "Story-Bibel öffnen"
+    sidebar_button: "Story-Bibel"
     loading: "Lädt…"
     load_error: "Story-Bibel konnte nicht geladen werden."
     create_error: "Anlegen fehlgeschlagen."

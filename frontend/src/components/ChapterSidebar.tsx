@@ -15,6 +15,7 @@ import {
     BookmarkPlus,
     History,
     GitBranch,
+    BookOpen,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -52,6 +53,13 @@ interface Props {
     onExport: () => void;
     onReorder: (chapterIds: string[]) => void;
     onMetadata: () => void;
+    /** Opens the Story Bible side panel (plugin-story-bible). When
+     *  provided (plugin active), the Actions footer shows a
+     *  "Story-Bibel" button alongside Metadaten — replacing the old
+     *  free-floating right-edge tab. Undef -> button hidden. */
+    onStoryBible?: () => void;
+    /** True while the Story Bible panel is open (active styling). */
+    storyBibleActive?: boolean;
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
     onAddFromTemplate?: () => void;
@@ -322,6 +330,8 @@ export default function ChapterSidebar({
                                            onExport,
                                            onReorder,
                                            onMetadata,
+                                           onStoryBible,
+                                           storyBibleActive,
                                            onValidateToc,
                                            onSaveAsTemplate,
                                            onAddFromTemplate,
@@ -575,6 +585,17 @@ export default function ChapterSidebar({
                 >
                     <FileText size={14}/> {t("ui.sidebar.metadata", "Metadaten")}
                 </button>
+                {onStoryBible && (
+                    <button
+                        className={`btn-sidebar-block ${storyBibleActive ? "is-active" : ""}`}
+                        style={{marginBottom: 6}}
+                        onClick={onStoryBible}
+                        data-testid="story-bible-toggle"
+                        title={t("ui.story_bible.open", "Story-Bibel öffnen")}
+                    >
+                        <BookOpen size={14}/> {t("ui.story_bible.sidebar_button", "Story-Bibel")}
+                    </button>
+                )}
                 {onGitBackup && (
                     <button
                         className="btn-sidebar-block"

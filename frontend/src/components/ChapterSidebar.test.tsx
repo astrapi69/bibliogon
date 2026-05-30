@@ -19,7 +19,7 @@
 
 import React from "react";
 import {describe, it, expect, vi} from "vitest";
-import {render, screen} from "@testing-library/react";
+import {render, screen, fireEvent} from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -69,6 +69,46 @@ function renderSidebar(chapters: Chapter[] = [makeChapter()]) {
         />,
     );
 }
+
+describe("ChapterSidebar - Story Bible action button (BOOK-EDITOR-STORY-BIBLE-BUTTON-01)", () => {
+    function renderWithStoryBible(onStoryBible?: () => void) {
+        return render(
+            <ChapterSidebar
+                bookTitle="Test Book"
+                chapters={[makeChapter()]}
+                activeChapterId={null}
+                onSelect={vi.fn()}
+                onAdd={vi.fn()}
+                onDelete={vi.fn()}
+                onRename={vi.fn()}
+                onBack={vi.fn()}
+                onExport={vi.fn()}
+                onReorder={vi.fn()}
+                onMetadata={vi.fn()}
+                onStoryBible={onStoryBible}
+                showMetadata={false}
+                hasToc={false}
+            />,
+        );
+    }
+
+    it("renders the Story-Bibel button in the Actions footer when onStoryBible is provided", () => {
+        renderWithStoryBible(vi.fn());
+        expect(screen.getByTestId("story-bible-toggle")).toBeTruthy();
+    });
+
+    it("hides the Story-Bibel button when onStoryBible is omitted (plugin inactive)", () => {
+        renderWithStoryBible(undefined);
+        expect(screen.queryByTestId("story-bible-toggle")).toBeNull();
+    });
+
+    it("calls onStoryBible when the button is clicked", () => {
+        const onStoryBible = vi.fn();
+        renderWithStoryBible(onStoryBible);
+        fireEvent.click(screen.getByTestId("story-bible-toggle"));
+        expect(onStoryBible).toHaveBeenCalledTimes(1);
+    });
+});
 
 describe("ChapterSidebar - flexbox scroll container", () => {
     it("renders the list container with the data-testid", () => {
