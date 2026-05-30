@@ -14,6 +14,8 @@ import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
+import {Badge} from "./Badge";
+import {publicationStatusVariant} from "../utils/publicationStatusBadge";
 import styles from "./BookListView.module.css";
 
 interface Props {
@@ -177,18 +179,17 @@ function BookListRow({
                  *  pattern. Reuses ``ui.articles.status_*``
                  *  i18n keys (the labels are identical between
                  *  the two surfaces). */}
-                <span
-                    data-testid={`book-list-row-status-${book.id}`}
-                    style={{ marginRight: 6, fontSize: 11, opacity: 0.8 }}
+                <Badge
+                    testId={`book-list-row-status-${book.id}`}
+                    variant={publicationStatusVariant(book.status ?? "draft")}
+                    size="sm"
+                    style={{ marginRight: 6 }}
                 >
-                    {(() => {
-                        const status = book.status ?? "draft";
-                        return t(
-                            `ui.articles.status_${status}`,
-                            status,
-                        );
-                    })()}
-                </span>
+                    {t(
+                        `ui.articles.status_${book.status ?? "draft"}`,
+                        book.status ?? "draft",
+                    )}
+                </Badge>
                 {book.language.toUpperCase()}
             </div>
             <div role="cell" className={styles.colDate}>

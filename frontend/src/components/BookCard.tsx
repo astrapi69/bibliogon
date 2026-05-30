@@ -5,6 +5,8 @@ import {Trash2, Clock, MoreVertical, AlertTriangle} from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import {formatLocaleDate} from "../utils/formatDate";
+import {Badge} from "./Badge";
+import {publicationStatusVariant} from "../utils/publicationStatusBadge";
 import styles from "./BookCard.module.css";
 
 interface Props {
@@ -77,18 +79,16 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                      *  + reuses the existing ``ui.articles.status_*``
                      *  i18n keys — the labels are identical between
                      *  the two surfaces. */}
-                    <span
-                        data-testid={`book-card-status-${book.id}`}
-                        className={styles.lang}
+                    <Badge
+                        testId={`book-card-status-${book.id}`}
+                        variant={publicationStatusVariant(book.status ?? "draft")}
+                        size="sm"
                     >
-                        {(() => {
-                            const status = book.status ?? "draft";
-                            return t(
-                                `ui.articles.status_${status}`,
-                                status,
-                            );
-                        })()}
-                    </span>
+                        {t(
+                            `ui.articles.status_${book.status ?? "draft"}`,
+                            book.status ?? "draft",
+                        )}
+                    </Badge>
                     <span className={styles.date}>
                         <Clock size={12}/>
                         {updated}

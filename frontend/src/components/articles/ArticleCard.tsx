@@ -14,6 +14,8 @@ import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
 import ContentTypeBadge from "./ContentTypeBadge";
+import {Badge} from "../Badge";
+import {publicationStatusVariant} from "../../utils/publicationStatusBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -97,9 +99,13 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                         testId={`article-card-type-${article.id}`}
                         className={styles.status}
                     />
-                    <span data-testid={`article-card-status-${article.id}`} className={styles.status}>
+                    <Badge
+                        testId={`article-card-status-${article.id}`}
+                        variant={publicationStatusVariant(article.status)}
+                        size="sm"
+                    >
                         {t(`ui.articles.status_${article.status}`, article.status)}
-                    </span>
+                    </Badge>
                     <span className={styles.lang}>{(article.language || "??").toUpperCase()}</span>
                     <span className={styles.date}>
                         <Clock size={12} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />

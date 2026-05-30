@@ -29,7 +29,7 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-import { api, ApiError, Article, ArticleStatus, ContentType, BookDetail } from "../api/client";
+import { api, ApiError, Article, ContentType, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { useContentTypes } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
@@ -39,6 +39,8 @@ import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
 import ContentTypeBadge from "../components/articles/ContentTypeBadge";
 import CommentsCountBadge from "../components/articles/CommentsCountBadge";
+import {Badge} from "../components/Badge";
+import {publicationStatusVariant} from "../utils/publicationStatusBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
     type BulkExportMode,
@@ -1546,16 +1548,13 @@ function ArticleRow({
                     className={layout.statusBadge}
                     style={{marginRight: 6}}
                 />
-                <span
-                    data-testid={`article-list-row-status-${article.id}`}
-                    className={layout.statusBadge}
-                    style={{
-                        background: badgeBg(article.status),
-                        color: badgeFg(article.status),
-                    }}
+                <Badge
+                    testId={`article-list-row-status-${article.id}`}
+                    variant={publicationStatusVariant(article.status)}
+                    size="sm"
                 >
                     {t(`ui.articles.status_${article.status}`, article.status)}
-                </span>
+                </Badge>
             </div>
             <div className={layout.gridCellLang}>
                 {(article.language || "??").toUpperCase()}
@@ -1621,24 +1620,3 @@ function ArticleRow({
     );
 }
 
-function badgeBg(status: ArticleStatus): string {
-    switch (status) {
-        case "published":
-            return "var(--success-light, #dcfce7)";
-        case "archived":
-            return "var(--bg-card)";
-        default:
-            return "var(--bg-card)";
-    }
-}
-
-function badgeFg(status: ArticleStatus): string {
-    switch (status) {
-        case "published":
-            return "var(--success, #166534)";
-        case "archived":
-            return "var(--text-muted)";
-        default:
-            return "var(--text-secondary)";
-    }
-}
