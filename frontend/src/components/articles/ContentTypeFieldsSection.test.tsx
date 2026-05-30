@@ -132,7 +132,7 @@ describe("ContentTypeFieldsSection — empty cases", () => {
 describe("ContentTypeFieldsSection — tutorial fields", () => {
     it("renders all 3 tutorial fields", () => {
         renderSection("tutorial");
-        expect(screen.getByTestId("article-type-field-difficulty_level")).toBeTruthy();
+        expect(screen.getByTestId("article-type-field-difficulty_level-trigger")).toBeTruthy();
         expect(screen.getByTestId("article-type-field-prerequisites")).toBeTruthy();
         expect(
             screen.getByTestId("article-type-field-estimated_duration_minutes"),
@@ -142,7 +142,7 @@ describe("ContentTypeFieldsSection — tutorial fields", () => {
     it("difficulty_level renders as a select with the 3 enum values", () => {
         renderSection("tutorial", {difficulty_level: "beginner"});
         const select = screen.getByTestId(
-            "article-type-field-difficulty_level",
+            "article-type-field-difficulty_level-trigger",
         ) as HTMLSelectElement;
         expect(select.tagName).toBe("SELECT");
         expect(select.value).toBe("beginner");
@@ -228,7 +228,7 @@ describe("ContentTypeFieldsSection — onChange", () => {
         const onChange = vi.fn();
         renderSection("tutorial", {}, onChange);
         const select = screen.getByTestId(
-            "article-type-field-difficulty_level",
+            "article-type-field-difficulty_level-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, {target: {value: "advanced"}});
         expect(onChange).toHaveBeenCalledWith("tutorial", {

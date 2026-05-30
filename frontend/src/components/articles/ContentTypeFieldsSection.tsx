@@ -21,6 +21,7 @@ import {useCallback, type ChangeEvent} from "react";
 import type {ContentType, ContentTypeExtraField} from "../../api/client";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {useI18n} from "../../hooks/useI18n";
+import {RadixSelect} from "../RadixSelect";
 
 interface ContentTypeFieldsSectionProps {
     contentType: string;
@@ -141,21 +142,19 @@ function FieldInput({field, value, onChange, disabled}: FieldInputProps) {
                 />
             )}
             {field.type === "enum" && (
-                <select
+                <RadixSelect
                     id={inputId}
-                    className="form-input"
+                    className="is-block"
                     value={typeof value === "string" ? value : ""}
-                    onChange={(e) => onChange(e.target.value || null)}
+                    onValueChange={(next) => onChange(next || null)}
                     disabled={disabled}
-                    data-testid={testId}
-                >
-                    <option value="">—</option>
-                    {(field.values ?? []).map((v) => (
-                        <option key={v} value={v}>
-                            {v}
-                        </option>
-                    ))}
-                </select>
+                    testId={testId}
+                    allOption={{label: "—"}}
+                    options={(field.values ?? []).map((v) => ({
+                        value: v,
+                        label: v,
+                    }))}
+                />
             )}
             {field.type === "date" && (
                 <input

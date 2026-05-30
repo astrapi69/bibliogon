@@ -1331,6 +1331,13 @@ body {
     padding: 4px 8px;
 }
 
+/* Full-width trigger for form fields (metadata editors, wizards,
+ * modal forms) where the select should fill its column like an
+ * .input. 2026-05-30 component-consistency sweep (Session 2B). */
+.radix-select-trigger.is-block {
+    width: 100%;
+}
+
 .radix-select-content {
     background: var(--bg-card);
     border: 1px solid var(--border);

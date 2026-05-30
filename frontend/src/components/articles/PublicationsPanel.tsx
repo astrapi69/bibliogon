@@ -25,6 +25,7 @@ import {
 } from "../../api/client";
 import { useDialog } from "../AppDialog";
 import { useI18n } from "../../hooks/useI18n";
+import {RadixSelect} from "../RadixSelect";
 import { notify } from "../../utils/notify";
 
 const STATUS_PILL_COLORS: Record<PublicationStatus, { bg: string; fg: string }> = {
@@ -420,21 +421,20 @@ function AddPublicationModal({
                 <label style={modalStyles.fieldLabel}>
                     {t("ui.publications.platform", "Plattform")}
                 </label>
-                <select
-                    data-testid="publications-add-platform"
+                <RadixSelect
+                    testId="publications-add-platform"
                     value={platform}
-                    onChange={(e) => {
-                        setPlatform(e.target.value);
+                    onValueChange={(next) => {
+                        setPlatform(next);
                         setMetadata({});
                     }}
-                    style={modalStyles.fieldInput}
-                >
-                    {platformOptions.map((slug) => (
-                        <option key={slug} value={slug}>
-                            {schemas[slug]?.display_name ?? slug}
-                        </option>
-                    ))}
-                </select>
+                    className="is-block"
+                    ariaLabel={t("ui.publications.platform", "Plattform")}
+                    options={platformOptions.map((slug) => ({
+                        value: slug,
+                        label: schemas[slug]?.display_name ?? slug,
+                    }))}
+                />
                 <label style={modalStyles.checkbox}>
                     <input
                         data-testid="publications-add-is-promo"

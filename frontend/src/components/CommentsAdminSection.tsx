@@ -16,6 +16,7 @@ import {RotateCcw, Trash, Trash2} from "lucide-react";
 import {api, ApiError, type ArticleComment} from "../api/client";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
+import {RadixSelect} from "./RadixSelect";
 import {notify} from "../utils/notify";
 import {formatLocaleDate} from "../utils/formatDate";
 import {LoadingIndicator} from "./LoadingIndicator";
@@ -636,21 +637,23 @@ export default function CommentsAdminSection() {
             >
                 <label style={{display: "flex", alignItems: "center", gap: 6}}>
                     {t("ui.comments.admin.filter_source", "Source:")}
-                    <select
-                        data-testid="comments-admin-filter-source"
+                    <RadixSelect
+                        testId="comments-admin-filter-source"
                         value={filters.importedFrom}
-                        onChange={(e) =>
-                            updateFilter({importedFrom: e.target.value})
+                        onValueChange={(next) =>
+                            updateFilter({importedFrom: next})
                         }
-                        style={{padding: "4px 8px"}}
-                    >
-                        <option value="">
-                            {t("ui.comments.admin.filter_source_any", "Any")}
-                        </option>
-                        <option value="medium">Medium</option>
-                        <option value="wordpress">WordPress</option>
-                        <option value="hashnode">Hashnode</option>
-                    </select>
+                        className="is-narrow"
+                        ariaLabel={t("ui.comments.admin.filter_source", "Source:")}
+                        allOption={{
+                            label: t("ui.comments.admin.filter_source_any", "Any"),
+                        }}
+                        options={[
+                            {value: "medium", label: "Medium"},
+                            {value: "wordpress", label: "WordPress"},
+                            {value: "hashnode", label: "Hashnode"},
+                        ]}
+                    />
                 </label>
 
                 <label style={{display: "flex", alignItems: "center", gap: 6}}>

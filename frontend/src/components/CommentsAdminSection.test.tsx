@@ -292,7 +292,7 @@ describe("CommentsAdminSection", () => {
             expect(listMock).toHaveBeenCalledTimes(1);
         });
         const select = screen.getByTestId(
-            "comments-admin-filter-source",
+            "comments-admin-filter-source-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, {target: {value: "medium"}});
         await waitFor(() => {

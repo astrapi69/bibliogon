@@ -143,7 +143,7 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
             page.getByTestId("article-type-fields-section"),
         ).toBeVisible();
         await expect(
-            page.getByTestId("article-type-field-difficulty_level"),
+            page.getByTestId("article-type-field-difficulty_level-trigger"),
         ).toBeVisible();
         await expect(
             page.getByTestId("article-type-field-prerequisites"),
@@ -154,8 +154,11 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
 
         // Set the difficulty + persist.
         await page
-            .getByTestId("article-type-field-difficulty_level")
-            .selectOption("advanced");
+            .getByTestId("article-type-field-difficulty_level-trigger")
+            .click();
+        await page
+            .getByTestId("article-type-field-difficulty_level-item-advanced")
+            .click();
 
         // Wait for the auto-save.
         await page.waitForTimeout(500);
