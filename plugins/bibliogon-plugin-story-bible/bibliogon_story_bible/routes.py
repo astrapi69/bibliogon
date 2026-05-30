@@ -37,8 +37,10 @@ router = APIRouter(tags=["story-bible"])
 def _include_crud_router() -> None:
     try:
         from .entities import router as entities_router
+        from .links import router as links_router
 
         router.include_router(entities_router)
+        router.include_router(links_router)
     except ImportError:
         pass
 

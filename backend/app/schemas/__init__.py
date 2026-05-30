@@ -1736,3 +1736,35 @@ class StoryEntityOut(BaseModel):
     @classmethod
     def _decode_metadata(cls, value: Any) -> dict[str, Any] | None:
         return _decode_entity_metadata(value)
+
+
+class StoryEntityLinkCreate(BaseModel):
+    """Payload for POST /api/story-bible/links — link an entity to a
+    page (picture/comic books) or a chapter (prose books).
+
+    Exactly one of ``page_id`` / ``chapter_id`` must be set; the route
+    validates this and that the referenced rows exist.
+    """
+
+    entity_id: str = Field(..., min_length=1)
+    page_id: str | None = None
+    chapter_id: str | None = None
+    role: str | None = Field(default=None, max_length=50)
+    notes: str | None = None
+
+
+class StoryEntityLinkOut(BaseModel):
+    """Response shape for a ``story_entity_page_links`` row, with the
+    linked entity embedded so the page->entities direction (storyboard
+    badges) has the entity name + type without a second fetch."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    entity_id: str
+    page_id: str | None = None
+    chapter_id: str | None = None
+    role: str | None = None
+    notes: str | None = None
+    created_at: datetime
+    entity: StoryEntityOut

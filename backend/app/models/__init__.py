@@ -1152,9 +1152,7 @@ class StoryEntity(Base):
     __tablename__ = "story_entities"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
-    book_id: Mapped[str] = mapped_column(
-        ForeignKey("books.id", ondelete="CASCADE"), nullable=False
-    )
+    book_id: Mapped[str] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"), nullable=False)
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
     name: Mapped[str] = mapped_column(String(300), nullable=False)
     # Rich-text description as TipTap JSON (serialised string, same
@@ -1185,6 +1183,56 @@ class StoryEntity(Base):
         return (
             f"<StoryEntity {self.id!r} book_id={self.book_id!r} "
             f"type={self.entity_type!r} name={self.name!r}>"
+        )
+
+
+class StoryEntityPageLink(Base):
+    """Links a Story Bible entity to a specific page or chapter
+    ("Character X appears on page Y") — STORY-BIBLE-STORYBOARD-
+    INTEGRATION-01 Session B C4.
+
+    The core innovation connecting the Story Bible to the Storyboard:
+    each row says "this entity appears here". Picture/comic books link
+    via ``page_id``; prose books link via ``chapter_id``. Exactly one
+    of the two is set (enforced at the Pydantic/route layer, not the
+    DB layer — same convention as the rest of the schema).
+
+    Cascades: deleting the entity, its page, or its chapter deletes
+    the link (no orphan rows). ``role`` is an optional free-text tag
+    ("protagonist" / "mentioned" / "appears" / "location"); ``notes``
+    is an optional short context note.
+    """
+
+    __tablename__ = "story_entity_page_links"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    entity_id: Mapped[str] = mapped_column(
+        ForeignKey("story_entities.id", ondelete="CASCADE"), nullable=False
+    )
+    # Exactly one of page_id / chapter_id is set (route-layer guard).
+    page_id: Mapped[str | None] = mapped_column(
+        ForeignKey("pages.id", ondelete="CASCADE"), nullable=True
+    )
+    chapter_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chapters.id", ondelete="CASCADE"), nullable=True
+    )
+    role: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    entity: Mapped["StoryEntity"] = relationship("StoryEntity")
+
+    __table_args__ = (
+        # "where does this entity appear?" + "which entities appear here?"
+        Index("ix_story_entity_links_entity", "entity_id"),
+        Index("ix_story_entity_links_page", "page_id"),
+        Index("ix_story_entity_links_chapter", "chapter_id"),
+    )
+
+    def __repr__(self) -> str:
+        return (
+            f"<StoryEntityPageLink {self.id!r} entity_id={self.entity_id!r} "
+            f"page_id={self.page_id!r} chapter_id={self.chapter_id!r}>"
         )
 
 
