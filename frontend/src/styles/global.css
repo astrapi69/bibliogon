@@ -1103,6 +1103,60 @@ input[type="checkbox"] {
     accent-color: var(--accent);
 }
 
+/* --- Badge / status-pill system ---
+ * Canonical pill badge used for status, type, tier and count chips.
+ * Variants tint the background to 15% of a semantic token and use the
+ * full token for the text, so every badge stays themed across all 12
+ * variants without hardcoded colors. Driven by the <Badge> component.
+ * 2026-05-30 component-consistency sweep (Session 2C). */
+.badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    line-height: 1.5;
+    white-space: nowrap;
+}
+
+.badge-sm {
+    padding: 1px 6px;
+    font-size: 0.625rem;
+}
+
+.badge-default {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+}
+
+.badge-muted {
+    background: var(--bg-card);
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+}
+
+.badge-success {
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+    color: var(--success);
+}
+
+.badge-warning {
+    background: color-mix(in srgb, var(--warning) 15%, transparent);
+    color: var(--warning);
+}
+
+.badge-danger {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+    color: var(--danger);
+}
+
+.badge-info {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+}
+
 .label {
     display: block;
     font-size: 0.8125rem;
