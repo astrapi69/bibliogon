@@ -4,6 +4,100 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.42.0] - 2026-05-30
+
+The Story Bible release. A new **plugin-story-bible** gives every book
+a per-book database of fiction-writing entities (character / setting /
+plot point / item / lore), and a deep **Story Bible ↔ Storyboard
+integration** turns it into Bibliogon's standout feature: while
+planning a story visually, the author sees which entities appear on
+which pages, links them by drag-and-drop, reviews character arcs on a
+visual timeline, gets advisory continuity warnings, and exports the
+whole bible to share with a co-author or illustrator. Plus a
+content-type-neutrality pass (the article editor now spans 8 content
+types, so user-facing "Artikel/Article" became "Text"), a
+component-consistency + accessibility sweep, and two
+safety/stability fixes (Zip Slip guard, app-wide error boundaries).
+74 commits since v0.41.0. Backend pytest 2399 → 2442 (+43, 1 skipped);
+Vitest 2487 → 2549 (+62); tsc + ruff + mypy + verify-theme (96 WCAG
+contrast checks) + verify-docs-discipline + verify-plugin-locks +
+pre-commit + launcher PyInstaller build smoke all green.
+
+### Added
+
+- **Story Bible plugin** (`STORY-BIBLE-PLUGIN-01`). New core plugin
+  `plugin-story-bible`: a per-book database of fiction entities with
+  an `entity_type` discriminator (character / setting / plot_point /
+  item / lore), per-type metadata fields, and rich-text descriptions.
+  Entity-type definitions are the SSoT in
+  `backend/config/story-bible-entities.yaml`. Ships a colored
+  `StoryBibleSidebar` (per-type icons + colors, inline create/delete),
+  a `StoryEntityEditor` detail/edit view, and `/api/story-bible/...`
+  CRUD. Availability-probed and gated behind plugin activation.
+- **Story Bible ↔ Storyboard integration**
+  (`STORY-BIBLE-STORYBOARD-INTEGRATION-01`):
+  - **Entity ↔ page/chapter links** (`StoryEntityPageLink` model +
+    migration) — "Character X appears on page Y"; picture/comic books
+    link via page, prose books via chapter, with both query
+    directions (an entity's appearances + a page's entities).
+  - **Entity badges** on Storyboard cards (name + type icon, color
+    coded, +N overflow, click opens the sidebar on that entity).
+  - **Drag-to-link**: drag an entity from the sidebar onto a card to
+    create the link (HTML5 drag-and-drop).
+  - **Appearance tracker** in the entity detail view (every page/
+    chapter the entity appears on, with remove).
+  - **Entity filter** on the Storyboard (show only pages where ALL
+    selected entities appear).
+  - **Arc View** — an SVG swim-lane timeline of character arcs across
+    the book's pages (dots colored by page mood, sized by role,
+    continuity polylines, click-to-navigate).
+  - **Continuity checker** — advisory warning badges (an entity
+    disappears / is absent for a long gap / a page has no entities).
+  - **Markdown export** of the Story Bible (entities by type +
+    descriptions + appearances) for sharing.
+- **Storyboard for comic books** — the Storyboard view (previously
+  picture-book-only) now also opens from the comic-book editor.
+- **Per-content-type default titles** — creating a content type from
+  the Article-Dashboard split-button now produces a matching default
+  title (Neuer Blogpost / Neues Tutorial / Neue Rezension / …) via a
+  new `default_title_key` per type in the `content-types.yaml` SSoT.
+
+### Changed
+
+- **Content-type neutrality** — the `Article` entity now spans 8
+  content types, so user-facing "Artikel/Article" used as a
+  document-noun became the neutral "Text" across the editor surface
+  (translate / delete / load / tooltips), and the content-type
+  dropdown label became "Textart" / "Content type". Section/list
+  naming, content-type value labels, and comment references kept.
+- **Component-consistency + accessibility sweep** — buttons, selects,
+  inputs, checkboxes, sliders, badges and cards unified onto global
+  CSS classes + tokens (the CSS-first discipline); editor/toolbar/
+  sidebar controls migrated off bespoke styling; WCAG hardening with
+  `vitest-axe` assertions across editor surfaces and associated
+  form-control labels.
+- **Story Bible toggle** moved into the ChapterSidebar actions cluster
+  (it was a free-floating right-edge tab).
+- Within-range dependency refresh (ipython 9.13 → 9.14).
+
+### Fixed
+
+- KDP check-metadata accepts `keywords` as a list, fixing a Publishing
+  Wizard 422.
+- Story Bible toggle no longer overlaps the editor toolbar.
+
+### Security
+
+- **Zip Slip (CWE-22)** — all archive-extraction paths (`.bgb` backup
+  import, backup compare, write-book-template + bgb project import) now
+  validate every member path against the target directory before
+  extracting. A crafted archive with `../` or absolute member paths can
+  no longer write files outside the extraction sandbox.
+- **App-wide React error boundaries** — a render-time crash in one
+  surface (BookEditor / ArticleEditor / Settings / Dashboard /
+  Storyboard) now shows a localized fallback with a Reload button
+  instead of blanking the entire app.
+
 ## [0.41.0] - 2026-05-30
 
 A UX/UI theme + accessibility hardening release, plus per-content-type
