@@ -27,17 +27,15 @@ import { useDialog } from "../AppDialog";
 import { useI18n } from "../../hooks/useI18n";
 import {RadixSelect} from "../RadixSelect";
 import {Toggle} from "../settings/Toggle";
+import {Badge, type BadgeVariant} from "../Badge";
 import { notify } from "../../utils/notify";
 
-const STATUS_PILL_COLORS: Record<PublicationStatus, { bg: string; fg: string }> = {
-    planned: { bg: "var(--bg-card)", fg: "var(--text-muted)" },
-    scheduled: { bg: "var(--bg-card)", fg: "var(--accent)" },
-    published: { bg: "var(--success-light, #dcfce7)", fg: "var(--success, #16a34a)" },
-    out_of_sync: {
-        bg: "var(--accent-light, #fff8e6)",
-        fg: "var(--warning, #b45309)",
-    },
-    archived: { bg: "var(--bg-card)", fg: "var(--text-muted)" },
+const STATUS_VARIANT: Record<PublicationStatus, BadgeVariant> = {
+    planned: "muted",
+    scheduled: "info",
+    published: "success",
+    out_of_sync: "warning",
+    archived: "muted",
 };
 
 export function PublicationsPanel({
@@ -152,7 +150,6 @@ function PublicationRow({
     const { t } = useI18n();
     const { confirm } = useDialog();
 
-    const colors = STATUS_PILL_COLORS[publication.status] ?? STATUS_PILL_COLORS.planned;
     const platformLabel = schema?.display_name ?? publication.platform;
     const publishedUrl = (publication.platform_metadata?.published_url as string | undefined) ?? null;
 
@@ -248,28 +245,24 @@ function PublicationRow({
                         {t("ui.publications.promo_badge", "Promo")}
                     </span>
                 )}
-                <span
-                    data-testid={`publication-row-status-${publication.id}`}
-                    style={{
-                        ...panelStyles.statusPill,
-                        background: colors.bg,
-                        color: colors.fg,
-                    }}
+                <Badge
+                    testId={`publication-row-status-${publication.id}`}
+                    variant={STATUS_VARIANT[publication.status] ?? "muted"}
+                    icon={
+                        publication.status === "out_of_sync" ? (
+                            <AlertTriangle size={10} aria-hidden />
+                        ) : publication.status === "published" ? (
+                            <CheckCircle size={10} aria-hidden />
+                        ) : publication.status === "scheduled" ? (
+                            <Clock size={10} aria-hidden />
+                        ) : undefined
+                    }
                 >
-                    {publication.status === "out_of_sync" && (
-                        <AlertTriangle size={10} aria-hidden />
-                    )}
-                    {publication.status === "published" && (
-                        <CheckCircle size={10} aria-hidden />
-                    )}
-                    {publication.status === "scheduled" && (
-                        <Clock size={10} aria-hidden />
-                    )}
                     {t(
                         `ui.publications.status_${publication.status}`,
                         publication.status,
                     )}
-                </span>
+                </Badge>
             </div>
             {publication.status === "out_of_sync" && (
                 <p
@@ -565,15 +558,6 @@ const panelStyles: Record<string, React.CSSProperties> = {
         color: "var(--accent)",
         borderRadius: 4,
         fontWeight: 500,
-    },
-    statusPill: {
-        fontSize: "0.625rem",
-        padding: "1px 6px",
-        borderRadius: 4,
-        fontWeight: 500,
-        display: "inline-flex",
-        alignItems: "center",
-        gap: 3,
     },
     driftWarning: {
         margin: "6px 0 0 0",
