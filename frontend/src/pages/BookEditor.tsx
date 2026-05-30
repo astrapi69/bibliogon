@@ -4,6 +4,7 @@ import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from 
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
 import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
+import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
@@ -66,6 +67,11 @@ export default function BookEditor() {
     const {t} = useI18n();
     const bookTypesSnapshot = useBookTypes();
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    // Story Bible (plugin-story-bible). Availability is probed once
+    // via getInfo (404 when the plugin is disabled); the panel + its
+    // toggle only render when the plugin is mounted.
+    const [storyBibleAvailable, setStoryBibleAvailable] = useState(false);
+    const [storyBibleOpen, setStoryBibleOpen] = useState(false);
     const TYPE_LABELS: Record<ChapterType, string> = {
         chapter: t("ui.chapter_types.chapter", "Kapitel"),
         preface: t("ui.chapter_types.preface", "Vorwort"),
@@ -120,6 +126,24 @@ export default function BookEditor() {
         if (wantsStoryboard !== showStoryboard) setShowStoryboard(wantsStoryboard);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
+
+    // Probe plugin-story-bible availability once. getInfo rejects
+    // (404) when the plugin is disabled; in that case the panel +
+    // toggle stay hidden.
+    useEffect(() => {
+        let cancelled = false;
+        api.storyBible
+            .getInfo()
+            .then(() => {
+                if (!cancelled) setStoryBibleAvailable(true);
+            })
+            .catch(() => {
+                if (!cancelled) setStoryBibleAvailable(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const _setShowMetadata = (next: boolean) => {
         setShowMetadata(next);
@@ -752,6 +776,34 @@ export default function BookEditor() {
                 />
             )}
             </main>
+
+            {storyBibleAvailable && storyBibleOpen && bookId && (
+                <StoryBibleSidebar
+                    bookId={bookId}
+                    onClose={() => setStoryBibleOpen(false)}
+                />
+            )}
+            {storyBibleAvailable && !storyBibleOpen && (
+                <button
+                    type="button"
+                    className="btn-icon"
+                    data-testid="story-bible-toggle"
+                    onClick={() => setStoryBibleOpen(true)}
+                    aria-label={t("ui.story_bible.open", "Story-Bibel öffnen")}
+                    title={t("ui.story_bible.open", "Story-Bibel öffnen")}
+                    style={{
+                        position: "fixed",
+                        top: 12,
+                        right: 12,
+                        zIndex: 100,
+                        background: "var(--bg-card)",
+                        borderRadius: "var(--radius-sm)",
+                        boxShadow: "var(--shadow-md)",
+                    }}
+                >
+                    <BookOpen size={20} />
+                </button>
+            )}
 
             {bookId && (
                 <ExportDialog

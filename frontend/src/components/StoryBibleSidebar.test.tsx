@@ -1,0 +1,185 @@
+import {describe, it, expect, vi, beforeEach} from "vitest";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
+
+import StoryBibleSidebar from "./StoryBibleSidebar";
+import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
+
+vi.mock("../hooks/useI18n", () => ({
+    useI18n: () => ({
+        t: (_key: string, fallback: string) => fallback,
+        lang: "en",
+        setLang: vi.fn(),
+    }),
+}));
+
+const mockConfirm = vi.fn();
+vi.mock("./AppDialog", () => ({
+    useDialog: () => ({confirm: mockConfirm}),
+}));
+
+const mockNotifyError = vi.fn();
+vi.mock("../utils/notify", () => ({
+    notify: {error: (...a: unknown[]) => mockNotifyError(...a)},
+}));
+
+const mockListTypes = vi.fn();
+const mockListEntities = vi.fn();
+const mockCreate = vi.fn();
+const mockDelete = vi.fn();
+
+vi.mock("../api/client", async () => {
+    const actual =
+        await vi.importActual<typeof import("../api/client")>("../api/client");
+    return {
+        ...actual,
+        api: {
+            storyBible: {
+                listEntityTypes: () => mockListTypes(),
+                listEntities: (...a: unknown[]) => mockListEntities(...a),
+                createEntity: (...a: unknown[]) => mockCreate(...a),
+                deleteEntity: (...a: unknown[]) => mockDelete(...a),
+            },
+        },
+    };
+});
+
+function typeDef(
+    id: string,
+    icon: string,
+    isDefault = false,
+): StoryEntityTypeDef {
+    return {
+        id,
+        label_key: `ui.story_bible.${id}`,
+        description_key: `ui.story_bible.${id}_description`,
+        icon,
+        default: isDefault,
+        extra_fields: [],
+    };
+}
+
+const TYPES: Record<string, StoryEntityTypeDef> = {
+    character: typeDef("character", "User", true),
+    setting: typeDef("setting", "MapPin"),
+    plot_point: typeDef("plot_point", "Milestone"),
+    item: typeDef("item", "Package"),
+    lore: typeDef("lore", "BookMarked"),
+};
+
+function entity(
+    id: string,
+    entity_type: string,
+    name: string,
+    description: string | null = null,
+): StoryEntityOut {
+    return {
+        id,
+        book_id: "b1",
+        entity_type,
+        name,
+        description,
+        entity_metadata: null,
+        image_asset_id: null,
+        position: 1,
+        created_at: "2026-05-30T00:00:00Z",
+        updated_at: "2026-05-30T00:00:00Z",
+    };
+}
+
+beforeEach(() => {
+    mockListTypes.mockReset();
+    mockListTypes.mockResolvedValue(TYPES);
+    mockListEntities.mockReset();
+    mockListEntities.mockResolvedValue([]);
+    mockCreate.mockReset();
+    mockCreate.mockResolvedValue(entity("new", "character", "New"));
+    mockDelete.mockReset();
+    mockDelete.mockResolvedValue(undefined);
+    mockConfirm.mockReset();
+    mockConfirm.mockResolvedValue(true);
+    mockNotifyError.mockReset();
+});
+
+describe("StoryBibleSidebar", () => {
+    it("renders the panel and a group per entity type", async () => {
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        expect(await screen.findByTestId("story-bible-sidebar")).toBeTruthy();
+        for (const id of Object.keys(TYPES)) {
+            expect(
+                await screen.findByTestId(`story-bible-group-${id}`),
+            ).toBeTruthy();
+            // Add button visible per group.
+            expect(screen.getByTestId(`story-bible-add-${id}`)).toBeTruthy();
+        }
+    });
+
+    it("shows the all-empty state when the book has no entities", async () => {
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        expect(await screen.findByTestId("story-bible-empty")).toBeTruthy();
+    });
+
+    it("lists entities under their type group", async () => {
+        mockListEntities.mockResolvedValue([
+            entity("c1", "character", "Alice"),
+            entity("c2", "character", "Bob"),
+            entity("l1", "lore", "Magic System"),
+        ]);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        expect(await screen.findByTestId("story-bible-entry-c1")).toBeTruthy();
+        expect(screen.getByTestId("story-bible-entry-c2")).toBeTruthy();
+        expect(screen.getByTestId("story-bible-entry-l1")).toBeTruthy();
+        expect(screen.getByText("Alice")).toBeTruthy();
+    });
+
+    it("creates an entity from the inline add form", async () => {
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        await screen.findByTestId("story-bible-group-character");
+        fireEvent.click(screen.getByTestId("story-bible-add-character"));
+        const input = await screen.findByTestId(
+            "story-bible-add-input-character",
+        );
+        fireEvent.change(input, {target: {value: "Carol"}});
+        fireEvent.click(screen.getByTestId("story-bible-add-save-character"));
+        await waitFor(() =>
+            expect(mockCreate).toHaveBeenCalledWith("b1", {
+                entity_type: "character",
+                name: "Carol",
+            }),
+        );
+    });
+
+    it("deletes an entity after confirmation", async () => {
+        mockListEntities.mockResolvedValue([
+            entity("c1", "character", "Alice"),
+        ]);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        await screen.findByTestId("story-bible-entry-c1");
+        fireEvent.click(screen.getByTestId("story-bible-delete-c1"));
+        await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+        await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("c1"));
+    });
+
+    it("expands an entry to preview its description", async () => {
+        mockListEntities.mockResolvedValue([
+            entity(
+                "c1",
+                "character",
+                "Alice",
+                JSON.stringify({
+                    type: "doc",
+                    content: [
+                        {
+                            type: "paragraph",
+                            content: [{type: "text", text: "A brave hero."}],
+                        },
+                    ],
+                }),
+            ),
+        ]);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        fireEvent.click(await screen.findByTestId("story-bible-entry-name-c1"));
+        expect(
+            await screen.findByTestId("story-bible-entry-preview-c1"),
+        ).toHaveTextContent("A brave hero.");
+    });
+});

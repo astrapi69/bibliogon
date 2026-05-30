@@ -1,0 +1,150 @@
+/* StoryBibleSidebar (STORY-BIBLE-PLUGIN-01 Session 2). A
+ * colored-sidebar surface mounted as a right-hand flex child in the
+ * BookEditor layout, alongside the left ChapterSidebar. Uses the
+ * sidebar token context (--text-sidebar / --bg-sidebar) and the
+ * global .btn-sidebar-icon button system. Semantic tokens only. */
+
+.sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border-left: 1px solid var(--border);
+    background: var(--bg-sidebar);
+    color: var(--text-sidebar);
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid color-mix(in srgb, var(--text-sidebar) 8%, transparent);
+}
+
+.title {
+    margin: 0;
+    flex: 1;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-sidebar);
+}
+
+.groups {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
+}
+
+.group {
+    margin-bottom: 6px;
+}
+
+.groupHeader {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px;
+}
+
+.groupIcon {
+    color: color-mix(in srgb, var(--text-sidebar) 60%, transparent);
+    flex-shrink: 0;
+}
+
+.groupLabel {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
+}
+
+.groupCount {
+    font-size: 0.6875rem;
+    color: color-mix(in srgb, var(--text-sidebar) 40%, transparent);
+    margin-left: auto;
+}
+
+.groupBody {
+    padding-left: 6px;
+}
+
+.empty,
+.groupEmpty {
+    font-size: 0.8125rem;
+    font-style: italic;
+    color: color-mix(in srgb, var(--text-sidebar) 45%, transparent);
+    padding: 6px 8px;
+}
+
+.addForm {
+    display: flex;
+    gap: 4px;
+    padding: 4px 0;
+}
+
+.addInput {
+    flex: 1;
+    min-width: 0;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    border-radius: var(--radius-sm);
+    padding: 4px 6px;
+    font-size: 0.8125rem;
+    font-family: var(--font-body);
+}
+
+.entry {
+    border-radius: var(--radius-sm);
+}
+
+.entryRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.entryName {
+    flex: 1;
+    min-width: 0;
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--text-sidebar);
+    cursor: pointer;
+    padding: 4px 6px;
+    font-size: 0.875rem;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.entryName:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 8%, transparent);
+}
+
+/* Hover-reveal delete (the C-chapter lesson applied correctly:
+ * the reveal rule ships WITH the opacity:0). */
+.entryDelete {
+    opacity: 0;
+}
+
+.entry:hover .entryDelete,
+.entry:focus-within .entryDelete {
+    opacity: 1;
+}
+
+.entryPreview {
+    margin: 0 6px 6px;
+    font-size: 0.8125rem;
+    line-height: 1.4;
+    color: color-mix(in srgb, var(--text-sidebar) 65%, transparent);
+}

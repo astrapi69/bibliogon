@@ -4233,6 +4233,46 @@ export const api = {
       }),
   },
 
+  /** plugin-story-bible Session 2 client (STORY-BIBLE-PLUGIN-01).
+   *  Per-book fiction-writing entity database. ``getInfo`` doubles
+   *  as the plugin-availability probe (404 when the plugin is
+   *  disabled). Field-name parity with the backend Pydantic
+   *  StoryEntity* schemas + the story-bible-entities.yaml SSoT. */
+  storyBible: {
+    getInfo: () => request<StoryBiblePluginInfo>("/story-bible/info"),
+
+    listEntityTypes: () =>
+      request<Record<string, StoryEntityTypeDef>>(
+        "/story-bible/entity-types",
+      ),
+
+    listEntities: (bookId: string, entityType?: string) =>
+      request<StoryEntityOut[]>(
+        `/story-bible/books/${bookId}/entities` +
+          (entityType ? `?entity_type=${encodeURIComponent(entityType)}` : ""),
+      ),
+
+    createEntity: (bookId: string, data: StoryEntityCreate) =>
+      request<StoryEntityOut>(`/story-bible/books/${bookId}/entities`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    getEntity: (entityId: string) =>
+      request<StoryEntityOut>(`/story-bible/entities/${entityId}`),
+
+    updateEntity: (entityId: string, data: StoryEntityUpdate) =>
+      request<StoryEntityOut>(`/story-bible/entities/${entityId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+
+    deleteEntity: (entityId: string) =>
+      request<void>(`/story-bible/entities/${entityId}`, {
+        method: "DELETE",
+      }),
+  },
+
   /** About-Dialog backend client. Single cohesive payload — app
    *  identity + Python runtime + bundled dependency versions —
    *  fetched on Settings > About tab mount. Stable shape per the
@@ -4279,6 +4319,71 @@ export interface ComicsPluginInfo {
   session: number;
   status: string;
   description: string;
+}
+
+/** Identity returned by GET /api/story-bible/info. Doubles as the
+ *  plugin-availability probe (the request rejects with a 404 when
+ *  plugin-story-bible is disabled). */
+export interface StoryBiblePluginInfo {
+  plugin: string;
+  version: string;
+  phase: string;
+}
+
+/** One per-type metadata-field declaration from the
+ *  story-bible-entities.yaml SSoT (parity with the backend
+ *  StoryEntityExtraField). */
+export interface StoryEntityExtraField {
+  name: string;
+  type: string;
+  label_key: string;
+  values?: string[] | null;
+  min?: number | null;
+  max?: number | null;
+}
+
+/** One entity-type definition from the SSoT (parity with the
+ *  backend StoryEntityTypeDef). */
+export interface StoryEntityTypeDef {
+  id: string;
+  label_key: string;
+  description_key: string;
+  icon: string;
+  default: boolean;
+  extra_fields: StoryEntityExtraField[];
+}
+
+/** A Story Bible entity row (parity with the backend
+ *  StoryEntityOut). ``description`` is TipTap JSON serialised as a
+ *  string; ``entity_metadata`` is the per-type extra-field object. */
+export interface StoryEntityOut {
+  id: string;
+  book_id: string;
+  entity_type: string;
+  name: string;
+  description?: string | null;
+  entity_metadata?: Record<string, unknown> | null;
+  image_asset_id?: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StoryEntityCreate {
+  entity_type: string;
+  name: string;
+  description?: string | null;
+  entity_metadata?: Record<string, unknown> | null;
+  image_asset_id?: string | null;
+}
+
+export interface StoryEntityUpdate {
+  entity_type?: string;
+  name?: string;
+  description?: string | null;
+  entity_metadata?: Record<string, unknown> | null;
+  image_asset_id?: string | null;
+  position?: number;
 }
 
 /** Comic-panel + comic-bubble Session-2 shapes. Field-name parity
