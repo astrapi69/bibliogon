@@ -20,7 +20,7 @@
  * the parent (BookEditor) routes through history state.
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, FileImage, GripVertical, ImageOff, X} from "lucide-react"
+import {ArrowLeft, BookOpen, FileImage, GripVertical, ImageOff, X} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -39,7 +39,14 @@ import {
 } from "@dnd-kit/sortable"
 import {CSS} from "@dnd-kit/utilities"
 
-import {api, type Page, type PageUpdate, type StoryBeat} from "../api/client"
+import {
+    api,
+    type Page,
+    type PageUpdate,
+    type StoryBeat,
+    type StoryEntityLinkOut,
+    type StoryEntityOut,
+} from "../api/client"
 import {imageUrlFor} from "../utils/imageUrl"
 
 /** 6 story-beat values per Pre-Inspection A2 (Setup / Inciting /
@@ -81,7 +88,13 @@ const MOOD_PALETTE: readonly {value: string; key: string}[] = [
 import {useI18n} from "../hooks/useI18n"
 import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
+import StoryBibleSidebar from "./StoryBibleSidebar"
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
 import styles from "./Storyboard.module.css"
+
+/** Max entity badges shown on a storyboard card before the
+ *  "+N" overflow indicator (STORY-BIBLE-STORYBOARD-INTEGRATION-01 C5). */
+const MAX_VISIBLE_BADGES = 5
 
 interface Props {
     bookId: string
@@ -103,6 +116,33 @@ export default function Storyboard({
     const [pages, setPages] = useState<Page[]>([])
     const [loadError, setLoadError] = useState<string | null>(null)
     const [loaded, setLoaded] = useState(false)
+
+    // Story Bible integration (C2 + C5). The sidebar is available only
+    // when plugin-story-bible is mounted (probed once); badge clicks +
+    // the header toggle open it with an entity optionally selected.
+    const [storyBibleAvailable, setStoryBibleAvailable] = useState(false)
+    const [storyBibleOpen, setStoryBibleOpen] = useState(false)
+    const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
+
+    useEffect(() => {
+        let cancelled = false
+        api.storyBible
+            .getInfo()
+            .then(() => {
+                if (!cancelled) setStoryBibleAvailable(true)
+            })
+            .catch(() => {
+                if (!cancelled) setStoryBibleAvailable(false)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [])
+
+    const openEntity = useCallback((entityId: string) => {
+        setSelectedEntityId(entityId)
+        setStoryBibleOpen(true)
+    }, [])
 
     useEffect(() => {
         let cancelled = false
@@ -218,7 +258,23 @@ export default function Storyboard({
                         {t("ui.storyboard.pages_unit", "pages")}
                     </span>
                 </div>
+                {storyBibleAvailable && (
+                    <div className={styles.headerActions}>
+                        <button
+                            type="button"
+                            className={styles.actionButton}
+                            onClick={() => setStoryBibleOpen((v) => !v)}
+                            aria-pressed={storyBibleOpen}
+                            data-testid={`${testidNamespace}-story-bible-toggle`}
+                            title={t("ui.story_bible.sidebar_button", "Story Bible")}
+                        >
+                            <BookOpen size={14} />
+                            {t("ui.story_bible.sidebar_button", "Story Bible")}
+                        </button>
+                    </div>
+                )}
             </div>
+            <div className={styles.bodyRow}>
             <div className={styles.scroll}>
                 {loadError ? (
                     <div
@@ -274,6 +330,8 @@ export default function Storyboard({
                                                 page={page}
                                                 onSelect={onSelectPage}
                                                 onPatch={handlePatchPage}
+                                                storyBibleAvailable={storyBibleAvailable}
+                                                onOpenEntity={openEntity}
                                                 testidNamespace={testidNamespace}
                                             />
                                         ))}
@@ -283,6 +341,15 @@ export default function Storyboard({
                         </SortableContext>
                     </DndContext>
                 )}
+            </div>
+            {storyBibleAvailable && storyBibleOpen && (
+                <StoryBibleSidebar
+                    bookId={bookId}
+                    onClose={() => setStoryBibleOpen(false)}
+                    onSelectEntity={(entity) => setSelectedEntityId(entity.id)}
+                    selectedEntityId={selectedEntityId}
+                />
+            )}
             </div>
         </div>
     )
@@ -297,6 +364,12 @@ interface CardProps {
      *  Rejects on network/validation failure; the caller has already
      *  shown a toast — children should not double-toast. */
     onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
+    /** True when plugin-story-bible is mounted; gates the per-card
+     *  entity-badge fetch (C5). */
+    storyBibleAvailable: boolean
+    /** Badge click -> open the Story Bible sidebar with this entity
+     *  selected (C5). */
+    onOpenEntity: (entityId: string) => void
     testidNamespace: string
 }
 
@@ -332,9 +405,39 @@ function SortableStoryboardCard(props: CardProps) {
     )
 }
 
-function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: CardProps) {
+function StoryboardCard({
+    bookId,
+    page,
+    onSelect,
+    onPatch,
+    storyBibleAvailable,
+    onOpenEntity,
+    testidNamespace,
+}: CardProps) {
     const {t} = useI18n()
     const previewTitle = derivePreviewTitle(page)
+
+    // C5: entity badges. Fetch the entities linked to this page when
+    // plugin-story-bible is active. Each card fetches its own links
+    // (the page->entities endpoint); N small reads is acceptable at
+    // storyboard scale. ``cancelled`` guards the async setState.
+    const [links, setLinks] = useState<StoryEntityLinkOut[]>([])
+    useEffect(() => {
+        if (!storyBibleAvailable) return
+        let cancelled = false
+        api.storyBible
+            .pageEntities(page.id)
+            .then((rows) => {
+                if (!cancelled) setLinks(rows)
+            })
+            .catch(() => {
+                // Badges are non-critical; a fetch failure leaves the
+                // card without badges rather than surfacing a toast.
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [page.id, storyBibleAvailable])
     const moodStyle: React.CSSProperties = page.mood_color
         ? {borderLeftColor: page.mood_color}
         : {}
@@ -416,6 +519,48 @@ function StoryboardCard({bookId, page, onSelect, onPatch, testidNamespace}: Card
                         </span>
                     )}
                 </div>
+                {links.length > 0 && (
+                    <div
+                        className={styles.entityBadges}
+                        data-testid={`${testidNamespace}-entity-badges-${page.id}`}
+                    >
+                        {links.slice(0, MAX_VISIBLE_BADGES).map((link) => {
+                            const entity: StoryEntityOut = link.entity
+                            const Icon = entityTypeIcon(entity.entity_type)
+                            return (
+                                <button
+                                    key={link.id}
+                                    type="button"
+                                    className={styles.entityBadge}
+                                    style={{color: entityTypeColor(entity.entity_type)}}
+                                    onClick={(e) => {
+                                        // Don't trigger the card's navigate.
+                                        e.stopPropagation()
+                                        onOpenEntity(entity.id)
+                                    }}
+                                    data-testid={`${testidNamespace}-entity-badge-${page.id}-${entity.id}`}
+                                    title={entity.name}
+                                >
+                                    <Icon size={12} aria-hidden />
+                                    <span className={styles.entityBadgeName}>
+                                        {entity.name}
+                                    </span>
+                                </button>
+                            )
+                        })}
+                        {links.length > MAX_VISIBLE_BADGES && (
+                            <span
+                                className={styles.entityBadgeMore}
+                                data-testid={`${testidNamespace}-entity-badges-more-${page.id}`}
+                            >
+                                {t("ui.storyboard.more_entities", "+{count} more").replace(
+                                    "{count}",
+                                    String(links.length - MAX_VISIBLE_BADGES),
+                                )}
+                            </span>
+                        )}
+                    </div>
+                )}
                 <BeatSelector
                     page={page}
                     onPatch={onPatch}

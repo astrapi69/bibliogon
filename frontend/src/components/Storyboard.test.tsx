@@ -48,9 +48,50 @@ vi.mock("../api/client", async () => {
                 update: vi.fn(),
                 delete: vi.fn(),
             },
+            storyBible: {
+                ...actual.api.storyBible,
+                getInfo: vi.fn(),
+                pageEntities: vi.fn(),
+            },
         },
     }
 })
+
+// Stub the sidebar so opening it doesn't fire its own entity fetches;
+// these tests cover Storyboard's integration (badge fetch + toggle +
+// mount), not StoryBibleSidebar internals.
+vi.mock("./StoryBibleSidebar", () => ({
+    default: ({selectedEntityId}: {selectedEntityId?: string | null}) => (
+        <div
+            data-testid="story-bible-sidebar-stub"
+            data-selected={selectedEntityId ?? ""}
+        />
+    ),
+}))
+
+function makeLink(entityId: string, name: string, entityType = "character") {
+    return {
+        id: `lnk-${entityId}`,
+        entity_id: entityId,
+        page_id: "p1",
+        chapter_id: null,
+        role: null,
+        notes: null,
+        created_at: new Date().toISOString(),
+        entity: {
+            id: entityId,
+            book_id: "b1",
+            entity_type: entityType,
+            name,
+            description: null,
+            entity_metadata: null,
+            image_asset_id: null,
+            position: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        },
+    }
+}
 
 function makePage(overrides: Partial<Page> = {}): Page {
     return {
@@ -88,6 +129,13 @@ beforeEach(() => {
     vi.mocked(api.pages.reorder).mockClear()
     vi.mocked(api.pages.list).mockResolvedValue([])
     vi.mocked(api.pages.reorder).mockResolvedValue([])
+    // Default: plugin-story-bible UNavailable (getInfo rejects) so the
+    // existing card/reorder tests render no sidebar/badges. The Story
+    // Bible integration tests below override getInfo to resolve.
+    vi.mocked(api.storyBible.getInfo).mockReset()
+    vi.mocked(api.storyBible.getInfo).mockRejectedValue(new Error("no plugin"))
+    vi.mocked(api.storyBible.pageEntities).mockReset()
+    vi.mocked(api.storyBible.pageEntities).mockResolvedValue([])
     defaultProps.onSelectPage = vi.fn()
     defaultProps.onBack = vi.fn()
 })
@@ -761,5 +809,79 @@ describe("Storyboard", () => {
             const positions = cards.map((c) => c.getAttribute("data-position"))
             expect(positions).toEqual(["1", "2", "3"])
         })
+    })
+})
+
+describe("Storyboard - Story Bible integration (C2 + C5)", () => {
+    it("shows the Story Bible header toggle only when the plugin is available", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({
+            plugin: "story-bible",
+            version: "1.0.0",
+            phase: "x",
+        } as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        render(<Storyboard {...defaultProps} />)
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("storyboard-story-bible-toggle"),
+            ).toBeTruthy()
+        })
+    })
+
+    it("hides the toggle when the plugin is unavailable", async () => {
+        // getInfo rejects (beforeEach default).
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        render(<Storyboard {...defaultProps} />)
+        await screen.findByTestId("storyboard-card-p1")
+        expect(
+            screen.queryByTestId("storyboard-story-bible-toggle"),
+        ).toBeNull()
+    })
+
+    it("renders entity badges from pageEntities on a card", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.pageEntities).mockResolvedValue([
+            makeLink("e1", "Max"),
+            makeLink("e2", "Lisa", "setting"),
+        ] as never)
+        render(<Storyboard {...defaultProps} />)
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("storyboard-entity-badge-p1-e1"),
+            ).toBeTruthy()
+        })
+        expect(screen.getByTestId("storyboard-entity-badge-p1-e2")).toBeTruthy()
+    })
+
+    it("shows a +N more overflow indicator beyond 5 badges", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.pageEntities).mockResolvedValue(
+            Array.from({length: 7}, (_, i) => makeLink(`e${i}`, `Ent ${i}`)) as never,
+        )
+        render(<Storyboard {...defaultProps} />)
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("storyboard-entity-badges-more-p1"),
+            ).toBeTruthy()
+        })
+        expect(screen.getByTestId("storyboard-entity-badge-p1-e0")).toBeTruthy()
+        expect(screen.queryByTestId("storyboard-entity-badge-p1-e5")).toBeNull()
+    })
+
+    it("opens the sidebar with the entity selected when a badge is clicked", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.pageEntities).mockResolvedValue([
+            makeLink("e1", "Max"),
+        ] as never)
+        render(<Storyboard {...defaultProps} />)
+        const badge = await screen.findByTestId("storyboard-entity-badge-p1-e1")
+        expect(screen.queryByTestId("story-bible-sidebar-stub")).toBeNull()
+        fireEvent.click(badge)
+        const sidebar = await screen.findByTestId("story-bible-sidebar-stub")
+        expect(sidebar.getAttribute("data-selected")).toBe("e1")
+        expect(defaultProps.onSelectPage).not.toHaveBeenCalled()
     })
 })

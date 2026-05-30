@@ -2735,6 +2735,7 @@ ui:
           italic: "Italic"
   storyboard:
     title: "Storyboard"
+    more_entities: "+{count} daha"
     back: "Editöre dön"
     pages_unit: "sayfa"
     empty: "Henüz sayfa yok. Burada görüntülemek için editörden sayfa ekleyin."

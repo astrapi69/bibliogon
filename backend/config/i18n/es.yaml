@@ -2735,6 +2735,7 @@ ui:
           italic: "Italic"
   storyboard:
     title: "Storyboard"
+    more_entities: "+{count} mas"
     back: "Volver al editor"
     pages_unit: "páginas"
     empty: "Aún no hay páginas. Añade páginas desde el editor para verlas aquí."

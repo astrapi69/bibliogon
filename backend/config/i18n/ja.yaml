@@ -2735,6 +2735,7 @@ ui:
           italic: "Italic"
   storyboard:
     title: "ストーリーボード"
+    more_entities: "他{count}件"
     back: "エディタに戻る"
     pages_unit: "ページ"
     empty: "ページがまだありません。エディタからページを追加するとここに表示されます。"

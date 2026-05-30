@@ -4275,6 +4275,26 @@ export const api = {
       request<void>(`/story-bible/entities/${entityId}`, {
         method: "DELETE",
       }),
+
+    /** Entity-page/chapter links (STORY-BIBLE-STORYBOARD-INTEGRATION-01).
+     *  appearances = where an entity shows up; pageEntities = which
+     *  entities appear on a page (storyboard badges). */
+    appearances: (entityId: string) =>
+      request<StoryEntityLinkOut[]>(
+        `/story-bible/entities/${entityId}/appearances`,
+      ),
+
+    pageEntities: (pageId: string) =>
+      request<StoryEntityLinkOut[]>(`/story-bible/pages/${pageId}/entities`),
+
+    createLink: (data: StoryEntityLinkCreate) =>
+      request<StoryEntityLinkOut>("/story-bible/links", {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    deleteLink: (linkId: string) =>
+      request<void>(`/story-bible/links/${linkId}`, { method: "DELETE" }),
   },
 
   /** About-Dialog backend client. Single cohesive payload — app
@@ -4379,6 +4399,29 @@ export interface StoryEntityCreate {
   description?: string | null;
   entity_metadata?: Record<string, unknown> | null;
   image_asset_id?: string | null;
+}
+
+/** A link between a Story Bible entity and a page (picture/comic) or
+ *  chapter (prose). STORY-BIBLE-STORYBOARD-INTEGRATION-01 C4. The Out
+ *  shape embeds the entity so the page->entities direction (storyboard
+ *  badges) has name + type without a second fetch. */
+export interface StoryEntityLinkOut {
+  id: string;
+  entity_id: string;
+  page_id?: string | null;
+  chapter_id?: string | null;
+  role?: string | null;
+  notes?: string | null;
+  created_at: string;
+  entity: StoryEntityOut;
+}
+
+export interface StoryEntityLinkCreate {
+  entity_id: string;
+  page_id?: string | null;
+  chapter_id?: string | null;
+  role?: string | null;
+  notes?: string | null;
 }
 
 export interface StoryEntityUpdate {

@@ -2735,6 +2735,7 @@ ui:
           italic: "Italic"
   storyboard:
     title: "Storyboard"
+    more_entities: "+{count} de plus"
     back: "Retour à l'éditeur"
     pages_unit: "pages"
     empty: "Aucune page pour l'instant. Ajoutez des pages depuis l'éditeur pour les voir ici."

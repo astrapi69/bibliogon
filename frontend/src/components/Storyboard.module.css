@@ -367,3 +367,53 @@ div:hover > .dragHandle,
 .dragHandle:active {
     cursor: grabbing;
 }
+
+/* Story Bible integration (C2 + C5). bodyRow lays the scroll area
+   and the StoryBibleSidebar (a 280px flex child) side by side. */
+.bodyRow {
+    display: flex;
+    flex: 1;
+    min-height: 0;
+}
+
+/* Entity badges on a card (C5): a small wrap row of clickable chips,
+   each tinted by its entity-type color (data value, like mood). */
+.entityBadges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.entityBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    max-width: 100%;
+    padding: 2px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    font-size: 0.72rem;
+    line-height: 1.2;
+    cursor: pointer;
+}
+
+.entityBadge:hover,
+.entityBadge:focus-visible {
+    background: var(--bg-hover);
+}
+
+.entityBadgeName {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 90px;
+    color: var(--text);
+}
+
+.entityBadgeMore {
+    align-self: center;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}

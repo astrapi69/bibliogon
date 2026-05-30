@@ -2733,6 +2733,7 @@ ui:
           italic: "Italic"
   storyboard:
     title: "Storyboard"
+    more_entities: "+{count} more"
     back: "Back to editor"
     pages_unit: "pages"
     empty: "No pages yet. Add pages from the editor to see them here."
