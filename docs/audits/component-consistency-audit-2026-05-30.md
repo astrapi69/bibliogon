@@ -367,6 +367,31 @@ The Phase 1 STOP review resolved the five questions above:
 Phase 2 proceeds as sessions **2A → 2B → 2C → 2D**, atomic-green per
 commit, pushed autonomously.
 
+### Checkbox status (Session 2B-2)
+
+- **Global accent unified:** `input[type="checkbox"] { accent-color: var(--accent) }`
+  themes every native checkbox in one rule — the high-value win.
+- **Migrated to `<Toggle>`:** ExportDialog manual-TOC, PdfExportControls
+  non-compact bleed, PublicationsPanel is-promo, AuthorSelectInput
+  add-to-Authors-DB (shared component), AITemplatePanel import-force.
+- **Documented exemptions (stay native, accent-themed):**
+  - **List-row selection** — ArticleList, Dashboard, BookListView,
+    medium-import preview table, CommentsAdmin row-select.
+  - **Generic plugin renderer** — `settings/fields/ScalarSettingField`.
+  - **Dense tier on/off toggles** — comics Tier1/Tier2 (per the
+    tier-section design-intent note).
+  - **Side-by-side label+description** — MediumImportSettings's
+    `checkboxField` rows (Toggle stacks description below; these put
+    it beside the label — the exact shape Toggle's docstring exempts).
+  - **White-label-core list-row** — `settings/ErweitertSettings`.
+- **Remaining Toggle candidates (lower value now the accent is unified;
+  structural-consistency only):** BulkTemplateImportDialog, GitSyncDialog,
+  FieldClassDialog, ErrorReportDialog, import-wizard PreviewPanel/
+  PreviewMultiBookStep, kdp-wizard PricingStep, TranslationLinks,
+  CreateBookModal is-series (a conditional-toggle — Toggle `children`),
+  ConvertToBookWizard. These are inline `<label><input>text</label>`
+  shapes; migrate opportunistically.
+
 ### Select-migration exemption (Session 2B)
 
 - **`import-wizard/steps/AuthorPicker`** stays a native `<select>` —
