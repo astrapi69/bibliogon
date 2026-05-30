@@ -43,8 +43,8 @@ test.describe("Comic-book multi-panel layout smoke", () => {
 
         // Default template after Create-First-Page is single_panel.
         await expect(
-            page.getByTestId("comic-grid-template-picker-select"),
-        ).toHaveValue("single_panel");
+            page.getByTestId("comic-grid-template-picker-trigger"),
+        ).toHaveAttribute("data-value", "single_panel");
 
         await page.getByTestId("comic-book-editor-add-panel").click();
         const panel = page.locator(
@@ -67,10 +67,11 @@ test.describe("Comic-book multi-panel layout smoke", () => {
 
         // Switch to grid_2x2 BEFORE adding panels.
         const picker = page.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         );
-        await picker.selectOption("grid_2x2");
-        await expect(picker).toHaveValue("grid_2x2");
+        await picker.click();
+    await page.getByTestId("comic-grid-template-picker-item-grid_2x2").click();
+        await expect(picker).toHaveAttribute("data-value", "grid_2x2");
 
         // Confirm the grid root carries the matching data attribute.
         await expect(
@@ -111,7 +112,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         // picker. Per Q4 audit: grid_3x3 is intentionally NOT in
         // the picker (legacy/advanced).
         const select = page.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         );
         const optionValues = await select
             .locator("option")
@@ -138,9 +139,10 @@ test.describe("Comic-book multi-panel layout smoke", () => {
             .getByTestId("comic-book-editor-add-page")
             .click();
 
+        await page.getByTestId("comic-grid-template-picker-trigger").click();
         await page
-            .getByTestId("comic-grid-template-picker-select")
-            .selectOption("grid_1x2");
+            .getByTestId("comic-grid-template-picker-item-grid_1x2")
+            .click();
         await expect(
             page.getByTestId("comic-page-grid"),
         ).toHaveAttribute("data-grid-template", "grid_1x2");
@@ -148,7 +150,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         // Reload to verify the template persisted server-side.
         await page.reload();
         await expect(
-            page.getByTestId("comic-grid-template-picker-select"),
-        ).toHaveValue("grid_1x2");
+            page.getByTestId("comic-grid-template-picker-trigger"),
+        ).toHaveAttribute("data-value", "grid_1x2");
     });
 });

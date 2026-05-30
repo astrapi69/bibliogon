@@ -34,8 +34,9 @@ test.describe("Comic-book cross-page panel move smoke (Phase 2)", () => {
 
     // Page 1: grid_2x2 with 2 panels.
     await page.getByTestId("comic-book-editor-add-page").click();
-    const picker = page.getByTestId("comic-grid-template-picker-select");
-    await picker.selectOption("grid_2x2");
+    const picker = page.getByTestId("comic-grid-template-picker-trigger");
+    await picker.click();
+    await page.getByTestId("comic-grid-template-picker-item-grid_2x2").click();
     await page.getByTestId("comic-book-editor-add-panel").click();
     await page.getByTestId("comic-book-editor-add-panel").click();
 
@@ -76,8 +77,9 @@ test.describe("Comic-book cross-page panel move smoke (Phase 2)", () => {
 
     // Page 1: grid_2x2 with 1 panel.
     await page.getByTestId("comic-book-editor-add-page").click();
-    const picker = page.getByTestId("comic-grid-template-picker-select");
-    await picker.selectOption("grid_2x2");
+    const picker = page.getByTestId("comic-grid-template-picker-trigger");
+    await picker.click();
+    await page.getByTestId("comic-grid-template-picker-item-grid_2x2").click();
     await page.getByTestId("comic-book-editor-add-panel").click();
 
     // Page 2: single_panel, fill it to capacity (1/1 -> full).

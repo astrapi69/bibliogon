@@ -73,6 +73,7 @@ export function RadixSelect({
                 name={name}
                 className={triggerClass}
                 data-testid={triggerTestId}
+                data-value={value}
                 aria-label={ariaLabel}
                 disabled={disabled}
                 value={value}
@@ -84,7 +85,14 @@ export function RadixSelect({
                     </option>
                 )}
                 {options.map((opt) => (
-                    <option key={opt.value} value={opt.value} disabled={opt.disabled}>
+                    <option
+                        key={opt.value}
+                        value={opt.value}
+                        disabled={opt.disabled}
+                        data-testid={
+                            testId ? `${testId}-item-${opt.value}` : undefined
+                        }
+                    >
                         {opt.label}
                     </option>
                 ))}
@@ -98,6 +106,7 @@ export function RadixSelect({
                 id={id}
                 className={triggerClass}
                 data-testid={triggerTestId}
+                data-value={value}
                 aria-label={ariaLabel}
             >
                 <Select.Value placeholder={placeholder} />

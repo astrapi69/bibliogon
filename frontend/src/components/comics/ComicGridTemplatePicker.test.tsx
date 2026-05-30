@@ -28,7 +28,7 @@ describe("ComicGridTemplatePicker", () => {
             />,
         );
         const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         ) as HTMLSelectElement;
         const optionValues = Array.from(select.options).map((o) => o.value);
         expect(optionValues).toEqual([
@@ -58,7 +58,7 @@ describe("ComicGridTemplatePicker", () => {
             "grid_3x2",
         ]) {
             expect(
-                screen.getByTestId(`comic-grid-template-option-${template}`),
+                screen.getByTestId(`comic-grid-template-picker-item-${template}`),
             ).toBeInTheDocument();
         }
     });
@@ -71,7 +71,7 @@ describe("ComicGridTemplatePicker", () => {
             />,
         );
         const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         ) as HTMLSelectElement;
         expect(select.value).toBe("grid_2x2");
     });
@@ -81,7 +81,7 @@ describe("ComicGridTemplatePicker", () => {
             <ComicGridTemplatePicker value={null} onChange={() => {}} />,
         );
         const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         ) as HTMLSelectElement;
         expect(select.value).toBe("single_panel");
     });
@@ -95,7 +95,7 @@ describe("ComicGridTemplatePicker", () => {
             />,
         );
         const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, {target: {value: "grid_2x2"}});
         expect(onChange).toHaveBeenCalledWith("grid_2x2");
@@ -110,21 +110,21 @@ describe("ComicGridTemplatePicker", () => {
             />,
         );
         const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
+            "comic-grid-template-picker-trigger",
         ) as HTMLSelectElement;
         expect(select.disabled).toBe(true);
     });
 
-    it("sets an explicit text color on the select (dark-mode readability pin)", () => {
+    it("uses the themed RadixSelect trigger (dark-mode readability pin)", () => {
         // Regression pin: a native <select> with a background but no
         // color rendered default black text on the dark --bg-card in
-        // dark mode (unreadable). The fix sets color explicitly.
+        // dark mode (unreadable). Readability now comes from the global
+        // .radix-select-trigger class (color: var(--text-primary)),
+        // which is theme-aware across all 12 variants.
         render(
             <ComicGridTemplatePicker value="single_panel" onChange={() => {}} />,
         );
-        const select = screen.getByTestId(
-            "comic-grid-template-picker-select",
-        ) as HTMLSelectElement;
-        expect(select.style.color).toBe("var(--text-primary)");
+        const trigger = screen.getByTestId("comic-grid-template-picker-trigger");
+        expect(trigger).toHaveClass("radix-select-trigger");
     });
 });

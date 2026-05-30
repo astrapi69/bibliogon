@@ -18,13 +18,13 @@
  */
 
 import {useI18n} from "../../hooks/useI18n";
+import {RadixSelect} from "../RadixSelect";
 
 import {
     COMIC_GRID_TEMPLATE_PICKER_OPTIONS,
     DEFAULT_COMIC_GRID_TEMPLATE,
     type ComicGridTemplate,
 } from "./ComicPanelGrid";
-import {COMIC_HEADER_SELECT_STYLE} from "./headerSelectStyle";
 
 interface ComicGridTemplatePickerProps {
     value: ComicGridTemplate | null;
@@ -63,32 +63,24 @@ export function ComicGridTemplatePicker({
             <span>
                 {t("ui.comic_book_editor.layout_picker.heading", "Layout")}
             </span>
-            <select
+            <RadixSelect
                 value={resolved}
-                onChange={(e) =>
-                    onChange(e.target.value as ComicGridTemplate)
-                }
+                onValueChange={(next) => onChange(next as ComicGridTemplate)}
                 disabled={disabled}
-                data-testid="comic-grid-template-picker-select"
-                aria-label={t(
+                testId="comic-grid-template-picker"
+                ariaLabel={t(
                     "ui.comic_book_editor.layout_picker.heading",
                     "Layout",
                 )}
-                style={COMIC_HEADER_SELECT_STYLE}
-            >
-                {COMIC_GRID_TEMPLATE_PICKER_OPTIONS.map((template) => (
-                    <option
-                        key={template}
-                        value={template}
-                        data-testid={`comic-grid-template-option-${template}`}
-                    >
-                        {t(
-                            `ui.comic_book_editor.layout_picker.${template}`,
-                            FALLBACK_LABELS[template],
-                        )}
-                    </option>
-                ))}
-            </select>
+                className="is-narrow"
+                options={COMIC_GRID_TEMPLATE_PICKER_OPTIONS.map((template) => ({
+                    value: template,
+                    label: t(
+                        `ui.comic_book_editor.layout_picker.${template}`,
+                        FALLBACK_LABELS[template],
+                    ),
+                }))}
+            />
         </label>
     );
 }

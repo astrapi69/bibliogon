@@ -34,9 +34,10 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
     await page.goto(`/book/${book.id}`);
     await page.getByTestId("comic-book-editor-add-page").click();
 
-    const picker = page.getByTestId("comic-grid-template-picker-select");
-    await picker.selectOption("grid_2x2");
-    await expect(picker).toHaveValue("grid_2x2");
+    const picker = page.getByTestId("comic-grid-template-picker-trigger");
+    await picker.click();
+    await page.getByTestId("comic-grid-template-picker-item-grid_2x2").click();
+    await expect(picker).toHaveAttribute("data-value", "grid_2x2");
 
     await addPanels(page, 3);
 
@@ -60,9 +61,10 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
     await page.goto(`/book/${book.id}`);
     await page.getByTestId("comic-book-editor-add-page").click();
 
-    const picker = page.getByTestId("comic-grid-template-picker-select");
-    await picker.selectOption("grid_2x2");
-    await expect(picker).toHaveValue("grid_2x2");
+    const picker = page.getByTestId("comic-grid-template-picker-trigger");
+    await picker.click();
+    await page.getByTestId("comic-grid-template-picker-item-grid_2x2").click();
+    await expect(picker).toHaveAttribute("data-value", "grid_2x2");
 
     await addPanels(page, 3);
 
