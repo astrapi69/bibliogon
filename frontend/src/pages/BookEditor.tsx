@@ -40,10 +40,10 @@ const EDITOR_COMPONENTS: Record<
         bookTitle: string;
         onBack: () => void;
         onShowMetadata: () => void;
-        /** Optional storyboard entry-point. Currently picture_book
-         *  only per A4 of the Storyboard-View Pre-Inspection;
-         *  ComicBookEditor receives no value and renders nothing
-         *  for it. */
+        /** Optional storyboard entry-point. Wired for both
+         *  picture_book (PageEditor) and comic_book (ComicBookEditor)
+         *  per STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1;
+         *  gated by STORYBOARD_BOOK_TYPES. */
         onShowStoryboard?: () => void;
         onTitleSave?: (title: string) => void | Promise<void>;
         isPublished?: boolean;
@@ -54,12 +54,15 @@ const EDITOR_COMPONENTS: Record<
 };
 
 /** Per-editor allow-list for the Storyboard view. Mirrors the
- *  ``content_model: pages`` gate but adds the v1 picture_book-only
- *  restriction per A4 of the PICTURE-BOOK-STORYBOARD-VIEW-01
- *  Pre-Inspection. Comic-book extension lands in a follow-up
- *  session when the multi-panel + multi-bubble UX has dedicated
- *  storyboard semantics. */
-const STORYBOARD_BOOK_TYPES = new Set<string>(["picture_book"]);
+ *  ``content_model: pages`` gate. Originally picture_book-only per
+ *  A4 of the PICTURE-BOOK-STORYBOARD-VIEW-01 Pre-Inspection;
+ *  STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1 extends it to
+ *  comic_book — the Storyboard annotation columns (notes,
+ *  story_beat, mood_color, act_group) exist on ALL Page records,
+ *  and StoryboardCard renders comic pages via the layout-tag path
+ *  (no panel thumbnail yet; a richer panel-thumbnail render is a
+ *  tracked follow-up). */
+const STORYBOARD_BOOK_TYPES = new Set<string>(["picture_book", "comic_book"]);
 
 export default function BookEditor() {
     const {bookId} = useParams<{ bookId: string }>();

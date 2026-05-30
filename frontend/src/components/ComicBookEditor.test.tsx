@@ -221,6 +221,45 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         ).toBeInTheDocument();
     });
 
+    // STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1: Storyboard
+    // entry-point button (mirrors the metadata-button contract).
+    it("does NOT render the storyboard button when onShowStoryboard is undefined", () => {
+        render(
+            <ComicBookEditor bookId="book-1" bookTitle="My Comic" onBack={vi.fn()} />,
+        );
+        expect(
+            screen.queryByTestId("comic-book-editor-show-storyboard"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("renders the storyboard button when onShowStoryboard is provided", () => {
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+                onShowStoryboard={vi.fn()}
+            />,
+        );
+        expect(
+            screen.getByTestId("comic-book-editor-show-storyboard"),
+        ).toBeInTheDocument();
+    });
+
+    it("calls onShowStoryboard when the storyboard button is clicked", () => {
+        const onShowStoryboard = vi.fn();
+        render(
+            <ComicBookEditor
+                bookId="book-1"
+                bookTitle="My Comic"
+                onBack={vi.fn()}
+                onShowStoryboard={onShowStoryboard}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("comic-book-editor-show-storyboard"));
+        expect(onShowStoryboard).toHaveBeenCalledTimes(1);
+    });
+
     it("calls onShowMetadata when the metadata button is clicked", () => {
         const onShowMetadata = vi.fn();
         render(

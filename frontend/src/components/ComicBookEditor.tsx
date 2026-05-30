@@ -26,7 +26,7 @@
  */
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { FileText, Maximize2, Minimize2 } from "lucide-react";
+import { FileText, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
 
 import {
   api,
@@ -77,6 +77,13 @@ interface Props {
    *  Optional so ComicBookEditor stays unit-testable standalone
    *  without a parent that wires it. */
   onShowMetadata?: () => void;
+  /** STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1: entry-point
+   *  into the Storyboard grid view. Mirrors PageEditor's
+   *  onShowStoryboard prop — when provided (book_type in the
+   *  storyboard allow-list), the header shows a Storyboard button
+   *  that flips ?view=storyboard. Optional so ComicBookEditor stays
+   *  unit-testable standalone. */
+  onShowStoryboard?: () => void;
   /** ARTICLE-TITLE-INLINE-EDIT-01 C1: persist a new book title. When
    *  provided, the header title becomes an EditableTitle
    *  (pencil-toggle); the parent (BookEditor) runs api.books.update.
@@ -93,6 +100,7 @@ export default function ComicBookEditor({
   bookTitle,
   onBack,
   onShowMetadata,
+  onShowStoryboard,
   onTitleSave,
   isPublished,
 }: Props) {
@@ -878,6 +886,21 @@ export default function ComicBookEditor({
             )}
           >
             <FileText size={14} />
+          </button>
+        )}
+        {/* STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1: Storyboard
+         * entry-point. Mirrors PageEditor's button + reuses the same
+         * i18n key (identical "Storyboard" label). */}
+        {onShowStoryboard && (
+          <button
+            type="button"
+            className="btn btn-secondary btn-sm"
+            data-testid="comic-book-editor-show-storyboard"
+            onClick={onShowStoryboard}
+            aria-label={t("ui.page_editor.show_storyboard", "Storyboard")}
+            title={t("ui.page_editor.show_storyboard", "Storyboard")}
+          >
+            <LayoutGrid size={14} />
           </button>
         )}
         {activePageId && (
