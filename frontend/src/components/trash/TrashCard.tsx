@@ -49,7 +49,7 @@ export default function TrashCard({
     permanentTestId,
 }: Props) {
     return (
-        <div data-testid={cardTestId} className={styles.card}>
+        <div data-testid={cardTestId} className={`card card-padded ${styles.card}`}>
             <div className={styles.body}>
                 <strong className={styles.title}>{title}</strong>
                 {subtitle ? <p className={styles.meta}>{subtitle}</p> : null}

@@ -13,16 +13,14 @@
  * narrow grid column and the second button paints outside the card.
  */
 
+/* Surface + 16px inset come from the global .card + .card-padded;
+ * this supplements the horizontal flex-row layout. 2026-05-30 sweep. */
 .card {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
     gap: 12px;
-    padding: 16px;
-    background: var(--bg-card);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-md);
     height: 100%;
 }
 
