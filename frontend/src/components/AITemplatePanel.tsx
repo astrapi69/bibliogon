@@ -2,6 +2,7 @@ import {useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {Sparkles, Download, Upload, X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
+import {Toggle} from "./settings/Toggle"
 import {notify} from "../utils/notify"
 import {api, ApiError} from "../api/client"
 import type {
@@ -316,28 +317,19 @@ export default function AITemplatePanel({
                                 borderRadius: 6,
                             }}
                         >
-                            <label style={{display: "flex", alignItems: "center", gap: 8}}>
-                                <input
-                                    type="checkbox"
-                                    checked={importForce}
-                                    onChange={(e) => setImportForce(e.target.checked)}
-                                    data-testid="ai-template-import-force"
-                                />
-                                <span>
-                                    <div>
-                                        {t(
-                                            "ui.ai_template.import_dialog.force",
-                                            "Overwrite existing values",
-                                        )}
-                                    </div>
-                                    <div style={{fontSize: "0.75rem", color: "var(--text-muted, #6b7280)"}}>
-                                        {t(
-                                            "ui.ai_template.import_dialog.force_hint",
-                                            "Without this, populated fields stay unchanged.",
-                                        )}
-                                    </div>
-                                </span>
-                            </label>
+                            <Toggle
+                                testId="ai-template-import-force"
+                                checked={importForce}
+                                onChange={setImportForce}
+                                label={t(
+                                    "ui.ai_template.import_dialog.force",
+                                    "Overwrite existing values",
+                                )}
+                                description={t(
+                                    "ui.ai_template.import_dialog.force_hint",
+                                    "Without this, populated fields stay unchanged.",
+                                )}
+                            />
                         </div>
                         <div className="dialog-footer" style={{marginTop: 16}}>
                             <button

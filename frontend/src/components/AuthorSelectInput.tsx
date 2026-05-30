@@ -31,6 +31,8 @@
  * the Tier1Section RCU pattern (testidPrefix-style n-site reuse).
  */
 
+import {Toggle} from "./settings/Toggle";
+
 interface AuthorSelectInputProps {
     /** Current author value (controlled). */
     value: string;
@@ -129,26 +131,14 @@ export default function AuthorSelectInput({
                 ))}
             </datalist>
             {showAddToAuthorsCheckbox && (
-                <label
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        marginTop: 8,
-                        fontSize: "0.875rem",
-                        color: "var(--text-secondary)",
-                    }}
-                >
-                    <input
-                        type="checkbox"
+                <div style={{marginTop: 8}}>
+                    <Toggle
                         checked={addToAuthorsDb}
-                        onChange={(e) =>
-                            onAddToAuthorsDbChange(e.target.checked)
-                        }
-                        data-testid={`${testidPrefix}-add-to-authors-checkbox`}
+                        onChange={onAddToAuthorsDbChange}
+                        label={checkboxLabel}
+                        testId={`${testidPrefix}-add-to-authors-checkbox`}
                     />
-                    <span>{checkboxLabel}</span>
-                </label>
+                </div>
             )}
         </>
     );

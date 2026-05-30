@@ -26,6 +26,7 @@ import {
 import { useDialog } from "../AppDialog";
 import { useI18n } from "../../hooks/useI18n";
 import {RadixSelect} from "../RadixSelect";
+import {Toggle} from "../settings/Toggle";
 import { notify } from "../../utils/notify";
 
 const STATUS_PILL_COLORS: Record<PublicationStatus, { bg: string; fg: string }> = {
@@ -435,18 +436,15 @@ function AddPublicationModal({
                         label: schemas[slug]?.display_name ?? slug,
                     }))}
                 />
-                <label style={modalStyles.checkbox}>
-                    <input
-                        data-testid="publications-add-is-promo"
-                        type="checkbox"
-                        checked={isPromo}
-                        onChange={(e) => setIsPromo(e.target.checked)}
-                    />
-                    {t(
+                <Toggle
+                    testId="publications-add-is-promo"
+                    checked={isPromo}
+                    onChange={setIsPromo}
+                    label={t(
                         "ui.publications.is_promo",
                         "Promo-Post (verlinkt auf eine Hauptpublikation)",
                     )}
-                </label>
+                />
                 {fields.map((field) => {
                     const required = schema?.required_metadata.includes(field) ?? false;
                     return (
