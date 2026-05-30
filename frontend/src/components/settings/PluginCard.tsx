@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {Save, Check, X, Trash2, Upload} from "lucide-react";
 import OrderedListEditor from "../OrderedListEditor";
+import {Badge} from "../Badge";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {AudiobookSettingsPanel} from "./panels/AudiobookSettingsPanel";
@@ -122,38 +123,22 @@ export function PluginCard({name, displayName, description, version, enabled, se
                 <div style={{flex: 1}}>
                     <div style={{display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap"}}>
                         <strong style={{fontSize: "1rem"}} data-testid={`plugin-name-${name}`}>{displayName}</strong>
-                        <span className={styles.badge}>v{version}</span>
-                        <span className={styles.badge} style={{
-                            background: "var(--accent-light)",
-                            color: "var(--accent)",
-                        }}>
+                        <Badge variant="default">v{version}</Badge>
+                        <Badge variant="info">
                             {t("ui.settings.free", "Kostenlos")}
-                        </span>
-                        <span className={styles.badge} style={{
-                            background: enabled ? "var(--success-light, rgba(34,197,94,0.12))" : "var(--surface-2)",
-                            color: enabled ? "var(--success, #16a34a)" : "var(--text-muted)",
-                        }}>
+                        </Badge>
+                        <Badge variant={enabled ? "success" : "muted"}>
                             {enabled ? t("ui.settings.active", "Aktiv") : t("ui.settings.inactive", "Inaktiv")}
-                        </span>
+                        </Badge>
                         {filterReason && FILTER_REASON_TO_I18N[filterReason] && (
-                            <span
-                                className={styles.badge}
-                                data-testid={`plugin-status-${name}`}
-                                style={{
-                                    background: "var(--danger-bg, rgba(239,68,68,0.12))",
-                                    color: "var(--danger, #dc2626)",
-                                }}
-                            >
+                            <Badge variant="danger" testId={`plugin-status-${name}`}>
                                 {t(FILTER_REASON_TO_I18N[filterReason], filterReason)}
-                            </span>
+                            </Badge>
                         )}
                         {isCore && (
-                            <span className={styles.badge} style={{
-                                background: "var(--accent-light, rgba(59,130,246,0.12))",
-                                color: "var(--accent, #2563eb)",
-                            }}>
+                            <Badge variant="info">
                                 {t("ui.settings.standard", "Standard")}
-                            </span>
+                            </Badge>
                         )}
                     </div>
                     {description && <p style={{color: "var(--text-muted)", fontSize: "0.875rem", marginTop: 4}}>{description}</p>}
