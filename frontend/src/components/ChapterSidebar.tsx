@@ -178,7 +178,8 @@ const SortableChapterItem = React.memo(function SortableChapterItem({chapter, is
             {!editing && (
                 <Tooltip content={deleteLabel} side="right">
                     <button
-                        className={styles.deleteBtn}
+                        className={`btn-sidebar-icon ${styles.deleteReveal}`}
+                        data-testid={`chapter-delete-${chapter.id}`}
                         onClick={(e) => {
                             e.stopPropagation();
                             onDelete(chapter.id);
@@ -383,7 +384,7 @@ export default function ChapterSidebar({
             {/* Header */}
             <div className={styles.header} data-testid="chapter-sidebar-header">
                 <Tooltip content={t("ui.sidebar.back_to_dashboard", "Zurück zum Dashboard")}>
-                    <button className={styles.backBtn} onClick={onBack}>
+                    <button className="btn-sidebar-icon" onClick={onBack} data-testid="chapter-sidebar-back">
                         <ChevronLeft size={18}/>
                     </button>
                 </Tooltip>
@@ -416,7 +417,7 @@ export default function ChapterSidebar({
                     <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
                         <Tooltip content={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}>
                             <DropdownMenu.Trigger asChild>
-                                <button className={styles.addBtn} data-testid="chapter-add-trigger">
+                                <button className="btn-sidebar-icon" data-testid="chapter-add-trigger">
                                     <Plus size={14}/>
                                 </button>
                             </DropdownMenu.Trigger>
@@ -474,7 +475,7 @@ export default function ChapterSidebar({
                 {frontMatter.length > 0 && (
                     <>
                         <div className={styles.sectionHeader}>
-                            <button className={styles.collapseBtn} onClick={() => toggleSection("front")}>
+                            <button className="btn-sidebar-icon" onClick={() => toggleSection("front")}>
                                 {collapsedSections.front ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
                             <span className={styles.listLabel}>{t("ui.sidebar.front_matter", "Front Matter")}</span>
@@ -503,7 +504,7 @@ export default function ChapterSidebar({
 
                 {/* Main Chapters */}
                 <div className={styles.sectionHeader}>
-                    <button className={styles.collapseBtn} onClick={() => toggleSection("chapters")}>
+                    <button className="btn-sidebar-icon" onClick={() => toggleSection("chapters")}>
                         {collapsedSections.chapters ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                     </button>
                     <span className={styles.listLabel}>{t("ui.sidebar.chapters", "Kapitel")}</span>
@@ -537,7 +538,7 @@ export default function ChapterSidebar({
                 {backMatter.length > 0 && (
                     <>
                         <div className={styles.sectionHeader}>
-                            <button className={styles.collapseBtn} onClick={() => toggleSection("back")}>
+                            <button className="btn-sidebar-icon" onClick={() => toggleSection("back")}>
                                 {collapsedSections.back ? <ChevronRight size={12}/> : <ChevronDown size={12}/>}
                             </button>
                             <span className={styles.listLabel}>{t("ui.sidebar.back_matter", "Back Matter")}</span>
@@ -568,7 +569,7 @@ export default function ChapterSidebar({
             {/* Actions */}
             <div className={styles.exportSection} data-testid="chapter-sidebar-footer">
                 <button
-                    className={`${styles.exportBtn} ${showMetadata ? styles.exportBtnActive : ""}`}
+                    className={`btn-sidebar-block ${showMetadata ? "is-active" : ""}`}
                     style={{marginBottom: 6}}
                     onClick={onMetadata}
                 >
@@ -576,7 +577,7 @@ export default function ChapterSidebar({
                 </button>
                 {onGitBackup && (
                     <button
-                        className={styles.exportBtn}
+                        className="btn-sidebar-block"
                         style={{marginBottom: 6, position: "relative"}}
                         onClick={onGitBackup}
                         data-testid="sidebar-git-backup"
@@ -603,7 +604,7 @@ export default function ChapterSidebar({
                 )}
                 {gitSyncMapped && onGitSync && (
                     <button
-                        className={styles.exportBtn}
+                        className="btn-sidebar-block"
                         style={{marginBottom: 6}}
                         onClick={onGitSync}
                         data-testid="sidebar-git-sync"
@@ -617,7 +618,7 @@ export default function ChapterSidebar({
                 )}
                 {hasToc && onValidateToc && (
                     <button
-                        className={styles.exportBtn}
+                        className="btn-sidebar-block"
                         style={{marginBottom: 6}}
                         onClick={onValidateToc}
                     >
@@ -627,7 +628,7 @@ export default function ChapterSidebar({
                 {onSaveAsTemplate && (
                     <Tooltip content={chapters.length === 0 ? t("ui.sidebar.save_template_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.save_template_tooltip", "Buchstruktur als wiederverwendbare Vorlage speichern")}>
                         <button
-                            className={`${styles.exportBtn} ${chapters.length === 0 ? styles.btnDisabled : ""}`}
+                            className="btn-sidebar-block"
                             style={{marginBottom: 6}}
                             onClick={onSaveAsTemplate}
                             disabled={chapters.length === 0}
@@ -639,7 +640,7 @@ export default function ChapterSidebar({
                 )}
                 <Tooltip content={chapters.length === 0 ? t("ui.sidebar.export_disabled", "Erstelle zuerst ein Kapitel") : t("ui.sidebar.export_book", "Buch exportieren")}>
                     <button
-                        className={`${styles.exportBtn} ${chapters.length === 0 ? styles.btnDisabled : ""}`}
+                        className="btn-sidebar-block"
                         onClick={onExport}
                         disabled={chapters.length === 0}
                     >

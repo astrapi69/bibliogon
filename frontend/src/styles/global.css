@@ -972,6 +972,76 @@ body {
     background: var(--bg-hover);
 }
 
+/* --- Sidebar button variants ---
+ * The colored-sidebar (--bg-sidebar / --text-sidebar) parallel to
+ * the .btn-icon / .btn system. They share the .btn sizing, radius
+ * and transition tokens so editor chrome stays consistent across
+ * surfaces, but use the sidebar color context so they remain
+ * readable on the sidebar background. Used by ChapterSidebar (and
+ * any future colored-sidebar surface). 2026-05-30 cross-editor
+ * button unification (C-chapter). A `.btn-sidebar` text base +
+ * `.btn-sidebar-sm` can follow the .btn / .btn-sm pattern when a
+ * sidebar text-button surface needs one. */
+.btn-sidebar-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 6px;
+    border: none;
+    background: transparent;
+    color: var(--text-sidebar);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-sidebar-icon:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 12%, transparent);
+}
+
+.btn-sidebar-icon:disabled,
+.btn-sidebar-icon[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* Full-width filled sidebar action (footer buttons). */
+.btn-sidebar-block {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 12px;
+    font-family: var(--font-body);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    border: 1px solid color-mix(in srgb, var(--text-sidebar) 12%, transparent);
+    border-radius: var(--radius-sm);
+    background: color-mix(in srgb, var(--text-sidebar) 6%, transparent);
+    color: var(--text-sidebar);
+    cursor: pointer;
+    transition: all var(--transition);
+}
+
+.btn-sidebar-block:hover {
+    background: color-mix(in srgb, var(--text-sidebar) 12%, transparent);
+    border-color: color-mix(in srgb, var(--text-sidebar) 18%, transparent);
+}
+
+.btn-sidebar-block.is-active {
+    background: color-mix(in srgb, var(--text-sidebar) 14%, transparent);
+    border-color: color-mix(in srgb, var(--text-sidebar) 20%, transparent);
+}
+
+.btn-sidebar-block:disabled,
+.btn-sidebar-block[disabled] {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
 /* --- Form elements --- */
 .input {
     width: 100%;
