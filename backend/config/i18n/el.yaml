@@ -2736,6 +2736,8 @@ ui:
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"
+    entity_linked: "Συνδέθηκε {name} στη σελίδα {page}"
+    entity_link_failed: "Αδυναμία σύνδεσης οντότητας"
     back: "Επιστροφή στον επεξεργαστή"
     pages_unit: "σελίδες"
     empty: "Δεν υπάρχουν σελίδες ακόμη. Προσθέστε σελίδες από τον επεξεργαστή για να εμφανιστούν εδώ."

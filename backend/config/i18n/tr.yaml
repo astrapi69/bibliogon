@@ -2736,6 +2736,8 @@ ui:
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"
+    entity_linked: "{name} sayfa {page} ile baglandi"
+    entity_link_failed: "Varlik baglanamadi"
     back: "Editöre dön"
     pages_unit: "sayfa"
     empty: "Henüz sayfa yok. Burada görüntülemek için editörden sayfa ekleyin."

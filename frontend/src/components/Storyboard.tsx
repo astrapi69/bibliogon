@@ -88,7 +88,7 @@ const MOOD_PALETTE: readonly {value: string; key: string}[] = [
 import {useI18n} from "../hooks/useI18n"
 import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
-import StoryBibleSidebar from "./StoryBibleSidebar"
+import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
 import styles from "./Storyboard.module.css"
 
@@ -348,6 +348,7 @@ export default function Storyboard({
                     onClose={() => setStoryBibleOpen(false)}
                     onSelectEntity={(entity) => setSelectedEntityId(entity.id)}
                     selectedEntityId={selectedEntityId}
+                    entitiesDraggable
                 />
             )}
             </div>
@@ -438,10 +439,54 @@ function StoryboardCard({
             cancelled = true
         }
     }, [page.id, storyBibleAvailable])
+
+    // C6: this card is an HTML5 drop target for entities dragged from
+    // the Story Bible sidebar. Dropping creates a link + appends the
+    // badge. ``isDropTarget`` highlights the card during a valid drag.
+    const [isDropTarget, setIsDropTarget] = useState(false)
+
+    const handleDragOver = (e: React.DragEvent) => {
+        if (!storyBibleAvailable) return
+        if (e.dataTransfer.types.includes(STORY_ENTITY_DND_MIME)) {
+            e.preventDefault() // mark as a valid drop target
+            setIsDropTarget(true)
+        }
+    }
+
+    const handleDrop = async (e: React.DragEvent) => {
+        if (!storyBibleAvailable) return
+        const entityId = e.dataTransfer.getData(STORY_ENTITY_DND_MIME)
+        if (!entityId) return
+        e.preventDefault()
+        setIsDropTarget(false)
+        // Idempotent: ignore a drop of an entity already linked here.
+        if (links.some((l) => l.entity_id === entityId)) return
+        try {
+            const link = await api.storyBible.createLink({
+                entity_id: entityId,
+                page_id: page.id,
+            })
+            setLinks((prev) => [...prev, link])
+            notify.success(
+                t("ui.storyboard.entity_linked", 'Linked "{name}" to page {page}')
+                    .replace("{name}", link.entity.name)
+                    .replace("{page}", String(page.position)),
+            )
+        } catch (err: unknown) {
+            notify.error(
+                t("ui.storyboard.entity_link_failed", "Could not link entity"),
+                err,
+            )
+        }
+    }
     const moodStyle: React.CSSProperties = page.mood_color
         ? {borderLeftColor: page.mood_color}
         : {}
-    const cardClass = [styles.card, page.mood_color ? styles.cardMoodBorder : ""]
+    const cardClass = [
+        styles.card,
+        page.mood_color ? styles.cardMoodBorder : "",
+        isDropTarget ? styles.cardDropTarget : "",
+    ]
         .filter(Boolean)
         .join(" ")
 
@@ -466,11 +511,15 @@ function StoryboardCard({
             style={moodStyle}
             onClick={() => onSelect(page.id)}
             onKeyDown={handleKeyDown}
+            onDragOver={handleDragOver}
+            onDragLeave={() => setIsDropTarget(false)}
+            onDrop={(e) => void handleDrop(e)}
             data-testid={`${testidNamespace}-card-${page.id}`}
             data-position={page.position}
             data-layout={page.layout}
             data-story-beat={page.story_beat ?? ""}
             data-mood-color={page.mood_color ?? ""}
+            data-drop-target={isDropTarget ? "true" : "false"}
             aria-label={`${t("ui.storyboard.open_page", "Open page")} ${page.position}`}
         >
             <div className={styles.thumbnail}>

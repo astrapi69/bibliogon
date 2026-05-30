@@ -26,6 +26,13 @@ import {useDialog} from "./AppDialog";
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryBibleSidebar.module.css";
 
+/** HTML5 drag-and-drop MIME used to carry an entity id from the
+ *  sidebar to a Storyboard card (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+ *  C6). HTML5 DnD (not @dnd-kit) per the stop-condition: the
+ *  Storyboard already runs a @dnd-kit DndContext for page reorder, and
+ *  a second cross-container @dnd-kit drag conflicts with it. */
+export const STORY_ENTITY_DND_MIME = "application/x-bibliogon-entity-id";
+
 interface StoryBibleSidebarProps {
     bookId: string;
     onClose: () => void;
@@ -38,6 +45,10 @@ interface StoryBibleSidebarProps {
      *  list refetches (the sidebar's own create/delete refetch
      *  internally). */
     refreshKey?: number;
+    /** When true (Storyboard view), entity rows become HTML5-draggable
+     *  so they can be dropped onto a StoryboardCard to create a link
+     *  (C6). Off in the BookEditor sidebar (no drop targets there). */
+    entitiesDraggable?: boolean;
 }
 
 export default function StoryBibleSidebar({
@@ -46,6 +57,7 @@ export default function StoryBibleSidebar({
     onSelectEntity,
     selectedEntityId,
     refreshKey = 0,
+    entitiesDraggable = false,
 }: StoryBibleSidebarProps) {
     const {t} = useI18n();
     const {confirm} = useDialog();
@@ -313,8 +325,21 @@ export default function StoryBibleSidebar({
                                                 selectedEntityId === entity.id
                                                     ? styles.entrySelected
                                                     : ""
-                                            }`}
+                                            } ${entitiesDraggable ? styles.entryDraggable : ""}`}
                                             data-testid={`story-bible-entry-${entity.id}`}
+                                            draggable={entitiesDraggable}
+                                            onDragStart={
+                                                entitiesDraggable
+                                                    ? (e) => {
+                                                          e.dataTransfer.setData(
+                                                              STORY_ENTITY_DND_MIME,
+                                                              entity.id,
+                                                          );
+                                                          e.dataTransfer.effectAllowed =
+                                                              "link";
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             <div className={styles.entryRow}>
                                                 <button

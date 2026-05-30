@@ -145,3 +145,13 @@
 .entry:focus-within .entryDelete {
     opacity: 1;
 }
+
+/* C6: entity rows are HTML5-draggable in the Storyboard view (dropped
+   onto a card to create a link). grab cursor signals the affordance. */
+.entryDraggable {
+    cursor: grab;
+}
+
+.entryDraggable:active {
+    cursor: grabbing;
+}

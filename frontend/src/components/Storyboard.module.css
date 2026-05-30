@@ -417,3 +417,11 @@ div:hover > .dragHandle,
     font-size: 0.72rem;
     color: var(--text-muted);
 }
+
+/* C6: a card highlights as a valid drop target while an entity is
+   dragged over it from the Story Bible sidebar. */
+.cardDropTarget {
+    outline: 2px dashed var(--accent);
+    outline-offset: 2px;
+    background: var(--bg-hover);
+}

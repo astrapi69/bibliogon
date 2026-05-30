@@ -2736,6 +2736,8 @@ ui:
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} de plus"
+    entity_linked: "{name} lie a la page {page}"
+    entity_link_failed: "Impossible de lier l'entite"
     back: "Retour à l'éditeur"
     pages_unit: "pages"
     empty: "Aucune page pour l'instant. Ajoutez des pages depuis l'éditeur pour les voir ici."

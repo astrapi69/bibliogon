@@ -52,6 +52,7 @@ vi.mock("../api/client", async () => {
                 ...actual.api.storyBible,
                 getInfo: vi.fn(),
                 pageEntities: vi.fn(),
+                createLink: vi.fn(),
             },
         },
     }
@@ -59,8 +60,11 @@ vi.mock("../api/client", async () => {
 
 // Stub the sidebar so opening it doesn't fire its own entity fetches;
 // these tests cover Storyboard's integration (badge fetch + toggle +
-// mount), not StoryBibleSidebar internals.
+// mount + drop), not StoryBibleSidebar internals. The MIME constant is
+// re-exported so the drop test references the real value.
+const STORY_ENTITY_DND_MIME = "application/x-bibliogon-entity-id"
 vi.mock("./StoryBibleSidebar", () => ({
+    STORY_ENTITY_DND_MIME: "application/x-bibliogon-entity-id",
     default: ({selectedEntityId}: {selectedEntityId?: string | null}) => (
         <div
             data-testid="story-bible-sidebar-stub"
@@ -136,6 +140,7 @@ beforeEach(() => {
     vi.mocked(api.storyBible.getInfo).mockRejectedValue(new Error("no plugin"))
     vi.mocked(api.storyBible.pageEntities).mockReset()
     vi.mocked(api.storyBible.pageEntities).mockResolvedValue([])
+    vi.mocked(api.storyBible.createLink).mockReset()
     defaultProps.onSelectPage = vi.fn()
     defaultProps.onBack = vi.fn()
 })
@@ -883,5 +888,46 @@ describe("Storyboard - Story Bible integration (C2 + C5)", () => {
         const sidebar = await screen.findByTestId("story-bible-sidebar-stub")
         expect(sidebar.getAttribute("data-selected")).toBe("e1")
         expect(defaultProps.onSelectPage).not.toHaveBeenCalled()
+    })
+})
+
+describe("Storyboard - drag entity onto card (C6)", () => {
+    it("creates a link + adds a badge when an entity is dropped on a card", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.pageEntities).mockResolvedValue([])
+        vi.mocked(api.storyBible.createLink).mockResolvedValue(
+            makeLink("e9", "Dropped") as never,
+        )
+        render(<Storyboard {...defaultProps} />)
+        const card = await screen.findByTestId("storyboard-card-p1")
+        const dataTransfer = {
+            types: [STORY_ENTITY_DND_MIME],
+            getData: (type: string) =>
+                type === STORY_ENTITY_DND_MIME ? "e9" : "",
+            setData: vi.fn(),
+        }
+        fireEvent.dragOver(card, {dataTransfer})
+        expect(card.getAttribute("data-drop-target")).toBe("true")
+        fireEvent.drop(card, {dataTransfer})
+        await waitFor(() => {
+            expect(api.storyBible.createLink).toHaveBeenCalledWith({
+                entity_id: "e9",
+                page_id: "p1",
+            })
+        })
+        // Badge appears for the dropped entity.
+        await screen.findByTestId("storyboard-entity-badge-p1-e9")
+    })
+
+    it("does not create a link when the drop carries no entity id", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        render(<Storyboard {...defaultProps} />)
+        const card = await screen.findByTestId("storyboard-card-p1")
+        fireEvent.drop(card, {
+            dataTransfer: {types: [], getData: () => "", setData: vi.fn()},
+        })
+        expect(api.storyBible.createLink).not.toHaveBeenCalled()
     })
 })

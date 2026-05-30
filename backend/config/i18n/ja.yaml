@@ -2736,6 +2736,8 @@ ui:
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"
+    entity_linked: "「{name}」をページ{page}にリンクしました"
+    entity_link_failed: "エンティティをリンクできませんでした"
     back: "エディタに戻る"
     pages_unit: "ページ"
     empty: "ページがまだありません。エディタからページを追加するとここに表示されます。"
