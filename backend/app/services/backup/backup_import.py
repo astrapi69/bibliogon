@@ -15,7 +15,12 @@ from app.backup_history import BackupHistory
 from app.exceptions import ValidationError
 from app.models import Article, ArticleAsset, Asset, Book, Chapter, ChapterType, Publication
 from app.paths import get_upload_dir
-from app.services.backup.archive_utils import find_articles_dir, find_books_dir, find_manifest
+from app.services.backup.archive_utils import (
+    find_articles_dir,
+    find_books_dir,
+    find_manifest,
+    safe_extractall,
+)
 from app.services.backup.serializer import (
     restore_article_from_data,
     restore_book_from_data,
@@ -102,7 +107,7 @@ def _extract_bgb(file: UploadFile, tmp_dir: Path) -> Path:
     extracted = tmp_dir / "extracted"
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(extracted)
+            safe_extractall(zf, extracted)
     except zipfile.BadZipFile as e:
         raise ValidationError("Beschaedigte .bgb-Datei") from e
     return extracted

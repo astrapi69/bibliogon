@@ -1,6 +1,31 @@
 """Archive layout discovery for extracted backup / project ZIPs."""
 
+import zipfile
 from pathlib import Path
+
+from app.exceptions import ValidationError
+
+
+def safe_extractall(zf: zipfile.ZipFile, target_dir: Path | str) -> None:
+    """Extract a ZIP, refusing any member that escapes ``target_dir``.
+
+    Guards against Zip Slip (CWE-22): a crafted archive with ``../``
+    components or absolute paths can otherwise write files anywhere on
+    disk via ``ZipFile.extractall``. Every member's resolved
+    destination must lie inside ``target_dir``; the first offender
+    aborts the whole extraction with a :class:`ValidationError` (no
+    partial extraction of a malicious archive).
+
+    Use this everywhere instead of a bare ``zf.extractall(...)``.
+    """
+    target = Path(target_dir).resolve()
+    for member in zf.namelist():
+        # ``Path.resolve`` collapses ``..`` and makes absolute members
+        # absolute, so the containment check below catches both vectors.
+        dest = (target / member).resolve()
+        if dest != target and target not in dest.parents:
+            raise ValidationError(f"Unsicherer Pfad im Archiv (Path-Traversal): '{member}'")
+    zf.extractall(target)
 
 
 def find_manifest(extracted: Path) -> Path | None:

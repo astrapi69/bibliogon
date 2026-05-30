@@ -244,6 +244,7 @@ class BgbImportHandler:
             from app.services.backup.archive_utils import (
                 find_articles_dir,
                 find_books_dir,
+                safe_extractall,
             )
             from app.services.backup.backup_import import (
                 _restore_article_from_dir,
@@ -253,7 +254,7 @@ class BgbImportHandler:
             tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_bgb_multi_"))
             try:
                 with zipfile.ZipFile(path, "r") as zf:
-                    zf.extractall(tmp_dir)
+                    safe_extractall(zf, tmp_dir)
                 books_dir = find_books_dir(tmp_dir)
                 if books_dir is None:
                     raise _BgbInvalid("Backup does not contain a books/ directory.")
@@ -488,7 +489,7 @@ def _restore_single_book_and_articles(session: Session, bgb_path: Path) -> tuple
     non-trashed entities; for the orchestrator the overwrite case is
     handled outside by hard-deleting first.
     """
-    from app.services.backup.archive_utils import find_articles_dir, find_books_dir
+    from app.services.backup.archive_utils import find_articles_dir, find_books_dir, safe_extractall
     from app.services.backup.backup_import import (
         _restore_article_from_dir,
         _restore_book_from_dir,
@@ -497,7 +498,7 @@ def _restore_single_book_and_articles(session: Session, bgb_path: Path) -> tuple
     tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_bgb_handler_"))
     try:
         with zipfile.ZipFile(bgb_path, "r") as zf:
-            zf.extractall(tmp_dir)
+            safe_extractall(zf, tmp_dir)
 
         book_id = ""
         books_dir = find_books_dir(tmp_dir)

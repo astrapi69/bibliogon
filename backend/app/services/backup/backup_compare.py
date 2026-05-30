@@ -19,7 +19,7 @@ from typing import Any
 from fastapi import UploadFile
 
 from app.exceptions import ValidationError
-from app.services.backup.archive_utils import find_books_dir, find_manifest
+from app.services.backup.archive_utils import find_books_dir, find_manifest, safe_extractall
 
 # --- Public entry point ---
 
@@ -89,7 +89,7 @@ def _extract_upload(file: UploadFile, dest: Path, label: str) -> Path:
     extracted = dest / "extracted"
     try:
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(extracted)
+            safe_extractall(zf, extracted)
     except zipfile.BadZipFile as e:
         raise ValidationError(
             f"Backup {label}: Datei ist beschädigt und kann nicht gelesen werden"

@@ -34,7 +34,7 @@ from app.import_plugins.protocol import (
     DetectedProject,
 )
 from app.models import Asset, Book, Chapter
-from app.services.backup.archive_utils import find_project_root
+from app.services.backup.archive_utils import find_project_root, safe_extractall
 from app.services.backup.project_import import _import_project_root
 
 _WBT_MARKER = "config/metadata.yaml"
@@ -452,7 +452,7 @@ def _extracted_root(zip_path: Path) -> Path:
             shutil.rmtree(target, ignore_errors=True)
         target.mkdir(parents=True, exist_ok=True)
         with zipfile.ZipFile(zip_path, "r") as zf:
-            zf.extractall(target)
+            safe_extractall(zf, target)
         sentinel.write_text("ok", encoding="utf-8")
     root = find_project_root(target)
     if root is None:
