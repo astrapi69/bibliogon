@@ -55,6 +55,7 @@ vi.mock("../api/client", async () => {
                 createLink: vi.fn(),
                 listEntities: vi.fn(),
                 appearances: vi.fn(),
+                continuityCheck: vi.fn(),
             },
         },
     }
@@ -147,6 +148,8 @@ beforeEach(() => {
     vi.mocked(api.storyBible.listEntities).mockResolvedValue([])
     vi.mocked(api.storyBible.appearances).mockReset()
     vi.mocked(api.storyBible.appearances).mockResolvedValue([])
+    vi.mocked(api.storyBible.continuityCheck).mockReset()
+    vi.mocked(api.storyBible.continuityCheck).mockResolvedValue([])
     defaultProps.onSelectPage = vi.fn()
     defaultProps.onBack = vi.fn()
 })
@@ -1023,5 +1026,31 @@ describe("Storyboard - arc view toggle (C9)", () => {
             expect(screen.getByTestId("storyboard-arc-empty")).toBeTruthy()
         })
         expect(screen.queryByTestId("storyboard-card-p1")).toBeNull()
+    })
+})
+
+describe("Storyboard - continuity warnings (C11)", () => {
+    it("badges a page with a continuity warning and dismisses it", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.continuityCheck).mockResolvedValue([
+            {code: "empty_page", page_id: "p1", page_position: 1},
+        ] as never)
+        render(<Storyboard {...defaultProps} />)
+        const warn = await screen.findByTestId("storyboard-warning-p1")
+        expect(warn).toBeTruthy()
+        fireEvent.click(screen.getByTestId("storyboard-warning-dismiss-p1"))
+        await waitFor(() => {
+            expect(screen.queryByTestId("storyboard-warning-p1")).toBeNull()
+        })
+    })
+
+    it("shows no warning badge when continuity-check is clean", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.continuityCheck).mockResolvedValue([])
+        render(<Storyboard {...defaultProps} />)
+        await screen.findByTestId("storyboard-card-p1")
+        expect(screen.queryByTestId("storyboard-warning-p1")).toBeNull()
     })
 })

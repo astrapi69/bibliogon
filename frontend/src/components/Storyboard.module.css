@@ -471,3 +471,25 @@ div:hover > .dragHandle,
     font-size: 0.78rem;
     cursor: pointer;
 }
+
+/* C11: continuity warning badge on a card (advisory, dismissable). */
+.warnBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    margin-left: auto;
+    color: var(--warning);
+}
+
+.warnDismiss {
+    display: inline-flex;
+    border: none;
+    background: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    padding: 0;
+}
+
+.warnDismiss:hover {
+    color: var(--text);
+}

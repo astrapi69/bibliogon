@@ -4295,6 +4295,12 @@ export const api = {
 
     deleteLink: (linkId: string) =>
       request<void>(`/story-bible/links/${linkId}`, { method: "DELETE" }),
+
+    /** Advisory continuity warnings for a book's Storyboard (C11). */
+    continuityCheck: (bookId: string) =>
+      request<ContinuityWarning[]>(
+        `/story-bible/books/${bookId}/continuity-check`,
+      ),
   },
 
   /** About-Dialog backend client. Single cohesive payload — app
@@ -4422,6 +4428,17 @@ export interface StoryEntityLinkCreate {
   chapter_id?: string | null;
   role?: string | null;
   notes?: string | null;
+}
+
+/** An advisory continuity warning (C11). ``page_id`` is the card to
+ *  badge; ``code`` + params drive the localized message. */
+export interface ContinuityWarning {
+  code: "empty_page" | "entity_disappears" | "entity_gap";
+  page_id: string;
+  page_position: number;
+  entity_id?: string;
+  entity_name?: string;
+  gap_to_position?: number;
 }
 
 export interface StoryEntityUpdate {

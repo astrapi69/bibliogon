@@ -21,6 +21,7 @@
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {
+    AlertTriangle,
     ArrowLeft,
     BookOpen,
     FileImage,
@@ -50,6 +51,7 @@ import {CSS} from "@dnd-kit/utilities"
 
 import {
     api,
+    type ContinuityWarning,
     type Page,
     type PageUpdate,
     type StoryBeat,
@@ -105,6 +107,25 @@ import styles from "./Storyboard.module.css"
 /** Max entity badges shown on a storyboard card before the
  *  "+N" overflow indicator (STORY-BIBLE-STORYBOARD-INTEGRATION-01 C5). */
 const MAX_VISIBLE_BADGES = 5
+
+/** Localize a continuity warning (C11). */
+function continuityMessage(
+    w: ContinuityWarning,
+    t: (key: string, fallback: string) => string,
+): string {
+    if (w.code === "entity_disappears") {
+        return t(
+            "ui.storyboard.continuity_disappears",
+            "{name} disappears after this page",
+        ).replace("{name}", w.entity_name ?? "")
+    }
+    if (w.code === "entity_gap") {
+        return t("ui.storyboard.continuity_gap", "{name} is absent until page {to}")
+            .replace("{name}", w.entity_name ?? "")
+            .replace("{to}", String(w.gap_to_position ?? ""))
+    }
+    return t("ui.storyboard.continuity_empty_page", "No entities on this page")
+}
 
 interface Props {
     bookId: string
@@ -217,6 +238,36 @@ export default function Storyboard({
                 : [...prev, entityId],
         )
     }, [])
+
+    // C11: continuity warnings, grouped by the page they badge.
+    // Dismissed page_ids are local (advisory, per the spec). Re-fetched
+    // when a link changes (linkRefreshKey) so a drop clears/adds a warn.
+    const [warningsByPage, setWarningsByPage] = useState<
+        Record<string, ContinuityWarning[]>
+    >({})
+    const [dismissedWarnings, setDismissedWarnings] = useState<Set<string>>(
+        new Set(),
+    )
+    const [linkRefreshKey, setLinkRefreshKey] = useState(0)
+
+    useEffect(() => {
+        if (!storyBibleAvailable) return
+        let cancelled = false
+        api.storyBible
+            .continuityCheck(bookId)
+            .then((rows) => {
+                if (cancelled) return
+                const grouped: Record<string, ContinuityWarning[]> = {}
+                for (const w of rows) {
+                    ;(grouped[w.page_id] ??= []).push(w)
+                }
+                setWarningsByPage(grouped)
+            })
+            .catch(() => {})
+        return () => {
+            cancelled = true
+        }
+    }, [bookId, storyBibleAvailable, linkRefreshKey])
 
     useEffect(() => {
         let cancelled = false
@@ -493,6 +544,18 @@ export default function Storyboard({
                                                 onPatch={handlePatchPage}
                                                 storyBibleAvailable={storyBibleAvailable}
                                                 onOpenEntity={openEntity}
+                                                warnings={warningsByPage[page.id] ?? []}
+                                                warningsDismissed={dismissedWarnings.has(
+                                                    page.id,
+                                                )}
+                                                onDismissWarnings={() =>
+                                                    setDismissedWarnings((prev) =>
+                                                        new Set(prev).add(page.id),
+                                                    )
+                                                }
+                                                onLinksChanged={() =>
+                                                    setLinkRefreshKey((k) => k + 1)
+                                                }
                                                 testidNamespace={testidNamespace}
                                             />
                                         ))}
@@ -532,6 +595,15 @@ interface CardProps {
     /** Badge click -> open the Story Bible sidebar with this entity
      *  selected (C5). */
     onOpenEntity: (entityId: string) => void
+    /** C11: continuity warnings for this page (advisory). */
+    warnings: ContinuityWarning[]
+    /** C11: whether the user dismissed this page's warnings. */
+    warningsDismissed: boolean
+    /** C11: dismiss this page's warning badge. */
+    onDismissWarnings: () => void
+    /** C6/C11: fired after a link is created here so the parent
+     *  re-runs the continuity check. */
+    onLinksChanged: () => void
     testidNamespace: string
 }
 
@@ -574,6 +646,10 @@ function StoryboardCard({
     onPatch,
     storyBibleAvailable,
     onOpenEntity,
+    warnings,
+    warningsDismissed,
+    onDismissWarnings,
+    onLinksChanged,
     testidNamespace,
 }: CardProps) {
     const {t} = useI18n()
@@ -628,6 +704,7 @@ function StoryboardCard({
                 page_id: page.id,
             })
             setLinks((prev) => [...prev, link])
+            onLinksChanged()
             notify.success(
                 t("ui.storyboard.entity_linked", 'Linked "{name}" to page {page}')
                     .replace("{name}", link.entity.name)
@@ -704,6 +781,32 @@ function StoryboardCard({
                     ) : (
                         <span className={styles.titlePlaceholder}>
                             {t("ui.storyboard.card_no_text", "(no text)")}
+                        </span>
+                    )}
+                    {warnings.length > 0 && !warningsDismissed && (
+                        <span
+                            className={styles.warnBadge}
+                            data-testid={`${testidNamespace}-warning-${page.id}`}
+                            title={warnings
+                                .map((w) => continuityMessage(w, t))
+                                .join("\n")}
+                        >
+                            <AlertTriangle size={13} aria-hidden />
+                            <button
+                                type="button"
+                                className={styles.warnDismiss}
+                                onClick={(e) => {
+                                    e.stopPropagation()
+                                    onDismissWarnings()
+                                }}
+                                data-testid={`${testidNamespace}-warning-dismiss-${page.id}`}
+                                aria-label={t(
+                                    "ui.storyboard.continuity_dismiss",
+                                    "Dismiss warnings",
+                                )}
+                            >
+                                <X size={11} />
+                            </button>
                         </span>
                     )}
                 </div>
