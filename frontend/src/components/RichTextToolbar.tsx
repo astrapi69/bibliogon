@@ -47,6 +47,7 @@ import {
 import {useEffect, useState} from "react"
 import {useI18n} from "../hooks/useI18n"
 import {PICTURE_BOOK_FONTS} from "../data/picture-book-fonts"
+import {RadixSelect} from "./RadixSelect"
 import styles from "./RichTextToolbar.module.css"
 
 /** Sentinel value for the "Default font" <option>. Distinct from
@@ -240,13 +241,12 @@ export default function RichTextToolbar({
             <span className={styles.divider} aria-hidden="true" />
 
             {/* PB-PHASE4 Session 4c-B-1 Finding G (G2): Font dropdown.
-             *  Native <select> per the Radix-DropdownMenu-in-happy-dom
-             *  lessons-learned rule. Sentinel "__default__" → no
-             *  fontFamily mark; any other value → setFontFamily.
-             *  Reads the current fontFamily via getAttributes('textStyle'),
-             *  falling back to the sentinel when no mark is present
-             *  (D11 backward-compat: existing pages without marks render
-             *  with the hardcoded Atkinson default in the PDF).
+             *  Sentinel "__default__" → no fontFamily mark; any other
+             *  value → setFontFamily. Reads the current fontFamily via
+             *  getAttributes('textStyle'), falling back to the sentinel
+             *  when no mark is present (D11 backward-compat: existing
+             *  pages without marks render with the hardcoded Atkinson
+             *  default in the PDF).
              *
              *  Bug 3 (2026-05-18): picture-book convention is one page
              *  one consistent font. Per-character font variation isn't
@@ -257,10 +257,17 @@ export default function RichTextToolbar({
              *  the editor's caret position is restored implicitly after
              *  the selection-based mark applies. Future per-mark override
              *  for fine-grained control is filed as
-             *  PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01 (P3 backlog). */}
-            <select
-                onChange={(e) => {
-                    const value = e.target.value
+             *  PICTURE-BOOK-FONT-PER-MARK-OVERRIDE-01 (P3 backlog).
+             *  2026-05-30 sweep 2B: now the canonical RadixSelect
+             *  (test-mode native render preserves Vitest determinism). */}
+            <RadixSelect
+                className="is-narrow"
+                value={
+                    (editor.getAttributes("textStyle").fontFamily as
+                        | string
+                        | undefined) ?? FONT_DEFAULT_SENTINEL
+                }
+                onValueChange={(value) => {
                     if (value === FONT_DEFAULT_SENTINEL) {
                         editor
                             .chain()
@@ -277,29 +284,23 @@ export default function RichTextToolbar({
                             .run()
                     }
                 }}
-                value={
-                    (editor.getAttributes("textStyle").fontFamily as
-                        | string
-                        | undefined) ?? FONT_DEFAULT_SENTINEL
-                }
                 disabled={disabled}
-                data-testid={`${testidNamespace}-font-family`}
-                title={t("ui.page_editor.toolbar.font_family", "Font")}
-                aria-label={t("ui.page_editor.toolbar.font_family", "Font")}
-                className={styles.fontSelect}
-            >
-                <option value={FONT_DEFAULT_SENTINEL}>
-                    {t(
-                        "ui.page_editor.toolbar.font_family_default",
-                        "Default",
-                    )}
-                </option>
-                {PICTURE_BOOK_FONTS.map((font) => (
-                    <option key={font.id} value={font.id}>
-                        {font.label}
-                    </option>
-                ))}
-            </select>
+                testId={`${testidNamespace}-font-family`}
+                ariaLabel={t("ui.page_editor.toolbar.font_family", "Font")}
+                options={[
+                    {
+                        value: FONT_DEFAULT_SENTINEL,
+                        label: t(
+                            "ui.page_editor.toolbar.font_family_default",
+                            "Default",
+                        ),
+                    },
+                    ...PICTURE_BOOK_FONTS.map((font) => ({
+                        value: font.id,
+                        label: font.label,
+                    })),
+                ]}
+            />
         </div>
     )
 }

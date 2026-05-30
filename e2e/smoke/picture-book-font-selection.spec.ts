@@ -63,25 +63,26 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         await expect(page.getByTestId("page-editor-toolbar-root")).toBeVisible()
 
         const fontSelect = page.getByTestId(
-            "page-editor-toolbar-font-family",
+            "page-editor-toolbar-font-family-trigger",
         )
         await expect(fontSelect).toBeVisible()
 
         // 1 sentinel + 5 fonts = 6 options. Pin the full set per
         // the D8 5-font decision so a catalog change is caught.
-        const options = await fontSelect.locator("option").all()
-        expect(options).toHaveLength(6)
-        const values = await Promise.all(
-            options.map((o) => o.getAttribute("value")),
-        )
-        expect(values).toEqual([
+        // RadixSelect: open the trigger, assert each item is present.
+        await fontSelect.click()
+        for (const v of [
             "__default__",
             "Atkinson Hyperlegible",
             "Andika",
             "Comic Neue",
             "Lexend",
             "OpenDyslexic",
-        ])
+        ]) {
+            await expect(
+                page.getByTestId(`page-editor-toolbar-font-family-item-${v}`),
+            ).toBeVisible()
+        }
     })
 
     test("Font dropdown does NOT render on a Tier-Property layout (speech_bubble)", async ({
@@ -103,7 +104,7 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
             0,
         )
         await expect(
-            page.getByTestId("page-editor-toolbar-font-family"),
+            page.getByTestId("page-editor-toolbar-font-family-trigger"),
         ).toHaveCount(0)
     })
 
@@ -137,9 +138,8 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
 
         // No explicit Ctrl/Cmd+A. The dropdown's onChange must
         // auto-select-all before applying the font.
-        await page
-            .getByTestId("page-editor-toolbar-font-family")
-            .selectOption("Andika")
+        await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
+        await page.getByTestId("page-editor-toolbar-font-family-item-Andika").click()
 
         // Wait for the autosave debounce (800 ms) + PATCH round-trip.
         await page.waitForTimeout(2000)
@@ -187,9 +187,8 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         await page.keyboard.press(
             process.platform === "darwin" ? "Meta+A" : "Control+A",
         )
-        await page
-            .getByTestId("page-editor-toolbar-font-family")
-            .selectOption("Comic Neue")
+        await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
+        await page.getByTestId("page-editor-toolbar-font-family-item-Comic Neue").click()
         await page.waitForTimeout(2000)
 
         // Sanity: the mark IS persisted.
@@ -203,9 +202,8 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         await page.keyboard.press(
             process.platform === "darwin" ? "Meta+A" : "Control+A",
         )
-        await page
-            .getByTestId("page-editor-toolbar-font-family")
-            .selectOption("__default__")
+        await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
+        await page.getByTestId("page-editor-toolbar-font-family-item-__default__").click()
         await page.waitForTimeout(2000)
 
         // The mark must be gone — D11 backward-compat: a page
@@ -278,8 +276,8 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         )
 
         const fontSelect = page.getByTestId(
-            "page-editor-toolbar-font-family",
+            "page-editor-toolbar-font-family-trigger",
         )
-        await expect(fontSelect).toHaveValue("Lexend")
+        await expect(fontSelect).toHaveAttribute("data-value", "Lexend")
     })
 })

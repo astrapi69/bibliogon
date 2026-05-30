@@ -281,7 +281,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
         render(<Host />)
         await waitFor(() => expect(screen.getByTestId("tb-root")).toBeTruthy())
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         expect(select).toBeTruthy()
         // 1 Default sentinel + 5 fonts (Atkinson Hyperlegible,
@@ -298,7 +298,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
         render(<Host />)
         await waitFor(() => expect(screen.getByTestId("tb-root")).toBeTruthy())
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         expect(select.value).toBe("__default__")
     })
@@ -318,7 +318,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
             editorRef!.commands.selectAll()
         })
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "Andika"}})
         // The contract the G4 PDF walker depends on: the JSON
@@ -347,7 +347,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
         )
         // Then revert via the dropdown.
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "__default__"}})
         // Mark should be gone.
@@ -398,7 +398,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
             editorRef!.commands.setTextSelection(0)
         })
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "Andika"}})
 
@@ -460,7 +460,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
             editorRef!.commands.setTextSelection(0)
         })
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "__default__"}})
 
@@ -484,7 +484,7 @@ describe("RichTextToolbar — Font dropdown (Finding G2)", () => {
             editorRef!.commands.setFontFamily("Comic Neue")
         })
         const select = screen.getByTestId(
-            "tb-font-family",
+            "tb-font-family-trigger",
         ) as HTMLSelectElement
         // The select's value tracks the active mark via
         // getAttributes('textStyle').fontFamily.
