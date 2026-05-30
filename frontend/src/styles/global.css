@@ -1092,6 +1092,17 @@ body {
     cursor: not-allowed;
 }
 
+/* Shared checkbox accent. Themes every native checkbox's check/fill
+ * to the palette accent in one declaration — covers the design-intent
+ * exemptions (list-row selection, generic plugin renderer, dense
+ * tier on/off toggles) that deliberately stay native rather than
+ * adopting the settings <Toggle>. Settings-row checkboxes use
+ * <Toggle> (which also sets accent-color, so this is a harmless
+ * base). 2026-05-30 component-consistency sweep (Session 2B). */
+input[type="checkbox"] {
+    accent-color: var(--accent);
+}
+
 .label {
     display: block;
     font-size: 0.8125rem;
