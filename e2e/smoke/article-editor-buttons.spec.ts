@@ -65,12 +65,13 @@ test.describe("ArticleEditor button + select styling", () => {
                 return {color: s.color, borderRadius: s.borderRadius};
             });
 
-        const language = await read("article-editor-language");
-        const status = await read("article-editor-status");
-        const contentType = await read("article-editor-content-type");
+        const language = await read("article-editor-language-trigger");
+        const status = await read("article-editor-status-trigger");
+        const contentType = await read("article-editor-content-type-trigger");
 
-        // All selects use the same .fieldInput style → identical
-        // computed color + radius (consistency pin).
+        // All selects use the same .radix-select-trigger style (2026-05-30
+        // Session 2B migration) → identical computed color + radius
+        // (consistency pin).
         expect(status.color).toBe(language.color);
         expect(contentType.color).toBe(language.color);
         expect(status.borderRadius).toBe(language.borderRadius);

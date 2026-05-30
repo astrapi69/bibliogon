@@ -46,18 +46,26 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         await page.goto(`/articles/${article.id}`);
         await expect(page.getByTestId("article-editor")).toBeVisible();
 
-        const topicSelect = page.getByTestId("article-editor-topic");
+        const topicSelect = page.getByTestId("article-editor-topic-trigger");
         await expect(topicSelect).toBeEnabled();
-        // Both topics must be present as options.
-        await expect(topicSelect.locator("option", {hasText: "Tech"})).toHaveCount(1);
-        await expect(topicSelect.locator("option", {hasText: "Writing"})).toHaveCount(1);
+        // Open the dropdown; both topics must be present as items.
+        await topicSelect.click();
+        await expect(
+            page.getByTestId("article-editor-topic-item-Tech"),
+        ).toBeVisible();
+        await expect(
+            page.getByTestId("article-editor-topic-item-Writing"),
+        ).toBeVisible();
 
-        await topicSelect.selectOption("Tech");
+        // Pick Tech (closes the menu).
+        await page.getByTestId("article-editor-topic-item-Tech").click();
         await page.waitForTimeout(300);
 
         // Reload and assert persistence via the dropdown's selected value.
         await page.reload();
-        await expect(page.getByTestId("article-editor-topic")).toHaveValue("Tech");
+        await expect(
+            page.getByTestId("article-editor-topic-trigger"),
+        ).toHaveAttribute("data-value", "Tech");
 
         // Cleanup: drop the seeded topics so other tests start clean.
         await patchJson("/settings/app", {topics: []});

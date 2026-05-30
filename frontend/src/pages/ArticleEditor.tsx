@@ -55,6 +55,7 @@ import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
+import { RadixSelect } from "../components/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/useTopics";
 import { notify } from "../utils/notify";
@@ -764,23 +765,20 @@ export default function ArticleEditor() {
                             "Sprache des Artikelinhalts.",
                         )}
                     />
-                    <select
-                        data-testid="article-editor-language"
-                        aria-label={t("ui.articles.language", "Sprache")}
+                    <RadixSelect
+                        testId="article-editor-language"
+                        ariaLabel={t("ui.articles.language", "Sprache")}
                         value={article.language}
-                        onChange={(e) => {
-                            const v = e.target.value;
+                        onValueChange={(v) => {
                             setArticle({ ...article, language: v });
                             void persistMeta({ language: v });
                         }}
-                        className={layout.fieldInput}
-                    >
-                        {SUPPORTED_LANGUAGES.map((opt) => (
-                            <option key={opt.code} value={opt.code}>
-                                {opt.label}
-                            </option>
-                        ))}
-                    </select>
+                        className="is-block"
+                        options={SUPPORTED_LANGUAGES.map((opt) => ({
+                            value: opt.code,
+                            label: opt.label,
+                        }))}
+                    />
                     <FieldLabel
                         label={t("ui.articles.status", "Status")}
                         tooltip={t(
@@ -788,26 +786,22 @@ export default function ArticleEditor() {
                             "Lebenszyklus: Entwurf > Bereit > Veröffentlicht > Archiviert.",
                         )}
                     />
-                    <select
-                        data-testid="article-editor-status"
-                        aria-label={t("ui.articles.status", "Status")}
+                    <RadixSelect
+                        testId="article-editor-status"
+                        ariaLabel={t("ui.articles.status", "Status")}
                         value={article.status}
-                        onChange={(e) =>
-                            persistMeta({
-                                status: e.target.value as ArticleStatus,
-                            })
+                        onValueChange={(v) =>
+                            persistMeta({ status: v as ArticleStatus })
                         }
-                        className={layout.fieldInput}
-                    >
-                        {STATUSES.map((s) => (
-                            <option key={s} value={s}>
-                                {t(
-                                    `ui.articles.status_${s}`,
-                                    s.charAt(0).toUpperCase() + s.slice(1),
-                                )}
-                            </option>
-                        ))}
-                    </select>
+                        className="is-block"
+                        options={STATUSES.map((s) => ({
+                            value: s,
+                            label: t(
+                                `ui.articles.status_${s}`,
+                                s.charAt(0).toUpperCase() + s.slice(1),
+                            ),
+                        }))}
+                    />
 
                     {/* ARTICLE-TYPES-SSOT-01 C6 (2026-05-29):
                      *  Article-type selector + type-specific fields.
@@ -824,12 +818,12 @@ export default function ArticleEditor() {
                             "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter.",
                         )}
                     />
-                    <select
-                        data-testid="article-editor-content-type"
-                        aria-label={t("ui.articles.article_type", "Artikel-Typ")}
+                    <RadixSelect
+                        testId="article-editor-content-type"
+                        ariaLabel={t("ui.articles.article_type", "Artikel-Typ")}
                         value={article.content_type}
-                        onChange={(e) => {
-                            const next = e.target.value as ContentType;
+                        onValueChange={(v) => {
+                            const next = v as ContentType;
                             // Auto-reset article_metadata when type
                             // changes; the new type's extra_fields are
                             // likely a different shape from the old.
@@ -841,14 +835,12 @@ export default function ArticleEditor() {
                                 article_metadata: {},
                             });
                         }}
-                        className={layout.fieldInput}
-                    >
-                        {articleTypesSnapshot.ordered.map((at) => (
-                            <option key={at.id} value={at.id}>
-                                {t(at.label_key, at.id)}
-                            </option>
-                        ))}
-                    </select>
+                        className="is-block"
+                        options={articleTypesSnapshot.ordered.map((at) => ({
+                            value: at.id,
+                            label: t(at.label_key, at.id),
+                        }))}
+                    />
                     {articleTypesSnapshot.types[article.content_type] ? (
                         <div
                             style={{
@@ -1217,41 +1209,39 @@ export default function ArticleEditor() {
                                     );
                                 }
                                 return (
-                                    <select
-                                        data-testid="article-editor-translate-provider"
+                                    <RadixSelect
+                                        testId="article-editor-translate-provider"
                                         value={translateProvider}
-                                        onChange={(e) =>
-                                            setTranslateProvider(e.target.value as "deepl" | "lmstudio")
+                                        onValueChange={(v) =>
+                                            setTranslateProvider(v as "deepl" | "lmstudio")
                                         }
                                         disabled={translating || providers === null}
-                                        className={layout.fieldInput}
-                                    >
-                                        {visibleProviders.map((p) => (
-                                            <option key={p.id} value={p.id}>
-                                                {p.name}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        className="is-block"
+                                        ariaLabel={t("ui.articles.translate_provider", "Provider")}
+                                        options={visibleProviders.map((p) => ({
+                                            value: p.id,
+                                            label: p.name,
+                                        }))}
+                                    />
                                 );
                             })()}
                             <label className={layout.fieldLabel}>
                                 {t("ui.articles.translate_target_lang", "Zielsprache")}
                             </label>
-                            <select
-                                data-testid="article-editor-translate-lang"
+                            <RadixSelect
+                                testId="article-editor-translate-lang"
                                 value={translateLang}
-                                onChange={(e) => setTranslateLang(e.target.value)}
+                                onValueChange={setTranslateLang}
                                 disabled={translating}
-                                className={layout.fieldInput}
-                            >
-                                {SUPPORTED_LANGUAGES.filter((l) => l.code !== article.language).map(
-                                    (opt) => (
-                                        <option key={opt.code} value={opt.code}>
-                                            {opt.label}
-                                        </option>
-                                    ),
-                                )}
-                            </select>
+                                className="is-block"
+                                ariaLabel={t("ui.articles.translate_target", "Zielsprache")}
+                                options={SUPPORTED_LANGUAGES.filter(
+                                    (l) => l.code !== article.language,
+                                ).map((opt) => ({
+                                    value: opt.code,
+                                    label: opt.label,
+                                }))}
+                            />
                             <div style={{display: "flex", gap: 6}}>
                                 <button
                                     type="button"
@@ -1487,12 +1477,11 @@ function TopicSelect({
         if (adding) inputRef.current?.focus();
     }, [adding]);
 
-    const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const next = e.target.value;
+    const handleSelectChange = (next: string) => {
         if (next === ADD_TOPIC_SENTINEL) {
-            // Reset the select to the current value so closing the
-            // inline input via Escape leaves the dropdown sane.
-            e.target.value = value;
+            // Controlled RadixSelect: we simply don't propagate the
+            // sentinel as a value, so the trigger keeps showing the
+            // current topic while the inline add-input opens.
             setDraft("");
             setAdding(true);
             return;
@@ -1567,29 +1556,30 @@ function TopicSelect({
 
     return (
         <>
-            <select
-                data-testid="article-editor-topic"
-                aria-label={t("ui.articles.topic", "Thema")}
+            <RadixSelect
+                testId="article-editor-topic"
+                ariaLabel={t("ui.articles.topic", "Thema")}
                 value={value}
-                onChange={handleSelectChange}
-                className={layout.fieldInput}
+                onValueChange={handleSelectChange}
+                className="is-block"
                 disabled={topics === null}
-            >
-                <option value="">
-                    {t("ui.articles.topic_none", "(kein Thema)")}
-                </option>
-                {list.map((topic) => (
-                    <option key={topic} value={topic}>
-                        {topic}
-                    </option>
-                ))}
-                {!valueIsKnown && (
-                    <option value={value}>{value}</option>
-                )}
-                <option value={ADD_TOPIC_SENTINEL} data-testid="article-editor-topic-add-new">
-                    {t("ui.articles.topic_add_new", "+ Neues Thema hinzufügen")}
-                </option>
-            </select>
+                allOption={{
+                    label: t("ui.articles.topic_none", "(kein Thema)"),
+                }}
+                options={[
+                    ...list.map((topic) => ({value: topic, label: topic})),
+                    ...(!valueIsKnown && value !== ""
+                        ? [{value, label: value}]
+                        : []),
+                    {
+                        value: ADD_TOPIC_SENTINEL,
+                        label: t(
+                            "ui.articles.topic_add_new",
+                            "+ Neues Thema hinzufügen",
+                        ),
+                    },
+                ]}
+            />
             {noTopicsConfigured && (
                 <p
                     data-testid="article-editor-topic-empty-hint"

@@ -125,9 +125,9 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         const id = page.url().split("/").pop()!;
 
         // Editor sidebar's type selector is present.
-        const typeSelect = page.getByTestId("article-editor-content-type");
+        const typeSelect = page.getByTestId("article-editor-content-type-trigger");
         await expect(typeSelect).toBeVisible();
-        await expect(typeSelect).toHaveValue("blogpost");
+        await expect(typeSelect).toHaveAttribute("data-value", "blogpost");
 
         // Description hint surfaces.
         await expect(
@@ -135,7 +135,10 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         ).toBeVisible();
 
         // Switch to tutorial.
-        await typeSelect.selectOption("tutorial");
+        await typeSelect.click();
+        await page
+            .getByTestId("article-editor-content-type-item-tutorial")
+            .click();
 
         // Wait for persistMeta to flush + re-render with the new
         // extra_fields section.
