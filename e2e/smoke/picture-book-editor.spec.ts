@@ -668,9 +668,10 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByTestId("speech-bubble-border-width-slider")
             .fill("4")
+        await page.getByTestId("speech-bubble-border-style-trigger").click()
         await page
-            .getByTestId("speech-bubble-border-style-select")
-            .selectOption("dashed")
+            .getByTestId("speech-bubble-border-style-item-dashed")
+            .click()
         // Wait for the composed border to land in the inline style.
         await expect
             .poll(
@@ -688,17 +689,19 @@ test.describe("Picture-Book PageEditor smoke", () => {
         //     font_size + text_align ---
         await page.getByTestId("speech-bubble-tier2-trigger").click()
         await expect(
-            page.getByTestId("speech-bubble-font-family-select"),
+            page.getByTestId("speech-bubble-font-family-trigger"),
         ).toBeVisible()
+        await page.getByTestId("speech-bubble-font-family-trigger").click()
         await page
-            .getByTestId("speech-bubble-font-family-select")
-            .selectOption("Comic Neue")
+            .getByTestId("speech-bubble-font-family-item-Comic Neue")
+            .click()
         await page
             .getByTestId("speech-bubble-font-size-slider")
             .fill("22")
+        await page.getByTestId("speech-bubble-text-align-trigger").click()
         await page
-            .getByTestId("speech-bubble-text-align-select")
-            .selectOption("left")
+            .getByTestId("speech-bubble-text-align-item-left")
+            .click()
 
         // Wait for Tier 2 emit to surface on the bubble's
         // inline style (debounced font_size + immediate

@@ -31,17 +31,17 @@ describe("Tier2Section", () => {
             />,
         );
         expect(
-            screen.getByTestId("speech-bubble-font-family-select"),
+            screen.getByTestId("speech-bubble-font-family-trigger"),
         ).toBeInTheDocument();
         expect(
             screen.getByTestId("speech-bubble-font-size-slider"),
         ).toBeInTheDocument();
         expect(
-            screen.getByTestId("speech-bubble-font-weight-select"),
+            screen.getByTestId("speech-bubble-font-weight-trigger"),
         ).toBeInTheDocument();
         expect(screen.getByTestId("speech-bubble-text-color")).toBeInTheDocument();
         expect(
-            screen.getByTestId("speech-bubble-text-align-select"),
+            screen.getByTestId("speech-bubble-text-align-trigger"),
         ).toBeInTheDocument();
         expect(
             screen.getByTestId("speech-bubble-italic-toggle"),
@@ -58,7 +58,7 @@ describe("Tier2Section", () => {
             />,
         );
         expect(
-            screen.getByTestId("comic-bubble-font-family-select"),
+            screen.getByTestId("comic-bubble-font-family-trigger"),
         ).toBeInTheDocument();
         expect(
             screen.getByTestId("comic-bubble-italic-toggle"),
@@ -75,7 +75,7 @@ describe("Tier2Section", () => {
             />,
         );
         const select = screen.getByTestId(
-            "speech-bubble-font-weight-select",
+            "speech-bubble-font-weight-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, {target: {value: "bold"}});
         expect(onChange).toHaveBeenCalledWith({font_weight: "bold"});

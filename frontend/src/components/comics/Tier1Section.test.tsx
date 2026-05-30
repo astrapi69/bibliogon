@@ -38,7 +38,7 @@ describe("Tier1Section", () => {
             screen.getByTestId("speech-bubble-border-width-slider"),
         ).toBeInTheDocument();
         expect(
-            screen.getByTestId("speech-bubble-border-style-select"),
+            screen.getByTestId("speech-bubble-border-style-trigger"),
         ).toBeInTheDocument();
         expect(
             screen.getByTestId("speech-bubble-border-radius-slider"),
@@ -73,7 +73,7 @@ describe("Tier1Section", () => {
         render(<Tier1Section config={null} onChange={onChange} />);
         fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"));
         const select = screen.getByTestId(
-            "speech-bubble-border-style-select",
+            "speech-bubble-border-style-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, {target: {value: "dashed"}});
         expect(onChange).toHaveBeenCalledWith({border_style: "dashed"});

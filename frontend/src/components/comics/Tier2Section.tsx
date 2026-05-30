@@ -24,6 +24,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import {useCollapsibleState} from "../../hooks/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
+import {RadixSelect} from "../RadixSelect";
 import {
     PICTURE_BOOK_FONTS,
 } from "../../data/picture-book-fonts";
@@ -114,24 +115,22 @@ export function Tier2Section({
                             "Schriftart",
                         )}
                     </span>
-                    <select
+                    <RadixSelect
                         value={currentFontFamily}
-                        onChange={(e) =>
-                            onChange({font_family: e.target.value})
+                        onValueChange={(next) =>
+                            onChange({font_family: next})
                         }
-                        data-testid={`${testidPrefix}-font-family-select`}
-                        className={styles.selectInput}
-                        aria-label={t(
+                        testId={`${testidPrefix}-font-family`}
+                        className="is-narrow"
+                        ariaLabel={t(
                             `${i18nKeyPrefix}.tier2.font_family`,
                             "Schriftart",
                         )}
-                    >
-                        {PICTURE_BOOK_FONTS.map((font) => (
-                            <option key={font.id} value={font.id}>
-                                {font.label}
-                            </option>
-                        ))}
-                    </select>
+                        options={PICTURE_BOOK_FONTS.map((font) => ({
+                            value: font.id,
+                            label: font.label,
+                        }))}
+                    />
                 </label>
 
                 <label className={styles.sliderLabel}>
@@ -174,30 +173,25 @@ export function Tier2Section({
                             "Schriftstärke",
                         )}
                     </span>
-                    <select
+                    <RadixSelect
                         value={currentFontWeight}
-                        onChange={(e) =>
-                            onChange({
-                                font_weight: e.target.value as FontWeight,
-                            })
+                        onValueChange={(next) =>
+                            onChange({font_weight: next as FontWeight})
                         }
-                        data-testid={`${testidPrefix}-font-weight-select`}
-                        className={styles.selectInput}
-                        aria-label={t(
+                        testId={`${testidPrefix}-font-weight`}
+                        className="is-narrow"
+                        ariaLabel={t(
                             `${i18nKeyPrefix}.tier2.font_weight`,
                             "Schriftstärke",
                         )}
-                    >
-                        {FONT_WEIGHTS.map((weight) => (
-                            <option key={weight} value={weight}>
-                                {t(
-                                    `${i18nKeyPrefix}.tier2.font_weight_${weight}`,
-                                    weight.charAt(0).toUpperCase() +
-                                        weight.slice(1),
-                                )}
-                            </option>
-                        ))}
-                    </select>
+                        options={FONT_WEIGHTS.map((weight) => ({
+                            value: weight,
+                            label: t(
+                                `${i18nKeyPrefix}.tier2.font_weight_${weight}`,
+                                weight.charAt(0).toUpperCase() + weight.slice(1),
+                            ),
+                        }))}
+                    />
                 </label>
 
                 <label className={styles.colorLabel}>
@@ -229,30 +223,25 @@ export function Tier2Section({
                             "Textausrichtung",
                         )}
                     </span>
-                    <select
+                    <RadixSelect
                         value={currentTextAlign}
-                        onChange={(e) =>
-                            onChange({
-                                text_align: e.target.value as TextAlign,
-                            })
+                        onValueChange={(next) =>
+                            onChange({text_align: next as TextAlign})
                         }
-                        data-testid={`${testidPrefix}-text-align-select`}
-                        className={styles.selectInput}
-                        aria-label={t(
+                        testId={`${testidPrefix}-text-align`}
+                        className="is-narrow"
+                        ariaLabel={t(
                             `${i18nKeyPrefix}.tier2.text_align`,
                             "Textausrichtung",
                         )}
-                    >
-                        {TEXT_ALIGNS.map((align) => (
-                            <option key={align} value={align}>
-                                {t(
-                                    `${i18nKeyPrefix}.tier2.text_align_${align}`,
-                                    align.charAt(0).toUpperCase() +
-                                        align.slice(1),
-                                )}
-                            </option>
-                        ))}
-                    </select>
+                        options={TEXT_ALIGNS.map((align) => ({
+                            value: align,
+                            label: t(
+                                `${i18nKeyPrefix}.tier2.text_align_${align}`,
+                                align.charAt(0).toUpperCase() + align.slice(1),
+                            ),
+                        }))}
+                    />
                 </label>
 
                 <label className={styles.checkboxLabel}>

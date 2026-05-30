@@ -27,6 +27,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 import {useCollapsibleState} from "../../hooks/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
+import {RadixSelect} from "../RadixSelect";
 
 import styles from "./tier-section.module.css";
 import {
@@ -222,30 +223,25 @@ export function Tier1Section({
                             "Rahmenstil",
                         )}
                     </span>
-                    <select
+                    <RadixSelect
                         value={currentBorderStyle}
-                        onChange={(e) =>
-                            onChange({
-                                border_style: e.target.value as BorderStyle,
-                            })
+                        onValueChange={(next) =>
+                            onChange({border_style: next as BorderStyle})
                         }
-                        data-testid={`${testidPrefix}-border-style-select`}
-                        className={styles.selectInput}
-                        aria-label={t(
+                        testId={`${testidPrefix}-border-style`}
+                        className="is-narrow"
+                        ariaLabel={t(
                             `${i18nKeyPrefix}.tier1.border_style`,
                             "Rahmenstil",
                         )}
-                    >
-                        {BORDER_STYLES.map((style) => (
-                            <option key={style} value={style}>
-                                {t(
-                                    `${i18nKeyPrefix}.tier1.border_style_${style}`,
-                                    style.charAt(0).toUpperCase() +
-                                        style.slice(1),
-                                )}
-                            </option>
-                        ))}
-                    </select>
+                        options={BORDER_STYLES.map((style) => ({
+                            value: style,
+                            label: t(
+                                `${i18nKeyPrefix}.tier1.border_style_${style}`,
+                                style.charAt(0).toUpperCase() + style.slice(1),
+                            ),
+                        }))}
+                    />
                 </label>
 
                 <label className={styles.sliderLabel}>

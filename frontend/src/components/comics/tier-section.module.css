@@ -93,15 +93,6 @@
     gap: 4px;
 }
 
-.selectInput {
-    appearance: auto;
-    padding: 4px 6px;
-    border: 1px solid color-mix(in srgb, var(--text-sidebar) 18%, transparent);
-    border-radius: 4px;
-    background: var(--bg-card);
-    color: var(--text-sidebar);
-    font-size: 0.85rem;
-}
 
 /* Tier-section on/off controls (shadow, italic). Design-intent
  * exemption from the shared settings ``Toggle``: these are dense
