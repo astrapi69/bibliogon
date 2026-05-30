@@ -105,6 +105,10 @@
     border-radius: var(--radius-sm);
 }
 
+.entrySelected {
+    background: color-mix(in srgb, var(--text-sidebar) 12%, transparent);
+}
+
 .entryRow {
     display: flex;
     align-items: center;
@@ -140,11 +144,4 @@
 .entry:hover .entryDelete,
 .entry:focus-within .entryDelete {
     opacity: 1;
-}
-
-.entryPreview {
-    margin: 0 6px 6px;
-    font-size: 0.8125rem;
-    line-height: 1.4;
-    color: color-mix(in srgb, var(--text-sidebar) 65%, transparent);
 }

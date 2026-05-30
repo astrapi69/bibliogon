@@ -102,7 +102,7 @@ beforeEach(() => {
 
 describe("StoryBibleSidebar", () => {
     it("renders the panel and a group per entity type", async () => {
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
         expect(await screen.findByTestId("story-bible-sidebar")).toBeTruthy();
         for (const id of Object.keys(TYPES)) {
             expect(
@@ -114,7 +114,7 @@ describe("StoryBibleSidebar", () => {
     });
 
     it("shows the all-empty state when the book has no entities", async () => {
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
         expect(await screen.findByTestId("story-bible-empty")).toBeTruthy();
     });
 
@@ -124,7 +124,7 @@ describe("StoryBibleSidebar", () => {
             entity("c2", "character", "Bob"),
             entity("l1", "lore", "Magic System"),
         ]);
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
         expect(await screen.findByTestId("story-bible-entry-c1")).toBeTruthy();
         expect(screen.getByTestId("story-bible-entry-c2")).toBeTruthy();
         expect(screen.getByTestId("story-bible-entry-l1")).toBeTruthy();
@@ -132,7 +132,7 @@ describe("StoryBibleSidebar", () => {
     });
 
     it("creates an entity from the inline add form", async () => {
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
         await screen.findByTestId("story-bible-group-character");
         fireEvent.click(screen.getByTestId("story-bible-add-character"));
         const input = await screen.findByTestId(
@@ -152,34 +152,27 @@ describe("StoryBibleSidebar", () => {
         mockListEntities.mockResolvedValue([
             entity("c1", "character", "Alice"),
         ]);
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
         await screen.findByTestId("story-bible-entry-c1");
         fireEvent.click(screen.getByTestId("story-bible-delete-c1"));
         await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
         await waitFor(() => expect(mockDelete).toHaveBeenCalledWith("c1"));
     });
 
-    it("expands an entry to preview its description", async () => {
-        mockListEntities.mockResolvedValue([
-            entity(
-                "c1",
-                "character",
-                "Alice",
-                JSON.stringify({
-                    type: "doc",
-                    content: [
-                        {
-                            type: "paragraph",
-                            content: [{type: "text", text: "A brave hero."}],
-                        },
-                    ],
-                }),
-            ),
-        ]);
-        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} />);
+    it("clicking an entry opens its detail view via onSelectEntity", async () => {
+        const alice = entity("c1", "character", "Alice");
+        mockListEntities.mockResolvedValue([alice]);
+        const onSelectEntity = vi.fn();
+        render(
+            <StoryBibleSidebar
+                bookId="b1"
+                onClose={vi.fn()}
+                onSelectEntity={onSelectEntity}
+            />,
+        );
         fireEvent.click(await screen.findByTestId("story-bible-entry-name-c1"));
-        expect(
-            await screen.findByTestId("story-bible-entry-preview-c1"),
-        ).toHaveTextContent("A brave hero.");
+        expect(onSelectEntity).toHaveBeenCalledWith(
+            expect.objectContaining({id: "c1", name: "Alice"}),
+        );
     });
 });

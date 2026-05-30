@@ -29,30 +29,23 @@ import styles from "./StoryBibleSidebar.module.css";
 interface StoryBibleSidebarProps {
     bookId: string;
     onClose: () => void;
-}
-
-function plainTextFromTipTap(json: string | null | undefined): string {
-    if (!json) return "";
-    try {
-        const doc = JSON.parse(json);
-        const parts: string[] = [];
-        const walk = (node: unknown): void => {
-            if (!node || typeof node !== "object") return;
-            const n = node as {text?: string; content?: unknown[]};
-            if (typeof n.text === "string") parts.push(n.text);
-            if (Array.isArray(n.content)) n.content.forEach(walk);
-        };
-        walk(doc);
-        return parts.join(" ").trim();
-    } catch {
-        // Not TipTap JSON (e.g. plain string) — show as-is.
-        return json;
-    }
+    /** Open an entry's full detail/edit view (C5, rendered in the
+     *  BookEditor main content area). */
+    onSelectEntity: (entity: StoryEntityOut) => void;
+    /** The currently-open entity (highlighted in the list). */
+    selectedEntityId?: string | null;
+    /** Bumped by the parent after an editor-driven change so the
+     *  list refetches (the sidebar's own create/delete refetch
+     *  internally). */
+    refreshKey?: number;
 }
 
 export default function StoryBibleSidebar({
     bookId,
     onClose,
+    onSelectEntity,
+    selectedEntityId,
+    refreshKey = 0,
 }: StoryBibleSidebarProps) {
     const {t} = useI18n();
     const {confirm} = useDialog();
@@ -60,7 +53,6 @@ export default function StoryBibleSidebar({
     const [entities, setEntities] = useState<StoryEntityOut[]>([]);
     const [loading, setLoading] = useState(true);
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-    const [expandedEntityId, setExpandedEntityId] = useState<string | null>(null);
     const [addingType, setAddingType] = useState<string | null>(null);
     const [newName, setNewName] = useState("");
 
@@ -100,7 +92,7 @@ export default function StoryBibleSidebar({
             cancelled = true;
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [bookId]);
+    }, [bookId, refreshKey]);
 
     const byType = useMemo(() => {
         const map = new Map<string, StoryEntityOut[]>();
@@ -158,7 +150,6 @@ export default function StoryBibleSidebar({
         if (!ok) return;
         try {
             await api.storyBible.deleteEntity(entity.id);
-            if (expandedEntityId === entity.id) setExpandedEntityId(null);
             await refreshEntities();
         } catch (err) {
             notify.error(
@@ -314,69 +305,48 @@ export default function StoryBibleSidebar({
                                         </p>
                                     ) : null}
 
-                                    {rows.map((entity) => {
-                                        const expanded =
-                                            expandedEntityId === entity.id;
-                                        const preview = plainTextFromTipTap(
-                                            entity.description,
-                                        );
-                                        return (
-                                            <div
-                                                key={entity.id}
-                                                className={styles.entry}
-                                                data-testid={`story-bible-entry-${entity.id}`}
-                                            >
-                                                <div className={styles.entryRow}>
-                                                    <button
-                                                        type="button"
-                                                        className={
-                                                            styles.entryName
-                                                        }
-                                                        onClick={() =>
-                                                            setExpandedEntityId(
-                                                                expanded
-                                                                    ? null
-                                                                    : entity.id,
-                                                            )
-                                                        }
-                                                        data-testid={`story-bible-entry-name-${entity.id}`}
-                                                    >
-                                                        {entity.name}
-                                                    </button>
-                                                    <button
-                                                        type="button"
-                                                        className={`btn-sidebar-icon ${styles.entryDelete}`}
-                                                        onClick={() =>
-                                                            void handleDelete(
-                                                                entity,
-                                                            )
-                                                        }
-                                                        data-testid={`story-bible-delete-${entity.id}`}
-                                                        aria-label={t(
-                                                            "ui.story_bible.delete_entry",
-                                                            "Eintrag löschen",
-                                                        )}
-                                                        title={t(
-                                                            "ui.story_bible.delete_entry",
-                                                            "Eintrag löschen",
-                                                        )}
-                                                    >
-                                                        <Trash2 size={13} />
-                                                    </button>
-                                                </div>
-                                                {expanded && preview && (
-                                                    <p
-                                                        className={
-                                                            styles.entryPreview
-                                                        }
-                                                        data-testid={`story-bible-entry-preview-${entity.id}`}
-                                                    >
-                                                        {preview.slice(0, 200)}
-                                                    </p>
-                                                )}
+                                    {rows.map((entity) => (
+                                        <div
+                                            key={entity.id}
+                                            className={`${styles.entry} ${
+                                                selectedEntityId === entity.id
+                                                    ? styles.entrySelected
+                                                    : ""
+                                            }`}
+                                            data-testid={`story-bible-entry-${entity.id}`}
+                                        >
+                                            <div className={styles.entryRow}>
+                                                <button
+                                                    type="button"
+                                                    className={styles.entryName}
+                                                    onClick={() =>
+                                                        onSelectEntity(entity)
+                                                    }
+                                                    data-testid={`story-bible-entry-name-${entity.id}`}
+                                                >
+                                                    {entity.name}
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className={`btn-sidebar-icon ${styles.entryDelete}`}
+                                                    onClick={() =>
+                                                        void handleDelete(entity)
+                                                    }
+                                                    data-testid={`story-bible-delete-${entity.id}`}
+                                                    aria-label={t(
+                                                        "ui.story_bible.delete_entry",
+                                                        "Eintrag löschen",
+                                                    )}
+                                                    title={t(
+                                                        "ui.story_bible.delete_entry",
+                                                        "Eintrag löschen",
+                                                    )}
+                                                >
+                                                    <Trash2 size={13} />
+                                                </button>
                                             </div>
-                                        );
-                                    })}
+                                        </div>
+                                    ))}
                                 </div>
                             )}
                         </section>

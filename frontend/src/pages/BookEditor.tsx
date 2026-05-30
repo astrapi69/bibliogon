@@ -5,6 +5,7 @@ import ConflictResolutionDialog, {type ConflictInfo} from "../components/Conflic
 import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
+import StoryEntityEditor from "../components/StoryEntityEditor";
 import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
@@ -72,6 +73,13 @@ export default function BookEditor() {
     // toggle only render when the plugin is mounted.
     const [storyBibleAvailable, setStoryBibleAvailable] = useState(false);
     const [storyBibleOpen, setStoryBibleOpen] = useState(false);
+    // The Story Bible entry whose detail/edit view occupies the main
+    // content area (C5). refreshKey re-fetches the sidebar list after
+    // editor-driven changes.
+    const [selectedStoryEntityId, setSelectedStoryEntityId] = useState<
+        string | null
+    >(null);
+    const [storyBibleRefreshKey, setStoryBibleRefreshKey] = useState(0);
     const TYPE_LABELS: Record<ChapterType, string> = {
         chapter: t("ui.chapter_types.chapter", "Kapitel"),
         preface: t("ui.chapter_types.preface", "Vorwort"),
@@ -669,7 +677,7 @@ export default function BookEditor() {
                 }
                 chapters={book.chapters}
                 activeChapterId={showMetadata ? null : activeChapterId}
-                onSelect={(id) => { setActiveChapterId(id); _setShowMetadata(false); setSidebarOpen(false); }}
+                onSelect={(id) => { setActiveChapterId(id); _setShowMetadata(false); setSelectedStoryEntityId(null); setSidebarOpen(false); }}
                 onAdd={handleAddChapter}
                 onDelete={handleDeleteChapter}
                 onRename={handleRenameChapter}
@@ -679,7 +687,7 @@ export default function BookEditor() {
                 gitSyncState={gitSyncState}
                 onGitSync={() => setShowGitSync(true)}
                 gitSyncMapped={gitSyncMapped}
-                onMetadata={() => _setShowMetadata(true)}
+                onMetadata={() => { setSelectedStoryEntityId(null); _setShowMetadata(true); }}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
@@ -707,7 +715,20 @@ export default function BookEditor() {
             </div>
 
             <main id="main-content" className={styles.content}>
-            {showMetadata ? (
+            {selectedStoryEntityId ? (
+                <StoryEntityEditor
+                    key={selectedStoryEntityId}
+                    entityId={selectedStoryEntityId}
+                    onBack={() => setSelectedStoryEntityId(null)}
+                    onChanged={() =>
+                        setStoryBibleRefreshKey((k) => k + 1)
+                    }
+                    onDeleted={() => {
+                        setSelectedStoryEntityId(null);
+                        setStoryBibleRefreshKey((k) => k + 1);
+                    }}
+                />
+            ) : showMetadata ? (
                 <BookMetadataEditor
                     book={book}
                     onSave={handleSaveMetadata}
@@ -781,6 +802,12 @@ export default function BookEditor() {
                 <StoryBibleSidebar
                     bookId={bookId}
                     onClose={() => setStoryBibleOpen(false)}
+                    onSelectEntity={(entity) => {
+                        setSelectedStoryEntityId(entity.id);
+                        _setShowMetadata(false);
+                    }}
+                    selectedEntityId={selectedStoryEntityId}
+                    refreshKey={storyBibleRefreshKey}
                 />
             )}
             {storyBibleAvailable && !storyBibleOpen && (

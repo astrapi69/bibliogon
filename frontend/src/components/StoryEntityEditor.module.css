@@ -1,0 +1,59 @@
+/* StoryEntityEditor (STORY-BIBLE-PLUGIN-01 Session 2 C5). Fills the
+ * BookEditor main content area when a Story Bible entry is open
+ * (replacing the chapter editor). Semantic tokens only. */
+
+.editor {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    padding: 24px 32px;
+}
+
+.loading {
+    color: var(--text-muted);
+    padding: 24px;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.typeBadge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-right: auto;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sectionTitle {
+    margin: 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+.fieldLabel {
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
