@@ -58,9 +58,9 @@ test.describe("Dashboard pagination (Books)", () => {
         await expect(page.getByTestId("dashboard-pagination")).toBeVisible();
 
         // Page-size dropdown is addressable + shows the persisted value.
-        const selector = page.getByTestId("dashboard-page-size-select");
+        const selector = page.getByTestId("dashboard-page-size-trigger");
         await expect(selector).toBeVisible();
-        await expect(selector).toHaveValue("10");
+        await expect(selector).toContainText("10");
 
         // Load-more is visible (12 > 10) + clicking it expands the slice.
         const loadMore = page.getByTestId("dashboard-load-more");
@@ -91,8 +91,9 @@ test.describe("Dashboard pagination (Books)", () => {
         await page.goto("/");
         await expect(page.getByTestId("dashboard-pagination")).toBeVisible();
 
-        const selector = page.getByTestId("dashboard-page-size-select");
-        await selector.selectOption("50");
+        // RadixSelect: open the trigger, then click the option.
+        await page.getByTestId("dashboard-page-size-trigger").click();
+        await page.getByTestId("dashboard-page-size-item-50").click();
 
         // Verify the PATCH landed by re-reading from the backend.
         const res = await fetch(`${API}/settings/app`);
@@ -112,9 +113,9 @@ test.describe("Dashboard pagination (Articles)", () => {
 
         await expect(page.getByTestId("article-list-pagination")).toBeVisible();
 
-        const selector = page.getByTestId("article-list-page-size-select");
+        const selector = page.getByTestId("article-list-page-size-trigger");
         await expect(selector).toBeVisible();
-        await expect(selector).toHaveValue("10");
+        await expect(selector).toContainText("10");
 
         const loadMore = page.getByTestId("article-list-load-more");
         await expect(loadMore).toBeVisible();
@@ -140,8 +141,9 @@ test.describe("Dashboard pagination (Articles)", () => {
         await page.goto("/articles");
         await expect(page.getByTestId("article-list-pagination")).toBeVisible();
 
-        const selector = page.getByTestId("article-list-page-size-select");
-        await selector.selectOption("100");
+        // RadixSelect: open the trigger, then click the option.
+        await page.getByTestId("article-list-page-size-trigger").click();
+        await page.getByTestId("article-list-page-size-item-100").click();
 
         const res = await fetch(`${API}/settings/app`);
         const config = await res.json();

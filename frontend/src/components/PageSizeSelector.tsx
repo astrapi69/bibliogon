@@ -12,6 +12,7 @@
 import type { PageSize } from "../hooks/usePagedList";
 import { ALLOWED_PAGE_SIZES } from "../hooks/usePagedList";
 import { useI18n } from "../hooks/useI18n";
+import { RadixSelect } from "./RadixSelect";
 
 interface Props {
     value: PageSize;
@@ -43,31 +44,22 @@ export default function PageSizeSelector({
             data-testid={testId ?? "page-size-selector"}
         >
             {label}
-            <select
-                value={value}
-                onChange={(e) => {
-                    const next = Number(e.target.value);
-                    if (isPageSize(next)) {
-                        onChange(next);
+            <RadixSelect
+                value={String(value)}
+                onValueChange={(next) => {
+                    const parsed = Number(next);
+                    if (isPageSize(parsed)) {
+                        onChange(parsed);
                     }
                 }}
-                style={{
-                    padding: "4px 8px",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--bg-card)",
-                    color: "var(--text)",
-                    cursor: "pointer",
-                }}
-                aria-label={label}
-                data-testid={`${testId ?? "page-size-selector"}-select`}
-            >
-                {ALLOWED_PAGE_SIZES.map((size) => (
-                    <option key={size} value={size}>
-                        {size}
-                    </option>
-                ))}
-            </select>
+                options={ALLOWED_PAGE_SIZES.map((size) => ({
+                    value: String(size),
+                    label: String(size),
+                }))}
+                ariaLabel={label}
+                className="is-narrow"
+                testId={testId ?? "page-size-selector"}
+            />
         </label>
     );
 }

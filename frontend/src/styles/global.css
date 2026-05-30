@@ -1322,6 +1322,15 @@ body {
     box-shadow: 0 0 0 2px var(--accent-light);
 }
 
+/* Compact trigger for narrow contexts (page-size picker, inline
+ * config panels, bulk-action bars) — drops the 180px min-width so
+ * the dropdown only takes the room its content needs.
+ * 2026-05-30 component-consistency sweep (Session 2B). */
+.radix-select-trigger.is-narrow {
+    min-width: 0;
+    padding: 4px 8px;
+}
+
 .radix-select-content {
     background: var(--bg-card);
     border: 1px solid var(--border);

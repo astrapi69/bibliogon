@@ -11,21 +11,21 @@ import PageSizeSelector from "./PageSizeSelector";
 describe("PageSizeSelector", () => {
     it("renders the four allowed sizes as options", () => {
         render(<PageSizeSelector value={25} onChange={() => {}} />);
-        const select = screen.getByTestId("page-size-selector-select") as HTMLSelectElement;
+        const select = screen.getByTestId("page-size-selector-trigger") as HTMLSelectElement;
         const values = Array.from(select.options).map((o) => o.value);
         expect(values).toEqual(["10", "25", "50", "100"]);
     });
 
     it("reflects the current value as the selected option", () => {
         render(<PageSizeSelector value={50} onChange={() => {}} />);
-        const select = screen.getByTestId("page-size-selector-select") as HTMLSelectElement;
+        const select = screen.getByTestId("page-size-selector-trigger") as HTMLSelectElement;
         expect(select.value).toBe("50");
     });
 
     it("fires onChange with the new page-size on selection", () => {
         const onChange = vi.fn();
         render(<PageSizeSelector value={25} onChange={onChange} />);
-        const select = screen.getByTestId("page-size-selector-select");
+        const select = screen.getByTestId("page-size-selector-trigger");
         fireEvent.change(select, { target: { value: "100" } });
         expect(onChange).toHaveBeenCalledWith(100);
     });
@@ -33,7 +33,7 @@ describe("PageSizeSelector", () => {
     it("typed onChange — value is a number, not a string", () => {
         const onChange = vi.fn();
         render(<PageSizeSelector value={25} onChange={onChange} />);
-        fireEvent.change(screen.getByTestId("page-size-selector-select"), {
+        fireEvent.change(screen.getByTestId("page-size-selector-trigger"), {
             target: { value: "10" },
         });
         expect(onChange).toHaveBeenCalledWith(10);
@@ -45,6 +45,6 @@ describe("PageSizeSelector", () => {
             <PageSizeSelector value={25} onChange={() => {}} data-testid="books-pager" />,
         );
         expect(screen.getByTestId("books-pager")).toBeTruthy();
-        expect(screen.getByTestId("books-pager-select")).toBeTruthy();
+        expect(screen.getByTestId("books-pager-trigger")).toBeTruthy();
     });
 });
