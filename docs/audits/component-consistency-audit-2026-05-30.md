@@ -341,3 +341,28 @@ Per the self-clarification rule, decisions that change Phase 2 scope:
 No STOP-blocking questions arose during the audit. All inventory
 counts were produced by grep against the working tree at HEAD
 `5bd5271f` and are reproducible via the commands in the sweep plan.
+
+---
+
+## Resolved decisions (user review, 2026-05-30)
+
+The Phase 1 STOP review resolved the five questions above:
+
+1. **Selects → widen Radix to editors.** `RadixSelect` becomes the
+   canonical dropdown; the 23 native `<select>` surfaces migrate to
+   it. *Implication:* Radix portals are brittle under happy-dom /
+   Vitest (lessons-learned "Radix DropdownMenu + happy-dom is
+   brittle for Vitest"); Phase 2B unit tests assert the trigger +
+   the chosen value, and defer open-menu option assertions to E2E.
+   `getComputedStyle()` pins go on the trigger.
+2. **`.btn-lg` — not added** (no current need).
+3. **Badges → all 38 sites.** Full `<Badge>` extraction + migration
+   of every badge/tag/chip, except the allowlisted data-color
+   exemptions (Storyboard mood-dots, comic-bubble convention
+   colors).
+4. **Dialogs (2D) — in scope** as an optional final sub-session.
+5. **Cards — split across sub-sessions**; dashboards (BookCard /
+   ArticleCard) first, then Settings, then the rest, within 2C.
+
+Phase 2 proceeds as sessions **2A → 2B → 2C → 2D**, atomic-green per
+commit, pushed autonomously.
