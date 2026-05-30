@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-30 (v0.41.0 released — UX/UI theme + accessibility hardening + per-content-type field visibility; 24 commits since v0.40.0. Full 12-variant theme audit (6 palettes × light/dark), 18 undefined-token fixes + 31 hardcoded-color replacements + dark-mode contrast fixes, new `make verify-theme` gate, AD single-line header, comic bubble/tail keyboard ops, per-type `core_fields` field gating, 35 screenshots regenerated + content-types help expansion. Backend pytest 2399, Vitest 2487, all green.)
-Latest release: v0.41.0 (2026-05-30) — see [changelog/releases/v0.41.0.md](../changelog/releases/v0.41.0.md) for the full per-release notes.
+Last updated: 2026-05-30 (v0.42.0 released — the Story Bible release; 75 commits since v0.41.0. New `plugin-story-bible` (per-book fiction-entity database) + a deep Story Bible ↔ Storyboard integration (entity-page linking, badges, appearance tracker, Arc View timeline, continuity checker, Markdown export); Storyboard extended to comic_book. Plus a content-type-neutrality pass ("Artikel" → "Text"), picture-book layout + collage expansion, comic-editor polish, a component-consistency + a11y sweep (global .btn/.card/.badge/.slider + RadixSelect + vitest-axe), and two safety fixes (Zip Slip guard, app-wide error boundaries). Backend pytest 2442, Vitest 2549, all green.)
+Latest release: v0.42.0 (2026-05-30) — see [changelog/releases/v0.42.0.md](../changelog/releases/v0.42.0.md) for the full per-release notes.
 Previous release: v0.39.0 (2026-05-27) — Picture-Book authoring depth; Storyboard View + Picture-Book Text-Stack arcs + LAYOUT-SWITCH-TEXT-CONVERSION.
 
 This file is a **thematic overview** of open work. Detailed scope,
