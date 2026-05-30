@@ -518,6 +518,9 @@ verify-theme: ## Theme-system gates: token completeness/undefined refs + WCAG co
 	@python3 scripts/check_hardcoded_colors.py --enforce
 	@echo "Theme gates green."
 
+verify-components: ## Advisory (non-blocking): CSS-module classes that re-declare a shared control surface (CSS-first rule)
+	@python3 scripts/check_component_classes.py
+
 # --- Release ---
 # Aggregate Makefile targets for the release-workflow.md mechanical steps
 # (Step 1 state capture, Step 4b dep currency, Step 5 test gate, Step 6
