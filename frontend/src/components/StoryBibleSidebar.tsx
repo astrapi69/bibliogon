@@ -23,7 +23,7 @@ import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {useDialog} from "./AppDialog";
-import {entityTypeIcon} from "./storyBibleIcons";
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryBibleSidebar.module.css";
 
 interface StoryBibleSidebarProps {
@@ -226,6 +226,7 @@ export default function StoryBibleSidebar({
                                 <Icon
                                     size={14}
                                     className={styles.groupIcon}
+                                    style={{color: entityTypeColor(type.id)}}
                                     aria-hidden
                                 />
                                 <span className={styles.groupLabel}>

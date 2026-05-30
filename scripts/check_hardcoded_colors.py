@@ -62,6 +62,10 @@ ALLOWLIST = {
     # (2026-05-30), mirrored 1:1 with the Python PDF walker.
     "frontend/src/components/comics/ComicBubble.tsx",
     "frontend/src/components/comics/bubbleConfigReads.ts",
+    # Story Bible per-entity-type accent colors (user-facing data
+    # values; mid-tones chosen to read on both light + dark sidebars,
+    # used only as decorative icon tints). STORY-BIBLE-PLUGIN-01 C7.
+    "frontend/src/components/storyBibleIcons.ts",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")

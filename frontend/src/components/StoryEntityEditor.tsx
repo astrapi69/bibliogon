@@ -28,7 +28,7 @@ import {notify} from "../utils/notify";
 import {useDialog} from "./AppDialog";
 import EditableTitle from "./EditableTitle";
 import RichTextEditor from "./RichTextEditor";
-import {entityTypeIcon} from "./storyBibleIcons";
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryEntityEditor.module.css";
 
 interface StoryEntityEditorProps {
@@ -208,7 +208,11 @@ export default function StoryEntityEditor({
                     <span>{t("ui.story_bible.back_to_list", "Zurück")}</span>
                 </button>
                 <span className={styles.typeBadge} data-testid="story-entity-type">
-                    <Icon size={14} aria-hidden />
+                    <Icon
+                        size={14}
+                        aria-hidden
+                        style={{color: entityTypeColor(entity.entity_type)}}
+                    />
                     {t(
                         typeDef?.label_key ?? entity.entity_type,
                         entity.entity_type,
