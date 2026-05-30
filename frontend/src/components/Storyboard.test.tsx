@@ -993,3 +993,35 @@ describe("Storyboard - entity filter (C8)", () => {
         expect(screen.queryByTestId("storyboard-entity-filter")).toBeNull()
     })
 })
+
+describe("Storyboard - arc view toggle (C9)", () => {
+    it("switches to arc view when the toggle is clicked", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.listEntities).mockResolvedValue([
+            {
+                id: "e1",
+                book_id: "b1",
+                entity_type: "character",
+                name: "Max",
+                description: null,
+                entity_metadata: null,
+                image_asset_id: null,
+                position: 1,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+            },
+        ] as never)
+        vi.mocked(api.storyBible.appearances).mockResolvedValue([])
+        render(<Storyboard {...defaultProps} />)
+        const toggle = await screen.findByTestId("storyboard-view-toggle")
+        // Grid first: card present.
+        expect(screen.getByTestId("storyboard-card-p1")).toBeTruthy()
+        fireEvent.click(toggle)
+        // Arc view region appears (empty arc since no appearances), grid card gone.
+        await waitFor(() => {
+            expect(screen.getByTestId("storyboard-arc-empty")).toBeTruthy()
+        })
+        expect(screen.queryByTestId("storyboard-card-p1")).toBeNull()
+    })
+})

@@ -20,7 +20,16 @@
  * the parent (BookEditor) routes through history state.
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, BookOpen, FileImage, GripVertical, ImageOff, X} from "lucide-react"
+import {
+    ArrowLeft,
+    BookOpen,
+    FileImage,
+    GripVertical,
+    ImageOff,
+    LayoutGrid,
+    Network,
+    X,
+} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -89,6 +98,7 @@ import {useI18n} from "../hooks/useI18n"
 import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
 import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
+import StoryboardArcView from "./StoryboardArcView"
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
 import styles from "./Storyboard.module.css"
 
@@ -123,6 +133,8 @@ export default function Storyboard({
     const [storyBibleAvailable, setStoryBibleAvailable] = useState(false)
     const [storyBibleOpen, setStoryBibleOpen] = useState(false)
     const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
+    // C9: grid (default) vs arc-view (entity swim-lanes) of the pages.
+    const [viewMode, setViewMode] = useState<"grid" | "arc">("grid")
 
     useEffect(() => {
         let cancelled = false
@@ -334,6 +346,29 @@ export default function Storyboard({
                         <button
                             type="button"
                             className={styles.actionButton}
+                            onClick={() =>
+                                setViewMode((m) => (m === "grid" ? "arc" : "grid"))
+                            }
+                            aria-pressed={viewMode === "arc"}
+                            data-testid={`${testidNamespace}-view-toggle`}
+                            title={
+                                viewMode === "grid"
+                                    ? t("ui.storyboard.arc_view", "Arc view")
+                                    : t("ui.storyboard.grid_view", "Grid view")
+                            }
+                        >
+                            {viewMode === "grid" ? (
+                                <Network size={14} />
+                            ) : (
+                                <LayoutGrid size={14} />
+                            )}
+                            {viewMode === "grid"
+                                ? t("ui.storyboard.arc_view", "Arc view")
+                                : t("ui.storyboard.grid_view", "Grid view")}
+                        </button>
+                        <button
+                            type="button"
+                            className={styles.actionButton}
                             onClick={() => setStoryBibleOpen((v) => !v)}
                             aria-pressed={storyBibleOpen}
                             data-testid={`${testidNamespace}-story-bible-toggle`}
@@ -347,7 +382,7 @@ export default function Storyboard({
             </div>
             <div className={styles.bodyRow}>
             <div className={styles.scroll}>
-                {storyBibleAvailable && entities.length > 0 && (
+                {storyBibleAvailable && entities.length > 0 && viewMode === "grid" && (
                     <div
                         className={styles.entityFilter}
                         data-testid={`${testidNamespace}-entity-filter`}
@@ -409,6 +444,13 @@ export default function Storyboard({
                             "No pages yet. Add pages from the editor to see them here.",
                         )}
                     </div>
+                ) : viewMode === "arc" ? (
+                    <StoryboardArcView
+                        pages={pages}
+                        entities={entities}
+                        onSelectPage={onSelectPage}
+                        testidNamespace={`${testidNamespace}-arc`}
+                    />
                 ) : filteredPages.length === 0 ? (
                     <div
                         className={styles.empty}

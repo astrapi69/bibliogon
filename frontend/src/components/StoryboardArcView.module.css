@@ -1,0 +1,45 @@
+/* Arc View (C9): SVG swim-lane timeline of entity arcs. Colors come
+   from tokens / data values passed as SVG attributes; this file only
+   carries layout + token-based strokes. */
+.scrollX {
+    width: 100%;
+    overflow-x: auto;
+    padding: 8px 0;
+}
+
+.empty {
+    padding: 24px;
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+.colHeader {
+    font-size: 0.7rem;
+    fill: var(--text-muted);
+}
+
+.laneBaseline {
+    stroke: var(--border);
+    stroke-width: 1;
+}
+
+.laneLabel {
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.continuity {
+    fill: none;
+    stroke-width: 2;
+    opacity: 0.4;
+}
+
+.dot {
+    cursor: pointer;
+    stroke-width: 2;
+}
+
+.dot:hover {
+    opacity: 0.8;
+}
