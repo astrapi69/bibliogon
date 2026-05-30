@@ -1547,6 +1547,10 @@ ui:
   a11y:
     skip_to_content: "Ir para o conteudo principal"
     editor_label: "Editor"
+  error_boundary:
+    title: "Algo deu errado"
+    message: "Ocorreu um erro inesperado nesta area. Recarregue a pagina para continuar."
+    reload: "Recarregar"
   common:
     cancel: "Cancelar"
     create: "Criar"

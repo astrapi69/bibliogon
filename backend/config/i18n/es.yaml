@@ -1583,6 +1583,10 @@ ui:
   a11y:
     skip_to_content: "Saltar al contenido principal"
     editor_label: "Editor"
+  error_boundary:
+    title: "Algo salio mal"
+    message: "Se produjo un error inesperado en esta area. Recarga la pagina para continuar."
+    reload: "Recargar"
   common:
     cancel: "Cancelar"
     create: "Crear"

@@ -1580,6 +1580,10 @@ ui:
   a11y:
     skip_to_content: "Zum Hauptinhalt springen"
     editor_label: "Editor"
+  error_boundary:
+    title: "Etwas ist schiefgelaufen"
+    message: "In diesem Bereich ist ein unerwarteter Fehler aufgetreten. Lade die Seite neu, um fortzufahren."
+    reload: "Neu laden"
   common:
     cancel: "Abbrechen"
     create: "Erstellen"

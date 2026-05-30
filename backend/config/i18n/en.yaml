@@ -1580,6 +1580,10 @@ ui:
   a11y:
     skip_to_content: "Skip to main content"
     editor_label: "Editor"
+  error_boundary:
+    title: "Something went wrong"
+    message: "An unexpected error occurred in this area. Reload the page to continue."
+    reload: "Reload"
   common:
     cancel: "Cancel"
     create: "Create"

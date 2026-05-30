@@ -1583,6 +1583,10 @@ ui:
   a11y:
     skip_to_content: "Ana icerige atla"
     editor_label: "Editor"
+  error_boundary:
+    title: "Bir seyler ters gitti"
+    message: "Bu alanda beklenmeyen bir hata olustu. Devam etmek icin sayfayi yeniden yukleyin."
+    reload: "Yeniden yukle"
   common:
     cancel: "Iptal"
     create: "Olustur"

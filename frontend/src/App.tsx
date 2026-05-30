@@ -8,6 +8,7 @@ import MediumImportPage from "./pages/MediumImportPage";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
+import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
 import {ContentTypesProvider} from "./hooks/useContentTypes";
@@ -136,15 +137,20 @@ export default function App() {
                     onDismiss={() => setReminderVisible(false)}
                 />
             ) : null}
+            {/* BUG-2: per-surface error boundaries. A render crash in
+                one route shows a friendly fallback + Reload instead of
+                blanking the whole app. BookEditor's boundary also covers
+                the page-based editors (PageEditor/ComicBookEditor) and
+                Storyboard mounted inside it. */}
             <Routes>
-                <Route path="/" element={<Dashboard/>}/>
-                <Route path="/book/:bookId" element={<BookEditor/>}/>
-                <Route path="/articles" element={<ArticleList/>}/>
-                <Route path="/articles/import/medium" element={<MediumImportPage/>}/>
-                <Route path="/articles/:id" element={<ArticleEditor/>}/>
-                <Route path="/settings" element={<Settings/>}/>
-                <Route path="/help" element={<Help/>}/>
-                <Route path="/get-started" element={<GetStarted/>}/>
+                <Route path="/" element={<ErrorBoundary surface="dashboard"><Dashboard/></ErrorBoundary>}/>
+                <Route path="/book/:bookId" element={<ErrorBoundary surface="book-editor"><BookEditor/></ErrorBoundary>}/>
+                <Route path="/articles" element={<ErrorBoundary surface="article-list"><ArticleList/></ErrorBoundary>}/>
+                <Route path="/articles/import/medium" element={<ErrorBoundary surface="medium-import"><MediumImportPage/></ErrorBoundary>}/>
+                <Route path="/articles/:id" element={<ErrorBoundary surface="article-editor"><ArticleEditor/></ErrorBoundary>}/>
+                <Route path="/settings" element={<ErrorBoundary surface="settings"><Settings/></ErrorBoundary>}/>
+                <Route path="/help" element={<ErrorBoundary surface="help"><Help/></ErrorBoundary>}/>
+                <Route path="/get-started" element={<ErrorBoundary surface="get-started"><GetStarted/></ErrorBoundary>}/>
             </Routes>
             <EventRecorderSetup/>
             <AudioExportGate/>
