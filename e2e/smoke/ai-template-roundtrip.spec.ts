@@ -97,7 +97,7 @@ test.describe("AI-template Workflow C (external YAML round-trip)", () => {
         ).toBeVisible();
         // Two-step dialog: language picker + download button + drop zone.
         await expect(
-            page.getByTestId("new-from-template-language"),
+            page.getByTestId("new-from-template-language-trigger"),
         ).toBeVisible();
         await expect(
             page.getByTestId("new-from-template-download"),

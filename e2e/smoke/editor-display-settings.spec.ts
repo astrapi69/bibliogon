@@ -39,9 +39,10 @@ test.describe("Editor display settings smoke", () => {
         // Pick "narrow" (680px). The select fires onChange which
         // writes localStorage + reapplies the CSS var.
         const widthSelect = page.getByTestId(
-            "editor-display-settings-width-select",
+            "editor-display-settings-width-trigger",
         );
-        await widthSelect.selectOption("narrow");
+        await widthSelect.click();
+        await page.getByTestId("editor-display-settings-width-item-narrow").click();
 
         // Read the computed CSS var off documentElement. Direct
         // style.getPropertyValue returns the inline value that
@@ -73,18 +74,14 @@ test.describe("Editor display settings smoke", () => {
         await toggle.click();
 
         // Change all four to non-default values.
-        await page
-            .getByTestId("editor-display-settings-width-select")
-            .selectOption("medium");
-        await page
-            .getByTestId("editor-display-settings-font-select")
-            .selectOption("mono");
-        await page
-            .getByTestId("editor-display-settings-size-select")
-            .selectOption("large");
-        await page
-            .getByTestId("editor-display-settings-line-select")
-            .selectOption("compact");
+        await page.getByTestId("editor-display-settings-width-trigger").click();
+        await page.getByTestId("editor-display-settings-width-item-medium").click();
+        await page.getByTestId("editor-display-settings-font-trigger").click();
+        await page.getByTestId("editor-display-settings-font-item-mono").click();
+        await page.getByTestId("editor-display-settings-size-trigger").click();
+        await page.getByTestId("editor-display-settings-size-item-large").click();
+        await page.getByTestId("editor-display-settings-line-trigger").click();
+        await page.getByTestId("editor-display-settings-line-item-compact").click();
 
         // Reset.
         await page.getByTestId("editor-display-settings-reset").click();

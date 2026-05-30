@@ -144,7 +144,7 @@ describe("NewFromTemplateButton", () => {
         )
         fireEvent.click(screen.getByTestId("new-from-template-article"))
         const select = screen.getByTestId(
-            "new-from-template-language",
+            "new-from-template-language-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "fr"}})
         fireEvent.click(screen.getByTestId("new-from-template-download"))

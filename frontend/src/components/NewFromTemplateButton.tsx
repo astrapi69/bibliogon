@@ -2,6 +2,7 @@ import {useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {Sparkles, Download, X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
+import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
 import {api, ApiError, type Article, type Book} from "../api/client"
 import TemplateImportDropZone, {
@@ -198,18 +199,15 @@ export default function NewFromTemplateButton({
                             >
                                 <label style={{display: "flex", alignItems: "center", gap: 6}}>
                                     <span>{t("ui.ai_template.new_from_template.language", "Language")}:</span>
-                                    <select
+                                    <RadixSelect
                                         value={language}
-                                        onChange={(e) => setLanguage(e.target.value)}
-                                        data-testid="new-from-template-language"
+                                        onValueChange={setLanguage}
+                                        testId="new-from-template-language"
+                                        ariaLabel={t("ui.ai_template.new_from_template.language", "Language")}
                                         disabled={downloading}
-                                    >
-                                        {LANGUAGES.map((l) => (
-                                            <option key={l} value={l}>
-                                                {l}
-                                            </option>
-                                        ))}
-                                    </select>
+                                        className="is-narrow"
+                                        options={LANGUAGES.map((l) => ({value: l, label: l}))}
+                                    />
                                 </label>
                                 <button
                                     type="button"

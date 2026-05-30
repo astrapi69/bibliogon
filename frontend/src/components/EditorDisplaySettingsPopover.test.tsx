@@ -45,10 +45,10 @@ describe("EditorDisplaySettingsPopover", () => {
         render(<EditorDisplaySettingsPopover {...baseProps} />);
         fireEvent.click(screen.getByTestId("editor-display-settings-toggle"));
         expect(screen.getByTestId("editor-display-settings-panel")).toBeTruthy();
-        expect(screen.getByTestId("editor-display-settings-width-select")).toBeTruthy();
-        expect(screen.getByTestId("editor-display-settings-font-select")).toBeTruthy();
-        expect(screen.getByTestId("editor-display-settings-size-select")).toBeTruthy();
-        expect(screen.getByTestId("editor-display-settings-line-select")).toBeTruthy();
+        expect(screen.getByTestId("editor-display-settings-width-trigger")).toBeTruthy();
+        expect(screen.getByTestId("editor-display-settings-font-trigger")).toBeTruthy();
+        expect(screen.getByTestId("editor-display-settings-size-trigger")).toBeTruthy();
+        expect(screen.getByTestId("editor-display-settings-line-trigger")).toBeTruthy();
         expect(screen.getByTestId("editor-display-settings-reset")).toBeTruthy();
     });
 
@@ -71,7 +71,7 @@ describe("EditorDisplaySettingsPopover", () => {
         );
         fireEvent.click(screen.getByTestId("editor-display-settings-toggle"));
         const select = screen.getByTestId(
-            "editor-display-settings-width-select",
+            "editor-display-settings-width-trigger",
         ) as HTMLSelectElement;
         expect(select.value).toBe("narrow");
         fireEvent.change(select, {target: {value: "medium"}});
@@ -88,7 +88,7 @@ describe("EditorDisplaySettingsPopover", () => {
         );
         fireEvent.click(screen.getByTestId("editor-display-settings-toggle"));
         fireEvent.change(
-            screen.getByTestId("editor-display-settings-font-select"),
+            screen.getByTestId("editor-display-settings-font-trigger"),
             {target: {value: "mono"}},
         );
         expect(onFontFamilyChange).toHaveBeenCalledWith("mono");
@@ -104,7 +104,7 @@ describe("EditorDisplaySettingsPopover", () => {
         );
         fireEvent.click(screen.getByTestId("editor-display-settings-toggle"));
         fireEvent.change(
-            screen.getByTestId("editor-display-settings-size-select"),
+            screen.getByTestId("editor-display-settings-size-trigger"),
             {target: {value: "large"}},
         );
         expect(onFontSizeChange).toHaveBeenCalledWith("large");
@@ -120,7 +120,7 @@ describe("EditorDisplaySettingsPopover", () => {
         );
         fireEvent.click(screen.getByTestId("editor-display-settings-toggle"));
         fireEvent.change(
-            screen.getByTestId("editor-display-settings-line-select"),
+            screen.getByTestId("editor-display-settings-line-trigger"),
             {target: {value: "compact"}},
         );
         expect(onLineHeightChange).toHaveBeenCalledWith("compact");
@@ -161,6 +161,6 @@ describe("EditorDisplaySettingsPopover", () => {
         expect(screen.getByTestId("book-eds-toggle")).toBeTruthy();
         fireEvent.click(screen.getByTestId("book-eds-toggle"));
         expect(screen.getByTestId("book-eds-panel")).toBeTruthy();
-        expect(screen.getByTestId("book-eds-width-select")).toBeTruthy();
+        expect(screen.getByTestId("book-eds-width-trigger")).toBeTruthy();
     });
 });

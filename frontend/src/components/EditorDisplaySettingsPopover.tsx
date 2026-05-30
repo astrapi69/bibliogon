@@ -26,6 +26,7 @@ import {
     type EditorWidth,
 } from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
+import {RadixSelect} from "./RadixSelect";
 
 interface Props {
     settings: EditorDisplaySettings;
@@ -229,25 +230,17 @@ function PopoverSelect<T extends string>({
             data-testid={testId}
         >
             <span style={{color: "var(--text-muted)"}}>{label}</span>
-            <select
+            <RadixSelect
                 value={value}
-                onChange={(e) => onChange(e.target.value as T)}
-                style={{
-                    padding: "4px 8px",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--radius-sm)",
-                    background: "var(--bg-card)",
-                    color: "var(--text)",
-                    cursor: "pointer",
-                }}
-                data-testid={`${testId}-select`}
-            >
-                {options.map((opt) => (
-                    <option key={opt.value} value={opt.value}>
-                        {t(opt.labelKey, opt.labelFallback)}
-                    </option>
-                ))}
-            </select>
+                onValueChange={(next) => onChange(next as T)}
+                testId={testId}
+                ariaLabel={label}
+                className="is-narrow"
+                options={options.map((opt) => ({
+                    value: opt.value,
+                    label: t(opt.labelKey, opt.labelFallback),
+                }))}
+            />
         </label>
     );
 }
