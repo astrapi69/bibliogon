@@ -5,6 +5,7 @@ import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookA
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {RadixSelect} from "./RadixSelect";
 import {useBookTypes} from "../hooks/useBookTypes";
 import {useAuthorProfile, profileDisplayNames} from "../hooks/useAuthorProfile";
 import AuthorSelectInput from "./AuthorSelectInput";
@@ -1295,13 +1296,20 @@ function AudiobookBookConfig({
             </div>
             <div className="field">
                 <label className="label">{t("ui.audiobook.engine", "Engine")}</label>
-                <select className="input" value={currentEngine} onChange={(e) => onEngineChange(e.target.value)}>
-                    <option value="edge-tts">Microsoft Edge TTS</option>
-                    <option value="google-tts">Google TTS (gTTS)</option>
-                    <option value="google-cloud-tts">Google Cloud TTS</option>
-                    <option value="pyttsx3">pyttsx3 (Offline)</option>
-                    <option value="elevenlabs">ElevenLabs</option>
-                </select>
+                <RadixSelect
+                    testId="audiobook-engine"
+                    className="is-block"
+                    value={currentEngine}
+                    onValueChange={onEngineChange}
+                    ariaLabel={t("ui.audiobook.engine", "Engine")}
+                    options={[
+                        {value: "edge-tts", label: "Microsoft Edge TTS"},
+                        {value: "google-tts", label: "Google TTS (gTTS)"},
+                        {value: "google-cloud-tts", label: "Google Cloud TTS"},
+                        {value: "pyttsx3", label: "pyttsx3 (Offline)"},
+                        {value: "elevenlabs", label: "ElevenLabs"},
+                    ]}
+                />
             </div>
             <div className="field">
                 <label className="label">{t("ui.audiobook.voice", "Stimme")}</label>
@@ -1316,11 +1324,17 @@ function AudiobookBookConfig({
                         {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}
                     </div>
                 ) : filteredVoices.length > 0 ? (
-                    <select className="input" value={voice} onChange={(e) => onVoiceChange(e.target.value)}>
-                        {filteredVoices.map((v) => (
-                            <option key={v.id} value={v.id}>{formatVoiceLabel(v)}</option>
-                        ))}
-                    </select>
+                    <RadixSelect
+                        testId="audiobook-voice"
+                        className="is-block"
+                        value={voice}
+                        onValueChange={onVoiceChange}
+                        ariaLabel={t("ui.audiobook.voice", "Stimme")}
+                        options={filteredVoices.map((v) => ({
+                            value: v.id,
+                            label: formatVoiceLabel(v),
+                        }))}
+                    />
                 ) : (
                     <div style={{padding: "6px 0", color: "var(--text-muted)", fontSize: "0.8125rem"}}>
                         {t("ui.audiobook.no_voices_for_combo", "Keine Stimmen für {engine} in {language} verfügbar")
@@ -1331,21 +1345,35 @@ function AudiobookBookConfig({
             </div>
             <div className="field">
                 <label className="label">{t("ui.audiobook.speed", "Geschwindigkeit")}</label>
-                <select className="input" value={speed} onChange={(e) => onSpeedChange(e.target.value)}>
-                    <option value="0.5">0.5x</option>
-                    <option value="0.75">0.75x</option>
-                    <option value="1.0">1.0x (Normal)</option>
-                    <option value="1.25">1.25x</option>
-                    <option value="1.5">1.5x</option>
-                </select>
+                <RadixSelect
+                    testId="audiobook-speed"
+                    className="is-block"
+                    value={speed}
+                    onValueChange={onSpeedChange}
+                    ariaLabel={t("ui.audiobook.speed", "Geschwindigkeit")}
+                    options={[
+                        {value: "0.5", label: "0.5x"},
+                        {value: "0.75", label: "0.75x"},
+                        {value: "1.0", label: "1.0x (Normal)"},
+                        {value: "1.25", label: "1.25x"},
+                        {value: "1.5", label: "1.5x"},
+                    ]}
+                />
             </div>
             <div className="field">
                 <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfügen")}</label>
-                <select className="input" value={merge} onChange={(e) => onMergeChange(e.target.value)}>
-                    <option value="separate">{t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")}</option>
-                    <option value="merged">{t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfügen")}</option>
-                    <option value="both">{t("ui.audiobook.merge_both", "Beides")}</option>
-                </select>
+                <RadixSelect
+                    testId="audiobook-merge"
+                    className="is-block"
+                    value={merge}
+                    onValueChange={onMergeChange}
+                    ariaLabel={t("ui.audiobook.merge", "Kapitel zusammenfügen")}
+                    options={[
+                        {value: "separate", label: t("ui.audiobook.merge_separate", "Alle Kapitel einzeln")},
+                        {value: "merged", label: t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfügen")},
+                        {value: "both", label: t("ui.audiobook.merge_both", "Beides")},
+                    ]}
+                />
             </div>
             <CustomFilenameField
                 bookTitle={bookTitle}
