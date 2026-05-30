@@ -621,7 +621,7 @@ describe("LayoutConfigSpeechBubble - Tier 1 Visual Style (4c-B-2 C2)", () => {
             screen.getByTestId("speech-bubble-border-width-slider"),
         ).toBeTruthy()
         expect(
-            screen.getByTestId("speech-bubble-border-style-select"),
+            screen.getByTestId("speech-bubble-border-style-trigger"),
         ).toBeTruthy()
         expect(
             screen.getByTestId("speech-bubble-border-radius-slider"),
@@ -688,7 +688,7 @@ describe("LayoutConfigSpeechBubble - Tier 1 Visual Style (4c-B-2 C2)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier1-trigger"))
         const select = screen.getByTestId(
-            "speech-bubble-border-style-select",
+            "speech-bubble-border-style-trigger",
         ) as HTMLSelectElement
         for (const style of ["solid", "dashed", "dotted", "none"]) {
             onChange.mockClear()
@@ -870,7 +870,7 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
     it("Tier 2 section is collapsed by default (controls not rendered)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
         expect(
-            screen.queryByTestId("speech-bubble-font-family-select"),
+            screen.queryByTestId("speech-bubble-font-family-trigger"),
         ).toBeNull()
     })
 
@@ -878,17 +878,17 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
         expect(
-            screen.getByTestId("speech-bubble-font-family-select"),
+            screen.getByTestId("speech-bubble-font-family-trigger"),
         ).toBeTruthy()
         expect(
             screen.getByTestId("speech-bubble-font-size-slider"),
         ).toBeTruthy()
         expect(
-            screen.getByTestId("speech-bubble-font-weight-select"),
+            screen.getByTestId("speech-bubble-font-weight-trigger"),
         ).toBeTruthy()
         expect(screen.getByTestId("speech-bubble-text-color")).toBeTruthy()
         expect(
-            screen.getByTestId("speech-bubble-text-align-select"),
+            screen.getByTestId("speech-bubble-text-align-trigger"),
         ).toBeTruthy()
     })
 
@@ -896,7 +896,7 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={vi.fn()} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
         const select = screen.getByTestId(
-            "speech-bubble-font-family-select",
+            "speech-bubble-font-family-trigger",
         ) as HTMLSelectElement
         const values = Array.from(select.options).map((o) => o.value)
         expect(values).toEqual([
@@ -913,7 +913,7 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
         const select = screen.getByTestId(
-            "speech-bubble-font-family-select",
+            "speech-bubble-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "Comic Neue"}})
         expect(onChange).toHaveBeenCalledWith({
@@ -944,7 +944,7 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
         const select = screen.getByTestId(
-            "speech-bubble-font-weight-select",
+            "speech-bubble-font-weight-trigger",
         ) as HTMLSelectElement
         for (const weight of ["bold", "normal"]) {
             onChange.mockClear()
@@ -976,7 +976,7 @@ describe("LayoutConfigSpeechBubble - Tier 2 Typography (4c-B-2 C3)", () => {
         render(<LayoutConfigSpeechBubble config={null} onChange={onChange} />)
         fireEvent.click(screen.getByTestId("speech-bubble-tier2-trigger"))
         const select = screen.getByTestId(
-            "speech-bubble-text-align-select",
+            "speech-bubble-text-align-trigger",
         ) as HTMLSelectElement
         for (const align of ["left", "right", "center"]) {
             onChange.mockClear()
