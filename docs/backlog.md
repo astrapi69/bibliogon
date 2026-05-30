@@ -766,6 +766,50 @@ in the same session.)
 
 ## P4 - Roadmap / Future Phases
 
+- **STORY-BIBLE-RELATIONSHIP-MODEL-01** (P4, filed 2026-05-30,
+  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C10): a
+  data model for entity-to-entity relationships (ally / rival /
+  neutral, etc.) + the Arc-View relationship lines that draw a
+  curved bezier between two lanes at pages where both appear.
+  **Blocked on a schema decision**: no relationship field exists
+  on StoryEntity today. Likely shape: a `StoryEntityRelationship`
+  join table (entity_a, entity_b, type) OR a `relationships` key
+  in `entity_metadata`. Arc View (C9, shipped) already renders the
+  lanes + dots; C10 adds the inter-lane lines once the data exists.
+
+- **STORY-BIBLE-PROSE-STORYBOARD-01** (P4, filed 2026-05-30,
+  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C3):
+  a Storyboard-like chapter grid for prose (chapter-based) books,
+  reusing StoryboardCard in a chapter-mode variant (title + word
+  count + notes/beat/mood). **Blocked on a schema decision**: the
+  Storyboard annotation columns (notes/story_beat/mood_color/
+  act_group) exist only on `Page`, not `Chapter`. Needs either
+  four new nullable columns on `Chapter` (+ migration) or a
+  reduced title-only card. The entity-link side already supports
+  prose via `StoryEntityPageLink.chapter_id` (C4) and the
+  appearance tracker (C7) resolves chapter titles.
+
+- **STORY-BIBLE-MENTION-EXTENSION-01** (P4, filed 2026-05-30,
+  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C13-C15):
+  `@`-mention autocomplete sourced from the book's Story Bible
+  entities, in the chapter / page / comic-bubble editors. Installs
+  `@tiptap/extension-mention` + `@tiptap/suggestion` (pin to the
+  2.27.2 line per the A4 adjudication; the stop-condition flags
+  testing the extension against the existing 15+1 extensions EARLY
+  before wiring all three editors). Plus C14 auto-detect (scan
+  existing text for entity names, propose batch links) + C15 i18n.
+  Best done in a dedicated session (new dependency + cross-editor).
+
+- **STORY-BIBLE-INTEGRATION-E2E-DOCS-01** (P4, filed 2026-05-30,
+  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C16-C18):
+  Playwright smoke for the full integrated flow (create book ->
+  Storyboard -> sidebar -> drag character -> badge -> Arc View ->
+  continuity warning -> export), help docs (DE+EN) + marketing
+  screenshots, and the backlog/CHANGELOG close-out for the wider
+  STORY-BIBLE-PLUGIN-01 epic. Release-prep-sized; the shipped
+  C4-C9/C11/C12 work has unit + integration + Vitest coverage but
+  no end-to-end Playwright spec yet.
+
 - **SETT-M-2-PER-TAB-SUBSECTION-HEADERS-01** (P4, UX-POLISH,
   filed 2026-05-25 from Settings-page UX audit, deferred per
   user adjudication; **partial scope shipped 2026-05-26**): add
