@@ -3,6 +3,7 @@ import {ArticleStatus} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {useArticleFilters} from "../../hooks/useArticleFilters";
 import SearchClearButton from "../SearchClearButton";
+import {RadixSelect} from "../RadixSelect";
 import layout from "../../pages/ArticleList.module.css";
 
 export const STATUS_FILTERS: (ArticleStatus | "all")[] = [
@@ -58,94 +59,81 @@ export function ArticleFilterBar({filters}: {filters: ReturnType<typeof useArtic
             ))}
 
             {filters.availableTopics.length > 0 ? (
-                <select
+                <RadixSelect
                     value={filters.topic}
-                    onChange={(e) => filters.setTopic(e.target.value)}
-                    data-testid="article-list-filter-topic"
+                    onValueChange={filters.setTopic}
+                    testId="article-list-filter-topic"
                     className={layout.filterSelect}
-                    aria-label={t("ui.articles.filter_topic", "Thema")}
-                >
-                    <option value="">
-                        {t("ui.articles.filter_topic_any", "Alle Themen")}
-                    </option>
-                    {filters.availableTopics.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                    ariaLabel={t("ui.articles.filter_topic", "Thema")}
+                    allOption={{
+                        label: t("ui.articles.filter_topic_any", "Alle Themen"),
+                    }}
+                    options={filters.availableTopics}
+                />
             ) : null}
 
             {filters.availableLanguages.length > 1 ? (
-                <select
+                <RadixSelect
                     value={filters.language}
-                    onChange={(e) => filters.setLanguage(e.target.value)}
-                    data-testid="article-list-filter-language"
+                    onValueChange={filters.setLanguage}
+                    testId="article-list-filter-language"
                     className={layout.filterSelect}
-                    aria-label={t("ui.articles.filter_language", "Sprache")}
-                >
-                    <option value="">
-                        {t("ui.articles.filter_language_any", "Alle Sprachen")}
-                    </option>
-                    {filters.availableLanguages.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                    ariaLabel={t("ui.articles.filter_language", "Sprache")}
+                    allOption={{
+                        label: t(
+                            "ui.articles.filter_language_any",
+                            "Alle Sprachen",
+                        ),
+                    }}
+                    options={filters.availableLanguages}
+                />
             ) : null}
 
             {filters.availableSeries.length > 0 ? (
-                <select
+                <RadixSelect
                     value={filters.series}
-                    onChange={(e) => filters.setSeries(e.target.value)}
-                    data-testid="article-list-filter-series"
+                    onValueChange={filters.setSeries}
+                    testId="article-list-filter-series"
                     className={layout.filterSelect}
-                    aria-label={t("ui.articles.filter_series_label", "Serie")}
-                >
-                    <option value="">
-                        {t("ui.articles.filter_series_any", "Alle Serien")}
-                    </option>
-                    {filters.availableSeries.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                    ariaLabel={t("ui.articles.filter_series_label", "Serie")}
+                    allOption={{
+                        label: t("ui.articles.filter_series_any", "Alle Serien"),
+                    }}
+                    options={filters.availableSeries}
+                />
             ) : null}
 
             {filters.availableTags.length > 0 ? (
-                <select
+                <RadixSelect
                     value={filters.tag}
-                    onChange={(e) => filters.setTag(e.target.value)}
-                    data-testid="article-list-filter-tag"
+                    onValueChange={filters.setTag}
+                    testId="article-list-filter-tag"
                     className={layout.filterSelect}
-                    aria-label={t("ui.articles.filter_tag_label", "Tag")}
-                >
-                    <option value="">
-                        {t("ui.articles.filter_tag_any", "Alle Tags")}
-                    </option>
-                    {filters.availableTags.map((opt) => (
-                        <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                        </option>
-                    ))}
-                </select>
+                    ariaLabel={t("ui.articles.filter_tag_label", "Tag")}
+                    allOption={{
+                        label: t("ui.articles.filter_tag_any", "Alle Tags"),
+                    }}
+                    options={filters.availableTags}
+                />
             ) : null}
 
-            <select
+            <RadixSelect
                 value={filters.sortBy}
-                onChange={(e) =>
-                    filters.setSortBy(e.target.value as "date" | "title" | "author")
+                onValueChange={(next) =>
+                    filters.setSortBy(next as "date" | "title" | "author")
                 }
-                data-testid="article-list-sort-by"
+                testId="article-list-sort-by"
                 className={layout.filterSelect}
-                aria-label={t("ui.articles.sort_by", "Sortieren nach")}
-            >
-                <option value="date">{t("ui.articles.sort_date", "Datum")}</option>
-                <option value="title">{t("ui.articles.sort_title", "Titel")}</option>
-                <option value="author">{t("ui.articles.sort_author", "Autor")}</option>
-            </select>
+                ariaLabel={t("ui.articles.sort_by", "Sortieren nach")}
+                options={[
+                    {value: "date", label: t("ui.articles.sort_date", "Datum")},
+                    {value: "title", label: t("ui.articles.sort_title", "Titel")},
+                    {
+                        value: "author",
+                        label: t("ui.articles.sort_author", "Autor"),
+                    },
+                ]}
+            />
             <button
                 type="button"
                 className="btn-icon"

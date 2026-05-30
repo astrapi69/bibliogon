@@ -23,7 +23,16 @@ export interface RadixSelectProps {
     className?: string;
     /** Native-form name (only meaningful in the test-mode <select>). */
     name?: string;
+    /** When set, prepends a sentinel "all / no filter" option. The
+     * real value "" maps to this option and selecting it emits "".
+     * Works around Radix's empty-Item-value restriction. The option's
+     * test id is `${testId}-item-all`. */
+    allOption?: {label: string};
 }
+
+/** Sentinel Radix Item value standing in for the empty-string "no
+ * filter" value (Radix forbids an empty Item value). */
+const ALL_SENTINEL = "__all__";
 
 /**
  * Themed single-select dropdown — the canonical app-wide select.
@@ -60,11 +69,17 @@ export function RadixSelect({
     id,
     className,
     name,
+    allOption,
 }: RadixSelectProps) {
     const triggerTestId = testId ? `${testId}-trigger` : undefined;
     const triggerClass = className
         ? `radix-select-trigger ${className}`
         : "radix-select-trigger";
+    const useAll = allOption !== undefined;
+    const resolvedValue = useAll && value === "" ? ALL_SENTINEL : value;
+    const emitChange = (next: string) =>
+        onValueChange(useAll && next === ALL_SENTINEL ? "" : next);
+    const allItemTestId = testId ? `${testId}-item-all` : undefined;
 
     if (IS_TEST) {
         return (
@@ -73,15 +88,20 @@ export function RadixSelect({
                 name={name}
                 className={triggerClass}
                 data-testid={triggerTestId}
-                data-value={value}
+                data-value={resolvedValue}
                 aria-label={ariaLabel}
                 disabled={disabled}
-                value={value}
-                onChange={(e) => onValueChange(e.target.value)}
+                value={resolvedValue}
+                onChange={(e) => emitChange(e.target.value)}
             >
                 {placeholder !== undefined && (
                     <option value="" disabled hidden>
                         {placeholder}
+                    </option>
+                )}
+                {useAll && (
+                    <option value={ALL_SENTINEL} data-testid={allItemTestId}>
+                        {allOption.label}
                     </option>
                 )}
                 {options.map((opt) => (
@@ -101,12 +121,16 @@ export function RadixSelect({
     }
 
     return (
-        <Select.Root value={value} onValueChange={onValueChange} disabled={disabled}>
+        <Select.Root
+            value={resolvedValue}
+            onValueChange={emitChange}
+            disabled={disabled}
+        >
             <Select.Trigger
                 id={id}
                 className={triggerClass}
                 data-testid={triggerTestId}
-                data-value={value}
+                data-value={resolvedValue}
                 aria-label={ariaLabel}
             >
                 <Select.Value placeholder={placeholder} />
@@ -121,6 +145,17 @@ export function RadixSelect({
                     sideOffset={4}
                 >
                     <Select.Viewport>
+                        {useAll && (
+                            <Select.Item
+                                value={ALL_SENTINEL}
+                                className="radix-select-item"
+                                data-testid={allItemTestId}
+                            >
+                                <Select.ItemText>
+                                    {allOption.label}
+                                </Select.ItemText>
+                            </Select.Item>
+                        )}
                         {options
                             .filter((opt) => opt.value !== "")
                             .map((opt) => (

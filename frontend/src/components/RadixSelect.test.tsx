@@ -59,6 +59,42 @@ describe("RadixSelect (test-mode native render)", () => {
         expect(screen.getByText("Pick one")).toBeInTheDocument();
     });
 
+    it("allOption maps the empty value to a sentinel and back", () => {
+        const onChange = vi.fn();
+        const {rerender} = render(
+            <RadixSelect
+                value=""
+                onValueChange={onChange}
+                options={opts}
+                testId="demo"
+                allOption={{label: "All"}}
+            />,
+        );
+        const el = screen.getByTestId("demo-trigger") as HTMLSelectElement;
+        // empty value resolves to the sentinel option (not a real value)
+        expect(el.value).toBe("__all__");
+        expect(screen.getByText("All")).toBeInTheDocument();
+
+        // picking a real value emits that value
+        fireEvent.change(el, {target: {value: "b"}});
+        expect(onChange).toHaveBeenLastCalledWith("b");
+
+        // picking "All" emits "" (not the sentinel)
+        rerender(
+            <RadixSelect
+                value="b"
+                onValueChange={onChange}
+                options={opts}
+                testId="demo"
+                allOption={{label: "All"}}
+            />,
+        );
+        fireEvent.change(screen.getByTestId("demo-trigger"), {
+            target: {value: "__all__"},
+        });
+        expect(onChange).toHaveBeenLastCalledWith("");
+    });
+
     it("honors per-option and whole-control disabled", () => {
         render(
             <RadixSelect

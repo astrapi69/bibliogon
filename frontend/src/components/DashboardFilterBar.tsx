@@ -11,8 +11,7 @@
  */
 
 import {Search, X, ChevronUp, ChevronDown} from "lucide-react";
-import * as Select from "@radix-ui/react-select";
-import {ChevronDownIcon} from "lucide-react";
+import {RadixSelect} from "./RadixSelect";
 import {useI18n} from "../hooks/useI18n";
 import type {BookFilters, SortField} from "../hooks/useBookFilters";
 import SearchClearButton from "./SearchClearButton";
@@ -128,48 +127,18 @@ function FilterSelect({testId, value, onChange, allLabel, options}: {
     allLabel: string;
     options: {value: string; label: string}[];
 }) {
-    // Radix Select does not support empty-string as a value natively,
-    // so we use a sentinel "__all__" for "no filter" and convert on
-    // the boundary.
-    const radixValue = value || "__all__";
-    const handleChange = (v: string) => onChange(v === "__all__" ? "" : v);
-
+    // Delegates to the canonical RadixSelect, which owns the
+    // empty-value "__all__" sentinel handling (allOption). 2026-05-30
+    // component-consistency sweep (Session 2B): removed the local
+    // raw-Radix duplicate.
     return (
-        <Select.Root value={radixValue} onValueChange={handleChange}>
-            <Select.Trigger
-                className={`radix-select-trigger ${styles.selectTrigger}`}
-                data-testid={`${testId}-trigger`}
-            >
-                <Select.Value/>
-                <Select.Icon><ChevronDownIcon size={14}/></Select.Icon>
-            </Select.Trigger>
-            <Select.Portal>
-                <Select.Content
-                    className="radix-select-content"
-                    position="popper"
-                    sideOffset={4}
-                >
-                    <Select.Viewport>
-                        <Select.Item
-                            value="__all__"
-                            className="radix-select-item"
-                            data-testid={`${testId}-item-all`}
-                        >
-                            <Select.ItemText>{allLabel}</Select.ItemText>
-                        </Select.Item>
-                        {options.map((opt) => (
-                            <Select.Item
-                                key={opt.value}
-                                value={opt.value}
-                                className="radix-select-item"
-                                data-testid={`${testId}-item-${opt.value}`}
-                            >
-                                <Select.ItemText>{opt.label}</Select.ItemText>
-                            </Select.Item>
-                        ))}
-                    </Select.Viewport>
-                </Select.Content>
-            </Select.Portal>
-        </Select.Root>
+        <RadixSelect
+            value={value}
+            onValueChange={onChange}
+            testId={testId}
+            className={styles.selectTrigger}
+            allOption={{label: allLabel}}
+            options={options}
+        />
     );
 }

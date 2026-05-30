@@ -101,9 +101,10 @@ test.describe("Bulk article export", () => {
         await expect(page.getByTestId("article-list")).toBeVisible()
 
         // Apply the series filter; the list narrows to A + B only.
-        const seriesFilter = page.getByTestId("article-list-filter-series")
+        const seriesFilter = page.getByTestId("article-list-filter-series-trigger")
         await expect(seriesFilter).toBeVisible()
-        await seriesFilter.selectOption({value: "Cosmos"})
+        await seriesFilter.click()
+        await page.getByTestId("article-list-filter-series-item-Cosmos").click()
         await expect(page.getByTestId(`article-bulk-check-${c.id}`)).toBeHidden()
 
         // Click Select-all. Selection count must equal the filtered set
@@ -139,9 +140,10 @@ test.describe("Bulk article export", () => {
         await page.getByTestId(`article-bulk-check-${b.id}`).check()
         await expect(page.getByTestId("article-bulk-action-bar")).toBeVisible()
 
-        await page.getByTestId("article-list-filter-series").selectOption({
-            value: "Other",
-        })
+        await page
+            .getByTestId("article-list-filter-series-trigger")
+            .click()
+        await page.getByTestId("article-list-filter-series-item-Other").click()
         await expect(page.getByTestId("article-bulk-action-bar")).toBeHidden()
     })
 })
