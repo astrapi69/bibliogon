@@ -205,6 +205,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={ANCHOR_PCT_MIN}
                     max={ANCHOR_PCT_MAX}
                     step={ANCHOR_PCT_STEP}
@@ -228,6 +229,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={ANCHOR_PCT_MIN}
                     max={ANCHOR_PCT_MAX}
                     step={ANCHOR_PCT_STEP}
@@ -252,6 +254,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={WIDTH_PCT_MIN}
                     max={WIDTH_PCT_MAX}
                     step={WIDTH_PCT_STEP}
@@ -275,6 +278,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={HEIGHT_PCT_MIN}
                     max={HEIGHT_PCT_MAX}
                     step={HEIGHT_PCT_STEP}
@@ -330,6 +334,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={TAIL_POSITION_MIN}
                     max={TAIL_POSITION_MAX}
                     step={TAIL_POSITION_STEP}
@@ -354,6 +359,7 @@ export function LayoutConfigComicBubble({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={TAIL_LENGTH_MIN}
                     max={TAIL_LENGTH_MAX}
                     step={TAIL_LENGTH_STEP}

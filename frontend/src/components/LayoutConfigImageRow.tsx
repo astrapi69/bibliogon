@@ -250,6 +250,7 @@ export function LayoutConfigImageLeftTextRight({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={SPLIT_RATIO_MIN}
                     max={SPLIT_RATIO_MAX}
                     step={SPLIT_RATIO_STEP}
@@ -506,6 +507,7 @@ export function LayoutConfigImageBorderTextCenter({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={BACKDROP_OPACITY_MIN}
                     max={BACKDROP_OPACITY_MAX}
                     step={BACKDROP_OPACITY_STEP}
@@ -724,6 +726,7 @@ export function LayoutConfigImageFullTextOverlay({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={BACKDROP_OPACITY_MIN}
                     max={BACKDROP_OPACITY_MAX}
                     step={BACKDROP_OPACITY_STEP}
@@ -762,6 +765,7 @@ export function LayoutConfigImageFullTextOverlay({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={TEXT_CONTAINER_WIDTH_MIN}
                     max={TEXT_CONTAINER_WIDTH_MAX}
                     step={TEXT_CONTAINER_WIDTH_STEP}
@@ -793,6 +797,7 @@ export function LayoutConfigImageFullTextOverlay({
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={TEXT_CONTAINER_HEIGHT_MIN}
                     max={TEXT_CONTAINER_HEIGHT_MAX}
                     step={TEXT_CONTAINER_HEIGHT_STEP}

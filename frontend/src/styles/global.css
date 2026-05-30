@@ -1075,6 +1075,23 @@ body {
     border-color: var(--accent);
 }
 
+/* Shared range-slider styling. `accent-color` themes the track-fill
+ * and thumb to the palette accent in one declaration across all
+ * browsers, replacing the browser-default (OS-blue) chrome that the
+ * picture-book / comic config sliders shipped with. Applied via the
+ * `.slider` class on every <input type="range"> in those panels.
+ * 2026-05-30 component-consistency sweep (Session 2A). */
+.slider {
+    width: 100%;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.slider:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
 .label {
     display: block;
     font-size: 0.8125rem;

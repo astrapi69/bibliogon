@@ -143,6 +143,7 @@ export function Tier2Section({
                     </span>
                     <input
                         type="range"
+                        className="slider"
                         min={FONT_SIZE_MIN}
                         max={FONT_SIZE_MAX}
                         step={FONT_SIZE_STEP}

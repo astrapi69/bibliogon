@@ -203,6 +203,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={OPACITY_MIN}
                     max={OPACITY_MAX}
                     step={OPACITY_STEP}
@@ -233,6 +234,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={WIDTH_MIN}
                     max={WIDTH_MAX}
                     step={WIDTH_STEP}
@@ -263,6 +265,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
                 </span>
                 <input
                     type="range"
+                    className="slider"
                     min={HEIGHT_MIN}
                     max={HEIGHT_MAX}
                     step={HEIGHT_STEP}

@@ -191,6 +191,7 @@ export function Tier1Section({
                     </span>
                     <input
                         type="range"
+                        className="slider"
                         min={BORDER_WIDTH_MIN}
                         max={BORDER_WIDTH_MAX}
                         step={BORDER_WIDTH_STEP}
@@ -256,6 +257,7 @@ export function Tier1Section({
                     </span>
                     <input
                         type="range"
+                        className="slider"
                         min={BORDER_RADIUS_MIN}
                         max={BORDER_RADIUS_MAX}
                         step={BORDER_RADIUS_STEP}
@@ -306,6 +308,7 @@ export function Tier1Section({
                     </span>
                     <input
                         type="range"
+                        className="slider"
                         min={SHADOW_INTENSITY_MIN}
                         max={SHADOW_INTENSITY_MAX}
                         step={SHADOW_INTENSITY_STEP}
@@ -339,6 +342,7 @@ export function Tier1Section({
                     </span>
                     <input
                         type="range"
+                        className="slider"
                         min={PADDING_MIN}
                         max={PADDING_MAX}
                         step={PADDING_STEP}
