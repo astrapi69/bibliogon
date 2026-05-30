@@ -118,6 +118,16 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "session for clarity per user direction — the column name "
         "``Article.content_type`` was already correct).",
     ),
+    (
+        "backend/app/services/story_entity_registry.py",
+        "load_story_entity_types",
+        "Cache lifetime: process. Tests in "
+        "test_story_entity_registry.py read the real committed SSoT "
+        "(no monkeypatched path) and have an autouse yield-based "
+        "fixture that calls cache_clear() before AND after each test, "
+        "preventing cross-file cache poisoning. Verified 2026-05-30 "
+        "(STORY-BIBLE-PLUGIN-01).",
+    ),
 ]
 
 
