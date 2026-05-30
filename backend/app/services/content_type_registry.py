@@ -68,6 +68,10 @@ class ContentTypeDef(BaseModel):
     id: str
     label_key: str
     description_key: str
+    # i18n key for the default title of a newly-created document of
+    # this type (AD split-button create flow). ``None`` (key omitted)
+    # falls back to the generic ``ui.articles.default_title``.
+    default_title_key: str | None = None
     icon: str
     default: bool = False
     extra_fields: list[ContentTypeExtraField] = []

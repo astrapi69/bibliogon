@@ -113,6 +113,10 @@ export interface ContentTypeDef {
   id: ContentType;
   label_key: string;
   description_key: string;
+  /** i18n key for the default title of a newly-created document of
+   *  this type (AD split-button create flow). Falls back to
+   *  ``ui.articles.default_title`` when null/absent. */
+  default_title_key?: string | null;
   icon: string;
   /** Marks the canonical default for new articles. Exactly one
    *  entry in the YAML registry is ``default: true``. */

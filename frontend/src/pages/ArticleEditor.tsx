@@ -812,15 +812,15 @@ export default function ArticleEditor() {
                      *  ContentTypeFieldsSection renders null for them.
                      */}
                     <FieldLabel
-                        label={t("ui.articles.article_type", "Artikel-Typ")}
+                        label={t("ui.articles.content_type", "Textart")}
                         tooltip={t(
-                            "ui.articles.article_type_tooltip",
-                            "Art des Artikels: Blogpost / Tutorial / Rezension / Essay / Newsletter.",
+                            "ui.articles.content_type_tooltip",
+                            "Textart: Blogpost / Tutorial / Rezension / Essay / Newsletter.",
                         )}
                     />
                     <RadixSelect
                         testId="article-editor-content-type"
-                        ariaLabel={t("ui.articles.article_type", "Artikel-Typ")}
+                        ariaLabel={t("ui.articles.content_type", "Textart")}
                         value={article.content_type}
                         onValueChange={(v) => {
                             const next = v as ContentType;

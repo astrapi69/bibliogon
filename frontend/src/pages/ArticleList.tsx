@@ -31,7 +31,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, ContentType, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import { useContentTypes } from "../hooks/useContentTypes";
+import {
+    useContentTypes,
+    contentTypeDefaultTitleKey,
+} from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
@@ -624,8 +627,17 @@ export default function ArticleList() {
             // ARTICLE-TYPES-SSOT-01 C5: optional content_type wired
             // from the split-button selection. When omitted, the
             // backend's column default ("blogpost") applies.
+            // Default title matches the selected type (e.g. "Neues
+            // Tutorial") via the registry's default_title_key; falls
+            // back to the generic title when the type omits the key
+            // or no type is selected.
+            const genericTitle = t("ui.articles.default_title", "Neuer Artikel");
+            const titleKey = articleType
+                ? contentTypeDefaultTitleKey(articleTypesSnapshot, articleType)
+                : null;
+            const defaultTitle = titleKey ? t(titleKey, genericTitle) : genericTitle;
             const fresh = await api.articles.create({
-                title: t("ui.articles.default_title", "Neuer Artikel"),
+                title: defaultTitle,
                 language: "de",
                 author: defaultAuthor,
                 ...(articleType ? {content_type: articleType} : {}),

@@ -127,6 +127,16 @@ export function contentTypeLabelKey(
     return snapshot.types[typeId]?.label_key ?? typeId;
 }
 
+/** Convenience selector: the article-type's default-title i18n
+ *  key for a given id, or ``null`` when the type omits it (the
+ *  create flow then falls back to the generic default title). */
+export function contentTypeDefaultTitleKey(
+    snapshot: ArticleTypesSnapshot,
+    typeId: string,
+): string | null {
+    return snapshot.types[typeId]?.default_title_key ?? null;
+}
+
 /** Convenience selector: the article-type's icon name for a
  *  given id. Returns "FileText" as the fallback so the badge
  *  surfaces SOMETHING for an unknown value. */

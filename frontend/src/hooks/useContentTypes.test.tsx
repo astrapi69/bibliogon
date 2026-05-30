@@ -13,6 +13,7 @@ import {
     ContentTypesProvider,
     contentTypeIcon,
     contentTypeLabelKey,
+    contentTypeDefaultTitleKey,
     useContentTypes,
 } from "./useContentTypes";
 import type {ContentTypeDef} from "../api/client";
@@ -225,6 +226,38 @@ describe("contentTypeLabelKey selector", () => {
         expect(contentTypeLabelKey(result.current, "unknown_type")).toBe(
             "unknown_type",
         );
+    });
+});
+
+describe("contentTypeDefaultTitleKey selector", () => {
+    it("returns the type's default_title_key when set", () => {
+        const registry: Record<string, ContentTypeDef> = {
+            tutorial: makeContentType({
+                id: "tutorial",
+                default_title_key: "ui.content_types.tutorial_default_title",
+            }),
+        };
+        const {result} = renderHook(() => useContentTypes(), {
+            wrapper: wrapper(registry),
+        });
+        expect(contentTypeDefaultTitleKey(result.current, "tutorial")).toBe(
+            "ui.content_types.tutorial_default_title",
+        );
+    });
+
+    it("returns null when the type omits default_title_key", () => {
+        const {result} = renderHook(() => useContentTypes(), {
+            wrapper: wrapper(SAMPLE_REGISTRY),
+        });
+        // SAMPLE_REGISTRY entries have no default_title_key
+        expect(contentTypeDefaultTitleKey(result.current, "blogpost")).toBeNull();
+    });
+
+    it("returns null for an unknown id", () => {
+        const {result} = renderHook(() => useContentTypes(), {
+            wrapper: wrapper(SAMPLE_REGISTRY),
+        });
+        expect(contentTypeDefaultTitleKey(result.current, "unknown")).toBeNull();
     });
 });
 

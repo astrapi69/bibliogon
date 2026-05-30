@@ -25,6 +25,7 @@ content_types:
   - id: blogpost
     label_key: ui.content_types.blogpost
     description_key: ui.content_types.blogpost_description
+    default_title_key: ui.content_types.blogpost_default_title
     icon: FileText
     default: true
     core_fields: [tags, excerpt, seo, canonical_url, featured_image]
@@ -33,6 +34,7 @@ content_types:
   - id: tutorial
     label_key: ui.content_types.tutorial
     description_key: ui.content_types.tutorial_description
+    default_title_key: ui.content_types.tutorial_default_title
     icon: GraduationCap
     core_fields: [tags, excerpt, seo, featured_image]
     extra_fields:
@@ -53,6 +55,7 @@ content_types:
   - id: review
     label_key: ui.content_types.review
     description_key: ui.content_types.review_description
+    default_title_key: ui.content_types.review_default_title
     icon: Star
     core_fields: [tags, excerpt, seo, featured_image]
     extra_fields:
@@ -71,6 +74,7 @@ content_types:
   - id: essay
     label_key: ui.content_types.essay
     description_key: ui.content_types.essay_description
+    default_title_key: ui.content_types.essay_default_title
     icon: Feather
     core_fields: [tags, featured_image]
     extra_fields: []
@@ -78,6 +82,7 @@ content_types:
   - id: newsletter
     label_key: ui.content_types.newsletter
     description_key: ui.content_types.newsletter_description
+    default_title_key: ui.content_types.newsletter_default_title
     icon: Mail
     core_fields: []
     extra_fields:
@@ -91,6 +96,7 @@ content_types:
   - id: interview
     label_key: ui.content_types.interview
     description_key: ui.content_types.interview_description
+    default_title_key: ui.content_types.interview_default_title
     icon: Users
     core_fields: [tags, featured_image]
     extra_fields:
@@ -104,6 +110,7 @@ content_types:
   - id: listicle
     label_key: ui.content_types.listicle
     description_key: ui.content_types.listicle_description
+    default_title_key: ui.content_types.listicle_default_title
     icon: ListOrdered
     core_fields: [tags, excerpt, seo, featured_image]
     extra_fields: []
@@ -111,6 +118,7 @@ content_types:
   - id: short_story
     label_key: ui.content_types.short_story
     description_key: ui.content_types.short_story_description
+    default_title_key: ui.content_types.short_story_default_title
     icon: BookOpen
     core_fields: [tags]
     extra_fields: []
