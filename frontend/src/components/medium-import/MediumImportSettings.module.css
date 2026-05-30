@@ -36,24 +36,6 @@
     color: var(--text-muted);
 }
 
-.input,
-.select {
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 6px 10px;
-    font-size: 0.9375rem;
-    max-width: 240px;
-}
-
-.input:focus,
-.select:focus {
-    outline: 2px solid var(--accent);
-    outline-offset: 1px;
-    border-color: var(--accent);
-}
-
 .checkbox {
     width: 16px;
     height: 16px;

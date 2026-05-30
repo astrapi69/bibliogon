@@ -71,7 +71,7 @@ describe("MediumImportSettings", () => {
         ) as HTMLInputElement;
         expect(timeout.value).toBe("60");
         const select = screen.getByTestId(
-            "medium-import-settings-default-status",
+            "medium-import-settings-default-status-trigger",
         ) as HTMLSelectElement;
         expect(select.value).toBe("draft");
         const featured = screen.getByTestId(
@@ -153,7 +153,7 @@ describe("MediumImportSettings", () => {
         render(<MediumImportSettings />);
         await waitFor(() => {
             const select = screen.getByTestId(
-                "medium-import-settings-default-status",
+                "medium-import-settings-default-status-trigger",
             ) as HTMLSelectElement;
             expect(select.value).toBe("published");
         });

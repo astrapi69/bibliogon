@@ -15,6 +15,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
+import { RadixSelect } from "../RadixSelect";
 import styles from "./MediumImportSettings.module.css";
 
 const PLUGIN_NAME = "medium-import";
@@ -181,7 +182,7 @@ export default function MediumImportSettings() {
                     min={1}
                     max={600}
                     step={1}
-                    className={styles.input}
+                    className="input"
                     value={state.image_download_timeout_seconds}
                     onChange={(e) => {
                         const next = Number(e.target.value);
@@ -269,24 +270,26 @@ export default function MediumImportSettings() {
                         "Standardstatus für importierte Artikel",
                     )}
                 </label>
-                <select
+                <RadixSelect
                     id="medium-import-default-status"
-                    className={styles.select}
+                    className="is-block"
                     value={state.default_status}
-                    onChange={(e) =>
+                    onValueChange={(next) =>
                         setState((s) => ({
                             ...s,
-                            default_status: coerceStatus(e.target.value),
+                            default_status: coerceStatus(next),
                         }))
                     }
-                    data-testid="medium-import-settings-default-status"
-                >
-                    {STATUS_OPTIONS.map((s) => (
-                        <option key={s} value={s}>
-                            {t(`ui.medium_import.settings.status_${s}`, s)}
-                        </option>
-                    ))}
-                </select>
+                    testId="medium-import-settings-default-status"
+                    ariaLabel={t(
+                        "ui.medium_import.settings.default_status",
+                        "Standardstatus für importierte Artikel",
+                    )}
+                    options={STATUS_OPTIONS.map((s) => ({
+                        value: s,
+                        label: t(`ui.medium_import.settings.status_${s}`, s),
+                    }))}
+                />
             </div>
 
             <div className={styles.actions}>
