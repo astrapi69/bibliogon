@@ -366,3 +366,39 @@ The Phase 1 STOP review resolved the five questions above:
 
 Phase 2 proceeds as sessions **2A → 2B → 2C → 2D**, atomic-green per
 commit, pushed autonomously.
+
+---
+
+## Correction: button scope was over-counted (Session 2A finding)
+
+The "66 CSS-module button occurrences / ~25 files" headline **over-counts
+the real work**. A per-file classification (does the same element also
+carry a global `.btn*` class?) shows **18 of the 24 files already use the
+global button system** with only thin *layout supplements* (flex-shrink,
+fixed width, min-width) — that is the design system working as intended,
+not a parallel button look. Only **6 files** had a `styles.*Btn`/`*Button`
+class with no global button class on the element, and of those:
+
+| File | Class | Verdict |
+|---|---|---|
+| `RichTextToolbar.tsx` | `btn`/`btnActive` | **Migrated** → `.btn-icon` + `.is-active` (commit `d37d7885`) |
+| `PageThumbnails.tsx` | `addBtn`/`deleteBtn` | **Migrated** → `.btn-sidebar-icon` + size/reveal supplements |
+| `medium-import/MediumImportUploadZone.tsx` | `clearBtn` | **Migrated** → `.btn-icon` + border supplement |
+| `PageCanvas.tsx` | `imageReplaceBtn` | **Design-intent exemption** — dark scrim (`rgba(0,0,0,.55)`) + white text/border for legibility over arbitrary user images; theme tokens would make it invisible. Keep. |
+| `KeywordInput.tsx` | `undoButton` | **Design-intent exemption** — `border:1px solid currentColor; color:inherit`; the pill inherits the surrounding notice's color context. Keep. |
+| `SplitButton.tsx` | `splitButtonGroup` | **False positive** — flex *container*, not a button look; its inner buttons already use global `.btn`. |
+
+`Toolbar.tsx` (chapter-editor) is the one genuinely-mixed surface: most
+buttons use its own `.button`/`.buttonActive`/`.buttonLoading`/`.buttonDisabled`
+module system while the copy-chevron uses a global class. Its `.button`
+system carries loading/disabled-with-reason states the global `.btn-icon`
+doesn't model. **Deferred within 2A** as a dedicated commit (or a
+follow-up) — migrating it onto `.btn-icon` + `.is-active` + small
+state-supplements is the last real button item. Storyboard's
+`actionButton` is left untouched this session (the parallel Story-Bible
+session is active in adjacent files).
+
+**Net:** the button portion of the sweep is **effectively done** after 2A.
+The sweep's real weight is **selects (Radix-widening, 23 files),
+checkboxes (29), inputs (32), badges (38), cards (~30), dialogs (32)** —
+i.e. 2B / 2C / 2D, not buttons.

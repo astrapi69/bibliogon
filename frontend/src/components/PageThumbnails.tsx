@@ -79,7 +79,7 @@ export default function PageThumbnails({
                 </span>
                 <button
                     type="button"
-                    className={styles.addBtn}
+                    className={`btn-sidebar-icon ${styles.addBtn}`}
                     onClick={onAddPage}
                     data-testid={`${testidNamespace}-add-page`}
                     title={t("ui.page_editor.add_page", "Add page")}
@@ -193,7 +193,7 @@ function SortablePageRow({
             {onDelete && (
                 <button
                     type="button"
-                    className={styles.deleteBtn}
+                    className={`btn-sidebar-icon ${styles.deleteBtn}`}
                     data-testid={`${testidNamespace}-delete-page-${page.id}`}
                     title={t("ui.page_editor.delete_page", "Delete page")}
                     aria-label={t("ui.page_editor.delete_page", "Delete page")}

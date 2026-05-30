@@ -149,7 +149,7 @@ export default function MediumImportUploadZone({
                     </div>
                     <button
                         type="button"
-                        className={styles.clearBtn}
+                        className={`btn-icon ${styles.clearBtn}`}
                         onClick={handleClear}
                         disabled={disabled}
                         data-testid="medium-import-upload-clear"

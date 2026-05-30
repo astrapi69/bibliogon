@@ -102,18 +102,8 @@
     margin-top: 6px;
 }
 
+/* Base look + hover come from the global .btn-icon; this only adds
+ * the bordered affordance for the file-clear control (2026-05-30 sweep 2A). */
 .clearBtn {
-    background: none;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    padding: 6px 8px;
-    cursor: pointer;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-}
-
-.clearBtn:hover {
-    background: var(--bg-hover);
-    color: var(--text-primary);
 }

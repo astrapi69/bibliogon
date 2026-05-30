@@ -23,21 +23,11 @@
     color: color-mix(in srgb, var(--text-sidebar) 70%, transparent);
 }
 
+/* Base look comes from the global .btn-sidebar-icon; this only
+ * supplements the fixed thumbnail-rail sizing (2026-05-30 sweep 2A). */
 .addBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 24px;
     height: 24px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-sidebar);
-    cursor: pointer;
-}
-
-.addBtn:hover {
-    background: color-mix(in srgb, var(--text-sidebar) 12%, transparent);
 }
 
 .empty {
@@ -110,17 +100,12 @@
     font-variant-numeric: tabular-nums;
 }
 
+/* Base look comes from the global .btn-sidebar-icon; this supplements
+ * the fixed sizing + the hover-reveal behavior (hidden until the row
+ * is hovered/focused) and the danger-tinted hover (2026-05-30 sweep 2A). */
 .deleteBtn {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
     width: 22px;
     height: 22px;
-    border: none;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--text-sidebar);
-    cursor: pointer;
     opacity: 0;
     transition: opacity 0.15s, background 0.15s, color 0.15s;
     flex-shrink: 0;
@@ -134,6 +119,6 @@
 .deleteBtn:hover,
 .deleteBtn:focus {
     opacity: 1;
-    background: color-mix(in srgb, var(--danger, #dc2626) 14%, transparent);
-    color: var(--danger, #dc2626);
+    background: color-mix(in srgb, var(--danger) 14%, transparent);
+    color: var(--danger);
 }
