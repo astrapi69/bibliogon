@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-launcher"
-version = "0.41.0"
+version = "0.42.0"
 description = "Windows Simple Launcher for Bibliogon. Starts the Docker stack, opens the browser, stops the stack on exit."
 authors = ["Asterios Raptis"]
 license = "MIT"
