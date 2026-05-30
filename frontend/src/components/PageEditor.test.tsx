@@ -792,7 +792,7 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
         // create the image_full_text_overlay namespace alongside
         // the preserved speech_bubble namespace.
         fireEvent.change(
-            screen.getByTestId("image-full-text-position-select"),
+            screen.getByTestId("image-full-text-position-trigger"),
             {target: {value: "top"}},
         )
         await waitFor(() => {
@@ -894,7 +894,7 @@ describe("PageEditor + LayoutConfig wiring (Session 4c Commit 3)", () => {
         // Step 2: edit something on image_left to trigger a write.
         // image_left's split-ratio slider is debounced; pick a
         // discrete control instead — image_fit dropdown.
-        fireEvent.change(screen.getByTestId("image-left-image-fit"), {
+        fireEvent.change(screen.getByTestId("image-left-image-fit-trigger"), {
             target: {value: "cover"},
         })
         await waitFor(() => {

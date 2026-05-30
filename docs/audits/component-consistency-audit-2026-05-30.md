@@ -367,6 +367,15 @@ The Phase 1 STOP review resolved the five questions above:
 Phase 2 proceeds as sessions **2A → 2B → 2C → 2D**, atomic-green per
 commit, pushed autonomously.
 
+### Select-migration exemption (Session 2B)
+
+- **`import-wizard/steps/AuthorPicker`** stays a native `<select>` —
+  it uses `<optgroup>` to group an author's pen-names under the
+  author name, and the canonical `RadixSelect` is a **flat** list
+  (no group support). Documented design-intent exemption until/unless
+  a `groups` capability is added to RadixSelect. All other native
+  `<select>` sites migrated.
+
 ---
 
 ## Correction: button scope was over-counted (Session 2A finding)

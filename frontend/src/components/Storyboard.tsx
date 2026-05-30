@@ -79,6 +79,7 @@ const MOOD_PALETTE: readonly {value: string; key: string}[] = [
     {value: "#F4ECD8", key: "gentle"},
 ] as const
 import {useI18n} from "../hooks/useI18n"
+import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
 import styles from "./Storyboard.module.css"
 
@@ -446,25 +447,23 @@ interface BeatSelectorProps {
     testidNamespace: string
 }
 
-/** Native <select> dropdown for ``page.story_beat`` (PICTURE-BOOK-
- *  STORYBOARD-VIEW-01 Session 2 C2). 6 dramatic-structure values per
- *  A2 + an empty "—" option for clearing.
+/** Beat dropdown for ``page.story_beat`` (PICTURE-BOOK-STORYBOARD-
+ *  VIEW-01 Session 2 C2). 6 dramatic-structure values per A2 + an
+ *  empty "no beat" option (allOption) for clearing.
  *
- *  Native <select> chosen over Radix Select for happy-dom test
- *  reliability (per the "Radix DropdownMenu + happy-dom is
- *  brittle" lessons-learned rule). The same brittleness applies to
- *  Radix Select; native <select>'s onChange fires deterministically
- *  in Vitest. The visible badge above the selector already shows
- *  the chosen value translated via ui.storyboard.beat.* so the
- *  user reads the localised name even when the <select> dropdown
- *  itself shows the i18n labels. */
+ *  Uses the canonical RadixSelect. The original native-<select>
+ *  rationale (happy-dom determinism) is satisfied by RadixSelect's
+ *  test-mode native render (it renders a real <select> under Vitest;
+ *  see RadixSelect.tsx). The stop-propagation wrapper keeps clicks /
+ *  keystrokes on the selector from bubbling into the draggable
+ *  storyboard card. 2026-05-30 component-consistency sweep. */
 function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
     const {t} = useI18n()
     const value = page.story_beat ?? ""
 
-    const handleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        const next = e.target.value as StoryBeat | ""
-        const normalised: StoryBeat | null = next === "" ? null : next
+    const handleValueChange = (next: string) => {
+        const normalised: StoryBeat | null =
+            next === "" ? null : (next as StoryBeat)
         if (normalised === (page.story_beat ?? null)) return
         void onPatch(page.id, {story_beat: normalised}).catch(() => {})
     }
@@ -474,25 +473,27 @@ function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
     }
 
     return (
-        <select
+        <span
             className={styles.beatSelect}
-            value={value}
-            onChange={handleChange}
             onClick={stop}
             onMouseDown={stop}
             onKeyDown={stop}
-            data-testid={`${testidNamespace}-beat-select-${page.id}`}
-            aria-label={t("ui.storyboard.beat_label", "Story beat")}
         >
-            <option value="">
-                {t("ui.storyboard.beat_none", "— no beat —")}
-            </option>
-            {STORY_BEATS.map((beat) => (
-                <option key={beat} value={beat}>
-                    {t(`ui.storyboard.beat.${beat}`, beat)}
-                </option>
-            ))}
-        </select>
+            <RadixSelect
+                className="is-narrow"
+                value={value}
+                onValueChange={handleValueChange}
+                testId={`${testidNamespace}-beat-select-${page.id}`}
+                ariaLabel={t("ui.storyboard.beat_label", "Story beat")}
+                allOption={{
+                    label: t("ui.storyboard.beat_none", "— no beat —"),
+                }}
+                options={STORY_BEATS.map((beat) => ({
+                    value: beat,
+                    label: t(`ui.storyboard.beat.${beat}`, beat),
+                }))}
+            />
+        </span>
     )
 }
 

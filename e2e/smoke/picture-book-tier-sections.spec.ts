@@ -179,9 +179,8 @@ test.describe("Picture-Book Tier 1+2 sections across image layouts", () => {
         // Trigger a write on image_left so the namespace gets
         // materialised (image_fit dropdown is a discrete control
         // that fires onChange immediately).
-        await page
-            .getByTestId("image-left-image-fit")
-            .selectOption("cover")
+        await page.getByTestId("image-left-image-fit-trigger").click()
+        await page.getByTestId("image-left-image-fit-item-cover").click()
 
         // Wait for the write to land.
         await expect

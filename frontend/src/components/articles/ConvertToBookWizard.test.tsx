@@ -294,7 +294,7 @@ describe("ConvertToBookWizard sort + tag-helpers", () => {
             />,
         )
         const select = screen.getByTestId(
-            "convert-to-book-wizard-selection-sort-strategy",
+            "convert-to-book-wizard-selection-sort-strategy-trigger",
         ) as HTMLSelectElement
         fireEvent.change(select, {target: {value: "title_asc"}})
         const list = screen.getByTestId("convert-to-book-wizard-selection-list")
@@ -317,7 +317,7 @@ describe("ConvertToBookWizard sort + tag-helpers", () => {
             />,
         )
         const select = screen.getByTestId(
-            "convert-to-book-wizard-selection-sort-strategy",
+            "convert-to-book-wizard-selection-sort-strategy-trigger",
         ) as HTMLSelectElement
         // date_asc is the default — verify by reading the list order
         // straight away.
@@ -456,7 +456,7 @@ describe("ConvertToBookWizard submit", () => {
         )
         // Use a deterministic sort first so manual_order is null.
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)
@@ -511,7 +511,7 @@ describe("ConvertToBookWizard submit", () => {
             />,
         )
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)
@@ -963,7 +963,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
         // Use a deterministic sort first so the article ordering is
         // predictable for the payload assertion.
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)
@@ -1000,7 +1000,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
             />,
         )
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)
@@ -1046,7 +1046,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
             />,
         )
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)
@@ -1087,7 +1087,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
             />,
         )
         fireEvent.change(
-            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            screen.getByTestId("convert-to-book-wizard-selection-sort-strategy-trigger"),
             {target: {value: "title_asc"}},
         )
         clickNext(0)

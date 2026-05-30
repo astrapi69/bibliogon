@@ -624,9 +624,10 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await expect(
             page.getByTestId("layout-config-image-full-text-overlay"),
         ).toBeVisible()
+        await page.getByTestId("image-full-text-position-trigger").click()
         await page
-            .getByTestId("image-full-text-position-select")
-            .selectOption("top")
+            .getByTestId("image-full-text-position-item-top")
+            .click()
         await expect(page.getByTestId("page-canvas-root")).toHaveAttribute(
             "data-text-position",
             "top",

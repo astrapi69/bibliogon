@@ -91,13 +91,22 @@ test.describe("Article-to-book conversion", () => {
             page.getByTestId("convert-to-book-wizard-selection-list"),
         ).toBeVisible()
         await expect(
-            page.getByTestId("convert-to-book-wizard-selection-sort-strategy"),
+            page.getByTestId(
+                "convert-to-book-wizard-selection-sort-strategy-trigger",
+            ),
         ).toBeVisible()
 
         // Apply title_asc so chapter order is predictable.
         await page
-            .getByTestId("convert-to-book-wizard-selection-sort-strategy")
-            .selectOption({value: "title_asc"})
+            .getByTestId(
+                "convert-to-book-wizard-selection-sort-strategy-trigger",
+            )
+            .click()
+        await page
+            .getByTestId(
+                "convert-to-book-wizard-selection-sort-strategy-item-title_asc",
+            )
+            .click()
 
         // Verify every article appears as a sortable row.
         for (const article of [a, b, c]) {

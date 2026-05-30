@@ -1,4 +1,5 @@
 import { useI18n } from "../../../hooks/useI18n";
+import { RadixSelect } from "../../RadixSelect";
 import type {
     DetectedBookSummary,
     DetectedProject,
@@ -319,38 +320,23 @@ function BookRow({
                             )}
                             :
                         </span>
-                        <select
+                        <RadixSelect
                             value={duplicateAction}
-                            onChange={(e) =>
-                                onSetDuplicateAction(
-                                    e.target.value as PerBookAction,
-                                )
+                            onValueChange={(next) =>
+                                onSetDuplicateAction(next as PerBookAction)
                             }
-                            data-testid={`multi-book-dup-action-${book.source_identifier}`}
-                            style={{
-                                fontSize: "0.75rem",
-                                padding: "1px 4px",
-                            }}
-                        >
-                            <option value="skip">
-                                {t(
-                                    "ui.import_wizard.multi_book_duplicate_action_skip",
-                                    "Skip",
-                                )}
-                            </option>
-                            <option value="overwrite">
-                                {t(
-                                    "ui.import_wizard.multi_book_duplicate_action_overwrite",
-                                    "Overwrite",
-                                )}
-                            </option>
-                            <option value="create_new">
-                                {t(
-                                    "ui.import_wizard.multi_book_duplicate_action_create_new",
-                                    "Create new copy",
-                                )}
-                            </option>
-                        </select>
+                            testId={`multi-book-dup-action-${book.source_identifier}`}
+                            className="is-narrow"
+                            ariaLabel={t(
+                                "ui.import_wizard.multi_book_duplicate_action_label",
+                                "Aktion",
+                            )}
+                            options={[
+                                {value: "skip", label: t("ui.import_wizard.multi_book_duplicate_action_skip", "Skip")},
+                                {value: "overwrite", label: t("ui.import_wizard.multi_book_duplicate_action_overwrite", "Overwrite")},
+                                {value: "create_new", label: t("ui.import_wizard.multi_book_duplicate_action_create_new", "Create new copy")},
+                            ]}
+                        />
                     </div>
                 )}
             </div>

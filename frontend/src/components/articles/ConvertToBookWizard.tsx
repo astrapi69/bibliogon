@@ -57,6 +57,7 @@ import {
     api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {RadixSelect} from "../RadixSelect"
 import {notify} from "../../utils/notify"
 import {computeAuthorSuggestions} from "../../utils/computeAuthorSuggestions"
 import AuthorSelectInput from "../AuthorSelectInput"
@@ -635,32 +636,22 @@ export default function ConvertToBookWizard({
                 <label style={styles.label}>
                     {t("ui.convert_to_book.sort_label", "Sortierung")}
                 </label>
-                <select
-                    style={styles.select}
+                <RadixSelect
+                    className="is-block"
                     value={sortStrategy}
-                    onChange={(e) =>
-                        handleSortChange(
-                            e.target.value as BookFromArticlesSortStrategy,
-                        )
+                    onValueChange={(next) =>
+                        handleSortChange(next as BookFromArticlesSortStrategy)
                     }
-                    data-testid="convert-to-book-wizard-selection-sort-strategy"
-                >
-                    <option value="date_asc">
-                        {t("ui.convert_to_book.sort_date_asc", "Datum (alt → neu)")}
-                    </option>
-                    <option value="date_desc">
-                        {t("ui.convert_to_book.sort_date_desc", "Datum (neu → alt)")}
-                    </option>
-                    <option value="title_asc">
-                        {t("ui.convert_to_book.sort_title_asc", "Titel A → Z")}
-                    </option>
-                    <option value="title_desc">
-                        {t("ui.convert_to_book.sort_title_desc", "Titel Z → A")}
-                    </option>
-                    <option value="manual">
-                        {t("ui.convert_to_book.sort_manual", "Manuell (per Drag)")}
-                    </option>
-                </select>
+                    testId="convert-to-book-wizard-selection-sort-strategy"
+                    ariaLabel={t("ui.convert_to_book.sort_label", "Sortierung")}
+                    options={[
+                        {value: "date_asc", label: t("ui.convert_to_book.sort_date_asc", "Datum (alt → neu)")},
+                        {value: "date_desc", label: t("ui.convert_to_book.sort_date_desc", "Datum (neu → alt)")},
+                        {value: "title_asc", label: t("ui.convert_to_book.sort_title_asc", "Titel A → Z")},
+                        {value: "title_desc", label: t("ui.convert_to_book.sort_title_desc", "Titel Z → A")},
+                        {value: "manual", label: t("ui.convert_to_book.sort_manual", "Manuell (per Drag)")},
+                    ]}
+                />
                 <span style={styles.countBadge}>
                     {t("ui.convert_to_book.count", "{count} ausgewählt").replace(
                         "{count}",

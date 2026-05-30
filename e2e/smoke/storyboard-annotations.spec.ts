@@ -90,8 +90,11 @@ test.describe("Storyboard annotations smoke", () => {
             .toBe("Pacing feels slow here.")
 
         // --- Story-beat (C2) ---
-        const beatP1 = page.getByTestId(`storyboard-beat-select-${p1.id}`)
-        await beatP1.selectOption("climax")
+        const beatP1 = page.getByTestId(`storyboard-beat-select-${p1.id}-trigger`)
+        await beatP1.click()
+        await page
+            .getByTestId(`storyboard-beat-select-${p1.id}-item-climax`)
+            .click()
         // Beat badge above the selector renders the new value.
         await expect(
             page.getByTestId(`storyboard-beat-tag-${p1.id}`),

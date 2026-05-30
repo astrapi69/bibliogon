@@ -543,14 +543,16 @@ describe("Storyboard", () => {
             ])
             render(<Storyboard {...defaultProps} />)
             const select = (await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )) as HTMLSelectElement
             expect(select).toBeTruthy()
-            // 6 beat options + 1 empty option = 7
+            // 6 beat options + 1 "no beat" allOption = 7. The empty
+            // value renders as the RadixSelect "__all__" sentinel
+            // option (it emits "" when picked).
             expect(select.options).toHaveLength(7)
             const values = Array.from(select.options).map((o) => o.value)
             expect(values).toEqual([
-                "",
+                "__all__",
                 "setup",
                 "inciting",
                 "rising",
@@ -566,7 +568,7 @@ describe("Storyboard", () => {
             ])
             render(<Storyboard {...defaultProps} />)
             const select = (await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )) as HTMLSelectElement
             expect(select.value).toBe("climax")
         })
@@ -579,7 +581,7 @@ describe("Storyboard", () => {
             vi.mocked(api.pages.update).mockResolvedValue(updated)
             render(<Storyboard {...defaultProps} />)
             const select = (await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )) as HTMLSelectElement
             fireEvent.change(select, {target: {value: "rising"}})
             await waitFor(() => {
@@ -597,7 +599,7 @@ describe("Storyboard", () => {
             vi.mocked(api.pages.update).mockResolvedValue(updated)
             render(<Storyboard {...defaultProps} />)
             const select = (await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )) as HTMLSelectElement
             fireEvent.change(select, {target: {value: ""}})
             await waitFor(() => {
@@ -613,7 +615,7 @@ describe("Storyboard", () => {
             ])
             render(<Storyboard {...defaultProps} />)
             const select = (await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )) as HTMLSelectElement
             fireEvent.change(select, {target: {value: "climax"}})
             await new Promise((r) => setTimeout(r, 0))
@@ -627,7 +629,7 @@ describe("Storyboard", () => {
             ])
             render(<Storyboard {...defaultProps} onSelectPage={onSelectPage} />)
             const select = await screen.findByTestId(
-                "storyboard-beat-select-p1",
+                "storyboard-beat-select-p1-trigger",
             )
             fireEvent.click(select)
             expect(onSelectPage).not.toHaveBeenCalled()

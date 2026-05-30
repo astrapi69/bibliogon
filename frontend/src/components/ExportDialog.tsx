@@ -5,6 +5,7 @@ import HelpLink from "./help/HelpLink";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
+import {RadixSelect} from "./RadixSelect";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -265,12 +266,17 @@ export default function ExportDialog({open, bookId, bookTitle, hasManualToc, onC
                     {format !== "project" && format !== "audiobook" && (
                         <div className="field">
                             <label className="label">{t("ui.export_dialog.toc_depth", "Inhaltsverzeichnis-Tiefe")}</label>
-                            <select className="input" value={tocDepth} onChange={(e) => setTocDepth(Number(e.target.value))}
-                                style={{width: "auto"}}>
-                                <option value={1}>{t("ui.export_dialog.toc_depth_1", "Tiefe 1 (nur #)")}</option>
-                                <option value={2}>{t("ui.export_dialog.toc_depth_2", "Tiefe 2 (# und ##)")}</option>
-                                <option value={3}>{t("ui.export_dialog.toc_depth_3", "Tiefe 3 (# ## ###)")}</option>
-                            </select>
+                            <RadixSelect
+                                className="is-narrow"
+                                value={String(tocDepth)}
+                                onValueChange={(next) => setTocDepth(Number(next))}
+                                ariaLabel={t("ui.export_dialog.toc_depth", "Inhaltsverzeichnis-Tiefe")}
+                                options={[
+                                    {value: "1", label: t("ui.export_dialog.toc_depth_1", "Tiefe 1 (nur #)")},
+                                    {value: "2", label: t("ui.export_dialog.toc_depth_2", "Tiefe 2 (# und ##)")},
+                                    {value: "3", label: t("ui.export_dialog.toc_depth_3", "Tiefe 3 (# ## ###)")},
+                                ]}
+                            />
                         </div>
                     )}
 

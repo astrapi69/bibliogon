@@ -1,6 +1,7 @@
 import React from "react"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
+import {RadixSelect} from "./RadixSelect"
 import {Tier1Section} from "./comics/Tier1Section"
 import {Tier2Section} from "./comics/Tier2Section"
 import styles from "./LayoutConfigImageRow.module.css"
@@ -79,19 +80,17 @@ function ImageFitDropdown({
             <span className={styles.legend}>
                 {t("ui.page_editor.config.image_fit", "Image fit")}
             </span>
-            <select
+            <RadixSelect
                 value={value}
-                onChange={(e) => onChange(e.target.value as ImageFit)}
-                data-testid={testid}
-                className={styles.select}
-            >
-                <option value="contain">
-                    {t("ui.page_editor.config.image_fit_contain", "Contain")}
-                </option>
-                <option value="cover">
-                    {t("ui.page_editor.config.image_fit_cover", "Cover")}
-                </option>
-            </select>
+                onValueChange={(next) => onChange(next as ImageFit)}
+                testId={testid}
+                className="is-narrow"
+                ariaLabel={t("ui.page_editor.config.image_fit", "Image fit")}
+                options={[
+                    {value: "contain", label: t("ui.page_editor.config.image_fit_contain", "Contain")},
+                    {value: "cover", label: t("ui.page_editor.config.image_fit_cover", "Cover")},
+                ]}
+            />
         </label>
     )
 }
@@ -689,33 +688,20 @@ export function LayoutConfigImageFullTextOverlay({
                 <span className={styles.legend}>
                     {t("ui.page_editor.config.text_position", "Text position")}
                 </span>
-                <select
+                <RadixSelect
                     value={position}
-                    onChange={(e) =>
-                        onChange({text_position: e.target.value as TextPosition})
+                    onValueChange={(next) =>
+                        onChange({text_position: next as TextPosition})
                     }
-                    data-testid="image-full-text-position-select"
-                    className={styles.select}
-                >
-                    <option value="top">
-                        {t(
-                            "ui.page_editor.config.text_position_top",
-                            "Top",
-                        )}
-                    </option>
-                    <option value="middle">
-                        {t(
-                            "ui.page_editor.config.text_position_middle",
-                            "Middle",
-                        )}
-                    </option>
-                    <option value="bottom">
-                        {t(
-                            "ui.page_editor.config.text_position_bottom",
-                            "Bottom",
-                        )}
-                    </option>
-                </select>
+                    testId="image-full-text-position"
+                    className="is-narrow"
+                    ariaLabel={t("ui.page_editor.config.text_position", "Text position")}
+                    options={[
+                        {value: "top", label: t("ui.page_editor.config.text_position_top", "Top")},
+                        {value: "middle", label: t("ui.page_editor.config.text_position_middle", "Middle")},
+                        {value: "bottom", label: t("ui.page_editor.config.text_position_bottom", "Bottom")},
+                    ]}
+                />
             </label>
             <label className={styles.fieldLabel}>
                 <span className={styles.legend}>

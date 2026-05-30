@@ -147,7 +147,7 @@ describe("PreviewMultiBookStep", () => {
         const dup = screen.getByTestId("multi-book-duplicate-sha256:multi::b");
         expect(dup).toBeInTheDocument();
         const select = screen.getByTestId(
-            "multi-book-dup-action-sha256:multi::b",
+            "multi-book-dup-action-sha256:multi::b-trigger",
         ) as HTMLSelectElement;
         fireEvent.change(select, { target: { value: "overwrite" } });
         expect(onSetDuplicateAction).toHaveBeenCalledWith(

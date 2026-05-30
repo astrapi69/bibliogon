@@ -51,7 +51,7 @@ describe("LayoutConfigImageTopTextBottom", () => {
                 .checked,
         ).toBe(true)
         expect(
-            (screen.getByTestId("image-top-image-fit") as HTMLSelectElement)
+            (screen.getByTestId("image-top-image-fit-trigger") as HTMLSelectElement)
                 .value,
         ).toBe("contain")
     })
@@ -70,7 +70,7 @@ describe("LayoutConfigImageTopTextBottom", () => {
         render(
             <LayoutConfigImageTopTextBottom config={null} onChange={onChange} />,
         )
-        fireEvent.change(screen.getByTestId("image-top-image-fit"), {
+        fireEvent.change(screen.getByTestId("image-top-image-fit-trigger"), {
             target: {value: "cover"},
         })
         expect(onChange).toHaveBeenCalledWith({image_fit: "cover"})
@@ -88,7 +88,7 @@ describe("LayoutConfigImageTopTextBottom", () => {
                 .checked,
         ).toBe(true)
         expect(
-            (screen.getByTestId("image-top-image-fit") as HTMLSelectElement)
+            (screen.getByTestId("image-top-image-fit-trigger") as HTMLSelectElement)
                 .value,
         ).toBe("cover")
     })
@@ -150,7 +150,7 @@ describe("LayoutConfigImageTopTextBottom", () => {
         )
         fireEvent.click(screen.getByTestId("image-top-text-tier2-trigger"))
         const fontSelect = screen.getByTestId(
-            "image-top-text-font-family-select",
+            "image-top-text-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(fontSelect, {
             target: {value: "Atkinson Hyperlegible"},
@@ -170,7 +170,7 @@ describe("LayoutConfigImageLeftTextRight", () => {
             screen.getByTestId("image-left-split-ratio-value").textContent,
         ).toBe("60%")
         expect(
-            (screen.getByTestId("image-left-image-fit") as HTMLSelectElement)
+            (screen.getByTestId("image-left-image-fit-trigger") as HTMLSelectElement)
                 .value,
         ).toBe("contain")
     })
@@ -196,7 +196,7 @@ describe("LayoutConfigImageLeftTextRight", () => {
         render(
             <LayoutConfigImageLeftTextRight config={null} onChange={onChange} />,
         )
-        fireEvent.change(screen.getByTestId("image-left-image-fit"), {
+        fireEvent.change(screen.getByTestId("image-left-image-fit-trigger"), {
             target: {value: "cover"},
         })
         expect(onChange).toHaveBeenCalledWith({image_fit: "cover"})
@@ -262,7 +262,7 @@ describe("LayoutConfigImageLeftTextRight", () => {
         )
         fireEvent.click(screen.getByTestId("image-left-text-tier2-trigger"))
         const fontSelect = screen.getByTestId(
-            "image-left-text-font-family-select",
+            "image-left-text-font-family-trigger",
         ) as HTMLSelectElement
         fireEvent.change(fontSelect, {
             target: {value: "Atkinson Hyperlegible"},
@@ -279,7 +279,7 @@ describe("LayoutConfigImageFullTextOverlay", () => {
             <LayoutConfigImageFullTextOverlay config={null} onChange={vi.fn()} />,
         )
         expect(
-            (screen.getByTestId("image-full-text-position-select") as HTMLSelectElement)
+            (screen.getByTestId("image-full-text-position-trigger") as HTMLSelectElement)
                 .value,
         ).toBe("bottom")
         expect(
@@ -292,7 +292,7 @@ describe("LayoutConfigImageFullTextOverlay", () => {
         render(
             <LayoutConfigImageFullTextOverlay config={null} onChange={onChange} />,
         )
-        fireEvent.change(screen.getByTestId("image-full-text-position-select"), {
+        fireEvent.change(screen.getByTestId("image-full-text-position-trigger"), {
             target: {value: "top"},
         })
         expect(onChange).toHaveBeenCalledWith({text_position: "top"})

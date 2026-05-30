@@ -33,6 +33,7 @@ import {
     api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {RadixSelect} from "../RadixSelect"
 
 interface Props {
     book: BookDetail
@@ -256,26 +257,25 @@ export default function ArcStep({book, onReviewerCountChange}: Props) {
                                 )}
                             </div>
                             <div style={styles.rowActions}>
-                                <select
+                                <RadixSelect
                                     value={r.review_status}
-                                    onChange={(e) =>
+                                    onValueChange={(next) =>
                                         handleStatusChange(
                                             r.id,
-                                            e.target.value as ReviewStatus,
+                                            next as ReviewStatus,
                                         )
                                     }
-                                    style={styles.statusSelect}
-                                    data-testid={`kdp-publishing-wizard-step-3-status-${r.id}`}
-                                >
-                                    {STATUS_ORDER.map((s) => (
-                                        <option key={s} value={s}>
-                                            {t(
-                                                `ui.kdp_publishing_wizard.arc_status_${s}`,
-                                                s,
-                                            )}
-                                        </option>
-                                    ))}
-                                </select>
+                                    className="is-narrow"
+                                    testId={`kdp-publishing-wizard-step-3-status-${r.id}`}
+                                    ariaLabel={t("ui.kdp_publishing_wizard.arc_status_label", "Status")}
+                                    options={STATUS_ORDER.map((s) => ({
+                                        value: s,
+                                        label: t(
+                                            `ui.kdp_publishing_wizard.arc_status_${s}`,
+                                            s,
+                                        ),
+                                    }))}
+                                />
                                 {r.reviewer_email && (
                                     <a
                                         href={`mailto:${r.reviewer_email}?subject=${encodeURIComponent(

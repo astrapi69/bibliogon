@@ -194,14 +194,14 @@ describe("ArcStep", () => {
         await waitFor(() =>
             expect(
                 screen.getByTestId(
-                    "kdp-publishing-wizard-step-3-status-r-1",
+                    "kdp-publishing-wizard-step-3-status-r-1-trigger",
                 ),
             ).toBeTruthy(),
         )
 
         fireEvent.change(
             screen.getByTestId(
-                "kdp-publishing-wizard-step-3-status-r-1",
+                "kdp-publishing-wizard-step-3-status-r-1-trigger",
             ),
             {target: {value: "sent"}},
         )
