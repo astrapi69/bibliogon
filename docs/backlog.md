@@ -689,58 +689,16 @@ store.
   asking for it OR v01 ships and the manual-tagging step is a
   visible bottleneck in feedback.
 
-- **STORY-BIBLE-PLUGIN-01** (P3, STRATEGIC, filed 2026-05-19
-  from the
-  ``docs/audits/exploration-features-2026-05-15-evaluation.md``
-  triage of exploration feature #4): plugin-based database for
-  fiction-writing entities (Characters, Settings, Plot-Points,
-  Items, Lore) with @-mention syntax in the editor for
-  cross-references.
-
-  Scope:
-  - New plugin: ``bibliogon-plugin-story-bible``
-  - DB: 5 entity types per-book-scoped (Character, Setting,
-    PlotPoint, Item, Lore) with rich-text descriptions +
-    optional photos
-  - TipTap extension: ``@-mention`` syntax with autocomplete
-    against existing entities
-  - Click-on-mention navigates to entity page
-  - AI-Template integration: per-entity-type prompts
-    (Character Profile, Setting Description, Plot-Point
-    structure)
-  - StoryBibleSidebar component in BookEditor (gated on
-    plugin activation)
-
-  Architecture-discipline notes (per audit
-  Track C):
-  - **3-Source-Plugin-Metadata-Pattern**: full pattern applies.
-    Canonical ``backend/config/plugins/story-bible.yaml`` (UI
-    metadata + settings defaults) + ``plugin.py`` class attrs
-    (identity + contract) + generated bundled YAML via
-    ``make build-zip``.
-  - **Recurring-Component-Unification**: 5 entity types x same
-    CRUD pattern -> extract ``EntityCRUDView`` in the SAME
-    session as the second entity type, NOT deferred. Per the
-    2-surfaces rule.
-  - **Single-Source-of-Truth**: cross-references between
-    entities + chapters must derive from the entity's
-    canonical record (DB row), not duplicate text into chapter
-    content. The TipTap extension stores the entity ID; the
-    editor renders the entity's current display-name on the
-    fly.
-  - **Half-Wired-Lifecycle Prevention**: the @-mention
-    autocomplete (write surface) and the click-to-navigate
-    affordance (read surface) MUST ship together. Half-wired
-    risk: shipping autocomplete without click-navigate creates
-    "I mentioned a character but can't get back to them"
-    purgatory.
-
-  Effort: XL (16+ commits, multi-session). Trigger: dedicated
-  Story-Bible session when Aster's next fiction-project
-  (SciFi continuation, new Kinderbuch series, comic) reaches
-  the point where character/setting tracking becomes a real
-  cognitive cost. Plugin model means non-fiction authors
-  never see it.
+- **STORY-BIBLE-PLUGIN-01** (P3, STRATEGIC, filed 2026-05-19):
+  per-book fiction-writing entity database (Characters, Settings,
+  Plot-Points, Items, Lore). **Sessions 1 (backend) + 2 (frontend)
+  shipped 2026-05-30** — plugin scaffold, core StoryEntity model +
+  migration + SSoT registry, CRUD API, StoryBibleSidebar +
+  StoryEntityEditor in BookEditor, per-type icons/colors, i18n
+  (DE+EN real, 6 passthru), help docs (DE+EN). The remaining work
+  (Session 3 relationship-graph + timeline, Session 4 @-mention
+  TipTap extension, cross-book/series scope, i18n native review) is
+  tracked in ROADMAP > P5 under `STORY-BIBLE-PLUGIN-01`.
 
 (D-05 closed as won't-fix 2026-05-05; archived in
 [docs/archive/roadmap/2026-05.md](archive/roadmap/2026-05.md).)

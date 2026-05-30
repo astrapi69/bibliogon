@@ -73,6 +73,10 @@ navigation:
           de: Comic-Panels anordnen
           en: Arranging comic panels
         slug: books/comic-panels
+      - title:
+          de: Story-Bibel
+          en: Story Bible
+        slug: story-bible
 
   - title:
       de: Dashboard

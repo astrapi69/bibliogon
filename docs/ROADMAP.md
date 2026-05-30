@@ -236,9 +236,23 @@ ROADMAP's "Deferred sub-parts" block; not yet filed in backlog.
   streak + per-chapter count widget (Scrivener / Ulysses
   precedent). M effort.
 - `STORY-BIBLE-PLUGIN-01` — fiction-writing entity database
-  (Characters, Settings, Plot-Points, etc.) with `@-mention`
-  syntax. XL effort; trigger: Aster's next fiction project
-  reaches the cognitive-cost point.
+  (Characters, Settings, Plot-Points, Items, Lore). **Session 1
+  (backend) + Session 2 (frontend) shipped 2026-05-30**: plugin
+  scaffold, core StoryEntity model + migration + SSoT registry,
+  CRUD API, StoryBibleSidebar + StoryEntityEditor in BookEditor,
+  per-type icons/colors, i18n (DE+EN real, 6 passthru), help docs.
+  Remaining:
+  - `STORY-BIBLE-SESSION-3-01` — relationship graph + timeline
+    visualizations (deferred from the per-book v1: relationships
+    are text fields today; timeline is list-ordered).
+  - `STORY-BIBLE-SESSION-4-01` — `@-mention` TipTap extension
+    (`@tiptap/extension-mention`, adjudicated 2026-05-30) so a
+    chapter can reference an entry inline + click-to-navigate.
+  - `STORY-BIBLE-CROSS-BOOK-01` — series-spanning bible (v1 is
+    per-book; rows migrate forward via a nullable series key).
+  - `I18N-NATIVE-REVIEW-STORY-BIBLE-01` — native-speaker review of
+    the `ui.story_bible.*` namespace in es/fr/el/pt/tr/ja (shipped
+    English passthru).
 - `MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01` — triage the
   open mobile-sync exploration. Deferred 2026-05-22 until real
   user-pull signal lands.
