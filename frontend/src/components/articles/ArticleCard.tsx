@@ -53,7 +53,7 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
             // grid or list view is active. See
             // VIEW-MODE-TESTID-PARITY-01.
             data-article-id={article.id}
-            className={styles.card}
+            className={`card card-interactive ${styles.card}`}
             onClick={() => {
                 if (!menuOpen) onClick();
             }}

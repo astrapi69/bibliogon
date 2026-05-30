@@ -27,7 +27,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
 
     return (
         <div
-            className={styles.card}
+            className={`card card-interactive ${styles.card}`}
             data-testid={`book-card-${book.id}`}
             // View-agnostic id attribute — paired with the
             // ``data-book-id`` on BookListView's row so E2E specs

@@ -1157,6 +1157,33 @@ input[type="checkbox"] {
     color: var(--accent);
 }
 
+/* --- Card surface ---
+ * Canonical card chrome: themed background, border, radius and a soft
+ * shadow. `.card-interactive` adds the clickable affordance (cursor +
+ * hover-lift); `.card-padded` adds the standard 16px inset for content
+ * cards. Replaces the per-component .card module classes that each
+ * re-declared the same surface. 2026-05-30 sweep (Session 2C). */
+.card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.card-interactive {
+    cursor: pointer;
+    transition: all 180ms ease;
+}
+
+.card-interactive:hover {
+    border-color: var(--border-strong);
+    box-shadow: var(--shadow-md);
+}
+
+.card-padded {
+    padding: 16px;
+}
+
 .label {
     display: block;
     font-size: 0.8125rem;

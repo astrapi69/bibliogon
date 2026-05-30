@@ -7,14 +7,11 @@
 
 /* Stretch to the parent grid row height so all cards in a row
    (and across rows when ``grid-auto-rows: 1fr`` is set) match. */
+/* Surface + interactive affordance come from the global .card +
+ * .card-interactive; this only supplements the tile layout
+ * (image-on-top, content-below). 2026-05-30 sweep (Session 2C). */
 .card {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    cursor: pointer;
     overflow: hidden;
-    transition: all 180ms ease;
     display: flex;
     flex-direction: column;
     height: 100%;

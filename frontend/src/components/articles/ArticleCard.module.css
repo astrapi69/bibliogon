@@ -5,17 +5,13 @@
  * applications. Mirrors BookCard's tile shape.
  */
 
-/* Stretch to the grid row height so all cards match. */
+/* Surface + interactive affordance come from the global .card +
+ * .card-interactive; this only supplements the tile layout (stretch
+ * to the grid row height so all cards match). 2026-05-30 sweep. */
 .card {
-    background: var(--bg-card);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-sm);
-    border: 1px solid var(--border);
-    cursor: pointer;
     overflow: hidden;
     display: flex;
     flex-direction: column;
-    transition: all 180ms ease;
     height: 100%;
 }
 
