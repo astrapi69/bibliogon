@@ -16,10 +16,11 @@
 
 import {useCallback, useEffect, useRef, useState} from "react";
 import type {JSONContent} from "@tiptap/react";
-import {ArrowLeft, Trash2} from "lucide-react";
+import {ArrowLeft, MapPin, Trash2, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
 import type {
     StoryEntityExtraField,
+    StoryEntityLinkOut,
     StoryEntityOut,
     StoryEntityTypeDef,
 } from "../api/client";
@@ -105,6 +106,74 @@ export default function StoryEntityEditor({
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [entityId]);
+
+    // C7: appearance tracker — the pages/chapters this entity is
+    // linked to. Pages resolve to a position label; chapters to a
+    // title (both fetched once the entity's book_id is known). The
+    // primary create path is the C6 Storyboard drag; here authors see
+    // every appearance + remove a wrong link. ``apprRefresh`` re-runs
+    // the fetch after a removal.
+    const [appearances, setAppearances] = useState<StoryEntityLinkOut[]>([]);
+    const [pagePos, setPagePos] = useState<Record<string, number>>({});
+    const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
+    const [apprRefresh, setApprRefresh] = useState(0);
+    const bookId = entity?.book_id;
+
+    useEffect(() => {
+        let cancelled = false;
+        api.storyBible
+            .appearances(entityId)
+            .then((rows) => {
+                if (!cancelled) setAppearances(rows);
+            })
+            .catch(() => {});
+        if (bookId) {
+            api.pages
+                .list(bookId)
+                .then((rows) => {
+                    if (cancelled) return;
+                    setPagePos(
+                        Object.fromEntries(rows.map((p) => [p.id, p.position])),
+                    );
+                })
+                .catch(() => {});
+            api.books
+                .get(bookId)
+                .then((book) => {
+                    if (cancelled) return;
+                    setChapterTitles(
+                        Object.fromEntries(
+                            (book.chapters ?? []).map((c) => [c.id, c.title]),
+                        ),
+                    );
+                })
+                .catch(() => {});
+        }
+        return () => {
+            cancelled = true;
+        };
+    }, [entityId, bookId, apprRefresh]);
+
+    const handleRemoveAppearance = useCallback(
+        async (linkId: string) => {
+            try {
+                await api.storyBible.deleteLink(linkId);
+                setApprRefresh((k) => k + 1);
+                onChanged();
+            } catch (err) {
+                notify.error(
+                    err instanceof ApiError
+                        ? err.detail
+                        : t(
+                              "ui.story_bible.appearance_remove_error",
+                              "Auftritt konnte nicht entfernt werden.",
+                          ),
+                    err,
+                );
+            }
+        },
+        [onChanged, t],
+    );
 
     const persist = useCallback(
         async (patch: Parameters<typeof api.storyBible.updateEntity>[1]) => {
@@ -264,6 +333,77 @@ export default function StoryEntityEditor({
                     ))}
                 </section>
             )}
+
+            <section
+                className={styles.section}
+                data-testid="story-entity-appearances"
+            >
+                <h3 className={styles.sectionTitle}>
+                    {t("ui.story_bible.appearances", "Auftritte")}
+                </h3>
+                {appearances.length === 0 ? (
+                    <p
+                        className={styles.appearanceEmpty}
+                        data-testid="story-entity-appearances-empty"
+                    >
+                        {t(
+                            "ui.story_bible.no_appearances",
+                            "Noch keine Auftritte. Ziehe diesen Eintrag im Storyboard auf eine Seite.",
+                        )}
+                    </p>
+                ) : (
+                    <ul className={styles.appearanceList}>
+                        {appearances.map((link) => {
+                            const ref = link.page_id
+                                ? `${t("ui.story_bible.appearance_page", "Seite")} ${
+                                      pagePos[link.page_id] ?? "?"
+                                  }`
+                                : link.chapter_id
+                                  ? (chapterTitles[link.chapter_id] ??
+                                    t("ui.story_bible.appearance_chapter", "Kapitel"))
+                                  : "";
+                            return (
+                                <li
+                                    key={link.id}
+                                    className={styles.appearanceItem}
+                                    data-testid={`story-entity-appearance-${link.id}`}
+                                >
+                                    <MapPin size={13} aria-hidden />
+                                    <span className={styles.appearanceRef}>{ref}</span>
+                                    {link.role && (
+                                        <span className={styles.appearanceRole}>
+                                            {link.role}
+                                        </span>
+                                    )}
+                                    {link.notes && (
+                                        <span className={styles.appearanceNotes}>
+                                            {link.notes}
+                                        </span>
+                                    )}
+                                    <button
+                                        type="button"
+                                        className={`btn-sidebar-icon ${styles.appearanceRemove}`}
+                                        onClick={() =>
+                                            void handleRemoveAppearance(link.id)
+                                        }
+                                        data-testid={`story-entity-appearance-remove-${link.id}`}
+                                        aria-label={t(
+                                            "ui.story_bible.appearance_remove",
+                                            "Auftritt entfernen",
+                                        )}
+                                        title={t(
+                                            "ui.story_bible.appearance_remove",
+                                            "Auftritt entfernen",
+                                        )}
+                                    >
+                                        <X size={13} />
+                                    </button>
+                                </li>
+                            );
+                        })}
+                    </ul>
+                )}
+            </section>
         </div>
     );
 }

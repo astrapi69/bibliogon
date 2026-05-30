@@ -57,3 +57,50 @@
     font-size: 0.8125rem;
     color: var(--text-secondary);
 }
+
+/* C7: appearance tracker — list of pages/chapters this entity is
+   linked to, each removable. */
+.appearanceEmpty {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.appearanceList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.appearanceItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 6px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    font-size: 0.82rem;
+}
+
+.appearanceRef {
+    font-weight: 600;
+    color: var(--text);
+}
+
+.appearanceRole {
+    color: var(--accent);
+}
+
+.appearanceNotes {
+    color: var(--text-muted);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.appearanceRemove {
+    margin-left: auto;
+}

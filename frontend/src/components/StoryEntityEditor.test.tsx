@@ -61,6 +61,10 @@ const mockGetEntity = vi.fn();
 const mockListTypes = vi.fn();
 const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
+const mockAppearances = vi.fn();
+const mockDeleteLink = vi.fn();
+const mockPagesList = vi.fn();
+const mockBooksGet = vi.fn();
 
 vi.mock("../api/client", async () => {
     const actual =
@@ -73,7 +77,11 @@ vi.mock("../api/client", async () => {
                 listEntityTypes: () => mockListTypes(),
                 updateEntity: (...a: unknown[]) => mockUpdate(...a),
                 deleteEntity: (...a: unknown[]) => mockDelete(...a),
+                appearances: (...a: unknown[]) => mockAppearances(...a),
+                deleteLink: (...a: unknown[]) => mockDeleteLink(...a),
             },
+            pages: {list: (...a: unknown[]) => mockPagesList(...a)},
+            books: {get: (...a: unknown[]) => mockBooksGet(...a)},
         },
     };
 });
@@ -121,6 +129,14 @@ beforeEach(() => {
     mockDelete.mockResolvedValue(undefined);
     mockConfirm.mockReset();
     mockConfirm.mockResolvedValue(true);
+    mockAppearances.mockReset();
+    mockAppearances.mockResolvedValue([]);
+    mockDeleteLink.mockReset();
+    mockDeleteLink.mockResolvedValue(undefined);
+    mockPagesList.mockReset();
+    mockPagesList.mockResolvedValue([]);
+    mockBooksGet.mockReset();
+    mockBooksGet.mockResolvedValue({chapters: []});
 });
 
 describe("StoryEntityEditor", () => {
@@ -208,5 +224,56 @@ describe("StoryEntityEditor", () => {
         );
         fireEvent.click(await screen.findByTestId("story-entity-back"));
         expect(onBack).toHaveBeenCalled();
+    });
+
+    it("renders the appearances section with a page link and removes it", async () => {
+        mockAppearances.mockResolvedValue([
+            {
+                id: "lnk1",
+                entity_id: "c1",
+                page_id: "p1",
+                chapter_id: null,
+                role: "protagonist",
+                notes: null,
+                created_at: "2026-05-30T00:00:00Z",
+                entity: entity(),
+            },
+        ]);
+        mockPagesList.mockResolvedValue([
+            {id: "p1", position: 3, book_id: "b1", layout: "image_top_text_bottom"},
+        ]);
+        render(
+            <StoryEntityEditor
+                entityId="c1"
+                onBack={vi.fn()}
+                onChanged={vi.fn()}
+                onDeleted={vi.fn()}
+            />,
+        );
+        const item = await screen.findByTestId("story-entity-appearance-lnk1");
+        // Page position resolves; role shows.
+        expect(item.textContent).toContain("3");
+        expect(item.textContent).toContain("protagonist");
+        fireEvent.click(
+            screen.getByTestId("story-entity-appearance-remove-lnk1"),
+        );
+        await waitFor(() => {
+            expect(mockDeleteLink).toHaveBeenCalledWith("lnk1");
+        });
+    });
+
+    it("shows the empty appearances state when there are none", async () => {
+        mockAppearances.mockResolvedValue([]);
+        render(
+            <StoryEntityEditor
+                entityId="c1"
+                onBack={vi.fn()}
+                onChanged={vi.fn()}
+                onDeleted={vi.fn()}
+            />,
+        );
+        expect(
+            await screen.findByTestId("story-entity-appearances-empty"),
+        ).toBeTruthy();
     });
 });
