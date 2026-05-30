@@ -34,15 +34,12 @@
     background: var(--bg-secondary);
 }
 
+/* Base look comes from the global .input; this only supplements the
+ * compact find/replace-bar sizing (2026-05-30 sweep 2A). */
 .searchInput {
-    padding: 4px 8px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
-    font-size: 0.8125rem;
-    background: var(--bg-card);
-    color: var(--text-primary);
-    outline: none;
     width: 160px;
+    padding: 4px 8px;
+    font-size: 0.8125rem;
 }
 
 .spellcheckPanel,

@@ -1257,7 +1257,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             {showSearch && !markdownMode && editor && (
                 <div className={styles.searchBar}>
                     <input
-                        className={styles.searchInput}
+                        className={`input ${styles.searchInput}`}
                         value={searchTerm}
                         onChange={(e) => {
                             setSearchTerm(e.target.value);
@@ -1271,7 +1271,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                         }}
                     />
                     <input
-                        className={styles.searchInput}
+                        className={`input ${styles.searchInput}`}
                         value={replaceTerm}
                         onChange={(e) => {
                             setReplaceTerm(e.target.value);

@@ -400,5 +400,25 @@ session is active in adjacent files).
 
 **Net:** the button portion of the sweep is **effectively done** after 2A.
 The sweep's real weight is **selects (Radix-widening, 23 files),
-checkboxes (29), inputs (32), badges (38), cards (~30), dialogs (32)** —
-i.e. 2B / 2C / 2D, not buttons.
+checkboxes (29), badges (38), cards (~30), dialogs (32)** — i.e. 2B / 2C
+/ 2D, not buttons or inputs.
+
+### Inputs + sliders (Session 2A finding)
+
+- **Sliders:** all 19 range inputs (5 files) were un-classed browser
+  defaults. Added a global `.slider` (`accent-color: var(--accent)`)
+  and applied it everywhere. **Done** (commit `4ec37c72`).
+- **Inputs:** like buttons, the "51 inputs / 32 files" over-counts.
+  Most are **legitimate non-`.input` variants** (KeywordInput's
+  borderless chip-input, PageCanvas's transparent on-canvas overlay
+  text, EditableTitle's inline title-edit), **already on global
+  `.input` + supplement** (DashboardFilterBar `searchInput`,
+  BookMetadataEditor `multilineInput`), or **inline JS style objects**
+  (`kdp-wizard/PricingStep` + `ArcStep` use `style={styles.priceInput}`
+  — a separate inline-style→className refactor, not CSS-module). The
+  one clean boxed duplicator migrated this session is **Editor's
+  find/replace `searchInput`** → `.input` + compact supplement.
+  `medium-import/MediumImportSettings.input` shares a single CSS rule
+  with `.select` → **deferred to 2B** (migrate input + select together).
+  Remaining inline-style inputs → filed implicitly for a later
+  inline-style cleanup; not blocking.
