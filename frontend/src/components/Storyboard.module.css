@@ -425,3 +425,49 @@ div:hover > .dragHandle,
     outline-offset: 2px;
     background: var(--bg-hover);
 }
+
+/* C8: entity filter bar above the grid (multi-select chips; grid
+   shows only pages where ALL selected entities appear). */
+.entityFilter {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.entityFilterLabel {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+}
+
+.filterChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    font-size: 0.78rem;
+    cursor: pointer;
+}
+
+.filterChip:hover,
+.filterChip:focus-visible {
+    background: var(--bg-hover);
+}
+
+.filterChipActive {
+    border-color: var(--accent);
+    background: var(--bg-hover);
+    font-weight: 600;
+}
+
+.filterClear {
+    border: none;
+    background: none;
+    color: var(--accent);
+    font-size: 0.78rem;
+    cursor: pointer;
+}

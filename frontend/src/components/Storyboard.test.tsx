@@ -53,6 +53,8 @@ vi.mock("../api/client", async () => {
                 getInfo: vi.fn(),
                 pageEntities: vi.fn(),
                 createLink: vi.fn(),
+                listEntities: vi.fn(),
+                appearances: vi.fn(),
             },
         },
     }
@@ -141,6 +143,10 @@ beforeEach(() => {
     vi.mocked(api.storyBible.pageEntities).mockReset()
     vi.mocked(api.storyBible.pageEntities).mockResolvedValue([])
     vi.mocked(api.storyBible.createLink).mockReset()
+    vi.mocked(api.storyBible.listEntities).mockReset()
+    vi.mocked(api.storyBible.listEntities).mockResolvedValue([])
+    vi.mocked(api.storyBible.appearances).mockReset()
+    vi.mocked(api.storyBible.appearances).mockResolvedValue([])
     defaultProps.onSelectPage = vi.fn()
     defaultProps.onBack = vi.fn()
 })
@@ -929,5 +935,61 @@ describe("Storyboard - drag entity onto card (C6)", () => {
             dataTransfer: {types: [], getData: () => "", setData: vi.fn()},
         })
         expect(api.storyBible.createLink).not.toHaveBeenCalled()
+    })
+})
+
+describe("Storyboard - entity filter (C8)", () => {
+    function makeEntity(id: string, name: string) {
+        return {
+            id,
+            book_id: "b1",
+            entity_type: "character",
+            name,
+            description: null,
+            entity_metadata: null,
+            image_asset_id: null,
+            position: 1,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+        }
+    }
+
+    it("filters the grid to pages where the selected entity appears", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([
+            makePage({id: "p1", position: 1}),
+            makePage({id: "p2", position: 2}),
+        ])
+        vi.mocked(api.storyBible.listEntities).mockResolvedValue([
+            makeEntity("e1", "Max"),
+        ] as never)
+        // Max appears only on p1.
+        vi.mocked(api.storyBible.appearances).mockResolvedValue([
+            {...makeLink("e1", "Max"), page_id: "p1"},
+        ] as never)
+        render(<Storyboard {...defaultProps} />)
+        const chip = await screen.findByTestId("storyboard-filter-chip-e1")
+        // Unfiltered: both cards visible.
+        expect(screen.getByTestId("storyboard-card-p1")).toBeTruthy()
+        expect(screen.getByTestId("storyboard-card-p2")).toBeTruthy()
+        fireEvent.click(chip)
+        await waitFor(() => {
+            expect(screen.queryByTestId("storyboard-card-p2")).toBeNull()
+        })
+        expect(screen.getByTestId("storyboard-card-p1")).toBeTruthy()
+        // Clear restores all pages.
+        fireEvent.click(screen.getByTestId("storyboard-filter-clear"))
+        await waitFor(() => {
+            expect(screen.getByTestId("storyboard-card-p2")).toBeTruthy()
+        })
+    })
+
+    it("hides the filter bar when there are no entities", async () => {
+        vi.mocked(api.storyBible.getInfo).mockResolvedValue({} as never)
+        vi.mocked(api.pages.list).mockResolvedValue([makePage({id: "p1"})])
+        vi.mocked(api.storyBible.listEntities).mockResolvedValue([])
+        render(<Storyboard {...defaultProps} />)
+        await screen.findByTestId("storyboard-card-p1")
+        expect(screen.queryByTestId("storyboard-entity-filter")).toBeNull()
     })
 })

@@ -144,6 +144,68 @@ export default function Storyboard({
         setStoryBibleOpen(true)
     }, [])
 
+    // C8: entity filter. The author selects one or more entities and
+    // the grid shows only pages where ALL of them appear (set
+    // intersection). Entities for the chips load once when available;
+    // ``visiblePageIds`` is null (= show all) when no filter is set.
+    const [entities, setEntities] = useState<StoryEntityOut[]>([])
+    const [entityFilter, setEntityFilter] = useState<string[]>([])
+    const [visiblePageIds, setVisiblePageIds] = useState<Set<string> | null>(null)
+
+    useEffect(() => {
+        if (!storyBibleAvailable) return
+        let cancelled = false
+        api.storyBible
+            .listEntities(bookId)
+            .then((rows) => {
+                if (!cancelled) setEntities(rows)
+            })
+            .catch(() => {})
+        return () => {
+            cancelled = true
+        }
+    }, [bookId, storyBibleAvailable])
+
+    useEffect(() => {
+        if (entityFilter.length === 0) {
+            setVisiblePageIds(null)
+            return
+        }
+        let cancelled = false
+        Promise.all(entityFilter.map((id) => api.storyBible.appearances(id)))
+            .then((perEntity) => {
+                if (cancelled) return
+                // Intersection of page_ids across all selected entities.
+                const sets = perEntity.map(
+                    (links) =>
+                        new Set(
+                            links
+                                .map((l) => l.page_id)
+                                .filter((p): p is string => Boolean(p)),
+                        ),
+                )
+                const intersection = sets.reduce<Set<string>>((acc, s, idx) => {
+                    if (idx === 0) return new Set(s)
+                    return new Set([...acc].filter((id) => s.has(id)))
+                }, new Set())
+                setVisiblePageIds(intersection)
+            })
+            .catch(() => {
+                if (!cancelled) setVisiblePageIds(null)
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [entityFilter])
+
+    const toggleEntityFilter = useCallback((entityId: string) => {
+        setEntityFilter((prev) =>
+            prev.includes(entityId)
+                ? prev.filter((id) => id !== entityId)
+                : [...prev, entityId],
+        )
+    }, [])
+
     useEffect(() => {
         let cancelled = false
         api.pages
@@ -163,7 +225,16 @@ export default function Storyboard({
         }
     }, [bookId])
 
-    const grouped = useMemo(() => groupByActGroup(pages), [pages])
+    // C8: when an entity filter is active, only pages in the
+    // intersection are shown. visiblePageIds === null means no filter.
+    const filteredPages = useMemo(
+        () =>
+            visiblePageIds === null
+                ? pages
+                : pages.filter((p) => visiblePageIds.has(p.id)),
+        [pages, visiblePageIds],
+    )
+    const grouped = useMemo(() => groupByActGroup(filteredPages), [filteredPages])
     const totalPages = pages.length
     const pageIds = useMemo(() => pages.map((p) => p.id), [pages])
 
@@ -276,6 +347,44 @@ export default function Storyboard({
             </div>
             <div className={styles.bodyRow}>
             <div className={styles.scroll}>
+                {storyBibleAvailable && entities.length > 0 && (
+                    <div
+                        className={styles.entityFilter}
+                        data-testid={`${testidNamespace}-entity-filter`}
+                    >
+                        <span className={styles.entityFilterLabel}>
+                            {t("ui.storyboard.filter_label", "Show only pages with")}
+                        </span>
+                        {entities.map((entity) => {
+                            const active = entityFilter.includes(entity.id)
+                            const Icon = entityTypeIcon(entity.entity_type)
+                            return (
+                                <button
+                                    key={entity.id}
+                                    type="button"
+                                    className={`${styles.filterChip} ${active ? styles.filterChipActive : ""}`}
+                                    style={{color: entityTypeColor(entity.entity_type)}}
+                                    aria-pressed={active}
+                                    onClick={() => toggleEntityFilter(entity.id)}
+                                    data-testid={`${testidNamespace}-filter-chip-${entity.id}`}
+                                >
+                                    <Icon size={12} aria-hidden />
+                                    {entity.name}
+                                </button>
+                            )
+                        })}
+                        {entityFilter.length > 0 && (
+                            <button
+                                type="button"
+                                className={styles.filterClear}
+                                onClick={() => setEntityFilter([])}
+                                data-testid={`${testidNamespace}-filter-clear`}
+                            >
+                                {t("ui.storyboard.filter_clear", "Clear")}
+                            </button>
+                        )}
+                    </div>
+                )}
                 {loadError ? (
                     <div
                         className={styles.empty}
@@ -298,6 +407,16 @@ export default function Storyboard({
                         {t(
                             "ui.storyboard.empty",
                             "No pages yet. Add pages from the editor to see them here.",
+                        )}
+                    </div>
+                ) : filteredPages.length === 0 ? (
+                    <div
+                        className={styles.empty}
+                        data-testid={`${testidNamespace}-filter-empty`}
+                    >
+                        {t(
+                            "ui.storyboard.filter_no_match",
+                            "No pages match the selected entities.",
                         )}
                     </div>
                 ) : (
