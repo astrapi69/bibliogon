@@ -5,7 +5,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../../utils/aiProviders";
 import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
-import {RadixSelect} from "./RadixSelect";
+import {RadixSelect} from "../RadixSelect";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";

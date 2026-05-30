@@ -11,7 +11,7 @@ import {
 } from "../PdfExportControls";
 import {KDP_REGIONS, REGION_LABELS} from "../kdp-wizard/pricing";
 import type {RegionCode} from "../kdp-wizard/machines/types";
-import {RadixSelect} from "./RadixSelect";
+import {RadixSelect} from "../RadixSelect";
 import {Toggle} from "./Toggle";
 
 function isPictureBookFormat(value: unknown): value is PictureBookFormat {

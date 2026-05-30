@@ -2,7 +2,7 @@ import {useState} from "react";
 import {Save, Eye, EyeOff} from "lucide-react";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../../RadixSelect";
 
 /** Custom panel for the translation plugin. Mostly exists to render
  *  ``provider`` as a dropdown and ``deepl_api_key`` as a masked password

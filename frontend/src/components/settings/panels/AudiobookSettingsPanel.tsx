@@ -3,7 +3,7 @@ import {Save} from "lucide-react";
 import {api, AudiobookVoice, formatVoiceLabel} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../../RadixSelect";
 import {Toggle} from "../Toggle";
 import {normalizeMergeMode} from "../utils";
 import {ElevenLabsKeyPanel} from "./ElevenLabsKeyPanel";
