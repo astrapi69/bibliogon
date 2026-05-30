@@ -185,18 +185,33 @@ describe("StoryBibleSidebar", () => {
     });
 
     it("exports the Story Bible as a Markdown download", async () => {
+        // Assign only the static methods so URL stays a constructor
+        // (spreading the class into a plain object breaks `new URL`,
+        // and stubGlobal can leak across files). Restore afterwards.
+        const origCreate = (URL as unknown as {createObjectURL?: unknown})
+            .createObjectURL;
+        const origRevoke = (URL as unknown as {revokeObjectURL?: unknown})
+            .revokeObjectURL;
         const createObjectURL = vi.fn(() => "blob:x");
-        const revokeObjectURL = vi.fn();
-        vi.stubGlobal("URL", {...URL, createObjectURL, revokeObjectURL});
-        render(
-            <StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />,
-        );
-        const exportBtn = await screen.findByTestId("story-bible-export");
-        fireEvent.click(exportBtn);
-        await waitFor(() => {
-            expect(mockExportBible).toHaveBeenCalledWith("b1");
-        });
-        expect(createObjectURL).toHaveBeenCalled();
-        vi.unstubAllGlobals();
+        URL.createObjectURL = createObjectURL as typeof URL.createObjectURL;
+        URL.revokeObjectURL = vi.fn() as typeof URL.revokeObjectURL;
+        try {
+            render(
+                <StoryBibleSidebar
+                    bookId="b1"
+                    onClose={vi.fn()}
+                    onSelectEntity={vi.fn()}
+                />,
+            );
+            const exportBtn = await screen.findByTestId("story-bible-export");
+            fireEvent.click(exportBtn);
+            await waitFor(() => {
+                expect(mockExportBible).toHaveBeenCalledWith("b1");
+            });
+            expect(createObjectURL).toHaveBeenCalled();
+        } finally {
+            URL.createObjectURL = origCreate as typeof URL.createObjectURL;
+            URL.revokeObjectURL = origRevoke as typeof URL.revokeObjectURL;
+        }
     });
 });

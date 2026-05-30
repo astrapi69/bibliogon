@@ -251,9 +251,14 @@ describe("StoryEntityEditor", () => {
             />,
         );
         const item = await screen.findByTestId("story-entity-appearance-lnk1");
-        // Page position resolves; role shows.
-        expect(item.textContent).toContain("3");
+        // Role shows immediately; the page position resolves after the
+        // pages.list fetch completes (separate async effect).
         expect(item.textContent).toContain("protagonist");
+        await waitFor(() => {
+            expect(
+                screen.getByTestId("story-entity-appearance-lnk1").textContent,
+            ).toContain("3");
+        });
         fireEvent.click(
             screen.getByTestId("story-entity-appearance-remove-lnk1"),
         );
