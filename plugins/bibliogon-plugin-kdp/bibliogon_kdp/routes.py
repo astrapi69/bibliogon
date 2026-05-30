@@ -152,7 +152,14 @@ class CheckMetadataRequest(BaseModel):
     description: str | None = None
     html_description: str | None = None
     language: str = ""
-    keywords: str | None = None
+    # keywords is a JSON array on the Book model (the API surfaces it to
+    # the frontend as string[], and the KDP wizard posts an array). The
+    # metadata checker already accepts a list[str] (with a str fallback
+    # for legacy payloads), but this request schema still typed it as
+    # ``str | None`` — so the wizard's array payload 422'd, surfacing as
+    # "Metadaten-Pruefung fehlgeschlagen. Request failed". Accept the
+    # list to match BookDetail.keywords.
+    keywords: list[str] | str | None = None
     cover_image: str | None = None
     isbn_ebook: str | None = None
     isbn_paperback: str | None = None
