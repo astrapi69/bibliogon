@@ -1469,6 +1469,18 @@ in the same session.)
 
 ## P5 - Speculative / Nice-to-have
 
+- **FRONTEND-LINT-FORMAT-SETUP-01** (P5, filed 2026-05-30):
+  the frontend Prettier/ESLint path is not operative in the
+  current checkout — no `.prettierrc` resolves (default Prettier
+  flags committed files, which use 4-space/double-quote), and
+  ESLint 9+ finds no `eslint.config.js`. Not urgent: the real
+  quality gates (`tsc --noEmit`, Vitest, `make verify-theme`)
+  cover correctness + theming, and the backend pre-commit hooks
+  (ruff) are unaffected. Quick-fix when someone wants frontend
+  format enforcement back: add a `.prettierrc` matching the
+  existing style (or reformat once to a chosen standard) + a
+  flat `eslint.config.js`, then wire both into pre-commit.
+
 - **PICTURE-BOOK-STORYBOARD-OPERATIONS-01** (P5,
   trigger-gated, filed 2026-05-27 from the closure of
   `PICTURE-BOOK-STORYBOARD-VIEW-01`): page-operations
