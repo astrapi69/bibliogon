@@ -38,6 +38,18 @@ StoryBeat = Literal[
     "resolution",
 ]
 
+# Per-chapter drafting workflow status (CHAPTER-STATUS-LABELS-01).
+# Fixed four-value enum (Scrivener-style To Do / First Draft / Revised
+# / Final). Stored as ``String(20)`` in the DB; Literal-validated at the
+# Pydantic layer per the ``Chapter.story_beat`` precedent. None = no
+# status set.
+ChapterStatus = Literal[
+    "todo",
+    "first_draft",
+    "revised",
+    "final",
+]
+
 # --- Enums ---
 
 
@@ -578,6 +590,8 @@ class ChapterCreate(BaseModel):
     story_beat: StoryBeat | None = None
     mood_color: str | None = Field(default=None, max_length=7)
     act_group: str | None = Field(default=None, max_length=100)
+    status: ChapterStatus | None = None
+    label_id: str | None = Field(default=None, max_length=32)
 
     @field_validator("mood_color")
     @classmethod
@@ -609,6 +623,8 @@ class ChapterUpdate(BaseModel):
     story_beat: StoryBeat | None = None
     mood_color: str | None = Field(default=None, max_length=7)
     act_group: str | None = Field(default=None, max_length=100)
+    status: ChapterStatus | None = None
+    label_id: str | None = Field(default=None, max_length=32)
 
     @field_validator("mood_color")
     @classmethod
@@ -672,6 +688,53 @@ class ChapterOut(BaseModel):
     story_beat: str | None = None
     mood_color: str | None = None
     act_group: str | None = None
+    # Drafting workflow (CHAPTER-STATUS-LABELS-01). status returns the
+    # raw String (no Literal enforcement on read so legacy rows
+    # serialize cleanly); label_id is the assigned ChapterLabel id (the
+    # client maps it to name+color via the book's chapter-labels list).
+    status: str | None = None
+    label_id: str | None = None
+
+
+class ChapterLabelCreate(BaseModel):
+    """Create body for a per-book chapter label (CHAPTER-STATUS-LABELS-01)."""
+
+    name: str = Field(min_length=1, max_length=100)
+    color: str = Field(max_length=7)
+
+    @field_validator("color")
+    @classmethod
+    def _validate_color(cls, value: str) -> str:
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("color must be a hex color code like #RRGGBB")
+        return value
+
+
+class ChapterLabelUpdate(BaseModel):
+    """PATCH body for a chapter label; all fields optional."""
+
+    name: str | None = Field(default=None, min_length=1, max_length=100)
+    color: str | None = Field(default=None, max_length=7)
+    position: int | None = None
+
+    @field_validator("color")
+    @classmethod
+    def _validate_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("color must be a hex color code like #RRGGBB")
+        return value
+
+
+class ChapterLabelOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    book_id: str
+    name: str
+    color: str
+    position: int
 
 
 class ChapterVersionSummary(BaseModel):

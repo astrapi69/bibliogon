@@ -43,6 +43,7 @@ from app.routers import (
     book_types,
     books,
     bulk_delete,
+    chapter_labels,
     chapter_templates,
     chapters,
     comments,
@@ -616,6 +617,7 @@ app.include_router(comments.router, prefix="/api")
 app.include_router(publications.publications_router, prefix="/api")
 app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
+app.include_router(chapter_labels.router, prefix="/api")
 app.include_router(pages.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")

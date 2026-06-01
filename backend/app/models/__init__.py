@@ -212,6 +212,10 @@ class Book(Base):
     pages: Mapped[list["Page"]] = relationship(
         back_populates="book", cascade="all, delete-orphan", order_by="Page.position"
     )
+    # Per-book, user-definable chapter labels (CHAPTER-STATUS-LABELS-01).
+    chapter_labels: Mapped[list["ChapterLabel"]] = relationship(
+        back_populates="book", cascade="all, delete-orphan", order_by="ChapterLabel.position"
+    )
 
     def __repr__(self) -> str:
         return f"<Book {self.id!r} title={self.title!r} type={self.book_type}>"
@@ -242,6 +246,18 @@ class Chapter(Base):
     story_beat: Mapped[str | None] = mapped_column(String(20), nullable=True)
     mood_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
     act_group: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    # Drafting workflow (CHAPTER-STATUS-LABELS-01). `status`: a fixed
+    # workflow enum (Literal-validated in Pydantic, String in SQL per the
+    # chapter_type / story_beat precedent). `label_id`: optional FK to a
+    # per-book, user-definable ChapterLabel (name + color). ON DELETE SET
+    # NULL clears the assignment when a label is deleted rather than
+    # cascading the chapters away; the label-delete service also nulls it
+    # explicitly (belt-and-suspenders, in case SQLite FK enforcement is
+    # off).
+    status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    label_id: Mapped[str | None] = mapped_column(
+        ForeignKey("chapter_labels.id", ondelete="SET NULL"), nullable=True
+    )
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 
@@ -249,6 +265,30 @@ class Chapter(Base):
         return (
             f"<Chapter {self.id!r} title={self.title!r} type={self.chapter_type} v={self.version}>"
         )
+
+
+class ChapterLabel(Base):
+    """A per-book, user-definable chapter label (CHAPTER-STATUS-LABELS-01).
+
+    Scrivener-style: each book owns its own set of named, colored
+    labels; a chapter references at most one via ``Chapter.label_id``.
+    Deleting a label nulls the referencing chapters' ``label_id`` (FK
+    ON DELETE SET NULL + an explicit service-layer null-out).
+    """
+
+    __tablename__ = "chapter_labels"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    book_id: Mapped[str] = mapped_column(ForeignKey("books.id", ondelete="CASCADE"))
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    color: Mapped[str] = mapped_column(String(7), nullable=False)
+    position: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
+
+    book: Mapped["Book"] = relationship(back_populates="chapter_labels")
+
+    def __repr__(self) -> str:
+        return f"<ChapterLabel {self.id!r} name={self.name!r} color={self.color}>"
 
 
 class ChapterVersion(Base):
