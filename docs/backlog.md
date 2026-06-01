@@ -2,7 +2,7 @@
 
 Latest release: v0.42.0 (2026-05-30) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.42.0.md](../changelog/releases/v0.42.0.md).
 
-Last updated: 2026-05-30 (v0.42.0 release cut — the Story Bible release: new `plugin-story-bible` + Story Bible ↔ Storyboard integration, content-type-neutrality pass, component-consistency + a11y sweep, Zip Slip guard + app-wide error boundaries. 4 Story Bible integration follow-ups filed as P4 (relationship model, prose storyboard, @-mention extension, integration E2E + docs). P3=17, P5=12, total active 61 (was 57, +4 P4).)
+Last updated: 2026-06-01 (v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups (relationship model, prose storyboard, @-mention) -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01 to the comprehensive-docs/screenshots remainder; filed COMPONENT-CONSISTENCY-TAIL-01 (P3, advisory) for the deferred v0.42.0 consistency-sweep tail.)
 Previous: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)
 Previous: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
 Previous: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
@@ -766,49 +766,33 @@ in the same session.)
 
 ## P4 - Roadmap / Future Phases
 
-- **STORY-BIBLE-RELATIONSHIP-MODEL-01** (P4, filed 2026-05-30,
-  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C10): a
-  data model for entity-to-entity relationships (ally / rival /
-  neutral, etc.) + the Arc-View relationship lines that draw a
-  curved bezier between two lanes at pages where both appear.
-  **Blocked on a schema decision**: no relationship field exists
-  on StoryEntity today. Likely shape: a `StoryEntityRelationship`
-  join table (entity_a, entity_b, type) OR a `relationships` key
-  in `entity_metadata`. Arc View (C9, shipped) already renders the
-  lanes + dots; C10 adds the inter-lane lines once the data exists.
+- **STORY-BIBLE-INTEGRATION-DOCS-01** (P4, re-scoped 2026-06-01
+  after v0.43.0 shipped the E2E prose-storyboard smoke + the
+  three sibling feature items): the REMAINING comprehensive
+  documentation for the Story Bible epic — help docs (DE+EN) for
+  the Story Bible, Storyboard (all 3 book types), @-mention, Arc
+  View + Continuity Checker, and the relationship editor; plus a
+  full integrated-flow Playwright smoke (create book -> Storyboard
+  -> sidebar -> drag character -> badge -> Arc View -> continuity
+  warning -> @-mention -> export) and marketing screenshots. The
+  v0.43.0 release shipped a focused `prose-storyboard.spec.ts`
+  smoke + the CHANGELOG/README-level prose; the help-page set +
+  screenshots (which need `_meta.yaml` nav + DE/EN parity + a
+  running app) are the deferred remainder.
 
-- **STORY-BIBLE-PROSE-STORYBOARD-01** (P4, filed 2026-05-30,
-  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C3):
-  a Storyboard-like chapter grid for prose (chapter-based) books,
-  reusing StoryboardCard in a chapter-mode variant (title + word
-  count + notes/beat/mood). **Blocked on a schema decision**: the
-  Storyboard annotation columns (notes/story_beat/mood_color/
-  act_group) exist only on `Page`, not `Chapter`. Needs either
-  four new nullable columns on `Chapter` (+ migration) or a
-  reduced title-only card. The entity-link side already supports
-  prose via `StoryEntityPageLink.chapter_id` (C4) and the
-  appearance tracker (C7) resolves chapter titles.
-
-- **STORY-BIBLE-MENTION-EXTENSION-01** (P4, filed 2026-05-30,
-  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C13-C15):
-  `@`-mention autocomplete sourced from the book's Story Bible
-  entities, in the chapter / page / comic-bubble editors. Installs
-  `@tiptap/extension-mention` + `@tiptap/suggestion` (pin to the
-  2.27.2 line per the A4 adjudication; the stop-condition flags
-  testing the extension against the existing 15+1 extensions EARLY
-  before wiring all three editors). Plus C14 auto-detect (scan
-  existing text for entity names, propose batch links) + C15 i18n.
-  Best done in a dedicated session (new dependency + cross-editor).
-
-- **STORY-BIBLE-INTEGRATION-E2E-DOCS-01** (P4, filed 2026-05-30,
-  deferred from STORY-BIBLE-STORYBOARD-INTEGRATION-01 C16-C18):
-  Playwright smoke for the full integrated flow (create book ->
-  Storyboard -> sidebar -> drag character -> badge -> Arc View ->
-  continuity warning -> export), help docs (DE+EN) + marketing
-  screenshots, and the backlog/CHANGELOG close-out for the wider
-  STORY-BIBLE-PLUGIN-01 epic. Release-prep-sized; the shipped
-  C4-C9/C11/C12 work has unit + integration + Vitest coverage but
-  no end-to-end Playwright spec yet.
+- **COMPONENT-CONSISTENCY-TAIL-01** (P3, filed 2026-06-01,
+  deferred from the v0.43.0 execution session under budget): the
+  remaining slices of the v0.42.0 component-consistency sweep,
+  all ADVISORY (`make verify-components` exits 0). (a) remaining
+  badge sites (PluginCard tier, comic/AI status chips) +
+  Settings/GetStarted/MediumImportPage card surfaces -> global
+  `.badge-*` / `.card`; (b) ~12 remaining inline checkboxes ->
+  `Toggle` (accent already unified; structural only; respect the
+  documented design-intent exemptions); (c) Toolbar stateful
+  button system + inline-style inputs (PricingStep/ArcStep); (d)
+  raw-Radix `Dialog` -> shared `AppDialog` (~32 sites). Group by
+  component type; one commit per type. Fix any Playwright spec the
+  migration breaks (fix the spec, not the migration).
 
 - **SETT-M-2-PER-TAB-SUBSECTION-HEADERS-01** (P4, UX-POLISH,
   filed 2026-05-25 from Settings-page UX audit, deferred per
