@@ -134,6 +134,10 @@ navigation:
           de: Titel bearbeiten
           en: Editing the title
         slug: editor/title-editing
+      - title:
+          de: Schreibziele
+          en: Writing goals
+        slug: editor/writing-goals
 
   - title:
       de: Export
