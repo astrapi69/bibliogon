@@ -21,6 +21,18 @@ The settings apply to both the book editor and the article editor — both share
 
 The page editors (picture-book, comic-book) and the Storyboard view carry a **fullscreen toggle** in the header — the expand icon among the other header controls. It uses the browser's native fullscreen so the editing canvas fills the whole screen with no app chrome; press the icon again, **Esc**, or **F11** to exit. Fullscreen is handy when arranging comic panels or laying out a collage, where every pixel of canvas helps.
 
+## Composition mode (distraction-free)
+
+The book/chapter editor has a **Composition mode** — the feather icon in the toolbar, or **Ctrl+Shift+D**. It is the all-in-one distraction-free writing surface:
+
+- The chapter sidebar and the editor toolbar fade away, leaving just your text on a clean paper column over a quiet backdrop.
+- Inactive paragraphs dim so the line you are writing stands out (the same dimming as the standalone **Focus** button).
+- **Typewriter scrolling** keeps the line you are writing vertically centered — the page scrolls under a fixed writing line.
+
+Leave composition mode with the floating **Exit** button (top-right), **Esc**, or **Ctrl+Shift+D** again. It is a per-session mode — reloading the page returns you to the normal editor.
+
+Composition mode composes the finer controls rather than replacing them: the standalone **Focus** button (dimming only) and the browser **Fullscreen** button stay available, and the paper width follows your editor display **Width** setting above.
+
 ## Related
 
 - [Word wrap (Alt+Z)](word-wrap.md) — keyboard shortcut for long-line layout in Markdown mode
