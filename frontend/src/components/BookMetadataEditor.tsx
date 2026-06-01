@@ -100,6 +100,9 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             description: book.description || "",
             book_idea: book.book_idea || "",
             expose: book.expose || "",
+            // Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01).
+            word_target: book.word_target != null ? String(book.word_target) : "",
+            word_target_deadline: book.word_target_deadline || "",
             edition: book.edition || "",
             publisher: book.publisher || "",
             publisher_city: book.publisher_city || "",
@@ -228,6 +231,26 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     }, [form.author, globalAuthors]);
 
     const set = (key: string, value: string) => setForm((prev) => ({...prev, [key]: value}));
+
+    // Writing-target deadline hint (WRITING-GOALS-PROGRESS-TRACKING-01):
+    // "N days left, ~X words/day for the full target". Derived from the
+    // target ÷ days remaining (an at-a-glance pace, not subtracting
+    // already-written words — the metadata editor doesn't hold the live
+    // total).
+    const wordsPerDayHint = useMemo(() => {
+        const target = parseInt(form.word_target ?? "", 10);
+        const deadline = form.word_target_deadline;
+        if (!Number.isFinite(target) || target <= 0 || !deadline) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const dl = new Date(deadline + "T00:00:00");
+        const days = Math.ceil((dl.getTime() - today.getTime()) / 86_400_000);
+        if (days <= 0) return t("ui.metadata.deadline_passed", "Deadline has passed");
+        const perDay = Math.ceil(target / days);
+        return t("ui.metadata.words_per_day", "{days} days left, ~{n} words/day for the full target")
+            .replace("{days}", String(days))
+            .replace("{n}", String(perDay));
+    }, [form.word_target, form.word_target_deadline, t]);
 
     const handleSave = async () => {
         setSaving(true);
@@ -487,6 +510,41 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                             language="markdown"
                             fullscreen
                         />
+                        {/* Writing target (WRITING-GOALS-PROGRESS-TRACKING-01). */}
+                        <div style={{marginTop: 8}}>
+                            <label className="label">
+                                {t("ui.metadata.word_target_label", "Word target")}
+                            </label>
+                            <input
+                                type="number"
+                                min={0}
+                                className="input"
+                                value={form.word_target ?? ""}
+                                onChange={(e) => set("word_target", e.target.value)}
+                                placeholder={t("ui.chapter_target.placeholder", "e.g. 80000")}
+                                data-testid="metadata-word-target"
+                            />
+                        </div>
+                        <div style={{marginTop: 8}}>
+                            <label className="label">
+                                {t("ui.metadata.word_target_deadline_label", "Target deadline")}
+                            </label>
+                            <input
+                                type="date"
+                                className="input"
+                                value={form.word_target_deadline ?? ""}
+                                onChange={(e) => set("word_target_deadline", e.target.value)}
+                                data-testid="metadata-word-target-deadline"
+                            />
+                        </div>
+                        {wordsPerDayHint && (
+                            <p
+                                style={{color: "var(--text-secondary)", fontSize: "0.8125rem", marginTop: 6}}
+                                data-testid="metadata-words-per-day"
+                            >
+                                {wordsPerDayHint}
+                            </p>
+                        )}
                     </div>
                 </Tabs.Content>
 

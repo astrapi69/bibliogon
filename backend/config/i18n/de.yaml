@@ -1284,6 +1284,10 @@ ui:
     subtitle: "Untertitel"
     description: "Beschreibung"
     # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.
+    word_target_label: "Wortziel (Buch)"
+    word_target_deadline_label: "Zielfrist"
+    deadline_passed: "Frist überschritten"
+    words_per_day: "Noch {days} Tage, ~{n} Wörter/Tag für das gesamte Ziel"
     book_idea_label: "Buchidee"
     book_idea_placeholder: "Kurz: 1-2 Sätze, worum geht es?"
     expose_label: "Exposé"
