@@ -1,0 +1,57 @@
+/* Editor right-click context menu (EDITOR-CONTEXT-MENU-01). Themed
+ * via tokens; mirrors the app's other Radix menu surfaces. */
+
+.content {
+  min-width: 200px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.25rem;
+  box-shadow: var(--shadow-md);
+  z-index: 60;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  border-radius: 4px;
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+}
+
+.item[data-highlighted] {
+  background: var(--accent);
+  color: var(--text-inverse);
+}
+
+.item[data-disabled] {
+  color: var(--text-muted);
+  cursor: default;
+}
+
+.shortcut {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.item[data-highlighted] .shortcut {
+  color: var(--text-inverse);
+}
+
+.info {
+  color: var(--text-muted);
+  font-size: 0.78rem;
+}
+
+.separator {
+  height: 1px;
+  background: var(--border);
+  margin: 0.25rem 0;
+}

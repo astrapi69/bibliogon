@@ -44,6 +44,7 @@ const ISSUE_TYPE_LABELS: Record<FixIssueType, (t: Translator) => string> = {
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {buildMentionLabels, createStoryBibleMention, handleMentionClick} from "./storyBibleMention";
+import EditorContextMenu from "./EditorContextMenu";
 import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
 import {api, ApiError, SaveAbortedError} from "../api/client";
@@ -694,6 +695,37 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             const json = JSON.stringify(editor.getJSON());
             void performSave(json);
         }, 800);
+    };
+
+    // EDITOR-CONTEXT-MENU-01: take a manual chapter snapshot from the
+    // right-click menu (chapter editor only; needs book + chapter ids).
+    const handleTakeSnapshot = async () => {
+        if (!bookId || !chapterId) return;
+        try {
+            await api.chapters.createSnapshot(bookId, chapterId, null);
+            notify.success(t("ui.versions.snapshot_taken", "Snapshot erstellt."));
+        } catch {
+            notify.error(t("ui.versions.snapshot_failed", "Snapshot konnte nicht erstellt werden."));
+        }
+    };
+
+    // EDITOR-CONTEXT-MENU-01: search the selected text in the Story
+    // Bible; open the first matching entity in the sidebar.
+    const handleSearchStoryBible = async (text: string) => {
+        const query = text.trim();
+        if (!mentionBookId || !query) return;
+        try {
+            const matches = await api.storyBible.listEntities(mentionBookId, undefined, query);
+            if (matches.length && onOpenStoryEntity) {
+                onOpenStoryEntity(matches[0].id);
+            } else {
+                notify.info(
+                    t("ui.editor_menu.no_story_bible_match", "Kein Story-Bibel-Eintrag gefunden."),
+                );
+            }
+        } catch {
+            notify.error(t("ui.editor_menu.search_failed", "Suche fehlgeschlagen."));
+        }
     };
 
     const handleToggleSpellcheck = async () => {
@@ -1447,15 +1479,31 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             spellCheck={false}
                         />
                     ) : onOpenStoryEntity ? (
-                        <div
-                            onClick={(e) => {
-                                handleMentionClick(e, onOpenStoryEntity);
-                            }}
+                        <EditorContextMenu
+                            editor={editor}
+                            mentionActive={!!mentionBookId}
+                            onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
+                            onTakeSnapshot={bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
-                            <EditorContent editor={editor}/>
-                        </div>
+                            <div
+                                onClick={(e) => {
+                                    handleMentionClick(e, onOpenStoryEntity);
+                                }}
+                            >
+                                <EditorContent editor={editor}/>
+                            </div>
+                        </EditorContextMenu>
                     ) : (
-                        <EditorContent editor={editor}/>
+                        <EditorContextMenu
+                            editor={editor}
+                            mentionActive={!!mentionBookId}
+                            onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
+                            onTakeSnapshot={bookId && chapterId ? handleTakeSnapshot : undefined}
+                        >
+                            <div>
+                                <EditorContent editor={editor}/>
+                            </div>
+                        </EditorContextMenu>
                     )}
                 </div>
             </div>
