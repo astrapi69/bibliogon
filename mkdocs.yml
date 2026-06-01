@@ -68,6 +68,7 @@ plugins:
         Zeilenumbruch: Word wrap
         Titel bearbeiten: Editing the title
         Schreibziele: Writing goals
+        Schreibverlauf: Writing history
         Gliederung: Outliner
         Snapshots und Versionen: Snapshots and versions
         Manuskript-Tools: Manuscript Tools
@@ -152,6 +153,7 @@ nav:
   - Zeilenumbruch: de/editor/word-wrap.md
   - Titel bearbeiten: de/editor/title-editing.md
   - Schreibziele: de/editor/writing-goals.md
+  - Schreibverlauf: de/editor/writing-history.md
   - Gliederung: de/editor/outliner.md
   - Snapshots und Versionen: de/editor/snapshots.md
 - Export:

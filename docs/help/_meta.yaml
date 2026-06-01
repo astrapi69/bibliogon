@@ -139,6 +139,10 @@ navigation:
           en: Writing goals
         slug: editor/writing-goals
       - title:
+          de: Schreibverlauf
+          en: Writing history
+        slug: editor/writing-history
+      - title:
           de: Gliederung
           en: Outliner
         slug: editor/outliner
