@@ -265,6 +265,32 @@ export interface WritingSession {
   words_written: number;
 }
 
+/** Global writing-history summary over a window (WRITING-HISTORY-STATS-01). */
+export interface WritingStatsSummary {
+  total_words: number;
+  days_active: number;
+  avg_per_active_day: number;
+  best_day: WritingSession | null;
+  current_streak: number;
+  longest_streak: number;
+  daily: WritingSession[];
+}
+
+/** Per-book writing totals + daily series (WRITING-HISTORY-STATS-01). */
+export interface WritingBookStats {
+  book_id: string;
+  book_title: string;
+  total_words: number;
+  daily: WritingSession[];
+}
+
+/** Per-chapter writing total (WRITING-HISTORY-STATS-01). */
+export interface WritingChapterStats {
+  chapter_id: string | null;
+  chapter_title: string;
+  total_words: number;
+}
+
 /** Per-chapter drafting workflow status (CHAPTER-STATUS-LABELS-01). */
 export type ChapterStatus = "todo" | "first_draft" | "revised" | "final";
 
@@ -2966,6 +2992,22 @@ export const api = {
   writingSessions: {
     list: (days = 30) =>
       request<WritingSession[]>(`/writing-sessions?days=${days}`),
+  },
+
+  /** Writing-History stats (WRITING-HISTORY-STATS-01): global summary,
+   *  per-book + per-chapter breakdowns, and a CSV export URL. */
+  writingStats: {
+    summary: (days = 90) =>
+      request<WritingStatsSummary>(`/writing-stats/summary?days=${days}`),
+    byBook: (days = 90) =>
+      request<WritingBookStats[]>(`/writing-stats/by-book?days=${days}`),
+    byChapter: (bookId: string, days = 90) =>
+      request<WritingChapterStats[]>(
+        `/writing-stats/by-chapter/${bookId}?days=${days}`,
+      ),
+    /** Absolute URL for the CSV download (used as an <a href>). */
+    exportCsvUrl: (days = 90) =>
+      `${BASE}/writing-stats/export.csv?days=${days}`,
   },
 
   /** PB-PHASE4 picture-book pages CRUD. Endpoints come from the
