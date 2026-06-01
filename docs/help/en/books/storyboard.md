@@ -1,12 +1,15 @@
 # Storyboard view
 
-The **Storyboard** is a bird's-eye grid view of a picture-book's pages — every page as a small card, in order, with thumbnail + first-line preview + layout tag + inline annotations. Use it to plan pacing across the whole 32- or 40-page arc that KDP picture books usually run.
+The **Storyboard** is a bird's-eye grid view of a book — every page (or, for prose books, every chapter) as a small card, in order, with a preview, a story-beat / mood / act-group annotation set, and any Story Bible entity badges. Use it to plan pacing across the whole arc: the 32- or 40-page run of a KDP picture book, the panels of a comic, or the chapters of a novel.
 
 ## Opening the storyboard
 
-In any picture-book editor, click the **Storyboard** button in the page-editor header (next to **Metadata** + **Export PDF**). The URL flips to `?view=storyboard` — so you can deep-link or use the browser back-button to return to the editor.
+The Storyboard is available for **every book type**:
 
-The Storyboard route is **picture-book only** in v1. Comic-book and prose books don't show the button. The schema columns it drives (notes, story_beat, mood_color, act_group) are shared by both picture-book and comic-book pages, so a future v2 extension to comic-book pages is schema-additive only.
+- **Picture books and comic books** — click the **Storyboard** button in the page-editor header (next to **Metadata** + **Export PDF**). The URL flips to `?view=storyboard`, so you can deep-link or use the browser back-button to return to the editor.
+- **Prose books** — click the **Storyboard** button in the chapter sidebar to open the chapter-card variant (see [Prose books](#prose-books-chapter-cards) below).
+
+Picture-book and comic-book pages share the same four annotation columns (`notes`, `story_beat`, `mood_color`, `act_group`); prose books carry the same four on each `Chapter`. The four inline editors are one shared `StoryboardAnnotations` component, so the annotation experience is identical across all three surfaces.
 
 ## Reading a card
 
@@ -79,6 +82,40 @@ Empty or whitespace-only values clear the act_group. **Enter** confirms the valu
 
 Typical values: `Act I` / `Act II` / `Act III`, or chapter labels like `Prologue` / `Forest` / `Castle`, or any other grouping the author finds useful.
 
+## Story Bible entities
+
+If the [Story Bible](../story-bible.md) plugin is active, the
+Storyboard doubles as your appearance-planning surface:
+
+- **Drag an entity** from the Story Bible sidebar onto a card to
+  record that the character / setting / item appears on that page.
+- Linked entities show as **color-coded badges** on the card, in
+  their entity-type color.
+- The **entity filter** at the top of the Storyboard narrows the grid
+  to the pages where the selected entities appear — handy for
+  checking one character's on-page rhythm, or finding every page two
+  characters share.
+
+These links feed the appearance tracker, [Arc View](../story-bible/arc-view.md)
+and the continuity checker.
+
+## Prose books (chapter cards)
+
+Prose books (novels, non-fiction, anything chapter-based) get a
+chapter-card variant of the Storyboard, opened from the **Storyboard**
+button in the chapter sidebar. Each card represents a chapter and
+shows:
+
+- The chapter **title** and a **word count** (computed from the
+  chapter's TipTap content).
+- The same four inline annotations as a page card —
+  notes, story beat, mood color and act group — backed by the shared
+  `StoryboardAnnotations` editors.
+
+Drag a card by its handle to reorder chapters; click a card to return
+to that chapter in the editor. Use the mood colors and act groups to
+block out acts and pacing across a whole manuscript at a glance.
+
 ## What's not in the Storyboard (yet)
 
 Deferred to follow-up sessions, captured in `PICTURE-BOOK-STORYBOARD-OPERATIONS-01`:
@@ -94,5 +131,7 @@ These are filed against real user-pull demand. The current v2 covers the **annot
 
 ## Related
 
+- [Story Bible](../story-bible.md) — the entity database whose badges and appearances surface on the cards
+- [Arc View and continuity checker](../story-bible/arc-view.md) — the timeline built from Storyboard appearances
 - [Text Configuration for Picture-Book Pages](text-configuration.md) — Tier 1 + Tier 2 properties set per page in the page editor
 - [Editor Display Settings](../editor/display-settings.md) — font / size / line-height / column-width per browser

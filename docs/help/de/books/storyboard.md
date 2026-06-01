@@ -1,12 +1,15 @@
 # Storyboard-Ansicht
 
-Das **Storyboard** ist die Vogelperspektive auf alle Seiten eines Bilderbuchs — jede Seite als kleine Karte, in der Reihenfolge, mit Vorschaubild + erstem Textauszug + Layout-Tag + Inline-Annotationen. Praktisch, um die Erzähl-Dynamik über die typischen 32 oder 40 KDP-Bilderbuch-Seiten hinweg zu planen.
+Das **Storyboard** ist die Vogelperspektive auf ein Buch — jede Seite (bzw. bei Prosa-Büchern jedes Kapitel) als kleine Karte, in der Reihenfolge, mit Vorschau, einem Story-Beat- / Stimmungs- / Akt-Gruppen-Annotationssatz und etwaigen Story-Bibel-Entity-Badges. Praktisch, um die Erzähl-Dynamik über den ganzen Bogen zu planen: die 32 oder 40 Seiten eines KDP-Bilderbuchs, die Panels eines Comics oder die Kapitel eines Romans.
 
 ## Storyboard öffnen
 
-Klicke im Bilderbuch-Editor auf den **Storyboard**-Button in der Kopfzeile (neben **Metadaten** + **PDF exportieren**). Die URL wechselt zu `?view=storyboard` — du kannst also direkt verlinken oder mit dem Browser-Zurück-Button zurück in den Editor.
+Das Storyboard ist für **jeden Buchtyp** verfügbar:
 
-Die Storyboard-Route ist in v1 **nur für Bilderbücher** verfügbar. Comic-Bücher und Prosa-Bücher zeigen den Button nicht. Die Schema-Spalten, auf denen das Storyboard arbeitet (notes, story_beat, mood_color, act_group), liegen schon im gemeinsamen Page-Modell, sodass eine spätere v2-Erweiterung auf Comic-Bücher ohne Schema-Migration funktioniert.
+- **Bilderbücher und Comic-Bücher** — klicke im Seiten-Editor auf den **Storyboard**-Button in der Kopfzeile (neben **Metadaten** + **PDF exportieren**). Die URL wechselt zu `?view=storyboard` — du kannst also direkt verlinken oder mit dem Browser-Zurück-Button zurück in den Editor.
+- **Prosa-Bücher** — klicke auf den **Storyboard**-Button in der Kapitel-Sidebar, um die Kapitelkarten-Variante zu öffnen (siehe Abschnitt *Prosa-Bücher* weiter unten).
+
+Bilderbuch- und Comic-Seiten teilen sich dieselben vier Annotationsspalten (`notes`, `story_beat`, `mood_color`, `act_group`); Prosa-Bücher tragen dieselben vier auf jedem `Chapter`. Die vier Inline-Editoren sind eine gemeinsame `StoryboardAnnotations`-Komponente, sodass das Annotations-Erlebnis auf allen drei Oberflächen identisch ist.
 
 ## Eine Karte lesen
 
@@ -79,6 +82,43 @@ Leere oder nur-Whitespace-Werte entfernen die Akt-Gruppe. **Enter** bestätigt d
 
 Typische Werte: `Akt I` / `Akt II` / `Akt III`, oder Kapitel-Labels wie `Prolog` / `Wald` / `Schloss`, oder jede andere Gruppierung, die für den Autor sinnvoll ist.
 
+## Story-Bibel-Entities
+
+Ist das [Story-Bibel](../story-bible.md)-Plugin aktiv, dient das
+Storyboard zugleich als deine Oberfläche zur Auftrittsplanung:
+
+- **Ziehe eine Entity** aus der Story-Bibel-Sidebar auf eine Karte,
+  um festzuhalten, dass die Figur / der Schauplatz / der Gegenstand
+  auf dieser Seite vorkommt.
+- Verknüpfte Entities erscheinen als **farbcodierte Badges** auf der
+  Karte, in ihrer Entity-Typ-Farbe.
+- Der **Entity-Filter** oben im Storyboard schränkt das Raster auf
+  die Seiten ein, auf denen die ausgewählten Entities auftreten —
+  praktisch, um den Auftritts-Rhythmus einer Figur zu prüfen oder
+  jede Seite zu finden, die sich zwei Figuren teilen.
+
+Diese Verknüpfungen speisen den Auftritts-Tracker, die
+[Arc-Ansicht](../story-bible/arc-view.md) und den
+Kontinuitäts-Prüfer.
+
+## Prosa-Bücher (Kapitelkarten)
+
+Prosa-Bücher (Romane, Sachbücher, alles Kapitel-basierte) erhalten
+eine Kapitelkarten-Variante des Storyboards, die über den
+**Storyboard**-Button in der Kapitel-Sidebar geöffnet wird. Jede
+Karte steht für ein Kapitel und zeigt:
+
+- Den **Kapiteltitel** und eine **Wortzahl** (aus dem
+  TipTap-Inhalt des Kapitels berechnet).
+- Dieselben vier Inline-Annotationen wie eine Seitenkarte — Notizen,
+  Story-Beat, Stimmungsfarbe und Akt-Gruppe — getragen von den
+  gemeinsamen `StoryboardAnnotations`-Editoren.
+
+Ziehe eine Karte am Anker, um Kapitel umzusortieren; klicke eine
+Karte, um zu diesem Kapitel im Editor zurückzukehren. Nutze
+Stimmungsfarben und Akt-Gruppen, um Akte und Pacing über ein ganzes
+Manuskript hinweg auf einen Blick zu blocken.
+
 ## Was (noch) NICHT im Storyboard ist
 
 Auf spätere Sessions verschoben, festgehalten in `PICTURE-BOOK-STORYBOARD-OPERATIONS-01`:
@@ -94,5 +134,7 @@ Diese Items sind gegen konkrete User-Nachfrage angelegt. Die aktuelle v2 deckt d
 
 ## Verwandte Themen
 
+- [Story-Bibel](../story-bible.md) — die Entity-Datenbank, deren Badges und Auftritte auf den Karten erscheinen
+- [Arc-Ansicht und Kontinuitäts-Prüfer](../story-bible/arc-view.md) — die Timeline aus den Storyboard-Auftritten
 - [Text-Konfiguration für Bilderbuch-Seiten](text-configuration.md) — Tier 1 + Tier 2 Eigenschaften, die im Seiten-Editor pro Seite gesetzt werden
 - [Editor-Anzeige-Einstellungen](../editor/display-settings.md) — Schriftart, Größe, Zeilenhöhe und Spaltenbreite pro Browser

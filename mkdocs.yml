@@ -59,6 +59,8 @@ plugins:
         Sprechblasen-Typen (Comic): Comic bubble types
         Comic-Panels anordnen: Arranging comic panels
         Story-Bibel: Story Bible
+        Erwähnungen und Auto-Erkennung: Mentions and auto-detect
+        Arc-Ansicht und Kontinuität: Arc View and continuity
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
         Formatierung: Formatting
@@ -132,7 +134,10 @@ nav:
   - Text-Konfiguration (Bilderbuch): de/books/text-configuration.md
   - Sprechblasen-Typen (Comic): de/books/comic-bubbles.md
   - Comic-Panels anordnen: de/books/comic-panels.md
-  - Story-Bibel: de/story-bible.md
+- Story-Bibel:
+  - Übersicht: de/story-bible.md
+  - Erwähnungen und Auto-Erkennung: de/story-bible/mentions.md
+  - Arc-Ansicht und Kontinuität: de/story-bible/arc-view.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md

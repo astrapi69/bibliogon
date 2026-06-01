@@ -73,10 +73,25 @@ navigation:
           de: Comic-Panels anordnen
           en: Arranging comic panels
         slug: books/comic-panels
+
+  - title:
+      de: Story-Bibel
+      en: Story Bible
+    slug: story-bible
+    icon: library
+    children:
       - title:
-          de: Story-Bibel
-          en: Story Bible
+          de: Übersicht
+          en: Overview
         slug: story-bible
+      - title:
+          de: Erwähnungen und Auto-Erkennung
+          en: Mentions and auto-detect
+        slug: story-bible/mentions
+      - title:
+          de: Arc-Ansicht und Kontinuität
+          en: Arc View and continuity
+        slug: story-bible/arc-view
 
   - title:
       de: Dashboard
