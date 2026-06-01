@@ -99,3 +99,63 @@ Two follow-ups for Aster:
    `STORY-BIBLE-INTEGRATION-DOCS-01`. Once captured, wire the image
    references into story-bible.md / arc-view.md / books/storyboard.md
    in a follow-up commit.
+
+---
+
+## Scrivener Ergonomie-Cluster session (P2 #1-#4)
+
+After the docs-polish + Scrivener competitive analysis, the user
+adjudicated the analysis top-10 into backlog items (P2 #1-4, P3 #5-7,
+P4 #8-10) and directed implementing the **P2 cluster** in order,
+autonomously, quality-over-speed. All four shipped this session.
+
+### What shipped (all pushed to main, gates green)
+
+| Item | Shape |
+|---|---|
+| **COMPOSITION-DISTRACTION-FREE-MODE-01** | Umbrella distraction-free mode (design fork resolved via AskUserQuestion -> "new umbrella toggle"). Reuses the pre-existing `focusMode` dimming + `fullscreen`; adds app-chrome hide (root `composition-mode` class) + paper backdrop + `useTypewriterScroll`. |
+| **CHAPTER-STATUS-LABELS-01** | Full scope (user chose status + user-definable label set). `Chapter.status` + `label_id`, `ChapterLabel` table + CRUD + inline manager, chips + selects in the prose Storyboard. |
+| **WRITING-GOALS-PROGRESS-TRACKING-01** | STOP-gate surfaced + resolved (WritingSession table + promote per-chapter goal to DB). `WritingSession` per-day table fed by the chapter PATCH delta; Dashboard daily-goal + streak widget; per-chapter `target_words` (Editor reads via prop, Storyboard/Outliner set); per-book `word_target` + deadline UI. |
+| **CHAPTER-OUTLINER-VIEW-01** | Sortable, inline-editable `?view=outline` spreadsheet of chapters; reuses the status/label/beat selects + the optimistic-locked PATCH; gets its columns from #2 + #3. |
+
+Migrations: `a6e7f8a9b0c1` (chapter status/labels), `b7f8a9b0c1d2`
+(writing goals). Three new top-level help-nav pages
+(editor/writing-goals, editor/outliner) + storyboard help updates.
+
+### Pre-Inspection findings worth recording
+
+- Composition mode was an *extension*, not greenfield: `focusMode`
+  (dimming) + `fullscreen` (browser) + `useEditorDisplaySettings`
+  (paper width) already existed. The umbrella composes them.
+- A per-chapter `wordGoal` already existed in the Editor
+  (localStorage); #3 promoted it to the DB and made the Editor read it
+  via a prop (Storyboard owns the chapter version for writes, avoiding
+  a version-bump/409 on metadata edits).
+- A `ChapterVersion` snapshot model already exists (relevant to the
+  still-open #5 CHAPTER-SNAPSHOTS-01).
+- Half-wired-lifecycle discipline drove two required consumers: the
+  Dashboard widget (consumes WritingSession) and the book-target UI
+  (sets the Book columns) — neither could be deferred without leaving
+  a write-surface without a consumer.
+
+### Notes / decisions
+
+- A real timezone bug (UTC `toISOString` vs local date arithmetic, vs
+  the backend's local `date.today()`) was caught by the WritingGoalWidget
+  Vitest and fixed (all date math is now local).
+- RadixSelect open/select stays brittle in happy-dom -> the select
+  interactions for all four features are covered by Playwright smokes
+  (Aster-run), Vitest pins the non-Radix paths.
+
+### Final verification
+
+Backend pytest 2485 passed / 1 skipped; Vitest 2593 passed (200 files);
+tsc clean; verify-theme (96 contrast) green; verify-docs-discipline +
+verify-docs-completeness green (en=63 de=63 help pages).
+
+### Still open (filed, not started)
+
+Scrivener P3 (CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01,
+WRITING-HISTORY-STATS-01) + P4 (CHAPTER-COLLECTIONS-01,
+SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01). The Story
+Bible screenshot Aster-run (from the docs-polish session) also remains.

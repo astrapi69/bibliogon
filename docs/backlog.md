@@ -2,7 +2,7 @@
 
 Latest release: v0.43.0 (2026-06-01) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.43.0.md](../changelog/releases/v0.43.0.md).
 
-Last updated: 2026-06-01 (Scrivener Ergonomie-Cluster filed — 10 items from docs/audits/scrivener-competitive-analysis-2026-06.md: P2 COMPOSITION-DISTRACTION-FREE-MODE-01 + CHAPTER-STATUS-LABELS-01 + WRITING-GOALS-PROGRESS-TRACKING-01 (promoted P3->P2, scope-augmented with Scrivener targets) + CHAPTER-OUTLINER-VIEW-01; P3 CHAPTER-SNAPSHOTS-01 + DOCX-IMPORT-01 + WRITING-HISTORY-STATS-01; P4 CHAPTER-COLLECTIONS-01 + SCRIVENER-PROJECT-IMPORT-01 + CHAPTER-SYNOPSIS-NOTES-01. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
+Last updated: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. The P3 (CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01, WRITING-HISTORY-STATS-01) + P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
 Previous: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)
 Previous: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
 Previous: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
@@ -63,94 +63,7 @@ store.
 
 ## P2 - High-Value User Features
 
-Scrivener Ergonomie-Cluster (filed 2026-06-01 from
-``docs/audits/scrivener-competitive-analysis-2026-06.md``). Items
-1-4 of the analysis top-10; they share the ``Chapter`` model + the
-editor/Storyboard surfaces and compound (Status/Labels + Targets
-give the Outliner its columns), so they implement as one coordinated
-arc, in order. Each promoted item needs its own Pre-Inspection.
-
-- **COMPOSITION-DISTRACTION-FREE-MODE-01** (P2, FEATURE-REQUEST,
-  filed 2026-06-01 from the Scrivener analysis, top-10 #1): a true
-  distraction-free writing surface beyond the existing browser-native
-  fullscreen.
-
-  Scope:
-  - "Composition" toggle in the editor that hides all chrome
-    (toolbar, sidebars, app shell) and renders a centered paper
-    column at a user-chosen width over a dedicated backdrop.
-  - Optional typewriter scrolling (active line stays vertically
-    centered) and optional dimmed/inactive-paragraph focus.
-  - Builds on the existing ``useFullscreenToggle`` (Ctrl+Shift+F,
-    EDITOR-FULLSCREEN-NATIVE-01) + editor display settings
-    (width/font/line-height) rather than replacing them.
-
-  Effort: S-M. Placement: Core (editor). Value: High.
-
-- **CHAPTER-STATUS-LABELS-01** (P2, FEATURE-REQUEST, filed
-  2026-06-01 from the Scrivener analysis, top-10 #2): per-chapter
-  status + label, the Scrivener label/status parity gap.
-
-  Scope:
-  - User-definable per-chapter **status** (e.g. To Do / First Draft
-    / Revised / Final) and a color-coded **label** set.
-  - New ``status`` + ``label`` columns on ``Chapter`` (mirrors the
-    existing storyboard annotation columns notes/story_beat/
-    mood_color/act_group).
-  - Render as chips on Storyboard cards (reuse the ``Badge`` / global
-    ``.badge`` system) and in the proposed Outliner.
-  - Reuse the ``StoryboardAnnotations`` editor shape.
-
-  Effort: S-M. Placement: Core (``Chapter`` columns + Storyboard
-  chip). Value: High.
-
-- **WRITING-GOALS-PROGRESS-TRACKING-01** (P2, FEATURE-REQUEST,
-  filed 2026-05-19 from
-  ``docs/audits/exploration-features-2026-05-15-evaluation.md`` #1;
-  **promoted P3 -> P2 + scope-augmented 2026-06-01** to absorb the
-  Scrivener analysis top-10 #3 "Writing Targets & Goals" — superset
-  of the original daily-goal item, NOT a parallel filing): word-count
-  targets + goals at session / chapter / book level.
-
-  Scope:
-  - Per-chapter ``target_words`` + a book-level target; live progress
-    bars (reuses ``@tiptap/extension-character-count`` + the prose
-    Storyboard per-chapter word count — no new counting logic).
-  - Session targets: daily word-count goal (default 500) + streak
-    counter (consecutive days hitting goal).
-  - Optional draft **deadline** with "words/day to stay on track"
-    auto-calc + optional writing-days mask (Scrivener parity).
-  - Visual progress widget on the Dashboard + in the editor header.
-  - Settings entry under the "Author" tab for goal configuration.
-
-  Architecture-discipline note (carried from the original filing):
-  per-session word-count storage is a STOP-gate decision in
-  Pre-Inspection — (a) a ``WritingSession`` table (persistent SSoT,
-  survives backup/restore, enables calendar/analytics; recommended)
-  vs (b) computed-on-demand from ``*.updated_at`` diff windows (no
-  migration). RCU: the Dashboard widget + the per-chapter editor
-  count share a ``DailyGoalProgressBar`` — extract in the same
-  session per the 2-surfaces rule.
-
-  Effort: M (6-10 commits). Placement: Core (``Chapter.target_words``
-  + in-editor widget) + optional plugin for the stats surface.
-  Value: High.
-
-- **CHAPTER-OUTLINER-VIEW-01** (P2, FEATURE-REQUEST, filed
-  2026-06-01 from the Scrivener analysis, top-10 #4): a spreadsheet /
-  grid outline view of a book's chapters, complementing the
-  card-based Storyboard.
-
-  Scope:
-  - New ``?view=outline`` mount alongside ``?view=storyboard``.
-  - Columns: title, synopsis/notes, word count, target, status,
-    label, story-beat — sortable, inline-editable.
-  - Inline cell edits reuse the Storyboard PATCH path; gets its
-    status/label/target columns from CHAPTER-STATUS-LABELS-01 +
-    WRITING-GOALS-PROGRESS-TRACKING-01 (do those first).
-
-  Effort: M. Placement: Core (frontend view over existing Chapter
-  data). Value: High.
+(none)
 
 ---
 
