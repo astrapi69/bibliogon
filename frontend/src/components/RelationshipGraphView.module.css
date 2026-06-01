@@ -15,3 +15,34 @@
   color: var(--text-muted);
   padding: 2rem 1rem;
 }
+
+.createDialog {
+  max-width: 440px;
+  width: min(440px, 95vw);
+}
+
+.createHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.createTitle {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.typeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.75rem;
+}
+
+.createActions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 0.75rem;
+}

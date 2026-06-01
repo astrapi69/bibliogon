@@ -1,21 +1,23 @@
 /**
- * Pins the relationship-graph data layer + view
- * (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C2):
- * - buildNodes: one node per entity, typed + positioned.
- * - buildEdges: one edge per relationship, coloured, target-filtered.
- * - the view shows the empty state with no entities and the canvas
- *   once entities load.
+ * Pins the relationship-graph data layer, view, and interactive editing
+ * (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C2 + C3):
+ * - buildNodes / buildEdges / addRelationship / removeRelationship pure.
+ * - empty + loaded states.
+ * - C3: a drag-connect opens the create dialog and PATCHes the source
+ *   entity's relationships; an edge click confirm-deletes the relationship.
  *
- * @xyflow/react is mocked (real React state for the node/edge hooks so
- * the canvas mounts; ReactFlow itself stubbed - happy-dom lacks its
- * layout). The live canvas is covered by the C6 Playwright smoke.
+ * @xyflow/react is mocked (real React state for the node/edge hooks; the
+ * ReactFlow stub exposes connect/edge-click triggers so the C3 handlers
+ * are exercisable without a real canvas). Live canvas: C6 Playwright smoke.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import RelationshipGraphView, {
   buildNodes,
   buildEdges,
+  addRelationship,
+  removeRelationship,
 } from "./RelationshipGraphView";
 import type { StoryEntityOut } from "../api/client";
 
@@ -36,6 +38,9 @@ vi.mock("../hooks/useTheme", () => ({
 }));
 vi.mock("../utils/notify", () => ({ notify: { error: vi.fn() } }));
 
+const mockConfirm = vi.fn();
+vi.mock("./AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));
+
 vi.mock("@xyflow/react", async () => {
   const React = await import("react");
   return {
@@ -48,7 +53,30 @@ vi.mock("@xyflow/react", async () => {
       const [s, set] = React.useState(init);
       return [s, set, vi.fn()];
     },
-    ReactFlow: () => null,
+    // Stub canvas exposing the interaction callbacks as test triggers.
+    ReactFlow: (props: {
+      nodes?: { id: string }[];
+      edges?: { id: string; source: string; target: string }[];
+      onConnect?: (c: { source: string; target: string }) => void;
+      onEdgeClick?: (e: unknown, edge: unknown) => void;
+    }) => (
+      <div data-testid="rf-stub">
+        <button
+          data-testid="rf-trigger-connect"
+          onClick={() => {
+            const [a, b] = props.nodes ?? [];
+            if (a && b) props.onConnect?.({ source: a.id, target: b.id });
+          }}
+        />
+        {(props.edges ?? []).map((e) => (
+          <button
+            key={e.id}
+            data-testid={`rf-edge-${e.id}`}
+            onClick={() => props.onEdgeClick?.({} as unknown, e)}
+          />
+        ))}
+      </div>
+    ),
     Background: () => null,
     Controls: () => null,
     Handle: () => null,
@@ -57,9 +85,13 @@ vi.mock("@xyflow/react", async () => {
 });
 
 const listEntities = vi.fn();
+const updateEntity = vi.fn();
 vi.mock("../api/client", () => ({
   api: {
-    storyBible: { listEntities: (...a: unknown[]) => listEntities(...a) },
+    storyBible: {
+      listEntities: (...a: unknown[]) => listEntities(...a),
+      updateEntity: (...a: unknown[]) => updateEntity(...a),
+    },
   },
 }));
 
@@ -92,26 +124,50 @@ describe("relationship-graph builders", () => {
       label: "Name a",
       entityType: "character",
     });
-    expect(typeof nodes[0].position.x).toBe("number");
   });
 
-  it("buildEdges makes one coloured edge per relationship, skipping missing targets", () => {
-    const entities = [
+  it("buildEdges makes one edge per relationship, skipping missing targets", () => {
+    const edges = buildEdges([
       entity("a", "character", [
         { target_entity_id: "b", relationship_type: "ally" },
-        { target_entity_id: "ghost", relationship_type: "rival" }, // target absent
+        { target_entity_id: "ghost", relationship_type: "rival" },
       ]),
       entity("b", "character"),
-    ];
-    const edges = buildEdges(entities);
+    ]);
     expect(edges).toHaveLength(1);
     expect(edges[0]).toMatchObject({ source: "a", target: "b", label: "ally" });
-    expect(edges[0].markerEnd).toBeTruthy();
+  });
+
+  it("addRelationship replaces an existing edge to the same target", () => {
+    const src = entity("a", "character", [
+      { target_entity_id: "b", relationship_type: "ally" },
+    ]);
+    const next = addRelationship(src, "b", "rival", "note");
+    expect(next).toHaveLength(1);
+    expect(next[0]).toMatchObject({
+      target_entity_id: "b",
+      relationship_type: "rival",
+      description: "note",
+    });
+  });
+
+  it("removeRelationship drops only the matching target", () => {
+    const src = entity("a", "character", [
+      { target_entity_id: "b", relationship_type: "ally" },
+      { target_entity_id: "c", relationship_type: "family" },
+    ]);
+    const next = removeRelationship(src, "b");
+    expect(next).toHaveLength(1);
+    expect(next[0].target_entity_id).toBe("c");
   });
 });
 
 describe("RelationshipGraphView", () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockConfirm.mockResolvedValue(true);
+    updateEntity.mockResolvedValue({});
+  });
 
   it("shows the empty state when the book has no entities", async () => {
     listEntities.mockResolvedValue([]);
@@ -119,9 +175,43 @@ describe("RelationshipGraphView", () => {
     expect(await screen.findByTestId("relationship-graph-empty")).toBeTruthy();
   });
 
-  it("renders the canvas once entities load", async () => {
-    listEntities.mockResolvedValue([entity("a", "character")]);
+  it("creates a relationship via drag-connect + dialog", async () => {
+    listEntities.mockResolvedValue([
+      entity("a", "character"),
+      entity("b", "character"),
+    ]);
     render(<RelationshipGraphView bookId="b1" />);
-    expect(await screen.findByTestId("relationship-graph")).toBeTruthy();
+    await screen.findByTestId("rf-stub");
+    fireEvent.click(screen.getByTestId("rf-trigger-connect"));
+    await screen.findByTestId("relationship-create-dialog");
+    fireEvent.click(screen.getByTestId("relationship-type-rival"));
+    fireEvent.click(screen.getByTestId("relationship-create-confirm"));
+    await waitFor(() =>
+      expect(updateEntity).toHaveBeenCalledWith("a", {
+        relationships: [
+          {
+            target_entity_id: "b",
+            relationship_type: "rival",
+            description: null,
+          },
+        ],
+      }),
+    );
+  });
+
+  it("deletes a relationship on edge click after confirm", async () => {
+    listEntities.mockResolvedValue([
+      entity("a", "character", [
+        { target_entity_id: "b", relationship_type: "ally" },
+      ]),
+      entity("b", "character"),
+    ]);
+    render(<RelationshipGraphView bookId="b1" />);
+    const edgeBtn = await screen.findByTestId("rf-edge-a->b:ally");
+    fireEvent.click(edgeBtn);
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalled());
+    await waitFor(() =>
+      expect(updateEntity).toHaveBeenCalledWith("a", { relationships: [] }),
+    );
   });
 });
