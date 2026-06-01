@@ -120,3 +120,45 @@
   gap: 0.35rem;
   flex-shrink: 0;
 }
+
+.diffPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.diffTitleChange {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.diffLines {
+  margin: 0;
+  max-height: 380px;
+  overflow: auto;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  background: var(--surface-2);
+}
+
+.diffAdded {
+  display: block;
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+}
+
+.diffRemoved {
+  display: block;
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.diffUnchanged {
+  display: block;
+  color: var(--text-muted);
+}

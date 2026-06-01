@@ -13,8 +13,21 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { X, RotateCcw, History, Camera, Trash2, Bookmark } from "lucide-react";
-import { api, type ChapterVersionSummary } from "../api/client";
+import {
+  X,
+  RotateCcw,
+  History,
+  Camera,
+  Trash2,
+  Bookmark,
+  GitCompare,
+  ArrowLeft,
+} from "lucide-react";
+import {
+  api,
+  type ChapterVersionSummary,
+  type ChapterVersionDiff,
+} from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { useDialog } from "./AppDialog";
 import { notify } from "../utils/notify";
@@ -45,6 +58,8 @@ export default function ChapterVersionsModal({
   const [busyId, setBusyId] = useState<string | null>(null);
   const [snapshotName, setSnapshotName] = useState("");
   const [creating, setCreating] = useState(false);
+  const [diff, setDiff] = useState<ChapterVersionDiff | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
 
   const reload = useCallback(async () => {
     if (!chapterId) return;
@@ -72,8 +87,28 @@ export default function ChapterVersionsModal({
     if (!open || !chapterId) return;
     setVersions(null);
     setSnapshotName("");
+    setDiff(null);
     void reload();
   }, [open, chapterId, reload]);
+
+  const handleDiff = async (versionId: string) => {
+    if (!chapterId) return;
+    setDiffLoading(true);
+    try {
+      const result = await api.chapters.diffVersion(
+        bookId,
+        chapterId,
+        versionId,
+      );
+      setDiff(result);
+    } catch {
+      notify.error(
+        t("ui.versions.diff_failed", "Vergleich konnte nicht geladen werden."),
+      );
+    } finally {
+      setDiffLoading(false);
+    }
+  };
 
   const handleTakeSnapshot = async () => {
     if (!chapterId || creating) return;
@@ -181,100 +216,172 @@ export default function ChapterVersionsModal({
             )}
           </Dialog.Description>
 
-          <div className={styles.takeRow}>
-            <input
-              type="text"
-              className="input"
-              value={snapshotName}
-              onChange={(e) => setSnapshotName(e.target.value)}
-              placeholder={t(
-                "ui.versions.snapshot_name_placeholder",
-                "Snapshot-Name (optional)",
-              )}
-              maxLength={200}
-              data-testid="chapter-snapshot-name"
-              disabled={creating}
-            />
-            <button
-              className="btn btn-primary btn-sm"
-              onClick={() => void handleTakeSnapshot()}
-              disabled={creating}
-              data-testid="chapter-snapshot-create"
+          {diff ? (
+            <div
+              className={styles.diffPanel}
+              data-testid="chapter-version-diff"
             >
-              <Camera size={14} aria-hidden />
-              {t("ui.versions.take_snapshot", "Snapshot erstellen")}
-            </button>
-          </div>
-
-          {loading ? (
-            <LoadingIndicator
-              testId="chapter-versions-loading"
-              variant="block"
-              label={t("ui.common.loading", "Laden...")}
-            />
-          ) : versions && versions.length === 0 ? (
-            <p
-              className={styles.emptyState}
-              data-testid="chapter-versions-empty"
-            >
-              {t(
-                "ui.versions.empty",
-                "Noch keine älteren Fassungen vorhanden.",
-              )}
-            </p>
-          ) : versions ? (
-            <ul className={styles.list} data-testid="chapter-versions-list">
-              {versions.map((v) => (
-                <li
-                  key={v.id}
-                  className={styles.item}
-                  data-testid={`chapter-version-item-${v.id}`}
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => setDiff(null)}
+                data-testid="chapter-version-diff-back"
+              >
+                <ArrowLeft size={14} aria-hidden />
+                {t("ui.versions.diff_back", "Zurück zur Liste")}
+              </button>
+              {diff.title_changed ? (
+                <p
+                  className={styles.diffTitleChange}
+                  data-testid="chapter-version-diff-title-change"
                 >
-                  <div className={styles.itemLine}>
-                    {v.is_manual ? (
-                      <span
-                        className={styles.snapshotBadge}
-                        data-testid={`chapter-version-manual-${v.id}`}
-                      >
-                        <Bookmark size={11} aria-hidden />
-                        {t("ui.versions.snapshot_badge", "Snapshot")}
-                      </span>
-                    ) : (
-                      <span className={styles.versionBadge}>v{v.version}</span>
-                    )}
-                    <span className={styles.timestamp}>
-                      {new Date(v.created_at).toLocaleString()}
-                    </span>
-                    <span className={styles.versionTitle}>
-                      {v.name || v.title}
-                    </span>
-                  </div>
-                  <div className={styles.actions}>
-                    <button
-                      className="btn btn-secondary btn-sm"
-                      disabled={busyId !== null}
-                      onClick={() => void handleRestore(v.id)}
-                      data-testid={`chapter-version-restore-${v.id}`}
+                  {t("ui.versions.diff_title_changed", "Titel geändert:")}{" "}
+                  <s>{diff.snapshot_title}</s> {"->"} {diff.current_title}
+                </p>
+              ) : null}
+              {diff.lines.length === 0 ? (
+                <p className={styles.emptyState}>
+                  {t("ui.versions.diff_identical", "Keine Textunterschiede.")}
+                </p>
+              ) : (
+                <pre className={styles.diffLines}>
+                  {diff.lines.map((line, i) => (
+                    <span
+                      key={i}
+                      className={
+                        line.type === "added"
+                          ? styles.diffAdded
+                          : line.type === "removed"
+                            ? styles.diffRemoved
+                            : styles.diffUnchanged
+                      }
                     >
-                      <RotateCcw size={12} aria-hidden />
-                      {t("ui.versions.restore", "Wiederherstellen")}
-                    </button>
-                    {v.is_manual ? (
-                      <button
-                        className="btn-icon"
-                        disabled={busyId !== null}
-                        onClick={() => void handleDelete(v.id)}
-                        aria-label={t("ui.versions.delete", "Snapshot löschen")}
-                        data-testid={`chapter-version-delete-${v.id}`}
-                      >
-                        <Trash2 size={14} aria-hidden />
-                      </button>
-                    ) : null}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : null}
+                      {line.type === "added"
+                        ? "+ "
+                        : line.type === "removed"
+                          ? "- "
+                          : "  "}
+                      {line.text || " "}
+                      {"\n"}
+                    </span>
+                  ))}
+                </pre>
+              )}
+            </div>
+          ) : (
+            <>
+              <div className={styles.takeRow}>
+                <input
+                  type="text"
+                  className="input"
+                  value={snapshotName}
+                  onChange={(e) => setSnapshotName(e.target.value)}
+                  placeholder={t(
+                    "ui.versions.snapshot_name_placeholder",
+                    "Snapshot-Name (optional)",
+                  )}
+                  maxLength={200}
+                  data-testid="chapter-snapshot-name"
+                  disabled={creating}
+                />
+                <button
+                  className="btn btn-primary btn-sm"
+                  onClick={() => void handleTakeSnapshot()}
+                  disabled={creating}
+                  data-testid="chapter-snapshot-create"
+                >
+                  <Camera size={14} aria-hidden />
+                  {t("ui.versions.take_snapshot", "Snapshot erstellen")}
+                </button>
+              </div>
+
+              {loading ? (
+                <LoadingIndicator
+                  testId="chapter-versions-loading"
+                  variant="block"
+                  label={t("ui.common.loading", "Laden...")}
+                />
+              ) : versions && versions.length === 0 ? (
+                <p
+                  className={styles.emptyState}
+                  data-testid="chapter-versions-empty"
+                >
+                  {t(
+                    "ui.versions.empty",
+                    "Noch keine älteren Fassungen vorhanden.",
+                  )}
+                </p>
+              ) : versions ? (
+                <ul className={styles.list} data-testid="chapter-versions-list">
+                  {versions.map((v) => (
+                    <li
+                      key={v.id}
+                      className={styles.item}
+                      data-testid={`chapter-version-item-${v.id}`}
+                    >
+                      <div className={styles.itemLine}>
+                        {v.is_manual ? (
+                          <span
+                            className={styles.snapshotBadge}
+                            data-testid={`chapter-version-manual-${v.id}`}
+                          >
+                            <Bookmark size={11} aria-hidden />
+                            {t("ui.versions.snapshot_badge", "Snapshot")}
+                          </span>
+                        ) : (
+                          <span className={styles.versionBadge}>
+                            v{v.version}
+                          </span>
+                        )}
+                        <span className={styles.timestamp}>
+                          {new Date(v.created_at).toLocaleString()}
+                        </span>
+                        <span className={styles.versionTitle}>
+                          {v.name || v.title}
+                        </span>
+                      </div>
+                      <div className={styles.actions}>
+                        <button
+                          className="btn-icon"
+                          disabled={diffLoading}
+                          onClick={() => void handleDiff(v.id)}
+                          aria-label={t(
+                            "ui.versions.diff",
+                            "Mit aktueller Fassung vergleichen",
+                          )}
+                          data-testid={`chapter-version-diff-${v.id}`}
+                        >
+                          <GitCompare size={14} aria-hidden />
+                        </button>
+                        <button
+                          className="btn btn-secondary btn-sm"
+                          disabled={busyId !== null}
+                          onClick={() => void handleRestore(v.id)}
+                          data-testid={`chapter-version-restore-${v.id}`}
+                        >
+                          <RotateCcw size={12} aria-hidden />
+                          {t("ui.versions.restore", "Wiederherstellen")}
+                        </button>
+                        {v.is_manual ? (
+                          <button
+                            className="btn-icon"
+                            disabled={busyId !== null}
+                            onClick={() => void handleDelete(v.id)}
+                            aria-label={t(
+                              "ui.versions.delete",
+                              "Snapshot löschen",
+                            )}
+                            data-testid={`chapter-version-delete-${v.id}`}
+                          >
+                            <Trash2 size={14} aria-hidden />
+                          </button>
+                        ) : null}
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+            </>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>

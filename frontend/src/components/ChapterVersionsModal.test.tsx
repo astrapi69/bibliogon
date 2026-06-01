@@ -32,6 +32,7 @@ const listVersions = vi.fn();
 const createSnapshot = vi.fn();
 const restoreVersion = vi.fn();
 const deleteVersion = vi.fn();
+const diffVersion = vi.fn();
 vi.mock("../api/client", () => ({
   api: {
     chapters: {
@@ -39,6 +40,7 @@ vi.mock("../api/client", () => ({
       createSnapshot: (...a: unknown[]) => createSnapshot(...a),
       restoreVersion: (...a: unknown[]) => restoreVersion(...a),
       deleteVersion: (...a: unknown[]) => deleteVersion(...a),
+      diffVersion: (...a: unknown[]) => diffVersion(...a),
     },
   },
 }));
@@ -81,6 +83,17 @@ describe("ChapterVersionsModal", () => {
     createSnapshot.mockResolvedValue({ ...MANUAL, id: "man2" });
     restoreVersion.mockResolvedValue({});
     deleteVersion.mockResolvedValue(undefined);
+    diffVersion.mockResolvedValue({
+      version_id: MANUAL.id,
+      title_changed: true,
+      snapshot_title: "Old Title",
+      current_title: "New Title",
+      lines: [
+        { type: "unchanged", text: "alpha" },
+        { type: "removed", text: "beta" },
+        { type: "added", text: "gamma" },
+      ],
+    });
     mockConfirm.mockResolvedValue(true);
   });
 
@@ -152,5 +165,30 @@ describe("ChapterVersionsModal", () => {
     await waitFor(() =>
       expect(deleteVersion).toHaveBeenCalledWith("b1", "ch1", MANUAL.id),
     );
+  });
+
+  it("shows a line diff with added/removed lines and a title-change note", async () => {
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    fireEvent.click(screen.getByTestId(`chapter-version-diff-${MANUAL.id}`));
+    const panel = await screen.findByTestId("chapter-version-diff");
+    expect(diffVersion).toHaveBeenCalledWith("b1", "ch1", MANUAL.id);
+    expect(
+      screen.getByTestId("chapter-version-diff-title-change"),
+    ).toBeTruthy();
+    expect(panel.textContent).toContain("+ gamma");
+    expect(panel.textContent).toContain("- beta");
+    // The list is hidden while the diff panel is open.
+    expect(screen.queryByTestId("chapter-versions-list")).toBeNull();
+  });
+
+  it("returns from the diff panel to the list", async () => {
+    renderModal();
+    await screen.findByTestId("chapter-versions-list");
+    fireEvent.click(screen.getByTestId(`chapter-version-diff-${MANUAL.id}`));
+    await screen.findByTestId("chapter-version-diff");
+    fireEvent.click(screen.getByTestId("chapter-version-diff-back"));
+    await screen.findByTestId("chapter-versions-list");
+    expect(screen.queryByTestId("chapter-version-diff")).toBeNull();
   });
 });
