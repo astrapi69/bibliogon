@@ -69,6 +69,7 @@ plugins:
         Titel bearbeiten: Editing the title
         Schreibziele: Writing goals
         Gliederung: Outliner
+        Snapshots und Versionen: Snapshots and versions
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
@@ -151,6 +152,7 @@ nav:
   - Titel bearbeiten: de/editor/title-editing.md
   - Schreibziele: de/editor/writing-goals.md
   - Gliederung: de/editor/outliner.md
+  - Snapshots und Versionen: de/editor/snapshots.md
 - Export:
   - EPUB: de/export/epub.md
   - PDF: de/export/pdf.md

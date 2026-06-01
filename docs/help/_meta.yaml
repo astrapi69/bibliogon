@@ -142,6 +142,10 @@ navigation:
           de: Gliederung
           en: Outliner
         slug: editor/outliner
+      - title:
+          de: Snapshots und Versionen
+          en: Snapshots and versions
+        slug: editor/snapshots
 
   - title:
       de: Export
