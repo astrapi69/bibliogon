@@ -48,16 +48,19 @@ def upgrade() -> None:
         sa.Column("position", sa.Integer(), nullable=False, server_default="0"),
         sa.Column("created_at", sa.DateTime(timezone=True), nullable=True),
     )
+    # Plain ADD COLUMN (no inline FK) so SQLite batch mode does NOT
+    # recreate ``chapters``. An inline FK on ``label_id`` would force a
+    # recreate, and the table's pre-existing unnamed FK to ``books``
+    # then trips Alembic's "Constraint must have a name", breaking
+    # ``alembic upgrade head`` for every incremental upgrade
+    # (ALEMBIC-UPGRADE-CHAIN-FIX). The FK + ON DELETE SET NULL still
+    # exists on fresh installs via ``Base.metadata.create_all``; on the
+    # upgrade path the label-delete null-out is guaranteed by the
+    # service layer (see the ChapterLabel model docstring), so omitting
+    # the DB-level FK here is behaviour-preserving.
     with op.batch_alter_table("chapters") as batch_op:
         batch_op.add_column(sa.Column("status", sa.String(length=20), nullable=True))
-        batch_op.add_column(
-            sa.Column(
-                "label_id",
-                sa.String(length=32),
-                sa.ForeignKey("chapter_labels.id", ondelete="SET NULL"),
-                nullable=True,
-            )
-        )
+        batch_op.add_column(sa.Column("label_id", sa.String(length=32), nullable=True))
 
 
 def downgrade() -> None:
