@@ -171,6 +171,11 @@ export interface Book {
   series: string | null;
   series_index: number | null;
   description: string | null;
+  /** Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01). word_target:
+   *  per-book aggregate word target; word_target_deadline: optional
+   *  draft deadline (ISO date string). */
+  word_target?: number | null;
+  word_target_deadline?: string | null;
   /** EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
    *  ``book_idea`` is the short premise (1-2 sentences);
    *  ``expose`` is the long-form Exposé (Plot + Characters +
@@ -250,6 +255,14 @@ export interface Chapter {
    *  (map to name+color via the book's chapter-labels list). */
   status?: ChapterStatus | null;
   label_id?: string | null;
+  /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
+  target_words?: number | null;
+}
+
+/** A per-day writing-session row (WRITING-GOALS-PROGRESS-TRACKING-01). */
+export interface WritingSession {
+  day: string;
+  words_written: number;
 }
 
 /** Per-chapter drafting workflow status (CHAPTER-STATUS-LABELS-01). */
@@ -1079,6 +1092,8 @@ export interface ChapterUpdatePayload {
   /** Drafting workflow (CHAPTER-STATUS-LABELS-01). */
   status?: ChapterStatus | null;
   label_id?: string | null;
+  /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
+  target_words?: number | null;
 }
 
 export interface ChapterVersionSummary {
@@ -1777,7 +1792,16 @@ export const api = {
         body: JSON.stringify(data),
       }),
 
-    update: (id: string, data: Partial<BookCreate>) =>
+    update: (
+      id: string,
+      // Writing-goals fields (WRITING-GOALS-PROGRESS-TRACKING-01) are
+      // PATCH-only, so they widen Partial<BookCreate> inline rather
+      // than polluting the create shape.
+      data: Partial<BookCreate> & {
+        word_target?: number | null;
+        word_target_deadline?: string | null;
+      },
+    ) =>
       request<Book>(`/books/${id}`, {
         method: "PATCH",
         body: JSON.stringify(data),
@@ -2890,6 +2914,13 @@ export const api = {
       request<void>(`/books/${bookId}/chapter-labels/${labelId}`, {
         method: "DELETE",
       }),
+  },
+
+  /** Per-day writing-session history (WRITING-GOALS-PROGRESS-TRACKING-01).
+   *  The daily-goal + streak are computed client-side from this. */
+  writingSessions: {
+    list: (days = 30) =>
+      request<WritingSession[]>(`/writing-sessions?days=${days}`),
   },
 
   /** PB-PHASE4 picture-book pages CRUD. Endpoints come from the
