@@ -9,6 +9,7 @@ import StoryEntityEditor from "../components/StoryEntityEditor";
 import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
+import ProseStoryboard from "../components/ProseStoryboard";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
@@ -693,6 +694,8 @@ export default function BookEditor() {
                 onMetadata={() => { setSelectedStoryEntityId(null); _setShowMetadata(true); }}
                 onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
                 storyBibleActive={storyBibleOpen}
+                onShowStoryboard={() => { setSelectedStoryEntityId(null); _setShowMetadata(false); _setShowStoryboard(true); }}
+                storyboardActive={showStoryboard}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
@@ -731,6 +734,16 @@ export default function BookEditor() {
                     onDeleted={() => {
                         setSelectedStoryEntityId(null);
                         setStoryBibleRefreshKey((k) => k + 1);
+                    }}
+                />
+            ) : showStoryboard ? (
+                <ProseStoryboard
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    onBack={() => _setShowStoryboard(false)}
+                    onSelectChapter={(chapterId) => {
+                        setActiveChapterId(chapterId);
+                        _setShowStoryboard(false);
                     }}
                 />
             ) : showMetadata ? (

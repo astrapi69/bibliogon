@@ -238,6 +238,13 @@ export interface Chapter {
    *  successful PATCH. Clients must echo it back on update.
    */
   version: number;
+  /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+   *  C3). Mirror the four Page storyboard fields; edited from the prose
+   *  chapter-card Storyboard view. */
+  notes?: string | null;
+  story_beat?: string | null;
+  mood_color?: string | null;
+  act_group?: string | null;
 }
 
 // --- Page (PB-PHASE4: picture-book pages) ---
@@ -1046,6 +1053,12 @@ export interface ChapterUpdatePayload {
   content?: string;
   position?: number;
   chapter_type?: ChapterType;
+  /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+   *  C3). */
+  notes?: string | null;
+  story_beat?: string | null;
+  mood_color?: string | null;
+  act_group?: string | null;
 }
 
 export interface ChapterVersionSummary {

@@ -54,54 +54,21 @@ import {
     type ContinuityWarning,
     type Page,
     type PageUpdate,
-    type StoryBeat,
     type StoryEntityLinkOut,
     type StoryEntityOut,
 } from "../api/client"
 import {imageUrlFor} from "../utils/imageUrl"
-
-/** 6 story-beat values per Pre-Inspection A2 (Setup / Inciting /
- *  Rising / Climax / Falling / Resolution). The order matters for
- *  the dropdown: it follows the canonical dramatic-structure arc
- *  the author walks through, not alphabetical. */
-const STORY_BEATS: readonly StoryBeat[] = [
-    "setup",
-    "inciting",
-    "rising",
-    "climax",
-    "falling",
-    "resolution",
-] as const
-
-/** Mood-color preset palette (PICTURE-BOOK-STORYBOARD-VIEW-01
- *  Session 2 C3). 10 curated colors covering the typical picture-
- *  book emotional range (warm/cool/happy/sad/calm/exciting/etc.).
- *
- *  Stored as a tuple {value, key} where ``value`` is the hex code
- *  that round-trips into ``page.mood_color`` (validated via
- *  MOOD_COLOR_RE on the backend) and ``key`` is the i18n key
- *  segment for the localised label (used as title-attr tooltip
- *  + screen-reader aria-label). Authors with custom needs can
- *  hand-edit the YAML or wait for the v3 free-color-picker
- *  follow-up. */
-const MOOD_PALETTE: readonly {value: string; key: string}[] = [
-    {value: "#FFC857", key: "sunny"},
-    {value: "#FF6B6B", key: "passionate"},
-    {value: "#4ECDC4", key: "calm"},
-    {value: "#C7B8EA", key: "dreamy"},
-    {value: "#7FB069", key: "peaceful"},
-    {value: "#F18A07", key: "adventurous"},
-    {value: "#F4A6CD", key: "tender"},
-    {value: "#6C7A89", key: "somber"},
-    {value: "#2E4057", key: "mysterious"},
-    {value: "#F4ECD8", key: "gentle"},
-] as const
 import {useI18n} from "../hooks/useI18n"
-import {RadixSelect} from "./RadixSelect"
 import {notify} from "../utils/notify"
 import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import StoryboardArcView from "./StoryboardArcView"
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
+import {
+    ActGroupInput,
+    BeatSelect,
+    MoodColorPicker,
+    NotesEditor,
+} from "./StoryboardAnnotations"
 import styles from "./Storyboard.module.css"
 
 /** Max entity badges shown on a storyboard card before the
@@ -874,294 +841,40 @@ function StoryboardCard({
                         )}
                     </div>
                 )}
-                <BeatSelector
-                    page={page}
-                    onPatch={onPatch}
-                    testidNamespace={testidNamespace}
+                <BeatSelect
+                    value={page.story_beat ?? null}
+                    onSave={(beat) =>
+                        void onPatch(page.id, {story_beat: beat}).catch(() => {})
+                    }
+                    namespace={testidNamespace}
+                    idSuffix={page.id}
                 />
                 <MoodColorPicker
-                    page={page}
-                    onPatch={onPatch}
-                    testidNamespace={testidNamespace}
+                    value={page.mood_color ?? null}
+                    onSave={(color) =>
+                        void onPatch(page.id, {mood_color: color}).catch(() => {})
+                    }
+                    namespace={testidNamespace}
+                    idSuffix={page.id}
                 />
                 <ActGroupInput
-                    page={page}
-                    onPatch={onPatch}
-                    testidNamespace={testidNamespace}
+                    value={page.act_group ?? null}
+                    onSave={(label) =>
+                        void onPatch(page.id, {act_group: label}).catch(() => {})
+                    }
+                    namespace={testidNamespace}
+                    idSuffix={page.id}
                 />
                 <NotesEditor
-                    page={page}
-                    onPatch={onPatch}
-                    testidNamespace={testidNamespace}
+                    value={page.notes ?? null}
+                    onSave={(notes) =>
+                        void onPatch(page.id, {notes}).catch(() => {})
+                    }
+                    namespace={testidNamespace}
+                    idSuffix={page.id}
                 />
             </div>
         </div>
-    )
-}
-
-interface BeatSelectorProps {
-    page: Page
-    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
-    testidNamespace: string
-}
-
-/** Beat dropdown for ``page.story_beat`` (PICTURE-BOOK-STORYBOARD-
- *  VIEW-01 Session 2 C2). 6 dramatic-structure values per A2 + an
- *  empty "no beat" option (allOption) for clearing.
- *
- *  Uses the canonical RadixSelect. The original native-<select>
- *  rationale (happy-dom determinism) is satisfied by RadixSelect's
- *  test-mode native render (it renders a real <select> under Vitest;
- *  see RadixSelect.tsx). The stop-propagation wrapper keeps clicks /
- *  keystrokes on the selector from bubbling into the draggable
- *  storyboard card. 2026-05-30 component-consistency sweep. */
-function BeatSelector({page, onPatch, testidNamespace}: BeatSelectorProps) {
-    const {t} = useI18n()
-    const value = page.story_beat ?? ""
-
-    const handleValueChange = (next: string) => {
-        const normalised: StoryBeat | null =
-            next === "" ? null : (next as StoryBeat)
-        if (normalised === (page.story_beat ?? null)) return
-        void onPatch(page.id, {story_beat: normalised}).catch(() => {})
-    }
-
-    const stop = (e: React.SyntheticEvent) => {
-        e.stopPropagation()
-    }
-
-    return (
-        <span
-            className={styles.beatSelect}
-            onClick={stop}
-            onMouseDown={stop}
-            onKeyDown={stop}
-        >
-            <RadixSelect
-                className="is-narrow"
-                value={value}
-                onValueChange={handleValueChange}
-                testId={`${testidNamespace}-beat-select-${page.id}`}
-                ariaLabel={t("ui.storyboard.beat_label", "Story beat")}
-                allOption={{
-                    label: t("ui.storyboard.beat_none", "— no beat —"),
-                }}
-                options={STORY_BEATS.map((beat) => ({
-                    value: beat,
-                    label: t(`ui.storyboard.beat.${beat}`, beat),
-                }))}
-            />
-        </span>
-    )
-}
-
-interface ActGroupInputProps {
-    page: Page
-    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
-    testidNamespace: string
-}
-
-/** Inline editable act-group label (PICTURE-BOOK-STORYBOARD-VIEW-01
- *  Session 2 C4). Drives the grouping-headers in the storyboard
- *  grid (groupByActGroup helper reads page.act_group; cards
- *  re-render under a new group when the label changes).
- *
- *  Drag behaviour intentionally does NOT couple to act_group:
- *  the SortableContext wraps the flat page-id list, so dragging
- *  a card across visual group boundaries reorders ``position``
- *  but leaves act_group unchanged. The next render snaps the
- *  card back to its own group, which would look glitchy if the
- *  user intended to change groups — but they didn't, they
- *  intended to reorder position. Auto-update-on-cross-group is
- *  filed as STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01 follow-up
- *  if the UX surfaces a real-world need. */
-function ActGroupInput({page, onPatch, testidNamespace}: ActGroupInputProps) {
-    const {t} = useI18n()
-    const [value, setValue] = useState<string>(page.act_group ?? "")
-
-    useEffect(() => {
-        setValue(page.act_group ?? "")
-    }, [page.id, page.act_group])
-
-    const handleBlur = () => {
-        const normalised = value.trim() === "" ? null : value.trim()
-        const persisted = page.act_group ?? null
-        if (normalised === persisted) return
-        void onPatch(page.id, {act_group: normalised}).catch(() => {})
-    }
-
-    const stop = (e: React.SyntheticEvent) => {
-        e.stopPropagation()
-    }
-
-    return (
-        <input
-            type="text"
-            className={styles.actGroupInput}
-            value={value}
-            placeholder={t(
-                "ui.storyboard.act_group_placeholder",
-                "Act / chapter (optional)",
-            )}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={handleBlur}
-            onClick={stop}
-            onMouseDown={stop}
-            onKeyDown={(e) => {
-                stop(e)
-                if (e.key === "Enter") {
-                    e.preventDefault()
-                    ;(e.target as HTMLInputElement).blur()
-                }
-            }}
-            data-testid={`${testidNamespace}-act-group-${page.id}`}
-            aria-label={t("ui.storyboard.act_group_label", "Act group")}
-            maxLength={100}
-        />
-    )
-}
-
-interface MoodColorPickerProps {
-    page: Page
-    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
-    testidNamespace: string
-}
-
-/** Preset mood-color swatches (PICTURE-BOOK-STORYBOARD-VIEW-01
- *  Session 2 C3). 10 curated picture-book mood colors + a clear
- *  button. Clicking a swatch sets it; clicking the currently-
- *  selected swatch clears it (toggle behaviour). The card's left
- *  border already renders the mood color via the cardMoodBorder
- *  class shipped in Session 1 C4 — this picker drives that
- *  border. */
-function MoodColorPicker({page, onPatch, testidNamespace}: MoodColorPickerProps) {
-    const {t} = useI18n()
-    const current = page.mood_color ?? null
-
-    const setColor = (next: string | null) => {
-        if (next === current) return
-        void onPatch(page.id, {mood_color: next}).catch(() => {})
-    }
-
-    const stop = (e: React.SyntheticEvent) => {
-        e.stopPropagation()
-    }
-
-    return (
-        <div
-            className={styles.moodPalette}
-            data-testid={`${testidNamespace}-mood-palette-${page.id}`}
-            onClick={stop}
-            onMouseDown={stop}
-            onKeyDown={stop}
-            role="group"
-            aria-label={t("ui.storyboard.mood_label", "Mood color")}
-        >
-            {MOOD_PALETTE.map(({value, key}) => {
-                const selected = current?.toUpperCase() === value.toUpperCase()
-                const label = t(`ui.storyboard.mood.${key}`, key)
-                return (
-                    <button
-                        key={value}
-                        type="button"
-                        className={[
-                            styles.moodSwatch,
-                            selected ? styles.moodSwatchSelected : "",
-                        ]
-                            .filter(Boolean)
-                            .join(" ")}
-                        style={{backgroundColor: value}}
-                        onClick={(e) => {
-                            stop(e)
-                            setColor(selected ? null : value)
-                        }}
-                        data-testid={`${testidNamespace}-mood-swatch-${key}-${page.id}`}
-                        data-selected={selected ? "true" : "false"}
-                        title={label}
-                        aria-label={label}
-                        aria-pressed={selected ? "true" : "false"}
-                    />
-                )
-            })}
-            {current && (
-                <button
-                    type="button"
-                    className={styles.moodClear}
-                    onClick={(e) => {
-                        stop(e)
-                        setColor(null)
-                    }}
-                    data-testid={`${testidNamespace}-mood-clear-${page.id}`}
-                    title={t("ui.storyboard.mood_clear", "Clear color")}
-                    aria-label={t("ui.storyboard.mood_clear", "Clear color")}
-                >
-                    <X size={10} aria-hidden />
-                </button>
-            )}
-        </div>
-    )
-}
-
-interface NotesEditorProps {
-    page: Page
-    onPatch: (pageId: string, patch: PageUpdate) => Promise<void>
-    testidNamespace: string
-}
-
-/** Auto-saving notes textarea (PICTURE-BOOK-STORYBOARD-VIEW-01
- *  Session 2 C1). Local state mirrors page.notes; onBlur fires the
- *  PATCH only when the value changed from the server's view of the
- *  field. Empty string normalises to null so a user clearing the
- *  textarea writes NULL back (matching the patch_clears_storyboard_
- *  field_via_null backend test pin).
- *
- *  stopPropagation on click + keyDown + mouseDown prevents the
- *  card's navigation handler from firing while the user edits the
- *  notes. Drag-handle remains a sibling overlay (no interference). */
-function NotesEditor({page, onPatch, testidNamespace}: NotesEditorProps) {
-    const {t} = useI18n()
-    const [value, setValue] = useState<string>(page.notes ?? "")
-
-    // Sync local state when the page row is replaced (e.g. by a
-    // sibling annotation save that returns the same row with fresh
-    // updated_at). useEffect guards against the case where the
-    // user is mid-edit on a different field — we keep local state
-    // when only updated_at changed.
-    useEffect(() => {
-        setValue(page.notes ?? "")
-    }, [page.id, page.notes])
-
-    const handleBlur = () => {
-        const normalised = value.trim() === "" ? null : value
-        const persisted = page.notes ?? null
-        if (normalised === persisted) return
-        void onPatch(page.id, {notes: normalised}).catch(() => {
-            // Parent already toasted the error; keep local state so
-            // the user doesn't lose their edit.
-        })
-    }
-
-    const stop = (e: React.SyntheticEvent) => {
-        e.stopPropagation()
-    }
-
-    return (
-        <textarea
-            className={styles.notesEditor}
-            value={value}
-            placeholder={t(
-                "ui.storyboard.notes_placeholder",
-                "Add notes...",
-            )}
-            onChange={(e) => setValue(e.target.value)}
-            onBlur={handleBlur}
-            onClick={stop}
-            onMouseDown={stop}
-            onKeyDown={stop}
-            data-testid={`${testidNamespace}-notes-${page.id}`}
-            aria-label={t("ui.storyboard.notes_label", "Page notes")}
-            rows={2}
-        />
     )
 }
 

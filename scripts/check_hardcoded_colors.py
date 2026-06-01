@@ -56,7 +56,9 @@ FRONTEND_SRC = REPO_ROOT / "frontend" / "src"
 # Files that legitimately carry color DATA (not theme styling).
 ALLOWLIST = {
     # Storyboard mood-color preset palette (user-facing data values).
-    "frontend/src/components/Storyboard.tsx",
+    # Extracted from Storyboard.tsx into the shared annotation-editor
+    # module (STORY-BIBLE-STORYBOARD-INTEGRATION-01 C3).
+    "frontend/src/components/StoryboardAnnotations.tsx",
     # Comic-bubble convention defaults (white fill / black stroke /
     # beige narration) — kept theme-independent by design decision
     # (2026-05-30), mirrored 1:1 with the Python PDF walker.

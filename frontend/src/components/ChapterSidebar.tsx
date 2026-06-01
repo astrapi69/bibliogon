@@ -16,6 +16,7 @@ import {
     History,
     GitBranch,
     BookOpen,
+    LayoutGrid,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -60,6 +61,11 @@ interface Props {
     onStoryBible?: () => void;
     /** True while the Story Bible panel is open (active styling). */
     storyBibleActive?: boolean;
+    /** Opens the prose Storyboard (chapter-card grid). Shown for all
+     *  chapter-based books (STORY-BIBLE-STORYBOARD-INTEGRATION-01 C3). */
+    onShowStoryboard?: () => void;
+    /** True while the prose Storyboard is open (active styling). */
+    storyboardActive?: boolean;
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
     onAddFromTemplate?: () => void;
@@ -332,6 +338,8 @@ export default function ChapterSidebar({
                                            onMetadata,
                                            onStoryBible,
                                            storyBibleActive,
+                                           onShowStoryboard,
+                                           storyboardActive,
                                            onValidateToc,
                                            onSaveAsTemplate,
                                            onAddFromTemplate,
@@ -585,6 +593,17 @@ export default function ChapterSidebar({
                 >
                     <FileText size={14}/> {t("ui.sidebar.metadata", "Metadaten")}
                 </button>
+                {onShowStoryboard && (
+                    <button
+                        className={`btn-sidebar-block ${storyboardActive ? "is-active" : ""}`}
+                        style={{marginBottom: 6}}
+                        onClick={onShowStoryboard}
+                        data-testid="chapter-sidebar-storyboard"
+                        title={t("ui.storyboard.open", "Storyboard öffnen")}
+                    >
+                        <LayoutGrid size={14}/> {t("ui.storyboard.title", "Storyboard")}
+                    </button>
+                )}
                 {onStoryBible && (
                     <button
                         className={`btn-sidebar-block ${storyBibleActive ? "is-active" : ""}`}
