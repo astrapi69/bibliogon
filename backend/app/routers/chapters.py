@@ -16,6 +16,7 @@ from app.schemas import (
     ChapterVersionRead,
     ChapterVersionSummary,
 )
+from app.services.writing_stats import count_words, record_progress
 
 # Retention: keep at most the last N snapshots per chapter. Further
 # history is only available via .bgb backups.
@@ -100,10 +101,18 @@ def update_chapter(
     )
     db.add(snapshot)
 
+    # Word count BEFORE the update, to record the day's net writing
+    # delta (WRITING-GOALS-PROGRESS-TRACKING-01) when content changes.
+    words_before = count_words(chapter.content)
+
     updates = payload.model_dump(exclude_unset=True, exclude={"version"})
     for key, value in updates.items():
         setattr(chapter, key, value)
     chapter.version += 1
+
+    if "content" in updates:
+        record_progress(db, count_words(chapter.content) - words_before)
+
     db.commit()
     db.refresh(chapter)
 

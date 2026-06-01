@@ -1,8 +1,8 @@
 import enum
 import uuid
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
-from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -96,6 +96,12 @@ class Book(Base):
     status: Mapped[str] = mapped_column(
         String(20), nullable=False, default="draft", server_default="draft"
     )
+
+    # Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01). word_target:
+    # per-book aggregate word target; word_target_deadline: optional
+    # draft deadline (the UI derives "words/day to finish" from it).
+    word_target: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    word_target_deadline: Mapped[date | None] = mapped_column(Date, nullable=True)
 
     # Publishing metadata
     edition: Mapped[str | None] = mapped_column(String(100), nullable=True)
@@ -258,6 +264,9 @@ class Chapter(Base):
     label_id: Mapped[str | None] = mapped_column(
         ForeignKey("chapter_labels.id", ondelete="SET NULL"), nullable=True
     )
+    # Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01).
+    # Promotes the former per-device localStorage goal to a DB column.
+    target_words: Mapped[int | None] = mapped_column(Integer, nullable=True)
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 
@@ -289,6 +298,28 @@ class ChapterLabel(Base):
 
     def __repr__(self) -> str:
         return f"<ChapterLabel {self.id!r} name={self.name!r} color={self.color}>"
+
+
+class WritingSession(Base):
+    """One row per calendar day with the net words written that day
+    (WRITING-GOALS-PROGRESS-TRACKING-01).
+
+    Populated by the chapter PATCH handler: when chapter content
+    changes it adds the word-count delta (new - old) to today's row
+    (upsert on ``day``). The daily-goal + streak are computed on the
+    frontend from this history against the user's per-device goal, so
+    no goal value is stored server-side. App-global (not per-book):
+    a writing day spans whatever the author worked on.
+    """
+
+    __tablename__ = "writing_sessions"
+
+    id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
+    day: Mapped[date] = mapped_column(Date, nullable=False, unique=True)
+    words_written: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+
+    def __repr__(self) -> str:
+        return f"<WritingSession day={self.day} words={self.words_written}>"
 
 
 class ChapterVersion(Base):

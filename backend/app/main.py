@@ -61,6 +61,7 @@ from app.routers import (
     system,
     templates,
     translations,
+    writing_stats,
 )
 from app.routers import (
     ssh_keys as ssh_keys_router,
@@ -618,6 +619,7 @@ app.include_router(publications.publications_router, prefix="/api")
 app.include_router(publications.platform_schemas_router, prefix="/api")
 app.include_router(chapters.router, prefix="/api")
 app.include_router(chapter_labels.router, prefix="/api")
+app.include_router(writing_stats.router, prefix="/api")
 app.include_router(pages.router, prefix="/api")
 app.include_router(assets.router, prefix="/api")
 app.include_router(audiobook.router, prefix="/api")

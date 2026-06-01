@@ -1,6 +1,6 @@
 import json
 import re
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from typing import Any, Literal
 
@@ -152,6 +152,11 @@ class BookUpdate(BaseModel):
     series: str | None = None
     series_index: int | None = None
     description: str | None = None
+    # Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01). word_target:
+    # per-book aggregate target; word_target_deadline: optional draft
+    # deadline (ISO date string -> date).
+    word_target: int | None = Field(default=None, ge=0)
+    word_target_deadline: date | None = None
     # EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
     book_idea: str | None = None
     expose: str | None = None
@@ -461,6 +466,9 @@ class BookOut(BaseModel):
     series: str | None
     series_index: int | None
     description: str | None
+    # Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01).
+    word_target: int | None = None
+    word_target_deadline: date | None = None
     # EXPOSE-BUCHIDEE-METADATA-01: author-design metadata. Same
     # nullable Text storage as ``description``.
     book_idea: str | None = None
@@ -592,6 +600,7 @@ class ChapterCreate(BaseModel):
     act_group: str | None = Field(default=None, max_length=100)
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
+    target_words: int | None = Field(default=None, ge=0)
 
     @field_validator("mood_color")
     @classmethod
@@ -625,6 +634,7 @@ class ChapterUpdate(BaseModel):
     act_group: str | None = Field(default=None, max_length=100)
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
+    target_words: int | None = Field(default=None, ge=0)
 
     @field_validator("mood_color")
     @classmethod
@@ -694,6 +704,16 @@ class ChapterOut(BaseModel):
     # client maps it to name+color via the book's chapter-labels list).
     status: str | None = None
     label_id: str | None = None
+    target_words: int | None = None
+
+
+class WritingSessionOut(BaseModel):
+    """One day's net words written (WRITING-GOALS-PROGRESS-TRACKING-01)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    day: date
+    words_written: int
 
 
 class ChapterLabelCreate(BaseModel):
