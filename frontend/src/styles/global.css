@@ -653,6 +653,20 @@ body.no-word-wrap [class*="markdownEditor"] {
     overflow-x: auto;
 }
 
+/* Story Bible @-mention inline badge (STORY-BIBLE C13). The per-mention
+   text colour is set inline from the entity-type colour data; this rule
+   carries only the shared, themable chrome. */
+.ProseMirror span.story-mention {
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    padding: 0 2px;
+}
+
+.ProseMirror span.story-mention:hover {
+    background: var(--surface-2);
+}
+
 /* --- Editor-specific palette rules ---
    Applied to TipTap's .ProseMirror container so they only affect
    the editor surface, not sidebars or metadata forms. */

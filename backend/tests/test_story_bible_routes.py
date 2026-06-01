@@ -64,9 +64,7 @@ def test_full_crud_cycle() -> None:
         assert r3.json()["position"] == 1
 
         # List (mandatory) — all three, then filtered.
-        all_entities = client.get(
-            f"/api/story-bible/books/{book_id}/entities"
-        ).json()
+        all_entities = client.get(f"/api/story-bible/books/{book_id}/entities").json()
         assert len(all_entities) == 3
         characters = client.get(
             f"/api/story-bible/books/{book_id}/entities?entity_type=character"
@@ -90,9 +88,7 @@ def test_full_crud_cycle() -> None:
         # Delete.
         deleted = client.delete(f"/api/story-bible/entities/{eid}")
         assert deleted.status_code == 204
-        assert (
-            client.get(f"/api/story-bible/entities/{eid}").status_code == 404
-        )
+        assert client.get(f"/api/story-bible/entities/{eid}").status_code == 404
 
 
 def test_metadata_round_trips_as_object() -> None:
@@ -137,12 +133,26 @@ def test_create_with_invalid_entity_type_422() -> None:
 
 def test_patch_and_delete_unknown_entity_404() -> None:
     with TestClient(app) as client:
-        assert (
-            client.patch(
-                "/api/story-bible/entities/nope", json={"name": "X"}
-            ).status_code
-            == 404
-        )
-        assert (
-            client.delete("/api/story-bible/entities/nope").status_code == 404
-        )
+        assert client.patch("/api/story-bible/entities/nope", json={"name": "X"}).status_code == 404
+        assert client.delete("/api/story-bible/entities/nope").status_code == 404
+
+
+def test_list_entities_search_filters_by_name() -> None:
+    # C13: the ?search= query param filters by a case-insensitive
+    # substring of the name (powers the @-mention autocomplete).
+    with TestClient(app) as client:
+        book_id = _create_book(client)
+        for name in ("Alice", "Albert", "Bob"):
+            client.post(
+                f"/api/story-bible/books/{book_id}/entities",
+                json={"entity_type": "character", "name": name},
+            )
+        all_rows = client.get(f"/api/story-bible/books/{book_id}/entities").json()
+        assert len(all_rows) == 3
+        # Case-insensitive substring "al" matches Alice + Albert.
+        matched = client.get(f"/api/story-bible/books/{book_id}/entities?search=al").json()
+        names = sorted(e["name"] for e in matched)
+        assert names == ["Albert", "Alice"]
+        # No match -> empty list.
+        none = client.get(f"/api/story-bible/books/{book_id}/entities?search=zzz").json()
+        assert none == []

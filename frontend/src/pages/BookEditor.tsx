@@ -783,6 +783,8 @@ export default function BookEditor() {
                     draftMaxAgeDays={editorSettings.draft_max_age_days}
                     aiContextChars={editorSettings.ai_context_chars}
                     initialFocus={pendingFocus && pendingFocus.chapterId === activeChapterMeta.id ? {type: pendingFocus.type, seq: pendingFocus.seq} : undefined}
+                    mentionBookId={storyBibleAvailable ? bookId : undefined}
+                    onOpenStoryEntity={storyBibleAvailable ? (entityId) => { setSelectedStoryEntityId(entityId); setStoryBibleOpen(true); } : undefined}
                 />
             ) : activeChapterMeta && contentLoading ? (
                 <LoadingIndicator

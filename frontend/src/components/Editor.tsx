@@ -42,6 +42,7 @@ const ISSUE_TYPE_LABELS: Record<FixIssueType, (t: Translator) => string> = {
 };
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
+import {buildMentionLabels, createStoryBibleMention, handleMentionClick} from "./storyBibleMention";
 import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
 import {api, ApiError, SaveAbortedError} from "../api/client";
@@ -108,9 +109,16 @@ interface Props {
      *  the jump even when chapter did not change. Set by BookEditor in
      *  response to a Quality-tab click. */
     initialFocus?: {type: string; seq: number};
+    /** When set, enables Story Bible @-mention autocomplete scoped to
+     *  this book (STORY-BIBLE C13). BookEditor passes the bookId only
+     *  when plugin-story-bible is active. */
+    mentionBookId?: string;
+    /** Opens a story entity (mention click). Wired by BookEditor to the
+     *  Story Bible sidebar. */
+    onOpenStoryEntity?: (entityId: string) => void;
 }
 
-export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus}: Props) {
+export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus, mentionBookId, onOpenStoryEntity}: Props) {
     const gates = pluginsForKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
@@ -340,6 +348,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 mode: "deepest",
             }),
             StyleCheckExtension,
+            ...(mentionBookId
+                ? [createStoryBibleMention(mentionBookId, buildMentionLabels(t))]
+                : []),
         ],
         content: parseContent(content),
         onUpdate: ({editor}) => {
@@ -1403,6 +1414,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             onChange={handleMarkdownChange}
                             spellCheck={false}
                         />
+                    ) : onOpenStoryEntity ? (
+                        <div
+                            onClick={(e) => {
+                                handleMentionClick(e, onOpenStoryEntity);
+                            }}
+                        >
+                            <EditorContent editor={editor}/>
+                        </div>
                     ) : (
                         <EditorContent editor={editor}/>
                     )}

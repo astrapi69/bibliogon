@@ -1132,6 +1132,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                                 )}
                                 testidNamespace={`page-canvas-richtext-${page.id}`}
                                 className={styles.textInput}
+                                mentionBookId={bookId}
                             />
                         ) : (
                             <textarea

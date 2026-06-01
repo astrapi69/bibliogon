@@ -41,6 +41,11 @@ import type {JSONContent} from "@tiptap/core"
 import {useEffect, useRef} from "react"
 
 import {useI18n} from "../hooks/useI18n"
+import {
+    buildMentionLabels,
+    createStoryBibleMention,
+    handleMentionClick,
+} from "./storyBibleMention"
 
 interface Props {
     /** The current TipTap document. ``null`` renders an empty
@@ -71,6 +76,12 @@ interface Props {
      *  apply layout-specific styles (e.g. the picture-book
      *  text region's fixed dimensions). */
     className?: string
+    /** When set, enables Story Bible @-mention autocomplete scoped to
+     *  this book (STORY-BIBLE C13). Undef -> no mention extension. */
+    mentionBookId?: string
+    /** Click handler for a rendered mention badge (opens the entity).
+     *  Only meaningful alongside ``mentionBookId``. */
+    onMentionClick?: (entityId: string) => void
 }
 
 export default function RichTextEditor({
@@ -81,6 +92,8 @@ export default function RichTextEditor({
     placeholder: _placeholder,
     testidNamespace,
     className,
+    mentionBookId,
+    onMentionClick,
 }: Props) {
     const {t} = useI18n()
     // The D1 MVP extension set. Order matches Editor.tsx's
@@ -102,6 +115,9 @@ export default function RichTextEditor({
             TextStyle,
             Color,
             FontFamily,
+            ...(mentionBookId
+                ? [createStoryBibleMention(mentionBookId, buildMentionLabels(t))]
+                : []),
         ],
         content: content ?? "",
         editable,
@@ -169,7 +185,17 @@ export default function RichTextEditor({
     if (!editor) return null
 
     return (
-        <div data-testid={`${testidNamespace}-root`} className={className}>
+        <div
+            data-testid={`${testidNamespace}-root`}
+            className={className}
+            onClick={
+                onMentionClick
+                    ? (e) => {
+                          handleMentionClick(e, onMentionClick)
+                      }
+                    : undefined
+            }
+        >
             <EditorContent editor={editor} data-testid={`${testidNamespace}-content`} />
         </div>
     )

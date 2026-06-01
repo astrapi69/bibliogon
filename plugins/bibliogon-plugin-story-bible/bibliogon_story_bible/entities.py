@@ -129,14 +129,19 @@ def list_entity_types() -> dict[str, StoryEntityTypeDef]:
 def list_entities(
     book_id: str,
     entity_type: str | None = None,
+    search: str | None = None,
     db: Session = Depends(get_db),
 ) -> list[StoryEntity]:
     """List a book's story entities ordered by position. An optional
-    ``entity_type`` query param narrows to one type."""
+    ``entity_type`` query param narrows to one type; an optional
+    ``search`` query param filters by a case-insensitive substring of
+    the name (powers the @-mention autocomplete, C13)."""
     _get_book_or_404(book_id, db)
     query = db.query(StoryEntity).filter(StoryEntity.book_id == book_id)
     if entity_type is not None:
         query = query.filter(StoryEntity.entity_type == entity_type)
+    if search is not None and search.strip() != "":
+        query = query.filter(StoryEntity.name.ilike(f"%{search.strip()}%"))
     return query.order_by(StoryEntity.entity_type.asc(), StoryEntity.position.asc()).all()
 
 

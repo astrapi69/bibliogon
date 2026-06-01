@@ -4263,11 +4263,15 @@ export const api = {
         "/story-bible/entity-types",
       ),
 
-    listEntities: (bookId: string, entityType?: string) =>
-      request<StoryEntityOut[]>(
-        `/story-bible/books/${bookId}/entities` +
-          (entityType ? `?entity_type=${encodeURIComponent(entityType)}` : ""),
-      ),
+    listEntities: (bookId: string, entityType?: string, search?: string) => {
+      const params = new URLSearchParams();
+      if (entityType) params.set("entity_type", entityType);
+      if (search) params.set("search", search);
+      const qs = params.toString();
+      return request<StoryEntityOut[]>(
+        `/story-bible/books/${bookId}/entities` + (qs ? `?${qs}` : ""),
+      );
+    },
 
     createEntity: (bookId: string, data: StoryEntityCreate) =>
       request<StoryEntityOut>(`/story-bible/books/${bookId}/entities`, {
