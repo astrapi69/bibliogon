@@ -137,7 +137,12 @@ def update_chapter(
     chapter.version += 1
 
     if "content" in updates:
-        record_progress(db, count_words(chapter.content) - words_before)
+        record_progress(
+            db,
+            count_words(chapter.content) - words_before,
+            book_id=chapter.book_id,
+            chapter_id=chapter.id,
+        )
 
     db.commit()
     db.refresh(chapter)

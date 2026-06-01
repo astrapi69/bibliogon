@@ -716,6 +716,41 @@ class WritingSessionOut(BaseModel):
     words_written: int
 
 
+class WritingStatsSummaryOut(BaseModel):
+    """Global writing-history summary over a window (WRITING-HISTORY-STATS-01)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    total_words: int
+    days_active: int
+    avg_per_active_day: int
+    best_day: WritingSessionOut | None
+    current_streak: int
+    longest_streak: int
+    daily: list[WritingSessionOut]
+
+
+class WritingBookStatsOut(BaseModel):
+    """Per-book writing totals + daily series (WRITING-HISTORY-STATS-01)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    book_id: str
+    book_title: str
+    total_words: int
+    daily: list[WritingSessionOut]
+
+
+class WritingChapterStatsOut(BaseModel):
+    """Per-chapter writing total (WRITING-HISTORY-STATS-01)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    chapter_id: str | None
+    chapter_title: str
+    total_words: int
+
+
 class ChapterLabelCreate(BaseModel):
     """Create body for a per-book chapter label (CHAPTER-STATUS-LABELS-01)."""
 

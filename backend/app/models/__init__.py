@@ -301,25 +301,45 @@ class ChapterLabel(Base):
 
 
 class WritingSession(Base):
-    """One row per calendar day with the net words written that day
-    (WRITING-GOALS-PROGRESS-TRACKING-01).
+    """Net words written on a calendar day, per book + chapter
+    (WRITING-GOALS-PROGRESS-TRACKING-01 + WRITING-HISTORY-STATS-01).
 
     Populated by the chapter PATCH handler: when chapter content
     changes it adds the word-count delta (new - old) to today's row
-    (upsert on ``day``). The daily-goal + streak are computed on the
-    frontend from this history against the user's per-device goal, so
-    no goal value is stored server-side. App-global (not per-book):
-    a writing day spans whatever the author worked on.
+    for that ``(book_id, chapter_id, day)`` (upsert). The daily-goal +
+    streak (the per-device WritingGoalWidget) read the day-aggregated
+    total across all books; the Writing-History stats view additionally
+    breaks the history down per book + per chapter.
+
+    Grain note: WRITING-HISTORY-STATS-01 added ``book_id`` + ``chapter_id``
+    and dropped the old day-unique constraint (there is now one row per
+    book+chapter per day). Legacy rows written before that change carry
+    NULL ``book_id``/``chapter_id`` and are still counted in the global
+    daily totals. ``chapter_id`` is SET NULL on chapter delete so the
+    words stay attributed to the book; ``book_id`` cascades on book
+    delete.
     """
 
     __tablename__ = "writing_sessions"
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_new_id)
-    day: Mapped[date] = mapped_column(Date, nullable=False, unique=True)
+    day: Mapped[date] = mapped_column(Date, nullable=False, index=True)
     words_written: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    book_id: Mapped[str | None] = mapped_column(
+        String(32),
+        ForeignKey("books.id", ondelete="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+    chapter_id: Mapped[str | None] = mapped_column(
+        String(32),
+        ForeignKey("chapters.id", ondelete="SET NULL"),
+        nullable=True,
+        index=True,
+    )
 
     def __repr__(self) -> str:
-        return f"<WritingSession day={self.day} words={self.words_written}>"
+        return f"<WritingSession day={self.day} book={self.book_id} words={self.words_written}>"
 
 
 class ChapterVersion(Base):
