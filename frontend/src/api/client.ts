@@ -1101,11 +1101,30 @@ export interface ChapterVersionSummary {
   chapter_id: string;
   title: string;
   version: number;
+  /** Scrivener-style label for a manual snapshot; null for auto rows. */
+  name: string | null;
+  /** True for a deliberately-taken snapshot (exempt from retention). */
+  is_manual: boolean;
   created_at: string;
 }
 
 export interface ChapterVersionRead extends ChapterVersionSummary {
   content: string;
+}
+
+/** Line of a snapshot-vs-current diff (CHAPTER-SNAPSHOTS-01). Reuses
+ *  the backup-compare line shape so the rendering pattern is shared. */
+export interface ChapterVersionDiffLine {
+  type: BackupDiffLineType;
+  text: string;
+}
+
+export interface ChapterVersionDiff {
+  version_id: string;
+  title_changed: boolean;
+  snapshot_title: string;
+  current_title: string;
+  lines: ChapterVersionDiffLine[];
 }
 
 export interface Asset {
@@ -2877,6 +2896,32 @@ export const api = {
         },
       ),
 
+    /** Take a Scrivener-style manual snapshot of the chapter's current
+     *  saved state (CHAPTER-SNAPSHOTS-01). Optional ``name`` labels it;
+     *  manual snapshots survive the last-20 retention trim. */
+    createSnapshot: (bookId: string, chapterId: string, name?: string | null) =>
+      request<ChapterVersionRead>(
+        `/books/${bookId}/chapters/${chapterId}/snapshots`,
+        {
+          method: "POST",
+          body: JSON.stringify({ name: name ?? null }),
+        },
+      ),
+
+    /** Line-diff of a stored version against the chapter's current
+     *  content. ``added`` = present now but not in the snapshot. */
+    diffVersion: (bookId: string, chapterId: string, versionId: string) =>
+      request<ChapterVersionDiff>(
+        `/books/${bookId}/chapters/${chapterId}/versions/${versionId}/diff`,
+      ),
+
+    /** Delete a MANUAL snapshot. Auto versions are rejected (400). */
+    deleteVersion: (bookId: string, chapterId: string, versionId: string) =>
+      request<void>(
+        `/books/${bookId}/chapters/${chapterId}/versions/${versionId}`,
+        { method: "DELETE" },
+      ),
+
     validateToc: (bookId: string) =>
       request<{
         valid: boolean;
@@ -4337,9 +4382,7 @@ export const api = {
     getInfo: () => request<StoryBiblePluginInfo>("/story-bible/info"),
 
     listEntityTypes: () =>
-      request<Record<string, StoryEntityTypeDef>>(
-        "/story-bible/entity-types",
-      ),
+      request<Record<string, StoryEntityTypeDef>>("/story-bible/entity-types"),
 
     listEntities: (bookId: string, entityType?: string, search?: string) => {
       const params = new URLSearchParams();
@@ -4384,7 +4427,7 @@ export const api = {
     autoDetect: (bookId: string) =>
       request<StoryEntityAutoDetectProposal[]>(
         `/story-bible/books/${bookId}/auto-detect`,
-        {method: "POST"},
+        { method: "POST" },
       ),
 
     /** Entity-page/chapter links (STORY-BIBLE-STORYBOARD-INTEGRATION-01).
