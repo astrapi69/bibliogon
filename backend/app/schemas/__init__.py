@@ -1731,6 +1731,53 @@ def _decode_entity_metadata(value: Any) -> dict[str, Any] | None:
     return None
 
 
+# Entity-to-entity relationship type (STORY-BIBLE C10). Six fixed
+# values constrain the relationship-line colour mapping in Arc View
+# (ally=green, rival=red, family=blue, mentor=purple, romantic=pink,
+# neutral=grey). Stored inside the JSON ``relationships`` blob;
+# validated as Literal at the Pydantic layer.
+RelationshipType = Literal[
+    "ally",
+    "rival",
+    "family",
+    "mentor",
+    "romantic",
+    "neutral",
+]
+
+
+class StoryEntityRelationship(BaseModel):
+    """One directed relationship from an entity to another entity in
+    the same book (STORY-BIBLE C10).
+
+    Stored as an element of the JSON ``relationships`` list on
+    ``StoryEntity``. ``target_entity_id`` references another
+    ``story_entities`` row; the route layer validates it exists in the
+    same book (no DB FK — the relationships live inside a JSON blob,
+    same convention as entity_metadata)."""
+
+    target_entity_id: str = Field(..., min_length=1)
+    relationship_type: RelationshipType
+    description: str | None = None
+
+
+def _decode_relationships(value: Any) -> list[dict[str, Any]] | None:
+    """Decode the JSON-as-Text ``relationships`` column on read."""
+    if value is None or value == "":
+        return None
+    if isinstance(value, list):
+        return [v for v in value if isinstance(v, dict)]
+    if isinstance(value, str):
+        try:
+            parsed = json.loads(value)
+        except json.JSONDecodeError:
+            return None
+        if isinstance(parsed, list):
+            return [v for v in parsed if isinstance(v, dict)]
+        return None
+    return None
+
+
 class StoryEntityCreate(BaseModel):
     """Payload for POST .../story-bible/books/{book_id}/entities.
 
@@ -1744,6 +1791,9 @@ class StoryEntityCreate(BaseModel):
     description: str | None = None
     entity_metadata: dict[str, Any] | None = None
     image_asset_id: str | None = None
+    # Entity-to-entity relationships (STORY-BIBLE C10). Target ids are
+    # validated against the same book at the route layer.
+    relationships: list[StoryEntityRelationship] | None = None
 
 
 class StoryEntityUpdate(BaseModel):
@@ -1755,6 +1805,7 @@ class StoryEntityUpdate(BaseModel):
     entity_metadata: dict[str, Any] | None = None
     image_asset_id: str | None = None
     position: int | None = None
+    relationships: list[StoryEntityRelationship] | None = None
 
 
 class StoryEntityOut(BaseModel):
@@ -1770,6 +1821,9 @@ class StoryEntityOut(BaseModel):
     entity_metadata: dict[str, Any] | None = None
     image_asset_id: str | None = None
     position: int
+    # Entity-to-entity relationships (STORY-BIBLE C10). Decoded from the
+    # JSON-as-Text column; NULL when unset.
+    relationships: list[StoryEntityRelationship] | None = None
     created_at: datetime
     updated_at: datetime
 
@@ -1777,6 +1831,21 @@ class StoryEntityOut(BaseModel):
     @classmethod
     def _decode_metadata(cls, value: Any) -> dict[str, Any] | None:
         return _decode_entity_metadata(value)
+
+    @field_validator("relationships", mode="before")
+    @classmethod
+    def _decode_rels(cls, value: Any) -> list[dict[str, Any]] | None:
+        return _decode_relationships(value)
+
+
+class StoryEntityRelationshipResolved(BaseModel):
+    """A relationship with the target entity resolved to a full object
+    (STORY-BIBLE C10). Returned by
+    ``GET .../entities/{entity_id}/relationships``."""
+
+    relationship_type: str
+    description: str | None = None
+    target: StoryEntityOut
 
 
 class StoryEntityLinkCreate(BaseModel):

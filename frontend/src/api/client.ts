@@ -4276,6 +4276,14 @@ export const api = {
         method: "DELETE",
       }),
 
+    /** Resolve an entity's relationships to full target entity objects
+     *  (STORY-BIBLE C10). Stale (deleted-target) relationships are
+     *  dropped server-side. */
+    getRelationships: (bookId: string, entityId: string) =>
+      request<StoryEntityRelationshipResolved[]>(
+        `/story-bible/books/${bookId}/entities/${entityId}/relationships`,
+      ),
+
     /** Entity-page/chapter links (STORY-BIBLE-STORYBOARD-INTEGRATION-01).
      *  appearances = where an entity shows up; pageEntities = which
      *  entities appear on a page (storyboard badges). */
@@ -4389,6 +4397,35 @@ export interface StoryEntityTypeDef {
   extra_fields: StoryEntityExtraField[];
 }
 
+/** Entity-to-entity relationship type (STORY-BIBLE C10). Parity with
+ *  the backend ``RelationshipType`` Literal. Drives the Arc View
+ *  relationship-line colour mapping. */
+export type RelationshipType =
+  | "ally"
+  | "rival"
+  | "family"
+  | "mentor"
+  | "romantic"
+  | "neutral";
+
+/** One directed relationship from an entity to another in the same
+ *  book (STORY-BIBLE C10). Parity with backend
+ *  ``StoryEntityRelationship``. */
+export interface StoryEntityRelationship {
+  target_entity_id: string;
+  relationship_type: RelationshipType;
+  description?: string | null;
+}
+
+/** A relationship with the target resolved to a full entity object,
+ *  returned by GET .../entities/{entity_id}/relationships
+ *  (StoryEntityRelationshipResolved). */
+export interface StoryEntityRelationshipResolved {
+  relationship_type: RelationshipType;
+  description?: string | null;
+  target: StoryEntityOut;
+}
+
 /** A Story Bible entity row (parity with the backend
  *  StoryEntityOut). ``description`` is TipTap JSON serialised as a
  *  string; ``entity_metadata`` is the per-type extra-field object. */
@@ -4401,6 +4438,7 @@ export interface StoryEntityOut {
   entity_metadata?: Record<string, unknown> | null;
   image_asset_id?: string | null;
   position: number;
+  relationships?: StoryEntityRelationship[] | null;
   created_at: string;
   updated_at: string;
 }
@@ -4411,6 +4449,7 @@ export interface StoryEntityCreate {
   description?: string | null;
   entity_metadata?: Record<string, unknown> | null;
   image_asset_id?: string | null;
+  relationships?: StoryEntityRelationship[] | null;
 }
 
 /** A link between a Story Bible entity and a page (picture/comic) or
@@ -4454,6 +4493,7 @@ export interface StoryEntityUpdate {
   entity_metadata?: Record<string, unknown> | null;
   image_asset_id?: string | null;
   position?: number;
+  relationships?: StoryEntityRelationship[] | null;
 }
 
 /** Comic-panel + comic-bubble Session-2 shapes. Field-name parity

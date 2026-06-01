@@ -1169,6 +1169,14 @@ class StoryEntity(Base):
     description: Mapped[str | None] = mapped_column(Text, nullable=True)
     # Per-type extra fields as a JSON object (keys per the SSoT yaml).
     entity_metadata: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Entity-to-entity relationships (STORY-BIBLE C10). JSON-encoded
+    # list of {target_entity_id, relationship_type, description} as
+    # Text (same storage convention as entity_metadata). Target ids
+    # reference other story_entities rows in the same book; validated
+    # at the route layer, NOT a DB FK (the references live inside the
+    # JSON blob). Powers the Arc View relationship lines + the entity
+    # detail relationship editor.
+    relationships: Mapped[str | None] = mapped_column(Text, nullable=True)
     image_asset_id: Mapped[str | None] = mapped_column(
         ForeignKey("assets.id", ondelete="SET NULL"), nullable=True
     )
