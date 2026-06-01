@@ -50,3 +50,52 @@ verify-components; verify-docs-discipline; launcher PyInstaller build;
 frontend `npm run build`. verify-docs-completeness WARN (advisory:
 one 39-day-old marketing screenshot — pre-existing). Docker push +
 MkDocs deploy run via their own CI workflows.
+
+---
+
+## Docs Polish session (post-release v0.43.0)
+
+Comprehensive documentation sweep bringing all docs to v0.43.0 state
+(the v0.43.0 release prose was in CLAUDE.md/CHANGELOG, but the
+user-facing docs still described v0.42.0 and never mentioned the
+Story Bible at all in the READMEs).
+
+| Commit | Scope |
+|---|---|
+| `861bb75a` | README.md + README-de.md — Story Bible headline section (entities, relationships, @-mentions, auto-detect, appearance tracker, Arc View, continuity checker, Markdown export); v0.42.0 -> v0.43.0; plugin table 12 -> 13 (plugin-story-bible); Storyboard all-book-types; README-de config parity (three-layer note + BIBLIOGON_AI_API_KEY) |
+| `45a1218e` | ROADMAP.md + backlog.md `Latest release` headers v0.42.0 -> v0.43.0 (verify-docs-completeness version-header gate was failing) |
+| `45e52ace` | CLAUDE.md Commands: add verify-components / verify-docs-discipline / verify-docs-completeness; CONTRIBUTING.md 12 -> 13 plugins + new "Quality gates" subsection |
+| `871c4903` | Help docs: rewrite story-bible.md (the page still called @-mentions "planned for a future version"); new story-bible/mentions.md + story-bible/arc-view.md; promote Story Bible to a top-level help-nav section (regenerate mkdocs.yml); books/storyboard.md corrected from "picture-book only in v1" -> every book type + entity badges/filter + prose chapter-card sections |
+
+### Verification
+
+- `make verify-docs-discipline` green (mkdocs nav in sync, no orphans).
+- `make verify-docs-completeness` green (en=61 de=61 help pages,
+  65 _meta slugs); only the pre-existing advisory WARN remains (one
+  39-day-old marketing screenshot).
+- German prose authored with real UTF-8 umlauts; transliteration
+  scan clean on all new/edited DE pages.
+
+### Screenshots — Aster-run (NOT done this session)
+
+New Story Bible surfaces (Arc View swim-lanes, relationship lines,
+@-mention autocomplete, prose Storyboard chapter cards, entity
+badges) have no screenshot specs yet, and the new help pages
+deliberately ship WITHOUT image references (so the image-existence
+gate stays green until the PNGs exist). The screenshots project at
+`e2e/screenshots/` auto-starts the app via its `webServer` config, so
+the run is feasible but was deferred per the session Stop-Condition
+("Screenshots brauchen laufende App -> dokumentieren als Aster-Run").
+
+Two follow-ups for Aster:
+
+1. **Refresh existing screenshots** (clears the 39-day-old
+   `editor-marketing-preview.png` WARN):
+   `cd e2e && npx playwright test --project=screenshots`
+2. **New Story Bible screenshots** need new screenshot specs +
+   e2e/helpers/api seeding helpers for entities + links (no
+   `createStoryEntity` helper exists yet, and Arc View has no
+   testid). Filed as remaining scope under
+   `STORY-BIBLE-INTEGRATION-DOCS-01`. Once captured, wire the image
+   references into story-bible.md / arc-view.md / books/storyboard.md
+   in a follow-up commit.
