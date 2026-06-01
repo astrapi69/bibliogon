@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-medium-import"
-version = "0.42.0"
+version = "0.43.0"
 description = "Medium archive importer for Bibliogon - converts Medium HTML export to Articles + Publications"
 authors = ["astrapi69"]
 license = "MIT"
