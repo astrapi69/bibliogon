@@ -59,6 +59,8 @@ vi.mock("@xyflow/react", async () => {
       edges?: { id: string; source: string; target: string }[];
       onConnect?: (c: { source: string; target: string }) => void;
       onEdgeClick?: (e: unknown, edge: unknown) => void;
+      onNodeClick?: (e: unknown, node: unknown) => void;
+      onNodeDoubleClick?: (e: unknown, node: unknown) => void;
     }) => (
       <div data-testid="rf-stub">
         <button
@@ -68,6 +70,18 @@ vi.mock("@xyflow/react", async () => {
             if (a && b) props.onConnect?.({ source: a.id, target: b.id });
           }}
         />
+        {(props.nodes ?? []).map((n) => (
+          <span key={n.id}>
+            <button
+              data-testid={`rf-node-${n.id}`}
+              onClick={() => props.onNodeClick?.({} as unknown, n)}
+            />
+            <button
+              data-testid={`rf-node-dblclick-${n.id}`}
+              onClick={() => props.onNodeDoubleClick?.({} as unknown, n)}
+            />
+          </span>
+        ))}
         {(props.edges ?? []).map((e) => (
           <button
             key={e.id}
@@ -213,5 +227,30 @@ describe("RelationshipGraphView", () => {
     await waitFor(() =>
       expect(updateEntity).toHaveBeenCalledWith("a", { relationships: [] }),
     );
+  });
+
+  it("opens a detail panel on node click and navigates via the open button", async () => {
+    const onOpenEntity = vi.fn();
+    listEntities.mockResolvedValue([
+      entity("a", "character", [
+        { target_entity_id: "b", relationship_type: "ally" },
+      ]),
+      entity("b", "character"),
+    ]);
+    render(<RelationshipGraphView bookId="b1" onOpenEntity={onOpenEntity} />);
+    fireEvent.click(await screen.findByTestId("rf-node-a"));
+    const panel = await screen.findByTestId("relationship-detail-panel");
+    expect(panel.textContent).toContain("Name a");
+    expect(panel.textContent).toContain("1"); // relationship count
+    fireEvent.click(screen.getByTestId("relationship-detail-open"));
+    expect(onOpenEntity).toHaveBeenCalledWith("a");
+  });
+
+  it("opens the entity directly on node double-click", async () => {
+    const onOpenEntity = vi.fn();
+    listEntities.mockResolvedValue([entity("a", "character")]);
+    render(<RelationshipGraphView bookId="b1" onOpenEntity={onOpenEntity} />);
+    fireEvent.click(await screen.findByTestId("rf-node-dblclick-a"));
+    expect(onOpenEntity).toHaveBeenCalledWith("a");
   });
 });

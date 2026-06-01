@@ -106,15 +106,24 @@ export function removeRelationship(
 
 interface Props {
   bookId: string;
+  /** Open an entity in the Story Bible editor (StoryEntityEditor). */
+  onOpenEntity?: (entityId: string) => void;
+  /** Show an entity's appearances (Storyboard). Optional. */
+  onShowAppearances?: (entityId: string) => void;
 }
 
-export default function RelationshipGraphView({ bookId }: Props) {
+export default function RelationshipGraphView({
+  bookId,
+  onOpenEntity,
+  onShowAppearances,
+}: Props) {
   const { t } = useI18n();
   const dialog = useDialog();
   const [entities, setEntities] = useState<StoryEntityOut[]>([]);
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges] = useEdgesState<Edge>([]);
   const [loading, setLoading] = useState(false);
+  const [detailId, setDetailId] = useState<string | null>(null);
   const [pending, setPending] = useState<{
     source: string;
     target: string;
@@ -153,6 +162,19 @@ export default function RelationshipGraphView({ bookId }: Props) {
       setPending({ source: c.source, target: c.target });
     }
   }, []);
+
+  const onNodeClick = useCallback((_e: React.MouseEvent, node: Node) => {
+    setDetailId(node.id);
+  }, []);
+
+  const onNodeDoubleClick = useCallback(
+    (_e: React.MouseEvent, node: Node) => {
+      onOpenEntity?.(node.id);
+    },
+    [onOpenEntity],
+  );
+
+  const detailEntity = entities.find((e) => e.id === detailId) ?? null;
 
   const handleCreate = async () => {
     if (!pending) return;
@@ -244,7 +266,53 @@ export default function RelationshipGraphView({ bookId }: Props) {
         onNodesChange={onNodesChange}
         onConnect={onConnect}
         onEdgeClick={onEdgeClick}
+        onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
       />
+
+      {detailEntity ? (
+        <div
+          className={`card ${styles.detailPanel}`}
+          data-testid="relationship-detail-panel"
+        >
+          <div className={styles.detailHeader}>
+            <span className={styles.detailName}>{detailEntity.name}</span>
+            <button
+              className="btn-icon"
+              onClick={() => setDetailId(null)}
+              aria-label={t("ui.common.close", "Schließen")}
+            >
+              <X size={14} />
+            </button>
+          </div>
+          <span className={styles.detailType}>{detailEntity.entity_type}</span>
+          <span className={styles.detailMeta}>
+            {t("ui.relationship_graph.relationship_count", "Beziehungen")}:{" "}
+            {(detailEntity.relationships ?? []).length}
+          </span>
+          <div className={styles.detailActions}>
+            <button
+              className="btn btn-primary btn-sm"
+              onClick={() => onOpenEntity?.(detailEntity.id)}
+              data-testid="relationship-detail-open"
+            >
+              {t("ui.relationship_graph.open_in_editor", "Im Editor öffnen")}
+            </button>
+            {onShowAppearances ? (
+              <button
+                className="btn btn-secondary btn-sm"
+                onClick={() => onShowAppearances(detailEntity.id)}
+                data-testid="relationship-detail-appearances"
+              >
+                {t(
+                  "ui.relationship_graph.show_appearances",
+                  "Auftritte anzeigen",
+                )}
+              </button>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
 
       <Dialog.Root
         open={pending !== null}

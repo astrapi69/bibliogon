@@ -790,7 +790,11 @@ export default function BookEditor() {
                     }}
                 />
             ) : showRelationships ? (
-                <RelationshipGraphView bookId={book.id} />
+                <RelationshipGraphView
+                    bookId={book.id}
+                    onOpenEntity={(entityId) => { setSelectedStoryEntityId(entityId); }}
+                    onShowAppearances={() => { _setShowStoryboard(true); }}
+                />
             ) : showMetadata ? (
                 <BookMetadataEditor
                     book={book}

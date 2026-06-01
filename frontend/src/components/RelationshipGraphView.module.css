@@ -1,6 +1,7 @@
 /* Relationship-graph view wrapper (STORY-BIBLE-RELATIONSHIP-GRAPH-01). */
 
 .wrapper {
+  position: relative;
   display: flex;
   flex-direction: column;
   width: 100%;
@@ -45,4 +46,48 @@
   display: flex;
   justify-content: flex-end;
   margin-top: 0.75rem;
+}
+
+.detailPanel {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.75rem;
+  z-index: 5;
+}
+
+.detailHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.detailName {
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.detailType {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: capitalize;
+}
+
+.detailMeta {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.detailActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-top: 0.25rem;
 }
