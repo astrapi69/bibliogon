@@ -34,6 +34,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Book, StoryEntity
 from app.schemas import (
+    StoryEntityAutoDetectProposal,
     StoryEntityCreate,
     StoryEntityOut,
     StoryEntityRelationship,
@@ -45,6 +46,8 @@ from app.services.story_entity_registry import (
     StoryEntityTypeDef,
     load_story_entity_types,
 )
+
+from .autodetect import detect_unlinked_mentions
 
 router = APIRouter(prefix="/story-bible", tags=["story-bible"])
 
@@ -182,6 +185,22 @@ def create_entity(
     db.commit()
     db.refresh(entity)
     return entity
+
+
+@router.post(
+    "/books/{book_id}/auto-detect",
+    response_model=list[StoryEntityAutoDetectProposal],
+)
+def auto_detect_mentions(
+    book_id: str,
+    db: Session = Depends(get_db),
+) -> list[dict]:
+    """Scan the book's chapter/page text for entity-name mentions and
+    return proposed (entity -> page/chapter) links that don't exist yet
+    (STORY-BIBLE C14). Read-only — creating the links is the caller's
+    choice via the create-link endpoint."""
+    _get_book_or_404(book_id, db)
+    return detect_unlinked_mentions(book_id, db)
 
 
 @router.get("/entities/{entity_id}", response_model=StoryEntityOut)

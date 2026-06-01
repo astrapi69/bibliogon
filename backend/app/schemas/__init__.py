@@ -1848,6 +1848,24 @@ class StoryEntityRelationshipResolved(BaseModel):
     target: StoryEntityOut
 
 
+class StoryEntityAutoDetectProposal(BaseModel):
+    """One proposed entity-appearance link found by the auto-detector
+    (STORY-BIBLE C14). The entity's name occurs in a chapter's / page's
+    text and no link exists yet. Exactly one of page_id / chapter_id is
+    set, mirroring StoryEntityPageLink."""
+
+    entity_id: str
+    entity_name: str
+    entity_type: str
+    page_id: str | None = None
+    chapter_id: str | None = None
+    #: Human label for the target page/chapter (e.g. "Page 3" or the
+    #: chapter title) — display only.
+    ref_label: str
+    #: Number of case-insensitive name occurrences in that text.
+    occurrences: int
+
+
 class StoryEntityLinkCreate(BaseModel):
     """Payload for POST /api/story-bible/links — link an entity to a
     page (picture/comic books) or a chapter (prose books).

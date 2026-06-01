@@ -155,3 +155,38 @@
 .entryDraggable:active {
     cursor: grabbing;
 }
+
+/* C14 auto-detect proposals panel. */
+.autodetectPanel {
+    margin: 8px;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background: var(--surface-2);
+}
+
+.autodetectSummary {
+    margin: 0 0 6px;
+    font-size: 0.85rem;
+    color: var(--text);
+}
+
+.autodetectList {
+    list-style: none;
+    margin: 0 0 8px;
+    padding: 0;
+    max-height: 10rem;
+    overflow-y: auto;
+}
+
+.autodetectItem {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    padding: 2px 0;
+}
+
+.autodetectActions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}

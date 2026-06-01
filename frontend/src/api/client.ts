@@ -4301,6 +4301,14 @@ export const api = {
         `/story-bible/books/${bookId}/entities/${entityId}/relationships`,
       ),
 
+    /** Scan the book's chapter/page text for unlinked entity-name
+     *  mentions and return proposed links (STORY-BIBLE C14). */
+    autoDetect: (bookId: string) =>
+      request<StoryEntityAutoDetectProposal[]>(
+        `/story-bible/books/${bookId}/auto-detect`,
+        {method: "POST"},
+      ),
+
     /** Entity-page/chapter links (STORY-BIBLE-STORYBOARD-INTEGRATION-01).
      *  appearances = where an entity shows up; pageEntities = which
      *  entities appear on a page (storyboard badges). */
@@ -4511,6 +4519,19 @@ export interface StoryEntityUpdate {
   image_asset_id?: string | null;
   position?: number;
   relationships?: StoryEntityRelationship[] | null;
+}
+
+/** A proposed entity-appearance link found by the auto-detector
+ *  (STORY-BIBLE C14). Parity with backend
+ *  StoryEntityAutoDetectProposal. */
+export interface StoryEntityAutoDetectProposal {
+  entity_id: string;
+  entity_name: string;
+  entity_type: string;
+  page_id?: string | null;
+  chapter_id?: string | null;
+  ref_label: string;
+  occurrences: number;
 }
 
 /** Comic-panel + comic-bubble Session-2 shapes. Field-name parity

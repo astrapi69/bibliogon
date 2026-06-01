@@ -18,8 +18,14 @@ vi.mock("./AppDialog", () => ({
 }));
 
 const mockNotifyError = vi.fn();
+const mockNotifyInfo = vi.fn();
+const mockNotifySuccess = vi.fn();
 vi.mock("../utils/notify", () => ({
-    notify: {error: (...a: unknown[]) => mockNotifyError(...a)},
+    notify: {
+        error: (...a: unknown[]) => mockNotifyError(...a),
+        info: (...a: unknown[]) => mockNotifyInfo(...a),
+        success: (...a: unknown[]) => mockNotifySuccess(...a),
+    },
 }));
 
 const mockListTypes = vi.fn();
@@ -27,6 +33,8 @@ const mockListEntities = vi.fn();
 const mockCreate = vi.fn();
 const mockDelete = vi.fn();
 const mockExportBible = vi.fn();
+const mockAutoDetect = vi.fn();
+const mockCreateLink = vi.fn();
 
 vi.mock("../api/client", async () => {
     const actual =
@@ -40,6 +48,8 @@ vi.mock("../api/client", async () => {
                 createEntity: (...a: unknown[]) => mockCreate(...a),
                 deleteEntity: (...a: unknown[]) => mockDelete(...a),
                 exportBible: (...a: unknown[]) => mockExportBible(...a),
+                autoDetect: (...a: unknown[]) => mockAutoDetect(...a),
+                createLink: (...a: unknown[]) => mockCreateLink(...a),
             },
         },
     };
@@ -106,6 +116,12 @@ beforeEach(() => {
         content: "# Story Bible: B",
         format: "markdown",
     });
+    mockNotifyInfo.mockReset();
+    mockNotifySuccess.mockReset();
+    mockAutoDetect.mockReset();
+    mockAutoDetect.mockResolvedValue([]);
+    mockCreateLink.mockReset();
+    mockCreateLink.mockResolvedValue({id: "lnk"});
 });
 
 describe("StoryBibleSidebar", () => {
@@ -213,5 +229,64 @@ describe("StoryBibleSidebar", () => {
             URL.createObjectURL = origCreate as typeof URL.createObjectURL;
             URL.revokeObjectURL = origRevoke as typeof URL.revokeObjectURL;
         }
+    });
+
+    // --- C14 auto-detect -----------------------------------------
+
+    it("shows the proposals panel after auto-detect finds mentions", async () => {
+        mockAutoDetect.mockResolvedValue([
+            {
+                entity_id: "e1",
+                entity_name: "Alice",
+                entity_type: "character",
+                chapter_id: "c1",
+                page_id: null,
+                ref_label: "Chapter 1",
+                occurrences: 3,
+            },
+        ]);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
+        const btn = await screen.findByTestId("story-bible-autodetect");
+        fireEvent.click(btn);
+        await waitFor(() => {
+            expect(screen.getByTestId("story-bible-autodetect-panel")).toBeTruthy();
+        });
+        expect(screen.getByTestId("story-bible-autodetect-item-e1")).toBeTruthy();
+        expect(mockAutoDetect).toHaveBeenCalledWith("b1");
+    });
+
+    it("auto-link-all creates a link per proposal", async () => {
+        mockAutoDetect.mockResolvedValue([
+            {
+                entity_id: "e1",
+                entity_name: "Alice",
+                entity_type: "character",
+                chapter_id: "c1",
+                page_id: null,
+                ref_label: "Chapter 1",
+                occurrences: 1,
+            },
+            {
+                entity_id: "e2",
+                entity_name: "Bob",
+                entity_type: "character",
+                chapter_id: null,
+                page_id: "p1",
+                ref_label: "Page 2",
+                occurrences: 1,
+            },
+        ]);
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
+        fireEvent.click(await screen.findByTestId("story-bible-autodetect"));
+        const linkAll = await screen.findByTestId("story-bible-autodetect-link-all");
+        fireEvent.click(linkAll);
+        await waitFor(() => {
+            expect(mockCreateLink).toHaveBeenCalledTimes(2);
+        });
+        expect(mockCreateLink).toHaveBeenCalledWith({
+            entity_id: "e1",
+            chapter_id: "c1",
+            page_id: null,
+        });
     });
 });

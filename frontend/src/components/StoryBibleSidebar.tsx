@@ -17,9 +17,13 @@
  */
 
 import {useCallback, useEffect, useMemo, useState} from "react";
-import {ChevronDown, ChevronRight, Download, Plus, Trash2, X} from "lucide-react";
+import {ChevronDown, ChevronRight, Download, Plus, Sparkles, Trash2, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
-import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
+import type {
+    StoryEntityAutoDetectProposal,
+    StoryEntityOut,
+    StoryEntityTypeDef,
+} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {useDialog} from "./AppDialog";
@@ -67,6 +71,62 @@ export default function StoryBibleSidebar({
     const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
     const [addingType, setAddingType] = useState<string | null>(null);
     const [newName, setNewName] = useState("");
+    // C14: auto-detect. ``proposals`` null = not run yet.
+    const [proposals, setProposals] = useState<StoryEntityAutoDetectProposal[] | null>(null);
+    const [detecting, setDetecting] = useState(false);
+    const [linking, setLinking] = useState(false);
+
+    const handleAutoDetect = useCallback(async () => {
+        setDetecting(true);
+        try {
+            const found = await api.storyBible.autoDetect(bookId);
+            setProposals(found);
+            if (found.length === 0) {
+                notify.info(
+                    t("ui.story_bible.autodetect_none", "Keine neuen Erwähnungen gefunden."),
+                );
+            }
+        } catch (err) {
+            notify.error(
+                err instanceof ApiError
+                    ? err.detail
+                    : t("ui.story_bible.autodetect_error", "Erkennung fehlgeschlagen."),
+                err,
+            );
+        } finally {
+            setDetecting(false);
+        }
+    }, [bookId, t]);
+
+    const handleAutoLinkAll = useCallback(async () => {
+        if (!proposals || proposals.length === 0) return;
+        setLinking(true);
+        let linked = 0;
+        try {
+            for (const p of proposals) {
+                try {
+                    await api.storyBible.createLink({
+                        entity_id: p.entity_id,
+                        page_id: p.page_id ?? null,
+                        chapter_id: p.chapter_id ?? null,
+                    });
+                    linked += 1;
+                } catch {
+                    // Skip a proposal that fails (e.g. became linked
+                    // meanwhile); keep going.
+                }
+            }
+            notify.success(
+                t("ui.story_bible.autodetect_linked", "{count} Verknüpfungen angelegt.").replace(
+                    "{count}",
+                    String(linked),
+                ),
+            );
+            setProposals(null);
+        } finally {
+            setLinking(false);
+        }
+    }, [proposals, t]);
 
     const refreshEntities = useCallback(async () => {
         const rows = await api.storyBible.listEntities(bookId);
@@ -209,6 +269,17 @@ export default function StoryBibleSidebar({
                 <button
                     type="button"
                     className="btn-sidebar-icon"
+                    onClick={() => void handleAutoDetect()}
+                    disabled={detecting}
+                    data-testid="story-bible-autodetect"
+                    aria-label={t("ui.story_bible.autodetect", "Erwähnungen erkennen")}
+                    title={t("ui.story_bible.autodetect", "Erwähnungen erkennen")}
+                >
+                    <Sparkles size={16} />
+                </button>
+                <button
+                    type="button"
+                    className="btn-sidebar-icon"
                     onClick={() => void handleExport()}
                     data-testid="story-bible-export"
                     aria-label={t("ui.story_bible.export", "Story-Bibel exportieren")}
@@ -227,6 +298,50 @@ export default function StoryBibleSidebar({
                     <X size={16} />
                 </button>
             </header>
+
+            {proposals && proposals.length > 0 && (
+                <div className={styles.autodetectPanel} data-testid="story-bible-autodetect-panel">
+                    <p className={styles.autodetectSummary}>
+                        {t(
+                            "ui.story_bible.autodetect_summary",
+                            "{count} mögliche Erwähnungen gefunden.",
+                        ).replace("{count}", String(proposals.length))}
+                    </p>
+                    <ul className={styles.autodetectList}>
+                        {proposals.slice(0, 20).map((p, i) => (
+                            <li
+                                key={`${p.entity_id}-${p.page_id ?? p.chapter_id}-${i}`}
+                                className={styles.autodetectItem}
+                                data-testid={`story-bible-autodetect-item-${p.entity_id}`}
+                            >
+                                <strong>{p.entity_name}</strong>
+                                {" — "}
+                                {p.ref_label}
+                                {p.occurrences > 1 ? ` (${p.occurrences}x)` : ""}
+                            </li>
+                        ))}
+                    </ul>
+                    <div className={styles.autodetectActions}>
+                        <button
+                            type="button"
+                            className="btn btn-primary btn-sm"
+                            onClick={() => void handleAutoLinkAll()}
+                            disabled={linking}
+                            data-testid="story-bible-autodetect-link-all"
+                        >
+                            {t("ui.story_bible.autodetect_link_all", "Automatisch verknüpfen")}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn btn-secondary btn-sm"
+                            onClick={() => setProposals(null)}
+                            data-testid="story-bible-autodetect-dismiss"
+                        >
+                            {t("ui.story_bible.autodetect_dismiss", "Verwerfen")}
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {loading ? (
                 <p className={styles.empty} data-testid="story-bible-loading">
