@@ -61,6 +61,9 @@ make test-backend         # backend only
 make test-plugins         # all plugin tests
 make test-frontend        # Vitest
 make verify-theme         # theme gates: token completeness/undefined-refs + WCAG contrast (12 variants) + no hardcoded hex
+make verify-components    # advisory (non-blocking): CSS-module classes re-declaring a shared control surface (CSS-first rule)
+make verify-docs-discipline    # mkdocs nav sync (_meta.yaml) + orphan-page detection (mandatory pre-tag)
+make verify-docs-completeness  # version headers + help i18n parity + image/xref integrity (FAIL blocks, WARN advisory)
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
 make generate-trial-key   # 30-day trial key (dormant, licensing disabled)

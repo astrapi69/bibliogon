@@ -9,7 +9,7 @@ as plugins, not core changes.
 
 - `backend/` - FastAPI app, SQLAlchemy models, Alembic migrations
 - `frontend/` - React + TypeScript + Vite, TipTap editor
-- `plugins/` - 12 first-party plugins, each a standalone Poetry package
+- `plugins/` - 13 first-party plugins, each a standalone Poetry package
 - `launcher/` - Cross-platform launcher (PyInstaller)
 - `docs/` - User docs (MkDocs), API reference, journals, audits
 - `.claude/rules/` - Project rules read on demand
@@ -50,6 +50,20 @@ make test-backend             # backend only
 make test-frontend            # Vitest only
 make test-plugin-{name}       # single plugin (export, kdp, audiobook, ...)
 make check-types              # mypy + tsc --noEmit
+```
+
+### Quality gates
+
+Beyond the test suites, several `make verify-*` gates guard
+non-functional quality. The first three run in the mandatory
+pre-tag release chain; `verify-components` is advisory.
+
+```bash
+make verify-theme              # CSS-token completeness + WCAG AA contrast (12 theme variants) + no hardcoded hex
+make verify-docs-discipline    # mkdocs nav in sync with docs/help/_meta.yaml + no orphan help pages
+make verify-docs-completeness  # version headers, help i18n parity, image/xref integrity (FAIL blocks, WARN advisory)
+make verify-components         # advisory: CSS-module classes that re-declare a shared control surface (CSS-first rule)
+make verify-plugin-locks       # detect drift between each plugin's pyproject.toml and its poetry.lock
 ```
 
 ## Plugin Development
