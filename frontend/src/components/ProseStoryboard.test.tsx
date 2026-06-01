@@ -42,6 +42,12 @@ vi.mock("../api/client", async () => {
                 reorder: vi.fn(),
                 get: vi.fn(),
             },
+            chapterLabels: {
+                list: vi.fn().mockResolvedValue([]),
+                create: vi.fn(),
+                update: vi.fn(),
+                remove: vi.fn(),
+            },
         },
     }
 })
