@@ -49,3 +49,7 @@ Im Reiter **Metadaten > Marketing** pflegst du Schlüsselwörter (Keywords) für
 Drei Marketing-Felder akzeptieren HTML und besitzen einen Vorschau-Umschalter: **Buch-Beschreibung (HTML für Amazon)**, **Rückseitenbeschreibung** und **Autor-Bio (Rückseite)**. Standardmäßig ist die bearbeitbare Textarea aktiv. Mit dem Vorschau-Button oben rechts am Feld schaltest du zwischen Bearbeitungsmodus und gerenderter HTML-Vorschau um. So kannst du prüfen, wie deine Beschreibung mit Absätzen, Listen, fett gesetzten Stellen und ähnlichen Elementen tatsächlich aussehen wird, ohne den Export starten zu müssen. Die Vorschau wird sicher gerendert: gefährliches HTML (z.B. Skripte) wird vor der Anzeige entfernt.
 
 ![Marketing-Tab HTML-Vorschau](../../assets/screenshots/editor-marketing-preview.png)
+
+## Rechtsklick-Menü
+
+Ein Rechtsklick im Editor öffnet ein Kontextmenü mit den häufigsten Aktionen: Ausschneiden / Kopieren / Einfügen / Alles auswählen, und - sobald Text markiert ist - Fett / Kursiv / Unterstrichen, Überschrift (H1-H3), Liste (Aufzählung / Nummerierung) und Zitat. Darunter Einfügen-Aktionen (@-Erwähnung bei aktiver Story-Bibel, horizontale Linie), die Story-Bibel-Suche für den markierten Text, **Snapshot erstellen** (im Kapitel-Editor) sowie eine Wortzahl-Anzeige (Auswahl / gesamt). Tastenkürzel stehen neben jedem Eintrag. Das Menü gibt es auf allen Editor-Flächen (Kapitel, Bilderbuch-Seitentext, Story-Bibel-Beschreibung).

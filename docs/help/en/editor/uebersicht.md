@@ -25,3 +25,7 @@ In **Metadata > Marketing** you maintain keywords for the book. These land in th
 Three marketing fields accept HTML and have a preview toggle: **Book description (HTML for Amazon)**, **Back cover description**, and **Author bio (back cover)**. The editable textarea is the default state. The preview button at the top-right of the field switches between edit mode and a rendered HTML preview, so you can see how your text will look with paragraphs, lists, bold passages, and similar elements without starting an export. The preview renders safely: dangerous HTML (e.g. scripts) is stripped before display.
 
 ![Marketing tab HTML preview toggle](../../assets/screenshots/editor-marketing-preview.png)
+
+## Right-click menu
+
+Right-clicking in the editor opens a context menu with the most common actions: cut / copy / paste / select all, and - once text is selected - bold / italic / underline, heading (H1-H3), list (bullet / numbered), and quote. Below that are insert actions (@-mention when the Story Bible is active, horizontal rule), a Story Bible search for the selected text, **Take snapshot** (in the chapter editor), and a word-count readout (selection / total). Keyboard shortcuts are shown next to each item. The menu is available on every editor surface (chapter, picture-book page text, Story Bible description).
