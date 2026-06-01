@@ -22,7 +22,7 @@
  * response so the next save carries the fresh version.
  */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, GripVertical} from "lucide-react"
+import {ArrowLeft, GripVertical, Tags} from "lucide-react"
 import {
     DndContext,
     closestCenter,
@@ -41,7 +41,13 @@ import {
 } from "@dnd-kit/sortable"
 import {CSS} from "@dnd-kit/utilities"
 
-import {api, SaveAbortedError, type Chapter, type ChapterUpdatePayload} from "../api/client"
+import {
+    api,
+    SaveAbortedError,
+    type Chapter,
+    type ChapterLabel,
+    type ChapterUpdatePayload,
+} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {
@@ -50,13 +56,16 @@ import {
     MoodColorPicker,
     NotesEditor,
 } from "./StoryboardAnnotations"
+import {LabelChip, LabelSelect, StatusChip, StatusSelect} from "./ChapterStatusLabel"
+import ChapterLabelManager from "./ChapterLabelManager"
+import type {ChapterStatus} from "../api/client"
 import styles from "./Storyboard.module.css"
 
 /** Patch shape the chapter card hands back up: a single annotation
  *  field. ``version`` is added by the parent from the current row. */
 type ChapterAnnotationPatch = Pick<
     ChapterUpdatePayload,
-    "notes" | "story_beat" | "mood_color" | "act_group"
+    "notes" | "story_beat" | "mood_color" | "act_group" | "status" | "label_id"
 >
 
 /** Flatten a TipTap doc to plain text (mirrors the helper in
@@ -130,6 +139,8 @@ export default function ProseStoryboard({
 }: Props) {
     const {t} = useI18n()
     const [chapters, setChapters] = useState<Chapter[]>([])
+    const [labels, setLabels] = useState<ChapterLabel[]>([])
+    const [showLabelManager, setShowLabelManager] = useState(false)
     const [loadError, setLoadError] = useState<string | null>(null)
     const [loaded, setLoaded] = useState(false)
 
@@ -151,6 +162,21 @@ export default function ProseStoryboard({
             cancelled = true
         }
     }, [bookId])
+
+    // Per-book chapter labels (CHAPTER-STATUS-LABELS-01). Loaded
+    // alongside chapters; refetched after any label mutation so the
+    // per-card label selects + chips stay in sync. A label-load failure
+    // is non-fatal — the storyboard still works without labels.
+    const loadLabels = useCallback(() => {
+        api.chapterLabels
+            .list(bookId)
+            .then(setLabels)
+            .catch(() => setLabels([]))
+    }, [bookId])
+
+    useEffect(() => {
+        loadLabels()
+    }, [loadLabels])
 
     const grouped = useMemo(() => groupChaptersByActGroup(chapters), [chapters])
     const totalChapters = chapters.length
@@ -244,8 +270,26 @@ export default function ProseStoryboard({
                     >
                         {totalChapters} {t("ui.storyboard.chapters_unit", "chapters")}
                     </span>
+                    <button
+                        type="button"
+                        className={styles.actionButton}
+                        onClick={() => setShowLabelManager((v) => !v)}
+                        data-testid={`${testidNamespace}-manage-labels`}
+                        aria-expanded={showLabelManager ? "true" : "false"}
+                    >
+                        <Tags size={14} />
+                        {t("ui.chapter_label.manage", "Manage labels")}
+                    </button>
                 </div>
             </div>
+            {showLabelManager && (
+                <ChapterLabelManager
+                    bookId={bookId}
+                    labels={labels}
+                    onChanged={loadLabels}
+                    namespace={`${testidNamespace}-labels`}
+                />
+            )}
             <div className={styles.bodyRow}>
                 <div className={styles.scroll}>
                     {loadError ? (
@@ -288,6 +332,7 @@ export default function ProseStoryboard({
                                                 <SortableChapterCard
                                                     key={chapter.id}
                                                     chapter={chapter}
+                                                    labels={labels}
                                                     onSelect={onSelectChapter}
                                                     onPatch={handlePatchChapter}
                                                     testidNamespace={testidNamespace}
@@ -307,6 +352,7 @@ export default function ProseStoryboard({
 
 interface ChapterCardProps {
     chapter: Chapter
+    labels: ChapterLabel[]
     onSelect: (chapterId: string) => void
     onPatch: (chapterId: string, patch: ChapterAnnotationPatch) => Promise<void>
     testidNamespace: string
@@ -340,9 +386,12 @@ function SortableChapterCard(props: ChapterCardProps) {
     )
 }
 
-function ChapterCard({chapter, onSelect, onPatch, testidNamespace}: ChapterCardProps) {
+function ChapterCard({chapter, labels, onSelect, onPatch, testidNamespace}: ChapterCardProps) {
     const {t} = useI18n()
     const wordCount = chapterWordCount(chapter.content)
+    const assignedLabel = chapter.label_id
+        ? labels.find((l) => l.id === chapter.label_id) ?? null
+        : null
 
     const moodStyle: React.CSSProperties = chapter.mood_color
         ? {borderLeftColor: chapter.mood_color}
@@ -402,7 +451,36 @@ function ChapterCard({chapter, onSelect, onPatch, testidNamespace}: ChapterCardP
                             {t(`ui.storyboard.beat.${chapter.story_beat}`, chapter.story_beat)}
                         </span>
                     )}
+                    {chapter.status && (
+                        <StatusChip
+                            status={chapter.status as ChapterStatus}
+                            namespace={testidNamespace}
+                            idSuffix={chapter.id}
+                        />
+                    )}
+                    {assignedLabel && (
+                        <LabelChip
+                            label={assignedLabel}
+                            namespace={testidNamespace}
+                            idSuffix={chapter.id}
+                        />
+                    )}
                 </div>
+                <StatusSelect
+                    value={chapter.status ?? null}
+                    onSave={(status) => void onPatch(chapter.id, {status}).catch(() => {})}
+                    namespace={testidNamespace}
+                    idSuffix={chapter.id}
+                />
+                <LabelSelect
+                    value={chapter.label_id ?? null}
+                    labels={labels}
+                    onSave={(labelId) =>
+                        void onPatch(chapter.id, {label_id: labelId}).catch(() => {})
+                    }
+                    namespace={testidNamespace}
+                    idSuffix={chapter.id}
+                />
                 <BeatSelect
                     value={chapter.story_beat ?? null}
                     onSave={(beat) =>

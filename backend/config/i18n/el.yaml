@@ -2769,6 +2769,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "Κατάσταση"
+    none: "— καμία κατάσταση —"
+    todo: "Προς υλοποίηση"
+    first_draft: "Πρώτο προσχέδιο"
+    revised: "Αναθεωρημένο"
+    final: "Τελικό"
+  chapter_label:
+    label: "Ετικέτα"
+    none: "— καμία ετικέτα —"
+    manage: "Διαχείριση ετικετών"
+    name: "Όνομα ετικέτας"
+    delete: "Διαγραφή ετικέτας"
+    new_placeholder: "Όνομα νέας ετικέτας"
+    add: "Προσθήκη"
+    save_failed: "Δεν ήταν δυνατή η αποθήκευση της ετικέτας"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"

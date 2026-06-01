@@ -72,6 +72,12 @@ ALLOWLIST = {
     # by the relationship editor + the Arc View relationship lines).
     # STORY-BIBLE C10.
     "frontend/src/components/relationshipColors.ts",
+    # Chapter-label chip readable-text computation: black/white text
+    # picked by relative luminance of the user-chosen label color. Pure
+    # contrast math on DATA (the label hex), not theme styling.
+    # CHAPTER-STATUS-LABELS-01. (Status-dot colors use theme tokens in
+    # ChapterStatusLabel.module.css, not hardcoded hex.)
+    "frontend/src/components/ChapterStatusLabel.tsx",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")

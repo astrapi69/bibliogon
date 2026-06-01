@@ -2769,6 +2769,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "Durum"
+    none: "— durum yok —"
+    todo: "Yapılacak"
+    first_draft: "İlk taslak"
+    revised: "Gözden geçirildi"
+    final: "Son"
+  chapter_label:
+    label: "Etiket"
+    none: "— etiket yok —"
+    manage: "Etiketleri yönet"
+    name: "Etiket adı"
+    delete: "Etiketi sil"
+    new_placeholder: "Yeni etiket adı"
+    add: "Ekle"
+    save_failed: "Etiket kaydedilemedi"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"

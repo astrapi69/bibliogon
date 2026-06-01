@@ -2767,6 +2767,22 @@ ui:
           text_align_center: "Mitte"
           text_align_right: "Rechts"
           italic: "Kursiv"
+  chapter_status:
+    label: "Status"
+    none: "— kein Status —"
+    todo: "Zu erledigen"
+    first_draft: "Erster Entwurf"
+    revised: "Überarbeitet"
+    final: "Fertig"
+  chapter_label:
+    label: "Label"
+    none: "— kein Label —"
+    manage: "Labels verwalten"
+    name: "Label-Name"
+    delete: "Label löschen"
+    new_placeholder: "Neuer Label-Name"
+    add: "Hinzufügen"
+    save_failed: "Label konnte nicht gespeichert werden"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} weitere"

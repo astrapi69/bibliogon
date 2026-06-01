@@ -2769,6 +2769,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "ステータス"
+    none: "— ステータスなし —"
+    todo: "未着手"
+    first_draft: "初稿"
+    revised: "改稿済み"
+    final: "完成"
+  chapter_label:
+    label: "ラベル"
+    none: "— ラベルなし —"
+    manage: "ラベルを管理"
+    name: "ラベル名"
+    delete: "ラベルを削除"
+    new_placeholder: "新しいラベル名"
+    add: "追加"
+    save_failed: "ラベルを保存できませんでした"
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"

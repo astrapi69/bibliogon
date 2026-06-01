@@ -2767,6 +2767,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "Status"
+    none: "— no status —"
+    todo: "To Do"
+    first_draft: "First Draft"
+    revised: "Revised"
+    final: "Final"
+  chapter_label:
+    label: "Label"
+    none: "— no label —"
+    manage: "Manage labels"
+    name: "Label name"
+    delete: "Delete label"
+    new_placeholder: "New label name"
+    add: "Add"
+    save_failed: "Could not save label"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"

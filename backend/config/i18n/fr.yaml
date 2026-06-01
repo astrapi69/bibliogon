@@ -2769,6 +2769,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "Statut"
+    none: "— aucun statut —"
+    todo: "À faire"
+    first_draft: "Premier jet"
+    revised: "Révisé"
+    final: "Final"
+  chapter_label:
+    label: "Étiquette"
+    none: "— aucune étiquette —"
+    manage: "Gérer les étiquettes"
+    name: "Nom de l'étiquette"
+    delete: "Supprimer l'étiquette"
+    new_placeholder: "Nom de la nouvelle étiquette"
+    add: "Ajouter"
+    save_failed: "Impossible d'enregistrer l'étiquette"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} de plus"

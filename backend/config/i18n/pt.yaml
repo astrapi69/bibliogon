@@ -2769,6 +2769,22 @@ ui:
           text_align_center: "Center"
           text_align_right: "Right"
           italic: "Italic"
+  chapter_status:
+    label: "Estado"
+    none: "— sem estado —"
+    todo: "A fazer"
+    first_draft: "Primeiro rascunho"
+    revised: "Revisado"
+    final: "Final"
+  chapter_label:
+    label: "Etiqueta"
+    none: "— sem etiqueta —"
+    manage: "Gerir etiquetas"
+    name: "Nome da etiqueta"
+    delete: "Eliminar etiqueta"
+    new_placeholder: "Nome da nova etiqueta"
+    add: "Adicionar"
+    save_failed: "Não foi possível guardar a etiqueta"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mais"
