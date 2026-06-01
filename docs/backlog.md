@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Latest release: v0.42.0 (2026-05-30) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.42.0.md](../changelog/releases/v0.42.0.md).
+Latest release: v0.43.0 (2026-06-01) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.43.0.md](../changelog/releases/v0.43.0.md).
 
 Last updated: 2026-06-01 (v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups (relationship model, prose storyboard, @-mention) -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01 to the comprehensive-docs/screenshots remainder; filed COMPONENT-CONSISTENCY-TAIL-01 (P3, advisory) for the deferred v0.42.0 consistency-sweep tail.)
 Previous: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)

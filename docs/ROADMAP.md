@@ -1,9 +1,9 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-05-30 (v0.42.0 released — the Story Bible release; 75 commits since v0.41.0. New `plugin-story-bible` (per-book fiction-entity database) + a deep Story Bible ↔ Storyboard integration (entity-page linking, badges, appearance tracker, Arc View timeline, continuity checker, Markdown export); Storyboard extended to comic_book. Plus a content-type-neutrality pass ("Artikel" → "Text"), picture-book layout + collage expansion, comic-editor polish, a component-consistency + a11y sweep (global .btn/.card/.badge/.slider + RadixSelect + vitest-axe), and two safety fixes (Zip Slip guard, app-wide error boundaries). Backend pytest 2442, Vitest 2549, all green.)
-Latest release: v0.42.0 (2026-05-30) — see [changelog/releases/v0.42.0.md](../changelog/releases/v0.42.0.md) for the full per-release notes.
-Previous release: v0.39.0 (2026-05-27) — Picture-Book authoring depth; Storyboard View + Picture-Book Text-Stack arcs + LAYOUT-SWITCH-TEXT-CONVERSION.
+Last updated: 2026-06-01 (v0.43.0 released — the Story Bible integration depth release; 10 commits since v0.42.0. Prose Storyboard (chapter-card grid for prose books, shared `StoryboardAnnotations` module, Storyboard button on every book type), entity relationships (ally/rival/family/mentor/romantic/neutral) + Arc-View relationship lines, @-mention autocomplete of Story Bible entities in the chapter + page editors, and auto-detect of entity mentions in existing text. Backend pytest 2468, Vitest 2568, all green.)
+Latest release: v0.43.0 (2026-06-01) — see [changelog/releases/v0.43.0.md](../changelog/releases/v0.43.0.md) for the full per-release notes.
+Previous release: v0.42.0 (2026-05-30) — the Story Bible release; `plugin-story-bible` + the deep Story Bible ↔ Storyboard integration (entity-page linking, badges, appearance tracker, Arc View timeline, continuity checker, Markdown export).
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
