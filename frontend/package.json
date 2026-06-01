@@ -55,6 +55,7 @@
     "@tiptap/suggestion": "2.27.2",
     "@types/dompurify": "3.2.0",
     "@xstate/react": "^6.1.0",
+    "@xyflow/react": "12.11.0",
     "dexie": "4.4.2",
     "dompurify": "^3.4.0",
     "lucide-react": "^1.8.0",
