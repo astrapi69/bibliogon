@@ -2,6 +2,7 @@ import {useEffect, useRef, useCallback, useState} from "react";
 import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
 import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
+import {useTypewriterScroll} from "../hooks/useTypewriterScroll";
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
 import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
 import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
@@ -425,6 +426,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             },
         },
     });
+
+    // COMPOSITION-DISTRACTION-FREE-MODE-01 C2: typewriter scrolling —
+    // keep the caret line vertically centered while in composition
+    // mode. No-op (and fail-open) outside composition.
+    useTypewriterScroll(editor, compositionMode);
 
     // Live word/char count off editor.storage.characterCount.
     // Updated from inside the existing useEditor onUpdate callback
