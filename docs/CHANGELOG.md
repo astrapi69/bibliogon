@@ -4,6 +4,55 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.43.0] - 2026-06-01
+
+The Story Bible integration depth release. Builds on v0.42.0's Story
+Bible by carrying it across the rest of the authoring surface: the
+Storyboard now works for prose books, entities can relate to one
+another, and the prose/picture editors gain @-mention autocomplete +
+an auto-detect pass that finds entity names in existing text. 10
+commits since v0.42.0.
+
+### Added
+- **Prose Storyboard** — the chapter-card Storyboard view for prose
+  (chapter-based) books, a counterpart to the picture/comic page
+  Storyboard. A drag-reorderable grid of chapter cards, each with a
+  word count and the same four inline-editable annotations (notes /
+  story beat / mood colour / act group) as a page card. The Storyboard
+  button is now available for every book type. The four annotation
+  editors are extracted into a shared module and reused by both
+  surfaces (no visual drift). New `notes` / `story_beat` / `mood_color`
+  / `act_group` columns on Chapter.
+- **Entity relationships** — Story Bible entities can declare typed
+  relationships to one another (ally / rival / family / mentor /
+  romantic / neutral) with an optional description, edited in a new
+  "Relationships" section of the entity detail view. In **Arc View**,
+  a "Show relationships" toggle draws colour-coded curves between two
+  entities' lanes wherever they share a page. New `relationships` JSON
+  field on StoryEntity + a resolve endpoint.
+- **@-mention autocomplete** — typing `@` in the chapter editor or a
+  picture-book page opens an autocomplete of the book's Story Bible
+  entities (grouped by type); selecting one inserts a colour-coded
+  inline mention badge. Clicking a badge opens that entity in the
+  Story Bible sidebar. Built on `@tiptap/extension-mention` (pinned to
+  2.27.2). The entity-list endpoint gains a `?search=` filter.
+- **Auto-detect mentions** — a "detect mentions" action scans a book's
+  chapter + page text for entity names and proposes links for any that
+  aren't linked yet (conservative: exact, case-insensitive, word-
+  boundary matches; short names skipped; already-linked pairs
+  excluded). "Link automatically" creates them in one click.
+
+### Changed
+- i18n: new Storyboard, relationship, @-mention and auto-detect strings
+  across all 8 catalogs (parity green).
+
+Migrations: `chapters` storyboard columns; `story_entities.relationships`.
+Backend pytest 2442 → 2468; Vitest 2549 → 2568; tsc + ruff +
+verify-theme + verify-components + i18n parity all green. Deferred to
+follow-ups: the component-consistency tail (badges / Toggle / raw-Radix
+→ AppDialog migration — advisory, `make verify-components` green) and
+the comprehensive help-doc + marketing-screenshot pass.
+
 ## [0.42.0] - 2026-05-30
 
 The Story Bible release. A new **plugin-story-bible** gives every book
