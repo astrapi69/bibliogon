@@ -233,6 +233,15 @@ class Chapter(Base):
     # Optimistic-lock version counter. Incremented by the PATCH handler
     # on every successful content write (commit 6). Starts at 1.
     version: Mapped[int] = mapped_column(Integer, nullable=False, default=1, server_default="1")
+    # Storyboard annotation columns (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+    # C3). Mirror the four Page storyboard columns so the prose-book
+    # chapter-card Storyboard view edits the same annotation shape as the
+    # picture/comic page Storyboard. Each is independently optional and
+    # born NULL; validated at the Pydantic layer, not at SQL.
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    story_beat: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    mood_color: Mapped[str | None] = mapped_column(String(7), nullable=True)
+    act_group: Mapped[str | None] = mapped_column(String(100), nullable=True)
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 

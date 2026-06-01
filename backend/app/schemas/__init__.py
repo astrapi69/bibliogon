@@ -22,6 +22,22 @@ BISAC_CODE_RE = re.compile(r"^[A-Z]{3}[0-9]{6}$")
 # channel, no named colors. Picker UIs always emit the 6-digit form.
 MOOD_COLOR_RE = re.compile(r"^#[0-9a-fA-F]{6}$")
 
+# Story-structure tag for ``Page.story_beat`` / ``Chapter.story_beat``
+# (PICTURE-BOOK-STORYBOARD-VIEW-01 + STORY-BIBLE-STORYBOARD-INTEGRATION-01
+# C3). Six fixed values constrain future beat-sheet templates
+# (Save-the-Cat, Hero's Journey, Three-Act). Stored as ``String(20)`` in
+# the DB; validated as Literal at the Pydantic layer per the existing
+# ``Page.layout`` precedent (no SQL ENUM). Defined here (top of module)
+# because both the Chapter schemas and the Page schemas reference it.
+StoryBeat = Literal[
+    "setup",
+    "inciting",
+    "rising",
+    "climax",
+    "falling",
+    "resolution",
+]
+
 # --- Enums ---
 
 
@@ -555,6 +571,22 @@ class ChapterCreate(BaseModel):
     content: str = ""
     position: int | None = None
     chapter_type: ChapterType = ChapterType.CHAPTER
+    # Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+    # C3). Mirror the Page storyboard fields; accepted on create for
+    # forward-compat with importers that pre-populate them.
+    notes: str | None = None
+    story_beat: StoryBeat | None = None
+    mood_color: str | None = Field(default=None, max_length=7)
+    act_group: str | None = Field(default=None, max_length=100)
+
+    @field_validator("mood_color")
+    @classmethod
+    def _validate_mood_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("mood_color must be a hex color code like #RRGGBB")
+        return value
 
 
 class ChapterUpdate(BaseModel):
@@ -570,6 +602,22 @@ class ChapterUpdate(BaseModel):
     content: str | None = None
     position: int | None = None
     chapter_type: ChapterType | None = None
+    # Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+    # C3). All optional; ``exclude_unset=True`` in the PATCH handler means
+    # unsent fields are NOT overwritten to NULL.
+    notes: str | None = None
+    story_beat: StoryBeat | None = None
+    mood_color: str | None = Field(default=None, max_length=7)
+    act_group: str | None = Field(default=None, max_length=100)
+
+    @field_validator("mood_color")
+    @classmethod
+    def _validate_mood_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("mood_color must be a hex color code like #RRGGBB")
+        return value
 
 
 class ChapterFork(BaseModel):
@@ -616,6 +664,14 @@ class ChapterOut(BaseModel):
     created_at: datetime
     updated_at: datetime
     version: int
+    # Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+    # C3). Always returned (NULL when unset); plain String/Text columns
+    # round-trip directly. story_beat returns the raw String value (no
+    # Literal enforcement on read so legacy rows still serialize cleanly).
+    notes: str | None = None
+    story_beat: str | None = None
+    mood_color: str | None = None
+    act_group: str | None = None
 
 
 class ChapterVersionSummary(BaseModel):
@@ -1115,21 +1171,6 @@ PageLayout = Literal[
     # interactivity (drag-to-position, CRUD, z-index) follows in
     # C2..C4. C5 adds the PDF walker branch; C6 i18n + smoke.
     "collage",
-]
-
-
-# Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
-# STORYBOARD-VIEW-01). Six fixed values constrain future beat-sheet
-# templates (Save-the-Cat, Hero's Journey, Three-Act). Stored as
-# ``String(20)`` in the DB; validated as Literal at the Pydantic
-# layer per the existing ``Page.layout`` precedent (no SQL ENUM).
-StoryBeat = Literal[
-    "setup",
-    "inciting",
-    "rising",
-    "climax",
-    "falling",
-    "resolution",
 ]
 
 
