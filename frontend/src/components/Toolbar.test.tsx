@@ -178,3 +178,60 @@ describe("Toolbar Copy split-button (F3)", () => {
         expect(notifySuccess).not.toHaveBeenCalled();
     });
 });
+
+describe("Toolbar composition mode toggle (COMPOSITION-DISTRACTION-FREE-MODE-01)", () => {
+    it("renders the composition button when onToggleComposition is provided", () => {
+        render(
+            <Toolbar
+                editor={makeEditor(sampleDoc)}
+                {...requiredProps}
+                onToggleComposition={() => {}}
+            />,
+        );
+        expect(screen.getByTestId("toolbar-composition")).toBeTruthy();
+    });
+
+    it("does not render the composition button without the handler", () => {
+        render(<Toolbar editor={makeEditor(sampleDoc)} {...requiredProps} />);
+        expect(screen.queryByTestId("toolbar-composition")).toBeNull();
+    });
+
+    it("hides the composition button in Markdown-edit mode", () => {
+        render(
+            <Toolbar
+                editor={makeEditor(sampleDoc)}
+                {...requiredProps}
+                markdownMode={true}
+                onToggleComposition={() => {}}
+            />,
+        );
+        expect(screen.queryByTestId("toolbar-composition")).toBeNull();
+    });
+
+    it("fires onToggleComposition on click", () => {
+        const onToggle = vi.fn();
+        render(
+            <Toolbar
+                editor={makeEditor(sampleDoc)}
+                {...requiredProps}
+                onToggleComposition={onToggle}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("toolbar-composition"));
+        expect(onToggle).toHaveBeenCalledTimes(1);
+    });
+
+    it("reflects active state via aria-pressed", () => {
+        render(
+            <Toolbar
+                editor={makeEditor(sampleDoc)}
+                {...requiredProps}
+                compositionMode={true}
+                onToggleComposition={() => {}}
+            />,
+        );
+        expect(
+            screen.getByTestId("toolbar-composition").getAttribute("aria-pressed"),
+        ).toBe("true");
+    });
+});
