@@ -2788,6 +2788,10 @@ ui:
   chapter_target:
     label: "Στόχος λέξεων"
     placeholder: "π.χ. 2000"
+  writing_goal:
+    today: "Σήμερα"
+    streak: "Σερί {n} ημερών"
+    daily_goal: "Ημερήσιος στόχος"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"

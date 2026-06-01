@@ -2786,6 +2786,10 @@ ui:
   chapter_target:
     label: "Word target"
     placeholder: "e.g. 2000"
+  writing_goal:
+    today: "Today"
+    streak: "{n}-day streak"
+    daily_goal: "Daily goal"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"

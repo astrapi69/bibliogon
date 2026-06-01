@@ -2788,6 +2788,10 @@ ui:
   chapter_target:
     label: "目標語数"
     placeholder: "例: 2000"
+  writing_goal:
+    today: "今日"
+    streak: "{n}日連続"
+    daily_goal: "1日の目標"
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"

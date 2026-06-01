@@ -2788,6 +2788,10 @@ ui:
   chapter_target:
     label: "Objectif de mots"
     placeholder: "p. ex. 2000"
+  writing_goal:
+    today: "Aujourd'hui"
+    streak: "Série de {n} jours"
+    daily_goal: "Objectif quotidien"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} de plus"

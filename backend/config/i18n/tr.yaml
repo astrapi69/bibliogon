@@ -2788,6 +2788,10 @@ ui:
   chapter_target:
     label: "Kelime hedefi"
     placeholder: "ör. 2000"
+  writing_goal:
+    today: "Bugün"
+    streak: "{n} günlük seri"
+    daily_goal: "Günlük hedef"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"

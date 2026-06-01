@@ -2788,6 +2788,10 @@ ui:
   chapter_target:
     label: "Meta de palavras"
     placeholder: "ex.: 2000"
+  writing_goal:
+    today: "Hoje"
+    streak: "Sequência de {n} dias"
+    daily_goal: "Meta diária"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mais"

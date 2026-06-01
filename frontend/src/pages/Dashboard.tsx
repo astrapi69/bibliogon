@@ -2,6 +2,7 @@ import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {api, ApiError, Book, BookCreate, BookFromTemplateCreate, BookType} from "../api/client";
 import CreateBookModal from "../components/CreateBookModal";
+import WritingGoalWidget from "../components/WritingGoalWidget";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, {type FieldClassDialogResult} from "../components/FieldClassDialog";
@@ -640,6 +641,7 @@ export default function Dashboard() {
                  *  to App.tsx — App-level mount above <Routes>. The
                  *  banner now persists across navigation (every page
                  *  shows it) until the user actively dismisses. */}
+                {!showTrash && <WritingGoalWidget />}
                 {showTrash ? (
                     /* Trash view */
                     <div data-testid="trash-view">

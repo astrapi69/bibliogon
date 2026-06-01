@@ -1,0 +1,60 @@
+/* Daily writing-goal widget (WRITING-GOALS-PROGRESS-TRACKING-01). */
+
+.widget {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  padding: 10px 14px;
+  margin-bottom: 16px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.today {
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+}
+
+.bar {
+  flex: 1;
+  min-width: 120px;
+  height: 8px;
+  background: var(--bg-secondary);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.barFill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 200ms ease;
+}
+
+.barFillProgress {
+  background: var(--accent);
+}
+
+.barFillDone {
+  background: var(--success);
+}
+
+.streak {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.goalEdit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+  white-space: nowrap;
+}
+
+.goalInput {
+  width: 72px;
+}
