@@ -9,14 +9,25 @@
  *
  * SVG (not Canvas) for click + hover interactivity. Read-only: the
  * data comes from the C4 appearances endpoint (one fetch per entity;
- * fine at storyboard scale). Relationship lines between lanes are a
- * separate follow-up (C10).
+ * fine at storyboard scale).
+ *
+ * C10 adds relationship lines: when two entities have a relationship
+ * (StoryEntity.relationships) AND appear on the same page, a subtle
+ * colour-coded bezier connects their lane dots at that page column.
+ * Behind the dots, opacity ~0.5, gated by a "Show relationships"
+ * toggle (default off to keep the default view uncluttered + cheap).
  */
 
 import {useEffect, useMemo, useState} from "react"
 
-import {api, type Page, type StoryEntityLinkOut, type StoryEntityOut} from "../api/client"
+import {
+    api,
+    type Page,
+    type StoryEntityLinkOut,
+    type StoryEntityOut,
+} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {relationshipColor} from "./relationshipColors"
 import {entityTypeColor} from "./storyBibleIcons"
 import styles from "./StoryboardArcView.module.css"
 
@@ -65,6 +76,8 @@ export default function StoryboardArcView({
 }: Props) {
     const {t} = useI18n()
     const [linksByEntity, setLinksByEntity] = useState<Record<string, StoryEntityLinkOut[]>>({})
+    // C10: relationship lines are off by default (uncluttered + cheap).
+    const [showRelationships, setShowRelationships] = useState(false)
 
     useEffect(() => {
         let cancelled = false
@@ -128,14 +141,101 @@ export default function StoryboardArcView({
     const height = TOP_H + lanes.length * LANE_H
     const colX = (index: number) => LABEL_W + index * COL_W + COL_W / 2
 
+    // C10: relationship line segments. Built from each lane entity's
+    // relationships; a segment is drawn only where BOTH endpoints have
+    // a lane AND share a page column. Deduped per unordered-pair + page
+    // + type so a reciprocal relationship doesn't double-draw.
+    const laneY = (laneIdx: number) => TOP_H + laneIdx * LANE_H + LANE_H / 2
+    const laneYById = new Map<string, number>()
+    const pageIdxById = new Map<string, Set<number>>()
+    lanes.forEach((lane, i) => {
+        laneYById.set(lane.entity.id, laneY(i))
+        pageIdxById.set(lane.entity.id, new Set(lane.dots.map((d) => d.pageIndex)))
+    })
+    const nameById = new Map(entities.map((e) => [e.id, e.name]))
+
+    interface RelSeg {
+        key: string
+        d: string
+        color: string
+        label: string
+    }
+    const relSegments: RelSeg[] = []
+    if (showRelationships) {
+        const seen = new Set<string>()
+        for (const lane of lanes) {
+            const aId = lane.entity.id
+            const yA = laneYById.get(aId)
+            if (yA === undefined) continue
+            for (const rel of lane.entity.relationships ?? []) {
+                const bId = rel.target_entity_id
+                const yB = laneYById.get(bId)
+                if (yB === undefined) continue
+                const aSet = pageIdxById.get(aId)
+                const bSet = pageIdxById.get(bId)
+                if (!aSet || !bSet) continue
+                const lo = aId < bId ? aId : bId
+                const hi = aId < bId ? bId : aId
+                for (const idx of aSet) {
+                    if (!bSet.has(idx)) continue
+                    const key = `${lo}-${hi}-${idx}-${rel.relationship_type}`
+                    if (seen.has(key)) continue
+                    seen.add(key)
+                    const x = colX(idx)
+                    const off = COL_W * 0.6
+                    relSegments.push({
+                        key,
+                        d: `M ${x},${yA} C ${x + off},${yA} ${x + off},${yB} ${x},${yB}`,
+                        color: relationshipColor(rel.relationship_type),
+                        label:
+                            `${nameById.get(aId) ?? ""} ${t(`ui.story_bible.relationship_type.${rel.relationship_type}`, rel.relationship_type)} ${nameById.get(bId) ?? ""}` +
+                            (rel.description ? `: ${rel.description}` : ""),
+                    })
+                }
+            }
+        }
+    }
+
     return (
-        <div className={styles.scrollX} data-testid={testidNamespace}>
+        <div data-testid={`${testidNamespace}-wrap`}>
+            <div className={styles.arcToolbar}>
+                <label className={styles.relToggle}>
+                    <input
+                        type="checkbox"
+                        checked={showRelationships}
+                        onChange={(e) => setShowRelationships(e.target.checked)}
+                        data-testid={`${testidNamespace}-relationships-toggle`}
+                    />
+                    {t("ui.story_bible.relationships_show", "Show relationships")}
+                </label>
+            </div>
+            <div className={styles.scrollX} data-testid={testidNamespace}>
             <svg
                 width={width}
                 height={height}
                 role="img"
                 aria-label={t("ui.storyboard.arc_view", "Arc view")}
             >
+                {/* C10 relationship lines — rendered first so they sit
+                    behind the lane baselines + dots. */}
+                {relSegments.length > 0 && (
+                    <g data-testid={`${testidNamespace}-relationships`}>
+                        {relSegments.map((seg) => (
+                            <path
+                                key={seg.key}
+                                d={seg.d}
+                                fill="none"
+                                stroke={seg.color}
+                                strokeWidth={2}
+                                opacity={0.5}
+                                className={styles.relationshipLine}
+                                data-testid={`${testidNamespace}-rel-${seg.key}`}
+                            >
+                                <title>{seg.label}</title>
+                            </path>
+                        ))}
+                    </g>
+                )}
                 {/* Page-position column headers. */}
                 {pages.map((p, i) => (
                     <text
@@ -203,6 +303,7 @@ export default function StoryboardArcView({
                     )
                 })}
             </svg>
+            </div>
         </div>
     )
 }

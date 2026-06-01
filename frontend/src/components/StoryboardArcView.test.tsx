@@ -128,4 +128,60 @@ describe("StoryboardArcView (C9)", () => {
             expect(screen.getByTestId("storyboard-arc-empty")).toBeTruthy()
         })
     })
+
+    // --- C10 relationship lines ----------------------------------
+
+    it("draws a relationship line only when the toggle is on and both share a page", async () => {
+        vi.mocked(api.storyBible.appearances).mockImplementation((id: string) =>
+            Promise.resolve(
+                id === "e1" ? [link("e1", "p3")] : [link("e2", "p3")],
+            ) as never,
+        )
+        const e1WithRel: StoryEntityOut = {
+            ...entity("e1", "Max"),
+            relationships: [
+                {target_entity_id: "e2", relationship_type: "rival", description: "Foes."},
+            ],
+        }
+        render(
+            <StoryboardArcView
+                pages={pages}
+                entities={[e1WithRel, entity("e2", "Lisa")]}
+                onSelectPage={vi.fn()}
+            />,
+        )
+        const toggle = await screen.findByTestId("storyboard-arc-relationships-toggle")
+        // Off by default: no relationship group.
+        expect(screen.queryByTestId("storyboard-arc-relationships")).toBeNull()
+        fireEvent.click(toggle)
+        await waitFor(() => {
+            expect(screen.getByTestId("storyboard-arc-relationships")).toBeTruthy()
+        })
+    })
+
+    it("draws no line when the related entities never share a page", async () => {
+        vi.mocked(api.storyBible.appearances).mockImplementation((id: string) =>
+            Promise.resolve(
+                id === "e1" ? [link("e1", "p1")] : [link("e2", "p3")],
+            ) as never,
+        )
+        const e1WithRel: StoryEntityOut = {
+            ...entity("e1", "Max"),
+            relationships: [{target_entity_id: "e2", relationship_type: "ally"}],
+        }
+        render(
+            <StoryboardArcView
+                pages={pages}
+                entities={[e1WithRel, entity("e2", "Lisa")]}
+                onSelectPage={vi.fn()}
+            />,
+        )
+        const toggle = await screen.findByTestId("storyboard-arc-relationships-toggle")
+        fireEvent.click(toggle)
+        // Shared-page set is empty -> the relationships group never renders.
+        await waitFor(() => {
+            expect(screen.getByTestId("storyboard-arc-lane-e1")).toBeTruthy()
+        })
+        expect(screen.queryByTestId("storyboard-arc-relationships")).toBeNull()
+    })
 })

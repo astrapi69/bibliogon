@@ -43,3 +43,29 @@
 .dot:hover {
     opacity: 0.8;
 }
+
+/* C10 relationship-line toggle toolbar above the arc svg. */
+.arcToolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 2px 8px;
+}
+
+.relToggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+/* Relationship bezier between two lanes (colour set inline = data). */
+.relationshipLine {
+    pointer-events: stroke;
+}
+
+.relationshipLine:hover {
+    opacity: 0.85 !important;
+}
