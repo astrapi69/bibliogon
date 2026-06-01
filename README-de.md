@@ -1,16 +1,31 @@
 # Bibliogon
 
-Open-Source-Toolkit für Self-Publishing-Autorinnen und -Autoren. Bücher, Artikel und Multi-Plattform-Content-Workflows. Offline-zuerst, Plugin-basiert, EPUB- / PDF- / Hörbuch-Export.
+Open-Source-Toolkit für Self-Publishing-Autorinnen und -Autoren. Bücher, Artikel, Bilderbücher, Comics und Multi-Plattform-Content-Workflows. Schreibe mit einer integrierten **Story-Bibel**, die deine Figuren, Orte und Handlungspunkte konsistent hält, und exportiere nach EPUB / PDF / Hörbuch. Offline-zuerst, Plugin-basiert, local-first.
 
 Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wiederverwendbaren Plugin-Framework auf Basis von [pluggy](https://pluggy.readthedocs.io/).
 
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
 
-**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.42.0**
+**[Dokumentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.43.0**
+
+## Story-Bibel
+
+Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederkehrenden Elemente deiner Fiktion** — Figuren, Schauplätze, Handlungspunkte, Gegenstände und Lore — direkt neben dem Manuskript, damit du nie den Überblick verlierst, wer wer ist und was wo passiert ist. Bereitgestellt vom Plugin **plugin-story-bible**.
+
+- **Fünf Entity-Typen**, jeder mit eigenem Icon, Akzentfarbe und typspezifischen Metadaten: **Figuren** (Aliase, Rolle, Eigenschaften, Arc-Notizen, Beziehungen), **Schauplätze** (Typ, Geografie, Bedeutung), **Handlungspunkte** (Timeline-Position, Story-Beat, beteiligte Figuren), **Gegenstände** (Bedeutung, aktueller Besitzer) und **Lore** (Magie / Technik / Kultur / Geschichte / Religion / Sprache). Die Typ-Registry ist die alleinige Quelle der Wahrheit in `backend/config/story-bible-entities.yaml`.
+- **Rich-Text-Beschreibungen** pro Entity (TipTap) plus eine Sidebar zum Inline-Erstellen / -Bearbeiten / -Löschen, die neben der Kapitelliste einfährt.
+- **Beziehungen** — verbinde zwei beliebige Entities als Verbündeter (ally), Rivale (rival), Familie (family), Mentor (mentor), romantisch (romantic) oder neutral (neutral), mit optionaler Notiz. Bearbeitet in einer eigenen "Beziehungen"-Sektion der Entity-Detailansicht; jeder Typ ist farbcodiert.
+- **@-Erwähnungen** — tippe `@` im Kapitel-Editor oder auf einer Bilderbuchseite, um die Entities des Buches per Autocomplete einzufügen (nach Typ gruppiert, Namenssuche beim Tippen). Fügt eine farbcodierte Inline-Erwähnungs-Badge ein; ein Klick öffnet die Entity in der Sidebar.
+- **Auto-Erkennung** — durchsucht den Kapitel- / Seitentext nach Entity-Namen (exakt, Groß-/Kleinschreibung egal, Wortgrenzen; kurze Namen übersprungen, bereits verknüpfte Entities ausgeschlossen) und verknüpft sie mit einem Klick ("Automatisch verknüpfen").
+- **Auftritts-Tracker** — verknüpfe eine Entity mit einer Seite oder einem Kapitel (zieh sie auf eine Storyboard-Karte oder nutze die Auto-Erkennung), jede Verknüpfung mit optionaler Rolle + Notiz. Die Detailansicht listet jeden Auftritt.
+- **Arc-Ansicht** — eine SVG-Swim-Lane-Timeline: jede Entity erhält eine Spur, jeder Auftritt einen stimmungsfarbenen, rollengroßen Punkt, verbunden durch Kontinuitäts-Linien; ein Klick auf einen Punkt springt zur Seite. Ein Schalter zeichnet farbcodierte Bezier-Linien zwischen den Spuren zweier Entities überall dort, wo sie sich eine Seite teilen.
+- **Kontinuitäts-Prüfer** — beratende Warnungen, wenn eine Entity verschwindet, eine lange Abwesenheitslücke hat oder eine Seite gar keine Entities enthält.
+- **Markdown-Export** — exportiert die gesamte Story-Bibel (nach Typ gruppiert, mit Auftritten) als Markdown-Dokument.
 
 ## Funktionen
 
 - WYSIWYG- und Markdown-Editor (TipTap mit 15 offiziellen + 1 Community-Erweiterung, 24 Toolbar-Buttons)
+- **Story-Bibel** — buchspezifische Datenbank für Figuren / Schauplätze / Handlung / Gegenstände / Lore mit Beziehungen, @-Erwähnungen, Auto-Erkennung, Arc-Timeline und Kontinuitätsprüfung (siehe oben)
 - Komplette Buchstruktur mit Kapiteltypen für jeden Abschnitt (Vorwort, Geleitwort, Prolog, Widmung, Teil, Epilog, Nachwort, Index, Auch vom Autor, Leseprobe, Call to Action, ...)
 - Genre-Katalog für Roman, Sachbuch, Fachbuch, Biografie, Lyrik, Kinderbuch, Fantasy, Thriller, Liebesroman, Kochbuch, Reise und mehr
 - Drag-and-Drop-Kapitelreihenfolge mit klappbaren Abschnitten
@@ -52,7 +67,7 @@ Bibliogon unterstützt einen dedizierten Bilderbuch-Workflow mit pro-Seite Bild-
 - **13 Seitenlayouts in 5 Kategorien** (über einen kategorisierten LayoutPicker wählbar): Einzelbild-mit-Text (Bild oben / unten / links / rechts, Vollbild-Overlay, Bild-als-Rahmen mit zentriertem Text), Nur-Bild, Mehrere-Bilder (zwei-Bilder-mit-zentriertem-Text, Split-horizontal, Split-vertikal sowie eine frei anordenbare **Collage** aus N per Drag positionierten Bild- und Text-Regionen), Nur-Text und das Spezial-Layout Sprechblase. Jedes Layout hat seinen eigenen `layout_config`-Namensraum, damit Layout-Wechsel die vorherigen Einstellungen erhalten.
 - **Collage-Layout** (Phase 3): Bild- und Text-Regionen frei auf der Seite ziehen und in der Größe ändern, mit z-Index-Reihenfolge (`useDragPosition`-Hook + `CollageCanvas`); der WeasyPrint-Walker spiegelt die Editor-Geometrie, sodass das PDF zur Arbeitsfläche passt.
 - **Tier 1 + Tier 2 Eigenschaften** pro Layout (Visual-Style- und Typografie-Sektionen im Editor): Textausrichtung, vertikale Zentrierung, Padding, Schriftart, Schriftgröße, Zeilenhöhe, Textfarbe, Schriftgewicht, Container-Breite/-Höhe. Ein gemeinsamer `computeTierTextStyles`-Helfer (TS + Python-Spiegel) hält Editor-Vorschau und PDF-Walker synchron.
-- **Storyboard-Ansicht** (Drag-Reorder-Raster): Notizen pro Seite, Story-Beat-Tag (Exposition / Auslösendes Ereignis / Steigende Handlung / Höhepunkt / Fallende Handlung / Auflösung), Stimmungsfarbe (10-Preset-Palette) und Akt-Gruppen-Label für visuelle Kapitelgrenzen.
+- **Storyboard-Ansicht** (Drag-Reorder-Raster): Notizen pro Seite, Story-Beat-Tag (Exposition / Auslösendes Ereignis / Steigende Handlung / Höhepunkt / Fallende Handlung / Auflösung), Stimmungsfarbe (10-Preset-Palette) und Akt-Gruppen-Label für visuelle Kapitelgrenzen. Story-Bibel-Entities lassen sich auf Karten ziehen, um Auftritte zu tracken (als farbcodierte Entity-Badges sichtbar), und ein Entity-Filter schränkt das Raster auf Seiten ein, auf denen ausgewählte Entities auftreten. Das Storyboard ist jetzt für **jeden Buchtyp** verfügbar — Prosa-Bücher erhalten eine Kapitelkarten-Variante (Wortzahl + dieselben vier Annotationen pro `Chapter`) über das gemeinsame `StoryboardAnnotations`-Modul.
 - **PDF-Export** via WeasyPrint mit KDP-kompatiblem Format-Dropdown (Quadrat 8.5x8.5, Querformat 8.5x11) plus Bleed- und Schnittmarken-Optionen.
 - **Layout-Wechsel-Hygiene:** der pro-Layout `layout_config`-Namensraum (Fix B) sorgt dafür, dass ein Wechsel weg von und zurück zu einem Layout dessen Konfiguration erhält; aktive Text-Konvertierung zwischen TipTap- und Tier-Property-Layouts hält die DB-Form passend zum aktiven Layout.
 
@@ -213,19 +228,30 @@ Browser --> nginx (statische Dateien + /api-Proxy) --> FastAPI (uvicorn)
 | kinderbuch | MIT | Kinderbuch-Seitenlayout |
 | kdp | MIT | Amazon-KDP-Metadaten, Cover-Validierung |
 | comics | MIT | Mehrteilige Comic-Seiten mit Multi-Bubble-Unterstützung pro Panel |
+| story-bible | MIT | Buchspezifische Fiktions-Entity-Datenbank (Figur / Schauplatz / Handlungspunkt / Gegenstand / Lore) mit Beziehungen, @-Erwähnungen, Arc-Ansicht, Kontinuitäts-Prüfer, Markdown-Export |
 | git-sync | MIT | Buch-als-Git-Repo: Import, Commit, Smart-Merge, Mehrsprachen-Verknüpfung |
 | medium-import | MIT | Medium-HTML-Export-Importer für Artikel mit Provenienz-Tracking |
 
-Drittanbieter-Plugins lassen sich als ZIP-Dateien über Einstellungen > Plugins installieren.
+Alle 13 First-Party-Plugins sind kostenlos unter MIT. Drittanbieter-Plugins lassen sich als ZIP-Dateien über Einstellungen > Plugins installieren.
 
 ## Konfiguration
 
-Umgebungsvariablen (in `.env` setzen):
+Drei-Schichten-Konfiguration: Projekt-`app.yaml` (Standardwerte) ← Benutzer-Override-Datei
+(`~/.config/bibliogon/secrets.yaml`, gitignored) ← Umgebungsvariablen (CI/Docker).
+Override gewinnt, Umgebungsvariablen haben immer höchste Priorität. Ausführlicher Leitfaden:
+[docs/configuration.md](docs/configuration.md).
+
+Geheimnisse wie `ai.api_key` gehören aus der Projekt-`app.yaml` heraus in die
+Override-Datei oder die `BIBLIOGON_AI_API_KEY`-Umgebungsvariable. Die Einstellungs-UI
+blendet das API-Key-Eingabefeld automatisch aus, sobald ein Override aktiv ist.
+
+Umgebungsvariablen (in `.env` oder Shell setzen):
 
 | Variable | Standard | Beschreibung |
 |----------|----------|--------------|
 | `BIBLIOGON_PORT` | 7880 | Port der Web-App |
 | `BIBLIOGON_DEBUG` | false | Debug-Modus (aktiviert Test-Endpoints, API-Docs) |
+| `BIBLIOGON_AI_API_KEY` | (nicht gesetzt) | Überschreibt `ai.api_key` aus jeder yaml-Schicht |
 | `BIBLIOGON_SECRET_KEY` | (generiert) | Geheimnis für Lizenz-Validierung |
 | `BIBLIOGON_CREDENTIALS_SECRET` | (generiert) | Geheimnis zur Verschlüsselung von API-Keys und Service-Account-Dateien |
 | `BIBLIOGON_CORS_ORIGINS` | localhost:7880 | Erlaubte CORS-Origins |

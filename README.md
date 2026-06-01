@@ -1,16 +1,31 @@
 # Bibliogon
 
-Open-source self-publishing toolkit for authors. Books, articles, and multi-platform content workflows. Offline-first, plugin-based, EPUB / PDF / audiobook export.
+Open-source self-publishing toolkit for authors. Books, articles, picture books, comics, and multi-platform content workflows. Write with a built-in **Story Bible** to keep your characters, places and plot points consistent, then export to EPUB / PDF / audiobook. Offline-first, plugin-based, local-first.
 
 Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plugin framework based on [pluggy](https://pluggy.readthedocs.io/).
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.42.0**
+**[Documentation](https://astrapi69.github.io/bibliogon/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.43.0**
+
+## Story Bible
+
+Bibliogon's standout feature: a **per-book database of your fiction's recurring elements** — characters, settings, plot points, items and lore — that lives right beside your manuscript so you never lose track of who's who or what happened where. Provided by the **plugin-story-bible** plugin.
+
+- **Five entity types**, each with its own icon, accent color and per-type metadata: **Characters** (aliases, role, traits, arc notes, relationships), **Settings** (type, geography, significance), **Plot Points** (timeline position, story beat, involved characters), **Items** (significance, current holder), and **Lore** (magic / technology / culture / history / religion / language). The type registry is the single source of truth in `backend/config/story-bible-entities.yaml`.
+- **Rich-text descriptions** per entity (TipTap) plus an inline create / edit / delete sidebar that slides in next to the chapter list.
+- **Relationships** — connect any two entities as ally, rival, family, mentor, romantic or neutral, with an optional note. Edited in a dedicated "Relationships" section of the entity detail view; each type is color-coded.
+- **@-mentions** — type `@` in the chapter editor or a picture-book page to autocomplete the book's entities (grouped by type, name-search as you type). Inserts a color-coded inline mention badge; clicking it opens that entity in the sidebar.
+- **Auto-detect** — scan your chapter / page text for entity names (exact, case-insensitive, word-boundary; short names skipped, already-linked entities excluded) and one-click "Link automatically" to create the appearance links.
+- **Appearance tracker** — link an entity to a page or chapter (drag it onto a Storyboard card, or auto-detect), each link carrying an optional role + notes. The entity detail view lists every place it appears.
+- **Arc View** — an SVG swim-lane timeline: each entity gets a lane, every appearance a mood-colored, role-sized dot, connected by continuity polylines; click a dot to jump to that page. A toggle draws color-coded bezier lines between two entities' lanes wherever they share a page.
+- **Continuity Checker** — advisory warnings when an entity disappears, has a long absence gap, or a page has no entities at all.
+- **Markdown export** — export the whole Story Bible (grouped by type, with appearances) as a Markdown document.
 
 ## Features
 
 - WYSIWYG and Markdown editor (TipTap with 15 official + 1 community extension, 24 toolbar buttons)
+- **Story Bible** — per-book character / setting / plot / item / lore database with relationships, @-mentions, auto-detect, Arc View timeline and continuity checking (see above)
 - Full-book structure with chapter types for every section (Preface, Foreword, Prologue, Dedication, Part, Epilogue, Afterword, Index, Also by the Author, Excerpt, Call to Action, ...)
 - Genre catalog for Novel, Non-Fiction, Technical, Biography, Poetry, Children, Fantasy, Thriller, Romance, Cookbook, Travel, and more
 - Drag-and-drop chapter ordering with collapsible sections
@@ -52,7 +67,7 @@ Bibliogon supports a dedicated picture-book authoring flow with per-page image +
 - **13 page layouts in 5 categories** (chosen from a categorised LayoutPicker): single-image-with-text (image top / bottom / left / right, full-image overlay, image-border with centered text), image-only, multi-image (two-images-with-centered-text, split-horizontal, split-vertical, and a free-form **collage** of N drag-positioned image + text regions), text-only, and the speech-bubble special layout. Each layout has its own per-layout `layout_config` namespace so switching layouts preserves prior settings.
 - **Collage layout** (Phase 3): freely drag-and-resize image and text regions on the page with z-index ordering (`useDragPosition` hook + `CollageCanvas`); the WeasyPrint walker mirrors the editor geometry so the PDF matches the canvas.
 - **Tier 1 + Tier 2 properties** per layout (Visual-Style and Typography sections in the editor properties pane): text alignment, vertical centering, padding, font family, font size, line-height, text color, font weight, container width/height. A shared `computeTierTextStyles` helper (TS + Python mirror) keeps the editor preview and the PDF walker in sync.
-- **Storyboard View** (drag-reorder grid): annotate each page with notes, a story-beat tag (Exposition / Inciting / Rising / Climax / Falling / Resolution), a mood color (10-preset palette), and an act-group label for visual chapter boundaries.
+- **Storyboard View** (drag-reorder grid): annotate each page with notes, a story-beat tag (Exposition / Inciting / Rising / Climax / Falling / Resolution), a mood color (10-preset palette), and an act-group label for visual chapter boundaries. Story Bible entities can be dragged onto cards to track appearances, surfaced as color-coded entity badges, and an entity filter narrows the grid to pages where selected entities appear. The Storyboard is now available for **every book type** — prose books get a chapter-card variant (word count + the same four annotations on each `Chapter`) via the shared `StoryboardAnnotations` module.
 - **PDF export** via WeasyPrint with KDP-aligned format dropdown (square 8.5x8.5, landscape 8.5x11) + bleed and crop marks controls.
 - **Layout-switch hygiene:** the per-layout `layout_config` namespace (Fix B) means switching away from and back to a layout preserves its configuration; active text-conversion between TipTap-based and Tier-Property-based layouts keeps the DB shape matching the active layout.
 
@@ -207,10 +222,11 @@ Browser --> nginx (static files + /api proxy) --> FastAPI (uvicorn)
 | kinderbuch | MIT | Children's book page layout |
 | kdp | MIT | Amazon KDP metadata, cover validation |
 | comics | MIT | Multi-panel comic-book pages with multi-bubble per-panel speech bubbles |
+| story-bible | MIT | Per-book fiction-entity database (character / setting / plot point / item / lore) with relationships, @-mentions, Arc View, continuity checker, Markdown export |
 | git-sync | MIT | Book-as-git-repo: import, commit, smart-merge, multi-language linking |
 | medium-import | MIT | Medium HTML-export importer for articles with provenance tracking |
 
-Third-party plugins can be installed as ZIP files via Settings > Plugins.
+All 13 first-party plugins ship free under MIT. Third-party plugins can be installed as ZIP files via Settings > Plugins.
 
 ## Configuration
 
