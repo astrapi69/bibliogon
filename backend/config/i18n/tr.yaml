@@ -2796,6 +2796,12 @@ ui:
     today: "Bugün"
     streak: "{n} günlük seri"
     daily_goal: "Günlük hedef"
+  outliner:
+    title: "Taslak"
+    open: "Taslağı aç"
+    col_title: "Başlık"
+    col_words: "Kelime"
+    col_target: "Hedef"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"

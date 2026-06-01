@@ -2796,6 +2796,12 @@ ui:
     today: "Σήμερα"
     streak: "Σερί {n} ημερών"
     daily_goal: "Ημερήσιος στόχος"
+  outliner:
+    title: "Διάρθρωση"
+    open: "Άνοιγμα διάρθρωσης"
+    col_title: "Τίτλος"
+    col_words: "Λέξεις"
+    col_target: "Στόχος"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"

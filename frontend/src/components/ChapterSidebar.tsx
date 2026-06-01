@@ -17,6 +17,7 @@ import {
     GitBranch,
     BookOpen,
     LayoutGrid,
+    Table,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -66,6 +67,10 @@ interface Props {
     onShowStoryboard?: () => void;
     /** True while the prose Storyboard is open (active styling). */
     storyboardActive?: boolean;
+    /** Opens the Outliner (spreadsheet) view (CHAPTER-OUTLINER-VIEW-01). */
+    onShowOutline?: () => void;
+    /** True while the Outliner is open (active styling). */
+    outlineActive?: boolean;
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
     onAddFromTemplate?: () => void;
@@ -340,6 +345,8 @@ export default function ChapterSidebar({
                                            storyBibleActive,
                                            onShowStoryboard,
                                            storyboardActive,
+                                           onShowOutline,
+                                           outlineActive,
                                            onValidateToc,
                                            onSaveAsTemplate,
                                            onAddFromTemplate,
@@ -602,6 +609,17 @@ export default function ChapterSidebar({
                         title={t("ui.storyboard.open", "Storyboard öffnen")}
                     >
                         <LayoutGrid size={14}/> {t("ui.storyboard.title", "Storyboard")}
+                    </button>
+                )}
+                {onShowOutline && (
+                    <button
+                        className={`btn-sidebar-block ${outlineActive ? "is-active" : ""}`}
+                        style={{marginBottom: 6}}
+                        onClick={onShowOutline}
+                        data-testid="chapter-sidebar-outline"
+                        title={t("ui.outliner.open", "Outliner öffnen")}
+                    >
+                        <Table size={14}/> {t("ui.outliner.title", "Outliner")}
                     </button>
                 )}
                 {onStoryBible && (

@@ -10,6 +10,7 @@ import PageEditor from "../components/PageEditor";
 import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
 import ProseStoryboard from "../components/ProseStoryboard";
+import ChapterOutliner from "../components/ChapterOutliner";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
 import ExportDialog from "../components/ExportDialog";
@@ -126,16 +127,21 @@ export default function BookEditor() {
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
     const [showStoryboard, setShowStoryboard] = useState(searchParams.get("view") === "storyboard");
+    // CHAPTER-OUTLINER-VIEW-01: the spreadsheet outline view.
+    const [showOutline, setShowOutline] = useState(searchParams.get("view") === "outline");
 
-    // Keep ``?view=metadata`` / ``?view=storyboard`` in sync so the
-    // audiobook badge / Storyboard back-link / browser back-forward
-    // can deep-link in either direction and retain the user's view.
+    // Keep ``?view=metadata`` / ``?view=storyboard`` / ``?view=outline``
+    // in sync so the audiobook badge / Storyboard back-link / browser
+    // back-forward can deep-link in either direction and retain the
+    // user's view.
     useEffect(() => {
         const view = searchParams.get("view");
         const wantsMetadata = view === "metadata";
         const wantsStoryboard = view === "storyboard";
+        const wantsOutline = view === "outline";
         if (wantsMetadata !== showMetadata) setShowMetadata(wantsMetadata);
         if (wantsStoryboard !== showStoryboard) setShowStoryboard(wantsStoryboard);
+        if (wantsOutline !== showOutline) setShowOutline(wantsOutline);
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [searchParams]);
 
@@ -159,7 +165,7 @@ export default function BookEditor() {
 
     const _setShowMetadata = (next: boolean) => {
         setShowMetadata(next);
-        if (next) setShowStoryboard(false);
+        if (next) { setShowStoryboard(false); setShowOutline(false); }
         const params = new URLSearchParams(searchParams);
         if (next) params.set("view", "metadata");
         else if (params.get("view") === "metadata") params.delete("view");
@@ -168,10 +174,19 @@ export default function BookEditor() {
 
     const _setShowStoryboard = (next: boolean) => {
         setShowStoryboard(next);
-        if (next) setShowMetadata(false);
+        if (next) { setShowMetadata(false); setShowOutline(false); }
         const params = new URLSearchParams(searchParams);
         if (next) params.set("view", "storyboard");
         else if (params.get("view") === "storyboard") params.delete("view");
+        setSearchParams(params, {replace: true});
+    };
+
+    const _setShowOutline = (next: boolean) => {
+        setShowOutline(next);
+        if (next) { setShowMetadata(false); setShowStoryboard(false); }
+        const params = new URLSearchParams(searchParams);
+        if (next) params.set("view", "outline");
+        else if (params.get("view") === "outline") params.delete("view");
         setSearchParams(params, {replace: true});
     };
     const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
@@ -696,6 +711,8 @@ export default function BookEditor() {
                 storyBibleActive={storyBibleOpen}
                 onShowStoryboard={() => { setSelectedStoryEntityId(null); _setShowMetadata(false); _setShowStoryboard(true); }}
                 storyboardActive={showStoryboard}
+                onShowOutline={() => { setSelectedStoryEntityId(null); _setShowOutline(true); }}
+                outlineActive={showOutline}
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
@@ -744,6 +761,16 @@ export default function BookEditor() {
                     onSelectChapter={(chapterId) => {
                         setActiveChapterId(chapterId);
                         _setShowStoryboard(false);
+                    }}
+                />
+            ) : showOutline ? (
+                <ChapterOutliner
+                    bookId={book.id}
+                    bookTitle={book.title}
+                    onBack={() => _setShowOutline(false)}
+                    onSelectChapter={(chapterId) => {
+                        setActiveChapterId(chapterId);
+                        _setShowOutline(false);
                     }}
                 />
             ) : showMetadata ? (

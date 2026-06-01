@@ -2796,6 +2796,12 @@ ui:
     today: "Hoje"
     streak: "Sequência de {n} dias"
     daily_goal: "Meta diária"
+  outliner:
+    title: "Estrutura"
+    open: "Abrir estrutura"
+    col_title: "Título"
+    col_words: "Palavras"
+    col_target: "Meta"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mais"

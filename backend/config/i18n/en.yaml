@@ -2794,6 +2794,12 @@ ui:
     today: "Today"
     streak: "{n}-day streak"
     daily_goal: "Daily goal"
+  outliner:
+    title: "Outliner"
+    open: "Open outliner"
+    col_title: "Title"
+    col_words: "Words"
+    col_target: "Target"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"

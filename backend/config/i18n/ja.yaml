@@ -2796,6 +2796,12 @@ ui:
     today: "今日"
     streak: "{n}日連続"
     daily_goal: "1日の目標"
+  outliner:
+    title: "アウトライン"
+    open: "アウトラインを開く"
+    col_title: "タイトル"
+    col_words: "語数"
+    col_target: "目標"
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"
