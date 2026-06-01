@@ -88,6 +88,11 @@ interface Props {
      *  the backend's optimistic-lock check passes. The normal autosave
      *  path gets version from the parent via `onSave`. */
     chapterVersion?: number;
+    /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01),
+     *  from the DB Chapter.target_words. Read-only here: shown as a
+     *  live progress bar while writing. Set it in the Storyboard /
+     *  Outliner (which own the chapter version for the PATCH). */
+    targetWords?: number | null;
     bookContext?: BookContext;
     /** When set, the toolbar's "Copy" action prepends this string
      *  as a heading (Markdown: ``# documentTitle\n\n``; plain text:
@@ -119,7 +124,7 @@ interface Props {
     onOpenStoryEntity?: (entityId: string) => void;
 }
 
-export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus, mentionBookId, onOpenStoryEntity}: Props) {
+export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, targetWords, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus, mentionBookId, onOpenStoryEntity}: Props) {
     const gates = pluginsForKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
@@ -168,12 +173,12 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const [reviewStatusMsg, setReviewStatusMsg] = useState<string | null>(null);
     const [reviewCostLabel, setReviewCostLabel] = useState<string | null>(null);
     const reviewEventSource = useRef<EventSource | null>(null);
-    const [wordGoal, setWordGoal] = useState<number | null>(() => {
-        if (!chapterId) return null;
-        const stored = localStorage.getItem(`bibliogon-word-goal-${chapterId}`);
-        return stored ? parseInt(stored, 10) : null;
-    });
-    const [editingGoal, setEditingGoal] = useState(false);
+    // Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01).
+    // Promoted from per-device localStorage to the DB
+    // Chapter.target_words, passed in by the parent. Read-only here
+    // (set in the Storyboard / Outliner, which own the chapter version
+    // for the PATCH); the editor shows live progress against it.
+    const wordGoal = targetWords ?? null;
     const [searchTerm, setSearchTerm] = useState("");
     const [replaceTerm, setReplaceTerm] = useState("");
     const [recoveryDraft, setRecoveryDraft] = useState<{content: string; savedAt: number} | null>(null);
@@ -1404,48 +1409,19 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     {wordCount} {t("ui.editor.words", "Wörter")}
                     {" / "}
                     {charCount} {t("ui.editor.characters", "Zeichen")}
-                    {/* Word goal */}
-                    {chapterId && !editingGoal && (
-                        <button
-                            className={styles.goalBtn}
-                            onClick={() => setEditingGoal(true)}
-                            title={t("ui.editor.set_goal", "Wortziel setzen")}
-                        >
-                            {wordGoal ? `${t("ui.editor.goal", "Ziel")}: ${wordGoal}` : `+ ${t("ui.editor.goal", "Ziel")}`}
-                        </button>
-                    )}
-                    {editingGoal && (
-                        <input
-                            className={styles.goalInput}
-                            type="number"
-                            min="0"
-                            placeholder="z.B. 2000"
-                            defaultValue={wordGoal ?? ""}
-                            autoFocus
-                            onBlur={(e) => {
-                                const val = parseInt(e.target.value, 10);
-                                if (val > 0) {
-                                    setWordGoal(val);
-                                    localStorage.setItem(`bibliogon-word-goal-${chapterId}`, String(val));
-                                } else {
-                                    setWordGoal(null);
-                                    localStorage.removeItem(`bibliogon-word-goal-${chapterId}`);
-                                }
-                                setEditingGoal(false);
-                            }}
-                            onKeyDown={(e) => {
-                                if (e.key === "Enter") (e.target as HTMLInputElement).blur();
-                                if (e.key === "Escape") setEditingGoal(false);
-                            }}
-                        />
+                    {/* Word target (read-only; set in the Storyboard). */}
+                    {wordGoal && wordGoal > 0 && (
+                        <span className={styles.goalBtn} data-testid="editor-word-goal">
+                            {t("ui.editor.goal", "Ziel")}: {wordGoal}
+                        </span>
                     )}
                 </span>
-                {/* Progress bar for word goal */}
+                {/* Progress bar for the word target */}
                 {wordGoal && wordGoal > 0 && (
                     <div className={styles.goalProgress}>
                         <div className={styles.goalProgressFill} style={{
                             width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
-                            background: wordCount >= wordGoal ? "var(--success, #16a34a)" : "var(--accent)",
+                            background: wordCount >= wordGoal ? "var(--success)" : "var(--accent)",
                         }}/>
                     </div>
                 )}

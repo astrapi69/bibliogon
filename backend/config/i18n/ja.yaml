@@ -2785,6 +2785,9 @@ ui:
     new_placeholder: "新しいラベル名"
     add: "追加"
     save_failed: "ラベルを保存できませんでした"
+  chapter_target:
+    label: "目標語数"
+    placeholder: "例: 2000"
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"

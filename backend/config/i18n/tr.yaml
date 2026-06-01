@@ -2785,6 +2785,9 @@ ui:
     new_placeholder: "Yeni etiket adı"
     add: "Ekle"
     save_failed: "Etiket kaydedilemedi"
+  chapter_target:
+    label: "Kelime hedefi"
+    placeholder: "ör. 2000"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"

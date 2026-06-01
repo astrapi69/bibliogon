@@ -770,6 +770,7 @@ export default function BookEditor() {
                     chapterTitle={activeChapterMeta.title}
                     chapterType={activeChapterMeta.chapter_type}
                     chapterVersion={activeChapterMeta.version}
+                    targetWords={activeChapterMeta.target_words}
                     bookContext={{
                         title: book.title,
                         author: book.author || "",

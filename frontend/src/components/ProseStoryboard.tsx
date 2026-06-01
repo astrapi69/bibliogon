@@ -65,7 +65,7 @@ import styles from "./Storyboard.module.css"
  *  field. ``version`` is added by the parent from the current row. */
 type ChapterAnnotationPatch = Pick<
     ChapterUpdatePayload,
-    "notes" | "story_beat" | "mood_color" | "act_group" | "status" | "label_id"
+    "notes" | "story_beat" | "mood_color" | "act_group" | "status" | "label_id" | "target_words"
 >
 
 /** Flatten a TipTap doc to plain text (mirrors the helper in
@@ -480,6 +480,27 @@ function ChapterCard({chapter, labels, onSelect, onPatch, testidNamespace}: Chap
                     }
                     namespace={testidNamespace}
                     idSuffix={chapter.id}
+                />
+                <input
+                    type="number"
+                    min={0}
+                    className={styles.actGroupInput}
+                    defaultValue={chapter.target_words ?? ""}
+                    placeholder={t("ui.chapter_target.placeholder", "Word target")}
+                    aria-label={t("ui.chapter_target.label", "Word target")}
+                    data-testid={`${testidNamespace}-target-${chapter.id}`}
+                    onClick={(e) => e.stopPropagation()}
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                        e.stopPropagation()
+                        if (e.key === "Enter") (e.target as HTMLInputElement).blur()
+                    }}
+                    onBlur={(e) => {
+                        const raw = e.target.value.trim()
+                        const next = raw === "" ? null : Math.max(0, parseInt(raw, 10) || 0)
+                        if (next === (chapter.target_words ?? null)) return
+                        void onPatch(chapter.id, {target_words: next}).catch(() => {})
+                    }}
                 />
                 <BeatSelect
                     value={chapter.story_beat ?? null}

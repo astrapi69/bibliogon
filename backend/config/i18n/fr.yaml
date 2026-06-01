@@ -2785,6 +2785,9 @@ ui:
     new_placeholder: "Nom de la nouvelle étiquette"
     add: "Ajouter"
     save_failed: "Impossible d'enregistrer l'étiquette"
+  chapter_target:
+    label: "Objectif de mots"
+    placeholder: "p. ex. 2000"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} de plus"

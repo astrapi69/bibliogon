@@ -2783,6 +2783,9 @@ ui:
     new_placeholder: "New label name"
     add: "Add"
     save_failed: "Could not save label"
+  chapter_target:
+    label: "Word target"
+    placeholder: "e.g. 2000"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"

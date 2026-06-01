@@ -2785,6 +2785,9 @@ ui:
     new_placeholder: "Όνομα νέας ετικέτας"
     add: "Προσθήκη"
     save_failed: "Δεν ήταν δυνατή η αποθήκευση της ετικέτας"
+  chapter_target:
+    label: "Στόχος λέξεων"
+    placeholder: "π.χ. 2000"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"

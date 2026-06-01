@@ -2785,6 +2785,9 @@ ui:
     new_placeholder: "Nombre de la nueva etiqueta"
     add: "Añadir"
     save_failed: "No se pudo guardar la etiqueta"
+  chapter_target:
+    label: "Objetivo de palabras"
+    placeholder: "p. ej. 2000"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mas"
