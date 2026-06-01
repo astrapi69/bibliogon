@@ -245,6 +245,23 @@ export interface Chapter {
   story_beat?: string | null;
   mood_color?: string | null;
   act_group?: string | null;
+  /** Drafting workflow (CHAPTER-STATUS-LABELS-01). status: fixed
+   *  workflow enum (ChapterStatus). label_id: assigned ChapterLabel id
+   *  (map to name+color via the book's chapter-labels list). */
+  status?: ChapterStatus | null;
+  label_id?: string | null;
+}
+
+/** Per-chapter drafting workflow status (CHAPTER-STATUS-LABELS-01). */
+export type ChapterStatus = "todo" | "first_draft" | "revised" | "final";
+
+/** A per-book, user-definable chapter label (CHAPTER-STATUS-LABELS-01). */
+export interface ChapterLabel {
+  id: string;
+  book_id: string;
+  name: string;
+  color: string;
+  position: number;
 }
 
 // --- Page (PB-PHASE4: picture-book pages) ---
@@ -1059,6 +1076,9 @@ export interface ChapterUpdatePayload {
   story_beat?: string | null;
   mood_color?: string | null;
   act_group?: string | null;
+  /** Drafting workflow (CHAPTER-STATUS-LABELS-01). */
+  status?: ChapterStatus | null;
+  label_id?: string | null;
 }
 
 export interface ChapterVersionSummary {
@@ -2843,6 +2863,33 @@ export const api = {
         broken: { text: string; anchor: string; toc_chapter_id: string }[];
         valid_anchors: string[];
       }>(`/books/${bookId}/chapters/validate-toc`, { method: "POST" }),
+  },
+
+  /** Per-book chapter labels (CHAPTER-STATUS-LABELS-01). */
+  chapterLabels: {
+    list: (bookId: string) =>
+      request<ChapterLabel[]>(`/books/${bookId}/chapter-labels`),
+
+    create: (bookId: string, data: { name: string; color: string }) =>
+      request<ChapterLabel>(`/books/${bookId}/chapter-labels`, {
+        method: "POST",
+        body: JSON.stringify(data),
+      }),
+
+    update: (
+      bookId: string,
+      labelId: string,
+      data: { name?: string; color?: string; position?: number },
+    ) =>
+      request<ChapterLabel>(`/books/${bookId}/chapter-labels/${labelId}`, {
+        method: "PATCH",
+        body: JSON.stringify(data),
+      }),
+
+    remove: (bookId: string, labelId: string) =>
+      request<void>(`/books/${bookId}/chapter-labels/${labelId}`, {
+        method: "DELETE",
+      }),
   },
 
   /** PB-PHASE4 picture-book pages CRUD. Endpoints come from the
