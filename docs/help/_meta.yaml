@@ -92,6 +92,10 @@ navigation:
           de: Arc-Ansicht und Kontinuität
           en: Arc View and continuity
         slug: story-bible/arc-view
+      - title:
+          de: Beziehungsgraph
+          en: Relationship graph
+        slug: story-bible/relationship-graph
 
   - title:
       de: Dashboard

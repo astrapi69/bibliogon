@@ -61,6 +61,7 @@ plugins:
         Story-Bibel: Story Bible
         Erwähnungen und Auto-Erkennung: Mentions and auto-detect
         Arc-Ansicht und Kontinuität: Arc View and continuity
+        Beziehungsgraph: Relationship graph
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
         Formatierung: Formatting
@@ -143,6 +144,7 @@ nav:
   - Übersicht: de/story-bible.md
   - Erwähnungen und Auto-Erkennung: de/story-bible/mentions.md
   - Arc-Ansicht und Kontinuität: de/story-bible/arc-view.md
+  - Beziehungsgraph: de/story-bible/relationship-graph.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md
