@@ -228,6 +228,9 @@ export interface Book {
 
 export interface BookDetail extends Book {
   chapters: Chapter[];
+  /** Persisted relationship-graph node positions {entity_id: {x, y}}
+   *  (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
+  graph_layout?: Record<string, { x: number; y: number }> | null;
 }
 
 export interface Chapter {
@@ -1845,6 +1848,8 @@ export const api = {
       data: Partial<BookCreate> & {
         word_target?: number | null;
         word_target_deadline?: string | null;
+        /** Relationship-graph node positions (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
+        graph_layout?: Record<string, { x: number; y: number }> | null;
       },
     ) =>
       request<Book>(`/books/${id}`, {

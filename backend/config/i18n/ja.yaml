@@ -2843,6 +2843,9 @@ ui:
     relationship_count: "関係数"
     open_in_editor: "エディターで開く"
     show_appearances: "登場箇所を表示"
+    reset_layout: "レイアウトをリセット"
+    export_png: "画像としてエクスポート"
+    export_failed: "エクスポートに失敗しました。"
   outliner:
     title: "アウトライン"
     open: "アウトラインを開く"

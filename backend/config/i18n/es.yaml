@@ -2843,6 +2843,9 @@ ui:
     relationship_count: "Relaciones"
     open_in_editor: "Abrir en el editor"
     show_appearances: "Mostrar apariciones"
+    reset_layout: "Restablecer disposicion"
+    export_png: "Exportar como imagen"
+    export_failed: "Error al exportar."
   outliner:
     title: "Esquema"
     open: "Abrir esquema"

@@ -48,6 +48,15 @@
   margin-top: 0.75rem;
 }
 
+.toolbar {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 5;
+  display: flex;
+  gap: 0.35rem;
+}
+
 .detailPanel {
   position: absolute;
   top: 1rem;

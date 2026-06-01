@@ -2841,6 +2841,9 @@ ui:
     relationship_count: "Relationships"
     open_in_editor: "Open in editor"
     show_appearances: "Show appearances"
+    reset_layout: "Reset layout"
+    export_png: "Export as image"
+    export_failed: "Export failed."
   outliner:
     title: "Outliner"
     open: "Open outliner"

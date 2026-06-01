@@ -17,6 +17,7 @@ import type {
   NodeTypes,
   OnNodesChange,
   OnConnect,
+  OnNodeDrag,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
@@ -32,6 +33,7 @@ interface Props {
   onConnect?: OnConnect;
   onNodeClick?: (event: React.MouseEvent, node: Node) => void;
   onNodeDoubleClick?: (event: React.MouseEvent, node: Node) => void;
+  onNodeDragStop?: OnNodeDrag;
   onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
 }
 
@@ -43,6 +45,7 @@ export default function RelationshipGraph({
   onConnect,
   onNodeClick,
   onNodeDoubleClick,
+  onNodeDragStop,
   onEdgeClick,
 }: Props) {
   const { theme } = useTheme();
@@ -56,6 +59,7 @@ export default function RelationshipGraph({
         onConnect={onConnect}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeDragStop={onNodeDragStop}
         onEdgeClick={onEdgeClick}
         colorMode={theme === "dark" ? "dark" : "light"}
         fitView

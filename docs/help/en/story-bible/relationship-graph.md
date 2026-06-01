@@ -38,3 +38,11 @@ Click a line and confirm the prompt - the relationship is removed.
   relationship count) with **Open in editor** and **Show appearances**.
 - A **double click** opens the entry directly in the Story Bible
   editor.
+
+## Saving the arrangement and exporting
+
+- Dragged nodes are saved automatically (per book) and persist the
+  next time you open the graph.
+- **Reset layout** restores the circular arrangement.
+- **Export as image** downloads the graph as a PNG - handy as an
+  overview graphic or for the Story Bible Markdown.

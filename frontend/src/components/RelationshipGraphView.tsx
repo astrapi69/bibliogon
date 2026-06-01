@@ -10,11 +10,12 @@
  * source entity's ``relationships``; clicking an edge offers a confirmed
  * delete. The graph reloads from the server after each mutation.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useNodesState, useEdgesState, MarkerType } from "@xyflow/react";
 import type { Node, Edge, Connection } from "@xyflow/react";
-import { X } from "lucide-react";
+import { toPng } from "html-to-image";
+import { X, RotateCcw, Download } from "lucide-react";
 
 import {
   api,
@@ -33,18 +34,26 @@ import styles from "./RelationshipGraphView.module.css";
 
 const nodeTypes = { entity: EntityNode };
 
+/** A saved node position. */
+export type NodePosition = { x: number; y: number };
+
 /** Lay entities out evenly around a circle (dependency-free, stable for
- * a given entity ordering). Radius scales with count so larger casts
- * don't overlap. */
-export function buildNodes(entities: StoryEntityOut[]): Node[] {
+ * a given entity ordering), unless a saved position exists in
+ * ``layout`` (C5 persistence) - then that wins. Radius scales with
+ * count so larger casts don't overlap. */
+export function buildNodes(
+  entities: StoryEntityOut[],
+  layout: Record<string, NodePosition> = {},
+): Node[] {
   const n = entities.length;
   const radius = Math.max(160, n * 36);
   return entities.map((entity, i) => {
     const angle = (2 * Math.PI * i) / Math.max(1, n);
+    const saved = layout[entity.id];
     return {
       id: entity.id,
       type: "entity",
-      position: {
+      position: saved ?? {
         x: radius + radius * Math.cos(angle),
         y: radius + radius * Math.sin(angle),
       },
@@ -106,6 +115,8 @@ export function removeRelationship(
 
 interface Props {
   bookId: string;
+  /** Persisted node positions {entity_id: {x, y}} (Book.graph_layout). */
+  savedLayout?: Record<string, NodePosition> | null;
   /** Open an entity in the Story Bible editor (StoryEntityEditor). */
   onOpenEntity?: (entityId: string) => void;
   /** Show an entity's appearances (Storyboard). Optional. */
@@ -114,6 +125,7 @@ interface Props {
 
 export default function RelationshipGraphView({
   bookId,
+  savedLayout,
   onOpenEntity,
   onShowAppearances,
 }: Props) {
@@ -130,13 +142,19 @@ export default function RelationshipGraphView({
   } | null>(null);
   const [createType, setCreateType] = useState<RelationshipType>("ally");
   const [createNote, setCreateNote] = useState("");
+  // Current node positions, seeded from the saved layout and updated on
+  // drag. A ref so ``load`` can read it without re-subscribing (the
+  // graph reloads after every relationship mutation, and must preserve
+  // the user's arrangement rather than snap back to the auto-layout).
+  const positionsRef = useRef<Record<string, NodePosition>>(savedLayout ?? {});
+  const wrapperRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const list = await api.storyBible.listEntities(bookId);
       setEntities(list);
-      setNodes(buildNodes(list));
+      setNodes(buildNodes(list, positionsRef.current));
       setEdges(buildEdges(list));
     } catch {
       notify.error(
@@ -150,6 +168,56 @@ export default function RelationshipGraphView({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, setNodes, setEdges]);
+
+  const onNodeDragStop = useCallback(
+    (_e: MouseEvent | TouchEvent, node: Node) => {
+      const next = { ...positionsRef.current, [node.id]: node.position };
+      positionsRef.current = next;
+      void api.books.update(bookId, { graph_layout: next }).catch(() => {
+        notify.error(
+          t(
+            "ui.relationship_graph.save_failed",
+            "Beziehung konnte nicht gespeichert werden.",
+          ),
+        );
+      });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [bookId],
+  );
+
+  const handleResetLayout = async () => {
+    positionsRef.current = {};
+    setNodes(buildNodes(entities, {}));
+    try {
+      await api.books.update(bookId, { graph_layout: {} });
+    } catch {
+      notify.error(
+        t(
+          "ui.relationship_graph.save_failed",
+          "Beziehung konnte nicht gespeichert werden.",
+        ),
+      );
+    }
+  };
+
+  const handleExportPng = async () => {
+    const viewport = wrapperRef.current?.querySelector<HTMLElement>(
+      ".react-flow__viewport",
+    );
+    if (!viewport) return;
+    try {
+      const dataUrl = await toPng(viewport, { backgroundColor: "transparent" });
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = "relationship-graph.png";
+      a.click();
+    } catch {
+      notify.error(
+        t("ui.relationship_graph.export_failed", "Export fehlgeschlagen."),
+      );
+    }
+  };
 
   useEffect(() => {
     void load();
@@ -257,7 +325,25 @@ export default function RelationshipGraphView({
   }
 
   return (
-    <div className={styles.wrapper}>
+    <div className={styles.wrapper} ref={wrapperRef}>
+      <div className={styles.toolbar}>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => void handleResetLayout()}
+          data-testid="relationship-reset-layout"
+        >
+          <RotateCcw size={14} aria-hidden />
+          {t("ui.relationship_graph.reset_layout", "Layout zurücksetzen")}
+        </button>
+        <button
+          className="btn btn-secondary btn-sm"
+          onClick={() => void handleExportPng()}
+          data-testid="relationship-export-png"
+        >
+          <Download size={14} aria-hidden />
+          {t("ui.relationship_graph.export_png", "Als Bild exportieren")}
+        </button>
+      </div>
       <RelationshipGraph
         bookId={bookId}
         nodes={nodes}
@@ -268,6 +354,7 @@ export default function RelationshipGraphView({
         onEdgeClick={onEdgeClick}
         onNodeClick={onNodeClick}
         onNodeDoubleClick={onNodeDoubleClick}
+        onNodeDragStop={onNodeDragStop}
       />
 
       {detailEntity ? (

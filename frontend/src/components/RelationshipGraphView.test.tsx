@@ -61,13 +61,26 @@ vi.mock("@xyflow/react", async () => {
       onEdgeClick?: (e: unknown, edge: unknown) => void;
       onNodeClick?: (e: unknown, node: unknown) => void;
       onNodeDoubleClick?: (e: unknown, node: unknown) => void;
+      onNodeDragStop?: (e: unknown, node: unknown) => void;
     }) => (
       <div data-testid="rf-stub">
+        <div className="react-flow__viewport" />
         <button
           data-testid="rf-trigger-connect"
           onClick={() => {
             const [a, b] = props.nodes ?? [];
             if (a && b) props.onConnect?.({ source: a.id, target: b.id });
+          }}
+        />
+        <button
+          data-testid="rf-trigger-drag-stop"
+          onClick={() => {
+            const [a] = props.nodes ?? [];
+            if (a)
+              props.onNodeDragStop?.({} as unknown, {
+                id: a.id,
+                position: { x: 42, y: 7 },
+              });
           }}
         />
         {(props.nodes ?? []).map((n) => (
@@ -100,14 +113,19 @@ vi.mock("@xyflow/react", async () => {
 
 const listEntities = vi.fn();
 const updateEntity = vi.fn();
+const updateBook = vi.fn();
 vi.mock("../api/client", () => ({
   api: {
     storyBible: {
       listEntities: (...a: unknown[]) => listEntities(...a),
       updateEntity: (...a: unknown[]) => updateEntity(...a),
     },
+    books: { update: (...a: unknown[]) => updateBook(...a) },
   },
 }));
+
+const toPng = vi.fn();
+vi.mock("html-to-image", () => ({ toPng: (...a: unknown[]) => toPng(...a) }));
 
 function entity(
   id: string,
@@ -138,6 +156,11 @@ describe("relationship-graph builders", () => {
       label: "Name a",
       entityType: "character",
     });
+  });
+
+  it("buildNodes honours a saved layout position over the auto-layout", () => {
+    const nodes = buildNodes([entity("a", "character")], { a: { x: 5, y: 9 } });
+    expect(nodes[0].position).toEqual({ x: 5, y: 9 });
   });
 
   it("buildEdges makes one edge per relationship, skipping missing targets", () => {
@@ -181,6 +204,8 @@ describe("RelationshipGraphView", () => {
     vi.clearAllMocks();
     mockConfirm.mockResolvedValue(true);
     updateEntity.mockResolvedValue({});
+    updateBook.mockResolvedValue({});
+    toPng.mockResolvedValue("data:image/png;base64,AAAA");
   });
 
   it("shows the empty state when the book has no entities", async () => {
@@ -252,5 +277,32 @@ describe("RelationshipGraphView", () => {
     render(<RelationshipGraphView bookId="b1" onOpenEntity={onOpenEntity} />);
     fireEvent.click(await screen.findByTestId("rf-node-dblclick-a"));
     expect(onOpenEntity).toHaveBeenCalledWith("a");
+  });
+
+  it("persists node positions on drag stop", async () => {
+    listEntities.mockResolvedValue([entity("a", "character")]);
+    render(<RelationshipGraphView bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("rf-trigger-drag-stop"));
+    await waitFor(() =>
+      expect(updateBook).toHaveBeenCalledWith("b1", {
+        graph_layout: { a: { x: 42, y: 7 } },
+      }),
+    );
+  });
+
+  it("resets the layout to empty", async () => {
+    listEntities.mockResolvedValue([entity("a", "character")]);
+    render(<RelationshipGraphView bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("relationship-reset-layout"));
+    await waitFor(() =>
+      expect(updateBook).toHaveBeenCalledWith("b1", { graph_layout: {} }),
+    );
+  });
+
+  it("exports the graph as a PNG", async () => {
+    listEntities.mockResolvedValue([entity("a", "character")]);
+    render(<RelationshipGraphView bookId="b1" />);
+    fireEvent.click(await screen.findByTestId("relationship-export-png"));
+    await waitFor(() => expect(toPng).toHaveBeenCalled());
   });
 });

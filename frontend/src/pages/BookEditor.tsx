@@ -792,6 +792,7 @@ export default function BookEditor() {
             ) : showRelationships ? (
                 <RelationshipGraphView
                     bookId={book.id}
+                    savedLayout={book.graph_layout}
                     onOpenEntity={(entityId) => { setSelectedStoryEntityId(entityId); }}
                     onShowAppearances={() => { _setShowStoryboard(true); }}
                 />

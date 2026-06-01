@@ -2843,6 +2843,9 @@ ui:
     relationship_count: "Relacoes"
     open_in_editor: "Abrir no editor"
     show_appearances: "Mostrar aparicoes"
+    reset_layout: "Redefinir layout"
+    export_png: "Exportar como imagem"
+    export_failed: "Falha na exportacao."
   outliner:
     title: "Estrutura"
     open: "Abrir estrutura"

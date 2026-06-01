@@ -40,3 +40,12 @@ entfernt.
   Typ, Anzahl der Beziehungen) mit **Im Editor öffnen** und
   **Auftritte anzeigen**.
 - **Doppelklick** öffnet den Eintrag direkt im Story-Bibel-Editor.
+
+## Anordnung speichern und exportieren
+
+- Verschobene Knoten werden automatisch gespeichert (pro Buch) und
+  bleiben beim nächsten Öffnen erhalten.
+- **Layout zurücksetzen** stellt die kreisförmige Anordnung wieder
+  her.
+- **Als Bild exportieren** lädt den Graphen als PNG herunter - ideal
+  als Übersichtsgrafik oder fürs Story-Bibel-Markdown.

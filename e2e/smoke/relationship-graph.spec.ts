@@ -46,5 +46,9 @@ test.describe("Relationship graph", () => {
     await expect(node).toBeVisible()
     await node.click()
     await expect(page.getByTestId("relationship-detail-panel")).toBeVisible()
+
+    // C5 toolbar: reset-layout + export-PNG controls are present.
+    await expect(page.getByTestId("relationship-reset-layout")).toBeVisible()
+    await expect(page.getByTestId("relationship-export-png")).toBeVisible()
   })
 })

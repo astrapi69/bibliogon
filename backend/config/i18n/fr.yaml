@@ -2843,6 +2843,9 @@ ui:
     relationship_count: "Relations"
     open_in_editor: "Ouvrir dans l'éditeur"
     show_appearances: "Afficher les apparitions"
+    reset_layout: "Reinitialiser la disposition"
+    export_png: "Exporter en image"
+    export_failed: "Echec de l'exportation."
   outliner:
     title: "Plan"
     open: "Ouvrir le plan"

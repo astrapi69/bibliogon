@@ -2843,6 +2843,9 @@ ui:
     relationship_count: "Σχέσεις"
     open_in_editor: "Άνοιγμα στον επεξεργαστή"
     show_appearances: "Εμφάνιση εμφανίσεων"
+    reset_layout: "Επαναφορά διάταξης"
+    export_png: "Εξαγωγή ως εικόνα"
+    export_failed: "Η εξαγωγή απέτυχε."
   outliner:
     title: "Διάρθρωση"
     open: "Άνοιγμα διάρθρωσης"

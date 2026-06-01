@@ -2841,6 +2841,9 @@ ui:
     relationship_count: "Beziehungen"
     open_in_editor: "Im Editor öffnen"
     show_appearances: "Auftritte anzeigen"
+    reset_layout: "Layout zurücksetzen"
+    export_png: "Als Bild exportieren"
+    export_failed: "Export fehlgeschlagen."
   outliner:
     title: "Gliederung"
     open: "Gliederung öffnen"
