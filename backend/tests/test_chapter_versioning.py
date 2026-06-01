@@ -10,6 +10,7 @@ Covers the contract the Editor depends on:
   - Restore overwrites current state AND snapshots the pre-restore
     state so nothing is lost
 """
+
 from fastapi.testclient import TestClient
 
 from app.main import app
@@ -64,14 +65,22 @@ def test_patch_with_stale_version_returns_409_with_server_state():
     ch = _create_chapter(book_id, content="original")
 
     # First save moves the server to v=2.
-    client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-        "content": "server-side write", "version": 1,
-    })
+    client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": "server-side write",
+            "version": 1,
+        },
+    )
 
     # Second save still thinks it is on v=1 - should 409.
-    r = client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-        "content": "stale client write", "version": 1,
-    })
+    r = client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": "stale client write",
+            "version": 1,
+        },
+    )
     assert r.status_code == 409
     body = r.json()["detail"]
     assert body["error"] == "version_conflict"
@@ -96,13 +105,18 @@ def test_patch_without_version_returns_422():
 
 def test_updated_at_bumps_on_every_patch():
     import time
+
     book_id = _create_book()
     ch = _create_chapter(book_id)
     initial = ch["updated_at"]
     time.sleep(0.02)  # defeat same-millisecond timestamps
-    r = client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-        "content": "bump", "version": 1,
-    })
+    r = client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": "bump",
+            "version": 1,
+        },
+    )
     assert r.json()["updated_at"] != initial
     _cleanup(book_id)
 
@@ -114,9 +128,13 @@ def test_patch_creates_version_row_with_pre_update_content():
     book_id = _create_book()
     ch = _create_chapter(book_id, content="A")
 
-    client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-        "content": "B", "version": 1,
-    })
+    client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": "B",
+            "version": 1,
+        },
+    )
 
     versions = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
     assert len(versions) == 1
@@ -136,9 +154,13 @@ def test_retention_trims_to_last_20_per_chapter():
     current_version = 1
     # 21 patches -> 21 snapshots before trim, then DELETE keeps 20.
     for i in range(21):
-        r = client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-            "content": f"edit {i}", "version": current_version,
-        })
+        r = client.patch(
+            f"/api/books/{book_id}/chapters/{ch['id']}",
+            json={
+                "content": f"edit {i}",
+                "version": current_version,
+            },
+        )
         assert r.status_code == 200
         current_version = r.json()["version"]
 
@@ -161,9 +183,13 @@ def test_restore_overwrites_current_and_snapshots_pre_restore():
     current_version = 1
     # Edit a few times to have real history.
     for content in ("second", "third"):
-        r = client.patch(f"/api/books/{book_id}/chapters/{ch['id']}", json={
-            "content": content, "version": current_version,
-        })
+        r = client.patch(
+            f"/api/books/{book_id}/chapters/{ch['id']}",
+            json={
+                "content": content,
+                "version": current_version,
+            },
+        )
         current_version = r.json()["version"]
 
     versions = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
@@ -194,9 +220,7 @@ def test_restore_overwrites_current_and_snapshots_pre_restore():
 def test_restore_nonexistent_version_returns_404():
     book_id = _create_book()
     ch = _create_chapter(book_id)
-    r = client.post(
-        f"/api/books/{book_id}/chapters/{ch['id']}/versions/nope/restore"
-    )
+    r = client.post(f"/api/books/{book_id}/chapters/{ch['id']}/versions/nope/restore")
     assert r.status_code == 404
     _cleanup(book_id)
 
@@ -230,9 +254,7 @@ def test_fork_creates_new_chapter_after_source_with_supplied_content():
     assert new_chapter["id"] != source["id"]
 
     # Source chapter is untouched.
-    fresh_source = client.get(
-        f"/api/books/{book_id}/chapters/{source['id']}"
-    ).json()
+    fresh_source = client.get(f"/api/books/{book_id}/chapters/{source['id']}").json()
     assert fresh_source["content"] == "server text"
     assert fresh_source["title"] == "Original"
 
@@ -318,4 +340,191 @@ def test_fork_inherits_source_chapter_type():
     assert r.status_code == 201
     assert r.json()["chapter_type"] == "preface"
 
+    _cleanup(book_id)
+
+
+# --- CHAPTER-SNAPSHOTS-01: manual named snapshots ---
+
+
+def test_create_manual_snapshot_captures_current_state_and_name():
+    book_id = _create_book()
+    ch = _create_chapter(book_id, title="Draft", content="current body")
+
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{ch['id']}/snapshots",
+        json={"name": "Before restructure"},
+    )
+    assert r.status_code == 201, r.text
+    snap = r.json()
+    assert snap["is_manual"] is True
+    assert snap["name"] == "Before restructure"
+    assert snap["content"] == "current body"
+    assert snap["title"] == "Draft"
+    # The manual snapshot mirrors the chapter's current version counter.
+    assert snap["version"] == ch["version"]
+
+    # It surfaces in the version list flagged as manual.
+    versions = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
+    assert any(v["id"] == snap["id"] and v["is_manual"] for v in versions)
+
+    _cleanup(book_id)
+
+
+def test_create_manual_snapshot_blank_name_stored_as_null():
+    book_id = _create_book()
+    ch = _create_chapter(book_id)
+    r = client.post(
+        f"/api/books/{book_id}/chapters/{ch['id']}/snapshots",
+        json={"name": "   "},
+    )
+    assert r.status_code == 201
+    assert r.json()["name"] is None
+
+    # Omitting the field entirely is also valid (unnamed snapshot).
+    r2 = client.post(f"/api/books/{book_id}/chapters/{ch['id']}/snapshots", json={})
+    assert r2.status_code == 201
+    assert r2.json()["name"] is None
+
+    _cleanup(book_id)
+
+
+def test_manual_snapshots_are_exempt_from_retention_trim():
+    book_id = _create_book()
+    ch = _create_chapter(book_id, content="seed")
+
+    # Take a manual snapshot up front, then push 25 auto versions past it.
+    manual = client.post(
+        f"/api/books/{book_id}/chapters/{ch['id']}/snapshots",
+        json={"name": "keep me"},
+    ).json()
+
+    current_version = ch["version"]
+    for i in range(25):
+        r = client.patch(
+            f"/api/books/{book_id}/chapters/{ch['id']}",
+            json={
+                "content": f"edit {i}",
+                "version": current_version,
+            },
+        )
+        current_version = r.json()["version"]
+
+    versions = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
+    auto = [v for v in versions if not v["is_manual"]]
+    manual_rows = [v for v in versions if v["is_manual"]]
+    # Auto rows trimmed to 20; the manual snapshot survives untouched.
+    assert len(auto) == 20
+    assert any(v["id"] == manual["id"] for v in manual_rows)
+
+    _cleanup(book_id)
+
+
+def test_diff_reports_added_and_removed_lines_against_current():
+    book_id = _create_book()
+    # TipTap JSON so the diff exercises the flatten path.
+    doc = (
+        '{"type":"doc","content":['
+        '{"type":"paragraph","content":[{"type":"text","text":"alpha"}]},'
+        '{"type":"paragraph","content":[{"type":"text","text":"beta"}]}'
+        "]}"
+    )
+    ch = _create_chapter(book_id, content=doc)
+    snap = client.post(
+        f"/api/books/{book_id}/chapters/{ch['id']}/snapshots",
+        json={"name": "snap"},
+    ).json()
+
+    # Replace "beta" with "gamma" in the current chapter.
+    new_doc = doc.replace("beta", "gamma")
+    client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": new_doc,
+            "version": ch["version"],
+        },
+    )
+
+    r = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions/{snap['id']}/diff")
+    assert r.status_code == 200, r.text
+    diff = r.json()
+    texts = {(line["type"], line["text"]) for line in diff["lines"]}
+    assert ("unchanged", "alpha") in texts
+    assert ("removed", "beta") in texts
+    assert ("added", "gamma") in texts
+    assert diff["title_changed"] is False
+
+    _cleanup(book_id)
+
+
+def test_diff_flags_title_change():
+    book_id = _create_book()
+    ch = _create_chapter(book_id, title="Old Title", content="body")
+    snap = client.post(f"/api/books/{book_id}/chapters/{ch['id']}/snapshots", json={}).json()
+    client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "title": "New Title",
+            "version": ch["version"],
+        },
+    )
+    diff = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions/{snap['id']}/diff").json()
+    assert diff["title_changed"] is True
+    assert diff["snapshot_title"] == "Old Title"
+    assert diff["current_title"] == "New Title"
+    _cleanup(book_id)
+
+
+def test_diff_nonexistent_version_returns_404():
+    book_id = _create_book()
+    ch = _create_chapter(book_id)
+    r = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions/nope/diff")
+    assert r.status_code == 404
+    _cleanup(book_id)
+
+
+def test_delete_manual_snapshot_removes_it():
+    book_id = _create_book()
+    ch = _create_chapter(book_id)
+    snap = client.post(
+        f"/api/books/{book_id}/chapters/{ch['id']}/snapshots",
+        json={"name": "tmp"},
+    ).json()
+
+    r = client.delete(f"/api/books/{book_id}/chapters/{ch['id']}/versions/{snap['id']}")
+    assert r.status_code == 204
+
+    versions = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
+    assert all(v["id"] != snap["id"] for v in versions)
+
+    _cleanup(book_id)
+
+
+def test_delete_auto_version_rejected_with_400():
+    book_id = _create_book()
+    ch = _create_chapter(book_id, content="A")
+    client.patch(
+        f"/api/books/{book_id}/chapters/{ch['id']}",
+        json={
+            "content": "B",
+            "version": 1,
+        },
+    )
+    auto = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()[0]
+    assert auto["is_manual"] is False
+
+    r = client.delete(f"/api/books/{book_id}/chapters/{ch['id']}/versions/{auto['id']}")
+    assert r.status_code == 400
+
+    # The auto version is still present.
+    still = client.get(f"/api/books/{book_id}/chapters/{ch['id']}/versions").json()
+    assert any(v["id"] == auto["id"] for v in still)
+
+    _cleanup(book_id)
+
+
+def test_delete_nonexistent_version_returns_404():
+    book_id = _create_book()
+    ch = _create_chapter(book_id)
+    r = client.delete(f"/api/books/{book_id}/chapters/{ch['id']}/versions/ghost")
+    assert r.status_code == 404
     _cleanup(book_id)

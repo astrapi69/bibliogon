@@ -766,6 +766,8 @@ class ChapterVersionSummary(BaseModel):
     chapter_id: str
     title: str
     version: int
+    name: str | None = None
+    is_manual: bool = False
     created_at: datetime
 
 
@@ -773,6 +775,47 @@ class ChapterVersionRead(ChapterVersionSummary):
     """Full version with content (for preview and restore)."""
 
     content: str
+
+
+class ChapterSnapshotCreate(BaseModel):
+    """Body for ``POST /chapters/{id}/snapshots`` (CHAPTER-SNAPSHOTS-01).
+
+    Takes a Scrivener-style manual snapshot of the chapter's CURRENT
+    saved state. The optional ``name`` is a free-text label the user
+    gives the snapshot ("Before restructure"); when omitted the
+    snapshot is kept but unnamed.
+    """
+
+    name: str | None = None
+
+    @field_validator("name")
+    @classmethod
+    def _trim_name(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        trimmed = value.strip()
+        return trimmed or None
+
+
+class ChapterVersionDiffLine(BaseModel):
+    """One line of a snapshot-vs-current diff."""
+
+    #: One of ``unchanged`` / ``added`` / ``removed``. ``added`` means
+    #: the line is present in the CURRENT chapter but not the snapshot;
+    #: ``removed`` means it was in the snapshot but is gone now.
+    type: str
+    text: str
+
+
+class ChapterVersionDiff(BaseModel):
+    """Line-oriented diff between a stored version and the current
+    chapter content (CHAPTER-SNAPSHOTS-01)."""
+
+    version_id: str
+    title_changed: bool
+    snapshot_title: str
+    current_title: str
+    lines: list[ChapterVersionDiffLine]
 
 
 class ChapterReorder(BaseModel):

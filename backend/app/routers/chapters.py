@@ -12,14 +12,18 @@ from app.schemas import (
     ChapterFork,
     ChapterOut,
     ChapterReorder,
+    ChapterSnapshotCreate,
     ChapterUpdate,
+    ChapterVersionDiff,
     ChapterVersionRead,
     ChapterVersionSummary,
 )
+from app.services.chapter_snapshots import line_diff, snapshot_plain_text
 from app.services.writing_stats import count_words, record_progress
 
-# Retention: keep at most the last N snapshots per chapter. Further
-# history is only available via .bgb backups.
+# Retention: keep at most the last N AUTOMATIC snapshots per chapter.
+# Manual (named) snapshots are exempt - they survive until the user
+# deletes them. Further auto history is only available via .bgb backups.
 VERSION_RETENTION = 20
 
 router = APIRouter(prefix="/books/{book_id}/chapters", tags=["chapters"])
@@ -30,6 +34,28 @@ def _get_book_or_404(book_id: str, db: Session) -> Book:
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     return book
+
+
+def _trim_auto_versions(db: Session, chapter_id: str) -> None:
+    """Keep only the last ``VERSION_RETENTION`` AUTOMATIC versions per
+    chapter. Manual snapshots (``is_manual = 1``) are never trimmed.
+
+    Run after the commit that wrote a new version so the row just
+    written is never a deletion candidate.
+    """
+    db.execute(
+        text(
+            "DELETE FROM chapter_versions "
+            "WHERE chapter_id = :cid AND is_manual = 0 AND id NOT IN ("
+            "  SELECT id FROM chapter_versions "
+            "  WHERE chapter_id = :cid AND is_manual = 0 "
+            "  ORDER BY created_at DESC, version DESC "
+            "  LIMIT :keep"
+            ")"
+        ),
+        {"cid": chapter_id, "keep": VERSION_RETENTION},
+    )
+    db.commit()
 
 
 @router.get("", response_model=list[ChapterOut])
@@ -116,22 +142,7 @@ def update_chapter(
     db.commit()
     db.refresh(chapter)
 
-    # Retention: keep only the last N versions per chapter. Done after
-    # the commit above so the snapshot we just wrote is never a candidate
-    # for deletion.
-    db.execute(
-        text(
-            "DELETE FROM chapter_versions "
-            "WHERE chapter_id = :cid AND id NOT IN ("
-            "  SELECT id FROM chapter_versions "
-            "  WHERE chapter_id = :cid "
-            "  ORDER BY created_at DESC, version DESC "
-            "  LIMIT :keep"
-            ")"
-        ),
-        {"cid": chapter.id, "keep": VERSION_RETENTION},
-    )
-    db.commit()
+    _trim_auto_versions(db, chapter.id)
 
     return chapter
 
@@ -220,22 +231,122 @@ def restore_chapter_version(
     db.commit()
     db.refresh(chapter)
 
-    # Retention trim (same query as PATCH).
-    db.execute(
-        text(
-            "DELETE FROM chapter_versions "
-            "WHERE chapter_id = :cid AND id NOT IN ("
-            "  SELECT id FROM chapter_versions "
-            "  WHERE chapter_id = :cid "
-            "  ORDER BY created_at DESC, version DESC "
-            "  LIMIT :keep"
-            ")"
-        ),
-        {"cid": chapter.id, "keep": VERSION_RETENTION},
-    )
-    db.commit()
+    _trim_auto_versions(db, chapter.id)
 
     return chapter
+
+
+@router.post(
+    "/{chapter_id}/snapshots",
+    response_model=ChapterVersionRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_chapter_snapshot(
+    book_id: str,
+    chapter_id: str,
+    payload: ChapterSnapshotCreate,
+    db: Session = Depends(get_db),
+):
+    """Take a Scrivener-style manual snapshot of the chapter's CURRENT
+    saved state (CHAPTER-SNAPSHOTS-01).
+
+    Unlike the automatic versions written on every PATCH, a manual
+    snapshot is ``is_manual = True`` and carries an optional ``name``.
+    It is exempt from the last-20 retention trim, so it survives until
+    the user deletes it explicitly.
+    """
+    _get_book_or_404(book_id, db)
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    if not chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+
+    snapshot = ChapterVersion(
+        chapter_id=chapter.id,
+        content=chapter.content,
+        title=chapter.title,
+        version=chapter.version,
+        name=payload.name,
+        is_manual=True,
+    )
+    db.add(snapshot)
+    db.commit()
+    db.refresh(snapshot)
+    return snapshot
+
+
+@router.get(
+    "/{chapter_id}/versions/{version_id}/diff",
+    response_model=ChapterVersionDiff,
+)
+def diff_chapter_version(
+    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+):
+    """Line-oriented diff between a stored version and the chapter's
+    CURRENT content (CHAPTER-SNAPSHOTS-01).
+
+    ``added`` lines are present now but not in the snapshot; ``removed``
+    lines were in the snapshot but are gone. Both sides are flattened
+    from TipTap JSON to line-broken plain text before diffing.
+    """
+    _get_book_or_404(book_id, db)
+    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    if not chapter:
+        raise HTTPException(status_code=404, detail="Chapter not found")
+    version = (
+        db.query(ChapterVersion)
+        .filter(
+            ChapterVersion.id == version_id,
+            ChapterVersion.chapter_id == chapter_id,
+        )
+        .first()
+    )
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+
+    snapshot_text = snapshot_plain_text(version.content)
+    current_text = snapshot_plain_text(chapter.content)
+    return {
+        "version_id": version.id,
+        "title_changed": version.title != chapter.title,
+        "snapshot_title": version.title,
+        "current_title": chapter.title,
+        "lines": line_diff(snapshot_text, current_text),
+    }
+
+
+@router.delete(
+    "/{chapter_id}/versions/{version_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+def delete_chapter_version(
+    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+):
+    """Delete a MANUAL snapshot (CHAPTER-SNAPSHOTS-01).
+
+    Only manual snapshots are user-deletable; automatic versions are
+    managed by the retention trim and rejected here with a 400 so the
+    history stays a faithful record of saves.
+    """
+    _get_book_or_404(book_id, db)
+    version = (
+        db.query(ChapterVersion)
+        .join(Chapter, ChapterVersion.chapter_id == Chapter.id)
+        .filter(
+            ChapterVersion.id == version_id,
+            ChapterVersion.chapter_id == chapter_id,
+            Chapter.book_id == book_id,
+        )
+        .first()
+    )
+    if not version:
+        raise HTTPException(status_code=404, detail="Version not found")
+    if not version.is_manual:
+        raise HTTPException(
+            status_code=400,
+            detail="Only manual snapshots can be deleted",
+        )
+    db.delete(version)
+    db.commit()
 
 
 @router.post(
