@@ -116,6 +116,24 @@ Drag a card by its handle to reorder chapters; click a card to return
 to that chapter in the editor. Use the mood colors and act groups to
 block out acts and pacing across a whole manuscript at a glance.
 
+### Status + labels
+
+Chapter cards also carry a Scrivener-style **drafting status** and a
+**label**:
+
+- **Status** — a fixed workflow stage per chapter: *To Do*, *First
+  Draft*, *Revised*, *Final* (or none). Set it from the status
+  dropdown on the card; it shows as a small colored-dot chip.
+- **Labels** — a per-book set of named, colored labels you define
+  yourself (e.g. *Needs research*, *POV: Mara*). Click **Manage
+  labels** in the Storyboard header to add a label (name + a color
+  from the preset palette), rename it, recolor it, or delete it
+  (deleting a label clears it from any chapters using it). Assign one
+  label per chapter from the label dropdown on the card; it shows as a
+  colored pill.
+
+Status and label both save instantly and persist per chapter.
+
 ## What's not in the Storyboard (yet)
 
 Deferred to follow-up sessions, captured in `PICTURE-BOOK-STORYBOARD-OPERATIONS-01`:

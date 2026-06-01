@@ -119,6 +119,25 @@ Karte, um zu diesem Kapitel im Editor zurückzukehren. Nutze
 Stimmungsfarben und Akt-Gruppen, um Akte und Pacing über ein ganzes
 Manuskript hinweg auf einen Blick zu blocken.
 
+### Status + Labels
+
+Kapitelkarten tragen außerdem einen Scrivener-artigen
+**Bearbeitungs-Status** und ein **Label**:
+
+- **Status** — eine feste Arbeitsstufe pro Kapitel: *Zu erledigen*,
+  *Erster Entwurf*, *Überarbeitet*, *Fertig* (oder keiner). Über das
+  Status-Dropdown auf der Karte gesetzt; erscheint als kleiner Chip
+  mit farbigem Punkt.
+- **Labels** — ein buchspezifischer Satz benannter, farbiger Labels,
+  die du selbst definierst (z. B. *Recherche nötig*, *POV: Mara*).
+  Klicke **Labels verwalten** in der Storyboard-Kopfzeile, um ein
+  Label hinzuzufügen (Name + Farbe aus der Preset-Palette),
+  umzubenennen, umzufärben oder zu löschen (das Löschen entfernt es
+  von allen Kapiteln, die es nutzen). Weise pro Kapitel ein Label über
+  das Label-Dropdown auf der Karte zu; es erscheint als farbige Pille.
+
+Status und Label speichern sofort und bleiben pro Kapitel erhalten.
+
 ## Was (noch) NICHT im Storyboard ist
 
 Auf spätere Sessions verschoben, festgehalten in `PICTURE-BOOK-STORYBOARD-OPERATIONS-01`:
