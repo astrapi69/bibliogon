@@ -138,6 +138,10 @@ navigation:
           de: Schreibziele
           en: Writing goals
         slug: editor/writing-goals
+      - title:
+          de: Gliederung
+          en: Outliner
+        slug: editor/outliner
 
   - title:
       de: Export
