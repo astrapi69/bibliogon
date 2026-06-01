@@ -127,6 +127,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
+    // COMPOSITION-DISTRACTION-FREE-MODE-01: umbrella distraction-free
+    // mode. Session-only (not persisted - we don't want to reload
+    // into a chromeless surface). Toggling it adds a `composition-mode`
+    // class to document.documentElement so global CSS can hide the
+    // app chrome (chapter sidebar + this editor's toolbar bar) that
+    // lives outside this component, paint the backdrop, and center
+    // the paper column. Escape exits; Ctrl+Shift+D toggles.
+    const [compositionMode, setCompositionMode] = useState(false);
     const [showSpellcheck, setShowSpellcheck] = useState(false);
     const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
@@ -190,11 +198,31 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     // primary keyboard path; Ctrl+Shift+F is the secondary
     // JS-controlled path that goes through requestFullscreen().
     const fullscreen = useFullscreenToggle();
-    useKeyboardShortcuts(
-        fullscreen.isSupported
+    useKeyboardShortcuts([
+        ...(fullscreen.isSupported
             ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
-            : [],
-    );
+            : []),
+        {keys: "ctrl+shift+d", handler: () => setCompositionMode((v) => !v)},
+    ]);
+
+    // COMPOSITION-DISTRACTION-FREE-MODE-01: drive the root-level
+    // `composition-mode` class (global.css hides the sidebar + the
+    // toolbar bar and paints the backdrop) and bind Escape-to-exit.
+    // The class lives on documentElement because the chrome to hide
+    // (ChapterSidebar, app shell) is rendered outside this component.
+    useEffect(() => {
+        if (!compositionMode) return;
+        const root = document.documentElement;
+        root.classList.add("composition-mode");
+        const onKey = (e: KeyboardEvent) => {
+            if (e.key === "Escape") setCompositionMode(false);
+        };
+        document.addEventListener("keydown", onKey);
+        return () => {
+            root.classList.remove("composition-mode");
+            document.removeEventListener("keydown", onKey);
+        };
+    }, [compositionMode]);
     // EDITOR-DISPLAY-SETTINGS-01 C4: per-device editor display
     // preferences (width / font / size / line-height). Reads + writes
     // localStorage; applies CSS custom properties to
@@ -1007,6 +1035,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 </div>
             )}
 
+            {/* Wrapped so composition mode can hide the whole toolbar
+                bar via global CSS (display:contents = layout-neutral
+                when not in composition mode). */}
+            <div className="editor-chrome-toolbar">
             <Toolbar
                 editor={editor}
                 markdownMode={markdownMode}
@@ -1014,6 +1046,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 onToggleSearch={() => setShowSearch(!showSearch)}
                 focusMode={focusMode}
                 onToggleFocus={() => setFocusMode(!focusMode)}
+                compositionMode={compositionMode}
+                onToggleComposition={() => setCompositionMode(!compositionMode)}
                 isFullscreen={fullscreen.isFullscreen}
                 onToggleFullscreen={
                     fullscreen.isSupported ? () => void fullscreen.toggle() : undefined
@@ -1033,6 +1067,22 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 documentTitle={documentTitle ?? chapterTitle}
                 documentSubtitle={documentSubtitle}
             />
+            </div>
+
+            {/* Floating exit affordance, only in composition mode
+                (the toolbar that hosts the toggle is hidden). */}
+            {compositionMode && (
+                <button
+                    type="button"
+                    className="composition-exit btn btn-ghost btn-sm"
+                    data-testid="composition-exit"
+                    onClick={() => setCompositionMode(false)}
+                    title={t("ui.toolbar.exit_composition", "Exit composition mode") + " (Esc)"}
+                    aria-label={t("ui.toolbar.exit_composition", "Exit composition mode")}
+                >
+                    {t("ui.toolbar.exit_composition", "Exit composition mode")}
+                </button>
+            )}
 
             {/* EDITOR-DISPLAY-SETTINGS-01 C4: editor-display popover.
               * Sits just below the Toolbar, right-aligned so it does
@@ -1406,7 +1456,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             </div>
 
             <div className={styles.editorArea}>
-                <div className={`${styles.editorContainer} ${focusMode ? "focus-mode" : ""}`}>
+                <div className={`${styles.editorContainer} ${focusMode || compositionMode ? "focus-mode" : ""} ${compositionMode ? "composition-surface" : ""}`}>
                     {markdownMode ? (
                         <textarea
                             className={styles.markdownEditor}

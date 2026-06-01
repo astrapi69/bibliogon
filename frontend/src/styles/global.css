@@ -1569,6 +1569,41 @@ input[type="checkbox"] {
     opacity: 1;
 }
 
+/* Composition / distraction-free writing mode
+   (COMPOSITION-DISTRACTION-FREE-MODE-01). The `composition-mode`
+   class is set on <html> from Editor.tsx so it can reach the app
+   chrome (chapter sidebar + the editor toolbar bar) rendered outside
+   the editor component. The editorContainer also carries `focus-mode`
+   in composition, so inactive-paragraph dimming applies for free. */
+.editor-chrome-toolbar {
+    display: contents;
+}
+
+html.composition-mode .sidebar-wrapper,
+html.composition-mode .editor-chrome-toolbar {
+    display: none;
+}
+
+/* The editor paper reads as a floating sheet over the backdrop:
+   drop the side borders, lift the shadow, add vertical breathing
+   room. */
+.composition-surface {
+    border-left: none;
+    border-right: none;
+    box-shadow: var(--shadow-md);
+    padding-top: 2rem;
+    padding-bottom: 6rem;
+}
+
+/* Floating exit affordance (the toolbar toggle is hidden in
+   composition mode; Esc also exits). */
+.composition-exit {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    z-index: 1000;
+}
+
 .tiptap-editor h1 {
     font-family: var(--font-display);
     font-size: 2rem;

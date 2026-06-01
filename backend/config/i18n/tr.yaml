@@ -1480,6 +1480,8 @@ ui:
     redo: "Yinele"
     search: "Bul ve degistir"
     focus_mode: "Odak modu"
+    composition_mode: "Kompozisyon modu"
+    exit_composition: "Kompozisyon modundan çık"
     fullscreen: "Tam ekran"
     exit_fullscreen: "Tam ekrandan cik"
     style_check: "Stil kontrolu"

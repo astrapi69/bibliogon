@@ -39,6 +39,7 @@ import {
     FootprintsIcon,
     Search,
     Focus,
+    Feather,
     SpellCheck,
     Headphones,
     Sparkles,
@@ -56,6 +57,15 @@ interface Props {
     onToggleSearch?: () => void;
     focusMode?: boolean;
     onToggleFocus?: () => void;
+    /** COMPOSITION-DISTRACTION-FREE-MODE-01: umbrella distraction-
+     *  free toggle. Hides the app chrome (chapter sidebar + this
+     *  toolbar), paints a composition backdrop with a centered paper
+     *  column, turns on paragraph dimming and (when enabled)
+     *  typewriter scrolling. Distinct from focusMode (dimming only)
+     *  and fullscreen (browser chrome only); composition composes
+     *  both. Omitted -> button not rendered. */
+    compositionMode?: boolean;
+    onToggleComposition?: () => void;
     /** EDITOR-FULLSCREEN-NATIVE-01: when defined, renders a
      *  browser-native fullscreen toggle in the toolbar.
      *  ``isFullscreen`` syncs with document.fullscreenElement
@@ -90,7 +100,7 @@ interface Props {
     documentSubtitle?: string;
 }
 
-export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, isFullscreen, onToggleFullscreen, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
+export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, compositionMode, onToggleComposition, isFullscreen, onToggleFullscreen, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
     const {t} = useI18n();
     if (!editor) return null;
 
@@ -473,6 +483,24 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                     className={cx(styles.button, focusMode && styles.buttonActive)}
                 >
                     <Focus size={16}/>
+                </button>
+            )}
+
+            {/* Composition / distraction-free mode toggle
+                (COMPOSITION-DISTRACTION-FREE-MODE-01). Umbrella mode:
+                hides chrome + paper backdrop + dimming + typewriter
+                scroll. Ctrl+Shift+D shortcut; Esc exits. */}
+            {onToggleComposition && !markdownMode && (
+                <button
+                    onClick={onToggleComposition}
+                    title={t("ui.toolbar.composition_mode", "Composition mode") + " (Ctrl+Shift+D)"}
+                    aria-label={t("ui.toolbar.composition_mode", "Composition mode")}
+                    aria-pressed={compositionMode ? "true" : "false"}
+                    aria-keyshortcuts="Control+Shift+D"
+                    data-testid="toolbar-composition"
+                    className={cx(styles.button, compositionMode && styles.buttonActive)}
+                >
+                    <Feather size={16}/>
                 </button>
             )}
 

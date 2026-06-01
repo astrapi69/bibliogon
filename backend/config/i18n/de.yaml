@@ -1455,6 +1455,8 @@ ui:
     redo: "Wiederholen"
     search: "Suchen & Ersetzen"
     focus_mode: "Fokus-Modus"
+    composition_mode: "Kompositionsmodus"
+    exit_composition: "Kompositionsmodus verlassen"
     fullscreen: "Vollbild"
     exit_fullscreen: "Vollbild verlassen"
     style_check: "Stilprüfung"

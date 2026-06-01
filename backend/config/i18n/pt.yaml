@@ -1444,6 +1444,8 @@ ui:
     redo: "Refazer"
     search: "Buscar e substituir"
     focus_mode: "Modo foco"
+    composition_mode: "Modo de composição"
+    exit_composition: "Sair do modo de composição"
     fullscreen: "Ecra inteiro"
     exit_fullscreen: "Sair do ecra inteiro"
     style_check: "Verificacao de estilo"

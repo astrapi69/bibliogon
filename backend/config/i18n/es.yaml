@@ -1480,6 +1480,8 @@ ui:
     redo: "Rehacer"
     search: "Buscar y reemplazar"
     focus_mode: "Modo enfoque"
+    composition_mode: "Modo composición"
+    exit_composition: "Salir del modo composición"
     fullscreen: "Pantalla completa"
     exit_fullscreen: "Salir de pantalla completa"
     style_check: "Revision de estilo"
