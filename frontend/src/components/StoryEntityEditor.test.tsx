@@ -63,6 +63,7 @@ const mockUpdate = vi.fn();
 const mockDelete = vi.fn();
 const mockAppearances = vi.fn();
 const mockDeleteLink = vi.fn();
+const mockListEntities = vi.fn();
 const mockPagesList = vi.fn();
 const mockBooksGet = vi.fn();
 
@@ -79,6 +80,7 @@ vi.mock("../api/client", async () => {
                 deleteEntity: (...a: unknown[]) => mockDelete(...a),
                 appearances: (...a: unknown[]) => mockAppearances(...a),
                 deleteLink: (...a: unknown[]) => mockDeleteLink(...a),
+                listEntities: (...a: unknown[]) => mockListEntities(...a),
             },
             pages: {list: (...a: unknown[]) => mockPagesList(...a)},
             books: {get: (...a: unknown[]) => mockBooksGet(...a)},
@@ -133,6 +135,8 @@ beforeEach(() => {
     mockAppearances.mockResolvedValue([]);
     mockDeleteLink.mockReset();
     mockDeleteLink.mockResolvedValue(undefined);
+    mockListEntities.mockReset();
+    mockListEntities.mockResolvedValue([]);
     mockPagesList.mockReset();
     mockPagesList.mockResolvedValue([]);
     mockBooksGet.mockReset();
@@ -280,5 +284,77 @@ describe("StoryEntityEditor", () => {
         expect(
             await screen.findByTestId("story-entity-appearances-empty"),
         ).toBeTruthy();
+    });
+
+    // --- C10 relationships ---------------------------------------
+
+    it("shows the empty relationships state with an add row when other entities exist", async () => {
+        mockListEntities.mockResolvedValue([
+            entity(),
+            {...entity(), id: "c2", name: "Bob"},
+        ]);
+        render(
+            <StoryEntityEditor
+                entityId="c1"
+                onBack={vi.fn()}
+                onChanged={vi.fn()}
+                onDeleted={vi.fn()}
+            />,
+        );
+        expect(
+            await screen.findByTestId("story-entity-relationships-empty"),
+        ).toBeTruthy();
+        // Add row visible because there is another entity to target.
+        expect(
+            await screen.findByTestId("story-entity-relationship-add"),
+        ).toBeTruthy();
+    });
+
+    it("renders an existing relationship with the target name + type", async () => {
+        mockGetEntity.mockResolvedValue({
+            ...entity(),
+            relationships: [
+                {target_entity_id: "c2", relationship_type: "rival", description: "Old foes."},
+            ],
+        });
+        mockListEntities.mockResolvedValue([{...entity(), id: "c2", name: "Bob"}]);
+        render(
+            <StoryEntityEditor
+                entityId="c1"
+                onBack={vi.fn()}
+                onChanged={vi.fn()}
+                onDeleted={vi.fn()}
+            />,
+        );
+        const row = await screen.findByTestId("story-entity-relationship-c2");
+        expect(row.textContent).toContain("Bob");
+        expect(
+            screen.getByTestId("story-entity-relationship-type-c2").textContent,
+        ).toContain("rival");
+    });
+
+    it("removing a relationship persists the shortened list", async () => {
+        mockGetEntity.mockResolvedValue({
+            ...entity(),
+            relationships: [
+                {target_entity_id: "c2", relationship_type: "ally", description: null},
+            ],
+        });
+        mockListEntities.mockResolvedValue([{...entity(), id: "c2", name: "Bob"}]);
+        render(
+            <StoryEntityEditor
+                entityId="c1"
+                onBack={vi.fn()}
+                onChanged={vi.fn()}
+                onDeleted={vi.fn()}
+            />,
+        );
+        const removeBtn = await screen.findByTestId(
+            "story-entity-relationship-remove-c2",
+        );
+        fireEvent.click(removeBtn);
+        await waitFor(() =>
+            expect(mockUpdate).toHaveBeenCalledWith("c1", {relationships: []}),
+        );
     });
 });

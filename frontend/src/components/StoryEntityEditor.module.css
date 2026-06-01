@@ -104,3 +104,18 @@
 .appearanceRemove {
     margin-left: auto;
 }
+
+/* C10 relationship add-row: target picker + type select + description
+ * + add button. Wraps on narrow sidebars. Layout-only supplement. */
+.relationshipAdd {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.relationshipAdd :global(.form-input) {
+    flex: 1 1 8rem;
+    min-width: 6rem;
+}

@@ -16,12 +16,14 @@
 
 import {useCallback, useEffect, useRef, useState} from "react";
 import type {JSONContent} from "@tiptap/react";
-import {ArrowLeft, MapPin, Trash2, X} from "lucide-react";
+import {ArrowLeft, MapPin, Plus, Trash2, Users, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
 import type {
+    RelationshipType,
     StoryEntityExtraField,
     StoryEntityLinkOut,
     StoryEntityOut,
+    StoryEntityRelationship,
     StoryEntityTypeDef,
 } from "../api/client";
 import {useI18n} from "../hooks/useI18n";
@@ -29,6 +31,8 @@ import {notify} from "../utils/notify";
 import {useDialog} from "./AppDialog";
 import EditableTitle from "./EditableTitle";
 import RichTextEditor from "./RichTextEditor";
+import {RadixSelect} from "./RadixSelect";
+import {RELATIONSHIP_TYPES, relationshipColor} from "./relationshipColors";
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryEntityEditor.module.css";
 
@@ -117,6 +121,9 @@ export default function StoryEntityEditor({
     const [pagePos, setPagePos] = useState<Record<string, number>>({});
     const [chapterTitles, setChapterTitles] = useState<Record<string, string>>({});
     const [apprRefresh, setApprRefresh] = useState(0);
+    // C10: other entities in this book (for the relationship target
+    // picker) — excludes self.
+    const [bookEntities, setBookEntities] = useState<StoryEntityOut[]>([]);
     const bookId = entity?.book_id;
 
     useEffect(() => {
@@ -146,6 +153,13 @@ export default function StoryEntityEditor({
                             (book.chapters ?? []).map((c) => [c.id, c.title]),
                         ),
                     );
+                })
+                .catch(() => {});
+            api.storyBible
+                .listEntities(bookId)
+                .then((rows) => {
+                    if (cancelled) return;
+                    setBookEntities(rows.filter((e) => e.id !== entityId));
                 })
                 .catch(() => {});
         }
@@ -203,6 +217,16 @@ export default function StoryEntityEditor({
         (patch: Parameters<typeof api.storyBible.updateEntity>[1]) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
             saveTimer.current = setTimeout(() => void persist(patch), 700);
+        },
+        [persist],
+    );
+
+    // C10: relationships are persisted immediately (not debounced) —
+    // each add/remove is a discrete user action, not a keystroke
+    // stream. ``persist`` replaces local ``entity`` with the response.
+    const handleSaveRelationships = useCallback(
+        (next: StoryEntityRelationship[]) => {
+            void persist({relationships: next});
         },
         [persist],
     );
@@ -404,7 +428,151 @@ export default function StoryEntityEditor({
                     </ul>
                 )}
             </section>
+
+            <StoryEntityRelationships
+                relationships={entity.relationships ?? []}
+                bookEntities={bookEntities}
+                onSave={handleSaveRelationships}
+            />
         </div>
+    );
+}
+
+/** C10 relationship editor. Lists the entity's relationships (target
+ *  name + colored type badge + description + remove) and an add row
+ *  (target picker + type select + description). Each mutation builds
+ *  the full next list and hands it to ``onSave`` (a single PATCH of
+ *  the relationships JSON field). */
+function StoryEntityRelationships({
+    relationships,
+    bookEntities,
+    onSave,
+}: {
+    relationships: StoryEntityRelationship[];
+    bookEntities: StoryEntityOut[];
+    onSave: (next: StoryEntityRelationship[]) => void;
+}) {
+    const {t} = useI18n();
+    const [addTarget, setAddTarget] = useState<string>("");
+    const [addType, setAddType] = useState<RelationshipType>("ally");
+    const [addDesc, setAddDesc] = useState<string>("");
+
+    const nameById = new Map(bookEntities.map((e) => [e.id, e.name]));
+
+    const handleAdd = () => {
+        if (!addTarget) return;
+        const next: StoryEntityRelationship[] = [
+            ...relationships,
+            {
+                target_entity_id: addTarget,
+                relationship_type: addType,
+                description: addDesc.trim() === "" ? null : addDesc.trim(),
+            },
+        ];
+        onSave(next);
+        setAddTarget("");
+        setAddType("ally");
+        setAddDesc("");
+    };
+
+    const handleRemove = (index: number) => {
+        onSave(relationships.filter((_, i) => i !== index));
+    };
+
+    return (
+        <section className={styles.section} data-testid="story-entity-relationships">
+            <h3 className={styles.sectionTitle}>
+                <Users size={14} aria-hidden /> {t("ui.story_bible.relationships", "Beziehungen")}
+            </h3>
+            {relationships.length === 0 ? (
+                <p
+                    className={styles.appearanceEmpty}
+                    data-testid="story-entity-relationships-empty"
+                >
+                    {t(
+                        "ui.story_bible.no_relationships",
+                        "Noch keine Beziehungen.",
+                    )}
+                </p>
+            ) : (
+                <ul className={styles.appearanceList}>
+                    {relationships.map((rel, index) => (
+                        <li
+                            key={`${rel.target_entity_id}-${index}`}
+                            className={styles.appearanceItem}
+                            data-testid={`story-entity-relationship-${rel.target_entity_id}`}
+                        >
+                            <span className={styles.appearanceRef}>
+                                {nameById.get(rel.target_entity_id) ??
+                                    t("ui.story_bible.relationship_unknown_target", "(unbekannt)")}
+                            </span>
+                            <span
+                                className={styles.appearanceRole}
+                                style={{color: relationshipColor(rel.relationship_type)}}
+                                data-testid={`story-entity-relationship-type-${rel.target_entity_id}`}
+                            >
+                                {t(`ui.story_bible.relationship_type.${rel.relationship_type}`, rel.relationship_type)}
+                            </span>
+                            {rel.description && (
+                                <span className={styles.appearanceNotes}>{rel.description}</span>
+                            )}
+                            <button
+                                type="button"
+                                className={`btn-sidebar-icon ${styles.appearanceRemove}`}
+                                onClick={() => handleRemove(index)}
+                                data-testid={`story-entity-relationship-remove-${rel.target_entity_id}`}
+                                aria-label={t("ui.story_bible.relationship_remove", "Beziehung entfernen")}
+                                title={t("ui.story_bible.relationship_remove", "Beziehung entfernen")}
+                            >
+                                <X size={13} />
+                            </button>
+                        </li>
+                    ))}
+                </ul>
+            )}
+            {bookEntities.length > 0 && (
+                <div className={styles.relationshipAdd} data-testid="story-entity-relationship-add">
+                    <RadixSelect
+                        className="is-narrow"
+                        value={addTarget}
+                        onValueChange={setAddTarget}
+                        testId="story-entity-relationship-target"
+                        ariaLabel={t("ui.story_bible.relationship_target", "Eintrag")}
+                        allOption={{label: t("ui.story_bible.relationship_pick_target", "— Eintrag wählen —")}}
+                        options={bookEntities.map((e) => ({value: e.id, label: e.name}))}
+                    />
+                    <RadixSelect
+                        className="is-narrow"
+                        value={addType}
+                        onValueChange={(v) => setAddType(v as RelationshipType)}
+                        testId="story-entity-relationship-typeselect"
+                        ariaLabel={t("ui.story_bible.relationship_type_label", "Beziehungstyp")}
+                        options={RELATIONSHIP_TYPES.map((rt) => ({
+                            value: rt,
+                            label: t(`ui.story_bible.relationship_type.${rt}`, rt),
+                        }))}
+                    />
+                    <input
+                        type="text"
+                        className="form-input"
+                        value={addDesc}
+                        placeholder={t("ui.story_bible.relationship_desc_placeholder", "Beschreibung (optional)")}
+                        onChange={(e) => setAddDesc(e.target.value)}
+                        data-testid="story-entity-relationship-desc"
+                        aria-label={t("ui.story_bible.relationship_desc_label", "Beschreibung")}
+                    />
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleAdd}
+                        disabled={!addTarget}
+                        data-testid="story-entity-relationship-add-btn"
+                    >
+                        <Plus size={14} /> {t("ui.story_bible.relationship_add", "Beziehung hinzufügen")}
+                    </button>
+                </div>
+            )}
+        </section>
     );
 }
 

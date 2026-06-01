@@ -68,6 +68,10 @@ ALLOWLIST = {
     # values; mid-tones chosen to read on both light + dark sidebars,
     # used only as decorative icon tints). STORY-BIBLE-PLUGIN-01 C7.
     "frontend/src/components/storyBibleIcons.ts",
+    # Relationship-type legend colours (user-facing colour DATA shared
+    # by the relationship editor + the Arc View relationship lines).
+    # STORY-BIBLE C10.
+    "frontend/src/components/relationshipColors.ts",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
