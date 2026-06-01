@@ -184,6 +184,9 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted relationship-graph
+    # node positions {entity_id: {x, y}}.
+    graph_layout: dict | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: manual repo URL for books not
     # imported via plugin-git-sync. See Book model field-comment +
     # docs/ROADMAP.md "Book Metadata Extensions" entry. Empty string
@@ -581,6 +584,9 @@ class BookOut(BaseModel):
 
 class BookDetail(BookOut):
     chapters: list["ChapterOut"] = []
+    # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted relationship-graph
+    # node positions {entity_id: {x, y}}. NULL = use the auto-layout.
+    graph_layout: dict | None = None
 
 
 # --- Chapter schemas ---

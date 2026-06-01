@@ -2,7 +2,18 @@ import enum
 import uuid
 from datetime import UTC, date, datetime
 
-from sqlalchemy import Boolean, Date, DateTime, Float, ForeignKey, Index, Integer, String, Text
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Float,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+)
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database import Base
@@ -137,6 +148,10 @@ class Book(Base):
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted node positions for
+    # the relationship graph, a JSON object {entity_id: {x, y}}. NULL =
+    # no saved layout (the graph falls back to its circular auto-layout).
+    graph_layout: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repository URL for
     # authors who track their book project externally. Two source
     # paths overlap conceptually but have different lifecycles:
