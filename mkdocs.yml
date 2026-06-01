@@ -76,6 +76,7 @@ plugins:
         Feldauswahl: Field selection
         Git-Historie übernehmen: Adopt git history
         Medium-Archiv: Medium archive
+        Word- und EPUB-Import: Word and EPUB import
         Docker Desktop installieren: Install Docker Desktop
         Plattformübergreifende Installer: Cross-platform installers
         Windows-Launcher: Windows Launcher
@@ -166,6 +167,7 @@ nav:
   - Feldauswahl: de/import/field-selection.md
   - Git-Historie übernehmen: de/import/git-adoption.md
   - Medium-Archiv: de/import/medium.md
+  - Word- und EPUB-Import: de/import/office.md
 - Installation:
   - Übersicht: de/installation.md
   - Docker Desktop installieren: de/install/docker-desktop.md

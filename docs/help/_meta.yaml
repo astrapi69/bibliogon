@@ -209,6 +209,10 @@ navigation:
           de: Medium-Archiv
           en: Medium archive
         slug: import/medium
+      - title:
+          de: Word- und EPUB-Import
+          en: Word and EPUB import
+        slug: import/office
 
   - title:
       de: Installation

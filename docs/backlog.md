@@ -2,7 +2,7 @@
 
 Latest release: v0.43.0 (2026-06-01) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.43.0.md](../changelog/releases/v0.43.0.md).
 
-Last updated: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. CHAPTER-SNAPSHOTS-01 (P3) SHIPPED 2026-06-01 (manual named snapshots + diff + restore, archived to 2026-06.md). The remaining P3 (DOCX-IMPORT-01, WRITING-HISTORY-STATS-01) + P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
+Last updated: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. CHAPTER-SNAPSHOTS-01 (P3) SHIPPED + DOCX-IMPORT-01 (P3) CLOSED-BY-DISCOVERY (already shipped under CIO-04; help page added) 2026-06-01, both archived to 2026-06.md. The remaining P3 (WRITING-HISTORY-STATS-01) + P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
 Previous: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)
 Previous: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
 Previous: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
@@ -69,21 +69,9 @@ store.
 
 ## P3 - Infrastructure / Quality
 
-Scrivener analysis items 5-7 (filed 2026-06-01 from
-``docs/audits/scrivener-competitive-analysis-2026-06.md``):
-
-- **DOCX-IMPORT-01** (P3, FEATURE-REQUEST, filed 2026-06-01 from the
-  Scrivener analysis, top-10 #6): import a ``.docx`` manuscript into a
-  book (a Word/Scrivener switching-cost reducer).
-
-  Scope:
-  - Pandoc (already a dependency on the export path) converts
-    DOCX -> HTML -> TipTap JSON.
-  - Heading-level split into chapters, reusing the existing
-    WBT-import chapter-creation path.
-
-  Effort: M. Placement: Plugin (extend ``plugin-export`` or a new
-  ``plugin-docx-import``). Value: Medium-High.
+Scrivener analysis item 7 (filed 2026-06-01 from
+``docs/audits/scrivener-competitive-analysis-2026-06.md``;
+items 5 + 6 — CHAPTER-SNAPSHOTS-01 + DOCX-IMPORT-01 — shipped + archived):
 
 - **WRITING-HISTORY-STATS-01** (P3, FEATURE-REQUEST, filed 2026-06-01
   from the Scrivener analysis, top-10 #7): per-day word-count history
