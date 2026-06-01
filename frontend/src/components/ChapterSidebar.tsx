@@ -18,6 +18,7 @@ import {
     BookOpen,
     LayoutGrid,
     Table,
+    Network,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -71,6 +72,12 @@ interface Props {
     onShowOutline?: () => void;
     /** True while the Outliner is open (active styling). */
     outlineActive?: boolean;
+    /** Opens the Story Bible relationship graph
+     *  (STORY-BIBLE-RELATIONSHIP-GRAPH-01). Only set when the Story
+     *  Bible plugin is available. */
+    onShowRelationships?: () => void;
+    /** True while the relationship graph is open (active styling). */
+    relationshipsActive?: boolean;
     onValidateToc?: () => void;
     onSaveAsTemplate?: () => void;
     onAddFromTemplate?: () => void;
@@ -347,6 +354,8 @@ export default function ChapterSidebar({
                                            storyboardActive,
                                            onShowOutline,
                                            outlineActive,
+                                           onShowRelationships,
+                                           relationshipsActive,
                                            onValidateToc,
                                            onSaveAsTemplate,
                                            onAddFromTemplate,
@@ -631,6 +640,17 @@ export default function ChapterSidebar({
                         title={t("ui.story_bible.open", "Story-Bibel öffnen")}
                     >
                         <BookOpen size={14}/> {t("ui.story_bible.sidebar_button", "Story-Bibel")}
+                    </button>
+                )}
+                {onShowRelationships && (
+                    <button
+                        className={`btn-sidebar-block ${relationshipsActive ? "is-active" : ""}`}
+                        style={{marginBottom: 6}}
+                        onClick={onShowRelationships}
+                        data-testid="chapter-sidebar-relationships"
+                        title={t("ui.relationship_graph.open", "Beziehungsgraph öffnen")}
+                    >
+                        <Network size={14}/> {t("ui.relationship_graph.title", "Beziehungsgraph")}
                     </button>
                 )}
                 {onGitBackup && (

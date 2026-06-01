@@ -11,7 +11,13 @@
  * ``colorMode`` so it reads correctly across all 12 variants.
  */
 import { ReactFlow, Background, Controls } from "@xyflow/react";
-import type { Node, Edge } from "@xyflow/react";
+import type {
+  Node,
+  Edge,
+  NodeTypes,
+  OnNodesChange,
+  OnConnect,
+} from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
 import { useTheme } from "../hooks/useTheme";
@@ -21,15 +27,36 @@ interface Props {
   bookId: string;
   nodes?: Node[];
   edges?: Edge[];
+  nodeTypes?: NodeTypes;
+  onNodesChange?: OnNodesChange;
+  onConnect?: OnConnect;
+  onNodeClick?: (event: React.MouseEvent, node: Node) => void;
+  onNodeDoubleClick?: (event: React.MouseEvent, node: Node) => void;
+  onEdgeClick?: (event: React.MouseEvent, edge: Edge) => void;
 }
 
-export default function RelationshipGraph({ nodes = [], edges = [] }: Props) {
+export default function RelationshipGraph({
+  nodes = [],
+  edges = [],
+  nodeTypes,
+  onNodesChange,
+  onConnect,
+  onNodeClick,
+  onNodeDoubleClick,
+  onEdgeClick,
+}: Props) {
   const { theme } = useTheme();
   return (
     <div className={styles.canvas} data-testid="relationship-graph">
       <ReactFlow
         nodes={nodes}
         edges={edges}
+        nodeTypes={nodeTypes}
+        onNodesChange={onNodesChange}
+        onConnect={onConnect}
+        onNodeClick={onNodeClick}
+        onNodeDoubleClick={onNodeDoubleClick}
+        onEdgeClick={onEdgeClick}
         colorMode={theme === "dark" ? "dark" : "light"}
         fitView
         proOptions={{ hideAttribution: true }}
