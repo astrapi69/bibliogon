@@ -253,9 +253,17 @@ not a live Zip Slip — but it would become exploitable if CPython behavior ever
 changed or if symlink-restoring extraction were added. Route both through
 `safe_extractall`.
 
-### M2 — Comic cross-page panel move has no server-side capacity gate
+### M2 — Comic cross-page panel move has no server-side capacity gate — FIXED
 
-**Severity:** MEDIUM. **Status:** documented.
+**Severity:** MEDIUM. **Status:** **FIXED**. `panels.py::update_panel` now
+enforces a capacity gate on a real cross-page move (target page differs from
+the panel's current page): it reads the destination's grid template from
+`Page.layout_config.comic_grid_template`, looks up the per-template cap in a
+new server-side `_GRID_MAX_PANELS` (mirroring the frontend
+`COMIC_GRID_MAX_PANELS`), and returns HTTP 400 if `occupied + 1 > capacity`.
+A direct `PATCH` can no longer over-fill a page. Regression pins in
+`test_comic_routes.py::TestCrossPageMoveCapacityGate` (move to a full
+single-panel page → 400; move to a page with room → 200).
 
 `plugins/bibliogon-plugin-comics/bibliogon_comics/panels.py` `update_panel`
 validates only that the target `page_id` belongs to the same book when moving

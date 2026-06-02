@@ -909,3 +909,66 @@ class TestBubbleAnchorBoundsValidation:
             json={"anchor": {"x_pct": 50, "y_pct": 999}},
         )
         assert resp.status_code == 422, resp.text
+
+
+class TestCrossPageMoveCapacityGate:
+    """QA M2: a cross-page panel move is rejected server-side (400) when the
+    destination page is already full for its grid template — the client gate
+    is no longer the only thing standing between a PATCH and an over-filled
+    page."""
+
+    @staticmethod
+    def _page_with_template(book_id: str, template: str) -> str:
+        import json as _json
+
+        from app.database import SessionLocal
+        from app.models import Page
+
+        session = SessionLocal()
+        try:
+            page = Page(
+                book_id=book_id,
+                position=1,
+                layout="comic_panel_grid",
+                layout_config=_json.dumps({"comic_grid_template": template}),
+            )
+            session.add(page)
+            session.commit()
+            return page.id
+        finally:
+            session.close()
+
+    @staticmethod
+    def _add_panel(client: TestClient, book_id: str, page_id: str) -> str:
+        resp = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+            json={"bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 100, "height_pct": 100}},
+        )
+        assert resp.status_code == 201, resp.text
+        return resp.json()["id"]
+
+    def test_move_to_full_single_panel_page_is_rejected(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        full = self._page_with_template(book_id, "single_panel")  # cap 1
+        source = self._page_with_template(book_id, "grid_2x2")
+        self._add_panel(client, book_id, full)  # fills the single-panel page
+        moving = self._add_panel(client, book_id, source)
+        resp = client.patch(
+            f"/api/books/{book_id}/comic-panels/{moving}",
+            json={"page_id": full},
+        )
+        assert resp.status_code == 400, resp.text
+        assert "full" in resp.json()["detail"].lower()
+
+    def test_move_to_page_with_room_succeeds(self, client: TestClient) -> None:
+        book_id = _create_comic_book(client)
+        dest = self._page_with_template(book_id, "grid_2x2")  # cap 4
+        source = self._page_with_template(book_id, "grid_2x2")
+        self._add_panel(client, book_id, dest)  # 1 of 4 used
+        moving = self._add_panel(client, book_id, source)
+        resp = client.patch(
+            f"/api/books/{book_id}/comic-panels/{moving}",
+            json={"page_id": dest},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["page_id"] == dest

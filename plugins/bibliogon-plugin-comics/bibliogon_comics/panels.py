@@ -82,6 +82,40 @@ def _serialize_json_field(value: dict[str, Any] | None) -> str | None:
     return json.dumps(value)
 
 
+# Per-grid-template panel capacity. Mirrors the frontend
+# ``COMIC_GRID_MAX_PANELS`` (comics/ComicPanelGrid.tsx); the server-side
+# copy makes the cross-page-move capacity gate authoritative (QA M2) so a
+# direct PATCH cannot over-fill a page the way the client menu prevents.
+_GRID_MAX_PANELS: dict[str, int] = {
+    "single_panel": 1,
+    "grid_1x2": 2,
+    "grid_2x1": 2,
+    "grid_2x2": 4,
+    "grid_2x3": 6,
+    "grid_3x2": 6,
+    "grid_3x3": 9,
+}
+_DEFAULT_GRID_TEMPLATE = "single_panel"
+
+
+def _page_panel_capacity(page: Page) -> int:
+    """Max panels the page's grid template allows.
+
+    The template id lives in ``Page.layout_config.comic_grid_template``
+    (JSON-text, Q1 β storage); unknown/absent falls back to the
+    single-panel default (cap 1)."""
+    template = _DEFAULT_GRID_TEMPLATE
+    raw = page.layout_config
+    if raw:
+        try:
+            parsed = json.loads(raw)
+            if isinstance(parsed, dict):
+                template = parsed.get("comic_grid_template") or _DEFAULT_GRID_TEMPLATE
+        except (ValueError, TypeError):
+            template = _DEFAULT_GRID_TEMPLATE
+    return _GRID_MAX_PANELS.get(template, 1)
+
+
 @router.get(
     "/{book_id}/comic-pages/{page_id}/panels",
     response_model=list[ComicPanelOut],
@@ -174,6 +208,25 @@ def update_panel(
                 status_code=400,
                 detail=(f"Target page {update_data['page_id']} not found in book {book_id}"),
             )
+        # Capacity gate (QA M2): a real cross-page move must not over-fill
+        # the destination beyond its grid template's panel count. Only
+        # enforced when the panel actually changes page (a no-op
+        # "move to same page" PATCH is exempt). Mirrors the client gate.
+        if target_page.id != panel.page_id:
+            occupied = (
+                db.query(func.count(ComicPanel.id))
+                .filter(ComicPanel.page_id == target_page.id)
+                .scalar()
+            )
+            capacity = _page_panel_capacity(target_page)
+            if occupied + 1 > capacity:
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Target page is full: its grid template allows {capacity} "
+                        f"panel(s) and it already has {occupied}."
+                    ),
+                )
     for field, value in update_data.items():
         setattr(panel, field, value)
     db.commit()
