@@ -48,8 +48,9 @@
 | i18n — translation completeness | advisory test | **ADVISORY** | L7 (LOW) |
 | A11y — Radix `Dialog.Content` missing `Dialog.Description` | code sweep | **FAIL → FIXED** | M4 (MEDIUM) |
 | Writing goals — negative daily word count | code review | **FAIL → FIXED** | M5 (MEDIUM) |
+| Backup `.bgb` round-trip fidelity | empirical export probe | **FAIL** | **H2 (HIGH, data-loss-on-restore)** |
 
-**Finding tally:** 1 CRITICAL (fixed), 1 HIGH, 5 MEDIUM (2 fixed this
+**Finding tally:** 1 CRITICAL (fixed), 2 HIGH, 5 MEDIUM (2 fixed this
 session: M4, M5), 7 LOW.
 
 **Fixed in this session:** C1 (CRITICAL, Stop-Condition), M4 + M5 (MEDIUM,
@@ -133,6 +134,67 @@ requires the victim to navigate to / embed the asset URL.
 upload (mirror `article_assets._ALLOWED_EXTENSIONS`), and/or serve assets
 with `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`,
 and/or force a generic `application/octet-stream` for non-image types.
+
+---
+
+### H2 — Backup `.bgb` does not cover most post-v0.38 models (data loss on restore)
+
+**Severity:** HIGH (silent data loss on a backup → restore cycle).
+**Status:** documented, NOT fixed — the fix is a multi-model backup-format
+extension (serialize + import + manifest version bump + tests for ~10 model
+families) that needs an explicit scope/design decision. Surfaced for review
+rather than implemented autonomously. (Borderline against the data-loss
+Stop-Condition, but that condition targets surgical hotfixes; a backup-format
+overhaul is a feature, not a hotfix.)
+
+**Empirical proof:** built a comic book with a Page + ComicPanel + ComicBubble
++ StoryEntity + ChapterLabel + ChapterVersion (manual snapshot) +
+BookPublishingState + ArcReviewer, plus an Article with an ArticleComment,
+then called `export_backup_archive` and inspected the `.bgb`. The archive
+contained only:
+```
+manifest.json
+books/<id>/book.json
+books/<id>/chapters/<id>.json
+articles/<id>/article.json   (+ publications.json / assets when present)
+```
+
+**Missing from the backup archive entirely** (and the restore side —
+`backup_import.py` — has zero references to any of them, so they would not be
+restored even if present):
+- **Page** — i.e. ALL picture-book + comic-book content (`content_model="pages"`)
+- **ComicPanel**, **ComicBubble**
+- **StoryEntity**, **StoryEntityPageLink** — the entire Story Bible
+- **ChapterLabel** (+ `Chapter.label_id` references)
+- **ChapterVersion** — all snapshots (manual AND auto)
+- **BookPublishingState**, **ArcReviewer** — KDP Publishing Wizard state
+- **ArticleComment** (already noted in lessons-learned)
+- **WritingSession** — writing history / streaks
+
+`serialize_book_for_backup` serializes only `Book` scalar columns + chapters;
+`_write_book_dir` writes only `book.json` + `chapters/` + `assets/`. The
+backup format predates Pages / Story Bible / comics / labels / snapshots /
+publishing-state and was never extended as those models shipped (v0.39–v0.44)
+— the "new persistent model shipped without backup coverage" variant of the
+parallel-surface / half-wired patterns in `lessons-learned.md`.
+
+**Impact:** for a picture-book or comic-book author, a `.bgb` backup → restore
+loses **100% of book content** (no pages survive). For a fiction author, the
+entire Story Bible, all chapter snapshots, and all per-book labels are lost.
+The user only discovers this when restoring — typically after the primary data
+is already gone (machine migration, disaster recovery). This is the worst
+bug class (silent loss surfacing exactly when the backup is needed).
+
+**Suggested scope (for review):** extend `serializer.py` + `_write_book_dir` /
+`_write_article_dir` to emit pages (+panels+bubbles), story entities (+links),
+chapter labels, chapter versions, publishing state (+ARC reviewers), and
+comments; mirror on the import side; bump the manifest to `3.0` with backward
+compatibility for `1.0`/`2.0`; add round-trip fidelity tests asserting every
+model family survives export → clear → import. Until then, a user-facing
+caveat in the backup help doc ("backups currently cover book metadata,
+chapters, articles, publications and assets; picture-book/comic pages, Story
+Bible, snapshots, labels and KDP wizard state are not yet included") would at
+least set expectations.
 
 ---
 
@@ -356,8 +418,9 @@ These QA-prompt categories were **not** run end-to-end in this environment
 - **Render performance at scale** — 50+ entities graph, 100-page storyboard,
   30×50 Arc View SVG. Backend N+1 (L3) found by reading; frontend render perf
   not measured.
-- **Round-trips** — backup `.bgb` export→clear→restore full fidelity;
-  Medium/DOCX import. Cascade + restore code reviewed; not executed.
+- **Round-trips** — backup `.bgb` export scope WAS executed (→ finding H2);
+  the import/restore side was code-reviewed (confirms the same omission) but
+  not run end-to-end. Medium/DOCX import not executed.
 
 **Recommendation:** run `npx playwright test --project=smoke`, `make
 verify-theme`, and a manual backup round-trip to close the visual/interaction
@@ -371,9 +434,12 @@ gaps above before the next release.
   immediately, don't wait for review") overrides the "STOP after the audit
   doc" gate for C1 only. C1 was fixed + pinned this session; H1 (HIGH) and all
   MEDIUM/LOW findings were left for user review per the gate.
-- **Assumption:** the uncommitted `chapter_labels.py` ruff-reflow predates
-  this session (not in any local commit, behaviorally identical). Left
-  unstaged; this session commits only its own explicit paths.
+- **Multi-tool note:** a parallel session committed + pushed the C1 fix as
+  `f470e942` (verified complete — all three sites + helper + the 70-line
+  regression test, matching this session's work) and the `chapter_labels.py`
+  ruff-reflow as `524d3867`. This session committed Bug M4, Bug M5, and this
+  report on top with explicit-path staging (no `git add -A`), per the
+  Multi-Tool-Coordination discipline.
 - **Threat-model note:** Bibliogon is local-first / unauthenticated by design,
   so C1/H1 severities are scored on the write/script primitive itself, with
   the no-remote-exposure posture noted as the practical mitigation. If a
