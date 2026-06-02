@@ -31,6 +31,7 @@ def _reject_control_chars(value: str, field: str) -> str:
             raise ValueError(f"{field} must not contain control characters")
     return value
 
+
 # Hex color regex for ``Page.mood_color`` (PICTURE-BOOK-STORYBOARD-
 # VIEW-01). Matches ``#RRGGBB`` only — no 3-char shorthand, no alpha
 # channel, no named colors. Picker UIs always emit the 6-digit form.
@@ -1083,6 +1084,7 @@ class ArticleUpdate(BaseModel):
     @classmethod
     def _check_title(cls, value: str | None) -> str | None:
         return value if value is None else _reject_control_chars(value, "title")
+
     # AR-02 Phase 2 SEO fields. ArticleEditor sidebar PATCHes these
     # through the same endpoint as content_json + title.
     canonical_url: str | None = Field(default=None, max_length=500)
