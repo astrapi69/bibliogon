@@ -357,11 +357,12 @@ goes negative — the daily-goal / streak widget then renders a negative count
   in `test_reset_token.py` (consume succeeds once then rejects replay;
   expired token isn't consumed). `/reset/prepare` still doesn't verify, so
   issuing a token doesn't spend it.
-- **L2 — Comic bubble `anchor` not bounds-validated server-side.**
-  `ComicBubbleCreate/Update` bound `width_pct/height_pct/tail_position_pct/
-  tail_length_px` with `ge/le`, but `anchor` (`{x_pct,y_pct}`) is a free
-  `dict[str, Any]`. A direct API call can place a bubble off-canvas
-  (cosmetic; bad PDF/editor placement; no crash/data loss).
+- **L2 — Comic bubble `anchor` not bounds-validated server-side — FIXED.**
+  `ComicBubbleCreate` + `ComicBubbleUpdate` now run a `field_validator`
+  (`_validate_bubble_anchor`) that rejects `anchor.x_pct` / `y_pct` outside
+  [0, 100] (and non-numeric) with HTTP 422; non-coordinate anchor keys pass
+  through. Regression pins in `test_comic_routes.py::TestBubbleAnchorBoundsValidation`
+  (in-range accepted; out-of-range create + update both 422).
 - **L3 — Continuity-checker N+1 query.**
   `plugins/.../bibliogon_story_bible/continuity.py` accesses `link.entity.name`
   per link without eager loading → one query per link. Perf only; correctness

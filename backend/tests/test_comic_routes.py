@@ -864,3 +864,48 @@ class TestComicBookExportDispatch:
         assert call["has_panels"]
         assert call["has_bubbles"]
         assert call["has_output_path"]
+
+
+class TestBubbleAnchorBoundsValidation:
+    """QA L2: a bubble anchor's x_pct/y_pct must be within [0, 100].
+
+    A bypassed client clamp or a hand-crafted PATCH that places a bubble
+    off-canvas is rejected at the API boundary (422)."""
+
+    def _panel(self, client: TestClient) -> tuple[str, str]:
+        book_id = _create_comic_book(client)
+        page_id = _add_comic_page(client, book_id)
+        panel = client.post(
+            f"/api/books/{book_id}/comic-pages/{page_id}/panels",
+            json={"bounds": {"x_pct": 0, "y_pct": 0, "width_pct": 100, "height_pct": 100}},
+        ).json()
+        return book_id, panel["id"]
+
+    def test_create_accepts_in_range_anchor(self, client: TestClient) -> None:
+        book_id, panel_id = self._panel(client)
+        resp = client.post(
+            f"/api/books/{book_id}/comic-panels/{panel_id}/bubbles",
+            json={"bubble_type": "speech", "anchor": {"x_pct": 0, "y_pct": 100}},
+        )
+        assert resp.status_code == 201, resp.text
+
+    def test_create_rejects_out_of_range_anchor(self, client: TestClient) -> None:
+        book_id, panel_id = self._panel(client)
+        for bad in ({"x_pct": 150, "y_pct": 50}, {"x_pct": 50, "y_pct": -10}):
+            resp = client.post(
+                f"/api/books/{book_id}/comic-panels/{panel_id}/bubbles",
+                json={"bubble_type": "speech", "anchor": bad},
+            )
+            assert resp.status_code == 422, (bad, resp.text)
+
+    def test_update_rejects_out_of_range_anchor(self, client: TestClient) -> None:
+        book_id, panel_id = self._panel(client)
+        bubble = client.post(
+            f"/api/books/{book_id}/comic-panels/{panel_id}/bubbles",
+            json={"bubble_type": "speech", "anchor": {"x_pct": 50, "y_pct": 50}},
+        ).json()
+        resp = client.patch(
+            f"/api/books/{book_id}/comic-bubbles/{bubble['id']}",
+            json={"anchor": {"x_pct": 50, "y_pct": 999}},
+        )
+        assert resp.status_code == 422, resp.text

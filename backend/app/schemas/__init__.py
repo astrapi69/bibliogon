@@ -1602,6 +1602,26 @@ class ComicPanelsReorder(BaseModel):
     panel_ids: list[str]
 
 
+def _validate_bubble_anchor(value: dict[str, Any]) -> dict[str, Any]:
+    """Bound a bubble anchor's ``x_pct`` / ``y_pct`` to [0, 100].
+
+    The anchor is the bubble's top-left corner as a percentage of the
+    panel; the PDF/editor place it at ``left: {x_pct}%; top: {y_pct}%``.
+    Out-of-range values (a bypassed client clamp, a hand-crafted PATCH)
+    would render the bubble off-canvas, so reject them at the API
+    boundary. Keys other than x_pct/y_pct (e.g. a preset wrapper) pass
+    through untouched. QA finding L2.
+    """
+    for key in ("x_pct", "y_pct"):
+        if key in value:
+            coord = value[key]
+            if not isinstance(coord, (int, float)) or isinstance(coord, bool):
+                raise ValueError(f"anchor.{key} must be a number")
+            if not 0 <= coord <= 100:
+                raise ValueError(f"anchor.{key} must be between 0 and 100, got {coord}")
+    return value
+
+
 class ComicBubbleCreate(BaseModel):
     """Payload for POST .../comic-panels/{panel_id}/bubbles.
 
@@ -1620,6 +1640,11 @@ class ComicBubbleCreate(BaseModel):
     bubble_config: dict[str, Any] | None = None
     text_content: str | None = None
 
+    @field_validator("anchor")
+    @classmethod
+    def _check_anchor(cls, value: dict[str, Any]) -> dict[str, Any]:
+        return _validate_bubble_anchor(value)
+
 
 class ComicBubbleUpdate(BaseModel):
     """Payload for PATCH .../comic-bubbles/{bubble_id}."""
@@ -1633,6 +1658,11 @@ class ComicBubbleUpdate(BaseModel):
     tail_length_px: int | None = Field(default=None, ge=0, le=64)
     bubble_config: dict[str, Any] | None = None
     text_content: str | None = None
+
+    @field_validator("anchor")
+    @classmethod
+    def _check_anchor(cls, value: dict[str, Any] | None) -> dict[str, Any] | None:
+        return value if value is None else _validate_bubble_anchor(value)
 
 
 class ComicBubbleOut(BaseModel):
