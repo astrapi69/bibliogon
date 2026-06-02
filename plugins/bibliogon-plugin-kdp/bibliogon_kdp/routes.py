@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Book
+from app.paths import safe_upload_filename
 from app.schemas import (
     ArcReviewerCreate,
     ArcReviewerOut,
@@ -127,9 +128,13 @@ def validate_cover_endpoint(file: UploadFile) -> dict[str, Any]:
     if not file.filename:
         raise HTTPException(status_code=400, detail="No file provided")
 
+    # Sanitise to a basename so a crafted multipart filename can't
+    # escape the temp dir (CWE-22 path traversal).
+    safe_name = safe_upload_filename(file.filename)
+
     tmp_dir = Path(tempfile.mkdtemp(prefix="kdp_cover_"))
     try:
-        tmp_file = tmp_dir / file.filename
+        tmp_file = tmp_dir / safe_name
         with open(tmp_file, "wb") as f:
             shutil.copyfileobj(file.file, f)
 

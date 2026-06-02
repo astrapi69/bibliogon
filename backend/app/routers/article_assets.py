@@ -16,7 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Article, ArticleAsset
-from app.paths import get_upload_dir
+from app.paths import get_upload_dir, safe_upload_filename
 from app.schemas import ArticleAssetOut
 
 router = APIRouter(prefix="/articles/{article_id}/assets", tags=["article-assets"])
@@ -51,7 +51,10 @@ def upload_asset(
     if not file.filename:
         raise HTTPException(status_code=400, detail="No filename provided")
 
-    ext = Path(file.filename).suffix.lower()
+    # Strip directory components before any path use (CWE-22).
+    safe_name = safe_upload_filename(file.filename)
+
+    ext = Path(safe_name).suffix.lower()
     if ext not in _ALLOWED_EXTENSIONS:
         raise HTTPException(
             status_code=400,
@@ -60,14 +63,14 @@ def upload_asset(
 
     article_dir = get_upload_dir() / "articles" / article_id / asset_type
     article_dir.mkdir(parents=True, exist_ok=True)
-    file_path = article_dir / file.filename
+    file_path = article_dir / safe_name
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     asset = ArticleAsset(
         article_id=article_id,
-        filename=file.filename,
+        filename=safe_name,
         asset_type=asset_type,
         path=str(file_path),
     )

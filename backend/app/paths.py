@@ -135,3 +135,31 @@ def mark_data_dir_as_production() -> None:
         "data loss caused by test runs (see backend/tests/conftest.py).\n",
         encoding="utf-8",
     )
+
+
+def safe_upload_filename(filename: str | None) -> str:
+    """Reduce a client-supplied upload filename to a safe basename.
+
+    Multipart upload filenames are attacker-controlled. Joining them
+    onto an upload directory verbatim (``upload_dir / file.filename``)
+    lets a crafted name such as ``../../../../etc/x`` or an absolute
+    path escape the directory and write anywhere the process can write
+    (Zip-Slip's sibling for plain uploads, CWE-22 path traversal).
+
+    This strips every directory component - handling both POSIX ``/``
+    and Windows ``\\`` separators - and keeps only the final segment,
+    then rejects names that resolve to nothing usable (empty, ``.``,
+    ``..``). Use it at EVERY site that builds a filesystem path from a
+    user-supplied upload filename.
+
+    Raises:
+        ValidationError: when the name is missing or unsafe.
+    """
+    from app.exceptions import ValidationError
+
+    if not filename:
+        raise ValidationError("Kein Dateiname angegeben.")
+    candidate = filename.replace("\\", "/").rsplit("/", 1)[-1].strip()
+    if candidate in ("", ".", ".."):
+        raise ValidationError(f"Unsicherer Dateiname (Path-Traversal): {filename!r}")
+    return candidate

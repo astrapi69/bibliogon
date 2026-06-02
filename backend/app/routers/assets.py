@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Asset, Book
-from app.paths import get_upload_dir
+from app.paths import get_upload_dir, safe_upload_filename
 from app.schemas import AssetOut
 
 router = APIRouter(prefix="/books/{book_id}/assets", tags=["assets"])
@@ -36,20 +36,22 @@ def upload_asset(
     if asset_type not in ("cover", "figure", "diagram", "table"):
         raise HTTPException(status_code=400, detail="Invalid asset_type")
 
-    if not file.filename:
-        raise HTTPException(status_code=400, detail="No filename provided")
+    # Sanitise the client-supplied filename to a bare basename before
+    # building any path (CWE-22 path traversal; a name like
+    # ``../../../etc/x`` would otherwise escape the upload dir).
+    safe_name = safe_upload_filename(file.filename)
 
     # Store file
     book_dir = get_upload_dir() / book_id / asset_type
     book_dir.mkdir(parents=True, exist_ok=True)
-    file_path = book_dir / file.filename
+    file_path = book_dir / safe_name
 
     with open(file_path, "wb") as f:
         shutil.copyfileobj(file.file, f)
 
     asset = Asset(
         book_id=book_id,
-        filename=file.filename,
+        filename=safe_name,
         asset_type=asset_type,
         path=str(file_path),
     )
