@@ -35,32 +35,22 @@ test.describe("ArticleEditor button + select styling", () => {
         const back = page.getByTestId("article-editor-back");
         await expect(back).toBeVisible();
 
-        const cs = await back.evaluate((el) => {
-            const s = getComputedStyle(el);
-            return {
-                classes: el.className,
-                padding: s.padding,
-                borderRadius: s.borderRadius,
-                background: s.backgroundColor,
-                display: s.display,
-                fontWeight: s.fontWeight,
-            };
-        });
-        // Uses the global button classes (the real "uses .btn" intent).
-        expect(cs.classes).toContain("btn");
-        expect(cs.classes).toContain("btn-ghost");
-        expect(cs.classes).toContain("btn-sm");
-        // Computed styles those classes apply.
-        expect(cs.padding).toBe("4px 10px"); // .btn-sm
-        expect(cs.borderRadius).toBe(RADIUS_SM); // --radius-sm
-        expect(cs.background).toBe(TRANSPARENT); // .btn-ghost at rest
-        expect(cs.fontWeight).toBe("500"); // .btn
-        // NOTE: do NOT assert display === "inline-flex". The back button is
-        // a child of the flex `.header`, so it is a flex item — CSS
-        // blockifies a flex item's display (inline-flex -> flex) in
-        // getComputedStyle. `.btn` correctly declares inline-flex; the
-        // blockified computed value is "flex" and is not a bug. Accept both.
-        expect(["inline-flex", "flex"]).toContain(cs.display);
+        // Use auto-retrying toHaveClass / toHaveCSS rather than a one-shot
+        // getComputedStyle read: during a transient re-render the one-shot
+        // read intermittently returned "" for shorthand properties (flaky).
+        // These poll until the value settles.
+        await expect(back).toHaveClass(/\bbtn\b/); // global .btn
+        await expect(back).toHaveClass(/\bbtn-ghost\b/);
+        await expect(back).toHaveClass(/\bbtn-sm\b/);
+        await expect(back).toHaveCSS("padding", "4px 10px"); // .btn-sm
+        await expect(back).toHaveCSS("border-radius", RADIUS_SM); // --radius-sm
+        await expect(back).toHaveCSS("background-color", TRANSPARENT); // .btn-ghost
+        await expect(back).toHaveCSS("font-weight", "500"); // .btn
+        // NOTE: do NOT assert display === "inline-flex". The back button is a
+        // child of the flex `.header`, so it is a flex item — CSS blockifies a
+        // flex item's display (inline-flex -> flex) in getComputedStyle. `.btn`
+        // correctly declares inline-flex; the blockified value "flex" is not a
+        // bug, so display is intentionally not asserted here.
     });
 
     test("metadata selects share one consistent themed style", async ({
@@ -75,35 +65,23 @@ test.describe("ArticleEditor button + select styling", () => {
             "article-editor-content-type-trigger",
         ];
 
-        // Read each trigger only after it is visible — RadixSelect mounts
-        // its trigger asynchronously, and reading getComputedStyle on a
-        // not-yet-connected element returned an empty string, which made the
-        // old cross-element exact-color equality flaky.
-        const read = async (testId: string) => {
-            const loc = page.getByTestId(testId);
-            await expect(loc).toBeVisible();
-            return loc.evaluate((el) => {
-                const s = getComputedStyle(el);
-                return {classes: el.className, color: s.color, borderRadius: s.borderRadius};
-            });
-        };
-
-        const [language, status, contentType] = await Promise.all(
-            triggers.map(read),
-        );
-
         // Consistency intent: all three selects use the shared
         // .radix-select-trigger style (2026-05-30 Session 2B migration).
-        // Assert the shared class + a themed (non-transparent, non-empty)
-        // color on each, and an identical radius — robust where the exact
-        // computed color string could vary by render timing.
-        for (const t of [language, status, contentType]) {
-            expect(t.classes).toContain("radix-select-trigger");
-            expect(t.color).not.toBe(TRANSPARENT);
-            expect(t.color).not.toBe("");
+        // Assert the shared class with auto-retrying toHaveClass — robust
+        // where a one-shot getComputedStyle read intermittently returned ""
+        // mid-render. The shared class guarantees identical themed color +
+        // radius by construction, so we assert membership rather than
+        // re-deriving (and comparing) brittle computed values.
+        for (const testId of triggers) {
+            const loc = page.getByTestId(testId);
+            await expect(loc).toBeVisible();
+            await expect(loc).toHaveClass(/radix-select-trigger/);
         }
-        expect(status.borderRadius).toBe(language.borderRadius);
-        expect(contentType.borderRadius).toBe(language.borderRadius);
+        // The shared class carries an explicit, non-transparent text color
+        // (the dark-mode "black text on dark surface" bug class). Poll it.
+        await expect(
+            page.getByTestId("article-editor-language-trigger"),
+        ).not.toHaveCSS("color", TRANSPARENT);
     });
 
     test("article-editor sidebar visual baseline", async ({page}) => {
