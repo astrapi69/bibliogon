@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-06-01 (v0.43.0 released — the Story Bible integration depth release; 10 commits since v0.42.0. Prose Storyboard (chapter-card grid for prose books, shared `StoryboardAnnotations` module, Storyboard button on every book type), entity relationships (ally/rival/family/mentor/romantic/neutral) + Arc-View relationship lines, @-mention autocomplete of Story Bible entities in the chapter + page editors, and auto-detect of entity mentions in existing text. Backend pytest 2468, Vitest 2568, all green.)
-Latest release: v0.44.0 (2026-06-01) — see [changelog/releases/v0.44.0.md](../changelog/releases/v0.44.0.md) for the full per-release notes.
+Latest release: v0.45.0 (2026-06-02) — see [changelog/releases/v0.45.0.md](../changelog/releases/v0.45.0.md) for the full per-release notes.
 Previous release: v0.42.0 (2026-05-30) — the Story Bible release; `plugin-story-bible` + the deep Story Bible ↔ Storyboard integration (entity-page linking, badges, appearance tracker, Arc View timeline, continuity checker, Markdown export).
 
 This file is a **thematic overview** of open work. Detailed scope,

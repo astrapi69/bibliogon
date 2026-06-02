@@ -4,6 +4,77 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.45.0] - 2026-06-02
+
+The QA-hardening + native-i18n release. An adversarial security +
+data-integrity pass closed one CRITICAL, one HIGH, five MEDIUM and
+eight LOW findings from the v0.44.0 QA report; an accessibility sweep
+gave every icon-only control an accessible name; and the six
+auto-translated locale catalogs received a full native-quality
+translation pass. No user-facing feature changes and no schema
+migrations - existing data, backups (`.bgb`) and projects (`.bgp`)
+are unaffected. 23 commits since v0.44.0.
+
+### Security
+- **Upload filename path traversal (CWE-22) fixed** at all three upload
+  sites (book assets, article assets, KDP cover validation). A new
+  shared `app.paths.safe_upload_filename()` strips every directory
+  component and rejects empty / `.` / `..`, so a crafted multipart
+  `filename` can no longer write outside the upload root. The persisted
+  `Asset.filename` / `ArticleAsset.filename` now store the sanitized
+  basename. Regression-pinned.
+- **Archive extraction hardened** - the last two raw `extractall` calls
+  were routed through the existing `safe_extractall()` Zip-Slip guard,
+  so every archive-extraction site in the codebase is now covered.
+- **Danger Zone reset token is genuinely one-time** - the HMAC reset
+  token is now consumed on verify via a nonce store, so a replayed
+  token is rejected.
+
+### Fixed
+- **Backup `.bgb` completeness overhaul (data-loss-on-restore)** - the
+  backup serializer is now introspection-driven (`serialize_row` /
+  `restore_row`) and covers **all 23 content models** instead of a
+  hand-maintained subset, closing a gap where restoring a backup could
+  silently drop rows (comments, story-bible links, comic panels, etc.).
+  New manifest **v3.0**, backward-compatible with v1.0 / v2.0 archives.
+  Pinned by a full round-trip test (build a maximal object graph ->
+  export -> wipe -> import -> field-level equality).
+- **Comic cross-page panel move** now enforces the destination page's
+  panel-capacity gate server-side (not just in the UI).
+- **@-mention nodes degrade to plain text** when their linked Story Bible
+  entity is deleted, instead of leaving a dangling reference.
+- **Writing-goals daily progress can no longer go negative** - the
+  per-day word-count delta is floored to `max(0, delta)`.
+- **Comic bubble anchor** `x_pct` / `y_pct` are validated to `[0, 100]`
+  server-side.
+- **Continuity checker N+1 query** resolved via eager `joinedload`.
+- **Story-Bible entity-page link** now enforces the page/chapter XOR
+  invariant with a DB `CheckConstraint` (was application-level only).
+- **Book / Article titles** capped at 500 characters with a control-char
+  rejecting validator.
+- **KDP routes** re-raise with `from e` (ruff B904), preserving the cause
+  chain in error reports.
+
+### Accessibility
+- Every icon-only button across the Dashboard, BookCard, AudiobookPlayer
+  and BookEditor now carries an `aria-label`; raw Radix `Dialog.Content`
+  surfaces (16 sites) gained the required `Dialog.Description` /
+  `aria-describedby`. The Dashboard now reports **zero axe-core
+  critical/serious violations** on load.
+
+### Changed
+- **Native-quality i18n translation sweep** across the six
+  auto-translated catalogs (es / fr / el / pt / tr / ja): every UI
+  string still byte-identical to English (~920-1000 keys per catalog,
+  accumulated across the v0.32-v0.44 feature work) was translated to
+  native quality - Latin-American-neutral Spanish, Metropolitan French
+  (with French typography), monotonic Modern Greek, European Portuguese
+  (pt-PT), vowel-harmony-correct Turkish, and polite concise Japanese.
+  Loanwords, format names, brand names and literal API field-names were
+  kept verbatim; `{placeholder}` sets preserved per key. The stale
+  `_meta` passthru-review markers were removed from all six catalogs.
+  i18n parity is green (51/51) across all 8 catalogs.
+
 ## [0.44.0] - 2026-06-01
 
 The Scrivener-parity + visual-planning release. Two coordinated
