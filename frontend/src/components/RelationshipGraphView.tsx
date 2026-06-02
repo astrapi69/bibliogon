@@ -412,6 +412,7 @@ export default function RelationshipGraphView({
           <Dialog.Content
             className={`radix-dialog-content ${styles.createDialog}`}
             data-testid="relationship-create-dialog"
+            aria-describedby={undefined}
           >
             <div className={styles.createHeader}>
               <Dialog.Title className={styles.createTitle}>

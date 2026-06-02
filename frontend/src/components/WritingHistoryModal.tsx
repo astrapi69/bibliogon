@@ -117,6 +117,7 @@ export default function WritingHistoryModal({ open, onClose }: Props) {
         <Dialog.Content
           className={`radix-dialog-content ${styles.content}`}
           data-testid="writing-history-modal"
+          aria-describedby={undefined}
         >
           <div className={styles.header}>
             <Dialog.Title className={styles.title}>
