@@ -384,10 +384,14 @@ goes negative — the daily-goal / streak widget then renders a negative count
   reading `link.entity.name` no longer fires one SELECT per link. Results
   unchanged (perf-only); story-bible tests green. (Boy-Scout: also fixed a
   pre-existing B905 bare `zip()` in the same file.)
-- **L4 — `StoryEntityPageLink` page_id/chapter_id XOR is route-only.** The
-  exactly-one-of invariant is enforced in `links.py` (HTTP 400), not by a DB
-  CHECK constraint. Documented design convention (matches `Chapter.chapter_type`
-  / `Page.layout`); raw-SQL inserts could violate it.
+- **L4 — `StoryEntityPageLink` page_id/chapter_id XOR is route-only — FIXED.**
+  Added a DB-level `CheckConstraint("(page_id IS NULL) <> (chapter_id IS NULL)",
+  name="ck_story_entity_link_page_xor_chapter")` to the model's `__table_args__`
+  plus migration `f1a2b3c4d5e6` (SQLite batch recreate — the only way to add a
+  CHECK). A both-set or neither-set row is now rejected with `IntegrityError`
+  even via raw SQL. alembic upgrade-chain + drift gates green; regression pins
+  in `test_story_entity_link_check.py` (both-set + neither-set rejected;
+  single-set OK).
 - **L5 — Null bytes & unbounded length accepted in text fields — FIXED.**
   `BookCreate` / `BookUpdate` titles now carry `Field(min_length=1,
   max_length=500)` (matching the article side) plus a `_reject_control_chars`

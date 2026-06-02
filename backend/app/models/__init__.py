@@ -5,6 +5,7 @@ from datetime import UTC, date, datetime
 from sqlalchemy import (
     JSON,
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     Float,
@@ -1361,6 +1362,14 @@ class StoryEntityPageLink(Base):
         Index("ix_story_entity_links_entity", "entity_id"),
         Index("ix_story_entity_links_page", "page_id"),
         Index("ix_story_entity_links_chapter", "chapter_id"),
+        # Exactly one of page_id / chapter_id is set. Previously route-only
+        # (QA L4); now also enforced at the DB layer so a raw-SQL insert
+        # can't create a both-set or neither-set link. ``(a IS NULL) <>
+        # (b IS NULL)`` is true iff exactly one is NULL.
+        CheckConstraint(
+            "(page_id IS NULL) <> (chapter_id IS NULL)",
+            name="ck_story_entity_link_page_xor_chapter",
+        ),
     )
 
     def __repr__(self) -> str:
