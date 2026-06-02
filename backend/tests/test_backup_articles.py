@@ -121,7 +121,7 @@ def test_export_manifest_carries_article_counts(tmp_path) -> None:
     manifest = find_manifest(extracted)
     assert manifest is not None
     data = json.loads(manifest.read_text(encoding="utf-8"))
-    assert data["version"] == "2.0"
+    assert data["version"] == "3.0"
     assert data["article_count"] >= 1
     assert data["publication_count"] >= 1
     assert "article_asset_count" in data

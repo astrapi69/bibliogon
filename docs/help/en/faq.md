@@ -6,7 +6,7 @@
 
 **Can I import an existing project?** Yes. On the Dashboard, click "Import Project" and select a ZIP file in write-book-template format.
 
-**How does backup work?** Click "Backup" on the Dashboard to export all books, chapters, and assets as a .bgb file. Use "Restore" to import a backup.
+**How does backup work?** Click "Backup" on the Dashboard to export your full library as a .bgb file — every book and article with all their chapters, pages, comic panels, Story Bible entities, chapter labels, snapshots, writing history, publishing-wizard state, comments and assets, plus your authors and custom templates. Use "Restore" to import a backup.
 
 **What happens when I delete a book?** By default, deleted books move to the trash (soft delete) so you can restore them. The trash icon on the Dashboard opens the trash view, where each book has a "Restore" action and a "Delete permanently" action. The list also has an "Empty trash" button that removes everything in the trash at once. Books in the trash are auto-deleted after 90 days by default; the retention can be set in Settings to 7, 14, 30, 60, 90, 180, or 365 days, or disabled (manual deletion only). If you prefer to skip the trash entirely, enable `delete_permanently` in Settings; deletions then bypass the trash and remove the book immediately.
 

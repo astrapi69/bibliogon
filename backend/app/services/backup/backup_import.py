@@ -13,7 +13,31 @@ from sqlalchemy.orm import Session
 
 from app.backup_history import BackupHistory
 from app.exceptions import ValidationError
-from app.models import Article, ArticleAsset, Asset, Book, Chapter, ChapterType, Publication
+from app.models import (
+    ArcReviewer,
+    Article,
+    ArticleAsset,
+    ArticleComment,
+    ArticleImportSource,
+    Asset,
+    Author,
+    Book,
+    BookImportSource,
+    BookPublishingState,
+    BookTemplate,
+    BookTemplateChapter,
+    Chapter,
+    ChapterLabel,
+    ChapterTemplate,
+    ChapterVersion,
+    ComicBubble,
+    ComicPanel,
+    Page,
+    Publication,
+    StoryEntity,
+    StoryEntityPageLink,
+    WritingSession,
+)
 from app.paths import get_upload_dir
 from app.services.backup.archive_utils import (
     find_articles_dir,
@@ -25,6 +49,7 @@ from app.services.backup.serializer import (
     restore_article_from_data,
     restore_book_from_data,
     restore_publication_from_data,
+    restore_row,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,10 +57,9 @@ _history = BackupHistory()
 
 # Manifest versions this build understands end-to-end. Newer values are
 # accepted with a warning; the additive segment-discovery (books/,
-# articles/, ...) keeps a 1.0 reader compatible with a 2.0 writer and
-# a 2.0 reader compatible with a hypothetical 3.0 writer that only
-# adds segments.
-_KNOWN_MANIFEST_VERSIONS = {"1.0", "2.0"}
+# articles/, globals/, ...) keeps a 1.0 reader compatible with a 2.0
+# writer and a 2.0 reader compatible with a 3.0 writer.
+_KNOWN_MANIFEST_VERSIONS = {"1.0", "2.0", "3.0"}
 
 
 def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
@@ -68,6 +92,10 @@ def import_backup_archive(file: UploadFile, db: Session) -> dict[str, int]:
             for article_dir in sorted(articles_dir.iterdir()):
                 if _restore_article_from_dir(db, article_dir):
                     imported_articles += 1
+
+        # Globals segment (manifest version 3.0+): authors, templates,
+        # orphaned comments. Missing directory = legacy backup; no-op.
+        _restore_globals(db, extracted)
 
         db.commit()
         _history.add(
@@ -185,16 +213,19 @@ def _restore_book_from_dir(db: Session, book_dir: Path) -> bool:
         db.delete(existing)
         db.flush()
 
+    book_id = book_data["id"]
     book = restore_book_from_data(book_data)
     db.add(book)
-    _restore_chapters(db, book_dir / "chapters", book_data["id"])
-    _restore_assets(db, book_dir, book_data["id"])
-    return True
-
-    book = restore_book_from_data(book_data)
-    db.add(book)
-    _restore_chapters(db, book_dir / "chapters", book_data["id"])
-    _restore_assets(db, book_dir, book_data["id"])
+    db.flush()
+    # FK-safe order: labels + assets BEFORE chapters/pages/entities,
+    # because Chapter.label_id and Page/ComicPanel/StoryEntity
+    # .image_asset_id are enforced at insert time (foreign_keys=ON).
+    _restore_simple(db, book_dir / "chapter_labels.json", ChapterLabel)
+    _restore_assets(db, book_dir, book_id)
+    db.flush()
+    _restore_chapters(db, book_dir / "chapters", book_id)
+    db.flush()
+    _restore_book_children(db, book_dir)
     return True
 
 
@@ -232,8 +263,10 @@ def _restore_article_from_dir(db: Session, article_dir: Path) -> bool:
     article = restore_article_from_data(article_data)
     db.add(article)
     db.flush()
+    _restore_simple(db, article_dir / "import_source.json", ArticleImportSource)
     _restore_publications(db, article_dir, article_data["id"])
     _restore_article_assets(db, article_dir, article_data["id"])
+    _restore_article_comments(db, article_dir, article_data["id"])
     return True
 
 
@@ -276,12 +309,13 @@ def _restore_article_assets(db: Session, article_dir: Path, article_id: str) -> 
         if src_file.exists():
             shutil.copy2(src_file, dest_path)
 
+        # Preserve id + every column; regenerate the machine-specific path
+        # and re-point article_id at the row we just (re-)inserted.
         db.add(
-            ArticleAsset(
-                article_id=article_id,
-                filename=meta["filename"],
-                asset_type=asset_type,
-                path=str(dest_path),
+            restore_row(
+                ArticleAsset,
+                meta,
+                overrides={"article_id": article_id, "path": str(dest_path)},
             )
         )
 
@@ -291,16 +325,9 @@ def _restore_chapters(db: Session, chapters_dir: Path, book_id: str) -> None:
         return
     for ch_file in sorted(chapters_dir.glob("*.json")):
         ch_data = json.loads(ch_file.read_text(encoding="utf-8"))
-        db.add(
-            Chapter(
-                id=ch_data["id"],
-                book_id=book_id,
-                title=ch_data["title"],
-                content=ch_data.get("content", ""),
-                position=ch_data.get("position", 0),
-                chapter_type=ch_data.get("chapter_type", ChapterType.CHAPTER.value),
-            )
-        )
+        # Every column round-trips (annotations, status, label_id, version,
+        # target_words, ...); book_id is forced to the parent we restored.
+        db.add(restore_row(Chapter, ch_data, overrides={"book_id": book_id}))
 
 
 def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
@@ -322,11 +349,139 @@ def _restore_assets(db: Session, book_dir: Path, book_id: str) -> None:
         if src_file.exists():
             shutil.copy2(src_file, dest_path)
 
+        # Preserve the asset id (Page / ComicPanel / StoryEntity
+        # .image_asset_id reference it) + every column; regenerate the
+        # machine-specific path and re-point book_id at the parent.
         db.add(
-            Asset(
-                book_id=book_id,
-                filename=meta["filename"],
-                asset_type=asset_type,
-                path=str(dest_path),
+            restore_row(
+                Asset,
+                meta,
+                overrides={"book_id": book_id, "path": str(dest_path)},
             )
         )
+
+
+# --- v3.0 child + globals restore (BACKUP-COMPLETENESS-01) ---
+
+
+def _restore_simple(db: Session, path: Path, model_cls: type) -> None:
+    """Restore every row in a per-book/per-article child list file.
+
+    Used for the freshly-inserted or trash-revived parent path where the
+    child ids are guaranteed absent (the parent's FK-cascade wiped them),
+    so a plain insert is correct. Tolerates either a JSON list or a single
+    object. Full-column round-trip via ``restore_row``.
+    """
+    if not path.exists():
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if isinstance(payload, dict):
+        payload = [payload]
+    if not isinstance(payload, list):
+        return
+    for row_data in payload:
+        db.add(restore_row(model_cls, row_data))
+
+
+def _restore_idempotent(db: Session, path: Path, model_cls: type) -> None:
+    """Restore rows from a list file, skipping ids that already exist.
+
+    Used for GLOBAL content (authors, templates, orphan comments) which
+    is restored once per archive regardless of books/articles, so a
+    re-import must not duplicate rows.
+    """
+    if not path.exists():
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return
+    for row_data in payload:
+        if db.get(model_cls, row_data.get("id")) is not None:
+            continue
+        db.add(restore_row(model_cls, row_data))
+
+
+def _restore_book_children(db: Session, book_dir: Path) -> None:
+    """Restore every per-book child model in FK-safe order.
+
+    Called after the book + its chapter-labels + assets + chapters are
+    already persisted. Flushes between dependency levels so the DB-level
+    FK checks (foreign_keys=ON) see parents before children:
+    pages -> comic_panels -> comic_bubbles; entities -> links;
+    publishing_state -> arc_reviewers.
+    """
+    _restore_simple(db, book_dir / "import_source.json", BookImportSource)
+    _restore_simple(db, book_dir / "chapter_versions.json", ChapterVersion)
+    _restore_simple(db, book_dir / "writing_sessions.json", WritingSession)
+    _restore_simple(db, book_dir / "pages.json", Page)
+    db.flush()
+    _restore_simple(db, book_dir / "comic_panels.json", ComicPanel)
+    db.flush()
+    _restore_simple(db, book_dir / "comic_bubbles.json", ComicBubble)
+    _restore_simple(db, book_dir / "story_entities.json", StoryEntity)
+    db.flush()
+    _restore_simple(db, book_dir / "story_entity_page_links.json", StoryEntityPageLink)
+    _restore_simple(db, book_dir / "publishing_state.json", BookPublishingState)
+    db.flush()
+    _restore_simple(db, book_dir / "arc_reviewers.json", ArcReviewer)
+
+
+def _restore_article_comments(db: Session, article_dir: Path, article_id: str) -> None:
+    """Restore an article's comments, skipping ids that already exist.
+
+    Comments are NOT cascade-deleted with their article (the FK is
+    ON DELETE SET NULL), so on a trash-revive re-import the old comment
+    rows survive; skip-existing keeps the restore idempotent.
+    """
+    path = article_dir / "comments.json"
+    if not path.exists():
+        return
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(payload, list):
+        return
+    for row_data in payload:
+        if db.get(ArticleComment, row_data.get("id")) is not None:
+            continue
+        db.add(
+            restore_row(ArticleComment, row_data, overrides={"responds_to_article_id": article_id})
+        )
+
+
+def _find_globals_dir(extracted: Path) -> Path | None:
+    """Locate the ``globals/`` segment at the archive root or one level
+    down (ZIPs often wrap a single top-level folder)."""
+    if (extracted / "globals").is_dir():
+        return extracted / "globals"
+    for child in extracted.iterdir():
+        if child.is_dir() and (child / "globals").is_dir():
+            return child / "globals"
+    return None
+
+
+def _restore_globals(db: Session, extracted: Path) -> None:
+    """Restore global (non per-book/article) user content (manifest 3.0+):
+    authors, book templates (+ their chapters), chapter templates, and
+    orphaned comments. All idempotent (skip existing ids). Missing
+    ``globals/`` segment (legacy archive) is a silent no-op.
+    """
+    globals_dir = _find_globals_dir(extracted)
+    if globals_dir is None:
+        return
+
+    _restore_idempotent(db, globals_dir / "authors.json", Author)
+
+    bt_path = globals_dir / "book_templates.json"
+    if bt_path.exists():
+        payload = json.loads(bt_path.read_text(encoding="utf-8"))
+        if isinstance(payload, list):
+            for tmpl_data in payload:
+                chapters = tmpl_data.pop("chapters", [])
+                if db.get(BookTemplate, tmpl_data.get("id")) is not None:
+                    continue
+                db.add(restore_row(BookTemplate, tmpl_data))
+                db.flush()
+                for ch_data in chapters:
+                    db.add(restore_row(BookTemplateChapter, ch_data))
+
+    _restore_idempotent(db, globals_dir / "chapter_templates.json", ChapterTemplate)
+    _restore_idempotent(db, globals_dir / "orphan_comments.json", ArticleComment)

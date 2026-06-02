@@ -29,7 +29,7 @@
 | Data integrity — cascades (Book/Article full graphs, ORM + bulk paths) | empirical pytest probe | **PASS** | 0 |
 | Data integrity — comment survival + FK SET NULL | empirical pytest probe | **PASS** | 0 |
 | Security — asset/article/KDP upload filename traversal | empirical probe | **FAIL → FIXED** | **C1 (CRITICAL)** |
-| Security — uploaded-asset content type (stored XSS) | empirical probe | **FAIL** | H1 (HIGH) |
+| Security — uploaded-asset content type (stored XSS) | empirical probe | **RECALIBRATED → LOW** | H1 |
 | Security — Zip Slip across extraction sites | code + empirical | **PARTIAL** | M1 (MEDIUM) |
 | Security — Danger Zone HMAC reset token | code review | **PASS** | L1 (LOW, replay) |
 | Security — plugin-install path validation | code review | **PASS** | 0 |
@@ -48,10 +48,10 @@
 | i18n — translation completeness | advisory test | **ADVISORY** | L7 (LOW) |
 | A11y — Radix `Dialog.Content` missing `Dialog.Description` | code sweep | **FAIL → FIXED** | M4 (MEDIUM) |
 | Writing goals — negative daily word count | code review | **FAIL → FIXED** | M5 (MEDIUM) |
-| Backup `.bgb` round-trip fidelity | empirical export probe | **FAIL** | **H2 (HIGH, data-loss-on-restore)** |
+| Backup `.bgb` round-trip fidelity | empirical export probe | **FAIL → FIXED** | **H2 (HIGH, data-loss-on-restore)** |
 
-**Finding tally:** 1 CRITICAL (fixed), 2 HIGH, 5 MEDIUM (2 fixed this
-session: M4, M5), 7 LOW.
+**Finding tally:** 1 CRITICAL (fixed), 2 HIGH (H2 fixed this session;
+H1 recalibrated to LOW — see below), 5 MEDIUM (2 fixed: M4, M5), 7 LOW.
 
 **Fixed in this session:** C1 (CRITICAL, Stop-Condition), M4 + M5 (MEDIUM,
 user-directed priority fixes). All other findings (H1, M1–M3, L1–L8)
@@ -107,10 +107,27 @@ non-escape assertions). All green; full backend suite 2504 → **2514** passed.
 
 ## HIGH
 
-### H1 — Stored XSS via uploaded HTML/SVG assets served as `text/html`
+### H2 — Backup `.bgb` data-loss (HIGH) — FIXED — see the dedicated section below.
 
-**Severity:** HIGH. **Status:** documented, NOT fixed (awaiting review — does
-not meet the immediate-fix Stop-Condition, which is CRITICAL/data-loss only).
+(The only remaining open HIGH was H2, now fixed. H1 below was recalibrated
+to LOW after checking the response headers.)
+
+## H1 (RECALIBRATED to LOW) — uploaded HTML/SVG asset served as `text/html`
+
+**Severity:** ~~HIGH~~ **LOW** (recalibrated). **Status:** not fixed; not
+required. **Why downgraded:** the serve endpoints already send
+`Content-Disposition: attachment` (from `FileResponse(filename=…)`), verified
+on a live response. Browsers therefore **download** an uploaded `.html`/`.svg`
+asset rather than render it — direct navigation and `<iframe>` embedding both
+trigger a download, not execution; and script inside an `<img>`-loaded SVG does
+not run. So the stored-XSS is not actually exploitable via the obvious vectors.
+The original HIGH was overscored because the first probe didn't inspect the
+`Content-Disposition` header. **Optional hardening (LOW, documented for a
+future pass):** add an `X-Content-Type-Options: nosniff` header + a book-asset
+upload extension allowlist (mirroring the article-asset endpoint) as
+defense-in-depth.
+
+<details><summary>Original HIGH write-up (retained for the record)</summary>
 
 **Reproduction:**
 1. `POST /api/books/{id}/assets` with `("evil.html", b"<script>alert(1)</script>", "text/html")`,
@@ -135,17 +152,29 @@ upload (mirror `article_assets._ALLOWED_EXTENSIONS`), and/or serve assets
 with `Content-Disposition: attachment` + `X-Content-Type-Options: nosniff`,
 and/or force a generic `application/octet-stream` for non-image types.
 
+</details>
+
 ---
 
 ### H2 — Backup `.bgb` does not cover most post-v0.38 models (data loss on restore)
 
 **Severity:** HIGH (silent data loss on a backup → restore cycle).
-**Status:** documented, NOT fixed — the fix is a multi-model backup-format
-extension (serialize + import + manifest version bump + tests for ~10 model
-families) that needs an explicit scope/design decision. Surfaced for review
-rather than implemented autonomously. (Borderline against the data-loss
-Stop-Condition, but that condition targets surgical hotfixes; a backup-format
-overhaul is a feature, not a hotfix.)
+**Status:** **FIXED** (BACKUP-COMPLETENESS-01, manifest v3.0). The backup now
+serializes EVERY mapped column of EVERY content model and a `globals/`
+segment (authors + templates), and the importer restores them all in
+FK-safe order. Built test-first: `tests/test_backup_full_roundtrip.py`
+exports a maximal graph (comic book + article + globals), wipes every table,
+imports, and asserts field-level equality for all 23 content models — it
+failed comprehensively before the fix and passes after. Implementation:
+generic introspection-driven `serialize_row` / `restore_row[M]` helpers
+(a new column is captured automatically and can never silently drop again);
+asset rows preserve their id (Page/Panel/Entity `image_asset_id` reference
+them) and regenerate only the machine-specific path; timestamps + `deleted_at`
+now round-trip. Deliberate, documented exclusions: `AudioVoice` (a cache
+re-synced at startup) and `GitSyncMapping` (machine-local clone path).
+Backend suite 2514 → 2516; mypy + ruff green.
+
+(Original finding, retained for the record:)
 
 **Empirical proof:** built a comic book with a Page + ComicPanel + ComicBubble
 + StoryEntity + ChapterLabel + ChapterVersion (manual snapshot) +

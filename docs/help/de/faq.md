@@ -14,7 +14,7 @@ Ja. Auf dem Dashboard klicke "Projekt importieren" und wähle eine ZIP-Datei im 
 
 ## Wie funktioniert das Backup?
 
-Klicke "Backup" auf dem Dashboard. Alle Bücher, Kapitel, Assets und Einstellungen werden in eine .bgb-Datei exportiert. Zum Wiederherstellen klicke "Restore" und wähle die .bgb-Datei aus.
+Klicke "Backup" auf dem Dashboard. Deine gesamte Bibliothek wird in eine .bgb-Datei exportiert — jedes Buch und jeder Artikel mit allen Kapiteln, Seiten, Comic-Panels, Story-Bible-Einträgen, Kapitel-Labels, Schnappschüssen, Schreibverlauf, Veröffentlichungs-Assistent-Status, Kommentaren und Assets, dazu deine Autoren und eigenen Vorlagen. Zum Wiederherstellen klicke "Restore" und wähle die .bgb-Datei aus.
 
 ## Was passiert wenn ich ein Buch lösche?
 

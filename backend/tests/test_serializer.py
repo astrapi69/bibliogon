@@ -1,16 +1,27 @@
-"""Tests for backup serializer (Book ORM <-> dict conversion)."""
+"""Tests for backup serializer (Book ORM <-> dict conversion).
 
-from datetime import datetime, timezone
+BACKUP-COMPLETENESS-01 (v3.0): the serializer is now generic + complete
+- EVERY mapped column round-trips (including ``deleted_at`` and the
+timestamps), and absent columns fall back to the model's own default,
+which SQLAlchemy applies at flush time (not at object construction).
+These tests therefore flush through an in-memory session whenever they
+assert a defaulted value.
+"""
 
-from app.models import Book
-from app.services.backup.serializer import restore_book_from_data, serialize_book_for_backup
+from datetime import UTC, datetime
 
 import pytest
+from sqlalchemy import inspect as sa_inspect
+from sqlalchemy.exc import IntegrityError
+
+from app.database import SessionLocal
+from app.models import Book
+from app.services.backup.serializer import restore_book_from_data, serialize_book_for_backup
 
 
 def _make_book(**overrides) -> Book:
     """Create a Book ORM object with sensible defaults for testing."""
-    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
     defaults = {
         "id": "abc123",
         "title": "Test Book",
@@ -128,13 +139,27 @@ def test_serialize_all_fields_present():
     assert result["audiobook_overwrite_existing"] is True
     assert result["ms_tools_max_sentence_length"] == 25
     assert result["ms_tools_max_filler_ratio"] == 0.05
-    # 39 keys total (all model fields minus deleted_at, chapters, assets, relationships)
-    assert len(result) == 39
+    # v3.0: EVERY mapped column is serialized - no field may silently drop.
+    expected_columns = {c.key for c in sa_inspect(Book).mapper.column_attrs}
+    assert set(result.keys()) == expected_columns
+    # spot-check the columns the pre-v3.0 serializer used to drop:
+    for previously_missing in (
+        "book_type",
+        "status",
+        "word_target",
+        "word_target_deadline",
+        "categories",
+        "bisac_codes",
+        "graph_layout",
+        "deleted_at",
+        "ai_tokens_used",
+    ):
+        assert previously_missing in result
 
 
 def test_serialize_timestamps_are_iso_strings():
     """created_at and updated_at are serialized as ISO 8601 strings."""
-    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
     book = _make_book(created_at=now, updated_at=now)
 
     result = serialize_book_for_backup(book)
@@ -145,14 +170,15 @@ def test_serialize_timestamps_are_iso_strings():
     assert isinstance(result["updated_at"], str)
 
 
-def test_serialize_does_not_include_deleted_at():
-    """Soft-delete timestamp is intentionally excluded from backups."""
-    deleted = datetime(2025, 7, 1, 0, 0, 0, tzinfo=timezone.utc)
+def test_serialize_includes_deleted_at():
+    """v3.0: the soft-delete timestamp round-trips so a trashed book is
+    restored as trashed (matches the articles-side contract)."""
+    deleted = datetime(2025, 7, 1, 0, 0, 0, tzinfo=UTC)
     book = _make_book(deleted_at=deleted)
 
     result = serialize_book_for_backup(book)
 
-    assert "deleted_at" not in result
+    assert result["deleted_at"] == "2025-07-01T00:00:00+00:00"
 
 
 def test_serialize_none_optional_fields():
@@ -178,7 +204,7 @@ def test_serialize_none_optional_fields():
 
 def test_roundtrip_full_book():
     """Serialize -> restore preserves all data fields except timestamps."""
-    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=timezone.utc)
+    now = datetime(2025, 6, 15, 12, 0, 0, tzinfo=UTC)
     original = _make_book(
         subtitle="Sub",
         series="Series",
@@ -242,41 +268,55 @@ def test_roundtrip_full_book():
     assert restored.ms_tools_max_sentence_length == original.ms_tools_max_sentence_length
     assert restored.ms_tools_max_filler_ratio == original.ms_tools_max_filler_ratio
 
-    # Timestamps are NOT preserved (restore creates fresh ORM defaults)
-    assert restored.created_at != now
+    # v3.0: timestamps now ROUND-TRIP (a backup preserves when a book was
+    # created/edited; the pre-v3.0 serializer reset them on restore).
+    assert restored.created_at == now
+    assert restored.updated_at == now
 
 
 def test_restore_minimal_data():
-    """Restore with only required fields succeeds with correct defaults."""
+    """Restore with only required fields persists with the model's
+    defaults. SQLAlchemy applies column defaults at flush, so we
+    persist + refresh to observe them."""
     minimal = {"id": "min1", "title": "Minimal", "author": "A"}
 
     book = restore_book_from_data(minimal)
-
     assert book.id == "min1"
     assert book.title == "Minimal"
     assert book.author == "A"
-    assert book.language == "de"  # default
-    assert book.ai_assisted is False  # default
-    assert book.audiobook_overwrite_existing is False  # default
-    assert book.subtitle is None
-    assert book.series is None
-    assert book.tts_engine is None
-    assert book.audiobook_merge is None
-    assert book.ms_tools_max_sentence_length is None
+
+    with SessionLocal() as session:
+        session.add(book)
+        session.flush()
+        session.refresh(book)
+        assert book.language == "de"  # default
+        assert book.ai_assisted is False  # default
+        assert book.audiobook_overwrite_existing is False  # default
+        assert book.subtitle is None
+        assert book.series is None
+        assert book.tts_engine is None
+        assert book.audiobook_merge is None
+        assert book.ms_tools_max_sentence_length is None
+        session.rollback()
 
 
-@pytest.mark.parametrize("missing_field", ["id", "title", "author"])
-def test_restore_missing_required_field_raises(missing_field: str):
-    """Missing required fields (id, title, author) raise KeyError."""
-    data = {"id": "x", "title": "T", "author": "A"}
-    del data[missing_field]
+def test_restore_missing_required_field_fails_on_flush():
+    """A backup dict missing the NOT-NULL ``title`` (no default) is
+    rejected at flush time. ``id`` auto-generates and ``author`` is
+    nullable, so only ``title`` is genuinely required."""
+    data = {"id": "x", "author": "A"}  # no title
 
-    with pytest.raises(KeyError, match=missing_field):
-        restore_book_from_data(data)
+    book = restore_book_from_data(data)
+    with SessionLocal() as session:
+        session.add(book)
+        with pytest.raises(IntegrityError):
+            session.flush()
+        session.rollback()
 
 
 def test_restore_legacy_backup_without_audiobook_fields():
-    """Older backups without audiobook/ms-tools fields restore cleanly."""
+    """Older backups without audiobook/ms-tools fields restore cleanly;
+    the absent columns fall back to their model defaults on flush."""
     legacy_data = {
         "id": "legacy1",
         "title": "Old Book",
@@ -291,21 +331,26 @@ def test_restore_legacy_backup_without_audiobook_fields():
     }
 
     book = restore_book_from_data(legacy_data)
-
     assert book.id == "legacy1"
     assert book.title == "Old Book"
     assert book.language == "en"
     assert book.genre == "History"
-    # All newer fields default to None or False
-    assert book.tts_engine is None
-    assert book.tts_voice is None
-    assert book.tts_language is None
-    assert book.tts_speed is None
-    assert book.audiobook_merge is None
-    assert book.audiobook_filename is None
-    assert book.audiobook_overwrite_existing is False
-    assert book.audiobook_skip_chapter_types is None
-    assert book.ms_tools_max_sentence_length is None
-    assert book.ms_tools_repetition_window is None
-    assert book.ms_tools_max_filler_ratio is None
-    assert book.ai_assisted is False
+
+    with SessionLocal() as session:
+        session.add(book)
+        session.flush()
+        session.refresh(book)
+        # Absent newer fields default to None or False on flush.
+        assert book.tts_engine is None
+        assert book.tts_voice is None
+        assert book.tts_language is None
+        assert book.tts_speed is None
+        assert book.audiobook_merge is None
+        assert book.audiobook_filename is None
+        assert book.audiobook_overwrite_existing is False
+        assert book.audiobook_skip_chapter_types is None
+        assert book.ms_tools_max_sentence_length is None
+        assert book.ms_tools_repetition_window is None
+        assert book.ms_tools_max_filler_ratio is None
+        assert book.ai_assisted is False
+        session.rollback()
