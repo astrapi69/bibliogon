@@ -89,11 +89,7 @@ def delete_label(book_id: str, label_id: str, db: Session = Depends(get_db)):
     # Clear the assignment on any chapters using this label before
     # deleting it. The FK is ON DELETE SET NULL too, but this is
     # explicit + robust whether or not SQLite FK enforcement is on.
-    db.execute(
-        update(Chapter)
-        .where(Chapter.label_id == label_id)
-        .values(label_id=None)
-    )
+    db.execute(update(Chapter).where(Chapter.label_id == label_id).values(label_id=None))
     db.delete(label)
     db.commit()
     return None
