@@ -74,14 +74,20 @@ def record_progress(
     chapter_id: str | None = None,
     day: date | None = None,
 ) -> WritingSession:
-    """Add ``delta`` net words to the ``(book_id, chapter_id, day)``
+    """Add ``delta`` words written to the ``(book_id, chapter_id, day)``
     session (today by default), upserting the row. Returns the session.
 
-    A zero delta is still recorded so 'I opened and saved today' counts
-    as activity at 0 net words (the row's existence marks the active
-    day). The grain is per book + chapter (WRITING-HISTORY-STATS-01);
-    the daily-goal widget reads the day-aggregated total across rows.
+    ``delta`` is floored to 0: a save that nets fewer words than before
+    (the user deleted text) must NOT decrement the day's progress, or a
+    day's ``words_written`` could go negative and the daily-goal widget
+    would render a negative count. We track gross words written, not the
+    net document size. A zero delta is still recorded so 'I opened and
+    saved today' counts as activity (the row's existence marks the
+    active day). The grain is per book + chapter
+    (WRITING-HISTORY-STATS-01); the daily-goal widget reads the
+    day-aggregated total across rows.
     """
+    delta = max(0, delta)
     target_day = day or date.today()
     session = (
         db.query(WritingSession)
@@ -119,7 +125,11 @@ def recent_sessions(db: Session, days: int) -> list[DailyTotal]:
         .limit(max(1, days))
         .all()
     )
-    return [DailyTotal(day=row.day, words_written=int(row.words_written or 0)) for row in rows]
+    # Floor to 0: guards the widget against any legacy negative rows
+    # written before record_progress clamped deletions (see that fn).
+    return [
+        DailyTotal(day=row.day, words_written=max(0, int(row.words_written or 0))) for row in rows
+    ]
 
 
 # --- WRITING-HISTORY-STATS-01: aggregates for the stats view ---
@@ -203,7 +213,11 @@ def daily_global_series(db: Session, days: int, *, today: date | None = None) ->
         .order_by(WritingSession.day.asc())
         .all()
     )
-    return [DailyTotal(day=row.day, words_written=int(row.words_written or 0)) for row in rows]
+    # Floor to 0: guards the widget against any legacy negative rows
+    # written before record_progress clamped deletions (see that fn).
+    return [
+        DailyTotal(day=row.day, words_written=max(0, int(row.words_written or 0))) for row in rows
+    ]
 
 
 def summary_stats(db: Session, days: int, *, today: date | None = None) -> StatsSummary:
