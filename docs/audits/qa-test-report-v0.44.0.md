@@ -363,10 +363,11 @@ goes negative — the daily-goal / streak widget then renders a negative count
   [0, 100] (and non-numeric) with HTTP 422; non-coordinate anchor keys pass
   through. Regression pins in `test_comic_routes.py::TestBubbleAnchorBoundsValidation`
   (in-range accepted; out-of-range create + update both 422).
-- **L3 — Continuity-checker N+1 query.**
-  `plugins/.../bibliogon_story_bible/continuity.py` accesses `link.entity.name`
-  per link without eager loading → one query per link. Perf only; correctness
-  fine. Use `joinedload`.
+- **L3 — Continuity-checker N+1 query — FIXED.** The link query in
+  `continuity.py` now uses `joinedload(StoryEntityPageLink.entity)`, so
+  reading `link.entity.name` no longer fires one SELECT per link. Results
+  unchanged (perf-only); story-bible tests green. (Boy-Scout: also fixed a
+  pre-existing B905 bare `zip()` in the same file.)
 - **L4 — `StoryEntityPageLink` page_id/chapter_id XOR is route-only.** The
   exactly-one-of invariant is enforced in `links.py` (HTTP 400), not by a DB
   CHECK constraint. Documented design convention (matches `Chapter.chapter_type`

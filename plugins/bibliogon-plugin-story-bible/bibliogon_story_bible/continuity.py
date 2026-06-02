@@ -85,9 +85,11 @@ def compute_continuity_warnings(
     for entity_id, entry in by_entity.items():
         appearances = sorted(entry["appearances"])
         name = entry["name"]
-        # Internal gaps between consecutive appearances.
+        # Internal gaps between consecutive appearances. The two iterables
+        # are intentionally off-by-one in length (pairwise sliding window),
+        # so strict=False is correct.
         for (prev_pos, prev_page), (next_pos, _next_page) in zip(
-            appearances, appearances[1:]
+            appearances, appearances[1:], strict=False
         ):
             if next_pos - prev_pos - 1 >= gap_threshold:
                 warnings.append(
@@ -125,6 +127,8 @@ def continuity_check(
     Loads the book's pages + entity links and runs the pure rule
     function. Empty list when the book has no pages (e.g. prose).
     """
+    from sqlalchemy.orm import joinedload
+
     from app.models import Page, StoryEntityPageLink
 
     pages = (
@@ -136,8 +140,11 @@ def continuity_check(
     if not pages:
         return []
     page_ids = [p.id for p in pages]
+    # Eager-load the entity so reading ``link.entity.name`` below doesn't
+    # fire one lazy SELECT per link (QA L3 N+1).
     link_rows = (
         db.query(StoryEntityPageLink)
+        .options(joinedload(StoryEntityPageLink.entity))
         .filter(StoryEntityPageLink.page_id.in_(page_ids))
         .all()
     )
