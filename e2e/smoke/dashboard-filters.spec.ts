@@ -61,7 +61,7 @@ function visibleBookCards(page: Page) {
     // `.claude/rules/lessons-learned.md` "Prefix testid selectors
     // match every nested testid that shares the prefix".
     return page.locator(
-        "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-'])",
+        "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-']):not([data-testid*='-status-'])",
     );
 }
 

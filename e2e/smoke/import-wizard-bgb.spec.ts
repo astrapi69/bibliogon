@@ -48,7 +48,7 @@ test.describe("Import wizard UI: .bgb", () => {
         await page.getByTestId("wizard-close").click();
         await expect(
             page.locator(
-                "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-'])",
+                "[data-testid^='book-card-']:not([data-testid*='-menu-']):not([data-testid*='-placeholder-']):not([data-testid*='-status-'])",
             ),
         ).toContainText("BGB Smoke Book");
     });

@@ -28,10 +28,10 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         // ``erscheinungsbild-settings-save``.
         await page.getByTestId("settings-tab-erscheinungsbild").click();
 
-        await expect(page.getByTestId("settings-books-view")).toBeVisible();
-        await expect(page.getByTestId("settings-articles-view")).toBeVisible();
-        await expect(page.getByTestId("settings-books-trash-view")).toBeVisible();
-        await expect(page.getByTestId("settings-articles-trash-view")).toBeVisible();
+        await expect(page.getByTestId("settings-books-view-trigger")).toBeVisible();
+        await expect(page.getByTestId("settings-articles-view-trigger")).toBeVisible();
+        await expect(page.getByTestId("settings-books-trash-view-trigger")).toBeVisible();
+        await expect(page.getByTestId("settings-articles-trash-view-trigger")).toBeVisible();
     });
 
     test("BD-Trash default = list propagates to the trash view", async ({page}) => {
@@ -39,7 +39,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // Set the books-trash default to "list" via the Radix Select.
-        await page.getByTestId("settings-books-trash-view").click();
+        await page.getByTestId("settings-books-trash-view-trigger").click();
         await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
         await page.getByTestId("erscheinungsbild-settings-save").click();
 
@@ -55,10 +55,10 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
 
         // Active BD = grid, Trash BD = list. Active and trash should
         // pick up different defaults — that's the whole point of Bug 3.
-        await page.getByTestId("settings-books-view").click();
+        await page.getByTestId("settings-books-view-trigger").click();
         await page.getByRole("option", {name: /kachel-ansicht|grid/i}).click();
 
-        await page.getByTestId("settings-books-trash-view").click();
+        await page.getByTestId("settings-books-trash-view-trigger").click();
         await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
         await page.getByTestId("erscheinungsbild-settings-save").click();
 
@@ -77,7 +77,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         // Set trash default to grid via Settings.
         await page.goto("/settings");
         await page.getByTestId("settings-tab-erscheinungsbild").click();
-        await page.getByTestId("settings-books-trash-view").click();
+        await page.getByTestId("settings-books-trash-view-trigger").click();
         await page.getByRole("option", {name: /kachel-ansicht|grid/i}).click();
         await page.getByTestId("erscheinungsbild-settings-save").click();
 
@@ -95,7 +95,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         // The select shows the saved value as its current item label.
         // The exact label depends on i18n; we read the trigger's text
         // and assert it matches the grid label, not the list label.
-        const trigger = page.getByTestId("settings-books-trash-view");
+        const trigger = page.getByTestId("settings-books-trash-view-trigger");
         await expect(trigger).toHaveText(/kachel-ansicht|grid/i);
     });
 });

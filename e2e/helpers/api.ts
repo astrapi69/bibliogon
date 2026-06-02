@@ -21,6 +21,45 @@ export async function resetDb(): Promise<void> {
     await request("/test/reset", {method: "DELETE"});
 }
 
+// Cross-test settings isolation. /test/reset wipes DB rows but NOT the
+// app settings (ui.dashboard view-modes + page-sizes, topics), which live
+// in app.yaml and are read fresh on every page load. A test that flips a
+// global setting (view-mode default, page-size, topics) would otherwise
+// leak into every later test in the serial run — the dominant cause of
+// "passes in isolation, fails in the full suite". Capture the pre-suite
+// baseline once, then restore the mutation-prone keys before each test.
+let _settingsBaseline: {ui?: Record<string, unknown>; topics?: unknown} | null =
+    null;
+
+export async function resetSettings(): Promise<void> {
+    if (_settingsBaseline === null) {
+        // First call (start of the run): capture the clean baseline.
+        _settingsBaseline = await request<{
+            ui?: Record<string, unknown>;
+            topics?: unknown;
+        }>("/settings/app");
+        return;
+    }
+    const ui = _settingsBaseline.ui ?? {};
+    const dashboard = (ui.dashboard as Record<string, unknown> | undefined) ?? {};
+    await request("/settings/app", {
+        method: "PATCH",
+        body: JSON.stringify({
+            ui: {
+                ...ui,
+                // The vast majority of dashboard specs drive the grid-only
+                // card testids (book-card-* / article-card-*). The app
+                // DEFAULT for articles_view is "list", so the E2E baseline
+                // explicitly forces BOTH dashboards to grid. List-specific
+                // specs (view-mode parity, trash-view-mode-defaults) set
+                // their own view after this reset.
+                dashboard: {...dashboard, books_view: "grid", articles_view: "grid"},
+            },
+            topics: _settingsBaseline.topics ?? [],
+        }),
+    });
+}
+
 export async function createBook(title: string, author: string = "E2E Autor"): Promise<{id: string; title: string}> {
     return request("/books", {
         method: "POST",

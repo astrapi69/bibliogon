@@ -1,14 +1,21 @@
 import {test as base, type Page} from "@playwright/test";
-import {resetDb, createBook, createChapter} from "../helpers/api";
+import {resetDb, resetSettings, createBook, createChapter} from "../helpers/api";
 
 /**
- * Extended test fixtures with DB reset.
+ * Extended test fixtures with DB + settings reset before every test.
+ *
+ * resetDb wipes all content tables; resetSettings restores the
+ * mutation-prone app settings (dashboard view-modes / page-sizes, topics)
+ * to the pre-suite baseline so a test that changes a global setting cannot
+ * leak into the next — the cross-test state-pollution class that made many
+ * specs pass in isolation but fail in the full serial run.
  */
 export const test = base.extend<{
     resetDatabase: void;
 }>({
     resetDatabase: [async ({}, use) => {
         await resetDb();
+        await resetSettings();
         await use();
     }, {auto: true}],
 });

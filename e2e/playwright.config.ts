@@ -17,10 +17,30 @@ export default defineConfig({
     },
     webServer: [
         {
+            // The E2E backend runs against an ISOLATED data dir, never the
+            // developer's real ~/.local/share/bibliogon. E2E destroys data
+            // (every test wipes the DB via /test/reset) and mutates app
+            // settings, so it must never point at real data. BIBLIOGON_DEBUG
+            // enables the /api/test/reset endpoint. reuseExistingServer is
+            // false so a stray real-data backend on :8000 is never silently
+            // reused — run E2E with no other backend on :8000.
             command: "cd ../backend && poetry run uvicorn app.main:app --port 8000",
             url: "http://localhost:8000/api/health",
-            reuseExistingServer: !process.env.CI,
-            timeout: 30_000,
+            env: {
+                // Isolated data dir + a persistent file DB under it.
+                // BIBLIOGON_TEST=1 skips the legacy in-tree data-dir
+                // migration (which would otherwise conflict on / move the
+                // repo's backend/plugins/installed) and the production
+                // marker; TEST_DATABASE_URL points at a real file (not the
+                // default :memory:) so data survives across requests within
+                // a run. DEBUG enables /api/test/reset.
+                BIBLIOGON_DATA_DIR: "/tmp/bibliogon-e2e-data",
+                BIBLIOGON_TEST: "1",
+                TEST_DATABASE_URL: "sqlite:////tmp/bibliogon-e2e-data/e2e.db",
+                BIBLIOGON_DEBUG: "true",
+            },
+            reuseExistingServer: false,
+            timeout: 60_000,
         },
         {
             command: "cd ../frontend && npm run dev",

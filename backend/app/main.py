@@ -949,17 +949,70 @@ def health():
 # Test reset endpoint - only available in debug mode
 if DEBUG:
     from app.database import SessionLocal
-    from app.models import Article, Asset, Book, Chapter
+    from app.models import (
+        ArcReviewer,
+        Article,
+        ArticleAsset,
+        ArticleComment,
+        ArticleImportSource,
+        Asset,
+        Book,
+        BookImportSource,
+        BookPublishingState,
+        Chapter,
+        ChapterLabel,
+        ChapterVersion,
+        ComicBubble,
+        ComicPanel,
+        Page,
+        Publication,
+        StoryEntity,
+        StoryEntityPageLink,
+        WritingSession,
+    )
+
+    # All per-test CONTENT tables, ordered children-before-parents so the
+    # deletes are FK-safe regardless of cascade configuration. Seed/config
+    # tables (BookTemplate*, ChapterTemplate, AudioVoice, GitSyncMapping,
+    # Author) are intentionally NOT wiped: templates/voices are re-seeded
+    # at startup, and Author is a user-managed catalog some tests rely on
+    # (each author-test cleans up its own rows).
+    _RESET_MODELS_IN_ORDER = [
+        StoryEntityPageLink,
+        ComicBubble,
+        ComicPanel,
+        StoryEntity,
+        ChapterVersion,
+        WritingSession,
+        ChapterLabel,
+        ArcReviewer,
+        BookPublishingState,
+        Publication,
+        ArticleComment,
+        ArticleImportSource,
+        ArticleAsset,
+        BookImportSource,
+        Page,
+        Asset,
+        Chapter,
+        Article,
+        Book,
+    ]
 
     @app.delete("/api/test/reset")
     def reset_test_db():
-        """Reset all data. Used by e2e tests for clean state. Only available in debug mode."""
+        """Reset all per-test content. Used by e2e tests for clean state.
+
+        Only available in debug mode. Previously wiped only
+        Asset/Chapter/Book/Article, which let Page / ComicPanel /
+        StoryEntity / ArticleComment / Publication / etc. orphan-accumulate
+        across the serial smoke run and pollute later tests. Now wipes every
+        content table (FK-safe order).
+        """
         db = SessionLocal()
         try:
-            db.query(Asset).delete()
-            db.query(Chapter).delete()
-            db.query(Book).delete()
-            db.query(Article).delete()
+            for model in _RESET_MODELS_IN_ORDER:
+                db.query(model).delete()
             db.commit()
             return {"status": "reset"}
         finally:
