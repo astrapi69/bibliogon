@@ -280,9 +280,17 @@ no 400.
 add a server-side capacity gate keyed off the target page's grid template,
 mirroring the client gate.
 
-### M3 — @-mention nodes orphan when the mentioned entity is deleted
+### M3 — @-mention nodes orphan when the mentioned entity is deleted — FIXED
 
-**Severity:** MEDIUM. **Status:** documented.
+**Severity:** MEDIUM. **Status:** **FIXED**. `delete_entity` now calls
+`_degrade_entity_mentions` BEFORE removing the row: it scans the book's
+chapters (`Chapter.content`) + pages (`Page.text_content`), and any TipTap
+`mention` node whose `attrs.id` matches the deleted entity is replaced in
+place with a plain `text` node carrying the mention's label — so the
+human-readable name survives and no dangling reference is left. A substring
+pre-filter skips docs that can't contain the id; non-JSON/plain content is
+left untouched. Regression pins in `test_story_bible_mention_cleanup.py`
+(mention degraded to text on delete; other entities' mentions untouched).
 
 `plugins/bibliogon-plugin-story-bible/bibliogon_story_bible/entities.py`
 delete-entity handler does a bare `db.delete(entity)` with **no scan/cleanup**

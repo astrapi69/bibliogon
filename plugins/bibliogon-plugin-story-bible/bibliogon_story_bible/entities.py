@@ -282,9 +282,83 @@ def get_entity_relationships(
     return resolved
 
 
+def _degrade_mentions_in_doc(node: Any, entity_id: str) -> bool:
+    """Recursively replace any ``mention`` node referencing ``entity_id``
+    with a plain text node carrying its label. Returns True if the tree
+    changed. Mutates ``node`` in place.
+
+    The TipTap mention node is ``{"type": "mention", "attrs": {"id",
+    "label", "entityType"}}`` (@tiptap/extension-mention + storyBibleMention).
+    Degrading to ``{"type": "text", "text": <label>}`` keeps the human-
+    readable name while removing the now-dangling entity reference.
+    """
+    if not isinstance(node, dict):
+        return False
+    changed = False
+    content = node.get("content")
+    if isinstance(content, list):
+        for i, child in enumerate(content):
+            if (
+                isinstance(child, dict)
+                and child.get("type") == "mention"
+                and isinstance(child.get("attrs"), dict)
+                and child["attrs"].get("id") == entity_id
+            ):
+                label = child["attrs"].get("label") or ""
+                content[i] = {"type": "text", "text": str(label)}
+                changed = True
+            elif _degrade_mentions_in_doc(child, entity_id):
+                changed = True
+    return changed
+
+
+def _strip_entity_mentions(raw: str | None, entity_id: str) -> str | None:
+    """Return ``raw`` (TipTap-JSON string) with mentions of ``entity_id``
+    degraded to text, or ``None`` if nothing changed / not parseable.
+
+    A cheap substring pre-filter avoids parsing docs that can't contain the
+    id. Plain-text (non-JSON) content can't hold a mention node, so it's
+    left untouched.
+    """
+    if not raw or entity_id not in raw:
+        return None
+    try:
+        doc = json.loads(raw)
+    except (ValueError, TypeError):
+        return None
+    if not isinstance(doc, dict):
+        return None
+    if _degrade_mentions_in_doc(doc, entity_id):
+        return json.dumps(doc)
+    return None
+
+
+def _degrade_entity_mentions(db: Session, entity: StoryEntity) -> None:
+    """Degrade every @-mention of ``entity`` across its book's chapters +
+    pages to plain text BEFORE the entity row is deleted (QA M3), so no
+    dangling-reference mention node is left behind."""
+    from app.models import Chapter, Page
+
+    for chapter in db.query(Chapter).filter(Chapter.book_id == entity.book_id):
+        rewritten = _strip_entity_mentions(chapter.content, entity.id)
+        if rewritten is not None:
+            chapter.content = rewritten
+
+    for page in db.query(Page).filter(Page.book_id == entity.book_id):
+        rewritten = _strip_entity_mentions(page.text_content, entity.id)
+        if rewritten is not None:
+            page.text_content = rewritten
+
+
 @router.delete("/entities/{entity_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_entity(entity_id: str, db: Session = Depends(get_db)) -> None:
-    """Delete a story entity."""
+    """Delete a story entity.
+
+    Before removing the row, degrade any @-mention of it in the book's
+    chapter / page content to plain text so no dangling mention node
+    survives (QA M3 / half-wired-lifecycle).
+    """
     entity = _get_entity_or_404(entity_id, db)
+    _degrade_entity_mentions(db, entity)
     db.delete(entity)
     db.commit()
