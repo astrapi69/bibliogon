@@ -1211,13 +1211,38 @@ input[type="checkbox"] {
 }
 
 /* --- Radix Dialog --- */
-.dialog-overlay {
+.dialog-overlay,
+.radix-dialog-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
     z-index: 2000;
     animation: fadeIn 150ms ease;
+}
+
+/* Positioning surface for the raw-Radix modals (WritingHistoryModal,
+ * ChapterVersionsModal, ConflictResolutionDialog, DonationOnboardingDialog,
+ * RelationshipGraphView) that render Dialog.Content directly instead of
+ * through AppDialog. Without this, those modals referenced an undefined
+ * class and rendered unpositioned (no fixed centering, no z-index) — they
+ * opened into the document flow and were effectively invisible. Per-modal
+ * width comes from the component's CSS-module .content (later cascade wins);
+ * this rule owns positioning + the scroll viewport for tall content. */
+.radix-dialog-content {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    padding: 24px;
+    width: min(720px, 95vw);
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: var(--shadow-lg);
+    z-index: 2001;
+    animation: slideIn 150ms ease;
 }
 
 .dialog-content {

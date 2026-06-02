@@ -43,6 +43,8 @@ export default function DashboardFilterBar({filters, layout = "row"}: Props) {
             <div className={isStack ? styles.searchStack : styles.searchRow}>
                 <Search size={16} className={styles.searchIcon}/>
                 <input
+                    id="dashboard-filter-search"
+                    name="dashboard-filter-search"
                     className={`input ${styles.searchInput}`}
                     data-testid="filter-search-input"
                     type="search"

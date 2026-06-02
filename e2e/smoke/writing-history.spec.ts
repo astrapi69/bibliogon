@@ -31,8 +31,30 @@ test.describe("Writing history", () => {
 
     // Open the Writing-History modal from the widget.
     await page.getByTestId("writing-goal-history-open").click()
-    await expect(page.getByTestId("writing-history-modal")).toBeVisible()
+    const modal = page.getByTestId("writing-history-modal")
+    await expect(modal).toBeVisible()
     await expect(page.getByTestId("writing-history-summary")).toBeVisible()
+
+    // Regression pin for the "Verlauf button does nothing" report: the
+    // modal referenced an UNDEFINED CSS class (radix-dialog-content), so
+    // Dialog.Content rendered in document flow with no fixed positioning
+    // and no z-index — invisible/unusable to the user even though
+    // toBeVisible() (which ignores positioning + occlusion) still passed.
+    // Assert the real computed positioning the fix restores; this FAILS
+    // pre-fix (position: static, z-index: auto).
+    const pos = await modal.evaluate((el) => {
+      const cs = getComputedStyle(el)
+      return { position: cs.position, zIndex: cs.zIndex }
+    })
+    expect(pos.position).toBe("fixed")
+    expect(Number(pos.zIndex)).toBeGreaterThan(0)
+    const box = await modal.boundingBox()
+    expect(box).not.toBeNull()
+    const vp = page.viewportSize()
+    if (vp) {
+      expect(box!.y).toBeGreaterThanOrEqual(0)
+      expect(box!.y).toBeLessThan(vp.height)
+    }
 
     // The book appears in the per-book breakdown.
     await expect(page.getByTestId(`writing-history-book-${book.id}`)).toBeVisible()

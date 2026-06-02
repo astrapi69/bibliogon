@@ -125,6 +125,8 @@ export default function WritingGoalWidget() {
         <input
           type="number"
           min={0}
+          id="writing-goal-daily-target"
+          name="writing-goal-daily-target"
           className={`input ${styles.goalInput}`}
           defaultValue={goal}
           aria-label={t("ui.writing_goal.daily_goal", "Daily goal")}

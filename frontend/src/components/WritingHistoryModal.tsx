@@ -285,7 +285,20 @@ export default function WritingHistoryModal({ open, onClose }: Props) {
                 </div>
               ) : null}
             </>
-          ) : null}
+          ) : (
+            // summary === null while not loading means the fetch failed (or
+            // returned nothing). Never leave the modal body blank — show an
+            // empty state so the modal visibly opens with content.
+            <p
+              className={styles.emptyState}
+              data-testid="writing-history-empty"
+            >
+              {t(
+                "ui.writing_stats.empty",
+                "No writing history in this period yet.",
+              )}
+            </p>
+          )}
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
