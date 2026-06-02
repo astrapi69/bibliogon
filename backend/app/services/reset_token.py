@@ -33,6 +33,12 @@ DEFAULT_TTL_SECONDS = 300  # 5 minutes
 
 _RESET_TOKEN_SECRET: bytes = secrets.token_bytes(32)
 
+# Nonces already spent by a successful ``consume`` verification. Makes the
+# two-phase reset token genuinely one-time: a token replayed within its TTL
+# is rejected. Per-process (so is the signing secret), so the set never
+# outlives the tokens it guards; it only grows by one per executed reset.
+_CONSUMED_NONCES: set[str] = set()
+
 
 @dataclass(frozen=True)
 class ResetToken:
@@ -55,13 +61,20 @@ def issue_token(ttl_seconds: int = DEFAULT_TTL_SECONDS) -> ResetToken:
     return ResetToken(encoded=encoded, nonce=nonce, expires_at=expires_at)
 
 
-def verify_token(encoded: str, now: int | None = None) -> bool:
+def verify_token(encoded: str, now: int | None = None, *, consume: bool = False) -> bool:
     """Verify signature + expiry on a previously-issued token.
 
     Returns ``True`` only when (a) the token parses, (b) the HMAC
     matches the per-process secret, and (c) ``expires_at > now``.
     Any malformed or tampered input returns ``False``; we never
     raise on bad input so the caller's error path stays uniform.
+
+    When ``consume=True`` the token is additionally enforced as
+    ONE-TIME: a token whose nonce was already spent by a prior
+    ``consume`` call returns ``False`` (replay rejected), and a fresh
+    valid token's nonce is recorded as spent before returning ``True``.
+    The ``/reset`` endpoint passes ``consume=True``; ``/reset/prepare``
+    never verifies, so issuing a token does not spend it.
     """
     now = now if now is not None else int(time.time())
     try:
@@ -81,9 +94,13 @@ def verify_token(encoded: str, now: int | None = None) -> bool:
         expires_at = int(expires_str)
     except (ValueError, UnicodeDecodeError):
         return False
-    if not nonce_str:
+    if not nonce_str or expires_at <= now:
         return False
-    return expires_at > now
+    if consume:
+        if nonce_str in _CONSUMED_NONCES:
+            return False  # replay of an already-spent token
+        _CONSUMED_NONCES.add(nonce_str)
+    return True
 
 
 def _pad(s: str) -> str:

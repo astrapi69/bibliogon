@@ -166,10 +166,10 @@ def reset_execute(body: _ResetRequest) -> dict[str, Any]:
             status_code=400,
             detail="Confirmation literal must equal 'RESET'.",
         )
-    if not reset_token.verify_token(body.token):
+    if not reset_token.verify_token(body.token, consume=True):
         raise HTTPException(
             status_code=400,
-            detail="Reset token is invalid or expired.",
+            detail="Reset token is invalid, expired, or already used.",
         )
     db: Session = SessionLocal()
     try:

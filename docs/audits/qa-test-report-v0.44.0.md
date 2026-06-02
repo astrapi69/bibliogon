@@ -350,13 +350,13 @@ goes negative — the daily-goal / streak widget then renders a negative count
 
 ## LOW
 
-- **L1 — Reset token replay within TTL.** `app/services/reset_token.py` issues
-  HMAC-SHA256 tokens with a per-process secret, constant-time
-  `compare_digest`, and 5-min expiry — solid. But there is no server-side
-  nonce store, so a token is replayable until it expires, despite the
-  docstring calling them "one-time". The reset also requires the literal
-  `"RESET"` confirmation, so replay only re-triggers an action the user
-  already authorized. Low risk.
+- **L1 — Reset token replay within TTL — FIXED.** `verify_token(...,
+  consume=True)` now records the token's nonce in a per-process
+  `_CONSUMED_NONCES` set and rejects any replay; the `/reset` endpoint calls
+  it with `consume=True`, so a token is genuinely one-time. Regression pins
+  in `test_reset_token.py` (consume succeeds once then rejects replay;
+  expired token isn't consumed). `/reset/prepare` still doesn't verify, so
+  issuing a token doesn't spend it.
 - **L2 — Comic bubble `anchor` not bounds-validated server-side.**
   `ComicBubbleCreate/Update` bound `width_pct/height_pct/tail_position_pct/
   tail_length_px` with `ge/le`, but `anchor` (`{x_pct,y_pct}`) is a free

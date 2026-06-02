@@ -71,3 +71,31 @@ def test_default_ttl_is_five_minutes() -> None:
     issued = reset_token.issue_token()
     delta = issued.expires_at - int(time.time())
     assert 295 <= delta <= 301
+
+
+def test_consume_enforces_one_time_use() -> None:
+    """L1: a token is one-time when verified with consume=True.
+
+    A non-consuming verify never spends the token (used by no production
+    gate, kept for parity); the first consuming verify succeeds and any
+    replay - the vector the /reset endpoint must reject - returns False.
+    """
+    issued = reset_token.issue_token()
+    # Non-consuming reads never spend it.
+    assert reset_token.verify_token(issued.encoded) is True
+    assert reset_token.verify_token(issued.encoded) is True
+    # First consume wins; replay is rejected.
+    assert reset_token.verify_token(issued.encoded, consume=True) is True
+    assert reset_token.verify_token(issued.encoded, consume=True) is False
+
+
+def test_expired_token_is_not_consumed() -> None:
+    """An expired token fails the TTL check before the nonce is spent, so a
+    later (hypothetical, clock-rewound) consume of the same nonce is still
+    available - expiry and replay are independent gates."""
+    issued = reset_token.issue_token(ttl_seconds=60)
+    assert (
+        reset_token.verify_token(issued.encoded, now=issued.expires_at + 1, consume=True)
+        is False
+    )
+    assert issued.nonce not in reset_token._CONSUMED_NONCES
