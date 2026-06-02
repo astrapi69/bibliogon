@@ -30,32 +30,44 @@
 | Data integrity — comment survival + FK SET NULL | empirical pytest probe | **PASS** | 0 |
 | Security — asset/article/KDP upload filename traversal | empirical probe | **FAIL → FIXED** | **C1 (CRITICAL)** |
 | Security — uploaded-asset content type (stored XSS) | empirical probe | **RECALIBRATED → LOW** | H1 |
-| Security — Zip Slip across extraction sites | code + empirical | **PARTIAL** | M1 (MEDIUM) |
-| Security — Danger Zone HMAC reset token | code review | **PASS** | L1 (LOW, replay) |
+| Security — Zip Slip across extraction sites | code + empirical | **FIXED** | M1 (MEDIUM) |
+| Security — Danger Zone HMAC reset token (one-time use) | code + empirical | **FIXED** | L1 (LOW) |
 | Security — plugin-install path validation | code review | **PASS** | 0 |
 | Security — SQL injection / schema validation | empirical probe | **PASS** | 0 |
-| API — 404 / 422 / wrong-type / bad-enum | empirical probe | **PASS** | L5 (LOW) |
-| Story Bible — relationships / auto-detect / export | code review | **PASS** | L3, L4 (LOW) |
-| Story Bible — @-mention lifecycle | code review | **FAIL** | M3 (MEDIUM) |
-| Comic — cross-page move capacity | code + empirical | **FAIL** | M2 (MEDIUM) |
-| Comic — bubble/tail bounds validation | code review | **PARTIAL** | L2 (LOW) |
+| API — 404/422/injection + title control-char/length validation | empirical probe | **PASS / L5 FIXED** | L5 (LOW) |
+| Story Bible — relationships / auto-detect / export (N+1 + XOR CHECK) | code + empirical | **PASS / L3,L4 FIXED** | L3, L4 (LOW) |
+| Story Bible — @-mention lifecycle (orphan cleanup) | code + empirical | **FIXED** | M3 (MEDIUM) |
+| Comic — cross-page move capacity gate | code + empirical | **FIXED** | M2 (MEDIUM) |
+| Comic — bubble anchor bounds validation | code + empirical | **FIXED** | L2 (LOW) |
 | Editor — snapshots (restore safety + retention) | code review | **PASS** | 0 |
 | Editor — chapter-label delete cleanup | code + cascade probe | **PASS** | 0 |
 | Editor — writing-goals daily target (div-by-zero) | code review | **PASS** | 0 |
 | KDP — ARC status validation / pricing math | code review | **PASS** | 0 |
 | Layout — `layout`/`layout_config` validation | code review | **PASS** | 0 (by design) |
-| Tooling — lint hygiene | ruff | **PARTIAL** | L6 (LOW, pre-existing) |
-| i18n — translation completeness | advisory test | **ADVISORY** | L7 (LOW) |
+| Tooling — lint hygiene (KDP B904, story-bible B905) | ruff | **FIXED** | L6 (LOW) |
+| i18n — translation completeness (auto-translated tier) | advisory test | **OPEN (debt, by-design advisory)** | L7 (LOW) |
 | A11y — Radix `Dialog.Content` missing `Dialog.Description` | code sweep | **FAIL → FIXED** | M4 (MEDIUM) |
 | Writing goals — negative daily word count | code review | **FAIL → FIXED** | M5 (MEDIUM) |
 | Backup `.bgb` round-trip fidelity | empirical export probe | **FAIL → FIXED** | **H2 (HIGH, data-loss-on-restore)** |
 
-**Finding tally:** 1 CRITICAL (fixed), 2 HIGH (H2 fixed this session;
-H1 recalibrated to LOW — see below), 5 MEDIUM (2 fixed: M4, M5), 7 LOW.
+**Finding tally:** 1 CRITICAL, 2 HIGH, 5 MEDIUM, 8 LOW (H1 recalibrated from
+HIGH → LOW). **All are now closed except L7** (translation-completeness debt,
+an advisory-by-design non-failure routed to the `I18N-DIACRITICS-01` track).
 
-**Fixed in this session:** C1 (CRITICAL, Stop-Condition), M4 + M5 (MEDIUM,
-user-directed priority fixes). All other findings (H1, M1–M3, L1–L8)
-documented for review.
+**Status (final):**
+- **CRITICAL:** C1 — FIXED (regression-pinned, live).
+- **HIGH:** H2 — FIXED (full backup overhaul + round-trip test);
+  H1 — recalibrated to LOW (already mitigated by `Content-Disposition:
+  attachment`; optional nosniff hardening noted).
+- **MEDIUM:** M1, M2, M3, M4, M5 — all FIXED + regression-pinned.
+- **LOW:** L1, L2, L3, L4, L5, L6 — all FIXED + regression-pinned;
+  L8 — RESOLVED by-design (no code change; a hard server lock would regress
+  intended UX); **L7 — OPEN** (auto-translated-tier completeness debt; see
+  its entry — flagged for a reviewed translation pass rather than blind
+  machine-translation of ~1000 strings across six languages).
+
+Every fix above landed as its own commit with regression tests and was pushed
+autonomously; the full backend suite is green after each.
 
 ---
 
@@ -404,14 +416,32 @@ goes negative — the daily-goal / streak widget then renders a negative count
 - **L6 — Pre-existing ruff B904 in KDP routes — FIXED.** `plugins/bibliogon-plugin-kdp/
   bibliogon_kdp/routes.py` now raises `HTTPException(...) from e` in the
   `build_kdp_package` handler, preserving the cause chain. ruff clean.
-- **L7 — i18n untranslated-English advisory.** `test_advisory_untranslated_en`
-  flags many catalog values as byte-identical-to-EN-and-English-looking
-  (the "...and 89 more" terminal line). Advisory heuristic, always passes;
-  represents translation completeness debt in auto-translated catalogs.
-- **L8 — EditableTitle published-work warning is client-side only** (no
-  server-side block on title edits of published/archived works). Classified
-  by-design: the feature is an acknowledgment warning, not a hard lock. Noted
-  for completeness; no action recommended unless a hard lock is intended.
+- **L7 — i18n untranslated-English advisory — OPEN (translation-completeness
+  debt; not a code defect).** Empirically: ~163 keys per catalog are
+  byte-identical to EN across the six auto-translated catalogs
+  (es/fr/el/pt/tr/ja); `de` is clean (maintainer-validated). These are
+  genuinely-untranslated recent UI strings (story-bible errors, danger-zone
+  dialogs, SSH hints, authors-DB, bulk warnings, ...). The advisory test
+  **passes by design** — string identity is tolerated for the auto-translated
+  tier. Closing this means producing ~1000 translations across six languages
+  (incl. Japanese / Greek / Turkish) with **no native reviewer**, which the
+  project deliberately routes to a separate track (lessons-learned
+  "auto-translated non-DE i18n YAMLs — separate diacritic-coverage track,
+  `I18N-DIACRITICS-01`"). Bulk blind machine-translation would risk shipping
+  subtly-wrong strings that degrade the product for native speakers with no
+  one to catch them — worse than a correct-English fallback. **Recommendation:**
+  do the translation as a reviewed `I18N-DIACRITICS-01` pass, not as part of
+  this code-fix session. Flagged to the user for an explicit decision rather
+  than auto-translated; this is the single finding not code-fixed here.
+- **L8 — EditableTitle published-work warning is client-side only —
+  RESOLVED (by design, no code change).** The feature is an *acknowledgment
+  warning*, not a permission gate: editing a published/archived work's title
+  is explicitly ALLOWED after the user acknowledges. A server-side hard block
+  would therefore be a regression of the intended behaviour (it would forbid
+  an action the product deliberately permits), and there is no integrity/
+  security invariant to enforce (the title is freely editable by design). No
+  action is the correct outcome; recorded here as a deliberate determination,
+  not a deferral.
 
 ---
 
