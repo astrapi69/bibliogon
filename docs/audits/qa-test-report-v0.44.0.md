@@ -70,6 +70,66 @@ autonomously; the full backend suite is green after each.
 
 ---
 
+## v0.45.0 release-hardening addendum (2026-06-02)
+
+Three further reports landed during the v0.45.0 release. Findings +
+the test-quality retrospective they triggered:
+
+- **Bug A — "Verlauf (Writing-History) button does nothing" — FIXED.**
+  Root cause was NOT the click wiring (correct) but pure CSS: the
+  WritingHistoryModal (and 4 sibling raw-Radix modals) referenced
+  `radix-dialog-content` / `radix-dialog-overlay`, classes defined in
+  no CSS file (the working AppDialog uses `dialog-content` /
+  `dialog-overlay`). `Dialog.Content` therefore rendered in document
+  flow with no `position: fixed`, no `z-index`, no backdrop — invisible.
+  Fixed by defining the two global classes (mirroring the proven
+  `.dialog-*` rules). Also added a null-summary empty state. Tests:
+  WritingGoalWidget Vitest pins click→modal-opens-with-content + the
+  failed-fetch empty state; `e2e/smoke/writing-history.spec.ts`
+  strengthened to assert computed `position: fixed` + z-index + an
+  in-viewport box (a `toBeVisible()`-only assertion did NOT catch this,
+  which is why the bug shipped — see the Coverage Illusion lesson).
+- **Bug B — "Medium Import broken" — NOT REPRODUCIBLE at the API level.**
+  The backend flow is verified working by 52 real-path tests, incl.
+  `test_medium_import_endpoint.py::test_import_creates_article_publication_and_provenance`
+  (real `/preview` + `/import` via TestClient → asserts Article + TipTap
+  content + Publication + ImportSource in the DB; only the external
+  image download is mocked). A real break would fail it. Any residual
+  issue is frontend-runtime / plugin-enablement / stale-bundle and needs
+  a real-browser repro (Aster). No fabricated fix applied to a working
+  backend.
+- **Bug C — Dashboard axe color-contrast — FIXED.** The semantic status
+  badges (`.badge-success/.warning/.danger/.info`, rendered on
+  BookCard/ArticleCard) put the pure semantic colour on a
+  `color-mix(...15%)` near-white tint, failing WCAG AA (success
+  **2.78:1**, danger 3.81, info 4.08, warning 4.03 on the default theme).
+  `check_theme_contrast.py` missed it because it cannot evaluate
+  `color-mix` backgrounds. Fixed by mixing badge text toward
+  `--text-primary` (self-corrects per mode; worst 4.80:1 across 12
+  variants) + a new `scripts/check_badge_contrast.py` gate wired into
+  `make verify-theme`. Real-browser axe confirmation pending (Aster).
+
+### Test-quality retrospective (the "coverage illusion")
+
+The Bug A shipment despite passing component tests motivated a
+test-quality pass:
+
+- Process: added the Pre-Release Aster-E2E **STOP-gate** to
+  release-workflow.md (CC must not tag autonomously), the **Test
+  Quality Rule** to coding-standards.md (regression test must fail
+  pre-fix; no mocks on the layer the bug lives in), and the **Coverage
+  Illusion** lesson to lessons-learned.md.
+- Audit of all fix commits since v0.44.0: most shipped a paired
+  regression test. Genuine gaps found: M1 (`safe_extractall` routing)
+  shipped with no test — closed here by
+  `test_medium_import_zipslip.py` (real `POST /preview` with a `..`
+  member → asserts HTTP 400 + no sandbox escape; fails pre-fix). The
+  a11y aria-label / aria-describedby fixes (221ae26c, 46d52abb) and the
+  N+1 fix (c465e81f) remain browser-/query-count-assertion gaps,
+  filed for follow-up.
+
+---
+
 ## CRITICAL
 
 ### C1 — Arbitrary file write via upload filename path traversal (CWE-22) — FIXED
