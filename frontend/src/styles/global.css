@@ -1151,24 +1151,31 @@ input[type="checkbox"] {
     border: 1px solid var(--border);
 }
 
+/* Badge text mixes the semantic colour toward --text-primary so it meets
+ * WCAG AA (>=4.5:1) on the 15%-over-card tint background. Mixing toward
+ * --text-primary self-corrects per mode (darkens in light, lightens in
+ * dark). Pre-fix, the pure semantic colour failed AA on the near-white
+ * tint (success 2.78:1, danger 3.81:1, etc. — the Dashboard axe
+ * color-contrast violation). Verified across all 12 variants by
+ * scripts/check_badge_contrast.py (worst 4.80:1). */
 .badge-success {
     background: color-mix(in srgb, var(--success) 15%, transparent);
-    color: var(--success);
+    color: color-mix(in srgb, var(--success) 45%, var(--text-primary));
 }
 
 .badge-warning {
     background: color-mix(in srgb, var(--warning) 15%, transparent);
-    color: var(--warning);
+    color: color-mix(in srgb, var(--warning) 45%, var(--text-primary));
 }
 
 .badge-danger {
     background: color-mix(in srgb, var(--danger) 15%, transparent);
-    color: var(--danger);
+    color: color-mix(in srgb, var(--danger) 45%, var(--text-primary));
 }
 
 .badge-info {
     background: color-mix(in srgb, var(--accent) 15%, transparent);
-    color: var(--accent);
+    color: color-mix(in srgb, var(--accent) 45%, var(--text-primary));
 }
 
 /* --- Card surface ---

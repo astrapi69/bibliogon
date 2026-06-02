@@ -516,6 +516,8 @@ verify-theme: ## Theme-system gates: token completeness/undefined refs + WCAG co
 	@python3 scripts/check_theme_contrast.py --enforce --quiet
 	@echo "=== no hardcoded hex outside the allowed set ==="
 	@python3 scripts/check_hardcoded_colors.py --enforce
+	@echo "=== semantic badge contrast (color-mix tints, 12 variants) ==="
+	@python3 scripts/check_badge_contrast.py
 	@echo "Theme gates green."
 
 verify-components: ## Advisory (non-blocking): CSS-module classes that re-declare a shared control surface (CSS-first rule)
