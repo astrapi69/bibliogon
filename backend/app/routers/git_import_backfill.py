@@ -24,6 +24,7 @@ from sqlalchemy.orm import Session
 from app.database import get_db
 from app.models import Book
 from app.services import git_backup
+from app.services.backup.archive_utils import safe_extractall
 from app.services.git_import_adopter import (
     CorruptedSourceRepo,
     RepoAlreadyPresent,
@@ -75,7 +76,7 @@ def adopt_from_upload(
 
         try:
             with zipfile.ZipFile(upload_path, "r") as zf:
-                zf.extractall(tmp_dir)
+                safe_extractall(zf, tmp_dir)
         except zipfile.BadZipFile as exc:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,

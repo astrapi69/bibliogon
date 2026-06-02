@@ -254,7 +254,7 @@ def build_package(book_id: str) -> FileResponse:
     try:
         zip_path = build_kdp_package(book_id)
     except KdpPackageError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
     return FileResponse(
         path=str(zip_path),

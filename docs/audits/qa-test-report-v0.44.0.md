@@ -229,9 +229,14 @@ least set expectations.
 
 ## MEDIUM
 
-### M1 — Two raw `extractall` calls bypass `safe_extractall` (defense-in-depth)
+### M1 — Two raw `extractall` calls bypass `safe_extractall` (defense-in-depth) — FIXED
 
-**Severity:** MEDIUM. **Status:** documented (backlog candidate).
+**Severity:** MEDIUM. **Status:** **FIXED**. Both sites now route through
+`safe_extractall`: `git_import_backfill.py` (module import) and the
+medium-import `preview.py` (deferred local import, matching that plugin's
+`app.*` import convention). A crafted `..`/absolute member is now rejected
+with a `ValidationError` rather than silently neutralized. git-backfill +
+medium-import + KDP plugin tests green; ruff clean.
 
 - `backend/app/routers/git_import_backfill.py:78` — `zf.extractall(tmp_dir)`
 - `plugins/bibliogon-plugin-medium-import/bibliogon_medium_import/preview.py:303` — `zf.extractall(tmp)`
@@ -371,10 +376,9 @@ goes negative — the daily-goal / streak widget then renders a negative count
   (SQLi stored as inert data — `books` table intact after `'; DROP TABLE
   books;--`), but no max-length / control-char rejection. The global
   `BodySizeLimitMiddleware` (default 500 MB) is the only size bound.
-- **L6 — Pre-existing ruff B904 in KDP routes.** `plugins/bibliogon-plugin-kdp/
-  bibliogon_kdp/routes.py:257` raises `HTTPException` inside an `except`
-  without `from`. NOT introduced this session; uncaught because the repo
-  pre-commit ruff hook is scoped `files: ^backend/` and does not lint plugins.
+- **L6 — Pre-existing ruff B904 in KDP routes — FIXED.** `plugins/bibliogon-plugin-kdp/
+  bibliogon_kdp/routes.py` now raises `HTTPException(...) from e` in the
+  `build_kdp_package` handler, preserving the cause chain. ruff clean.
 - **L7 — i18n untranslated-English advisory.** `test_advisory_untranslated_en`
   flags many catalog values as byte-identical-to-EN-and-English-looking
   (the "...and 89 more" terminal line). Advisory heuristic, always passes;

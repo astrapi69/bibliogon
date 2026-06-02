@@ -296,11 +296,16 @@ def _walk_for_preview(zip_bytes: bytes) -> tuple[list[PreviewItem], list[dict[st
     items: list[PreviewItem] = []
     errored: list[dict[str, str]] = []
 
+    # Local import (deferred-app-import convention of this plugin): route the
+    # extraction through the Zip-Slip-guarding helper instead of a bare
+    # extractall, per the safe_extractall "use everywhere" policy (QA M1).
+    from app.services.backup.archive_utils import safe_extractall
+
     with tempfile.TemporaryDirectory(prefix="medium-preview-") as tmp_str:
         tmp = Path(tmp_str)
         try:
             with zipfile.ZipFile(io.BytesIO(zip_bytes)) as zf:
-                zf.extractall(tmp)
+                safe_extractall(zf, tmp)
         except zipfile.BadZipFile as exc:
             raise ValueError(f"Not a valid ZIP archive: {exc}") from exc
 
