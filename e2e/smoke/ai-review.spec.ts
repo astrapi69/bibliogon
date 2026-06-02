@@ -102,7 +102,16 @@ async function mockReviewHappyPath(page: Page) {
 
 async function openEditorForChapter(page: Page, bookId: string) {
   await page.goto(`/book/${bookId}`);
-  await expect(page.locator(".ProseMirror")).toBeVisible({timeout: 10_000});
+  // The editor occasionally mounts before the freshly-created chapter has
+  // been fetched (no chapter selected -> no ProseMirror). Reload once if it
+  // hasn't appeared rather than failing the whole spec on a load race.
+  const editor = page.locator(".ProseMirror");
+  try {
+    await expect(editor).toBeVisible({timeout: 8000});
+  } catch {
+    await page.reload();
+    await expect(editor).toBeVisible({timeout: 12_000});
+  }
   // The toolbar AI button enables once the plugin-status poll returns
   // ai.available. With the route mock above it should enable quickly.
   const aiBtn = page.getByTestId("toolbar-ai");
@@ -115,9 +124,11 @@ async function openEditorForChapter(page: Page, bookId: string) {
     "AI plugin not available (toolbar-ai disabled) in this environment",
   );
   await aiBtn.click();
-  // Review is one of five aiPromptType buttons; click it to surface
-  // the review UI.
-  await page.getByRole("button", {name: /Review/}).first().click();
+  // Review is one of five aiPromptType buttons; wait for it to be
+  // actionable, then click it to surface the review UI.
+  const reviewBtn = page.getByRole("button", {name: /Review/}).first();
+  await expect(reviewBtn).toBeVisible({timeout: 8000});
+  await reviewBtn.click();
 }
 
 test.describe("AI Review Extension - UI surface", () => {
