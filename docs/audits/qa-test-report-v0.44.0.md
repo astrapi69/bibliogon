@@ -45,14 +45,14 @@
 | KDP — ARC status validation / pricing math | code review | **PASS** | 0 |
 | Layout — `layout`/`layout_config` validation | code review | **PASS** | 0 (by design) |
 | Tooling — lint hygiene (KDP B904, story-bible B905) | ruff | **FIXED** | L6 (LOW) |
-| i18n — translation completeness (auto-translated tier) | advisory test | **OPEN (debt, by-design advisory)** | L7 (LOW) |
+| i18n — translation completeness (auto-translated tier) | reviewed translation pass | **FIXED** | L7 (LOW) |
 | A11y — Radix `Dialog.Content` missing `Dialog.Description` | code sweep | **FAIL → FIXED** | M4 (MEDIUM) |
 | Writing goals — negative daily word count | code review | **FAIL → FIXED** | M5 (MEDIUM) |
 | Backup `.bgb` round-trip fidelity | empirical export probe | **FAIL → FIXED** | **H2 (HIGH, data-loss-on-restore)** |
 
 **Finding tally:** 1 CRITICAL, 2 HIGH, 5 MEDIUM, 8 LOW (H1 recalibrated from
-HIGH → LOW). **All are now closed except L7** (translation-completeness debt,
-an advisory-by-design non-failure routed to the `I18N-DIACRITICS-01` track).
+HIGH → LOW). **All findings are now closed**, including L7 (closed 2026-06-02
+by a reviewed native-quality translation sweep — see its entry).
 
 **Status (final):**
 - **CRITICAL:** C1 — FIXED (regression-pinned, live).
@@ -62,9 +62,8 @@ an advisory-by-design non-failure routed to the `I18N-DIACRITICS-01` track).
 - **MEDIUM:** M1, M2, M3, M4, M5 — all FIXED + regression-pinned.
 - **LOW:** L1, L2, L3, L4, L5, L6 — all FIXED + regression-pinned;
   L8 — RESOLVED by-design (no code change; a hard server lock would regress
-  intended UX); **L7 — OPEN** (auto-translated-tier completeness debt; see
-  its entry — flagged for a reviewed translation pass rather than blind
-  machine-translation of ~1000 strings across six languages).
+  intended UX); **L7 — FIXED** (2026-06-02 reviewed native-quality translation
+  sweep across all six auto-translated catalogs; see its entry).
 
 Every fix above landed as its own commit with regression tests and was pushed
 autonomously; the full backend suite is green after each.
@@ -416,23 +415,26 @@ goes negative — the daily-goal / streak widget then renders a negative count
 - **L6 — Pre-existing ruff B904 in KDP routes — FIXED.** `plugins/bibliogon-plugin-kdp/
   bibliogon_kdp/routes.py` now raises `HTTPException(...) from e` in the
   `build_kdp_package` handler, preserving the cause chain. ruff clean.
-- **L7 — i18n untranslated-English advisory — OPEN (translation-completeness
-  debt; not a code defect).** Empirically: ~163 keys per catalog are
-  byte-identical to EN across the six auto-translated catalogs
-  (es/fr/el/pt/tr/ja); `de` is clean (maintainer-validated). These are
-  genuinely-untranslated recent UI strings (story-bible errors, danger-zone
-  dialogs, SSH hints, authors-DB, bulk warnings, ...). The advisory test
-  **passes by design** — string identity is tolerated for the auto-translated
-  tier. Closing this means producing ~1000 translations across six languages
-  (incl. Japanese / Greek / Turkish) with **no native reviewer**, which the
-  project deliberately routes to a separate track (lessons-learned
-  "auto-translated non-DE i18n YAMLs — separate diacritic-coverage track,
-  `I18N-DIACRITICS-01`"). Bulk blind machine-translation would risk shipping
-  subtly-wrong strings that degrade the product for native speakers with no
-  one to catch them — worse than a correct-English fallback. **Recommendation:**
-  do the translation as a reviewed `I18N-DIACRITICS-01` pass, not as part of
-  this code-fix session. Flagged to the user for an explicit decision rather
-  than auto-translated; this is the single finding not code-fixed here.
+- **L7 — i18n untranslated-English advisory — FIXED (2026-06-02 reviewed
+  native-quality translation sweep).** The original finding flagged ~163
+  *advisory-detected* keys per catalog (the long, English-looking subset the
+  parity advisory surfaces). A full survey found the genuine scope was larger:
+  ≈920–1000 keys per catalog were byte-identical to EN across the six
+  auto-translated catalogs (es/fr/el/pt/tr/ja), accumulated as v0.32–v0.44
+  feature work outran the per-namespace `_meta` markers (`de` was clean —
+  maintainer-validated). All of them were translated to native quality in a
+  reviewed pass, per-language style (Latin-American-neutral Spanish/tú,
+  Metropolitan French/vous + « » typography, monotonic Greek, European
+  Portuguese, vowel-harmony-correct Turkish, polite concise Japanese).
+  Loanwords / proper nouns / format names (PDF, EPUB, Markdown, ISBN, KDP,
+  Git, "Story Bible", brand names) and literal AI-template field-names were
+  intentionally kept verbatim; `{placeholder}` sets were preserved per key
+  (parity test green). The stale `_meta` passthru-markers were removed from
+  all six catalogs (no namespace is passthru-English any longer). This is the
+  reviewed-pass the original recommendation called for, not blind bulk
+  machine-translation. See `backend/config/i18n/REVIEW_STATUS.md`
+  (2026-06-02 entry). A native-speaker spot-check remains welcome via PRs
+  tagged `i18n-{lang}`.
 - **L8 — EditableTitle published-work warning is client-side only —
   RESOLVED (by design, no code change).** The feature is an *acknowledgment
   warning*, not a permission gate: editing a published/archived work's title

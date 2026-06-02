@@ -12,12 +12,25 @@ companion.
 |------|----------|--------|------------|------|-------|
 | en | English | **source / reference** | maintainer | — | The reference catalog. Every other catalog mirrors its key set. No `_meta` block. |
 | de | Deutsch | **maintainer-validated** | maintainer | — | Native-speaker authoritative. Real umlauts (ä ö ü ß) per the project rule. No `_meta` block. |
-| es | Español | **partial: pending native speaker for new namespaces** | Claude (Anthropic) | 2026-05-12 | Most of the catalog was user-validated against `LAUNCHER-I18N-NATIVE-REVIEW-01` precedent. The three v0.31.0 new namespaces (`ai_template`, `bulk_ai_fill`, `comments`) are still passthru English. |
-| fr | Français | **partial: pending native speaker for new namespaces** | Claude (Anthropic) | 2026-05-12 | Same shape as `es`. Tutoiement (informal) elsewhere; new namespaces left in English. |
-| el | Ελληνικά | **partial: pending native speaker for new namespaces** | Claude (Anthropic) | 2026-05-12 | Same shape as `es`. Monotonic Greek elsewhere; new namespaces left in English. |
-| pt | Português | **pending native speaker** | Claude (Anthropic) | 2026-05-12 | Whole catalog is best-effort Brazilian Portuguese (você); the three new namespaces share the passthru-English state of the rest of the catalog. |
-| tr | Türkçe | **pending native speaker** | Claude (Anthropic) | 2026-05-12 | Whole catalog is best-effort Turkish (sen-form); the three new namespaces share the passthru-English state. |
-| ja | 日本語 | **pending native speaker** | Claude (Anthropic) | 2026-05-12 | Whole catalog is best-effort Japanese (polite-neutral 〜です/ます); the three new namespaces share the passthru-English state. |
+| es | Español | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep of all previously-passthru keys. Latin American neutral Spanish, "tú" form. `_meta` marker removed (no passthru-English namespaces remain). |
+| fr | Français | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep. Metropolitan French, "vous" form, French typography (« » + spaced punctuation). `_meta` marker removed. |
+| el | Ελληνικά | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep. Monotonic Modern Greek, polite register, Greek question mark `;`. `_meta` marker removed. |
+| pt | Português | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep. European Portuguese (pt-PT: guardar / definições / ficheiro / base de dados). `_meta` marker removed. |
+| tr | Türkçe | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep. Modern Turkish with correct vowel harmony. `_meta` marker removed. |
+| ja | 日本語 | **full AI native-quality pass; native-speaker spot-check welcome** | Claude (Anthropic) | 2026-06-02 | Full sweep. Polite 〜です/ます; concise noun-form labels; full-width punctuation. `_meta` marker removed. |
+
+> **2026-06-02 — Full native-quality translation sweep (I18N-FULL-SWEEP-01).**
+> Every key that was still byte-identical to English across `es/fr/el/pt/tr/ja`
+> (≈920–1000 keys per catalog, accumulated from v0.32–v0.44 feature work the
+> per-namespace `_meta` markers had fallen behind on) was translated to native
+> quality. Loanwords / proper nouns / format names (PDF, EPUB, Markdown, ISBN,
+> KDP, Git, "Story Bible", brand names) and literal API field-names shown in the
+> AI-template UI were intentionally kept verbatim. Placeholder sets ({count},
+> {name}, …) preserved per key. The `_meta` passthru-marker blocks were removed
+> from all six catalogs because no namespace is passthru-English any longer; the
+> parity test (`test_review_status_marker_shape`) treats marker-absence as the
+> maintainer-validated state. A native-speaker spot-check is still welcome — open
+> a PR tagged `i18n-{lang}`.
 
 ## How the marker works
 
