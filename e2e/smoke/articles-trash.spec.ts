@@ -54,7 +54,30 @@ interface ArticleFixture {
     title: string
 }
 
+// This spec drives the grid-only ``article-card-menu-*`` kebab. The
+// articles view-mode is a BACKEND setting (ui.dashboard.articles_view,
+// read fresh on every list load — useViewMode ignores localStorage), so
+// a sibling test that flips the default to "list" makes the cards render
+// as rows and the kebab testid vanishes. Force grid before each test so
+// this pin is independent of suite ordering.
+async function ensureArticlesGridView(): Promise<void> {
+    const cfg = await (await fetch(`${API}/settings/app`)).json()
+    const ui = (cfg.ui ?? {}) as Record<string, unknown>
+    const dashboard = (ui.dashboard ?? {}) as Record<string, unknown>
+    await fetch(`${API}/settings/app`, {
+        method: "PATCH",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({
+            ui: {...ui, dashboard: {...dashboard, articles_view: "grid"}},
+        }),
+    })
+}
+
 test.describe("Articles trash - soft-delete + restore round-trip", () => {
+    test.beforeEach(async () => {
+        await ensureArticlesGridView()
+    })
+
     test("restore button returns the article to the live list", async ({page}) => {
         const a = await postJson<ArticleFixture>("/articles", {
             title: "Articles Trash Restore Smoke",
@@ -62,10 +85,20 @@ test.describe("Articles trash - soft-delete + restore round-trip", () => {
 
         await page.goto("/articles")
         await expect(page.getByTestId(`article-bulk-check-${a.id}`)).toBeVisible()
+        // Let the list settle (per-card async data) before opening the
+        // kebab. Otherwise a late re-render detaches the open menu's
+        // delete item mid-click ("element detached from the DOM") — the
+        // card-re-render race that made this flaky under full-suite load.
+        await page.waitForLoadState("networkidle")
 
-        // Soft-delete the article via its row menu.
-        await page.getByTestId(`article-card-menu-${a.id}`).click()
-        await page.getByTestId(`article-card-menu-delete-${a.id}`).click()
+        // Soft-delete the article via its row menu. Re-open + retry if a
+        // stray re-render closes the menu before the item is clicked.
+        await expect(async () => {
+            await page.getByTestId(`article-card-menu-${a.id}`).click()
+            const del = page.getByTestId(`article-card-menu-delete-${a.id}`)
+            await expect(del).toBeVisible({timeout: 2000})
+            await del.click({timeout: 2000})
+        }).toPass({timeout: 15_000})
 
         // Live grid no longer shows the article.
         await expect(page.getByTestId(`article-bulk-check-${a.id}`)).toBeHidden()

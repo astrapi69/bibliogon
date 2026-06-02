@@ -39,7 +39,18 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         await page.getByTestId("topic-add-btn").click();
         await page.getByTestId("topics-save-btn").click();
 
-        // Reset back to a stable state for other tests by patching via API.
+        // The save is an async PATCH; the editor reads the topics list
+        // fresh on load, so navigating before the PATCH lands races it
+        // (the dropdown then shows no topics — the deterministic failure
+        // this pins). Wait for the topics to actually persist first.
+        await expect
+            .poll(async () => {
+                const res = await page.request.get(`${API}/settings/app`);
+                const cfg = await res.json();
+                return (cfg.topics as string[] | undefined) ?? [];
+            })
+            .toEqual(expect.arrayContaining(["Tech", "Writing"]));
+
         // Both topics persisted; verify in the editor.
         const article = await postJson<{id: string}>("/articles", {title: "Topic Test"});
 
@@ -75,13 +86,19 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         const article = await postJson<{id: string}>("/articles", {title: "Layout Test"});
         await page.goto(`/articles/${article.id}`);
 
+        // Wait for the editor shell to mount before measuring layout.
+        // Under full-suite load the editor can take >5s; wait for the
+        // root, then the sidebar + ProseMirror with a generous budget.
+        await expect(page.getByTestId("article-editor")).toBeVisible({
+            timeout: 15_000,
+        });
         const sidebar = page.getByTestId("article-editor-sidebar");
         // The shared Editor renders ProseMirror inside the pane.
         // Compare its position to the sidebar's to confirm the
         // sidebar is on the left.
         const editor = page.locator(".ProseMirror").first();
-        await expect(sidebar).toBeVisible();
-        await expect(editor).toBeVisible();
+        await expect(sidebar).toBeVisible({timeout: 15_000});
+        await expect(editor).toBeVisible({timeout: 15_000});
 
         const sidebarBox = await sidebar.boundingBox();
         const editorBox = await editor.boundingBox();
