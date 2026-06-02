@@ -236,6 +236,30 @@ How to apply when changing a visual:
 
 This rule is the visual-layer counterpart of the Recurring-Component Unification Rule: that one unifies component *shape*; this one unifies component *look*.
 
+## Test Quality Rule
+
+Passing unit tests != working feature. Every critical user flow needs at
+least one integration test that exercises the real path with minimal
+mocking.
+
+When fixing a bug: the regression test must exercise the same path a user
+would. If the test passes with the bug still present, the test is wrong.
+Before claiming a regression test, confirm it FAILS on the pre-fix code
+(or would fail if the bug were reintroduced) — a test that is green
+either way proves nothing.
+
+Mock only true external boundaries (network calls to third-party APIs,
+the clock, the filesystem when isolation demands it). Do NOT mock the
+layer the bug lives in: an API-contract bug needs a `TestClient` test
+that calls the real endpoint; a data-integrity bug needs the real DB
+round-trip; a UI-wiring bug needs a render-and-interact test.
+
+Every Playwright E2E spec is part of the release gate. "Written for
+Aster to run" is not "deferred" — it is mandatory before release (see
+release-workflow.md "Pre-Release Gate"). UI-visibility bugs that a
+component test cannot catch (CSS positioning, z-index, real-browser
+layout) MUST ship a Playwright spec, flagged for Aster to run.
+
 ## Boy Scout Rule
 
 - Leave code cleaner than you found it. Small improvements on every change.

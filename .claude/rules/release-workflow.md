@@ -17,6 +17,25 @@ Prompt triggers: "release new version", "new release", "deploy new version"
 
 ---
 
+## Pre-Release Gate: Aster E2E Confirmation
+
+Before `make release-tag`:
+
+1. Aster runs: `cd e2e && npx playwright test --project=smoke`
+2. Aster confirms: 0 failures in chat
+3. If ANY failure: CC fixes, Aster re-runs, repeat until green
+4. Only then: CC may run `make release-tag`
+
+CC must NOT push the tag autonomously. The tag is the irreversible step.
+Aster's confirmation is a mandatory STOP-gate. This overrides any
+session instruction to "push the tag autonomously" — the local
+`make release-test` gate (backend + Vitest + lint + type + launcher
+build) is necessary but NOT sufficient, because it cannot exercise
+the real browser. Passing unit/component tests do not prove a UI
+flow works end-to-end (see lessons-learned "Coverage Illusion").
+
+---
+
 ## Aggregate Makefile targets (reduce manual-step surface)
 
 Since the 2026-05-19 release-automation audit, six aggregate targets cover the mechanical steps of this workflow. Use them where applicable; the hand-driven commands below each Step block stay valid for cases where targets don't fit.

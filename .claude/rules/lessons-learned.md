@@ -4923,3 +4923,68 @@ Pairs with: the "Periodic theme-token completeness audit" rule
 (the gate this discipline keeps effective) and the
 Recurring-Component-Unification Rule in `coding-standards.md`
 (shape-level unification; this is the look-level counterpart).
+
+## Coverage Illusion: passing tests != working feature
+
+Filed 2026-06-02 during the v0.45.0 release hardening, after a
+"Verlauf (Writing-History) button does nothing" report landed on a
+feature that already had passing Vitest coverage.
+
+A large test count can be green while the feature is broken when the
+tests exercise mocked internals or component wiring instead of the
+real contract the user touches. Concretely, the WritingHistoryModal
+had tests asserting the component mounts and renders, yet the modal
+was invisible in the real app because it referenced two CSS classes
+(`radix-dialog-content` / `radix-dialog-overlay`) that were never
+defined in `global.css` — so `Dialog.Content` rendered with no
+`position: fixed`, no `z-index`, no backdrop, dropping into document
+flow off-screen. happy-dom/jsdom do not apply `global.css` and do not
+compute layout, so a `findByTestId("...-modal")` assertion passes
+whether or not the modal is actually visible. The component test
+could never have caught a pure CSS-visibility regression.
+
+### Rule
+
+After every bug fix, ask: **would the NEW test have FAILED before the
+fix?** If not, the test proves nothing — rewrite it to exercise the
+path that was actually broken, or (when the failure mode is outside
+the unit-test runtime, e.g. CSS layout / z-index / real-browser
+behaviour) ship a Playwright spec flagged for Aster to run.
+
+### What each bug class needs (no mocks on the critical path)
+
+- **UI wiring** (click -> state -> render): a render-and-interact
+  test (Vitest) asserting the visible outcome, not just that a
+  handler was called.
+- **UI visibility** (CSS positioning, z-index, overlay, layout): a
+  Playwright spec — Vitest/jsdom cannot see it. Mark it "Aster must
+  run" in the release gate; that is mandatory, not deferred.
+- **API contract** (endpoint returns wrong data / missing
+  validation): a `TestClient` test calling the REAL endpoint with the
+  exact triggering input, asserting the response — not a mocked
+  router or a service-function unit test.
+- **Data integrity** (backup/cascade/restore): build the full object
+  graph, perform the operation, assert EVERY related record — not a
+  single-table happy path.
+- **Security** (traversal / XSS / token replay): attempt the EXACT
+  exploit and assert rejection.
+
+### Diagnostic corollary
+
+When a feature is reported broken but its tests are green, do NOT
+assume the report is wrong AND do NOT assume the tests are right.
+Run the real-path integration test (or write one). Two honest
+outcomes: (a) it passes -> the break is in a layer the test can't
+reach (CSS/browser/config/stale bundle), document precisely what is
+verified vs what needs browser repro; (b) it fails -> you found the
+real bug and now have the regression pin. Either way the integration
+test is the arbiter, not the green unit-test count.
+
+### Pairs with
+
+- "End-to-end behavior tests are not 'kwarg passes through' tests"
+  (this file) — same family; that rule is the settings-flag instance.
+- coding-standards.md "Test Quality Rule" — the forward-looking
+  discipline this incident motivated.
+- release-workflow.md "Pre-Release Gate: Aster E2E Confirmation" —
+  the process gate that makes the Playwright half mandatory.
