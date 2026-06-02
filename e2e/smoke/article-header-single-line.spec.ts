@@ -13,14 +13,16 @@
  * chevron dropdown, making the cluster ~one button narrower than
  * the Book Dashboard (the known-good single-line baseline).
  *
- * This pin asserts BOUNDING-BOX HEIGHT (per the lessons-learned
- * "assert bounding-box dimensions for CSS-collapse class bugs"
- * rule, applied to the inverse — a too-TALL header signals a
- * wrap). A single row of header controls is ~56-64px tall
- * (12px padding top+bottom + ~32px control). A wrapped two-line
- * header is ~100px+. The 80px threshold cleanly separates the
- * two without being brittle to a few px of control-height
- * variation.
+ * This pin detects a wrap by comparing the header height at the
+ * target width against its height at a generous reference width
+ * (1440px, where the cluster is guaranteed single-line): a header
+ * that stays single-line does NOT grow when narrowed, whereas a wrap
+ * adds a full control row (~36px+). Comparing widths instead of
+ * asserting an absolute pixel height keeps the pin robust across
+ * rendering environments — the single-line header is ~56px on the
+ * baseline env but ~97px under a different font stack, which the old
+ * absolute `< 80px` threshold flagged as a false positive even though
+ * the header was a single line at every width.
  *
  * Also pins that Backup moved INTO the Import chevron dropdown
  * (it is no longer a standalone header button).
@@ -28,33 +30,38 @@
 
 import {test, expect} from "../fixtures/base";
 
+const REFERENCE_WIDTH = 1440; // wide enough that the cluster is single-line
+const WRAP_TOLERANCE = 8; // px of control-height jitter allowed before "wrap"
+
+async function headerHeightAt(
+    page: import("@playwright/test").Page,
+    width: number,
+): Promise<number> {
+    await page.setViewportSize({width, height: 800});
+    await expect(page.getByTestId("article-list-page")).toBeVisible();
+    const header = page.getByTestId("article-list-header");
+    await expect(header).toBeVisible();
+    const box = await header.boundingBox();
+    expect(box).not.toBeNull();
+    return box!.height;
+}
+
 test.describe("AD-HEADER-SINGLE-LINE-01", () => {
     test("Article-Dashboard header stays single-line at 900px", async ({
         page,
     }) => {
-        await page.setViewportSize({width: 900, height: 800});
         await page.goto("/articles");
-        await expect(page.getByTestId("article-list-page")).toBeVisible();
-
-        const header = page.getByTestId("article-list-header");
-        await expect(header).toBeVisible();
-
-        const box = await header.boundingBox();
-        expect(box).not.toBeNull();
-        // Single row ~56-64px; a two-line wrap is ~100px+.
-        expect(box!.height).toBeLessThan(80);
+        const reference = await headerHeightAt(page, REFERENCE_WIDTH);
+        const narrow = await headerHeightAt(page, 900);
+        // Single-line: narrowing must not add a wrapped row.
+        expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
     });
 
     test("header stays single-line at 1024px too", async ({page}) => {
-        await page.setViewportSize({width: 1024, height: 800});
         await page.goto("/articles");
-        await expect(page.getByTestId("article-list-page")).toBeVisible();
-
-        const box = await page
-            .getByTestId("article-list-header")
-            .boundingBox();
-        expect(box).not.toBeNull();
-        expect(box!.height).toBeLessThan(80);
+        const reference = await headerHeightAt(page, REFERENCE_WIDTH);
+        const narrow = await headerHeightAt(page, 1024);
+        expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
     });
 
     test("Backup lives in the Import chevron dropdown, not a standalone button", async ({
