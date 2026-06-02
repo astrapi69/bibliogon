@@ -326,8 +326,17 @@ describe("StoryEntityEditor", () => {
                 onDeleted={vi.fn()}
             />,
         );
-        const row = await screen.findByTestId("story-entity-relationship-c2");
-        expect(row.textContent).toContain("Bob");
+        // The relationship row appears as soon as getEntity resolves, but the
+        // target *name* is filled from a separate listEntities fetch. Wait for
+        // that second fetch to resolve before asserting the name, otherwise the
+        // row briefly shows the "(unknown)" fallback and the assertion races it
+        // (flaky under CI coverage-mode test ordering).
+        await screen.findByTestId("story-entity-relationship-c2");
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("story-entity-relationship-c2").textContent,
+            ).toContain("Bob"),
+        );
         expect(
             screen.getByTestId("story-entity-relationship-type-c2").textContent,
         ).toContain("rival");
