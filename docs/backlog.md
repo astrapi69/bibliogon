@@ -69,6 +69,20 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- [ ] **ARTICLE-HEADER-900PX-WRAP-01** — the Article-Dashboard header
+  (`article-list-header`) wraps to two lines at 900px in the German
+  (default) locale: ~71px single-line at 1440px, ~97px at 900px. The
+  long German labels in the action cluster ("Neuer Artikel" SplitButton
+  + Import chevron + view toggle) overflow at 900px. Pre-existing
+  (predates v0.45.0); surfaced when the AD-HEADER-SINGLE-LINE-01 smoke
+  pin was hardened from a font-env-fragile absolute `<80px` height to a
+  width-relative no-wrap assertion. The 900px case is `test.fixme` in
+  `e2e/smoke/article-header-single-line.spec.ts` until fixed. Fix
+  options: tighten the cluster to fit single-line at 900px (icon-only /
+  shorter labels at narrow widths), or officially raise the
+  supported-width floor to 1024px and drop the 900px assertion. The
+  1024px+ single-line pin already passes.
+
 The Scrivener analysis P3 cluster (items 5-7) is fully shipped +
 archived to 2026-06.md: CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01
 (closed-by-discovery), WRITING-HISTORY-STATS-01.
