@@ -372,12 +372,15 @@ goes negative — the daily-goal / streak widget then renders a negative count
   exactly-one-of invariant is enforced in `links.py` (HTTP 400), not by a DB
   CHECK constraint. Documented design convention (matches `Chapter.chapter_type`
   / `Page.layout`); raw-SQL inserts could violate it.
-- **L5 — Null bytes & unbounded length accepted in text fields.** `POST /api/books`
-  accepts a title containing `\x00` (HTTP 201) and a 10,000-char title (stored
-  in full; `Book.title` is an unbounded `String`/TEXT column). No injection
-  (SQLi stored as inert data — `books` table intact after `'; DROP TABLE
-  books;--`), but no max-length / control-char rejection. The global
-  `BodySizeLimitMiddleware` (default 500 MB) is the only size bound.
+- **L5 — Null bytes & unbounded length accepted in text fields — FIXED.**
+  `BookCreate` / `BookUpdate` titles now carry `Field(min_length=1,
+  max_length=500)` (matching the article side) plus a `_reject_control_chars`
+  validator that 422s any NUL / C0 control char (tab/newline/CR tolerated);
+  the same control-char validator was added to `ArticleCreate` / `ArticleUpdate`
+  titles (which already capped length). Regression pins in
+  `test_title_validation.py` (NUL → 422, 10k chars → 422, PATCH NUL → 422,
+  normal title accepted). SQLi remains inert (parameterized ORM; verified
+  earlier).
 - **L6 — Pre-existing ruff B904 in KDP routes — FIXED.** `plugins/bibliogon-plugin-kdp/
   bibliogon_kdp/routes.py` now raises `HTTPException(...) from e` in the
   `build_kdp_package` handler, preserving the cause chain. ruff clean.

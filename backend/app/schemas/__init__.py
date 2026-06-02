@@ -17,6 +17,20 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 # digit, lowercase, wrong segment length).
 BISAC_CODE_RE = re.compile(r"^[A-Z]{3}[0-9]{6}$")
 
+
+def _reject_control_chars(value: str, field: str) -> str:
+    """Reject NUL + other C0 control characters in a single-line text field.
+
+    SQLite does not enforce ``String(n)`` length and happily stores NUL
+    bytes, which later poison filename derivation and C-string consumers
+    (QA L5). Single-line metadata (titles) should carry no control chars;
+    tab / newline / carriage-return are allowed through for tolerance.
+    """
+    for ch in value:
+        if ord(ch) < 0x20 and ch not in "\t\n\r":
+            raise ValueError(f"{field} must not contain control characters")
+    return value
+
 # Hex color regex for ``Page.mood_color`` (PICTURE-BOOK-STORYBOARD-
 # VIEW-01). Matches ``#RRGGBB`` only — no 3-char shorthand, no alpha
 # channel, no named colors. Picker UIs always emit the 6-digit form.
@@ -114,7 +128,7 @@ PublicationStatus = Literal["draft", "ready", "published", "archived"]
 
 
 class BookCreate(BaseModel):
-    title: str
+    title: str = Field(min_length=1, max_length=500)
     subtitle: str | None = None
     author: str | None = None
     language: str = "de"
@@ -136,6 +150,11 @@ class BookCreate(BaseModel):
     # Same 4 values as Article.status.
     status: PublicationStatus | None = None
 
+    @field_validator("title")
+    @classmethod
+    def _check_title(cls, value: str) -> str:
+        return _reject_control_chars(value, "title")
+
 
 class BookUpdate(BaseModel):
     # Phase-4 immutability rule: book_type is immutable after
@@ -144,7 +163,7 @@ class BookUpdate(BaseModel):
     # default extra='ignore' behaviour. A loud 400 on explicit attempts
     # is enforced in the books PATCH handler before this schema is
     # constructed (see app/routers/books.py).
-    title: str | None = None
+    title: str | None = Field(default=None, min_length=1, max_length=500)
     subtitle: str | None = None
     author: str | None = None
     language: str | None = None
@@ -205,6 +224,11 @@ class BookUpdate(BaseModel):
         if v is not None and v not in _PUBLISHING_LIFECYCLE:
             raise ValueError(f"status must be one of {_PUBLISHING_LIFECYCLE}, got {v!r}")
         return v
+
+    @field_validator("title")
+    @classmethod
+    def _check_title(cls, value: str | None) -> str | None:
+        return value if value is None else _reject_control_chars(value, "title")
 
     @field_validator("keywords", mode="before")
     @classmethod
@@ -1039,6 +1063,11 @@ class ArticleCreate(BaseModel):
     content_type: ContentType | None = None
     article_metadata: dict[str, Any] | None = None
 
+    @field_validator("title")
+    @classmethod
+    def _check_title(cls, value: str) -> str:
+        return _reject_control_chars(value, "title")
+
 
 class ArticleUpdate(BaseModel):
     """PATCH body. All fields optional; only provided fields update."""
@@ -1049,6 +1078,11 @@ class ArticleUpdate(BaseModel):
     language: str | None = Field(default=None, min_length=2, max_length=10)
     content_json: str | None = None
     status: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def _check_title(cls, value: str | None) -> str | None:
+        return value if value is None else _reject_control_chars(value, "title")
     # AR-02 Phase 2 SEO fields. ArticleEditor sidebar PATCHes these
     # through the same endpoint as content_json + title.
     canonical_url: str | None = Field(default=None, max_length=500)
