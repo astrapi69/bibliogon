@@ -204,6 +204,7 @@ function BookListRow({
                         <button
                             className="btn-icon"
                             data-testid={`book-list-row-menu-${book.id}`}
+                            aria-label={t("ui.dashboard.book_actions", "Buchaktionen")}
                             onClick={(e) => e.stopPropagation()}
                         >
                             <MoreVertical size={16} />

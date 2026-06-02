@@ -132,6 +132,8 @@ ui:
     restore: "復元"
     import: "インポート"
     trash: "ゴミ箱"
+    menu: "メニュー"
+    book_actions: "本の操作"
     search_placeholder: "タイトル、著者、ジャンル、言語で検索..."
     sort_date: "日付"
     sort_title: "タイトル"
@@ -319,6 +321,7 @@ ui:
     toc_valid: "目次は有効です：すべてのリンクが正しいです。"
     upload_failed: "アップロードに失敗しました"
   sidebar:
+    open_sidebar: "サイドバーを開く"
     manuscript: "原稿"
     content: "コンテンツ"
     front_matter: "前付"

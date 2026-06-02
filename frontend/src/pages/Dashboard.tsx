@@ -575,6 +575,7 @@ export default function Dashboard() {
                             <button
                                 className="btn-icon"
                                 data-testid="trash-toggle"
+                                aria-label={t("ui.dashboard.trash", "Papierkorb")}
                                 onClick={() => setShowTrash(!showTrash)}
                                 style={
                                     showTrash
@@ -596,7 +597,10 @@ export default function Dashboard() {
                         {/* Mobile: hamburger menu */}
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
-                                <button className="btn-icon show-mobile-only">
+                                <button
+                                    className="btn-icon show-mobile-only"
+                                    aria-label={t("ui.dashboard.menu", "Menü")}
+                                >
                                     <Menu size={20}/>
                                 </button>
                             </DropdownMenu.Trigger>

@@ -132,6 +132,8 @@ ui:
     restore: "Geri yukle"
     import: "Iceri aktar"
     trash: "Cop kutusu"
+    menu: "Menü"
+    book_actions: "Kitap işlemleri"
     search_placeholder: "Baslik, yazar, tur veya dile gore ara..."
     sort_date: "Tarih"
     sort_title: "Baslik"
@@ -319,6 +321,7 @@ ui:
     toc_valid: "Icindekiler gecerli: tum baglantilar dogru."
     upload_failed: "Yukleme basarisiz"
   sidebar:
+    open_sidebar: "Kenar çubuğunu aç"
     manuscript: "El yazmasi"
     content: "Icerik"
     front_matter: "On kisim"

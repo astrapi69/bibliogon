@@ -120,6 +120,8 @@ ui:
     restore: "Restore"
     import: "Importieren"
     trash: "Papierkorb"
+    menu: "Menü"
+    book_actions: "Buchaktionen"
     search_placeholder: "Suche nach Titel, Autor, Genre oder Sprache..."
     sort_date: "Datum"
     sort_title: "Titel"
@@ -307,6 +309,7 @@ ui:
     recovery_restore: "Wiederherstellen"
     recovery_discard: "Verwerfen"
   sidebar:
+    open_sidebar: "Seitenleiste öffnen"
     manuscript: "Manuskript"
     content: "Inhalt"
     front_matter: "Vorderer Teil"

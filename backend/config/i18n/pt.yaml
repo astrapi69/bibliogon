@@ -132,6 +132,8 @@ ui:
     restore: "Restaurar"
     import: "Importar"
     trash: "Lixeira"
+    menu: "Menu"
+    book_actions: "Ações do livro"
     search_placeholder: "Buscar por titulo, autor, genero ou idioma..."
     sort_date: "Data"
     sort_title: "Titulo"
@@ -319,6 +321,7 @@ ui:
     toc_valid: "Indice valido: todos os links corretos."
     upload_failed: "Falha no upload"
   sidebar:
+    open_sidebar: "Abrir barra lateral"
     manuscript: "Manuscrito"
     content: "Conteudo"
     front_matter: "Preliminares"

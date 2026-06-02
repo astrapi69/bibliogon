@@ -684,6 +684,7 @@ export default function BookEditor() {
                 <button
                     className="show-mobile-only btn-icon"
                     data-testid="book-editor-sidebar-toggle"
+                    aria-label={t("ui.sidebar.open_sidebar", "Seitenleiste öffnen")}
                     style={{position: "fixed", top: 12, left: 12, zIndex: 100, background: "var(--bg-card)", borderRadius: "var(--radius-sm)", boxShadow: "var(--shadow-md)"}}
                     onClick={() => setSidebarOpen(true)}
                 >

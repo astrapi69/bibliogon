@@ -132,6 +132,8 @@ ui:
     restore: "Restaurar"
     import: "Importar"
     trash: "Papelera"
+    menu: "Menú"
+    book_actions: "Acciones del libro"
     search_placeholder: "Buscar por titulo, autor, genero o idioma..."
     sort_date: "Fecha"
     sort_title: "Titulo"
@@ -319,6 +321,7 @@ ui:
     recovery_restore: "Restaurar"
     recovery_discard: "Descartar"
   sidebar:
+    open_sidebar: "Abrir barra lateral"
     manuscript: "Manuscrito"
     content: "Contenido"
     front_matter: "Preliminares"

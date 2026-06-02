@@ -132,6 +132,8 @@ ui:
     restore: "Επαναφορά"
     import: "Εισαγωγή"
     trash: "Κάδος"
+    menu: "Μενού"
+    book_actions: "Ενέργειες βιβλίου"
     search_placeholder: "Αναζήτηση κατά τίτλο, συγγραφέα, είδος ή γλώσσα..."
     sort_date: "Ημερομηνία"
     sort_title: "Τίτλος"
@@ -319,6 +321,7 @@ ui:
     toc_valid: "Πίνακας περιεχομένων έγκυρος: όλοι οι σύνδεσμοι σωστοί."
     upload_failed: "Αποτυχία μεταφόρτωσης"
   sidebar:
+    open_sidebar: "Άνοιγμα πλαϊνής μπάρας"
     manuscript: "Χειρόγραφο"
     content: "Περιεχόμενο"
     front_matter: "Εισαγωγικό υλικό"

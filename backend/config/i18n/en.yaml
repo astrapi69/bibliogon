@@ -120,6 +120,8 @@ ui:
     restore: "Restore"
     import: "Import"
     trash: "Trash"
+    menu: "Menu"
+    book_actions: "Book actions"
     search_placeholder: "Search by title, author, genre or language..."
     sort_date: "Date"
     sort_title: "Title"
@@ -307,6 +309,7 @@ ui:
     recovery_restore: "Restore"
     recovery_discard: "Discard"
   sidebar:
+    open_sidebar: "Open sidebar"
     manuscript: "Manuscript"
     content: "Content"
     front_matter: "Front Matter"

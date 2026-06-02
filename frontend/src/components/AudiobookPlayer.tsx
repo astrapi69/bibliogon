@@ -336,7 +336,11 @@ export default function AudiobookPlayer({chapters, currentIndex, bookTitle, onCh
         {/* Volume */}
         <div className="audiobook-player__volume">
           <Tip label={muted ? t("ui.audiobook.player.unmute", "Ton ein") : t("ui.audiobook.player.mute", "Ton aus")}>
-            <button className="btn-icon" onClick={() => setMuted((m) => !m)}>
+            <button
+              className="btn-icon"
+              onClick={() => setMuted((m) => !m)}
+              aria-label={muted ? t("ui.audiobook.player.unmute", "Ton ein") : t("ui.audiobook.player.mute", "Ton aus")}
+            >
               {muted || volume === 0 ? <VolumeX size={14}/> : <Volume2 size={14}/>}
             </button>
           </Tip>
@@ -364,6 +368,10 @@ export default function AudiobookPlayer({chapters, currentIndex, bookTitle, onCh
           <button
             className={`btn-icon audiobook-player__toggle${autoAdvance ? " audiobook-player__toggle--active" : ""}`}
             onClick={() => setAutoAdvance((a) => !a)}
+            aria-label={autoAdvance
+              ? t("ui.audiobook.player.auto_advance_on", "Automatisch weiter (an)")
+              : t("ui.audiobook.player.auto_advance_off", "Automatisch weiter (aus)")
+            }
           >
             <ChevronRight size={14}/>
           </button>

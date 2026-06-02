@@ -99,6 +99,7 @@ export default function BookCard({book, onClick, onDelete, onDeletePermanent}: P
                             <button
                                 className="btn-icon"
                                 data-testid={`book-card-menu-${book.id}`}
+                                aria-label={t("ui.dashboard.book_actions", "Buchaktionen")}
                                 onClick={(e) => e.stopPropagation()}
                                 style={{marginLeft: "auto"}}
                             >
