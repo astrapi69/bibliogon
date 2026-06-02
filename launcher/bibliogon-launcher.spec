@@ -120,8 +120,8 @@ if sys.platform == "darwin":
         info_plist={
             "CFBundleName": "Bibliogon Launcher",
             "CFBundleDisplayName": "Bibliogon Launcher",
-            "CFBundleVersion": "0.44.0",
-            "CFBundleShortVersionString": "0.44.0",
+            "CFBundleVersion": "0.45.0",
+            "CFBundleShortVersionString": "0.45.0",
             "NSHighResolutionCapable": True,
             "NSRequiresAquaSystemAppearance": False,
         },
