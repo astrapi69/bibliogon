@@ -4,6 +4,81 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.44.0] - 2026-06-01
+
+The Scrivener-parity + visual-planning release. Two coordinated
+Scrivener-gap clusters (ergonomics + drafting) plus Bibliogon's
+standout new visual feature — an interactive Story Bible relationship
+graph. 43 commits since v0.43.0.
+
+### Added
+- **Editor context menu** — a right-click menu on every TipTap editor
+  surface (chapter, picture-book page text, Story Bible description):
+  cut / copy / paste / select-all; on a selection bold / italic /
+  underline, heading (H1-H3) and list (bullet / numbered) submenus, and
+  blockquote; insert @-mention + horizontal rule; search the selection
+  in the Story Bible; take a chapter snapshot; a word-count readout.
+  Keyboard-shortcut hints per item.
+- **Composition mode** — distraction-free writing (Feather toolbar
+  toggle / Ctrl+Shift+D / Esc). Hides app chrome via a root class,
+  adds a paper backdrop, paragraph dimming, and typewriter scrolling.
+- **Chapter status + labels** — a per-chapter workflow status plus a
+  user-definable, colour-coded label set per book (create / rename /
+  recolour / delete). Status + label chips on the Storyboard cards and
+  the Outliner; new `chapter_labels` table + `Chapter.status` /
+  `Chapter.label_id`.
+- **Writing goals + streak** — a per-book word target + optional
+  deadline with an auto-computed daily target, a per-chapter
+  `target_words` (promoted from per-device storage to the DB), and a
+  Dashboard daily-goal widget with a consecutive-day streak.
+- **Chapter Outliner** — a sortable, inline-editable spreadsheet view
+  of the chapters (`?view=outline`): title, status, label, word count,
+  target, beat, and notes, with drag-reorder.
+- **Chapter snapshots** — Scrivener-style named manual snapshots layered
+  onto chapter version history. Take a named snapshot before a revision
+  pass; manual snapshots are exempt from the auto-version retention; a
+  line-diff view compares any snapshot against the current content;
+  restore overwrites the current text (snapshotting it first as a
+  safety net) and a manual snapshot can be deleted.
+- **Writing history** — a Writing-History view opened from the daily-goal
+  widget: summary stats (total / active days / average per active day /
+  current + longest streak), a per-day words bar chart (recharts), a
+  per-book breakdown that drills into per-chapter totals, and a CSV
+  export. `WritingSession` is now tracked per book + chapter.
+- **Story Bible relationship graph** — an interactive node-graph of the
+  book's Story Bible (`?view=relationships`, @xyflow/react). One node
+  per entity (shape + colour + icon by type), one edge per relationship
+  (coloured / labelled by type). Drag from one node to another to
+  create a relationship (type + note); click an edge to delete it; a
+  node detail panel offers open-in-editor + show-appearances, and a
+  double-click opens the entity. Node positions persist per book
+  (`Book.graph_layout`), a Reset-layout button re-runs the auto-layout,
+  and the graph exports to PNG (html-to-image).
+- **Word/EPUB import help** — a documentation page for the existing
+  Pandoc-based DOCX/EPUB import in the import wizard.
+
+### Changed
+- README / README-de lead with the Story Bible; full Story Bible help
+  section (relationship graph, mentions, Arc View) + a Storyboard help
+  rewrite; CLAUDE.md / CONTRIBUTING quality-gate notes.
+- New `docs/audits/scrivener-competitive-analysis-2026-06.md` plus 10
+  filed Scrivener-gap backlog items (P2-P4).
+
+### Fixed
+- **Alembic upgrade chain** — `alembic upgrade head` crashed on a clean
+  database at the chapter-status-labels migration (a SQLite batch
+  table-recreate forced by an inline FK column hit "Constraint must
+  have a name"). Fixed so the column is added without a recreate; the
+  whole suite stayed green because tests build the schema via
+  `create_all`, but every incremental in-app upgrade would have
+  crashed at startup. A new regression gate runs the real
+  `alembic upgrade head` against a throwaway database.
+
+### Dependencies
+- Added `recharts` (MIT, charts — Writing History), `@xyflow/react` v12
+  (MIT, node graph — Relationship Graph), and `html-to-image` (MIT, PNG
+  export). All three report 0 high/critical advisories.
+
 ## [0.43.0] - 2026-06-01
 
 The Story Bible integration depth release. Builds on v0.42.0's Story
