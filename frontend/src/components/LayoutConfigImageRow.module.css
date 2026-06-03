@@ -43,6 +43,7 @@
 }
 
 .radioCell {
+    position: relative;
     flex: 1;
     display: flex;
     align-items: center;
@@ -64,10 +65,17 @@
     border-color: color-mix(in srgb, var(--accent, var(--text-sidebar)) 55%, transparent);
 }
 
+/* Visually hidden but clickable: the radio overlays the whole cell
+ * so a click anywhere in the cell (real user or Playwright) lands on
+ * the input. The visible affordance is the cell's text label. */
 .radioInput {
     position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
     opacity: 0;
-    pointer-events: none;
+    cursor: pointer;
 }
 
 .select {

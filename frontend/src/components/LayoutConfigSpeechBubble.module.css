@@ -40,6 +40,7 @@
 }
 
 .anchorCell {
+    position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -82,10 +83,20 @@
     grid-row: 3;
 }
 
+/* The radio is visually hidden but kept as the interactive hit
+ * target so clicking anywhere in the cell selects it (native
+ * label→input is not relied upon; the input overlays the whole
+ * cell). pointer-events stay active so both real users and
+ * Playwright click the cell and land on the input. opacity:0 keeps
+ * the custom .anchorDot indicator as the only visible affordance. */
 .anchorInput {
     position: absolute;
+    inset: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
     opacity: 0;
-    pointer-events: none;
+    cursor: pointer;
 }
 
 .anchorDot {
@@ -94,6 +105,12 @@
     border-radius: 50%;
     background: var(--text-sidebar);
     opacity: 0.65;
+    /* Decorative only. opacity < 1 makes the dot its own stacking
+     * context, which (being later in DOM) would otherwise paint
+     * above the overlaying radio input and eat the click at the
+     * cell centre. Keep it transparent to hit-testing so the input
+     * stays the click target. */
+    pointer-events: none;
 }
 
 .anchorCellSelected .anchorDot {

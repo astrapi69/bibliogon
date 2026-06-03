@@ -185,6 +185,12 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const [recoveryDraft, setRecoveryDraft] = useState<{content: string; savedAt: number} | null>(null);
     const serverContentHash = useRef(hashContent(content));
     const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+    // Pending "saved" -> "idle" reset. Tracked so a NEW save cycle can
+    // cancel a prior reset: without this, the idle-timer from save N
+    // fires ~2s later and clobbers save N+1's "saved" status (set just
+    // before), flickering the indicator off early on rapid sequential
+    // autosaves. (Found via content-safety version-history smoke.)
+    const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [markdownText, setMarkdownText] = useState("");
 
     // Ctrl+H toggles search (documented in toolbar but was not wired as a shortcut)
@@ -282,7 +288,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             if (chapterId) deleteDraft(chapterId);
             serverContentHash.current = hashContent(json);
             setSaveStatus("saved");
-            setTimeout(() => setSaveStatus("idle"), 2000);
+            // Reset to idle after 2s, cancelling any prior reset so a
+            // newer "saved" isn't clobbered by an older save's timer.
+            if (idleTimer.current) clearTimeout(idleTimer.current);
+            idleTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
         },
         [onSave, chapterId, t],
     );
@@ -290,6 +299,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const debouncedSave = useCallback(
         (json: string) => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
+            // A new edit starts a fresh save cycle; cancel any pending
+            // "saved" -> "idle" reset so it can't flip the indicator to
+            // idle mid-cycle.
+            if (idleTimer.current) { clearTimeout(idleTimer.current); idleTimer.current = null; }
             setSaveStatus("saving");
             saveTimer.current = setTimeout(() => { void performSave(json); }, autosaveDebounceMs);
 

@@ -160,7 +160,9 @@ export default function WizardShell({
 
                         {banner}
 
-                        <div ref={bodyRef}>{children}</div>
+                        <div ref={bodyRef} style={styles.body}>
+                            {children}
+                        </div>
 
                         {nav}
 
@@ -390,10 +392,23 @@ const styles: Record<string, React.CSSProperties> = {
         color: "var(--text-primary)",
         borderRadius: "var(--radius-md, 8px)",
         padding: 24,
-        maxHeight: "90vh",
-        overflowY: "auto",
+        // Fixed height + flex column so the nav footer stays at a
+        // constant Y across steps. Without this, the modal is
+        // vertically centered and its height tracks each step's
+        // content, so the footer (and its action button) jumps
+        // between steps — a real UX wobble the convert-to-book
+        // layout-stability smoke pins. The body absorbs the height
+        // delta and scrolls; the footer never moves.
+        height: "min(600px, 86vh)",
+        display: "flex",
+        flexDirection: "column",
         boxShadow: "var(--shadow-lg)",
         zIndex: 9999,
+    },
+    body: {
+        flex: 1,
+        minHeight: 0,
+        overflowY: "auto",
     },
     title: {
         display: "flex",

@@ -88,8 +88,17 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
         .filter(([name]) => {
             // Not currently enabled
             if (enabled.has(name) && !disabled.has(name)) return false;
-            // Show if loaded or ZIP-installed
-            return loadedPlugins.has(name) || name.startsWith("installed-");
+            // Show if loaded, explicitly disabled, or ZIP-installed.
+            // ``disabled.has(name)`` is load-bearing: a plugin disabled
+            // via config is still loaded at runtime until restart (the
+            // PluginManager does not unload on a live config change),
+            // but it MUST appear in the add/inactive list so the user
+            // can re-enable it — regardless of its runtime loaded state.
+            return (
+                loadedPlugins.has(name) ||
+                disabled.has(name) ||
+                name.startsWith("installed-")
+            );
         });
 
     const activePlugins = Object.entries(configs)
