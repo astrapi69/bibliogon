@@ -114,9 +114,12 @@ test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
             "comic-book-editor-pdf-format-trigger",
         );
         await expect(select).toBeVisible();
-        const options = await select
-            .locator("option")
-            .allTextContents();
+        // RadixSelect renders portal divs (role=option), NOT native
+        // <option> elements, in the browser. Open the dropdown and
+        // count the rendered options.
+        await select.click();
+        const options = await page.getByRole("option").allTextContents();
         expect(options.length).toBeGreaterThanOrEqual(5);
+        await page.keyboard.press("Escape");
     });
 });

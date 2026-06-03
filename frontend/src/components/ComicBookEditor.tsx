@@ -854,6 +854,7 @@ export default function ComicBookEditor({
             testIdPrefix="comic-book-editor-title"
             style={{ margin: 0, fontSize: "1.4rem", flex: 1 }}
             isPublished={isPublished}
+            headingLevel={1}
           />
         ) : (
           <h1
@@ -920,6 +921,7 @@ export default function ComicBookEditor({
             data-testid="comic-book-editor-fullscreen"
             onClick={() => void fullscreen.toggle()}
             aria-pressed={fullscreen.isFullscreen ? "true" : "false"}
+            aria-keyshortcuts="F11 Control+Shift+F"
             aria-label={
               fullscreen.isFullscreen
                 ? t("ui.editor.exit_fullscreen", "Vollbild verlassen")

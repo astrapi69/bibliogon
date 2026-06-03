@@ -87,6 +87,13 @@ export default function EditorDisplaySettingsPopover({
         if (!open) return;
         const handler = (e: MouseEvent) => {
             if (!wrapperRef.current) return;
+            // RadixSelect renders its dropdown in a portal on
+            // document.body, i.e. OUTSIDE wrapperRef. A click on a
+            // select option must NOT close the popover — otherwise
+            // picking a width/font value closes the whole panel before
+            // the change applies (the option never takes effect).
+            const target = e.target as HTMLElement | null;
+            if (target?.closest(".radix-select-content")) return;
             if (!wrapperRef.current.contains(e.target as Node)) {
                 setOpen(false);
             }

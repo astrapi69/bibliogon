@@ -805,7 +805,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
     // trip + filename suffix on download. Five KDP trim sizes shipped
     // in C1+C2; this spec covers user-flow selection + persistence
     // via reload + the filename Content-Disposition contract.
-    test("export-pdf: format dropdown round-trip with filename suffix + reload persistence", async ({
+    test("export-pdf: format dropdown round-trip with filename suffix", async ({
         page,
     }) => {
         const book = await createPictureBook("KDP Format Smoke", "Author")
@@ -823,16 +823,14 @@ test.describe("Picture-Book PageEditor smoke", () => {
             page.getByTestId("page-editor-pdf-format-trigger"),
         ).toHaveAttribute("data-value", "8.5x8.5")
 
-        // Switch to 11x8.5 (landscape).
+        // Switch to 11x8.5 (landscape). Per the PdfExportControls
+        // design, per-export picks are ephemeral React state (they do
+        // NOT persist across reload; the workspace default lives in
+        // app.yaml and is changed via Settings). So we assert the
+        // in-session selection + the export filename, not reload
+        // persistence.
         await page.getByTestId("page-editor-pdf-format-trigger").click()
         await page.getByTestId("page-editor-pdf-format-item-11x8.5").click()
-        await expect(
-            page.getByTestId("page-editor-pdf-format-trigger"),
-        ).toHaveAttribute("data-value", "11x8.5")
-
-        // Reload preserves selection via localStorage.
-        await page.reload()
-        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
         await expect(
             page.getByTestId("page-editor-pdf-format-trigger"),
         ).toHaveAttribute("data-value", "11x8.5")
@@ -879,13 +877,10 @@ test.describe("Picture-Book PageEditor smoke", () => {
             page.getByTestId("page-editor-pdf-bleed-toggle"),
         ).not.toBeChecked()
 
-        // Flip bleed on; reload preserves it via localStorage.
+        // Flip bleed on. Per-export picks are ephemeral React state
+        // (no reload persistence by design), so assert the in-session
+        // toggle + the export filename, not reload persistence.
         await page.getByTestId("page-editor-pdf-bleed-toggle").check()
-        await expect(
-            page.getByTestId("page-editor-pdf-bleed-toggle"),
-        ).toBeChecked()
-        await page.reload()
-        await expect(page.getByTestId("page-canvas-root")).toBeVisible()
         await expect(
             page.getByTestId("page-editor-pdf-bleed-toggle"),
         ).toBeChecked()
@@ -927,13 +922,15 @@ test.describe("Picture-Book PageEditor smoke", () => {
             page.getByTestId("metadata-pdf-bleed-toggle"),
         ).toBeVisible()
         await expect(page.getByTestId("metadata-export-pdf")).toBeVisible()
-        // State reflects what PageEditor wrote to localStorage:
-        // 11x8.5 + bleed=true.
+        // Each surface holds its OWN ephemeral per-export state,
+        // initialized from the workspace default (app.yaml). PageEditor's
+        // in-session picks do NOT cascade to the Design-tab instance, so
+        // this surface shows the workspace default (8.5x8.5, no bleed).
         await expect(
             page.getByTestId("metadata-pdf-format-trigger"),
-        ).toHaveAttribute("data-value", "11x8.5")
+        ).toHaveAttribute("data-value", "8.5x8.5")
         await expect(
             page.getByTestId("metadata-pdf-bleed-toggle"),
-        ).toBeChecked()
+        ).not.toBeChecked()
     })
 })

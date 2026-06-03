@@ -51,6 +51,12 @@ interface EditableTitleProps {
      *  its title inline (no CSS module), so it passes font sizing here;
      *  the text + input inherit the font from the wrapper. */
     style?: CSSProperties;
+    /** When set, the display-mode title text renders as an
+     *  ``<h{level}>`` heading instead of a ``<span>``, so the editor
+     *  surface exposes a single page-level heading for a11y. Default
+     *  (unset) keeps the inline span — unchanged for the surfaces that
+     *  carry their own heading elsewhere. */
+    headingLevel?: 1 | 2 | 3;
 }
 
 export default function EditableTitle({
@@ -62,7 +68,11 @@ export default function EditableTitle({
     inputClassName,
     isPublished = false,
     style,
+    headingLevel,
 }: EditableTitleProps) {
+    const TextTag = (
+        headingLevel ? `h${headingLevel}` : "span"
+    ) as keyof React.JSX.IntrinsicElements;
     const {t} = useI18n();
     const [editing, setEditing] = useState(false);
     const [warning, setWarning] = useState(false);
@@ -142,12 +152,12 @@ export default function EditableTitle({
                 />
             ) : (
                 <>
-                    <span
+                    <TextTag
                         data-testid={`${testIdPrefix}-text`}
                         className={textClassName ?? styles.text}
                     >
                         {value || placeholder}
-                    </span>
+                    </TextTag>
                     <button
                         type="button"
                         data-testid={`${testIdPrefix}-edit`}

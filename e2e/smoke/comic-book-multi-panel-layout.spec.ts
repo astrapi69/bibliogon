@@ -115,14 +115,21 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         // Confirm each of the 6 standard-layout options is in the
         // picker. Per Q4 audit: grid_3x3 is intentionally NOT in
         // the picker (legacy/advanced).
-        const select = page.getByTestId(
-            "comic-grid-template-picker-trigger",
+        // RadixSelect renders portal divs (role=option / item testids),
+        // NOT native <option> elements, in the browser. Open the
+        // dropdown and read the item testids' value suffixes.
+        await page.getByTestId("comic-grid-template-picker-trigger").click();
+        const items = page.locator(
+            '[data-testid^="comic-grid-template-picker-item-"]',
         );
-        const optionValues = await select
-            .locator("option")
-            .evaluateAll((opts) =>
-                opts.map((o) => (o as HTMLOptionElement).value),
-            );
+        const optionValues = await items.evaluateAll((els) =>
+            els.map((el) =>
+                (el.getAttribute("data-testid") ?? "").replace(
+                    "comic-grid-template-picker-item-",
+                    "",
+                ),
+            ),
+        );
         expect(optionValues).toEqual([
             "single_panel",
             "grid_1x2",
@@ -132,6 +139,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
             "grid_3x2",
         ]);
         expect(optionValues).not.toContain("grid_3x3");
+        await page.keyboard.press("Escape");
     });
 
     test("grid_1x2: switching layout updates grid-template attr + persists", async ({
