@@ -50,10 +50,12 @@ test.describe("Chapter Outliner", () => {
         await page.goto(`/book/${book.id}?view=outline`)
         await page.getByTestId(`outliner-status-select-${ch.id}-trigger`).click()
         await page.getByTestId(`outliner-status-select-${ch.id}-item-final`).click()
-        // Re-open the outliner after a reload; the select reflects the saved value.
+        // Re-open the outliner after a reload; the select reflects the
+        // saved value. Assert the locale-agnostic data-value (the
+        // visible label is translated, e.g. "Fertig" in de).
         await page.reload()
         await expect(
             page.getByTestId(`outliner-status-select-${ch.id}-trigger`),
-        ).toContainText(/Final/i)
+        ).toHaveAttribute("data-value", "final")
     })
 })

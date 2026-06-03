@@ -28,11 +28,14 @@ test.describe("Alt+Z word-wrap toggle", () => {
         const proseMirror = page.locator(".ProseMirror").first();
         await expect(proseMirror).toBeVisible({timeout: 5000});
 
-        // Initial state — wrap enabled (TipTap default `pre-wrap`).
+        // Initial state — wrap enabled. The exact computed value is a
+        // wrapping value (pre-wrap / break-spaces depending on the
+        // ProseMirror build); the contract is "not 'pre'" (wrap on).
+        // Capture it to assert the round-trip restores it.
         const initialWhiteSpace = await proseMirror.evaluate((el) => {
             return window.getComputedStyle(el).whiteSpace;
         });
-        expect(initialWhiteSpace).toBe("pre-wrap");
+        expect(initialWhiteSpace).not.toBe("pre");
         expect(
             await page.evaluate(() => document.body.classList.contains("no-word-wrap")),
         ).toBe(false);
@@ -59,7 +62,7 @@ test.describe("Alt+Z word-wrap toggle", () => {
         const restoredWhiteSpace = await proseMirror.evaluate((el) => {
             return window.getComputedStyle(el).whiteSpace;
         });
-        expect(restoredWhiteSpace).toBe("pre-wrap");
+        expect(restoredWhiteSpace).toBe(initialWhiteSpace);
     });
 
     test("preference persists across reload via localStorage", async ({page}) => {

@@ -44,15 +44,17 @@ test.describe("ChapterSidebar button unification", () => {
                 padding: s.padding,
                 borderRadius: s.borderRadius,
                 background: s.backgroundColor,
-                display: s.display,
             };
         });
         // .btn-sidebar-icon: padding 6px, --radius-sm radius,
-        // transparent at rest, inline-flex.
+        // transparent at rest. (display is asserted via the class
+        // rather than getComputedStyle: a flex child's inline-flex is
+        // blockified to flex by the CSS spec, so the computed value is
+        // 'flex' even though the rule sets inline-flex.)
         expect(cs.padding).toBe("6px");
         expect(cs.borderRadius).toBe(RADIUS_SM);
         expect(cs.background).toBe(TRANSPARENT);
-        expect(cs.display).toBe("inline-flex");
+        await expect(back).toHaveClass(/btn-sidebar-icon/);
 
         // The sidebar back button shares the sidebar text color with
         // the rest of the sidebar chrome (same --text-sidebar token).

@@ -142,7 +142,7 @@ test.describe("Picture-Book PDF export smoke", () => {
         // mouseDown workaround).
         await page.getByTestId("metadata-tab-design").click()
 
-        const exportBtn = page.getByTestId("metadata-export-picture-pdf")
+        const exportBtn = page.getByTestId("metadata-export-pdf")
         await expect(exportBtn).toBeVisible()
 
         const downloadPromise = page.waitForEvent("download", {
@@ -170,7 +170,7 @@ test.describe("Picture-Book PDF export smoke", () => {
 
         // Picture-book-only button is correctly absent.
         await expect(
-            page.getByTestId("metadata-export-picture-pdf"),
+            page.getByTestId("metadata-export-pdf"),
         ).toHaveCount(0)
     })
 

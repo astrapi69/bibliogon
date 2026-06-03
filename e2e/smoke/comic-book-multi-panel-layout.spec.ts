@@ -84,7 +84,11 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         await page.getByTestId("comic-book-editor-add-panel").click();
         await page.getByTestId("comic-book-editor-add-panel").click();
 
-        const panels = page.locator('[data-testid^="comic-panel-"]');
+        // Exclude nested comic-panel-image-* / -bubble-* testids so the
+        // selector matches only panel roots.
+        const panels = page.locator(
+            '[data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
+        );
         await expect(panels).toHaveCount(2);
 
         // Non-zero-height assertion: each panel must be >50px tall.
