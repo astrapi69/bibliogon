@@ -1,5 +1,5 @@
 import {test as base, type Page} from "@playwright/test";
-import {resetDb, resetSettings, createBook, createChapter} from "../helpers/api";
+import {resetDb, resetSettings, createBook, createChapter, deleteBook} from "../helpers/api";
 
 /**
  * Extended test fixtures with DB + settings reset before every test.
@@ -13,9 +13,25 @@ import {resetDb, resetSettings, createBook, createChapter} from "../helpers/api"
 export const test = base.extend<{
     resetDatabase: void;
 }>({
-    resetDatabase: [async ({}, use) => {
+    resetDatabase: [async ({page}, use) => {
         await resetDb();
         await resetSettings();
+        // Suppress the one-time donation onboarding dialog (S-02).
+        // It opens after the FIRST UI-created book and its
+        // radix-dialog-overlay then intercepts every subsequent
+        // click on the Dashboard. It is not what these specs test;
+        // the dedicated donation specs seed their own localStorage.
+        // Same baseline-normalisation intent as resetSettings.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    "bibliogon-donation-onboarding-seen",
+                    "true",
+                );
+            } catch {
+                // localStorage unavailable (privacy mode); ignore.
+            }
+        });
         await use();
     }, {auto: true}],
 });
@@ -46,7 +62,7 @@ export async function fillPrompt(page: Page, value: string) {
     await page.getByTestId("app-dialog-confirm").click();
 }
 
-export {createBook, createChapter, resetDb};
+export {createBook, createChapter, resetDb, deleteBook};
 export {updateBook, updateKdpPublishingState} from "../helpers/api";
 export {createPictureBook, createComicBook} from "../helpers/api";
 export {createArticle, deleteArticle, getArticles} from "../helpers/api";

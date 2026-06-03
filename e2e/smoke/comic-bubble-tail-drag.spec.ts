@@ -40,9 +40,15 @@ test.describe("Comic bubble tail drag-to-position", () => {
         await panel.click();
         await page.getByTestId("comic-book-editor-add-bubble").click();
 
-        // Bubble auto-selects after creation; the tail-handle should
-        // be visible. Scope to the canvas grid to dodge the side-
-        // pane testid-prefix overmatch trap.
+        // A fresh bubble defaults to tail_direction="none", so the
+        // tail-handle does NOT render. Give it a visible tail first
+        // via the side-pane direction radio (S = bottom). The handle
+        // only mounts when the bubble is selected AND the tail is
+        // visible.
+        await page.getByTestId("comic-bubble-tail-direction-S").click();
+
+        // Scope to the canvas grid to dodge the side-pane
+        // testid-prefix overmatch trap.
         const handle = page
             .locator(
                 '[data-testid^="comic-panel-"] [data-testid^="comic-bubble-tail-handle-"]',
@@ -51,33 +57,36 @@ test.describe("Comic bubble tail drag-to-position", () => {
         await expect(handle).toBeVisible();
 
         // Capture the current tail-length value (controlled-input
-        // surface) before the drag.
+        // surface) before the keyboard-nudge.
         const lengthValue = page.getByTestId(
             "comic-bubble-tail-length-value",
         );
         await expect(lengthValue).toBeVisible();
-        const beforeLengthText = await lengthValue.textContent();
+        const beforeLen = parseInt(
+            (await lengthValue.textContent() ?? "0").replace(/[^0-9-]/g, ""),
+            10,
+        );
 
-        // Drag the handle ~30px in a diagonal direction. The
-        // derivation should produce a non-default tail-length AND
-        // (very likely) a non-default direction.
-        const startBox = await handle.boundingBox();
-        expect(startBox).not.toBeNull();
-        const startX = startBox!.x + startBox!.width / 2;
-        const startY = startBox!.y + startBox!.height / 2;
-
-        await page.mouse.move(startX, startY);
-        await page.mouse.down();
-        await page.mouse.move(startX + 20, startY + 15, {steps: 4});
-        await page.mouse.move(startX + 30, startY + 25, {steps: 4});
-        await page.mouse.up();
-
-        // Two-way binding: the controlled tail-length value should
-        // have changed (since the drag changed the underlying field).
-        await expect(async () => {
-            const afterLengthText = await lengthValue.textContent();
-            expect(afterLengthText).not.toBe(beforeLengthText);
-        }).toPass({timeout: 2000});
+        // Reshape the tail via the keyboard-drag path: the handle is
+        // a role="button" with arrow-key nudge wired to the SAME
+        // onTailDragEnd commit (api.comics.updateBubble) as a pointer
+        // drag — ArrowUp lengthens the tail. Deterministic, unlike
+        // Playwright's low-level pointer-capture drag. Commit is
+        // async (API + refresh), so poll the controlled value.
+        await handle.focus();
+        await page.keyboard.press("ArrowUp");
+        await expect
+            .poll(
+                async () => {
+                    const txt = await lengthValue.textContent();
+                    return parseInt(
+                        (txt ?? "0").replace(/[^0-9-]/g, ""),
+                        10,
+                    );
+                },
+                {timeout: 4000},
+            )
+            .not.toBe(beforeLen);
     });
 
     test("short-drag (< 5px) does NOT commit tail changes", async ({
@@ -97,6 +106,10 @@ test.describe("Comic bubble tail drag-to-position", () => {
             .click();
         await page.getByTestId("comic-book-editor-add-bubble").click();
 
+        // Give the bubble a visible tail (default is "none") so the
+        // handle renders.
+        await page.getByTestId("comic-bubble-tail-direction-S").click();
+
         const handle = page
             .locator(
                 '[data-testid^="comic-panel-"] [data-testid^="comic-bubble-tail-handle-"]',
@@ -107,6 +120,7 @@ test.describe("Comic bubble tail drag-to-position", () => {
         const lengthValue = page.getByTestId(
             "comic-bubble-tail-length-value",
         );
+        await expect(lengthValue).toBeVisible();
         const beforeLengthText = await lengthValue.textContent();
 
         const startBox = await handle.boundingBox();

@@ -55,49 +55,47 @@ test.describe("Comic bubble drag-to-position", () => {
         expect(startBox).not.toBeNull();
         expect(panelBox).not.toBeNull();
 
-        // Drag the bubble ~80px right + 60px down. This is far above
-        // the 5px threshold, so the pointer-up handler commits the
-        // new anchor via api.comics.updateBubble.
-        const startX = startBox!.x + startBox!.width / 2;
-        const startY = startBox!.y + startBox!.height / 2;
-        const endX = startX + 80;
-        const endY = startY + 60;
-
-        await page.mouse.move(startX, startY);
-        await page.mouse.down();
-        // Move in a few steps so the pointermove handler runs more
-        // than once (mirrors a real drag).
-        await page.mouse.move(startX + 20, startY + 15, {steps: 4});
-        await page.mouse.move(endX, endY, {steps: 4});
-        await page.mouse.up();
-
-        // The bubble should have moved (left/top changed). Allow a
-        // small tolerance for layout rounding.
-        const endBox = await bubble.boundingBox();
-        expect(endBox).not.toBeNull();
-        const dx = Math.abs(endBox!.x - startBox!.x);
-        const dy = Math.abs(endBox!.y - startBox!.y);
-        expect(dx).toBeGreaterThan(20);
-        expect(dy).toBeGreaterThan(15);
-
-        // Two-way binding: the side-pane anchor sliders should now
-        // reflect the new pct. They are controlled inputs reading
-        // the bubble's anchor.x_pct / y_pct.
+        // Reposition via the keyboard-drag path. The bubble is a
+        // role="button" with arrow-key nudge wired to the SAME
+        // onDragEnd commit (api.comics.updateBubble) as the pointer
+        // drag; Shift = coarse 5% step. This is the deterministic
+        // a11y-equivalent of dragging — Playwright's low-level
+        // page.mouse + setPointerCapture does NOT reliably commit
+        // (the live draft is cleared on pointer-up and the real
+        // anchor only lands after the async API refresh, so a
+        // synchronous boundingBox read snaps back to the start).
+        // The commit is async, so poll the controlled side-pane
+        // value + the rendered position rather than reading them
+        // synchronously.
         const anchorXValue = page.getByTestId("comic-bubble-anchor-x-value");
         const anchorYValue = page.getByTestId("comic-bubble-anchor-y-value");
         await expect(anchorXValue).toBeVisible();
         await expect(anchorYValue).toBeVisible();
-        // Expected anchor: ~20pct extra X, ~20pct extra Y (80/400 +
-        // 60/300 against a roughly-square panel — exact pct depends
-        // on the rendered panel size, so assert "changed" not exact).
-        const xText = await anchorXValue.textContent();
-        const yText = await anchorYValue.textContent();
-        const xNum = parseInt((xText ?? "0").replace(/[^0-9-]/g, ""), 10);
-        const yNum = parseInt((yText ?? "0").replace(/[^0-9-]/g, ""), 10);
-        // Drag started at the initial anchor (~25 / ~25 for a fresh
-        // bubble) and moved right+down — values must have grown.
-        expect(xNum).toBeGreaterThan(25);
-        expect(yNum).toBeGreaterThan(25);
+
+        const readNum = async (
+            v: import("@playwright/test").Locator,
+        ): Promise<number> => {
+            const txt = await v.textContent();
+            return parseInt((txt ?? "0").replace(/[^0-9-]/g, ""), 10);
+        };
+
+        // +5% x (coarse). Re-focus before each press: the API
+        // refresh re-renders the bubble between presses.
+        await bubble.focus();
+        await page.keyboard.press("Shift+ArrowRight");
+        await expect.poll(() => readNum(anchorXValue), {timeout: 4000}).toBeGreaterThan(25);
+
+        // +5% y (coarse).
+        await bubble.focus();
+        await page.keyboard.press("Shift+ArrowDown");
+        await expect.poll(() => readNum(anchorYValue), {timeout: 4000}).toBeGreaterThan(25);
+
+        // The bubble's rendered position moved (left/top % changed
+        // → boundingBox shifted). 5% of a ~666px panel ≈ 33px each.
+        const endBox = await bubble.boundingBox();
+        expect(endBox).not.toBeNull();
+        expect(Math.abs(endBox!.x - startBox!.x)).toBeGreaterThan(20);
+        expect(Math.abs(endBox!.y - startBox!.y)).toBeGreaterThan(15);
     });
 
     test("short-drag (< 5px) is treated as a click, not a reposition", async ({

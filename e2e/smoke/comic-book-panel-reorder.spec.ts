@@ -76,27 +76,28 @@ test.describe("Comic-book same-page panel reorder smoke (Phase 1)", () => {
     );
     const firstId = idsBefore[0];
 
-    // Drag the first panel's handle onto the last panel's cell.
+    // Reorder via @dnd-kit's KeyboardSensor (already wired on the
+    // grid): focus the first panel's drag handle, Space to pick up,
+    // arrow keys to move it forward in the grid, Space to drop. This
+    // is deterministic — Playwright's low-level page.mouse does NOT
+    // reliably trip dnd-kit's PointerSensor activation. Same
+    // onDragEnd → reorder-API commit either way.
     const firstHandle = page
       .locator('[data-testid^="comic-reorder-handle-"]')
       .first();
-    const lastSortable = sortables.last();
-    const handleBox = await firstHandle.boundingBox();
-    const targetBox = await lastSortable.boundingBox();
-    expect(handleBox).not.toBeNull();
-    expect(targetBox).not.toBeNull();
-
-    const startX = handleBox!.x + handleBox!.width / 2;
-    const startY = handleBox!.y + handleBox!.height / 2;
-    const endX = targetBox!.x + targetBox!.width / 2;
-    const endY = targetBox!.y + targetBox!.height / 2;
-
-    await page.mouse.move(startX, startY);
-    await page.mouse.down();
-    // Cross the 5px PointerSensor activation threshold first.
-    await page.mouse.move(startX + 8, startY + 8, { steps: 5 });
-    await page.mouse.move(endX, endY, { steps: 10 });
-    await page.mouse.up();
+    // Stabiliser delays make @dnd-kit's KeyboardSensor reliable
+    // under Playwright. The grid (rectSortingStrategy) needs a
+    // longer settle than the vertical-list sidebars — 50ms (the
+    // chapter-reorder value) batches the events here; 120ms reorders
+    // deterministically. Space picks up, ArrowRight moves the panel
+    // one cell forward in the grid, Space drops.
+    await firstHandle.focus();
+    await page.waitForTimeout(120);
+    await page.keyboard.press("Space"); // pick up
+    await page.waitForTimeout(120);
+    await page.keyboard.press("ArrowRight"); // move forward one cell
+    await page.waitForTimeout(120);
+    await page.keyboard.press("Space"); // drop
 
     // The dragged panel is no longer first.
     await expect

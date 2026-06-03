@@ -17,7 +17,54 @@
  *      pre-toggle value).
  */
 
-import {test, expect} from "../fixtures/base";
+import {test, expect, createBook, deleteBook} from "../fixtures/base";
+
+/** Soft-delete a book so the BD trash view has content. With an empty
+ *  trash the Dashboard renders an EmptyState, NOT trash-grid/trash-list,
+ *  so the view-mode assertions need at least one trashed book. */
+async function seedTrashedBook(): Promise<void> {
+    const book = await createBook("Trash View-Mode Seed");
+    await deleteBook(book.id);
+}
+
+/** Select a view-mode (grid/list) on one of the Erscheinungsbild
+ *  RadixSelects and CONFIRM the trigger reflects it before moving on.
+ *  The portal-based Radix option click can otherwise be flaky under
+ *  load (the dropdown isn't ready / the click misses), leaving the
+ *  saved value at the old default — the root of the intermittent
+ *  "trash-list not visible". Asserting the trigger's data-value pins
+ *  that the selection actually registered. */
+async function pickViewMode(
+    page: import("@playwright/test").Page,
+    triggerTestId: string,
+    mode: "grid" | "list",
+): Promise<void> {
+    const trigger = page.getByTestId(triggerTestId);
+    await trigger.click();
+    const optionRe =
+        mode === "list" ? /listen-ansicht|list/i : /kachel-ansicht|grid/i;
+    await page.getByRole("option", {name: optionRe}).click();
+    await expect(trigger).toHaveAttribute("data-value", mode);
+}
+
+/** Click the Erscheinungsbild save button and WAIT for the settings
+ *  PATCH to land before continuing. Saving is async (PATCH
+ *  /settings/app); navigating away immediately races the request and
+ *  the view-mode preference never persists (flaky "trash-list not
+ *  visible"). */
+async function saveAppearance(
+    page: import("@playwright/test").Page,
+): Promise<void> {
+    const saved = page.waitForResponse(
+        (r) =>
+            r.url().includes("/settings/app") &&
+            r.request().method() === "PATCH" &&
+            r.ok(),
+        {timeout: 8000},
+    );
+    await page.getByTestId("erscheinungsbild-settings-save").click();
+    await saved;
+}
 
 test.describe("Trash view-mode default settings (Bug 3)", () => {
     test("Settings UI exposes 4 view-mode dropdowns", async ({page}) => {
@@ -35,13 +82,13 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
     });
 
     test("BD-Trash default = list propagates to the trash view", async ({page}) => {
+        await seedTrashedBook();
         await page.goto("/settings");
         await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // Set the books-trash default to "list" via the Radix Select.
-        await page.getByTestId("settings-books-trash-view-trigger").click();
-        await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
-        await page.getByTestId("erscheinungsbild-settings-save").click();
+        await pickViewMode(page, "settings-books-trash-view-trigger", "list");
+        await saveAppearance(page);
 
         // Open the BD trash; the view should mount as list.
         await page.goto("/");
@@ -50,17 +97,16 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
     });
 
     test("AD/BD active default and BD-Trash default are independent", async ({page}) => {
+        await seedTrashedBook();
         await page.goto("/settings");
         await page.getByTestId("settings-tab-erscheinungsbild").click();
 
         // Active BD = grid, Trash BD = list. Active and trash should
         // pick up different defaults — that's the whole point of Bug 3.
-        await page.getByTestId("settings-books-view-trigger").click();
-        await page.getByRole("option", {name: /kachel-ansicht|grid/i}).click();
+        await pickViewMode(page, "settings-books-view-trigger", "grid");
 
-        await page.getByTestId("settings-books-trash-view-trigger").click();
-        await page.getByRole("option", {name: /listen-ansicht|list/i}).click();
-        await page.getByTestId("erscheinungsbild-settings-save").click();
+        await pickViewMode(page, "settings-books-trash-view-trigger", "list");
+        await saveAppearance(page);
 
         await page.goto("/");
         // Active surface mounts grid.
@@ -74,12 +120,12 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
     });
 
     test("toggling view-mode inside trash does NOT persist to YAML", async ({page}) => {
+        await seedTrashedBook();
         // Set trash default to grid via Settings.
         await page.goto("/settings");
         await page.getByTestId("settings-tab-erscheinungsbild").click();
-        await page.getByTestId("settings-books-trash-view-trigger").click();
-        await page.getByRole("option", {name: /kachel-ansicht|grid/i}).click();
-        await page.getByTestId("erscheinungsbild-settings-save").click();
+        await pickViewMode(page, "settings-books-trash-view-trigger", "grid");
+        await saveAppearance(page);
 
         // Open trash, toggle to list.
         await page.goto("/");

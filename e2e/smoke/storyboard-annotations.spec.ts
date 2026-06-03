@@ -57,11 +57,16 @@ test.describe("Storyboard annotations smoke", () => {
         page,
     }) => {
         const book = await createPictureBook("Storyboard Anno Book", "E2E")
-        const [p1, p2, p3] = await Promise.all([
-            createPage(book.id),
-            createPage(book.id),
-            createPage(book.id),
-        ])
+        // Create the pages SEQUENTIALLY, not via Promise.all: the
+        // server assigns position = max(position)+1, so concurrent
+        // creates race and the [p1,p2,p3] array order may not match
+        // DB positions [1,2,3]. Later assertions index listPages by
+        // position (e.g. listPages()[1] == p2), so the mapping must be
+        // deterministic — otherwise the note saved on p2 is checked
+        // against a different page and reads null (load-dependent flake).
+        const p1 = await createPage(book.id)
+        const p2 = await createPage(book.id)
+        const p3 = await createPage(book.id)
 
         // Open the storyboard via the query-param flip.
         await page.goto(`/book/${book.id}?view=storyboard`)

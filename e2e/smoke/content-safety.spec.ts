@@ -16,7 +16,7 @@
  * Uses the project's standard data-testid selectors; no brittle CSS.
  */
 
-import {test, expect, createBook, createChapter} from '../fixtures/base'
+import {test, expect, acceptDialog, createBook, createChapter} from '../fixtures/base'
 
 const LOCAL_CONTENT =
   '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"Draft from before the crash"}]}]}'
@@ -219,9 +219,29 @@ test.describe('Content safety', () => {
     await expect(page.getByTestId('chapter-versions-modal')).toBeVisible()
 
     // Backend snapshots the PRE-update state; with 3 saves the
-    // versions are: v1 = initial "v0", v2 = "edit one", v3 = "edit two".
-    // Restore v2 to bring "edit one" back into the editor.
-    await page.getByTestId('chapter-version-restore-2').click()
+    // snapshots are "v0", "edit one", "edit two". Restore the one
+    // whose content is "edit one". The restore button is keyed by the
+    // version's id (a UUID string), NOT a sequential index — so look
+    // the id up by content via the API rather than guessing "2".
+    const apiBase = 'http://localhost:8000/api'
+    const summaries: Array<{id: string}> = await fetch(
+      `${apiBase}/books/${book.id}/chapters/${chapter.id}/versions`,
+    ).then((r) => r.json())
+    let restoreId: string | null = null
+    for (const s of summaries) {
+      const full: {content?: string} = await fetch(
+        `${apiBase}/books/${book.id}/chapters/${chapter.id}/versions/${s.id}`,
+      ).then((r) => r.json())
+      if ((full.content ?? '').includes('edit one')) {
+        restoreId = s.id
+        break
+      }
+    }
+    expect(restoreId, 'a version snapshot with content "edit one"').not.toBeNull()
+    await page.getByTestId(`chapter-version-restore-${restoreId}`).click()
+    // Restore asks for confirmation via AppDialog ("Version
+    // wiederherstellen?"); accept it before the modal closes.
+    await acceptDialog(page)
     await expect(page.getByTestId('chapter-versions-modal')).toBeHidden({timeout: 5000})
     await expect(page.locator('.ProseMirror')).toContainText('edit one')
   })

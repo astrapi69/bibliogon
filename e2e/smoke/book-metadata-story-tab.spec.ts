@@ -84,8 +84,20 @@ test.describe("Book-metadata Story tab smoke", () => {
         await ideaInput.fill(ideaValue);
         await exposeInput.fill(exposeValue);
 
-        // Trigger save.
+        // Trigger save and WAIT for the PATCH to land before
+        // reloading. Save is async (api.books.update → PATCH
+        // /books/{id}); reloading immediately races the in-flight
+        // request — under load the reload aborts it and the values
+        // never persist (the source of this spec's flakiness).
+        const savePatch = page.waitForResponse(
+            (r) =>
+                r.url().includes(`/books/${book.id}`) &&
+                r.request().method() === "PATCH" &&
+                r.ok(),
+            {timeout: 8000},
+        );
         await page.getByTestId("metadata-save").click();
+        await savePatch;
 
         // Reload from URL — the editor reads fresh data from
         // /api/books/{id} on mount.

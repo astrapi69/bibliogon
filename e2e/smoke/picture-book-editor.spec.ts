@@ -100,12 +100,22 @@ test.describe("Picture-Book PageEditor smoke", () => {
             page.getByTestId(`page-editor-page-row-${p2.id}`),
         ).toHaveAttribute("data-position", "2")
 
-        // Drag page 2's handle above page 1. Playwright drives real
-        // pointer events; @dnd-kit's PointerSensor (5px activation
-        // distance — see PageThumbnails.tsx) responds correctly.
+        // Move page 2 above page 1 via @dnd-kit's KeyboardSensor
+        // (wired in PageThumbnails.tsx): focus the handle, Space to
+        // pick up, ArrowUp to move it above page 1, Space to drop.
+        // Deterministic — Playwright's pointer-level dragTo does NOT
+        // reliably trip dnd-kit's PointerSensor. Same onDragEnd →
+        // reorder-API commit either way.
         const handle2 = page.getByTestId(`page-editor-drag-handle-${p2.id}`)
-        const target1 = page.getByTestId(`page-editor-page-row-${p1.id}`)
-        await handle2.dragTo(target1)
+        // Brief stabiliser delays make @dnd-kit's KeyboardSensor
+        // reliable under Playwright (see chapter-reorder.spec.ts).
+        await handle2.focus()
+        await page.waitForTimeout(50)
+        await page.keyboard.press("Space")
+        await page.waitForTimeout(50)
+        await page.keyboard.press("ArrowUp")
+        await page.waitForTimeout(50)
+        await page.keyboard.press("Space")
 
         // After reorder, the API reflects the swap (p2 at position 1,
         // p1 at position 2) and the rows' data-position attributes
@@ -453,12 +463,15 @@ test.describe("Picture-Book PageEditor smoke", () => {
         const book = await createPictureBook("Layout Regression Book", "Author")
         await page.goto(`/book/${book.id}`)
 
-        // Two pages.
+        // Two pages. Add-page POSTs + refreshes asynchronously;
+        // clicking twice back-to-back races (the refresh from the
+        // first add can drop or duplicate the second). Wait for each
+        // row to mount before adding the next.
+        const pageRows = page.locator('[data-testid^="page-editor-page-row-"]')
         await page.getByTestId("page-editor-add-page").click()
+        await expect(pageRows).toHaveCount(1)
         await page.getByTestId("page-editor-add-page").click()
-        await expect(
-            page.locator('[data-testid^="page-editor-page-row-"]'),
-        ).toHaveCount(2)
+        await expect(pageRows).toHaveCount(2)
 
         // Switch the active page's layout to image_left_text_right.
         // Phase 1 C4 (2026-05-28): direct click; no disclosure.
@@ -468,35 +481,57 @@ test.describe("Picture-Book PageEditor smoke", () => {
             "image_left_text_right",
         )
 
-        // Text-input still saves.
-        const textarea = page.getByTestId("page-canvas-text-input")
-        await textarea.fill("Side-by-side layout text")
-        await textarea.blur()
+        // Text editing still saves. image_left_text_right is a
+        // TipTap layout (see TIPTAP_LAYOUTS in PageCanvas.tsx), so
+        // the text region is a ProseMirror rich-text editor and
+        // text_content is stored as TipTap JSON — NOT a plain
+        // textarea. Type into the editor and assert the text
+        // round-trips into the persisted JSON (autosave is debounced
+        // ~800ms, hence the poll).
+        const richText = page
+            .locator(
+                '[data-testid^="page-canvas-richtext-"][data-testid$="-content"]',
+            )
+            .first()
+        await expect(richText).toBeVisible()
+        await richText.click()
+        await page.keyboard.type("Side-by-side layout text")
         await expect
             .poll(
                 async () => {
                     const pages: {text_content: string | null}[] = await fetch(
                         `${API}/books/${book.id}/pages`,
                     ).then((r) => r.json())
-                    return pages.some(
-                        (p) => p.text_content === "Side-by-side layout text",
+                    return pages.some((p) =>
+                        (p.text_content ?? "").includes(
+                            "Side-by-side layout text",
+                        ),
                     )
                 },
-                {timeout: 3000},
+                {timeout: 4000},
             )
             .toBe(true)
 
         // Upload affordance still present (non-text_only layout).
         await expect(page.getByTestId("page-canvas-image-replace")).toBeVisible()
 
-        // Drag-reorder still works after the layout change.
+        // Reorder still works after the layout change — via the
+        // KeyboardSensor (deterministic; pointer-level dragTo does
+        // not reliably trip dnd-kit). Move page 2 above page 1.
         const pagesNow: {id: string; position: number}[] = await fetch(
             `${API}/books/${book.id}/pages`,
         ).then((r) => r.json())
         const [p1, p2] = pagesNow.sort((a, b) => a.position - b.position)
         const handle2 = page.getByTestId(`page-editor-drag-handle-${p2.id}`)
-        const target1 = page.getByTestId(`page-editor-page-row-${p1.id}`)
-        await handle2.dragTo(target1)
+        // Brief stabiliser delays make @dnd-kit's KeyboardSensor
+        // reliable under Playwright (see chapter-reorder.spec.ts).
+        await handle2.focus()
+        await page.waitForTimeout(50)
+        await page.keyboard.press("Space")
+        await page.waitForTimeout(50)
+        await page.keyboard.press("ArrowUp")
+        await page.waitForTimeout(50)
+        await page.keyboard.press("Space")
         await expect
             .poll(
                 async () => {
@@ -558,8 +593,11 @@ test.describe("Picture-Book PageEditor smoke", () => {
             )
             .toBe(true)
 
-        // Drag the size slider (continuous, 300ms debounce).
-        await page.getByTestId("speech-bubble-size-slider").fill("30")
+        // Drag the width slider (continuous, 300ms debounce). The
+        // single legacy "size" knob was split into independent
+        // width + height sliders (speech-bubble-{width,height}-slider);
+        // the canvas width is driven by bubble_width.
+        await page.getByTestId("speech-bubble-width-slider").fill("30")
         await expect
             .poll(
                 async () => {

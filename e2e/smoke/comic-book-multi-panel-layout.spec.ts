@@ -48,7 +48,13 @@ test.describe("Comic-book multi-panel layout smoke", () => {
 
         await page.getByTestId("comic-book-editor-add-panel").click();
         const panel = page.locator(
-            '[data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
+            // Scope to the canvas grid: the bare ``comic-panel-``
+            // prefix also matches side-pane controls
+            // (comic-panel-tier1-section / -trigger, ~34px tall),
+            // which overmatched nth(1) and read as a "collapsed
+            // panel". Per LL "Prefix testid selectors match every
+            // nested testid that shares the prefix".
+            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
         ).first();
         await expect(panel).toBeVisible();
         const bbox = await panel.boundingBox();
@@ -78,15 +84,24 @@ test.describe("Comic-book multi-panel layout smoke", () => {
             page.getByTestId("comic-page-grid"),
         ).toHaveAttribute("data-grid-template", "grid_2x2");
 
-        // Add 2 panels into the grid_2x2 layout.
-        await page.getByTestId("comic-book-editor-add-panel").click();
-        await page.getByTestId("comic-book-editor-add-panel").click();
-
-        // Exclude nested comic-panel-image-* / -bubble-* testids so the
-        // selector matches only panel roots.
+        // Scope to the canvas grid: the bare ``comic-panel-``
+        // prefix also matches side-pane controls
+        // (comic-panel-tier1-section / -trigger, ~34px tall),
+        // which overmatched nth(1) and read as a "collapsed
+        // panel". Per LL "Prefix testid selectors match every
+        // nested testid that shares the prefix".
         const panels = page.locator(
-            '[data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
+            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
         );
+
+        // Add 2 panels into the grid_2x2 layout. Add-panel POSTs +
+        // refreshes asynchronously; clicking twice back-to-back drops
+        // the second add (the refresh from the first hasn't landed).
+        // Wait for each panel to mount before adding the next.
+        await page.getByTestId("comic-book-editor-add-panel").click();
+        await expect(panels).toHaveCount(1);
+        await page.getByTestId("comic-book-editor-add-panel").click();
+        await expect(panels).toHaveCount(2);
 
         // Regression pin for the "Second panel too small" bug: the
         // added panels must render at proper cell height (NOT collapsed

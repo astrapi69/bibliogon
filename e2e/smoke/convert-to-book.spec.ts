@@ -355,9 +355,14 @@ test.describe("Article-to-book conversion", () => {
         const avgPriorY = stepYs.reduce((s, y) => s + y, 0) / stepYs.length
         expect(Math.abs(finishBox!.y - avgPriorY)).toBeLessThan(6)
 
-        // The pre-fix inline body button must NOT be present.
+        // Exactly ONE finish button exists, and it's the WizardNav
+        // footer button. The pre-fix bug rendered a SECOND, inline
+        // action button in the step body; the footer button carries
+        // the `...-step-5-finish` testid and there is no inline
+        // duplicate, so the count is 1 (a count of 0 would contradict
+        // the visible-in-footer assertion above).
         await expect(
             page.getByTestId("convert-to-book-wizard-step-5-finish"),
-        ).toHaveCount(0)
+        ).toHaveCount(1)
     })
 })

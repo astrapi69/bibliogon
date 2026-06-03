@@ -118,11 +118,21 @@ test.describe("Picture-Book Tier 1+2 sections across image layouts", () => {
         await page.getByTestId("image-top-text-tier1-trigger").click()
         const colorInput = page.getByTestId("image-top-text-background-color")
         await expect(colorInput).toBeVisible()
-        // Native <input type="color"> doesn't accept .fill();
-        // dispatch a change event with a hex value.
+        // Native <input type="color"> doesn't accept .fill(). Setting
+        // ``input.value`` directly does NOT trigger React's onChange:
+        // React's _valueTracker already recorded the value via its own
+        // overridden setter, so the dispatched event sees no diff and
+        // skips the handler. Drive the change through the NATIVE value
+        // setter (bypassing React's) so the tracker detects the change
+        // and onChange fires. This is the canonical "simulate a React
+        // controlled-input change" pattern.
         await colorInput.evaluate((el, value) => {
             const input = el as HTMLInputElement
-            input.value = value
+            const nativeSetter = Object.getOwnPropertyDescriptor(
+                HTMLInputElement.prototype,
+                "value",
+            )!.set!
+            nativeSetter.call(input, value)
             input.dispatchEvent(new Event("input", {bubbles: true}))
             input.dispatchEvent(new Event("change", {bubbles: true}))
         }, "#ffc857")

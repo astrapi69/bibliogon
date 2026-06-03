@@ -38,13 +38,14 @@ test.describe("Page-delete smoke", () => {
         const book = await createPictureBook("Delete Non-Active", "E2E Author");
         await page.goto(`/book/${book.id}`);
 
-        // Add a second page (the picture-book template creates page 1
-        // implicitly on first navigation — fall through to add-page if
-        // not yet auto-created).
-        await page.getByTestId("page-editor-add-page").click();
-        await page.getByTestId("page-editor-add-page").click();
-
+        // Add two pages. Add-page POSTs + refreshes asynchronously;
+        // clicking twice back-to-back races (the refresh from the
+        // first add can drop or duplicate the second). Wait for each
+        // row to mount before adding the next.
         const rows = page.locator('[data-testid^="page-editor-page-row-"]');
+        await page.getByTestId("page-editor-add-page").click();
+        await expect(rows).toHaveCount(1);
+        await page.getByTestId("page-editor-add-page").click();
         await expect(rows).toHaveCount(2);
 
         // Hover on row 1 to surface its delete affordance (CSS makes
@@ -76,10 +77,12 @@ test.describe("Page-delete smoke", () => {
         const book = await createPictureBook("Auto-Select Next", "E2E Author");
         await page.goto(`/book/${book.id}`);
 
-        await page.getByTestId("page-editor-add-page").click();
-        await page.getByTestId("page-editor-add-page").click();
-
+        // Add two pages, waiting for each row to mount before the next
+        // (back-to-back add-page clicks race the async POST+refresh).
         const rows = page.locator('[data-testid^="page-editor-page-row-"]');
+        await page.getByTestId("page-editor-add-page").click();
+        await expect(rows).toHaveCount(1);
+        await page.getByTestId("page-editor-add-page").click();
         await expect(rows).toHaveCount(2);
 
         // After 2nd add, page 2 is active (handleAddPage auto-selects).

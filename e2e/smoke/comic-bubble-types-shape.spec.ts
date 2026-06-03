@@ -145,12 +145,16 @@ test.describe("Comic bubble types — visual shape contract", () => {
                 expect(cubicCount).toBeGreaterThanOrEqual(2);
                 expect(arcCount).toBeGreaterThanOrEqual(4);
             } else if (spec.bubble_type === "thought") {
-                // Post-swap: ellipse outline (4 cubics) + 3
-                // shrinking circles (2 arcs each at tail_length_px
-                // > 30). The chain uses arcs, not cubics — so the
+                // Post-swap: ellipse outline (4 cubics) + a
+                // thought-circle chain. thoughtCircleChainSuffix
+                // (bubblePath.ts) picks the circle count by tail
+                // length: >30 → 3, >15 → 2, else 1. This spec creates
+                // the bubbles with tail_length_px = 30 (NOT > 30), so
+                // the chain is the "medium" 2-circle variant = 2 arcs
+                // each = 4. The chain uses arcs, not cubics, so the
                 // outline's 4 cubics are the total cubic count.
                 expect(cubicCount).toBe(4);
-                expect(arcCount).toBe(2 * 3);
+                expect(arcCount).toBe(2 * 2);
             } else if (spec.bubble_type === "narration") {
                 // Force-ignored tail_direction = no tail. Simple
                 // zero-radius "rounded" rect (4 L + 4 A all

@@ -55,14 +55,24 @@ test.describe("Editor display settings smoke", () => {
         expect(widthAfter).toBe("680px");
 
         // Reload — the hook reads localStorage on mount and
-        // reapplies the var BEFORE any user interaction.
+        // reapplies the var in a useEffect AFTER the Editor surface
+        // mounts. Wait for the editor before sampling, and poll the
+        // inline style (the apply is post-mount, not pre-paint).
         await page.reload();
-        const widthAfterReload = await page.evaluate(() =>
-            getComputedStyle(document.documentElement).getPropertyValue(
-                "--editor-content-width",
-            ).trim(),
-        );
-        expect(widthAfterReload).toBe("680px");
+        await expect(
+            page.getByTestId("editor-display-settings-toggle"),
+        ).toBeVisible({timeout: 10000});
+        await expect
+            .poll(
+                async () =>
+                    page.evaluate(() =>
+                        document.documentElement.style
+                            .getPropertyValue("--editor-content-width")
+                            .trim(),
+                    ),
+                {timeout: 4000},
+            )
+            .toBe("680px");
     });
 
     test("reset returns all four CSS vars to their defaults", async ({page}) => {
@@ -89,18 +99,26 @@ test.describe("Editor display settings smoke", () => {
         // All four CSS vars return to defaults:
         //   width=none, font=var(--font-display), size=1.125rem,
         //   line-height=1.8
-        const vars = await page.evaluate(() => {
-            const cs = getComputedStyle(document.documentElement);
-            return {
-                width: cs.getPropertyValue("--editor-content-width").trim(),
-                font: cs.getPropertyValue("--editor-font-family").trim(),
-                size: cs.getPropertyValue("--editor-font-size").trim(),
-                line: cs.getPropertyValue("--editor-line-height").trim(),
-            };
-        });
-        expect(vars.width).toBe("none");
-        expect(vars.font).toBe("var(--font-display)");
-        expect(vars.size).toBe("1.125rem");
-        expect(vars.line).toBe("1.8");
+        // Read the INLINE style, not getComputedStyle: the font
+        // default value is literally "var(--font-display)", and
+        // getComputedStyle resolves that nested var to the concrete
+        // font stack ("Crimson Pro", Georgia, serif). The inline
+        // style (what the hook actually wrote) preserves the literal.
+        // Poll because the reset applies in a post-render useEffect.
+        await expect
+            .poll(
+                async () =>
+                    page.evaluate(() => {
+                        const s = document.documentElement.style;
+                        return [
+                            s.getPropertyValue("--editor-content-width").trim(),
+                            s.getPropertyValue("--editor-font-family").trim(),
+                            s.getPropertyValue("--editor-font-size").trim(),
+                            s.getPropertyValue("--editor-line-height").trim(),
+                        ].join("|");
+                    }),
+                {timeout: 4000},
+            )
+            .toBe("none|var(--font-display)|1.125rem|1.8");
     });
 });
