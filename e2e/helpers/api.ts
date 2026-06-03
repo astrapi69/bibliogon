@@ -50,10 +50,18 @@ export async function resetSettings(): Promise<void> {
                 // The vast majority of dashboard specs drive the grid-only
                 // card testids (book-card-* / article-card-*). The app
                 // DEFAULT for articles_view is "list", so the E2E baseline
-                // explicitly forces BOTH dashboards to grid. List-specific
-                // specs (view-mode parity, trash-view-mode-defaults) set
+                // explicitly forces BOTH dashboards to grid. Also force the
+                // TRASH view-modes to grid: trash-view-mode-defaults flips
+                // them to "list", which otherwise leaks into trash.spec.ts
+                // (grid trash-card-* testids). List-specific specs set
                 // their own view after this reset.
-                dashboard: {...dashboard, books_view: "grid", articles_view: "grid"},
+                dashboard: {
+                    ...dashboard,
+                    books_view: "grid",
+                    articles_view: "grid",
+                    books_trash_view: "grid",
+                    articles_trash_view: "grid",
+                },
             },
             topics: _settingsBaseline.topics ?? [],
         }),
