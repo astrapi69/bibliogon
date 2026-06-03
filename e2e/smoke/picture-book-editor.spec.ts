@@ -229,7 +229,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
 
         // Prose books stay on the Dashboard (no auto-navigate).
         await expect(page.getByTestId("dashboard-loading")).toHaveCount(0)
-        await expect(page.getByText("Smoke Prose Book")).toBeVisible()
+        await expect(page.getByText("Smoke Prose Book").first()).toBeVisible()
 
         const list: BookRow[] = await fetch(`${API}/books`).then((r) => r.json())
         const created = list.find((b) => b.title === "Smoke Prose Book")
@@ -428,7 +428,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
 
         // Navigate to the book; prose flow stays on dashboard after
         // create, so click the book card to open it.
-        await page.getByText("Prose Metadata Smoke").click()
+        await page.getByText("Prose Metadata Smoke").first().click()
 
         // Open metadata via the existing prose path (chapter sidebar's
         // metadata button — its testid is 'sidebar-metadata' or
