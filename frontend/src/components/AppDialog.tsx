@@ -1,7 +1,15 @@
 import {useState, useEffect, useCallback, createContext, useContext} from "react";
 import {api} from "../api/client";
 import {useI18n} from "../hooks/useI18n";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog";
 import {X, AlertTriangle, CheckCircle, Info} from "lucide-react";
 
 // --- Dialog types ---
@@ -159,90 +167,85 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     return (
         <DialogContext.Provider value={{confirm, prompt, alert, choose}}>
             {children}
-            <Dialog.Root open={!!dialog} onOpenChange={(open) => { if (!open) handleCancel(); }}>
-                <Dialog.Portal>
-                    <Dialog.Overlay className="dialog-overlay"/>
-                    <Dialog.Content className="dialog-content" onEscapeKeyDown={handleCancel}>
-                        {dialog && (
-                            <>
-                                <div className="dialog-header">
-                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                        {icon}
-                                        <Dialog.Title className="dialog-title">{dialog.title}</Dialog.Title>
-                                    </div>
-                                    <Dialog.Close asChild>
-                                        <button className="btn-icon" onClick={handleCancel} aria-label="Close">
-                                            <X size={16}/>
-                                        </button>
-                                    </Dialog.Close>
-                                </div>
+            <Dialog open={!!dialog} onOpenChange={(open) => { if (!open) handleCancel(); }}>
+                {dialog && (
+                    <DialogContent size="default" onEscapeKeyDown={handleCancel}>
+                        <DialogHeader>
+                            <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                {icon}
+                                <DialogTitle>{dialog.title}</DialogTitle>
+                            </div>
+                            <DialogClose asChild>
+                                <button className="btn-icon" onClick={handleCancel} aria-label="Close">
+                                    <X size={16}/>
+                                </button>
+                            </DialogClose>
+                        </DialogHeader>
 
-                                <Dialog.Description className="dialog-message">
-                                    {dialog.message}
-                                </Dialog.Description>
+                        <DialogDescription>
+                            {dialog.message}
+                        </DialogDescription>
 
-                                {dialog.type === "prompt" && (
-                                    <input
-                                        className="input"
-                                        style={{marginTop: 12}}
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && handleConfirm()}
-                                        placeholder={dialog.placeholder || ""}
-                                        autoFocus
-                                    />
-                                )}
-
-                                <div className="dialog-footer">
-                                    {dialog.type === "choose" ? (
-                                        <>
-                                            <button
-                                                className="btn btn-ghost"
-                                                data-testid="app-dialog-cancel"
-                                                onClick={handleCancel}
-                                            >
-                                                {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
-                                            </button>
-                                            {(dialog.choices || []).map((choice) => (
-                                                <button
-                                                    key={choice.value}
-                                                    className={btnClass(choice.variant)}
-                                                    data-testid={`app-dialog-choice-${choice.value}`}
-                                                    onClick={() => handleChoose(choice.value)}
-                                                    autoFocus={choice.autoFocus}
-                                                >
-                                                    {choice.label}
-                                                </button>
-                                            ))}
-                                        </>
-                                    ) : (
-                                        <>
-                                            {dialog.type !== "alert" && (
-                                                <button
-                                                    className="btn btn-ghost"
-                                                    data-testid="app-dialog-cancel"
-                                                    onClick={handleCancel}
-                                                >
-                                                    {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
-                                                </button>
-                                            )}
-                                            <button
-                                                className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
-                                                data-testid="app-dialog-confirm"
-                                                onClick={handleConfirm}
-                                                disabled={dialog.type === "prompt" && !inputValue.trim()}
-                                                autoFocus={dialog.type !== "prompt"}
-                                            >
-                                                {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : t("ui.common.confirm", "Bestätigen"))}
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
-                            </>
+                        {dialog.type === "prompt" && (
+                            <input
+                                className="input"
+                                style={{marginTop: 12}}
+                                value={inputValue}
+                                onChange={(e) => setInputValue(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && inputValue.trim() && handleConfirm()}
+                                placeholder={dialog.placeholder || ""}
+                                autoFocus
+                            />
                         )}
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+
+                        <DialogFooter>
+                            {dialog.type === "choose" ? (
+                                <>
+                                    <button
+                                        className="btn btn-ghost"
+                                        data-testid="app-dialog-cancel"
+                                        onClick={handleCancel}
+                                    >
+                                        {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
+                                    </button>
+                                    {(dialog.choices || []).map((choice) => (
+                                        <button
+                                            key={choice.value}
+                                            className={btnClass(choice.variant)}
+                                            data-testid={`app-dialog-choice-${choice.value}`}
+                                            onClick={() => handleChoose(choice.value)}
+                                            autoFocus={choice.autoFocus}
+                                        >
+                                            {choice.label}
+                                        </button>
+                                    ))}
+                                </>
+                            ) : (
+                                <>
+                                    {dialog.type !== "alert" && (
+                                        <button
+                                            className="btn btn-ghost"
+                                            data-testid="app-dialog-cancel"
+                                            onClick={handleCancel}
+                                        >
+                                            {dialog.cancelLabel || t("ui.common.cancel", "Abbrechen")}
+                                        </button>
+                                    )}
+                                    <button
+                                        className={`btn ${variant === "danger" ? "btn-danger" : "btn-primary"}`}
+                                        data-testid="app-dialog-confirm"
+                                        onClick={handleConfirm}
+                                        disabled={dialog.type === "prompt" && !inputValue.trim()}
+                                        autoFocus={dialog.type !== "prompt"}
+                                    >
+                                        {dialog.confirmLabel || (dialog.type === "alert" ? "OK" : t("ui.common.confirm", "Bestätigen"))}
+                                    </button>
+                                </>
+                            )}
+                        </DialogFooter>
+                    </DialogContent>
+                )}
+            </Dialog>
         </DialogContext.Provider>
     );
 }

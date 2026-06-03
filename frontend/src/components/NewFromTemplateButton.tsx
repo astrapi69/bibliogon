@@ -1,5 +1,13 @@
 import {useState} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog"
 import {Sparkles, Download, X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
 import {RadixSelect} from "./RadixSelect"
@@ -135,7 +143,7 @@ export default function NewFromTemplateButton({
                 {t("ui.ai_template.new_from_template.button", "New from template")}
             </button>
 
-            <Dialog.Root
+            <Dialog
                 open={open}
                 onOpenChange={(o) => {
                     if (!o) {
@@ -144,21 +152,19 @@ export default function NewFromTemplateButton({
                     }
                 }}
             >
-                <Dialog.Portal>
-                    <Dialog.Overlay className="dialog-overlay"/>
-                    <Dialog.Content
-                        className="dialog-content dialog-content-wide"
-                        data-testid="new-from-template-dialog"
-                        onEscapeKeyDown={() => setOpen(false)}
-                    >
-                        <div className="dialog-header">
-                            <Dialog.Title className="dialog-title">
+                <DialogContent
+                    size="wide"
+                    data-testid="new-from-template-dialog"
+                    onEscapeKeyDown={() => setOpen(false)}
+                >
+                        <DialogHeader>
+                            <DialogTitle>
                                 {t(
                                     "ui.ai_template.new_from_template.dialog_title",
                                     "New from template",
                                 )}
-                            </Dialog.Title>
-                            <Dialog.Close asChild>
+                            </DialogTitle>
+                            <DialogClose asChild>
                                 <button
                                     type="button"
                                     className="btn-icon"
@@ -167,14 +173,14 @@ export default function NewFromTemplateButton({
                                 >
                                     <X size={16}/>
                                 </button>
-                            </Dialog.Close>
-                        </div>
-                        <Dialog.Description className="dialog-message">
+                            </DialogClose>
+                        </DialogHeader>
+                        <DialogDescription>
                             {t(
                                 "ui.ai_template.new_from_template.description",
                                 "Download an empty template, fill it, then upload the result.",
                             )}
-                        </Dialog.Description>
+                        </DialogDescription>
 
                         {/* Step 1: download an empty template */}
                         <div
@@ -251,7 +257,7 @@ export default function NewFromTemplateButton({
                             {file && <TemplateImportFilePreview file={file}/>}
                         </div>
 
-                        <div className="dialog-footer" style={{marginTop: 16}}>
+                        <DialogFooter sticky>
                             <button
                                 type="button"
                                 className="btn btn-ghost"
@@ -273,10 +279,9 @@ export default function NewFromTemplateButton({
                                     "Create",
                                 )}
                             </button>
-                        </div>
-                    </Dialog.Content>
-                </Dialog.Portal>
-            </Dialog.Root>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
         </>
     )
 }

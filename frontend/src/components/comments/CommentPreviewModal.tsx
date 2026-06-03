@@ -16,7 +16,14 @@
  * via ``comment={null}``.
  */
 
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { FileText, Trash2, X } from "lucide-react";
 
 import type { ArticleComment } from "../../api/client";
@@ -53,26 +60,24 @@ export default function CommentPreviewModal({
   const busy = pendingReclassify || pendingDelete;
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(o) => {
         if (!o) onClose();
       }}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content"
-          onEscapeKeyDown={onClose}
-          data-testid="comment-preview-modal"
-          style={{ maxWidth: 640, width: "92vw" }}
-          aria-describedby={undefined}
-        >
-          <div className="dialog-header">
-            <Dialog.Title className="dialog-title">
+      <DialogContent
+        size="none"
+        onEscapeKeyDown={onClose}
+        data-testid="comment-preview-modal"
+        style={{ maxWidth: 640, width: "92vw" }}
+        aria-describedby={undefined}
+      >
+          <DialogHeader>
+            <DialogTitle>
               {t("ui.comments.admin.preview.title", "Kommentar-Details")}
-            </Dialog.Title>
-            <Dialog.Close asChild>
+            </DialogTitle>
+            <DialogClose asChild>
               <button
                 type="button"
                 className="btn-icon"
@@ -82,8 +87,8 @@ export default function CommentPreviewModal({
               >
                 <X size={16} />
               </button>
-            </Dialog.Close>
-          </div>
+            </DialogClose>
+          </DialogHeader>
 
           {comment && (
             <>
@@ -163,8 +168,7 @@ export default function CommentPreviewModal({
             </>
           )}
 
-          <div
-            className="dialog-footer"
+          <DialogFooter
             style={{ display: "flex", gap: 8, alignItems: "center" }}
           >
             {/* Reclassify lives in the modal only (Bug 4c).
@@ -207,9 +211,8 @@ export default function CommentPreviewModal({
             >
               {t("ui.common.close", "Schließen")}
             </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

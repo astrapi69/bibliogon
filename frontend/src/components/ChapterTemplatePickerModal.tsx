@@ -3,7 +3,13 @@ import { api, ApiError, ChapterTemplate } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { useDialog } from "./AppDialog";
 import { notify } from "../utils/notify";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Download, Lock, Pencil, Trash2, Upload } from "lucide-react";
 import styles from "./ChapterTemplatePickerModal.module.css";
 import SaveAsChapterTemplateModal from "./SaveAsChapterTemplateModal";
@@ -143,26 +149,24 @@ export default function ChapterTemplatePickerModal({
   };
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(o) => {
         if (!o) handleClose();
       }}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content dialog-content-wide"
-          data-testid="chapter-template-picker"
-          aria-describedby={undefined}
-        >
-          <div className="dialog-header">
-            <Dialog.Title className="dialog-title">
+      <DialogContent
+        size="wide"
+        data-testid="chapter-template-picker"
+        aria-describedby={undefined}
+      >
+          <DialogHeader>
+            <DialogTitle>
               {t(
                 "ui.chapter_template_picker.title",
                 "Wähle eine Kapitelvorlage",
               )}
-            </Dialog.Title>
+            </DialogTitle>
             <button
               type="button"
               className="btn btn-ghost btn-sm"
@@ -185,7 +189,7 @@ export default function ChapterTemplatePickerModal({
               onChange={handleImportFile}
               data-testid="chapter-template-import-input"
             />
-          </div>
+          </DialogHeader>
 
           <div className={styles.body}>
             {templates === null && (
@@ -332,7 +336,7 @@ export default function ChapterTemplatePickerModal({
             )}
           </div>
 
-          <div className="dialog-footer">
+          <DialogFooter sticky>
             <button className="btn btn-ghost" onClick={handleClose}>
               {t("ui.common.cancel", "Abbrechen")}
             </button>
@@ -344,9 +348,8 @@ export default function ChapterTemplatePickerModal({
             >
               {t("ui.chapter_template_picker.insert", "Einfügen")}
             </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
+          </DialogFooter>
+        </DialogContent>
       {editingTemplate && (
         <SaveAsChapterTemplateModal
           open={!!editingTemplate}
@@ -358,6 +361,6 @@ export default function ChapterTemplatePickerModal({
           }}
         />
       )}
-    </Dialog.Root>
+    </Dialog>
   );
 }
