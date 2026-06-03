@@ -147,7 +147,13 @@ test.describe("Wizard Author-Dropdown (Bug 8 Phase 2)", () => {
             .evaluateAll((nodes) =>
                 nodes.map((n) => (n as HTMLOptionElement).value),
             )
-        expect(values).toEqual(["Alice", "Bob", "Carol"])
+        // The datalist is a documented union of article-authors +
+        // the global Authors-DB catalog (which is not reset between
+        // tests), so assert the article authors are all present
+        // rather than exclusive equality.
+        for (const expected of ["Alice", "Bob", "Carol"]) {
+            expect(values).toContain(expected)
+        }
     })
 
     test("typing a new name with checkbox CHECKED creates the Author in the DB", async ({
@@ -173,7 +179,7 @@ test.describe("Wizard Author-Dropdown (Bug 8 Phase 2)", () => {
         await page.getByTestId("convert-to-book-wizard-step-2-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-3-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-4-next").click()
-        await page.getByTestId("convert-to-book-wizard-review-confirm").click()
+        await page.getByTestId("convert-to-book-wizard-step-5-finish").click()
         // Wait for the success toast.
         await expect(
             page.getByTestId("convert-to-book-success-view-book"),
@@ -209,7 +215,7 @@ test.describe("Wizard Author-Dropdown (Bug 8 Phase 2)", () => {
         await page.getByTestId("convert-to-book-wizard-step-2-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-3-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-4-next").click()
-        await page.getByTestId("convert-to-book-wizard-review-confirm").click()
+        await page.getByTestId("convert-to-book-wizard-step-5-finish").click()
         await expect(
             page.getByTestId("convert-to-book-success-view-book"),
         ).toBeVisible()
@@ -245,7 +251,7 @@ test.describe("Wizard Author-Dropdown (Bug 8 Phase 2)", () => {
         await page.getByTestId("convert-to-book-wizard-step-2-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-3-skip").click()
         await page.getByTestId("convert-to-book-wizard-step-4-next").click()
-        await page.getByTestId("convert-to-book-wizard-review-confirm").click()
+        await page.getByTestId("convert-to-book-wizard-step-5-finish").click()
         await expect(
             page.getByTestId("convert-to-book-success-view-book"),
         ).toBeVisible()

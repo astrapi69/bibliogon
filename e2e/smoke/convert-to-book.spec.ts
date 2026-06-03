@@ -102,11 +102,16 @@ test.describe("Article-to-book conversion", () => {
                 "convert-to-book-wizard-selection-sort-strategy-trigger",
             )
             .click()
+        // force: the RadixSelect option portals inside the WizardShell
+        // dialog; Playwright's actionability check sees the dialog's
+        // aria-hidden background as intercepting pointer events even
+        // though the option is the topmost element at its coordinates
+        // (real users click it fine).
         await page
             .getByTestId(
                 "convert-to-book-wizard-selection-sort-strategy-item-title_asc",
             )
-            .click()
+            .click({force: true})
 
         // Verify every article appears as a sortable row.
         for (const article of [a, b, c]) {
@@ -305,10 +310,10 @@ test.describe("Article-to-book conversion", () => {
         const b = await seedArticle("Stability B")
         await page.goto("/articles")
         await page
-            .getByTestId(`article-select-checkbox-${a.id}`)
+            .getByTestId(`article-bulk-check-${a.id}`)
             .click()
         await page
-            .getByTestId(`article-select-checkbox-${b.id}`)
+            .getByTestId(`article-bulk-check-${b.id}`)
             .click()
         await page.getByTestId("article-bulk-convert-to-book").click()
         await expect(page.getByTestId("convert-to-book-wizard-dialog"))
@@ -352,7 +357,7 @@ test.describe("Article-to-book conversion", () => {
 
         // The pre-fix inline body button must NOT be present.
         await expect(
-            page.getByTestId("convert-to-book-wizard-review-confirm"),
+            page.getByTestId("convert-to-book-wizard-step-5-finish"),
         ).toHaveCount(0)
     })
 })

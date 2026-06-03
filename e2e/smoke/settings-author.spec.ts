@@ -52,8 +52,20 @@ test.describe("Settings - autoren tab (author profile)", () => {
 
         const root = page.getByTestId("author-settings");
         await expect(root).toBeVisible();
+        // Let the autoren tab settle (the AuthorsDatabase section
+        // fetches /api/authors) before filling, so a late re-render
+        // can't detach the just-filled input.
+        await page.waitForLoadState("networkidle");
 
-        await page.getByTestId("author-real-name").fill("E2E Author");
+        // Fill + verify the value stuck before saving. Under full-suite
+        // load a late StrictMode remount / config-prop re-init can
+        // detach the freshly-filled input and re-mount it empty, so the
+        // save would persist "". Retry until the value is stable.
+        const realName = page.getByTestId("author-real-name");
+        await expect(async () => {
+            await realName.fill("E2E Author");
+            await expect(realName).toHaveValue("E2E Author");
+        }).toPass({timeout: 10_000});
         await page.getByTestId("author-save").click();
 
         // Backend sees the new name. Use a poll because the save is
@@ -67,12 +79,17 @@ test.describe("Settings - autoren tab (author profile)", () => {
 
     test("pen-name add via Add button persists", async ({page}) => {
         await page.goto("/settings?tab=autoren");
+        await page.waitForLoadState("networkidle");
 
-        await page.getByTestId("author-pen-name-input").fill("E2E Pseudonym");
-        await page.getByTestId("author-pen-name-add").click();
-
-        // The new pen-name appears in the list immediately.
-        await expect(page.getByTestId("author-pen-name-0")).toContainText("E2E Pseudonym");
+        // Add + verify it stuck before saving (a late re-init can reset
+        // the pen-name list under full-suite load); retry until stable.
+        await expect(async () => {
+            await page.getByTestId("author-pen-name-input").fill("E2E Pseudonym");
+            await page.getByTestId("author-pen-name-add").click();
+            await expect(page.getByTestId("author-pen-name-0")).toContainText(
+                "E2E Pseudonym",
+            );
+        }).toPass({timeout: 10_000});
 
         // Save commits to the backend.
         await page.getByTestId("author-save").click();
@@ -84,6 +101,7 @@ test.describe("Settings - autoren tab (author profile)", () => {
     test("pen-name remove drops the entry on save", async ({page}) => {
         await patchAuthor({pen_names: ["Keep", "Drop"]});
         await page.goto("/settings?tab=autoren");
+        await page.waitForLoadState("networkidle");
 
         // Both seeded entries are present.
         await expect(page.getByTestId("author-pen-name-0")).toContainText("Keep");

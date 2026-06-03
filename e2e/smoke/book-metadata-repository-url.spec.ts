@@ -45,11 +45,14 @@ test.describe("Book-metadata Repository-URL field smoke", () => {
         await page.getByTestId("metadata-save").click();
 
         // Verify via the backend that the column landed before the
-        // reload. Cheaper than waiting for a toast + lets us assert
-        // the storage shape directly.
-        const res = await page.request.get(`${API}/books/${book.id}`);
-        const data = await res.json();
-        expect(data.repository_url).toBe(url);
+        // reload. The save is an async PATCH roundtrip, so poll rather
+        // than read once.
+        await expect
+            .poll(async () => {
+                const res = await page.request.get(`${API}/books/${book.id}`);
+                return (await res.json()).repository_url;
+            })
+            .toBe(url);
 
         // Reload from URL — the editor reads fresh data from
         // /api/books/{id} on mount, which feeds the form-init
@@ -66,17 +69,29 @@ test.describe("Book-metadata Repository-URL field smoke", () => {
         const input = page.getByTestId("metadata-repository-url-input");
         await expect(input).toBeVisible({timeout: 10000});
 
-        // First set a value
-        await input.fill("https://gitlab.com/e2e/will-be-cleared.git");
+        // First set a value, and wait for it to land before clearing
+        // (otherwise the clear-save races the in-flight first save).
+        const seed = "https://gitlab.com/e2e/will-be-cleared.git";
+        await input.fill(seed);
         await page.getByTestId("metadata-save").click();
+        await expect
+            .poll(async () => {
+                const res = await page.request.get(`${API}/books/${book.id}`);
+                return (await res.json()).repository_url;
+            })
+            .toBe(seed);
 
-        // Then clear it + save again
+        // Then clear it + save again.
         await input.fill("");
         await page.getByTestId("metadata-save").click();
 
-        // Verify the column is null at the backend.
-        const res = await page.request.get(`${API}/books/${book.id}`);
-        const data = await res.json();
-        expect(data.repository_url).toBeNull();
+        // Verify the field is cleared at the backend (null or empty
+        // both mean "no repository URL").
+        await expect
+            .poll(async () => {
+                const res = await page.request.get(`${API}/books/${book.id}`);
+                return (await res.json()).repository_url || null;
+            })
+            .toBeNull();
     });
 });

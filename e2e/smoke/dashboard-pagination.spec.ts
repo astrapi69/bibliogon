@@ -95,10 +95,14 @@ test.describe("Dashboard pagination (Books)", () => {
         await page.getByTestId("dashboard-page-size-trigger").click();
         await page.getByTestId("dashboard-page-size-item-50").click();
 
-        // Verify the PATCH landed by re-reading from the backend.
-        const res = await fetch(`${API}/settings/app`);
-        const config = await res.json();
-        expect(config.ui?.dashboard?.books_page_size).toBe(50);
+        // Verify the PATCH landed by re-reading from the backend
+        // (poll: the select onChange fires an async settings PATCH).
+        await expect
+            .poll(async () => {
+                const res = await fetch(`${API}/settings/app`);
+                return (await res.json()).ui?.dashboard?.books_page_size;
+            })
+            .toBe(50);
     });
 });
 
@@ -145,8 +149,11 @@ test.describe("Dashboard pagination (Articles)", () => {
         await page.getByTestId("article-list-page-size-trigger").click();
         await page.getByTestId("article-list-page-size-item-100").click();
 
-        const res = await fetch(`${API}/settings/app`);
-        const config = await res.json();
-        expect(config.ui?.dashboard?.articles_page_size).toBe(100);
+        await expect
+            .poll(async () => {
+                const res = await fetch(`${API}/settings/app`);
+                return (await res.json()).ui?.dashboard?.articles_page_size;
+            })
+            .toBe(100);
     });
 });
