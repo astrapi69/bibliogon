@@ -236,6 +236,15 @@ How to apply when changing a visual:
 
 This rule is the visual-layer counterpart of the Recurring-Component Unification Rule: that one unifies component *shape*; this one unifies component *look*.
 
+### How Tailwind v4 + shadcn/ui fit this rule (adopted 2026-06-03)
+
+Tailwind utilities are a sanctioned tool for NEW component work and do NOT weaken the CSS-first rule, because they are **token-mapped, not a parallel system**:
+
+- `frontend/src/styles/tailwind.css` maps every Tailwind color utility onto the existing `var(--*)` tokens (`bg-primary` → `var(--accent)`, `text-foreground` → `var(--text)`, …) via `@theme inline`, and clears Tailwind's default palette (`--color-*: initial`) so a hardcoded-color escape hatch like `bg-red-500` cannot be generated. A Tailwind color utility is therefore just another way to reference a theme token — `make verify-theme` stays authoritative.
+- The "no hardcoded hex / no inline `style` for themable values" prohibitions are unchanged. `bg-[#16a34a]` (arbitrary hex) is the Tailwind-shaped version of the same violation and is forbidden; use the semantic utility (`bg-success`) or a `[prop:var(--token)]` arbitrary value for non-color tokens (`rounded-[var(--radius-md)]`).
+- The global-class-first ordering (1 → 2 → 3 above) still governs EXISTING `global.css`-styled surfaces. Tailwind/shadcn is for new reusable primitives (`src/components/ui/*`), not for re-skinning existing surfaces piecemeal (that drifts look across screens — exactly what this rule prevents).
+- Preflight is omitted, so Tailwind adds no base reset; `global.css` remains the base layer.
+
 ## Test Quality Rule
 
 Passing unit tests != working feature. Every critical user flow needs at
@@ -312,7 +321,7 @@ Chain: BibliogonError -> API response (detail + traceback) -> ApiError -> toast 
 New dependencies only after asking. Existing stack:
 
 Backend: FastAPI, SQLAlchemy, Pydantic v2, pluginforge, manuscripta, PyYAML, markdown (MD->HTML)
-Frontend: React 18, TypeScript, TipTap (15+1 extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
+Frontend: React 18, TypeScript, TipTap (15+1 extensions), Vite, Radix UI, Tailwind v4 (@tailwindcss/vite, token-mapped, Preflight-omitted) + shadcn/ui (clsx + tailwind-merge), @dnd-kit, Lucide, react-toastify
 Testing: pytest, Playwright, Vitest, mutmut (Python mutation testing)
 Linting/formatting: ruff (Python), ESLint + Prettier (TypeScript), pre-commit
 Tooling: Poetry, npm, Docker, Make
