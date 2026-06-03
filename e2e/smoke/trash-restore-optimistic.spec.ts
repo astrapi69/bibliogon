@@ -60,7 +60,9 @@ test.describe("Articles trash - optimistic restore", () => {
             // any "row only disappears after the network returns"
             // regression visible as a hang.
             await restorePending;
-            await route.continue();
+            // Swallow "already handled": page.unroute below can flush
+            // the held route before this resumes.
+            await route.continue().catch(() => {});
         });
 
         const restoreButton = page.getByTestId(`article-trash-restore-${article.id}`);
@@ -128,7 +130,9 @@ test.describe("Books trash - optimistic restore", () => {
         });
         await page.route(`**/api/books/trash/${book.id}/restore`, async (route) => {
             await restorePending;
-            await route.continue();
+            // Swallow "already handled": page.unroute below can flush
+            // the held route before this resumes.
+            await route.continue().catch(() => {});
         });
 
         const restoreButton = page.getByTestId(`trash-restore-${book.id}`);

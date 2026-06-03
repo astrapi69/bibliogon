@@ -182,12 +182,14 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         await page.waitForURL(/\/articles\/[a-z0-9]+/i);
         const id = page.url().split("/").pop()!;
 
-        // Back to the list.
+        // Back to the list. Wait for the row to render before probing
+        // the badge — isVisible() does not auto-wait, so a still-
+        // loading list would make both probes false.
         await page.goto("/articles");
+        await expect(page.getByTestId(`article-bulk-check-${id}`)).toBeVisible();
 
-        // The list-row badge is present regardless of view-mode
-        // (grid: ``article-card-type-{id}``; list:
-        // ``article-list-row-type-{id}``). Probe both.
+        // The badge is present regardless of view-mode (grid:
+        // ``article-card-type-{id}``; list: ``article-list-row-type-{id}``).
         const cardBadge = page.getByTestId(`article-card-type-${id}`);
         const rowBadge = page.getByTestId(`article-list-row-type-${id}`);
 

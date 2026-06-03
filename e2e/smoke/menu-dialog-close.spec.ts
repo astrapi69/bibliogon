@@ -75,7 +75,7 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
             .catch(() => page.keyboard.press("Escape"));
     });
 
-    test("BookCard kebab: move-to-trash closes menu cleanly", async ({page}) => {
+    test("BookCard kebab: permanent-delete closes menu before AppDialog", async ({page}) => {
         const book = await postJson<{id: string}>("/books", {
             title: "Menu-close regression book",
             author: "Asterios",
@@ -88,13 +88,16 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
         // Open the kebab menu.
         await page.getByTestId(`book-card-menu-${book.id}`).click();
 
-        // The menu's items are now visible.
-        const trashItem = page.getByTestId(`book-card-menu-delete-${book.id}`);
-        await expect(trashItem).toBeVisible({timeout: 3000});
-
-        // Click "In den Papierkorb" → triggers an AppDialog confirm
-        // (Dashboard.handleDelete).
-        await trashItem.click();
+        // Use the permanent-delete item: book move-to-trash
+        // (Dashboard.handleDelete) deletes immediately with NO confirm
+        // dialog, so it can't pin "menu closes before dialog". The
+        // live card passes onDeletePermanent, which opens an AppDialog
+        // confirm — the same Bug-6 shape as the ArticleCard test above.
+        const permanentItem = page.getByTestId(
+            `book-card-menu-delete-permanent-${book.id}`,
+        );
+        await expect(permanentItem).toBeVisible({timeout: 3000});
+        await permanentItem.click();
 
         // The AppDialog confirm appears.
         const dialog = page.getByRole("dialog");
@@ -103,7 +106,7 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
         // CRITICAL Bug 6 assertion: the menu's CONTENT must be gone.
         // Before commit 02fc66b, the menu lingered alongside the
         // dialog. Now Radix auto-closes the menu on item-select.
-        await expect(trashItem).not.toBeVisible({timeout: 3000});
+        await expect(permanentItem).not.toBeVisible({timeout: 3000});
 
         // Cancel out of the confirm to leave the test fixture clean.
         await dialog
