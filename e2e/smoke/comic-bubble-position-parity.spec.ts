@@ -64,13 +64,22 @@ test.describe("Comic bubble editor↔PDF position parity", () => {
         // a bubble at the test position via the API (faster + more
         // reliable than the click-to-add-bubble UI flow which is
         // sensitive to selection state).
-        const panelsRes = await fetch(`${API}/books/${book.id}/comic-panels`)
-        const panels = (await panelsRes.json()) as Array<{id: string}>
-        if (panels.length === 0) {
+        // Read the created panel's id from the DOM. There is no flat
+        // "all panels for a book" list endpoint (panels are page-
+        // scoped: /comic-pages/{page_id}/panels); the panel root
+        // carries a comic-panel-{id} testid.
+        const panelEl = page
+            .locator(
+                '[data-testid^="comic-panel-"]:not([data-testid*="-image-"]):not([data-testid*="-bubble-"])',
+            )
+            .first()
+        if (!(await panelEl.isVisible().catch(() => false))) {
             test.skip(true, "Panel creation produced no panel — backend skip")
             return
         }
-        const panelId = panels[0].id
+        const panelTestId = (await panelEl.getAttribute("data-testid")) ?? ""
+        const panelId = panelTestId.replace("comic-panel-", "")
+        expect(panelId).not.toBe("")
         await fetch(
             `${API}/books/${book.id}/comic-panels/${panelId}/bubbles`,
             {
@@ -113,13 +122,20 @@ test.describe("Comic bubble editor↔PDF position parity", () => {
             await addPanelBtn.click()
         }
 
-        const panelsRes = await fetch(`${API}/books/${book.id}/comic-panels`)
-        const panels = (await panelsRes.json()) as Array<{id: string}>
-        if (panels.length === 0) {
+        // Read the panel id from the DOM (no flat comic-panels list
+        // endpoint; panels are page-scoped).
+        const panelEl = page
+            .locator(
+                '[data-testid^="comic-panel-"]:not([data-testid*="-image-"]):not([data-testid*="-bubble-"])',
+            )
+            .first()
+        if (!(await panelEl.isVisible().catch(() => false))) {
             test.skip(true, "No panel created")
             return
         }
-        const panelId = panels[0].id
+        const panelTestId = (await panelEl.getAttribute("data-testid")) ?? ""
+        const panelId = panelTestId.replace("comic-panel-", "")
+        expect(panelId).not.toBe("")
 
         for (const pos of KNOWN_POSITIONS) {
             await fetch(
