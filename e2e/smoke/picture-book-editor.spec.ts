@@ -186,7 +186,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Autorenname oder Pen Name")
             .fill("Smoke Author")
-        await page.getByText("Erstellen").click()
+        await page.getByTestId("create-book-submit").click()
 
         // PageEditor mounts at /book/{id}.
         await expect(page.getByTestId("page-editor-root")).toBeVisible()
@@ -225,7 +225,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Autorenname oder Pen Name")
             .fill("Smoke Author")
-        await page.getByText("Erstellen").click()
+        await page.getByTestId("create-book-submit").click()
 
         // Prose books stay on the Dashboard (no auto-navigate).
         await expect(page.getByTestId("dashboard-loading")).toHaveCount(0)
@@ -424,7 +424,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Autorenname oder Pen Name")
             .fill("Author")
-        await page.getByText("Erstellen").click()
+        await page.getByTestId("create-book-submit").click()
 
         // Navigate to the book; prose flow stays on dashboard after
         // create, so click the book card to open it.
