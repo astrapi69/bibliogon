@@ -11,6 +11,7 @@ import GetStarted from "./pages/GetStarted";
 // Dialog->Pages migration: new full-page surfaces are lazy-loaded so
 // they create their own chunks (the rest of the routes stay eager).
 const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
+const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
@@ -151,6 +152,7 @@ export default function App() {
                 <Route path="/books/new" element={<ErrorBoundary surface="create-book"><CreateBookPage/></ErrorBoundary>}/>
                 <Route path="/book/:bookId" element={<ErrorBoundary surface="book-editor"><BookEditor/></ErrorBoundary>}/>
                 <Route path="/articles" element={<ErrorBoundary surface="article-list"><ArticleList/></ErrorBoundary>}/>
+                <Route path="/articles/new" element={<ErrorBoundary surface="create-article"><CreateArticlePage/></ErrorBoundary>}/>
                 <Route path="/articles/import/medium" element={<ErrorBoundary surface="medium-import"><MediumImportPage/></ErrorBoundary>}/>
                 <Route path="/articles/:id" element={<ErrorBoundary surface="article-editor"><ArticleEditor/></ErrorBoundary>}/>
                 <Route path="/settings" element={<ErrorBoundary surface="settings"><Settings/></ErrorBoundary>}/>

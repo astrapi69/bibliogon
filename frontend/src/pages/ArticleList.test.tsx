@@ -326,16 +326,18 @@ describe("ArticleList", () => {
         expect(mockList).toHaveBeenCalledTimes(1);
     });
 
-    it("New Article creates and navigates to the new editor", async () => {
+    it("New Article navigates to the create page", async () => {
+        // Dialog->Pages migration (C2): the split-button no longer
+        // creates inline; it routes to the /articles/new create page.
         await renderList([makeArticle()]);
         await waitFor(() =>
             expect(screen.getByTestId("article-list-new")).toBeInTheDocument(),
         );
-        mockCreate.mockResolvedValue(makeArticle({ id: "fresh-id" }));
         fireEvent.click(screen.getByTestId("article-list-new"));
         await waitFor(() =>
-            expect(navigateMock).toHaveBeenCalledWith("/articles/fresh-id"),
+            expect(navigateMock).toHaveBeenCalledWith("/articles/new"),
         );
+        expect(mockCreate).not.toHaveBeenCalled();
     });
 
     it("trash view back-button returns to live list", async () => {
@@ -416,17 +418,17 @@ describe("ArticleList", () => {
         ).toBeInTheDocument();
     });
 
-    it("empty-state CTA also creates + navigates", async () => {
+    it("empty-state CTA also navigates to the create page", async () => {
         await renderList([]);
         await waitFor(() =>
             expect(
                 screen.getByTestId("article-list-empty-cta"),
             ).toBeInTheDocument(),
         );
-        mockCreate.mockResolvedValue(makeArticle({ id: "first" }));
         fireEvent.click(screen.getByTestId("article-list-empty-cta"));
         await waitFor(() =>
-            expect(navigateMock).toHaveBeenCalledWith("/articles/first"),
+            expect(navigateMock).toHaveBeenCalledWith("/articles/new"),
         );
+        expect(mockCreate).not.toHaveBeenCalled();
     });
 });

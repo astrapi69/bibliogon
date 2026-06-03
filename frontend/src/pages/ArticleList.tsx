@@ -29,12 +29,9 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
-import { api, ApiError, Article, ContentType, BookDetail } from "../api/client";
+import { api, ApiError, Article, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import {
-    useContentTypes,
-    contentTypeDefaultTitleKey,
-} from "../hooks/useContentTypes";
+import { useContentTypes } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
@@ -82,7 +79,6 @@ export default function ArticleList() {
     const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [creating, setCreating] = useState(false);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.articles_trash_view``). In-trash toggles
@@ -606,58 +602,6 @@ export default function ArticleList() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
-    async function handleCreate(articleType?: ContentType): Promise<void> {
-        setCreating(true);
-        try {
-            // Default author from app settings - mirrors CreateBookModal.
-            // Failure is silent: blank-author article is fine, the user
-            // can fill it in the editor sidebar.
-            let defaultAuthor: string | null = null;
-            try {
-                const config = await api.settings.getApp();
-                const authorConfig = (config.author || {}) as Record<
-                    string,
-                    unknown
-                >;
-                const realName = (authorConfig.name as string) || "";
-                if (realName) defaultAuthor = realName;
-            } catch {
-                // ignore; create with empty author
-            }
-            // ARTICLE-TYPES-SSOT-01 C5: optional content_type wired
-            // from the split-button selection. When omitted, the
-            // backend's column default ("blogpost") applies.
-            // Default title matches the selected type (e.g. "Neues
-            // Tutorial") via the registry's default_title_key; falls
-            // back to the generic title when the type omits the key
-            // or no type is selected.
-            const genericTitle = t("ui.articles.default_title", "Neuer Artikel");
-            const titleKey = articleType
-                ? contentTypeDefaultTitleKey(articleTypesSnapshot, articleType)
-                : null;
-            const defaultTitle = titleKey ? t(titleKey, genericTitle) : genericTitle;
-            const fresh = await api.articles.create({
-                title: defaultTitle,
-                language: "de",
-                author: defaultAuthor,
-                ...(articleType ? {content_type: articleType} : {}),
-            });
-            navigate(`/articles/${fresh.id}`);
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t(
-                        "ui.articles.create_error",
-                        "Konnte Artikel nicht erstellen.",
-                    ),
-                    err,
-                );
-            }
-        } finally {
-            setCreating(false);
-        }
-    }
-
     return (
         <div data-testid="article-list-page" className={layout.page}>
             <header className={layout.appHeader} data-testid="article-list-header">
@@ -686,7 +630,6 @@ export default function ArticleList() {
                         <SplitButton
                             buttonClass="btn btn-primary"
                             variant="primary"
-                            disabled={creating}
                             primaryContent={
                                 <>
                                     <Plus size={16} />
@@ -695,7 +638,7 @@ export default function ArticleList() {
                                     </span>
                                 </>
                             }
-                            onPrimaryClick={() => void handleCreate()}
+                            onPrimaryClick={() => navigate("/articles/new")}
                             chevronTooltip={t(
                                 "ui.articles.new_more_tooltip",
                                 "Weitere Artikel-Arten",
@@ -722,8 +665,8 @@ export default function ArticleList() {
                                             </>
                                         ),
                                         onSelect: () =>
-                                            void handleCreate(
-                                                at.id as ContentType,
+                                            navigate(
+                                                `/articles/new?type=${at.id}`,
                                             ),
                                     }),
                                 )}
@@ -1055,7 +998,7 @@ export default function ArticleList() {
                     {t("ui.common.loading", "Laedt...")}
                 </p>
             ) : articles.length === 0 ? (
-                <ArticleListEmptyState onCreate={() => void handleCreate()} />
+                <ArticleListEmptyState onCreate={() => navigate("/articles/new")} />
             ) : filters.filteredArticles.length === 0 ? (
                 <EmptyState
                     testId="article-list-filter-empty"
