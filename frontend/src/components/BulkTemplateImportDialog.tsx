@@ -1,5 +1,13 @@
 import {useState} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog"
 import {X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
 import {Toggle} from "./settings/Toggle"
@@ -100,27 +108,25 @@ export default function BulkTemplateImportDialog({
     }
 
     return (
-        <Dialog.Root
+        <Dialog
             open={open}
             onOpenChange={(o) => {
                 if (!o) close()
             }}
         >
-            <Dialog.Portal>
-                <Dialog.Overlay className="dialog-overlay"/>
-                <Dialog.Content
-                    className="dialog-content dialog-content-wide"
-                    data-testid="bulk-template-import-dialog"
-                    onEscapeKeyDown={close}
-                >
-                    <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">
+            <DialogContent
+                size="wide"
+                data-testid="bulk-template-import-dialog"
+                onEscapeKeyDown={close}
+            >
+                    <DialogHeader>
+                        <DialogTitle>
                             {t(
                                 "ui.ai_template.bulk_import.title",
                                 "Bulk import filled templates",
                             )}
-                        </Dialog.Title>
-                        <Dialog.Close asChild>
+                        </DialogTitle>
+                        <DialogClose asChild>
                             <button
                                 type="button"
                                 className="btn-icon"
@@ -129,14 +135,14 @@ export default function BulkTemplateImportDialog({
                             >
                                 <X size={16}/>
                             </button>
-                        </Dialog.Close>
-                    </div>
-                    <Dialog.Description className="dialog-message">
+                        </DialogClose>
+                    </DialogHeader>
+                    <DialogDescription>
                         {t(
                             "ui.ai_template.bulk_import.description",
                             "Drop a .zip of filled .biblio.yaml files. Each entry is matched to its target record by reference.id; up to 50 entries per batch.",
                         )}
-                    </Dialog.Description>
+                    </DialogDescription>
                     <div style={{marginTop: 12}}>
                         <TemplateImportDropZone
                             mode="bulk"
@@ -167,7 +173,7 @@ export default function BulkTemplateImportDialog({
                             )}
                         />
                     </div>
-                    <div className="dialog-footer" style={{marginTop: 16}}>
+                    <DialogFooter sticky>
                         <button
                             type="button"
                             className="btn btn-ghost"
@@ -186,9 +192,8 @@ export default function BulkTemplateImportDialog({
                         >
                             {t("ui.ai_template.bulk_import.submit", "Import")}
                         </button>
-                    </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+                    </DialogFooter>
+                </DialogContent>
+        </Dialog>
     )
 }
