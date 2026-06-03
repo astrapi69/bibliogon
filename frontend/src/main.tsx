@@ -2,6 +2,10 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import App from "./App";
+// Tailwind utilities (token-mapped, Preflight-omitted) load first so
+// global.css -- which is unlayered and therefore outranks Tailwind's
+// layered utilities -- keeps final say over any existing surface.
+import "./styles/tailwind.css";
 import "./styles/global.css";
 import { verifyBackendVersion } from "./utils/versionCheck";
 

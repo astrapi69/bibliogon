@@ -41,7 +41,7 @@ On a conflict between CLAUDE.md and the rules, the rules win.
 ## Tech stack
 
 - **Backend:** Python 3.11+, FastAPI, SQLAlchemy 2.0, SQLite, Pydantic v2, Poetry
-- **Frontend:** React 18, TypeScript (strict), TipTap (15+1 extensions), Vite, Radix UI, @dnd-kit, Lucide, react-toastify
+- **Frontend:** React 18, TypeScript (strict), TipTap (15+1 extensions), Vite, Radix UI, Tailwind v4 (token-mapped, Preflight-omitted) + shadcn/ui, @dnd-kit, Lucide, react-toastify
 - **Plugins:** pluginforge ^0.10.0 (PyPI), entry points, YAML config
 - **Export:** manuscripta ^0.9.0 (PyPI), Pandoc, write-book-template structure. All TTS engines delegate to the manuscripta adapter.
 - **Testing:** pytest, Vitest, Playwright, mutmut, Stryker
