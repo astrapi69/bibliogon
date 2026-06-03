@@ -1,5 +1,13 @@
 import {useState, useEffect, useCallback} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription,
+    DialogFooter,
+    DialogClose,
+} from "@/components/ui/dialog"
 import {X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
 import type {AiFillRequest} from "../api/client"
@@ -223,17 +231,15 @@ export default function FieldClassDialog({
     const canSubmit = selected.size > 0 && !loading
 
     return (
-        <Dialog.Root open={open} onOpenChange={(o) => { if (!o) onClose() }}>
-            <Dialog.Portal>
-                <Dialog.Overlay className="dialog-overlay"/>
-                <Dialog.Content
-                    className="dialog-content dialog-content-wide"
-                    data-testid="field-class-dialog"
-                    onEscapeKeyDown={onClose}
-                >
-                    <div className="dialog-header">
-                        <Dialog.Title className="dialog-title">{dialogTitle}</Dialog.Title>
-                        <Dialog.Close asChild>
+        <Dialog open={open} onOpenChange={(o) => { if (!o) onClose() }}>
+            <DialogContent
+                size="wide"
+                data-testid="field-class-dialog"
+                onEscapeKeyDown={onClose}
+            >
+                    <DialogHeader>
+                        <DialogTitle>{dialogTitle}</DialogTitle>
+                        <DialogClose asChild>
                             <button
                                 className="btn-icon"
                                 onClick={onClose}
@@ -241,15 +247,15 @@ export default function FieldClassDialog({
                             >
                                 <X size={16}/>
                             </button>
-                        </Dialog.Close>
-                    </div>
+                        </DialogClose>
+                    </DialogHeader>
 
-                    <Dialog.Description className="dialog-message">
+                    <DialogDescription>
                         {t(
                             "ui.ai_template.fill_dialog.description",
                             "Select which field-classes the AI should fill. Each class is one LLM call.",
                         )}
-                    </Dialog.Description>
+                    </DialogDescription>
 
                     <div
                         style={{display: "flex", flexDirection: "column", gap: 8, marginTop: 12}}
@@ -334,7 +340,7 @@ export default function FieldClassDialog({
                         </label>
                     </div>
 
-                    <div className="dialog-footer" style={{marginTop: 16}}>
+                    <DialogFooter sticky>
                         <button
                             className="btn btn-ghost"
                             onClick={onClose}
@@ -351,9 +357,8 @@ export default function FieldClassDialog({
                         >
                             {submitText}
                         </button>
-                    </div>
-                </Dialog.Content>
-            </Dialog.Portal>
-        </Dialog.Root>
+                    </DialogFooter>
+                </DialogContent>
+        </Dialog>
     )
 }

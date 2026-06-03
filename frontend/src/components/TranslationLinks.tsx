@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogClose,
+} from "@/components/ui/dialog";
 import { Globe, Link2, Link2Off, Loader2, Plus, X } from "lucide-react";
 import {
   api,
@@ -298,28 +305,26 @@ function LinkPickerDialog({
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content dialog-content-wide"
-          data-testid="translation-link-picker"
-          aria-describedby={undefined}
-        >
-          <div className="dialog-header">
-            <Dialog.Title className="dialog-title">
+    <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
+      <DialogContent
+        size="wide"
+        data-testid="translation-link-picker"
+        aria-describedby={undefined}
+      >
+          <DialogHeader>
+            <DialogTitle>
               {t(
                 "ui.translations.link_dialog_title",
                 "Bücher als Übersetzungen verknüpfen",
               )}
-            </Dialog.Title>
-            <Dialog.Close
+            </DialogTitle>
+            <DialogClose
               className="dialog-close"
               aria-label={t("ui.common.close", "Schließen")}
             >
               <X size={18} />
-            </Dialog.Close>
-          </div>
+            </DialogClose>
+          </DialogHeader>
           {loading ? (
             <div
               data-testid="translation-link-picker-loading"
@@ -375,7 +380,7 @@ function LinkPickerDialog({
               ))}
             </ul>
           )}
-          <div className="dialog-footer">
+          <DialogFooter sticky>
             <button
               type="button"
               className="btn btn-secondary"
@@ -398,9 +403,8 @@ function LinkPickerDialog({
               )}
               {t("ui.translations.link_confirm", "Verknüpfen")}
             </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </DialogFooter>
+        </DialogContent>
+    </Dialog>
   );
 }
