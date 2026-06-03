@@ -72,15 +72,20 @@ test.describe("Editor author field — Pattern A Datalist", () => {
         // Pattern B.
         await expect(authorInput).toHaveAttribute("list", /metadata-author-suggestions/i)
 
-        // Datalist exists + carries the pre-seeded author.
+        // Datalist exists + carries the pre-seeded author. The options
+        // come from BookMetadataEditor's async /api/authors fetch, so
+        // poll until the option appears rather than reading once.
         const datalist = page.getByTestId("metadata-author-datalist")
         await expect(datalist).toBeAttached()
-        const datalistValues = await datalist.evaluate((el) =>
-            Array.from(el.querySelectorAll("option")).map(
-                (o) => (o as HTMLOptionElement).value,
-            ),
-        )
-        expect(datalistValues).toContain("Pre-Seeded Author")
+        await expect
+            .poll(async () =>
+                datalist.evaluate((el) =>
+                    Array.from(el.querySelectorAll("option")).map(
+                        (o) => (o as HTMLOptionElement).value,
+                    ),
+                ),
+            )
+            .toContain("Pre-Seeded Author")
 
         // Type a brand new name + verify the checkbox surfaces.
         await authorInput.fill("Brand New Smoke Author")

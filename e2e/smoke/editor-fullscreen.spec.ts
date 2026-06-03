@@ -28,21 +28,26 @@
  * convention is Claude Code writes specs, Aster runs them.
  */
 
-import {test, expect} from "../fixtures/base";
+import {
+    test,
+    expect,
+    createBook,
+    createChapter,
+    createPictureBook,
+    createComicBook,
+} from "../fixtures/base";
 
 test.describe("Editor fullscreen toggles (EDITOR-FULLSCREEN-NATIVE-01)", () => {
     test("Editor.tsx Toolbar renders toolbar-fullscreen with ARIA shortcuts", async ({
         page,
     }) => {
-        // Pick any existing book + chapter so Editor.tsx mounts.
-        // The first book in the dashboard list is sufficient.
-        await page.goto("/");
-        const firstCard = page.locator('[data-testid^="book-card-"]').first();
-        await firstCard.click();
+        // Create a prose book + chapter via API (resetDb wipes the
+        // dashboard each test), then open it so Editor.tsx mounts.
+        const book = await createBook("Fullscreen Prose");
+        await createChapter(book.id, "Chapter 1", "<p>Body</p>");
+        await page.goto(`/book/${book.id}`);
 
         const fsButton = page.getByTestId("toolbar-fullscreen");
-        // Editor.tsx may take a moment to mount the toolbar after
-        // chapter load.
         await expect(fsButton).toBeVisible({timeout: 8000});
         await expect(fsButton).toHaveAttribute(
             "aria-keyshortcuts",
@@ -54,27 +59,8 @@ test.describe("Editor fullscreen toggles (EDITOR-FULLSCREEN-NATIVE-01)", () => {
     test("PageEditor renders page-editor-fullscreen with ARIA shortcuts", async ({
         page,
     }) => {
-        // Picture-book editor mounts when the user opens a book
-        // with book_type === "picture_book". The smoke fixture
-        // does not guarantee one exists; the test creates one
-        // via the dashboard split-button's picture-book menu
-        // item.
-        await page.goto("/");
-        const chevron = page.getByTestId("new-book-chevron");
-        if (!(await chevron.isVisible())) {
-            test.skip(true, "split-button chevron not available in fixture");
-            return;
-        }
-        await chevron.click();
-        await page.getByTestId("new-book-menu-item-picture-book").click();
-        // Fill the create-book modal minimum, submit, land in
-        // PageEditor. Use whatever title input is canonical in
-        // the modal.
-        const titleInput = page.locator(
-            '[data-testid="create-book-title"]',
-        );
-        await titleInput.fill(`fullscreen-spec ${Date.now()}`);
-        await page.getByTestId("create-book-submit").click();
+        const book = await createPictureBook("Fullscreen Picture Book");
+        await page.goto(`/book/${book.id}`);
 
         const fsButton = page.getByTestId("page-editor-fullscreen");
         await expect(fsButton).toBeVisible({timeout: 8000});
@@ -88,22 +74,8 @@ test.describe("Editor fullscreen toggles (EDITOR-FULLSCREEN-NATIVE-01)", () => {
     test("ComicBookEditor renders comic-book-editor-fullscreen with ARIA shortcuts", async ({
         page,
     }) => {
-        await page.goto("/");
-        const chevron = page.getByTestId("new-book-chevron");
-        if (!(await chevron.isVisible())) {
-            test.skip(true, "split-button chevron not available in fixture");
-            return;
-        }
-        await chevron.click();
-        const comicItem = page.getByTestId("new-book-menu-item-comic-book");
-        if (!(await comicItem.isVisible())) {
-            test.skip(true, "comic-book menu item not registered in this build");
-            return;
-        }
-        await comicItem.click();
-        const titleInput = page.locator('[data-testid="create-book-title"]');
-        await titleInput.fill(`comic-fs-spec ${Date.now()}`);
-        await page.getByTestId("create-book-submit").click();
+        const book = await createComicBook("Fullscreen Comic Book");
+        await page.goto(`/book/${book.id}`);
 
         const fsButton = page.getByTestId("comic-book-editor-fullscreen");
         await expect(fsButton).toBeVisible({timeout: 8000});
