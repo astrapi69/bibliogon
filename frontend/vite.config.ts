@@ -1,6 +1,8 @@
 /// <reference types="vitest" />
+import {fileURLToPath, URL} from "node:url";
 import {defineConfig} from "vite";
 import react from "@vitejs/plugin-react";
+import tailwindcss from "@tailwindcss/vite";
 import {VitePWA} from "vite-plugin-pwa";
 
 import pkg from "./package.json" with {type: "json"};
@@ -13,8 +15,17 @@ export default defineConfig({
         // re-declaring a hardcoded constant.
         __APP_VERSION__: JSON.stringify(pkg.version),
     },
+    resolve: {
+        // ``@`` -> ``src`` alias for the shadcn/ui convention
+        // (``@/components``, ``@/lib/utils``). Vitest shares this
+        // config, so the alias resolves in tests too.
+        alias: {
+            "@": fileURLToPath(new URL("./src", import.meta.url)),
+        },
+    },
     plugins: [
         react(),
+        tailwindcss(),
         VitePWA({
             registerType: "autoUpdate",
             devOptions: {

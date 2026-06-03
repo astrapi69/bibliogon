@@ -1,0 +1,82 @@
+/*
+ * Tailwind v4 entry — Tailwind + shadcn/ui adoption, Phase A.
+ *
+ * Preflight is INTENTIONALLY OMITTED. Tailwind's base reset would
+ * restyle every existing surface (headings, lists, buttons, borders);
+ * Bibliogon already has a complete base in ``global.css``. So we import
+ * only the ``theme`` + ``utilities`` layers here. Consequences:
+ *   - Existing app styling is untouched; Tailwind contributes only
+ *     opt-in utility classes for NEW component work.
+ *   - Utilities live in ``layer(utilities)``; ``global.css`` is
+ *     unlayered, and unlayered rules outrank layered ones in the
+ *     cascade. So a Tailwind utility can never silently override an
+ *     existing ``global.css`` rule -> safe co-existence by construction.
+ * Adopting Preflight (and migrating the base layer) is a deliberate
+ * later phase, not Phase A.
+ */
+@layer theme, base, components, utilities;
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities);
+
+/*
+ * Token bridge. ``inline`` makes every generated utility emit the
+ * referenced custom property AT THE POINT OF USE rather than capturing
+ * a static value, so runtime palette + dark-mode switching (driven by
+ * the ``[data-app-theme]`` / ``[data-theme="dark"]`` attributes that
+ * global.css keys off) propagates live through the utilities.
+ */
+@theme inline {
+    /*
+     * Wipe Tailwind's default color palette. The ONLY color utilities
+     * that exist are the semantic, token-mapped ones below -- so a
+     * stray ``bg-red-500`` / ``text-blue-600`` escape hatch is simply
+     * not generatable. Color stays single-sourced in global.css, and
+     * ``make verify-theme`` (which audits global.css tokens + WCAG
+     * contrast) remains authoritative for the whole UI.
+     * ``transparent`` / ``current`` / ``inherit`` are Tailwind
+     * built-ins and remain available regardless of this reset.
+     */
+    --color-*: initial;
+
+    /*
+     * shadcn/ui canonical semantic names, each aliased onto a Bibliogon
+     * design token. shadcn components reference these names verbatim
+     * (``bg-background``, ``text-foreground``, ``bg-primary``, ...), so
+     * they theme correctly across all 12 variants with zero hardcoded
+     * color. The shadcn names are pure aliases; the hex still lives
+     * only in global.css.
+     */
+    --color-background: var(--bg-primary);
+    --color-foreground: var(--text);
+
+    --color-card: var(--bg-card);
+    --color-card-foreground: var(--text);
+    --color-popover: var(--bg-card);
+    --color-popover-foreground: var(--text);
+
+    --color-primary: var(--accent);
+    --color-primary-foreground: var(--btn-primary-text);
+    --color-secondary: var(--surface-2);
+    --color-secondary-foreground: var(--text);
+
+    --color-muted: var(--bg-secondary);
+    --color-muted-foreground: var(--text-muted);
+    --color-accent: var(--accent-light);
+    --color-accent-foreground: var(--accent-hover);
+
+    --color-destructive: var(--danger);
+    --color-destructive-foreground: var(--btn-primary-text);
+
+    --color-border: var(--border);
+    --color-input: var(--border);
+    --color-ring: var(--accent);
+
+    /* Bibliogon-native status semantics (used outside the shadcn set). */
+    --color-success: var(--success);
+    --color-warning: var(--warning);
+
+    /* Neutral keywords kept available after the palette reset. */
+    --color-white: #fff;
+    --color-black: #000;
+}
