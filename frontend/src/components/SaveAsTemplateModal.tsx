@@ -9,7 +9,13 @@ import {
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import { EnhancedTextarea } from "./textarea/EnhancedTextarea";
-import * as Dialog from "@radix-ui/react-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown, ChevronRight } from "lucide-react";
@@ -162,25 +168,23 @@ export default function SaveAsTemplateModal({
     !!name.trim() && !!description.trim() && chapterCount > 0 && !saving;
 
   return (
-    <Dialog.Root
+    <Dialog
       open={open}
       onOpenChange={(o) => {
         if (!o) handleClose();
       }}
     >
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content dialog-content-wide"
-          data-testid="save-template-modal"
-          aria-describedby={undefined}
-        >
-          <div className="dialog-header">
-            <Dialog.Title className="dialog-title">
+      <DialogContent
+        size="wide"
+        data-testid="save-template-modal"
+        aria-describedby={undefined}
+      >
+          <DialogHeader>
+            <DialogTitle>
               {t("ui.save_template.title", "Als Vorlage speichern")}:{" "}
               {book.title}
-            </Dialog.Title>
-          </div>
+            </DialogTitle>
+          </DialogHeader>
 
           <div className={styles.body}>
             <div className="field">
@@ -399,7 +403,7 @@ export default function SaveAsTemplateModal({
             </Collapsible.Root>
           </div>
 
-          <div className="dialog-footer">
+          <DialogFooter sticky>
             <button
               className="btn btn-ghost"
               onClick={handleClose}
@@ -417,9 +421,8 @@ export default function SaveAsTemplateModal({
                 ? t("ui.save_template.saving", "Speichert...")
                 : t("ui.save_template.save", "Speichern")}
             </button>
-          </div>
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+          </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

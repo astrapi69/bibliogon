@@ -90,8 +90,28 @@ export function DialogHeader({className, ...props}: React.HTMLAttributes<HTMLDiv
     return <div className={cn("flex items-center justify-between mb-3", className)} {...props} />;
 }
 
-export function DialogFooter({className, ...props}: React.HTMLAttributes<HTMLDivElement>) {
-    return <div className={cn("flex justify-end gap-2 mt-5", className)} {...props} />;
+export interface DialogFooterProps extends React.HTMLAttributes<HTMLDivElement> {
+    /**
+     * Reproduce `.dialog-content-wide .dialog-footer`: a sticky footer
+     * with a top border + card background, used by the scrollable
+     * (size="wide") modals so the footer stays pinned while the body
+     * scrolls.
+     */
+    sticky?: boolean;
+}
+
+export function DialogFooter({className, sticky = false, ...props}: DialogFooterProps) {
+    return (
+        <div
+            className={cn(
+                sticky
+                    ? "flex justify-end gap-2 sticky bottom-0 z-[2] mt-4 py-3 bg-card border-t border-border"
+                    : "flex justify-end gap-2 mt-5",
+                className,
+            )}
+            {...props}
+        />
+    );
 }
 
 export const DialogTitle = React.forwardRef<
