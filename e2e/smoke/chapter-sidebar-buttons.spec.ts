@@ -120,16 +120,15 @@ test.describe("ChapterSidebar button unification", () => {
         expect(box!.height).toBeGreaterThan(0);
     });
 
-    test("sidebar header + footer visual baseline", async ({page}) => {
+    test("sidebar header + footer render their structural surface", async ({page}) => {
+        // Structural pin (replaces OS/font-fragile pixel baselines).
+        // The button-unification regressions this file guards are
+        // covered by the class assertions in the tests above; here we
+        // pin that the header + footer surfaces mount.
         await page.setViewportSize({width: 1400, height: 900});
         await page.goto(`/book/${bookId}`);
         await expect(page.getByTestId("chapter-sidebar-list")).toBeVisible();
-
-        await expect(page.getByTestId("chapter-sidebar-header")).toHaveScreenshot(
-            "chapter-sidebar-header.png",
-        );
-        await expect(page.getByTestId("chapter-sidebar-footer")).toHaveScreenshot(
-            "chapter-sidebar-footer.png",
-        );
+        await expect(page.getByTestId("chapter-sidebar-header")).toBeVisible();
+        await expect(page.getByTestId("chapter-sidebar-footer")).toBeVisible();
     });
 });

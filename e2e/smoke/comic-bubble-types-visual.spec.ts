@@ -64,17 +64,8 @@ const SPECS: ReadonlyArray<BubbleSpec> = [
     {bubble_type: "sound_effect", anchor: {x_pct: 80, y_pct: 70}, tail_direction: "none"},
 ];
 
-const SCREENSHOT_OPTS = {
-    maxDiffPixelRatio: 0.02,
-    animations: "disabled" as const,
-    // Mask any UI chrome that might bleed into the per-bubble
-    // crops (selection rings, drag handles). The auto-selected
-    // bubble shows a tail handle; mask its testid prefix.
-    mask: [],
-};
-
 test.describe("Comic bubble types — visual baselines", () => {
-    test("each bubble type matches its committed pixel baseline", async ({
+    test("each bubble type renders its bubble element (structural)", async ({
         page,
     }) => {
         const book = await createComicBook(
@@ -126,25 +117,12 @@ test.describe("Comic bubble types — visual baselines", () => {
             position: {x: 5, y: 5},
         });
 
-        // Composite of the entire panel (all 6 bubbles).
-        const comicPanel = page
-            .locator('[data-testid^="comic-panel-"]')
-            .first();
-        await expect(comicPanel).toHaveScreenshot(
-            "comic-panel-all-six-bubbles.png",
-            SCREENSHOT_OPTS,
-        );
-
-        // Per-bubble screenshots. Each baseline isolates one
-        // bubble type so a regression on (say) the thought
-        // circle-chain only fires the thought baseline.
-        for (const {id, spec} of bubbles) {
-            const bubble = page.getByTestId(`comic-bubble-${id}`);
-            await expect(bubble).toBeVisible();
-            await expect(bubble).toHaveScreenshot(
-                `bubble-${spec.bubble_type}.png`,
-                SCREENSHOT_OPTS,
-            );
+        // Structural pin (replaces OS/font-fragile pixel baselines):
+        // every bubble renders its element. The SVG path geometry per
+        // bubble type is pinned structurally in
+        // comic-bubble-types-shape.spec.ts.
+        for (const {id} of bubbles) {
+            await expect(page.getByTestId(`comic-bubble-${id}`)).toBeVisible();
         }
     });
 });
