@@ -1,22 +1,25 @@
 /**
- * Tests for CreateBookModal.
+ * Tests for CreateBookForm (the book-creation form body, extracted from
+ * the former CreateBookModal in the Dialog->Pages migration C2).
  *
  * Covers: required field validation, form submission with trimming,
  * collapsible optional fields, series toggle conditional fields,
- * genre-to-key mapping, form reset after submit.
+ * genre-to-key mapping, form reset after submit, template mode, the
+ * bookType prop (template-tab visibility + book_type payload threading),
+ * and Authors-DB integration. The per-type page TITLE lives on the page
+ * shell (CreateBookPage) now, so title assertions moved to
+ * CreateBookPage.test.tsx.
  */
 
-import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
-import CreateBookModal from "./CreateBookModal"
+import CreateBookForm from "./CreateBookForm"
 import {BookTypesProvider} from "../hooks/useBookTypes"
 import type {BookTypeDef} from "../api/client"
 
-// BOOK-TYPES-SSOT-YAML-01 C6: CreateBookModal now reads the
-// BookType registry to drive the template-tab visibility
-// (capabilities.template_catalog). Static test snapshot.
+// BOOK-TYPES-SSOT-YAML-01 C6: CreateBookForm reads the BookType registry
+// to drive the template-tab visibility (capabilities.template_catalog).
 const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
   prose: {
     id: "prose",
@@ -109,13 +112,13 @@ vi.mock("../utils/notify", () => ({
   notify: {success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 
-describe("CreateBookModal", () => {
-  const onClose = vi.fn()
+describe("CreateBookForm", () => {
+  const onCancel = vi.fn()
   const onCreate = vi.fn()
   const onCreateFromTemplate = vi.fn()
 
   beforeEach(() => {
-    onClose.mockClear()
+    onCancel.mockClear()
     onCreate.mockClear()
     onCreateFromTemplate.mockClear()
     mockListTemplates.mockReset()
@@ -137,12 +140,11 @@ describe("CreateBookModal", () => {
     )
   })
 
-  function renderModal(open = true, bookType?: "prose" | "picture_book") {
+  function renderForm(bookType?: "prose" | "picture_book") {
     return render(
       <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
-        <CreateBookModal
-          open={open}
-          onClose={onClose}
+        <CreateBookForm
+          onCancel={onCancel}
           onCreate={onCreate}
           onCreateFromTemplate={onCreateFromTemplate}
           bookType={bookType}
@@ -151,16 +153,16 @@ describe("CreateBookModal", () => {
     )
   }
 
-  it("renders title and author fields when open", async () => {
-    renderModal()
+  it("renders title and author fields", async () => {
+    renderForm()
     await waitFor(() => {
       expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy()
     })
-    expect(screen.getByText("Neues Buch")).toBeTruthy()
+    expect(screen.getByPlaceholderText("Autorenname oder Pen Name")).toBeTruthy()
   })
 
   it("submit button is disabled when title is empty", async () => {
-    renderModal()
+    renderForm()
     await waitFor(() => {
       expect(screen.getByText("Erstellen")).toBeTruthy()
     })
@@ -169,7 +171,7 @@ describe("CreateBookModal", () => {
   })
 
   it("submit button is disabled when author is empty", async () => {
-    renderModal()
+    renderForm()
     const titleInput = screen.getByPlaceholderText("Der Titel deines Buches")
     fireEvent.change(titleInput, {target: {value: "My Book"}})
 
@@ -178,7 +180,7 @@ describe("CreateBookModal", () => {
   })
 
   it("calls onCreate with trimmed title and author", async () => {
-    renderModal()
+    renderForm()
     const titleInput = screen.getByPlaceholderText("Der Titel deines Buches")
     const authorInput = screen.getByPlaceholderText("Autorenname oder Pen Name")
 
@@ -187,8 +189,8 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
-    // handleSubmit is async now (Authors-DB create runs before
-    // onCreate); wait for the chain to resolve.
+    // handleSubmit is async (Authors-DB create runs before onCreate);
+    // wait for the chain to resolve.
     await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1))
     const arg = onCreate.mock.calls[0][0]
     expect(arg.title).toBe("My Book")
@@ -197,7 +199,7 @@ describe("CreateBookModal", () => {
   })
 
   it("does not call onCreate when submit with whitespace-only title", async () => {
-    renderModal()
+    renderForm()
     const titleInput = screen.getByPlaceholderText("Der Titel deines Buches")
     const authorInput = screen.getByPlaceholderText("Autorenname oder Pen Name")
 
@@ -208,14 +210,14 @@ describe("CreateBookModal", () => {
     expect(screen.getByText("Erstellen")).toBeDisabled()
   })
 
-  it("cancel button calls onClose", async () => {
-    renderModal()
+  it("cancel button calls onCancel", async () => {
+    renderForm()
     fireEvent.click(screen.getByText("Abbrechen"))
-    expect(onClose).toHaveBeenCalled()
+    expect(onCancel).toHaveBeenCalled()
   })
 
   it("optional fields are collapsed by default", async () => {
-    renderModal()
+    renderForm()
     // Genre placeholder should not be visible when collapsed
     expect(screen.queryByPlaceholderText("Genre wählen oder eingeben...")).toBeNull()
     // The toggle button should be visible
@@ -223,7 +225,7 @@ describe("CreateBookModal", () => {
   })
 
   it("expanding details shows genre and subtitle fields", async () => {
-    renderModal()
+    renderForm()
     fireEvent.click(screen.getByText("Weitere Details"))
 
     await waitFor(() => {
@@ -235,7 +237,7 @@ describe("CreateBookModal", () => {
   })
 
   it("series fields appear when series checkbox is checked", async () => {
-    renderModal()
+    renderForm()
     fireEvent.click(screen.getByText("Weitere Details"))
 
     await waitFor(() => {
@@ -257,7 +259,7 @@ describe("CreateBookModal", () => {
   })
 
   it("includes optional fields in submission when filled", async () => {
-    renderModal()
+    renderForm()
 
     // Fill required fields
     fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
@@ -292,7 +294,7 @@ describe("CreateBookModal", () => {
   })
 
   it("resets form fields after successful submit", async () => {
-    renderModal()
+    renderForm()
 
     fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
       target: {value: "Book"},
@@ -303,8 +305,8 @@ describe("CreateBookModal", () => {
 
     fireEvent.click(screen.getByText("Erstellen"))
 
-    // After submit, fields should be reset (handleSubmit is async
-    // now; resetForm runs after the awaited author + book POST chain).
+    // After submit, fields reset (handleSubmit is async now; resetForm
+    // runs after the awaited author + book POST chain).
     await waitFor(() => {
       const titleInput = screen.getByPlaceholderText(
         "Der Titel deines Buches",
@@ -316,8 +318,8 @@ describe("CreateBookModal", () => {
   // --- Template mode ---
 
   /**
-   * Radix Tabs reacts to the pointerdown event, not to a plain click. In the
-   * happy-dom environment we dispatch the pointer/mouse sequence explicitly.
+   * Radix Tabs reacts to the pointerdown event, not to a plain click. In
+   * the happy-dom environment we dispatch the pointer/mouse sequence.
    */
   function clickTab(testId: string) {
     const el = screen.getByTestId(testId)
@@ -360,14 +362,14 @@ describe("CreateBookModal", () => {
 
   it("renders both mode tabs", async () => {
     mockListTemplates.mockResolvedValue([])
-    renderModal()
+    renderForm()
     expect(screen.getByTestId("create-book-mode-blank")).toBeTruthy()
     expect(screen.getByTestId("create-book-mode-template")).toBeTruthy()
   })
 
   it("switching to template mode fetches and shows templates", async () => {
     mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -381,7 +383,7 @@ describe("CreateBookModal", () => {
 
   it("create button is disabled in template mode until a template is selected", async () => {
     mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
-    renderModal()
+    renderForm()
 
     // Fill required fields first
     fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
@@ -408,7 +410,7 @@ describe("CreateBookModal", () => {
 
   it("submit in template mode calls onCreateFromTemplate with template_id", async () => {
     mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
-    renderModal()
+    renderForm()
 
     fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
       target: {value: "My Memoir"},
@@ -437,7 +439,7 @@ describe("CreateBookModal", () => {
 
   it("shows 'no templates' state when the list is empty", async () => {
     mockListTemplates.mockResolvedValue([])
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -451,7 +453,7 @@ describe("CreateBookModal", () => {
 
   it("shows error state when template fetch fails", async () => {
     mockListTemplates.mockRejectedValue(new Error("boom"))
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -476,7 +478,7 @@ describe("CreateBookModal", () => {
 
   it("user templates have a delete button, builtins show a badge", async () => {
     mockListTemplates.mockResolvedValue([FAKE_TEMPLATES[0], USER_TPL])
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -496,7 +498,7 @@ describe("CreateBookModal", () => {
     mockListTemplates.mockResolvedValue([USER_TPL])
     mockConfirm.mockResolvedValue(true)
     mockDeleteTemplate.mockResolvedValue(undefined)
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -514,7 +516,7 @@ describe("CreateBookModal", () => {
   it("delete cancelled by user does not call the API", async () => {
     mockListTemplates.mockResolvedValue([USER_TPL])
     mockConfirm.mockResolvedValue(false)
-    renderModal()
+    renderForm()
     clickTab("create-book-mode-template")
 
     await waitFor(() => {
@@ -528,32 +530,28 @@ describe("CreateBookModal", () => {
     expect(screen.getByText("My Custom")).toBeTruthy()
   })
 
-  // --- PB-PHASE4 Session 3 Commit 9: bookType prop ---
+  // --- bookType prop (template-tab + payload threading) ---
 
   describe("bookType prop (picture-book branch)", () => {
-    it("defaults to prose: title is 'Neues Buch' + Template tab visible", async () => {
-      renderModal()
+    it("defaults to prose: Template tab is visible", async () => {
+      renderForm()
       await waitFor(() =>
-        expect(screen.getByTestId("create-book-title-prose")).toBeTruthy(),
+        expect(screen.getByTestId("create-book-mode-template")).toBeTruthy(),
       )
-      expect(screen.getByText("Neues Buch")).toBeTruthy()
-      expect(screen.getByTestId("create-book-mode-template")).toBeTruthy()
+      expect(screen.getByTestId("create-book-mode-blank")).toBeTruthy()
     })
 
-    it("with bookType='picture_book': title switches + Template tab hides", async () => {
-      renderModal(true, "picture_book")
+    it("with bookType='picture_book': Template tab hides", async () => {
+      renderForm("picture_book")
       await waitFor(() =>
-        expect(
-          screen.getByTestId("create-book-title-picture_book"),
-        ).toBeTruthy(),
+        expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
       )
-      expect(screen.getByText("Neues Bilderbuch")).toBeTruthy()
       expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
       expect(screen.queryByTestId("create-book-mode-blank")).toBeNull()
     })
 
-    it("submit with bookType='picture_book' threads book_type='picture_book' into onCreate", async () => {
-      renderModal(true, "picture_book")
+    it("submit with bookType='picture_book' threads book_type into onCreate", async () => {
+      renderForm("picture_book")
       await waitFor(() =>
         expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
       )
@@ -572,7 +570,7 @@ describe("CreateBookModal", () => {
     })
 
     it("submit with default (prose) does NOT include book_type in the payload", async () => {
-      renderModal()
+      renderForm()
       await waitFor(() =>
         expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
       )
@@ -590,14 +588,11 @@ describe("CreateBookModal", () => {
   })
 
   /**
-   * Bug-fix 2026-05-19: Authors-Database integration (closes the
-   * pre-vs-post-AuthorsDB pattern gap where CreateBookModal still
-   * used the older user-identity-only choices even after Authors-DB
-   * shipped in v0.34.0). Mirrors the ConvertToBookWizard's Bug 8
-   * Phase 2 pattern.
+   * Authors-Database integration (mirrors the ConvertToBookWizard Bug 8
+   * Phase 2 pattern). Carried over unchanged from the modal.
    */
   describe("Authors-Database integration", () => {
-    it("fetches global Authors-DB on open and exposes datalist", async () => {
+    it("fetches global Authors-DB on mount and exposes datalist", async () => {
       mockListAuthors.mockResolvedValue([
         {
           id: "a1",
@@ -608,14 +603,11 @@ describe("CreateBookModal", () => {
           updated_at: "2026-05-19T00:00:00Z",
         },
       ])
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       await waitFor(() =>
         expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
       )
-      // Suggestion option for the seeded author renders inside the
-      // datalist (browser shows it as a dropdown; happy-dom exposes
-      // the <option> elements).
       await waitFor(() =>
         expect(
           screen.getByTestId("create-book-author-suggestion-Aster Raptis"),
@@ -624,7 +616,7 @@ describe("CreateBookModal", () => {
     })
 
     it("Add-to-Authors-DB checkbox is VISIBLE when typed author is new", async () => {
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(
         screen.getByPlaceholderText("Autorenname oder Pen Name"),
@@ -648,14 +640,12 @@ describe("CreateBookModal", () => {
           updated_at: "2026-05-19T00:00:00Z",
         },
       ])
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(
         screen.getByPlaceholderText("Autorenname oder Pen Name"),
         {target: {value: "Existing Author"}},
       )
-      // Checkbox disappears when name matches existing entry
-      // (case-insensitive + trim).
       await waitFor(() =>
         expect(
           screen.queryByTestId("create-book-add-to-authors-checkbox"),
@@ -674,7 +664,7 @@ describe("CreateBookModal", () => {
           updated_at: "2026-05-19T00:00:00Z",
         },
       ])
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(
         screen.getByPlaceholderText("Autorenname oder Pen Name"),
@@ -688,7 +678,7 @@ describe("CreateBookModal", () => {
     })
 
     it("on submit, creates author in Authors-DB BEFORE book POST when checkbox checked + name is new", async () => {
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
         target: {value: "My Book"},
@@ -707,7 +697,7 @@ describe("CreateBookModal", () => {
     })
 
     it("on submit with checkbox UNchecked, skips author create but still creates book", async () => {
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
         target: {value: "My Book"},
@@ -737,7 +727,7 @@ describe("CreateBookModal", () => {
           updated_at: "2026-05-19T00:00:00Z",
         },
       ])
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
         target: {value: "My Book"},
@@ -754,7 +744,7 @@ describe("CreateBookModal", () => {
 
     it("on author-create failure, book create still proceeds (fail-soft pattern)", async () => {
       mockCreateAuthor.mockRejectedValue(new Error("Network down"))
-      renderModal()
+      renderForm()
       await waitFor(() => expect(mockListAuthors).toHaveBeenCalled())
       fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
         target: {value: "My Book"},

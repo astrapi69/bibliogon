@@ -594,6 +594,7 @@ ui:
     title: "新しい本"
     title_picture_book: "新しい絵本"
     title_comic_book: "新しいコミック"
+    create_error: "本を作成できませんでした。"
     book_title: "タイトル"
     book_title_placeholder: "本のタイトル"
     author: "著者"

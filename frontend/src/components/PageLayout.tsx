@@ -25,6 +25,9 @@ export interface PageLayoutProps {
     actions?: React.ReactNode;
     /** testid namespace for the page root; back button gets `${testId}-back`. */
     testId?: string;
+    /** Optional testid for the <h1> title (e.g. a page that preserves a
+     *  per-variant title testid from the dialog it replaced). */
+    titleTestId?: string;
     children: React.ReactNode;
 }
 
@@ -44,6 +47,7 @@ export function PageLayout({
     backLabel,
     actions,
     testId,
+    titleTestId,
     children,
 }: PageLayoutProps) {
     const widthClass = MAX_WIDTH[maxWidth];
@@ -62,7 +66,10 @@ export function PageLayout({
                             <ChevronLeft size={18} />
                         </button>
                     )}
-                    <h1 className="flex-1 font-[family-name:var(--font-display)] text-xl font-semibold">
+                    <h1
+                        className="flex-1 font-[family-name:var(--font-display)] text-xl font-semibold"
+                        data-testid={titleTestId}
+                    >
                         {title}
                     </h1>
                     {actions}

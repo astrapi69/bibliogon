@@ -1,7 +1,6 @@
-import {useEffect, useState} from "react";
-import {useNavigate} from "react-router-dom";
-import {api, ApiError, Book, BookCreate, BookFromTemplateCreate, BookType} from "../api/client";
-import CreateBookModal from "../components/CreateBookModal";
+import {useEffect, useRef, useState} from "react";
+import {useLocation, useNavigate} from "react-router-dom";
+import {api, ApiError, Book} from "../api/client";
 import WritingGoalWidget from "../components/WritingGoalWidget";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
@@ -23,7 +22,7 @@ import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
-import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
+import {useBookTypes} from "../hooks/useBookTypes";
 import {BookTypeIcon} from "../utils/bookTypeIcon";
 import SplitButton, {type SplitButtonDropdownItem} from "../components/SplitButton";
 import {
@@ -61,17 +60,17 @@ export default function Dashboard() {
     const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
-    const [showModal, setShowModal] = useState(false);
-    // PB-PHASE4 Session 3 Commit 9: which book_type the open Create
-    // Book modal is creating. "prose" for the primary button + the
-    // empty-state button; "picture_book" when the split-button's
-    // chevron menu picked the picture-book item.
-    const [createBookType, setCreateBookType] = useState<BookType>("prose");
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
+    const location = useLocation();
+    // Dialog->Pages migration (C2): book creation moved to CreateBookPage
+    // (/books/new). After a prose create it navigates back here with a
+    // `bookCreated` nav-state flag; this ref makes the resulting
+    // donation-onboarding check fire exactly once per arrival.
+    const onboardingHandledRef = useRef(false);
     const filters = useBookFilters(books, t);
     const selection = useBookSelection();
     const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
@@ -349,40 +348,23 @@ export default function Dashboard() {
         setShowDonationOnboarding(true);
     };
 
-    const handleCreate = async (data: BookCreate) => {
-        const wasFirstBook = books.length === 0;
-        const book = await api.books.create(data);
-        setBooks((prev) => [book, ...prev]);
-        setShowModal(false);
-        // PB-PHASE4 Session 3 Commit 9 + BOOK-TYPES-SSOT-YAML-01 C5:
-        // page-based books need their page-based editor immediately —
-        // the dashboard view doesn't surface their content. Prose
-        // books (content_model="chapters") stay on the dashboard.
-        // The set of page-based types comes from the BookTypeRegistry
-        // (content_model="pages"); adding a new page-based type means
-        // flipping the YAML field, not editing this branch.
-        if (
-            data.book_type !== undefined &&
-            pageableBookTypeIds(bookTypesSnapshot).has(data.book_type)
-        ) {
-            navigate(`/book/${book.id}`);
-            return;
-        }
-        maybeShowDonationOnboarding(wasFirstBook);
-    };
-
-    const openCreate = (bookType: BookType) => {
-        setCreateBookType(bookType);
-        setShowModal(true);
-    };
-
-    const handleCreateFromTemplate = async (data: BookFromTemplateCreate) => {
-        const wasFirstBook = books.length === 0;
-        const book = await api.books.createFromTemplate(data);
-        setBooks((prev) => [book, ...prev]);
-        setShowModal(false);
-        maybeShowDonationOnboarding(wasFirstBook);
-    };
+    // Dialog->Pages migration (C2): CreateBookPage performs the book
+    // create now. When it creates a prose book it returns here with
+    // `location.state.bookCreated`; mirror the former handleCreate
+    // behavior by re-running the first-book donation-onboarding check
+    // once both the books list and the donations config have loaded.
+    // wasFirstBook is inferred from the freshly loaded list length (===1).
+    useEffect(() => {
+        if (onboardingHandledRef.current) return;
+        const navState = location.state as {bookCreated?: boolean} | null;
+        if (!navState?.bookCreated) return;
+        if (loading || !donationsConfig) return;
+        onboardingHandledRef.current = true;
+        maybeShowDonationOnboarding(books.length === 1);
+        // Clear the flag so a refresh / back-nav doesn't re-trigger it.
+        navigate("/", {replace: true, state: null});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, donationsConfig, books, location.state]);
 
     const handleDelete = async (id: string) => {
         await api.books.delete(id);
@@ -494,7 +476,7 @@ export default function Dashboard() {
                                     </span>
                                 </>
                             }
-                            onPrimaryClick={() => openCreate("prose")}
+                            onPrimaryClick={() => navigate("/books/new")}
                             chevronTooltip={t(
                                 "ui.dashboard.new_book_more_tooltip",
                                 "Weitere Buch-Arten",
@@ -524,7 +506,7 @@ export default function Dashboard() {
                                             </>
                                         ),
                                         onSelect: () =>
-                                            openCreate(bt.id as BookType),
+                                            navigate(`/books/new?type=${bt.id}`),
                                     }),
                                 )}
                             groupTestId="new-book-group"
@@ -738,7 +720,7 @@ export default function Dashboard() {
                             <>
                                 <button
                                     className="btn btn-primary"
-                                    onClick={() => openCreate("prose")}
+                                    onClick={() => navigate("/books/new")}
                                     data-testid="dashboard-empty-create-book"
                                 >
                                     <Plus size={16}/> {t("ui.dashboard.create_book", "Buch erstellen")}
@@ -944,13 +926,6 @@ export default function Dashboard() {
                 )}
             </main>
 
-            <CreateBookModal
-                open={showModal}
-                onClose={() => setShowModal(false)}
-                onCreate={handleCreate}
-                onCreateFromTemplate={handleCreateFromTemplate}
-                bookType={createBookType}
-            />
             <ImportWizardModal
                 open={importWizardOpen}
                 onClose={() => setImportWizardOpen(false)}

@@ -608,6 +608,7 @@ ui:
     title: "Yeni kitap"
     title_picture_book: "Yeni resimli kitap"
     title_comic_book: "Yeni çizgi roman"
+    create_error: "Kitap oluşturulamadı."
     book_title: "Baslik"
     book_title_placeholder: "Kitabinizin basligi"
     author: "Yazar"
