@@ -29,7 +29,14 @@
  * pins the wiring end-to-end (UI → handler → hook → bar visibility).
  */
 
-import {test, expect, createBook, createArticle} from "../fixtures/base"
+import {
+    test,
+    expect,
+    createBook,
+    createArticle,
+    softDeleteArticleViaKebab,
+    softDeleteBookViaKebab,
+} from "../fixtures/base"
 
 test.describe("Selection cleanup after row-delete (Articles)", () => {
     test("row-delete on the selected article unmounts the BulkActionBar", async ({
@@ -48,9 +55,8 @@ test.describe("Selection cleanup after row-delete (Articles)", () => {
         await expect(bar).toBeVisible()
         await expect(page.getByTestId("article-bulk-count")).toContainText(/^1/)
 
-        // Row-delete via the article card menu.
-        await page.getByTestId(`article-card-menu-${a.id}`).click()
-        await page.getByTestId(`article-card-menu-delete-${a.id}`).click()
+        // Row-delete via the article card menu (race-robust helper).
+        await softDeleteArticleViaKebab(page, a.id)
 
         // Item gone from the live grid.
         await expect(page.getByTestId(`article-bulk-check-${a.id}`)).toBeHidden()
@@ -75,8 +81,7 @@ test.describe("Selection cleanup after row-delete (Articles)", () => {
         await expect(page.getByTestId("article-bulk-count")).toContainText(/^1/)
 
         // Row-delete "drop" (NOT in selection).
-        await page.getByTestId(`article-card-menu-${drop.id}`).click()
-        await page.getByTestId(`article-card-menu-delete-${drop.id}`).click()
+        await softDeleteArticleViaKebab(page, drop.id)
 
         // "drop" gone, but "keep" still selected and the bar still
         // shows count=1 — pins that `remove(id)` does NOT touch other
@@ -105,8 +110,7 @@ test.describe("Selection cleanup after row-delete (Books)", () => {
         await expect(bar).toBeVisible()
         await expect(page.getByTestId("book-bulk-count")).toContainText(/^1/)
 
-        await page.getByTestId(`book-card-menu-${a.id}`).click()
-        await page.getByTestId(`book-card-menu-delete-${a.id}`).click()
+        await softDeleteBookViaKebab(page, a.id)
 
         await expect(page.getByTestId(`book-bulk-check-${a.id}`)).toBeHidden()
         await expect(bar).toBeHidden()
@@ -125,8 +129,7 @@ test.describe("Selection cleanup after row-delete (Books)", () => {
         await page.getByTestId(`book-bulk-check-${keep.id}`).check()
         await expect(page.getByTestId("book-bulk-count")).toContainText(/^1/)
 
-        await page.getByTestId(`book-card-menu-${drop.id}`).click()
-        await page.getByTestId(`book-card-menu-delete-${drop.id}`).click()
+        await softDeleteBookViaKebab(page, drop.id)
 
         await expect(page.getByTestId(`book-bulk-check-${drop.id}`)).toBeHidden()
         await expect(page.getByTestId("book-bulk-action-bar")).toBeVisible()

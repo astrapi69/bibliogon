@@ -114,6 +114,37 @@ export async function deleteBook(id: string): Promise<void> {
     await request(`/books/${id}`, {method: "DELETE"});
 }
 
+/**
+ * PATCH a book from the node side (absolute URL). Use this for test
+ * setup instead of an in-browser `page.evaluate(fetch(...))` with a
+ * relative URL: before the first `page.goto`, the page is at
+ * `about:blank`, where a relative `/api/...` URL fails to parse.
+ */
+export async function updateBook(
+    id: string,
+    patch: Record<string, unknown>,
+): Promise<{id: string}> {
+    return request(`/books/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+    });
+}
+
+/**
+ * PATCH a book's KDP publishing-state (plugin-kdp). Creates the row
+ * on first call. Node-side absolute URL, same rationale as
+ * `updateBook`.
+ */
+export async function updateKdpPublishingState(
+    id: string,
+    patch: Record<string, unknown>,
+): Promise<unknown> {
+    return request(`/kdp/publishing-state/${id}`, {
+        method: "PATCH",
+        body: JSON.stringify(patch),
+    });
+}
+
 export async function getBooks(): Promise<{id: string; title: string}[]> {
     return request("/books");
 }

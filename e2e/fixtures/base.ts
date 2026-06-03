@@ -47,6 +47,8 @@ export async function fillPrompt(page: Page, value: string) {
 }
 
 export {createBook, createChapter, resetDb};
+export {updateBook, updateKdpPublishingState} from "../helpers/api";
 export {createPictureBook, createComicBook} from "../helpers/api";
 export {createArticle, deleteArticle, getArticles} from "../helpers/api";
+export {softDeleteArticleViaKebab, softDeleteBookViaKebab} from "../helpers/ui";
 export {expect} from "@playwright/test";

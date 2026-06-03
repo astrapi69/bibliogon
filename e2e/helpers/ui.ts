@@ -1,0 +1,53 @@
+/**
+ * Shared UI interaction helpers for E2E smoke specs.
+ */
+
+import {expect, type Page} from "@playwright/test";
+
+/**
+ * Robustly soft-delete an article via its grid-card kebab menu.
+ *
+ * Waits for the list to settle (networkidle), then retries the
+ * open-menu -> click-delete sequence inside an expect().toPass()
+ * loop. Under full-suite load a late per-card re-render can detach
+ * the open menu's delete item mid-click ("element detached from the
+ * DOM") — the kebab re-render race that made several trash/selection
+ * specs flaky. Pattern extracted from articles-trash.spec.ts (the
+ * canonical green soft-delete flow).
+ *
+ * Article soft-delete (move-to-trash) does NOT show a confirm dialog
+ * (ArticleList.handleDelete deletes immediately), so this helper
+ * completes the deletion in one shot. For permanent-delete (which
+ * does confirm), drive the menu directly in the spec.
+ */
+export async function softDeleteArticleViaKebab(
+    page: Page,
+    articleId: string,
+): Promise<void> {
+    await page.waitForLoadState("networkidle");
+    await expect(async () => {
+        await page.getByTestId(`article-card-menu-${articleId}`).click();
+        const del = page.getByTestId(`article-card-menu-delete-${articleId}`);
+        await expect(del).toBeVisible({timeout: 2000});
+        await del.click({timeout: 2000});
+    }).toPass({timeout: 15_000});
+}
+
+/**
+ * Robustly soft-delete a book via its grid-card kebab menu. Same
+ * race-robustness rationale as softDeleteArticleViaKebab. Book
+ * soft-delete (move-to-trash) also does NOT confirm
+ * (Dashboard.handleDelete deletes immediately).
+ */
+export async function softDeleteBookViaKebab(
+    page: Page,
+    bookId: string,
+): Promise<void> {
+    await page.waitForLoadState("networkidle");
+    await expect(async () => {
+        await page.getByTestId(`book-card-menu-${bookId}`).click();
+        const del = page.getByTestId(`book-card-menu-delete-${bookId}`);
+        await expect(del).toBeVisible({timeout: 2000});
+        await del.click({timeout: 2000});
+    }).toPass({timeout: 15_000});
+}

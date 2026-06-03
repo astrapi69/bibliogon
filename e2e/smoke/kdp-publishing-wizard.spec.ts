@@ -37,7 +37,14 @@
  * the "Testid namespace pinning prevents silent E2E skips" rule.
  */
 
-import {test, expect, createBook, createChapter} from "../fixtures/base";
+import {
+    test,
+    expect,
+    createBook,
+    createChapter,
+    updateBook,
+    updateKdpPublishingState,
+} from "../fixtures/base";
 
 test.describe("KDP Publishing Wizard smoke", () => {
     test("open wizard → advance step 0 → step 1 shows no-cover state", async ({
@@ -49,18 +56,10 @@ test.describe("KDP Publishing Wizard smoke", () => {
         await createChapter(book.id, "Chapter 1", "{}", "chapter");
 
         // Patch the book to add description (required field).
-        const res = await page.evaluate(
-            async ({id}) => {
-                const r = await fetch(`/api/books/${id}`, {
-                    method: "PATCH",
-                    headers: {"Content-Type": "application/json"},
-                    body: JSON.stringify({description: "Smoke test description."}),
-                });
-                return r.ok;
-            },
-            {id: book.id},
-        );
-        expect(res).toBe(true);
+        // Node-side absolute URL: the page is still about:blank here
+        // (first goto is below), so an in-browser relative fetch would
+        // fail to parse the URL.
+        await updateBook(book.id, {description: "Smoke test description."});
 
         // Open BookMetadataEditor via the ?view=metadata URL.
         await page.goto(`/book/${book.id}?view=metadata`);
@@ -147,37 +146,21 @@ test.describe("KDP Publishing Wizard smoke", () => {
         await createChapter(book.id, "Chapter 1", "{}", "chapter");
 
         // Add description so the metadata gate would pass (even
-        // though this test won't advance past metadata).
-        await page.evaluate(async ({id}) => {
-            await fetch(`/api/books/${id}`, {
-                method: "PATCH",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({description: "Pre-conflict baseline."}),
-            });
-        }, {id: book.id});
+        // though this test won't advance past metadata). Node-side
+        // absolute URLs throughout — see the rationale in the test
+        // above (page is about:blank until the goto below).
+        await updateBook(book.id, {description: "Pre-conflict baseline."});
 
         // PATCH the publishing-state with a royalty plan. This
         // creates the row + sets state.updated_at to NOW.
-        await page.evaluate(async ({id}) => {
-            await fetch(`/api/kdp/publishing-state/${id}`, {
-                method: "PATCH",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({royalty_plan: "70"}),
-            });
-        }, {id: book.id});
+        await updateKdpPublishingState(book.id, {royalty_plan: "70"});
 
         // Wait a moment so the next PATCH produces a strictly-
         // later timestamp than the publishing-state's.
         await page.waitForTimeout(1100);
 
         // Modify the book's metadata — this bumps book.updated_at.
-        await page.evaluate(async ({id}) => {
-            await fetch(`/api/books/${id}`, {
-                method: "PATCH",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({description: "Edited after pricing save."}),
-            });
-        }, {id: book.id});
+        await updateBook(book.id, {description: "Edited after pricing save."});
 
         // Open the wizard. The mount-time fetch returns both
         // ``book_updated_at`` and ``state.updated_at``; book > state

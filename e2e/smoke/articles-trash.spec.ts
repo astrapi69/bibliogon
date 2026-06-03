@@ -23,7 +23,7 @@
  *   3. backend state matches the UI claims
  */
 
-import {test, expect} from "../fixtures/base"
+import {test, expect, softDeleteArticleViaKebab} from "../fixtures/base"
 
 const API = "http://localhost:8000/api"
 
@@ -85,20 +85,12 @@ test.describe("Articles trash - soft-delete + restore round-trip", () => {
 
         await page.goto("/articles")
         await expect(page.getByTestId(`article-bulk-check-${a.id}`)).toBeVisible()
-        // Let the list settle (per-card async data) before opening the
-        // kebab. Otherwise a late re-render detaches the open menu's
-        // delete item mid-click ("element detached from the DOM") — the
-        // card-re-render race that made this flaky under full-suite load.
-        await page.waitForLoadState("networkidle")
 
-        // Soft-delete the article via its row menu. Re-open + retry if a
-        // stray re-render closes the menu before the item is clicked.
-        await expect(async () => {
-            await page.getByTestId(`article-card-menu-${a.id}`).click()
-            const del = page.getByTestId(`article-card-menu-delete-${a.id}`)
-            await expect(del).toBeVisible({timeout: 2000})
-            await del.click({timeout: 2000})
-        }).toPass({timeout: 15_000})
+        // Soft-delete the article via its row menu. The shared helper
+        // settles the list (networkidle) then retries open-menu ->
+        // click-delete, guarding against the per-card re-render race
+        // that detaches the open menu's delete item mid-click.
+        await softDeleteArticleViaKebab(page, a.id)
 
         // Live grid no longer shows the article.
         await expect(page.getByTestId(`article-bulk-check-${a.id}`)).toBeHidden()

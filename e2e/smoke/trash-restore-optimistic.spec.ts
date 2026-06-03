@@ -17,7 +17,13 @@
  * so the optimistic-update behavior is observable.
  */
 
-import {test, expect, createBook} from "../fixtures/base";
+import {
+    test,
+    expect,
+    createBook,
+    softDeleteArticleViaKebab,
+    softDeleteBookViaKebab,
+} from "../fixtures/base";
 
 const API = "http://localhost:8000/api";
 
@@ -38,8 +44,7 @@ test.describe("Articles trash - optimistic restore", () => {
         // Soft-delete + open trash view.
         await page.goto("/articles");
         await expect(page.getByTestId(`article-bulk-check-${article.id}`)).toBeVisible();
-        await page.getByTestId(`article-card-menu-${article.id}`).click();
-        await page.getByTestId(`article-card-menu-delete-${article.id}`).click();
+        await softDeleteArticleViaKebab(page, article.id);
         await page.getByTestId("article-list-trash-toggle").click();
         await expect(page.getByTestId("article-trash-panel")).toBeVisible();
 
@@ -81,8 +86,8 @@ test.describe("Articles trash - optimistic restore", () => {
         const article = await createArticleFixture("Revert-on-Error Smoke");
 
         await page.goto("/articles");
-        await page.getByTestId(`article-card-menu-${article.id}`).click();
-        await page.getByTestId(`article-card-menu-delete-${article.id}`).click();
+        await expect(page.getByTestId(`article-bulk-check-${article.id}`)).toBeVisible();
+        await softDeleteArticleViaKebab(page, article.id);
         await page.getByTestId("article-list-trash-toggle").click();
 
         // Spoof a 500 on the restore endpoint to exercise the
@@ -112,8 +117,8 @@ test.describe("Books trash - optimistic restore", () => {
         const book = await createBook("Optimistic Book Restore");
 
         await page.goto("/");
-        await page.getByTestId(`book-card-menu-${book.id}`).click();
-        await page.getByTestId(`book-card-menu-delete-${book.id}`).click();
+        await expect(page.getByTestId(`book-card-${book.id}`)).toBeVisible();
+        await softDeleteBookViaKebab(page, book.id);
         await page.getByTestId("trash-toggle").click();
         await expect(page.getByTestId("trash-view")).toBeVisible();
 
@@ -144,8 +149,8 @@ test.describe("Books trash - optimistic restore", () => {
         const book = await createBook("Revert-on-Error Book");
 
         await page.goto("/");
-        await page.getByTestId(`book-card-menu-${book.id}`).click();
-        await page.getByTestId(`book-card-menu-delete-${book.id}`).click();
+        await expect(page.getByTestId(`book-card-${book.id}`)).toBeVisible();
+        await softDeleteBookViaKebab(page, book.id);
         await page.getByTestId("trash-toggle").click();
 
         await page.route(`**/api/books/trash/${book.id}/restore`, async (route) => {

@@ -58,7 +58,7 @@ test.describe("View-mode parity - articles", () => {
     test("[data-article-id] selector resolves in both grid and list views", async ({
         page,
     }) => {
-        const article = await createArticle({title: "View Parity Article Smoke"});
+        const article = await createArticle("View Parity Article Smoke");
 
         await page.goto("/articles");
 
