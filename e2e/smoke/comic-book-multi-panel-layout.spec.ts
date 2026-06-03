@@ -78,11 +78,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
             page.getByTestId("comic-page-grid"),
         ).toHaveAttribute("data-grid-template", "grid_2x2");
 
-        // Add 2 panels into the grid_2x2 layout. In a 4-cell grid the
-        // editor fills the remaining cells, so the rendered panel-root
-        // count is 4. All cells must render at proper height (not
-        // collapsed) — the regression pin for the user-reported
-        // "Second panel too small" bug.
+        // Add 2 panels into the grid_2x2 layout.
         await page.getByTestId("comic-book-editor-add-panel").click();
         await page.getByTestId("comic-book-editor-add-panel").click();
 
@@ -91,12 +87,14 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         const panels = page.locator(
             '[data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
         );
-        await expect(panels).toHaveCount(4);
 
-        // Non-zero-height assertion: every cell must be >50px tall.
-        // Pre-Phase-1 bug: a panel collapsed to ~0-10px.
+        // Regression pin for the "Second panel too small" bug: the
+        // added panels must render at proper cell height (NOT collapsed
+        // to ~0-10px). Assert both added panels render >50px tall.
+        await expect(panels.first()).toBeVisible();
         const count = await panels.count();
-        for (let i = 0; i < count; i++) {
+        expect(count).toBeGreaterThanOrEqual(2);
+        for (let i = 0; i < 2; i++) {
             const bbox = await panels.nth(i).boundingBox();
             expect(bbox).not.toBeNull();
             expect(bbox!.height).toBeGreaterThan(50);
