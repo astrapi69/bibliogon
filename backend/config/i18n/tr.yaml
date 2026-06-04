@@ -1681,6 +1681,7 @@ ui:
     banner_message: "Cevrimdisisiniz. Degisiklikler yerel olarak kaydediliyor ve baglanti dondugunde senkronize edilecek."
     synced_toast: "Senkronize edilen bolumler: {count}"
     sync_partial: "Bazi bolumler senkronize edilemedi."
+    conflicts_found: "Çakışma bulundu. Lütfen Ayarlar'da çöz."
   versions:
     menu_item: "Surum gecmisi"
     title: "Surum gecmisi"

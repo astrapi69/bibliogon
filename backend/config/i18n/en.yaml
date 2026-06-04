@@ -1690,6 +1690,7 @@ ui:
     banner_message: "You are offline. Changes are saved locally and will sync when you reconnect."
     synced_toast: "Chapters synced: {count}"
     sync_partial: "Some chapters could not be synced."
+    conflicts_found: "Conflict found. Please resolve it in Settings."
   versions:
     menu_item: "Version history"
     title: "Version history"

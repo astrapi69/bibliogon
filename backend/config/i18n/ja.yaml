@@ -1681,6 +1681,7 @@ ui:
     banner_message: "オフラインです。変更はローカルに保存され、接続復帰時に同期されます。"
     synced_toast: "同期された章: {count}"
     sync_partial: "一部の章は同期できませんでした。"
+    conflicts_found: "競合が見つかりました。設定で解決してください。"
   versions:
     menu_item: "バージョン履歴"
     title: "バージョン履歴"

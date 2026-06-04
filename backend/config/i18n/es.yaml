@@ -1681,6 +1681,7 @@ ui:
     banner_message: "Sin conexion. Los cambios se guardan localmente y se sincronizaran cuando vuelvas a estar en linea."
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Algunos capitulos no se pudieron sincronizar."
+    conflicts_found: "Conflicto encontrado. Resuélvelo en Ajustes."
   versions:
     menu_item: "Historial de versiones"
     title: "Historial de versiones"

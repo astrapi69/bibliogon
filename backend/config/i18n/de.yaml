@@ -1690,6 +1690,7 @@ ui:
     banner_message: "Du bist offline. Änderungen sind lokal gesichert und werden beim nächsten Verbindungsaufbau synchronisiert."
     synced_toast: "Kapitel synchronisiert: {count}"
     sync_partial: "Einige Kapitel konnten nicht synchronisiert werden."
+    conflicts_found: "Konflikt gefunden. Bitte in den Einstellungen lösen."
   versions:
     menu_item: "Versionsverlauf"
     title: "Versionsverlauf"

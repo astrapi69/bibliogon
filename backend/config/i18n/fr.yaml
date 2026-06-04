@@ -1681,6 +1681,7 @@ ui:
     banner_message: "Vous etes hors ligne. Les modifications sont sauvees localement et seront synchronisees a la reconnexion."
     synced_toast: "Chapitres synchronises: {count}"
     sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
+    conflicts_found: "Conflit détecté. Résous-le dans les Réglages."
   versions:
     menu_item: "Historique des versions"
     title: "Historique des versions"
