@@ -37,9 +37,16 @@ if (import.meta.env.DEV) {
   }
 }
 
+// Router basename follows the Vite deploy base so deep-linkable routes
+// work under a sub-path host (GitHub Pages, "/bibliogon/") as well as at
+// the root (Desktop / LAN, "/"). Vite injects `import.meta.env.BASE_URL`
+// at build time; strip the trailing slash because React Router expects a
+// basename without one (root collapses back to "/").
+const routerBasename = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,
