@@ -47,8 +47,10 @@ export interface PageLayoutProps {
  * theme toggle on the right, on a `bg-card` bar with the same tokens, so
  * a deep-linked page reads as "still inside Bibliogon" rather than a
  * separate surface. The page-specific back button + title sit in a
- * centered, max-width content column below. Tailwind utilities only, all
- * colors via the token bridge.
+ * centered, max-width content column below, wrapped in a card surface.
+ * Pure Tailwind utilities, all colors via the token bridge. (Spacing
+ * utilities rely on the global `*` reset living in `@layer base` so the
+ * `utilities` layer outranks it -- see global.css.)
  */
 export function PageLayout({
     title,
@@ -65,19 +67,26 @@ export function PageLayout({
     const widthClass = MAX_WIDTH[maxWidth];
     return (
         <div className="min-h-screen bg-background text-foreground" data-testid={testId}>
-            {/* App-chrome header — same visual language as the existing
-                page headers (brand left, controls right, bg-card bar). */}
+            {/* App-chrome header — brand left, controls right, on a
+                bg-card bar (same surface as the Medium-import header). */}
             <header className="border-b border-border bg-card">
                 <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6">
+                    {/* `appearance-none border-0 bg-transparent p-0` strips the
+                        user-agent button chrome (Preflight is omitted, so a bare
+                        <button> otherwise renders the browser default light-grey
+                        box + outset border -- the "logo is white in dark mode"
+                        report). The whole mark is `text-primary` (=> var(--accent)),
+                        designed to stay legible on the bg-card bar in every
+                        light/dark variant. */}
                     <button
                         type="button"
                         onClick={() => navigate("/")}
-                        className="flex items-center gap-2.5 text-primary"
+                        className="flex cursor-pointer appearance-none items-center gap-2.5 border-0 bg-transparent p-0 text-primary"
                         title="Dashboard"
                         data-testid={testId ? `${testId}-home` : "page-home"}
                     >
                         <BookOpen size={28} strokeWidth={1.5} />
-                        <span className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-foreground">
+                        <span className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-primary">
                             Bibliogon
                         </span>
                     </button>
@@ -88,16 +97,16 @@ export function PageLayout({
                 </div>
             </header>
 
-            <main id="main-content" className={cn("mx-auto px-4 py-6 sm:px-6", widthClass)}>
-                {/* Centered card surface (Dialog->Pages visual parity):
-                    the same bg-card + border + shadow + padding language
-                    as the Medium-import / wizard surfaces. Tokens only, so
-                    `make verify-theme` stays authoritative across all 12
-                    variants. */}
+            <main id="main-content" className={cn("mx-auto px-4 py-8 sm:px-6", widthClass)}>
+                {/* Centered card surface (Dialog->Pages visual parity): the same
+                    bg-card + border + radius + padding language as the
+                    Medium-import cards, so every migrated page reads as the same
+                    kind of surface. Tokens only -> verify-theme stays
+                    authoritative across all 12 variants. */}
                 <div
                     className={cn(
                         card &&
-                            "rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-[var(--shadow-md)] sm:p-8",
+                            "rounded-[var(--radius-lg)] border border-border bg-card p-6 shadow-[var(--shadow-md)] sm:p-8",
                     )}
                 >
                     <div className="mb-6 flex items-center gap-3">

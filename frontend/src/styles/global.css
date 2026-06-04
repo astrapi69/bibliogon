@@ -742,12 +742,26 @@ body.no-word-wrap [class*="markdownEditor"] {
     background: rgba(168, 85, 247, 0.28);
 }
 
-*,
-*::before,
-*::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
+/*
+ * Base reset placed in `@layer base` (the layer is declared in
+ * tailwind.css: `@layer theme, base, components, utilities`). This is
+ * deliberate: when the reset was UNLAYERED it outranked every Tailwind
+ * utility (unlayered beats any layer), so `mx-auto` / `p-*` / `mb-*`
+ * silently resolved to 0 -- which left Tailwind-styled components
+ * un-centered and un-padded. In `@layer base` the reset still strips
+ * default margins/padding from bare elements, but the `utilities` layer
+ * (which is later in the layer order) now wins, so Tailwind spacing
+ * utilities apply as authored. Unlayered component classes (.btn, .card,
+ * ...) still outrank everything, so existing surfaces are unaffected.
+ */
+@layer base {
+    *,
+    *::before,
+    *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+    }
 }
 
 html,
