@@ -434,8 +434,11 @@ When the help system with MkDocs is set up:
 
 - A GitHub Action triggers automatically on push to main
 - No manual step
-- Verify: https://astrapi69.github.io/bibliogon/ shows the new content
-- Check the action status: `gh run list --workflow=docs.yml --limit=1`
+- Verify: https://astrapi69.github.io/bibliogon/docs/ shows the new content
+  (the site root https://astrapi69.github.io/bibliogon/ now hosts the
+  frontend web app; the docs live under `/docs/`)
+- Check the action status: `gh run list --workflow=deploy-pages.yml --limit=1`
+  (the combined frontend+docs Pages deploy; replaced the old `docs.yml`)
 
 On a failed deploy: pull the error from the action logs and fix it,
 but the release is still out.

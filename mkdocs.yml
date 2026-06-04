@@ -86,6 +86,7 @@ plugins:
         Word- und EPUB-Import: Word and EPUB import
         Docker Desktop installieren: Install Docker Desktop
         Plattformübergreifende Installer: Cross-platform installers
+        Auf dem Handy nutzen: Use on mobile
         Windows-Launcher: Windows Launcher
         macOS-Launcher: macOS Launcher
         Linux-Launcher: Linux Launcher
@@ -187,6 +188,7 @@ nav:
   - Übersicht: de/installation.md
   - Docker Desktop installieren: de/install/docker-desktop.md
   - Plattformübergreifende Installer: de/install/cross-platform-installers.md
+  - Auf dem Handy nutzen: de/install/mobile.md
   - Windows-Launcher: de/launcher-windows.md
   - macOS-Launcher: de/launcher-macos.md
   - Linux-Launcher: de/launcher-linux.md
