@@ -87,3 +87,51 @@ main mid-session (regular merge `d8018a94`); this session's work lives on
   every page; prohibited without ask). Matched the existing per-page
   header pattern at the shared-component level instead, per the user's
   explicit choice.
+
+---
+
+## C6-C12 (PR #24, branch feature/dialogs-to-pages-c6, base main)
+
+Continued after PR #23 (C3 + app-header + C5) merged. PR #24 holds:
+
+- **C6** — `refactor(editor): lift active chapter into the URL (?chapter=)`
+  (BookEditor; derived-from-URL with a thin setter wrapper, ~18 call
+  sites unchanged, prose-only) + **ChapterVersionsModal →
+  `/books/:bookId/chapters/:chapterId/snapshots`** (ChapterVersionsView
+  extracted; restore navigates to `/book/:bookId?chapter=:id` so the
+  editor re-mounts + re-fetches with the chapter selected).
+- **C7 SKIPPED** — CommentPreviewModal stays a dialog: no
+  `GET /api/comments/{id}` (can't self-load on deep-link without backend
+  work) + pure-presentational coupled to the global Comments-Admin table.
+- **C8** — GitBackupDialog → `/books/:bookId/git-backup` + GitSyncDialog →
+  `/books/:bookId/git-sync` (**per-book**, not `/settings/*`; in-place
+  chrome→PageLayout; GitSyncDiffDialog stays a nested Dialog).
+- **C9** — ShortcutCheatsheet → `/help/shortcuts` (Ctrl+/ navigates
+  there). DonationOnboardingDialog + AiSetupWizard stay dialogs
+  (auto-trigger onboarding; not navigation targets).
+- **C11** — orphaned dialog-chrome CSS cleanup (WritingHistoryView +
+  ChapterVersionsView modules; global.css comment).
+- **C12** — `docs/architecture/dialog-to-pages-routes.md` route map +
+  classification.
+
+Each landed as its own green commit (Vitest 2661, tsc, verify-theme,
+build, docs-discipline). New E2E specs per page (deep-link + back +
+mobile) for Aster to run.
+
+## Still open — unadjudicated forks (real stop-conditions)
+
+- **C7** CommentPreview: keep dialog, or add `GET /api/comments/{id}` +
+  migrate?
+- **C10 inline-remaining** (FieldClass/TranslationLinks/WritingGoalSettings/
+  DashboardFilterSheet/ConflictResolution): the plan says "inline into
+  parent" but the target is ambiguous/contradictory (ConflictResolution
+  listed as BOTH page and inline; some hold transient state). Needs
+  per-item adjudication before implementing — stopped here per the
+  "stop only on real architecture forks" directive.
+
+## Questions and assumptions
+
+- Routes corrected per-item vs the handover (systematically wrong):
+  WritingHistory global; Git per-book; CommentPreview no endpoint.
+- DonationOnboarding classified with AiSetup (auto-trigger onboarding →
+  stays a dialog), consistent with the user's explicit AiSetup decision.
