@@ -2,7 +2,6 @@ import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate, useSearchParams} from "react-router-dom";
 import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from "../api/client";
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
-import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
@@ -122,7 +121,6 @@ export default function BookEditor() {
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
-    const [versionsChapterId, setVersionsChapterId] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
     const [showStoryboard, setShowStoryboard] = useState(searchParams.get("view") === "storyboard");
@@ -752,7 +750,7 @@ export default function BookEditor() {
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                onShowVersions={(id) => setVersionsChapterId(id)}
+                onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -959,37 +957,6 @@ export default function BookEditor() {
                 onDiscardLocal={resolveConflictDiscardLocal}
                 onSaveAsNewChapter={resolveConflictSaveAsNew}
             />
-            {bookId ? (
-                <ChapterVersionsModal
-                    open={versionsChapterId !== null}
-                    bookId={bookId}
-                    chapterId={versionsChapterId}
-                    onClose={() => setVersionsChapterId(null)}
-                    onRestored={async (restoredId) => {
-                        // Reload the book so the restored chapter's
-                        // bumped version lands in state, AND fetch
-                        // the chapter directly so the editor receives
-                        // the new content. ``api.books.get`` defaults
-                        // to ``include_content=false``, which would
-                        // otherwise propagate an empty string into the
-                        // editor and silently wipe the restored text.
-                        if (!bookId) return;
-                        try {
-                            const fresh = await api.books.get(bookId);
-                            setBook(fresh);
-                            if (restoredId === activeChapterId) {
-                                const restoredChapter = await api.chapters.get(bookId, restoredId);
-                                setLoadedContent({
-                                    id: restoredChapter.id,
-                                    content: restoredChapter.content,
-                                });
-                            }
-                        } catch {
-                            /* next interaction will reload */
-                        }
-                    }}
-                />
-            ) : null}
         </div>
     );
 }

@@ -1,8 +1,9 @@
 /**
- * T-01 Phase B: ChapterVersionsModal CSS-Module.
+ * ChapterVersionsView CSS-Module (version-history list + diff panel).
  *
- * Migrated from a 13-line ``const styles`` block. 11 keys, ~12 inline
- * applications. Lists chapter version history.
+ * Originally a `const styles` block (T-01 Phase B); renamed from
+ * ChapterVersionsModal.module.css alongside the Dialog->Pages migration
+ * (C6) that extracted the body into ChapterVersionsView.
  */
 
 .content {

@@ -1,5 +1,6 @@
 /**
- * Pins the chapter snapshots/version modal (CHAPTER-SNAPSHOTS-01 C2):
+ * Pins the chapter snapshots/version view (CHAPTER-SNAPSHOTS-01 C2;
+ * extracted from ChapterVersionsModal in the Dialog->Pages migration C6):
  * - Manual snapshots render a "Snapshot" badge + name; auto rows a v-badge.
  * - Take Snapshot calls createSnapshot with the typed name + reloads.
  * - Restore confirms first; on cancel restoreVersion is never called.
@@ -8,7 +9,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-import ChapterVersionsModal from "./ChapterVersionsModal";
+import ChapterVersionsView from "./ChapterVersionsView";
 import type { ChapterVersionSummary } from "../api/client";
 
 vi.mock("../hooks/useI18n", () => ({
@@ -66,17 +67,11 @@ const MANUAL: ChapterVersionSummary = {
 
 function renderModal() {
   return render(
-    <ChapterVersionsModal
-      open
-      bookId="b1"
-      chapterId="ch1"
-      onClose={vi.fn()}
-      onRestored={vi.fn()}
-    />,
+    <ChapterVersionsView bookId="b1" chapterId="ch1" onRestored={vi.fn()} />,
   );
 }
 
-describe("ChapterVersionsModal", () => {
+describe("ChapterVersionsView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     listVersions.mockResolvedValue([MANUAL, AUTO]);
