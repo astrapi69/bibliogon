@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
@@ -61,6 +61,16 @@ export default function CreateArticlePage() {
   const [language, setLanguage] = useState("de");
   const [submitting, setSubmitting] = useState(false);
 
+  // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: the workspace default
+  // content-type (ui.defaults.content_type) is fetched async below and
+  // applied once both it and the type registry are available. An
+  // explicit ?type= (requestedValid) or a manual dropdown pick
+  // (userChoseTypeRef) always wins over the configured default.
+  const [configuredContentType, setConfiguredContentType] = useState<
+    string | null
+  >(null);
+  const userChoseTypeRef = useRef(false);
+
   // Keep the title field in sync with the type context (initial load +
   // type-dropdown changes) until the user edits it by hand.
   useEffect(() => {
@@ -68,9 +78,21 @@ export default function CreateArticlePage() {
   }, [contextTitle, titleDirty]);
 
   const handleTypeChange = (value: string) => {
+    userChoseTypeRef.current = true;
     setSelectedType(value as ContentType);
     setExplicit(true);
   };
+
+  // Apply the configured default content-type once it has loaded AND
+  // the registry knows it. Skipped when the user deep-linked an
+  // explicit ?type= or already picked a type by hand. Setting the type
+  // here is NOT an explicit choice, so the generic title is preserved.
+  useEffect(() => {
+    if (requestedValid || userChoseTypeRef.current) return;
+    if (!configuredContentType) return;
+    if (!typesSnapshot.types[configuredContentType]) return;
+    setSelectedType(configuredContentType as ContentType);
+  }, [configuredContentType, typesSnapshot, requestedValid]);
 
   // Pre-fill the author from the configured profile (mirrors the former
   // one-click create). Silent fail: a blank author is fine, the user can
@@ -85,9 +107,15 @@ export default function CreateArticlePage() {
         const penNames = Array.isArray(authorConfig.pen_names)
           ? (authorConfig.pen_names as string[]).filter(Boolean)
           : [];
+        const uiConfig = (config.ui || {}) as Record<string, unknown>;
+        const uiDefaults = (uiConfig.defaults || {}) as Record<string, unknown>;
+        const defaultContentType = uiDefaults.content_type;
         if (cancelled) return;
         setAuthorChoices(realName ? [realName, ...penNames] : penNames);
         if (realName) setAuthor((prev) => prev || realName);
+        if (typeof defaultContentType === "string") {
+          setConfiguredContentType(defaultContentType);
+        }
       })
       .catch(() => {});
     return () => {

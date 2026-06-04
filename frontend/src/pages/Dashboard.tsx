@@ -62,6 +62,11 @@ export default function Dashboard() {
     const [loading, setLoading] = useState(true);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
+    // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
+    // book-type (ui.defaults.book_type). The split-button primary
+    // "Neues Buch" creates this type (CreateBookPage applies it); the
+    // chevron dropdown lists every other dashboard-visible type.
+    const [defaultBookType, setDefaultBookType] = useState("prose");
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
@@ -337,6 +342,10 @@ export default function Dashboard() {
             .then((config) => {
                 const donations = getDonationsConfig(config);
                 setDonationsConfig(donations);
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const uiDefaults = (uiConfig.defaults || {}) as Record<string, unknown>;
+                const dt = uiDefaults.book_type;
+                if (typeof dt === "string") setDefaultBookType(dt);
             })
             .catch(() => {});
     }, []);
@@ -482,9 +491,13 @@ export default function Dashboard() {
                                 "Weitere Buch-Arten",
                             )}
                             dropdownItems={bookTypesSnapshot.ordered
+                                // Exclude the configured default (created
+                                // by the primary button) so the dropdown
+                                // never duplicates it. Defaults to prose,
+                                // matching the pre-feature behaviour.
                                 .filter(
                                     (bt) =>
-                                        bt.id !== "prose" &&
+                                        bt.id !== defaultBookType &&
                                         bt.dashboard_create_visible,
                                 )
                                 .map(

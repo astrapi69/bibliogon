@@ -76,6 +76,16 @@ ui:
   subtitle: ''
   theme: warm-literary
   title: Bibliogon
+  defaults:
+    # Pre-selected type when creating a new book / text. The Dashboard
+    # "Neues Buch" / Article-list "Neuer Artikel" main buttons and the
+    # /books/new + /articles/new pages start from these. A "?type="
+    # URL param always overrides the configured default.
+    # Allowed book_type values come from book-types.yaml
+    # (prose | picture_book | comic_book); content_type values from
+    # content-types.yaml (the 8 article types).
+    book_type: prose
+    content_type: blogpost
   picture_book:
     # Workspace default for the picture-book / comic-book PDF export
     # controls (PdfExportControls). Authors can still override per

@@ -298,6 +298,75 @@ def test_patch_page_size_does_not_break_unrelated_ui_keys(client):
     assert resp.json()["ui"]["dashboard"]["books_view"] == "list"
 
 
+# --- PATCH /api/settings/app : ui.defaults (book_type + content_type) ---
+
+
+def test_patch_accepts_valid_default_book_type(client):
+    """Each registry book_type round-trips into ui.defaults.book_type."""
+    for value in ("prose", "picture_book", "comic_book"):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"defaults": {"book_type": value}}},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["ui"]["defaults"]["book_type"] == value
+
+
+def test_patch_accepts_valid_default_content_type(client):
+    """A representative set of registry content_types round-trips."""
+    for value in ("blogpost", "tutorial", "short_story"):
+        resp = client.patch(
+            "/api/settings/app",
+            json={"ui": {"defaults": {"content_type": value}}},
+        )
+        assert resp.status_code == 200, resp.text
+        assert resp.json()["ui"]["defaults"]["content_type"] == value
+
+
+def test_patch_accepts_both_defaults_together(client):
+    """Book + content default persist together in one PATCH and survive
+    a subsequent GET (round-trip to disk + back)."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ui": {"defaults": {"book_type": "comic_book", "content_type": "tutorial"}}},
+    )
+    assert resp.status_code == 200, resp.text
+    fresh = client.get("/api/settings/app").json()
+    assert fresh["ui"]["defaults"]["book_type"] == "comic_book"
+    assert fresh["ui"]["defaults"]["content_type"] == "tutorial"
+
+
+def test_patch_rejects_unknown_default_book_type(client):
+    """A book_type not in book-types.yaml produces a 400 naming the key."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ui": {"defaults": {"book_type": "novella"}}},
+    )
+    assert resp.status_code == 400
+    assert "ui.defaults.book_type" in resp.json()["detail"]
+
+
+def test_patch_rejects_unknown_default_content_type(client):
+    """A content_type not in content-types.yaml produces a 400."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ui": {"defaults": {"content_type": "podcast"}}},
+    )
+    assert resp.status_code == 400
+    assert "ui.defaults.content_type" in resp.json()["detail"]
+
+
+def test_patch_defaults_does_not_break_unrelated_ui_keys(client):
+    """ui.defaults validation fires only on its own keys; other ui
+    fields flow through untouched."""
+    resp = client.patch(
+        "/api/settings/app",
+        json={"ui": {"defaults": {"book_type": "prose"}, "sidebar_collapsed": True}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["ui"]["sidebar_collapsed"] is True
+
+
 # --- GET /api/settings/plugins ---
 
 

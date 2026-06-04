@@ -49,11 +49,12 @@ vi.mock("../hooks/useI18n", () => ({
 
 const mockArticlesCreate = vi.fn()
 const mockNotifyError = vi.fn()
+const mockGetApp = vi.fn()
 
 vi.mock("../api/client", () => ({
   api: {
     settings: {
-      getApp: vi.fn().mockResolvedValue({author: {name: "", pen_names: []}}),
+      getApp: (...args: unknown[]) => mockGetApp(...args),
     },
     articles: {
       create: (...args: unknown[]) => mockArticlesCreate(...args),
@@ -109,7 +110,38 @@ describe("CreateArticlePage", () => {
   beforeEach(() => {
     mockArticlesCreate.mockReset()
     mockNotifyError.mockReset()
+    mockGetApp.mockReset()
+    mockGetApp.mockResolvedValue({author: {name: "", pen_names: []}})
     mockArticlesCreate.mockResolvedValue({id: "new-article-id"})
+  })
+
+  it("pre-selects the configured default content-type when no ?type= is given", async () => {
+    mockGetApp.mockResolvedValue({
+      author: {name: "", pen_names: []},
+      ui: {defaults: {content_type: "tutorial"}},
+    })
+    renderPage("/articles/new")
+    // The title testid tracks selectedType; tutorial must be applied.
+    await waitFor(() =>
+      expect(screen.getByTestId("create-article-title-tutorial")).toBeTruthy(),
+    )
+    fireEvent.click(screen.getByTestId("create-article-submit"))
+    await waitFor(() => expect(mockArticlesCreate).toHaveBeenCalledTimes(1))
+    const payload = mockArticlesCreate.mock.calls[0][0] as Record<string, unknown>
+    expect(payload.content_type).toBe("tutorial")
+  })
+
+  it("lets an explicit ?type= override the configured default content-type", async () => {
+    mockGetApp.mockResolvedValue({
+      author: {name: "", pen_names: []},
+      ui: {defaults: {content_type: "tutorial"}},
+    })
+    renderPage("/articles/new?type=blogpost")
+    await waitFor(() =>
+      expect(screen.getByTestId("create-article-title-blogpost")).toBeTruthy(),
+    )
+    // The configured default (tutorial) must NOT override the URL.
+    expect(screen.queryByTestId("create-article-title-tutorial")).toBeNull()
   })
 
   it("defaults to the registry default type when no ?type= is given", async () => {
