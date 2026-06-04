@@ -136,6 +136,30 @@ dev-backend:
 dev-frontend:
 	cd frontend && npm run dev
 
+build-frontend: ## Build the frontend production bundle to frontend/dist
+	@echo "Building frontend bundle..."
+	@cd frontend && npm run build
+	@echo "Frontend built -> frontend/dist"
+
+dev-lan: build-frontend ## Serve the whole app on the LAN, single port 0.0.0.0:8000 (mobile access, LAN-MODE-PHASE-1)
+	@# Single-origin LAN mode: the backend serves the built frontend/dist
+	@# AND the API on one port, so a phone reaches everything at one URL
+	@# with no CORS hop. Foreground (one process); Ctrl+C stops it. NO
+	@# --reload: a reload would regenerate the LAN PIN and drop sessions.
+	@echo ""
+	@echo "Bibliogon LAN mode: frontend + API on a single origin (:8000)."
+	@ip=$$(hostname -I 2>/dev/null | awk '{print $$1}'); \
+		if [ -n "$$ip" ]; then \
+			echo "  On this device : http://localhost:8000"; \
+			echo "  On the LAN     : http://$$ip:8000"; \
+		else \
+			echo "  Open http://<this-device-LAN-IP>:8000 on the phone."; \
+		fi
+	@echo "  (Backend binds 0.0.0.0, no --reload. Ctrl+C to stop.)"
+	@echo ""
+	@cd backend && poetry env use python3.12 -q 2>/dev/null; \
+		BIBLIOGON_LAN_MODE=1 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
 # --- Install ---
 
 install: install-plugins install-backend install-frontend install-e2e ## Install all dependencies

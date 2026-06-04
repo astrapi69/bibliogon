@@ -2965,6 +2965,12 @@ ui:
       grid_2x2: "標準グリッド（4 コマ）"
       grid_2x3: "2 段組み（6 コマ）"
       grid_3x2: "3 段組み（6 コマ）"
+  lan_access:
+    heading: "LANアクセス"
+    description: "同じネットワーク上の別のデバイスを接続します。QRコードをスキャンするか、URLを開いてPINを入力してください。"
+    url_label: "URL"
+    pin_label: "PIN"
+    scan_hint: "QRコードをスキャンしてデバイスを接続"
   about:
     heading: "Bibliogon について"
     description: "バージョン、システム情報、インストール済みプラグイン、寄付チャネル。"

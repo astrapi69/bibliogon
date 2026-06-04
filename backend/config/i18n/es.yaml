@@ -2965,6 +2965,12 @@ ui:
       grid_2x2: "Cuadrícula estándar (4 viñetas)"
       grid_2x3: "Dos filas (6 viñetas)"
       grid_3x2: "Tres filas (6 viñetas)"
+  lan_access:
+    heading: "Acceso LAN"
+    description: "Conecta un segundo dispositivo en la misma red: escanea el código QR o abre la URL e introduce el PIN."
+    url_label: "URL"
+    pin_label: "PIN"
+    scan_hint: "Escanea el código QR para conectar un dispositivo"
   about:
     heading: "Acerca de Bibliogon"
     description: "Version, info del sistema, plugins instalados y canales de donacion."
