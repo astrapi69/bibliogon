@@ -59,6 +59,38 @@ def _validate_dashboard_page_sizes(ui: dict[str, Any]) -> None:
             )
 
 
+def _validate_ui_defaults(ui: dict[str, Any]) -> None:
+    """Reject ui.defaults.{book_type,content_type} values outside the
+    registry-defined allowed sets. Raises 400 with a precise message
+    naming the offending key + the allowed set. Silent on missing keys.
+
+    SSoT: the allowed ids come from book-types.yaml / content-types.yaml
+    via the registry services, never a hardcoded list here. Adding a new
+    book/content type to the YAML automatically widens the allowed set.
+    """
+    defaults = ui.get("defaults")
+    if not isinstance(defaults, dict):
+        return
+
+    from app.services.book_type_registry import book_type_ids
+    from app.services.content_type_registry import content_type_ids
+
+    checks: tuple[tuple[str, Any], ...] = (
+        ("book_type", book_type_ids),
+        ("content_type", content_type_ids),
+    )
+    for key, allowed_fn in checks:
+        if key not in defaults:
+            continue
+        value = defaults[key]
+        allowed = allowed_fn()
+        if value not in allowed:
+            raise HTTPException(
+                status_code=400,
+                detail=(f"ui.defaults.{key} must be one of {sorted(allowed)}; got {value!r}"),
+            )
+
+
 def _secrets_managed_externally() -> bool:
     """True when the user has migrated secrets to the override file
     OR set the BIBLIOGON_AI_API_KEY env-var. Frontend reads this
@@ -213,6 +245,9 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
         # Validate enum-constrained dashboard keys (C2) BEFORE merging
         # so an invalid request never reaches disk.
         _validate_dashboard_page_sizes(body.ui)
+        # Validate ui.defaults.{book_type,content_type} against the
+        # type registries (SSoT) before write.
+        _validate_ui_defaults(body.ui)
 
     if body.app is not None:
         current.setdefault("app", {}).update(body.app)

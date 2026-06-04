@@ -4,7 +4,9 @@
  *
  * Pins the extracted "Verhalten" tab — Language + Trash +
  * delete-permanently + allow-without-author lifted out of the old
- * catch-all "Allgemein" tab.
+ * catch-all "Allgemein" tab. CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01
+ * added the "Standardwerte" section (default book-type + content-type)
+ * to the same tab.
  */
 
 import {describe, it, expect, vi} from "vitest";
@@ -19,6 +21,35 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
+// The Standardwerte section consumes the type registries via hooks.
+// Mock them so the component renders without the App-root providers.
+vi.mock("../../hooks/useBookTypes", () => ({
+    useBookTypes: () => ({
+        types: {},
+        ordered: [
+            {id: "prose", label_key: "ui.book_types.prose"},
+            {id: "picture_book", label_key: "ui.book_types.picture_book"},
+            {id: "comic_book", label_key: "ui.book_types.comic_book"},
+        ],
+        status: "ready",
+        refresh: vi.fn(),
+    }),
+}));
+
+vi.mock("../../hooks/useContentTypes", () => ({
+    useContentTypes: () => ({
+        types: {},
+        ordered: [
+            {id: "blogpost", label_key: "ui.content_types.blogpost"},
+            {id: "tutorial", label_key: "ui.content_types.tutorial"},
+            {id: "short_story", label_key: "ui.content_types.short_story"},
+        ],
+        defaultId: "blogpost",
+        status: "ready",
+        refresh: vi.fn(),
+    }),
+}));
+
 describe("VerhaltenSettings — extracted Behavior tab", () => {
     const baseConfig = {
         app: {
@@ -27,6 +58,12 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
             trash_auto_delete_days: 30,
             delete_permanently: false,
             allow_books_without_author: true,
+        },
+        ui: {
+            defaults: {
+                book_type: "prose",
+                content_type: "blogpost",
+            },
         },
     };
 
@@ -40,7 +77,18 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
         expect(screen.getByTestId("settings-allow-books-without-author")).toBeChecked();
     });
 
-    it("invokes onSave with the {app + behavior} envelope on save click", () => {
+    it("renders the Standardwerte section with both type dropdowns", () => {
+        render(<VerhaltenSettings config={baseConfig} onSave={vi.fn()} saving={false}/>);
+        expect(screen.getByTestId("settings-defaults")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("settings-default-book-type-trigger"),
+        ).toBeInTheDocument();
+        expect(
+            screen.getByTestId("settings-default-content-type-trigger"),
+        ).toBeInTheDocument();
+    });
+
+    it("invokes onSave with the {app + behavior + ui} envelope on save click", () => {
         const onSave = vi.fn();
         render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
         fireEvent.click(screen.getByTestId("verhalten-settings-save"));
@@ -56,7 +104,60 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
             behavior: {
                 skip_non_destructive_confirmations: false,
             },
+            ui: {
+                defaults: {
+                    book_type: "prose",
+                    content_type: "blogpost",
+                },
+            },
         });
+    });
+
+    it("threads the default book-type + content-type through the save payload", () => {
+        const onSave = vi.fn();
+        render(
+            <VerhaltenSettings
+                config={{
+                    ...baseConfig,
+                    ui: {defaults: {book_type: "comic_book", content_type: "tutorial"}},
+                }}
+                onSave={onSave}
+                saving={false}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ui: {
+                    defaults: {book_type: "comic_book", content_type: "tutorial"},
+                },
+            }),
+        );
+    });
+
+    it("preserves unrelated ui.* branches in the save payload", () => {
+        const onSave = vi.fn();
+        render(
+            <VerhaltenSettings
+                config={{
+                    ...baseConfig,
+                    ui: {
+                        picture_book: {pdf_default_format: "8x10"},
+                        defaults: {book_type: "prose", content_type: "blogpost"},
+                    },
+                }}
+                onSave={onSave}
+                saving={false}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                ui: expect.objectContaining({
+                    picture_book: {pdf_default_format: "8x10"},
+                }),
+            }),
+        );
     });
 
     it("skip-non-destructive toggle threads through the save payload", () => {

@@ -1,8 +1,11 @@
 import {useEffect, useState} from "react";
 import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
+import {useBookTypes} from "../../hooks/useBookTypes";
+import {useContentTypes} from "../../hooks/useContentTypes";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
+import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";
 
@@ -12,8 +15,12 @@ export function VerhaltenSettings({config, onSave, saving}: {
     saving: boolean;
 }) {
     const {t} = useI18n();
+    const bookTypes = useBookTypes();
+    const contentTypes = useContentTypes();
     const app = (config.app || {}) as Record<string, unknown>;
     const behavior = (config.behavior || {}) as Record<string, unknown>;
+    const ui = (config.ui || {}) as Record<string, unknown>;
+    const uiDefaults = (ui.defaults || {}) as Record<string, unknown>;
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
@@ -25,6 +32,12 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const [skipNonDestructive, setSkipNonDestructive] = useState(
         Boolean(behavior.skip_non_destructive_confirmations),
     );
+    const [defaultBookType, setDefaultBookType] = useState(
+        (uiDefaults.book_type as string) || "prose",
+    );
+    const [defaultContentType, setDefaultContentType] = useState(
+        (uiDefaults.content_type as string) || "blogpost",
+    );
 
     useEffect(() => {
         setLang((app.default_language as string) || "de");
@@ -34,6 +47,10 @@ export function VerhaltenSettings({config, onSave, saving}: {
         setAllowBooksWithoutAuthor(Boolean(app.allow_books_without_author));
         const b = (config.behavior || {}) as Record<string, unknown>;
         setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
+        const d = (((config.ui || {}) as Record<string, unknown>).defaults ||
+            {}) as Record<string, unknown>;
+        setDefaultBookType((d.book_type as string) || "prose");
+        setDefaultContentType((d.content_type as string) || "blogpost");
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
 
@@ -48,6 +65,17 @@ export function VerhaltenSettings({config, onSave, saving}: {
         behavior: {
             ...behavior,
             skip_non_destructive_confirmations: skipNonDestructive,
+        },
+        // Preserve other ui.* branches (picture_book, dashboard, ...)
+        // via the spread; only the defaults branch is owned here. The
+        // backend PATCH shallow-merges ui, so the full branch is sent.
+        ui: {
+            ...ui,
+            defaults: {
+                ...uiDefaults,
+                book_type: defaultBookType,
+                content_type: defaultContentType,
+            },
         },
     });
 
@@ -149,6 +177,41 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         indentedDescription
                     />
                 </div>
+                <div className={styles.subCard} data-testid="settings-defaults">
+                    <h3 className={styles.subCardTitle}>
+                        {t("ui.settings.defaults_title", "Standardwerte")}
+                    </h3>
+                    <HelpText>
+                        {t("ui.settings.defaults_hint", "Der vorausgewählte Typ beim Erstellen neuer Bücher und Texte. Ein „?type=\"-Parameter in der URL hat Vorrang.")}
+                    </HelpText>
+                    <div className={styles.subCardGrid}>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.default_book_type", "Standard-Buchtyp")}</label>
+                            <RadixSelect
+                                value={defaultBookType}
+                                onValueChange={setDefaultBookType}
+                                testId="settings-default-book-type"
+                                options={bookTypes.ordered.map((bt) => ({
+                                    value: bt.id,
+                                    label: t(bt.label_key, bt.id),
+                                }))}
+                            />
+                        </div>
+                        <div className="field">
+                            <label className="label">{t("ui.settings.default_content_type", "Standard-Textart")}</label>
+                            <RadixSelect
+                                value={defaultContentType}
+                                onValueChange={setDefaultContentType}
+                                testId="settings-default-content-type"
+                                options={contentTypes.ordered.map((ct) => ({
+                                    value: ct.id,
+                                    label: t(ct.label_key, ct.id),
+                                }))}
+                            />
+                        </div>
+                    </div>
+                </div>
+
                 <button
                     className="btn btn-primary"
                     disabled={saving}
