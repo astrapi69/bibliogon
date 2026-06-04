@@ -102,9 +102,12 @@ test.describe("Get-Started multi-book-type onboarding smoke", () => {
         await page.goto("/get-started");
         await page.evaluate(() => localStorage.removeItem("bibliogon-onboarding"));
         await page.reload();
+        await page.waitForLoadState("networkidle").catch(() => {});
         await page.getByRole("button", {name: "2", exact: true}).click();
 
-        await page.getByTestId("getstarted-sample-prose").click();
+        const sample = page.getByTestId("getstarted-sample-prose");
+        await expect(sample).toBeVisible();
+        await sample.click();
         // After successful creation, navigate fires to /book/{id}.
         // URL pattern is exactly /book/<uuid>; this catches both
         // BookEditor (prose) AND the picture/comic editors' shared
@@ -119,9 +122,14 @@ test.describe("Get-Started multi-book-type onboarding smoke", () => {
         await page.goto("/get-started");
         await page.evaluate(() => localStorage.removeItem("bibliogon-onboarding"));
         await page.reload();
+        // Let the async App-level donation banner / config fetch settle so
+        // a late layout shift doesn't detach the sample button mid-click.
+        await page.waitForLoadState("networkidle").catch(() => {});
         await page.getByRole("button", {name: "2", exact: true}).click();
 
-        await page.getByTestId("getstarted-sample-picture_book").click();
+        const sample = page.getByTestId("getstarted-sample-picture_book");
+        await expect(sample).toBeVisible();
+        await sample.click();
         await page.waitForURL(/\/book\/[a-f0-9-]+/);
         // The router branches on book_type; picture_book lands on
         // PageEditor.
@@ -136,9 +144,12 @@ test.describe("Get-Started multi-book-type onboarding smoke", () => {
         await page.goto("/get-started");
         await page.evaluate(() => localStorage.removeItem("bibliogon-onboarding"));
         await page.reload();
+        await page.waitForLoadState("networkidle").catch(() => {});
         await page.getByRole("button", {name: "2", exact: true}).click();
 
-        await page.getByTestId("getstarted-sample-comic_book").click();
+        const sample = page.getByTestId("getstarted-sample-comic_book");
+        await expect(sample).toBeVisible();
+        await sample.click();
         await page.waitForURL(/\/book\/[a-f0-9-]+/);
         // Comic-book router branch lands on ComicBookEditor.
         await expect(

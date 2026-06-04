@@ -100,8 +100,13 @@ test("create book from memoir template populates chapters", async ({page}) => {
     await expect(submit).toBeEnabled();
     await submit.click();
 
-    // The modal closes and the new book appears on the dashboard.
-    // Fetch via API to count chapters since the card doesn't show them.
+    // Dialog->Pages C2: a prose create navigates back to the dashboard.
+    // Wait for that navigation so the API poll only starts once the
+    // create has actually been processed (avoids an empty-list race).
+    await expect(page).not.toHaveURL(/\/books\/new/);
+
+    // The new book appears on the dashboard. Fetch via API to count
+    // chapters since the card doesn't show them.
     await page.waitForFunction(async () => {
         const res = await fetch("/api/books");
         if (!res.ok) return false;
@@ -135,6 +140,9 @@ test("create book blank mode still works after template tabs added", async ({pag
     const submit = page.getByTestId("create-book-submit");
     await expect(submit).toBeEnabled();
     await submit.click();
+
+    // Wait for the post-create navigation off /books/new before polling.
+    await expect(page).not.toHaveURL(/\/books\/new/);
 
     await page.waitForFunction(async () => {
         const res = await fetch("/api/books");

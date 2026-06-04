@@ -1,10 +1,11 @@
 /**
- * Smoke test for the Writing-History view (WRITING-HISTORY-STATS-01).
+ * Smoke test for the Writing-History page (WRITING-HISTORY-STATS-01;
+ * Dialog->Pages C5 made it a route at /writing-history).
  *
  * Covers the chart surface Vitest mocks away (recharts needs a real
- * browser): edit a chapter to record writing, open the history modal
- * from the Dashboard widget, and verify the summary + per-book
- * breakdown + window switch + CSV link render.
+ * browser): edit a chapter to record writing, open the history from the
+ * Dashboard widget (now navigates to the page), and verify the summary +
+ * per-book breakdown + window switch + CSV link render.
  *
  * Testid namespace: writing-history-* / writing-goal-history-open.
  */
@@ -29,32 +30,11 @@ test.describe("Writing history", () => {
     await page.goto("/")
     await expect(page.getByTestId("writing-goal-widget")).toBeVisible()
 
-    // Open the Writing-History modal from the widget.
+    // The widget's Verlauf button navigates to the Writing-History page.
     await page.getByTestId("writing-goal-history-open").click()
-    const modal = page.getByTestId("writing-history-modal")
-    await expect(modal).toBeVisible()
+    await expect(page).toHaveURL(/\/writing-history/)
+    await expect(page.getByTestId("writing-history-page")).toBeVisible()
     await expect(page.getByTestId("writing-history-summary")).toBeVisible()
-
-    // Regression pin for the "Verlauf button does nothing" report: the
-    // modal referenced an UNDEFINED CSS class (radix-dialog-content), so
-    // Dialog.Content rendered in document flow with no fixed positioning
-    // and no z-index — invisible/unusable to the user even though
-    // toBeVisible() (which ignores positioning + occlusion) still passed.
-    // Assert the real computed positioning the fix restores; this FAILS
-    // pre-fix (position: static, z-index: auto).
-    const pos = await modal.evaluate((el) => {
-      const cs = getComputedStyle(el)
-      return { position: cs.position, zIndex: cs.zIndex }
-    })
-    expect(pos.position).toBe("fixed")
-    expect(Number(pos.zIndex)).toBeGreaterThan(0)
-    const box = await modal.boundingBox()
-    expect(box).not.toBeNull()
-    const vp = page.viewportSize()
-    if (vp) {
-      expect(box!.y).toBeGreaterThanOrEqual(0)
-      expect(box!.y).toBeLessThan(vp.height)
-    }
 
     // The book appears in the per-book breakdown.
     await expect(page.getByTestId(`writing-history-book-${book.id}`)).toBeVisible()
