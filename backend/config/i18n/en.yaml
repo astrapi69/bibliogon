@@ -596,6 +596,7 @@ ui:
     title: "New Book"
     title_picture_book: "New picture book"
     title_comic_book: "New comic book"
+    create_error: "Could not create the book."
     book_title: "Title"
     book_title_placeholder: "Your book's title"
     author: "Author"

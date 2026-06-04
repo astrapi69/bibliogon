@@ -1,9 +1,10 @@
 /**
- * T-01 Phase B: CreateBookModal CSS-Module.
+ * CreateBookForm CSS-Module (book creation form + template picker grid).
  *
- * Migrated from a 122-line ``const styles`` block at the bottom of
- * CreateBookModal.tsx. 18 keys, ~22 inline applications (book
- * creation form + template picker grid).
+ * Originally a 122-line ``const styles`` block at the bottom of the
+ * former CreateBookModal.tsx (T-01 Phase B), then this module; renamed
+ * from CreateBookModal.module.css alongside the Dialog->Pages migration
+ * (C2) that extracted the form body into CreateBookForm.
  */
 
 .body {

@@ -594,6 +594,7 @@ ui:
     title: "Νέο βιβλίο"
     title_picture_book: "Νέο εικονογραφημένο βιβλίο"
     title_comic_book: "Νέο κόμικ"
+    create_error: "Δεν ήταν δυνατή η δημιουργία του βιβλίου."
     book_title: "Τίτλος"
     book_title_placeholder: "Ο τίτλος του βιβλίου σας"
     author: "Συγγραφέας"

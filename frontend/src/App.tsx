@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from "react";
+import {lazy, Suspense, useCallback, useEffect, useMemo, useState} from "react";
 import {Routes, Route} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
@@ -8,6 +8,10 @@ import MediumImportPage from "./pages/MediumImportPage";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
+// Dialog->Pages migration: new full-page surfaces are lazy-loaded so
+// they create their own chunks (the rest of the routes stay eager).
+const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
+const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
@@ -142,16 +146,20 @@ export default function App() {
                 blanking the whole app. BookEditor's boundary also covers
                 the page-based editors (PageEditor/ComicBookEditor) and
                 Storyboard mounted inside it. */}
+            <Suspense fallback={null}>
             <Routes>
                 <Route path="/" element={<ErrorBoundary surface="dashboard"><Dashboard/></ErrorBoundary>}/>
+                <Route path="/books/new" element={<ErrorBoundary surface="create-book"><CreateBookPage/></ErrorBoundary>}/>
                 <Route path="/book/:bookId" element={<ErrorBoundary surface="book-editor"><BookEditor/></ErrorBoundary>}/>
                 <Route path="/articles" element={<ErrorBoundary surface="article-list"><ArticleList/></ErrorBoundary>}/>
+                <Route path="/articles/new" element={<ErrorBoundary surface="create-article"><CreateArticlePage/></ErrorBoundary>}/>
                 <Route path="/articles/import/medium" element={<ErrorBoundary surface="medium-import"><MediumImportPage/></ErrorBoundary>}/>
                 <Route path="/articles/:id" element={<ErrorBoundary surface="article-editor"><ArticleEditor/></ErrorBoundary>}/>
                 <Route path="/settings" element={<ErrorBoundary surface="settings"><Settings/></ErrorBoundary>}/>
                 <Route path="/help" element={<ErrorBoundary surface="help"><Help/></ErrorBoundary>}/>
                 <Route path="/get-started" element={<ErrorBoundary surface="get-started"><GetStarted/></ErrorBoundary>}/>
             </Routes>
+            </Suspense>
             <EventRecorderSetup/>
             <AudioExportGate/>
             <MediumImportGate/>

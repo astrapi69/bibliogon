@@ -594,6 +594,7 @@ ui:
     title: "Novo livro"
     title_picture_book: "Novo livro ilustrado"
     title_comic_book: "Nova banda desenhada"
+    create_error: "Não foi possível criar o livro."
     book_title: "Titulo"
     book_title_placeholder: "O titulo do seu livro"
     author: "Autor"
