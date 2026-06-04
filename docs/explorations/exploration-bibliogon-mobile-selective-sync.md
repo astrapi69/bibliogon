@@ -4,6 +4,81 @@
 **Status:** Open exploration; not yet decisions
 **Trigger context:** After PluginForge 0.7.0 + V060 + Phase 4 ship, Aster surfaced interest in Multi-Device-Story modeled on sibling project adaptive-learner Phase 13 (PWA/Dexie phone + FastAPI/SQLite desktop, Local-Sync via QR-pairing + AI-Assisted-Merge). Key constraint surfaced by Aster: user selects which content (books, articles, etc.) goes mobile, NOT full-database sync.
 
+> ## 2026-06-04 UPDATE — decisions made; Phase 1 shipped
+>
+> This exploration is no longer "not yet decisions". The 2026-05-20 body
+> below remains as the design source. This block records the decisions
+> taken with Aster on 2026-06-04 and the work already shipped. **Where
+> this block and the body disagree, this block wins.**
+>
+> ### Topology decision: Variant C (Desktop-authoritative)
+> Desktop is the authority (its SQLite + the always-running FastAPI
+> backend are the source of truth); Mobile is a Dexie client (cache +
+> offline queue). **No central cloud server, no CRDT/Automerge, no P2P.**
+> Conflict resolution = surface desktop + mobile versions, user decides
+> (= the body's D4 β, per-document D6 β). This is the topology; the
+> body's **selective-sync** stays the *scope*: full-offline +
+> bidirectional **within the user-selected scope only** (project-level
+> β with sub-item override). Settings stay device-local (not synced).
+>
+> ### Phase 1 (LAN Mode) — SHIPPED 2026-06-04 (PR #28, `main`)
+> Maps onto the body's Phase A (PWA already existed) + Phase D2
+> (pairing). Delivered: single-port serving (backend serves
+> `frontend/dist`, `app/frontend_static.py`), `make dev-lan`, a
+> **PIN gate** (`app/lan_auth.py`: gates `/api/*` + HTML nav, httpOnly
+> 24 h cookie, 3×→10 min lockout) and a **QR** banner + Settings card
+> (`app/lan_net.py`, `segno`). PIN+QR are **new for Bibliogon** (the
+> body assumed adaptive-learner's QR-pairing-token; we shipped a simpler
+> PIN-over-LAN gate because Bibliogon has no account system). All
+> opt-in via `BIBLIOGON_LAN_MODE` — `make dev`/CI/Docker-prod untouched.
+> So the phone can already REACH + view the app on the LAN; Phase 2 adds
+> the offline store + sync.
+>
+> ### D1 (sync as plugin vs core) — leaning core, deferred
+> Phase 1's PIN gate landed in **core** (`backend/app/`), not a plugin.
+> The body's D1-γ (PWA core + sync plugin) is not yet decided; revisit
+> when the sync backend is designed. Not a Phase-2-C1 blocker.
+>
+> ### Phase 2 sequencing decision: IStorageService layer FIRST
+> Before Selection-UI (body Phase C) or Sync-backend (body Phase D), the
+> frontend needs a storage abstraction so a later DexieStorage can slot
+> in without touching every component. Today the frontend goes straight
+> through `frontend/src/api/client.ts` (no abstraction); Dexie exists
+> only for crash-recovery drafts (`frontend/src/db/drafts.ts`); the PWA
+> service worker is `NetworkOnly` for `/api/` (must change for offline).
+>
+> **Adaptive-learner reference-read (2026-06-04, `frontend/src/storage/`):**
+> - `index.ts` — a `getStorage()` factory returns one `IStorageService`,
+>   picking the backend ONCE: persisted `localStorage` mode → build-time
+>   `VITE_STORAGE_MODE` → auto-pick (API in dev/when API base set, else
+>   Dexie). Instance cached for the page lifetime. **Inherit this shape.**
+> - `types.ts` — `IStorageService` is composed of per-domain
+>   sub-interfaces (UserService, ProjectService, SettingsService, …),
+>   each method mirroring the `api/client.ts` signature. `ApiStorage` +
+>   `DexieStorage` both implement it. **Inherit the composition; the
+>   DOMAINS are Bibliogon's (books/chapters/articles/pages/…), not
+>   adaptive-learner's — do NOT copy the schema or domain list.**
+> - Mode lives in `localStorage["adaptive-learner.storage_mode"]` +
+>   `VITE_STORAGE_MODE`. Bibliogon analog: `bibliogon.storage_mode` +
+>   `VITE_STORAGE_MODE`.
+> - **Do NOT copy** adaptive-learner's data classification, full-DB sync
+>   logic, or settings-sync — Bibliogon is selective + device-local
+>   settings (per body's "What NOT to copy" section).
+>
+> **Phase 2 commit plan (IStorageService first):**
+> - **P2-C1 (foundation):** `frontend/src/storage/{types,api-storage,index}.ts`
+>   — `IStorageService` interface (start with the sync-relevant core
+>   domains: books, chapters, articles), `ApiStorage` delegating to the
+>   existing `api` object, `getStorage()` factory + mode resolution
+>   (ApiStorage-only until Dexie lands), `bibliogon.storage_mode` key.
+>   Vitest pins the factory + delegation. No call-site migration yet.
+> - **P2-C2..Cn (migration):** migrate components to `getStorage()`
+>   per domain (Recurring-Component discipline; one domain per commit).
+> - **P2 later:** DexieStorage (offline mirror of the selected scope),
+>   service-worker offline queue (replace `/api/` NetworkOnly), Selection
+>   UI (body Phase C), sync backend `/api/sync/` + conflict UI (body
+>   Phase D). PIN session from Phase 1 carries the mobile auth.
+
 ## Pre-audit
 
 This exploration adapts adaptive-learner Phase 13 to Bibliogon-specific constraints. adaptive-learner syncs Learning-Sessions which are Phone-equal-citizen (user starts on phone, continues on desktop, both surfaces equally productive). Bibliogon is fundamentally Desktop-primary: Picture-Book layout, Comic panel-grid, KDP Publishing-Wizard are not Phone-productive. Phone for Bibliogon is **Capture-and-Review-Surface**, not **Production-Surface**.
@@ -292,3 +367,64 @@ When this exploration goes to CC for evaluation (similar pattern to exploration-
 Apply ACCEPT / DEFER / REJECT / EXTEND markers per sub-phase plus per architecture-decision. Plus surface any Bibliogon-specific blocker not covered above (e.g. existing schema incompatibility with selective-sync, existing UI surface that would need substantial refactor for Mobile-responsive).
 
 CC plus Strategic-Advisor are aligned on β2-style Anti-Speculation: anything not-explicitly-needed gets deferred to follow-up. v1 should ship Capture-plus-Review-on-Phone with Sync-back-to-Desktop. Anything beyond that is follow-up.
+
+---
+
+## 2026-06-04 CLOSEOUT — Phase 3 (offline storage + sync) shipped
+
+Branch `feature/mobile-sync-phase2` (rebased on main, PR opened). The
+Phase-2 storage seam now carries a full offline-and-sync engine.
+
+**Shipped (C1–C10):**
+- **C1 DexieStorage** — IndexedDB backend, flat FK-indexed schema for the
+  selectable graph (`frontend/src/storage/dexie-storage.ts`).
+- **C2 connectivity + auto-switch** — `navigator.onLine` + `/api/health`
+  probe; `getStorage()` resolves ApiStorage online / DexieStorage offline.
+  OPT-IN (only when a book is taken offline) so the desktop is untouched.
+- **C3 selective download** — `GET /api/books/{id}/full` (one-request
+  graph via `serialize_row`) + "Take offline" toggle + Dashboard badge.
+- **C4 read migration** — Dashboard + BookEditor reads via `getStorage()`.
+- **C5 write queue** — `SyncQueueEntry` (Dexie v2, `++seq` FIFO) recorded
+  by a queueing-storage wrapper on every offline write.
+- **C6 background sync** — `processSyncQueue()` replays the queue in
+  FIFO (= FK-safe) order; failures retained, never dropped.
+- **C7 conflict detection** — server-version baselines (Dexie v3); a
+  desktop-side move parks a `conflict` (keep-mobile / keep-desktop via
+  the existing `ConflictResolutionDialog`); book metadata is LWW.
+- **C9 activation** — `SyncStatusWatcher` drains the queue on reconnect +
+  toasts (synced / conflicts / partial).
+- **C10 e2e** — `e2e/smoke/offline-sync.spec.ts` (Aster runs).
+- **(Blogpost SW fix, PR #30)** — the recurring "Blogpost missing from
+  the content-type dropdown" was the dev Service Worker serving a stale
+  bundle, NOT a dropdown filter (verified: a Vitest opens the Radix
+  Select and finds all 8; CreateArticlePage never filtered). Dev SW
+  disabled + skipWaiting/clientsClaim + self-unregister.
+
+**Test layers (per the sync testing directive):** round-trip CRUD,
+FIFO/FK-order pin, parity pin (every wrapper-enqueued op is replayable),
+the 3 conflict scenarios (both-sides → conflict; book title → LWW;
+edit-vs-delete). 33 storage/sync Vitest green.
+
+**DB-guard eval (directive Step 6):** adaptive-learner's `db_guard.py`
+need NOT be ported — Bibliogon already has the equivalent protection:
+`app/paths.py::mark_data_dir_as_production` writes a `.bibliogon-production`
+marker and `backend/tests/conftest.py` aborts the run (exit 2) if a test
+ever sees it, plus `BIBLIOGON_TEST=1` + `TEST_DATABASE_URL` isolation
+(CLAUDE.md "Test isolation"). The sync engine is client-side (replays
+normal REST CRUD); it never wipes the server DB.
+
+**Deferred (follow-ups, not blocking):**
+- **Offline-create id reconciliation** — an offline create posts and the
+  server mints a new id; the local Dexie row keeps its client id. Needs a
+  post-sync local-id rewrite.
+- **Conflict-resolution UI wiring** — show `ConflictResolutionDialog` per
+  parked conflict from a Settings "Sync status" surface (the engine
+  returns the conflicts; the per-conflict dialog flow is the next UI step).
+- **C8 NetworkFirst SW refinement** — runtime `/api/` is `NetworkOnly`
+  today (offline data comes from Dexie via `getStorage`); a NetworkFirst
+  cache is an optional optimisation.
+- **C11 help docs (DE+EN) + screenshots** — user-facing help page for the
+  offline workflow, to land with the phase2 merge.
+- **Pages/comics/story-entity offline CRUD** — the graph is downloaded
+  (C3) but only books/chapters/articles have IStorageService write methods
+  so far; the rest gain methods as their call-sites migrate.

@@ -1671,9 +1671,17 @@ ui:
     completion_toast: "Audiolivro pronto. Disponivel em Metadados > Audiolivro."
     completed_hint: "Audiolivro pronto - clique abre metadados"
   offline:
+    take: "Guardar offline"
+    remove: "Remover offline"
+    working: "A trabalhar …"
+    taken: "O livro está agora disponível offline."
+    removed: "Livro removido do armazenamento offline."
+    error: "A ação offline falhou."
+    available: "Disponível offline"
     banner_message: "Estas sem conexao. As alteracoes sao salvas localmente e serao sincronizadas quando voltares a ter rede."
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Alguns capitulos nao puderam ser sincronizados."
+    conflicts_found: "Conflito encontrado. Resolve-o nas Definições."
   versions:
     menu_item: "Historico de versoes"
     title: "Historico de versoes"

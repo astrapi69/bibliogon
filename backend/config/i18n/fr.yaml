@@ -1671,9 +1671,17 @@ ui:
     redo: "Retablir"
     hint: "Astuce: Appuyez sur Ctrl+/ pour ouvrir cette vue a tout moment."
   offline:
+    take: "Mettre hors ligne"
+    remove: "Retirer hors ligne"
+    working: "En cours …"
+    taken: "Le livre est maintenant disponible hors ligne."
+    removed: "Livre retiré du stockage hors ligne."
+    error: "L'action hors ligne a échoué."
+    available: "Disponible hors ligne"
     banner_message: "Vous etes hors ligne. Les modifications sont sauvees localement et seront synchronisees a la reconnexion."
     synced_toast: "Chapitres synchronises: {count}"
     sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
+    conflicts_found: "Conflit détecté. Résous-le dans les Réglages."
   versions:
     menu_item: "Historique des versions"
     title: "Historique des versions"

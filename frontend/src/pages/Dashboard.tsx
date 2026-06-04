@@ -1,6 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {api, ApiError, Book} from "../api/client";
+import {getStorage} from "../storage";
 import WritingGoalWidget from "../components/WritingGoalWidget";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
@@ -313,7 +314,9 @@ export default function Dashboard() {
 
     const loadBooks = async () => {
         try {
-            const data = await api.books.list();
+            // Reads route through the storage seam: ApiStorage online,
+            // DexieStorage offline (offline-available books). (P3-C4)
+            const data = await getStorage().books.list();
             setBooks(data);
         } catch (err) {
             console.error("Failed to load books:", err);
