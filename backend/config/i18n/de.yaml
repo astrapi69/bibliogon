@@ -2975,6 +2975,12 @@ ui:
       grid_2x2: "Standardraster (4 Panels)"
       grid_2x3: "Zweistufig (6 Panels)"
       grid_3x2: "Dreistufig (6 Panels)"
+  lan_access:
+    heading: "LAN-Zugriff"
+    description: "Verbinde ein zweites Gerät im selben Netzwerk: scanne den QR-Code oder öffne die URL und gib die PIN ein."
+    url_label: "URL"
+    pin_label: "PIN"
+    scan_hint: "QR-Code scannen, um ein Gerät zu verbinden"
   about:
     heading: "Über Bibliogon"
     description: "Version, System-Info, installierte Plugins und Spenden-Kanäle."

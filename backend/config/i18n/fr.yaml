@@ -2965,6 +2965,12 @@ ui:
       grid_2x2: "Grille standard (4 cases)"
       grid_2x3: "Deux rangées (6 cases)"
       grid_3x2: "Trois rangées (6 cases)"
+  lan_access:
+    heading: "Accès LAN"
+    description: "Connecte un second appareil sur le même réseau : scanne le QR code, ou ouvre l'URL et saisis le code PIN."
+    url_label: "URL"
+    pin_label: "PIN"
+    scan_hint: "Scanne le QR code pour connecter un appareil"
   about:
     heading: "À propos de Bibliogon"
     description: "Version, infos systeme, plugins installes et canaux de don."

@@ -2965,6 +2965,12 @@ ui:
       grid_2x2: "Standart ızgara (4 panel)"
       grid_2x3: "İki katmanlı (6 panel)"
       grid_3x2: "Üç katmanlı (6 panel)"
+  lan_access:
+    heading: "LAN erişimi"
+    description: "Aynı ağdaki ikinci bir cihazı bağla: QR kodunu tara ya da URL'yi açıp PIN'i gir."
+    url_label: "URL"
+    pin_label: "PIN"
+    scan_hint: "Bir cihaz bağlamak için QR kodunu tara"
   about:
     heading: "Bibliogon Hakkında"
     description: "Surum, sistem bilgisi, yuklenmis eklentiler ve bagis kanallari."

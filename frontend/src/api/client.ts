@@ -1807,6 +1807,12 @@ export interface MediumImportCancelPreviewResponse {
 // --- Books ---
 
 export const api = {
+  lanAuth: {
+    /** LAN-mode access details. Throws ApiError(404) when LAN mode
+     *  is off, which the Settings card treats as "hide the section". */
+    info: () => request<LanAccessInfo>("/lan-auth/info"),
+  },
+
   books: {
     list: () => request<Book[]>("/books"),
 
@@ -5057,6 +5063,18 @@ export interface DiscoveredPlugin {
    *  plugins added via ``register_plugin()`` (ZIP installs).
    *  Null for configured-but-not-discovered rows. */
   source: "entry_point" | "direct_register" | null;
+}
+
+/** Returned by GET /api/lan-auth/info when LAN mode is active.
+ *  Absent (the endpoint 404s) when the backend runs without
+ *  BIBLIOGON_LAN_MODE -- the caller treats that as "LAN mode off".
+ *  See LAN-MODE-PHASE-1. */
+export interface LanAccessInfo {
+  enabled: boolean;
+  lan_ip: string;
+  port: number;
+  url: string;
+  pin: string;
 }
 
 /** Returned by GET /api/system/info. Aggregates app identity +
