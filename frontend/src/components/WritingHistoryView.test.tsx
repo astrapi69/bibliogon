@@ -1,5 +1,6 @@
 /**
- * Pins the Writing-History modal (WRITING-HISTORY-STATS-01 C2):
+ * Pins the Writing-History view (WRITING-HISTORY-STATS-01 C2; extracted
+ * from WritingHistoryModal in the Dialog->Pages migration C5):
  * - Summary cards render the fetched stats.
  * - The window buttons refetch for the chosen day-range.
  * - The CSV export link points at the export endpoint.
@@ -11,7 +12,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
-import WritingHistoryModal from "./WritingHistoryModal";
+import WritingHistoryView from "./WritingHistoryView";
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -70,7 +71,7 @@ const BOOKS = [
   { book_id: "b2", book_title: "Beta", total_words: 434, daily: [] },
 ];
 
-describe("WritingHistoryModal", () => {
+describe("WritingHistoryView", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     summary.mockResolvedValue(SUMMARY);
@@ -82,7 +83,7 @@ describe("WritingHistoryModal", () => {
   });
 
   function renderModal() {
-    return render(<WritingHistoryModal open onClose={vi.fn()} />);
+    return render(<WritingHistoryView />);
   }
 
   it("renders summary cards from the fetched stats", async () => {

@@ -18,6 +18,14 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }))
 
+// Dialog->Pages C5: the Verlauf button navigates to /writing-history
+// instead of opening a modal. Mock useNavigate to assert the route.
+const navigateMock = vi.fn()
+vi.mock("react-router-dom", async (orig) => ({
+    ...(await orig<typeof import("react-router-dom")>()),
+    useNavigate: () => navigateMock,
+}))
+
 vi.mock("../api/client", async () => {
     const actual = await vi.importActual<typeof import("../api/client")>("../api/client")
     return {
@@ -97,48 +105,14 @@ describe("WritingGoalWidget", () => {
         expect(container.querySelector('[data-testid="writing-goal-widget"]')).toBeNull()
     })
 
-    // Regression pin for the "Verlauf button does nothing" report: clicking
-    // the history button must open the WritingHistoryModal and render content.
-    it("opens the Writing-History modal when the Verlauf button is clicked", async () => {
+    // Regression pin for the "Verlauf button does nothing" report: the
+    // history button must navigate to the /writing-history page (the
+    // view's content + empty-state are pinned in WritingHistoryView.test).
+    it("navigates to /writing-history when the Verlauf button is clicked", async () => {
         ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockResolvedValue([])
-        ;(api.writingStats.summary as ReturnType<typeof vi.fn>).mockResolvedValue({
-            total_words: 1234,
-            days_active: 3,
-            avg_per_active_day: 411,
-            current_streak: 2,
-            longest_streak: 5,
-            daily: [{day: daysAgo(0), words_written: 600}],
-        })
-        ;(api.writingStats.byBook as ReturnType<typeof vi.fn>).mockResolvedValue([])
-        render(<WritingGoalWidget />)
-        await waitFor(() => expect(screen.getByTestId("writing-goal-widget")).toBeTruthy())
-        // Modal not mounted-open before the click.
-        expect(screen.queryByTestId("writing-history-modal")).toBeNull()
-        fireEvent.click(screen.getByTestId("writing-goal-history-open"))
-        const modal = await screen.findByTestId("writing-history-modal")
-        expect(modal).toBeTruthy()
-        // Real content renders (summary cards + chart), not a blank modal.
-        expect(await screen.findByTestId("writing-history-summary")).toBeTruthy()
-        expect(await screen.findByTestId("writing-history-chart")).toBeTruthy()
-        // Locale-robust: the summary value 1234 renders with the env's
-        // thousands separator (1,234 or 1.234); assert the digits survive.
-        expect(modal.textContent?.replace(/[.,]/g, "")).toContain("1234")
-    })
-
-    // When the stats fetch fails, the modal must still open with an empty
-    // state — never a silently-blank body.
-    it("opens with an empty state when the stats fetch fails", async () => {
-        ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockResolvedValue([])
-        ;(api.writingStats.summary as ReturnType<typeof vi.fn>).mockRejectedValue(
-            new Error("boom"),
-        )
-        ;(api.writingStats.byBook as ReturnType<typeof vi.fn>).mockRejectedValue(
-            new Error("boom"),
-        )
         render(<WritingGoalWidget />)
         await waitFor(() => expect(screen.getByTestId("writing-goal-widget")).toBeTruthy())
         fireEvent.click(screen.getByTestId("writing-goal-history-open"))
-        expect(await screen.findByTestId("writing-history-modal")).toBeTruthy()
-        expect(await screen.findByTestId("writing-history-empty")).toBeTruthy()
+        expect(navigateMock).toHaveBeenCalledWith("/writing-history")
     })
 })

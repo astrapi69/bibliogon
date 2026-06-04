@@ -1,9 +1,11 @@
 /**
- * T-01 Phase B: ExportDialog CSS-Module.
+ * ExportForm CSS-Module (format grid + format buttons + the top
+ * format-contextual HelpLink row).
  *
- * Migrated from a 17-line ``const styles`` block at the bottom of
- * ExportDialog.tsx. 3 keys, 3 inline applications (1 grid, 1 btn,
- * 1 btn-active modifier).
+ * Originally a `const styles` block at the bottom of the former
+ * ExportDialog.tsx (T-01 Phase B); renamed from ExportDialog.module.css
+ * alongside the Dialog->Pages migration (C3) that extracted the form
+ * body into ExportForm.
  */
 
 .formatGrid {
@@ -33,4 +35,12 @@
     border-color: var(--accent);
     background: var(--accent-light);
     color: var(--accent);
+}
+
+/* Dialog->Pages C3: format-contextual HelpLink row at the top of the
+ * export form (the "?" used to sit inside the dialog title). */
+.helpRow {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 8px;
 }
