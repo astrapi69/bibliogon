@@ -1110,7 +1110,7 @@ ui:
     content_type: "Type de contenu"
     content_type_tooltip: "Type de contenu: Article de blog / Tutoriel / Critique / Essai / Newsletter / Interview / Listicle / Nouvelle."
     import_more_tooltip: "Options d'import et de sauvegarde"
-    default_title: "Nouvel article"
+    default_title: "Nouveau texte"
     create_error: "Impossible de creer l'article."
     empty_heading: "Aucun article pour l'instant"
     empty_subtitle: "Creez votre premier article pour rediger des publications longues separement des livres."

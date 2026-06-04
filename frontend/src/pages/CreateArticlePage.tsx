@@ -7,6 +7,7 @@ import { PageLayout } from "../components/PageLayout";
 import {
   useContentTypes,
   contentTypeDefaultTitleKey,
+  contentTypeLabelKey,
 } from "../hooks/useContentTypes";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
@@ -30,24 +31,46 @@ export default function CreateArticlePage() {
   const typesSnapshot = useContentTypes();
   const [searchParams] = useSearchParams();
 
-  // Resolve ?type= against the registry; fall back to the default type
-  // (the same default the split-button's primary action used).
+  // Resolve ?type= against the registry. A valid ?type= is an EXPLICIT
+  // type choice (the dashboard dropdown deep-links with it); the bare
+  // main "Neuer Text" button navigates without one, so the type defaults
+  // to the registry default (blogpost) but stays "not explicitly chosen".
   const requested = searchParams.get("type");
-  const contentType: ContentType = (
-    requested && typesSnapshot.types[requested]
-      ? requested
-      : typesSnapshot.defaultId
-  ) as ContentType;
+  const requestedValid = !!(requested && typesSnapshot.types[requested]);
 
-  const genericTitle = t("ui.articles.default_title", "Neuer Artikel");
-  const titleKey = contentTypeDefaultTitleKey(typesSnapshot, contentType);
-  const defaultTitle = titleKey ? t(titleKey, genericTitle) : genericTitle;
+  const [selectedType, setSelectedType] = useState<ContentType>(
+    (requestedValid ? requested : typesSnapshot.defaultId) as ContentType,
+  );
+  // Until the user signals a specific type (deep-link ?type= or picking
+  // one in the dropdown) the page shows the GENERIC title ("Neuer Text"),
+  // not a per-type one ("Neuer Blogpost") -- the user hasn't chosen a type.
+  const [explicit, setExplicit] = useState(requestedValid);
+  const [titleDirty, setTitleDirty] = useState(false);
 
-  const [title, setTitle] = useState(defaultTitle);
+  const genericTitle = t("ui.articles.default_title", "Neuer Text");
+  const typeTitle = (typeId: string): string => {
+    const key = contentTypeDefaultTitleKey(typesSnapshot, typeId);
+    return key ? t(key, genericTitle) : genericTitle;
+  };
+  // Title shown in the page heading + pre-filled into the input.
+  const contextTitle = explicit ? typeTitle(selectedType) : genericTitle;
+
+  const [title, setTitle] = useState(contextTitle);
   const [author, setAuthor] = useState("");
   const [authorChoices, setAuthorChoices] = useState<string[]>([]);
   const [language, setLanguage] = useState("de");
   const [submitting, setSubmitting] = useState(false);
+
+  // Keep the title field in sync with the type context (initial load +
+  // type-dropdown changes) until the user edits it by hand.
+  useEffect(() => {
+    if (!titleDirty) setTitle(contextTitle);
+  }, [contextTitle, titleDirty]);
+
+  const handleTypeChange = (value: string) => {
+    setSelectedType(value as ContentType);
+    setExplicit(true);
+  };
 
   // Pre-fill the author from the configured profile (mirrors the former
   // one-click create). Silent fail: a blank author is fine, the user can
@@ -82,7 +105,7 @@ export default function CreateArticlePage() {
         title: title.trim(),
         language,
         author: author.trim() || null,
-        content_type: contentType,
+        content_type: selectedType,
       });
       navigate(`/articles/${fresh.id}`);
     } catch (err) {
@@ -96,8 +119,8 @@ export default function CreateArticlePage() {
 
   return (
     <PageLayout
-      title={defaultTitle}
-      titleTestId={`create-article-title-${contentType}`}
+      title={contextTitle}
+      titleTestId={`create-article-title-${selectedType}`}
       testId="create-article-page"
       maxWidth="md"
       onBack={goBack}
@@ -113,7 +136,10 @@ export default function CreateArticlePage() {
         <input
           className="input"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={(e) => {
+            setTitle(e.target.value);
+            setTitleDirty(true);
+          }}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
               e.preventDefault();
@@ -123,6 +149,49 @@ export default function CreateArticlePage() {
           data-testid="create-article-title"
           autoFocus
         />
+      </div>
+
+      {/* Content-type selector — all registered types, the registry
+          default (blogpost) pre-selected. Picking a type makes the
+          choice explicit and (until the user edits the title) updates
+          the title to that type's default. */}
+      <div className="field">
+        <label className="label">
+          {t("ui.articles.content_type", "Textart")}
+        </label>
+        <Select.Root value={selectedType} onValueChange={handleTypeChange}>
+          <Select.Trigger
+            className="radix-select-trigger"
+            data-testid="create-article-type"
+          >
+            <Select.Value />
+            <Select.Icon>
+              <ChevronDown size={14} />
+            </Select.Icon>
+          </Select.Trigger>
+          <Select.Portal>
+            <Select.Content
+              className="radix-select-content"
+              position="popper"
+              sideOffset={4}
+            >
+              <Select.Viewport>
+                {typesSnapshot.ordered.map((typeDef) => (
+                  <Select.Item
+                    key={typeDef.id}
+                    value={typeDef.id}
+                    className="radix-select-item"
+                    data-testid={`create-article-type-${typeDef.id}`}
+                  >
+                    <Select.ItemText>
+                      {t(contentTypeLabelKey(typesSnapshot, typeDef.id), typeDef.id)}
+                    </Select.ItemText>
+                  </Select.Item>
+                ))}
+              </Select.Viewport>
+            </Select.Content>
+          </Select.Portal>
+        </Select.Root>
       </div>
 
       <div className="field">

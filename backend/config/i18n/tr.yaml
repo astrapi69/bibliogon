@@ -1110,7 +1110,7 @@ ui:
     content_type: "Icerik tipi"
     content_type_tooltip: "Icerik turu: Blog yazisi / Egitim / Inceleme / Deneme / Bulten / Roportaj / Liste yazisi / Kisa hikaye."
     import_more_tooltip: "İçe aktarma ve yedekleme seçenekleri"
-    default_title: "Yeni makale"
+    default_title: "Yeni metin"
     create_error: "Makale olusturulamadi."
     empty_heading: "Henuz makale yok"
     empty_subtitle: "Kitaplardan ayri olarak uzun yazilar yazmak icin ilk makaleni olustur."
