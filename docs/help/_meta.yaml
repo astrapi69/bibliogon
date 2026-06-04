@@ -240,6 +240,10 @@ navigation:
           en: Cross-platform installers
         slug: install/cross-platform-installers
       - title:
+          de: Auf dem Handy nutzen
+          en: Use on mobile
+        slug: install/mobile
+      - title:
           de: Windows-Launcher
           en: Windows Launcher
         slug: launcher-windows
