@@ -171,11 +171,14 @@ export const dexieStorage: IStorageService = {
     get: async (id, includeContent = false) => {
       const book = await offlineDb.books.get(id);
       if (!book) notFound("Book", id);
-      const chapters = includeContent
-        ? (await offlineDb.chapters.where("book_id").equals(id).toArray()).sort(
-            (a, b) => a.position - b.position,
-          )
-        : [];
+      // Match the API contract: the chapter LIST (titles/positions) is
+      // always present; only the heavy `content` is stripped when
+      // includeContent is false (BookEditor loads it per-chapter).
+      const chapters = (
+        await offlineDb.chapters.where("book_id").equals(id).toArray()
+      )
+        .sort((a, b) => a.position - b.position)
+        .map((c) => (includeContent ? c : { ...c, content: "" }));
       const detail: BookDetail = { ...book, chapters };
       return detail;
     },

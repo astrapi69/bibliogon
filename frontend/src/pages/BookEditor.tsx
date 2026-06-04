@@ -13,6 +13,7 @@ import ConflictResolutionDialog, {
 } from "../components/ConflictResolutionDialog";
 import ChapterSidebar from "../components/ChapterSidebar";
 import { OfflineToggleButton } from "../components/OfflineToggleButton";
+import { getStorage } from "../storage";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
 import PageEditor from "../components/PageEditor";
@@ -327,7 +328,7 @@ export default function BookEditor() {
     const runLoad = async () => {
       if (!bookId) return;
       try {
-        const data = await api.books.get(bookId);
+        const data = await getStorage().books.get(bookId);
         if (cancelled) return;
         setBook(data);
         if (data.chapters.length > 0) {
@@ -656,7 +657,7 @@ export default function BookEditor() {
       });
       // Reload the book so the new chapter shows up + every
       // position bumped on the server is reflected in state.
-      const fresh = await api.books.get(bookId);
+      const fresh = await getStorage().books.get(bookId);
       setBook(fresh);
       // Source chapter keeps the server's content; load that
       // into the editor so the user sees the canonical version.
@@ -765,7 +766,7 @@ export default function BookEditor() {
             allBooks={allBooks}
             onRefresh={async () => {
               if (!bookId) return;
-              const fresh = await api.books.get(bookId);
+              const fresh = await getStorage().books.get(bookId);
               setBook(fresh);
             }}
           />
