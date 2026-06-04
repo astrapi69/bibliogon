@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-story-bible"
-version = "0.45.0"
+version = "0.46.0"
 description = "Story Bible plugin for Bibliogon - per-book fiction-writing entity database (characters, settings, plot points, items, lore) with @-mention cross-references (Session 1: scaffolding)"
 authors = ["astrapi69"]
 license = "MIT"

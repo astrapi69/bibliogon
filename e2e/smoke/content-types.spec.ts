@@ -40,6 +40,20 @@ async function deleteArticle(id: string): Promise<void> {
     await fetch(`${API}/articles/${id}`, {method: "DELETE"});
 }
 
+/**
+ * Dialog->Pages C2: article creation is now a form page at /articles/new
+ * (the split-button navigates there instead of one-click creating). The
+ * form pre-fills the per-type title, so submitting creates the article
+ * and lands on its editor. Returns the new article id (UUID, distinct
+ * from the literal "new" segment of the form URL).
+ */
+async function submitCreateForm(page: import("@playwright/test").Page): Promise<string> {
+    await page.waitForURL(/\/articles\/new(\?|$)/);
+    await page.getByTestId("create-article-submit").click();
+    await page.waitForURL(/\/articles\/[0-9a-f-]{8,}$/i);
+    return page.url().split("/").pop()!;
+}
+
 interface ArticleResponse {
     id: string;
     title: string;
@@ -53,10 +67,9 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         await expect(page.getByTestId("article-list-page")).toBeVisible();
 
         await page.getByTestId("article-list-new").click();
-
-        // The redirect lands on /articles/{id}; capture the id from URL.
-        await page.waitForURL(/\/articles\/[a-z0-9]+/i);
-        const id = page.url().split("/").pop()!;
+        // The split-button navigates to the create form; submitting it
+        // creates the (default) blogpost and lands on its editor.
+        const id = await submitCreateForm(page);
 
         const article = await getJson<ArticleResponse>(`/articles/${id}`);
         expect(article.content_type).toBe("blogpost");
@@ -105,9 +118,8 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
 
         await page.getByTestId("new-article-chevron").click();
         await page.getByTestId("new-article-menu-item-tutorial").click();
-
-        await page.waitForURL(/\/articles\/[a-z0-9]+/i);
-        const id = page.url().split("/").pop()!;
+        // Navigates to /articles/new?type=tutorial; submit to create it.
+        const id = await submitCreateForm(page);
 
         const article = await getJson<ArticleResponse>(`/articles/${id}`);
         expect(article.content_type).toBe("tutorial");
@@ -118,11 +130,10 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
     test("editor type selector switches type + reveals extra fields", async ({
         page,
     }) => {
-        // Seed: create a blogpost via the primary click.
+        // Seed: create a blogpost via the primary click + form submit.
         await page.goto("/articles");
         await page.getByTestId("article-list-new").click();
-        await page.waitForURL(/\/articles\/[a-z0-9]+/i);
-        const id = page.url().split("/").pop()!;
+        const id = await submitCreateForm(page);
 
         // Editor sidebar's type selector is present.
         const typeSelect = page.getByTestId("article-editor-content-type-trigger");
@@ -179,8 +190,7 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         await page.goto("/articles");
         await page.getByTestId("new-article-chevron").click();
         await page.getByTestId("new-article-menu-item-tutorial").click();
-        await page.waitForURL(/\/articles\/[a-z0-9]+/i);
-        const id = page.url().split("/").pop()!;
+        const id = await submitCreateForm(page);
 
         // Back to the list. Wait for the row to render before probing
         // the badge — isVisible() does not auto-wait, so a still-

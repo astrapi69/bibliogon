@@ -4,6 +4,53 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.46.0] - 2026-06-04
+
+The Dialog → Pages + Tailwind/shadcn-foundation release. Eight of the
+app's large, deep-linkable dialogs became real full-page routes rendered
+through a shared `PageLayout` (app-chrome header + centered content +
+working browser Back), and the editor's active chapter moved into the URL
+so chapter selections are deep-linkable. The migration sits on a new
+Tailwind v4 + shadcn/ui foundation (token-mapped, so the existing theme
+system stays the single source of truth for color). No schema migrations
+- existing data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- **Dialog → Pages migration.** Eight dialogs are now deep-linkable
+  routes, each with a working Back button and a mobile-friendly layout
+  (no overlay, no size-jump):
+  - `/books/new?type=<book_type>` (was CreateBookModal)
+  - `/articles/new?type=<content_type>` (was the one-click split-button create)
+  - `/books/:bookId/export` (was ExportDialog)
+  - `/writing-history` (was WritingHistoryModal; global across all books)
+  - `/books/:bookId/chapters/:chapterId/snapshots` (was ChapterVersionsModal)
+  - `/books/:bookId/git-backup` + `/books/:bookId/git-sync` (were the Git dialogs)
+  - `/help/shortcuts` (was the Ctrl+/ shortcut cheatsheet overlay)
+- **Deep-linkable chapter selection.** The book editor's active chapter
+  is now carried in the URL (`?chapter=<id>`), so a chapter can be linked
+  directly and a snapshot restore returns to the editor with the right
+  chapter selected.
+- **Shared `PageLayout` with the app-chrome header** - the migrated pages
+  carry the same brand + theme-toggle header as the rest of the app, so a
+  deep-linked page still reads as "inside Bibliogon".
+- **Tailwind v4 + shadcn/ui foundation** - a token-mapped `@theme` bridge
+  (Preflight omitted) so Tailwind color utilities resolve to the existing
+  `var(--*)` theme tokens, plus a shadcn Dialog primitive now backing
+  `AppDialog` and the confirmation dialogs.
+
+### Changed
+- **`recharts` is lazy-loaded** with the writing-history page, moving
+  ~330 kB out of the eager dashboard bundle.
+- Five smaller dialogs were migrated onto the shadcn Dialog primitive
+  (Phase B) - these stay dialogs (small, context-bound, transient state).
+
+### Docs
+- `docs/architecture/dialog-to-pages-routes.md` - the route map and the
+  per-dialog classification (which surfaces became pages, and which stay
+  dialogs by design: confirmations, transient-state wizards,
+  auto-triggered onboarding nudges, and detail modals without a
+  single-fetch endpoint).
+
 ## [0.45.0] - 2026-06-02
 
 The QA-hardening + native-i18n release. An adversarial security +

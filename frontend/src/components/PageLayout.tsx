@@ -31,6 +31,12 @@ export interface PageLayoutProps {
     /** Optional testid for the <h1> title (e.g. a page that preserves a
      *  per-variant title testid from the dialog it replaced). */
     titleTestId?: string;
+    /** Wrap the title + content in a centered card surface (bg-card +
+     *  border + shadow + padding), matching the Medium-import / wizard
+     *  visual language so every Dialog->Pages page reads as the same
+     *  kind of surface. Default `true`; pass `false` for a page that
+     *  manages its own full-bleed layout. */
+    card?: boolean;
     children: React.ReactNode;
 }
 
@@ -52,6 +58,7 @@ export function PageLayout({
     actions,
     testId,
     titleTestId,
+    card = true,
     children,
 }: PageLayoutProps) {
     const navigate = useNavigate();
@@ -61,7 +68,7 @@ export function PageLayout({
             {/* App-chrome header — same visual language as the existing
                 page headers (brand left, controls right, bg-card bar). */}
             <header className="border-b border-border bg-card">
-                <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-4 px-6 py-3">
+                <div className="mx-auto flex max-w-[1100px] items-center justify-between gap-3 px-4 py-3 sm:gap-4 sm:px-6">
                     <button
                         type="button"
                         onClick={() => navigate("/")}
@@ -82,26 +89,38 @@ export function PageLayout({
             </header>
 
             <main id="main-content" className={cn("mx-auto px-4 py-6 sm:px-6", widthClass)}>
-                <div className="mb-6 flex items-center gap-3">
-                    {onBack && (
-                        <button
-                            type="button"
-                            onClick={onBack}
-                            className="btn-icon"
-                            aria-label={backLabel ?? "Back"}
-                            data-testid={testId ? `${testId}-back` : "page-back"}
-                        >
-                            <ChevronLeft size={18} />
-                        </button>
+                {/* Centered card surface (Dialog->Pages visual parity):
+                    the same bg-card + border + shadow + padding language
+                    as the Medium-import / wizard surfaces. Tokens only, so
+                    `make verify-theme` stays authoritative across all 12
+                    variants. */}
+                <div
+                    className={cn(
+                        card &&
+                            "rounded-[var(--radius-lg)] border border-border bg-card p-5 shadow-[var(--shadow-md)] sm:p-8",
                     )}
-                    <h1
-                        className="font-[family-name:var(--font-display)] text-2xl font-semibold"
-                        data-testid={titleTestId}
-                    >
-                        {title}
-                    </h1>
+                >
+                    <div className="mb-6 flex items-center gap-3">
+                        {onBack && (
+                            <button
+                                type="button"
+                                onClick={onBack}
+                                className="btn-icon"
+                                aria-label={backLabel ?? "Back"}
+                                data-testid={testId ? `${testId}-back` : "page-back"}
+                            >
+                                <ChevronLeft size={18} />
+                            </button>
+                        )}
+                        <h1
+                            className="font-[family-name:var(--font-display)] text-2xl font-semibold"
+                            data-testid={titleTestId}
+                        >
+                            {title}
+                        </h1>
+                    </div>
+                    {children}
                 </div>
-                {children}
             </main>
         </div>
     );

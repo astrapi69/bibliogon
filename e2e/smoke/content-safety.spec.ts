@@ -216,7 +216,11 @@ test.describe('Content safety', () => {
       await page.locator(`[data-testid='chapter-item-${chapter.id}']`).click({button: 'right'})
     })
     await page.getByTestId(`chapter-context-history-${chapter.id}`).click()
-    await expect(page.getByTestId('chapter-versions-modal')).toBeVisible()
+    // Dialog->Pages C6: the version history is now a route.
+    await expect(page).toHaveURL(
+      new RegExp(`/books/${book.id}/chapters/${chapter.id}/snapshots`),
+    )
+    await expect(page.getByTestId('chapter-versions-page')).toBeVisible()
 
     // Backend snapshots the PRE-update state; with 3 saves the
     // snapshots are "v0", "edit one", "edit two". Restore the one
@@ -240,9 +244,11 @@ test.describe('Content safety', () => {
     expect(restoreId, 'a version snapshot with content "edit one"').not.toBeNull()
     await page.getByTestId(`chapter-version-restore-${restoreId}`).click()
     // Restore asks for confirmation via AppDialog ("Version
-    // wiederherstellen?"); accept it before the modal closes.
+    // wiederherstellen?"); accept it.
     await acceptDialog(page)
-    await expect(page.getByTestId('chapter-versions-modal')).toBeHidden({timeout: 5000})
+    // On restore the page navigates back to the editor with the chapter
+    // selected (?chapter=); the editor re-fetches the restored content.
+    await expect(page).toHaveURL(new RegExp(`/book/${book.id}\\?chapter=`), {timeout: 5000})
     await expect(page.locator('.ProseMirror')).toContainText('edit one')
   })
 })

@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-help"
-version = "0.45.0"
+version = "0.46.0"
 description = "In-app help, keyboard shortcuts, and FAQ for Bibliogon"
 authors = ["astrapi69"]
 license = "MIT"

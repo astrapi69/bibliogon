@@ -1,9 +1,10 @@
 /**
  * Smoke tests for Scrivener-style chapter snapshots
- * (CHAPTER-SNAPSHOTS-01) in the version-history modal.
+ * (CHAPTER-SNAPSHOTS-01) on the version-history page (Dialog->Pages C6
+ * made it a route at /books/:bookId/chapters/:chapterId/snapshots).
  *
  * Covers what Vitest can't reliably do (Radix ContextMenu open +
- * portal in happy-dom): open the version modal from the chapter
+ * portal in happy-dom): open the version page from the chapter
  * context menu, take a named manual snapshot, see the Snapshot badge
  * + name, open the diff-vs-current view, and return to the list.
  *
@@ -21,10 +22,13 @@ test.describe("Chapter snapshots", () => {
         const row = page.getByTestId(`chapter-item-${ch.id}`)
         await expect(row).toBeVisible()
 
-        // Open the version-history modal from the chapter context menu.
+        // Open the version-history page from the chapter context menu.
         await row.click({button: "right"})
         await page.getByTestId(`chapter-context-history-${ch.id}`).click()
-        await expect(page.getByTestId("chapter-versions-modal")).toBeVisible()
+        await expect(page).toHaveURL(
+            new RegExp(`/books/${book.id}/chapters/${ch.id}/snapshots`),
+        )
+        await expect(page.getByTestId("chapter-versions-page")).toBeVisible()
 
         // Take a named manual snapshot of the current saved state.
         await page.getByTestId("chapter-snapshot-name").fill("Milestone")
