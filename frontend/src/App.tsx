@@ -13,6 +13,7 @@ import GetStarted from "./pages/GetStarted";
 const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
 const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
+const WritingHistoryPage = lazy(() => import("./pages/WritingHistoryPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
@@ -160,6 +161,7 @@ export default function App() {
                 <Route path="/settings" element={<ErrorBoundary surface="settings"><Settings/></ErrorBoundary>}/>
                 <Route path="/help" element={<ErrorBoundary surface="help"><Help/></ErrorBoundary>}/>
                 <Route path="/get-started" element={<ErrorBoundary surface="get-started"><GetStarted/></ErrorBoundary>}/>
+                <Route path="/writing-history" element={<ErrorBoundary surface="writing-history"><WritingHistoryPage/></ErrorBoundary>}/>
             </Routes>
             </Suspense>
             <EventRecorderSetup/>

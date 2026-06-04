@@ -7,11 +7,11 @@
  *  GET /api/writing-sessions. Streak + today are computed here so the
  *  backend stays goal-agnostic. */
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Flame, BarChart3 } from "lucide-react";
 
 import { api, type WritingSession } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import WritingHistoryModal from "./WritingHistoryModal";
 import styles from "./WritingGoalWidget.module.css";
 
 const GOAL_KEY = "bibliogon-daily-word-goal";
@@ -67,10 +67,10 @@ export function computeStreak(
 
 export default function WritingGoalWidget() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [sessions, setSessions] = useState<WritingSession[]>([]);
   const [goal, setGoal] = useState<number>(readGoal);
   const [loaded, setLoaded] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -141,16 +141,12 @@ export default function WritingGoalWidget() {
       </span>
       <button
         className="btn btn-secondary btn-sm"
-        onClick={() => setShowHistory(true)}
+        onClick={() => navigate("/writing-history")}
         data-testid="writing-goal-history-open"
       >
         <BarChart3 size={14} aria-hidden />{" "}
         {t("ui.writing_stats.open", "Verlauf")}
       </button>
-      <WritingHistoryModal
-        open={showHistory}
-        onClose={() => setShowHistory(false)}
-      />
     </div>
   );
 }
