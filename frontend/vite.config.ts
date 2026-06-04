@@ -7,7 +7,18 @@ import { VitePWA } from "vite-plugin-pwa";
 
 import pkg from "./package.json" with { type: "json" };
 
+// GitHub-Pages / sub-path support. The deployed base path is injected at
+// build time via VITE_BASE_URL (e.g. "/bibliogon/" for GitHub Pages);
+// the default "/" keeps the Desktop / LAN / `make dev` builds exactly as
+// they are today. Vite exposes the resolved value as
+// `import.meta.env.BASE_URL`, which the router reads for its basename and
+// vite-plugin-pwa uses for the Service Worker registration scope +
+// precache URLs. Vitest never sets the env-var, so component tests always
+// run under base "/".
+const base = process.env.VITE_BASE_URL || "/";
+
 export default defineConfig({
+  base,
   define: {
     // Single source of truth: package.json. Replaced at build
     // time (and during vitest runs) by the literal string.
@@ -53,19 +64,23 @@ export default defineConfig({
         background_color: "#faf8f5",
         display: "standalone",
         orientation: "any",
-        start_url: "/",
-        scope: "/",
+        // start_url / scope / icon srcs follow the deploy base so the
+        // installed PWA works under a sub-path (GitHub Pages) as well as
+        // at the root (Desktop / LAN). With base "/" these resolve to the
+        // exact same values shipped today.
+        start_url: base,
+        scope: base,
         icons: [
-          { src: "/icon-192.png", sizes: "192x192", type: "image/png" },
-          { src: "/icon-512.png", sizes: "512x512", type: "image/png" },
+          { src: `${base}icon-192.png`, sizes: "192x192", type: "image/png" },
+          { src: `${base}icon-512.png`, sizes: "512x512", type: "image/png" },
           {
-            src: "/icon-192.svg",
+            src: `${base}icon-192.svg`,
             sizes: "192x192",
             type: "image/svg+xml",
             purpose: "any",
           },
           {
-            src: "/icon-512.svg",
+            src: `${base}icon-512.svg`,
             sizes: "512x512",
             type: "image/svg+xml",
             purpose: "any",
@@ -75,7 +90,9 @@ export default defineConfig({
       workbox: {
         // Precache static assets, skip API calls
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
-        navigateFallback: "/index.html",
+        // SPA navigation fallback lives under the deploy base so deep
+        // routes resolve to the right index.html on a sub-path host.
+        navigateFallback: `${base}index.html`,
         // Take control + drop the previous precache as soon as a
         // new SW installs, so a new production bundle is served on
         // the next load instead of lingering behind the old SW.
