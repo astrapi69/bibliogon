@@ -644,10 +644,14 @@ export default function ArticleList() {
                                 "Weitere Artikel-Arten",
                             )}
                             dropdownItems={articleTypesSnapshot.ordered
-                                .filter(
-                                    (at) =>
-                                        at.id !== articleTypesSnapshot.defaultId,
-                                )
+                                // Show ALL content types, including the
+                                // default (Blogpost). It is deliberately
+                                // NOT filtered out: the user must be able
+                                // to see and explicitly pick every type
+                                // from the menu. The bare primary button
+                                // still creates the default generically
+                                // (-> "Neuer Text"); picking Blogpost here
+                                // is an explicit choice (-> "Neuer Blogpost").
                                 .map(
                                     (at): SplitButtonDropdownItem => ({
                                         id: at.id,
