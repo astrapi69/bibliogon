@@ -14,25 +14,33 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import "fake-indexeddb/auto";
 
 vi.mock("../api/client", () => {
-  const r = () => vi.fn(async () => ({ id: "srv" }) as never);
+  const w = () => vi.fn(async () => ({ id: "srv" }) as never);
+  // GET returns a server record whose updated_at matches the default
+  // baseline, so by default there is no conflict; conflict tests override.
+  const g = () => vi.fn(async () => ({ updated_at: "BASE" }) as never);
   return {
     api: {
-      books: { create: r(), update: r(), delete: r() },
-      chapters: { create: r(), update: r(), delete: r() },
-      articles: { create: r(), update: r(), delete: r() },
+      books: { create: w(), update: w(), delete: w() },
+      chapters: { create: w(), update: w(), delete: w(), get: g() },
+      articles: { create: w(), update: w(), delete: w(), get: g() },
     },
   };
 });
 
 import { api } from "../api/client";
-import { offlineDb, dexieStorage } from "./dexie-storage";
+import { offlineDb, dexieStorage, setBaseline } from "./dexie-storage";
 import {
   makeQueueingStorage,
   pendingSyncCount,
   clearSyncQueue,
   listPendingSyncEntries,
 } from "./sync-queue";
-import { processSyncQueue, REPLAYABLE_OPS } from "./sync-engine";
+import {
+  processSyncQueue,
+  REPLAYABLE_OPS,
+  resolveKeepMobile,
+  resolveKeepDesktop,
+} from "./sync-engine";
 
 const storage = makeQueueingStorage(dexieStorage);
 
@@ -49,7 +57,7 @@ describe("processSyncQueue", () => {
 
     const result = await processSyncQueue();
 
-    expect(result).toEqual({ synced: 2, failed: 0 });
+    expect(result).toEqual({ synced: 2, failed: 0, conflicts: [] });
     // FK-order: book create replays BEFORE its chapter create.
     expect(
       vi.mocked(api.books.create).mock.invocationCallOrder[0],
@@ -68,7 +76,7 @@ describe("processSyncQueue", () => {
 
     const result = await processSyncQueue();
 
-    expect(result).toEqual({ synced: 1, failed: 1 }); // article ok, book failed
+    expect(result).toEqual({ synced: 1, failed: 1, conflicts: [] }); // article ok, book failed
     // The failed book entry is retained (not dropped) for retry.
     const all = await offlineDb.syncQueue.toArray();
     const failed = all.filter((e) => e.status === "failed");
@@ -104,5 +112,97 @@ describe("processSyncQueue", () => {
     expect(result.failed).toBe(0);
     expect(result.synced).toBe(enqueuedKeys.size > 0 ? result.synced : 0);
     expect(await pendingSyncCount()).toBe(0);
+  });
+});
+
+describe("conflict detection (C7)", () => {
+  it("detects a conflict when the chapter moved on the server (both sides edited)", async () => {
+    const book = await storage.books.create({ title: "B" });
+    const ch = await storage.chapters.create(book.id, { title: "K" });
+    // Downloaded baseline, then edited offline:
+    await setBaseline("chapter", ch.id, "2026-01-01T00:00:00Z");
+    await storage.chapters.update(book.id, ch.id, {
+      version: 0,
+      title: "K-mobile",
+    });
+    // Desktop moved the chapter while offline (server updated_at != base):
+    vi.mocked(api.chapters.get).mockResolvedValue({
+      updated_at: "2026-02-02T00:00:00Z",
+    } as never);
+
+    const result = await processSyncQueue();
+
+    // The two creates replay; the update is parked as a conflict.
+    expect(result.conflicts).toHaveLength(1);
+    expect(result.conflicts[0].model).toBe("chapter");
+    expect(result.conflicts[0].operation).toBe("update");
+    expect(result.conflicts[0].serverDeleted).toBe(false);
+    // Conflicted entry is NOT auto-resolved (not synced).
+    const entry = await offlineDb.syncQueue
+      .where("id")
+      .equals(result.conflicts[0].entryId)
+      .first();
+    expect(entry?.status).toBe("conflict");
+  });
+
+  it("book metadata update is last-write-wins (no conflict)", async () => {
+    const book = await storage.books.create({ title: "B" });
+    await setBaseline("book", book.id, "2026-01-01T00:00:00Z");
+    await storage.books.update(book.id, { title: "B-mobile" });
+
+    const result = await processSyncQueue();
+
+    expect(result.conflicts).toEqual([]);
+    expect(vi.mocked(api.books.update)).toHaveBeenCalled(); // applied (LWW)
+  });
+
+  it("detects edit-vs-delete (server record gone)", async () => {
+    const book = await storage.books.create({ title: "B" });
+    const ch = await storage.chapters.create(book.id, { title: "K" });
+    await setBaseline("chapter", ch.id, "2026-01-01T00:00:00Z");
+    await storage.chapters.update(book.id, ch.id, {
+      version: 0,
+      title: "edit",
+    });
+    vi.mocked(api.chapters.get).mockRejectedValue(new Error("404 gone"));
+
+    const result = await processSyncQueue();
+
+    const conflict = result.conflicts.find((c) => c.model === "chapter");
+    expect(conflict).toBeDefined();
+    expect(conflict?.serverDeleted).toBe(true);
+  });
+
+  it("resolveKeepDesktop discards the mobile edit; resolveKeepMobile re-applies it", async () => {
+    const book = await storage.books.create({ title: "B" });
+    const ch = await storage.chapters.create(book.id, { title: "K" });
+    await setBaseline("chapter", ch.id, "2026-01-01T00:00:00Z");
+    await storage.chapters.update(book.id, ch.id, { version: 0, title: "m" });
+    vi.mocked(api.chapters.get).mockResolvedValue({
+      updated_at: "2026-09-09T00:00:00Z",
+    } as never);
+    const result = await processSyncQueue();
+    const conflict = result.conflicts[0];
+
+    // Keep desktop -> the queued mobile edit is dropped, never replayed.
+    await resolveKeepDesktop(conflict);
+    expect(
+      await offlineDb.syncQueue.where("id").equals(conflict.entryId).first(),
+    ).toBeUndefined();
+    expect(vi.mocked(api.chapters.update)).not.toHaveBeenCalled();
+  });
+
+  it("resolveKeepMobile force-applies the queued edit", async () => {
+    const book = await storage.books.create({ title: "B" });
+    const ch = await storage.chapters.create(book.id, { title: "K" });
+    await setBaseline("chapter", ch.id, "2026-01-01T00:00:00Z");
+    await storage.chapters.update(book.id, ch.id, { version: 0, title: "m" });
+    vi.mocked(api.chapters.get).mockResolvedValue({
+      updated_at: "2026-09-09T00:00:00Z",
+    } as never);
+    const conflict = (await processSyncQueue()).conflicts[0];
+
+    await resolveKeepMobile(conflict);
+    expect(vi.mocked(api.chapters.update)).toHaveBeenCalled(); // re-applied
   });
 });

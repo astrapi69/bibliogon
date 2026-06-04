@@ -56,8 +56,16 @@ export interface SyncQueueEntry {
   /** Replay payload (the created row / the update patch); null for delete. */
   payload: Record<string, unknown> | null;
   created_at: string;
-  status: "pending" | "synced" | "failed";
+  status: "pending" | "synced" | "failed" | "conflict";
   error: string | null;
+}
+
+/** Server-version baseline captured at download (C3) so the sync engine
+ *  (C7) can tell whether the desktop moved a record while the phone was
+ *  offline. Keyed by ``${model}:${entityId}``. */
+export interface SyncBaseline {
+  id: string;
+  updated_at: string;
 }
 
 class BibliogonOfflineDB extends Dexie {
@@ -73,6 +81,7 @@ class BibliogonOfflineDB extends Dexie {
   chapterLabels!: Table<GraphRow, string>;
   writingSessions!: Table<GraphRow, string>;
   syncQueue!: Table<SyncQueueEntry, number>;
+  syncBaselines!: Table<SyncBaseline, string>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -95,7 +104,32 @@ class BibliogonOfflineDB extends Dexie {
     this.version(2).stores({
       syncQueue: "++seq, id, status, created_at, model",
     });
+    // v3 (C7): server-version baselines for conflict detection.
+    this.version(3).stores({
+      syncBaselines: "id",
+    });
   }
+}
+
+/** Record the server's current `updated_at` as the conflict baseline. */
+export async function setBaseline(
+  model: string,
+  entityId: string,
+  updatedAt: string,
+): Promise<void> {
+  await offlineDb.syncBaselines.put({
+    id: `${model}:${entityId}`,
+    updated_at: updatedAt,
+  });
+}
+
+/** The baseline `updated_at` for a record, or null if none recorded. */
+export async function getBaseline(
+  model: string,
+  entityId: string,
+): Promise<string | null> {
+  const row = await offlineDb.syncBaselines.get(`${model}:${entityId}`);
+  return row?.updated_at ?? null;
 }
 
 export const offlineDb = new BibliogonOfflineDB();
@@ -391,6 +425,15 @@ export async function ingestBookGraph(graph: BookGraph): Promise<void> {
       asGraphRows(graph.story_entity_page_links),
     );
     await offlineDb.chapterLabels.bulkPut(asGraphRows(graph.chapter_labels));
+    // Conflict baselines: the server version each record was downloaded
+    // at, so the sync engine (C7) can detect a desktop-side edit.
+    await offlineDb.syncBaselines.bulkPut([
+      { id: `book:${graph.book.id}`, updated_at: graph.book.updated_at },
+      ...graph.chapters.map((c) => ({
+        id: `chapter:${c.id}`,
+        updated_at: c.updated_at,
+      })),
+    ]);
   });
 }
 

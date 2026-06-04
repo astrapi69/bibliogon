@@ -67,6 +67,25 @@ export async function markFailed(
     .modify({ status: "failed", error });
 }
 
+export async function markConflict(entryId: string): Promise<void> {
+  await offlineDb.syncQueue
+    .where("id")
+    .equals(entryId)
+    .modify({ status: "conflict" });
+}
+
+/** Entries parked as conflicts, awaiting user resolution (C7). */
+export async function listConflictEntries(): Promise<SyncQueueEntry[]> {
+  return offlineDb.syncQueue.where("status").equals("conflict").toArray();
+}
+
+/** A single queue entry by its uuid id (for conflict resolution). */
+export async function getSyncEntry(
+  entryId: string,
+): Promise<SyncQueueEntry | undefined> {
+  return offlineDb.syncQueue.where("id").equals(entryId).first();
+}
+
 export async function clearSyncQueue(): Promise<void> {
   await offlineDb.syncQueue.clear();
 }
