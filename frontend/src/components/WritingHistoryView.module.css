@@ -1,26 +1,7 @@
-/* Writing-History modal (WRITING-HISTORY-STATS-01). Layout-only deltas;
- * surfaces use global .card / .btn classes + theme tokens. */
-
-.content {
-  max-width: 720px;
-  width: min(720px, 95vw);
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-}
-
-.title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-}
+/* Writing-History view (WRITING-HISTORY-STATS-01). Layout-only deltas;
+ * surfaces use global .card / .btn classes + theme tokens. The former
+ * dialog-chrome classes (.content/.header/.title) were dropped in the
+ * Dialog->Pages migration (C11) — the page shell owns those now. */
 
 .controls {
   display: flex;
