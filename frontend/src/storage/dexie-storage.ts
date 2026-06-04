@@ -39,6 +39,27 @@ export type OfflineBookRow = Book & { offline_available?: boolean };
  *  `id` plus arbitrary columns. C3 populates these during download. */
 type GraphRow = { id: string } & Record<string, unknown>;
 
+/** A queued offline mutation awaiting replay against the API on
+ *  reconnect (mobile-sync P3-C5). Created by the queueing-storage
+ *  wrapper on every offline write; drained by the sync engine (C6). */
+export interface SyncQueueEntry {
+  /** Auto-increment FIFO key (Dexie-assigned). The replay order (C6) is
+   *  ascending `seq` -- a monotonic counter, unlike `created_at` whose
+   *  millisecond ties would not preserve creation order. */
+  seq?: number;
+  id: string;
+  model: "book" | "chapter" | "article";
+  operation: "create" | "update" | "delete";
+  entity_id: string;
+  /** Parent book id for chapter ops (needed to build the API path). */
+  book_id: string | null;
+  /** Replay payload (the created row / the update patch); null for delete. */
+  payload: Record<string, unknown> | null;
+  created_at: string;
+  status: "pending" | "synced" | "failed";
+  error: string | null;
+}
+
 class BibliogonOfflineDB extends Dexie {
   books!: Table<OfflineBookRow, string>;
   chapters!: Table<Chapter, string>;
@@ -51,6 +72,7 @@ class BibliogonOfflineDB extends Dexie {
   storyEntityPageLinks!: Table<GraphRow, string>;
   chapterLabels!: Table<GraphRow, string>;
   writingSessions!: Table<GraphRow, string>;
+  syncQueue!: Table<SyncQueueEntry, number>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -67,6 +89,11 @@ class BibliogonOfflineDB extends Dexie {
       storyEntityPageLinks: "id, page_id, chapter_id",
       chapterLabels: "id, book_id",
       writingSessions: "id, book_id, chapter_id",
+    });
+    // v2 (C5): the offline write queue. created_at indexes the replay
+    // order; status filters pending vs synced/failed.
+    this.version(2).stores({
+      syncQueue: "++seq, id, status, created_at, model",
     });
   }
 }

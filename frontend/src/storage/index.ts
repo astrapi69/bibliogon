@@ -83,8 +83,14 @@ let dexieLoad: Promise<IStorageService> | null = null;
 export async function ensureDexieStorageLoaded(): Promise<IStorageService> {
   if (dexieRef) return dexieRef;
   if (!dexieLoad) {
-    dexieLoad = import("./dexie-storage").then((m) => {
-      dexieRef = m.dexieStorage;
+    // Wrap DexieStorage in the queueing layer so offline writes are
+    // recorded for replay (C5). Both modules are dynamically imported,
+    // keeping Dexie + the queue out of the desktop bundle.
+    dexieLoad = Promise.all([
+      import("./dexie-storage"),
+      import("./sync-queue"),
+    ]).then(([dx, sq]) => {
+      dexieRef = sq.makeQueueingStorage(dx.dexieStorage);
       return dexieRef;
     });
   }

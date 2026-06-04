@@ -42,9 +42,11 @@ describe("getStorage routing", () => {
     expect(resolveStorageMode()).toBe("dexie");
 
     await ensureDexieStorageLoaded();
+    // Offline backend is the DexieStorage wrapped in the queueing layer
+    // (C5), so it is mode "dexie" but not the raw dexieStorage identity.
     const svc = getStorage();
-    expect(svc).toBe(dexieStorage);
     expect(svc.mode).toBe("dexie");
+    expect(svc).not.toBe(dexieStorage);
 
     await dexieStorage.books.create({ title: "Nur offline" });
     const list = await svc.books.list();
