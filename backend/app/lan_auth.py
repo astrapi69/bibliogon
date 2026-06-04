@@ -291,5 +291,12 @@ def configure_lan_auth(app: FastAPI, state: LanAuthState | None = None) -> LanAu
         return build_verify_response(state, body, request)
 
     app.add_middleware(LanPinAuthMiddleware, state=state)
-    logger.info("LAN mode active. Access PIN: %s", state.pin)
+
+    # Print the scannable banner to stdout so it stands out in the
+    # `make dev-lan` terminal; a concise line also goes to the log.
+    from app.lan_net import detect_lan_ip, lan_port, render_terminal_banner
+
+    ip, port = detect_lan_ip(), lan_port()
+    print(render_terminal_banner(state.pin, ip, port))  # noqa: T201 - operator banner
+    logger.info("LAN mode active at http://%s:%s (PIN %s)", ip, port, state.pin)
     return state
