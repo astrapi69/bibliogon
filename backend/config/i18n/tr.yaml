@@ -1671,6 +1671,13 @@ ui:
     redo: "Yinele"
     hint: "Ipucu: Her zaman Ctrl+/ ile bu genel bakisi acabilirsiniz."
   offline:
+    take: "Çevrimdışı al"
+    remove: "Çevrimdışı kaldır"
+    working: "Çalışıyor …"
+    taken: "Kitap artık çevrimdışı kullanılabilir."
+    removed: "Kitap çevrimdışı depolamadan kaldırıldı."
+    error: "Çevrimdışı işlem başarısız oldu."
+    available: "Çevrimdışı kullanılabilir"
     banner_message: "Cevrimdisisiniz. Degisiklikler yerel olarak kaydediliyor ve baglanti dondugunde senkronize edilecek."
     synced_toast: "Senkronize edilen bolumler: {count}"
     sync_partial: "Bazi bolumler senkronize edilemedi."

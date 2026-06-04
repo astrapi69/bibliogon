@@ -1680,6 +1680,13 @@ ui:
     redo: "Wiederherstellen"
     hint: "Tipp: Drücke Ctrl+/ um diese Übersicht jederzeit zu öffnen."
   offline:
+    take: "Offline nehmen"
+    remove: "Offline entfernen"
+    working: "Arbeitet …"
+    taken: "Buch ist jetzt offline verfügbar."
+    removed: "Buch aus dem Offline-Speicher entfernt."
+    error: "Offline-Aktion fehlgeschlagen."
+    available: "Offline verfügbar"
     banner_message: "Du bist offline. Änderungen sind lokal gesichert und werden beim nächsten Verbindungsaufbau synchronisiert."
     synced_toast: "Kapitel synchronisiert: {count}"
     sync_partial: "Einige Kapitel konnten nicht synchronisiert werden."

@@ -6,10 +6,23 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import ValidationError
+from sqlalchemy import or_
 from sqlalchemy.orm import Session, joinedload
 
 from app.database import get_db
-from app.models import Article, Book, BookTemplate, Chapter
+from app.models import (
+    Article,
+    Asset,
+    Book,
+    BookTemplate,
+    Chapter,
+    ChapterLabel,
+    ComicBubble,
+    ComicPanel,
+    Page,
+    StoryEntity,
+    StoryEntityPageLink,
+)
 from app.schemas import (
     BookCreate,
     BookDetail,
@@ -22,6 +35,7 @@ from app.schemas import (
     BookUpdate,
 )
 from app.schemas import ChapterType as ChapterTypeEnum
+from app.services.backup.serializer import serialize_row
 
 logger = logging.getLogger(__name__)
 
@@ -594,6 +608,58 @@ def get_book(book_id: str, include_content: bool = True, db: Session = Depends(g
             ch["content"] = ""
         return result
     return book
+
+
+@router.get("/{book_id}/full")
+def get_book_full(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+    """Return the complete book graph in one request for offline download.
+
+    Avoids the N+1 round-trips a mobile client would otherwise make when
+    taking a book offline (mobile-sync Phase 3, C3). Every row is
+    serialized generically via ``serialize_row`` so the shape matches what
+    DexieStorage stores. Binary asset FILES are not included — only asset
+    metadata; the client fetches images via the asset endpoint.
+    """
+    book = db.query(Book).filter(Book.id == book_id).first()
+    if not book:
+        raise HTTPException(status_code=404, detail="Book not found")
+
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
+    pages = db.query(Page).filter(Page.book_id == book_id).all()
+    chapter_ids = [c.id for c in chapters]
+    page_ids = [p.id for p in pages]
+    panels = db.query(ComicPanel).filter(ComicPanel.page_id.in_(page_ids)).all() if page_ids else []
+    panel_ids = [p.id for p in panels]
+    bubbles = (
+        db.query(ComicBubble).filter(ComicBubble.panel_id.in_(panel_ids)).all() if panel_ids else []
+    )
+    entities = db.query(StoryEntity).filter(StoryEntity.book_id == book_id).all()
+    links = (
+        db.query(StoryEntityPageLink)
+        .filter(
+            or_(
+                StoryEntityPageLink.page_id.in_(page_ids),
+                StoryEntityPageLink.chapter_id.in_(chapter_ids),
+            )
+        )
+        .all()
+        if (page_ids or chapter_ids)
+        else []
+    )
+    labels = db.query(ChapterLabel).filter(ChapterLabel.book_id == book_id).all()
+    assets = db.query(Asset).filter(Asset.book_id == book_id).all()
+
+    return {
+        "book": serialize_row(book),
+        "chapters": [serialize_row(r) for r in chapters],
+        "pages": [serialize_row(r) for r in pages],
+        "comic_panels": [serialize_row(r) for r in panels],
+        "comic_bubbles": [serialize_row(r) for r in bubbles],
+        "story_entities": [serialize_row(r) for r in entities],
+        "story_entity_page_links": [serialize_row(r) for r in links],
+        "chapter_labels": [serialize_row(r) for r in labels],
+        "assets": [serialize_row(r) for r in assets],
+    }
 
 
 _IMMUTABLE_BOOK_FIELDS = ("book_type",)

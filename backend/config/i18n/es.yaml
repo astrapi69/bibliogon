@@ -1671,6 +1671,13 @@ ui:
     redo: "Rehacer"
     hint: "Consejo: Pulsa Ctrl+/ para abrir esta vista en cualquier momento."
   offline:
+    take: "Guardar sin conexión"
+    remove: "Quitar sin conexión"
+    working: "Trabajando …"
+    taken: "El libro ya está disponible sin conexión."
+    removed: "Libro eliminado del almacenamiento sin conexión."
+    error: "La acción sin conexión falló."
+    available: "Disponible sin conexión"
     banner_message: "Sin conexion. Los cambios se guardan localmente y se sincronizaran cuando vuelvas a estar en linea."
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Algunos capitulos no se pudieron sincronizar."

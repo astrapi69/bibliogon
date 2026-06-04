@@ -1816,6 +1816,11 @@ export const api = {
   books: {
     list: () => request<Book[]>("/books"),
 
+    /** Complete book graph in one request (chapters + pages + comic
+     *  panels/bubbles + story entities/links + chapter labels + asset
+     *  metadata) for the offline-download flow (mobile-sync P3-C3). */
+    full: (id: string) => request<BookFullGraph>(`/books/${id}/full`),
+
     get: (id: string, includeContent = false) =>
       request<BookDetail>(
         `/books/${id}${includeContent ? "" : "?include_content=false"}`,
@@ -5063,6 +5068,22 @@ export interface DiscoveredPlugin {
    *  plugins added via ``register_plugin()`` (ZIP installs).
    *  Null for configured-but-not-discovered rows. */
   source: "entry_point" | "direct_register" | null;
+}
+
+/** Returned by GET /api/books/{id}/full — the complete book graph for
+ *  offline download (mobile-sync P3-C3). The not-yet-typed child tables
+ *  are kept as `Record<string, unknown>[]` (flat rows keyed by id);
+ *  DexieStorage stores them verbatim. */
+export interface BookFullGraph {
+  book: Book;
+  chapters: Chapter[];
+  pages: Array<Record<string, unknown>>;
+  comic_panels: Array<Record<string, unknown>>;
+  comic_bubbles: Array<Record<string, unknown>>;
+  story_entities: Array<Record<string, unknown>>;
+  story_entity_page_links: Array<Record<string, unknown>>;
+  chapter_labels: Array<Record<string, unknown>>;
+  assets: Array<Record<string, unknown>>;
 }
 
 /** Returned by GET /api/lan-auth/info when LAN mode is active.

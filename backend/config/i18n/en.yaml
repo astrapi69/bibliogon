@@ -1680,6 +1680,13 @@ ui:
     redo: "Redo"
     hint: "Tip: Press Ctrl+/ to open this overview at any time."
   offline:
+    take: "Take offline"
+    remove: "Remove offline"
+    working: "Working …"
+    taken: "Book is now available offline."
+    removed: "Book removed from offline storage."
+    error: "Offline action failed."
+    available: "Available offline"
     banner_message: "You are offline. Changes are saved locally and will sync when you reconnect."
     synced_toast: "Chapters synced: {count}"
     sync_partial: "Some chapters could not be synced."
