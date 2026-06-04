@@ -198,7 +198,6 @@ vi.mock("../components/BookMetadataEditor", () => ({
 }));
 vi.mock("../components/ConflictResolutionDialog", () => ({default: () => null}));
 vi.mock("../components/ChapterVersionsModal", () => ({default: () => null}));
-vi.mock("../components/ExportDialog", () => ({default: () => null}));
 vi.mock("../components/GitBackupDialog", () => ({default: () => null}));
 vi.mock("../components/GitSyncDialog", () => ({default: () => null}));
 vi.mock("../components/SaveAsTemplateModal", () => ({default: () => null}));

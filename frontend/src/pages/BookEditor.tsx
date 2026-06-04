@@ -14,7 +14,6 @@ import ChapterOutliner from "../components/ChapterOutliner";
 import RelationshipGraphView from "../components/RelationshipGraphView";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
-import ExportDialog from "../components/ExportDialog";
 import GitBackupDialog from "../components/GitBackupDialog";
 import GitSyncDialog from "../components/GitSyncDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
@@ -116,7 +115,6 @@ export default function BookEditor() {
     };
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
-    const [showExport, setShowExport] = useState(false);
     const [showGitBackup, setShowGitBackup] = useState(false);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
     const [showGitSync, setShowGitSync] = useState(false);
@@ -569,7 +567,7 @@ export default function BookEditor() {
     };
 
     const handleExport = () => {
-        setShowExport(true);
+        navigate(`/books/${bookId}/export`);
     };
 
     if (loading) {
@@ -887,15 +885,6 @@ export default function BookEditor() {
                 see BOOK-EDITOR-STORY-BIBLE-BUTTON-01. The old
                 free-floating right-edge tab was not UX-conformant. */}
 
-            {bookId && (
-                <ExportDialog
-                    open={showExport}
-                    bookId={bookId}
-                    bookTitle={book.title}
-                    hasManualToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
-                    onClose={() => setShowExport(false)}
-                />
-            )}
 
             {bookId && (
                 <GitBackupDialog

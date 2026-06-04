@@ -1,17 +1,19 @@
 /**
- * Tests for ExportDialog.
+ * Tests for ExportForm (the export-config form body, extracted from the
+ * former ExportDialog in the Dialog->Pages migration C3).
  *
  * Covers: format selection grid, book type visibility per format,
  * TOC depth selector, manual TOC checkbox, AI-assisted flag,
  * export button label, audiobook-specific dry-run section,
- * batch export button, cancel behavior.
+ * batch export button, cancel behavior. The "Export: <title>" heading
+ * lives on the page shell (ExportPage) now, so that assertion moved to
+ * ExportPage.test.tsx.
  */
 
-import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
-import {render, screen, fireEvent, waitFor} from "@testing-library/react"
+import {render, screen, fireEvent} from "@testing-library/react"
 
-import ExportDialog from "./ExportDialog"
+import ExportForm from "./ExportForm"
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -81,23 +83,22 @@ vi.mock("./AppDialog", () => ({
   }),
 }))
 
-describe("ExportDialog", () => {
-  const onClose = vi.fn()
+describe("ExportForm", () => {
+  const onDone = vi.fn()
   const defaultProps = {
-    open: true,
     bookId: "book-123",
     bookTitle: "Test Book",
     hasManualToc: false,
-    onClose,
+    onDone,
   }
 
   beforeEach(() => {
-    onClose.mockClear()
+    onDone.mockClear()
     vi.spyOn(window, "open").mockImplementation(() => null)
   })
 
   function renderDialog(overrides: Partial<typeof defaultProps> = {}) {
-    return render(<ExportDialog {...defaultProps} {...overrides} />)
+    return render(<ExportForm {...defaultProps} {...overrides} />)
   }
 
   // --- Format selection ---
@@ -111,11 +112,6 @@ describe("ExportDialog", () => {
     expect(screen.getByText("Markdown")).toBeTruthy()
     expect(screen.getByText("Projekt (ZIP)")).toBeTruthy()
     expect(screen.getByText("Audiobook (MP3)")).toBeTruthy()
-  })
-
-  it("shows dialog title with book name", () => {
-    renderDialog()
-    expect(screen.getByText(/Export.*Test Book/)).toBeTruthy()
   })
 
   it("EPUB is selected by default", () => {
@@ -221,10 +217,10 @@ describe("ExportDialog", () => {
     expect(screen.getByText("Alle Formate (ZIP)")).toBeTruthy()
   })
 
-  it("cancel button calls onClose", () => {
+  it("cancel button calls onDone", () => {
     renderDialog()
     fireEvent.click(screen.getByText("Abbrechen"))
-    expect(onClose).toHaveBeenCalled()
+    expect(onDone).toHaveBeenCalled()
   })
 
   // --- Section order ---
