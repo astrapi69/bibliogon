@@ -66,8 +66,18 @@ export const DialogContent = React.forwardRef<
     const content = (
         <DialogPrimitive.Content
             ref={ref}
+            // Centering MUST use the `transform` property (NOT Tailwind's
+            // `-translate-x/y-1/2`, which in v4 emit the standalone
+            // `translate:` property). The `slideIn` keyframe animates
+            // `transform`, and `translate` + `transform` compose — so
+            // mixing them double-offsets the dialog (~-100%,-100%) for the
+            // 150ms animation: it flashes toward the top-left, then snaps
+            // to center when the animation ends and the keyframe transform
+            // is dropped. Keeping centering on `transform` (as the legacy
+            // `.radix-dialog-content` did) means the keyframe and the base
+            // value share one property — no jump.
             className={cn(
-                "fixed left-1/2 top-1/2 z-[2001] -translate-x-1/2 -translate-y-1/2 bg-card rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow-lg)] animate-[slideIn_150ms_ease]",
+                "fixed left-1/2 top-1/2 z-[2001] [transform:translate(-50%,-50%)] bg-card rounded-[var(--radius-lg)] p-6 shadow-[var(--shadow-lg)] animate-[slideIn_150ms_ease]",
                 DIALOG_SIZE[size],
                 className,
             )}
