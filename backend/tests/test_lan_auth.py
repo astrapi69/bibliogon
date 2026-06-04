@@ -87,15 +87,18 @@ def _app() -> tuple[TestClient, LanAuthState]:
     def books() -> list[dict[str, str]]:
         return [{"id": "1"}]
 
+    # Mirror production order: the lan-auth routes register BEFORE the SPA
+    # catch-all so the catch-all (which 404s unmatched /api/ GETs) cannot
+    # shadow /api/lan-auth/info + qr.svg.
+    state = LanAuthState(pin=PIN)
+    configure_lan_auth(app, state=state)
+
     @app.get("/{full_path:path}")
     def spa(full_path: str):  # noqa: ANN202 - test stub
         from starlette.responses import HTMLResponse
 
         return HTMLResponse("<title>app shell</title>")
 
-    state = LanAuthState(pin=PIN)
-    configure_lan_auth(app, state=state)
-    # raise_server_exceptions keeps behaviour; cookies persist on the client.
     return TestClient(app), state
 
 
@@ -155,3 +158,26 @@ def test_lan_mode_enabled_env(monkeypatch: pytest.MonkeyPatch) -> None:
     assert lan_mode_enabled() is True
     monkeypatch.setenv("BIBLIOGON_LAN_MODE", "false")
     assert lan_mode_enabled() is False
+
+
+def test_info_endpoint_gated_then_returns_details() -> None:
+    client, _ = _app()
+    assert client.get("/api/lan-auth/info").status_code == 401  # needs auth
+    client.post("/api/lan-auth/verify", json={"pin": PIN})
+    info = client.get("/api/lan-auth/info")
+    assert info.status_code == 200
+    body = info.json()
+    assert body["enabled"] is True
+    assert body["pin"] == PIN
+    assert body["url"].startswith("http://")
+    assert body["port"] >= 1
+
+
+def test_qr_svg_endpoint_serves_svg_when_authed() -> None:
+    client, _ = _app()
+    assert client.get("/api/lan-auth/qr.svg").status_code == 401
+    client.post("/api/lan-auth/verify", json={"pin": PIN})
+    qr = client.get("/api/lan-auth/qr.svg")
+    assert qr.status_code == 200
+    assert qr.headers["content-type"].startswith("image/svg+xml")
+    assert b"<svg" in qr.content

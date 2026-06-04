@@ -1019,27 +1019,28 @@ if DEBUG:
             db.close()
 
 
-# Serve the built frontend (single-port LAN access). No-op in the normal
-# `make dev` flow where Vite serves the SPA and frontend/dist is absent.
-# Registered LAST so the SPA catch-all cannot shadow any /api route.
-# See LAN-MODE-PHASE-1.
-# Single-port frontend serving + LAN PIN gate. Both are OPT-IN so the
-# normal `make dev`, the test suite, and the Docker prod stack (nginx
-# serves the SPA there) behave identically whether or not a local
-# frontend/dist build happens to exist -- the catch-all must not register
-# incidentally just because a dev built the bundle once (env-dependent
-# test behaviour is the "passes locally, fails in CI" trap). Serving is
-# enabled by BIBLIOGON_LAN_MODE (the `make dev-lan` flow) or an explicit
-# BIBLIOGON_SERVE_FRONTEND. Registered LAST so the SPA catch-all cannot
-# shadow any /api route and the gate middleware is outermost.
-# See LAN-MODE-PHASE-1.
+# Single-port frontend serving + LAN PIN gate (LAN-MODE-PHASE-1). Both
+# are OPT-IN so the normal `make dev`, the test suite, and the Docker
+# prod stack (nginx serves the SPA there) behave identically whether or
+# not a local frontend/dist build happens to exist -- the SPA catch-all
+# must not register incidentally just because a dev built the bundle once
+# (env-dependent test behaviour is the "passes locally, fails in CI"
+# trap). Serving is enabled by BIBLIOGON_LAN_MODE (the `make dev-lan`
+# flow) or an explicit BIBLIOGON_SERVE_FRONTEND.
+#
+# Order matters: configure_lan_auth FIRST so its /api/lan-auth/* routes
+# register before the SPA catch-all (which 404s every unmatched /api/
+# GET and would otherwise shadow the info + qr endpoints). The PIN gate
+# middleware is still outermost regardless, because register_frontend_static
+# adds no middleware.
 from app.frontend_static import register_frontend_static
 from app.lan_auth import configure_lan_auth, lan_mode_enabled
+
+if lan_mode_enabled():
+    configure_lan_auth(app)
 
 _serve_frontend = lan_mode_enabled() or os.getenv(
     "BIBLIOGON_SERVE_FRONTEND", ""
 ).strip().lower() in ("1", "true", "yes")
 if _serve_frontend:
     register_frontend_static(app)
-if lan_mode_enabled():
-    configure_lan_auth(app)

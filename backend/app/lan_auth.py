@@ -290,6 +290,33 @@ def configure_lan_auth(app: FastAPI, state: LanAuthState | None = None) -> LanAu
     async def verify_lan_pin(body: PinVerifyRequest, request: Request) -> Response:
         return build_verify_response(state, body, request)
 
+    @app.get("/api/lan-auth/info")
+    def lan_auth_info() -> dict[str, object]:
+        """Current LAN access details (gated -- the requester is authed).
+
+        Lets the running app show the URL + PIN + QR so a second device
+        can be onboarded from within Bibliogon. Only exists in LAN mode,
+        so a 404 here is the frontend's signal that LAN mode is off.
+        """
+        from app.lan_net import detect_lan_ip, lan_port
+
+        ip, port = detect_lan_ip(), lan_port()
+        return {
+            "enabled": True,
+            "lan_ip": ip,
+            "port": port,
+            "url": f"http://{ip}:{port}",
+            "pin": state.pin,
+        }
+
+    @app.get("/api/lan-auth/qr.svg")
+    def lan_auth_qr() -> Response:
+        """SVG QR of the access URL (PIN embedded) for the Settings card."""
+        from app.lan_net import access_url, detect_lan_ip, lan_port, qr_svg
+
+        url = access_url(detect_lan_ip(), lan_port(), state.pin)
+        return Response(content=qr_svg(url), media_type="image/svg+xml")
+
     app.add_middleware(LanPinAuthMiddleware, state=state)
 
     # Print the scannable banner to stdout so it stands out in the

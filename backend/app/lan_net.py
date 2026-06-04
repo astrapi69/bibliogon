@@ -59,6 +59,13 @@ def _qr_terminal(data: str) -> str:
     return buf.getvalue()
 
 
+def qr_svg(data: str, scale: int = 5) -> bytes:
+    """Render ``data`` as an SVG QR code (bytes), for serving to the UI."""
+    buf = io.BytesIO()
+    segno.make(data, error="m").save(buf, kind="svg", scale=scale, border=2)
+    return buf.getvalue()
+
+
 def render_terminal_banner(pin: str, ip: str, port: int) -> str:
     """A multi-line startup banner: URLs, PIN, and a scannable QR code."""
     qr = _qr_terminal(access_url(ip, port, pin))
