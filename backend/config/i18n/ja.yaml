@@ -1074,7 +1074,7 @@ ui:
     content_type: "コンテンツタイプ"
     content_type_tooltip: "コンテンツタイプ:ブログ記事 / チュートリアル / レビュー / エッセイ / ニュースレター / インタビュー / リスト記事 / 短編小説。"
     import_more_tooltip: "インポートとバックアップのオプション"
-    default_title: "新しい記事"
+    default_title: "新しいテキスト"
     create_error: "記事を作成できませんでした。"
     empty_heading: "まだ記事がありません"
     empty_subtitle: "本とは別に長文を書くため、最初の記事を作成してください。"

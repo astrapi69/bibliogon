@@ -1076,7 +1076,7 @@ ui:
     content_type: "Content type"
     content_type_tooltip: "Content type: Blog post / Tutorial / Review / Essay / Newsletter / Interview / Listicle / Short story."
     import_more_tooltip: "Import and backup options"
-    default_title: "New Article"
+    default_title: "New Text"
     create_error: "Could not create article."
     empty_heading: "No articles yet"
     empty_subtitle: "Create your first article to write long-form posts separately from books."

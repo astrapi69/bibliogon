@@ -1077,7 +1077,7 @@ ui:
     content_type: "Textart"
     content_type_tooltip: "Textart: Blogpost / Tutorial / Rezension / Essay / Newsletter / Interview / Listicle / Kurzgeschichte."
     import_more_tooltip: "Import- und Backup-Optionen"
-    default_title: "Neuer Artikel"
+    default_title: "Neuer Text"
     create_error: "Konnte Artikel nicht erstellen."
     empty_heading: "Noch keine Artikel"
     empty_subtitle: "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen."
