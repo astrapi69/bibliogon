@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { useParams } from "react-router-dom";
 import {
-  X,
   Upload,
   GitBranch,
   AlertTriangle,
@@ -9,7 +8,7 @@ import {
   Loader2,
   GitMerge,
 } from "lucide-react";
-import GitSyncDiffDialog from "./GitSyncDiffDialog";
+import GitSyncDiffDialog from "../components/GitSyncDiffDialog";
 import {
   api,
   ApiError,
@@ -18,28 +17,21 @@ import {
   GitSyncUnifiedCommitResult,
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import { Toggle } from "./settings/Toggle";
+import { Toggle } from "../components/settings/Toggle";
 import { notify } from "../utils/notify";
+import { PageLayout } from "../components/PageLayout";
+import { useGoBack } from "../hooks/useGoBack";
 
 /**
- * PGS-02 commit-to-repo dialog.
- *
- * Surfaced from the BookEditor sidebar when the book has a
- * GitSyncMapping (i.e. it was imported via the plugin-git-sync
- * git-URL wizard). Shows the mapping snapshot + working-tree
- * dirty state, lets the user provide an optional commit message
- * and toggle "push to remote" (currently a 501 - the toggle is
- * present so the form survives the eventual push wiring without
- * a UI rework).
+ * PGS-02 commit-to-repo page (Dialog->Pages migration C8), per-book at
+ * `/books/:bookId/git-sync`. Was GitSyncDialog; converted in place
+ * (Dialog chrome -> PageLayout). Self-loads the sync mapping on mount.
+ * The nested diff sub-dialog (GitSyncDiffDialog) stays a Dialog.
  */
-interface Props {
-  open: boolean;
-  bookId: string;
-  onClose: () => void;
-}
-
-export default function GitSyncDialog({ open, bookId, onClose }: Props) {
+export default function GitSyncPage() {
   const { t } = useI18n();
+  const { bookId = "" } = useParams<{ bookId: string }>();
+  const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
   const [status, setStatus] = useState<GitSyncMappingStatus | null>(null);
   const [loading, setLoading] = useState(false);
   const [committing, setCommitting] = useState(false);
@@ -54,13 +46,13 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
   const [showDiff, setShowDiff] = useState(false);
 
   useEffect(() => {
-    if (!open) return;
     void refresh();
-    // Reset transient form state when the dialog re-opens for a different
+    // Reset transient form state when the page mounts for a different
     // book; preserves last commit result during the same session.
     setMessage("");
     setPush(false);
-  }, [open, bookId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId]);
 
   async function refresh(): Promise<void> {
     setLoading(true);
@@ -187,30 +179,13 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content dialog-content-wide"
-          data-testid="git-sync-dialog"
-          aria-describedby={undefined}
-        >
-          <div className="dialog-header">
-            <Dialog.Title className="dialog-title">
-              <GitBranch
-                size={18}
-                style={{ verticalAlign: -3, marginRight: 8 }}
-              />
-              {t("ui.git_sync.title", "Sync zu Git-Repository")}
-            </Dialog.Title>
-            <Dialog.Close
-              className="dialog-close"
-              aria-label={t("ui.common.close", "Schließen")}
-            >
-              <X size={18} />
-            </Dialog.Close>
-          </div>
-
+    <PageLayout
+      title={t("ui.git_sync.title", "Sync zu Git-Repository")}
+      testId="git-sync-page"
+      maxWidth="lg"
+      onBack={goBack}
+      backLabel={t("ui.common.back", "Zurück")}
+    >
           {loading && !status ? (
             <div
               data-testid="git-sync-loading"
@@ -252,15 +227,13 @@ export default function GitSyncDialog({ open, bookId, onClose }: Props) {
               {unifiedResult && <UnifiedResult result={unifiedResult} />}
             </>
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
       <GitSyncDiffDialog
         open={showDiff}
         bookId={bookId}
         onClose={() => setShowDiff(false)}
         onResolved={() => void refresh()}
       />
-    </Dialog.Root>
+    </PageLayout>
   );
 }
 

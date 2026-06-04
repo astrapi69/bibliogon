@@ -197,8 +197,6 @@ vi.mock("../components/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
 }));
 vi.mock("../components/ConflictResolutionDialog", () => ({default: () => null}));
-vi.mock("../components/GitBackupDialog", () => ({default: () => null}));
-vi.mock("../components/GitSyncDialog", () => ({default: () => null}));
 vi.mock("../components/SaveAsTemplateModal", () => ({default: () => null}));
 vi.mock("../components/ChapterTemplatePickerModal", () => ({default: () => null}));
 vi.mock("../components/SaveAsChapterTemplateModal", () => ({default: () => null}));

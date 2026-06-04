@@ -15,6 +15,8 @@ const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
 const WritingHistoryPage = lazy(() => import("./pages/WritingHistoryPage"));
 const ChapterVersionsPage = lazy(() => import("./pages/ChapterVersionsPage"));
+const GitBackupPage = lazy(() => import("./pages/GitBackupPage"));
+const GitSyncPage = lazy(() => import("./pages/GitSyncPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
@@ -156,6 +158,8 @@ export default function App() {
                 <Route path="/book/:bookId" element={<ErrorBoundary surface="book-editor"><BookEditor/></ErrorBoundary>}/>
                 <Route path="/books/:bookId/export" element={<ErrorBoundary surface="export"><ExportPage/></ErrorBoundary>}/>
                 <Route path="/books/:bookId/chapters/:chapterId/snapshots" element={<ErrorBoundary surface="chapter-versions"><ChapterVersionsPage/></ErrorBoundary>}/>
+                <Route path="/books/:bookId/git-backup" element={<ErrorBoundary surface="git-backup"><GitBackupPage/></ErrorBoundary>}/>
+                <Route path="/books/:bookId/git-sync" element={<ErrorBoundary surface="git-sync"><GitSyncPage/></ErrorBoundary>}/>
                 <Route path="/articles" element={<ErrorBoundary surface="article-list"><ArticleList/></ErrorBoundary>}/>
                 <Route path="/articles/new" element={<ErrorBoundary surface="create-article"><CreateArticlePage/></ErrorBoundary>}/>
                 <Route path="/articles/import/medium" element={<ErrorBoundary surface="medium-import"><MediumImportPage/></ErrorBoundary>}/>

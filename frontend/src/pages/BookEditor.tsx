@@ -13,8 +13,6 @@ import ChapterOutliner from "../components/ChapterOutliner";
 import RelationshipGraphView from "../components/RelationshipGraphView";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
-import GitBackupDialog from "../components/GitBackupDialog";
-import GitSyncDialog from "../components/GitSyncDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import type {NavigableFindingType} from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
@@ -114,9 +112,7 @@ export default function BookEditor() {
     };
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
-    const [showGitBackup, setShowGitBackup] = useState(false);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
-    const [showGitSync, setShowGitSync] = useState(false);
     const [gitSyncMapped, setGitSyncMapped] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
@@ -734,9 +730,9 @@ export default function BookEditor() {
                 onRename={handleRenameChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
-                onGitBackup={() => setShowGitBackup(true)}
+                onGitBackup={() => navigate(`/books/${bookId}/git-backup`)}
                 gitSyncState={gitSyncState}
-                onGitSync={() => setShowGitSync(true)}
+                onGitSync={() => navigate(`/books/${bookId}/git-sync`)}
                 gitSyncMapped={gitSyncMapped}
                 onMetadata={() => { setSelectedStoryEntityId(null); _setShowMetadata(true); }}
                 onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
@@ -904,28 +900,6 @@ export default function BookEditor() {
                 see BOOK-EDITOR-STORY-BIBLE-BUTTON-01. The old
                 free-floating right-edge tab was not UX-conformant. */}
 
-
-            {bookId && (
-                <GitBackupDialog
-                    open={showGitBackup}
-                    bookId={bookId}
-                    onClose={() => {
-                        setShowGitBackup(false);
-                        void refreshGitSync();
-                    }}
-                />
-            )}
-
-            {bookId && (
-                <GitSyncDialog
-                    open={showGitSync}
-                    bookId={bookId}
-                    onClose={() => {
-                        setShowGitSync(false);
-                        void refreshGitSyncMapping();
-                    }}
-                />
-            )}
 
             <SaveAsTemplateModal
                 open={showSaveTemplate}
