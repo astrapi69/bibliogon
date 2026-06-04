@@ -44,6 +44,19 @@ if (import.meta.env.DEV) {
 // basename without one (root collapses back to "/").
 const routerBasename = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
 
+// SPA deep-link restore for GitHub Pages. public/404.html bounces an
+// unknown deep link to `${BASE_URL}?redirect=<route>`; rewrite the URL
+// back to the intended route BEFORE the router mounts so React Router
+// boots straight onto it (no extra render / flash). No-op when there is
+// no ?redirect= param (the Desktop / LAN deploy never sets one).
+(() => {
+  const params = new URLSearchParams(window.location.search);
+  const redirectTo = params.get("redirect");
+  if (!redirectTo || !redirectTo.startsWith("/")) return;
+  const prefix = routerBasename === "/" ? "" : routerBasename;
+  window.history.replaceState(null, "", prefix + redirectTo);
+})();
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <BrowserRouter basename={routerBasename}>
