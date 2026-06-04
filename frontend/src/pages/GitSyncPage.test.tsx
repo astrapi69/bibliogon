@@ -8,9 +8,21 @@
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 
-import GitSyncDialog from "./GitSyncDialog";
+import GitSyncPage from "./GitSyncPage";
 import type { GitSyncMappingStatus } from "../api/client";
+
+/** Render GitSyncPage at its route so useParams/useGoBack resolve. */
+function renderAt() {
+  return render(
+    <MemoryRouter initialEntries={["/books/book-1/git-sync"]}>
+      <Routes>
+        <Route path="/books/:bookId/git-sync" element={<GitSyncPage />} />
+      </Routes>
+    </MemoryRouter>,
+  );
+}
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -116,11 +128,8 @@ const unmapped: GitSyncMappingStatus = {
     has_credential: false,
 };
 
-describe("GitSyncDialog", () => {
-    const onClose = vi.fn();
-
+describe("GitSyncPage", () => {
     beforeEach(() => {
-        onClose.mockClear();
         mockStatus.mockReset();
         mockCommit.mockReset();
         mockUnifiedCommit.mockReset();
@@ -133,9 +142,7 @@ describe("GitSyncDialog", () => {
     async function renderDialog(initial: GitSyncMappingStatus): Promise<void> {
         mockStatus.mockResolvedValueOnce(initial);
         await act(async () => {
-            render(
-                <GitSyncDialog open={true} bookId="book-1" onClose={onClose} />,
-            );
+            renderAt();
         });
         await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(1));
     }
@@ -377,7 +384,7 @@ describe("GitSyncDialog", () => {
     it("renders 'not set' when has_credential is false", async () => {
         mockStatus.mockResolvedValue(mappedClean);
         await act(async () => {
-            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+            renderAt();
         });
         await waitFor(() =>
             expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
@@ -390,7 +397,7 @@ describe("GitSyncDialog", () => {
     it("renders 'configured' + Remove button when has_credential is true", async () => {
         mockStatus.mockResolvedValue({ ...mappedClean, has_credential: true });
         await act(async () => {
-            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+            renderAt();
         });
         await waitFor(() =>
             expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
@@ -408,7 +415,7 @@ describe("GitSyncDialog", () => {
         mockPutCredential.mockResolvedValue({ has_credential: true });
 
         await act(async () => {
-            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+            renderAt();
         });
         await waitFor(() =>
             expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
@@ -437,7 +444,7 @@ describe("GitSyncDialog", () => {
         mockDeleteCredential.mockResolvedValue(undefined);
 
         await act(async () => {
-            render(<GitSyncDialog open bookId="book-1" onClose={vi.fn()} />);
+            renderAt();
         });
         await waitFor(() =>
             expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy(),

@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
-import * as Dialog from "@radix-ui/react-dialog";
+import { useParams } from "react-router-dom";
 import {
-  X,
   GitCommit,
   GitBranch,
   RefreshCw,
@@ -20,18 +19,21 @@ import {
   GitSyncStatus,
   GitMergeResult,
 } from "../api/client";
-import { useDialog } from "./AppDialog";
+import { useDialog } from "../components/AppDialog";
+import { PageLayout } from "../components/PageLayout";
+import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 
-interface Props {
-  open: boolean;
-  bookId: string;
-  onClose: () => void;
-}
-
-export default function GitBackupDialog({ open, bookId, onClose }: Props) {
+/**
+ * Git-backup page (Dialog->Pages migration C8), per-book at
+ * `/books/:bookId/git-backup`. Was GitBackupDialog; converted in place
+ * (Dialog chrome -> PageLayout). Self-loads the repo status on mount.
+ */
+export default function GitBackupPage() {
   const { t } = useI18n();
+  const { bookId = "" } = useParams<{ bookId: string }>();
+  const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
   const [status, setStatus] = useState<GitRepoStatus | null>(null);
   const [commits, setCommits] = useState<GitCommitEntry[]>([]);
   const [remote, setRemote] = useState<GitRemoteConfig | null>(null);
@@ -50,9 +52,9 @@ export default function GitBackupDialog({ open, bookId, onClose }: Props) {
   >({});
 
   useEffect(() => {
-    if (!open) return;
     void refresh();
-  }, [open, bookId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId]);
 
   async function refresh() {
     try {
@@ -288,42 +290,13 @@ export default function GitBackupDialog({ open, bookId, onClose }: Props) {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={(next) => !next && onClose()}>
-      <Dialog.Portal>
-        <Dialog.Overlay className="dialog-overlay" />
-        <Dialog.Content
-          className="dialog-content"
-          style={{ maxWidth: 760, maxHeight: "85vh", overflowY: "auto" }}
-          data-testid="git-backup-dialog"
-          aria-describedby={undefined}
-        >
-          <div
-            className="dialog-header"
-            data-testid="git-backup-header"
-            style={{
-              position: "sticky",
-              top: 0,
-              zIndex: 2,
-              background: "var(--bg-card)",
-              paddingBottom: 8,
-              borderBottom: "1px solid var(--border)",
-            }}
-          >
-            <Dialog.Title className="dialog-title">
-              <GitBranch
-                size={18}
-                style={{ verticalAlign: -3, marginRight: 8 }}
-              />
-              {t("ui.git.title", "Git-Sicherung")}
-            </Dialog.Title>
-            <Dialog.Close
-              className="dialog-close"
-              aria-label={t("ui.common.close", "Schließen")}
-            >
-              <X size={18} />
-            </Dialog.Close>
-          </div>
-
+    <PageLayout
+      title={t("ui.git.title", "Git-Sicherung")}
+      testId="git-backup-page"
+      maxWidth="lg"
+      onBack={goBack}
+      backLabel={t("ui.common.back", "Zurück")}
+    >
           {status && !status.initialized && (
             <div style={{ padding: 16 }}>
               <p style={{ color: "var(--text-muted)", marginBottom: 12 }}>
@@ -685,9 +658,7 @@ export default function GitBackupDialog({ open, bookId, onClose }: Props) {
               }}
             />
           )}
-        </Dialog.Content>
-      </Dialog.Portal>
-    </Dialog.Root>
+    </PageLayout>
   );
 }
 

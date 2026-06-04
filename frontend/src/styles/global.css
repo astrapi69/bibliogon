@@ -1228,10 +1228,12 @@ input[type="checkbox"] {
     animation: fadeIn 150ms ease;
 }
 
-/* Positioning surface for the raw-Radix modals (WritingHistoryModal,
- * ChapterVersionsModal, ConflictResolutionDialog, DonationOnboardingDialog,
- * RelationshipGraphView) that render Dialog.Content directly instead of
- * through AppDialog. Without this, those modals referenced an undefined
+/* Positioning surface for the raw-Radix modals (ConflictResolutionDialog,
+ * DonationOnboardingDialog, RelationshipGraphView) that render
+ * Dialog.Content directly instead of through AppDialog. (WritingHistory +
+ * ChapterVersions became pages in the Dialog->Pages migration and no
+ * longer use this class.) Without this, those modals referenced an
+ * undefined
  * class and rendered unpositioned (no fixed centering, no z-index) — they
  * opened into the document flow and were effectively invisible. Per-modal
  * width comes from the component's CSS-module .content (later cascade wins);

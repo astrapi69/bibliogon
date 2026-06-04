@@ -1,5 +1,5 @@
 import {lazy, Suspense, useCallback, useEffect, useMemo, useState} from "react";
-import {Routes, Route} from "react-router-dom";
+import {Routes, Route, useNavigate} from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
 import ArticleList from "./pages/ArticleList";
@@ -14,6 +14,10 @@ const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
 const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
 const ExportPage = lazy(() => import("./pages/ExportPage"));
 const WritingHistoryPage = lazy(() => import("./pages/WritingHistoryPage"));
+const ChapterVersionsPage = lazy(() => import("./pages/ChapterVersionsPage"));
+const GitBackupPage = lazy(() => import("./pages/GitBackupPage"));
+const GitSyncPage = lazy(() => import("./pages/GitSyncPage"));
+const ShortcutsPage = lazy(() => import("./pages/ShortcutsPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import {useTheme} from "./hooks/useTheme";
 import {I18nProvider} from "./hooks/useI18n";
@@ -41,7 +45,6 @@ import {
     getDonationsConfig,
     type DonationsConfig,
 } from "./components/SupportSection";
-import ShortcutCheatsheet from "./components/ShortcutCheatsheet";
 import {useKeyboardShortcuts, Shortcut} from "./hooks/useKeyboardShortcuts";
 import {useWordWrap} from "./hooks/useWordWrap";
 import {api, ApiError} from "./api/client";
@@ -94,12 +97,13 @@ export default function App() {
     // VS Code / Sublime / IntelliJ behavior).
     const {toggle: toggleWordWrap} = useWordWrap();
 
-    // Shortcut cheatsheet
-    const [showShortcuts, setShowShortcuts] = useState(false);
+    // Shortcut cheatsheet — Dialog->Pages C9: Ctrl+/ now routes to the
+    // /help/shortcuts page instead of toggling an App-level overlay.
+    const navigate = useNavigate();
     const shortcuts = useMemo<Shortcut[]>(() => [
-        {keys: "ctrl+/", handler: () => setShowShortcuts((s) => !s), label: "Show shortcuts"},
+        {keys: "ctrl+/", handler: () => navigate("/help/shortcuts"), label: "Show shortcuts"},
         {keys: "alt+z", handler: toggleWordWrap, label: "Toggle word wrap"},
-    ], [toggleWordWrap]);
+    ], [toggleWordWrap, navigate]);
     useKeyboardShortcuts(shortcuts);
 
     // Error report dialog state — opened via custom event from notify.ts
@@ -154,6 +158,9 @@ export default function App() {
                 <Route path="/books/new" element={<ErrorBoundary surface="create-book"><CreateBookPage/></ErrorBoundary>}/>
                 <Route path="/book/:bookId" element={<ErrorBoundary surface="book-editor"><BookEditor/></ErrorBoundary>}/>
                 <Route path="/books/:bookId/export" element={<ErrorBoundary surface="export"><ExportPage/></ErrorBoundary>}/>
+                <Route path="/books/:bookId/chapters/:chapterId/snapshots" element={<ErrorBoundary surface="chapter-versions"><ChapterVersionsPage/></ErrorBoundary>}/>
+                <Route path="/books/:bookId/git-backup" element={<ErrorBoundary surface="git-backup"><GitBackupPage/></ErrorBoundary>}/>
+                <Route path="/books/:bookId/git-sync" element={<ErrorBoundary surface="git-sync"><GitSyncPage/></ErrorBoundary>}/>
                 <Route path="/articles" element={<ErrorBoundary surface="article-list"><ArticleList/></ErrorBoundary>}/>
                 <Route path="/articles/new" element={<ErrorBoundary surface="create-article"><CreateArticlePage/></ErrorBoundary>}/>
                 <Route path="/articles/import/medium" element={<ErrorBoundary surface="medium-import"><MediumImportPage/></ErrorBoundary>}/>
@@ -162,6 +169,7 @@ export default function App() {
                 <Route path="/help" element={<ErrorBoundary surface="help"><Help/></ErrorBoundary>}/>
                 <Route path="/get-started" element={<ErrorBoundary surface="get-started"><GetStarted/></ErrorBoundary>}/>
                 <Route path="/writing-history" element={<ErrorBoundary surface="writing-history"><WritingHistoryPage/></ErrorBoundary>}/>
+                <Route path="/help/shortcuts" element={<ErrorBoundary surface="shortcuts"><ShortcutsPage/></ErrorBoundary>}/>
             </Routes>
             </Suspense>
             <EventRecorderSetup/>
@@ -180,7 +188,6 @@ export default function App() {
                 onClose={() => setShowAiWizard(false)}
                 secretsManagedExternally={secretsExternal}
             />
-            <ShortcutCheatsheet open={showShortcuts} onClose={() => setShowShortcuts(false)}/>
             <ToastContainer
                 position="bottom-right"
                 autoClose={3000}

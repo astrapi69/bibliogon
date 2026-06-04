@@ -2,7 +2,6 @@ import {useEffect, useState, useCallback} from "react";
 import {useParams, useNavigate, useSearchParams} from "react-router-dom";
 import {api, ApiError, SaveAbortedError, BookDetail, Chapter, ChapterType} from "../api/client";
 import ConflictResolutionDialog, {type ConflictInfo} from "../components/ConflictResolutionDialog";
-import ChapterVersionsModal from "../components/ChapterVersionsModal";
 import ChapterSidebar from "../components/ChapterSidebar";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
@@ -14,8 +13,6 @@ import ChapterOutliner from "../components/ChapterOutliner";
 import RelationshipGraphView from "../components/RelationshipGraphView";
 import {pageableBookTypeIds, useBookTypes} from "../hooks/useBookTypes";
 import Editor from "../components/Editor";
-import GitBackupDialog from "../components/GitBackupDialog";
-import GitSyncDialog from "../components/GitSyncDialog";
 import BookMetadataEditor from "../components/BookMetadataEditor";
 import type {NavigableFindingType} from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
@@ -115,14 +112,11 @@ export default function BookEditor() {
     };
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
-    const [showGitBackup, setShowGitBackup] = useState(false);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
-    const [showGitSync, setShowGitSync] = useState(false);
     const [gitSyncMapped, setGitSyncMapped] = useState(false);
     const [showSaveTemplate, setShowSaveTemplate] = useState(false);
     const [showChapterTemplatePicker, setShowChapterTemplatePicker] = useState(false);
     const [saveChapterTemplateId, setSaveChapterTemplateId] = useState<string | null>(null);
-    const [versionsChapterId, setVersionsChapterId] = useState<string | null>(null);
     const [searchParams, setSearchParams] = useSearchParams();
     const [showMetadata, setShowMetadata] = useState(searchParams.get("view") === "metadata");
     const [showStoryboard, setShowStoryboard] = useState(searchParams.get("view") === "storyboard");
@@ -201,7 +195,28 @@ export default function BookEditor() {
         else if (params.get("view") === "relationships") params.delete("view");
         setSearchParams(params, {replace: true});
     };
-    const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+    // Dialog->Pages C6: the active chapter lives in the URL (``?chapter=``)
+    // rather than local state, so a chapter selection is deep-linkable and
+    // survives navigating to (and back from) the snapshots page. Derived
+    // here; the setter writes the param (preserving ``?view=`` etc.), so
+    // all existing call sites keep using ``setActiveChapterId`` unchanged.
+    const activeChapterId = searchParams.get("chapter");
+    const setActiveChapterId = useCallback(
+        (
+            next:
+                | string
+                | null
+                | ((prev: string | null) => string | null),
+        ) => {
+            const params = new URLSearchParams(searchParams);
+            const resolved =
+                typeof next === "function" ? next(params.get("chapter")) : next;
+            if (resolved) params.set("chapter", resolved);
+            else params.delete("chapter");
+            setSearchParams(params, {replace: true});
+        },
+        [searchParams, setSearchParams],
+    );
     const [pendingFocus, setPendingFocus] = useState<{chapterId: string; type: NavigableFindingType; seq: number} | null>(null);
     const [conflict, setConflict] = useState<ConflictInfo | null>(null);
     const [loading, setLoading] = useState(true);
@@ -715,9 +730,9 @@ export default function BookEditor() {
                 onRename={handleRenameChapter}
                 onBack={() => navigate("/")}
                 onExport={handleExport}
-                onGitBackup={() => setShowGitBackup(true)}
+                onGitBackup={() => navigate(`/books/${bookId}/git-backup`)}
                 gitSyncState={gitSyncState}
-                onGitSync={() => setShowGitSync(true)}
+                onGitSync={() => navigate(`/books/${bookId}/git-sync`)}
                 gitSyncMapped={gitSyncMapped}
                 onMetadata={() => { setSelectedStoryEntityId(null); _setShowMetadata(true); }}
                 onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
@@ -731,7 +746,7 @@ export default function BookEditor() {
                 onSaveAsTemplate={() => setShowSaveTemplate(true)}
                 onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                 onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                onShowVersions={(id) => setVersionsChapterId(id)}
+                onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
                 showMetadata={showMetadata}
                 onReorder={handleReorder}
                 hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
@@ -886,28 +901,6 @@ export default function BookEditor() {
                 free-floating right-edge tab was not UX-conformant. */}
 
 
-            {bookId && (
-                <GitBackupDialog
-                    open={showGitBackup}
-                    bookId={bookId}
-                    onClose={() => {
-                        setShowGitBackup(false);
-                        void refreshGitSync();
-                    }}
-                />
-            )}
-
-            {bookId && (
-                <GitSyncDialog
-                    open={showGitSync}
-                    bookId={bookId}
-                    onClose={() => {
-                        setShowGitSync(false);
-                        void refreshGitSyncMapping();
-                    }}
-                />
-            )}
-
             <SaveAsTemplateModal
                 open={showSaveTemplate}
                 book={book}
@@ -938,37 +931,6 @@ export default function BookEditor() {
                 onDiscardLocal={resolveConflictDiscardLocal}
                 onSaveAsNewChapter={resolveConflictSaveAsNew}
             />
-            {bookId ? (
-                <ChapterVersionsModal
-                    open={versionsChapterId !== null}
-                    bookId={bookId}
-                    chapterId={versionsChapterId}
-                    onClose={() => setVersionsChapterId(null)}
-                    onRestored={async (restoredId) => {
-                        // Reload the book so the restored chapter's
-                        // bumped version lands in state, AND fetch
-                        // the chapter directly so the editor receives
-                        // the new content. ``api.books.get`` defaults
-                        // to ``include_content=false``, which would
-                        // otherwise propagate an empty string into the
-                        // editor and silently wipe the restored text.
-                        if (!bookId) return;
-                        try {
-                            const fresh = await api.books.get(bookId);
-                            setBook(fresh);
-                            if (restoredId === activeChapterId) {
-                                const restoredChapter = await api.chapters.get(bookId, restoredId);
-                                setLoadedContent({
-                                    id: restoredChapter.id,
-                                    content: restoredChapter.content,
-                                });
-                            }
-                        } catch {
-                            /* next interaction will reload */
-                        }
-                    }}
-                />
-            ) : null}
         </div>
     );
 }

@@ -1,30 +1,14 @@
 /**
- * T-01 Phase B: ChapterVersionsModal CSS-Module.
+ * ChapterVersionsView CSS-Module (version-history list + diff panel).
  *
- * Migrated from a 13-line ``const styles`` block. 11 keys, ~12 inline
- * applications. Lists chapter version history.
+ * Originally a `const styles` block (T-01 Phase B); renamed from
+ * ChapterVersionsModal.module.css alongside the Dialog->Pages migration
+ * (C6) that extracted the body into ChapterVersionsView.
  */
 
-.content {
-  max-width: 640px;
-  width: min(640px, 95vw);
-}
-
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 0.5rem;
-}
-
-.title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-}
+/* The former dialog-chrome classes (.content/.header/.title) were
+ * dropped in the Dialog->Pages migration (C11) — the page shell owns
+ * those now. */
 
 .description {
   color: var(--text-muted);
