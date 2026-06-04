@@ -1,0 +1,95 @@
+name: Deploy to GitHub Pages
+
+# Combined single-artifact GitHub Pages deploy.
+#
+# A repo has exactly ONE Pages site / one artifact, so the frontend and
+# the MkDocs docs cannot be deployed by two independent workflows without
+# clobbering each other. This workflow builds BOTH and assembles them into
+# one tree:
+#   - the React/Vite frontend at the site root   -> /bibliogon/
+#   - the MkDocs documentation under a sub-path   -> /bibliogon/docs/
+# It supersedes the former standalone docs.yml (removed in the same change).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - 'docs/help/**'
+      - 'mkdocs.yml'
+      - 'scripts/generate_mkdocs_nav.py'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; a newer push supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+# Defensive opt-in: coerce any JavaScript-runtime action still declaring
+# Node 20 to Node 24 (safety net for future additions; all actions used
+# here already run natively on Node 24). Mirrors the other workflows.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Full history for the git-revision-date docs plugin
+
+      # --- Frontend: build under the /bibliogon/ sub-path ---
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Build frontend (base /bibliogon/)
+        working-directory: ./frontend
+        run: |
+          npm ci
+          VITE_BASE_URL=/bibliogon/ npm run build
+
+      # --- Docs: build the MkDocs site ---
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Install docs dependencies
+        working-directory: ./docs
+        run: poetry install --no-interaction
+      - name: Generate navigation from _meta.yaml
+        working-directory: ./docs
+        run: poetry run python ../scripts/generate_mkdocs_nav.py
+      - name: Build docs
+        working-directory: ./docs
+        run: poetry run mkdocs build -f ../mkdocs.yml --strict
+
+      # --- Assemble: frontend at root, docs under /docs ---
+      - name: Assemble combined Pages tree
+        run: |
+          rm -rf _site
+          mkdir -p _site/docs
+          cp -r frontend/dist/. _site/
+          cp -r site/. _site/docs/
+
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment
