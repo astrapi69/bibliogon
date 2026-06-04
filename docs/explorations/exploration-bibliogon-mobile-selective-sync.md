@@ -367,3 +367,64 @@ When this exploration goes to CC for evaluation (similar pattern to exploration-
 Apply ACCEPT / DEFER / REJECT / EXTEND markers per sub-phase plus per architecture-decision. Plus surface any Bibliogon-specific blocker not covered above (e.g. existing schema incompatibility with selective-sync, existing UI surface that would need substantial refactor for Mobile-responsive).
 
 CC plus Strategic-Advisor are aligned on β2-style Anti-Speculation: anything not-explicitly-needed gets deferred to follow-up. v1 should ship Capture-plus-Review-on-Phone with Sync-back-to-Desktop. Anything beyond that is follow-up.
+
+---
+
+## 2026-06-04 CLOSEOUT — Phase 3 (offline storage + sync) shipped
+
+Branch `feature/mobile-sync-phase2` (rebased on main, PR opened). The
+Phase-2 storage seam now carries a full offline-and-sync engine.
+
+**Shipped (C1–C10):**
+- **C1 DexieStorage** — IndexedDB backend, flat FK-indexed schema for the
+  selectable graph (`frontend/src/storage/dexie-storage.ts`).
+- **C2 connectivity + auto-switch** — `navigator.onLine` + `/api/health`
+  probe; `getStorage()` resolves ApiStorage online / DexieStorage offline.
+  OPT-IN (only when a book is taken offline) so the desktop is untouched.
+- **C3 selective download** — `GET /api/books/{id}/full` (one-request
+  graph via `serialize_row`) + "Take offline" toggle + Dashboard badge.
+- **C4 read migration** — Dashboard + BookEditor reads via `getStorage()`.
+- **C5 write queue** — `SyncQueueEntry` (Dexie v2, `++seq` FIFO) recorded
+  by a queueing-storage wrapper on every offline write.
+- **C6 background sync** — `processSyncQueue()` replays the queue in
+  FIFO (= FK-safe) order; failures retained, never dropped.
+- **C7 conflict detection** — server-version baselines (Dexie v3); a
+  desktop-side move parks a `conflict` (keep-mobile / keep-desktop via
+  the existing `ConflictResolutionDialog`); book metadata is LWW.
+- **C9 activation** — `SyncStatusWatcher` drains the queue on reconnect +
+  toasts (synced / conflicts / partial).
+- **C10 e2e** — `e2e/smoke/offline-sync.spec.ts` (Aster runs).
+- **(Blogpost SW fix, PR #30)** — the recurring "Blogpost missing from
+  the content-type dropdown" was the dev Service Worker serving a stale
+  bundle, NOT a dropdown filter (verified: a Vitest opens the Radix
+  Select and finds all 8; CreateArticlePage never filtered). Dev SW
+  disabled + skipWaiting/clientsClaim + self-unregister.
+
+**Test layers (per the sync testing directive):** round-trip CRUD,
+FIFO/FK-order pin, parity pin (every wrapper-enqueued op is replayable),
+the 3 conflict scenarios (both-sides → conflict; book title → LWW;
+edit-vs-delete). 33 storage/sync Vitest green.
+
+**DB-guard eval (directive Step 6):** adaptive-learner's `db_guard.py`
+need NOT be ported — Bibliogon already has the equivalent protection:
+`app/paths.py::mark_data_dir_as_production` writes a `.bibliogon-production`
+marker and `backend/tests/conftest.py` aborts the run (exit 2) if a test
+ever sees it, plus `BIBLIOGON_TEST=1` + `TEST_DATABASE_URL` isolation
+(CLAUDE.md "Test isolation"). The sync engine is client-side (replays
+normal REST CRUD); it never wipes the server DB.
+
+**Deferred (follow-ups, not blocking):**
+- **Offline-create id reconciliation** — an offline create posts and the
+  server mints a new id; the local Dexie row keeps its client id. Needs a
+  post-sync local-id rewrite.
+- **Conflict-resolution UI wiring** — show `ConflictResolutionDialog` per
+  parked conflict from a Settings "Sync status" surface (the engine
+  returns the conflicts; the per-conflict dialog flow is the next UI step).
+- **C8 NetworkFirst SW refinement** — runtime `/api/` is `NetworkOnly`
+  today (offline data comes from Dexie via `getStorage`); a NetworkFirst
+  cache is an optional optimisation.
+- **C11 help docs (DE+EN) + screenshots** — user-facing help page for the
+  offline workflow, to land with the phase2 merge.
+- **Pages/comics/story-entity offline CRUD** — the graph is downloaded
+  (C3) but only books/chapters/articles have IStorageService write methods
+  so far; the rest gain methods as their call-sites migrate.
