@@ -71,11 +71,12 @@ vi.mock("../hooks/useI18n", () => ({
 const mockBooksCreate = vi.fn()
 const mockBooksCreateFromTemplate = vi.fn()
 const mockNotifyError = vi.fn()
+const mockGetApp = vi.fn()
 
 vi.mock("../api/client", () => ({
   api: {
     settings: {
-      getApp: vi.fn().mockResolvedValue({author: {name: "", pen_names: []}}),
+      getApp: (...args: unknown[]) => mockGetApp(...args),
     },
     authors: {
       list: vi.fn().mockResolvedValue([]),
@@ -169,8 +170,36 @@ describe("CreateBookPage", () => {
     mockBooksCreate.mockReset()
     mockBooksCreateFromTemplate.mockReset()
     mockNotifyError.mockReset()
+    mockGetApp.mockReset()
+    mockGetApp.mockResolvedValue({author: {name: "", pen_names: []}})
     mockBooksCreate.mockResolvedValue({id: "new-book-id", title: "My Book"})
     mockBooksCreateFromTemplate.mockResolvedValue({id: "tpl-book-id"})
+  })
+
+  it("pre-selects the configured default book-type when no ?type= is given", async () => {
+    mockGetApp.mockResolvedValue({
+      author: {name: "", pen_names: []},
+      ui: {defaults: {book_type: "picture_book"}},
+    })
+    renderPage("/books/new")
+    await waitFor(() =>
+      expect(
+        screen.getByTestId("create-book-title-picture_book"),
+      ).toBeTruthy(),
+    )
+  })
+
+  it("lets an explicit ?type= override the configured default", async () => {
+    mockGetApp.mockResolvedValue({
+      author: {name: "", pen_names: []},
+      ui: {defaults: {book_type: "picture_book"}},
+    })
+    renderPage("/books/new?type=prose")
+    await waitFor(() =>
+      expect(screen.getByTestId("create-book-title-prose")).toBeTruthy(),
+    )
+    // The configured default (picture_book) must NOT win.
+    expect(screen.queryByTestId("create-book-title-picture_book")).toBeNull()
   })
 
   it("renders the generic title for prose with its testid", async () => {
