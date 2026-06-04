@@ -135,3 +135,74 @@ mobile) for Aster to run.
   WritingHistory global; Git per-book; CommentPreview no endpoint.
 - DonationOnboarding classified with AiSetup (auto-trigger onboarding →
   stays a dialog), consistent with the user's explicit AiSetup decision.
+
+## Mobile/LAN/Sync arc (PR #28, #30, #31 — all merged to main 8d877b04)
+
+This day's second arc, separate from the Dialog→Pages work above.
+Mobile-sync project record lives in memory [[mobile-sync-lan-project]]
+(Variant C: Desktop authoritative, Mobile Dexie client).
+
+### LAN Mode — Phase 1 (PR #28)
+
+- Goal: serve frontend + API on one port so a phone on the same LAN can
+  reach the desktop instance.
+- `make dev-lan` serves on `0.0.0.0:8000`; opt-in via `BIBLIOGON_LAN_MODE`.
+- New: `backend/app/lan_auth.py` (PIN gate), `backend/app/lan_net.py`
+  (QR via segno), `backend/app/frontend_static.py` (static serving).
+- Frontend: QR banner + Settings card.
+- Desktop unchanged — everything opt-in.
+
+### Blogpost dropdown — CLOSED, do NOT reinvestigate (PR #27 + #30)
+
+- Reported 4×, verified 7+ times incl. a Vitest that opens the Radix
+  select and finds all 8 types (blogpost included) — green.
+- Root cause was the PWA Service Worker serving a stale bundle (the old
+  ArticleList SplitButton that filtered until #27), NOT CreateArticlePage
+  (which never had a filter).
+- Fixed: #27 (filter removed) + #30 (dev SW off + self-deregistration).
+- If reported again: DevTools → Application → Service Workers → Unregister
+  + reload. No code bug.
+
+### Offline-Sync — Phase 2+3 (PR #31)
+
+- Full offline stack in `frontend/src/storage/`: `index.ts`
+  (`getStorage()` factory: api online / dexie offline, opt-in),
+  `types.ts` (`IStorageService`), `api-storage.ts`, `dexie-storage.ts`
+  (IndexedDB v3), `connectivity.ts`, `useStorageMode.ts`,
+  `sync-queue.ts` (FIFO `++seq`), `sync-engine.ts` (`processSyncQueue`
+  + conflict detection), `offline-download.ts`.
+- UI: `OfflineToggleButton` (BookEditor sidebar), cloud badge on
+  `BookCard`, `SyncStatusWatcher` (App.tsx, replays queue on reconnect).
+- Backend: `GET /api/books/{id}/full`.
+- Desktop bundle unaffected — dexie/sync are dynamically imported.
+
+### Open follow-ups (non-blocking, in exploration closeout)
+
+1. Offline-create ID reconciliation (offline-id ≠ server-id post-sync).
+2. Conflict-dialog UI wiring — `processSyncQueue()` returns `conflicts[]`;
+   a Settings "Sync status" surface should drive `ConflictResolutionDialog`
+   per conflict (keep-mobile/keep-desktop logic exists). **Recommended
+   next step — highest user value.**
+3. NetworkFirst SW refinement (today `/api/` = NetworkOnly).
+4. Help docs (DE+EN) for the offline workflow.
+5. pages/comics/story-entity offline CRUD (only books/chapters/articles
+   have `IStorageService` write methods).
+6. Diff-noise cleanup: C3/C4 Prettier reformatted BookEditor/BookCard/
+   ChapterSidebar to 2-space (cosmetic). Optional revert to keep
+   semantic deltas only.
+
+### Disciplines confirmed this arc
+
+- Prettier only NEW own files — never reformat existing (caused the
+  rebase conflicts).
+- Multi-tool: parallel sessions swap branches in the same working tree —
+  `git status` before every commit, explicit paths.
+- Test isolation: never `python -c "from app.main import app"` without
+  `BIBLIOGON_TEST=1`.
+
+### State of main at session end
+
+- Merged to `8d877b04`; no open PRs; clean tree.
+- Backend 2569 tests, Vitest 2671, ruff/mypy/tsc clean (counts as
+  reported in handover — re-verify per the numeric-claims rule before
+  any release).
