@@ -1017,3 +1017,12 @@ if DEBUG:
             return {"status": "reset"}
         finally:
             db.close()
+
+
+# Serve the built frontend (single-port LAN access). No-op in the normal
+# `make dev` flow where Vite serves the SPA and frontend/dist is absent.
+# Registered LAST so the SPA catch-all cannot shadow any /api route.
+# See LAN-MODE-PHASE-1.
+from app.frontend_static import register_frontend_static
+
+register_frontend_static(app)
