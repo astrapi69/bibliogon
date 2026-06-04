@@ -201,7 +201,28 @@ export default function BookEditor() {
         else if (params.get("view") === "relationships") params.delete("view");
         setSearchParams(params, {replace: true});
     };
-    const [activeChapterId, setActiveChapterId] = useState<string | null>(null);
+    // Dialog->Pages C6: the active chapter lives in the URL (``?chapter=``)
+    // rather than local state, so a chapter selection is deep-linkable and
+    // survives navigating to (and back from) the snapshots page. Derived
+    // here; the setter writes the param (preserving ``?view=`` etc.), so
+    // all existing call sites keep using ``setActiveChapterId`` unchanged.
+    const activeChapterId = searchParams.get("chapter");
+    const setActiveChapterId = useCallback(
+        (
+            next:
+                | string
+                | null
+                | ((prev: string | null) => string | null),
+        ) => {
+            const params = new URLSearchParams(searchParams);
+            const resolved =
+                typeof next === "function" ? next(params.get("chapter")) : next;
+            if (resolved) params.set("chapter", resolved);
+            else params.delete("chapter");
+            setSearchParams(params, {replace: true});
+        },
+        [searchParams, setSearchParams],
+    );
     const [pendingFocus, setPendingFocus] = useState<{chapterId: string; type: NavigableFindingType; seq: number} | null>(null);
     const [conflict, setConflict] = useState<ConflictInfo | null>(null);
     const [loading, setLoading] = useState(true);
