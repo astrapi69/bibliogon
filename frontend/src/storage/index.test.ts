@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import "fake-indexeddb/auto";
 import { api } from "../api/client";
 import { apiStorage } from "./api-storage";
 import {

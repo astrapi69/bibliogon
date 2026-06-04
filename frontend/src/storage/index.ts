@@ -1,29 +1,34 @@
 /**
- * Storage factory + public exports (mobile-sync Phase 2, P2-C1).
+ * Storage factory + public exports (mobile-sync Phase 2/3).
  *
  * Components import `getStorage()` and use the returned
- * `IStorageService`. The factory resolves the backend ONCE and caches
- * it for the page lifetime:
+ * `IStorageService`. The factory resolves the EFFECTIVE backend on every
+ * call (cheap — it just picks between two module singletons):
  *
- *   1. persisted `localStorage["bibliogon.storage_mode"]` (a future
- *      Settings toggle writes it), then
- *   2. build-time `VITE_STORAGE_MODE`, then
- *   3. default `"api"`.
+ *   1. An explicit mode wins: persisted
+ *      `localStorage["bibliogon.storage_mode"]` then build-time
+ *      `VITE_STORAGE_MODE` (used by tests / forced builds).
+ *   2. Otherwise AUTO: when offline capability is enabled (a book was
+ *      taken offline, C3) AND the backend is currently unreachable, use
+ *      DexieStorage; in every other case use ApiStorage.
  *
- * Only ApiStorage exists in P2-C1. A resolved `"dexie"` is honoured at
- * the mode layer (so the toggle + mode plumbing can ship and be tested
- * now) but the factory still serves ApiStorage until DexieStorage lands
- * in a later P2 commit. Migrating call-sites from `api.*` to
- * `getStorage().*` happens per-domain in follow-up commits; this commit
- * only introduces the seam.
- *
- * Pattern adapted from adaptive-learner `frontend/src/storage/index.ts`.
+ * Desktop safety: with offline capability OFF (the default, and the
+ * normal `make dev` flow) auto always resolves to `"api"`, the
+ * connectivity monitor never starts, and DexieStorage is NEVER imported
+ * — it is pulled in via a dynamic `import()` only when offline
+ * capability is enabled, so it stays out of the desktop bundle/path.
  */
 
 import { apiStorage } from "./api-storage";
+import { connectivity, isOfflineEnabled } from "./connectivity";
 import type { IStorageService, StorageMode } from "./types";
 
 export type { IStorageService, StorageMode } from "./types";
+export {
+  connectivity,
+  isOfflineEnabled,
+  setOfflineEnabled,
+} from "./connectivity";
 
 const STORAGE_MODE_KEY = "bibliogon.storage_mode";
 
@@ -31,7 +36,7 @@ function isStorageMode(value: unknown): value is StorageMode {
   return value === "api" || value === "dexie";
 }
 
-/** The user's persisted mode preference, or null if none/unavailable. */
+/** An explicitly-chosen mode (persisted or build-time), or null. */
 export function readPersistedStorageMode(): StorageMode | null {
   try {
     const raw = localStorage.getItem(STORAGE_MODE_KEY);
@@ -41,14 +46,11 @@ export function readPersistedStorageMode(): StorageMode | null {
   }
 }
 
-/** Persist a mode preference (a future Settings toggle calls this).
- *  A reload is required to pick up the new backend; live-swap is not in
- *  scope for P2-C1. */
 export function setPersistedStorageMode(mode: StorageMode): void {
   try {
     localStorage.setItem(STORAGE_MODE_KEY, mode);
   } catch {
-    /* localStorage unavailable (private mode, locked iframe) — no-op */
+    /* localStorage unavailable — no-op */
   }
 }
 
@@ -57,27 +59,55 @@ function readBuildTimeMode(): StorageMode | null {
   return isStorageMode(raw) ? raw : null;
 }
 
-/** Resolve the mode that should be used now (does not build anything). */
-export function resolveStorageMode(): StorageMode {
-  return readPersistedStorageMode() ?? readBuildTimeMode() ?? "api";
+/** An explicit override if one is set, else null (→ auto). */
+export function explicitStorageMode(): StorageMode | null {
+  return readPersistedStorageMode() ?? readBuildTimeMode();
 }
 
-let cached: IStorageService | null = null;
+/** The mode that should be active right now (explicit override, else
+ *  auto from offline-capability + connectivity). */
+export function resolveStorageMode(): StorageMode {
+  const explicit = explicitStorageMode();
+  if (explicit) return explicit;
+  if (isOfflineEnabled() && !connectivity.isOnline()) return "dexie";
+  return "api";
+}
 
-/** The active storage service. Cached for the page lifetime. */
+// --- lazy DexieStorage (kept out of the desktop bundle) ------------------
+
+let dexieRef: IStorageService | null = null;
+let dexieLoad: Promise<IStorageService> | null = null;
+
+/** Load DexieStorage on demand. Called by the offline-enabling path so
+ *  the instance is ready before the client actually goes offline. */
+export async function ensureDexieStorageLoaded(): Promise<IStorageService> {
+  if (dexieRef) return dexieRef;
+  if (!dexieLoad) {
+    dexieLoad = import("./dexie-storage").then((m) => {
+      dexieRef = m.dexieStorage;
+      return dexieRef;
+    });
+  }
+  return dexieLoad;
+}
+
+/** The active storage service for the current effective mode. */
 export function getStorage(): IStorageService {
-  if (cached) return cached;
   if (resolveStorageMode() === "dexie") {
+    if (dexieRef) return dexieRef;
+    // Offline but DexieStorage not loaded yet — kick off the load and
+    // serve ApiStorage this once (callers retry; the enabling path
+    // normally preloads it well before we ever go offline).
+    void ensureDexieStorageLoaded();
     console.warn(
-      "[storage] 'dexie' mode requested but DexieStorage is not " +
-        "implemented yet (mobile-sync P2); using ApiStorage.",
+      "[storage] offline but DexieStorage not loaded yet; using ApiStorage for this call.",
     );
   }
-  cached = apiStorage;
-  return cached;
+  return apiStorage;
 }
 
-/** Test-only: drop the cached instance so the next getStorage() re-resolves. */
+/** Test-only: drop the lazily-loaded DexieStorage reference. */
 export function __resetStorageForTests(): void {
-  cached = null;
+  dexieRef = null;
+  dexieLoad = null;
 }
