@@ -18,6 +18,23 @@ if (import.meta.env.DEV) {
   void import("@axe-core/react").then(({ default: axe }) => {
     void axe(React, ReactDOM, 1000);
   });
+
+  // The dev Service Worker is disabled (vite.config devOptions.enabled:
+  // false). A SW registered by an EARLIER session persists in the browser
+  // and would keep serving its stale precached bundle across reloads --
+  // the recurring "fix merged but the old UI is still shown" symptom.
+  // Proactively unregister any leftover SW + drop its caches so a single
+  // reload picks up the live dev modules.
+  if ("serviceWorker" in navigator) {
+    void navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) void reg.unregister();
+    });
+    if ("caches" in window) {
+      void caches.keys().then((keys) => {
+        for (const key of keys) void caches.delete(key);
+      });
+    }
+  }
 }
 
 ReactDOM.createRoot(document.getElementById("root")!).render(

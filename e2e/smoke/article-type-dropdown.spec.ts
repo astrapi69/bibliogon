@@ -10,9 +10,13 @@
  * which happy-dom/Vitest cannot reliably open) -- so this real-
  * browser spec is the contract: both surfaces must show every type.
  *
- * If this ever fails while the code looks correct, suspect a STALE
- * FRONTEND BUNDLE first (rebuild / hard-reload) -- that is the most
- * common cause of a "still missing" report on a just-shipped fix.
+ * If this ever fails while the code looks correct, suspect the PWA
+ * SERVICE WORKER serving a stale bundle (the actual root cause when
+ * "Blogpost missing" was reported 3x against correct code): the dev SW
+ * is now disabled (vite.config devOptions.enabled=false) + production
+ * SWs skipWaiting/clientsClaim, and a leftover SW self-unregisters in
+ * dev (main.tsx). To clear by hand: DevTools > Application > Service
+ * Workers > Unregister, then reload.
  *
  * Written by Claude Code; Aster runs it (per the E2E gate).
  */
@@ -56,6 +60,11 @@ test.describe("Content-type selectors include Blogpost", () => {
                 page.getByTestId(`create-article-type-${id}`),
             ).toBeVisible();
         }
+        // Blogpost (the default) specifically, and exactly 8 options.
+        await expect(page.getByTestId("create-article-type-blogpost")).toBeVisible();
+        await expect(
+            page.locator('[data-testid^="create-article-type-"]'),
+        ).toHaveCount(DROPDOWN_IDS.length);
     });
 
     test("ArticleList 'Neuer Artikel' menu lists all 8 types", async ({
