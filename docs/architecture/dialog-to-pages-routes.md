@@ -62,17 +62,30 @@ can't self-load on a deep-link without a backend change:
 
 - `CommentPreviewModal` — no `GET /api/comments/{id}`; pure-presentational
   + tightly coupled to the global Comments-Admin table (reclassify /
-  delete + refresh owned by the parent). Revisit if a single-fetch
-  endpoint is added.
+  delete + refresh owned by the parent). **Final: stays a dialog** — no
+  backend endpoint for a purely-presentational preview.
 
-## Deferred
+**Small, context-bound dialogs holding transient state** — adjudicated
+2026-06-04; a separate route or an inline-into-parent refactor would be
+invasive with no deep-link payoff:
 
-- **C10 inline-remaining** — FieldClassDialog, TranslationLinks,
-  WritingGoalSettings, DashboardFilterSheet, ConflictResolutionDialog:
-  the plan calls these "inline into the parent surface" rather than
-  separate routes, but the target is ambiguous (e.g. ConflictResolution
-  is listed as both a page and inline; some hold transient state). Needs
-  per-item adjudication before implementing.
+- `FieldClassDialog` — small context-bound field picker (bulk-AI-fill).
+- `TranslationLinksDialog` — small context-bound link editor (ArticleEditor).
+- `WritingGoalSettingsDialog` — quick goal-setting.
+- `DashboardFilterSheet` — stays as-is (expandable section / sheet).
+- `ConflictResolutionDialog` — transient state (which conflict, which
+  resolution), context-bound in BookEditor.
+
+## Migration scope: complete
+
+The Dialog → Pages migration is **done**. It covered the large,
+deep-linkable surfaces (book/article create, export, writing history,
+chapter snapshots, git backup/sync, shortcuts) plus the editor's
+`?chapter=` URL state. Everything not migrated is a deliberate dialog —
+confirmations, transient-state wizards, auto-trigger onboarding nudges,
+or the small context-bound dialogs above. There is no remaining
+inline-refactor work; the original "C10 inline-remaining" plan was
+adjudicated to "all stay dialogs".
 
 ## Convention for the next migration
 
