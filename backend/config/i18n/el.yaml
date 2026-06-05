@@ -546,6 +546,7 @@ ui:
     interview_default_title: "Νέα συνέντευξη"
     listicle_default_title: "Νέο listicle"
     short_story_default_title: "Νέο διήγημα"
+    article_default_title: "Νέο άρθρο"
   export_dialog:
     title: "Εξαγωγή"
     format: "Μορφή"
@@ -1016,6 +1017,9 @@ ui:
     book_type_picture_title: "Εικονογραφημένο βιβλίο"
     book_type_picture_desc: "Μία εικόνα συν κείμενο ανά σελίδα. 5 διατάξεις (εικόνα επάνω/αριστερά, συννεφάκι ομιλίας κ.λπ.) και εξαγωγή PDF έτοιμη για KDP."
     book_type_comic_title: "Κόμικ"
+    book_type_prose_default_title: "Νέο βιβλίο"
+    book_type_picture_default_title: "Νέο εικονογραφημένο βιβλίο"
+    book_type_comic_default_title: "Νέο κόμικ"
     book_type_comic_desc: "Διατάξεις πολλαπλών καρέ (πλέγμα 2x2, 3x3 κ.λπ.) με συννεφάκια ομιλίας και εικόνες ανά καρέ."
     help_create_1: "Πηγαίνετε στο Dashboard (αρχική σελίδα)"
     help_create_2: "Κάντε κλικ στο κουμπί \"Νέο βιβλίο\""

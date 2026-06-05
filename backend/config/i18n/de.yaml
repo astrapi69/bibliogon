@@ -549,6 +549,7 @@ ui:
     interview_default_title: "Neues Interview"
     listicle_default_title: "Neues Listicle"
     short_story_default_title: "Neue Kurzgeschichte"
+    article_default_title: "Neuer Artikel"
   export_dialog:
     title: "Export"
     format: "Format"
@@ -1019,6 +1020,9 @@ ui:
     book_type_picture_title: "Bilderbuch"
     book_type_picture_desc: "Eine Seite pro Bild plus Text. 5 Layouts (Bild oben/links, Speech-Bubble, etc.) und KDP-fähiger PDF-Export."
     book_type_comic_title: "Comicbuch"
+    book_type_prose_default_title: "Neues Buch"
+    book_type_picture_default_title: "Neues Bilderbuch"
+    book_type_comic_default_title: "Neues Comicbuch"
     book_type_comic_desc: "Multi-Panel-Layouts (Grid 2x2, 3x3, etc.) mit Sprechblasen und Bildern pro Panel."
     help_create_1: "Gehe zum Dashboard (Startseite)"
     help_create_2: "Klicke den Button \"Neues Buch\""

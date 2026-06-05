@@ -61,6 +61,10 @@ export interface BookTypeDef {
   id: BookType;
   label_key: string;
   description_key: string;
+  /** i18n key for the per-type create label (Dashboard SplitButton
+   *  primary) / default new-document title. Mirrors
+   *  ContentTypeDef.default_title_key. */
+  default_title_key?: string | null;
   icon: string;
   /** "chapters" | "pages" — drives the editor selection + the
    *  PAGEABLE_BOOK_TYPES gate on the backend. */

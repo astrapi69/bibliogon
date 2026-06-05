@@ -15,6 +15,7 @@ import type {ReactNode} from "react";
 
 import {
     BookTypesProvider,
+    bookTypeDefaultTitleKey,
     bookTypeIdsWithCapability,
     pageableBookTypeIds,
     useBookTypes,
@@ -227,6 +228,43 @@ describe("bookTypeIdsWithCapability selector", () => {
         expect(
             bookTypeIdsWithCapability(result.current, "template_catalog"),
         ).toEqual(new Set(["prose"]));
+    });
+});
+
+describe("bookTypeDefaultTitleKey selector", () => {
+    const REGISTRY_WITH_KEYS: Record<string, BookTypeDef> = {
+        prose: makeBookType({
+            id: "prose",
+            default_title_key: "ui.get_started.book_type_prose_default_title",
+        }),
+        comic_book: makeBookType({
+            id: "comic_book",
+            default_title_key: "ui.get_started.book_type_comic_default_title",
+        }),
+    };
+
+    it("returns the configured default_title_key for a known type", () => {
+        const {result} = renderHook(() => useBookTypes(), {
+            wrapper: wrapper(REGISTRY_WITH_KEYS),
+        });
+        expect(bookTypeDefaultTitleKey(result.current, "comic_book")).toBe(
+            "ui.get_started.book_type_comic_default_title",
+        );
+    });
+
+    it("returns null when the type omits the key", () => {
+        const {result} = renderHook(() => useBookTypes(), {
+            // SAMPLE_REGISTRY entries have no default_title_key.
+            wrapper: wrapper(SAMPLE_REGISTRY),
+        });
+        expect(bookTypeDefaultTitleKey(result.current, "prose")).toBeNull();
+    });
+
+    it("returns null for an unknown type id", () => {
+        const {result} = renderHook(() => useBookTypes(), {
+            wrapper: wrapper(REGISTRY_WITH_KEYS),
+        });
+        expect(bookTypeDefaultTitleKey(result.current, "nope")).toBeNull();
     });
 });
 

@@ -546,6 +546,7 @@ ui:
     interview_default_title: "新しいインタビュー"
     listicle_default_title: "新しいリスト記事"
     short_story_default_title: "新しい短編小説"
+    article_default_title: "新しい記事"
   export_dialog:
     title: "エクスポート"
     format: "フォーマット"
@@ -1016,6 +1017,9 @@ ui:
     book_type_picture_title: "絵本"
     book_type_picture_desc: "1 ページにつき画像 1 点とテキスト。5 種類のレイアウト（画像を上／左、吹き出しなど）と KDP 対応の PDF エクスポート。"
     book_type_comic_title: "コミック"
+    book_type_prose_default_title: "新しい本"
+    book_type_picture_default_title: "新しい絵本"
+    book_type_comic_default_title: "新しいコミック"
     book_type_comic_desc: "マルチコマレイアウト（2x2、3x3 などのグリッド）に吹き出しとコマ単位の画像を配置。"
     help_create_1: "ダッシュボード(ホームページ)に移動"
     help_create_2: "\"新しい本\"ボタンをクリック"

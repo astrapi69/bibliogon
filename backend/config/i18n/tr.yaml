@@ -546,6 +546,7 @@ ui:
     interview_default_title: "Yeni roportaj"
     listicle_default_title: "Yeni liste yazisi"
     short_story_default_title: "Yeni kisa hikaye"
+    article_default_title: "Yeni makale"
   export_dialog:
     title: "Disa aktar"
     format: "Biçim"
@@ -1030,6 +1031,9 @@ ui:
     book_type_picture_title: "Resimli Kitap"
     book_type_picture_desc: "Sayfa başına bir görsel ve metin. 5 düzen (görsel üstte/solda, konuşma balonu vb.) ve KDP'ye hazır PDF dışa aktarımı."
     book_type_comic_title: "Çizgi Roman"
+    book_type_prose_default_title: "Yeni kitap"
+    book_type_picture_default_title: "Yeni resimli kitap"
+    book_type_comic_default_title: "Yeni çizgi roman"
     book_type_comic_desc: "Konuşma balonları ve panel düzeyinde görsellerle çok panelli düzenler (2x2, 3x3 ızgara vb.)."
     help_create_1: "Dashboard'a gidin (ana sayfa)"
     help_create_2: "\"Yeni kitap\" dügmesine tiklayin"

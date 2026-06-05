@@ -31,7 +31,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import { useContentTypes } from "../hooks/useContentTypes";
+import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
@@ -79,6 +79,11 @@ export default function ArticleList() {
     const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
     const [loading, setLoading] = useState(true);
+    // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
+    // content-type (ui.defaults.content_type). The SplitButton primary
+    // "Neuer Artikel" creates this type (CreateArticlePage applies it);
+    // its label reflects the default's registry default_title_key.
+    const [defaultContentType, setDefaultContentType] = useState("blogpost");
     const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.articles_trash_view``). In-trash toggles
@@ -90,6 +95,17 @@ export default function ArticleList() {
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
+    // SplitButton primary label reflects the configured default
+    // content-type via its registry ``default_title_key`` (falls back
+    // to the generic "Neuer Artikel").
+    const newArticleFallbackLabel = t("ui.articles.new", "Neuer Artikel");
+    const newArticleTitleKey = contentTypeDefaultTitleKey(
+        articleTypesSnapshot,
+        defaultContentType,
+    );
+    const newArticleLabel = newArticleTitleKey
+        ? t(newArticleTitleKey, newArticleFallbackLabel)
+        : newArticleFallbackLabel;
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
     // active (non-trash) article list. Slices ``filters.filteredArticles``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -376,6 +392,30 @@ export default function ArticleList() {
         void loadTrash();
     }, []);
 
+    // Fetch the configured default content-type for the SplitButton
+    // primary label. No cache on getApp(), and this runs on every
+    // mount, so the label updates as soon as the user returns from
+    // Settings after changing the default. Silent fail: keep "blogpost".
+    useEffect(() => {
+        let cancelled = false;
+        api.settings
+            .getApp()
+            .then((config) => {
+                if (cancelled) return;
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const uiDefaults = (uiConfig.defaults || {}) as Record<
+                    string,
+                    unknown
+                >;
+                const ct = uiDefaults.content_type;
+                if (typeof ct === "string") setDefaultContentType(ct);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
+
     /** Soft-delete: moves the article to the trash. Mirrors books'
      *  ``handleDelete`` - no confirm dialog, matching the
      *  Dashboard pattern; the Trash panel is the safety net. */
@@ -634,7 +674,7 @@ export default function ArticleList() {
                                 <>
                                     <Plus size={16} />
                                     <span className="hide-mobile">
-                                        {t("ui.articles.new", "Neuer Artikel")}
+                                        {newArticleLabel}
                                     </span>
                                 </>
                             }

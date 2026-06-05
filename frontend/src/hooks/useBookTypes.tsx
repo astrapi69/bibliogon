@@ -132,3 +132,15 @@ export function bookTypeIdsWithCapability(
             .map((bt) => bt.id),
     );
 }
+
+/** The i18n key for a book-type's create label / default title, or
+ *  null when the type is unknown or omits the key. Mirrors
+ *  ``contentTypeDefaultTitleKey`` for the content-type registry;
+ *  the Dashboard SplitButton primary label reads this so it reflects
+ *  the configured ``ui.defaults.book_type``. */
+export function bookTypeDefaultTitleKey(
+    snapshot: BookTypesSnapshot,
+    typeId: string,
+): string | null {
+    return snapshot.types[typeId]?.default_title_key ?? null;
+}

@@ -25,6 +25,7 @@ book_types:
   - id: prose
     label_key: ui.get_started.book_type_prose_title
     description_key: ui.get_started.book_type_prose_desc
+    default_title_key: ui.get_started.book_type_prose_default_title
     icon: BookOpen
     content_model: chapters
     editor_component: BookEditor
@@ -41,6 +42,7 @@ book_types:
   - id: picture_book
     label_key: ui.get_started.book_type_picture_title
     description_key: ui.get_started.book_type_picture_desc
+    default_title_key: ui.get_started.book_type_picture_default_title
     icon: Image
     content_model: pages
     editor_component: PageEditor
@@ -58,6 +60,7 @@ book_types:
   - id: comic_book
     label_key: ui.get_started.book_type_comic_title
     description_key: ui.get_started.book_type_comic_desc
+    default_title_key: ui.get_started.book_type_comic_default_title
     icon: Layers
     content_model: pages
     editor_component: ComicBookEditor

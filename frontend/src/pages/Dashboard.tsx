@@ -23,7 +23,7 @@ import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import {useBookFilters} from "../hooks/useBookFilters";
-import {useBookTypes} from "../hooks/useBookTypes";
+import {useBookTypes, bookTypeDefaultTitleKey} from "../hooks/useBookTypes";
 import {BookTypeIcon} from "../utils/bookTypeIcon";
 import SplitButton, {type SplitButtonDropdownItem} from "../components/SplitButton";
 import {
@@ -80,6 +80,21 @@ export default function Dashboard() {
     const filters = useBookFilters(books, t);
     const selection = useBookSelection();
     const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
+    // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: the SplitButton primary
+    // label reflects the configured default book-type. Look up its
+    // ``default_title_key`` in the registry (book-types.yaml SSoT) and
+    // fall back to the generic "Neues Buch" if the type is unknown or
+    // omits the key. Re-reads on every mount (the settings fetch has no
+    // cache), so changing the default in Settings updates the label as
+    // soon as the user navigates back to the Dashboard.
+    const newBookFallbackLabel = t("ui.dashboard.new_book", "Neues Buch");
+    const newBookTitleKey = bookTypeDefaultTitleKey(
+        bookTypesSnapshot,
+        defaultBookType,
+    );
+    const newBookLabel = newBookTitleKey
+        ? t(newBookTitleKey, newBookFallbackLabel)
+        : newBookFallbackLabel;
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.books_trash_view``). In-trash toggles
     // are session-local (no YAML write); persistence is only via the
@@ -484,7 +499,7 @@ export default function Dashboard() {
                                 <>
                                     <Plus size={16} />{" "}
                                     <span className="hide-mobile">
-                                        {t("ui.dashboard.new_book", "Neues Buch")}
+                                        {newBookLabel}
                                     </span>
                                 </>
                             }

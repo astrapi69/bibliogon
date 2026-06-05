@@ -54,6 +54,11 @@ class BookTypeDef(BaseModel):
     id: str
     label_key: str
     description_key: str
+    # i18n key for the per-type create label (Dashboard SplitButton
+    # primary button) / default new-document title. ``None`` (key
+    # omitted) falls back to the generic ``ui.dashboard.new_book``.
+    # Mirrors ContentTypeDef.default_title_key.
+    default_title_key: str | None = None
     icon: str
     content_model: str  # "chapters" | "pages"
     editor_component: str

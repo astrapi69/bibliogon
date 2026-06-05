@@ -129,6 +129,7 @@ content_types:
   - id: article
     label_key: ui.content_types.article
     description_key: ui.content_types.article_description
+    default_title_key: ui.content_types.article_default_title
     icon: FileText
     core_fields: [tags, excerpt, seo, canonical_url, featured_image]
     extra_fields: []

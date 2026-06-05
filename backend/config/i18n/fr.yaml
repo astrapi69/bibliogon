@@ -546,6 +546,7 @@ ui:
     interview_default_title: "Nouvelle interview"
     listicle_default_title: "Nouveau listicle"
     short_story_default_title: "Nouvelle histoire courte"
+    article_default_title: "Nouvel article"
   export_dialog:
     title: "Exporter"
     format: "Format"
@@ -1030,6 +1031,9 @@ ui:
     book_type_picture_title: "Livre illustré"
     book_type_picture_desc: "Une image et du texte par page. 5 mises en page (image en haut/à gauche, bulle, etc.) et export PDF prêt pour KDP."
     book_type_comic_title: "Bande dessinée"
+    book_type_prose_default_title: "Nouveau livre"
+    book_type_picture_default_title: "Nouveau livre illustré"
+    book_type_comic_default_title: "Nouvelle bande dessinée"
     book_type_comic_desc: "Mises en page multi-cases (grille 2x2, 3x3, etc.) avec bulles et images par case."
     help_create_1: "Allez au Dashboard (page d'accueil)"
     help_create_2: "Cliquez sur le bouton \"Nouveau livre\""

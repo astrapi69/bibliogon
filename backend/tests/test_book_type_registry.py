@@ -43,9 +43,7 @@ def _clear_cache():
 
 
 @pytest.fixture
-def fake_registry_path(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
-) -> Path:
+def fake_registry_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "book-types.yaml"
     monkeypatch.setattr(book_type_registry, "_REGISTRY_PATH", path)
     return path
@@ -65,6 +63,20 @@ class TestRealRegistry:
         for type_id, definition in load_book_types().items():
             assert isinstance(definition, BookTypeDef)
             assert definition.id == type_id
+
+    def test_default_title_keys_match_known_truth(self) -> None:
+        # CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: every book-type
+        # carries a default_title_key driving the Dashboard SplitButton
+        # primary label.
+        types = load_book_types()
+        assert types["prose"].default_title_key == "ui.get_started.book_type_prose_default_title"
+        assert (
+            types["picture_book"].default_title_key
+            == "ui.get_started.book_type_picture_default_title"
+        )
+        assert (
+            types["comic_book"].default_title_key == "ui.get_started.book_type_comic_default_title"
+        )
 
     def test_prose_capabilities_match_known_truth(self) -> None:
         prose = get_book_type("prose")
@@ -102,9 +114,7 @@ class TestRealRegistry:
         # The hardcoded ``PAGEABLE_BOOK_TYPES`` in
         # backend/app/routers/pages.py that the registry will
         # replace.
-        assert pageable_book_types() == frozenset(
-            {"picture_book", "comic_book"}
-        )
+        assert pageable_book_types() == frozenset({"picture_book", "comic_book"})
 
     def test_book_type_ids_returns_frozenset(self) -> None:
         ids = book_type_ids()
@@ -113,25 +123,19 @@ class TestRealRegistry:
 
     def test_immutable_book_field_ids_includes_all_types(self) -> None:
         # All three current types are immutable after creation.
-        assert immutable_book_field_ids() == frozenset(
-            {"prose", "picture_book", "comic_book"}
-        )
+        assert immutable_book_field_ids() == frozenset({"prose", "picture_book", "comic_book"})
 
     def test_ebook_export_capability_query(self) -> None:
         # Only prose books are ebook-exportable on KDP.
-        assert book_types_with_capability("ebook_export") == frozenset(
-            {"prose"}
-        )
+        assert book_types_with_capability("ebook_export") == frozenset({"prose"})
 
     def test_paperback_export_capability_query(self) -> None:
-        assert book_types_with_capability(
-            "paperback_export"
-        ) == frozenset({"prose", "picture_book", "comic_book"})
+        assert book_types_with_capability("paperback_export") == frozenset(
+            {"prose", "picture_book", "comic_book"}
+        )
 
     def test_template_catalog_capability_query(self) -> None:
-        assert book_types_with_capability(
-            "template_catalog"
-        ) == frozenset({"prose"})
+        assert book_types_with_capability("template_catalog") == frozenset({"prose"})
 
     def test_unknown_capability_returns_empty(self) -> None:
         assert book_types_with_capability("nonexistent_flag") == frozenset()
@@ -166,40 +170,24 @@ class TestFakedRegistry:
     """Tests against a tmpdir-backed YAML so we can exercise
     edge cases without touching the committed book-types.yaml."""
 
-    def test_missing_yaml_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_missing_yaml_returns_empty(self, fake_registry_path: Path) -> None:
         # File does not exist at the fake path.
         assert not fake_registry_path.exists()
         assert load_book_types() == {}
 
-    def test_non_mapping_root_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "- this is a list at root\n", encoding="utf-8"
-        )
+    def test_non_mapping_root_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("- this is a list at root\n", encoding="utf-8")
         assert load_book_types() == {}
 
-    def test_missing_book_types_key_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "unrelated_key: value\n", encoding="utf-8"
-        )
+    def test_missing_book_types_key_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("unrelated_key: value\n", encoding="utf-8")
         assert load_book_types() == {}
 
-    def test_book_types_not_list_returns_empty(
-        self, fake_registry_path: Path
-    ) -> None:
-        fake_registry_path.write_text(
-            "book_types: not_a_list\n", encoding="utf-8"
-        )
+    def test_book_types_not_list_returns_empty(self, fake_registry_path: Path) -> None:
+        fake_registry_path.write_text("book_types: not_a_list\n", encoding="utf-8")
         assert load_book_types() == {}
 
-    def test_malformed_entry_logged_and_skipped(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_malformed_entry_logged_and_skipped(self, fake_registry_path: Path) -> None:
         # Entry missing required fields (label_key, content_model).
         fake_registry_path.write_text(
             (
@@ -220,9 +208,7 @@ class TestFakedRegistry:
         assert "half_baked" not in result
         assert "valid_one" in result
 
-    def test_capabilities_negative_default(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_capabilities_negative_default(self, fake_registry_path: Path) -> None:
         # When capabilities is an empty dict, all flags default to
         # False (safe-by-default).
         fake_registry_path.write_text(
@@ -244,9 +230,7 @@ class TestFakedRegistry:
         assert minimal.capabilities.paperback_export is False
         assert minimal.capabilities.template_catalog is False
 
-    def test_unknown_capability_field_rejected(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_unknown_capability_field_rejected(self, fake_registry_path: Path) -> None:
         # ``extra="forbid"`` on BookTypeCapabilities means a typo'd
         # flag fails validation. The entry is then SKIPPED (not
         # crashing); the registry stays usable.
@@ -267,9 +251,7 @@ class TestFakedRegistry:
         # Malformed entry → not loaded.
         assert get_book_type("typo_test") is None
 
-    def test_dashboard_create_visible_defaults_true(
-        self, fake_registry_path: Path
-    ) -> None:
+    def test_dashboard_create_visible_defaults_true(self, fake_registry_path: Path) -> None:
         fake_registry_path.write_text(
             (
                 "book_types:\n"

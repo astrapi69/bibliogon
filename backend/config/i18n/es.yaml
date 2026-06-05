@@ -546,6 +546,7 @@ ui:
     interview_default_title: "Nueva entrevista"
     listicle_default_title: "Nuevo listicle"
     short_story_default_title: "Nuevo cuento corto"
+    article_default_title: "Nuevo artículo"
   export_dialog:
     title: "Exportar"
     format: "Formato"
@@ -1030,6 +1031,9 @@ ui:
     book_type_picture_title: "Libro ilustrado"
     book_type_picture_desc: "Una imagen más texto por página. 5 diseños (imagen arriba/izquierda, globo de diálogo, etc.) y exportación a PDF listo para KDP."
     book_type_comic_title: "Cómic"
+    book_type_prose_default_title: "Nuevo libro"
+    book_type_picture_default_title: "Nuevo libro ilustrado"
+    book_type_comic_default_title: "Nuevo cómic"
     book_type_comic_desc: "Diseños de varias viñetas (cuadrícula 2x2, 3x3, etc.) con globos de diálogo e imágenes por viñeta."
     help_create_1: "Ve al Dashboard (pagina de inicio)"
     help_create_2: "Haz clic en el boton \"Nuevo libro\""
