@@ -16,6 +16,7 @@ import {
   resolveStorageMode,
   readPersistedStorageMode,
   setPersistedStorageMode,
+  ensureDexieStorageLoaded,
   __resetStorageForTests,
 } from "./index";
 
@@ -57,12 +58,16 @@ describe("getStorage factory", () => {
     expect(getStorage()).toBe(a);
   });
 
-  it("falls back to ApiStorage (with a warning) when 'dexie' is requested", () => {
+  it("falls back to ApiStorage (with a warning) when 'dexie' is requested", async () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
     setPersistedStorageMode("dexie");
     const svc = getStorage();
     expect(svc).toBe(apiStorage);
     expect(warn).toHaveBeenCalledOnce();
+    // getStorage() kicked off the lazy DexieStorage import; await it so the
+    // dynamic import settles inside the test env, not after teardown (which
+    // would surface as an EnvironmentTeardownError unhandled rejection).
+    await ensureDexieStorageLoaded().catch(() => {});
   });
 });
 
