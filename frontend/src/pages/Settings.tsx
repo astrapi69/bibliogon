@@ -60,6 +60,12 @@ export default function Settings() {
     const {setLang: setGlobalLang} = useI18n();
     const {t} = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
+    // Gate the settings forms on the FIRST app-config load. The forms
+    // hydrate their local state from `config`; rendering them before the
+    // async getApp resolves means a fast edit can be clobbered when the
+    // real config arrives (the systemic settings-save flake). Holding the
+    // form area until loaded closes that window for every form at once.
+    const [appLoaded, setAppLoaded] = useState(false);
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
     const [saving, setSaving] = useState(false);
 
@@ -99,6 +105,9 @@ export default function Settings() {
         } catch (err) {
             console.error("Failed to load app settings:", err);
         }
+        // Render the forms now (with the loaded config, or with defaults
+        // if the load failed — better degraded than hung).
+        setAppLoaded(true);
         try {
             const plugins = await api.settings.listPlugins();
             setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
@@ -241,6 +250,10 @@ export default function Settings() {
                 </div>
 
                 <main id="main-content" className={styles.main}>
+                    {!appLoaded ? (
+                        <p data-testid="settings-loading">{t("ui.common.loading", "Lädt…")}</p>
+                    ) : (
+                    <>
                     {activeTab === "erscheinungsbild" && (
                         <ErscheinungsbildSettings
                             config={appConfig}
@@ -424,6 +437,8 @@ export default function Settings() {
                         />
                     )}
                     {activeTab === "danger_zone" && <DangerZoneSettings />}
+                    </>
+                    )}
                 </main>
             </div>
         </div>
