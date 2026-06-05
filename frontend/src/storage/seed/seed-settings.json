@@ -1,0 +1,117 @@
+{
+  "ai": {
+    "enabled": true,
+    "provider": "anthropic",
+    "api_key": "",
+    "base_url": "https://api.anthropic.com/v1",
+    "max_tokens": 2048,
+    "model": "claude-sonnet-4-20250514",
+    "temperature": 0.7,
+    "bulk": {
+      "max_ai_fill": 50,
+      "max_ai_template": 50
+    }
+  },
+  "editor": {
+    "autosave_debounce_ms": 800,
+    "draft_save_debounce_ms": 2000,
+    "draft_max_age_days": 30,
+    "ai_context_chars": 2000
+  },
+  "app": {
+    "default_language": "de",
+    "delete_permanently": false,
+    "description": "Open-source book authoring platform",
+    "name": "Bibliogon",
+    "supported_languages": [
+      "de",
+      "en",
+      "es",
+      "fr",
+      "el",
+      "pt",
+      "tr",
+      "ja"
+    ],
+    "trash_auto_delete_days": 90,
+    "trash_auto_delete_enabled": true,
+    "version": "0.11.0",
+    "allow_books_without_author": false,
+    "max_upload_mb": 500
+  },
+  "author": {
+    "name": "Asterios Raptis",
+    "pen_names": [
+      "Draven Quantum",
+      "Stelio Moon"
+    ]
+  },
+  "plugins": {
+    "config_dir": "config/plugins",
+    "disabled": [],
+    "enabled": [
+      "export",
+      "help",
+      "getstarted",
+      "ms-tools",
+      "audiobook",
+      "kdp",
+      "translation",
+      "kinderbuch",
+      "grammar",
+      "git-sync",
+      "medium-import",
+      "comics",
+      "story-bible"
+    ],
+    "entry_point_group": "bibliogon.plugins"
+  },
+  "ui": {
+    "logo": "assets/logo.svg",
+    "subtitle": "Bücher schreiben und exportieren",
+    "theme": "cool-modern",
+    "title": "Bibliogon",
+    "dashboard": {
+      "books_view": "grid",
+      "articles_view": "list",
+      "books_page_size": 25,
+      "articles_page_size": 25
+    }
+  },
+  "topics": [],
+  "features": {
+    "white_label": false
+  },
+  "donations": {
+    "enabled": true,
+    "landing_page_url": null,
+    "channels": [
+      {
+        "name": "Liberapay",
+        "url": "https://liberapay.com/astrapi69/donate",
+        "icon": "liberapay",
+        "recommended": true,
+        "description_key": "ui.donations.channels.liberapay_desc"
+      },
+      {
+        "name": "GitHub Sponsors",
+        "url": "https://github.com/sponsors/astrapi69",
+        "icon": "github",
+        "description_key": "ui.donations.channels.github_desc"
+      },
+      {
+        "name": "Ko-fi",
+        "url": "https://ko-fi.com/astrapi69",
+        "icon": "kofi",
+        "description_key": "ui.donations.channels.kofi_desc"
+      },
+      {
+        "name": "PayPal",
+        "url": "https://www.paypal.com/donate/?cmd=_s-xclick&hosted_button_id=MJ7V43GU2H386",
+        "icon": "paypal",
+        "description_key": "ui.donations.channels.paypal_desc"
+      }
+    ]
+  },
+  "_secrets_managed_externally": false
+}

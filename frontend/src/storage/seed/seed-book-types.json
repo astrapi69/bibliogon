@@ -1,0 +1,62 @@
+{
+  "prose": {
+    "id": "prose",
+    "label_key": "ui.get_started.book_type_prose_title",
+    "description_key": "ui.get_started.book_type_prose_desc",
+    "default_title_key": "ui.get_started.book_type_prose_default_title",
+    "icon": "BookOpen",
+    "content_model": "chapters",
+    "editor_component": "BookEditor",
+    "capabilities": {
+      "ebook_export": true,
+      "paperback_export": true,
+      "hardcover_export": true,
+      "audiobook_export": true,
+      "template_catalog": true,
+      "kdp_package_supported": true
+    },
+    "dashboard_create_visible": true,
+    "immutable_after_create": true,
+    "default_page_size": null
+  },
+  "picture_book": {
+    "id": "picture_book",
+    "label_key": "ui.get_started.book_type_picture_title",
+    "description_key": "ui.get_started.book_type_picture_desc",
+    "default_title_key": "ui.get_started.book_type_picture_default_title",
+    "icon": "Image",
+    "content_model": "pages",
+    "editor_component": "PageEditor",
+    "capabilities": {
+      "ebook_export": false,
+      "paperback_export": true,
+      "hardcover_export": false,
+      "audiobook_export": false,
+      "template_catalog": false,
+      "kdp_package_supported": true
+    },
+    "dashboard_create_visible": true,
+    "immutable_after_create": true,
+    "default_page_size": "8.5x8.5"
+  },
+  "comic_book": {
+    "id": "comic_book",
+    "label_key": "ui.get_started.book_type_comic_title",
+    "description_key": "ui.get_started.book_type_comic_desc",
+    "default_title_key": "ui.get_started.book_type_comic_default_title",
+    "icon": "Layers",
+    "content_model": "pages",
+    "editor_component": "ComicBookEditor",
+    "capabilities": {
+      "ebook_export": false,
+      "paperback_export": true,
+      "hardcover_export": false,
+      "audiobook_export": false,
+      "template_catalog": false,
+      "kdp_package_supported": true
+    },
+    "dashboard_create_visible": true,
+    "immutable_after_create": true,
+    "default_page_size": "7x10"
+  }
+}

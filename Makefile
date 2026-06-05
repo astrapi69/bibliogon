@@ -416,6 +416,9 @@ sync-versions-check: ## Exit non-zero if any subsystem version drifts from canon
 
 # --- License ---
 
+generate-seed-data: ## Regenerate offline-PWA seed JSON from backend YAML (run + commit after changing i18n/app.yaml/type registries)
+	@cd backend && poetry run python ../scripts/generate-seed-data.py
+
 generate-trial-key: ## Generate 30-day trial key. Usage: make generate-trial-key AUTHOR="Name"
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run python -c \
 		"from app.licensing import *; \

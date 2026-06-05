@@ -73,6 +73,7 @@ make verify-docs-completeness  # version headers + help i18n parity + image/xref
 make prod                 # Docker Compose (port 7880)
 make prod-down            # stop Docker
 make generate-trial-key   # 30-day trial key (dormant, licensing disabled)
+make generate-seed-data   # regen offline-PWA seed JSON (frontend/src/storage/seed/) from backend YAML; re-run + commit after changing i18n catalogs, app.yaml defaults, or book/content-type registries
 make clean                # remove build artifacts
 make help                 # all targets
 ```

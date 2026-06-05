@@ -1,0 +1,215 @@
+{
+  "blogpost": {
+    "id": "blogpost",
+    "label_key": "ui.content_types.blogpost",
+    "description_key": "ui.content_types.blogpost_description",
+    "default_title_key": "ui.content_types.blogpost_default_title",
+    "icon": "FileText",
+    "default": true,
+    "extra_fields": [],
+    "core_fields": [
+      "tags",
+      "excerpt",
+      "seo",
+      "canonical_url",
+      "featured_image"
+    ]
+  },
+  "tutorial": {
+    "id": "tutorial",
+    "label_key": "ui.content_types.tutorial",
+    "description_key": "ui.content_types.tutorial_description",
+    "default_title_key": "ui.content_types.tutorial_default_title",
+    "icon": "GraduationCap",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "difficulty_level",
+        "type": "enum",
+        "label_key": "ui.content_types.tutorial_field_difficulty",
+        "values": [
+          "beginner",
+          "intermediate",
+          "advanced"
+        ],
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "prerequisites",
+        "type": "text",
+        "label_key": "ui.content_types.tutorial_field_prerequisites",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "estimated_duration_minutes",
+        "type": "number",
+        "label_key": "ui.content_types.tutorial_field_duration",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ],
+    "core_fields": [
+      "tags",
+      "excerpt",
+      "seo",
+      "featured_image"
+    ]
+  },
+  "review": {
+    "id": "review",
+    "label_key": "ui.content_types.review",
+    "description_key": "ui.content_types.review_description",
+    "default_title_key": "ui.content_types.review_default_title",
+    "icon": "Star",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "reviewed_work",
+        "type": "text",
+        "label_key": "ui.content_types.review_field_work",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "reviewed_work_author",
+        "type": "text",
+        "label_key": "ui.content_types.review_field_work_author",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "rating",
+        "type": "number",
+        "label_key": "ui.content_types.review_field_rating",
+        "values": null,
+        "min": 1.0,
+        "max": 5.0
+      }
+    ],
+    "core_fields": [
+      "tags",
+      "excerpt",
+      "seo",
+      "featured_image"
+    ]
+  },
+  "essay": {
+    "id": "essay",
+    "label_key": "ui.content_types.essay",
+    "description_key": "ui.content_types.essay_description",
+    "default_title_key": "ui.content_types.essay_default_title",
+    "icon": "Feather",
+    "default": false,
+    "extra_fields": [],
+    "core_fields": [
+      "tags",
+      "featured_image"
+    ]
+  },
+  "newsletter": {
+    "id": "newsletter",
+    "label_key": "ui.content_types.newsletter",
+    "description_key": "ui.content_types.newsletter_description",
+    "default_title_key": "ui.content_types.newsletter_default_title",
+    "icon": "Mail",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "issue_number",
+        "type": "number",
+        "label_key": "ui.content_types.newsletter_field_issue",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "send_date",
+        "type": "date",
+        "label_key": "ui.content_types.newsletter_field_send_date",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ],
+    "core_fields": []
+  },
+  "interview": {
+    "id": "interview",
+    "label_key": "ui.content_types.interview",
+    "description_key": "ui.content_types.interview_description",
+    "default_title_key": "ui.content_types.interview_default_title",
+    "icon": "Users",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "interview_partner_name",
+        "type": "text",
+        "label_key": "ui.content_types.interview_field_partner_name",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "interview_partner_role",
+        "type": "text",
+        "label_key": "ui.content_types.interview_field_partner_role",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ],
+    "core_fields": [
+      "tags",
+      "featured_image"
+    ]
+  },
+  "listicle": {
+    "id": "listicle",
+    "label_key": "ui.content_types.listicle",
+    "description_key": "ui.content_types.listicle_description",
+    "default_title_key": "ui.content_types.listicle_default_title",
+    "icon": "ListOrdered",
+    "default": false,
+    "extra_fields": [],
+    "core_fields": [
+      "tags",
+      "excerpt",
+      "seo",
+      "featured_image"
+    ]
+  },
+  "short_story": {
+    "id": "short_story",
+    "label_key": "ui.content_types.short_story",
+    "description_key": "ui.content_types.short_story_description",
+    "default_title_key": "ui.content_types.short_story_default_title",
+    "icon": "BookOpen",
+    "default": false,
+    "extra_fields": [],
+    "core_fields": [
+      "tags"
+    ]
+  },
+  "article": {
+    "id": "article",
+    "label_key": "ui.content_types.article",
+    "description_key": "ui.content_types.article_description",
+    "default_title_key": "ui.content_types.article_default_title",
+    "icon": "FileText",
+    "default": false,
+    "extra_fields": [],
+    "core_fields": [
+      "tags",
+      "excerpt",
+      "seo",
+      "canonical_url",
+      "featured_image"
+    ]
+  }
+}

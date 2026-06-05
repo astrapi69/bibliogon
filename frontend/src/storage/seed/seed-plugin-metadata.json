@@ -1,0 +1,70 @@
+[
+  {
+    "name": "export",
+    "has_config": true,
+    "enabled": true,
+    "loaded": true,
+    "license_tier": "core",
+    "has_license": true,
+    "display_name": {
+      "de": "Buch-Export",
+      "en": "Book Export",
+      "es": "Exportar libro",
+      "fr": "Export de livre"
+    },
+    "description": {
+      "de": "EPUB, PDF, DOCX, HTML und Projektstruktur-Export via manuscripta/Pandoc",
+      "en": "EPUB, PDF, DOCX, HTML and project structure export via manuscripta/Pandoc"
+    },
+    "version": "1.0.0",
+    "filter_reason": null,
+    "load_error_message": null,
+    "activated_at": null,
+    "last_config_change": null,
+    "source": "bundled"
+  },
+  {
+    "name": "help",
+    "has_config": true,
+    "enabled": true,
+    "loaded": true,
+    "license_tier": "core",
+    "has_license": true,
+    "display_name": {
+      "de": "Hilfe",
+      "en": "Help"
+    },
+    "description": {
+      "de": "In-App Hilfe, Tastenkürzel und FAQ",
+      "en": "In-app help, keyboard shortcuts, and FAQ"
+    },
+    "version": "1.0.0",
+    "filter_reason": null,
+    "load_error_message": null,
+    "activated_at": null,
+    "last_config_change": null,
+    "source": "bundled"
+  },
+  {
+    "name": "getstarted",
+    "has_config": true,
+    "enabled": true,
+    "loaded": true,
+    "license_tier": "core",
+    "has_license": true,
+    "display_name": {
+      "de": "Erste Schritte",
+      "en": "Get Started"
+    },
+    "description": {
+      "de": "Einfuehrung und Beispielbuch für neue Benutzer",
+      "en": "Onboarding guide and sample book for new users"
+    },
+    "version": "1.0.0",
+    "filter_reason": null,
+    "load_error_message": null,
+    "activated_at": null,
+    "last_config_change": null,
+    "source": "bundled"
+  }
+]
