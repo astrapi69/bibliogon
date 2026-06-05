@@ -494,7 +494,7 @@ export default function BookEditor() {
     const current = book?.chapters.find((c) => c.id === chapterId);
     if (!current) return;
     try {
-      const updated = await api.chapters.update(bookId, chapterId, {
+      const updated = await getStorage().chapters.update(bookId, chapterId, {
         title: newTitle,
         version: current.version,
       });
@@ -530,7 +530,7 @@ export default function BookEditor() {
       ))
     )
       return;
-    await api.chapters.delete(bookId, chapterId);
+    await getStorage().chapters.delete(bookId, chapterId);
     setBook((prev) => {
       if (!prev) return prev;
       const chapters = prev.chapters.filter((c) => c.id !== chapterId);
@@ -552,7 +552,7 @@ export default function BookEditor() {
       // its status to "error" instead of lying with "saved". 409
       // (version_conflict) is caught below and routed into the
       // conflict resolution dialog.
-      const updated = await api.chapters.update(bookId, activeChapterId, {
+      const updated = await getStorage().chapters.update(bookId, activeChapterId, {
         content,
         version: current.version,
       });
@@ -594,7 +594,7 @@ export default function BookEditor() {
   const resolveConflictKeepLocal = async (info: ConflictInfo) => {
     if (!bookId) return;
     try {
-      const updated = await api.chapters.update(bookId, info.chapterId, {
+      const updated = await getStorage().chapters.update(bookId, info.chapterId, {
         content: info.localContent,
         version: info.serverVersion,
       });
@@ -685,7 +685,7 @@ export default function BookEditor() {
   const handleReorder = async (chapterIds: string[]) => {
     if (!bookId) return;
     try {
-      const reordered = await api.chapters.reorder(bookId, chapterIds);
+      const reordered = await getStorage().chapters.reorder(bookId, chapterIds);
       setBook((prev) => {
         if (!prev) return prev;
         return { ...prev, chapters: reordered };

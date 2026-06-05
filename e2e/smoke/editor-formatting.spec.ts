@@ -463,9 +463,11 @@ test.describe('H. Toolbar button state sync', () => {
     await page.keyboard.press('ArrowLeft')
     await page.keyboard.press('ArrowLeft')
 
-    // Wait for TipTap to update toolbar state
-    await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(true)
+    // TipTap syncs the toolbar state on the selection transaction,
+    // which is async; poll instead of a fixed 100ms wait (flaky).
+    await expect
+      .poll(() => isToolbarButtonActive(page, 'toolbar-bold'), {timeout: 5000})
+      .toBe(true)
   })
 
   test('H2 button shows active style when cursor is in H2, H1 and H3 do not', async ({page}) => {
@@ -474,10 +476,10 @@ test.describe('H. Toolbar button state sync', () => {
     await page.keyboard.type('A Heading')
     await page.getByTestId("toolbar-h2").click()
 
-    // Cursor is in the H2 now - wait for state update
-    await page.waitForTimeout(100)
-
-    expect(await isToolbarButtonActive(page, "toolbar-h2")).toBe(true)
+    // Cursor is in the H2 now - poll until the toolbar state syncs.
+    await expect
+      .poll(() => isToolbarButtonActive(page, 'toolbar-h2'), {timeout: 5000})
+      .toBe(true)
     expect(await isToolbarButtonActive(page, "toolbar-h1")).toBe(false)
     expect(await isToolbarButtonActive(page, "toolbar-h3")).toBe(false)
   })
@@ -493,17 +495,20 @@ test.describe('H. Toolbar button state sync', () => {
     await page.keyboard.type(' plain')
 
     // Cursor is after " plain" - should NOT be active
-    await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(false)
+    await expect
+      .poll(() => isToolbarButtonActive(page, 'toolbar-bold'), {timeout: 5000})
+      .toBe(false)
 
     // Move cursor into the bold text
     for (let i = 0; i < 8; i++) await page.keyboard.press('ArrowLeft')
-    await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(true)
+    await expect
+      .poll(() => isToolbarButtonActive(page, 'toolbar-bold'), {timeout: 5000})
+      .toBe(true)
 
     // Move cursor out to the left of bold
     for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowLeft')
-    await page.waitForTimeout(100)
-    expect(await isToolbarButtonActive(page, "toolbar-bold")).toBe(false)
+    await expect
+      .poll(() => isToolbarButtonActive(page, 'toolbar-bold'), {timeout: 5000})
+      .toBe(false)
   })
 })

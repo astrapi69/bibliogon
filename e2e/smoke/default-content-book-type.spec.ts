@@ -55,15 +55,26 @@ test.describe("Configurable default book-type + content-type", () => {
         await page
             .getByTestId("settings-default-book-type-item-comic_book")
             .click();
+        // Wait for the Radix listbox to close, which guarantees the
+        // onChange has committed the new value into React state before
+        // we click save (clicking mid-transition raced the selection).
+        await expect(
+            page.getByTestId("settings-default-book-type-item-comic_book"),
+        ).toBeHidden();
         await page.getByTestId("verhalten-settings-save").click();
 
-        // The change round-trips to the backend.
+        // The change round-trips to the backend. Generous timeout: the
+        // PATCH writes the user-overlay config file and the GET reads it
+        // back, which can lag under parallel E2E load.
         await expect
-            .poll(async () => {
-                const r = await fetch(`${API}/settings/app`);
-                const b = await r.json();
-                return b.ui?.defaults?.book_type;
-            })
+            .poll(
+                async () => {
+                    const r = await fetch(`${API}/settings/app`);
+                    const b = await r.json();
+                    return b.ui?.defaults?.book_type;
+                },
+                {timeout: 10000},
+            )
             .toBe("comic_book");
     });
 
