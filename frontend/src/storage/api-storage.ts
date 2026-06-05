@@ -14,30 +14,31 @@
  */
 
 import { api } from "../api/client";
-import type { IStorageService } from "./types";
+import type {
+  ArticleStorage,
+  BookStorage,
+  ChapterStorage,
+  IStorageService,
+} from "./types";
 
+/**
+ * The `api.*` namespaces (supersets of the storage sub-interfaces) are
+ * returned via getters so the reference resolves at CALL time, not at
+ * module-import time. Capturing `api.books.create` at the top level froze
+ * the import and threw under partial `api/client` test mocks once this
+ * module entered the dashboard import graph (via useOfflineFeatureGate ->
+ * useStorageMode). Getters keep the zero-overhead delegation while
+ * deferring access - the documented "no frozen imports" fix.
+ */
 export const apiStorage: IStorageService = {
   mode: "api",
-  books: {
-    list: api.books.list,
-    get: api.books.get,
-    create: api.books.create,
-    update: api.books.update,
-    delete: api.books.delete,
+  get books(): BookStorage {
+    return api.books;
   },
-  chapters: {
-    list: api.chapters.list,
-    get: api.chapters.get,
-    create: api.chapters.create,
-    update: api.chapters.update,
-    delete: api.chapters.delete,
-    reorder: api.chapters.reorder,
+  get chapters(): ChapterStorage {
+    return api.chapters;
   },
-  articles: {
-    list: api.articles.list,
-    get: api.articles.get,
-    create: api.articles.create,
-    update: api.articles.update,
-    delete: api.articles.delete,
+  get articles(): ArticleStorage {
+    return api.articles;
   },
 };

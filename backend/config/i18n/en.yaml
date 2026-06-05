@@ -1,4 +1,6 @@
 ui:
+  feature:
+    requires_desktop_app: "This feature requires the Bibliogon desktop app"
   story_bible:
     title: "Story Bible"
     close: "Close Story Bible"

@@ -42,6 +42,7 @@ import {Moon, Sun} from "lucide-react";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
 import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
@@ -56,6 +57,9 @@ export default function Dashboard() {
     const bookTypesSnapshot = useBookTypes();
     const {openHelp} = useHelp();
     const {t} = useI18n();
+    // Offline (Dexie/GitHub-Pages) gate: backend-only features (.bgb
+    // backup/export, import) are disabled with a "needs desktop app" hint.
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
     const {theme, toggle: toggleTheme} = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
@@ -461,6 +465,7 @@ export default function Dashboard() {
     };
 
     const handleBackupExport = () => {
+        if (offlineGate) return; // no backend to produce the .bgb
         window.open(api.backup.exportUrl(), "_blank");
     };
 
@@ -576,11 +581,18 @@ export default function Dashboard() {
                                 className="btn btn-secondary btn-sm"
                                 data-testid="backup-export-btn"
                                 onClick={handleBackupExport}
-                                disabled={books.length === 0}
+                                disabled={books.length === 0 || offlineGate}
+                                title={offlineGate ? offlineMsg : undefined}
                             >
                                 <Download size={14}/> {t("ui.dashboard.backup", "Backup")}
                             </button>
-                            <button className="btn btn-secondary btn-sm" data-testid="import-wizard-btn" onClick={() => setImportWizardOpen(true)}>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="import-wizard-btn"
+                                onClick={() => !offlineGate && setImportWizardOpen(true)}
+                                disabled={offlineGate}
+                                title={offlineGate ? offlineMsg : undefined}
+                            >
                                 <Upload size={14}/> {t("ui.dashboard.import", "Importieren")}
                             </button>
                             <div className={styles.headerSeparator}/>
@@ -645,10 +657,10 @@ export default function Dashboard() {
                                         <FileText size={16}/> {t("ui.dashboard.articles_nav", "Artikel")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" disabled={offlineGate} onSelect={handleBackupExport}>
                                         <Download size={16}/> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
-                                    <DropdownMenu.Item className="hamburger-menu-item" onSelect={() => setImportWizardOpen(true)}>
+                                    <DropdownMenu.Item className="hamburger-menu-item" disabled={offlineGate} onSelect={() => setImportWizardOpen(true)}>
                                         <Upload size={16}/> {t("ui.dashboard.import", "Importieren")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Separator className="hamburger-menu-separator"/>

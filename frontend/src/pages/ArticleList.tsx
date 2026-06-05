@@ -31,6 +31,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
@@ -74,6 +75,7 @@ import { EmptyState } from "../components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -386,6 +388,7 @@ export default function ArticleList() {
      *  separately). Articles dashboard exposes the action so users
      *  do not have to navigate to the books dashboard to trigger it. */
     const handleBackupExport = () => {
+        if (offlineGate) return; // no backend to produce the .bgb
         window.open(api.backup.exportUrl(), "_blank");
     };
 
@@ -783,8 +786,9 @@ export default function ArticleList() {
                                 <button
                                     className="btn btn-secondary btn-sm"
                                     data-testid="article-import-wizard-btn"
-                                    onClick={() => setImportWizardOpen(true)}
-                                    title={t("ui.dashboard.import", "Importieren")}
+                                    onClick={() => !offlineGate && setImportWizardOpen(true)}
+                                    disabled={offlineGate}
+                                    title={offlineGate ? offlineMsg : t("ui.dashboard.import", "Importieren")}
                                 >
                                     <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
                                 </button>
@@ -815,6 +819,8 @@ export default function ArticleList() {
                                             <DropdownMenu.Item
                                                 className="hamburger-menu-item"
                                                 data-testid="article-medium-import-btn"
+                                                disabled={offlineGate}
+                                                title={offlineGate ? offlineMsg : undefined}
                                                 onSelect={() => navigate("/articles/import/medium")}
                                             >
                                                 <Upload size={14} />
@@ -826,7 +832,8 @@ export default function ArticleList() {
                                             <DropdownMenu.Item
                                                 className="hamburger-menu-item"
                                                 data-testid="article-backup-export-btn"
-                                                disabled={articles.length === 0}
+                                                disabled={articles.length === 0 || offlineGate}
+                                                title={offlineGate ? offlineMsg : undefined}
                                                 onSelect={handleBackupExport}
                                             >
                                                 <Download size={14} />
@@ -919,12 +926,14 @@ export default function ArticleList() {
                                     <DropdownMenu.Separator className="hamburger-menu-separator" />
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
+                                        disabled={offlineGate}
                                         onSelect={handleBackupExport}
                                     >
                                         <Download size={16} /> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
                                     <DropdownMenu.Item
                                         className="hamburger-menu-item"
+                                        disabled={offlineGate}
                                         onSelect={() => setImportWizardOpen(true)}
                                     >
                                         <Upload size={16} /> {t("ui.dashboard.import", "Importieren")}

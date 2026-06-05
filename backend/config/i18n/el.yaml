@@ -1,4 +1,6 @@
 ui:
+  feature:
+    requires_desktop_app: "Αυτή η λειτουργία απαιτεί την εφαρμογή Bibliogon για υπολογιστή"
   story_bible:
     title: "Story Bible"
     close: "Κλείσιμο του Story Bible"

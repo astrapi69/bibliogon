@@ -1,4 +1,6 @@
 ui:
+  feature:
+    requires_desktop_app: "Diese Funktion benötigt die Bibliogon Desktop-App"
   story_bible:
     title: "Story-Bibel"
     close: "Story-Bibel schließen"

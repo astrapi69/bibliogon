@@ -17,6 +17,7 @@ import {ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import BulkActionBar from "./BulkActionBar"
 import {RadixSelect} from "./RadixSelect"
+import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate"
 import styles from "./BookBulkActionBar.module.css"
 
 export type BookBulkExportFormat = "epub" | "pdf" | "docx"
@@ -66,10 +67,12 @@ export default function BookBulkActionBar({
     t,
 }: Props) {
     const [format, setFormat] = useState<BookBulkExportFormat>("epub")
+    // Export + AI are backend-only -> disabled in offline (Dexie) mode.
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
 
     const overLimit = count > BOOK_BULK_LIMIT_HARD
     const overWarning = count > BOOK_BULK_LIMIT_WARNING && !overLimit
-    const disabled = count === 0 || overLimit
+    const disabled = count === 0 || overLimit || offlineGate
 
     const renderCount = t(
         "ui.dashboard.bulk.selected_count",
@@ -127,6 +130,7 @@ export default function BookBulkActionBar({
                 className="btn-primary"
                 data-testid="book-bulk-export"
                 disabled={disabled}
+                title={offlineGate ? offlineMsg : undefined}
                 onClick={() => onExport(format)}
             >
                 {t("ui.dashboard.bulk.export_button", "Export")}
@@ -138,9 +142,11 @@ export default function BookBulkActionBar({
                             type="button"
                             className="btn btn-secondary btn-sm"
                             data-testid="book-bulk-ai-menu"
-                            disabled={count === 0 || count > BOOK_AI_BULK_LIMIT}
+                            disabled={count === 0 || count > BOOK_AI_BULK_LIMIT || offlineGate}
                             title={
-                                count > BOOK_AI_BULK_LIMIT
+                                offlineGate
+                                    ? offlineMsg
+                                    : count > BOOK_AI_BULK_LIMIT
                                     ? t(
                                           "ui.ai_template.bulk.over_cap",
                                           "Maximum 50 books per AI batch",

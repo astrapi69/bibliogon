@@ -22,6 +22,7 @@ import {BookOpen, ChevronDown, Sparkles, Trash2} from "lucide-react"
 
 import BulkActionBar from "../BulkActionBar"
 import {RadixSelect} from "../RadixSelect"
+import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate"
 import styles from "./ArticleBulkActionBar.module.css"
 
 export type BulkExportFormat = "markdown" | "html" | "pdf" | "docx"
@@ -91,9 +92,12 @@ export default function ArticleBulkActionBar({
     const [format, setFormat] = useState<BulkExportFormat>("markdown")
     const [mode, setMode] = useState<BulkExportMode>("zip")
 
+    // Export + AI are backend-only -> disabled in offline (Dexie) mode.
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
+
     const overLimit = count > BULK_LIMIT_HARD
     const overWarning = count > BULK_LIMIT_WARNING && !overLimit
-    const disabled = count === 0 || overLimit
+    const disabled = count === 0 || overLimit || offlineGate
 
     const renderCount = formatCount
         ? formatCount(count)
@@ -172,6 +176,7 @@ export default function ArticleBulkActionBar({
                 className="btn-primary"
                 data-testid="article-bulk-export"
                 disabled={disabled}
+                title={offlineGate ? offlineMsg : undefined}
                 onClick={() => onExport(format, mode)}
             >
                 {t("ui.articles.bulk.export_button", "Export")}
@@ -183,9 +188,11 @@ export default function ArticleBulkActionBar({
                             type="button"
                             className="btn btn-secondary btn-sm"
                             data-testid="article-bulk-ai-menu"
-                            disabled={count === 0 || count > ARTICLE_AI_BULK_LIMIT}
+                            disabled={count === 0 || count > ARTICLE_AI_BULK_LIMIT || offlineGate}
                             title={
-                                count > ARTICLE_AI_BULK_LIMIT
+                                offlineGate
+                                    ? offlineMsg
+                                    : count > ARTICLE_AI_BULK_LIMIT
                                     ? t(
                                           "ui.ai_template.bulk.over_cap",
                                           "Maximum 50 articles per AI batch",
