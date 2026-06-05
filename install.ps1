@@ -15,7 +15,7 @@
 
 $ErrorActionPreference = "Stop"
 
-$Version = if ($env:BIBLIOGON_VERSION) { $env:BIBLIOGON_VERSION } else { "v0.47.0" }
+$Version = if ($env:BIBLIOGON_VERSION) { $env:BIBLIOGON_VERSION } else { "v0.47.1" }
 $Repo = "astrapi69/bibliogon"
 $InstallDir = if ($env:BIBLIOGON_DIR) { $env:BIBLIOGON_DIR } else { Join-Path $HOME "bibliogon" }
 
