@@ -12,7 +12,7 @@ Open the following address in your phone or tablet browser:
 
 This is the same Bibliogon interface as the desktop app. The
 documentation you are reading lives under
-[astrapi69.github.io/bibliogon/docs](https://astrapi69.github.io/bibliogon/docs/).
+[astrapi69.github.io/bibliogondocs](https://astrapi69.github.io/bibliogondocs/).
 
 ## Install to your home screen
 

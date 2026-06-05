@@ -1,23 +1,24 @@
-name: Deploy to GitHub Pages
+name: Deploy app to GitHub Pages
 
-# Combined single-artifact GitHub Pages deploy.
+# Deploys the Bibliogon frontend (the React/Vite SPA) to this repo's
+# GitHub Pages site at https://astrapi69.github.io/bibliogon/.
 #
-# A repo has exactly ONE Pages site / one artifact, so the frontend and
-# the MkDocs docs cannot be deployed by two independent workflows without
-# clobbering each other. This workflow builds BOTH and assembles them into
-# one tree:
-#   - the React/Vite frontend at the site root   -> /bibliogon/
-#   - the MkDocs documentation under a sub-path   -> /bibliogon/docs/
-# It supersedes the former standalone docs.yml (removed in the same change).
+# This repo's Pages site hosts the APP. The documentation is published
+# separately to the astrapi69/bibliogondocs repo (see deploy-docs.yml) —
+# a GitHub Pages project site is always served at <user>.github.io/<repo>/,
+# so app and docs need distinct repos to get distinct URLs.
+#
+# The app is built as a standalone OFFLINE PWA: there is no backend at
+# the GitHub Pages origin, so it runs purely on local IndexedDB storage
+# (VITE_STORAGE_MODE=dexie forces the offline storage backend). LAN sync
+# to a desktop is intentionally out of scope here (blocked by HTTPS->HTTP
+# mixed content); see MOBILE-LAN-SYNC-01 in the backlog.
 
 on:
   push:
     branches: [main]
     paths:
       - 'frontend/**'
-      - 'docs/help/**'
-      - 'mkdocs.yml'
-      - 'scripts/generate_mkdocs_nav.py'
       - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
 
@@ -32,8 +33,8 @@ concurrency:
   cancel-in-progress: true
 
 # Defensive opt-in: coerce any JavaScript-runtime action still declaring
-# Node 20 to Node 24 (safety net for future additions; all actions used
-# here already run natively on Node 24). Mirrors the other workflows.
+# Node 20 to Node 24 (safety net for future additions). Mirrors the other
+# workflows.
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
@@ -42,47 +43,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-        with:
-          fetch-depth: 0  # Full history for the git-revision-date docs plugin
-
-      # --- Frontend: build under the /bibliogon/ sub-path ---
       - uses: actions/setup-node@v5
         with:
           node-version: "24"
-      - name: Build frontend (base /bibliogon/)
+      - name: Build frontend (base /bibliogon/, offline Dexie storage)
         working-directory: ./frontend
+        env:
+          VITE_BASE_URL: /bibliogon/
+          # No same-origin backend on GitHub Pages -> force the offline
+          # IndexedDB storage backend (mobile-sync storage layer). Inert
+          # until that layer is on main; harmless before then.
+          VITE_STORAGE_MODE: dexie
         run: |
           npm ci
-          VITE_BASE_URL=/bibliogon/ npm run build
-
-      # --- Docs: build the MkDocs site ---
-      - uses: actions/setup-python@v6
-        with:
-          python-version: '3.12'
-      - name: Install Poetry
-        run: pipx install poetry
-      - name: Install docs dependencies
-        working-directory: ./docs
-        run: poetry install --no-interaction
-      - name: Generate navigation from _meta.yaml
-        working-directory: ./docs
-        run: poetry run python ../scripts/generate_mkdocs_nav.py
-      - name: Build docs
-        working-directory: ./docs
-        run: poetry run mkdocs build -f ../mkdocs.yml --strict
-
-      # --- Assemble: frontend at root, docs under /docs ---
-      - name: Assemble combined Pages tree
-        run: |
-          rm -rf _site
-          mkdir -p _site/docs
-          cp -r frontend/dist/. _site/
-          cp -r site/. _site/docs/
-
+          npm run build
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:
-          path: _site
+          path: frontend/dist
 
   deploy:
     needs: build

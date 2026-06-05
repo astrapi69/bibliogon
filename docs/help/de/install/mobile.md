@@ -12,7 +12,7 @@ dem Startbildschirm installieren kannst - ganz ohne App Store.
 
 Das ist dieselbe Bibliogon-Oberfläche wie in der Desktop-App. Die
 Dokumentation, die du gerade liest, liegt unter
-[astrapi69.github.io/bibliogon/docs](https://astrapi69.github.io/bibliogon/docs/).
+[astrapi69.github.io/bibliogondocs](https://astrapi69.github.io/bibliogondocs/).
 
 ## Auf dem Startbildschirm installieren
 
