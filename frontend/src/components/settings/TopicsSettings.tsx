@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Save, Plus, X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
@@ -16,7 +16,14 @@ export function TopicsSettings({config, onSave, saving}: {
     const [topics, setTopics] = useState<string[]>(initialTopics);
     const [newTopic, setNewTopic] = useState("");
 
+    // The parent loads `config` asynchronously (getApp); this effect
+    // re-hydrates the topics once it arrives. A late arrival must not
+    // CLOBBER topics the user just added/removed (that would save the
+    // stale list, e.g. []), so ``userEdited`` gates the re-hydrate.
+    const userEdited = useRef(false);
+
     useEffect(() => {
+        if (userEdited.current) return; // never clobber an in-progress edit
         setTopics(
             Array.isArray(config.topics)
                 ? (config.topics as unknown[]).filter((v): v is string => typeof v === "string")
@@ -27,11 +34,13 @@ export function TopicsSettings({config, onSave, saving}: {
     const addTopic = () => {
         const trimmed = newTopic.trim();
         if (!trimmed || topics.includes(trimmed)) return;
+        userEdited.current = true;
         setTopics([...topics, trimmed]);
         setNewTopic("");
     };
 
     const removeTopic = (index: number) => {
+        userEdited.current = true;
         setTopics(topics.filter((_, i) => i !== index));
     };
 
