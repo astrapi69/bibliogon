@@ -63,19 +63,33 @@ Backend-only triggers disabled in dexie mode with the translated
 **Result:** books/articles/chapters create/edit/delete fully offline; settings,
 i18n (8 langs), type registries, plugin list from the seed.
 
-## Remaining gap — the `/api` tail (this session's task)
+## The `/api` tail — CLOSED (`41a5e745`..`bb9ffad1`)
 
-Literal whole-app **zero `/api` in dexie mode** is NOT yet met. Advanced/secondary
-surfaces still fire graceful-degrading 404s offline:
-- Advanced editors: `api.pages` (~173), `api.comics` (~41), `api.storyBible` (~76),
-  `api.audiobook`, `api.translations`, `api.assets`.
-- Secondary: `api.authors.list` (ArticleEditor), `api.chapterLabels.list`
-  (BookEditor), comments-count badge (ArticleList), BookEditor story-bible probe.
+Literal whole-app **zero `/api` in dexie mode** is now met:
+- `guardedFetch()` in `client.ts` is the single network egress; on the
+  backendless build (`VITE_STORAGE_MODE=dexie`) it rejects before any fetch, so
+  every `request()`/raw upload/blob/export call AND `import.ts` are covered.
+- Advanced editors (`api.pages`/`api.comics`/`api.storyBible`) gated via
+  `useOfflineFeatureGate()`; secondary reads (authors, chapter labels, imported
+  comments, story-bible probe) stubbed to defaults offline.
+- Offline E2E installs a global `page.route('**/api/**', r => r.abort())` hard
+  gate — any `/api` request fails the run.
 
-Plan: gate the advanced-editor surfaces wholesale via `useOfflineFeatureGate()`
-(book-type-specific, outside the prose+article offline scope); stub the secondary
-reads to a default (empty/zero) or skip in dexie mode. Then a global
-`page.route('**/api/**', r => r.abort())` in the offline E2E as a hard regression gate.
+## Documentation discipline — no inline comments (`aade1dbd` + `0428b727`)
+
+New rule in `.claude/rules/code-hygiene.md`: no inline `#`/`//` comments; code
+self-explanatory, explanations go in docstrings/TSDoc (allowed: `TODO`/`FIXME`
+with issue ref, regex/complex-why, license headers). The Track A+B inline
+comments were cleaned up in one sweep (20 files): repetitive offline-gating
+comments deleted, genuine "why" moved into `guardedFetch`/`makeQueueingStorage`/
+`updateApp`/`generate_settings` docstrings. Vitest 2715 + tsc green.
+
+## Next — v0.47.0 release
+
+Offline-PWA + menu/settings fixes + doc-rule cleanup are all on `main`. The
+companion handover `session-handoff-2026-06-05-offline-pwa-complete.md` carries
+the long-form offline architecture. v0.47.0 is being prepared (version bump +
+CHANGELOG); tag is gated on Aster's offline-E2E confirmation (Pre-Release Gate).
 
 ## Conventions / gotchas observed
 
