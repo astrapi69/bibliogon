@@ -737,6 +737,47 @@ in the same session.)
 
 ## P4 - Roadmap / Future Phases
 
+- **MOBILE-LAN-SYNC-01** (P4, FEATURE-REQUEST, filed 2026-06-05 from
+  the GitHub-Pages-deploy / mobile-PWA work): let the GitHub-Pages PWA
+  (HTTPS, no same-origin backend) sync books to a desktop Bibliogon
+  running on the same local network. Deferred from the deploy work
+  (CCW C5) because it is blocked by a real browser constraint, not by
+  effort.
+
+  The blocker: a page served over **HTTPS** (GitHub Pages) **cannot**
+  call an **HTTP** desktop backend on a LAN IP — browsers reject it as
+  mixed content, and there is no in-page opt-out. CC's offline storage
+  layer (``feature/mobile-sync-phase2``, Phase 3) already handles
+  offline editing + reconnect *against a same-origin backend*; it has
+  no cross-origin "pair phone -> desktop LAN IP" path, which is the
+  piece this item must design.
+
+  Mixed-content solution options to evaluate (none trivial):
+  - **Local HTTPS on the desktop (mkcert).** Desktop serves the API
+    over HTTPS with a locally-trusted cert; phone trusts the same CA.
+    Cleanest technically, but requires installing a CA on every device
+    (UX + onboarding cost) and a stable local hostname.
+  - **Tunnel / relay** (e.g. a cloud relay or ngrok-style tunnel).
+    Sidesteps mixed content via a public HTTPS endpoint, but adds an
+    external dependency and breaks the local-first / offline promise.
+  - **WebRTC data channel** (browser <-> browser/desktop peer). No
+    HTTP origin involved, NAT-traversable on a LAN, but needs a
+    signaling path and a peer endpoint on the desktop side.
+
+  Scope (once a transport is chosen):
+  - A "connect to my desktop" UI in the PWA (enter/discover the
+    desktop endpoint, pair, show sync status).
+  - Cross-origin auth + the existing LAN PIN flow
+    (``backend/app/lan_auth.py``) extended to the cross-origin case.
+  - Reuse CC's sync-engine / sync-queue / conflict resolution for the
+    actual replay; this item is the *transport + pairing* layer, not a
+    new sync engine.
+
+  Effort: L-XL (dominated by the transport decision + onboarding UX).
+  Placement: frontend PWA + backend LAN auth. Value: High for mobile
+  authors, but only after a transport is proven. Do NOT build under
+  time pressure — pick the transport deliberately first.
+
 Scrivener analysis items 8-10 (filed 2026-06-01 from
 ``docs/audits/scrivener-competitive-analysis-2026-06.md``):
 
