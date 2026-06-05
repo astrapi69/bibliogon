@@ -109,3 +109,25 @@ Before merging the deploy changes to `main`, make sure steps 1-5 above
 are done so `https://astrapi69.github.io/bibliogondocs/` is already live.
 That way the docs URL is never empty during the switch from the old
 single-repo docs deploy to the new split layout.
+
+## Merge order: mobile-sync storage first, then this deploy branch
+
+The app deploy (`deploy-pages.yml`) builds the SPA with
+`VITE_STORAGE_MODE=dexie` - a standalone offline PWA with no backend at
+the GitHub Pages origin. That offline storage backend is provided by the
+mobile-sync storage layer (`frontend/src/storage/`, branch
+`feature/mobile-sync-phase2`). Until that layer is on `main`, the
+GitHub-Pages app is a non-functional shell (no backend, no offline
+store).
+
+Therefore the merge order is fixed:
+
+1. **mobile-sync storage layer reaches `main`** first.
+2. **This deploy branch (`feature/ccw-ghpages-deploy`) is rebased onto
+   `main`** afterwards, and the offline flow is validated end-to-end
+   (the offline E2E smoke under `e2e/smoke/`) before/at merge.
+
+Do NOT merge this deploy branch ahead of the storage layer. LAN sync
+from the GitHub-Pages PWA to a desktop is deliberately out of scope here
+(blocked by HTTPS->HTTP mixed content); it is tracked as
+`MOBILE-LAN-SYNC-01` in the backlog.
