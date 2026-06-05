@@ -25,7 +25,8 @@ import {
     type ReactNode,
 } from "react";
 
-import {api, type ContentTypeDef} from "../api/client";
+import {type ContentTypeDef} from "../api/client";
+import {getStorage} from "../storage";
 
 type Status = "loading" | "ready" | "error";
 
@@ -64,7 +65,7 @@ export function ContentTypesProvider({children, initialTypes}: ProviderProps) {
 
     const fetchTypes = useCallback(async () => {
         try {
-            const result = await api.contentTypes.list();
+            const result = await getStorage().contentTypes.list();
             setTypes(result);
             setStatus("ready");
         } catch {

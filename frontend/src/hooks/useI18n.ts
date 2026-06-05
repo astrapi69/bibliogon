@@ -1,5 +1,5 @@
 import {createContext, useContext, useEffect, useState, useCallback, type ReactNode} from "react";
-import {api} from "../api/client";
+import {getStorage} from "../storage";
 import React from "react";
 
 type I18nStrings = Record<string, unknown>;
@@ -23,7 +23,7 @@ export function I18nProvider({children}: {children: ReactNode}) {
     // Load language preference from app settings on mount
     useEffect(() => {
         if (cachedLang) return; // already loaded
-        api.settings.getApp().then((config) => {
+        getStorage().settings.getApp().then((config) => {
             const appLang = ((config.app as Record<string, unknown>)?.default_language as string) || "de";
             setLangState(appLang);
         }).catch(() => {});
@@ -35,8 +35,8 @@ export function I18nProvider({children}: {children: ReactNode}) {
             setStrings(cachedStrings);
             return;
         }
-        api.i18n
-            .get(lang)
+        getStorage()
+            .i18n.get(lang)
             .then((data) => {
                 cachedLang = lang;
                 cachedStrings = data;

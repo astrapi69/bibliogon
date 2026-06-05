@@ -28,7 +28,8 @@ import {
     type ReactNode,
 } from "react";
 
-import {api, type BookTypeDef} from "../api/client";
+import {type BookTypeDef} from "../api/client";
+import {getStorage} from "../storage";
 
 type Status = "loading" | "ready" | "error";
 
@@ -64,7 +65,7 @@ export function BookTypesProvider({children, initialTypes}: ProviderProps) {
 
     const fetchTypes = useCallback(async () => {
         try {
-            const result = await api.bookTypes.list();
+            const result = await getStorage().bookTypes.list();
             setTypes(result);
             setStatus("ready");
         } catch {

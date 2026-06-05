@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState} from "react";
 import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
 import {api} from "../api/client";
+import {getStorage} from "../storage";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import {ChevronLeft, Home} from "lucide-react";
@@ -100,7 +101,7 @@ export default function Settings() {
     const loadData = async () => {
         // Load each independently so one failure doesn't block the rest
         try {
-            const app = await api.settings.getApp();
+            const app = await getStorage().settings.getApp();
             setAppConfig(app);
         } catch (err) {
             console.error("Failed to load app settings:", err);
@@ -108,6 +109,9 @@ export default function Settings() {
         // Render the forms now (with the loaded config, or with defaults
         // if the load failed — better degraded than hung).
         setAppLoaded(true);
+        // Plugin settings/config are backend-only (no server offline);
+        // skip the call in Dexie mode so it doesn't fire a dead /api 404.
+        if (getStorage().mode === "dexie") return;
         try {
             const plugins = await api.settings.listPlugins();
             setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
@@ -260,7 +264,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.saved", "Gespeichert"));
                                 } catch (err) {
@@ -277,7 +281,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     // Live language switch without reload
                                     const newLang = (data.app as Record<string, unknown>)?.default_language as string;
@@ -297,7 +301,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.saved", "Gespeichert"));
                                 } catch (err) {
@@ -314,7 +318,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.saved", "Gespeichert"));
                                 } catch (err) {
@@ -331,7 +335,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
                                 } catch {
@@ -348,7 +352,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.topics_saved", "Themen gespeichert"));
                                 } catch {
@@ -380,7 +384,7 @@ export default function Settings() {
                                     } else {
                                         await api.settings.disablePlugin(name);
                                     }
-                                    const app = await api.settings.getApp();
+                                    const app = await getStorage().settings.getApp();
                                     setAppConfig(app);
                                     showMessage(`${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`);
                                 } catch (err) {
@@ -402,7 +406,7 @@ export default function Settings() {
                                     await api.settings.deletePlugin(name);
                                     const [plugins, app] = await Promise.all([
                                         api.settings.listPlugins(),
-                                        api.settings.getApp(),
+                                        getStorage().settings.getApp(),
                                     ]);
                                     setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
                                     setAppConfig(app);
@@ -425,7 +429,7 @@ export default function Settings() {
                             onSave={async (data) => {
                                 setSaving(true);
                                 try {
-                                    const updated = await api.settings.updateApp(data);
+                                    const updated = await getStorage().settings.updateApp(data);
                                     setAppConfig(updated);
                                     showMessage(t("ui.settings.saved", "Gespeichert"));
                                 } catch (err) {
