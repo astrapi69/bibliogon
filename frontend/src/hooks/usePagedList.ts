@@ -23,6 +23,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../api/client";
+import { getStorage } from "../storage";
 
 export type PageSize = 10 | 25 | 50 | 100;
 
@@ -48,7 +49,7 @@ export interface UsePagedListResult {
     limit: number;
     /** True while the initial settings fetch is in flight. */
     loading: boolean;
-    /** Change the page size. Persists to ``api.settings.updateApp``
+    /** Change the page size. Persists to ``getStorage().settings.updateApp``
      *  in the background and snaps ``limit`` back to the new size. */
     setPageSize: (next: PageSize) => void;
     /** Grow ``limit`` by ``pageSize``. */
@@ -107,7 +108,7 @@ export function usePagedList(scope: PagedListScope): UsePagedListResult {
                         (config.ui as Record<string, unknown> | undefined) ?? {};
                     const dashboard =
                         (ui.dashboard as Record<string, unknown> | undefined) ?? {};
-                    return api.settings.updateApp({
+                    return getStorage().settings.updateApp({
                         ui: {
                             ...ui,
                             dashboard: {

@@ -26,6 +26,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { notify } from "../utils/notify";
 import { api } from "../api/client";
+import { getStorage } from "../storage";
 import {
   AI_PROVIDER_PRESETS,
   AI_PROVIDER_IDS,
@@ -106,7 +107,7 @@ export default function AiSetupWizard({
     setTestResult("idle");
     try {
       // Save first so the backend sees the config
-      await api.settings.updateApp({ ai: buildAiPayload() });
+      await getStorage().settings.updateApp({ ai: buildAiPayload() });
       const data = await api.ai.testConnection();
       if (data.success) {
         setTestResult("ok");
@@ -129,7 +130,7 @@ export default function AiSetupWizard({
   const handleFinish = async () => {
     setSaving(true);
     try {
-      await api.settings.updateApp({ ai: buildAiPayload() });
+      await getStorage().settings.updateApp({ ai: buildAiPayload() });
       localStorage.setItem(DISMISSED_KEY, "true");
       notify.success(t("ui.ai_wizard.done", "KI-Assistent eingerichtet"));
       onClose();

@@ -7,6 +7,7 @@ import {
   BookFromTemplateCreate,
   BookType,
 } from "../api/client";
+import { getStorage } from "../storage";
 import CreateBookForm from "../components/CreateBookForm";
 import { PageLayout } from "../components/PageLayout";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/useBookTypes";
@@ -112,7 +113,7 @@ export default function CreateBookPage() {
 
   const handleCreate = async (data: BookCreate) => {
     try {
-      const book = await api.books.create(data);
+      const book = await getStorage().books.create(data);
       goToBookOrDashboard(book.id, data.book_type as BookType | undefined);
     } catch (err) {
       notify.error(

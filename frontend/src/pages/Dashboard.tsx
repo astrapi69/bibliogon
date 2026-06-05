@@ -398,7 +398,7 @@ export default function Dashboard() {
     }, [loading, donationsConfig, books, location.state]);
 
     const handleDelete = async (id: string) => {
-        await api.books.delete(id);
+        await getStorage().books.delete(id);
         setBooks((prev) => prev.filter((b) => b.id !== id));
         // Reconcile bulk-selection state: the row that just
         // disappeared must not stay in the BulkActionBar count.
@@ -413,7 +413,7 @@ export default function Dashboard() {
             t("ui.dashboard.delete_permanent_warning", "Das Buch wird unwiderruflich gelöscht. Diese Aktion kann NICHT rückgaengig gemacht werden. Nur für erfahrene Benutzer."),
             "danger",
         )) return;
-        await api.books.delete(id);
+        await getStorage().books.delete(id);
         try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
         setBooks((prev) => prev.filter((b) => b.id !== id));
         // Reconcile bulk-selection state.

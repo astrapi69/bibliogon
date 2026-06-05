@@ -19,6 +19,7 @@ import {
     type ChapterLabel,
     type ChapterUpdatePayload,
 } from "../api/client"
+import {getStorage} from "../storage"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {BeatSelect} from "./StoryboardAnnotations"
@@ -58,8 +59,8 @@ export default function ChapterOutliner({
 
     useEffect(() => {
         let cancelled = false
-        api.chapters
-            .list(bookId)
+        getStorage()
+            .chapters.list(bookId)
             .then((rows) => {
                 if (!cancelled) {
                     setChapters(rows)
@@ -87,7 +88,7 @@ export default function ChapterOutliner({
             const current = chapters.find((c) => c.id === chapterId)
             if (!current) return
             try {
-                const updated = await api.chapters.update(bookId, chapterId, {
+                const updated = await getStorage().chapters.update(bookId, chapterId, {
                     version: current.version,
                     ...patch,
                 })
@@ -96,7 +97,7 @@ export default function ChapterOutliner({
                 if (err instanceof SaveAbortedError) return
                 notify.error(t("ui.storyboard.save_failed", "Save failed"), err)
                 try {
-                    const fresh = await api.chapters.get(bookId, chapterId)
+                    const fresh = await getStorage().chapters.get(bookId, chapterId)
                     setChapters((prev) => prev.map((c) => (c.id === chapterId ? fresh : c)))
                 } catch {
                     /* toast already fired */

@@ -282,8 +282,8 @@ export default function BookEditor() {
     }
     if (loadedContent?.id === activeChapterId) return;
     setContentLoading(true);
-    api.chapters
-      .get(bookId, activeChapterId)
+    getStorage()
+      .chapters.get(bookId, activeChapterId)
       .then((ch) => setLoadedContent({ id: ch.id, content: ch.content }))
       .catch(() => notify.error(t("ui.common.error", "Fehler beim Laden")))
       .finally(() => setContentLoading(false));
@@ -358,8 +358,8 @@ export default function BookEditor() {
         if (ed) setEditorSettings(ed);
       })
       .catch(() => {});
-    api.books
-      .list()
+    getStorage()
+      .books.list()
       .then((list) => {
         if (cancelled) return;
         setAllBooks(list);
@@ -387,7 +387,7 @@ export default function BookEditor() {
 
   const handleSaveMetadata = async (data: Record<string, unknown>) => {
     if (!bookId) return;
-    const updated = await api.books.update(
+    const updated = await getStorage().books.update(
       bookId,
       data as Partial<import("../api/client").BookCreate>,
     );
@@ -403,7 +403,7 @@ export default function BookEditor() {
       `z.B. Mein ${typeLabel}`,
     );
     if (!title) return;
-    const chapter = await api.chapters.create(bookId, {
+    const chapter = await getStorage().chapters.create(bookId, {
       title: title.trim(),
       chapter_type: chapterType || "chapter",
     });
@@ -431,7 +431,7 @@ export default function BookEditor() {
         );
         const created: import("../api/client").Chapter[] = [];
         for (const child of children) {
-          const chapter = await api.chapters.create(bookId, {
+          const chapter = await getStorage().chapters.create(bookId, {
             title: child.name,
             chapter_type: child.chapter_type,
             content: child.content ?? "",
@@ -462,7 +462,7 @@ export default function BookEditor() {
     }
 
     try {
-      const chapter = await api.chapters.create(bookId, {
+      const chapter = await getStorage().chapters.create(bookId, {
         title: template.name,
         chapter_type: template.chapter_type,
         content: template.content ?? "",
@@ -757,7 +757,7 @@ export default function BookEditor() {
           <BookMetadataEditor
             book={book}
             onSave={async (data) => {
-              const updated = await api.books.update(book.id, data);
+              const updated = await getStorage().books.update(book.id, data);
               setBook((prev) =>
                 prev ? ({ ...prev, ...updated } as BookDetail) : prev,
               );
@@ -782,7 +782,7 @@ export default function BookEditor() {
             storyboardSupported ? () => _setShowStoryboard(true) : undefined
           }
           onTitleSave={async (newTitle) => {
-            const updated = await api.books.update(book.id, {
+            const updated = await getStorage().books.update(book.id, {
               title: newTitle,
             });
             setBook((prev) =>
@@ -831,7 +831,7 @@ export default function BookEditor() {
         <ChapterSidebar
           bookTitle={book.title}
           onTitleSave={async (newTitle) => {
-            const updated = await api.books.update(book.id, {
+            const updated = await getStorage().books.update(book.id, {
               title: newTitle,
             });
             setBook((prev) =>
@@ -979,8 +979,8 @@ export default function BookEditor() {
             allBooks={allBooks}
             onNavigateToIssue={handleNavigateToIssue}
             onRefresh={() => {
-              void api.books
-                .get(book.id, true)
+              void getStorage()
+                .books.get(book.id, true)
                 .then((fresh) => setBook(fresh))
                 .catch(() => {});
             }}

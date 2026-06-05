@@ -12,6 +12,7 @@
  */
 import { useCallback, useEffect, useState } from "react";
 import { api, ApiError } from "../api/client";
+import { getStorage } from "../storage";
 import type { ViewMode } from "../components/ViewToggle";
 
 type DashboardScope = "books" | "articles";
@@ -81,7 +82,7 @@ export function useViewMode(scope: DashboardScope): {
                     const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
                     const dashboard =
                         (ui.dashboard as Record<string, unknown> | undefined) ?? {};
-                    return api.settings.updateApp({
+                    return getStorage().settings.updateApp({
                         ui: {
                             ...ui,
                             dashboard: {

@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {api, type BookType} from "../api/client";
+import {getStorage} from "../storage";
 import {useI18n} from "../hooks/useI18n";
 import {useBookTypes} from "../hooks/useBookTypes";
 import {BookTypeIcon} from "../utils/bookTypeIcon";
@@ -100,7 +101,7 @@ export default function GetStarted() {
     // GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: sample-book creation
     // branches on book_type. Prose ships chapters; picture_book +
     // comic_book ship pages (api.pages.create instead of
-    // api.chapters.create). The Book row itself carries the
+    // getStorage().chapters.create). The Book row itself carries the
     // book_type discriminator so the editor router lands on the
     // right surface (PageEditor for picture_book, ComicBookEditor
     // for comic_book, BookEditor for prose).
@@ -108,7 +109,7 @@ export default function GetStarted() {
         setCreating(true);
         try {
             const sample = await api.getStarted.sampleBook("de", bookType);
-            const book = await api.books.create({
+            const book = await getStorage().books.create({
                 title: sample.title,
                 author: sample.author,
                 language: sample.language,
@@ -117,7 +118,7 @@ export default function GetStarted() {
             });
             if (sample.chapters && sample.chapters.length > 0) {
                 for (const ch of sample.chapters) {
-                    await api.chapters.create(book.id, {title: ch.title, content: ch.content});
+                    await getStorage().chapters.create(book.id, {title: ch.title, content: ch.content});
                 }
             }
             if (sample.pages && sample.pages.length > 0) {

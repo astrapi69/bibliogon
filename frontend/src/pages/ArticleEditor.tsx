@@ -39,6 +39,7 @@ import {
 } from "lucide-react";
 
 import { api, ApiError, Article, ArticleStatus, ContentType, Author } from "../api/client";
+import { getStorage } from "../storage";
 import { useContentTypes } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import ContentTypeFieldsSection from "../components/articles/ContentTypeFieldsSection";
@@ -150,7 +151,7 @@ export default function ArticleEditor() {
         }
         const next = [...current, trimmed];
         try {
-            await api.settings.updateApp({ topics: next });
+            await getStorage().settings.updateApp({ topics: next });
             setTopics(next);
             return true;
         } catch (err) {
@@ -171,8 +172,8 @@ export default function ArticleEditor() {
         if (!id) return;
         let cancelled = false;
         setLoading(true);
-        api.articles
-            .get(id)
+        getStorage()
+            .articles.get(id)
             .then((a) => {
                 if (cancelled) return;
                 setArticle(a);
@@ -217,7 +218,7 @@ export default function ArticleEditor() {
             if (!id) return;
             setSaveStatus("saving");
             try {
-                await api.articles.update(id, { content_json: json });
+                await getStorage().articles.update(id, { content_json: json });
                 setSaveStatus("saved");
                 setTimeout(() => setSaveStatus("idle"), 2000);
             } catch (err) {
@@ -263,7 +264,7 @@ export default function ArticleEditor() {
             });
             if (meta === lastSavedMeta.current) return;
             try {
-                const saved = await api.articles.update(id, {
+                const saved = await getStorage().articles.update(id, {
                     title: patch.title,
                     subtitle: patch.subtitle as string | null | undefined,
                     author: patch.author as string | null | undefined,
@@ -518,7 +519,7 @@ export default function ArticleEditor() {
         );
         if (!ok) return;
         try {
-            await api.articles.delete(article.id);
+            await getStorage().articles.delete(article.id);
             notify.info(
                 t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
             );
@@ -1121,8 +1122,8 @@ export default function ArticleEditor() {
                         onApplied={() => {
                             // Re-fetch so updated metadata + tokens used
                             // appear in the sidebar immediately.
-                            void api.articles
-                                .get(article.id)
+                            void getStorage()
+                                .articles.get(article.id)
                                 .then((fresh) => setArticle(fresh))
                                 .catch(() => {})
                         }}

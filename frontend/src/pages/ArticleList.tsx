@@ -30,6 +30,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, BookDetail } from "../api/client";
+import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
@@ -292,7 +293,7 @@ export default function ArticleList() {
                             return;
                         }
                         const undoResult = await api.articles.bulkRestore(undone);
-                        const fresh = await api.articles.list();
+                        const fresh = await getStorage().articles.list();
                         setArticles(fresh);
                         void loadTrash();
                         if (undoResult.failed.length > 0) {
@@ -436,7 +437,7 @@ export default function ArticleList() {
      *  Dashboard pattern; the Trash panel is the safety net. */
     async function handleDelete(article: Article): Promise<void> {
         try {
-            await api.articles.delete(article.id);
+            await getStorage().articles.delete(article.id);
             setArticles((prev) => prev.filter((a) => a.id !== article.id));
             // Reconcile bulk-selection state: the row that just
             // disappeared must not stay in the BulkActionBar count.
@@ -472,7 +473,7 @@ export default function ArticleList() {
         );
         if (!ok) return;
         try {
-            await api.articles.delete(article.id);
+            await getStorage().articles.delete(article.id);
             try {
                 await api.articles.permanentDelete(article.id);
             } catch {
@@ -592,8 +593,8 @@ export default function ArticleList() {
     // effectively stable.
     const refreshArticles = (showSpinner = false) => {
         if (showSpinner) setLoading(true);
-        return api.articles
-            .list()
+        return getStorage()
+            .articles.list()
             .then((rows) => {
                 setArticles(rows);
             })
@@ -613,8 +614,8 @@ export default function ArticleList() {
         // Server-side status filter retired - useArticleFilters now
         // owns every facet (status / topic / language / search / sort)
         // client-side, matching the books pattern via useBookFilters.
-        api.articles
-            .list()
+        getStorage()
+            .articles.list()
             .then((rows) => {
                 if (!cancelled) setArticles(rows);
             })
@@ -1213,8 +1214,8 @@ export default function ArticleList() {
                 onClose={() => setBulkArticleAiImportOpen(false)}
                 onApplied={() => {
                     selection.clear();
-                    void api.articles
-                        .list()
+                    void getStorage()
+                        .articles.list()
                         .then(setArticles)
                         .catch(() => {});
                 }}

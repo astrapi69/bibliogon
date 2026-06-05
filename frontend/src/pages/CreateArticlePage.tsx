@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from "react-router-dom";
 import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 import { api, ApiError, ContentType } from "../api/client";
+import { getStorage } from "../storage";
 import { PageLayout } from "../components/PageLayout";
 import {
   useContentTypes,
@@ -99,8 +100,8 @@ export default function CreateArticlePage() {
   // fill it in the editor sidebar.
   useEffect(() => {
     let cancelled = false;
-    api.settings
-      .getApp()
+    getStorage()
+      .settings.getApp()
       .then((config) => {
         const authorConfig = (config.author || {}) as Record<string, unknown>;
         const realName = (authorConfig.name as string) || "";
@@ -129,7 +130,7 @@ export default function CreateArticlePage() {
     if (!title.trim() || submitting) return;
     setSubmitting(true);
     try {
-      const fresh = await api.articles.create({
+      const fresh = await getStorage().articles.create({
         title: title.trim(),
         language,
         author: author.trim() || null,
