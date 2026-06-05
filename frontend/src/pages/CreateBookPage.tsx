@@ -93,7 +93,7 @@ export default function CreateBookPage() {
     bookType === "picture_book"
       ? t("ui.create_book.title_picture_book", "Neues Bilderbuch")
       : bookType === "comic_book"
-        ? t("ui.create_book.title_comic_book", "Neuer Comic")
+        ? t("ui.create_book.title_comic_book", "Neues Comicbuch")
         : t("ui.create_book.title", "Neues Buch");
 
   const goToBookOrDashboard = (bookId: string, createdType?: BookType) => {

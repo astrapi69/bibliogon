@@ -95,17 +95,29 @@ export default function ArticleList() {
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
-    // SplitButton primary label reflects the configured default
-    // content-type via its registry ``default_title_key`` (falls back
-    // to the generic "Neuer Artikel").
+    // SplitButton primary reflects the configured default content-type,
+    // but ONLY when it is a SPECIFIC (non-registry-default) type. The
+    // registry default (blogpost) and the unconfigured case fall back to
+    // the generic "Neuer Artikel" label + a bare /articles/new (which
+    // CreateArticlePage renders with the generic "Neuer Text" title).
+    // When a specific default is set, the primary deep-links
+    // /articles/new?type=<default> so CreateArticlePage shows the
+    // type-specific title (e.g. "Neues Tutorial").
+    const registryDefaultContentType = articleTypesSnapshot.defaultId;
+    const hasSpecificDefaultContentType =
+        !!defaultContentType &&
+        defaultContentType !== registryDefaultContentType &&
+        !!articleTypesSnapshot.types[defaultContentType];
     const newArticleFallbackLabel = t("ui.articles.new", "Neuer Artikel");
-    const newArticleTitleKey = contentTypeDefaultTitleKey(
-        articleTypesSnapshot,
-        defaultContentType,
-    );
+    const newArticleTitleKey = hasSpecificDefaultContentType
+        ? contentTypeDefaultTitleKey(articleTypesSnapshot, defaultContentType)
+        : null;
     const newArticleLabel = newArticleTitleKey
         ? t(newArticleTitleKey, newArticleFallbackLabel)
         : newArticleFallbackLabel;
+    const newArticleHref = hasSpecificDefaultContentType
+        ? `/articles/new?type=${defaultContentType}`
+        : "/articles/new";
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
     // active (non-trash) article list. Slices ``filters.filteredArticles``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -678,7 +690,7 @@ export default function ArticleList() {
                                     </span>
                                 </>
                             }
-                            onPrimaryClick={() => navigate("/articles/new")}
+                            onPrimaryClick={() => navigate(newArticleHref)}
                             chevronTooltip={t(
                                 "ui.articles.new_more_tooltip",
                                 "Weitere Artikel-Arten",

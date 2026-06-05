@@ -13,6 +13,7 @@ import { render, screen, fireEvent, waitFor, act } from "@testing-library/react"
 import { MemoryRouter } from "react-router-dom";
 
 import ArticleList from "./ArticleList";
+import { api } from "../api/client";
 import type { Article, ContentTypeDef } from "../api/client";
 import { ContentTypesProvider } from "../hooks/useContentTypes";
 
@@ -248,6 +249,43 @@ describe("ArticleList", () => {
         );
         fireEvent.click(screen.getByTestId("article-list-row-a-99"));
         expect(navigateMock).toHaveBeenCalledWith("/articles/a-99");
+    });
+
+    // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01 Bug B: the SplitButton
+    // primary deep-links the configured default content-type so
+    // CreateArticlePage renders the type-specific title.
+    it("primary deep-links the configured non-default content type", async () => {
+        vi.mocked(api.settings.getApp).mockResolvedValue({
+            ui: {
+                dashboard: {
+                    articles_view: "list",
+                    articles_trash_view: "list",
+                },
+                defaults: { content_type: "tutorial" },
+            },
+        });
+        await renderList([]);
+        const btn = await screen.findByTestId("article-list-new");
+        await waitFor(() => expect(api.settings.getApp).toHaveBeenCalled());
+        fireEvent.click(btn);
+        expect(navigateMock).toHaveBeenCalledWith("/articles/new?type=tutorial");
+    });
+
+    it("primary uses bare /articles/new when the default is the registry default (blogpost)", async () => {
+        vi.mocked(api.settings.getApp).mockResolvedValue({
+            ui: {
+                dashboard: {
+                    articles_view: "list",
+                    articles_trash_view: "list",
+                },
+                defaults: { content_type: "blogpost" },
+            },
+        });
+        await renderList([]);
+        const btn = await screen.findByTestId("article-list-new");
+        await waitFor(() => expect(api.settings.getApp).toHaveBeenCalled());
+        fireEvent.click(btn);
+        expect(navigateMock).toHaveBeenCalledWith("/articles/new");
     });
 
     it("list row renders exactly 9 grid children when bulk-select is enabled (status+lang overlap regression pin)", async () => {
