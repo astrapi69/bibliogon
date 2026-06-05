@@ -20,6 +20,7 @@
 import {useEffect, useState} from "react";
 
 import {api, ApiError, type ArticleComment} from "../../api/client";
+import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {formatLocaleDate} from "../../utils/formatDate";
 
@@ -37,6 +38,11 @@ export default function ArticleCommentsPanel({articleId}: Props) {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
+        // Imported comments are backend-only; empty offline (no /api call).
+        if (getStorage().mode === "dexie") {
+            setComments([]);
+            return;
+        }
         let cancelled = false;
         setLoadError(null);
         api.articles

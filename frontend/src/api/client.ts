@@ -1602,7 +1602,43 @@ const BASE = "/api";
 // same map.
 const saveControllers = new Map<string, AbortController>();
 
+/**
+ * Backendless offline build / explicit Dexie pin. True on the GitHub-Pages
+ * app (built with VITE_STORAGE_MODE=dexie) and whenever a session explicitly
+ * pins Dexie via the `bibliogon.storage_mode` localStorage override (used by
+ * the offline E2E). Read inline here - importing the storage module would
+ * create a client<->storage cycle that degrades the `typeof api.*` types.
+ *
+ * NOT the LAN auto-offline case (connectivity-driven): there the seam still
+ * serves data from Dexie, direct api.* calls degrade gracefully (caught), and
+ * the sync engine replays on reconnect. Those surfaces are UI-gated
+ * (useOfflineFeatureGate). This guard's job is the no-backend build.
+ */
+function isBackendlessOffline(): boolean {
+  try {
+    if (localStorage.getItem("bibliogon.storage_mode") === "dexie") return true;
+  } catch {
+    /* localStorage unavailable */
+  }
+  return import.meta.env.VITE_STORAGE_MODE === "dexie";
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  // Offline catch-all: there is no backend, so never fire a doomed /api
+  // request. The storage seam serves every offline-capable entity from
+  // IndexedDB; any direct api.* call reaching here is a backend-only feature
+  // (export, AI, git, comments, story-bible, ...). Reject immediately so the
+  // network tab stays empty - callers already .catch + degrade, and their UI
+  // triggers are gated. This also auto-covers any future api.* call that
+  // forgets the seam. The seam itself (DexieStorage) never calls request().
+  if (isBackendlessOffline()) {
+    throw new ApiError(
+      503,
+      `Offline: ${path} requires the Bibliogon backend.`,
+      `${BASE}${path}`.split("?")[0],
+      options?.method || "GET",
+    );
+  }
   const method = options?.method || "GET";
   const startTime = performance.now();
   const endpoint = `${BASE}${path}`.split("?")[0]; // strip query for recorder
