@@ -4,15 +4,14 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
-## [0.46.0] - 2026-06-04
+## [0.46.0] - 2026-06-05
 
-The Dialog → Pages + Tailwind/shadcn-foundation release. Eight of the
-app's large, deep-linkable dialogs became real full-page routes rendered
-through a shared `PageLayout` (app-chrome header + centered content +
-working browser Back), and the editor's active chapter moved into the URL
-so chapter selections are deep-linkable. The migration sits on a new
-Tailwind v4 + shadcn/ui foundation (token-mapped, so the existing theme
-system stays the single source of truth for color). No schema migrations
+A large release across four arcs: the **Dialog → Pages** migration on a
+new **Tailwind v4 + shadcn/ui** foundation, **LAN Mode** (reach the
+desktop instance from a phone on the same network), the **Phase 2+3
+offline / local-first sync** stack (IndexedDB-backed offline editing with
+a background sync queue + conflict resolution), and **configurable default
+content/book types** plus a generic 9th content type. No schema migrations
 - existing data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
 
 ### Added
@@ -37,12 +36,48 @@ system stays the single source of truth for color). No schema migrations
   (Preflight omitted) so Tailwind color utilities resolve to the existing
   `var(--*)` theme tokens, plus a shadcn Dialog primitive now backing
   `AppDialog` and the confirmation dialogs.
+- **LAN Mode** (opt-in via `BIBLIOGON_LAN_MODE`) - serve the built
+  frontend and the API from a single port so a phone or tablet on the
+  same network can open Bibliogon. A startup QR banner shows the LAN URL
+  (auto-detected IP, QR via `segno`), a PIN gate protects access (session
+  cookie + lockout), a Settings > About card shows the URL + PIN + QR, and
+  a new `make dev-lan` / `make build-frontend` target drives it.
+- **Offline mode + background sync (mobile / local-first), Phase 2+3** -
+  an `IStorageService` seam with two backends (`ApiStorage` online,
+  `DexieStorage` on IndexedDB offline) selected by a connectivity monitor;
+  "Take offline" selectively downloads a book (`GET /api/books/{id}/full`)
+  for offline editing; offline writes go to a FIFO sync queue that a
+  background sync engine replays on reconnect, with conflict detection +
+  resolution and reconnect status toasts. Desktop is unaffected - the
+  whole stack is opt-in and the Dexie/sync code is dynamically imported so
+  it stays out of the desktop bundle.
+- **Configurable default book-type + content-type** (Settings >
+  Verhalten) - choose which type the dashboards' "new" actions default
+  to; the create pages and the dashboards read the configured default.
+- **Generic "Article" content type** - a 9th, unspecified content type
+  (no per-type metadata, like Essay) alongside the existing 8.
 
 ### Changed
 - **`recharts` is lazy-loaded** with the writing-history page, moving
   ~330 kB out of the eager dashboard bundle.
 - Five smaller dialogs were migrated onto the shadcn Dialog primitive
   (Phase B) - these stay dialogs (small, context-bound, transient state).
+- **Dashboard + Article SplitButton primary label** now reflects the
+  configured default type (via the registry `default_title_key`) instead
+  of a fixed "Neues Buch" / "Neuer Artikel", and updates on return from
+  Settings. When a specific (non-default) content type is configured, the
+  article "+" deep-links `/articles/new?type=<default>` so the create page
+  shows the type-specific title (e.g. "Neues Tutorial"); the registry
+  default (blogpost) keeps the generic "Neuer Text".
+
+### Fixed
+- **Blogpost (the default) no longer hidden** from the New-Article type
+  menu; the create page shows a generic title + the full content-type
+  dropdown. A stale PWA Service Worker that kept serving the old bundle
+  (and masked the fix) is now disabled in dev + self-deregisters.
+- **Dialog → Pages dark-mode + layout fixes** - migrated pages are
+  centered and padded, the logo is visible in dark mode, and the shadcn
+  `DialogContent` no longer jumps to center on open.
 
 ### Docs
 - `docs/architecture/dialog-to-pages-routes.md` - the route map and the
