@@ -21,6 +21,12 @@ const OFFLINE_ENABLED_KEY = "bibliogon.offline_enabled";
 const PROBE_PATH = "/api/health";
 const PROBE_INTERVAL_MS = 15_000;
 
+/** Fired on `window` when offline capability flips ON, so a long-lived
+ *  consumer (useStorageMode, mounted once at app start) can start the
+ *  connectivity monitor in the SAME session a book is taken offline,
+ *  rather than only after an app reload. */
+export const OFFLINE_ENABLED_EVENT = "bibliogon:offline-enabled";
+
 /** Whether offline capability is switched on for this client. Set true
  *  when the first book is taken offline (C3); read by getStorage() and
  *  the connectivity monitor as the master gate. */
@@ -38,6 +44,15 @@ export function setOfflineEnabled(enabled: boolean): void {
     else localStorage.removeItem(OFFLINE_ENABLED_KEY);
   } catch {
     /* localStorage unavailable — no-op */
+  }
+  // Notify in-session consumers so the monitor starts now, not only on
+  // the next app load (taking a book offline happens long after mount).
+  if (enabled) {
+    try {
+      window.dispatchEvent(new Event(OFFLINE_ENABLED_EVENT));
+    } catch {
+      /* no window (SSR/tests without DOM) — the mount-time path covers it */
+    }
   }
 }
 

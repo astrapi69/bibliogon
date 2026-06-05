@@ -19,6 +19,7 @@ import {
   isOfflineEnabled,
   resolveStorageMode,
 } from "./index";
+import { OFFLINE_ENABLED_EVENT } from "./connectivity";
 import type { StorageMode } from "./types";
 
 export interface StorageModeState {
@@ -42,16 +43,35 @@ export function useStorageMode(opts?: {
   const prevOnline = useRef(connectivity.isOnline());
 
   useEffect(() => {
-    if (!offlineEnabled) return; // desktop: never monitor, never preload
-    void ensureDexieStorageLoaded(); // ready before we ever go offline
-    connectivity.start();
+    // Subscribe UNCONDITIONALLY so that enabling offline mid-session
+    // (the take-offline path starts the monitor) is observed here
+    // without a remount, so the reconnect drain (onReconnect) still
+    // fires. The subscription is inert until connectivity.start() runs,
+    // so desktop (offline never enabled) sees no monitor + no probing +
+    // online stays true + mode stays "api" — the desktop path is
+    // unaffected.
     const unsubscribe = connectivity.subscribe((next) => {
       if (!prevOnline.current && next) onReconnectRef.current?.();
       prevOnline.current = next;
       setOnline(next);
     });
+    // Preload the queueing DexieStorage + start the connectivity monitor.
+    // Both are idempotent. Done at mount when offline is already enabled,
+    // AND on the OFFLINE_ENABLED_EVENT so taking a book offline mid-session
+    // (long after this hook mounted with offlineEnabled=false) still starts
+    // the monitor — otherwise connectivity never flips, getStorage() stays
+    // on the API path, and offline edits are lost.
+    const activate = () => {
+      void ensureDexieStorageLoaded();
+      connectivity.start();
+    };
+    if (offlineEnabled) activate();
+    window.addEventListener(OFFLINE_ENABLED_EVENT, activate);
     setOnline(connectivity.isOnline());
-    return unsubscribe;
+    return () => {
+      unsubscribe();
+      window.removeEventListener(OFFLINE_ENABLED_EVENT, activate);
+    };
   }, [offlineEnabled]);
 
   return { mode: resolveStorageMode(), online, offlineEnabled };

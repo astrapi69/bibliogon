@@ -463,6 +463,12 @@ test.describe("Picture-Book PageEditor smoke", () => {
         const book = await createPictureBook("Layout Regression Book", "Author")
         await page.goto(`/book/${book.id}`)
 
+        // Wait for the initial page load to settle (empty state) BEFORE
+        // adding. The mount-time api.pages.list resolves async; clicking
+        // add-page before it settles races the optimistic append against
+        // the list-resolve and can leave 2 rows after a single click.
+        await expect(page.getByTestId("page-editor-canvas-empty")).toBeVisible()
+
         // Two pages. Add-page POSTs + refreshes asynchronously;
         // clicking twice back-to-back races (the refresh from the
         // first add can drop or duplicate the second). Wait for each
