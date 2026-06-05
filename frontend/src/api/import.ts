@@ -5,7 +5,7 @@
  * POST /api/import/execute: JSON body, commits the import.
  */
 
-import { ApiError } from "./client";
+import { ApiError, guardedFetch } from "./client";
 
 export interface DetectedAsset {
     filename: string;
@@ -236,7 +236,7 @@ export async function detectImport(
     if (relativePaths && relativePaths.length === files.length) {
         for (const p of relativePaths) form.append("paths", p);
     }
-    const response = await fetch(`${BASE}/import/detect`, {
+    const response = await guardedFetch(`${BASE}/import/detect`, {
         method: "POST",
         body: form,
     });
@@ -260,7 +260,7 @@ export async function detectImport(
 export async function detectGitImport(
     gitUrl: string,
 ): Promise<DetectResponse> {
-    const response = await fetch(`${BASE}/import/detect/git`, {
+    const response = await guardedFetch(`${BASE}/import/detect/git`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ git_url: gitUrl }),
@@ -290,7 +290,7 @@ export async function executeImport(
     existingBookId?: string | null,
     gitAdoption?: GitAdoption | null,
 ): Promise<ExecuteResponse> {
-    const response = await fetch(`${BASE}/import/execute`, {
+    const response = await guardedFetch(`${BASE}/import/execute`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

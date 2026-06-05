@@ -1632,7 +1632,7 @@ function isBackendlessOffline(): boolean {
  * seam (DexieStorage) never reaches this path. Auto-covers any future api.*
  * call that forgets the seam.
  */
-function guardedFetch(
+export function guardedFetch(
   input: string,
   init?: RequestInit,
 ): Promise<Response> {
