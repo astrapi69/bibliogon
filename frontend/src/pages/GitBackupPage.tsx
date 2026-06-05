@@ -21,8 +21,10 @@ import {
 } from "../api/client";
 import { useDialog } from "../components/AppDialog";
 import { PageLayout } from "../components/PageLayout";
+import { OfflineFeatureNotice } from "../components/OfflineFeatureNotice";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { notify } from "../utils/notify";
 
 /**
@@ -32,6 +34,7 @@ import { notify } from "../utils/notify";
  */
 export default function GitBackupPage() {
   const { t } = useI18n();
+  const { offline } = useOfflineFeatureGate();
   const { bookId = "" } = useParams<{ bookId: string }>();
   const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
   const [status, setStatus] = useState<GitRepoStatus | null>(null);
@@ -52,9 +55,10 @@ export default function GitBackupPage() {
   >({});
 
   useEffect(() => {
+    if (offline) return; // Git is backend-only; skip the mount fetch offline
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId]);
+  }, [bookId, offline]);
 
   async function refresh() {
     try {
@@ -297,6 +301,10 @@ export default function GitBackupPage() {
       onBack={goBack}
       backLabel={t("ui.common.back", "Zurück")}
     >
+          {offline ? (
+            <OfflineFeatureNotice testId="git-backup-offline" />
+          ) : (
+          <>
           {status && !status.initialized && (
             <div style={{ padding: 16 }}>
               <p style={{ color: "var(--text-muted)", marginBottom: 12 }}>
@@ -657,6 +665,8 @@ export default function GitBackupPage() {
                 setResolutions({});
               }}
             />
+          )}
+          </>
           )}
     </PageLayout>
   );

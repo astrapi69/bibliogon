@@ -37,6 +37,8 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { OfflineFeatureNotice } from "../components/OfflineFeatureNotice";
 import {
     api,
     ApiError,
@@ -56,6 +58,7 @@ type Phase = "idle" | "uploading" | "previewing" | "importing";
 export default function MediumImportPage() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    const { offline } = useOfflineFeatureGate();
     const job = useMediumImportJob();
 
     const [file, setFile] = useState<File | null>(null);
@@ -294,6 +297,10 @@ export default function MediumImportPage() {
             </header>
 
             <main id="main-content" className={styles.main}>
+                {offline ? (
+                    <OfflineFeatureNotice testId="medium-import-offline" />
+                ) : (
+                <>
                 <p className={styles.intro}>
                     {t(
                         "ui.medium_import.intro",
@@ -499,6 +506,8 @@ export default function MediumImportPage() {
                         </div>
                     )}
                 </section>
+                </>
+                )}
             </main>
         </div>
     );

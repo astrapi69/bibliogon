@@ -4,8 +4,10 @@ import {ApiError, BookDetail, api} from "../api/client";
 import ExportForm from "../components/ExportForm";
 import {PageLayout} from "../components/PageLayout";
 import {LoadingIndicator} from "../components/LoadingIndicator";
+import {OfflineFeatureNotice} from "../components/OfflineFeatureNotice";
 import {useGoBack} from "../hooks/useGoBack";
 import {useI18n} from "../hooks/useI18n";
+import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
 import {notify} from "../utils/notify";
 
 /**
@@ -17,12 +19,19 @@ import {notify} from "../utils/notify";
  */
 export default function ExportPage() {
     const {t} = useI18n();
+    const {offline} = useOfflineFeatureGate();
     const {bookId} = useParams<{bookId: string}>();
     const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
     const [book, setBook] = useState<BookDetail | null>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        // Export is backend-only (Pandoc) - on the offline build skip the
+        // mount fetch so no dead /api request fires; the body shows a notice.
+        if (offline) {
+            setLoading(false);
+            return;
+        }
         if (!bookId) return;
         let cancelled = false;
         api.books
@@ -45,7 +54,7 @@ export default function ExportPage() {
         return () => {
             cancelled = true;
         };
-    }, [bookId]);
+    }, [bookId, offline]);
 
     const title = book
         ? `${t("ui.export_dialog.title", "Export")}: ${book.title}`
@@ -62,7 +71,9 @@ export default function ExportPage() {
             onBack={goBack}
             backLabel={t("ui.common.back", "Zurück")}
         >
-            {loading ? (
+            {offline ? (
+                <OfflineFeatureNotice testId="export-page-offline" />
+            ) : loading ? (
                 <LoadingIndicator testId="export-page-loading" variant="block" />
             ) : book ? (
                 <ExportForm

@@ -20,6 +20,8 @@ import { useI18n } from "../hooks/useI18n";
 import { Toggle } from "../components/settings/Toggle";
 import { notify } from "../utils/notify";
 import { PageLayout } from "../components/PageLayout";
+import { OfflineFeatureNotice } from "../components/OfflineFeatureNotice";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { useGoBack } from "../hooks/useGoBack";
 
 /**
@@ -30,6 +32,7 @@ import { useGoBack } from "../hooks/useGoBack";
  */
 export default function GitSyncPage() {
   const { t } = useI18n();
+  const { offline } = useOfflineFeatureGate();
   const { bookId = "" } = useParams<{ bookId: string }>();
   const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
   const [status, setStatus] = useState<GitSyncMappingStatus | null>(null);
@@ -46,13 +49,14 @@ export default function GitSyncPage() {
   const [showDiff, setShowDiff] = useState(false);
 
   useEffect(() => {
+    if (offline) return; // Git is backend-only; skip the mount fetch offline
     void refresh();
     // Reset transient form state when the page mounts for a different
     // book; preserves last commit result during the same session.
     setMessage("");
     setPush(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookId]);
+  }, [bookId, offline]);
 
   async function refresh(): Promise<void> {
     setLoading(true);
@@ -186,6 +190,10 @@ export default function GitSyncPage() {
       onBack={goBack}
       backLabel={t("ui.common.back", "Zurück")}
     >
+          {offline ? (
+            <OfflineFeatureNotice testId="git-sync-offline" />
+          ) : (
+          <>
           {loading && !status ? (
             <div
               data-testid="git-sync-loading"
@@ -233,6 +241,8 @@ export default function GitSyncPage() {
         onClose={() => setShowDiff(false)}
         onResolved={() => void refresh()}
       />
+          </>
+          )}
     </PageLayout>
   );
 }
