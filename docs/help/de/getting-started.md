@@ -57,7 +57,7 @@ Das stoppt die Container und löscht das Installationsverzeichnis samt SQLite-Da
 
 ## Optional: PDF-Export mit Pandoc
 
-EPUB-, Word-, HTML- und Markdown-Export funktionieren ohne weitere Schritte. PDF-Export benötigt [Pandoc](https://pandoc.org/installing.html) im Docker-Container; es ist im Standard-Image enthalten, sodass die meisten Nutzer nichts zusätzlich installieren müssen. Wenn du ein eigenes Image ohne Pandoc baust, schlägt der PDF-Export mit einer eindeutigen Fehlermeldung im Export-Dialog fehl.
+EPUB-, Word-, HTML- und Markdown-Export funktionieren ohne weitere Schritte. PDF-Export benötigt [Pandoc](https://pandoc.org/installing.html) im Docker-Container; es ist im Standard-Image enthalten, sodass die meisten Nutzer nichts zusätzlich installieren müssen. Wenn du ein eigenes Image ohne Pandoc baust, schlägt der PDF-Export mit einer eindeutigen Fehlermeldung auf der Export-Seite fehl.
 
 ## Für Entwickler
 
@@ -67,7 +67,7 @@ Die Arbeit an Bibliogon selbst nutzt ein anderes Setup: `make install` (Poetry +
 
 Wenn du [http://localhost:7880](http://localhost:7880) zum ersten Mal öffnest, ist die Datenbank leer. Bibliogon nutzt SQLite als lokale Datenbank; alle Daten liegen auf deinem Rechner, es wird kein externer Server benötigt. Über die Einstellungen kannst du Sprache und Theme anpassen. Es stehen sechs Themes (Warm Literary, Cool Modern, Nord, Klassisch, Studio, Notizbuch) jeweils in Light- und Dark-Variante zur Verfügung - Details im Abschnitt Themes.
 
-Beim ersten Aufruf zeigt Bibliogon den Onboarding-Assistenten unter `/get-started` an — sieben kurze Schritte, die durch die wichtigsten Funktionen führen.
+Beim ersten Aufruf zeigt Bibliogon den Onboarding-Assistenten unter `/get-started` an: einige kurze Schritte, die durch die wichtigsten Funktionen führen.
 
 ![Erste-Schritte-Onboarding-Assistent, Schritt 1 von 7](../assets/screenshots/get-started.png)
 

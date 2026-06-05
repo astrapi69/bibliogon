@@ -45,6 +45,7 @@ plugins:
       nav_translations:
         # AUTO-GENERATED-NAV-TRANSLATIONS-START (do not edit; regenerate via make sync-mkdocs-nav)
         Erste Schritte: Getting Started
+        Dialoge werden zu Seiten: Dialogs become pages
         Artikel: Articles
         Übersicht: Overview
         Massen-Export: Bulk export
@@ -64,6 +65,7 @@ plugins:
         Beziehungsgraph: Relationship graph
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
+        Offline-Modus und LAN-Zugriff: Offline mode and LAN access
         Formatierung: Formatting
         Anzeige-Einstellungen: Display settings
         Zeilenumbruch: Word wrap
@@ -72,6 +74,9 @@ plugins:
         Schreibverlauf: Writing history
         Gliederung: Outliner
         Snapshots und Versionen: Snapshots and versions
+        Kapitelstatus und Labels: Chapter status and labels
+        Schreibmodus: Composition mode
+        Kontextmenü: Context menu
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
@@ -97,6 +102,7 @@ plugins:
         Einstellungen: Settings
         Backups verwalten: Manage backups
         Gefahrenzone: Danger Zone
+        Standardwerte: Defaults
         Entwickler: Developers
         Architektur-Übersicht: Architecture overview
         Plugin-Entwicklung: Plugin Development
@@ -126,6 +132,7 @@ nav:
 - Home: de/index.md
 # AUTO-GENERATED-NAV-START (do not edit; regenerate via make sync-mkdocs-nav)
 - Erste Schritte: de/getting-started.md
+- Dialoge werden zu Seiten: de/dialog-to-pages.md
 - Artikel:
   - Übersicht: de/articles.md
   - Massen-Export: de/articles/bulk-export.md
@@ -148,6 +155,7 @@ nav:
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md
+- Offline-Modus und LAN-Zugriff: de/offline-lan.md
 - Editor:
   - Übersicht: de/editor/uebersicht.md
   - Formatierung: de/editor/formatierung.md
@@ -158,6 +166,9 @@ nav:
   - Schreibverlauf: de/editor/writing-history.md
   - Gliederung: de/editor/outliner.md
   - Snapshots und Versionen: de/editor/snapshots.md
+  - Kapitelstatus und Labels: de/editor/chapter-status-labels.md
+  - Schreibmodus: de/editor/composition-mode.md
+  - Kontextmenü: de/editor/context-menu.md
 - Export:
   - EPUB: de/export/epub.md
   - PDF: de/export/pdf.md
@@ -197,6 +208,7 @@ nav:
   - Navigation: de/settings/sidebar.md
   - Backups verwalten: de/settings/backups.md
   - Gefahrenzone: de/settings/danger-zone.md
+  - Standardwerte: de/settings/defaults.md
 - Entwickler:
   - Architektur-Übersicht: de/developers/architecture.md
   - Plugin-Entwicklung: de/developers/plugins.md

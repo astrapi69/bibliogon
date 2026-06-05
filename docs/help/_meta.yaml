@@ -13,6 +13,12 @@ navigation:
     icon: rocket
 
   - title:
+      de: Dialoge werden zu Seiten
+      en: Dialogs become pages
+    slug: dialog-to-pages
+    icon: layout
+
+  - title:
       de: Artikel
       en: Articles
     slug: articles
@@ -113,6 +119,12 @@ navigation:
         slug: dashboard/trash-and-restore
 
   - title:
+      de: Offline-Modus und LAN-Zugriff
+      en: Offline mode and LAN access
+    slug: offline-lan
+    icon: wifi-off
+
+  - title:
       de: Editor
       en: Editor
     slug: editor
@@ -154,6 +166,18 @@ navigation:
           de: Snapshots und Versionen
           en: Snapshots and versions
         slug: editor/snapshots
+      - title:
+          de: Kapitelstatus und Labels
+          en: Chapter status and labels
+        slug: editor/chapter-status-labels
+      - title:
+          de: Schreibmodus
+          en: Composition mode
+        slug: editor/composition-mode
+      - title:
+          de: Kontextmenü
+          en: Context menu
+        slug: editor/context-menu
 
   - title:
       de: Export
@@ -344,6 +368,10 @@ navigation:
           de: Gefahrenzone
           en: Danger Zone
         slug: settings/danger-zone
+      - title:
+          de: Standardwerte
+          en: Defaults
+        slug: settings/defaults
 
   - title:
       de: Entwickler

@@ -1,21 +1,22 @@
 # Content types
 
-Bibliogon supports 8 content types so you can capture every long-form
+Bibliogon supports 9 content types so you can capture every long-form
 writing shape in the right structure. The type is picked at creation
 and can be changed any time in the ArticleEditor.
 
-## The 8 types at a glance
+## The 9 types at a glance
 
 | Type | When to use | Type-specific fields |
 |---|---|---|
-| **Blog post** | The default for short to medium-length posts | — |
+| **Blog post** | The default for short to medium-length posts | - |
 | **Tutorial** | Step-by-step guides | Difficulty level, prerequisites, estimated duration |
 | **Review** | Critiques of works (book, product, film …) | Reviewed work, creator, rating 1-5 |
-| **Essay** | Longer reflective prose | — |
+| **Essay** | Longer reflective prose | - |
 | **Newsletter** | Recurring posts with issue numbers | Issue number, send date |
 | **Interview** | Conversations with other people | Partner name + role |
-| **Listicle** | List-based posts (Top 10, 5 tips …) | — |
-| **Short story** | Short, self-contained narratives | — |
+| **Listicle** | List-based posts (Top 10, 5 tips …) | - |
+| **Short story** | Short, self-contained narratives | - |
+| **Article** | A generic text with no fixed shape | - |
 
 ## Field visibility per type
 
@@ -24,13 +25,13 @@ the editor sidebar stays focused. **Always shown** for every type:
 title, content, status, subtitle, author, language and topic. The
 **optional core fields** below appear per type:
 
-| Core field | blogpost | tutorial | review | essay | newsletter | interview | listicle | short story |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Tags | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ |
-| Excerpt | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
-| SEO (title + description) | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
-| Canonical URL | ✓ | — | — | — | — | — | — | — |
-| Featured image | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — |
+| Core field | blogpost | tutorial | review | essay | newsletter | interview | listicle | short story | article |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Tags | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
+| Excerpt | ✓ | ✓ | ✓ | - | - | - | ✓ | - | ✓ |
+| SEO (title + description) | ✓ | ✓ | ✓ | - | - | - | ✓ | - | ✓ |
+| Canonical URL | ✓ | - | - | - | - | - | - | - | ✓ |
+| Featured image | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ | - | ✓ |
 
 The visibility is configured in the single source of truth,
 `backend/config/content-types.yaml` (`core_fields` per type), so it
@@ -40,7 +41,7 @@ or hides the relevant fields immediately.
 ## Each type in detail
 
 ### Blog post
-The default and most flexible type — short to medium posts on any
+The default and most flexible type, for short to medium posts on any
 topic. Shows the full set of optional fields (Tags, Excerpt, SEO,
 Canonical URL, Featured image), so it's also the right home for a
 post first published elsewhere (set the Canonical URL).
@@ -59,14 +60,14 @@ reviews where the rating + reviewed-work metadata matter.
 
 ### Essay
 Longer, reflective prose. No type-specific fields. Shows only Tags +
-a Featured image — Excerpt, SEO and Canonical URL are hidden to keep
+a Featured image. Excerpt, SEO and Canonical URL are hidden to keep
 the focus on the writing rather than search snippets. Use it for
 opinion or reflective pieces.
 
 ### Newsletter
 A recurring issue. Type-specific fields: **issue number** and **send
-date**. Shows none of the optional core fields — a newsletter is
-distributed by email, so SEO snippets, excerpts and canonical URLs
+date**. Shows none of the optional core fields, because a newsletter
+is distributed by email, so SEO snippets, excerpts and canonical URLs
 don't apply. Use it for issues of a periodic publication.
 
 ### Interview
@@ -76,15 +77,24 @@ for Q&A or interview formats.
 
 ### Listicle
 A list-based post (Top 10, 5 tips …). No type-specific fields. Shows
-Tags, Excerpt, SEO and a Featured image — list posts tend to be
-search-oriented, so the SEO fields stay. Use it for ranked or
+Tags, Excerpt, SEO and a Featured image, because list posts tend to
+be search-oriented, so the SEO fields stay. Use it for ranked or
 enumerated content.
 
 ### Short story
 A short, self-contained narrative. No type-specific fields. Shows
-only Tags — fiction rarely needs SEO snippets, canonical URLs or
-excerpts. Use it for fiction you want to keep separate from
+only Tags, because fiction rarely needs SEO snippets, canonical URLs
+or excerpts. Use it for fiction you want to keep separate from
 non-fiction posts.
+
+### Article
+The generic, unspecified type. No type-specific fields. Shows the
+same optional core fields as a blog post (Tags, Excerpt, SEO,
+Canonical URL, Featured image), but carries no special meaning like
+Tutorial or Review. Use it when none of the more specific types fit
+and you simply want a neutral text with the full publishing fields.
+Note: **Blog post** stays the built-in default, **Article** is the
+generic alternative to it.
 
 ## Creating with a type
 
@@ -93,8 +103,10 @@ On the article dashboard, click the arrow to the right of the
 (Blog post). Picking a type creates a new article of that type
 directly.
 
-A plain click on **New Article** creates a blog post — the most
-common choice, so it skips the menu round-trip.
+A plain click on **New Article** creates the configured default (a
+blog post out of the box), the most common choice, so it skips the
+menu round-trip. You can choose which type is the default under
+Settings (see [Defaults](../settings/defaults.md)).
 
 ## Changing the type later
 
@@ -111,4 +123,7 @@ small badge with the type's icon and label. You can see at a glance
 which articles are tutorials, reviews, etc. without opening the
 editor.
 
-![Article dashboard with article-type badges](../../assets/screenshots/article-dashboard-grid.png)
+## Related topics
+
+- [Overview](../articles.md)
+- [Defaults](../settings/defaults.md)

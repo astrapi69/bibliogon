@@ -1,21 +1,22 @@
 # Textarten
 
-Bibliogon unterstützt 8 Textarten, damit du jede lange Schreibform
+Bibliogon unterstützt 9 Textarten, damit du jede lange Schreibform
 in der passenden Struktur erfassen kannst. Der Typ wird beim Anlegen
 gewählt und kann jederzeit im ArticleEditor geändert werden.
 
-## Die 8 Typen auf einen Blick
+## Die 9 Typen auf einen Blick
 
 | Typ | Wann verwenden | Typ-spezifische Felder |
 |---|---|---|
-| **Blogpost** | Standardform, kurze bis mittlere Beiträge | — |
+| **Blogpost** | Standardform, kurze bis mittlere Beiträge | - |
 | **Tutorial** | Schritt-für-Schritt-Anleitungen | Schwierigkeitsgrad, Voraussetzungen, geschätzte Dauer |
 | **Rezension** | Bewertungen von Werken (Buch, Produkt, Film …) | Bewertetes Werk, Urheber, Bewertung 1-5 |
-| **Essay** | Längere reflektierende Prosa | — |
+| **Essay** | Längere reflektierende Prosa | - |
 | **Newsletter** | Wiederkehrende Beiträge in Ausgaben | Ausgabennummer, Versanddatum |
 | **Interview** | Gespräche mit anderen Personen | Name + Rolle des Gesprächspartners |
-| **Listicle** | Listen-basierte Beiträge (Top 10, 5 Tipps …) | — |
-| **Kurzgeschichte** | Kurze, in sich geschlossene Erzählungen | — |
+| **Listicle** | Listen-basierte Beiträge (Top 10, 5 Tipps …) | - |
+| **Kurzgeschichte** | Kurze, in sich geschlossene Erzählungen | - |
+| **Artikel** | Allgemeiner Text ohne festgelegte Form | - |
 
 ## Feld-Sichtbarkeit pro Typ
 
@@ -24,13 +25,13 @@ damit die Editor-Seitenleiste übersichtlich bleibt. **Immer sichtbar**
 bei jedem Typ: Titel, Inhalt, Status, Untertitel, Autor, Sprache und
 Thema. Die folgenden **optionalen Kernfelder** erscheinen je nach Typ:
 
-| Kernfeld | blogpost | tutorial | rezension | essay | newsletter | interview | listicle | kurzgeschichte |
-|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
-| Tags | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | ✓ |
-| Excerpt | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
-| SEO (Titel + Beschreibung) | ✓ | ✓ | ✓ | — | — | — | ✓ | — |
-| Canonical URL | ✓ | — | — | — | — | — | — | — |
-| Beitragsbild | ✓ | ✓ | ✓ | ✓ | — | ✓ | ✓ | — |
+| Kernfeld | blogpost | tutorial | rezension | essay | newsletter | interview | listicle | kurzgeschichte | artikel |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|
+| Tags | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ | ✓ | ✓ |
+| Excerpt | ✓ | ✓ | ✓ | - | - | - | ✓ | - | ✓ |
+| SEO (Titel + Beschreibung) | ✓ | ✓ | ✓ | - | - | - | ✓ | - | ✓ |
+| Canonical URL | ✓ | - | - | - | - | - | - | - | ✓ |
+| Beitragsbild | ✓ | ✓ | ✓ | ✓ | - | ✓ | ✓ | - | ✓ |
 
 Die Sichtbarkeit ist in der Single Source of Truth konfiguriert,
 `backend/config/content-types.yaml` (`core_fields` pro Typ), und
@@ -40,11 +41,11 @@ passenden Felder sofort ein oder aus.
 ## Jeder Typ im Detail
 
 ### Blogpost
-Der Standard und der flexibelste Typ — kurze bis mittlere Beiträge zu
-beliebigen Themen. Zeigt alle optionalen Felder (Tags, Excerpt, SEO,
-Canonical URL, Beitragsbild) und ist damit auch die richtige Heimat
-für einen anderswo zuerst veröffentlichten Beitrag (Canonical URL
-setzen).
+Der Standard und der flexibelste Typ, für kurze bis mittlere Beiträge
+zu beliebigen Themen. Zeigt alle optionalen Felder (Tags, Excerpt,
+SEO, Canonical URL, Beitragsbild) und ist damit auch die richtige
+Heimat für einen anderswo zuerst veröffentlichten Beitrag (Canonical
+URL setzen).
 
 ### Tutorial
 Eine Schritt-für-Schritt-Anleitung. Typ-spezifische Felder:
@@ -62,14 +63,14 @@ Werk-Metadaten zählen.
 
 ### Essay
 Längere, reflektierende Prosa. Keine typ-spezifischen Felder. Zeigt
-nur Tags + ein Beitragsbild — Excerpt, SEO und Canonical URL sind
+nur Tags + ein Beitragsbild. Excerpt, SEO und Canonical URL sind
 ausgeblendet, damit der Fokus auf dem Text statt auf Such-Snippets
 liegt. Verwende ihn für Meinungs- oder reflektierende Stücke.
 
 ### Newsletter
 Eine wiederkehrende Ausgabe. Typ-spezifische Felder:
 **Ausgabennummer** und **Versanddatum**. Zeigt keines der optionalen
-Kernfelder — ein Newsletter wird per E-Mail verteilt, daher sind
+Kernfelder, denn ein Newsletter wird per E-Mail verteilt, daher sind
 SEO-Snippets, Excerpts und Canonical URLs nicht relevant. Verwende
 ihn für Ausgaben einer periodischen Publikation.
 
@@ -81,15 +82,25 @@ Verwende ihn für Q&A- oder Interview-Formate.
 ### Listicle
 Ein listen-basierter Beitrag (Top 10, 5 Tipps …). Keine
 typ-spezifischen Felder. Zeigt Tags, Excerpt, SEO und ein
-Beitragsbild — Listen-Beiträge sind oft suchorientiert, daher
+Beitragsbild, denn Listen-Beiträge sind oft suchorientiert, daher
 bleiben die SEO-Felder. Verwende ihn für gereihte oder aufgezählte
 Inhalte.
 
 ### Kurzgeschichte
 Eine kurze, in sich geschlossene Erzählung. Keine typ-spezifischen
-Felder. Zeigt nur Tags — Belletristik braucht selten SEO-Snippets,
-Canonical URLs oder Excerpts. Verwende sie für Fiktion, die du von
-Sachtexten getrennt halten willst.
+Felder. Zeigt nur Tags, denn Belletristik braucht selten
+SEO-Snippets, Canonical URLs oder Excerpts. Verwende sie für Fiktion,
+die du von Sachtexten getrennt halten willst.
+
+### Artikel
+Der allgemeine, nicht festgelegte Typ. Keine typ-spezifischen Felder.
+Zeigt dieselben optionalen Kernfelder wie ein Blogpost (Tags,
+Excerpt, SEO, Canonical URL, Beitragsbild), trägt aber keine
+spezielle Bedeutung wie Tutorial oder Rezension. Verwende ihn, wenn
+keiner der spezifischeren Typen passt und du einfach einen neutralen
+Text mit den vollen Veröffentlichungs-Feldern willst. Hinweis:
+**Blogpost** bleibt der eingebaute Standard, **Artikel** ist die
+generische Alternative dazu.
 
 ## Anlegen mit Typ
 
@@ -98,8 +109,11 @@ Auf dem Artikel-Dashboard klickst du auf den Pfeil rechts neben dem
 dem Standard (Blogpost). Klick auf den gewünschten Typ legt direkt
 einen neuen Artikel mit diesem Typ an.
 
-Ein einfacher Klick auf **Neuer Artikel** legt einen Blogpost an —
-die häufigste Wahl, daher ohne Umweg über das Menü.
+Ein einfacher Klick auf **Neuer Artikel** legt den eingestellten
+Standard an (ab Werk ein Blogpost), die häufigste Wahl, daher ohne
+Umweg über das Menü. Welcher Typ der Standard ist, kannst du unter
+Einstellungen festlegen (siehe
+[Standardwerte](../settings/defaults.md)).
 
 ## Typ später ändern
 
@@ -117,4 +131,7 @@ zeigt einen kleinen Badge mit dem Typ-Icon und der Bezeichnung. So
 siehst du auf einen Blick, welche Artikel Tutorials, Rezensionen
 usw. sind, ohne den Editor zu öffnen.
 
-![Artikel-Dashboard mit Textart-Badges](../../assets/screenshots/article-dashboard-grid.png)
+## Verwandte Themen
+
+- [Übersicht](../articles.md)
+- [Standardwerte](../settings/defaults.md)
