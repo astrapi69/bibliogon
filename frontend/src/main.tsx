@@ -8,6 +8,7 @@ import App from "./App";
 import "./styles/tailwind.css";
 import "./styles/global.css";
 import { verifyBackendVersion } from "./utils/versionCheck";
+import { restoreSpaRedirect } from "./utils/spaRedirect";
 
 // a11y: @axe-core/react logs WCAG / Section 508 violations to
 // the browser DevTools console after every render in dev mode.
@@ -37,9 +38,21 @@ if (import.meta.env.DEV) {
   }
 }
 
+// Router basename follows the Vite deploy base so deep-linkable routes
+// work under a sub-path host (GitHub Pages, "/bibliogon/") as well as at
+// the root (Desktop / LAN, "/"). Vite injects `import.meta.env.BASE_URL`
+// at build time; strip the trailing slash because React Router expects a
+// basename without one (root collapses back to "/").
+const routerBasename = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
+
+// SPA deep-link restore for GitHub Pages. Rewrites a ?redirect= bounce
+// (set by public/404.html) back to the intended route BEFORE the router
+// mounts. No-op on the Desktop / LAN deploy (no ?redirect= there).
+restoreSpaRedirect(routerBasename);
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
+    <BrowserRouter basename={routerBasename}>
       <App />
     </BrowserRouter>
   </React.StrictMode>,

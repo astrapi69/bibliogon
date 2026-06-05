@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bibliogon</title>
+    <script>
+      // SPA deep-link redirect for GitHub Pages.
+      //
+      // GitHub Pages serves this file for any path it has no file for
+      // (e.g. /bibliogon/books/123 on a hard refresh). We encode the
+      // originally-requested route and bounce to the SPA entry
+      // (/bibliogon/), where main.tsx reads ?redirect= and restores the
+      // route before the router mounts.
+      //
+      // The base is hard-coded to the GitHub Pages sub-path: this file is
+      // ONLY ever served by GitHub Pages. The Desktop / LAN backend has
+      // its own SPA catch-all that falls back to index.html (never this
+      // file), so the hard-coded base cannot affect those deploys.
+      (function () {
+        var base = "/bibliogon/";
+        var loc = window.location;
+        var full = loc.pathname + loc.search + loc.hash;
+        // Strip the base prefix so the redirect value is a basename-
+        // relative route (what React Router's basename expects).
+        var route =
+          full.indexOf(base) === 0
+            ? "/" + full.slice(base.length)
+            : full.replace(/^\/+/, "/");
+        loc.replace(loc.origin + base + "?redirect=" + encodeURIComponent(route));
+      })();
+    </script>
+  </head>
+  <body></body>
+</html>

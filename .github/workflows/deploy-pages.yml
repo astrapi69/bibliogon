@@ -1,0 +1,73 @@
+name: Deploy app to GitHub Pages
+
+# Deploys the Bibliogon frontend (the React/Vite SPA) to this repo's
+# GitHub Pages site at https://astrapi69.github.io/bibliogon/.
+#
+# This repo's Pages site hosts the APP. The documentation is published
+# separately to the astrapi69/bibliogondocs repo (see deploy-docs.yml) —
+# a GitHub Pages project site is always served at <user>.github.io/<repo>/,
+# so app and docs need distinct repos to get distinct URLs.
+#
+# The app is built as a standalone OFFLINE PWA: there is no backend at
+# the GitHub Pages origin, so it runs purely on local IndexedDB storage
+# (VITE_STORAGE_MODE=dexie forces the offline storage backend). LAN sync
+# to a desktop is intentionally out of scope here (blocked by HTTPS->HTTP
+# mixed content); see MOBILE-LAN-SYNC-01 in the backlog.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one Pages deploy at a time; a newer push supersedes an in-flight one.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+# Defensive opt-in: coerce any JavaScript-runtime action still declaring
+# Node 20 to Node 24 (safety net for future additions). Mirrors the other
+# workflows.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Build frontend (base /bibliogon/, offline Dexie storage)
+        working-directory: ./frontend
+        env:
+          VITE_BASE_URL: /bibliogon/
+          # No same-origin backend on GitHub Pages -> force the offline
+          # IndexedDB storage backend (mobile-sync storage layer). Inert
+          # until that layer is on main; harmless before then.
+          VITE_STORAGE_MODE: dexie
+        run: |
+          npm ci
+          npm run build
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: frontend/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v5
+        id: deployment

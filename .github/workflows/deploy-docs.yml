@@ -1,0 +1,78 @@
+name: Deploy Docs
+
+# Builds the MkDocs documentation from docs/help/ (the SSoT also read by
+# the in-app Help plugin) and publishes it to a SEPARATE repository,
+# astrapi69/bibliogondocs, whose GitHub Pages site is served at
+# https://astrapi69.github.io/bibliogondocs/.
+#
+# Why cross-repo: a GitHub Pages project site is always served at
+# <user>.github.io/<repo-name>/. This repo's own Pages site hosts the
+# frontend app (deploy-pages.yml), so the docs need their own repo to
+# get the /bibliogondocs/ URL. The content stays here (SSoT for in-app
+# help); only the built site is pushed out.
+#
+# Auth: an SSH deploy key. The PRIVATE key is the `DOCS_DEPLOY_KEY`
+# secret in this repo; the matching PUBLIC key is a write-enabled Deploy
+# Key on astrapi69/bibliogondocs. See docs/development/docs-deploy.md.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'docs/help/**'
+      - 'mkdocs.yml'
+      - 'scripts/generate_mkdocs_nav.py'
+      - '.github/workflows/deploy-docs.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# A distinct concurrency group: this deploy targets the bibliogondocs
+# repo, NOT this repo's `pages` environment (that group belongs to the
+# app deploy in deploy-pages.yml). Sharing it would needlessly serialize
+# the two independent deploys.
+concurrency:
+  group: docs-deploy
+  cancel-in-progress: true
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  build-and-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0  # Full history for the git-revision-date plugin
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install docs dependencies
+        working-directory: ./docs
+        run: poetry install --no-interaction
+
+      - name: Generate navigation from _meta.yaml
+        working-directory: ./docs
+        run: poetry run python ../scripts/generate_mkdocs_nav.py
+
+      - name: Build docs
+        working-directory: ./docs
+        run: poetry run mkdocs build -f ../mkdocs.yml --strict
+
+      - name: Publish to bibliogondocs (gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.DOCS_DEPLOY_KEY }}
+          external_repository: astrapi69/bibliogondocs
+          publish_branch: gh-pages
+          publish_dir: ./site
+          # Single-commit history on the published branch (no buildup).
+          force_orphan: true
+          full_commit_message: "docs: deploy from bibliogon@${{ github.sha }}"
