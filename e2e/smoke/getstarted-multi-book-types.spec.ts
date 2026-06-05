@@ -88,8 +88,12 @@ test.describe("Get-Started multi-book-type onboarding smoke", () => {
         await expect(buttons).toHaveCount(3);
 
         // Bounding-box-dimension assertion: each button must render
-        // at clickable height (>20px).
+        // at clickable height (>20px). boundingBox() does NOT auto-wait,
+        // so assert per-button visibility first (the sample buttons come
+        // from useBookTypes(), fetched async alongside the guide steps;
+        // calling boundingBox() mid-layout returned null intermittently).
         for (let i = 0; i < 3; i++) {
+            await expect(buttons.nth(i)).toBeVisible();
             const bbox = await buttons.nth(i).boundingBox();
             expect(bbox).not.toBeNull();
             expect(bbox!.height).toBeGreaterThan(20);

@@ -78,12 +78,21 @@ test.describe("Comic-book multi-page navigation smoke", () => {
         const book = await createComicBook("Switch Active", "E2E Author");
         await page.goto(`/book/${book.id}`);
 
-        // Create two pages.
-        await page.getByTestId("comic-book-editor-add-page").click();
-        await page.getByTestId("comic-book-editor-add-page").click();
+        // Create two pages. Wait for page 1 to land before adding the
+        // second: each add-page is an async create + list-refresh +
+        // auto-select. Clicking twice back-to-back races the two
+        // handlers (both compute the new position from the same stale
+        // page list, and whichever create resolves LAST wins the
+        // auto-select), which under load left page 1 active instead of
+        // page 2. Waiting for count 1 between clicks makes it
+        // deterministic AND mirrors real use (click, see the page,
+        // click again).
         const rows = page.locator(
             '[data-testid^="comic-book-editor-page-row-"]',
         );
+        await page.getByTestId("comic-book-editor-add-page").click();
+        await expect(rows).toHaveCount(1);
+        await page.getByTestId("comic-book-editor-add-page").click();
         await expect(rows).toHaveCount(2);
 
         // Page 2 auto-selected after the 2nd add (perception-lag-fix).

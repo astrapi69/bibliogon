@@ -27,9 +27,14 @@ test.describe("Mobile viewport (375px): key screens render usably", () => {
         const book = await createBook("Mobile Smoke Buch");
         await createChapter(book.id, "Kapitel 1");
 
-        // Dashboard.
+        // Dashboard. The "new book" split-button is the primary CTA and
+        // stays visible at phone width (only its text label is
+        // ``hide-mobile``, the button itself is not). The
+        // ``articles-nav-btn`` is deliberately ``hide-mobile`` (it lives
+        // in the hamburger menu on phones), so it is NOT a valid
+        // mobile-visibility anchor.
         await page.goto("/");
-        await expect(page.getByTestId("articles-nav-btn")).toBeVisible();
+        await expect(page.getByTestId("new-book-btn")).toBeVisible();
         // No horizontal overflow at phone width (4px sub-pixel tolerance).
         const overflow = await page.evaluate(
             () =>

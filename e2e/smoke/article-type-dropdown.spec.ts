@@ -35,6 +35,7 @@ const MENU_ITEM_IDS = [
     "interview",
     "listicle",
     "short-story",
+    "article",
 ];
 const DROPDOWN_IDS = [
     "blogpost",
@@ -45,10 +46,11 @@ const DROPDOWN_IDS = [
     "interview",
     "listicle",
     "short_story",
+    "article",
 ];
 
 test.describe("Content-type selectors include Blogpost", () => {
-    test("CreateArticlePage type dropdown lists all 8 types", async ({
+    test("CreateArticlePage type dropdown lists all 9 types", async ({
         page,
         resetDatabase,
     }) => {
@@ -60,14 +62,15 @@ test.describe("Content-type selectors include Blogpost", () => {
                 page.getByTestId(`create-article-type-${id}`),
             ).toBeVisible();
         }
-        // Blogpost (the default) specifically, and exactly 8 options.
+        // Blogpost (the default) specifically, and exactly 9 options
+        // (the generic "article" type was added in v0.46.0).
         await expect(page.getByTestId("create-article-type-blogpost")).toBeVisible();
         await expect(
             page.locator('[data-testid^="create-article-type-"]'),
         ).toHaveCount(DROPDOWN_IDS.length);
     });
 
-    test("ArticleList 'Neuer Artikel' menu lists all 8 types", async ({
+    test("ArticleList 'Neuer Artikel' menu lists all 9 types", async ({
         page,
         resetDatabase,
     }) => {
