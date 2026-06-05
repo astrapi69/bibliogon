@@ -1623,28 +1623,43 @@ function isBackendlessOffline(): boolean {
   return import.meta.env.VITE_STORAGE_MODE === "dexie";
 }
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  // Offline catch-all: there is no backend, so never fire a doomed /api
-  // request. The storage seam serves every offline-capable entity from
-  // IndexedDB; any direct api.* call reaching here is a backend-only feature
-  // (export, AI, git, comments, story-bible, ...). Reject immediately so the
-  // network tab stays empty - callers already .catch + degrade, and their UI
-  // triggers are gated. This also auto-covers any future api.* call that
-  // forgets the seam. The seam itself (DexieStorage) never calls request().
+/**
+ * The single network egress for the whole client. Every `api.*` method - the
+ * JSON `request()` helper AND the raw upload/blob/export calls - goes through
+ * here, so the offline catch-all is enforced in ONE place: on the backendless
+ * build there is no server, so a doomed /api request never fires. Callers
+ * already `.catch` + degrade, their UI triggers are gated, and the storage
+ * seam (DexieStorage) never reaches this path. Auto-covers any future api.*
+ * call that forgets the seam.
+ */
+function guardedFetch(
+  input: string,
+  init?: RequestInit,
+): Promise<Response> {
   if (isBackendlessOffline()) {
-    throw new ApiError(
-      503,
-      `Offline: ${path} requires the Bibliogon backend.`,
-      `${BASE}${path}`.split("?")[0],
-      options?.method || "GET",
+    return Promise.reject(
+      new ApiError(
+        503,
+        `Offline: ${input} requires the Bibliogon backend.`,
+        String(input).split("?")[0],
+        init?.method || "GET",
+      ),
     );
   }
+  // Preserve the exact call shape (some callers + tests rely on a single
+  // argument): only forward `init` when present.
+  return init === undefined
+    ? globalThis.fetch(input)
+    : globalThis.fetch(input, init);
+}
+
+async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const method = options?.method || "GET";
   const startTime = performance.now();
   const endpoint = `${BASE}${path}`.split("?")[0]; // strip query for recorder
   let res: Response;
   try {
-    res = await fetch(`${BASE}${path}`, {
+    res = await guardedFetch(`${BASE}${path}`, {
       headers: { "Content-Type": "application/json" },
       ...options,
     });
@@ -1955,7 +1970,7 @@ export const api = {
       bookIds: string[],
       format: "epub" | "pdf" | "docx",
     ): Promise<{ blob: Blob; filename: string }> => {
-      const res = await fetch(`${BASE}/books/bulk-export`, {
+      const res = await guardedFetch(`${BASE}/books/bulk-export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ book_ids: bookIds, format }),
@@ -1987,7 +2002,7 @@ export const api = {
       /** Download the book's filled template as a
        *  ``.biblio.yaml`` blob. */
       export: async (id: string): Promise<{ blob: Blob; filename: string }> => {
-        const res = await fetch(`${BASE}/books/${id}/ai-template`);
+        const res = await guardedFetch(`${BASE}/books/${id}/ai-template`);
         if (!res.ok) {
           const err = await res
             .json()
@@ -2028,7 +2043,7 @@ export const api = {
         language = "en",
       ): Promise<{ blob: Blob; filename: string }> => {
         const url = `${BASE}/ai-templates/book?language=${encodeURIComponent(language)}`;
-        const res = await fetch(url);
+        const res = await guardedFetch(url);
         if (!res.ok) {
           const err = await res
             .json()
@@ -2060,7 +2075,7 @@ export const api = {
      *  5 ship time. */
     fromAiTemplate: async (yamlText: string): Promise<BookDetail> => {
       const url = `${BASE}/books/from-ai-template`;
-      const res = await fetch(url, {
+      const res = await guardedFetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/yaml" },
         body: yamlText,
@@ -2095,7 +2110,7 @@ export const api = {
       export: async (
         ids: string[],
       ): Promise<{ blob: Blob; filename: string }> => {
-        const res = await fetch(`${BASE}/books/bulk-ai-template/export`, {
+        const res = await guardedFetch(`${BASE}/books/bulk-ai-template/export`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids }),
@@ -2128,7 +2143,7 @@ export const api = {
         const form = new FormData();
         form.append("file", zipFile);
         const url = `${BASE}/books/bulk-ai-template/import?force=${force}`;
-        const res = await fetch(url, { method: "POST", body: form });
+        const res = await guardedFetch(url, { method: "POST", body: form });
         if (!res.ok) {
           const err = await res
             .json()
@@ -2373,7 +2388,7 @@ export const api = {
       format: "markdown" | "html" | "pdf" | "docx",
       mode: "zip" | "combined",
     ): Promise<{ blob: Blob; filename: string }> => {
-      const res = await fetch(`${BASE}/articles/bulk-export`, {
+      const res = await guardedFetch(`${BASE}/articles/bulk-export`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ article_ids: articleIds, format, mode }),
@@ -2400,7 +2415,7 @@ export const api = {
      *  ``api.books.aiTemplate``. */
     aiTemplate: {
       export: async (id: string): Promise<{ blob: Blob; filename: string }> => {
-        const res = await fetch(`${BASE}/articles/${id}/ai-template`);
+        const res = await guardedFetch(`${BASE}/articles/${id}/ai-template`);
         if (!res.ok) {
           const err = await res
             .json()
@@ -2436,7 +2451,7 @@ export const api = {
         language = "en",
       ): Promise<{ blob: Blob; filename: string }> => {
         const url = `${BASE}/ai-templates/article?language=${encodeURIComponent(language)}`;
-        const res = await fetch(url);
+        const res = await guardedFetch(url);
         if (!res.ok) {
           const err = await res
             .json()
@@ -2467,7 +2482,7 @@ export const api = {
      *  title.current_value to be a non-empty string. */
     fromAiTemplate: async (yamlText: string): Promise<Article> => {
       const url = `${BASE}/articles/from-ai-template`;
-      const res = await fetch(url, {
+      const res = await guardedFetch(url, {
         method: "POST",
         headers: { "Content-Type": "text/yaml" },
         body: yamlText,
@@ -2496,7 +2511,7 @@ export const api = {
       export: async (
         ids: string[],
       ): Promise<{ blob: Blob; filename: string }> => {
-        const res = await fetch(`${BASE}/articles/bulk-ai-template/export`, {
+        const res = await guardedFetch(`${BASE}/articles/bulk-ai-template/export`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ids }),
@@ -2529,7 +2544,7 @@ export const api = {
         const form = new FormData();
         form.append("file", zipFile);
         const url = `${BASE}/articles/bulk-ai-template/import?force=${force}`;
-        const res = await fetch(url, { method: "POST", body: form });
+        const res = await guardedFetch(url, { method: "POST", body: form });
         if (!res.ok) {
           const err = await res
             .json()
@@ -2637,7 +2652,7 @@ export const api = {
       fmt: "markdown" | "html" | "pdf" | "docx",
     ): Promise<void> => {
       const url = `${BASE}/articles/${articleId}/export/${fmt}`;
-      const res = await fetch(url, { method: "GET" });
+      const res = await guardedFetch(url, { method: "GET" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
@@ -2682,7 +2697,7 @@ export const api = {
       const formData = new FormData();
       formData.append("file", file);
       const url = `${BASE}/articles/${articleId}/assets?asset_type=${encodeURIComponent(assetType)}`;
-      const res = await fetch(url, { method: "POST", body: formData });
+      const res = await guardedFetch(url, { method: "POST", body: formData });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
@@ -2924,7 +2939,7 @@ export const api = {
 
     /** Best-effort save that survives tab close / page unload.
      *
-     * Uses `fetch(..., {keepalive: true})` so the browser completes
+     * Uses `guardedFetch(..., {keepalive: true})` so the browser completes
      * the request after the tab is gone. Does NOT go through the
      * normal `request` helper: keepalive requests cannot be
      * cancelled and we intentionally skip the abort-controller
@@ -2937,7 +2952,7 @@ export const api = {
       data: ChapterUpdatePayload,
     ): void => {
       try {
-        void fetch(`${BASE}/books/${bookId}/chapters/${chapterId}`, {
+        void guardedFetch(`${BASE}/books/${bookId}/chapters/${chapterId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(data),
@@ -3121,7 +3136,7 @@ export const api = {
     ): Promise<Asset> => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(
+      const res = await guardedFetch(
         `${BASE}/books/${bookId}/assets?asset_type=${assetType}`,
         { method: "POST", body: formData },
       );
@@ -3149,7 +3164,7 @@ export const api = {
     ): Promise<CoverUploadResponse> => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${BASE}/books/${bookId}/cover`, {
+      const res = await guardedFetch(`${BASE}/books/${bookId}/cover`, {
         method: "POST",
         body: formData,
       });
@@ -3184,7 +3199,7 @@ export const api = {
     ): Promise<void> => {
       const query = params.toString();
       const url = `${BASE}/books/${bookId}/export/${format}${query ? `?${query}` : ""}`;
-      const res = await fetch(url, { method: "GET" });
+      const res = await guardedFetch(url, { method: "GET" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
@@ -3233,7 +3248,7 @@ export const api = {
         params.set("generation_mode", generationMode);
       const qs = params.toString();
       const url = `${BASE}/books/${bookId}/export/async/audiobook${qs ? `?${qs}` : ""}`;
-      const res = await fetch(url, { method: "POST" });
+      const res = await guardedFetch(url, { method: "POST" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
@@ -3289,7 +3304,7 @@ export const api = {
     ): Promise<GoogleCloudTTSUploadResponse> => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${BASE}/audiobook/config/google-cloud-tts`, {
+      const res = await guardedFetch(`${BASE}/audiobook/config/google-cloud-tts`, {
         method: "POST",
         body: formData,
       });
@@ -3370,7 +3385,7 @@ export const api = {
       chapterTitle: string,
     ): Promise<Blob> => {
       const url = `${BASE}/audiobook/preview`;
-      const res = await fetch(url, {
+      const res = await guardedFetch(url, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -3469,7 +3484,7 @@ export const api = {
     buildPackage: async (
       bookId: string,
     ): Promise<{ blob: Blob; filename: string }> => {
-      const res = await fetch(`${BASE}/kdp/package/${bookId}`, {
+      const res = await guardedFetch(`${BASE}/kdp/package/${bookId}`, {
         method: "POST",
       });
       if (!res.ok) {
@@ -3528,7 +3543,7 @@ export const api = {
       bookId: string,
       reviewerId: string,
     ): Promise<void> => {
-      const res = await fetch(
+      const res = await guardedFetch(
         `${BASE}/kdp/publishing-state/${bookId}/reviewers/${reviewerId}`,
         { method: "DELETE" },
       );
@@ -3587,7 +3602,7 @@ export const api = {
     /** Dry-run: generate a short sample from the first paragraph.
      *  Returns a blob URL for playback + cost estimate from headers. */
     dryRun: async (bookId: string): Promise<DryRunResult> => {
-      const res = await fetch(`${BASE}/books/${bookId}/audiobook/dry-run`, {
+      const res = await guardedFetch(`${BASE}/books/${bookId}/audiobook/dry-run`, {
         method: "POST",
       });
       if (!res.ok) {
@@ -3679,7 +3694,7 @@ export const api = {
     ): Promise<{ imported_books: number; imported_articles?: number }> => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${BASE}/backup/import`, {
+      const res = await guardedFetch(`${BASE}/backup/import`, {
         method: "POST",
         body: formData,
       });
@@ -3700,7 +3715,7 @@ export const api = {
       const formData = new FormData();
       formData.append("file_a", fileA);
       formData.append("file_b", fileB);
-      const res = await fetch(`${BASE}/backup/compare`, {
+      const res = await guardedFetch(`${BASE}/backup/compare`, {
         method: "POST",
         body: formData,
       });
@@ -3859,7 +3874,7 @@ export const api = {
     }> => {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch(`${BASE}/plugins/install`, {
+      const res = await guardedFetch(`${BASE}/plugins/install`, {
         method: "POST",
         body: formData,
       });
@@ -3899,7 +3914,7 @@ export const api = {
   },
 
   /** Medium-import plugin client. The importZip helper is the only
-   *  XHR-based call in the codebase; XHR is required because fetch()
+   *  XHR-based call in the codebase; XHR is required because guardedFetch()
    *  does not expose upload-progress events and Medium archives can
    *  be large enough that a determinate progress bar matters. */
   mediumImport: {
@@ -4195,7 +4210,7 @@ export const api = {
      *  Content-Disposition header. */
     exportJson: async (id: string): Promise<void> => {
       const url = `${BASE}/chapter-templates/${id}/export`;
-      const res = await fetch(url, { method: "GET" });
+      const res = await guardedFetch(url, { method: "GET" });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
@@ -4227,7 +4242,7 @@ export const api = {
       const formData = new FormData();
       formData.append("file", file);
       const url = `${BASE}/chapter-templates/import`;
-      const res = await fetch(url, { method: "POST", body: formData });
+      const res = await guardedFetch(url, { method: "POST", body: formData });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));
         throw new ApiError(
