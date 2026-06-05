@@ -107,3 +107,24 @@ CHANGELOG); tag is gated on Aster's offline-E2E confirmation (Pre-Release Gate).
   in dexie mode. The seam covers books/chapters/articles/settings/i18n/bookTypes/
   contentTypes/writingSessions only — everything else stays on `api` and must be
   gated offline.
+
+## Update — post-v0.47.0 (empty-dropdowns fix + rules)
+
+- **v0.47.0 released + deployed.** Tag + GitHub Release live; both Pages sites
+  serving v0.47.0 (verified the live bundle).
+- **Empty-dropdowns bug (issue #32) fixed + deployed** (`2b8eb1c7`). Root cause:
+  `getStorage()` is sync but DexieStorage is lazy-loaded, so the one-shot
+  type/i18n/settings providers raced the import at mount, fell back to
+  ApiStorage (rejected offline), and never retried → Settings Verhalten
+  default-type dropdowns empty. Fix: preload DexieStorage before first render
+  when explicit dexie mode is set; skip `verifyBackendVersion()`'s `/api/health`
+  on the forced-offline build. Offline E2E 5/5 green, zero `/api`.
+- **Stale Service Worker** is the reason older reports showed v0.46.0 firing
+  `/api` 404s: users must clear the SW once (DevTools > Application > SW >
+  Unregister + Clear site data) to leave the pre-offline cached build.
+- **Rules synced from adaptive-learner** (`e15268dd`): issue discipline,
+  TOUCH-TARGETS, DEXIE-MODE-REGEL, BACKUP-PARITY-PIN; `needs-repro` label added.
+- **Two conflicts adjudicated** (2026-06-05): FUNKTION-NICHT-VERFUEGBAR
+  overridden (keep disable+explain); CSS-first replaced by Tailwind-first.
+- **Next:** v0.47.1 patch (the dropdown + E2E fixes), gated on Aster's offline
+  smoke confirmation before tagging.
