@@ -172,7 +172,6 @@ export default function BookEditor() {
   // (404) when the plugin is disabled; in that case the panel +
   // toggle stay hidden.
   useEffect(() => {
-    // Story Bible is a backend plugin; unavailable offline (no probe call).
     if (offlineGate) {
       setStoryBibleAvailable(false);
       return;
@@ -298,7 +297,7 @@ export default function BookEditor() {
   }, [bookId, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshGitSync = useCallback(async () => {
-    if (!bookId || offlineGate) return; // git is backend-only
+    if (!bookId || offlineGate) return;
     try {
       const sync = await api.git.syncStatus(bookId);
       setGitSyncState(sync.state);
@@ -309,7 +308,7 @@ export default function BookEditor() {
   }, [bookId, offlineGate]);
 
   const refreshGitSyncMapping = useCallback(async () => {
-    if (!bookId || offlineGate) return; // git is backend-only
+    if (!bookId || offlineGate) return;
     try {
       const mapping = await api.gitSync.status(bookId);
       setGitSyncMapped(mapping.mapped);
@@ -743,8 +742,6 @@ export default function BookEditor() {
   // in place of the page-based editor — same URL-routed pattern
   // as the prose flow.
   if (pageableBookTypeIds(bookTypesSnapshot).has(book.book_type)) {
-    // Picture-book / comic editors (api.pages / api.comics) are backend-only
-    // and outside the offline-PWA scope; show the desktop-app notice offline.
     if (offlineGate) {
       return <OfflineFeatureNotice testId="book-editor-offline" />;
     }

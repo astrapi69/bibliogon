@@ -79,7 +79,6 @@ export default function ChapterOutliner({
     }, [bookId])
 
     const loadLabels = useCallback(() => {
-        // Chapter labels are backend-only; empty offline (no dead /api call).
         if (getStorage().mode === "dexie") { setLabels([]); return }
         api.chapterLabels.list(bookId).then(setLabels).catch(() => setLabels([]))
     }, [bookId])

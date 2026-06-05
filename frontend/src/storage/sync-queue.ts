@@ -95,7 +95,11 @@ const asPayload = (v: unknown): Record<string, unknown> =>
 
 /** Wrap a storage backend so every WRITE also records a queue entry.
  *  Reads delegate straight through. Used for the offline (Dexie)
- *  backend; the API backend is never wrapped. */
+ *  backend; the API backend is never wrapped.
+ *
+ *  Settings and reference data (settings, i18n, bookTypes, contentTypes,
+ *  writingSessions) delegate straight through without a queue entry: in
+ *  offline mode their writes are local-only (no server to sync them to yet). */
 export function makeQueueingStorage(base: IStorageService): IStorageService {
   return {
     mode: base.mode,
@@ -158,9 +162,6 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         await enqueue("article", "delete", id, null, null);
       },
     },
-    // Settings + reference data: settings.updateApp is a local-only write
-    // in offline mode (no server to sync settings to yet), so all of these
-    // delegate straight through without a queue entry.
     settings: base.settings,
     i18n: base.i18n,
     bookTypes: base.bookTypes,

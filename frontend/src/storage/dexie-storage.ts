@@ -111,8 +111,6 @@ class BibliogonOfflineDB extends Dexie {
   writingSessions!: Table<GraphRow, string>;
   syncQueue!: Table<SyncQueueEntry, number>;
   syncBaselines!: Table<SyncBaseline, string>;
-  // Offline reference data (Track B): app settings + type registries +
-  // plugin metadata (single-row blobs) and per-language i18n catalogs.
   appSettings!: Table<KeyedBlob<Record<string, unknown>>, string>;
   i18nCatalogs!: Table<I18nCatalogRow, string>;
   bookTypesRef!: Table<KeyedBlob<Record<string, BookTypeDef>>, string>;
@@ -490,12 +488,15 @@ export const dexieStorage: IStorageService = {
       return (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
     },
 
+    /**
+     * Apply a settings patch with a shallow per-section merge, mirroring the
+     * backend PATCH semantics (`current.setdefault(section, {}).update(...)`):
+     * object sections merge key-by-key, scalars replace.
+     */
     updateApp: async (patch) => {
       await ensureSeeded();
       const row = await offlineDb.appSettings.get(SETTINGS_KEY);
       const current = (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
-      // Shallow per-section merge, mirroring the backend PATCH semantics
-      // (current.setdefault(section, {}).update(body[section])).
       const merged: Record<string, unknown> = { ...current };
       for (const [key, value] of Object.entries(patch)) {
         const prev = merged[key];
@@ -542,8 +543,10 @@ export const dexieStorage: IStorageService = {
   },
 
   writingSessions: {
-    // No server-derived writing history offline; return empty so the
-    // writing-history page renders its empty state (no dead /api call).
+    /**
+     * Writing history is server-computed; offline it returns empty so the
+     * writing-history page renders its empty state.
+     */
     list: async (_days = 30) => {
       void _days;
       return [] as WritingSession[];

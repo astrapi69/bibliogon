@@ -1631,6 +1631,9 @@ function isBackendlessOffline(): boolean {
  * already `.catch` + degrade, their UI triggers are gated, and the storage
  * seam (DexieStorage) never reaches this path. Auto-covers any future api.*
  * call that forgets the seam.
+ *
+ * `init` is forwarded only when present so the single-argument call shape that
+ * some callers and tests rely on is preserved exactly.
  */
 export function guardedFetch(
   input: string,
@@ -1646,8 +1649,6 @@ export function guardedFetch(
       ),
     );
   }
-  // Preserve the exact call shape (some callers + tests rely on a single
-  // argument): only forward `init` when present.
   return init === undefined
     ? globalThis.fetch(input)
     : globalThis.fetch(input, init);

@@ -47,7 +47,7 @@ export function LanAccessSettings() {
   const [info, setInfo] = useState<LanAccessInfo | null>(null);
 
   useEffect(() => {
-    if (offline) return; // LAN is backend-only; no dead /api/lan-auth call
+    if (offline) return;
     let cancelled = false;
     api.lanAuth
       .info()

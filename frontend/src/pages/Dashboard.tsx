@@ -57,8 +57,6 @@ export default function Dashboard() {
     const bookTypesSnapshot = useBookTypes();
     const {openHelp} = useHelp();
     const {t} = useI18n();
-    // Offline (Dexie/GitHub-Pages) gate: backend-only features (.bgb
-    // backup/export, import) are disabled with a "needs desktop app" hint.
     const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
     const {theme, toggle: toggleTheme} = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
@@ -345,7 +343,7 @@ export default function Dashboard() {
     };
 
     const loadTrash = async () => {
-        if (offlineGate) return; // no server-side trash offline
+        if (offlineGate) return;
         try {
             const data = await api.books.listTrash();
             setTrash(data);
@@ -466,7 +464,7 @@ export default function Dashboard() {
     };
 
     const handleBackupExport = () => {
-        if (offlineGate) return; // no backend to produce the .bgb
+        if (offlineGate) return;
         window.open(api.backup.exportUrl(), "_blank");
     };
 

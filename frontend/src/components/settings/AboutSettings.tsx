@@ -57,8 +57,6 @@ export function AboutSettings({ appConfig }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    // system.info() is backend-only; skip it offline (no dead /api call).
-    // The plugin list comes from the storage seam (seeded offline).
     const offline = getStorage().mode === "dexie";
     const systemInfoP = offline
       ? Promise.resolve<SystemInfo | null>(null)

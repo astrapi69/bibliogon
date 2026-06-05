@@ -49,7 +49,7 @@ export default function GitSyncPage() {
   const [showDiff, setShowDiff] = useState(false);
 
   useEffect(() => {
-    if (offline) return; // Git is backend-only; skip the mount fetch offline
+    if (offline) return;
     void refresh();
     // Reset transient form state when the page mounts for a different
     // book; preserves last commit result during the same session.

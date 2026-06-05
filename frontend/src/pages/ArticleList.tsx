@@ -389,12 +389,12 @@ export default function ArticleList() {
      *  separately). Articles dashboard exposes the action so users
      *  do not have to navigate to the books dashboard to trigger it. */
     const handleBackupExport = () => {
-        if (offlineGate) return; // no backend to produce the .bgb
+        if (offlineGate) return;
         window.open(api.backup.exportUrl(), "_blank");
     };
 
     const loadTrash = async () => {
-        if (offlineGate) return; // no server-side trash offline
+        if (offlineGate) return;
         try {
             const rows = await api.articles.listTrash();
             setTrash(rows);

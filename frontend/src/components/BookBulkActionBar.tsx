@@ -67,7 +67,6 @@ export default function BookBulkActionBar({
     t,
 }: Props) {
     const [format, setFormat] = useState<BookBulkExportFormat>("epub")
-    // Export + AI are backend-only -> disabled in offline (Dexie) mode.
     const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
 
     const overLimit = count > BOOK_BULK_LIMIT_HARD

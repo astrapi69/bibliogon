@@ -38,13 +38,9 @@ BACKEND_DIR = REPO_ROOT / "backend"
 CONFIG_DIR = BACKEND_DIR / "config"
 SEED_DIR = REPO_ROOT / "frontend" / "src" / "storage" / "seed"
 
-# Mirrors backend/config/i18n/*.yaml (8 catalogs).
 LANGS = ["de", "en", "es", "fr", "el", "pt", "tr", "ja"]
-# Standard always-visible plugins (premium/licensed plugins are hidden until
-# licensed and are not seeded).
 VISIBLE_PLUGINS = ["export", "help", "getstarted"]
 
-# Make ``app.*`` importable for the registry loaders.
 sys.path.insert(0, str(BACKEND_DIR))
 
 
@@ -75,14 +71,18 @@ def generate_i18n() -> None:
 
 
 def generate_settings() -> None:
+    """Emit the offline settings seed from app.yaml.
+
+    Blanks the AI api_key so no secret ships in the committed seed, and adds
+    the ``_secrets_managed_externally`` flag the getApp endpoint injects so the
+    seed matches the API response shape.
+    """
     config = _load_yaml(CONFIG_DIR / "app.yaml")
     if not isinstance(config, dict):
         raise SystemExit("ERROR: app.yaml did not parse to a mapping")
-    # Never ship secrets in a committed seed file.
     ai = config.get("ai")
     if isinstance(ai, dict) and "api_key" in ai:
         ai["api_key"] = ""
-    # The getApp endpoint injects this flag; mirror it for shape parity.
     config["_secrets_managed_externally"] = False
     _write_json("seed-settings.json", config)
 

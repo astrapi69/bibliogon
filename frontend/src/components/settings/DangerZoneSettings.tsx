@@ -181,7 +181,7 @@ export function DangerZoneSettings() {
     }, [navigate, resetText, state, t, token]);
 
     const handleBackupClick = useCallback(() => {
-        if (offlineGate) return; // no backend to produce the .bgb
+        if (offlineGate) return;
         // Triggers a download via the existing backup-export URL.
         // Opening in a new tab + immediately closing is the
         // standard browser idiom for "save this file" without

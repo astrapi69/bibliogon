@@ -38,7 +38,6 @@ export default function ArticleCommentsPanel({articleId}: Props) {
     const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
-        // Imported comments are backend-only; empty offline (no /api call).
         if (getStorage().mode === "dexie") {
             setComments([]);
             return;

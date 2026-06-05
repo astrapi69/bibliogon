@@ -92,7 +92,6 @@ export default function ArticleBulkActionBar({
     const [format, setFormat] = useState<BulkExportFormat>("markdown")
     const [mode, setMode] = useState<BulkExportMode>("zip")
 
-    // Export + AI are backend-only -> disabled in offline (Dexie) mode.
     const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
 
     const overLimit = count > BULK_LIMIT_HARD

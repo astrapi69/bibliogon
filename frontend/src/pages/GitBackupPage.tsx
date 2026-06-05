@@ -55,7 +55,7 @@ export default function GitBackupPage() {
   >({});
 
   useEffect(() => {
-    if (offline) return; // Git is backend-only; skip the mount fetch offline
+    if (offline) return;
     void refresh();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookId, offline]);

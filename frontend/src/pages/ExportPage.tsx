@@ -26,8 +26,6 @@ export default function ExportPage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Export is backend-only (Pandoc) - on the offline build skip the
-        // mount fetch so no dead /api request fires; the body shows a notice.
         if (offline) {
             setLoading(false);
             return;

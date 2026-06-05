@@ -109,8 +109,6 @@ export default function Settings() {
         // Render the forms now (with the loaded config, or with defaults
         // if the load failed — better degraded than hung).
         setAppLoaded(true);
-        // Plugin settings/config are backend-only (no server offline);
-        // skip the call in Dexie mode so it doesn't fire a dead /api 404.
         if (getStorage().mode === "dexie") return;
         try {
             const plugins = await api.settings.listPlugins();

@@ -99,8 +99,6 @@ export default function ArticleEditor() {
     // auto-save-on-keystroke rationale (see consumer site below).
     const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
     useEffect(() => {
-        // Authors DB is backend-only; offline the suggestions just come
-        // from the local profile names (no dead /api/authors call).
         if (getStorage().mode === "dexie") return;
         let cancelled = false;
         api.authors

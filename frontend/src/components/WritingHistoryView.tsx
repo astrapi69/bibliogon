@@ -45,7 +45,7 @@ export default function WritingHistoryView() {
   const [chapters, setChapters] = useState<WritingChapterStats[] | null>(null);
 
   const reload = useCallback(async () => {
-    if (offline) return; // writing stats are server-computed; none offline
+    if (offline) return;
     setLoading(true);
     setExpandedBook(null);
     setChapters(null);
