@@ -32,6 +32,7 @@ import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal
 import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { BookOpen, Menu, Plus } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
@@ -79,6 +80,7 @@ export default function BookEditor() {
   const navigate = useNavigate();
   const dialog = useDialog();
   const { t } = useI18n();
+  const { offline: offlineGate } = useOfflineFeatureGate();
   const bookTypesSnapshot = useBookTypes();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   // Story Bible (plugin-story-bible). Availability is probed once
@@ -290,7 +292,7 @@ export default function BookEditor() {
   }, [bookId, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refreshGitSync = useCallback(async () => {
-    if (!bookId) return;
+    if (!bookId || offlineGate) return; // git is backend-only
     try {
       const sync = await api.git.syncStatus(bookId);
       setGitSyncState(sync.state);
@@ -298,10 +300,10 @@ export default function BookEditor() {
       // Non-fatal: repo may not be initialized yet.
       setGitSyncState(null);
     }
-  }, [bookId]);
+  }, [bookId, offlineGate]);
 
   const refreshGitSyncMapping = useCallback(async () => {
-    if (!bookId) return;
+    if (!bookId || offlineGate) return; // git is backend-only
     try {
       const mapping = await api.gitSync.status(bookId);
       setGitSyncMapped(mapping.mapped);
@@ -311,7 +313,7 @@ export default function BookEditor() {
       // hide the button rather than spam toasts.
       setGitSyncMapped(false);
     }
-  }, [bookId]);
+  }, [bookId, offlineGate]);
 
   // Bootstrap effect: load book + app settings + book list.
   //
