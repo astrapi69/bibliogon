@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogon/docs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.46.0**
+**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.46.0**
 
 ## Story Bible
 
@@ -181,7 +181,7 @@ See [CLAUDE.md](CLAUDE.md) for full development documentation.
 The documentation is available in two forms:
 
 - **In-App:** Click the help icon in the navigation bar to open the slide-over help panel with search, navigation tree, and Markdown rendering.
-- **Online:** [astrapi69.github.io/bibliogon/docs](https://astrapi69.github.io/bibliogon/docs/) - MkDocs Material site with full-text search, light/dark mode, and i18n. (The site root, [astrapi69.github.io/bibliogon](https://astrapi69.github.io/bibliogon/), hosts the Bibliogon web app itself.)
+- **Online:** [astrapi69.github.io/bibliogondocs](https://astrapi69.github.io/bibliogondocs/) - MkDocs Material site with full-text search, light/dark mode, and i18n. (The Bibliogon web app itself is hosted separately at [astrapi69.github.io/bibliogon](https://astrapi69.github.io/bibliogon/).)
 
 Both read from the same Markdown files in `docs/help/`. To build the docs locally:
 

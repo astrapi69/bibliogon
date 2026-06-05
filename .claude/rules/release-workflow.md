@@ -434,10 +434,16 @@ When the help system with MkDocs is set up:
 
 - A GitHub Action triggers automatically on push to main
 - No manual step
-- Verify: https://astrapi69.github.io/bibliogon/docs/ shows the new content
-  (the site root https://astrapi69.github.io/bibliogon/ now hosts the
-  frontend web app; the docs live under `/docs/`)
-- Check the action status: `gh run list --workflow=deploy-pages.yml --limit=1`
+- The docs deploy to a SEPARATE repo, `astrapi69/bibliogondocs`, whose
+  GitHub Pages site is served at https://astrapi69.github.io/bibliogondocs/.
+  The `bibliogon` repo's own Pages site (https://astrapi69.github.io/bibliogon/)
+  hosts the frontend web app instead. (A GitHub Pages project site is
+  always served at `<user>.github.io/<repo-name>/`, so the only way to
+  get the docs onto a distinct `/bibliogondocs/` path is a distinct repo.)
+- Verify: https://astrapi69.github.io/bibliogondocs/ shows the new content
+- Check the action status: `gh run list --workflow=deploy-docs.yml --limit=1`
+  (builds the MkDocs site and publishes it to the bibliogondocs repo;
+  the app deploy is `deploy-pages.yml`)
   (the combined frontend+docs Pages deploy; replaced the old `docs.yml`)
 
 On a failed deploy: pull the error from the action logs and fix it,
