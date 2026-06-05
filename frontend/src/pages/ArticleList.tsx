@@ -31,6 +31,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { useOverflowCollapse } from "../hooks/useOverflowCollapse";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
@@ -73,7 +74,7 @@ import { EmptyState } from "../components/EmptyState";
 
 export default function ArticleList() {
     const navigate = useNavigate();
-    const { t } = useI18n();
+    const { t, lang } = useI18n();
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -118,6 +119,12 @@ export default function ArticleList() {
     const newArticleHref = hasSpecificDefaultContentType
         ? `/articles/new?type=${defaultContentType}`
         : "/articles/new";
+    // MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01: content-aware collapse so the
+    // Article-Dashboard header never wraps (resolves ARTICLE-HEADER-900PX-
+    // WRAP-01). Re-measures on [lang, newArticleLabel] - the language switch
+    // and default-content-type label triggers - plus the ResizeObserver.
+    const {containerRef, primaryRef, contentRef, collapsed} =
+        useOverflowCollapse([lang, newArticleLabel]);
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
     // active (non-trash) article list. Slices ``filters.filteredArticles``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -668,7 +675,7 @@ export default function ArticleList() {
                         <BookOpen size={28} strokeWidth={1.5} />
                         <h1 className={layout.logoText}>Bibliogon</h1>
                     </div>
-                    <div className={layout.headerActions}>
+                    <div className={layout.headerActions} ref={containerRef}>
                         {/* ARTICLE-TYPES-SSOT-01 C5 (2026-05-29):
                          *  shared SplitButton primitive (extracted in
                          *  C4) replaces the plain "Neuer Artikel"
@@ -679,6 +686,7 @@ export default function ArticleList() {
                          *  shape exactly. Testid pattern follows the
                          *  ``new-book-menu-item-*`` convention from
                          *  the Book Dashboard side. */}
+                        <div ref={primaryRef} className={layout.headerCollapsible}>
                         <SplitButton
                             buttonClass="btn btn-primary"
                             variant="primary"
@@ -731,36 +739,39 @@ export default function ArticleList() {
                             chevronTestId="new-article-chevron"
                             itemTestIdPrefix="new-article-menu-item"
                         />
-                        <NewFromTemplateButton
-                            kind="article"
-                            defaultLanguage="de"
-                            triggerClassName="btn btn-secondary btn-sm hide-mobile"
-                            triggerTestId="article-list-new-from-template"
-                            onCreated={(created) => navigate(`/articles/${created.id}`)}
-                        />
-                        {/* Symmetric cross-nav to Books dashboard.
-                            Mirrors the ``articles-nav-btn`` button in
-                            Dashboard.tsx (text-only, hide-mobile,
-                            secondary). */}
-                        <button
-                            className="btn btn-secondary btn-sm hide-mobile"
-                            data-testid="books-nav-btn"
-                            onClick={() => navigate("/")}
-                            title={t("ui.dashboard.books_nav_tooltip", "Bücher verwalten")}
-                        >
-                            {t("ui.dashboard.books_nav", "Bücher")}
-                        </button>
+                        </div>
 
-                        {/* Desktop chrome: every icon button + ThemeToggle.
-                            Hidden under 768px; the hamburger menu below
-                            takes over on mobile. Structure mirrors
-                            Dashboard.tsx so the top-nav layout doesn't
-                            jump when switching between the two
-                            dashboards. */}
+                        {/* Secondary cluster: collapses into the hamburger as
+                         *  ONE unit when it would not fit (useOverflowCollapse).
+                         *  When collapsed it stays in the DOM but out of flow
+                         *  (overflow-measure-hidden); the hamburger renders in
+                         *  its place. Mirrors Dashboard.tsx. */}
                         <div
-                            className="hide-mobile"
-                            style={{ display: "flex", alignItems: "center", gap: 6 }}
+                            ref={contentRef}
+                            className={
+                                collapsed
+                                    ? `${layout.headerCollapsible} overflow-measure-hidden`
+                                    : layout.headerCollapsible
+                            }
+                            data-testid="article-header-inline-actions"
+                            aria-hidden={collapsed}
                         >
+                            <NewFromTemplateButton
+                                kind="article"
+                                defaultLanguage="de"
+                                triggerClassName="btn btn-secondary btn-sm"
+                                triggerTestId="article-list-new-from-template"
+                                onCreated={(created) => navigate(`/articles/${created.id}`)}
+                            />
+                            {/* Symmetric cross-nav to Books dashboard. */}
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="books-nav-btn"
+                                onClick={() => navigate("/")}
+                                title={t("ui.dashboard.books_nav_tooltip", "Bücher verwalten")}
+                            >
+                                {t("ui.dashboard.books_nav", "Bücher")}
+                            </button>
                             {/* Symmetric separator before the action
                                 cluster — Book Dashboard ships the same
                                 separator at the same position. */}
@@ -892,14 +903,15 @@ export default function ArticleList() {
                             <ThemeToggle />
                         </div>
 
-                        {/* Mobile: hamburger menu collapses every desktop
-                            icon button into one Radix DropdownMenu so the
-                            Articles header degrades like the Dashboard
-                            does at <=768px. */}
+                        {/* Overflow: hamburger menu, rendered only when the
+                            secondary cluster does not fit on one line
+                            (useOverflowCollapse). Same DropdownMenu the
+                            <=768px breakpoint used to drive. */}
+                        {collapsed && (
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                                 <button
-                                    className="btn-icon show-mobile-only"
+                                    className="btn-icon"
                                     data-testid="article-list-mobile-menu"
                                     aria-label={t("ui.dashboard.menu", "Menü")}
                                 >
@@ -962,6 +974,7 @@ export default function ArticleList() {
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
+                        )}
                     </div>
                 </div>
             </header>

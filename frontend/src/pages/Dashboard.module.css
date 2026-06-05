@@ -49,8 +49,24 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    flex-wrap: wrap;
+    /* Never wrap. The single-line guarantee is enforced by collapsing the
+     * secondary cluster into the hamburger (useOverflowCollapse) rather than
+     * reflowing onto a second line. flex:1 + min-width:0 make clientWidth
+     * equal the available width so the hook can re-expand; overflow:hidden
+     * clips the out-of-flow measurement node; position:relative contains it. */
+    flex: 1 1 auto;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
+    position: relative;
     justify-content: flex-end;
+}
+
+.headerCollapsible {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .headerSeparator {

@@ -47,17 +47,15 @@ async function headerHeightAt(
 }
 
 test.describe("AD-HEADER-SINGLE-LINE-01", () => {
-    // KNOWN ISSUE (ARTICLE-HEADER-900PX-WRAP-01): with this robust
-    // width-relative assertion, the German (default-locale) Article-Dashboard
-    // header genuinely WRAPS at 900px — it is ~71px single-line at 1440px but
-    // ~97px at 900px (a wrapped row). This is a pre-existing responsive layout
-    // issue in the article-list header cluster (long German labels:
-    // "Neuer Artikel" SplitButton + Import chevron + view toggle), NOT a test
-    // artifact and NOT introduced by v0.45.0. The old absolute `<80px` pin
-    // masked it because it false-positived on every width in this font env.
-    // fixme until the header cluster is tightened to fit single-line at 900px
-    // (or the supported-width floor is officially raised to 1024px).
-    test.fixme(
+    // RESOLVED by MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01 (2026-06-05).
+    // ARTICLE-HEADER-900PX-WRAP-01 used to wrap the German (default,
+    // widest-label) header at 900px. The header now NEVER wraps: the
+    // secondary cluster collapses into the hamburger (useOverflowCollapse,
+    // content-aware so it also fires on the language / default-type label
+    // triggers). German is the active locale here, i.e. the worst case, so
+    // this is the language-trigger single-line pin. It FAILS on the pre-fix
+    // code (the bar wrapped to ~2 rows at 900px) and PASSES after.
+    test(
         "Article-Dashboard header stays single-line at 900px",
         async ({page}) => {
             await page.goto("/articles");
@@ -67,6 +65,44 @@ test.describe("AD-HEADER-SINGLE-LINE-01", () => {
             expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
         },
     );
+
+    // Proves the bar COLLAPSED to the hamburger (rather than wrapped or
+    // clipped) at the width where German overflows: the hamburger trigger is
+    // present AND the inline secondary cluster is not rendered inline.
+    test("collapses to the hamburger at 900px, not a second row", async ({
+        page,
+    }) => {
+        await page.setViewportSize({width: 900, height: 800});
+        await page.goto("/articles");
+        await expect(page.getByTestId("article-list-page")).toBeVisible();
+        // Overflow trigger present...
+        await expect(
+            page.getByTestId("article-list-mobile-menu"),
+        ).toBeVisible();
+        // ...and the inline secondary cluster is collapsed (out of flow),
+        // so a representative inline-only control is not visible inline.
+        await expect(page.getByTestId("books-nav-btn")).toBeHidden();
+        // The collapsed actions are reachable from the hamburger.
+        await page.getByTestId("article-list-mobile-menu").click();
+        await expect(
+            page.getByTestId("article-list-mobile-menu-books"),
+        ).toBeVisible();
+        await page.keyboard.press("Escape");
+    });
+
+    // The mirror of the collapse pin: at a generous width the full bar is
+    // inline and the hamburger is absent (proves the bar re-expands).
+    test("shows the full inline bar (no hamburger) at 1440px", async ({
+        page,
+    }) => {
+        await page.setViewportSize({width: REFERENCE_WIDTH, height: 800});
+        await page.goto("/articles");
+        await expect(page.getByTestId("article-list-page")).toBeVisible();
+        await expect(page.getByTestId("books-nav-btn")).toBeVisible();
+        await expect(
+            page.getByTestId("article-list-mobile-menu"),
+        ).toHaveCount(0);
+    });
 
     test("header stays single-line at 1024px too", async ({page}) => {
         await page.goto("/articles");

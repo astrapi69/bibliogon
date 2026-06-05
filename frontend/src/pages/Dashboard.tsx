@@ -29,7 +29,7 @@ import SplitButton, {type SplitButtonDropdownItem} from "../components/SplitButt
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
     Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, SlidersHorizontal,
+    Menu, Search, SlidersHorizontal, FileText,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
@@ -42,6 +42,7 @@ import {Moon, Sun} from "lucide-react";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
+import {useOverflowCollapse} from "../hooks/useOverflowCollapse";
 import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
@@ -55,7 +56,7 @@ export default function Dashboard() {
     const dialog = useDialog();
     const bookTypesSnapshot = useBookTypes();
     const {openHelp} = useHelp();
-    const {t} = useI18n();
+    const {t, lang} = useI18n();
     const {theme, toggle: toggleTheme} = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
@@ -95,6 +96,14 @@ export default function Dashboard() {
     const newBookLabel = newBookTitleKey
         ? t(newBookTitleKey, newBookFallbackLabel)
         : newBookFallbackLabel;
+    // MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01: the header bar never wraps;
+    // when the secondary cluster would not fit it collapses into the
+    // hamburger. Content-aware (not a media query) so it also fires on the
+    // two reported triggers - language switch and default-type label change
+    // - which widen labels at a fixed viewport. Re-measures on [lang,
+    // newBookLabel] (label width) plus the container ResizeObserver.
+    const {containerRef, primaryRef, contentRef, collapsed} =
+        useOverflowCollapse([lang, newBookLabel]);
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.books_trash_view``). In-trash toggles
     // are session-local (no YAML write); persistence is only via the
@@ -467,13 +476,13 @@ export default function Dashboard() {
     return (
         <div className={styles.container}>
             {/* Header */}
-            <header className={styles.header}>
+            <header className={styles.header} data-testid="dashboard-header">
                 <div className={styles.headerInner}>
                     <div className={styles.logo} onClick={() => navigate("/")} role="button" title="Dashboard">
                         <BookOpen size={28} strokeWidth={1.5}/>
                         <h1 className={styles.logoText}>Bibliogon</h1>
                     </div>
-                    <div className={styles.headerActions}>
+                    <div className={styles.headerActions} ref={containerRef}>
                         {/* Always visible. Split-button: the primary
                          *  click keeps the existing 'new prose book'
                          *  flow (testid 'new-book-btn' preserved for
@@ -492,6 +501,7 @@ export default function Dashboard() {
                          *  new-book-chevron / new-book-menu-item-*)
                          *  so E2E specs keep working without
                          *  modification. */}
+                        <div ref={primaryRef} className={styles.headerCollapsible}>
                         <SplitButton
                             buttonClass="btn btn-primary"
                             variant="primary"
@@ -545,24 +555,38 @@ export default function Dashboard() {
                             chevronTestId="new-book-chevron"
                             itemTestIdPrefix="new-book-menu-item"
                         />
-                        <NewFromTemplateButton
-                            kind="book"
-                            defaultLanguage="de"
-                            triggerClassName="btn btn-secondary btn-sm hide-mobile"
-                            triggerTestId="new-book-from-template-btn"
-                            onCreated={(created) => navigate(`/books/${created.id}`)}
-                        />
-                        <button
-                            className="btn btn-secondary btn-sm hide-mobile"
-                            data-testid="articles-nav-btn"
-                            onClick={() => navigate("/articles")}
-                            title={t("ui.dashboard.articles_nav_tooltip", "Artikel verwalten")}
-                        >
-                            {t("ui.dashboard.articles_nav", "Artikel")}
-                        </button>
+                        </div>
 
-                        {/* Desktop: inline buttons */}
-                        <div className="hide-mobile" style={{display: "flex", alignItems: "center", gap: 6}}>
+                        {/* Secondary cluster: collapses into the hamburger as
+                         *  ONE unit when it would not fit (useOverflowCollapse).
+                         *  When collapsed it stays in the DOM but out of flow
+                         *  (overflow-measure-hidden) so the hook can re-expand;
+                         *  the hamburger below renders in its place. */}
+                        <div
+                            ref={contentRef}
+                            className={
+                                collapsed
+                                    ? `${styles.headerCollapsible} overflow-measure-hidden`
+                                    : styles.headerCollapsible
+                            }
+                            data-testid="dashboard-header-inline-actions"
+                            aria-hidden={collapsed}
+                        >
+                            <NewFromTemplateButton
+                                kind="book"
+                                defaultLanguage="de"
+                                triggerClassName="btn btn-secondary btn-sm"
+                                triggerTestId="new-book-from-template-btn"
+                                onCreated={(created) => navigate(`/books/${created.id}`)}
+                            />
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="articles-nav-btn"
+                                onClick={() => navigate("/articles")}
+                                title={t("ui.dashboard.articles_nav_tooltip", "Artikel verwalten")}
+                            >
+                                {t("ui.dashboard.articles_nav", "Artikel")}
+                            </button>
                             <div className={styles.headerSeparator}/>
                             <button
                                 className="btn btn-secondary btn-sm"
@@ -607,11 +631,14 @@ export default function Dashboard() {
                             <ThemeToggle/>
                         </div>
 
-                        {/* Mobile: hamburger menu */}
+                        {/* Overflow: hamburger menu, rendered only when the
+                         *  secondary cluster does not fit on one line. */}
+                        {collapsed && (
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                                 <button
-                                    className="btn-icon show-mobile-only"
+                                    className="btn-icon"
+                                    data-testid="dashboard-hamburger"
                                     aria-label={t("ui.dashboard.menu", "Menü")}
                                 >
                                     <Menu size={20}/>
@@ -619,6 +646,19 @@ export default function Dashboard() {
                             </DropdownMenu.Trigger>
                             <DropdownMenu.Portal>
                                 <DropdownMenu.Content className="hamburger-menu-content" align="end" sideOffset={4}>
+                                    {/* Cross-nav to the Article Dashboard.
+                                     *  Mirrors the "Bücher" item in the
+                                     *  ArticleList hamburger so the collapsed
+                                     *  menu carries the same actions as the
+                                     *  inline bar. */}
+                                    <DropdownMenu.Item
+                                        className="hamburger-menu-item"
+                                        data-testid="dashboard-hamburger-articles"
+                                        onSelect={() => navigate("/articles")}
+                                    >
+                                        <FileText size={16}/> {t("ui.dashboard.articles_nav", "Artikel")}
+                                    </DropdownMenu.Item>
+                                    <DropdownMenu.Separator className="hamburger-menu-separator"/>
                                     <DropdownMenu.Item className="hamburger-menu-item" onSelect={handleBackupExport}>
                                         <Download size={16}/> {t("ui.dashboard.backup", "Backup")}
                                     </DropdownMenu.Item>
@@ -647,6 +687,7 @@ export default function Dashboard() {
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
+                        )}
 
                     </div>
                 </div>
