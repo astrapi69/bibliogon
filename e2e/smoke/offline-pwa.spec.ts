@@ -93,11 +93,34 @@ test.describe("Offline PWA (Dexie mode)", () => {
         ).toContainText(/English|Englisch/);
     });
 
-    // NOTE: a full create-book-offline + reload test is deferred until the
-    // book/chapter/article CRUD *call sites* (CreateBookPage, BookEditor,
-    // Dashboard, ArticleList, ...) are routed through getStorage(). They
-    // still call api.* directly today, so book CRUD does not yet resolve to
-    // Dexie. The storage seam + DexieStorage CRUD already exist (Phase 3);
-    // only the call-site wiring remains. Until then this spec verifies the
-    // reference-data + settings layer, which IS routed.
+    test("create a book offline, reload - persisted in Dexie, no CRUD /api", async ({
+        page,
+    }) => {
+        await forceDexie(page);
+        // Fail the test if any book/chapter CRUD endpoint is hit: the create
+        // + list must resolve to Dexie, not the backend.
+        const crudCalls: string[] = [];
+        await page.route("**/api/books**", (route) => {
+            crudCalls.push(route.request().url());
+            return route.abort();
+        });
+
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Offline Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        // Lands in the editor: the book was created in IndexedDB.
+        await expect(page).toHaveURL(/\/book\//, {timeout: 10000});
+
+        // Reload the dashboard from Dexie - the book persists.
+        await page.goto("/");
+        await expect(page.getByTestId("new-book-group")).toBeVisible();
+        await expect(page.getByText("Offline Book")).toBeVisible();
+
+        // The create + list never touched /api/books.
+        expect(
+            crudCalls,
+            `book CRUD hit the backend: ${crudCalls.join(", ")}`,
+        ).toEqual([]);
+    });
 });

@@ -56,6 +56,7 @@ import {
 import { useKeyboardShortcuts, Shortcut } from "./hooks/useKeyboardShortcuts";
 import { useWordWrap } from "./hooks/useWordWrap";
 import { api, ApiError } from "./api/client";
+import { getStorage } from "./storage";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -83,8 +84,8 @@ export default function App() {
 
   useEffect(() => {
     ensureFirstUseDate();
-    api.settings
-      .getApp()
+    getStorage()
+      .settings.getApp()
       .then((config) => {
         if (shouldShowAiWizard(config)) setShowAiWizard(true);
         setSecretsExternal(

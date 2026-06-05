@@ -345,6 +345,7 @@ export default function Dashboard() {
     };
 
     const loadTrash = async () => {
+        if (offlineGate) return; // no server-side trash offline
         try {
             const data = await api.books.listTrash();
             setTrash(data);

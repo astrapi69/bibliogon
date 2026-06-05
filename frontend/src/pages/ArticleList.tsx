@@ -394,6 +394,7 @@ export default function ArticleList() {
     };
 
     const loadTrash = async () => {
+        if (offlineGate) return; // no server-side trash offline
         try {
             const rows = await api.articles.listTrash();
             setTrash(rows);
