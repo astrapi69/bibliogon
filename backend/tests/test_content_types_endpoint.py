@@ -29,7 +29,7 @@ def _clear_cache():
     load_content_types.cache_clear()
 
 
-def test_endpoint_returns_eight_real_content_types() -> None:
+def test_endpoint_returns_nine_real_content_types() -> None:
     with TestClient(app) as client:
         resp = client.get("/api/content-types")
     assert resp.status_code == 200
@@ -43,6 +43,7 @@ def test_endpoint_returns_eight_real_content_types() -> None:
         "interview",
         "listicle",
         "short_story",
+        "article",
     }
 
 
@@ -106,9 +107,7 @@ def test_review_rating_bounds_present_in_response() -> None:
     with TestClient(app) as client:
         resp = client.get("/api/content-types")
     body = resp.json()
-    rating = next(
-        f for f in body["review"]["extra_fields"] if f["name"] == "rating"
-    )
+    rating = next(f for f in body["review"]["extra_fields"] if f["name"] == "rating")
     assert rating["min"] == 1
     assert rating["max"] == 5
 

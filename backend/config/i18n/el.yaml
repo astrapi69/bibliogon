@@ -534,6 +534,8 @@ ui:
     listicle_description: "Δημοσίευση με μορφή λίστας (Top 10, 5 συμβουλές κ.λπ.)."
     short_story: "Διήγημα"
     short_story_description: "Σύντομη, αυτοτελής αφήγηση."
+    article: "Άρθρο"
+    article_description: "Ο γενικός, μη καθορισμένος τύπος άρθρου."
     # Default new-document titles per content type (used by
     # the AD split-button create flow; SSoT key in content-types.yaml).
     blogpost_default_title: "Νέα δημοσίευση blog"

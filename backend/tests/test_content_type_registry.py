@@ -49,7 +49,7 @@ def fake_registry_path(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
 class TestRealRegistry:
     """Sanity tests against the actual content-types.yaml on disk."""
 
-    def test_real_registry_loads_all_eight_types(self) -> None:
+    def test_real_registry_loads_all_nine_types(self) -> None:
         types = load_content_types()
         assert set(types.keys()) == {
             "blogpost",
@@ -60,6 +60,7 @@ class TestRealRegistry:
             "interview",
             "listicle",
             "short_story",
+            "article",
         }
 
     def test_each_type_is_a_validated_ContentTypeDef(self) -> None:
@@ -122,6 +123,7 @@ class TestRealRegistry:
                 "interview",
                 "listicle",
                 "short_story",
+                "article",
             }
         )
 
@@ -272,9 +274,17 @@ class TestCoreFields:
         # type-specific issue_number / send_date extra_fields).
         assert types["newsletter"].core_fields == []
         assert types["short_story"].core_fields == ["tags"]
-        # canonical_url is blogpost-only.
+        # The generic "article" type mirrors blogpost's full core set.
+        assert types["article"].core_fields == [
+            "tags",
+            "excerpt",
+            "seo",
+            "canonical_url",
+            "featured_image",
+        ]
+        # canonical_url is exposed only by blogpost + the generic article.
         for tid, defn in types.items():
-            if tid != "blogpost":
+            if tid not in ("blogpost", "article"):
                 assert "canonical_url" not in (defn.core_fields or [])
 
     def test_valid_core_fields_parse(self, fake_registry_path: Path) -> None:

@@ -534,6 +534,8 @@ ui:
     listicle_description: "リスト形式の投稿(トップ10、5つのヒントなど)。"
     short_story: "短編小説"
     short_story_description: "短く、自己完結した物語。"
+    article: "記事"
+    article_description: "汎用的で種別を特定しない記事タイプ。"
     # Default new-document titles per content type (used by
     # the AD split-button create flow; SSoT key in content-types.yaml).
     blogpost_default_title: "新しいブログ記事"

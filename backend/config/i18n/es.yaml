@@ -534,6 +534,8 @@ ui:
     listicle_description: "Publicacion basada en listas (Top 10, 5 consejos, etc.)."
     short_story: "Cuento corto"
     short_story_description: "Narrativa corta y autonoma."
+    article: "Artículo"
+    article_description: "El tipo de artículo genérico y sin especificar."
     # Default new-document titles per content type (used by
     # the AD split-button create flow; SSoT key in content-types.yaml).
     blogpost_default_title: "Nuevo blog post"

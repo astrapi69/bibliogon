@@ -86,7 +86,8 @@ export type ContentType =
   | "newsletter"
   | "interview"
   | "listicle"
-  | "short_story";
+  | "short_story"
+  | "article";
 
 /** ARTICLE-TYPES-SSOT-01: one per-type extra field declaration
  *  inside ContentTypeDef.extra_fields. The frontend ArticleEditor

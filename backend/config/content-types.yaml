@@ -122,3 +122,13 @@ content_types:
     icon: BookOpen
     core_fields: [tags]
     extra_fields: []
+
+  # The generic, unspecified article type. No type-specific metadata
+  # (like essay). Same core fields as blogpost. NOT the default —
+  # blogpost stays the column + registry default.
+  - id: article
+    label_key: ui.content_types.article
+    description_key: ui.content_types.article_description
+    icon: FileText
+    core_fields: [tags, excerpt, seo, canonical_url, featured_image]
+    extra_fields: []

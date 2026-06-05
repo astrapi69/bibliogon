@@ -1051,6 +1051,7 @@ ContentType = Literal[
     "interview",
     "listicle",
     "short_story",
+    "article",
 ]
 
 
