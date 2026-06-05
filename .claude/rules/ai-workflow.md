@@ -15,6 +15,28 @@ When the user says "continue", "next item", "go on" or similar:
 2. Name the first open item (unchecked checkbox).
 3. Wait for confirmation, do NOT start implementing immediately.
 
+## GitHub issue discipline
+
+Synced from adaptive-learner (2026-06-05). Applies to all agents and all repos.
+
+### Issue-first (GITHUB-ISSUE-PFLICHT)
+
+Every bug and every issue MUST have a GitHub issue BEFORE the fix begins.
+
+- First search whether the issue already exists; do not open a duplicate.
+- No fix without an issue. No commit without an issue reference.
+- This holds even when an agent discovers a bug WHILE working on another
+  bug: open a separate issue for the new finding rather than folding it in
+  silently.
+
+### Issue lifecycle (ISSUE-LIFECYCLE)
+
+Every GitHub issue is closed by its fix commit.
+
+- The commit message or PR body contains `Closes #XX` / `Fixes #XX`.
+- No manual close without a commit reference.
+- No open issue left behind after a merged fix.
+
 ## Order for new features
 
 1. Check whether the feature belongs in a plugin or in the core.

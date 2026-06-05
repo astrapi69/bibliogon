@@ -302,6 +302,60 @@ Chain: BibliogonError -> API response (detail + traceback) -> ApiError -> toast 
 - Surviving mutants in critical code: add tests. In trivial code: ignore.
 - See quality-checks.md for the full test strategy and mutmut configuration.
 
+## Touch targets (TOUCH-TARGETS)
+
+Synced from adaptive-learner (2026-06-05). NON-NEGOTIABLE.
+
+Every interactive element (button, link, icon-button, toggle, select trigger,
+drag handle, list-row tap area) MUST present a touch target of at least
+**44x44px**. This is the WCAG 2.5.5 / Apple HIG minimum and matters for the
+phone/tablet surfaces (LAN Mode + the offline PWA) that Bibliogon now serves.
+
+- Icon-only controls need padding (or an explicit min-size) to reach 44px even
+  when the glyph is smaller; do not rely on the glyph box.
+- A visually smaller control is acceptable only if its hit area is enlarged
+  (e.g. an invisible padding / pseudo-element) to 44px.
+- New components ship at >=44px from the start; this is not a later a11y pass.
+
+## Backup parity (BACKUP-PARITY-PIN)
+
+Synced from adaptive-learner (2026-06-05). Bibliogon already practises this
+since the v0.45.0 `.bgb` overhaul (introspection-driven
+`serialize_row`/`restore_row`); this formalises it as a named rule.
+
+Structural parity must hold across the three persistence paths:
+**export == restore == sync**. The same set of models/columns that a feature
+writes to the DB must also be carried by `.bgb` export, reconstructed by
+import, and (where applicable) replayed by the offline sync queue.
+
+- **Round-trip test:** every backup-touching change ships a
+  create -> export -> wipe -> import -> compare test that asserts the restored
+  state equals the original (not just "import returns 200").
+- **FK-order pins:** restore inserts parents before children
+  (Book before Chapter/Page, StoryEntity before StoryEntityPageLink, etc.);
+  a test pins the order so a reshuffle can't reintroduce an integrity error.
+- When a new model/column is added, extend the backup serializer in the SAME
+  change - a column the DB has but `.bgb` lacks is silent data loss on restore.
+
+## Synced-rule reconciliation notes (2026-06-05)
+
+Two adaptive-learner rules are NOT adopted verbatim because they conflict with
+standing Bibliogon directives. They are recorded here as OPEN, pending user
+adjudication; do not enforce either side repo-wide until resolved:
+
+- **FUNKTION-NICHT-VERFUEGBAR** (AL: render nothing for an unavailable
+  function - no disabled state, no hint) vs Bibliogon's
+  "disable + explain, do not hide" (`useOfflineFeatureGate` /
+  `OfflineFeatureNotice`). See architecture.md "Dexie-mode rule".
+- **TAILWIND-ONLY / no new `global.css` entries** (AL) vs Bibliogon's
+  "CSS-first" rule, where global classes in `global.css` are the SSoT for
+  shared control surfaces (`.btn*`/`.input`/`.badge*`/`.card*` ...) and
+  Tailwind is a token-mapped utility layer for NEW components on top of that
+  base. Adopting "no new global.css" would forbid the established mechanism
+  for cross-surface visual consistency. Until adjudicated, Bibliogon keeps
+  CSS-first; new components still prefer Tailwind utilities where they don't
+  re-skin an existing global-class surface.
+
 ## Security
 
 - Never commit BIBLIOGON_SECRET_KEY.

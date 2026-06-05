@@ -228,3 +228,36 @@ Per-user vs per-book: settings that should vary between books do NOT belong in `
 - Frontend deliverable as static files.
 - License validation offline (signed keys, no license server).
 - Exception: plugins with external APIs (TTS, LanguageTool) need network access.
+
+### Dexie-mode rule (DEXIE-MODE-REGEL)
+
+Synced from adaptive-learner (2026-06-05), adapted to Bibliogon's
+backend-dependent reality.
+
+Every feature MUST work in Dexie/offline mode in the SAME commit that ships
+it - OR be explicitly gated offline in that same commit. There is no
+"online-only by omission". Concretely, a new feature is done only when one of
+the following is true on the backendless (`VITE_STORAGE_MODE=dexie`) build:
+
+1. **Works offline:** its reads/writes go through the storage seam
+   (`getStorage()`), so they hit IndexedDB. This is the default for
+   core-data features (books, chapters, articles, settings, registries).
+2. **Gated offline:** for genuinely backend-only features (export, Git,
+   audiobook, Medium import, LAN, AI, story bible, picture-book/comic
+   editors), the trigger is disabled with the translated
+   `ui.feature.requires_desktop_app` hint via `useOfflineFeatureGate()` /
+   `OfflineFeatureNotice`, and the surface fires NO `/api` request offline
+   (the `guardedFetch()` egress is the backstop, not a license to skip the
+   gate).
+
+The offline E2E (`e2e/smoke/offline-pwa.spec.ts`) enforces literal zero
+`/api` calls in dexie mode for every surface it touches - a new feature that
+forgets both the seam AND the gate fails it.
+
+> Note (2026-06-05): the upstream adaptive-learner rule pairs this with
+> "FUNKTION-NICHT-VERFUEGBAR" (do NOT render an unavailable function at all -
+> no disabled state, no hint). That directly conflicts with Bibliogon's
+> standing directive "Do NOT hide backend-only features; disable + explain,
+> do not hide". The conflict is UNRESOLVED and must be adjudicated by the
+> user before either approach is enforced repo-wide; until then Bibliogon
+> keeps disable-and-explain.
