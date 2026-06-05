@@ -254,10 +254,16 @@ The offline E2E (`e2e/smoke/offline-pwa.spec.ts`) enforces literal zero
 `/api` calls in dexie mode for every surface it touches - a new feature that
 forgets both the seam AND the gate fails it.
 
-> Note (2026-06-05): the upstream adaptive-learner rule pairs this with
-> "FUNKTION-NICHT-VERFUEGBAR" (do NOT render an unavailable function at all -
-> no disabled state, no hint). That directly conflicts with Bibliogon's
-> standing directive "Do NOT hide backend-only features; disable + explain,
-> do not hide". The conflict is UNRESOLVED and must be adjudicated by the
-> user before either approach is enforced repo-wide; until then Bibliogon
-> keeps disable-and-explain.
+### FUNKTION-NICHT-VERFUEGBAR — overridden for Bibliogon
+
+The upstream adaptive-learner rule "FUNKTION-NICHT-VERFUEGBAR" (do NOT render
+an unavailable function at all - no disabled state, no hint) is **overridden
+for Bibliogon** (user-adjudicated 2026-06-05).
+
+Bibliogon uses "disable + explain, do not hide" for unavailable features in
+offline mode. Backend-only features are shown with a disabled trigger and a
+translated "requires desktop app" hint (`OfflineFeatureNotice` /
+`useOfflineFeatureGate`). This is a conscious product decision: hiding features
+makes the app look feature-poor; disabling with explanation shows the full
+scope and motivates the desktop download. The adaptive-learner
+FUNKTION-NICHT-VERFUEGBAR rule (render nothing) does not apply to Bibliogon.

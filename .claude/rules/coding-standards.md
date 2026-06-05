@@ -206,44 +206,26 @@ A broader `RECURRING-COMPONENT-AUDIT-01` (filed alongside this rule) sweeps the 
 
 The general system prompt rule "Don't add features, refactor, or introduce abstractions beyond what the task requires" still applies — but ONLY when there are zero existing usage-sites. The Recurring-Component Unification Rule fires when there ARE existing sites; in that case the "use what already exists" principle takes precedence over the "don't add abstractions" principle. The abstraction isn't speculative when 2+ concrete instances drive the API.
 
-## CSS-first for visual consistency
+## Tailwind-first for visual consistency
 
-Filed 2026-05-30 from the component-consistency sweep. **Visual consistency is a CSS concern, solved with global classes + tokens — not re-implemented per component.**
+Updated 2026-06-05. **Supersedes the former "CSS-first" rule** (filed 2026-05-30), which predated the Tailwind v4 migration.
 
-When a control or surface needs a look (button, select, input, checkbox, slider, badge/status-pill, card), the source of truth is, in order:
+**All new visual/layout work goes through Tailwind utilities and Tailwind config.** No new entries in `global.css`. No raw CSS, no custom `@media` blocks, no `<style>` tags for layout logic. Existing `global.css` classes remain (do not migrate retroactively) but are NOT extended. New shared styles use Tailwind utilities, `@apply` directives in the Tailwind CSS file, or Tailwind config extensions.
 
-1. A **global class** in `frontend/src/styles/global.css` (`.btn*`, `.input`, `.slider`, `.radix-select-trigger`, `.badge*`, `.card*`) keyed off CSS custom-property tokens.
-2. A **shared component** that renders those classes (`Toggle`, `RadixSelect`, `Badge`, `AppDialog`, …).
-3. A **thin per-component supplement** (CSS-module class) for layout-only deltas the global class can't own (flex direction, fixed width, hover-reveal, grid placement).
+Why Tailwind-first does not introduce a second color system (and keeps `make verify-theme` authoritative):
+
+- `frontend/src/styles/tailwind.css` maps every Tailwind color utility onto the existing `var(--*)` tokens (`bg-primary` → `var(--accent)`, `text-foreground` → `var(--text)`, …) via `@theme inline`, and clears Tailwind's default palette (`--color-*: initial`) so a hardcoded-color escape hatch like `bg-red-500` cannot be generated. A Tailwind color utility is just another way to reference a theme token.
+- Preflight is omitted, so Tailwind adds no base reset; the existing `global.css` remains the base layer for the surfaces it already styles.
 
 What this rule forbids:
 
-- **Re-declaring a shared surface in a CSS-module.** A module `.card` that sets `background/border/radius/shadow`, or a module `.btn`/`.select`/`.input` that re-states the global look, is duplication. Use the global class; keep only the layout delta in the module.
-- **Inline `style={{}}` for anything themable** (color, background, border, radius, padding-that-matches-a-token). Inline styles bypass the theme system, can't be audited by `make verify-theme`, and drift per surface. Inline `style` is acceptable ONLY for genuinely dynamic/computed values (a drag-positioned `transform`, a data-driven `width: ${pct}%`, an image `background-image: url(...)`).
-- **Hardcoded hex / rgb** (even as a `var(--token, #fallback)` fallback) in component CSS or inline styles. Reference the token bare; if the token doesn't exist, add it to every variant, don't fall back to hex. The data-color exemptions (storyboard mood presets, comic-bubble convention defaults) are allowlisted in `scripts/check_hardcoded_colors.py`.
+- **New or extended `global.css` entries** for a component/surface look. Use a Tailwind utility, an `@apply` directive in the Tailwind CSS file, or a Tailwind config extension instead.
+- **Inline `style={{}}` for anything themable** (color, background, border, radius, padding-that-matches-a-token). Inline `style` is acceptable ONLY for genuinely dynamic/computed values (a drag-positioned `transform`, a data-driven `width: ${pct}%`, an image `background-image: url(...)`).
+- **Hardcoded hex / rgb** anywhere — including the Tailwind-shaped `bg-[#16a34a]`. Use the semantic utility (`bg-success`) or a `[prop:var(--token)]` arbitrary value for non-color tokens (`rounded-[var(--radius-md)]`). The data-color exemptions (storyboard mood presets, comic-bubble convention defaults) are allowlisted in `scripts/check_hardcoded_colors.py`.
 
-Why CSS-first (not "fix the colors per component"):
-
-- One global class changes all consumers at once; per-component overrides drift the moment two surfaces are edited separately.
-- `make verify-theme` can only audit tokens + global classes — inline styles and hex fallbacks are invisible to it, so they're where dark-mode/contrast regressions hide.
-- The accent-color one-liner (`input[type="checkbox"] { accent-color: var(--accent) }`) themed 52 checkboxes at once; the equivalent per-component fix would have been 52 edits that drift.
-
-How to apply when changing a visual:
-
-1. Is there a global class for this surface? Use it.
-2. No global class but the pattern appears on 2+ surfaces? Add the global class / shared component first (per the Recurring-Component Unification Rule), then apply.
-3. Truly one-off and non-themable? A thin module class is fine. Inline `style` only for computed values.
+Existing-surface policy: the legacy `global.css` classes (`.btn*`, `.input`, `.slider`, `.radix-select-trigger`, `.badge*`, `.card*`) and the shared components that render them (`Toggle`, `RadixSelect`, `Badge`, `AppDialog`, …) stay in place and remain the right thing to REUSE when touching an already-styled surface — but they are frozen: no new classes, no extensions. New reusable primitives live under `src/components/ui/*`, built from Tailwind/shadcn.
 
 This rule is the visual-layer counterpart of the Recurring-Component Unification Rule: that one unifies component *shape*; this one unifies component *look*.
-
-### How Tailwind v4 + shadcn/ui fit this rule (adopted 2026-06-03)
-
-Tailwind utilities are a sanctioned tool for NEW component work and do NOT weaken the CSS-first rule, because they are **token-mapped, not a parallel system**:
-
-- `frontend/src/styles/tailwind.css` maps every Tailwind color utility onto the existing `var(--*)` tokens (`bg-primary` → `var(--accent)`, `text-foreground` → `var(--text)`, …) via `@theme inline`, and clears Tailwind's default palette (`--color-*: initial`) so a hardcoded-color escape hatch like `bg-red-500` cannot be generated. A Tailwind color utility is therefore just another way to reference a theme token — `make verify-theme` stays authoritative.
-- The "no hardcoded hex / no inline `style` for themable values" prohibitions are unchanged. `bg-[#16a34a]` (arbitrary hex) is the Tailwind-shaped version of the same violation and is forbidden; use the semantic utility (`bg-success`) or a `[prop:var(--token)]` arbitrary value for non-color tokens (`rounded-[var(--radius-md)]`).
-- The global-class-first ordering (1 → 2 → 3 above) still governs EXISTING `global.css`-styled surfaces. Tailwind/shadcn is for new reusable primitives (`src/components/ui/*`), not for re-skinning existing surfaces piecemeal (that drifts look across screens — exactly what this rule prevents).
-- Preflight is omitted, so Tailwind adds no base reset; `global.css` remains the base layer.
 
 ## Test Quality Rule
 
@@ -339,22 +321,17 @@ import, and (where applicable) replayed by the offline sync queue.
 
 ## Synced-rule reconciliation notes (2026-06-05)
 
-Two adaptive-learner rules are NOT adopted verbatim because they conflict with
-standing Bibliogon directives. They are recorded here as OPEN, pending user
-adjudication; do not enforce either side repo-wide until resolved:
+Two adaptive-learner rules conflicted with standing Bibliogon directives. Both
+were adjudicated by the user on 2026-06-05 and are now RESOLVED:
 
 - **FUNKTION-NICHT-VERFUEGBAR** (AL: render nothing for an unavailable
-  function - no disabled state, no hint) vs Bibliogon's
-  "disable + explain, do not hide" (`useOfflineFeatureGate` /
-  `OfflineFeatureNotice`). See architecture.md "Dexie-mode rule".
-- **TAILWIND-ONLY / no new `global.css` entries** (AL) vs Bibliogon's
-  "CSS-first" rule, where global classes in `global.css` are the SSoT for
-  shared control surfaces (`.btn*`/`.input`/`.badge*`/`.card*` ...) and
-  Tailwind is a token-mapped utility layer for NEW components on top of that
-  base. Adopting "no new global.css" would forbid the established mechanism
-  for cross-surface visual consistency. Until adjudicated, Bibliogon keeps
-  CSS-first; new components still prefer Tailwind utilities where they don't
-  re-skin an existing global-class surface.
+  function) is **overridden for Bibliogon** in favour of "disable + explain,
+  do not hide". See architecture.md "Dexie-mode rule" for the full override
+  rationale.
+- **TAILWIND-ONLY / no new `global.css` entries** is **adopted**: the former
+  "CSS-first" rule above is replaced by "Tailwind-first for visual
+  consistency". New visual/layout work goes through Tailwind; `global.css` is
+  frozen (existing classes reused, never extended).
 
 ## Security
 
