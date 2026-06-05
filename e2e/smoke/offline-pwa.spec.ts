@@ -89,19 +89,47 @@ test.describe("Offline PWA (Dexie mode)", () => {
         ).toContainText(/English|Englisch/);
     });
 
-    test("create a book offline, edit a chapter, reload - persisted in Dexie", async ({
+    test("create a book offline, reload - persisted in Dexie", async ({
         page,
     }) => {
         await page.goto("/books/new");
         await page.getByTestId("create-book-title").fill("Offline Book");
         await page.getByTestId("create-book-author").fill("Aster");
         await page.getByTestId("create-book-submit").click();
-        // Lands in the editor: the book was created in IndexedDB.
-        await expect(page).toHaveURL(/\/book\//, {timeout: 10000});
 
-        // Dashboard reload from Dexie - the book persists.
-        await page.goto("/");
+        // A prose book returns to the dashboard (only pageable types open the
+        // editor), so the book was created in IndexedDB and now shows in the
+        // library. `.first()` because an optimistic placeholder card and the
+        // persisted card can both carry the title for a moment.
+        await expect(page.getByText("Offline Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // Reload from Dexie - the book persists.
+        await page.reload();
         await expect(page.getByTestId("new-book-group")).toBeVisible();
-        await expect(page.getByText("Offline Book")).toBeVisible();
+        await expect(page.getByText("Offline Book").first()).toBeVisible();
+    });
+
+    test("settings default-type dropdowns are populated from the seeded registries", async ({
+        page,
+    }) => {
+        await page.goto("/settings?tab=verhalten");
+        await expect(page.getByTestId("verhalten-settings")).toBeVisible();
+
+        // Regression pin: the book-type + content-type registries must load
+        // from the seam on first mount. If DexieStorage is not preloaded
+        // before render, the one-shot providers race the lazy import, fall
+        // back to ApiStorage (rejected offline), and the dropdowns stay empty.
+        await page.getByTestId("settings-default-book-type-trigger").click();
+        await expect(
+            page.getByTestId("settings-default-book-type-item-prose"),
+        ).toBeVisible();
+        await page.keyboard.press("Escape");
+
+        await page.getByTestId("settings-default-content-type-trigger").click();
+        await expect(
+            page.getByTestId("settings-default-content-type-item-blogpost"),
+        ).toBeVisible();
     });
 });

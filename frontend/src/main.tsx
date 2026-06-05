@@ -9,6 +9,7 @@ import "./styles/tailwind.css";
 import "./styles/global.css";
 import { verifyBackendVersion } from "./utils/versionCheck";
 import { restoreSpaRedirect } from "./utils/spaRedirect";
+import { explicitStorageMode, ensureDexieStorageLoaded } from "./storage";
 
 // a11y: @axe-core/react logs WCAG / Section 508 violations to
 // the browser DevTools console after every render in dev mode.
@@ -50,12 +51,37 @@ const routerBasename = import.meta.env.BASE_URL.replace(/\/+$/, "") || "/";
 // mounts. No-op on the Desktop / LAN deploy (no ?redirect= there).
 restoreSpaRedirect(routerBasename);
 
-ReactDOM.createRoot(document.getElementById("root")!).render(
-  <React.StrictMode>
-    <BrowserRouter basename={routerBasename}>
-      <App />
-    </BrowserRouter>
-  </React.StrictMode>,
-);
+/**
+ * Mount the app. On a forced-offline build (`VITE_STORAGE_MODE=dexie`, the
+ * GitHub-Pages PWA) or a persisted dexie override, DexieStorage is loaded
+ * BEFORE the first render so the one-shot data providers (book/content types,
+ * i18n, settings) read from IndexedDB on mount. Without this, those providers
+ * race the lazy DexieStorage import, fall back to a doomed ApiStorage call on
+ * the backendless host, and never retry - leaving registries (e.g. the
+ * Settings default-type dropdowns) permanently empty. In api mode this is a
+ * no-op and Dexie is never imported.
+ *
+ * The forced-offline build has no backend, so the startup backend-version
+ * cross-check (a raw `/api/health` fetch) is skipped - it would otherwise fire
+ * a doomed `/api` request on the GitHub-Pages host.
+ */
+async function boot(): Promise<void> {
+  const forcedOffline = explicitStorageMode() === "dexie";
+  if (forcedOffline) {
+    try {
+      await ensureDexieStorageLoaded();
+    } catch {
+      /* render anyway: a failed offline preload must not block the app shell */
+    }
+  }
+  ReactDOM.createRoot(document.getElementById("root")!).render(
+    <React.StrictMode>
+      <BrowserRouter basename={routerBasename}>
+        <App />
+      </BrowserRouter>
+    </React.StrictMode>,
+  );
+  if (!forcedOffline) void verifyBackendVersion();
+}
 
-void verifyBackendVersion();
+void boot();
