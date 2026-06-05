@@ -78,6 +78,16 @@ content/book types** plus a generic 9th content type. No schema migrations
 - **Dialog → Pages dark-mode + layout fixes** - migrated pages are
   centered and padded, the logo is visible in dark mode, and the shadcn
   `DialogContent` no longer jumps to center on open.
+- **Settings forms no longer clobber in-progress edits.** The Settings
+  forms are gated on the first config load (a systemic fix), so an async
+  config hydrate can no longer overwrite values you just typed - and the
+  Topics form no longer drops a topic you added while the config was still
+  loading.
+- **Offline: connectivity monitor starts when a book is taken offline
+  mid-session.** Previously the monitor was not running if a book was
+  taken offline after startup, so offline edits could be lost on
+  reconnect; the monitor now starts at "Take offline" time and editor
+  chapter writes are routed through the active storage backend.
 
 ### Docs
 - `docs/architecture/dialog-to-pages-routes.md` - the route map and the
