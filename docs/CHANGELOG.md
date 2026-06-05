@@ -4,6 +4,27 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.47.1] - 2026-06-05
+
+Patch release fixing the offline PWA's first-render data loading. No schema
+migrations; existing data, backups (`.bgb`) and projects (`.bgp`) are
+unaffected.
+
+### Fixed
+- Offline PWA: a DexieStorage lazy-loading race left the book-type and
+  content-type dropdowns (Settings > Verhalten) empty on first render in Dexie
+  mode - the one-shot registry/i18n/settings providers ran before the lazy
+  IndexedDB backend finished loading, fell back to the (offline-rejected) API
+  client, and never retried. DexieStorage is now preloaded before the first
+  render when an explicit dexie mode is set. (`2b8eb1c7`, #32)
+- Offline PWA: `verifyBackendVersion()` fired a raw `/api/health` request even
+  on the backendless build; skipped in forced-offline (dexie) mode. (`2b8eb1c7`)
+- E2E: fixed three offline-spec bugs surfaced by the above - the `**/api/**`
+  route glob aborted the Vite-served `/src/api/client.ts` source module, the
+  create-book assertion expected the editor URL (prose returns to the
+  dashboard), and a strict-mode double-match on the optimistic placeholder
+  card. (`2b8eb1c7`, `108a06ea`)
+
 ## [0.47.0] - 2026-06-05
 
 The **full offline PWA** release. The static GitHub Pages build now boots with
