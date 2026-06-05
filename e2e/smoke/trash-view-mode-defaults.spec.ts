@@ -66,6 +66,27 @@ async function saveAppearance(
     await saved;
 }
 
+/** Navigate to the dashboard and WAIT for its settings fetch to land,
+ *  so useTrashViewMode has applied the saved view-mode before the trash
+ *  is opened. Without this, opening the trash races the async getApp and
+ *  the view briefly mounts at its hard-coded "grid" default — the root of
+ *  the intermittent "trash-list not visible". */
+async function gotoDashboardSettled(
+    page: import("@playwright/test").Page,
+): Promise<void> {
+    const settingsLoaded = page
+        .waitForResponse(
+            (r) =>
+                r.url().includes("/settings/app") &&
+                r.request().method() === "GET" &&
+                r.ok(),
+            {timeout: 10000},
+        )
+        .catch(() => null);
+    await page.goto("/");
+    await settingsLoaded;
+}
+
 test.describe("Trash view-mode default settings (Bug 3)", () => {
     test("Settings UI exposes 4 view-mode dropdowns", async ({page}) => {
         await page.goto("/settings");
@@ -91,9 +112,9 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         await saveAppearance(page);
 
         // Open the BD trash; the view should mount as list.
-        await page.goto("/");
+        await gotoDashboardSettled(page);
         await page.getByTestId("trash-toggle").click();
-        await expect(page.getByTestId("trash-list")).toBeVisible();
+        await expect(page.getByTestId("trash-list")).toBeVisible({timeout: 10000});
     });
 
     test("AD/BD active default and BD-Trash default are independent", async ({page}) => {
@@ -108,7 +129,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         await pickViewMode(page, "settings-books-trash-view-trigger", "list");
         await saveAppearance(page);
 
-        await page.goto("/");
+        await gotoDashboardSettled(page);
         // Active surface mounts grid.
         await expect(page.locator('[data-testid^="book-card-"]').first()).toBeVisible({timeout: 5000}).catch(() => {
             // No books to display; skip the active-surface assertion.
@@ -116,7 +137,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
 
         // Trash surface mounts list (independent of active).
         await page.getByTestId("trash-toggle").click();
-        await expect(page.getByTestId("trash-list")).toBeVisible();
+        await expect(page.getByTestId("trash-list")).toBeVisible({timeout: 10000});
     });
 
     test("toggling view-mode inside trash does NOT persist to YAML", async ({page}) => {
@@ -128,10 +149,10 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         await saveAppearance(page);
 
         // Open trash, toggle to list.
-        await page.goto("/");
+        await gotoDashboardSettled(page);
         await page.getByTestId("trash-toggle").click();
         await page.getByTestId("view-toggle-list").click();
-        await expect(page.getByTestId("trash-list")).toBeVisible();
+        await expect(page.getByTestId("trash-list")).toBeVisible({timeout: 10000});
 
         // Re-open Settings — the saved value should STILL be grid,
         // because the in-trash toggle is session-local.

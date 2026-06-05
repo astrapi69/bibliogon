@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {PALETTES} from "../../themes/palettes";
@@ -29,7 +29,21 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
         (uiDashboard.articles_trash_view as string) === "list" ? "list" : "grid",
     );
 
+    // The parent loads `config` asynchronously (getApp), so this effect
+    // re-hydrates the dropdowns once the real config arrives. But if the
+    // user already changed a dropdown before that late arrival, re-hydrating
+    // would CLOBBER their edit back to the stored value and save the wrong
+    // thing. ``userEdited`` gates the re-hydrate so in-progress edits win.
+    const userEdited = useRef(false);
+    const onEdit =
+        (setter: (value: string) => void) =>
+        (value: string): void => {
+            userEdited.current = true;
+            setter(value);
+        };
+
     useEffect(() => {
+        if (userEdited.current) return; // never clobber an in-progress edit
         setTheme((ui.theme as string) || "warm-literary");
         const dashboardCfg = (ui.dashboard || {}) as Record<string, unknown>;
         setBooksView((dashboardCfg.books_view as string) === "list" ? "list" : "grid");
@@ -65,6 +79,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                     <RadixSelect
                         value={theme}
                         onValueChange={(val) => {
+                            userEdited.current = true;
                             setTheme(val);
                             document.documentElement.setAttribute("data-app-theme", val);
                             localStorage.setItem("bibliogon-app-theme", val);
@@ -87,7 +102,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             </label>
                             <RadixSelect
                                 value={booksView}
-                                onValueChange={setBooksView}
+                                onValueChange={onEdit(setBooksView)}
                                 testId="settings-books-view"
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
@@ -101,7 +116,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             </label>
                             <RadixSelect
                                 value={articlesView}
-                                onValueChange={setArticlesView}
+                                onValueChange={onEdit(setArticlesView)}
                                 testId="settings-articles-view"
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
@@ -124,7 +139,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             </label>
                             <RadixSelect
                                 value={booksTrashView}
-                                onValueChange={setBooksTrashView}
+                                onValueChange={onEdit(setBooksTrashView)}
                                 testId="settings-books-trash-view"
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
@@ -147,7 +162,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             </label>
                             <RadixSelect
                                 value={articlesTrashView}
-                                onValueChange={setArticlesTrashView}
+                                onValueChange={onEdit(setArticlesTrashView)}
                                 testId="settings-articles-trash-view"
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},

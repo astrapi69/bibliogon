@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {useBookTypes} from "../../hooks/useBookTypes";
@@ -39,7 +39,21 @@ export function VerhaltenSettings({config, onSave, saving}: {
         (uiDefaults.content_type as string) || "blogpost",
     );
 
+    // The parent loads `config` asynchronously (getApp); this effect
+    // re-hydrates the form once the real config arrives. A late arrival
+    // must not CLOBBER a value the user already changed (that would save
+    // the stale value), so ``userEdited`` gates the re-hydrate and the
+    // ``onEdit`` wrapper marks the form dirty on the first interaction.
+    const userEdited = useRef(false);
+    function onEdit<T>(setter: (value: T) => void): (value: T) => void {
+        return (value) => {
+            userEdited.current = true;
+            setter(value);
+        };
+    }
+
     useEffect(() => {
+        if (userEdited.current) return; // never clobber an in-progress edit
         setLang((app.default_language as string) || "de");
         setTrashEnabled(Boolean(app.trash_auto_delete_enabled));
         setTrashDays(String(Number(app.trash_auto_delete_days ?? 30)));
@@ -90,7 +104,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                     <label className="label">{t("ui.settings.language", "Sprache")}</label>
                     <RadixSelect
                         value={lang}
-                        onValueChange={setLang}
+                        onValueChange={onEdit(setLang)}
                         testId="settings-language"
                         options={[
                             {value: "de", label: t("ui.languages.de", "Deutsch")},
@@ -108,7 +122,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                     <Toggle
                         label={t("ui.settings.trash_checkbox", "Gelöschte Bücher automatisch entfernen")}
                         checked={trashEnabled}
-                        onChange={setTrashEnabled}
+                        onChange={onEdit(setTrashEnabled)}
                         testId="settings-trash-enabled"
                         description={trashEnabled
                             ? t("ui.settings.trash_info", "Bücher im Papierkorb werden nach {days} Tagen automatisch gelöscht").replace("{days}", trashDays)
@@ -119,7 +133,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                                 <label className="label">{t("ui.settings.trash_delete_after", "Endgültig löschen nach")}</label>
                                 <RadixSelect
                                     value={trashDays}
-                                    onValueChange={setTrashDays}
+                                    onValueChange={onEdit(setTrashDays)}
                                     testId="settings-trash-days"
                                     options={[
                                         {value: "7", label: t("ui.settings.trash_days_7", "7 Tage")},
@@ -140,7 +154,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         label={t("ui.settings.delete_permanently", "Gelöschte Bücher sofort permanent löschen")}
                         description={t("ui.settings.delete_permanently_hint", "Bei Aktivierung werden Bücher nicht in den Papierkorb verschoben.")}
                         checked={deletePermanently}
-                        onChange={setDeletePermanently}
+                        onChange={onEdit(setDeletePermanently)}
                         testId="settings-delete-permanently"
                         indentedDescription
                     />
@@ -156,7 +170,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                             "Aktiviere diese Option, um Bücher ohne Autor zu importieren oder zu speichern. Hilfreich beim Konvertieren von Dokumenten zu Hoerbüchern, bei denen keine Autorinformation nötig ist.",
                         )}
                         checked={allowBooksWithoutAuthor}
-                        onChange={setAllowBooksWithoutAuthor}
+                        onChange={onEdit(setAllowBooksWithoutAuthor)}
                         testId="settings-allow-books-without-author"
                         indentedDescription
                     />
@@ -172,7 +186,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                             "Aktiviert: Aktionen wie „Als Buch zusammenfassen?“, „Importieren?“ laufen ohne Rückfrage. Zerstörende Aktionen (Löschen, Papierkorb, Gefahrenzone) fragen IMMER nach.",
                         )}
                         checked={skipNonDestructive}
-                        onChange={setSkipNonDestructive}
+                        onChange={onEdit(setSkipNonDestructive)}
                         testId="settings-skip-non-destructive-confirmations"
                         indentedDescription
                     />
@@ -189,7 +203,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                             <label className="label">{t("ui.settings.default_book_type", "Standard-Buchtyp")}</label>
                             <RadixSelect
                                 value={defaultBookType}
-                                onValueChange={setDefaultBookType}
+                                onValueChange={onEdit(setDefaultBookType)}
                                 testId="settings-default-book-type"
                                 options={bookTypes.ordered.map((bt) => ({
                                     value: bt.id,
@@ -201,7 +215,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
                             <label className="label">{t("ui.settings.default_content_type", "Standard-Textart")}</label>
                             <RadixSelect
                                 value={defaultContentType}
-                                onValueChange={setDefaultContentType}
+                                onValueChange={onEdit(setDefaultContentType)}
                                 testId="settings-default-content-type"
                                 options={contentTypes.ordered.map((ct) => ({
                                     value: ct.id,
