@@ -28,8 +28,37 @@
 
 import Dexie, { type Table } from "dexie";
 
-import type { Article, Book, BookDetail, Chapter } from "../api/client";
+import type {
+  Article,
+  Book,
+  BookDetail,
+  BookTypeDef,
+  Chapter,
+  ContentTypeDef,
+  DiscoveredPlugin,
+  WritingSession,
+} from "../api/client";
 import type { IStorageService } from "./types";
+import {
+  SEED_BOOK_TYPES,
+  SEED_CONTENT_TYPES,
+  SEED_I18N,
+  SEED_PLUGIN_METADATA,
+  SEED_SETTINGS,
+} from "./seed";
+
+/** Single-row reference blob (settings / type registries / plugin meta),
+ *  keyed by a constant. Seeded on first init from the committed JSON;
+ *  settings is the one the user can mutate offline. */
+interface KeyedBlob<T> {
+  key: string;
+  data: T;
+}
+/** One language's i18n catalog row. */
+interface I18nCatalogRow {
+  lang: string;
+  catalog: Record<string, unknown>;
+}
 
 /** A book row carries the offline-availability flag the Selection UI
  *  (C3) sets; it is structurally a `Book` plus that optional marker. */
@@ -82,6 +111,13 @@ class BibliogonOfflineDB extends Dexie {
   writingSessions!: Table<GraphRow, string>;
   syncQueue!: Table<SyncQueueEntry, number>;
   syncBaselines!: Table<SyncBaseline, string>;
+  // Offline reference data (Track B): app settings + type registries +
+  // plugin metadata (single-row blobs) and per-language i18n catalogs.
+  appSettings!: Table<KeyedBlob<Record<string, unknown>>, string>;
+  i18nCatalogs!: Table<I18nCatalogRow, string>;
+  bookTypesRef!: Table<KeyedBlob<Record<string, BookTypeDef>>, string>;
+  contentTypesRef!: Table<KeyedBlob<Record<string, ContentTypeDef>>, string>;
+  pluginMetaRef!: Table<KeyedBlob<DiscoveredPlugin[]>, string>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -107,6 +143,16 @@ class BibliogonOfflineDB extends Dexie {
     // v3 (C7): server-version baselines for conflict detection.
     this.version(3).stores({
       syncBaselines: "id",
+    });
+    // v4 (Track B): offline reference data. Single-row blobs keyed by a
+    // constant ("app" / "all"); i18n keyed by language. Seeded lazily by
+    // ensureSeeded() (idempotent, never overwrites user-edited settings).
+    this.version(4).stores({
+      appSettings: "key",
+      i18nCatalogs: "lang",
+      bookTypesRef: "key",
+      contentTypesRef: "key",
+      pluginMetaRef: "key",
     });
   }
 }
@@ -137,6 +183,53 @@ export const offlineDb = new BibliogonOfflineDB();
 const nowIso = (): string => new Date().toISOString();
 const newId = (): string => crypto.randomUUID();
 const EMPTY_DOC = '{"type":"doc","content":[]}';
+
+// --- offline reference data (Track B) ------------------------------------
+
+/** Constant primary key for the single-row reference blobs. */
+const REF_KEY = "all";
+/** Primary key for the single settings row. */
+const SETTINGS_KEY = "app";
+
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+let seedPromise: Promise<void> | null = null;
+
+/** Populate the reference tables from the committed seed. Idempotent +
+ *  non-destructive: writes only an ABSENT row, so a user-edited settings
+ *  row (or a newly-added i18n language on seed regen) is never clobbered.
+ *  Memoized so concurrent reads seed exactly once. */
+export function ensureSeeded(): Promise<void> {
+  if (!seedPromise) seedPromise = doSeed();
+  return seedPromise;
+}
+
+async function doSeed(): Promise<void> {
+  if (!(await offlineDb.appSettings.get(SETTINGS_KEY))) {
+    await offlineDb.appSettings.put({ key: SETTINGS_KEY, data: SEED_SETTINGS });
+  }
+  if (!(await offlineDb.bookTypesRef.get(REF_KEY))) {
+    await offlineDb.bookTypesRef.put({ key: REF_KEY, data: SEED_BOOK_TYPES });
+  }
+  if (!(await offlineDb.contentTypesRef.get(REF_KEY))) {
+    await offlineDb.contentTypesRef.put({
+      key: REF_KEY,
+      data: SEED_CONTENT_TYPES,
+    });
+  }
+  if (!(await offlineDb.pluginMetaRef.get(REF_KEY))) {
+    await offlineDb.pluginMetaRef.put({
+      key: REF_KEY,
+      data: SEED_PLUGIN_METADATA,
+    });
+  }
+  for (const [lang, catalog] of Object.entries(SEED_I18N)) {
+    if (!(await offlineDb.i18nCatalogs.get(lang))) {
+      await offlineDb.i18nCatalogs.put({ lang, catalog });
+    }
+  }
+}
 
 function buildBook(
   data: import("../api/client").BookCreate,
@@ -387,6 +480,73 @@ export const dexieStorage: IStorageService = {
 
     delete: async (id) => {
       await offlineDb.articles.delete(id);
+    },
+  },
+
+  settings: {
+    getApp: async () => {
+      await ensureSeeded();
+      const row = await offlineDb.appSettings.get(SETTINGS_KEY);
+      return (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
+    },
+
+    updateApp: async (patch) => {
+      await ensureSeeded();
+      const row = await offlineDb.appSettings.get(SETTINGS_KEY);
+      const current = (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
+      // Shallow per-section merge, mirroring the backend PATCH semantics
+      // (current.setdefault(section, {}).update(body[section])).
+      const merged: Record<string, unknown> = { ...current };
+      for (const [key, value] of Object.entries(patch)) {
+        const prev = merged[key];
+        merged[key] =
+          isPlainObject(prev) && isPlainObject(value)
+            ? { ...prev, ...value }
+            : value;
+      }
+      await offlineDb.appSettings.put({ key: SETTINGS_KEY, data: merged });
+      return merged;
+    },
+
+    discoveredPlugins: async () => {
+      await ensureSeeded();
+      const row = await offlineDb.pluginMetaRef.get(REF_KEY);
+      return row?.data ?? SEED_PLUGIN_METADATA;
+    },
+  },
+
+  i18n: {
+    get: async (lang: string) => {
+      await ensureSeeded();
+      const row = await offlineDb.i18nCatalogs.get(lang);
+      if (row) return row.catalog;
+      const fallback = await offlineDb.i18nCatalogs.get("en");
+      return fallback?.catalog ?? {};
+    },
+  },
+
+  bookTypes: {
+    list: async () => {
+      await ensureSeeded();
+      const row = await offlineDb.bookTypesRef.get(REF_KEY);
+      return row?.data ?? SEED_BOOK_TYPES;
+    },
+  },
+
+  contentTypes: {
+    list: async () => {
+      await ensureSeeded();
+      const row = await offlineDb.contentTypesRef.get(REF_KEY);
+      return row?.data ?? SEED_CONTENT_TYPES;
+    },
+  },
+
+  writingSessions: {
+    // No server-derived writing history offline; return empty so the
+    // writing-history page renders its empty state (no dead /api call).
+    list: async (_days = 30) => {
+      void _days;
+      return [] as WritingSession[];
     },
   },
 };

@@ -17,8 +17,13 @@ import { api } from "../api/client";
 import type {
   ArticleStorage,
   BookStorage,
+  BookTypesStorage,
   ChapterStorage,
+  ContentTypesStorage,
+  I18nStorage,
   IStorageService,
+  SettingsStorage,
+  WritingSessionsStorage,
 } from "./types";
 
 /**
@@ -40,5 +45,20 @@ export const apiStorage: IStorageService = {
   },
   get articles(): ArticleStorage {
     return api.articles;
+  },
+  get settings(): SettingsStorage {
+    return api.settings;
+  },
+  get i18n(): I18nStorage {
+    return api.i18n;
+  },
+  get bookTypes(): BookTypesStorage {
+    return api.bookTypes;
+  },
+  get contentTypes(): ContentTypesStorage {
+    return api.contentTypes;
+  },
+  get writingSessions(): WritingSessionsStorage {
+    return api.writingSessions;
   },
 };

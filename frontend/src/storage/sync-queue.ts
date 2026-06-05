@@ -158,5 +158,13 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         await enqueue("article", "delete", id, null, null);
       },
     },
+    // Settings + reference data: settings.updateApp is a local-only write
+    // in offline mode (no server to sync settings to yet), so all of these
+    // delegate straight through without a queue entry.
+    settings: base.settings,
+    i18n: base.i18n,
+    bookTypes: base.bookTypes,
+    contentTypes: base.contentTypes,
+    writingSessions: base.writingSessions,
   };
 }

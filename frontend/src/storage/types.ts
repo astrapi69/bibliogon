@@ -52,10 +52,43 @@ export interface ArticleStorage {
   delete: typeof api.articles.delete;
 }
 
+/**
+ * App settings + reference data (i18n catalogs, type registries, plugin
+ * metadata). Backend-served in `api` mode; served from seeded Dexie tables
+ * in offline mode so the backendless PWA boots with real config. The
+ * `typeof api.*` typing keeps these from drifting from the real client.
+ */
+export interface SettingsStorage {
+  getApp: typeof api.settings.getApp;
+  updateApp: typeof api.settings.updateApp;
+  discoveredPlugins: typeof api.settings.discoveredPlugins;
+}
+
+export interface I18nStorage {
+  get: typeof api.i18n.get;
+}
+
+export interface BookTypesStorage {
+  list: typeof api.bookTypes.list;
+}
+
+export interface ContentTypesStorage {
+  list: typeof api.contentTypes.list;
+}
+
+export interface WritingSessionsStorage {
+  list: typeof api.writingSessions.list;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
   books: BookStorage;
   chapters: ChapterStorage;
   articles: ArticleStorage;
+  settings: SettingsStorage;
+  i18n: I18nStorage;
+  bookTypes: BookTypesStorage;
+  contentTypes: ContentTypesStorage;
+  writingSessions: WritingSessionsStorage;
 }
