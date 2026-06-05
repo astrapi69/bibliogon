@@ -32,9 +32,13 @@ test.beforeEach(async ({page}) => {
             /* ignore */
         }
     });
-    // Hard gate: record + abort every /api request. With the storage seam +
-    // the request-layer offline guard, none should ever fire.
-    await page.route("**/api/**", (route) => {
+    // Hard gate: record + abort every backend /api request. With the storage
+    // seam + the request-layer offline guard, none should ever fire. The
+    // matcher is anchored to a `/api/` path right after the origin so it does
+    // NOT catch the Vite dev server serving the source module
+    // `/src/api/client.ts` (a glob `**\/api/**` over-matches that and aborting
+    // it breaks module loading); the bundled GH-Pages build has no `/src/` path.
+    await page.route(/^https?:\/\/[^/]+\/api\//, (route) => {
         apiHits.push(route.request().url());
         return route.abort();
     });
