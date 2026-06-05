@@ -23,6 +23,7 @@ import {
   EyeOff,
 } from "lucide-react";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { notify } from "../utils/notify";
 import { api } from "../api/client";
 import {
@@ -50,6 +51,7 @@ export default function AiSetupWizard({
   secretsManagedExternally = false,
 }: Props) {
   const { t } = useI18n();
+  const { offline: offlineGate, message: offlineMsg } = useOfflineFeatureGate();
   const [step, setStep] = useState(0);
   const [provider, setProvider] = useState("anthropic");
   const [baseUrl, setBaseUrl] = useState(
@@ -337,7 +339,8 @@ export default function AiSetupWizard({
                 <button
                   className="btn btn-primary"
                   onClick={handleTest}
-                  disabled={testing}
+                  disabled={testing || offlineGate}
+                  title={offlineGate ? offlineMsg : undefined}
                 >
                   {testing
                     ? t("ui.common.loading", "Laden...")
@@ -393,7 +396,8 @@ export default function AiSetupWizard({
                 <button
                   className="btn btn-primary btn-sm"
                   onClick={handleFinish}
-                  disabled={saving || testResult !== "ok"}
+                  disabled={saving || testResult !== "ok" || offlineGate}
+                  title={offlineGate ? offlineMsg : undefined}
                 >
                   {saving
                     ? t("ui.common.loading", "Laden...")

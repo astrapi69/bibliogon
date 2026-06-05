@@ -14,6 +14,7 @@
 import { useEffect, useState } from "react";
 import { api, type LanAccessInfo } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
+import { useOfflineFeatureGate } from "../../storage/useOfflineFeatureGate";
 import { SectionHeader } from "./SectionHeader";
 
 const sectionStyle: React.CSSProperties = {
@@ -42,9 +43,11 @@ const dlStyle: React.CSSProperties = {
 
 export function LanAccessSettings() {
   const { t } = useI18n();
+  const { offline } = useOfflineFeatureGate();
   const [info, setInfo] = useState<LanAccessInfo | null>(null);
 
   useEffect(() => {
+    if (offline) return; // LAN is backend-only; no dead /api/lan-auth call
     let cancelled = false;
     api.lanAuth
       .info()
@@ -58,7 +61,7 @@ export function LanAccessSettings() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [offline]);
 
   if (!info) return null;
 

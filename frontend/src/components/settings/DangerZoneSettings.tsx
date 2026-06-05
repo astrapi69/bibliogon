@@ -38,6 +38,7 @@ import {AlertTriangle, X} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
+import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
 import {notify} from "../../utils/notify";
 import {db} from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
@@ -91,6 +92,7 @@ const resetInputStyle: React.CSSProperties = {
 
 export function DangerZoneSettings() {
     const {t} = useI18n();
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
     const navigate = useNavigate();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [state, setState] = useState<DialogState>("idle");
@@ -179,6 +181,7 @@ export function DangerZoneSettings() {
     }, [navigate, resetText, state, t, token]);
 
     const handleBackupClick = useCallback(() => {
+        if (offlineGate) return; // no backend to produce the .bgb
         // Triggers a download via the existing backup-export URL.
         // Opening in a new tab + immediately closing is the
         // standard browser idiom for "save this file" without
@@ -186,7 +189,7 @@ export function DangerZoneSettings() {
         // open). The browser handles the .bgb download natively;
         // no JS coordination needed.
         window.open(api.backup.exportUrl(false), "_blank", "noopener");
-    }, []);
+    }, [offlineGate]);
 
     const destructiveEnabled = state === "typing" && token !== null && resetText === "RESET";
 
@@ -281,7 +284,8 @@ export function DangerZoneSettings() {
                                 className="btn btn-secondary"
                                 data-testid="danger-zone-backup-button"
                                 onClick={handleBackupClick}
-                                disabled={state === "submitting"}
+                                disabled={state === "submitting" || offlineGate}
+                                title={offlineGate ? offlineMsg : undefined}
                             >
                                 {t("ui.settings.danger_zone.reset_dialog_backup_button", "Backup erstellen")}
                             </button>
