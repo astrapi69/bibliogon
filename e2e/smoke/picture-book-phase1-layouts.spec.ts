@@ -46,6 +46,9 @@ test.describe("Picture-Book Phase 1 layouts (C6 smoke)", () => {
         await expect(page.getByTestId("page-editor-root")).toBeVisible()
 
         // Add one page so the LayoutPicker mounts.
+        // Wait for the initial pages.list to settle (empty state) so the
+        // mount-load does not race the optimistic add (flaky page/layout state).
+        await expect(page.getByTestId("page-editor-canvas-empty")).toBeVisible()
         await page.getByTestId("page-editor-add-page").click()
         await expect(
             page.locator('[data-testid^="page-editor-page-row-"]'),
@@ -82,6 +85,9 @@ test.describe("Picture-Book Phase 1 layouts (C6 smoke)", () => {
     }) => {
         const book = await createPictureBook("Bottom Text Top", "E2E Author")
         await page.goto(`/book/${book.id}`)
+        // Wait for the initial pages.list to settle (empty state) so the
+        // mount-load does not race the optimistic add (flaky page/layout state).
+        await expect(page.getByTestId("page-editor-canvas-empty")).toBeVisible()
         await page.getByTestId("page-editor-add-page").click()
 
         await page
@@ -111,6 +117,9 @@ test.describe("Picture-Book Phase 1 layouts (C6 smoke)", () => {
     }) => {
         const book = await createPictureBook("Right Text Left", "E2E Author")
         await page.goto(`/book/${book.id}`)
+        // Wait for the initial pages.list to settle (empty state) so the
+        // mount-load does not race the optimistic add (flaky page/layout state).
+        await expect(page.getByTestId("page-editor-canvas-empty")).toBeVisible()
         await page.getByTestId("page-editor-add-page").click()
 
         await page
@@ -135,6 +144,9 @@ test.describe("Picture-Book Phase 1 layouts (C6 smoke)", () => {
     }) => {
         const book = await createPictureBook("Full No Text", "E2E Author")
         await page.goto(`/book/${book.id}`)
+        // Wait for the initial pages.list to settle (empty state) so the
+        // mount-load does not race the optimistic add (flaky page/layout state).
+        await expect(page.getByTestId("page-editor-canvas-empty")).toBeVisible()
         await page.getByTestId("page-editor-add-page").click()
 
         await page
