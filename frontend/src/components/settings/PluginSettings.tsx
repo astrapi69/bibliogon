@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {Check, Plus, Upload} from "lucide-react";
 import {api} from "../../api/client";
+import {getStorage} from "../../storage";
 import {useDialog} from "../AppDialog";
 import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/notify";
@@ -68,7 +69,7 @@ export function PluginSettings({configs, appConfig, onSavePlugin, onTogglePlugin
         source: "entry_point" | "direct_register" | null;
     }>>({});
     useEffect(() => {
-        api.settings.discoveredPlugins().then((discovered) => {
+        getStorage().settings.discoveredPlugins().then((discovered) => {
             setLoadedPlugins(new Set(discovered.filter((p) => p.loaded).map((p) => p.name)));
             const states: typeof pluginStates = {};
             for (const p of discovered) {

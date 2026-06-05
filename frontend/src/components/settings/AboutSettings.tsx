@@ -20,6 +20,7 @@ import {
   type DiscoveredPlugin,
   type SystemInfo,
 } from "../../api/client";
+import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { getLocalized } from "./utils";
 import SupportSection, { getDonationsConfig } from "../SupportSection";
@@ -56,7 +57,13 @@ export function AboutSettings({ appConfig }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([api.system.info(), api.settings.discoveredPlugins()])
+    // system.info() is backend-only; skip it offline (no dead /api call).
+    // The plugin list comes from the storage seam (seeded offline).
+    const offline = getStorage().mode === "dexie";
+    const systemInfoP = offline
+      ? Promise.resolve<SystemInfo | null>(null)
+      : api.system.info();
+    Promise.all([systemInfoP, getStorage().settings.discoveredPlugins()])
       .then(([info, pluginList]) => {
         if (cancelled) return;
         setSystemInfo(info);

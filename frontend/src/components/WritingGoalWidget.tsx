@@ -10,7 +10,8 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Flame, BarChart3 } from "lucide-react";
 
-import { api, type WritingSession } from "../api/client";
+import { type WritingSession } from "../api/client";
+import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import styles from "./WritingGoalWidget.module.css";
 
@@ -74,8 +75,8 @@ export default function WritingGoalWidget() {
 
   useEffect(() => {
     let cancelled = false;
-    api.writingSessions
-      .list(60)
+    getStorage()
+      .writingSessions.list(60)
       .then((rows) => {
         if (!cancelled) {
           setSessions(rows);

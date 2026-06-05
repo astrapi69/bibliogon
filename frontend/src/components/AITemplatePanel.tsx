@@ -2,6 +2,7 @@ import {useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {Sparkles, Download, Upload, X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
+import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate"
 import {Toggle} from "./settings/Toggle"
 import {notify} from "../utils/notify"
 import {api, ApiError} from "../api/client"
@@ -59,6 +60,7 @@ export default function AITemplatePanel({
     layout = "default",
 }: Props) {
     const {t} = useI18n()
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
     const namespace = kind === "article" ? api.articles : api.books
 
     // Per-button loading flags so the user can tell which action is
@@ -230,7 +232,8 @@ export default function AITemplatePanel({
                     type="button"
                     className={btnClass}
                     onClick={() => setShowFillDialog(true)}
-                    disabled={fillLoading}
+                    disabled={fillLoading || offlineGate}
+                    title={offlineGate ? offlineMsg : undefined}
                     data-testid="ai-template-fill"
                 >
                     <Sparkles size={14} style={{marginRight: 6}}/>
@@ -240,7 +243,8 @@ export default function AITemplatePanel({
                     type="button"
                     className={btnClass}
                     onClick={handleExport}
-                    disabled={exportLoading}
+                    disabled={exportLoading || offlineGate}
+                    title={offlineGate ? offlineMsg : undefined}
                     data-testid="ai-template-export"
                 >
                     <Download size={14} style={{marginRight: 6}}/>
@@ -250,7 +254,8 @@ export default function AITemplatePanel({
                     type="button"
                     className={btnClass}
                     onClick={openImportDialog}
-                    disabled={importLoading}
+                    disabled={importLoading || offlineGate}
+                    title={offlineGate ? offlineMsg : undefined}
                     data-testid="ai-template-import"
                 >
                     <Upload size={14} style={{marginRight: 6}}/>

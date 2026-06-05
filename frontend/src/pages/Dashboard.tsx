@@ -360,7 +360,7 @@ export default function Dashboard() {
         // logic. The S-03 reminder banner moved to App-level mount in
         // v0.35.1 and has its own config fetch. Failure is non-critical;
         // OnboardingDialog stays hidden if it fails.
-        api.settings.getApp()
+        getStorage().settings.getApp()
             .then((config) => {
                 const donations = getDonationsConfig(config);
                 setDonationsConfig(donations);

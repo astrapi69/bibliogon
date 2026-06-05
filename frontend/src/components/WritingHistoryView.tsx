@@ -26,6 +26,8 @@ import {
   type WritingChapterStats,
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { OfflineFeatureNotice } from "./OfflineFeatureNotice";
 import { notify } from "../utils/notify";
 import { LoadingIndicator } from "./LoadingIndicator";
 import styles from "./WritingHistoryView.module.css";
@@ -34,6 +36,7 @@ const WINDOWS = [30, 90, 365] as const;
 
 export default function WritingHistoryView() {
   const { t } = useI18n();
+  const { offline } = useOfflineFeatureGate();
   const [days, setDays] = useState<number>(90);
   const [summary, setSummary] = useState<WritingStatsSummary | null>(null);
   const [books, setBooks] = useState<WritingBookStats[] | null>(null);
@@ -42,6 +45,7 @@ export default function WritingHistoryView() {
   const [chapters, setChapters] = useState<WritingChapterStats[] | null>(null);
 
   const reload = useCallback(async () => {
+    if (offline) return; // writing stats are server-computed; none offline
     setLoading(true);
     setExpandedBook(null);
     setChapters(null);
@@ -94,6 +98,14 @@ export default function WritingHistoryView() {
 
   const maxBookWords =
     books?.reduce((m, b) => Math.max(m, b.total_words), 0) || 1;
+
+  if (offline) {
+    return (
+      <div data-testid="writing-history-view">
+        <OfflineFeatureNotice testId="writing-history-offline" />
+      </div>
+    );
+  }
 
   return (
     <div data-testid="writing-history-view">

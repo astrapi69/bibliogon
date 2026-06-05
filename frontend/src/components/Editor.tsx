@@ -47,6 +47,7 @@ import {buildMentionLabels, createStoryBibleMention, handleMentionClick} from ".
 import EditorContextMenu from "./EditorContextMenu";
 import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
+import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
 import {api, ApiError, SaveAbortedError} from "../api/client";
 import {notify} from "../utils/notify";
 import {editorToMarkdown} from "../utils/tiptap-markdown";
@@ -131,6 +132,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const {t} = useI18n();
+    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
@@ -1288,7 +1290,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     data-testid="ai-review-start"
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiReview}
-                                    disabled={aiLoading}
+                                    disabled={aiLoading || offlineGate}
+                                    title={offlineGate ? offlineMsg : undefined}
                                 >
                                     {aiLoading
                                         ? (reviewStatusMsg || t("ui.editor.ai_loading", "Denke nach..."))
@@ -1339,7 +1342,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     data-testid={aiPromptType === "fix_issue" ? "ai-fix-issue-run" : undefined}
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiSuggest}
-                                    disabled={aiLoading || (aiPromptType === "fix_issue" && !activeIssue)}
+                                    disabled={aiLoading || offlineGate || (aiPromptType === "fix_issue" && !activeIssue)}
+                                    title={offlineGate ? offlineMsg : undefined}
                                 >
                                     {aiLoading
                                         ? (aiPromptType === "fix_issue" && activeIssue
