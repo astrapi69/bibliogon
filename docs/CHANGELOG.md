@@ -4,6 +4,64 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.47.0] - 2026-06-05
+
+The **full offline PWA** release. The static GitHub Pages build now boots with
+no backend, loads settings / i18n / type registries from a seeded IndexedDB,
+supports full prose-book and article authoring offline, and fires **zero
+`/api` network requests** - enforced by a single `guardedFetch()` egress and an
+E2E hard gate. Plus the GitHub Pages deploy split, a non-toggling single-line
+menu header, and a settings-persistence fix. No schema migrations - existing
+data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- **Full offline PWA.** The static GitHub Pages build
+  (`astrapi69.github.io/bibliogon/`) boots with no backend. It loads default
+  settings, the 8 i18n catalogs, book-types, content-types and the plugin list
+  from a seeded IndexedDB, and supports create / edit / delete / reload of
+  prose books and articles entirely offline. Backend-only features (export,
+  Git, Medium import, LAN, audiobook, story bible, picture-book / comic
+  editors, danger-zone backup, AI) are gated offline with a translated
+  "requires the desktop app" hint (all 8 catalogs) instead of a broken button.
+- **Seed pipeline.** `make generate-seed-data`
+  (`scripts/generate-seed-data.py`) reads the canonical backend YAML
+  single-source-of-truth and emits committed JSON under
+  `frontend/src/storage/seed/` (i18n catalogs, settings defaults, book/content
+  types, plugin metadata) whose shapes mirror the `/api` responses;
+  `DexieStorage` seeds its reference tables on first init via an idempotent
+  `ensureSeeded()`.
+- **GitHub Pages deploy split.** The app deploys to
+  `astrapi69.github.io/bibliogon/` and the docs to
+  `astrapi69.github.io/bibliogondocs/`, with a `404.html` SPA redirect; both
+  workflows auto-trigger on push to `main`.
+
+### Fixed
+- **Menu single-line header.** The top menu no longer flips between the full
+  bar and the hamburger when the language or default content-type changes; it
+  switches on a fixed viewport breakpoint (`--breakpoint-menu`, 1200px) sized
+  for the worst-case label width across all 8 locales.
+- **Settings "skip non-destructive confirmations" persistence.** The
+  `behavior.skip_non_destructive_confirmations` toggle was silently dropped on
+  save because the settings update schema had no `behavior` field. Fixed +
+  regression test.
+
+### Changed
+- **`guardedFetch()` single egress.** Every client network call - the JSON
+  `request()` helper, the raw upload / blob / export calls, and the import
+  wizard - now flows through one `guardedFetch()` choke point. On the
+  backendless offline build it rejects before any fetch, so the offline build
+  fires zero `/api` requests regardless of which `api.*` method is called, and
+  any future call that forgets the storage seam is auto-covered. An offline
+  E2E installs a global `route.abort()` on `**/api/**` as a hard regression
+  gate.
+- **`IStorageService` seam extended.** The seam now covers settings, i18n,
+  book-types, content-types and writing-sessions in addition to books /
+  chapters / articles, with `ApiStorage` (online) and `DexieStorage` (offline)
+  implementations; call sites read and write through `getStorage()`.
+- **Documentation discipline.** New `.claude/rules/code-hygiene.md` rule: no
+  inline comments; explanations live in docstrings / TSDoc. The recent
+  offline-PWA code was cleaned up accordingly.
+
 ## [0.46.0] - 2026-06-05
 
 A large release across four arcs: the **Dialog → Pages** migration on a
