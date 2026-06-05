@@ -158,6 +158,32 @@ def test_update_persists_to_disk(client, temp_base):
     assert on_disk["app"]["language"] == "fr"
 
 
+def test_update_behavior_skip_confirmations_round_trips(client, temp_base):
+    """behavior.skip_non_destructive_confirmations persists end-to-end.
+
+    Regression: the ``behavior`` branch was missing from
+    AppSettingsUpdate, so the Settings>Verhalten "skip confirmations
+    for harmless actions" toggle was silently dropped at validation and
+    never saved (reported by Aster 2026-06-05). This test fails on the
+    pre-fix code (the field never reaches disk or the response).
+    """
+    resp = client.patch(
+        "/api/settings/app",
+        json={"behavior": {"skip_non_destructive_confirmations": True}},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["behavior"]["skip_non_destructive_confirmations"] is True
+
+    # Persisted to disk...
+    with open(temp_base / "config" / "app.yaml") as f:
+        on_disk = yaml.safe_load(f)
+    assert on_disk["behavior"]["skip_non_destructive_confirmations"] is True
+
+    # ...and returned by a fresh GET (what AppDialog reads on next load).
+    got = client.get("/api/settings/app")
+    assert got.json()["behavior"]["skip_non_destructive_confirmations"] is True
+
+
 def test_update_preserves_unmentioned_sections(client):
     """Sections not included in the PATCH body remain unchanged."""
     resp = client.patch("/api/settings/app", json={"app": {"language": "es"}})

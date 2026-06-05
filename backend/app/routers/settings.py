@@ -152,6 +152,10 @@ class AppSettingsUpdate(BaseModel):
     plugins: dict[str, Any] | None = None
     ai: dict[str, Any] | None = None
     editor: dict[str, Any] | None = None
+    # behavior.skip_non_destructive_confirmations (read by AppDialog).
+    # Without this field the Settings>Verhalten toggle was silently
+    # dropped at validation and never persisted.
+    behavior: dict[str, Any] | None = None
     # AR-02 Phase 2.1: settings-managed list of article topics. The
     # ArticleEditor topic dropdown reads from app.yaml topics: [...].
     topics: list[str] | None = None
@@ -251,6 +255,8 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
 
     if body.app is not None:
         current.setdefault("app", {}).update(body.app)
+    if body.behavior is not None:
+        current.setdefault("behavior", {}).update(body.behavior)
     if body.ui is not None:
         current.setdefault("ui", {}).update(body.ui)
     if body.author is not None:
