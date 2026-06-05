@@ -52,22 +52,12 @@
     display: flex;
     align-items: center;
     gap: 6px;
-    /* Never wrap - collapse the secondary cluster into the hamburger
-     * (useOverflowCollapse) instead of reflowing. See Dashboard.module.css
-     * .headerActions for the flex:1 + overflow rationale. */
-    flex: 1 1 auto;
-    min-width: 0;
+    /* Never wrap: fixed 1200px Tailwind `menu:` breakpoint (see
+     * Dashboard.module.css .headerActions + tailwind.css). nowrap +
+     * overflow:hidden guards against a second line. */
     flex-wrap: nowrap;
     overflow: hidden;
-    position: relative;
     justify-content: flex-end;
-}
-
-.headerCollapsible {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    flex-shrink: 0;
 }
 
 .headerSeparator {

@@ -31,7 +31,6 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
-import { useOverflowCollapse } from "../hooks/useOverflowCollapse";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
@@ -74,7 +73,7 @@ import { EmptyState } from "../components/EmptyState";
 
 export default function ArticleList() {
     const navigate = useNavigate();
-    const { t, lang } = useI18n();
+    const { t } = useI18n();
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -119,12 +118,6 @@ export default function ArticleList() {
     const newArticleHref = hasSpecificDefaultContentType
         ? `/articles/new?type=${defaultContentType}`
         : "/articles/new";
-    // MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01: content-aware collapse so the
-    // Article-Dashboard header never wraps (resolves ARTICLE-HEADER-900PX-
-    // WRAP-01). Re-measures on [lang, newArticleLabel] - the language switch
-    // and default-content-type label triggers - plus the ResizeObserver.
-    const {containerRef, primaryRef, contentRef, collapsed} =
-        useOverflowCollapse([lang, newArticleLabel]);
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
     // active (non-trash) article list. Slices ``filters.filteredArticles``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -675,7 +668,7 @@ export default function ArticleList() {
                         <BookOpen size={28} strokeWidth={1.5} />
                         <h1 className={layout.logoText}>Bibliogon</h1>
                     </div>
-                    <div className={layout.headerActions} ref={containerRef}>
+                    <div className={layout.headerActions}>
                         {/* ARTICLE-TYPES-SSOT-01 C5 (2026-05-29):
                          *  shared SplitButton primitive (extracted in
                          *  C4) replaces the plain "Neuer Artikel"
@@ -686,7 +679,6 @@ export default function ArticleList() {
                          *  shape exactly. Testid pattern follows the
                          *  ``new-book-menu-item-*`` convention from
                          *  the Book Dashboard side. */}
-                        <div ref={primaryRef} className={layout.headerCollapsible}>
                         <SplitButton
                             buttonClass="btn btn-primary"
                             variant="primary"
@@ -739,22 +731,16 @@ export default function ArticleList() {
                             chevronTestId="new-article-chevron"
                             itemTestIdPrefix="new-article-menu-item"
                         />
-                        </div>
 
-                        {/* Secondary cluster: collapses into the hamburger as
-                         *  ONE unit when it would not fit (useOverflowCollapse).
-                         *  When collapsed it stays in the DOM but out of flow
-                         *  (overflow-measure-hidden); the hamburger renders in
-                         *  its place. Mirrors Dashboard.tsx. */}
+                        {/* Secondary cluster. Fixed-breakpoint collapse via the
+                         *  Tailwind `menu:` screen (1200px; see tailwind.css):
+                         *  shown inline at >=1200px, hidden below where the
+                         *  hamburger takes over. Viewport-only - language /
+                         *  default-type changes never toggle it. Mirrors
+                         *  Dashboard.tsx. */}
                         <div
-                            ref={contentRef}
-                            className={
-                                collapsed
-                                    ? `${layout.headerCollapsible} overflow-measure-hidden`
-                                    : layout.headerCollapsible
-                            }
+                            className="hidden menu:flex items-center gap-[6px]"
                             data-testid="article-header-inline-actions"
-                            aria-hidden={collapsed}
                         >
                             <NewFromTemplateButton
                                 kind="article"
@@ -903,11 +889,10 @@ export default function ArticleList() {
                             <ThemeToggle />
                         </div>
 
-                        {/* Overflow: hamburger menu, rendered only when the
-                            secondary cluster does not fit on one line
-                            (useOverflowCollapse). Same DropdownMenu the
-                            <=768px breakpoint used to drive. */}
-                        {collapsed && (
+                        {/* Overflow: hamburger menu, shown below the 1200px
+                            breakpoint (Tailwind `menu:hidden`). Viewport-only,
+                            so it never toggles on language / default-type. */}
+                        <div className="menu:hidden">
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                                 <button
@@ -974,7 +959,7 @@ export default function ArticleList() {
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
-                        )}
+                        </div>
                     </div>
                 </div>
             </header>

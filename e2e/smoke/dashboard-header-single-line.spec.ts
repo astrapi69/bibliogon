@@ -1,78 +1,59 @@
 /**
- * MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01 (2026-06-05) regression pin
- * for the BOOK Dashboard header (sister to article-header-single-line.spec.ts).
+ * MENU-SINGLE-LINE fixed-breakpoint regression pin (Book Dashboard).
  *
- * The header must NEVER wrap to a second line. The two triggers that used to
- * wrap it at a fixed viewport are content-width changes, which a viewport
- * media query cannot see:
- *   1. the active LANGUAGE (German labels are the widest; German is default),
- *   2. the configured DEFAULT BOOK TYPE, whose label drives the SplitButton
- *      primary width (e.g. "Neues Bilderbuch" is wider than "Neues Buch").
+ * The header is EITHER the full inline bar OR the hamburger, decided by a
+ * single fixed CSS breakpoint (Tailwind `menu:` = 1200px), NEVER by content.
+ * Switching language or the default book type must not change which state is
+ * shown at a given viewport - no toggling, and never a two-line wrap.
  *
- * The fix (useOverflowCollapse) measures actual overflow and collapses the
- * secondary cluster into the hamburger, so the bar stays one line in every
- * locale and for every default-type label. These pins compare the header
- * height at a narrow width against its height at a generous reference width
- * (single-line guaranteed): a wrap adds a full control row (~36px+); a
- * collapse does not. Width-relative (not absolute px) keeps it robust across
- * font stacks.
+ * 1200px is the worst-case full-bar width (widest locale es/pt/el, where
+ * "Backup" is an ~18-char phrase, + the longest default-type label + margin).
+ * Above it the full bar always fits; below it the hamburger takes over.
  *
- * Pre-fix behaviour: at 820px the German bar wrapped to ~2 rows (the
- * `.headerActions` flex-wrap). These height pins FAIL on the pre-fix code.
+ * `Playwright-visible != User-visible`: the height assertions use
+ * boundingBox().height (a wrap adds a full control row) rather than just
+ * asserting visibility. The hamburger trigger is always in the DOM (CSS-
+ * hidden above the breakpoint), so visibility is asserted with
+ * toBeVisible()/toBeHidden(), not toHaveCount.
  */
 
 import {test, expect} from "../fixtures/base";
 
-const REFERENCE_WIDTH = 1440; // wide enough that the cluster is single-line
-const NARROW_WIDTH = 820; // inside the wrap window (> 768px breakpoint)
-const WRAP_TOLERANCE = 8; // px of control-height jitter allowed before "wrap"
+const ABOVE = 1280; // > 1200 breakpoint -> full bar
+const BELOW = 1100; // < 1200 breakpoint -> hamburger
+const REFERENCE_WIDTH = 1440; // single-line guaranteed
+const WRAP_TOLERANCE = 8; // px control-height jitter before "wrap"
 
-async function headerHeightAt(
-    page: import("@playwright/test").Page,
-    width: number,
-): Promise<number> {
+async function ready(page: import("@playwright/test").Page, width: number) {
     await page.setViewportSize({width, height: 800});
     await expect(page.getByTestId("new-book-group")).toBeVisible();
-    const header = page.getByTestId("dashboard-header");
-    await expect(header).toBeVisible();
-    const box = await header.boundingBox();
+}
+
+async function headerHeight(
+    page: import("@playwright/test").Page,
+): Promise<number> {
+    const box = await page.getByTestId("dashboard-header").boundingBox();
     expect(box).not.toBeNull();
     return box!.height;
 }
 
 test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
-    // Language trigger: German is the active (widest-label) locale, the worst
-    // case. The header must stay single-line at a width that wrapped pre-fix.
-    test("header stays single-line at 820px (German, widest labels)", async ({
+    test("full inline bar above the breakpoint, hamburger hidden", async ({
         page,
     }) => {
         await page.goto("/");
-        const reference = await headerHeightAt(page, REFERENCE_WIDTH);
-        const narrow = await headerHeightAt(page, NARROW_WIDTH);
-        expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
+        await ready(page, ABOVE);
+        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
     });
 
-    test("header stays single-line at 1024px too", async ({page}) => {
+    test("hamburger below the breakpoint, inline bar hidden", async ({page}) => {
         await page.goto("/");
-        const reference = await headerHeightAt(page, REFERENCE_WIDTH);
-        const narrow = await headerHeightAt(page, 1024);
-        expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
-    });
-
-    // Proves the bar COLLAPSED to the hamburger (not wrapped, not clipped):
-    // the hamburger trigger is present and an inline-only secondary control is
-    // not visible inline.
-    test("collapses to the hamburger at 820px, not a second row", async ({
-        page,
-    }) => {
-        await page.setViewportSize({width: NARROW_WIDTH, height: 800});
-        await page.goto("/");
-        await expect(page.getByTestId("new-book-group")).toBeVisible();
+        await ready(page, BELOW);
         await expect(page.getByTestId("dashboard-hamburger")).toBeVisible();
-        // The inline secondary cluster is collapsed (out of flow).
         await expect(page.getByTestId("backup-export-btn")).toBeHidden();
-        // Aster feedback 2026-06-05: the collapsed menu must carry the
-        // "Artikel" cross-nav (it was missing). Pin it in the hamburger.
+        // All actions reachable from the hamburger (incl. the Artikel
+        // cross-nav Aster asked for).
         await page.getByTestId("dashboard-hamburger").click();
         await expect(
             page.getByTestId("dashboard-hamburger-articles"),
@@ -80,26 +61,52 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await page.keyboard.press("Escape");
     });
 
-    // Mirror: at a generous width the full inline bar shows and there is no
-    // hamburger (proves the bar re-expands).
-    test("shows the full inline bar (no hamburger) at 1440px", async ({
-        page,
-    }) => {
-        await page.setViewportSize({width: REFERENCE_WIDTH, height: 800});
+    test("never wraps to two lines at any width", async ({page}) => {
         await page.goto("/");
-        await expect(page.getByTestId("new-book-group")).toBeVisible();
-        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
-        await expect(page.getByTestId("dashboard-hamburger")).toHaveCount(0);
+        await ready(page, REFERENCE_WIDTH);
+        const reference = await headerHeight(page);
+        for (const width of [1280, 1200, 1199, 1100, 1024, 820, 768]) {
+            await ready(page, width);
+            const h = await headerHeight(page);
+            expect(
+                h,
+                `header wrapped at ${width}px (got ${h}, ref ${reference})`,
+            ).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
+        }
     });
 
-    // Default-type trigger: changing the default book type widens the
-    // SplitButton primary label. The header must still be single-line after
-    // the change (proves the content-aware re-measure on the label dep).
-    test("stays single-line after the default book type changes", async ({
+    test("no toggle when the language changes (above breakpoint)", async ({
         page,
     }) => {
-        // Set the default book type to picture_book (longer label:
-        // "Neues Bilderbuch") via the Verhalten settings deep-link.
+        await page.goto("/");
+        await ready(page, ABOVE);
+        const before = await headerHeight(page);
+
+        // Switch to Spanish (the widest-label locale) via Settings.
+        await page.goto("/settings?tab=verhalten");
+        await expect(page.getByTestId("verhalten-settings")).toBeVisible();
+        await page.getByTestId("settings-language-trigger").click();
+        await page.getByTestId("settings-language-item-es").click();
+        await page.getByTestId("verhalten-settings-save").click();
+
+        await page.goto("/");
+        await ready(page, ABOVE);
+        // Still the full bar, hamburger still hidden, height unchanged: the
+        // layout did not toggle even though the labels got wider.
+        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
+        expect(await headerHeight(page)).toBeLessThanOrEqual(
+            before + WRAP_TOLERANCE,
+        );
+    });
+
+    test("no toggle when the default book type changes (above breakpoint)", async ({
+        page,
+    }) => {
+        await page.goto("/");
+        await ready(page, ABOVE);
+        const before = await headerHeight(page);
+
         await page.goto("/settings?tab=verhalten");
         await expect(page.getByTestId("verhalten-settings")).toBeVisible();
         await page.getByTestId("settings-default-book-type-trigger").click();
@@ -108,10 +115,12 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
             .click();
         await page.getByTestId("verhalten-settings-save").click();
 
-        // Back to the dashboard (re-reads the default on mount).
         await page.goto("/");
-        const reference = await headerHeightAt(page, REFERENCE_WIDTH);
-        const narrow = await headerHeightAt(page, NARROW_WIDTH);
-        expect(narrow).toBeLessThanOrEqual(reference + WRAP_TOLERANCE);
+        await ready(page, ABOVE);
+        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("dashboard-hamburger")).toBeHidden();
+        expect(await headerHeight(page)).toBeLessThanOrEqual(
+            before + WRAP_TOLERANCE,
+        );
     });
 });

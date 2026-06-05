@@ -42,7 +42,6 @@ import {Moon, Sun} from "lucide-react";
 import {useDialog} from "../components/AppDialog";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
-import {useOverflowCollapse} from "../hooks/useOverflowCollapse";
 import {useHelp} from "../contexts/HelpContext";
 import {getDonationsConfig, type DonationsConfig} from "../components/SupportSection";
 import DonationOnboardingDialog, {shouldShowDonationOnboarding} from "../components/DonationOnboardingDialog";
@@ -56,7 +55,7 @@ export default function Dashboard() {
     const dialog = useDialog();
     const bookTypesSnapshot = useBookTypes();
     const {openHelp} = useHelp();
-    const {t, lang} = useI18n();
+    const {t} = useI18n();
     const {theme, toggle: toggleTheme} = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
@@ -96,14 +95,6 @@ export default function Dashboard() {
     const newBookLabel = newBookTitleKey
         ? t(newBookTitleKey, newBookFallbackLabel)
         : newBookFallbackLabel;
-    // MENU-SINGLE-LINE-HAMBURGER-COLLAPSE-01: the header bar never wraps;
-    // when the secondary cluster would not fit it collapses into the
-    // hamburger. Content-aware (not a media query) so it also fires on the
-    // two reported triggers - language switch and default-type label change
-    // - which widen labels at a fixed viewport. Re-measures on [lang,
-    // newBookLabel] (label width) plus the container ResizeObserver.
-    const {containerRef, primaryRef, contentRef, collapsed} =
-        useOverflowCollapse([lang, newBookLabel]);
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.books_trash_view``). In-trash toggles
     // are session-local (no YAML write); persistence is only via the
@@ -482,7 +473,7 @@ export default function Dashboard() {
                         <BookOpen size={28} strokeWidth={1.5}/>
                         <h1 className={styles.logoText}>Bibliogon</h1>
                     </div>
-                    <div className={styles.headerActions} ref={containerRef}>
+                    <div className={styles.headerActions}>
                         {/* Always visible. Split-button: the primary
                          *  click keeps the existing 'new prose book'
                          *  flow (testid 'new-book-btn' preserved for
@@ -501,7 +492,6 @@ export default function Dashboard() {
                          *  new-book-chevron / new-book-menu-item-*)
                          *  so E2E specs keep working without
                          *  modification. */}
-                        <div ref={primaryRef} className={styles.headerCollapsible}>
                         <SplitButton
                             buttonClass="btn btn-primary"
                             variant="primary"
@@ -555,22 +545,16 @@ export default function Dashboard() {
                             chevronTestId="new-book-chevron"
                             itemTestIdPrefix="new-book-menu-item"
                         />
-                        </div>
 
-                        {/* Secondary cluster: collapses into the hamburger as
-                         *  ONE unit when it would not fit (useOverflowCollapse).
-                         *  When collapsed it stays in the DOM but out of flow
-                         *  (overflow-measure-hidden) so the hook can re-expand;
-                         *  the hamburger below renders in its place. */}
+                        {/* Secondary cluster. Fixed-breakpoint collapse via the
+                         *  Tailwind `menu:` screen (1200px worst-case full-bar
+                         *  width; see tailwind.css): shown inline at >=1200px,
+                         *  hidden below it where the hamburger takes over. The
+                         *  decision is viewport-only - language / default-type
+                         *  changes never toggle it. */}
                         <div
-                            ref={contentRef}
-                            className={
-                                collapsed
-                                    ? `${styles.headerCollapsible} overflow-measure-hidden`
-                                    : styles.headerCollapsible
-                            }
+                            className="hidden menu:flex items-center gap-[6px]"
                             data-testid="dashboard-header-inline-actions"
-                            aria-hidden={collapsed}
                         >
                             <NewFromTemplateButton
                                 kind="book"
@@ -631,9 +615,11 @@ export default function Dashboard() {
                             <ThemeToggle/>
                         </div>
 
-                        {/* Overflow: hamburger menu, rendered only when the
-                         *  secondary cluster does not fit on one line. */}
-                        {collapsed && (
+                        {/* Overflow: hamburger menu, shown below the 1200px
+                         *  breakpoint (Tailwind `menu:hidden` => visible only
+                         *  under the worst-case full-bar width). Viewport-only,
+                         *  so it never toggles on language / default-type. */}
+                        <div className="menu:hidden">
                         <DropdownMenu.Root>
                             <DropdownMenu.Trigger asChild>
                                 <button
@@ -687,7 +673,7 @@ export default function Dashboard() {
                                 </DropdownMenu.Content>
                             </DropdownMenu.Portal>
                         </DropdownMenu.Root>
-                        )}
+                        </div>
 
                     </div>
                 </div>

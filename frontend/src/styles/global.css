@@ -1961,18 +1961,6 @@ html.composition-mode .editor-chrome-toolbar {
     display: none !important;
 }
 
-/* Content-aware overflow collapse (useOverflowCollapse): the
- * collapsible cluster is taken out of flow but kept measurable
- * (it retains its natural width) so the hook can decide when the
- * bar fits again. Layout-only, not themable. */
-.overflow-measure-hidden {
-    position: absolute;
-    visibility: hidden;
-    pointer-events: none;
-    left: 0;
-    top: 0;
-}
-
 /* Sidebar wrapper for responsive behavior */
 .sidebar-wrapper {
     flex-shrink: 0;

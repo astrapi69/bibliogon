@@ -80,3 +80,18 @@
     --color-white: #fff;
     --color-black: #000;
 }
+
+/*
+ * Custom responsive breakpoint for the app-header single-line collapse.
+ * 1200px (75rem) is the worst-case full menu-bar width across all 8
+ * locales + the longest default book/content-type label, + a safety
+ * margin (the widest case is the Book Dashboard in es/pt/el, where
+ * "Backup" is an ~18-char phrase). The header shows the full inline bar
+ * at `menu:` and up (`hidden menu:flex`) and the hamburger below it
+ * (`menu:hidden`). The decision is viewport-only, so a language or
+ * default-type change can never toggle the layout (no two-line wrap, no
+ * jump between full-bar and hamburger).
+ */
+@theme {
+    --breakpoint-menu: 75rem;
+}
