@@ -489,25 +489,56 @@ logger.info(f"Exported {book}")  # no objects inside messages, use extra
 
 ## Inline documentation
 
-### When to write comments
+### No inline comments - docstrings only
+
+No inline comments (`#` / `//`) in code. Code must be self-explanatory through
+descriptive variable and function names. If something needs explaining, it
+belongs in a docstring/doc-block, not an inline comment.
+
+**Python - Google Style Docstrings** for all public functions, classes, and
+methods:
 
 ```python
-# RIGHT: the why, not the what
-# TipTap uses 4-space indent, write-book-template uses 2-space.
-# Double the indentation before conversion.
-content = re.sub(r'^( +)', lambda m: m.group(1) * 2, content, flags=re.MULTILINE)
+def restore_backup(backup_data: dict, user_id: str) -> RestoreResult:
+    """Restore a user's data from a backup archive.
 
-# WRONG: commenting the obvious
-# Create a new book
-book = Book(title=title, author=author)
+    Matches seeded catalog rows by natural key to avoid
+    UNIQUE constraint violations on re-seeded databases.
+
+    Args:
+        backup_data: Parsed backup archive contents.
+        user_id: Target user for the restore operation.
+
+    Returns:
+        RestoreResult with counts of added, updated, skipped rows.
+
+    Raises:
+        IntegrityError: If a natural key conflict cannot be resolved.
+    """
 ```
 
-**Rules:**
-- Comments explain WHY, not WHAT.
-- Docstrings for every public Python function (Google style).
-- TypeScript: JSDoc only for exported functions with non-obvious parameters.
-- TODOs only with context: `# TODO(phase-8): audiobook plugin needs ffmpeg check`
-- No commented-out code blocks. Git is the versioning.
+**TypeScript / React - TSDoc** for all exported functions, hooks, and components:
+
+```typescript
+/**
+ * Renders the backup section in Settings > Data.
+ * Hidden in Dexie mode (no backend available).
+ *
+ * @param userId - Active user ID for backup operations.
+ */
+export function BackupSection({ userId }: BackupSectionProps) {
+```
+
+**Allowed:**
+- `TODO:` and `FIXME:` with an issue reference (`# TODO(#53): extract to shared util`)
+- Regex or complex algorithms where the "why" is not obvious from the code
+- License headers
+
+**Forbidden:**
+- `# increment counter` / `// set the value` (obvious)
+- `# this fixes the bug` (belongs in the commit message)
+- `# added by CC` / `# AI-generated`
+- Commented-out code (delete it, do not comment it out; Git has the history)
 
 ### Docstring format (Python)
 
