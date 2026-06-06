@@ -4988,3 +4988,110 @@ test is the arbiter, not the green unit-test count.
   discipline this incident motivated.
 - release-workflow.md "Pre-Release Gate: Aster E2E Confirmation" —
   the process gate that makes the Playwright half mandatory.
+
+## Store IndexedDB binary as ArrayBuffer, not Blob (fake-indexeddb round-trip)
+
+Filed 2026-06-06 (P3c offline assets). When persisting binary (image
+bytes, file uploads) in IndexedDB via Dexie, store the bytes as a raw
+`ArrayBuffer`, NOT a `Blob`. Reconstruct the Blob on read:
+`new Blob([row.data], { type: row.mimeType })`.
+
+Why: a `Blob` stored and read back through the test stack
+(happy-dom + `fake-indexeddb`, which clone via the environment's
+`structuredClone`) loses its prototype methods — the retrieved object
+has neither `.text()` nor `.arrayBuffer()` (`TypeError: blob.arrayBuffer
+is not a function`), so the round-trip is untestable and the value is
+effectively opaque. A real browser stores Blobs fine, but the test
+environment does not, and you want the data layer covered by Vitest.
+`ArrayBuffer` structured-clones losslessly in EVERY implementation
+(Node, happy-dom, browsers), is equally efficient (binary, not base64),
+and the service worker reads it directly into a `Response`
+(`new Response(arrayBuffer, { headers: { 'Content-Type': mimeType } })`)
+while the resolver wraps it into a `Blob` for `createObjectURL`.
+
+Extraction helper (handles an input File whose `.arrayBuffer()` may be
+absent in older happy-dom): try `blob.arrayBuffer()`, else `FileReader`.
+See `storeAssetBlob` / `getBlob` in
+`frontend/src/storage/dexie-storage.ts`. The handover note "store images
+as native Blobs (base64 is wasteful)" was right to avoid base64 but
+wrong on Blob-vs-ArrayBuffer — ArrayBuffer is the testable, equally
+non-wasteful choice.
+
+## Service-worker intercept is the right tool for non-React-owned URLs — but is untestable in the SW-less dev E2E
+
+Filed 2026-06-06 (P3c offline assets). Two facts that shape any
+"serve-from-IndexedDB" feature in Bibliogon:
+
+1. **A sub-path-scoped SW DOES intercept root-absolute `/api/...`
+   requests.** GH Pages serves the app under `/bibliogon/`; the SW scope
+   is `/bibliogon/`, and `BASE = "/api"` makes asset URLs root-absolute
+   (`/api/books/...`, outside that path). Scope limits which *pages* the
+   SW controls, NOT which *request URLs* it sees: once it controls a
+   page, it gets that page's fetches (and `<img>` loads) to ANY path. So
+   the intercept works on GH Pages despite the scope/path mismatch.
+
+2. **The offline E2E runs against `npm run dev`, where the SW is disabled
+   (`devOptions.enabled: false`).** So an SW intercept is invisible to
+   the dev-server Playwright suite, and the hard `route.abort('**/api/**')`
+   gate would catch any `<img src="/api/...">` the SW would otherwise
+   serve. A pure-SW approach cannot be E2E-verified there.
+
+Design rule: **hybrid**. For images whose `<img>` element you CONTROL
+(covers, cards, thumbnails), use a resolver hook (`useAssetUrl`) that
+returns a `blob:` URL offline — works without the SW, so it is
+E2E-testable in dev AND fires zero `/api`. For URLs you do NOT control at
+render time (embedded inside TipTap bodies; id-served images rendered by
+a string `src`), the SW intercept is the only option — production-only,
+build-validated, NOT unit/E2E covered. Pin the SW's URL-shape regexes in
+a Vitest (the SW file can't be loaded — top-level `self.addEventListener`)
+and flag the IndexedDB read path as a known coverage gap for Aster's
+live-build verification.
+
+`workbox.importScripts` (generateSW mode) adds a dependency-free custom
+fetch listener at the top of the generated SW; it `respondWith`s only the
+asset URLs and returns for everything else, so it composes with Workbox's
+own routing without a race (the existing `/^\/api\//` regex doesn't match
+full URLs, so there's no conflict). This avoids migrating to
+`injectManifest`. See `public/asset-intercept-sw.js`.
+
+## Inserting an i18n key into a block that already exists elsewhere → duplicate YAML mapping key
+
+Filed 2026-06-06 (P3c). When adding a key under an existing top-level
+namespace (e.g. `ui.offline.*`), the namespace block may already be
+defined LATER in the catalog. Blindly inserting `  offline:\n    new_key:`
+near the top creates a SECOND `offline:` mapping key under `ui:`. YAML's
+last-key-wins then drops your insertion when the seed generator parses it
+(the offline-PWA reads keys from the seed JSON, so the key silently
+vanishes for non-DE users — and `grep -c new_key seed.json` returns 0
+even though the YAML "has" it).
+
+Detection: after inserting, `grep -c '^  <namespace>:'` per catalog must
+be 1, not 2. Fix: find the EXISTING block and add the key as a child of
+it. Always reseed (`make generate-seed-data`) AND assert the key is
+present in the seed JSON, not just the YAML, before committing. Backend
+`test_i18n_parity.py` (51) checks key parity ACROSS catalogs but NOT
+same-file duplicate keys, so it would not have caught this.
+
+## CI-only frontend flake: identical bundle, green one push, red the next
+
+Filed 2026-06-06 (P3c). A docs-only commit (journal markdown, zero
+frontend change) failed the CI "Run Vitest" step on a storyboard
+annotation assertion (`expected vi.fn() to be called with [...] / Number
+of calls: 0`) while the IMMEDIATELY PRIOR commit — same frontend bundle —
+passed CI, and a local `vitest run` of the suspected files passed 3/3.
+Identical code, green→red across two pushes = a flaky test, not a
+regression.
+
+Triage recipe when CI frontend goes red but you suspect a flake:
+1. Compare against the prior commit's CI: if the frontend bundle is
+   identical (e.g. a docs-only commit) and that run was green, it's a
+   flake by construction.
+2. Reproduce locally in a loop (`for i in 1 2 3; do vitest run <files>;
+   done`). Consistently green locally ⇒ CI-only flake.
+3. `gh run rerun <id> --failed` to restore green on main.
+This flake class is the documented React-18 double-effect-mount /
+non-stable-mock family (see "React 18 dev-mode double-effect-mount
+strands mockImplementationOnce" + "React useEffect deps + i18n test
+mocks" in this file). Re-run clears the red; the underlying mock-
+stability fix in the specific storyboard test is separate, lower-tier
+work — do not bundle it into an unrelated feature.
