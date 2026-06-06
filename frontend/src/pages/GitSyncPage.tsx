@@ -434,6 +434,7 @@ function CredentialsSection({
           alignItems: "center",
           justifyContent: "space-between",
           gap: 8,
+          flexWrap: "wrap",
         }}
       >
         <strong style={{ display: "flex", alignItems: "center", gap: 6 }}>
@@ -484,6 +485,7 @@ function CredentialsSection({
       {open && (
         <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
           <input
+            className="input"
             data-testid="git-sync-credential-input"
             type="password"
             value={pat}
@@ -494,7 +496,7 @@ function CredentialsSection({
             )}
             autoComplete="off"
             spellCheck={false}
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 0 }}
           />
           <button
             type="button"

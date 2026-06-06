@@ -472,10 +472,7 @@ export default function GitBackupPage() {
                         value={remoteUrlDraft}
                         onChange={(e) => setRemoteUrlDraft(e.target.value)}
                         placeholder="https://github.com/user/my-book.git"
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "0.8125rem",
-                        }}
+                        style={{ fontFamily: "var(--font-mono)" }}
                         data-testid="git-remote-url-input"
                       />
                     </div>
@@ -504,10 +501,7 @@ export default function GitBackupPage() {
                         value={remotePatDraft}
                         onChange={(e) => setRemotePatDraft(e.target.value)}
                         placeholder="ghp_..."
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "0.8125rem",
-                        }}
+                        style={{ fontFamily: "var(--font-mono)" }}
                         data-testid="git-remote-pat-input"
                       />
                       <small
