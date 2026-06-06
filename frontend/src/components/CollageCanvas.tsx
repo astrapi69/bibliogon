@@ -35,7 +35,8 @@ import {
     Type as TypeIcon,
     Upload,
 } from "lucide-react";
-import {api, type Page, type PageUpdate} from "../api/client";
+import {type Page, type PageUpdate} from "../api/client";
+import {getStorage} from "../storage";
 import {useDragPosition} from "../hooks/useDragPosition";
 import {useI18n} from "../hooks/useI18n";
 import {
@@ -622,7 +623,7 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
         setUploading(true);
         setUploadError(null);
         try {
-            const asset = await api.assets.upload(bookId, file, "figure");
+            const asset = await getStorage().assets.upload(bookId, file, "figure");
             const nextZ =
                 images.length === 0
                     ? 1

@@ -2,7 +2,8 @@ import React, {useCallback, useEffect, useRef, useState} from "react"
 import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
-import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {getStorage} from "../storage"
 import {imageUrlFor} from "../utils/imageUrl"
 import {
     readLayoutNamespace,
@@ -633,7 +634,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         setUploading(true)
         setUploadError(null)
         try {
-            const asset = await api.assets.upload(bookId, file, "figure")
+            const asset = await getStorage().assets.upload(bookId, file, "figure")
             await onUpdate({image_asset_id: asset.id})
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : String(err))
@@ -656,7 +657,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         setUploadingSecondary(true)
         setUploadSecondaryError(null)
         try {
-            const asset = await api.assets.upload(bookId, file, "figure")
+            const asset = await getStorage().assets.upload(bookId, file, "figure")
             const nextConfig = writeSecondaryImageAssetId(
                 page.layout_config,
                 page.layout as PageLayout,

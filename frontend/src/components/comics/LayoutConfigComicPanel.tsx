@@ -31,7 +31,6 @@
 
 import {useRef, useState} from "react";
 
-import {api} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 
@@ -69,7 +68,7 @@ export function LayoutConfigComicPanel({
         setUploading(true);
         setUploadError(null);
         try {
-            const asset = await api.assets.upload(bookId, file, "figure");
+            const asset = await getStorage().assets.upload(bookId, file, "figure");
             onChange({image_asset_id: asset.id});
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : String(err));

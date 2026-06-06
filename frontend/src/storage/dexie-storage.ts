@@ -1215,6 +1215,7 @@ export async function storeAssetBlob(
   blob: Blob,
   mimeType: string,
   assetType: string,
+  id?: string,
 ): Promise<AssetRow> {
   const data = await blobToArrayBuffer(blob);
   const existing = (await offlineDb.assets
@@ -1223,7 +1224,10 @@ export async function storeAssetBlob(
     .primaryKeys()) as string[];
   if (existing.length) await offlineDb.assets.bulkDelete(existing);
   const row: AssetRow = {
-    id: newId(),
+    // The offline-download byte-fetch passes the SERVER asset id so the
+    // id-served picture-book / collage URLs (`/assets/{id}/file`) resolve;
+    // fresh uploads mint a uuid.
+    id: id ?? newId(),
     bookId,
     filename,
     mimeType,

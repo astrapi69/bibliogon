@@ -346,7 +346,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const uploadAndInsertImage = async (file: File) => {
         if (!bookId) return;
         try {
-            const asset = await api.assets.upload(bookId, file, "figure");
+            const asset = await getStorage().assets.upload(bookId, file, "figure");
             const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
             editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
         } catch (err) {
