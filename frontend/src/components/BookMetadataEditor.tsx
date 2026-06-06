@@ -4,6 +4,9 @@ import DOMPurify from "dompurify";
 import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel, type GitSyncMappingStatus} from "../api/client";
 import { getStorage } from "../storage";
 import { useAssetUrl } from "../hooks/useAssetUrl";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { aiChat, getAiConfig, isAiConfigured } from "../ai/llmClient";
+import { buildMarketingMessages } from "../ai/marketingPrompts";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -92,6 +95,21 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [showKdpWizard, setShowKdpWizard] = useState(false);
     const [aiGenerating, setAiGenerating] = useState<string | null>(null);
     const {status: pluginStatus} = useEditorPluginStatus();
+    const {offline} = useOfflineFeatureGate();
+    // Offline the AI plugin probe is empty (backend-only); the marketing
+    // generate instead runs browser-direct, so availability follows whether
+    // the user configured an AI key in Settings.
+    const [offlineAiReady, setOfflineAiReady] = useState(false);
+    useEffect(() => {
+        if (!offline) return;
+        let cancelled = false;
+        void getAiConfig().then((cfg) => {
+            if (!cancelled) setOfflineAiReady(isAiConfigured(cfg));
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [offline]);
     const authorProfile = useAuthorProfile();
 
     useEffect(() => {
@@ -316,12 +334,14 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         notify.success(t("ui.metadata.copy_success", "Verlag und Autoren-Info übernommen"));
     };
 
-    const aiAvailable = isPluginAvailable(pluginStatus, "ai");
+    const aiAvailable = offline
+        ? offlineAiReady
+        : isPluginAvailable(pluginStatus, "ai");
 
     const handleAiGenerate = async (field: string) => {
         setAiGenerating(field);
         try {
-            const data = await api.ai.generateMarketing({
+            const req = {
                 field,
                 book_title: book.title,
                 author: book.author,
@@ -331,10 +351,21 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 chapter_titles: book.chapters.map((ch) => ch.title),
                 existing_text: field === "keywords" ? "" : (form[field] || ""),
                 book_id: book.id,
-            });
+            };
+            // Offline: build the same prompts and call the provider directly
+            // from the browser; online: the backend AI route.
+            const content = offline
+                ? (
+                      await aiChat(
+                          await getAiConfig(),
+                          buildMarketingMessages(req),
+                          {maxTokens: 1024},
+                      )
+                  ).content
+                : (await api.ai.generateMarketing(req)).content;
             if (field === "keywords") {
                 try {
-                    const parsed = JSON.parse(data.content);
+                    const parsed = JSON.parse(content);
                     if (Array.isArray(parsed)) {
                         setKeywords(parsed.map(String).filter(Boolean));
                         notify.success(t("ui.metadata.ai_keywords_generated", "Keywords generiert"));
@@ -345,7 +376,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                     notify.error(t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"));
                 }
             } else {
-                set(field, data.content || "");
+                set(field, content || "");
                 notify.success(t("ui.metadata.ai_text_generated", "Text generiert"));
             }
         } catch (err) {
