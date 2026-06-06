@@ -7,6 +7,7 @@ import {getStorage} from "../storage";
 import {useCoverUrl} from "../hooks/useAssetUrl";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
+import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota";
 import {EmptyState} from "./EmptyState";
 import styles from "./CoverUpload.module.css";
 
@@ -62,6 +63,12 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
             onChange(result.cover_image);
             setInfo({width: result.width, height: result.height});
             notify.success(t("ui.cover.upload_success", "Cover hochgeladen"));
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            );
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : String(err);
             notify.error(

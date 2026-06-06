@@ -1679,6 +1679,7 @@ ui:
     redo: "Retablir"
     hint: "Astuce: Appuyez sur Ctrl+/ pour ouvrir cette vue a tout moment."
   offline:
+    storage_almost_full: "Le stockage du navigateur est presque plein. Supprimez les livres hors ligne dont vous n'avez plus besoin pour libérer de l'espace."
     take: "Mettre hors ligne"
     remove: "Retirer hors ligne"
     working: "En cours …"

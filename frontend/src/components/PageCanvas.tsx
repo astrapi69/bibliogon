@@ -5,6 +5,7 @@ import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {getStorage} from "../storage"
 import {imageUrlFor} from "../utils/imageUrl"
+import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota"
 import {
     readLayoutNamespace,
     readSecondaryImageAssetId,
@@ -636,6 +637,12 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         try {
             const asset = await getStorage().assets.upload(bookId, file, "figure")
             await onUpdate({image_asset_id: asset.id})
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            )
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : String(err))
         } finally {
@@ -664,6 +671,12 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                 asset.id,
             )
             await onUpdate({layout_config: nextConfig})
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            )
         } catch (err: unknown) {
             setUploadSecondaryError(
                 err instanceof Error ? err.message : String(err),

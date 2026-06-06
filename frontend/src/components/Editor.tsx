@@ -50,6 +50,7 @@ import {useI18n} from "../hooks/useI18n";
 import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
 import {api, ApiError, SaveAbortedError} from "../api/client";
 import {getStorage} from "../storage";
+import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota";
 import {notify} from "../utils/notify";
 import {editorToMarkdown} from "../utils/tiptap-markdown";
 
@@ -349,6 +350,12 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             const asset = await getStorage().assets.upload(bookId, file, "figure");
             const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
             editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            );
         } catch (err) {
             notify.error(t("ui.editor.upload_failed", "Upload fehlgeschlagen"), err);
         }

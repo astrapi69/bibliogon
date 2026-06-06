@@ -1731,6 +1731,7 @@
       "hint": "Tipp: Drücke Ctrl+/ um diese Übersicht jederzeit zu öffnen."
     },
     "offline": {
+      "storage_almost_full": "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
       "take": "Offline nehmen",
       "remove": "Offline entfernen",
       "working": "Arbeitet …",

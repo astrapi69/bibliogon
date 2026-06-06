@@ -1688,6 +1688,7 @@ ui:
     redo: "Redo"
     hint: "Tip: Press Ctrl+/ to open this overview at any time."
   offline:
+    storage_almost_full: "Browser storage is almost full. Remove offline books you no longer need to free up space."
     take: "Take offline"
     remove: "Remove offline"
     working: "Working …"

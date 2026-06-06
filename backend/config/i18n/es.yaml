@@ -1679,6 +1679,7 @@ ui:
     redo: "Rehacer"
     hint: "Consejo: Pulsa Ctrl+/ para abrir esta vista en cualquier momento."
   offline:
+    storage_almost_full: "El almacenamiento del navegador está casi lleno. Elimina los libros sin conexión que ya no necesites para liberar espacio."
     take: "Guardar sin conexión"
     remove: "Quitar sin conexión"
     working: "Trabajando …"

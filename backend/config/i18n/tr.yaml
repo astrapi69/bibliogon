@@ -1679,6 +1679,7 @@ ui:
     redo: "Yinele"
     hint: "Ipucu: Her zaman Ctrl+/ ile bu genel bakisi acabilirsiniz."
   offline:
+    storage_almost_full: "Tarayıcı depolaması neredeyse dolu. Yer açmak için artık ihtiyaç duymadığınız çevrimdışı kitapları kaldırın."
     take: "Çevrimdışı al"
     remove: "Çevrimdışı kaldır"
     working: "Çalışıyor …"

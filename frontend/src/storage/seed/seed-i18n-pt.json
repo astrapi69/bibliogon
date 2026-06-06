@@ -1731,6 +1731,7 @@
       "completed_hint": "Audiolivro pronto - clique abre metadados"
     },
     "offline": {
+      "storage_almost_full": "O armazenamento do navegador está quase cheio. Remova livros offline de que já não precisa para libertar espaço.",
       "take": "Guardar offline",
       "remove": "Remover offline",
       "working": "A trabalhar …",

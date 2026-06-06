@@ -33,6 +33,7 @@ import {useRef, useState} from "react";
 
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
+import {warnIfOfflineStorageNearlyFull} from "../../utils/storageQuota";
 
 import {Tier1Section} from "./Tier1Section";
 import type {ComicPanelData} from "./ComicPanel";
@@ -70,6 +71,12 @@ export function LayoutConfigComicPanel({
         try {
             const asset = await getStorage().assets.upload(bookId, file, "figure");
             onChange({image_asset_id: asset.id});
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            );
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : String(err));
         } finally {

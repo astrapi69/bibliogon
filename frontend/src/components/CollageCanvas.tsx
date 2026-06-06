@@ -44,6 +44,7 @@ import {
     writeLayoutNamespace,
 } from "../utils/layoutConfig";
 import {imageUrlFor} from "../utils/imageUrl";
+import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota";
 import styles from "./CollageCanvas.module.css";
 
 const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif";
@@ -642,6 +643,12 @@ export default function CollageCanvas({page, bookId, onUpdate}: Props) {
                 },
             ];
             updateNamespace({images: nextImages});
+            void warnIfOfflineStorageNearlyFull(
+                t(
+                    "ui.offline.storage_almost_full",
+                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
+                ),
+            );
         } catch (err: unknown) {
             setUploadError(err instanceof Error ? err.message : String(err));
         } finally {
