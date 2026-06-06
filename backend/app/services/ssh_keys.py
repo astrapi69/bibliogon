@@ -23,11 +23,21 @@ from typing import Any
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
+from app.paths import get_config_dir
+
 logger = logging.getLogger(__name__)
 
-SSH_DIR = Path("config/ssh")
+# SSH key directory override. ``None`` means "resolve fresh under the data
+# dir" (see ``_resolve_ssh_dir``); tests monkeypatch this to a tmp_path. Never
+# a CWD-relative literal - that escapes the isolated data dir.
+SSH_DIR: Path | None = None
 PRIVATE_KEY_NAME = "id_ed25519"
 PUBLIC_KEY_NAME = "id_ed25519.pub"
+
+
+def _resolve_ssh_dir() -> Path:
+    """The SSH key directory: a test override, else fresh under the data dir."""
+    return SSH_DIR if SSH_DIR is not None else get_config_dir() / "ssh"
 
 
 class SshKeyError(Exception):
@@ -43,21 +53,22 @@ class SshKeyNotFoundError(SshKeyError):
 
 
 def _ssh_dir() -> Path:
-    SSH_DIR.mkdir(parents=True, exist_ok=True)
+    target = _resolve_ssh_dir()
+    target.mkdir(parents=True, exist_ok=True)
     try:
-        os.chmod(SSH_DIR, 0o700)
+        os.chmod(target, 0o700)
     except OSError:
         # Windows or restrictive container FS.
         pass
-    return SSH_DIR
+    return target
 
 
 def private_key_path() -> Path:
-    return SSH_DIR / PRIVATE_KEY_NAME
+    return _resolve_ssh_dir() / PRIVATE_KEY_NAME
 
 
 def public_key_path() -> Path:
-    return SSH_DIR / PUBLIC_KEY_NAME
+    return _resolve_ssh_dir() / PUBLIC_KEY_NAME
 
 
 def exists() -> bool:
@@ -149,5 +160,5 @@ def delete() -> bool:
             path.unlink()
             removed = True
     if removed:
-        logger.info("SSH keypair deleted from %s", SSH_DIR)
+        logger.info("SSH keypair deleted from %s", _resolve_ssh_dir())
     return removed

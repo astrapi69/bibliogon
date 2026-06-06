@@ -5,10 +5,13 @@ to the entire GCP project. Unlike a simple API key (ElevenLabs), a
 leaked Service Account can rack up unbounded costs, so we never
 store it in plain text on disk.
 
-Encryption uses Fernet (AES-128-CBC + HMAC-SHA256) with a key
-derived from the ``BIBLIOGON_CREDENTIALS_SECRET`` environment
-variable. The encrypted blob lives at a configurable path under
-``config/plugins/audiobook/`` with ``chmod 600`` permissions.
+Encryption uses Fernet (AES-128-CBC + HMAC-SHA256) with a key derived
+(SHA-256) from a secret resolved via a fallback chain:
+``BIBLIOGON_CREDENTIALS_SECRET`` -> ``BIBLIOGON_SECRET_KEY`` -> an
+auto-generated secret persisted in the data dir (so credential storage
+works without manual env setup). The encrypted blob lives under the
+user data dir (``get_config_dir()/plugins/audiobook/`` by default) with
+``chmod 600`` permissions.
 
 The decrypted bytes are only ever held in memory - they are written
 to a ``NamedTemporaryFile`` for the short window that the manuscripta
@@ -31,25 +34,72 @@ from cryptography.fernet import Fernet, InvalidToken
 
 logger = logging.getLogger(__name__)
 
-# Default path for stored encrypted credentials. Callers can override
-# via the ``path`` parameter (tests do this with tmp_path).
-DEFAULT_CREDENTIALS_DIR = Path("config/plugins/audiobook")
+# Default credentials directory override. ``None`` means "resolve fresh under
+# the data dir" (see ``_default_credentials_dir``); tests set this (or pass
+# ``credentials_dir``) to a ``tmp_path``. Never a CWD-relative literal - that
+# escapes the isolated data dir (filesystem-isolation rule).
+DEFAULT_CREDENTIALS_DIR: Path | None = None
+
+# Persisted auto-generated credentials secret, used only when neither
+# BIBLIOGON_CREDENTIALS_SECRET nor BIBLIOGON_SECRET_KEY is set.
+_AUTO_SECRET_FILENAME = "credentials.secret"
+
+
+def _default_credentials_dir() -> Path:
+    """Default encrypted-credentials directory, resolved fresh under the user
+    data dir (or a test override)."""
+    from app.paths import get_config_dir
+
+    return DEFAULT_CREDENTIALS_DIR or (get_config_dir() / "plugins" / "audiobook")
+
+
+def _get_secret() -> str:
+    """Resolve the credentials-encryption secret with a fallback chain so
+    credential storage works out of the box:
+
+    1. ``BIBLIOGON_CREDENTIALS_SECRET`` (dedicated; allows independent rotation)
+    2. ``BIBLIOGON_SECRET_KEY`` (the app secret start.sh auto-generates)
+    3. an auto-generated secret persisted in the data dir on first use.
+    """
+    secret = os.environ.get("BIBLIOGON_CREDENTIALS_SECRET") or os.environ.get(
+        "BIBLIOGON_SECRET_KEY"
+    )
+    if secret:
+        return secret
+    return _load_or_create_persisted_secret()
+
+
+def _load_or_create_persisted_secret() -> str:
+    from app.paths import get_config_dir
+
+    path = get_config_dir() / _AUTO_SECRET_FILENAME
+    try:
+        if path.exists():
+            existing = path.read_text(encoding="utf-8").strip()
+            if existing:
+                return existing
+    except OSError as e:
+        logger.warning("Could not read persisted credentials secret: %s", e)
+    new_secret = base64.urlsafe_b64encode(os.urandom(32)).decode("ascii")
+    try:
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(new_secret, encoding="utf-8")
+        os.chmod(path, 0o600)
+    except OSError as e:
+        # Could not persist (read-only FS); the in-memory secret still works
+        # this process, but stored credentials won't decrypt after a restart.
+        logger.warning("Could not persist auto-generated credentials secret: %s", e)
+    return new_secret
 
 
 def _get_cipher() -> Fernet:
-    """Build a Fernet cipher from the environment secret.
+    """Build a Fernet cipher from the resolved credentials secret.
 
-    Fernet requires a 32-byte URL-safe base64-encoded key. We derive
-    it deterministically from the user's secret string via SHA-256 so
-    any passphrase length works.
+    Fernet requires a 32-byte URL-safe base64-encoded key. We derive it
+    deterministically from the secret via SHA-256 so any passphrase length
+    works.
     """
-    secret = os.environ.get("BIBLIOGON_CREDENTIALS_SECRET", "")
-    if not secret:
-        raise RuntimeError(
-            "BIBLIOGON_CREDENTIALS_SECRET is not set. "
-            "Add it to your .env or environment before configuring "
-            "encrypted credentials."
-        )
+    secret = _get_secret()
     key = base64.urlsafe_b64encode(hashlib.sha256(secret.encode()).digest())
     return Fernet(key)
 
@@ -93,7 +143,7 @@ def save_encrypted(
     this function — ``save_encrypted`` only does the encrypt-and-write
     part so it stays reusable for future credential types.
     """
-    target_dir = credentials_dir or DEFAULT_CREDENTIALS_DIR
+    target_dir = credentials_dir or _default_credentials_dir()
     target_dir.mkdir(parents=True, exist_ok=True)
 
     cipher = _get_cipher()
@@ -131,7 +181,7 @@ def load_decrypted(
         FileNotFoundError: credential file does not exist.
         RuntimeError: decryption failed (wrong secret or corrupted file).
     """
-    target = (credentials_dir or DEFAULT_CREDENTIALS_DIR) / filename
+    target = (credentials_dir or _default_credentials_dir()) / filename
     if not target.exists():
         raise FileNotFoundError(f"Credential file not found: {target}")
 
@@ -172,7 +222,7 @@ def is_configured(
     credentials_dir: Path | None = None,
 ) -> bool:
     """True if encrypted credentials exist on disk."""
-    return ((credentials_dir or DEFAULT_CREDENTIALS_DIR) / filename).exists()
+    return ((credentials_dir or _default_credentials_dir()) / filename).exists()
 
 
 def secure_delete(
@@ -180,7 +230,7 @@ def secure_delete(
     credentials_dir: Path | None = None,
 ) -> bool:
     """Overwrite the file with null bytes, then unlink. Returns True if deleted."""
-    target = (credentials_dir or DEFAULT_CREDENTIALS_DIR) / filename
+    target = (credentials_dir or _default_credentials_dir()) / filename
     if not target.exists():
         return False
     try:

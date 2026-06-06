@@ -500,6 +500,28 @@ def test_credentials_put_then_get_then_delete(
     assert client.get(f"/api/git-sync/{book.id}/credentials").json() == {"has_credential": False}
 
 
+def test_credentials_put_succeeds_without_secret_env(
+    book: Book,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    # Regression for #35: storing a PAT must NOT 500 when neither
+    # BIBLIOGON_CREDENTIALS_SECRET nor BIBLIOGON_SECRET_KEY is set. The
+    # credential store auto-generates a secret; previously this raised an
+    # unhandled RuntimeError -> 500 ("Konnte Repo-Token nicht speichern").
+    monkeypatch.setattr(git_credentials, "GIT_CRED_DIR", tmp_path / "creds")
+    monkeypatch.delenv("BIBLIOGON_CREDENTIALS_SECRET", raising=False)
+    monkeypatch.delenv("BIBLIOGON_SECRET_KEY", raising=False)
+
+    put_resp = client.put(
+        f"/api/git-sync/{book.id}/credentials",
+        json={"pat": "ghp_no_secret_set"},
+    )
+    assert put_resp.status_code == 200
+    assert put_resp.json() == {"has_credential": True}
+    assert "ghp_no_secret_set" not in put_resp.text
+
+
 def test_credentials_put_empty_clears(
     book: Book,
     tmp_path: Path,

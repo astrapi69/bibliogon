@@ -15,14 +15,24 @@ import urllib.parse
 from pathlib import Path
 
 from app import credential_store
+from app.paths import get_config_dir
 from app.services import ssh_keys
 
-# Single source of truth for the per-book PAT directory. Tests
-# monkeypatch this attribute. Keep imports of this constant via the
-# module path (``git_credentials.GIT_CRED_DIR``), never via ``from
-# git_credentials import GIT_CRED_DIR`` - the latter freezes the
-# binding at import time and defeats the monkeypatch.
-GIT_CRED_DIR = Path("config/git_credentials")
+# Per-book PAT directory override. ``None`` means "resolve fresh under the
+# data dir" (see ``_cred_dir``); tests monkeypatch this to a tmp_path. Access
+# via the module path (``git_credentials.GIT_CRED_DIR``), never ``from
+# git_credentials import GIT_CRED_DIR`` (that freezes the binding and defeats
+# the monkeypatch). Never a CWD-relative literal - that escapes the isolated
+# data dir (filesystem-isolation rule).
+GIT_CRED_DIR: Path | None = None
+
+
+def _cred_dir() -> Path:
+    """The per-book PAT directory: a test override, else fresh under the
+    data dir."""
+    return (
+        GIT_CRED_DIR if GIT_CRED_DIR is not None else get_config_dir() / "git_credentials"
+    )
 
 
 def pat_filename(book_id: str) -> str:
@@ -39,7 +49,7 @@ def save_pat(book_id: str, pat: str) -> None:
     credential_store.save_encrypted(
         pat.encode("utf-8"),
         filename=pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
+        credentials_dir=_cred_dir(),
     )
 
 
@@ -47,7 +57,7 @@ def delete_pat(book_id: str) -> None:
     """Idempotent secure delete of the PAT for ``book_id``."""
     credential_store.secure_delete(
         filename=pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
+        credentials_dir=_cred_dir(),
     )
 
 
@@ -55,7 +65,7 @@ def has_pat(book_id: str) -> bool:
     """True when a PAT is stored for ``book_id``."""
     return credential_store.is_configured(
         filename=pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
+        credentials_dir=_cred_dir(),
     )
 
 
@@ -65,7 +75,7 @@ def load_pat(book_id: str) -> str | None:
         return None
     raw = credential_store.load_decrypted(
         filename=pat_filename(book_id),
-        credentials_dir=GIT_CRED_DIR,
+        credentials_dir=_cred_dir(),
     )
     pat = raw.decode("utf-8").strip()
     return pat or None
