@@ -171,7 +171,7 @@ export function editorToPlainText(
     return prependMetadataPlain(body, metadata);
 }
 
-function nodeToPlainText(node: TipTapNode): string {
+export function nodeToPlainText(node: TipTapNode): string {
     if (!node) return "";
     const type = node.type as string;
     const content = node.content as TipTapNode[] | undefined;
