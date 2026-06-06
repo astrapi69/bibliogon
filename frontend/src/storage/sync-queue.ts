@@ -181,5 +181,10 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     // (replay deferred); passthrough.
     pages: base.pages,
     comics: base.comics,
+    // Assets + covers: blobs stored locally offline (replay deferred — a
+    // reconnect re-upload is a future sync concern, matching pages/comics);
+    // straight passthrough so the seam stays complete.
+    assets: base.assets,
+    covers: base.covers,
   };
 }

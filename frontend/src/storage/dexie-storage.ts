@@ -30,6 +30,7 @@ import Dexie, { type Table } from "dexie";
 
 import type {
   Article,
+  Asset,
   Author,
   AuthorCreate,
   AuthorUpdate,
@@ -41,6 +42,7 @@ import type {
   ComicBubbleOut,
   ComicPanelOut,
   ContentTypeDef,
+  CoverUploadResponse,
   DiscoveredPlugin,
   Page,
   StoryEntityLinkOut,
@@ -79,6 +81,23 @@ export type OfflineBookRow = Book & { offline_available?: boolean };
 /** Minimal shape for the not-yet-method-backed graph tables: a primary
  *  `id` plus arbitrary columns. C3 populates these during download. */
 type GraphRow = { id: string } & Record<string, unknown>;
+
+/** A binary image asset held in IndexedDB (P3c). The metadata mirrors the
+ *  API `Asset` (minus the server-side `path`); the body is stored as a raw
+ *  `ArrayBuffer` (not a `Blob`) so it structured-clones losslessly through
+ *  every IndexedDB implementation — the service worker reconstructs a
+ *  `Response` from it and the resolver a `Blob`. Looked up BY FILENAME via
+ *  the compound `[bookId+filename]` index, because the editor / cover URLs
+ *  reference a `/api/books/{id}/assets/file/{filename}` path, not an id. */
+export interface AssetRow {
+  id: string;
+  bookId: string;
+  filename: string;
+  mimeType: string;
+  assetType: string;
+  data: ArrayBuffer;
+  createdAt: string;
+}
 
 /** A queued offline mutation awaiting replay against the API on
  *  reconnect (mobile-sync P3-C5). Created by the queueing-storage
@@ -133,6 +152,7 @@ class BibliogonOfflineDB extends Dexie {
   >;
   pluginMetaRef!: Table<KeyedBlob<DiscoveredPlugin[]>, string>;
   authors!: Table<Author, string>;
+  assets!: Table<AssetRow, string>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -177,6 +197,13 @@ class BibliogonOfflineDB extends Dexie {
     // per-type create options offline.
     this.version(6).stores({
       storyEntityTypesRef: "key",
+    });
+    // v7 (Maximal Offline P3c): binary image assets. Looked up by filename
+    // (the editor/cover URLs are filename-keyed), so a compound
+    // `[bookId+filename]` index backs the resolver AND the service worker's
+    // raw-IndexedDB read. The `blob` field holds the file body natively.
+    this.version(7).stores({
+      assets: "id, bookId, filename, [bookId+filename]",
     });
   }
 }
@@ -477,6 +504,7 @@ export const dexieStorage: IStorageService = {
           offlineDb.chapterLabels,
           offlineDb.writingSessions,
           offlineDb.storyEntities,
+          offlineDb.assets,
         ],
         async () => {
           await offlineDb.books.delete(id);
@@ -485,6 +513,7 @@ export const dexieStorage: IStorageService = {
           await offlineDb.chapterLabels.where("book_id").equals(id).delete();
           await offlineDb.writingSessions.where("book_id").equals(id).delete();
           await offlineDb.storyEntities.where("book_id").equals(id).delete();
+          await offlineDb.assets.where("bookId").equals(id).delete();
         },
       );
     },
@@ -1068,7 +1097,155 @@ export const dexieStorage: IStorageService = {
       await offlineDb.comicBubbles.delete(bubbleId);
     },
   },
+
+  assets: {
+    list: async (bookId) => {
+      const rows = await offlineDb.assets
+        .where("bookId")
+        .equals(bookId)
+        .toArray();
+      return rows.map(assetRowToMeta);
+    },
+    upload: async (bookId, file, assetType) => {
+      const row = await storeAssetBlob(
+        bookId,
+        sanitizeAssetName(file.name),
+        file,
+        file.type || "application/octet-stream",
+        assetType,
+      );
+      return assetRowToMeta(row);
+    },
+    delete: async (_bookId, assetId) => {
+      await offlineDb.assets.delete(assetId);
+    },
+    getBlob: async (bookId, filename) => {
+      const row = await offlineDb.assets
+        .where("[bookId+filename]")
+        .equals([bookId, filename])
+        .first();
+      return row ? new Blob([row.data], { type: row.mimeType }) : null;
+    },
+    cacheBlob: async (bookId, filename, blob, assetType = "figure") => {
+      await storeAssetBlob(
+        bookId,
+        filename,
+        blob,
+        blob.type || "application/octet-stream",
+        assetType,
+      );
+    },
+  },
+
+  covers: {
+    upload: async (bookId, file) => {
+      const extension = (file.name.split(".").pop() || "png").toLowerCase();
+      const filename = `cover-${bookId}.${extension}`;
+      await storeAssetBlob(
+        bookId,
+        filename,
+        file,
+        file.type || `image/${extension}`,
+        "cover",
+      );
+      const dims = await imageDimensions(file);
+      const response: CoverUploadResponse = {
+        cover_image: `assets/covers/${filename}`,
+        filename,
+        width: dims.width,
+        height: dims.height,
+        aspect_ratio: dims.width ? Number((dims.height / dims.width).toFixed(4)) : 0,
+        size_bytes: file.size,
+      };
+      return response;
+    },
+    delete: async (bookId) => {
+      const ids = (await offlineDb.assets
+        .where("bookId")
+        .equals(bookId)
+        .filter((row) => row.assetType === "cover")
+        .primaryKeys()) as string[];
+      if (ids.length) await offlineDb.assets.bulkDelete(ids);
+    },
+  },
 };
+
+/** Map an IndexedDB asset row to the API `Asset` shape components expect
+ *  (the server-only `path` is irrelevant offline). */
+function assetRowToMeta(row: AssetRow): Asset {
+  return {
+    id: row.id,
+    book_id: row.bookId,
+    filename: row.filename,
+    asset_type: row.assetType,
+    path: "",
+    uploaded_at: row.createdAt,
+  };
+}
+
+/** Reduce a client filename to a safe basename, mirroring the backend's
+ *  `safe_upload_filename` so the offline-minted URL stays stable. */
+function sanitizeAssetName(name: string): string {
+  const base = name.split(/[\\/]/).pop() || "asset";
+  return base.replace(/[^A-Za-z0-9._-]/g, "_") || "asset";
+}
+
+/** Best-effort intrinsic dimensions of an image blob (0 when the env has
+ *  no `createImageBitmap`, e.g. happy-dom). */
+async function imageDimensions(
+  blob: Blob,
+): Promise<{ width: number; height: number }> {
+  try {
+    const bitmap = await createImageBitmap(blob);
+    const dims = { width: bitmap.width, height: bitmap.height };
+    bitmap.close?.();
+    return dims;
+  } catch {
+    return { width: 0, height: 0 };
+  }
+}
+
+/** Upsert an asset blob keyed by (bookId, filename). Mirrors the backend's
+ *  overwrite-by-filename: any existing row for the same pair is dropped
+ *  first, so a re-upload replaces rather than duplicates. Exported so the
+ *  offline-download byte-fetch + the lazy online cache reuse it. */
+export async function storeAssetBlob(
+  bookId: string,
+  filename: string,
+  blob: Blob,
+  mimeType: string,
+  assetType: string,
+): Promise<AssetRow> {
+  const data = await blobToArrayBuffer(blob);
+  const existing = (await offlineDb.assets
+    .where("[bookId+filename]")
+    .equals([bookId, filename])
+    .primaryKeys()) as string[];
+  if (existing.length) await offlineDb.assets.bulkDelete(existing);
+  const row: AssetRow = {
+    id: newId(),
+    bookId,
+    filename,
+    mimeType,
+    assetType,
+    data,
+    createdAt: nowIso(),
+  };
+  await offlineDb.assets.put(row);
+  return row;
+}
+
+/** Read a Blob/File into an ArrayBuffer, with a FileReader fallback for
+ *  environments whose Blob lacks `.arrayBuffer()`. */
+async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
+  if (typeof blob.arrayBuffer === "function") return blob.arrayBuffer();
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as ArrayBuffer);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsArrayBuffer(blob);
+  });
+}
 
 /** Attach each link's full entity (skipping links whose entity was deleted),
  *  matching the API's embedded-entity link shape. */
@@ -1171,6 +1348,7 @@ export async function removeBookGraph(bookId: string): Promise<void> {
     await offlineDb.pages.where("book_id").equals(bookId).delete();
     await offlineDb.storyEntities.where("book_id").equals(bookId).delete();
     await offlineDb.chapterLabels.where("book_id").equals(bookId).delete();
+    await offlineDb.assets.where("bookId").equals(bookId).delete();
     if (pageIds.length > 0) {
       await offlineDb.storyEntityPageLinks
         .where("page_id")

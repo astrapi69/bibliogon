@@ -174,6 +174,41 @@ export interface ComicsStorage {
   deleteBubble: typeof api.comics.deleteBubble;
 }
 
+/**
+ * Binary image assets (figures + editor images). `list` / `upload` / `delete`
+ * mirror `api.assets`; the two extra members carry the offline blob plumbing
+ * that has no api counterpart:
+ *  - `getBlob` resolves a stored `(bookId, filename)` to its bytes — the
+ *    `useAssetUrl` resolver turns this into a `blob:` URL in dexie mode (api
+ *    mode fetches the served file).
+ *  - `cacheBlob` stores bytes for later offline display — used by the
+ *    take-offline byte-fetch and the lazy online-view cache. Api mode is a
+ *    no-op (the server is the source of truth).
+ * The embedded-in-TipTap image URLs are served by the service worker, which
+ * reads the same IndexedDB store directly; this seam covers the React-
+ * controlled display + upload sites.
+ */
+export interface AssetStorage {
+  list: typeof api.assets.list;
+  upload: typeof api.assets.upload;
+  delete: typeof api.assets.delete;
+  getBlob(bookId: string, filename: string): Promise<Blob | null>;
+  cacheBlob(
+    bookId: string,
+    filename: string,
+    blob: Blob,
+    assetType?: string,
+  ): Promise<void>;
+}
+
+/** Per-book cover image. Mirrors `api.covers` (upload + delete); the cover
+ *  is stored in the same offline assets store under a `cover-{id}.{ext}`
+ *  filename so the existing `/assets/file/{filename}` display path resolves. */
+export interface CoverStorage {
+  upload: typeof api.covers.upload;
+  delete: typeof api.covers.delete;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -193,4 +228,6 @@ export interface IStorageService {
   storyBible: StoryBibleStorage;
   pages: PageStorage;
   comics: ComicsStorage;
+  assets: AssetStorage;
+  covers: CoverStorage;
 }

@@ -14,9 +14,11 @@
  */
 
 import { api } from "../api/client";
+import { bookAssetFileUrl } from "./asset-url";
 import type {
   ArticlePlatformStorage,
   ArticleStorage,
+  AssetStorage,
   AuthorStorage,
   BookStorage,
   BookTypesStorage,
@@ -24,6 +26,7 @@ import type {
   ChapterStorage,
   ComicsStorage,
   ContentTypesStorage,
+  CoverStorage,
   EditorPluginStatusStorage,
   I18nStorage,
   IStorageService,
@@ -92,5 +95,24 @@ export const apiStorage: IStorageService = {
   },
   get comics(): ComicsStorage {
     return api.comics;
+  },
+  get assets(): AssetStorage {
+    return {
+      list: api.assets.list,
+      upload: api.assets.upload,
+      delete: api.assets.delete,
+      // Online resolution goes straight to the served file; getBlob is only
+      // exercised by the lazy offline-cache path (fetch the bytes once a
+      // displayed asset belongs to an offline-available book).
+      getBlob: async (bookId, filename) => {
+        const res = await fetch(bookAssetFileUrl(bookId, filename));
+        return res.ok ? res.blob() : null;
+      },
+      // The server already holds the bytes in api mode; nothing to cache.
+      cacheBlob: async () => {},
+    };
+  },
+  get covers(): CoverStorage {
+    return api.covers;
   },
 };

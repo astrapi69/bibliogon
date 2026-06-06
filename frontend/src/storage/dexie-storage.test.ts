@@ -14,6 +14,10 @@ beforeEach(async () => {
   await Promise.all(offlineDb.tables.map((t) => t.clear()));
 });
 
+/** Read a (reconstructed) Blob's bytes as text via arrayBuffer. */
+const readText = async (blob: Blob): Promise<string> =>
+  new TextDecoder().decode(await blob.arrayBuffer());
+
 describe("DexieStorage — books", () => {
   it("create -> get -> list -> update -> delete round-trip", async () => {
     const created = await dexieStorage.books.create({
@@ -306,5 +310,92 @@ describe("DexieStorage — publishing surfaces (offline defaults)", () => {
     expect(await dexieStorage.publications.list("any-article")).toEqual([]);
     expect(await dexieStorage.articlePlatforms.list()).toEqual({});
     expect(await dexieStorage.editorPluginStatus.get()).toEqual({});
+  });
+});
+
+describe("DexieStorage — assets (blob round-trip)", () => {
+  const makeFile = (name: string, body = "PNGDATA"): File =>
+    new File([body], name, { type: "image/png" });
+
+  it("upload -> getBlob (by filename) -> list -> delete", async () => {
+    const meta = await dexieStorage.assets.upload(
+      "book-1",
+      makeFile("fig.png"),
+      "figure",
+    );
+    expect(meta.id).toBeTruthy();
+    expect(meta.book_id).toBe("book-1");
+    expect(meta.filename).toBe("fig.png");
+    expect(meta.asset_type).toBe("figure");
+
+    const blob = await dexieStorage.assets.getBlob("book-1", "fig.png");
+    expect(blob).not.toBeNull();
+    expect(await readText(blob!)).toBe("PNGDATA");
+
+    expect(await dexieStorage.assets.list("book-1")).toHaveLength(1);
+
+    await dexieStorage.assets.delete("book-1", meta.id);
+    expect(await dexieStorage.assets.list("book-1")).toHaveLength(0);
+    expect(await dexieStorage.assets.getBlob("book-1", "fig.png")).toBeNull();
+  });
+
+  it("re-upload of the same filename replaces (no duplicate row)", async () => {
+    await dexieStorage.assets.upload("b", makeFile("x.png", "v1"), "figure");
+    await dexieStorage.assets.upload("b", makeFile("x.png", "v2"), "figure");
+    const rows = await dexieStorage.assets.list("b");
+    expect(rows).toHaveLength(1);
+    const blob = await dexieStorage.assets.getBlob("b", "x.png");
+    expect(await readText(blob!)).toBe("v2");
+  });
+
+  it("sanitizes unsafe filenames to a bare basename", async () => {
+    const meta = await dexieStorage.assets.upload(
+      "b",
+      makeFile("../../etc/p w.png"),
+      "figure",
+    );
+    expect(meta.filename).toBe("p_w.png");
+  });
+
+  it("getBlob is scoped per book (same filename, different book)", async () => {
+    await dexieStorage.assets.upload("b1", makeFile("same.png", "one"), "figure");
+    await dexieStorage.assets.upload("b2", makeFile("same.png", "two"), "figure");
+    const b1 = await dexieStorage.assets.getBlob("b1", "same.png");
+    const b2 = await dexieStorage.assets.getBlob("b2", "same.png");
+    expect(await readText(b1!)).toBe("one");
+    expect(await readText(b2!)).toBe("two");
+  });
+
+  it("cacheBlob stores bytes retrievable by filename", async () => {
+    await dexieStorage.assets.cacheBlob(
+      "b",
+      "cached.png",
+      new Blob(["bytes"], { type: "image/png" }),
+    );
+    const blob = await dexieStorage.assets.getBlob("b", "cached.png");
+    expect(await readText(blob!)).toBe("bytes");
+  });
+});
+
+describe("DexieStorage — covers", () => {
+  it("upload stores a cover-{id} blob + returns the cover_image path", async () => {
+    const resp = await dexieStorage.covers.upload(
+      "bk",
+      new File(["JPGDATA"], "my-cover.jpg", { type: "image/jpeg" }),
+    );
+    expect(resp.filename).toBe("cover-bk.jpg");
+    expect(resp.cover_image).toBe("assets/covers/cover-bk.jpg");
+
+    const blob = await dexieStorage.assets.getBlob("bk", "cover-bk.jpg");
+    expect(await readText(blob!)).toBe("JPGDATA");
+  });
+
+  it("delete removes the cover blob(s) for the book", async () => {
+    await dexieStorage.covers.upload(
+      "bk",
+      new File(["x"], "c.png", { type: "image/png" }),
+    );
+    await dexieStorage.covers.delete("bk");
+    expect(await dexieStorage.assets.getBlob("bk", "cover-bk.png")).toBeNull();
   });
 });
