@@ -90,6 +90,33 @@ async function boot(): Promise<void> {
     </React.StrictMode>,
   );
   if (!forcedOffline) void verifyBackendVersion();
+  scheduleServiceWorkerUpdateChecks();
+}
+
+/**
+ * Nudge the (autoUpdate) service worker to check for a new deploy when the
+ * user returns to the tab and hourly while it stays open. The SW is
+ * registered + auto-reloaded by vite-plugin-pwa (registerType "autoUpdate" +
+ * skipWaiting + clientsClaim); the browser only checks for a new SW on
+ * navigation by default, so a long-open or reopened PWA tab can sit on a
+ * stale precached bundle until the next hard reload. Calling
+ * `registration.update()` on visibility/focus closes that gap WITHOUT owning
+ * the reload (which would race vite-plugin-pwa's own reload and risk a loop).
+ * Production-only: the dev SW is disabled + proactively unregistered above.
+ */
+function scheduleServiceWorkerUpdateChecks(): void {
+  if (import.meta.env.DEV) return;
+  if (!("serviceWorker" in navigator)) return;
+  const check = (): void => {
+    void navigator.serviceWorker.getRegistration().then((registration) => {
+      if (registration) void registration.update();
+    });
+  };
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") check();
+  });
+  window.addEventListener("focus", check);
+  window.setInterval(check, 60 * 60 * 1000);
 }
 
 void boot();
