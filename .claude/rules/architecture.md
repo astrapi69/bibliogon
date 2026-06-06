@@ -232,23 +232,36 @@ Per-user vs per-book: settings that should vary between books do NOT belong in `
 ### Dexie-mode rule (DEXIE-MODE-REGEL)
 
 Synced from adaptive-learner (2026-06-05), adapted to Bibliogon's
-backend-dependent reality.
+backend-dependent reality. **Direction updated 2026-06-06: "Maximal
+Offline"** — the static GitHub-Pages app must do EVERYTHING the desktop can.
+The gate is now the EXCEPTION, reserved only for the four genuinely
+browser-impossible features; everything else works offline via Dexie (or a
+browser-native alternative). See [[offline-maximal-dexie-direction]].
 
 Every feature MUST work in Dexie/offline mode in the SAME commit that ships
 it - OR be explicitly gated offline in that same commit. There is no
 "online-only by omission". Concretely, a new feature is done only when one of
 the following is true on the backendless (`VITE_STORAGE_MODE=dexie`) build:
 
-1. **Works offline:** its reads/writes go through the storage seam
-   (`getStorage()`), so they hit IndexedDB. This is the default for
-   core-data features (books, chapters, articles, settings, registries).
-2. **Gated offline:** for genuinely backend-only features (export, Git,
-   audiobook, Medium import, LAN, AI, story bible, picture-book/comic
-   editors), the trigger is disabled with the translated
+1. **Works offline (the DEFAULT):** its reads/writes go through the storage
+   seam (`getStorage()`), so they hit IndexedDB. This covers core data
+   (books, chapters, articles, settings, registries, authors,
+   publications/platforms) AND, per the Maximal-Offline direction, all
+   remaining data CRUD (story bible, storyboard, picture-book pages, comic
+   panels, chapter labels, comments, writing sessions, assets), plus
+   browser-native alternatives for the gray-area features: client-side
+   export (Markdown/HTML/Text/PDF/EPUB/DOCX, no Pandoc), client-side Medium
+   import (DOMParser), and AI via a direct browser->provider call with the
+   user's own key (stored in Dexie, never sent anywhere but the provider).
+2. **Gated offline (the EXCEPTION):** ONLY for the genuinely
+   browser-impossible features — **Pandoc/LaTeX export, Git sync/backup,
+   audiobook TTS, and LAN mode**. The trigger is disabled with the translated
    `ui.feature.requires_desktop_app` hint via `useOfflineFeatureGate()` /
    `OfflineFeatureNotice`, and the surface fires NO `/api` request offline
    (the `guardedFetch()` egress is the backstop, not a license to skip the
-   gate).
+   gate). Do NOT gate a feature merely because it currently calls `api.*` —
+   route it through the seam instead. A new gate outside the four listed
+   features needs explicit justification.
 
 The offline E2E (`e2e/smoke/offline-pwa.spec.ts`) enforces literal zero
 `/api` calls in dexie mode for every surface it touches - a new feature that
