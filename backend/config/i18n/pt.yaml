@@ -965,6 +965,11 @@ ui:
     kdp_default_marketplace_hint: "Mercado padrao para o assistente de publicacao KDP. Substituivel por livro no assistente."
     skip_non_destructive_confirmations: "Ignorar confirmacoes para acoes nao destrutivas"
     skip_non_destructive_confirmations_hint: "Quando ativado: acoes como \"Converter em livro?\", \"Importar?\" sao executadas sem confirmacao. Acoes destrutivas (excluir, lixeira, zona de perigo) SEMPRE pedem confirmacao."
+    export_engine: "Motor de exportação"
+    export_engine_hint: "Que motor a exportação usa. «Automático» usa Pandoc (PDF LaTeX) online e a exportação do navegador offline. «Navegador» exporta sempre no navegador; «Backend» usa sempre Pandoc (apenas online)."
+    export_engine_auto: "Automático (recomendado)"
+    export_engine_client: "Navegador (offline)"
+    export_engine_backend: "Backend (Pandoc/LaTeX, apenas online)"
   authors_database:
     title: "Base de dados de autores"
     description: "Catalogo de outros autores que alimenta as sugestoes de preenchimento automatico em assistentes e editores. A sua propria identidade encontra-se acima em \"Perfil de autor\"."
@@ -2998,6 +3003,7 @@ ui:
     success: "Exportação criada."
     failed: "Falha na exportação."
     client_hint: "Exportação offline diretamente no navegador. Para PDF com Pandoc (LaTeX), use o aplicativo de desktop."
+    client_engine_hint: "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc (LaTeX), defina o motor de exportação para «Backend»."
   about:
     heading: "Acerca do Bibliogon"
     description: "Versao, info do sistema, plugins instalados e canais de doacao."

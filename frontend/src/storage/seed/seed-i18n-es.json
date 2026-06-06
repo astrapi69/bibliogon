@@ -323,6 +323,7 @@
     },
     "sidebar": {
       "open_sidebar": "Abrir barra lateral",
+      "collapse_sidebar": "Contraer barra lateral",
       "manuscript": "Manuscrito",
       "content": "Contenido",
       "front_matter": "Preliminares",
@@ -985,6 +986,11 @@
       "kdp_default_marketplace_hint": "Mercado predeterminado para el asistente de publicacion KDP. Anulable por libro en el asistente.",
       "skip_non_destructive_confirmations": "Omitir confirmaciones para acciones no destructivas",
       "skip_non_destructive_confirmations_hint": "Cuando se activa: acciones como \"Convertir en libro?\", \"Importar?\" se ejecutan sin preguntar. Acciones destructivas (eliminar, papelera, zona de peligro) SIEMPRE preguntan.",
+      "export_engine": "Motor de exportación",
+      "export_engine_hint": "Qué motor usa la exportación. «Automático» usa Pandoc (PDF LaTeX) en línea y la exportación del navegador sin conexión. «Navegador» siempre exporta en el navegador; «Backend» siempre usa Pandoc (solo en línea).",
+      "export_engine_auto": "Automático (recomendado)",
+      "export_engine_client": "Navegador (sin conexión)",
+      "export_engine_backend": "Backend (Pandoc/LaTeX, solo en línea)",
       "off": "Desactivado",
       "on": "Activado",
       "ordered_lists": "Orden y listas",
@@ -3162,7 +3168,8 @@
       "menu_label": "Exportar",
       "success": "Exportación creada.",
       "failed": "La exportación falló.",
-      "client_hint": "Exportación offline directamente en el navegador. Para PDF con Pandoc (LaTeX) usa la aplicación de escritorio."
+      "client_hint": "Exportación offline directamente en el navegador. Para PDF con Pandoc (LaTeX) usa la aplicación de escritorio.",
+      "client_engine_hint": "La exportación del navegador está seleccionada en Ajustes. Para PDF con Pandoc (LaTeX), cambia el motor de exportación a «Backend»."
     },
     "about": {
       "heading": "Acerca de Bibliogon",

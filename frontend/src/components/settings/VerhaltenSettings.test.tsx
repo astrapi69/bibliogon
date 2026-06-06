@@ -103,6 +103,7 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
             },
             behavior: {
                 skip_non_destructive_confirmations: false,
+                export_engine: "auto",
             },
             ui: {
                 defaults: {
@@ -111,6 +112,31 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                 },
             },
         });
+    });
+
+    it("rehydrates + threads the export-engine preference through the save payload", () => {
+        const onSave = vi.fn();
+        render(
+            <VerhaltenSettings
+                config={{
+                    ...baseConfig,
+                    behavior: {export_engine: "client"},
+                }}
+                onSave={onSave}
+                saving={false}
+            />,
+        );
+        // The select shows the rehydrated value...
+        expect(
+            screen.getByTestId("settings-export-engine-trigger"),
+        ).toHaveTextContent(/Browser/);
+        // ...and the value lands in the saved behavior block.
+        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
+        expect(onSave).toHaveBeenCalledWith(
+            expect.objectContaining({
+                behavior: expect.objectContaining({export_engine: "client"}),
+            }),
+        );
     });
 
     it("threads the default book-type + content-type through the save payload", () => {
@@ -167,7 +193,9 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
         fireEvent.click(screen.getByTestId("verhalten-settings-save"));
         expect(onSave).toHaveBeenCalledWith(
             expect.objectContaining({
-                behavior: {skip_non_destructive_confirmations: true},
+                behavior: expect.objectContaining({
+                    skip_non_destructive_confirmations: true,
+                }),
             }),
         );
     });

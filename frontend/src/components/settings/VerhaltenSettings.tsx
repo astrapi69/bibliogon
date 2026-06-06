@@ -3,6 +3,7 @@ import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {useBookTypes} from "../../hooks/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
+import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
 import {HelpText} from "./HelpText";
@@ -38,6 +39,9 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const [defaultContentType, setDefaultContentType] = useState(
         (uiDefaults.content_type as string) || "blogpost",
     );
+    const [exportEngine, setExportEngine] = useState<ExportEngine>(
+        asExportEngine(behavior.export_engine),
+    );
 
     // The parent loads `config` asynchronously (getApp); this effect
     // re-hydrates the form once the real config arrives. A late arrival
@@ -61,6 +65,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
         setAllowBooksWithoutAuthor(Boolean(app.allow_books_without_author));
         const b = (config.behavior || {}) as Record<string, unknown>;
         setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
+        setExportEngine(asExportEngine(b.export_engine));
         const d = (((config.ui || {}) as Record<string, unknown>).defaults ||
             {}) as Record<string, unknown>;
         setDefaultBookType((d.book_type as string) || "prose");
@@ -79,6 +84,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
         behavior: {
             ...behavior,
             skip_non_destructive_confirmations: skipNonDestructive,
+            export_engine: exportEngine,
         },
         // Preserve other ui.* branches (picture_book, dashboard, ...)
         // via the spread; only the defaults branch is owned here. The
@@ -189,6 +195,27 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         onChange={onEdit(setSkipNonDestructive)}
                         testId="settings-skip-non-destructive-confirmations"
                         indentedDescription
+                    />
+                </div>
+                <div className="field">
+                    <label className="label">
+                        {t("ui.settings.export_engine", "Export-Engine")}
+                    </label>
+                    <HelpText>
+                        {t(
+                            "ui.settings.export_engine_hint",
+                            "Welche Engine der Export nutzt. „Automatisch“ verwendet online Pandoc (LaTeX-PDF) und offline den Browser-Export. „Browser“ exportiert immer direkt im Browser; „Backend“ immer über Pandoc (nur online).",
+                        )}
+                    </HelpText>
+                    <RadixSelect
+                        value={exportEngine}
+                        onValueChange={onEdit((v) => setExportEngine(asExportEngine(v)))}
+                        testId="settings-export-engine"
+                        options={[
+                            {value: "auto", label: t("ui.settings.export_engine_auto", "Automatisch (empfohlen)")},
+                            {value: "client", label: t("ui.settings.export_engine_client", "Browser (offline-fähig)")},
+                            {value: "backend", label: t("ui.settings.export_engine_backend", "Backend (Pandoc/LaTeX, nur online)")},
+                        ]}
                     />
                 </div>
                 <div className={styles.subCard} data-testid="settings-defaults">

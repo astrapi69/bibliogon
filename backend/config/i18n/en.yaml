@@ -967,6 +967,11 @@ ui:
     kdp_default_marketplace_hint: "Default marketplace for the KDP Publishing Wizard. Overridable per book in the wizard."
     skip_non_destructive_confirmations: "Skip confirmations for non-destructive actions"
     skip_non_destructive_confirmations_hint: "When enabled: actions like \"Convert to book?\", \"Import?\" run without a prompt. Destructive actions (delete, trash, danger zone) ALWAYS prompt."
+    export_engine: "Export engine"
+    export_engine_hint: "Which engine the export uses. \"Automatic\" uses Pandoc (LaTeX PDF) online and the browser export offline. \"Browser\" always exports in the browser; \"Backend\" always uses Pandoc (online only)."
+    export_engine_auto: "Automatic (recommended)"
+    export_engine_client: "Browser (offline-capable)"
+    export_engine_backend: "Backend (Pandoc/LaTeX, online only)"
   authors_database:
     title: "Authors Database"
     description: "Catalogue of other authors that powers autocomplete suggestions in wizards and editors. Your own identity lives above under \"Author profile\"."
@@ -3009,6 +3014,7 @@ ui:
     success: "Export created."
     failed: "Export failed."
     client_hint: "Offline export straight in the browser. For Pandoc PDF (LaTeX) use the desktop app."
+    client_engine_hint: "Browser export is selected in Settings. For Pandoc PDF (LaTeX), set the export engine to \"Backend\"."
   about:
     heading: "About Bibliogon"
     description: "Version, system info, installed plugins and donation channels."

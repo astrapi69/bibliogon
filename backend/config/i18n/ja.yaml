@@ -965,6 +965,11 @@ ui:
     kdp_default_marketplace_hint: "KDP出版ウィザードのデフォルトマーケットプレイス。ウィザード内で本ごとに上書き可能。"
     skip_non_destructive_confirmations: "非破壊的アクションの確認をスキップ"
     skip_non_destructive_confirmations_hint: "有効化時: \"本に変換しますか?\"、\"インポートしますか?\" などのアクションは確認なしで実行されます。破壊的アクション (削除、ゴミ箱、危険ゾーン) は常に確認を求めます。"
+    export_engine: "エクスポートエンジン"
+    export_engine_hint: "エクスポートが使用するエンジン。「自動」はオンラインで Pandoc（LaTeX PDF）、オフラインでブラウザエクスポートを使用します。「ブラウザ」は常にブラウザでエクスポートし、「バックエンド」は常に Pandoc を使用します（オンラインのみ）。"
+    export_engine_auto: "自動（推奨）"
+    export_engine_client: "ブラウザ（オフライン対応）"
+    export_engine_backend: "バックエンド（Pandoc/LaTeX、オンラインのみ）"
   authors_database:
     title: "著者データベース"
     description: "ウィザードやエディタでのオートコンプリート候補のソースとなる、他の著者のカタログ。あなた自身のアイデンティティは上の「著者プロファイル」にあります。"
@@ -2998,6 +3003,7 @@ ui:
     success: "エクスポートを作成しました。"
     failed: "エクスポートに失敗しました。"
     client_hint: "ブラウザで直接オフラインエクスポート。Pandoc PDF（LaTeX）にはデスクトップアプリを使用してください。"
+    client_engine_hint: "設定でブラウザエクスポートが選択されています。Pandoc PDF（LaTeX）には、エクスポートエンジンを「バックエンド」に設定してください。"
   about:
     heading: "Bibliogon について"
     description: "バージョン、システム情報、インストール済みプラグイン、寄付チャネル。"
