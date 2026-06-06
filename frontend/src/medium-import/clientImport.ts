@@ -16,9 +16,16 @@
 import { strFromU8, unzipSync } from "fflate";
 
 import type {
+  ArticleStatus,
+  MediumImportErroredItem,
+  MediumImportImportedItem,
   MediumImportPreviewItem,
   MediumImportPreviewResponse,
+  MediumImportResponse,
+  MediumImportSkippedCommentItem,
+  MediumImportSkippedItem,
 } from "../api/client";
+import { getStorage } from "../storage";
 import { parseMediumPost, type ParsedPost, type TipTapDoc } from "./walker";
 
 export interface ClientMediumPreview {
@@ -90,8 +97,117 @@ export async function parseMediumZip(
   };
 }
 
-/** First ~120 chars of a post's body text (for comment preview rows). */
-function bodyPreview(doc: TipTapDoc, max = 120): string {
+/** Settings the import step honours (subset of the backend importer's; the
+ *  browser-impossible ones — image download — are dropped). */
+export interface ClientImportSettings {
+  defaultStatus: ArticleStatus;
+  defaultLanguage: string;
+  skipExistingCanonicalUrls: boolean;
+}
+
+/**
+ * Create the selected parsed posts as offline articles via the storage seam.
+ *
+ * - Comment-classified posts are skipped (no offline comment store yet) and
+ *   reported under `skipped_comments`.
+ * - Posts whose canonical_url already exists are skipped when
+ *   `skipExistingCanonicalUrls` is on (dedup is also applied within the batch
+ *   so two files sharing a URL don't both import).
+ * - Each article is created then updated with the full body + SEO defaults
+ *   (ArticleCreate is title-only; the rest goes through ArticleUpdate).
+ *
+ * Returns the same `MediumImportResponse` shape the backend returns, so the
+ * existing result UI renders unchanged.
+ */
+export async function importParsed(
+  parsed: Map<string, ParsedPost>,
+  selectedFilenames: string[],
+  settings: ClientImportSettings,
+): Promise<MediumImportResponse> {
+  const storage = getStorage();
+  const byCanonical = new Map<string, string>();
+  for (const article of await storage.articles.list()) {
+    if (article.canonical_url) byCanonical.set(article.canonical_url, article.id);
+  }
+
+  const imported: MediumImportImportedItem[] = [];
+  const skipped: MediumImportSkippedItem[] = [];
+  const errored: MediumImportErroredItem[] = [];
+  const skippedComments: MediumImportSkippedCommentItem[] = [];
+
+  for (const filename of selectedFilenames) {
+    const post = parsed.get(filename);
+    if (!post) {
+      errored.push({ filename, error: "not found in preview" });
+      continue;
+    }
+    if (post.isComment) {
+      skippedComments.push({ filename, reason: "mode_skip" });
+      continue;
+    }
+    if (!post.canonicalUrl) {
+      errored.push({ filename, error: "missing canonical URL" });
+      continue;
+    }
+    const existingId = byCanonical.get(post.canonicalUrl);
+    if (settings.skipExistingCanonicalUrls && existingId) {
+      skipped.push({
+        filename,
+        canonical_url: post.canonicalUrl,
+        existing_article_id: existingId,
+      });
+      continue;
+    }
+    try {
+      const title = post.title || "(untitled)";
+      const subtitle = post.subtitle || null;
+      const created = await storage.articles.create({
+        title,
+        subtitle,
+        author: post.author || null,
+        language: post.detectedLanguage ?? settings.defaultLanguage,
+        content_type: "blogpost",
+      });
+      const updated = await storage.articles.update(created.id, {
+        content_json: JSON.stringify(post.contentDoc),
+        status: settings.defaultStatus,
+        canonical_url: post.canonicalUrl,
+        seo_title: title,
+        seo_description: subtitle,
+        excerpt: subtitle || bodyExcerpt(post.contentDoc),
+        tags: [],
+      });
+      byCanonical.set(post.canonicalUrl, updated.id);
+      imported.push({
+        id: updated.id,
+        title,
+        canonical_url: post.canonicalUrl,
+        warnings: post.warnings,
+      });
+    } catch (err) {
+      errored.push({
+        filename,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return {
+    imported_count: imported.length,
+    skipped_count: skipped.length,
+    errored_count: errored.length,
+    imported,
+    skipped,
+    errored,
+    imported_comments_count: 0,
+    skipped_comments_count: skippedComments.length,
+    imported_comments: [],
+    skipped_comments: skippedComments,
+  };
+}
+
+/** Concatenated body text of a doc. */
+function gatherDocText(doc: TipTapDoc): string {
   const bits: string[] = [];
   const walk = (node: unknown): void => {
     if (typeof node !== "object" || node === null) return;
@@ -100,6 +216,18 @@ function bodyPreview(doc: TipTapDoc, max = 120): string {
     if (Array.isArray(obj.content)) obj.content.forEach(walk);
   };
   walk(doc);
-  const text = bits.join(" ").trim();
+  return bits.join(" ").trim();
+}
+
+/** First ~120 chars of a post's body text (for comment preview rows). */
+function bodyPreview(doc: TipTapDoc, max = 120): string {
+  const text = gatherDocText(doc);
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+/** Long-form display excerpt (~280 chars of body text) when there is no
+ *  authored subtitle. */
+function bodyExcerpt(doc: TipTapDoc, max = 280): string {
+  const text = gatherDocText(doc);
   return text.length > max ? text.slice(0, max) : text;
 }
