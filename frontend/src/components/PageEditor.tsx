@@ -9,6 +9,8 @@ import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
 import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
 import {useDialog} from "./AppDialog"
 import PageThumbnails from "./PageThumbnails"
+import {SidebarToggleButton} from "./SidebarToggleButton"
+import {useDualSidebarCollapse} from "../hooks/useDualSidebarCollapse"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
 import PageCanvas, {extractPlainText, isTipTapLayout} from "./PageCanvas"
@@ -69,6 +71,10 @@ export default function PageEditor({
 }: Props) {
     const {t} = useI18n()
     const dialog = useDialog()
+    const sidebars = useDualSidebarCollapse(
+        "bibliogon-page-editor-thumbnails",
+        "bibliogon-page-editor-properties",
+    )
     const [pages, setPages] = useState<Page[]>([])
     const [activePageId, setActivePageId] = useState<string | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
@@ -417,10 +423,44 @@ export default function PageEditor({
                   * PdfExportControls. */}
                 <ThemeToggle variant="dark" />
             </header>
-            <div className={styles.body}>
+            <div className={styles.body} style={{position: "relative"}}>
+                {!sidebars.left.open && (
+                    <SidebarToggleButton
+                        open={false}
+                        onToggle={sidebars.left.toggle}
+                        testId="page-editor-thumbnails-toggle"
+                        className="fixed left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                    />
+                )}
+                {!sidebars.right.open && (
+                    <SidebarToggleButton
+                        open={false}
+                        onToggle={sidebars.right.toggle}
+                        testId="page-editor-properties-toggle"
+                        className="fixed right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                    />
+                )}
+                <div
+                    data-testid="page-editor-thumbnails-wrapper"
+                    data-sidebar-open={sidebars.left.open}
+                    className={[
+                        "shrink-0 overflow-hidden transition-[width] duration-200",
+                        "fixed inset-y-0 left-0 z-[90] bg-card shadow-[var(--shadow-md)]",
+                        "menu:static menu:inset-auto menu:z-auto menu:bg-transparent menu:shadow-none",
+                        sidebars.left.open ? "w-[200px]" : "w-0",
+                    ].join(" ")}
+                >
+                    <div className="flex h-full w-[200px] flex-col">
+                        <div className="flex justify-end p-1">
+                            <SidebarToggleButton
+                                open
+                                onToggle={sidebars.left.toggle}
+                                testId="page-editor-thumbnails-collapse"
+                            />
+                        </div>
                 <aside
                     data-testid="page-editor-thumbnails"
-                    className={styles.thumbnails}
+                    className={`${styles.thumbnails} flex-1`}
                     aria-label={t("ui.page_editor.thumbnails_pane", "Pages")}
                 >
                     <PageThumbnails
@@ -432,9 +472,11 @@ export default function PageEditor({
                         onDelete={handleDeletePage}
                     />
                 </aside>
+                    </div>
+                </div>
                 <main
                     data-testid="page-editor-canvas"
-                    className={styles.canvas}
+                    className={`${styles.canvas} flex-1`}
                     aria-label={t("ui.page_editor.canvas_pane", "Canvas")}
                     data-active-page-id={activePageId ?? ""}
                 >
@@ -469,9 +511,27 @@ export default function PageEditor({
                         )
                     )}
                 </main>
+                <div
+                    data-testid="page-editor-properties-wrapper"
+                    data-sidebar-open={sidebars.right.open}
+                    className={[
+                        "shrink-0 overflow-hidden transition-[width] duration-200",
+                        "fixed inset-y-0 right-0 z-[90] bg-card shadow-[var(--shadow-md)]",
+                        "menu:static menu:inset-auto menu:z-auto menu:bg-transparent menu:shadow-none",
+                        sidebars.right.open ? "w-[280px]" : "w-0",
+                    ].join(" ")}
+                >
+                    <div className="flex h-full w-[280px] flex-col">
+                        <div className="flex justify-start p-1">
+                            <SidebarToggleButton
+                                open
+                                onToggle={sidebars.right.toggle}
+                                testId="page-editor-properties-collapse"
+                            />
+                        </div>
                 <aside
                     data-testid="page-editor-properties"
-                    className={styles.properties}
+                    className={`${styles.properties} flex-1`}
                     aria-label={t("ui.page_editor.properties_pane", "Page properties")}
                 >
                     {activePage ? (
@@ -506,6 +566,8 @@ export default function PageEditor({
                         </div>
                     )}
                 </aside>
+                    </div>
+                </div>
             </div>
         </div>
     )

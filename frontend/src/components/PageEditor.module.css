@@ -52,9 +52,16 @@
     }
 }
 
+/*
+ * Flex row so the left thumbnails + right properties panels can become
+ * collapsible fixed-position overlays below the menu breakpoint (the
+ * grid track template they used to sit in is unlayered and cannot be
+ * overridden by Tailwind utilities -- documented cascade-conflict
+ * exception). flex:1 + min-height:0 are preserved so the center canvas
+ * keeps filling the remaining editor height.
+ */
 .body {
-    display: grid;
-    grid-template-columns: 200px 1fr 280px;
+    display: flex;
     flex: 1;
     min-height: 0;
 }
