@@ -312,6 +312,7 @@ ui:
     recovery_discard: "Descartar"
   sidebar:
     open_sidebar: "Abrir barra lateral"
+    collapse_sidebar: "Contraer barra lateral"
     manuscript: "Manuscrito"
     content: "Contenido"
     front_matter: "Preliminares"

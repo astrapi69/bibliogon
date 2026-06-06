@@ -312,6 +312,7 @@ ui:
     upload_failed: "Falha no upload"
   sidebar:
     open_sidebar: "Abrir barra lateral"
+    collapse_sidebar: "Recolher barra lateral"
     manuscript: "Manuscrito"
     content: "Conteudo"
     front_matter: "Preliminares"

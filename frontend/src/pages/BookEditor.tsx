@@ -33,7 +33,12 @@ import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
-import { BookOpen, Menu, Plus } from "lucide-react";
+import {
+  useSidebarCollapse,
+  SIDEBAR_MENU_BREAKPOINT_PX,
+} from "../hooks/useSidebarCollapse";
+import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { BookOpen, Plus } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
@@ -82,7 +87,19 @@ export default function BookEditor() {
   const { t } = useI18n();
   const { offline: offlineGate } = useOfflineFeatureGate();
   const bookTypesSnapshot = useBookTypes();
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const {
+    open: sidebarOpen,
+    toggle: toggleSidebar,
+    setOpen: setSidebarOpen,
+  } = useSidebarCollapse("bibliogon-book-editor-sidebar");
+  const closeSidebarOnNarrow = useCallback(() => {
+    if (
+      typeof window !== "undefined" &&
+      window.innerWidth < SIDEBAR_MENU_BREAKPOINT_PX
+    ) {
+      setSidebarOpen(false);
+    }
+  }, [setSidebarOpen]);
   // Story Bible (plugin-story-bible). Availability is probed once
   // via getInfo (404 when the plugin is disabled); the panel + its
   // toggle only render when the plugin is mounted.
@@ -385,7 +402,7 @@ export default function BookEditor() {
     }));
     setActiveChapterId(chapterId);
     _setShowMetadata(false);
-    setSidebarOpen(false);
+    closeSidebarOnNarrow();
   };
 
   const handleSaveMetadata = async (data: Record<string, unknown>) => {
@@ -803,33 +820,23 @@ export default function BookEditor() {
   return (
     <div className={styles.layout} data-testid="book-editor">
       <h1 className="sr-only">{book.title || "Bibliogon"}</h1>
-      {/* Mobile sidebar toggle */}
       {!sidebarOpen && (
-        <button
-          className="show-mobile-only btn-icon"
-          data-testid="book-editor-sidebar-toggle"
-          aria-label={t("ui.sidebar.open_sidebar", "Seitenleiste öffnen")}
-          style={{
-            position: "fixed",
-            top: 12,
-            left: 12,
-            zIndex: 100,
-            background: "var(--bg-card)",
-            borderRadius: "var(--radius-sm)",
-            boxShadow: "var(--shadow-md)",
-          }}
-          onClick={() => setSidebarOpen(true)}
-        >
-          <Menu size={20} />
-        </button>
+        <SidebarToggleButton
+          open={false}
+          onToggle={toggleSidebar}
+          testId="book-editor-sidebar-toggle"
+          className="fixed left-3 top-3 z-[100] bg-card shadow-[var(--shadow-md)]"
+        />
       )}
       <div
-        className={
-          sidebarOpen
-            ? "sidebar-wrapper sidebar-open"
-            : "sidebar-wrapper sidebar-closed"
-        }
         data-testid="book-editor-sidebar"
+        data-sidebar-open={sidebarOpen}
+        className={[
+          "shrink-0 overflow-hidden transition-[width] duration-200",
+          "fixed inset-y-0 left-0 z-[90] shadow-[var(--shadow-md)]",
+          "menu:static menu:inset-auto menu:z-auto menu:shadow-none",
+          sidebarOpen ? "w-[260px]" : "w-0",
+        ].join(" ")}
       >
         <ChapterSidebar
           bookTitle={book.title}
@@ -850,12 +857,13 @@ export default function BookEditor() {
             setActiveChapterId(id);
             _setShowMetadata(false);
             setSelectedStoryEntityId(null);
-            setSidebarOpen(false);
+            closeSidebarOnNarrow();
           }}
           onAdd={handleAddChapter}
           onDelete={handleDeleteChapter}
           onRename={handleRenameChapter}
           onBack={() => navigate("/")}
+          onCollapse={() => setSidebarOpen(false)}
           onExport={handleExport}
           onGitBackup={() => navigate(`/books/${bookId}/git-backup`)}
           offlineSlot={

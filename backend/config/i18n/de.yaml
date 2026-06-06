@@ -312,6 +312,7 @@ ui:
     recovery_discard: "Verwerfen"
   sidebar:
     open_sidebar: "Seitenleiste öffnen"
+    collapse_sidebar: "Seitenleiste einklappen"
     manuscript: "Manuskript"
     content: "Inhalt"
     front_matter: "Vorderer Teil"

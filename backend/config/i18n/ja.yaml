@@ -312,6 +312,7 @@ ui:
     upload_failed: "アップロードに失敗しました"
   sidebar:
     open_sidebar: "サイドバーを開く"
+    collapse_sidebar: "サイドバーを折りたたむ"
     manuscript: "原稿"
     content: "コンテンツ"
     front_matter: "前付"

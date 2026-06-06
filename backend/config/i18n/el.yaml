@@ -312,6 +312,7 @@ ui:
     upload_failed: "Αποτυχία μεταφόρτωσης"
   sidebar:
     open_sidebar: "Άνοιγμα πλαϊνής μπάρας"
+    collapse_sidebar: "Σύμπτυξη πλαϊνής μπάρας"
     manuscript: "Χειρόγραφο"
     content: "Περιεχόμενο"
     front_matter: "Εισαγωγικό υλικό"

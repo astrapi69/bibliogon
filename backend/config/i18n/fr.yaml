@@ -312,6 +312,7 @@ ui:
     upload_failed: "Echec du telechargement"
   sidebar:
     open_sidebar: "Ouvrir la barre latérale"
+    collapse_sidebar: "Réduire la barre latérale"
     manuscript: "Manuscrit"
     content: "Contenu"
     front_matter: "Pages liminaires"

@@ -312,6 +312,7 @@ ui:
     upload_failed: "Yukleme basarisiz"
   sidebar:
     open_sidebar: "Kenar çubuğunu aç"
+    collapse_sidebar: "Kenar çubuğunu daralt"
     manuscript: "El yazmasi"
     content: "Icerik"
     front_matter: "On kisim"

@@ -312,6 +312,7 @@ ui:
     recovery_discard: "Discard"
   sidebar:
     open_sidebar: "Open sidebar"
+    collapse_sidebar: "Collapse sidebar"
     manuscript: "Manuscript"
     content: "Content"
     front_matter: "Front Matter"

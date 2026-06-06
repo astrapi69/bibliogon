@@ -19,6 +19,7 @@ import {
   LayoutGrid,
   Table,
   Network,
+  PanelLeftClose,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -53,6 +54,9 @@ interface Props {
   onDelete: (id: string) => void;
   onRename: (id: string, newTitle: string) => void;
   onBack: () => void;
+  /** Collapse the sidebar (hide it, freeing the editor width).
+   *  Omitted when the surrounding layout has no collapse affordance. */
+  onCollapse?: () => void;
   onExport: () => void;
   onReorder: (chapterIds: string[]) => void;
   onMetadata: () => void;
@@ -432,6 +436,7 @@ export default function ChapterSidebar({
   onDelete,
   onRename,
   onBack,
+  onCollapse,
   onExport,
   onReorder,
   onMetadata,
@@ -537,8 +542,27 @@ export default function ChapterSidebar({
             {bookTitle}
           </h2>
         )}
-        <div style={{ marginLeft: "auto" }}>
+        <div style={{ marginLeft: "auto" }} className="flex items-center gap-1">
           <ThemeToggle variant="dark" />
+          {onCollapse && (
+            <Tooltip
+              content={t("ui.sidebar.collapse_sidebar", "Seitenleiste einklappen")}
+            >
+              <button
+                type="button"
+                className="btn-sidebar-icon"
+                onClick={onCollapse}
+                aria-expanded={true}
+                aria-label={t(
+                  "ui.sidebar.collapse_sidebar",
+                  "Seitenleiste einklappen",
+                )}
+                data-testid="chapter-sidebar-collapse"
+              >
+                <PanelLeftClose size={18} />
+              </button>
+            </Tooltip>
+          )}
         </div>
       </div>
 

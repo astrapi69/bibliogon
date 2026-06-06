@@ -56,6 +56,8 @@ import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
+import { useSidebarCollapse } from "../hooks/useSidebarCollapse";
+import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { RadixSelect } from "../components/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/useTopics";
@@ -85,6 +87,9 @@ export default function ArticleEditor() {
     const { t } = useI18n();
     const { confirm } = useDialog();
     const articleTypesSnapshot = useContentTypes();
+    const { open: sidebarOpen, toggle: toggleSidebar } = useSidebarCollapse(
+        "bibliogon-article-editor-sidebar",
+    );
 
     const [article, setArticle] = useState<Article | null>(null);
     const [loading, setLoading] = useState(true);
@@ -620,6 +625,11 @@ export default function ArticleEditor() {
         <div data-testid="article-editor" className={layout.page}>
             <h1 className="sr-only">{article.title || "Bibliogon"}</h1>
             <header className={layout.header}>
+                <SidebarToggleButton
+                    open={sidebarOpen}
+                    onToggle={toggleSidebar}
+                    testId="article-editor-sidebar-toggle"
+                />
                 <button
                     type="button"
                     className="btn btn-ghost btn-sm"
@@ -697,8 +707,21 @@ export default function ArticleEditor() {
                 <ThemeToggle />
             </header>
 
-            <main id="main-content" className={layout.body}>
-                <aside className={layout.sidebar} data-testid="article-editor-sidebar">
+            <main id="main-content" className="flex flex-1 min-h-0">
+                <div
+                    data-testid="article-editor-sidebar-wrapper"
+                    data-sidebar-open={sidebarOpen}
+                    className={[
+                        "shrink-0 overflow-hidden transition-[width] duration-200",
+                        "fixed inset-y-0 left-0 z-[90] shadow-[var(--shadow-md)]",
+                        "menu:static menu:inset-auto menu:z-auto menu:shadow-none",
+                        sidebarOpen ? "w-[300px]" : "w-0",
+                    ].join(" ")}
+                >
+                <aside
+                    className={`${layout.sidebar} w-[300px] h-full`}
+                    data-testid="article-editor-sidebar"
+                >
                     <h3 className={layout.sidebarHeading}>
                         {t("ui.articles.metadata_heading", "Metadaten")}
                     </h3>
@@ -1294,7 +1317,8 @@ export default function ArticleEditor() {
                         {t("ui.articles.delete", "Löschen")}
                     </button>
                 </aside>
-                <div className={layout.editorPane}>
+                </div>
+                <div className={`${layout.editorPane} flex-1 min-w-0`}>
                     <Editor
                         contentKind="article"
                         content={article.content_json}
