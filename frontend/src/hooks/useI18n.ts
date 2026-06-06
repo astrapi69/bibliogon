@@ -12,6 +12,41 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue | null>(null);
 
+/**
+ * Resolve a dot-notation i18n key against a loaded strings tree.
+ *
+ * Pure function shared by the provider's ``t`` and its tests so both
+ * exercise the same logic (no duplicated copy that can silently drift).
+ *
+ * Defensive: a non-string key (e.g. a registry entry whose ``label_key``
+ * is undefined, or a dynamic key that resolved to null) returns the
+ * fallback instead of crashing on ``key.split()`` — which would otherwise
+ * take down the whole React subtree via the nearest error boundary. This
+ * guards the offline path where seeded registries can carry sparser
+ * shapes than the live ``/api`` responses.
+ */
+export function translate(
+    strings: I18nStrings,
+    key: string,
+    fallback?: string,
+): string {
+    if (typeof key !== "string") return fallback ?? "";
+    const parts = key.split(".");
+    let current: unknown = strings;
+    for (const part of parts) {
+        if (
+            current &&
+            typeof current === "object" &&
+            part in (current as Record<string, unknown>)
+        ) {
+            current = (current as Record<string, unknown>)[part];
+        } else {
+            return fallback || key;
+        }
+    }
+    return typeof current === "string" ? current : fallback || key;
+}
+
 // Module-level cache to avoid refetching on remount
 let cachedLang = "";
 let cachedStrings: I18nStrings = {};
@@ -51,18 +86,11 @@ export function I18nProvider({children}: {children: ReactNode}) {
         setLangState(newLang);
     }, []);
 
-    const t = useCallback((key: string, fallback?: string): string => {
-        const parts = key.split(".");
-        let current: unknown = strings;
-        for (const part of parts) {
-            if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
-                current = (current as Record<string, unknown>)[part];
-            } else {
-                return fallback || key;
-            }
-        }
-        return typeof current === "string" ? current : (fallback || key);
-    }, [strings]);
+    const t = useCallback(
+        (key: string, fallback?: string): string =>
+            translate(strings, key, fallback),
+        [strings],
+    );
 
     const value: I18nContextValue = {t, lang, setLang};
 

@@ -1,19 +1,13 @@
 import {describe, it, expect} from "vitest";
 
-// Test the t() function logic directly (without React hooks)
+import {translate} from "./useI18n";
+
+// Exercise the REAL resolver the provider's t() delegates to (no local
+// copy that can drift). createT binds the strings tree so the existing
+// cases read unchanged.
 function createT(strings: Record<string, unknown>) {
-    return (key: string, fallback?: string): string => {
-        const parts = key.split(".");
-        let current: unknown = strings;
-        for (const part of parts) {
-            if (current && typeof current === "object" && part in (current as Record<string, unknown>)) {
-                current = (current as Record<string, unknown>)[part];
-            } else {
-                return fallback || key;
-            }
-        }
-        return typeof current === "string" ? current : (fallback || key);
-    };
+    return (key: string, fallback?: string): string =>
+        translate(strings, key, fallback);
 }
 
 describe("i18n t() function", () => {
@@ -50,5 +44,18 @@ describe("i18n t() function", () => {
 
     it("handles empty strings", () => {
         expect(t("", "Fallback")).toBe("Fallback");
+    });
+
+    it("returns fallback for a non-string key instead of crashing", () => {
+        // Regression pin: a registry entry whose label_key is undefined
+        // (or any dynamic key that resolved to null) used to crash the
+        // whole subtree on key.split(). It must degrade to the fallback.
+        // Pre-fix this threw "Cannot read properties of undefined
+        // (reading 'split')"; the article-list ErrorBoundary surfaced it
+        // on the offline build.
+        expect(
+            translate(strings, undefined as unknown as string, "Fallback"),
+        ).toBe("Fallback");
+        expect(translate(strings, null as unknown as string)).toBe("");
     });
 });
