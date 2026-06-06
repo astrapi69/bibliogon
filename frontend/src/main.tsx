@@ -68,10 +68,18 @@ restoreSpaRedirect(routerBasename);
 async function boot(): Promise<void> {
   const forcedOffline = explicitStorageMode() === "dexie";
   if (forcedOffline) {
-    try {
-      await ensureDexieStorageLoaded();
-    } catch {
-      /* render anyway: a failed offline preload must not block the app shell */
+    // Retry the lazy DexieStorage import: on the GitHub-Pages PWA the chunk is
+    // fetched over the network, and during a service-worker update (or before
+    // CDN propagation) that fetch can transiently fail. Rendering without
+    // Dexie would fall every getStorage() call back to the offline-rejected
+    // API client, so retry a few times before giving up.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      try {
+        await ensureDexieStorageLoaded();
+        break;
+      } catch {
+        await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      }
     }
   }
   ReactDOM.createRoot(document.getElementById("root")!).render(
