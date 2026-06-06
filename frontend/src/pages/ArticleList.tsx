@@ -1124,7 +1124,11 @@ export default function ArticleList() {
                                 ))}
                             </div>
                         ) : (
-                            <ul className={layout.list} data-testid="article-list">
+                            <div className="overflow-x-auto">
+                            <ul
+                                className={`${layout.list} min-w-[820px] menu:min-w-0`}
+                                data-testid="article-list"
+                            >
                                 {visibleArticles.map((a) => (
                                     <ArticleRow
                                         key={a.id}
@@ -1137,6 +1141,7 @@ export default function ArticleList() {
                                     />
                                 ))}
                             </ul>
+                            </div>
                         )}
                         {filters.filteredArticles.length > 0 && (
                             <div
