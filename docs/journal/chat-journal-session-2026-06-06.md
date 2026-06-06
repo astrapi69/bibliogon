@@ -116,14 +116,62 @@ panel/bubble cascade) + offline E2E (picture-book → add page). Fixed a
 lazy-import teardown race in useStorageMode.test. Vitest 2740; build green.
 Pushed live.
 
+## 10. P3c — assets/media offline via IndexedDB blobs (7 commits)
+
+The last + most complex P3 entity: binary image assets offline. Hybrid design
+(user-adjudicated) after the audit found two facts the originating prompt
+missed — images are referenced by **filename-URL embedded in TipTap** (not by
+id), and `/api/books/{id}/full` carries asset **metadata only**, no bytes.
+
+- **C1 (c67ddce1)** — Dexie v7 `assets` table (id, bookId, filename, mimeType,
+  assetType, `data` ArrayBuffer, createdAt; compound `[bookId+filename]`
+  index). Bytes stored as ArrayBuffer (structured-clones losslessly
+  everywhere; the happy-dom+fake-indexeddb Blob round-trip drops `.text()`).
+  DexieStorage `assets` (list/upload/delete/getBlob/cacheBlob) + `covers`
+  (upload/delete) + seam (types/api-storage/sync-queue) + `storeAssetBlob`
+  upsert-by-filename. Book delete + removeBookGraph cascade assets.
+- **C2 (06322809)** — `useAssetUrl`/`useCoverUrl` resolver: api mode returns
+  the served URL synchronously, dexie mode mints a `blob:` URL from IndexedDB
+  (revoked on unmount). Wired the React-controlled display sites (cover,
+  BookCard, BookListView, author-assets, ComicBookEditor panel map) — these
+  show offline **without the SW**. Unwound the planted ComicBookEditor
+  dexie-skip.
+- **C3 (39ddbe16)** — routed all six upload sites through
+  `getStorage().assets.upload`. Picture-book/collage/storyboard images are
+  served by **id** (`/assets/{id}/file`) — left on the /api URL for the SW to
+  resolve (no rewiring); `storeAssetBlob` gained an optional id so take-offline
+  stores under the server id.
+- **C4 (249e1e4f)** — **service-worker intercept**
+  (`public/asset-intercept-sw.js`, dependency-free, `workbox.importScripts`):
+  serves both URL shapes (by `[bookId+filename]` index + by primary key) from
+  raw IndexedDB, network-fallback on miss. This is the production mechanism for
+  the embedded-in-TipTap + id-served images. URL-shape regexes pinned in
+  `asset-url.test.ts` (the SW can't be loaded by vitest; the dev-E2E has no
+  SW). The sub-path SW scope still intercepts root-absolute `/api/...` (a
+  controlled page's fetches fire the SW regardless of the request path).
+- **C5 (65eeda9d)** — byte sourcing (**both**): take-offline fetches each
+  asset's bytes (under the server id) after `ingestBookGraph`; lazy online-view
+  cache in `useAssetUrl` (dynamic-import-gated on `isOfflineEnabled()` so Dexie
+  stays out of the desktop bundle).
+- **C6 (bedbe608)** — storage-quota warning (`navigator.storage.estimate`
+  >=80%, offline-only toast) after each upload + `ui.offline.storage_almost_full`
+  in 8 catalogs + reseed. (Caught + fixed a duplicate `ui.offline:` YAML key I
+  first introduced.)
+- **C7 (1f74b36c)** — offline E2E: cover upload → blob-URL display → save →
+  reload → still displays, all under the zero-`/api` gate (cover is the only
+  offline-display surface testable without the SW). CoverUpload testids.
+
+Vitest 2740 → **2769** (+29). tsc + build green (SW emits
+`importScripts("asset-intercept-sw.js")`; offline storage chunk still
+code-split). Backend i18n parity 51. Pushed live.
+
+**Known gap:** the SW's IndexedDB read path is build-validated but not
+unit/E2E covered (no SW in the dev test env); only the URL-shape regexes are
+pinned. Aster runs the offline E2E pre-release.
+
 ## Remaining (tracked in #34)
 
 - **comments**: needs a new Dexie table (schema bump) + admin CRUD. Low offline
   value until P4 (no offline data source — comments come from Medium import).
-- **assets**: IndexedDB blobs (binary upload + blob-URL serving) — unlocks
-  images in the picture-book/comic editors offline. Most complex; last.
 - **P4**: AI via the user's own provider key + client-side Medium import; plus
-  the deferred Settings > Export engine chooser.
-
-P4 — AI via the user's own provider key + client-side Medium import. Plus the
-deferred export-engine chooser. All multi-session.
+  the deferred Settings > Export engine chooser. All multi-session.
