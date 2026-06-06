@@ -2991,6 +2991,11 @@ ui:
     url_label: "URL"
     pin_label: "PIN"
     scan_hint: "Bir cihaz bağlamak için QR kodunu tara"
+  export:
+    menu_label: "Dışa aktar"
+    success: "Dışa aktarma oluşturuldu."
+    failed: "Dışa aktarma başarısız."
+    client_hint: "Çevrimdışı dışa aktarma doğrudan tarayıcıda. Pandoc PDF (LaTeX) için masaüstü uygulamasını kullanın."
   about:
     heading: "Bibliogon Hakkında"
     description: "Surum, sistem bilgisi, yuklenmis eklentiler ve bagis kanallari."

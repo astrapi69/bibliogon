@@ -490,17 +490,23 @@ export default function ArticleEditor() {
         if (!article || exporting) return;
         setExporting(fmt);
         try {
-            await api.articleExport.download(article.id, fmt);
+            if (getStorage().mode === "dexie") {
+                // Offline: render the file in the browser (no Pandoc backend).
+                const { downloadExport, buildArticleDocument } = await import(
+                    "../export"
+                );
+                await downloadExport(buildArticleDocument(article), fmt);
+            } else {
+                await api.articleExport.download(article.id, fmt);
+            }
             notify.success(
                 t("ui.articles.export_success", "Export gestartet."),
             );
         } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.export_failed", "Export fehlgeschlagen."),
-                    err,
-                );
-            }
+            notify.error(
+                t("ui.articles.export_failed", "Export fehlgeschlagen."),
+                err instanceof ApiError ? err : undefined,
+            );
         } finally {
             setExporting(null);
         }

@@ -2991,6 +2991,11 @@ ui:
     url_label: "URL"
     pin_label: "PIN"
     scan_hint: "Escaneia o código QR para conectar um dispositivo"
+  export:
+    menu_label: "Exportar"
+    success: "Exportação criada."
+    failed: "Falha na exportação."
+    client_hint: "Exportação offline diretamente no navegador. Para PDF com Pandoc (LaTeX), use o aplicativo de desktop."
   about:
     heading: "Acerca do Bibliogon"
     description: "Versao, info do sistema, plugins instalados e canais de doacao."

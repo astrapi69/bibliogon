@@ -3157,6 +3157,12 @@
       "pin_label": "PIN",
       "scan_hint": "QR-Code scannen, um ein Gerät zu verbinden"
     },
+    "export": {
+      "menu_label": "Exportieren",
+      "success": "Export erstellt.",
+      "failed": "Export fehlgeschlagen.",
+      "client_hint": "Offline-Export direkt im Browser. Für Pandoc-PDF (LaTeX) die Desktop-App nutzen."
+    },
     "about": {
       "heading": "Über Bibliogon",
       "description": "Version, System-Info, installierte Plugins und Spenden-Kanäle.",

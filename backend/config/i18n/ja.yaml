@@ -2991,6 +2991,11 @@ ui:
     url_label: "URL"
     pin_label: "PIN"
     scan_hint: "QRコードをスキャンしてデバイスを接続"
+  export:
+    menu_label: "エクスポート"
+    success: "エクスポートを作成しました。"
+    failed: "エクスポートに失敗しました。"
+    client_hint: "ブラウザで直接オフラインエクスポート。Pandoc PDF（LaTeX）にはデスクトップアプリを使用してください。"
   about:
     heading: "Bibliogon について"
     description: "バージョン、システム情報、インストール済みプラグイン、寄付チャネル。"

@@ -111,6 +111,33 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Offline Book").first()).toBeVisible();
     });
 
+    test("export a book offline downloads a file via the client engine", async ({
+        page,
+    }) => {
+        // Create a prose book offline, then open it to learn its id.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Export Me");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Export Me").first()).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByText("Export Me").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        expect(bookId).toBeTruthy();
+
+        // The dedicated export surface shows the client export offline (not the
+        // backend-only gate), and a format pick yields a real browser download.
+        await page.goto(`/books/${bookId}/export`);
+        await expect(page.getByTestId("export-page-client")).toBeVisible();
+        const downloadPromise = page.waitForEvent("download");
+        await page.getByTestId("export-page-client-trigger").click();
+        await page.getByTestId("client-export-markdown").click();
+        const download = await downloadPromise;
+        expect(download.suggestedFilename()).toMatch(/\.md$/);
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {
