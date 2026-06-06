@@ -13,6 +13,9 @@ import { useAssetUrl, useCoverUrl } from "./useAssetUrl";
 const getStorageMock = vi.fn();
 vi.mock("../storage", () => ({
   getStorage: () => getStorageMock(),
+  // Offline capability off in the resolver tests, so the lazy-cache effect is
+  // a no-op (no dynamic offline-download import).
+  isOfflineEnabled: () => false,
 }));
 
 beforeEach(() => {

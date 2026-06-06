@@ -18,7 +18,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getStorage } from "../storage";
+import { getStorage, isOfflineEnabled } from "../storage";
 import { bookAssetFileUrl, coverFilenameFromPath } from "../storage/asset-url";
 
 export function useAssetUrl(
@@ -61,6 +61,18 @@ export function useAssetUrl(
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
+  }, [mode, bookId, filename]);
+
+  // Lazy online-view cache: while online (api mode) with offline capability
+  // on, opportunistically cache this asset's bytes so a later offline session
+  // shows it (covers assets uploaded after the book was taken offline). The
+  // offline-download module is imported dynamically behind the
+  // isOfflineEnabled() gate, so Dexie stays out of the desktop bundle.
+  useEffect(() => {
+    if (mode !== "api" || !bookId || !filename || !isOfflineEnabled()) return;
+    void import("../storage/offline-download")
+      .then((m) => m.lazyCacheAsset(bookId, filename))
+      .catch(() => {});
   }, [mode, bookId, filename]);
 
   return mode === "api" ? apiUrl : blobUrl;

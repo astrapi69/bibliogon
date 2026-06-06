@@ -1239,6 +1239,19 @@ export async function storeAssetBlob(
   return row;
 }
 
+/** Whether a (bookId, filename) asset blob is already cached. Lets the lazy
+ *  online-view cache skip a redundant re-download. */
+export async function hasAssetBlob(
+  bookId: string,
+  filename: string,
+): Promise<boolean> {
+  const count = await offlineDb.assets
+    .where("[bookId+filename]")
+    .equals([bookId, filename])
+    .count();
+  return count > 0;
+}
+
 /** Read a Blob/File into an ArrayBuffer, with a FileReader fallback for
  *  environments whose Blob lacks `.arrayBuffer()`. */
 async function blobToArrayBuffer(blob: Blob): Promise<ArrayBuffer> {
