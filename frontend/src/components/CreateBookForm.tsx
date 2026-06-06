@@ -8,6 +8,7 @@ import {
   BookTemplate,
   BookType,
 } from "../api/client";
+import { getStorage } from "../storage";
 import { useBookTypes } from "../hooks/useBookTypes";
 import { useI18n } from "../hooks/useI18n";
 import { useDialog } from "./AppDialog";
@@ -174,7 +175,7 @@ export default function CreateBookForm({
   // fallback on fetch error.
   useEffect(() => {
     let cancelled = false;
-    api.authors
+    getStorage().authors
       .list({})
       .then((rows) => {
         if (!cancelled) setGlobalAuthors(rows);
@@ -277,7 +278,7 @@ export default function CreateBookForm({
     // text author. Defensive pattern mirrors ConvertToBookWizard.
     if (showAddToAuthorsCheckbox && addToAuthorsDb && author.trim()) {
       try {
-        const created = await api.authors.create({
+        const created = await getStorage().authors.create({
           name: author.trim(),
         });
         setGlobalAuthors((prev) => [...prev, created]);

@@ -132,4 +132,25 @@ test.describe("Offline PWA (Dexie mode)", () => {
             page.getByTestId("settings-default-content-type-item-blogpost"),
         ).toBeVisible();
     });
+
+    test("authors work offline: creating a book adds the author to the local DB", async ({
+        page,
+    }) => {
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Author Seam Book");
+        await page.getByTestId("create-book-author").fill("Jane Offline");
+        await page.getByTestId("create-book-submit").click();
+
+        // The book is created AND (addToAuthorsDb defaults on) the new author
+        // is written to the local Authors-DB. The afterEach hard gate proves
+        // both went to Dexie, not a doomed /api call.
+        await expect(page.getByText("Author Seam Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // The author persisted: it shows in Settings > Autoren.
+        await page.goto("/settings?tab=autoren");
+        await expect(page.getByTestId("authors-database-section")).toBeVisible();
+        await expect(page.getByText("Jane Offline").first()).toBeVisible();
+    });
 });

@@ -30,6 +30,9 @@ import Dexie, { type Table } from "dexie";
 
 import type {
   Article,
+  Author,
+  AuthorCreate,
+  AuthorUpdate,
   Book,
   BookDetail,
   BookTypeDef,
@@ -116,6 +119,7 @@ class BibliogonOfflineDB extends Dexie {
   bookTypesRef!: Table<KeyedBlob<Record<string, BookTypeDef>>, string>;
   contentTypesRef!: Table<KeyedBlob<Record<string, ContentTypeDef>>, string>;
   pluginMetaRef!: Table<KeyedBlob<DiscoveredPlugin[]>, string>;
+  authors!: Table<Author, string>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -151,6 +155,9 @@ class BibliogonOfflineDB extends Dexie {
       bookTypesRef: "key",
       contentTypesRef: "key",
       pluginMetaRef: "key",
+    });
+    this.version(5).stores({
+      authors: "id, name, slug",
     });
   }
 }
@@ -305,6 +312,31 @@ function buildArticle(
     seo_title: null,
     seo_description: null,
     series: null,
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
+/** Client-side slug from a name (lowercase, hyphenated, diacritics folded),
+ *  mirroring the server's slug shape closely enough for offline use. Empty
+ *  input falls back to "author". */
+function slugify(name: string): string {
+  const folded = name
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return folded || "author";
+}
+
+function buildAuthor(data: AuthorCreate, id: string): Author {
+  const ts = nowIso();
+  return {
+    id,
+    name: data.name,
+    slug: slugify(data.name),
+    bio: data.bio ?? null,
     created_at: ts,
     updated_at: ts,
   };
@@ -550,6 +582,38 @@ export const dexieStorage: IStorageService = {
     list: async (_days = 30) => {
       void _days;
       return [] as WritingSession[];
+    },
+  },
+
+  authors: {
+    list: async ({ search, limit = 200 } = {}) => {
+      let rows = await offlineDb.authors.toArray();
+      if (search?.trim()) {
+        const query = search.trim().toLowerCase();
+        rows = rows.filter((author) => author.name.toLowerCase().includes(query));
+      }
+      rows.sort((left, right) => left.name.localeCompare(right.name));
+      return rows.slice(0, limit);
+    },
+    get: async (id) => {
+      const row = await offlineDb.authors.get(id);
+      if (!row) notFound("Author", id);
+      return row;
+    },
+    create: async (data: AuthorCreate) => {
+      const row = buildAuthor(data, newId());
+      await offlineDb.authors.add(row);
+      return row;
+    },
+    update: async (id, data: AuthorUpdate) => {
+      const existing = await offlineDb.authors.get(id);
+      if (!existing) notFound("Author", id);
+      const merged: Author = { ...existing, ...data, id, updated_at: nowIso() };
+      await offlineDb.authors.put(merged);
+      return merged;
+    },
+    delete: async (id) => {
+      await offlineDb.authors.delete(id);
     },
   },
 };

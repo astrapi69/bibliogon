@@ -2,6 +2,7 @@ import {useState, useEffect, useCallback, useMemo} from "react";
 import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
 import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel, type GitSyncMappingStatus} from "../api/client";
+import { getStorage } from "../storage";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -190,7 +191,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     const [addAuthorToDb, setAddAuthorToDb] = useState(true);
     useEffect(() => {
         let cancelled = false;
-        api.authors
+        getStorage().authors
             .list({})
             .then((rows) => {
                 if (!cancelled) setGlobalAuthors(rows);
@@ -264,7 +265,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
             const typedAuthor = (form.author ?? "").trim();
             if (showAddToAuthorsCheckbox && addAuthorToDb && typedAuthor) {
                 try {
-                    const created = await api.authors.create({name: typedAuthor});
+                    const created = await getStorage().authors.create({name: typedAuthor});
                     setGlobalAuthors((prev) => [...prev, created]);
                 } catch (err) {
                     notify.error(

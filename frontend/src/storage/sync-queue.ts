@@ -167,5 +167,6 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     bookTypes: base.bookTypes,
     contentTypes: base.contentTypes,
     writingSessions: base.writingSessions,
+    authors: base.authors,
   };
 }

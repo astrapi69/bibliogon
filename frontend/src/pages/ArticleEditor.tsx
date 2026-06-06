@@ -99,10 +99,9 @@ export default function ArticleEditor() {
     // auto-save-on-keystroke rationale (see consumer site below).
     const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
     useEffect(() => {
-        if (getStorage().mode === "dexie") return;
         let cancelled = false;
-        api.authors
-            .list({})
+        getStorage()
+            .authors.list({})
             .then((rows) => {
                 if (!cancelled) setGlobalAuthors(rows);
             })

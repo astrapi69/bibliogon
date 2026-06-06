@@ -80,6 +80,16 @@ export interface WritingSessionsStorage {
   list: typeof api.writingSessions.list;
 }
 
+/** The global Authors-Database. Pure CRUD, so it works offline against a
+ *  Dexie table (the user can add + pick authors on the backendless PWA). */
+export interface AuthorStorage {
+  list: typeof api.authors.list;
+  get: typeof api.authors.get;
+  create: typeof api.authors.create;
+  update: typeof api.authors.update;
+  delete: typeof api.authors.delete;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -91,4 +101,5 @@ export interface IStorageService {
   bookTypes: BookTypesStorage;
   contentTypes: ContentTypesStorage;
   writingSessions: WritingSessionsStorage;
+  authors: AuthorStorage;
 }

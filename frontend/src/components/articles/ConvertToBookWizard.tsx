@@ -56,6 +56,7 @@ import {
     BookFromArticlesValidationError,
     api,
 } from "../../api/client"
+import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {RadixSelect} from "../RadixSelect"
 import {notify} from "../../utils/notify"
@@ -253,7 +254,7 @@ export default function ConvertToBookWizard({
     useEffect(() => {
         if (!open) return
         let cancelled = false
-        api.authors
+        getStorage().authors
             .list()
             .then((rows) => {
                 if (!cancelled) setGlobalAuthors(rows)
@@ -503,7 +504,7 @@ export default function ConvertToBookWizard({
         // suffixed; we only need to send the name.
         if (showAddToAuthorsCheckbox && addToAuthorsDb && author.trim()) {
             try {
-                const created = await api.authors.create({
+                const created = await getStorage().authors.create({
                     name: author.trim(),
                 })
                 // Update local mirror so the dropdown reflects the

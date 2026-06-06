@@ -16,6 +16,7 @@
 import { api } from "../api/client";
 import type {
   ArticleStorage,
+  AuthorStorage,
   BookStorage,
   BookTypesStorage,
   ChapterStorage,
@@ -60,5 +61,8 @@ export const apiStorage: IStorageService = {
   },
   get writingSessions(): WritingSessionsStorage {
     return api.writingSessions;
+  },
+  get authors(): AuthorStorage {
+    return api.authors;
   },
 };

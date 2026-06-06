@@ -1,6 +1,7 @@
 import {useEffect, useState} from "react";
 import {Plus, Edit2, Trash2, Save, X, Search} from "lucide-react";
-import {api, type Author} from "../../api/client";
+import {type Author} from "../../api/client";
+import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
@@ -42,7 +43,7 @@ export function AuthorsDatabase() {
 
     const loadAuthors = async (searchTerm?: string) => {
         try {
-            const rows = await api.authors.list(
+            const rows = await getStorage().authors.list(
                 searchTerm ? {search: searchTerm} : {}
             );
             setAuthors(rows);
@@ -82,7 +83,7 @@ export function AuthorsDatabase() {
         if (!trimmed) return;
         setCreating(true);
         try {
-            await api.authors.create({
+            await getStorage().authors.create({
                 name: trimmed,
                 bio: newBio.trim() || null,
             });
@@ -120,7 +121,7 @@ export function AuthorsDatabase() {
         if (!trimmed) return;
         setSavingId(id);
         try {
-            const updated = await api.authors.update(id, {
+            const updated = await getStorage().authors.update(id, {
                 name: trimmed,
                 bio: editBio.trim() || null,
             });
@@ -150,7 +151,7 @@ export function AuthorsDatabase() {
         );
         if (!ok) return;
         try {
-            await api.authors.delete(author.id);
+            await getStorage().authors.delete(author.id);
             // Optimistic local removal so the row vanishes immediately;
             // the next list refresh re-syncs in the background.
             setAuthors((prev) => prev.filter((a) => a.id !== author.id));
