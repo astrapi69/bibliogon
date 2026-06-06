@@ -3009,6 +3009,8 @@ ui:
     load_failed: "Could not load information:"
     version_heading: "Version"
     app_label: "Bibliogon"
+    build_label: "Build"
+    build_date_label: "Build date"
     license_label: "License"
     credits_heading: "Credits"
     authors_label: "Authors"

@@ -2998,6 +2998,8 @@ ui:
     load_failed: "Δεν ήταν δυνατή η φόρτωση των πληροφοριών:"
     version_heading: "Έκδοση"
     app_label: "Bibliogon"
+    build_label: "Build"
+    build_date_label: "Ημερομηνία build"
     license_label: "Άδεια χρήσης"
     credits_heading: "Συντελεστές"
     authors_label: "Συγγραφείς"

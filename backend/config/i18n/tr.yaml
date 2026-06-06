@@ -2998,6 +2998,8 @@ ui:
     load_failed: "Bilgiler yüklenemedi:"
     version_heading: "Sürüm"
     app_label: "Bibliogon"
+    build_label: "Build"
+    build_date_label: "Yapım tarihi"
     license_label: "Lisans"
     credits_heading: "Katkıda Bulunanlar"
     authors_label: "Yazarlar"

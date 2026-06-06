@@ -37,6 +37,29 @@ vi.mock("../../api/client", async () => {
     };
 });
 
+// Storage seam mock: a mutable mode lets a test flip to "dexie" (the
+// backendless GitHub-Pages build) so the offline About-render path —
+// systemInfo null, build provenance + plugin list still shown — is
+// pinned at the unit layer. discoveredPlugins is a shared mock so both
+// online and offline tests configure the same plugin payload.
+const storageMock = vi.hoisted(() => ({
+    mode: {current: "api" as "api" | "dexie"},
+    discoveredPlugins: vi.fn(),
+}));
+
+vi.mock("../../storage", async () => {
+    const actual =
+        await vi.importActual<typeof import("../../storage")>("../../storage");
+    return {
+        ...actual,
+        getStorage: () =>
+            ({
+                mode: storageMock.mode.current,
+                settings: {discoveredPlugins: storageMock.discoveredPlugins},
+            }) as unknown as ReturnType<typeof actual.getStorage>,
+    };
+});
+
 import {api, type DiscoveredPlugin} from "../../api/client";
 
 const FIXTURE = {
@@ -115,15 +138,16 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
 
 describe("AboutSettings", () => {
     beforeEach(() => {
+        storageMock.mode.current = "api";
         vi.mocked(api.system.info).mockImplementation(async () => FIXTURE);
-        vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+        storageMock.discoveredPlugins.mockImplementation(
             async () => PLUGINS_FIXTURE,
         );
     });
 
     afterEach(() => {
         vi.mocked(api.system.info).mockClear();
-        vi.mocked(api.settings.discoveredPlugins).mockClear();
+        storageMock.discoveredPlugins.mockClear();
     });
 
     it("renders loading state initially", () => {
@@ -144,12 +168,23 @@ describe("AboutSettings", () => {
     });
 
     describe("Version section", () => {
-        it("renders app version + license", async () => {
+        it("renders the build version from the build-time literal + license", async () => {
             render(<AboutSettings appConfig={{}} />);
             const version = await screen.findByTestId("about-app-version");
-            expect(version.textContent).toBe("v0.35.1");
+            // Sourced from the Vite __APP_VERSION__ literal (the running
+            // build), not the backend systemInfo.version, so it is correct
+            // offline and identifies the bundle against a stale SW.
+            expect(version.textContent).toBe(`v${__APP_VERSION__}`);
             const section = screen.getByTestId("about-version-section");
             expect(section.textContent).toMatch(/MIT/);
+        });
+
+        it("renders build hash + build date from build-time literals", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const hash = await screen.findByTestId("about-build-hash");
+            const date = await screen.findByTestId("about-build-date");
+            expect(hash.textContent).toBe(__BUILD_HASH__);
+            expect(date.textContent).toBeTruthy();
         });
     });
 
@@ -247,7 +282,7 @@ describe("AboutSettings", () => {
         });
 
         it("falls back to slug when display_name dict is empty", async () => {
-            vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+            storageMock.discoveredPlugins.mockImplementation(
                 async () => [
                     {
                         ...PLUGINS_FIXTURE[0],
@@ -262,7 +297,7 @@ describe("AboutSettings", () => {
         });
 
         it("renders empty-state when no plugins active", async () => {
-            vi.mocked(api.settings.discoveredPlugins).mockImplementation(
+            storageMock.discoveredPlugins.mockImplementation(
                 async () => [],
             );
             render(<AboutSettings appConfig={{}} />);
@@ -317,6 +352,31 @@ describe("AboutSettings", () => {
             // Defensive: also assert that fireEvent is importable
             // (catches accidental tree-shake regressions).
             expect(typeof fireEvent.click).toBe("function");
+        });
+    });
+
+    describe("Offline (dexie) mode", () => {
+        it("renders build provenance + plugins without the backend, hiding backend-only sections", async () => {
+            storageMock.mode.current = "dexie";
+            render(<AboutSettings appConfig={{}} />);
+
+            // Build provenance comes from build-time literals -> still shown.
+            const version = await screen.findByTestId("about-app-version");
+            expect(version.textContent).toBe(`v${__APP_VERSION__}`);
+            expect(screen.getByTestId("about-build-hash").textContent).toBe(
+                __BUILD_HASH__,
+            );
+
+            // The plugin list reads the seeded Dexie registry -> still shown.
+            expect(screen.getByTestId("about-plugins-section")).toBeTruthy();
+            expect(screen.getByTestId("about-plugin-row-comics")).toBeTruthy();
+
+            // No backend: /api/system/info is never called, and the
+            // systemInfo-dependent sections are omitted (not errored).
+            expect(api.system.info).not.toHaveBeenCalled();
+            expect(screen.queryByTestId("about-credits-section")).toBeNull();
+            expect(screen.queryByTestId("about-system-section")).toBeNull();
+            expect(screen.queryByTestId("about-settings-error")).toBeNull();
         });
     });
 });

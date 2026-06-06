@@ -3164,6 +3164,8 @@
       "load_failed": "Não foi possível carregar as informações:",
       "version_heading": "Versão",
       "app_label": "Bibliogon",
+      "build_label": "Build",
+      "build_date_label": "Data de compilação",
       "license_label": "Licença",
       "credits_heading": "Créditos",
       "authors_label": "Autores",

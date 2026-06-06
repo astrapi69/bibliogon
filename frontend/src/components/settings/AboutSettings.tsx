@@ -124,33 +124,53 @@ export function AboutSettings({ appConfig }: Props) {
         </div>
       )}
 
-      {!loading && !error && systemInfo && (
+      {!loading && !error && (
         <div
           data-testid="about-settings-content"
           style={{ display: "flex", flexDirection: "column", gap: 20 }}
         >
-          <VersionSection info={systemInfo} t={t} />
-          <CreditsSection info={systemInfo} t={t} />
+          {/* Build provenance reads build-time literals, so it renders
+              offline (Dexie mode) where systemInfo is null. The other
+              sections that need the backend stay gated on systemInfo. */}
+          <VersionSection info={systemInfo} t={t} lang={lang} />
+          {systemInfo ? <CreditsSection info={systemInfo} t={t} /> : null}
           <PluginListSection plugins={plugins} t={t} lang={lang} />
           {donationsConfig ? (
             <article data-testid="about-donations-section" style={sectionStyle}>
               <SupportSection config={donationsConfig} />
             </article>
           ) : null}
-          <SystemInfoSection info={systemInfo} t={t} />
+          {systemInfo ? <SystemInfoSection info={systemInfo} t={t} /> : null}
         </div>
       )}
     </section>
   );
 }
 
-/** Bibliogon's name + version + license + repository links. */
+/** Format the build-time ISO timestamp into a locale-aware string,
+ *  falling back to the raw value if it is not a parseable date. */
+function formatBuildDate(iso: string, lang: string): string {
+  const parsed = new Date(iso);
+  if (Number.isNaN(parsed.getTime())) return iso;
+  try {
+    return parsed.toLocaleString(lang);
+  } catch {
+    return parsed.toLocaleString();
+  }
+}
+
+/** Bibliogon's running build: version + build hash + build date +
+ *  license. Version / hash / date come from Vite build-time literals
+ *  so they render offline (Dexie mode); the license needs the backend
+ *  systemInfo and is omitted when it is unavailable. */
 function VersionSection({
   info,
   t,
+  lang,
 }: {
-  info: SystemInfo;
+  info: SystemInfo | null;
   t: (key: string, fallback: string) => string;
+  lang: string;
 }) {
   return (
     <article data-testid="about-version-section" style={sectionStyle}>
@@ -162,12 +182,28 @@ function VersionSection({
           <strong>{t("ui.about.app_label", "Bibliogon")}</strong>
         </dt>
         <dd data-testid="about-app-version" style={{ margin: 0 }}>
-          v{info.app.version}
+          v{__APP_VERSION__}
         </dd>
         <dt>
-          <strong>{t("ui.about.license_label", "Lizenz")}</strong>
+          <strong>{t("ui.about.build_label", "Build")}</strong>
         </dt>
-        <dd style={{ margin: 0 }}>{info.app.license}</dd>
+        <dd data-testid="about-build-hash" style={{ margin: 0 }}>
+          {__BUILD_HASH__}
+        </dd>
+        <dt>
+          <strong>{t("ui.about.build_date_label", "Build-Datum")}</strong>
+        </dt>
+        <dd data-testid="about-build-date" style={{ margin: 0 }}>
+          {formatBuildDate(__BUILD_DATE__, lang)}
+        </dd>
+        {info ? (
+          <>
+            <dt>
+              <strong>{t("ui.about.license_label", "Lizenz")}</strong>
+            </dt>
+            <dd style={{ margin: 0 }}>{info.app.license}</dd>
+          </>
+        ) : null}
       </dl>
     </article>
   );

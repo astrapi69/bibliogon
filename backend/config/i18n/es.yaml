@@ -2998,6 +2998,8 @@ ui:
     load_failed: "No se pudo cargar la información:"
     version_heading: "Versión"
     app_label: "Bibliogon"
+    build_label: "Build"
+    build_date_label: "Fecha de compilación"
     license_label: "Licencia"
     credits_heading: "Créditos"
     authors_label: "Autores"

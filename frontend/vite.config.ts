@@ -1,4 +1,5 @@
 /// <reference types="vitest" />
+import { execSync } from "node:child_process";
 import { fileURLToPath, URL } from "node:url";
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
@@ -6,6 +7,22 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 
 import pkg from "./package.json" with { type: "json" };
+
+// Build provenance baked into the bundle so Settings > About can show
+// exactly which build is running. This is the user-facing antidote to the
+// stale-service-worker problem: when a live report shows already-fixed
+// behavior, the build hash/date tells at a glance whether the browser is
+// serving an old precached bundle. CI can override via VITE_BUILD_HASH /
+// VITE_BUILD_DATE; otherwise derive from git + the wall clock at build time.
+function gitShortHash(): string {
+  try {
+    return execSync("git rev-parse --short HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
+const buildHash = process.env.VITE_BUILD_HASH || gitShortHash();
+const buildDate = process.env.VITE_BUILD_DATE || new Date().toISOString();
 
 // GitHub-Pages / sub-path support. The deployed base path is injected at
 // build time via VITE_BASE_URL (e.g. "/bibliogon/" for GitHub Pages);
@@ -25,6 +42,8 @@ export default defineConfig({
     // Downstream code reads __APP_VERSION__ instead of
     // re-declaring a hardcoded constant.
     __APP_VERSION__: JSON.stringify(pkg.version),
+    __BUILD_HASH__: JSON.stringify(buildHash),
+    __BUILD_DATE__: JSON.stringify(buildDate),
   },
   resolve: {
     // ``@`` -> ``src`` alias for the shadcn/ui convention
