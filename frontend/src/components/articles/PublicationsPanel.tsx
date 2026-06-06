@@ -23,6 +23,7 @@ import {
     Publication,
     PublicationStatus,
 } from "../../api/client";
+import { getStorage } from "../../storage";
 import { useDialog } from "../AppDialog";
 import { useI18n } from "../../hooks/useI18n";
 import {RadixSelect} from "../RadixSelect";
@@ -53,8 +54,8 @@ export function PublicationsPanel({
         setLoading(true);
         try {
             const [pubs, sch] = await Promise.all([
-                api.publications.list(articleId),
-                api.articlePlatforms.list(),
+                getStorage().publications.list(articleId),
+                getStorage().articlePlatforms.list(),
             ]);
             setPublications(pubs);
             setSchemas(sch);

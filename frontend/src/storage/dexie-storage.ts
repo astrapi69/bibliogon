@@ -301,7 +301,13 @@ function buildArticle(
     author: data.author ?? null,
     language: data.language ?? "de",
     content_type: data.content_type ?? "blogpost",
-    article_metadata: data.article_metadata,
+    // Match the ArticleOut API shape exactly: the Pydantic decoder always
+    // populates these (metadata -> {}, comments_count -> 0,
+    // original_published_at -> null for a native article with no
+    // publications). Leaving them undefined offline diverges from the
+    // online shape and is the kind of gap that surfaces as a downstream
+    // render crash, so seed the same defaults the backend would.
+    article_metadata: data.article_metadata ?? {},
     content_json: EMPTY_DOC,
     status: "draft",
     canonical_url: null,
@@ -314,6 +320,9 @@ function buildArticle(
     series: null,
     created_at: ts,
     updated_at: ts,
+    deleted_at: null,
+    original_published_at: null,
+    comments_count: 0,
   };
 }
 
@@ -615,6 +624,26 @@ export const dexieStorage: IStorageService = {
     delete: async (id) => {
       await offlineDb.authors.delete(id);
     },
+  },
+
+  // Publishing surfaces are backend-only: offline these reads return the
+  // empty defaults the editor expects (no publications, no platform
+  // schemas) so opening an article offline never fires a doomed `/api`
+  // request. The publish MUTATIONS are not seam-routed (they push to
+  // external platforms via the desktop backend).
+  publications: {
+    list: async () => [],
+  },
+
+  articlePlatforms: {
+    list: async () => ({}),
+  },
+
+  // AI / grammar / audiobook / ms-tools are backend plugins. Offline the
+  // probe returns an empty map, so every editor plugin reads as
+  // unavailable (the toolbar already degrades gracefully on that shape).
+  editorPluginStatus: {
+    get: async () => ({}),
   },
 };
 

@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import {api} from "../api/client";
+import {getStorage} from "../storage";
 
 export interface PluginStatus {
     available: boolean;
@@ -30,7 +30,7 @@ export function useEditorPluginStatus(): {
 
     const fetch_ = useCallback(async () => {
         try {
-            const data = await api.editorPluginStatus();
+            const data = await getStorage().editorPluginStatus.get();
             setStatus(data);
         } catch {
             // Endpoint missing or server down — treat everything as unavailable

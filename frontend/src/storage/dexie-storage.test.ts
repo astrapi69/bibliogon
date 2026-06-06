@@ -103,4 +103,29 @@ describe("DexieStorage — articles", () => {
     await dexieStorage.articles.delete(a.id);
     expect(await dexieStorage.articles.list()).toHaveLength(0);
   });
+
+  it("create produces the ArticleOut API shape (no undefined fields)", async () => {
+    // Regression for the offline /articles render crash: an article
+    // loaded from Dexie must carry the same defaults the API decoder
+    // populates, not undefined. article_metadata in particular is {} on
+    // the server; leaving it undefined offline diverges from the online
+    // shape that consumers are written against.
+    const a = await dexieStorage.articles.create({ title: "Shape" });
+    expect(a.article_metadata).toEqual({});
+    expect(a.comments_count).toBe(0);
+    expect(a.original_published_at).toBeNull();
+    expect(a.deleted_at).toBeNull();
+    expect(a.tags).toEqual([]);
+  });
+});
+
+describe("DexieStorage — publishing surfaces (offline defaults)", () => {
+  it("returns empty publications/platforms + an empty plugin-status map", async () => {
+    // These backend-only reads must resolve to empty offline so opening
+    // the article/chapter editor in Dexie mode fires no /api request and
+    // never errors. Publishing + plugins stay desktop-only.
+    expect(await dexieStorage.publications.list("any-article")).toEqual([]);
+    expect(await dexieStorage.articlePlatforms.list()).toEqual({});
+    expect(await dexieStorage.editorPluginStatus.get()).toEqual({});
+  });
 });

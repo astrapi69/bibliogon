@@ -90,6 +90,31 @@ export interface AuthorStorage {
   delete: typeof api.authors.delete;
 }
 
+/**
+ * Article publications (which platforms a piece was published to). The
+ * READ is seam-routed so opening the article editor offline returns an
+ * empty list from Dexie instead of firing a doomed `/api` request; the
+ * publish MUTATIONS stay on `api.publications.*` (they push to external
+ * platforms via the backend and are genuinely desktop-only for now).
+ */
+export interface PublicationStorage {
+  list: typeof api.publications.list;
+}
+
+/** Publishing platform schemas (reference data for the publish UI).
+ *  Seam-routed read so the editor's offline load returns an empty map
+ *  instead of erroring; publishing itself remains backend-only. */
+export interface ArticlePlatformStorage {
+  list: typeof api.articlePlatforms.list;
+}
+
+/** Editor plugin-availability probe (AI / grammar / audiobook / ms-tools).
+ *  These plugins are backend-only, so the offline probe returns an empty
+ *  map (everything unavailable) from Dexie without firing `/api`. */
+export interface EditorPluginStatusStorage {
+  get: typeof api.editorPluginStatus;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -102,4 +127,7 @@ export interface IStorageService {
   contentTypes: ContentTypesStorage;
   writingSessions: WritingSessionsStorage;
   authors: AuthorStorage;
+  publications: PublicationStorage;
+  articlePlatforms: ArticlePlatformStorage;
+  editorPluginStatus: EditorPluginStatusStorage;
 }

@@ -15,14 +15,17 @@
 
 import { api } from "../api/client";
 import type {
+  ArticlePlatformStorage,
   ArticleStorage,
   AuthorStorage,
   BookStorage,
   BookTypesStorage,
   ChapterStorage,
   ContentTypesStorage,
+  EditorPluginStatusStorage,
   I18nStorage,
   IStorageService,
+  PublicationStorage,
   SettingsStorage,
   WritingSessionsStorage,
 } from "./types";
@@ -64,5 +67,14 @@ export const apiStorage: IStorageService = {
   },
   get authors(): AuthorStorage {
     return api.authors;
+  },
+  get publications(): PublicationStorage {
+    return api.publications;
+  },
+  get articlePlatforms(): ArticlePlatformStorage {
+    return api.articlePlatforms;
+  },
+  get editorPluginStatus(): EditorPluginStatusStorage {
+    return { get: api.editorPluginStatus };
   },
 };

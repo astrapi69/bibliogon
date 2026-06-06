@@ -168,5 +168,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     contentTypes: base.contentTypes,
     writingSessions: base.writingSessions,
     authors: base.authors,
+    // Read-only publishing surfaces: straight passthrough, no queue entry.
+    publications: base.publications,
+    articlePlatforms: base.articlePlatforms,
+    editorPluginStatus: base.editorPluginStatus,
   };
 }
