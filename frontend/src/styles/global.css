@@ -1090,7 +1090,10 @@ body {
     width: 100%;
     padding: 10px 12px;
     font-family: var(--font-body);
-    font-size: 0.9375rem;
+    /* 1rem (16px). Below 16px iOS Safari auto-zooms the page on input
+     * focus; 15px shipped that zoom on every form field. Responsive
+     * mobile pass (feature/responsive-mobile), 2026-06-06. */
+    font-size: 1rem;
     color: var(--text-primary);
     background: var(--bg-card);
     border: 1px solid var(--border);
@@ -1101,6 +1104,25 @@ body {
 
 .input:focus {
     border-color: var(--accent);
+}
+
+/* Touch-device tap targets. On coarse pointers (phones / tablets) the
+ * legacy padding-only sizing leaves .btn (~36px), .btn-sm (~28px) and
+ * .btn-icon (~28px) below the 44x44 WCAG 2.5.5 / coding-standards
+ * minimum. Scoping the bump to `pointer: coarse` keeps dense desktop
+ * (mouse) toolbars untouched. Responsive mobile pass, 2026-06-06. */
+@media (pointer: coarse) {
+    .btn,
+    .btn-sm,
+    .btn-icon,
+    .btn-sidebar-icon,
+    .radix-select-trigger {
+        min-height: 44px;
+    }
+    .btn-icon,
+    .btn-sidebar-icon {
+        min-width: 44px;
+    }
 }
 
 /* Shared range-slider styling. `accent-color` themes the track-fill

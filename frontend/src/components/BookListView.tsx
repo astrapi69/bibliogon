@@ -43,11 +43,12 @@ export default function BookListView({
     const { t } = useI18n();
     const showSelection = isSelected != null && onToggleSelect != null;
     return (
+        <div className="overflow-x-auto">
         <div
             data-testid="book-list-view"
             role="table"
             aria-label={t("ui.dashboard.list_aria_label", "Bücherliste")}
-            className={`${styles.table}${showSelection ? ` ${styles.tableSelectable}` : ""}`}
+            className={`${styles.table} min-w-[680px] menu:min-w-0${showSelection ? ` ${styles.tableSelectable}` : ""}`}
         >
             <div role="row" className={styles.headerRow}>
                 {showSelection ? (
@@ -85,6 +86,7 @@ export default function BookListView({
                     onToggleSelect={onToggleSelect ? () => onToggleSelect(book) : undefined}
                 />
             ))}
+        </div>
         </div>
     );
 }
