@@ -142,6 +142,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
                     ref={inputRef}
                     type="file"
                     accept={ACCEPT_ATTR}
+                    data-testid="cover-upload-input"
                     className={styles.hiddenInput}
                     onChange={(e) => handleFiles(e.target.files)}
                 />
@@ -192,6 +193,7 @@ function CoverPreview({
             <img
                 src={url}
                 alt="Cover"
+                data-testid="cover-preview-img"
                 className={styles.preview}
                 onLoad={(e) => {
                     const img = e.currentTarget;

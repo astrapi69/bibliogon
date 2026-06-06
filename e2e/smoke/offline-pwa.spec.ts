@@ -177,6 +177,52 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("page-editor-page-list")).toBeVisible();
     });
 
+    test("book cover uploads + displays offline from IndexedDB, persists across reload", async ({
+        page,
+    }) => {
+        // A 1x1 PNG — valid image bytes so the browser renders the blob.
+        const PNG_1x1 =
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+        const coverFile = {
+            name: "cover.png",
+            mimeType: "image/png",
+            buffer: Buffer.from(PNG_1x1, "base64"),
+        };
+
+        // Create a prose book offline, learn its id.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Cover Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Cover Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByText("Cover Book").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        expect(bookId).toBeTruthy();
+
+        // Design tab → upload a cover. Stored in IndexedDB (covers seam), not /api.
+        await page.goto(`/book/${bookId}?view=metadata`);
+        await page.getByTestId("metadata-tab-design").click();
+        await page
+            .getByTestId("cover-upload-input")
+            .setInputFiles(coverFile);
+
+        // The cover displays from a blob: URL resolved out of IndexedDB.
+        const preview = page.getByTestId("cover-preview-img");
+        await expect(preview).toBeVisible({ timeout: 10000 });
+        await expect(preview).toHaveAttribute("src", /^blob:/);
+
+        // Persist cover_image to the book row (Dexie), then reload from scratch.
+        await page.getByTestId("metadata-save").click();
+        await page.goto(`/book/${bookId}?view=metadata`);
+        await page.getByTestId("metadata-tab-design").click();
+        const reloaded = page.getByTestId("cover-preview-img");
+        await expect(reloaded).toBeVisible({ timeout: 10000 });
+        await expect(reloaded).toHaveAttribute("src", /^blob:/);
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {
