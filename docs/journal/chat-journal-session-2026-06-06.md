@@ -67,9 +67,34 @@ Backend-free export (#34), 6 formats:
 tsc clean; Vitest 2715 -> 2736; backend i18n parity 51 + structure 111 green;
 `npm run build` green (pdfmake/vfs lazy-chunked); P2 deploy queued.
 
+## 7. P3a — chapter labels + prose storyboard via Dexie (fd0a6ff4)
+
+Chapter labels are pure CRUD over the existing (offline-download) Dexie
+`chapterLabels` table: `ChapterLabelStorage` seam (list/create/update/remove)
++ apiStorage getter + DexieStorage impl (book-scoped, position-ordered) +
+sync-queue passthrough. Wired ChapterLabelManager, ChapterOutliner and
+ProseStoryboard through `getStorage()`; ProseStoryboard's direct
+`api.chapters` reads were routed too, so the whole prose storyboard works
+offline. Dexie round-trip test + existing component tests green (delegate
+through the seam). Vitest 2737. Pushed live.
+
+Also confirmed `writingSessions` is already offline-complete (DexieStorage
+returns an empty list → the writing-history page renders its empty state).
+
 ## Remaining (tracked in #34)
 
-P3 — remaining data entities via Dexie (story-bible, storyboard, picture-book
-pages, comic panels, chapter labels, comments, writing sessions, assets).
+P3 (the gated authoring features — each a focused multi-commit sub-project,
+NOT quick wins; scoping noted):
+- **story-bible**: seed entity-types (add a `generate_story_entity_types()` to
+  the seed pipeline mirroring content-types + a Dexie ref table) → entity CRUD
+  + links + relationships over the existing `storyEntities` /
+  `storyEntityPageLinks` tables → gate the logic methods (autoDetect /
+  continuityCheck / exportBible) offline → flip `storyBibleAvailable` true in
+  Dexie mode → wire the 9 call sites.
+- **pages** (picture-book) + **comics**: un-gate the editors, CRUD over the
+  existing `pages` / `comicPanels` / `comicBubbles` tables.
+- **comments**: needs a new Dexie table (schema bump) + admin CRUD.
+- **assets**: IndexedDB blobs (binary) — most complex, last.
+
 P4 — AI via the user's own provider key + client-side Medium import. Plus the
-deferred export-engine chooser. Both multi-session.
+deferred export-engine chooser. All multi-session.
