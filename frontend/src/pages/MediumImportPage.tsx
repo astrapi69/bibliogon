@@ -32,18 +32,24 @@
  * mounted at App level) so F5 mid-import re-attaches to the
  * running job instead of dropping the progress UI.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
-import { OfflineFeatureNotice } from "../components/OfflineFeatureNotice";
 import {
     api,
     ApiError,
     type MediumImportPreviewResponse,
+    type MediumImportResponse,
 } from "../api/client";
+import { getStorage } from "../storage";
+import {
+    importParsed,
+    parseMediumZip,
+} from "../medium-import/clientImport";
+import type { ParsedPost } from "../medium-import/walker";
 import { notify } from "../utils/notify";
 import { useMediumImportJob } from "../contexts/MediumImportJobContext";
 import MediumImportSettings from "../components/medium-import/MediumImportSettings";
@@ -78,12 +84,18 @@ export default function MediumImportPage() {
     );
     const [selected, setSelected] = useState<Set<string>>(new Set());
 
-    // MediumImportJobContext.result is the source of truth for the
-    // result panel. Reading from context (not local useState) means
-    // the result survives navigation — user can click "Go to comments"
-    // → Settings → browser-back and still see the result panel,
-    // matching their mental model of "this should still be here".
-    const result = job.result;
+    // Offline (dexie) parse runs entirely in the browser: the parsed posts are
+    // held here between the preview and import steps (no server-side cache),
+    // and the import result is local (there is no SSE job offline).
+    const parsedRef = useRef<Map<string, ParsedPost>>(new Map());
+    const [offlineResult, setOfflineResult] = useState<MediumImportResponse | null>(
+        null,
+    );
+
+    // MediumImportJobContext.result is the source of truth online (survives
+    // navigation); offline uses the local result. Either renders the same
+    // MediumImportResult panel.
+    const result = job.result ?? offlineResult;
 
     const isBusy = phase !== "idle";
     const isUploading = phase === "uploading";
@@ -96,16 +108,26 @@ export default function MediumImportPage() {
         // result panel + cached job (the user is committing to a
         // new flow). job.clear() drops both.
         job.clear();
+        setOfflineResult(null);
         setPreview(null);
         setSelected(new Set());
         setUploadLoaded(0);
         setUploadTotal(file.size);
         setPhase("uploading");
         try {
-            const response = await api.mediumImport.preview(file, (loaded, total) => {
-                setUploadLoaded(loaded);
-                setUploadTotal(total);
-            });
+            let response: MediumImportPreviewResponse;
+            if (offline) {
+                // Parse the ZIP in the browser; keep the parsed posts for the
+                // import step.
+                const client = await parseMediumZip(file, Date.now());
+                parsedRef.current = client.parsed;
+                response = client.preview;
+            } else {
+                response = await api.mediumImport.preview(file, (loaded, total) => {
+                    setUploadLoaded(loaded);
+                    setUploadTotal(total);
+                });
+            }
             setPreview(response);
             setSelected(new Set(response.items.map((item) => item.filename)));
             setPhase("previewing");
@@ -120,12 +142,43 @@ export default function MediumImportPage() {
                       );
             notify.error(message, err);
         }
-    }, [file, t, job]);
+    }, [file, t, job, offline]);
 
     const handleImportSelection = useCallback(async () => {
         if (!preview || selected.size === 0) return;
         setPhase("importing");
         try {
+            if (offline) {
+                // Offline import runs synchronously against IndexedDB (no SSE).
+                const app = await getStorage().settings.getApp();
+                const defaultLanguage =
+                    ((app.app as Record<string, unknown> | undefined)
+                        ?.default_language as string) || "en";
+                const response = await importParsed(
+                    parsedRef.current,
+                    Array.from(selected),
+                    {
+                        defaultStatus: "draft",
+                        defaultLanguage,
+                        skipExistingCanonicalUrls: true,
+                    },
+                );
+                setOfflineResult(response);
+                setPreview(null);
+                setSelected(new Set());
+                setFile(null);
+                setPhase("idle");
+                const summary = t(
+                    "ui.medium_import.toast.imported_summary",
+                    "Import abgeschlossen: {imported} importiert, {skipped} übersprungen, {errored} Fehler.",
+                )
+                    .replace("{imported}", String(response.imported_count))
+                    .replace("{skipped}", String(response.skipped_count))
+                    .replace("{errored}", String(response.errored_count));
+                if (response.errored_count > 0) notify.warning(summary);
+                else notify.success(summary);
+                return;
+            }
             const started = await api.mediumImport.importSelectedAsync(
                 preview.preview_id,
                 Array.from(selected),
@@ -149,7 +202,7 @@ export default function MediumImportPage() {
                       );
             notify.error(message, err);
         }
-    }, [preview, selected, t, job]);
+    }, [preview, selected, t, job, offline]);
 
     // Watch the context for SSE-driven phase changes. When the
     // active job terminates, drive the page's own transitions:
@@ -205,15 +258,17 @@ export default function MediumImportPage() {
     }, [job.phase, job.result, job.errorMessage, phase, t, job]);
 
     const handleCancelPreview = useCallback(async () => {
-        if (preview) {
+        // Offline previews are purely in-memory (no server cache to release).
+        if (preview && !offline) {
             void api.mediumImport.cancelPreview(preview.preview_id).catch(() => {
                 // Swallowed - TTL reaper will catch any leak.
             });
         }
+        parsedRef.current = new Map();
         setPreview(null);
         setSelected(new Set());
         setPhase("idle");
-    }, [preview]);
+    }, [preview, offline]);
 
     const handleCancelImport = useCallback(async () => {
         // Cancel the in-flight async job. The SSE stream emits
@@ -254,6 +309,8 @@ export default function MediumImportPage() {
         setSelected(new Set());
         setUploadLoaded(0);
         setUploadTotal(0);
+        setOfflineResult(null);
+        parsedRef.current = new Map();
         // job.clear() drops the result from context too; the result
         // panel unmounts and the page returns to a clean dropzone
         // state. This is the user's "I'm done with this import,
@@ -297,15 +354,16 @@ export default function MediumImportPage() {
             </header>
 
             <main id="main-content" className={styles.main}>
-                {offline ? (
-                    <OfflineFeatureNotice testId="medium-import-offline" />
-                ) : (
-                <>
                 <p className={styles.intro}>
-                    {t(
-                        "ui.medium_import.intro",
-                        "Importiere dein Medium-Archiv (Download your information ZIP) als Artikel in Bibliogon. Jeder Beitrag wird ein Artikel; die kanonische URL wird erfasst, sodass ein erneuter Import desselben Archivs sicher ist.",
-                    )}
+                    {offline
+                        ? t(
+                              "ui.medium_import.intro_offline",
+                              "Importiere dein Medium-Archiv (ZIP) direkt im Browser als Artikel. Kommentare werden übersprungen; Bilder bleiben auf Mediums CDN verlinkt.",
+                          )
+                        : t(
+                              "ui.medium_import.intro",
+                              "Importiere dein Medium-Archiv (Download your information ZIP) als Artikel in Bibliogon. Jeder Beitrag wird ein Artikel; die kanonische URL wird erfasst, sodass ein erneuter Import desselben Archivs sicher ist.",
+                          )}
                 </p>
 
                 {/*
@@ -448,18 +506,23 @@ export default function MediumImportPage() {
 
                 {result && <MediumImportResult result={result} onReset={handleReset} />}
 
-                <section className={styles.card}>
-                    <h2 className={styles.cardHeader}>
-                        {t("ui.medium_import.settings.card_title", "Einstellungen")}
-                    </h2>
-                    <p className={styles.cardHint}>
-                        {t(
-                            "ui.medium_import.settings.card_hint",
-                            "Diese Einstellungen gelten für alle künftigen Importe. Pro Buch oder pro Artikel sind sie nicht überschreibbar.",
-                        )}
-                    </p>
-                    <MediumImportSettings />
-                </section>
+                {/* Settings are backed by the backend plugin config; offline
+                    the import uses sensible defaults (draft status, app
+                    language, skip duplicates), so the card is online-only. */}
+                {!offline && (
+                    <section className={styles.card}>
+                        <h2 className={styles.cardHeader}>
+                            {t("ui.medium_import.settings.card_title", "Einstellungen")}
+                        </h2>
+                        <p className={styles.cardHint}>
+                            {t(
+                                "ui.medium_import.settings.card_hint",
+                                "Diese Einstellungen gelten für alle künftigen Importe. Pro Buch oder pro Artikel sind sie nicht überschreibbar.",
+                            )}
+                        </p>
+                        <MediumImportSettings />
+                    </section>
+                )}
 
                 <section className={styles.card}>
                     <h2 className={styles.cardHeader}>
@@ -506,8 +569,6 @@ export default function MediumImportPage() {
                         </div>
                     )}
                 </section>
-                </>
-                )}
             </main>
         </div>
     );
