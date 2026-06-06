@@ -81,16 +81,30 @@ through the seam). Vitest 2737. Pushed live.
 Also confirmed `writingSessions` is already offline-complete (DexieStorage
 returns an empty list → the writing-history page renders its empty state).
 
+## 8. P3 — Story Bible offline (1ae549c8)
+
+The per-book fiction-entity database now works on the backendless build:
+- Seeded the entity-type registry (`generate_story_entity_types()` in the seed
+  pipeline → `seed-story-entity-types.json` → a new Dexie `storyEntityTypesRef`
+  table at schema v6, populated by `ensureSeeded()`).
+- `StoryBibleStorage` seam (16 methods) + apiStorage getter + sync-queue
+  passthrough. DexieStorage: entity CRUD + entity-page/chapter link CRUD over
+  the existing `storyEntities` / `storyEntityPageLinks` tables, relationship
+  resolution, `getInfo` (reports available so the UI un-gates), client-side
+  Markdown export. `autoDetect` / `continuityCheck` return empty offline.
+- Routed all 9 story-bible call sites through `getStorage()`; removed the
+  BookEditor offline early-return so `storyBibleAvailable` is the seam probe.
+  StoryEntityEditor skips its `api.pages` probe offline + reads chapters via
+  the seam → zero `/api`.
+- DexieStorage round-trip test (CRUD + relationships + links + export +
+  cascade) + offline E2E (add a character, persists). Vitest 2738; build
+  green. Pushed live.
+
 ## Remaining (tracked in #34)
 
-P3 (the gated authoring features — each a focused multi-commit sub-project,
-NOT quick wins; scoping noted):
-- **story-bible**: seed entity-types (add a `generate_story_entity_types()` to
-  the seed pipeline mirroring content-types + a Dexie ref table) → entity CRUD
-  + links + relationships over the existing `storyEntities` /
-  `storyEntityPageLinks` tables → gate the logic methods (autoDetect /
-  continuityCheck / exportBible) offline → flip `storyBibleAvailable` true in
-  Dexie mode → wire the 9 call sites.
+P3 still open (each a focused sub-project; the Dexie tables already exist from
+offline-download, so it's seam-methods + un-gate + wire, same as the shipped
+ones):
 - **pages** (picture-book) + **comics**: un-gate the editors, CRUD over the
   existing `pages` / `comicPanels` / `comicBubbles` tables.
 - **comments**: needs a new Dexie table (schema bump) + admin CRUD.
