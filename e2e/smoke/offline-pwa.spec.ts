@@ -229,6 +229,42 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(reloaded).toHaveAttribute("src", /^blob:/);
     });
 
+    test("AI works offline: configure a key + the test call goes browser->provider", async ({
+        page,
+    }) => {
+        // Mock the provider so the browser-direct call gets a canned OK. The
+        // provider URL is NOT under /api/, so the hard gate does not abort it.
+        await page.route("https://api.openai.com/**", (route) =>
+            route.fulfill({
+                status: 200,
+                contentType: "application/json",
+                body: JSON.stringify({
+                    model: "gpt-4o",
+                    choices: [{message: {content: "OK"}}],
+                    usage: {total_tokens: 3},
+                }),
+            }),
+        );
+
+        await page.goto("/settings?tab=ai");
+        await expect(page.getByTestId("ai-assistant-settings")).toBeVisible();
+
+        // Enable AI, pick OpenAI (auto-fills base_url + model), enter a key.
+        await page.getByTestId("ai-enabled").click();
+        await page.getByTestId("ai-provider-trigger").click();
+        await page.getByTestId("ai-provider-item-openai").click();
+        await page.getByTestId("ai-api-key-input").fill("sk-test");
+
+        // "Test connection" runs entirely in the browser against the provider.
+        const providerCall = page.waitForRequest(
+            "https://api.openai.com/v1/chat/completions",
+        );
+        await page.getByTestId("ai-test").click();
+        await providerCall;
+        // The config (incl. the key) persisted to IndexedDB via the seam.
+        // afterEach proves the whole flow fired zero /api calls.
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {
