@@ -30,9 +30,7 @@ GIT_CRED_DIR: Path | None = None
 def _cred_dir() -> Path:
     """The per-book PAT directory: a test override, else fresh under the
     data dir."""
-    return (
-        GIT_CRED_DIR if GIT_CRED_DIR is not None else get_config_dir() / "git_credentials"
-    )
+    return GIT_CRED_DIR if GIT_CRED_DIR is not None else get_config_dir() / "git_credentials"
 
 
 def pat_filename(book_id: str) -> str:
