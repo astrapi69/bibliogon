@@ -109,6 +109,14 @@ export default defineConfig({
       workbox: {
         // Precache static assets, skip API calls
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // Offline asset intercept (P3c): a dependency-free fetch listener
+        // that serves book images from IndexedDB for the two /assets URL
+        // shapes. importScripts injects it at the TOP of the generated SW,
+        // so it claims asset requests before Workbox's routing runs; it
+        // respondWith()s only those URLs, leaving everything else to Workbox.
+        // The relative path resolves under the deploy base (e.g. GH Pages
+        // /bibliogon/asset-intercept-sw.js). See public/asset-intercept-sw.js.
+        importScripts: ["asset-intercept-sw.js"],
         // SPA navigation fallback lives under the deploy base so deep
         // routes resolve to the right index.html on a sub-path host.
         navigateFallback: `${base}index.html`,
