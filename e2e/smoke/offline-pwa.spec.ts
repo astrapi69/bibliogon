@@ -161,6 +161,22 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Frodo").first()).toBeVisible();
     });
 
+    test("picture-book editor works offline: add a page via Dexie", async ({
+        page,
+    }) => {
+        // Picture-book is a pageable type -> creating it opens the page editor.
+        await page.goto("/books/new?type=picture_book");
+        await page.getByTestId("create-book-title").fill("Bilderbuch");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await page.waitForURL(/\/book\//);
+
+        // The editor is no longer gated offline; pages persist to Dexie.
+        await expect(page.getByTestId("page-editor-root")).toBeVisible();
+        await page.getByTestId("page-editor-add-page").click();
+        await expect(page.getByTestId("page-editor-page-list")).toBeVisible();
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {

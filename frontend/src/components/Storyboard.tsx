@@ -239,7 +239,7 @@ export default function Storyboard({
 
     useEffect(() => {
         let cancelled = false
-        api.pages
+        getStorage().pages
             .list(bookId)
             .then((rows) => {
                 if (cancelled) return
@@ -294,14 +294,14 @@ export default function Storyboard({
                 .map((id) => pages.find((p) => p.id === id))
                 .filter((p): p is Page => Boolean(p))
             setPages(nextPages.map((p, idx) => ({...p, position: idx + 1})))
-            void api.pages
+            void getStorage().pages
                 .reorder(bookId, next)
                 .then((rows) => setPages(rows))
                 .catch((err: unknown) => {
                     // On failure, refetch authoritative order so the
                     // UI doesn't silently keep the optimistic state.
                     setLoadError(err instanceof Error ? err.message : String(err))
-                    void api.pages
+                    void getStorage().pages
                         .list(bookId)
                         .then((rows) => setPages(rows))
                         .catch(() => {})
@@ -320,7 +320,7 @@ export default function Storyboard({
     const handlePatchPage = useCallback(
         async (pageId: string, patch: PageUpdate): Promise<void> => {
             try {
-                const updated = await api.pages.update(bookId, pageId, patch)
+                const updated = await getStorage().pages.update(bookId, pageId, patch)
                 setPages((prev) =>
                     prev.map((p) => (p.id === pageId ? updated : p)),
                 )

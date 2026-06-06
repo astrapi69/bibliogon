@@ -177,5 +177,9 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     chapterLabels: base.chapterLabels,
     // Story Bible: local-only offline writes (replay deferred); passthrough.
     storyBible: base.storyBible,
+    // Picture-book pages + comic panels/bubbles: local-only offline writes
+    // (replay deferred); passthrough.
+    pages: base.pages,
+    comics: base.comics,
   };
 }

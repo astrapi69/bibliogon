@@ -38,8 +38,11 @@ import type {
   BookTypeDef,
   Chapter,
   ChapterLabel,
+  ComicBubbleOut,
+  ComicPanelOut,
   ContentTypeDef,
   DiscoveredPlugin,
+  Page,
   StoryEntityLinkOut,
   StoryEntityOut,
   StoryEntityRelationshipResolved,
@@ -390,6 +393,30 @@ function buildStoryEntity(
     image_asset_id: data.image_asset_id ?? null,
     position,
     relationships: data.relationships ?? [],
+    created_at: ts,
+    updated_at: ts,
+  };
+}
+
+function buildPage(
+  bookId: string,
+  data: import("../api/client").PageCreate,
+  id: string,
+  position: number,
+): Page {
+  const ts = nowIso();
+  return {
+    id,
+    book_id: bookId,
+    position,
+    layout: data.layout,
+    text_content: data.text_content ?? null,
+    image_asset_id: data.image_asset_id ?? null,
+    layout_config: data.layout_config ?? null,
+    notes: data.notes ?? null,
+    story_beat: data.story_beat ?? null,
+    mood_color: data.mood_color ?? null,
+    act_group: data.act_group ?? null,
     created_at: ts,
     updated_at: ts,
   };
@@ -864,6 +891,181 @@ export const dexieStorage: IStorageService = {
         content: storyBibleToMarkdown(entities),
         format: "markdown",
       };
+    },
+  },
+
+  // Picture-book pages over the existing pages table.
+  pages: {
+    list: async (bookId) => {
+      const rows = (await offlineDb.pages
+        .where("book_id")
+        .equals(bookId)
+        .toArray()) as unknown as Page[];
+      return rows.sort((a, b) => a.position - b.position);
+    },
+    create: async (bookId, data) => {
+      const position = await offlineDb.pages
+        .where("book_id")
+        .equals(bookId)
+        .count();
+      const row = buildPage(bookId, data, newId(), position);
+      await offlineDb.pages.add(row as unknown as GraphRow);
+      return row;
+    },
+    update: async (_bookId, pageId, data) => {
+      const existing = await offlineDb.pages.get(pageId);
+      if (!existing) notFound("Page", pageId);
+      const merged = {
+        ...existing,
+        ...data,
+        updated_at: nowIso(),
+      } as unknown as Page;
+      await offlineDb.pages.put(merged as unknown as GraphRow);
+      return merged;
+    },
+    delete: async (_bookId, pageId) => {
+      // Cascade the page's comic panels + their bubbles.
+      const panelIds = (await offlineDb.comicPanels
+        .where("page_id")
+        .equals(pageId)
+        .primaryKeys()) as string[];
+      if (panelIds.length) {
+        const bubbleIds = (await offlineDb.comicBubbles
+          .filter((b) => panelIds.includes((b as { panel_id?: string }).panel_id ?? ""))
+          .primaryKeys()) as string[];
+        if (bubbleIds.length) await offlineDb.comicBubbles.bulkDelete(bubbleIds);
+        await offlineDb.comicPanels.bulkDelete(panelIds);
+      }
+      await offlineDb.pages.delete(pageId);
+    },
+    reorder: async (bookId, pageIds) => {
+      await Promise.all(
+        pageIds.map((id, index) =>
+          offlineDb.pages.update(id, { position: index } as Partial<GraphRow>),
+        ),
+      );
+      const rows = (await offlineDb.pages
+        .where("book_id")
+        .equals(bookId)
+        .toArray()) as unknown as Page[];
+      return rows.sort((a, b) => a.position - b.position);
+    },
+  },
+
+  // Comic panels + speech bubbles over the existing comicPanels /
+  // comicBubbles tables.
+  comics: {
+    getInfo: async () => ({
+      name: "comics",
+      version: "offline",
+      session: 0,
+      status: "offline",
+      description: "offline",
+    }),
+    listPanels: async (_bookId, pageId) => {
+      const rows = (await offlineDb.comicPanels
+        .where("page_id")
+        .equals(pageId)
+        .toArray()) as unknown as ComicPanelOut[];
+      return rows.sort((a, b) => a.position - b.position);
+    },
+    createPanel: async (_bookId, pageId, data) => {
+      const position = await offlineDb.comicPanels
+        .where("page_id")
+        .equals(pageId)
+        .count();
+      const ts = nowIso();
+      const row: ComicPanelOut = {
+        id: newId(),
+        page_id: pageId,
+        position,
+        image_asset_id: data.image_asset_id ?? null,
+        bounds: data.bounds,
+        panel_config: data.panel_config ?? null,
+        created_at: ts,
+        updated_at: ts,
+      };
+      await offlineDb.comicPanels.add(row as unknown as GraphRow);
+      return row;
+    },
+    updatePanel: async (_bookId, panelId, data) => {
+      const existing = await offlineDb.comicPanels.get(panelId);
+      if (!existing) notFound("ComicPanel", panelId);
+      const merged = {
+        ...existing,
+        ...data,
+        updated_at: nowIso(),
+      } as unknown as ComicPanelOut;
+      await offlineDb.comicPanels.put(merged as unknown as GraphRow);
+      return merged;
+    },
+    deletePanel: async (_bookId, panelId) => {
+      const bubbleIds = (await offlineDb.comicBubbles
+        .where("panel_id")
+        .equals(panelId)
+        .primaryKeys()) as string[];
+      if (bubbleIds.length) await offlineDb.comicBubbles.bulkDelete(bubbleIds);
+      await offlineDb.comicPanels.delete(panelId);
+    },
+    reorderPanels: async (_bookId, pageId, panelIds) => {
+      await Promise.all(
+        panelIds.map((id, index) =>
+          offlineDb.comicPanels.update(id, {
+            position: index,
+          } as Partial<GraphRow>),
+        ),
+      );
+      const rows = (await offlineDb.comicPanels
+        .where("page_id")
+        .equals(pageId)
+        .toArray()) as unknown as ComicPanelOut[];
+      return rows.sort((a, b) => a.position - b.position);
+    },
+    listBubbles: async (_bookId, panelId) => {
+      const rows = (await offlineDb.comicBubbles
+        .where("panel_id")
+        .equals(panelId)
+        .toArray()) as unknown as ComicBubbleOut[];
+      return rows.sort((a, b) => a.position - b.position);
+    },
+    createBubble: async (_bookId, panelId, data) => {
+      const position = await offlineDb.comicBubbles
+        .where("panel_id")
+        .equals(panelId)
+        .count();
+      const ts = nowIso();
+      const row: ComicBubbleOut = {
+        id: newId(),
+        panel_id: panelId,
+        position,
+        bubble_type: data.bubble_type,
+        anchor: data.anchor,
+        width_pct: data.width_pct ?? 30,
+        height_pct: data.height_pct ?? 20,
+        tail_direction: data.tail_direction ?? "none",
+        tail_position_pct: data.tail_position_pct ?? 50,
+        tail_length_px: data.tail_length_px ?? 16,
+        bubble_config: data.bubble_config ?? null,
+        text_content: data.text_content ?? null,
+        created_at: ts,
+        updated_at: ts,
+      };
+      await offlineDb.comicBubbles.add(row as unknown as GraphRow);
+      return row;
+    },
+    updateBubble: async (_bookId, bubbleId, data) => {
+      const existing = await offlineDb.comicBubbles.get(bubbleId);
+      if (!existing) notFound("ComicBubble", bubbleId);
+      const merged = {
+        ...existing,
+        ...data,
+        updated_at: nowIso(),
+      } as unknown as ComicBubbleOut;
+      await offlineDb.comicBubbles.put(merged as unknown as GraphRow);
+      return merged;
+    },
+    deleteBubble: async (_bookId, bubbleId) => {
+      await offlineDb.comicBubbles.delete(bubbleId);
     },
   },
 };

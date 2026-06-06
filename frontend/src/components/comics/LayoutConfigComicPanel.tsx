@@ -13,7 +13,7 @@
  * 1. Operates on a SINGLE panel's row (NOT a layout_config dict).
  *    The active panel's full row is passed in; ``onChange`` carries
  *    a partial update merged at the API layer
- *    (``api.comics.updatePanel``).
+ *    (``getStorage().comics.updatePanel``).
  * 2. Reuses ``Tier1Section`` for visual-style knobs (RCU canonical
  *    3rd-site application, after picture-book single-bubble +
  *    comic-book bubble).
@@ -32,6 +32,7 @@
 import {useRef, useState} from "react";
 
 import {api} from "../../api/client";
+import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 
 import {Tier1Section} from "./Tier1Section";

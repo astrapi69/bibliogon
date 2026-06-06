@@ -22,10 +22,12 @@ import type {
   BookTypesStorage,
   ChapterLabelStorage,
   ChapterStorage,
+  ComicsStorage,
   ContentTypesStorage,
   EditorPluginStatusStorage,
   I18nStorage,
   IStorageService,
+  PageStorage,
   PublicationStorage,
   SettingsStorage,
   StoryBibleStorage,
@@ -84,5 +86,11 @@ export const apiStorage: IStorageService = {
   },
   get storyBible(): StoryBibleStorage {
     return api.storyBible;
+  },
+  get pages(): PageStorage {
+    return api.pages;
+  },
+  get comics(): ComicsStorage {
+    return api.comics;
   },
 };

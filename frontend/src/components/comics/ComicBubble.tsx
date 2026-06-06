@@ -65,7 +65,7 @@ interface ComicBubbleProps {
     /** Fires once on pointer-up after a tail-handle drag exceeds
      *  the 5px threshold. The receiver should persist the new
      *  (direction, position_pct, length_px) via the existing
-     *  ``api.comics.updateBubble`` path. */
+     *  ``getStorage().comics.updateBubble`` path. */
     onTailDragEnd?: (
         direction: string,
         positionPct: number,

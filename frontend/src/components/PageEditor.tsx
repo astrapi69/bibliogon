@@ -2,6 +2,7 @@ import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
 import {ChevronLeft, FileText, LayoutGrid, Maximize2, Minimize2} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
+import {getStorage} from "../storage";
 import {writeLayoutNamespace} from "../utils/layoutConfig"
 import {useI18n} from "../hooks/useI18n"
 import {useFullscreenToggle} from "../hooks/useFullscreenToggle"
@@ -87,7 +88,7 @@ export default function PageEditor({
 
     useEffect(() => {
         let cancelled = false
-        api.pages
+        getStorage().pages
             .list(bookId)
             .then((rows) => {
                 if (cancelled) return
@@ -104,7 +105,7 @@ export default function PageEditor({
     }, [bookId])
 
     const handleAddPage = useCallback(async () => {
-        const created = await api.pages.create(bookId, {
+        const created = await getStorage().pages.create(bookId, {
             layout: DEFAULT_NEW_PAGE_LAYOUT,
         })
         setPages((prev) => [...prev, created])
@@ -113,7 +114,7 @@ export default function PageEditor({
 
     const handleReorder = useCallback(
         async (pageIds: string[]) => {
-            const next = await api.pages.reorder(bookId, pageIds)
+            const next = await getStorage().pages.reorder(bookId, pageIds)
             setPages(next)
         },
         [bookId],
@@ -144,7 +145,7 @@ export default function PageEditor({
             )
             if (!confirmed) return
             try {
-                await api.pages.delete(bookId, pageId)
+                await getStorage().pages.delete(bookId, pageId)
             } catch (err: unknown) {
                 setLoadError(err instanceof Error ? err.message : String(err))
                 return
@@ -205,7 +206,7 @@ export default function PageEditor({
             ) {
                 updates.text_content = extractPlainText(activePage.text_content)
             }
-            const updated = await api.pages.update(bookId, activePage.id, updates)
+            const updated = await getStorage().pages.update(bookId, activePage.id, updates)
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
         [bookId, activePage],
@@ -214,7 +215,7 @@ export default function PageEditor({
     const handleUpdateActivePage = useCallback(
         async (updates: PageUpdate) => {
             if (!activePage) return
-            const updated = await api.pages.update(bookId, activePage.id, updates)
+            const updated = await getStorage().pages.update(bookId, activePage.id, updates)
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))
         },
         [bookId, activePage],
@@ -250,7 +251,7 @@ export default function PageEditor({
                     p.id === activePage.id ? {...p, layout_config: nextConfig} : p,
                 ),
             )
-            const updated = await api.pages.update(bookId, activePage.id, {
+            const updated = await getStorage().pages.update(bookId, activePage.id, {
                 layout_config: nextConfig,
             })
             setPages((prev) => prev.map((p) => (p.id === updated.id ? updated : p)))

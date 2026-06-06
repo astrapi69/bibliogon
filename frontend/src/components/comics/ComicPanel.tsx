@@ -35,11 +35,11 @@ interface ComicPanelProps {
     onBubbleClick?: (bubbleId: string) => void;
     /** Fires once on bubble pointer-up after a drag exceeded the
      *  5px threshold. The receiver should persist the new anchor
-     *  via the existing ``api.comics.updateBubble`` path. */
+     *  via the existing ``getStorage().comics.updateBubble`` path. */
     onBubbleDragEnd?: (bubbleId: string, x_pct: number, y_pct: number) => void;
     /** Fires once on tail-handle pointer-up after a drag exceeded
      *  the 5px threshold. Persists the new (direction, position,
-     *  length) triple via the existing api.comics.updateBubble. */
+     *  length) triple via the existing getStorage().comics.updateBubble. */
     onBubbleTailDragEnd?: (
         bubbleId: string,
         direction: string,

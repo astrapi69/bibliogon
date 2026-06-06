@@ -148,6 +148,32 @@ export interface StoryBibleStorage {
   exportBible: typeof api.storyBible.exportBible;
 }
 
+/** Picture-book pages. CRUD over the existing Dexie pages table, so the
+ *  picture-book / comic page editor works offline. */
+export interface PageStorage {
+  list: typeof api.pages.list;
+  create: typeof api.pages.create;
+  update: typeof api.pages.update;
+  delete: typeof api.pages.delete;
+  reorder: typeof api.pages.reorder;
+}
+
+/** Comic panels + speech bubbles. CRUD over the existing Dexie comicPanels /
+ *  comicBubbles tables, so the comic editor works offline. getInfo reports
+ *  available so the comic surfaces un-gate in Dexie mode. */
+export interface ComicsStorage {
+  getInfo: typeof api.comics.getInfo;
+  listPanels: typeof api.comics.listPanels;
+  createPanel: typeof api.comics.createPanel;
+  updatePanel: typeof api.comics.updatePanel;
+  deletePanel: typeof api.comics.deletePanel;
+  reorderPanels: typeof api.comics.reorderPanels;
+  listBubbles: typeof api.comics.listBubbles;
+  createBubble: typeof api.comics.createBubble;
+  updateBubble: typeof api.comics.updateBubble;
+  deleteBubble: typeof api.comics.deleteBubble;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -165,4 +191,6 @@ export interface IStorageService {
   editorPluginStatus: EditorPluginStatusStorage;
   chapterLabels: ChapterLabelStorage;
   storyBible: StoryBibleStorage;
+  pages: PageStorage;
+  comics: ComicsStorage;
 }

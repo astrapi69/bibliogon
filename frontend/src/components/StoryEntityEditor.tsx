@@ -136,22 +136,15 @@ export default function StoryEntityEditor({
             })
             .catch(() => {});
         if (bookId) {
-            // Page positions only matter for pageable books; skip the call
-            // offline until the pages seam lands (P3d) so the Story-Bible
-            // editor fires no /api in Dexie mode.
-            if (getStorage().mode !== "dexie") {
-                api.pages
-                    .list(bookId)
-                    .then((rows) => {
-                        if (cancelled) return;
-                        setPagePos(
-                            Object.fromEntries(
-                                rows.map((p) => [p.id, p.position]),
-                            ),
-                        );
-                    })
-                    .catch(() => {});
-            }
+            getStorage()
+                .pages.list(bookId)
+                .then((rows) => {
+                    if (cancelled) return;
+                    setPagePos(
+                        Object.fromEntries(rows.map((p) => [p.id, p.position])),
+                    );
+                })
+                .catch(() => {});
             getStorage()
                 .books.get(bookId)
                 .then((book) => {

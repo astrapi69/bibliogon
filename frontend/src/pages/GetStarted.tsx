@@ -100,7 +100,7 @@ export default function GetStarted() {
 
     // GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: sample-book creation
     // branches on book_type. Prose ships chapters; picture_book +
-    // comic_book ship pages (api.pages.create instead of
+    // comic_book ship pages (getStorage().pages.create instead of
     // getStorage().chapters.create). The Book row itself carries the
     // book_type discriminator so the editor router lands on the
     // right surface (PageEditor for picture_book, ComicBookEditor
@@ -123,7 +123,7 @@ export default function GetStarted() {
             }
             if (sample.pages && sample.pages.length > 0) {
                 for (const pg of sample.pages) {
-                    await api.pages.create(book.id, {
+                    await getStorage().pages.create(book.id, {
                         layout: pg.layout as never,
                         ...(pg.text_content !== undefined ? {text_content: pg.text_content} : {}),
                         ...(pg.layout_config !== undefined ? {layout_config: pg.layout_config} : {}),

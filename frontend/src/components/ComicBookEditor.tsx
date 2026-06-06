@@ -21,7 +21,7 @@
  * plugin-kinderbuch to backend core and now accepts both
  * picture_book + comic_book). When the book has no pages yet, the
  * empty state surfaces a "Create first comic page" action button
- * that calls ``api.pages.create(bookId, {layout: "comic_panel_grid"})``
+ * that calls ``getStorage().pages.create(bookId, {layout: "comic_panel_grid"})``
  * + refreshes the pages list.
  */
 
@@ -36,6 +36,7 @@ import {
   type ComicsPluginInfo,
   type Page,
 } from "../api/client";
+import {getStorage} from "../storage";
 import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
 import { useI18n } from "../hooks/useI18n";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -127,7 +128,7 @@ export default function ComicBookEditor({
 
   useEffect(() => {
     let cancelled = false;
-    api.comics
+    getStorage().comics
       .getInfo()
       .then((info) => {
         if (!cancelled) setPluginInfo(info);
@@ -148,7 +149,7 @@ export default function ComicBookEditor({
   // state action button creates the first page on click.
   const refreshPages = useCallback(async () => {
     try {
-      const rows = await api.pages.list(bookId);
+      const rows = await getStorage().pages.list(bookId);
       setPages(rows);
       return rows;
     } catch (err) {
@@ -160,7 +161,7 @@ export default function ComicBookEditor({
 
   useEffect(() => {
     let cancelled = false;
-    api.pages
+    getStorage().pages
       .list(bookId)
       .then((rows) => {
         if (cancelled) return;
@@ -191,7 +192,7 @@ export default function ComicBookEditor({
       // so the page doesn't rely on the γ-shim fallback. The
       // ComicGridTemplatePicker in the header lets the user
       // change it afterwards.
-      const newPage = await api.pages.create(bookId, {
+      const newPage = await getStorage().pages.create(bookId, {
         layout: "comic_panel_grid",
         layout_config: {
           comic_grid_template: DEFAULT_COMIC_GRID_TEMPLATE,
@@ -213,12 +214,12 @@ export default function ComicBookEditor({
 
   // PLUGIN-COMICS-MULTI-PAGE-NAVIGATION-01 C1: drag-reorder pages
   // via PageThumbnails. Mirrors PageEditor.tsx's handleReorder
-  // shape — the two surfaces share the same api.pages.reorder
+  // shape — the two surfaces share the same getStorage().pages.reorder
   // contract.
   const handleReorderPages = useCallback(
     async (pageIds: string[]) => {
       try {
-        const next = await api.pages.reorder(bookId, pageIds);
+        const next = await getStorage().pages.reorder(bookId, pageIds);
         setPages(next);
       } catch (err) {
         const detail = err instanceof ApiError ? err.detail : String(err);
@@ -230,7 +231,7 @@ export default function ComicBookEditor({
 
   // PAGES-DELETE-EDITOR-UI-01 C2: page-delete handler. Mirrors
   // PageEditor.tsx's handleDeletePage shape — the two surfaces
-  // share the same api.pages.delete contract + the same
+  // share the same getStorage().pages.delete contract + the same
   // PageThumbnails onDelete prop. Confirm dialog + state
   // reconciliation per "Destructive row-actions must reconcile
   // collection state" LL: filter from local pages, clear
@@ -249,7 +250,7 @@ export default function ComicBookEditor({
       );
       if (!confirmed) return;
       try {
-        await api.pages.delete(bookId, pageId);
+        await getStorage().pages.delete(bookId, pageId);
       } catch (err) {
         const detail = err instanceof ApiError ? err.detail : String(err);
         setPagesError(detail);
@@ -271,12 +272,12 @@ export default function ComicBookEditor({
   const refreshPanelsAndBubbles = useCallback(
     async (pageId: string) => {
       try {
-        const panelRows = await api.comics.listPanels(bookId, pageId);
+        const panelRows = await getStorage().comics.listPanels(bookId, pageId);
         setPanels(panelRows);
         const bubbleMap: Record<string, ComicBubbleOut[]> = {};
         await Promise.all(
           panelRows.map(async (panel) => {
-            bubbleMap[panel.id] = await api.comics.listBubbles(
+            bubbleMap[panel.id] = await getStorage().comics.listBubbles(
               bookId,
               panel.id,
             );
@@ -322,7 +323,7 @@ export default function ComicBookEditor({
       // panels) without re-checking overflow. Used after the
       // overflow has been resolved (or there was no overflow).
       const persistTemplateChange = async () => {
-        await api.pages.update(bookId, activePageId, {
+        await getStorage().pages.update(bookId, activePageId, {
           layout_config: {
             ...priorConfig,
             comic_grid_template: template,
@@ -408,7 +409,7 @@ export default function ComicBookEditor({
           // per panel; parallel would mask which panel
           // failed.
           for (const p of excessPanels) {
-            await api.comics.deletePanel(bookId, p.id);
+            await getStorage().comics.deletePanel(bookId, p.id);
           }
           notify.success(
             t(
@@ -423,7 +424,7 @@ export default function ComicBookEditor({
           const newPagesCount = Math.ceil(excess / targetMax);
           const newPageIds: string[] = [];
           for (let i = 0; i < newPagesCount; i++) {
-            const newPage = await api.pages.create(bookId, {
+            const newPage = await getStorage().pages.create(bookId, {
               layout: "comic_panel_grid",
               layout_config: {
                 comic_grid_template: template,
@@ -436,7 +437,7 @@ export default function ComicBookEditor({
           for (let i = 0; i < excessPanels.length; i++) {
             const targetPageIndex = Math.floor(i / targetMax);
             const positionInTargetPage = i % targetMax;
-            await api.comics.updatePanel(bookId, excessPanels[i].id, {
+            await getStorage().comics.updatePanel(bookId, excessPanels[i].id, {
               page_id: newPageIds[targetPageIndex],
               position: positionInTargetPage,
             });
@@ -483,6 +484,10 @@ export default function ComicBookEditor({
   const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
 
   const refreshAssets = useCallback(async () => {
+    // Asset thumbnails come from the backend; offline (Dexie) skip the probe
+    // so the comic editor fires no /api. Image support lands with the assets
+    // seam (P3e); panels/bubbles still render + edit offline meanwhile.
+    if (getStorage().mode === "dexie") return;
     try {
       const assets = await api.assets.list(bookId);
       const urlMap: Record<string, string> = {};
@@ -520,7 +525,7 @@ export default function ComicBookEditor({
     );
     if (panels.length >= COMIC_GRID_MAX_PANELS[template]) return;
     try {
-      const newPanel = await api.comics.createPanel(bookId, activePageId, {
+      const newPanel = await getStorage().comics.createPanel(bookId, activePageId, {
         bounds: { x_pct: 0, y_pct: 0, width_pct: 100, height_pct: 100 },
       });
       await refreshPanelsAndBubbles(activePageId);
@@ -540,7 +545,7 @@ export default function ComicBookEditor({
   const handleDeletePanel = useCallback(async () => {
     if (!selectedPanelId || !activePageId) return;
     try {
-      await api.comics.deletePanel(bookId, selectedPanelId);
+      await getStorage().comics.deletePanel(bookId, selectedPanelId);
       setSelectedPanelId(null);
       setSelectedBubbleId(null);
       await refreshPanelsAndBubbles(activePageId);
@@ -553,7 +558,7 @@ export default function ComicBookEditor({
   const handleAddBubble = useCallback(async () => {
     if (!selectedPanelId || !activePageId) return;
     try {
-      const newBubble = await api.comics.createBubble(bookId, selectedPanelId, {
+      const newBubble = await getStorage().comics.createBubble(bookId, selectedPanelId, {
         bubble_type: "speech",
         anchor: { x_pct: 25, y_pct: 25 },
       });
@@ -572,7 +577,7 @@ export default function ComicBookEditor({
   const handleDeleteBubble = useCallback(async () => {
     if (!selectedBubbleId || !activePageId) return;
     try {
-      await api.comics.deleteBubble(bookId, selectedBubbleId);
+      await getStorage().comics.deleteBubble(bookId, selectedBubbleId);
       setSelectedBubbleId(null);
       await refreshPanelsAndBubbles(activePageId);
     } catch (err) {
@@ -585,7 +590,7 @@ export default function ComicBookEditor({
     async (partial: Partial<ComicBubbleData>) => {
       if (!selectedBubbleId || !activePageId) return;
       try {
-        await api.comics.updateBubble(
+        await getStorage().comics.updateBubble(
           bookId,
           selectedBubbleId,
           partial as Record<string, unknown>,
@@ -609,7 +614,7 @@ export default function ComicBookEditor({
       if (!activePageId) return;
       setSelectedBubbleId(bubbleId);
       try {
-        await api.comics.updateBubble(bookId, bubbleId, {
+        await getStorage().comics.updateBubble(bookId, bubbleId, {
           anchor: { x_pct, y_pct },
         });
         await refreshPanelsAndBubbles(activePageId);
@@ -636,7 +641,7 @@ export default function ComicBookEditor({
       if (!activePageId) return;
       setSelectedBubbleId(bubbleId);
       try {
-        await api.comics.updateBubble(bookId, bubbleId, {
+        await getStorage().comics.updateBubble(bookId, bubbleId, {
           tail_direction: direction,
           tail_position_pct: positionPct,
           tail_length_px: lengthPx,
@@ -654,7 +659,7 @@ export default function ComicBookEditor({
     async (partial: Partial<ComicPanelData>) => {
       if (!selectedPanelId || !activePageId) return;
       try {
-        await api.comics.updatePanel(
+        await getStorage().comics.updatePanel(
           bookId,
           selectedPanelId,
           partial as Record<string, unknown>,
@@ -700,7 +705,7 @@ export default function ComicBookEditor({
           .filter((p): p is ComicPanelOut => Boolean(p));
       });
       try {
-        const reordered = await api.comics.reorderPanels(
+        const reordered = await getStorage().comics.reorderPanels(
           bookId,
           activePageId,
           panelIds,
@@ -725,7 +730,7 @@ export default function ComicBookEditor({
     const otherPages = pages.filter((p) => p.id !== activePageId);
     const entries = await Promise.all(
       otherPages.map(async (p) => {
-        const targetPanels = await api.comics.listPanels(bookId, p.id);
+        const targetPanels = await getStorage().comics.listPanels(bookId, p.id);
         const template = resolveComicGridTemplate(
           (p.layout_config as Record<string, unknown> | null) ?? null,
         );
@@ -750,8 +755,8 @@ export default function ComicBookEditor({
       const sourcePageId = activePageId;
       const movedPanelId = selectedPanelId;
       try {
-        const targetPanels = await api.comics.listPanels(bookId, targetPageId);
-        await api.comics.updatePanel(bookId, movedPanelId, {
+        const targetPanels = await getStorage().comics.listPanels(bookId, targetPageId);
+        await getStorage().comics.updatePanel(bookId, movedPanelId, {
           page_id: targetPageId,
           position: targetPanels.length + 1,
         });
@@ -760,7 +765,7 @@ export default function ComicBookEditor({
           .sort((a, b) => a.position - b.position)
           .map((p) => p.id);
         if (remaining.length > 0) {
-          await api.comics.reorderPanels(bookId, sourcePageId, remaining);
+          await getStorage().comics.reorderPanels(bookId, sourcePageId, remaining);
         }
         setSelectedPanelId(null);
         setSelectedBubbleId(null);

@@ -44,6 +44,7 @@
  */
 
 import type {PageLayout} from "../api/client"
+import {getStorage} from "../storage";
 
 /** Known layout names that can appear as namespace keys. Mirrors
  *  the ``PageLayout`` Literal but as a runtime array for the
@@ -134,7 +135,7 @@ export function readLayoutNamespace(
 /** Merge a partial update into the active layout's namespace.
  *
  *  Returns the new top-level layout_config dict to persist via
- *  ``api.pages.update({layout_config: ...})``. Preserves any
+ *  ``getStorage().pages.update({layout_config: ...})``. Preserves any
  *  sibling-layout namespaces (the user's prior settings for OTHER
  *  layouts survive untouched).
  *
@@ -200,7 +201,7 @@ export function readSecondaryImageAssetId(
  *  namespace (Picture-Book Layout Expansion Phase 2 — M1 storage).
  *
  *  Returns the new top-level layout_config dict to persist via
- *  ``api.pages.update({layout_config: ...})``. Preserves sibling
+ *  ``getStorage().pages.update({layout_config: ...})``. Preserves sibling
  *  layouts' namespaces and other fields within the active layout's
  *  namespace.
  *

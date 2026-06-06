@@ -222,6 +222,82 @@ describe("DexieStorage — story bible", () => {
   });
 });
 
+describe("DexieStorage — picture-book pages", () => {
+  it("create -> list (order) -> update -> reorder -> delete round-trip", async () => {
+    const p1 = await dexieStorage.pages.create("b1", { layout: "text_only" });
+    const p2 = await dexieStorage.pages.create("b1", {
+      layout: "image_top_text_bottom",
+    });
+    expect(p1.position).toBe(0);
+    expect(p2.position).toBe(1);
+    expect(p1.layout_config).toBeNull();
+
+    expect((await dexieStorage.pages.list("b1")).map((p) => p.id)).toEqual([
+      p1.id,
+      p2.id,
+    ]);
+
+    const updated = await dexieStorage.pages.update("b1", p1.id, {
+      text_content: "Hi",
+    });
+    expect(updated.text_content).toBe("Hi");
+
+    const reordered = await dexieStorage.pages.reorder("b1", [p2.id, p1.id]);
+    expect(reordered.map((p) => p.id)).toEqual([p2.id, p1.id]);
+
+    await dexieStorage.pages.delete("b1", p1.id);
+    expect((await dexieStorage.pages.list("b1")).map((p) => p.id)).toEqual([
+      p2.id,
+    ]);
+  });
+});
+
+describe("DexieStorage — comic panels + bubbles", () => {
+  it("panel + bubble CRUD with cascade on delete", async () => {
+    const page = await dexieStorage.pages.create("b1", {
+      layout: "comic_panel_grid",
+    });
+    const panel = await dexieStorage.comics.createPanel("b1", page.id, {
+      bounds: { x: 0, y: 0, w: 100, h: 100 },
+    });
+    expect(panel.position).toBe(0);
+    expect((await dexieStorage.comics.listPanels("b1", page.id))).toHaveLength(1);
+
+    const bubble = await dexieStorage.comics.createBubble("b1", panel.id, {
+      bubble_type: "speech",
+      anchor: { x: 50, y: 50 },
+    });
+    // Backend defaults are mirrored offline.
+    expect(bubble.width_pct).toBe(30);
+    expect(bubble.tail_direction).toBe("none");
+    expect(bubble.tail_length_px).toBe(16);
+
+    const reBubble = await dexieStorage.comics.updateBubble("b1", bubble.id, {
+      text_content: "Boom!",
+    });
+    expect(reBubble.text_content).toBe("Boom!");
+    expect((await dexieStorage.comics.listBubbles("b1", panel.id))).toHaveLength(1);
+
+    // Deleting the panel cascades its bubbles; deleting the page cascades
+    // its panels.
+    await dexieStorage.comics.deletePanel("b1", panel.id);
+    expect((await dexieStorage.comics.listBubbles("b1", panel.id))).toEqual([]);
+
+    const panel2 = await dexieStorage.comics.createPanel("b1", page.id, {
+      bounds: {},
+    });
+    await dexieStorage.comics.createBubble("b1", panel2.id, {
+      bubble_type: "thought",
+      anchor: {},
+    });
+    await dexieStorage.pages.delete("b1", page.id);
+    expect((await dexieStorage.comics.listPanels("b1", page.id))).toEqual([]);
+    expect((await dexieStorage.comics.listBubbles("b1", panel2.id))).toEqual([]);
+
+    expect((await dexieStorage.comics.getInfo()).name).toBe("comics");
+  });
+});
+
 describe("DexieStorage — publishing surfaces (offline defaults)", () => {
   it("returns empty publications/platforms + an empty plugin-status map", async () => {
     // These backend-only reads must resolve to empty offline so opening

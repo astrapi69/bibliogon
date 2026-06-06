@@ -33,7 +33,6 @@ import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
-import { OfflineFeatureNotice } from "../components/OfflineFeatureNotice";
 import { BookOpen, Menu, Plus } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
@@ -739,9 +738,6 @@ export default function BookEditor() {
   // in place of the page-based editor — same URL-routed pattern
   // as the prose flow.
   if (pageableBookTypeIds(bookTypesSnapshot).has(book.book_type)) {
-    if (offlineGate) {
-      return <OfflineFeatureNotice testId="book-editor-offline" />;
-    }
     const editorName =
       bookTypesSnapshot.types[book.book_type]?.editor_component;
     const EditorComponent = editorName
@@ -948,9 +944,6 @@ export default function BookEditor() {
             }}
           />
         ) : showStoryboard ? (
-          offlineGate ? (
-            <OfflineFeatureNotice testId="storyboard-offline" />
-          ) : (
           <ProseStoryboard
             bookId={book.id}
             bookTitle={book.title}
@@ -960,7 +953,6 @@ export default function BookEditor() {
               _setShowStoryboard(false);
             }}
           />
-          )
         ) : showOutline ? (
           <ChapterOutliner
             bookId={book.id}
@@ -972,9 +964,6 @@ export default function BookEditor() {
             }}
           />
         ) : showRelationships ? (
-          offlineGate ? (
-            <OfflineFeatureNotice testId="relationships-offline" />
-          ) : (
           <RelationshipGraphView
             bookId={book.id}
             savedLayout={book.graph_layout}
@@ -985,7 +974,6 @@ export default function BookEditor() {
               _setShowStoryboard(true);
             }}
           />
-          )
         ) : showMetadata ? (
           <BookMetadataEditor
             book={book}

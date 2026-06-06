@@ -11,6 +11,7 @@ import "fake-indexeddb/auto";
 import { renderHook } from "@testing-library/react";
 
 import { connectivity, setOfflineEnabled } from "./connectivity";
+import { ensureDexieStorageLoaded } from "./index";
 import { useStorageMode } from "./useStorageMode";
 
 beforeEach(() => {
@@ -18,7 +19,12 @@ beforeEach(() => {
   connectivity.__resetForTests(true);
 });
 
-afterEach(() => {
+afterEach(async () => {
+  // Enabling offline can kick off the lazy DexieStorage import (seed JSON);
+  // await it so the dynamic import settles inside the test env rather than
+  // after teardown, which would surface as an unhandled EnvironmentTeardown
+  // rejection (same class as the index.test settle fix, a9fab5c1).
+  await ensureDexieStorageLoaded().catch(() => {});
   connectivity.stop();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
