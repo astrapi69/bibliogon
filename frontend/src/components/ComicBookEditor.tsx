@@ -60,6 +60,8 @@ import type { ComicBubbleData } from "./comics/ComicBubble";
 import type { ComicPanelData } from "./comics/ComicPanel";
 import { useDialog } from "./AppDialog";
 import PageThumbnails from "./PageThumbnails";
+import { SidebarToggleButton } from "./SidebarToggleButton";
+import { useDualSidebarCollapse } from "../hooks/useDualSidebarCollapse";
 import PdfExportControls from "./PdfExportControls";
 import EditableTitle from "./EditableTitle";
 import ThemeToggle from "./ThemeToggle";
@@ -107,6 +109,10 @@ export default function ComicBookEditor({
 }: Props) {
   const { t } = useI18n();
   const dialog = useDialog();
+  const sidebars = useDualSidebarCollapse(
+    "bibliogon-comic-editor-thumbnails",
+    "bibliogon-comic-editor-properties",
+  );
   const [pluginInfo, setPluginInfo] = useState<ComicsPluginInfo | null>(null);
   const [pluginError, setPluginError] = useState<string | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
@@ -1014,23 +1020,59 @@ export default function ComicBookEditor({
        * testidNamespace="comic-book-editor" templates its
        * testids for E2E namespace correctness. */}
       <div
+        data-testid="comic-book-editor-body"
         style={{
-          display: "grid",
-          gridTemplateColumns: "220px 1fr 320px",
+          position: "relative",
+          display: "flex",
           gap: 16,
           minHeight: 480,
         }}
       >
-        <aside
-          data-testid="comic-book-editor-thumbnails"
-          style={{
-            border: "1px solid var(--border, #ddd)",
-            borderRadius: 8,
-            background: "var(--surface-2, #fafafa)",
-            minHeight: 400,
-            overflow: "auto",
-          }}
+        {!sidebars.left.open && (
+          <SidebarToggleButton
+            open={false}
+            onToggle={sidebars.left.toggle}
+            testId="comic-book-editor-thumbnails-toggle"
+            className="fixed left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+          />
+        )}
+        {!sidebars.right.open && (
+          <SidebarToggleButton
+            open={false}
+            onToggle={sidebars.right.toggle}
+            testId="comic-book-editor-side-pane-toggle"
+            className="fixed right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+          />
+        )}
+        <div
+          data-testid="comic-book-editor-thumbnails-wrapper"
+          data-sidebar-open={sidebars.left.open}
+          className={[
+            "shrink-0 overflow-hidden transition-[width] duration-200",
+            "fixed inset-y-0 left-0 z-[90] bg-card shadow-[var(--shadow-md)]",
+            "menu:static menu:inset-auto menu:z-auto menu:bg-transparent menu:shadow-none",
+            sidebars.left.open ? "w-[220px]" : "w-0",
+          ].join(" ")}
         >
+          <div className="flex h-full w-[220px] flex-col">
+            <div className="flex justify-end p-1">
+              <SidebarToggleButton
+                open
+                onToggle={sidebars.left.toggle}
+                testId="comic-book-editor-thumbnails-collapse"
+              />
+            </div>
+            <aside
+              data-testid="comic-book-editor-thumbnails"
+              className="flex-1"
+              style={{
+                border: "1px solid var(--border, #ddd)",
+                borderRadius: 8,
+                background: "var(--surface-2, #fafafa)",
+                minHeight: 400,
+                overflow: "auto",
+              }}
+            >
           <PageThumbnails
             pages={pages}
             activePageId={activePageId}
@@ -1044,7 +1086,9 @@ export default function ComicBookEditor({
             onDelete={handleDeletePage}
             testidNamespace="comic-book-editor"
           />
-        </aside>
+            </aside>
+          </div>
+        </div>
 
         <section
           style={{
@@ -1052,6 +1096,7 @@ export default function ComicBookEditor({
             flexDirection: "column",
             gap: 12,
             minWidth: 0,
+            flex: 1,
           }}
         >
           {pagesError && (
@@ -1180,16 +1225,35 @@ export default function ComicBookEditor({
           )}
         </section>
 
-        <aside
-          data-testid="comic-book-editor-side-pane"
-          style={{
-            border: "1px solid var(--border, #ddd)",
-            borderRadius: 8,
-            background: "var(--surface-2, #fafafa)",
-            minHeight: 400,
-            overflow: "auto",
-          }}
+        <div
+          data-testid="comic-book-editor-side-pane-wrapper"
+          data-sidebar-open={sidebars.right.open}
+          className={[
+            "shrink-0 overflow-hidden transition-[width] duration-200",
+            "fixed inset-y-0 right-0 z-[90] bg-card shadow-[var(--shadow-md)]",
+            "menu:static menu:inset-auto menu:z-auto menu:bg-transparent menu:shadow-none",
+            sidebars.right.open ? "w-[320px]" : "w-0",
+          ].join(" ")}
         >
+          <div className="flex h-full w-[320px] flex-col">
+            <div className="flex justify-start p-1">
+              <SidebarToggleButton
+                open
+                onToggle={sidebars.right.toggle}
+                testId="comic-book-editor-side-pane-collapse"
+              />
+            </div>
+            <aside
+              data-testid="comic-book-editor-side-pane"
+              className="flex-1"
+              style={{
+                border: "1px solid var(--border, #ddd)",
+                borderRadius: 8,
+                background: "var(--surface-2, #fafafa)",
+                minHeight: 400,
+                overflow: "auto",
+              }}
+            >
           {selectedBubble ? (
             <LayoutConfigComicBubble
               bubble={selectedBubble}
@@ -1212,7 +1276,9 @@ export default function ComicBookEditor({
               )}
             </div>
           )}
-        </aside>
+            </aside>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -1,0 +1,80 @@
+/**
+ * Smoke tests for the collapsible Comic Editor sidebars.
+ *
+ * The comic editor has two sidebars -- the page-thumbnail list (left)
+ * and the panel/bubble properties pane (right). Below the menu
+ * breakpoint (1200px) both fixed-pixel columns overflowed a phone
+ * viewport. Mirrors the BookEditor collapse pattern. Covers:
+ *
+ * 1. Below the menu breakpoint both sidebars are collapsed by default
+ *    (width ~0), with their floating open-toggles visible.
+ * 2. At/above the menu breakpoint both are expanded by default.
+ * 3. Below the md breakpoint (768px) the two are mutually exclusive --
+ *    opening one collapses the other so the canvas keeps full width.
+ *
+ * Layout/geometry can't be observed by a component test, so Aster runs
+ * this spec in a real browser before release.
+ */
+
+import {test, expect, createComicBook} from "../fixtures/base";
+import type {Page} from "@playwright/test";
+
+const PHONE = {width: 375, height: 667};
+const NARROW = {width: 1024, height: 800};
+const WIDE = {width: 1440, height: 900};
+
+async function openEditor(page: Page, bookId: string) {
+    await page.goto(`/book/${bookId}`);
+    await expect(page.getByTestId("comic-book-editor-root")).toBeVisible();
+}
+
+async function wrapperWidth(page: Page, testId: string): Promise<number> {
+    const box = await page.getByTestId(testId).boundingBox();
+    return box ? box.width : -1;
+}
+
+const LEFT = "comic-book-editor-thumbnails-wrapper";
+const RIGHT = "comic-book-editor-side-pane-wrapper";
+
+test.describe("Comic Editor sidebars collapse", () => {
+    test("both collapsed by default below the menu breakpoint", async ({
+        page,
+    }) => {
+        const book = await createComicBook("Comic Narrow");
+        await page.setViewportSize(NARROW);
+        await openEditor(page, book.id);
+
+        expect(await wrapperWidth(page, LEFT)).toBeLessThanOrEqual(1);
+        expect(await wrapperWidth(page, RIGHT)).toBeLessThanOrEqual(1);
+        await expect(
+            page.getByTestId("comic-book-editor-thumbnails-toggle"),
+        ).toBeVisible();
+        await expect(
+            page.getByTestId("comic-book-editor-side-pane-toggle"),
+        ).toBeVisible();
+    });
+
+    test("both expanded by default at/above the menu breakpoint", async ({
+        page,
+    }) => {
+        const book = await createComicBook("Comic Wide");
+        await page.setViewportSize(WIDE);
+        await openEditor(page, book.id);
+
+        expect(await wrapperWidth(page, LEFT)).toBeGreaterThan(180);
+        expect(await wrapperWidth(page, RIGHT)).toBeGreaterThan(280);
+    });
+
+    test("only one sidebar open at a time below 768px", async ({page}) => {
+        const book = await createComicBook("Comic Phone");
+        await page.setViewportSize(PHONE);
+        await openEditor(page, book.id);
+
+        await page.getByTestId("comic-book-editor-thumbnails-toggle").click();
+        await expect.poll(() => wrapperWidth(page, LEFT)).toBeGreaterThan(180);
+
+        await page.getByTestId("comic-book-editor-side-pane-toggle").click();
+        await expect.poll(() => wrapperWidth(page, RIGHT)).toBeGreaterThan(280);
+        await expect.poll(() => wrapperWidth(page, LEFT)).toBeLessThanOrEqual(1);
+    });
+});
