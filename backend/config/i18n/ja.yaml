@@ -1921,6 +1921,7 @@ ui:
     nav_label: "Medium からインポート"
     back_to_articles: "記事一覧に戻る"
     intro: "Medium のアーカイブ（Download your information の ZIP）を Bibliogon に記事としてインポートします。各投稿は 1 つの記事になります。正規 URL が記録されるため、同じアーカイブを再度インポートしても安全です。"
+    intro_offline: "Medium のアーカイブ（ZIP）をブラウザで直接、記事としてインポートします。コメントはスキップされ、画像は Medium の CDN にリンクされたままです。"
     upload:
       card_title: "アーカイブをアップロード"
       card_hint: "Medium からメールで送られた ZIP ファイルを選択してください。最大 200 MB。"

@@ -14,7 +14,13 @@
  * `/api` directly and 404 on a backendless host).
  */
 
+import {fileURLToPath} from "node:url";
+
 import {test, expect} from "../fixtures/base";
+
+const MEDIUM_ZIP = fileURLToPath(
+    new URL("../fixtures/medium-export.zip", import.meta.url),
+);
 
 // Smoke tests mutate the viewport / storage mode; run this file serially so
 // the shared per-test recorder below is never raced.
@@ -264,5 +270,36 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.goto("/settings?tab=autoren");
         await expect(page.getByTestId("authors-database-section")).toBeVisible();
         await expect(page.getByText("Jane Offline").first()).toBeVisible();
+    });
+
+    test("medium import works offline: parse a zip + create articles in Dexie", async ({
+        page,
+    }) => {
+        // The page is un-gated offline (browser-side parse + create).
+        await page.goto("/articles/import/medium");
+        await expect(page.getByTestId("medium-import-upload-zone")).toBeVisible();
+
+        // Upload the fixture export (2 posts: 1 article + 1 comment) and preview.
+        await page.getByTestId("medium-import-upload-input").setInputFiles(MEDIUM_ZIP);
+        await page.getByTestId("medium-import-start").click();
+        await expect(page.getByTestId("medium-import-preview-section")).toBeVisible({
+            timeout: 10000,
+        });
+
+        // Import the selection — runs entirely against IndexedDB.
+        await page.getByTestId("medium-import-preview-import-btn").click();
+        await expect(page.getByTestId("medium-import-result")).toBeVisible({
+            timeout: 10000,
+        });
+        // 1 imported (the article); the comment is skipped offline.
+        await expect(
+            page.getByTestId("medium-import-result-imported-count"),
+        ).toContainText("1");
+
+        // The imported article now shows in the Articles list (from Dexie).
+        await page.goto("/articles");
+        await expect(page.getByText("Real Article").first()).toBeVisible({
+            timeout: 10000,
+        });
     });
 });

@@ -1981,6 +1981,7 @@
       "nav_label": "Importer depuis Medium",
       "back_to_articles": "Retour aux articles",
       "intro": "Importez votre archive Medium (ZIP Download your information) dans Bibliogon en tant qu'articles. Chaque publication devient un article ; l'URL canonique est conservée afin que la réimportation de la même archive soit sûre.",
+      "intro_offline": "Importez votre archive Medium (ZIP) directement dans le navigateur en tant qu'articles. Les commentaires sont ignorés ; les images restent liées au CDN de Medium.",
       "upload": {
         "card_title": "Téléverser l'archive",
         "card_hint": "Choisissez le fichier ZIP que Medium vous a envoyé par e-mail. Maximum 200 Mo.",

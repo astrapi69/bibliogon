@@ -1981,6 +1981,7 @@
       "nav_label": "Medium'dan İçe Aktar",
       "back_to_articles": "Makalelere geri dön",
       "intro": "Medium arşivinizi (Download your information ZIP) Bibliogon'a makale olarak içe aktarın. Her gönderi bir makale olur; kanonik URL kaydedildiği için aynı arşivi tekrar içe aktarmak güvenlidir.",
+      "intro_offline": "Medium arşivinizi (ZIP) doğrudan tarayıcıda makale olarak içe aktarın. Yorumlar atlanır; görseller Medium'un CDN'sine bağlı kalır.",
       "upload": {
         "card_title": "Arşivi yükle",
         "card_hint": "Medium'un e-posta ile gönderdiği ZIP dosyasını seçin. En fazla 200 MB.",
