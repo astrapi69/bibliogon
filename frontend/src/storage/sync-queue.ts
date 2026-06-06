@@ -172,5 +172,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     publications: base.publications,
     articlePlatforms: base.articlePlatforms,
     editorPluginStatus: base.editorPluginStatus,
+    // Chapter labels: local-only offline writes (replay deferred, like
+    // authors); straight passthrough so the seam stays complete.
+    chapterLabels: base.chapterLabels,
   };
 }

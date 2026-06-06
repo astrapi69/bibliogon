@@ -37,6 +37,7 @@ import type {
   BookDetail,
   BookTypeDef,
   Chapter,
+  ChapterLabel,
   ContentTypeDef,
   DiscoveredPlugin,
   WritingSession,
@@ -644,6 +645,43 @@ export const dexieStorage: IStorageService = {
   // unavailable (the toolbar already degrades gracefully on that shape).
   editorPluginStatus: {
     get: async () => ({}),
+  },
+
+  chapterLabels: {
+    list: async (bookId) => {
+      const rows = await offlineDb.chapterLabels
+        .where("book_id")
+        .equals(bookId)
+        .toArray();
+      return (rows as unknown as ChapterLabel[]).sort(
+        (a, b) => a.position - b.position,
+      );
+    },
+    create: async (bookId, data) => {
+      const position = await offlineDb.chapterLabels
+        .where("book_id")
+        .equals(bookId)
+        .count();
+      const row: ChapterLabel = {
+        id: newId(),
+        book_id: bookId,
+        name: data.name,
+        color: data.color,
+        position,
+      };
+      await offlineDb.chapterLabels.add(row as unknown as GraphRow);
+      return row;
+    },
+    update: async (_bookId, labelId, data) => {
+      const existing = await offlineDb.chapterLabels.get(labelId);
+      if (!existing) notFound("ChapterLabel", labelId);
+      const merged = { ...existing, ...data } as unknown as ChapterLabel;
+      await offlineDb.chapterLabels.put(merged as unknown as GraphRow);
+      return merged;
+    },
+    remove: async (_bookId, labelId) => {
+      await offlineDb.chapterLabels.delete(labelId);
+    },
   },
 };
 

@@ -9,7 +9,8 @@
 import {useState} from "react"
 import {Plus, Trash2} from "lucide-react"
 
-import {api, type ChapterLabel} from "../api/client"
+import {type ChapterLabel} from "../api/client"
+import {getStorage} from "../storage"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {MOOD_PALETTE} from "./StoryboardAnnotations"
@@ -76,7 +77,7 @@ export default function ChapterLabelManager({
         const name = newName.trim()
         if (!name) return
         void run(async () => {
-            await api.chapterLabels.create(bookId, {name, color: newColor})
+            await getStorage().chapterLabels.create(bookId, {name, color: newColor})
             setNewName("")
             setNewColor(DEFAULT_COLOR)
         })
@@ -96,14 +97,14 @@ export default function ChapterLabelManager({
                         onBlur={(e) => {
                             const name = e.target.value.trim()
                             if (!name || name === label.name) return
-                            void run(() => api.chapterLabels.update(bookId, label.id, {name}))
+                            void run(() => getStorage().chapterLabels.update(bookId, label.id, {name}))
                         }}
                     />
                     <SwatchRow
                         value={label.color}
                         onPick={(hex) => {
                             if (hex === label.color) return
-                            void run(() => api.chapterLabels.update(bookId, label.id, {color: hex}))
+                            void run(() => getStorage().chapterLabels.update(bookId, label.id, {color: hex}))
                         }}
                         testid={`${namespace}-swatches-${label.id}`}
                     />
@@ -111,7 +112,7 @@ export default function ChapterLabelManager({
                         type="button"
                         className="btn-icon"
                         disabled={busy}
-                        onClick={() => void run(() => api.chapterLabels.remove(bookId, label.id))}
+                        onClick={() => void run(() => getStorage().chapterLabels.remove(bookId, label.id))}
                         aria-label={t("ui.chapter_label.delete", "Delete label")}
                         title={t("ui.chapter_label.delete", "Delete label")}
                         data-testid={`${namespace}-delete-${label.id}`}

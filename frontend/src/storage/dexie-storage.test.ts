@@ -119,6 +119,37 @@ describe("DexieStorage — articles", () => {
   });
 });
 
+describe("DexieStorage — chapter labels", () => {
+  it("create -> list (position order) -> update -> remove round-trip", async () => {
+    const first = await dexieStorage.chapterLabels.create("b1", {
+      name: "Draft",
+      color: "#aaa",
+    });
+    const second = await dexieStorage.chapterLabels.create("b1", {
+      name: "Final",
+      color: "#bbb",
+    });
+    expect(first.position).toBe(0);
+    expect(second.position).toBe(1);
+
+    // Scoped to the book + ordered by position.
+    await dexieStorage.chapterLabels.create("other", { name: "X", color: "#ccc" });
+    const labels = await dexieStorage.chapterLabels.list("b1");
+    expect(labels.map((l) => l.name)).toEqual(["Draft", "Final"]);
+
+    const updated = await dexieStorage.chapterLabels.update("b1", first.id, {
+      name: "Entwurf",
+    });
+    expect(updated.name).toBe("Entwurf");
+    expect(updated.color).toBe("#aaa");
+
+    await dexieStorage.chapterLabels.remove("b1", first.id);
+    expect((await dexieStorage.chapterLabels.list("b1")).map((l) => l.name)).toEqual([
+      "Final",
+    ]);
+  });
+});
+
 describe("DexieStorage — publishing surfaces (offline defaults)", () => {
   it("returns empty publications/platforms + an empty plugin-status map", async () => {
     // These backend-only reads must resolve to empty offline so opening

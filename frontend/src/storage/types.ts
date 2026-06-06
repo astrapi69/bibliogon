@@ -115,6 +115,16 @@ export interface EditorPluginStatusStorage {
   get: typeof api.editorPluginStatus;
 }
 
+/** Per-book chapter labels (colour-coded workflow tags). Pure CRUD against a
+ *  Dexie table, so the prose chapter-label manager / outliner / storyboard
+ *  work offline. */
+export interface ChapterLabelStorage {
+  list: typeof api.chapterLabels.list;
+  create: typeof api.chapterLabels.create;
+  update: typeof api.chapterLabels.update;
+  remove: typeof api.chapterLabels.remove;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -130,4 +140,5 @@ export interface IStorageService {
   publications: PublicationStorage;
   articlePlatforms: ArticlePlatformStorage;
   editorPluginStatus: EditorPluginStatusStorage;
+  chapterLabels: ChapterLabelStorage;
 }

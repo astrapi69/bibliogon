@@ -80,7 +80,7 @@ export default function ChapterOutliner({
 
     const loadLabels = useCallback(() => {
         if (getStorage().mode === "dexie") { setLabels([]); return }
-        api.chapterLabels.list(bookId).then(setLabels).catch(() => setLabels([]))
+        getStorage().chapterLabels.list(bookId).then(setLabels).catch(() => setLabels([]))
     }, [bookId])
     useEffect(() => loadLabels(), [loadLabels])
 

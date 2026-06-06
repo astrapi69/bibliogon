@@ -42,12 +42,12 @@ import {
 import {CSS} from "@dnd-kit/utilities"
 
 import {
-    api,
     SaveAbortedError,
     type Chapter,
     type ChapterLabel,
     type ChapterUpdatePayload,
 } from "../api/client"
+import {getStorage} from "../storage"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {
@@ -146,7 +146,7 @@ export default function ProseStoryboard({
 
     useEffect(() => {
         let cancelled = false
-        api.chapters
+        getStorage().chapters
             .list(bookId)
             .then((rows) => {
                 if (cancelled) return
@@ -168,7 +168,7 @@ export default function ProseStoryboard({
     // per-card label selects + chips stay in sync. A label-load failure
     // is non-fatal — the storyboard still works without labels.
     const loadLabels = useCallback(() => {
-        api.chapterLabels
+        getStorage().chapterLabels
             .list(bookId)
             .then(setLabels)
             .catch(() => setLabels([]))
@@ -199,12 +199,12 @@ export default function ProseStoryboard({
                 .map((id) => chapters.find((c) => c.id === id))
                 .filter((c): c is Chapter => Boolean(c))
             setChapters(nextChapters.map((c, idx) => ({...c, position: idx})))
-            void api.chapters
+            void getStorage().chapters
                 .reorder(bookId, next)
                 .then((rows) => setChapters(rows))
                 .catch((err: unknown) => {
                     setLoadError(err instanceof Error ? err.message : String(err))
-                    void api.chapters
+                    void getStorage().chapters
                         .list(bookId)
                         .then((rows) => setChapters(rows))
                         .catch(() => {})
@@ -223,7 +223,7 @@ export default function ProseStoryboard({
             const current = chapters.find((c) => c.id === chapterId)
             if (!current) return
             try {
-                const updated = await api.chapters.update(bookId, chapterId, {
+                const updated = await getStorage().chapters.update(bookId, chapterId, {
                     version: current.version,
                     ...patch,
                 })
@@ -234,7 +234,7 @@ export default function ProseStoryboard({
                 // Resync version so the user's next edit isn't doomed to
                 // a second 409.
                 try {
-                    const fresh = await api.chapters.get(bookId, chapterId)
+                    const fresh = await getStorage().chapters.get(bookId, chapterId)
                     setChapters((prev) => prev.map((c) => (c.id === chapterId ? fresh : c)))
                 } catch {
                     // leave optimistic state; the toast already fired.

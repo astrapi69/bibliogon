@@ -20,6 +20,7 @@ import type {
   AuthorStorage,
   BookStorage,
   BookTypesStorage,
+  ChapterLabelStorage,
   ChapterStorage,
   ContentTypesStorage,
   EditorPluginStatusStorage,
@@ -76,5 +77,8 @@ export const apiStorage: IStorageService = {
   },
   get editorPluginStatus(): EditorPluginStatusStorage {
     return { get: api.editorPluginStatus };
+  },
+  get chapterLabels(): ChapterLabelStorage {
+    return api.chapterLabels;
   },
 };
