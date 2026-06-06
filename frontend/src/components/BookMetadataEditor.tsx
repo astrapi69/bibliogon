@@ -3,6 +3,7 @@ import {useNavigate} from "react-router-dom";
 import DOMPurify from "dompurify";
 import {api, ApiError, Author, AudiobookChapterFile, AudiobookVoice, Book, BookAudiobook, BookDetail, BookType, Chapter, formatVoiceLabel, type GitSyncMappingStatus} from "../api/client";
 import { getStorage } from "../storage";
+import { useAssetUrl } from "../hooks/useAssetUrl";
 import {Save, Copy, ChevronLeft, Download, Trash2, Package, Sparkles, CheckCircle, Clock, AlertCircle, Play, Pause, Loader2, Rocket} from "lucide-react";
 import {notify} from "../utils/notify";
 import {useI18n} from "../hooks/useI18n";
@@ -1050,6 +1051,25 @@ function Field({label, value, onChange, placeholder, multiline, mono, maxChars, 
  * support lives behind a separate backend validator bump and is not
  * wired here.
  */
+/** A single author-asset thumbnail. Resolves the image src across storage
+ *  modes (served URL online, IndexedDB blob URL offline). */
+function AuthorAssetImage({bookId, filename}: {bookId: string; filename: string}) {
+    const src = useAssetUrl(bookId, filename);
+    return (
+        <img
+            src={src ?? undefined}
+            alt={filename}
+            style={{
+                width: "100%",
+                aspectRatio: "3/4",
+                objectFit: "cover",
+                borderRadius: 4,
+                background: "var(--bg-hover)",
+            }}
+        />
+    );
+}
+
 export function AuthorAssetsPanel({bookId}: {bookId: string}) {
     const {t} = useI18n();
     const [assets, setAssets] = useState<{id: string; filename: string; asset_type: string; path: string}[]>([]);
@@ -1058,8 +1078,8 @@ export function AuthorAssetsPanel({bookId}: {bookId: string}) {
     useEffect(() => {
         let cancelled = false;
         setLoading(true);
-        api.assets
-            .list(bookId)
+        getStorage()
+            .assets.list(bookId)
             .then((rows) => {
                 if (cancelled) return;
                 setAssets(rows.filter((a) => a.asset_type === "author-asset"));
@@ -1077,7 +1097,7 @@ export function AuthorAssetsPanel({bookId}: {bookId: string}) {
 
     const handleDelete = async (assetId: string) => {
         try {
-            await api.assets.delete(bookId, assetId);
+            await getStorage().assets.delete(bookId, assetId);
             setAssets((prev) => prev.filter((a) => a.id !== assetId));
             notify.success(t("ui.metadata.author_asset_deleted", "Autor-Asset gelöscht"));
         } catch (err) {
@@ -1131,16 +1151,9 @@ export function AuthorAssetsPanel({bookId}: {bookId: string}) {
                             gap: 4,
                         }}
                     >
-                        <img
-                            src={`/api/books/${bookId}/assets/file/${asset.filename}`}
-                            alt={asset.filename}
-                            style={{
-                                width: "100%",
-                                aspectRatio: "3/4",
-                                objectFit: "cover",
-                                borderRadius: 4,
-                                background: "var(--bg-hover)",
-                            }}
+                        <AuthorAssetImage
+                            bookId={bookId}
+                            filename={asset.filename}
                         />
                         <span
                             style={{

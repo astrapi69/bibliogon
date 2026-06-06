@@ -14,6 +14,7 @@ import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
+import { useCoverUrl } from "../hooks/useAssetUrl";
 import {Badge} from "./Badge";
 import {publicationStatusVariant} from "../utils/publicationStatusBadge";
 import styles from "./BookListView.module.css";
@@ -111,10 +112,8 @@ function BookListRow({
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const updated = formatLocaleDate(book.updated_at, lang);
-    const coverFilename = book.cover_image ? book.cover_image.split("/").pop() : null;
-    const coverUrl = coverFilename
-        ? `/api/books/${book.id}/assets/file/${coverFilename}`
-        : null;
+    // Resolves to the served URL online, or an IndexedDB blob URL offline.
+    const coverUrl = useCoverUrl(book.id, book.cover_image);
 
     const showSelection = onToggleSelect != null;
     return (

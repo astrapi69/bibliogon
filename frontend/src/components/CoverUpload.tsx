@@ -1,8 +1,10 @@
 import {useEffect, useRef, useState} from "react";
 import {Image as ImageIcon, Upload, X} from "lucide-react";
 
-import {ApiError, api} from "../api/client";
+import {ApiError} from "../api/client";
 import type {CoverUploadResponse} from "../api/client";
+import {getStorage} from "../storage";
+import {useCoverUrl} from "../hooks/useAssetUrl";
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {EmptyState} from "./EmptyState";
@@ -39,10 +41,8 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
         setInfo(null);
     }, [coverImage]);
 
-    const coverFilename = coverImage ? coverImage.split("/").pop() : null;
-    const coverUrl = coverFilename
-        ? `/api/books/${bookId}/assets/file/${coverFilename}`
-        : null;
+    // Resolves to the served URL online, or an IndexedDB blob URL offline.
+    const coverUrl = useCoverUrl(bookId, coverImage);
 
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
@@ -55,7 +55,10 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
         }
         setUploading(true);
         try {
-            const result: CoverUploadResponse = await api.covers.upload(bookId, file);
+            const result: CoverUploadResponse = await getStorage().covers.upload(
+                bookId,
+                file,
+            );
             onChange(result.cover_image);
             setInfo({width: result.width, height: result.height});
             notify.success(t("ui.cover.upload_success", "Cover hochgeladen"));
@@ -74,7 +77,7 @@ export default function CoverUpload({bookId, coverImage, onChange}: Props) {
     const handleRemove = async () => {
         setUploading(true);
         try {
-            await api.covers.delete(bookId);
+            await getStorage().covers.delete(bookId);
             onChange(null);
             setInfo(null);
             notify.success(t("ui.cover.remove_success", "Cover entfernt"));

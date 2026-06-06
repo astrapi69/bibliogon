@@ -25,11 +25,10 @@
  * + refreshes the pages list.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { FileText, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
 
 import {
-  api,
   ApiError,
   type ComicBubbleOut,
   type ComicPanelOut,
@@ -37,6 +36,7 @@ import {
   type Page,
 } from "../api/client";
 import {getStorage} from "../storage";
+import {bookAssetFileUrl} from "../storage/asset-url";
 import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
 import { useI18n } from "../hooks/useI18n";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
@@ -482,28 +482,50 @@ export default function ComicBookEditor({
   // ``image_asset_id`` (uploads change the asset set; see
   // handleUpdatePanel).
   const [assetUrls, setAssetUrls] = useState<Record<string, string>>({});
+  // Blob URLs minted in dexie mode, tracked so they are revoked on refresh /
+  // unmount (no leak). Empty in api mode (server URLs need no revocation).
+  const blobUrlsRef = useRef<string[]>([]);
+  const revokeBlobUrls = useCallback(() => {
+    for (const url of blobUrlsRef.current) URL.revokeObjectURL(url);
+    blobUrlsRef.current = [];
+  }, []);
 
   const refreshAssets = useCallback(async () => {
-    // Asset thumbnails come from the backend; offline (Dexie) skip the probe
-    // so the comic editor fires no /api. Image support lands with the assets
-    // seam (P3e); panels/bubbles still render + edit offline meanwhile.
-    if (getStorage().mode === "dexie") return;
+    // Maps image_asset_id -> a displayable URL. Online: the served file URL.
+    // Offline (Dexie): a blob URL read from IndexedDB, so panel images show
+    // without the service worker and without firing /api.
+    const storage = getStorage();
     try {
-      const assets = await api.assets.list(bookId);
+      const assets = await storage.assets.list(bookId);
       const urlMap: Record<string, string> = {};
-      for (const asset of assets) {
-        urlMap[asset.id] = `/api/books/${bookId}/assets/file/${asset.filename}`;
+      if (storage.mode === "dexie") {
+        const created: string[] = [];
+        for (const asset of assets) {
+          const blob = await storage.assets.getBlob(bookId, asset.filename);
+          if (blob) {
+            const url = URL.createObjectURL(blob);
+            created.push(url);
+            urlMap[asset.id] = url;
+          }
+        }
+        revokeBlobUrls();
+        blobUrlsRef.current = created;
+      } else {
+        for (const asset of assets) {
+          urlMap[asset.id] = bookAssetFileUrl(bookId, asset.filename);
+        }
       }
       setAssetUrls(urlMap);
     } catch (err) {
       const detail = err instanceof ApiError ? err.detail : String(err);
       setPagesError(detail);
     }
-  }, [bookId]);
+  }, [bookId, revokeBlobUrls]);
 
   useEffect(() => {
     void refreshAssets();
-  }, [refreshAssets]);
+    return () => revokeBlobUrls();
+  }, [refreshAssets, revokeBlobUrls]);
 
   useEffect(() => {
     if (!activePageId) {

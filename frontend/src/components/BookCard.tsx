@@ -14,6 +14,7 @@ import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
 import { Badge } from "./Badge";
 import { publicationStatusVariant } from "../utils/publicationStatusBadge";
+import { useCoverUrl } from "../hooks/useAssetUrl";
 import styles from "./BookCard.module.css";
 
 interface Props {
@@ -49,13 +50,8 @@ export default function BookCard({
     };
   }, [book.id]);
 
-  // Extract cover filename from path (e.g. "uploads/abc/cover/cover.png" -> "cover.png")
-  const coverFilename = book.cover_image
-    ? book.cover_image.split("/").pop()
-    : null;
-  const coverUrl = coverFilename
-    ? `/api/books/${book.id}/assets/file/${coverFilename}`
-    : null;
+  // Resolves to the served URL online, or an IndexedDB blob URL offline.
+  const coverUrl = useCoverUrl(book.id, book.cover_image);
 
   return (
     <div
