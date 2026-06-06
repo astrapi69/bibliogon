@@ -259,7 +259,7 @@ export default function StoryBibleSidebar({
 
     return (
         <aside
-            className={styles.sidebar}
+            className={`${styles.sidebar} fixed right-0 top-0 z-[90] shadow-[var(--shadow-md)] menu:static menu:z-auto menu:shadow-none`}
             data-testid="story-bible-sidebar"
             aria-label={t("ui.story_bible.title", "Story-Bibel")}
         >
