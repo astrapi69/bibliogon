@@ -1,6 +1,8 @@
 import {useEffect, useState} from "react";
 import {Save, Eye, EyeOff} from "lucide-react";
 import {api} from "../../api/client";
+import {aiChat} from "../../ai/llmClient";
+import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
 import {useI18n} from "../../hooks/useI18n";
 import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../../utils/aiProviders";
 import {notify} from "../../utils/notify";
@@ -16,6 +18,7 @@ export function AiAssistantSettings({config, onSave, saving}: {
     saving: boolean;
 }) {
     const {t} = useI18n();
+    const {offline} = useOfflineFeatureGate();
     const aiConfig = (config.ai || {}) as Record<string, unknown>;
 
     const [aiEnabled, setAiEnabled] = useState(Boolean(aiConfig.enabled));
@@ -204,6 +207,30 @@ export function AiAssistantSettings({config, onSave, saving}: {
                                     try {
                                         // Save current settings first so the backend sees the latest config
                                         await onSave(buildSaveData());
+
+                                        if (offline) {
+                                            // Offline: ping the provider directly from the browser
+                                            // with the just-entered config (no backend round-trip).
+                                            try {
+                                                await aiChat(
+                                                    {
+                                                        provider: aiProvider,
+                                                        base_url: aiBaseUrl,
+                                                        model: aiModel,
+                                                        api_key: aiApiKey,
+                                                    },
+                                                    [{role: "user", content: "Reply with the single word: OK"}],
+                                                    {maxTokens: 16},
+                                                );
+                                                setAiTestStatus("ok");
+                                                notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+                                            } catch (err) {
+                                                setAiTestStatus("fail");
+                                                notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"), err);
+                                            }
+                                            setTimeout(() => setAiTestStatus("idle"), 3000);
+                                            return;
+                                        }
 
                                         const data = await api.ai.testConnection();
                                         if (data.success) {
