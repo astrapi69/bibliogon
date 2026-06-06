@@ -168,17 +168,14 @@ export default function BookEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
-  // Probe plugin-story-bible availability once. getInfo rejects
-  // (404) when the plugin is disabled; in that case the panel +
-  // toggle stay hidden.
+  // Probe Story-Bible availability once via the storage seam. Online,
+  // getInfo rejects (404) when the plugin is disabled -> stays hidden.
+  // Offline (Dexie) the seam returns availability, so the Story Bible
+  // works against IndexedDB (Maximal Offline P3) instead of being gated.
   useEffect(() => {
-    if (offlineGate) {
-      setStoryBibleAvailable(false);
-      return;
-    }
     let cancelled = false;
-    api.storyBible
-      .getInfo()
+    getStorage()
+      .storyBible.getInfo()
       .then(() => {
         if (!cancelled) setStoryBibleAvailable(true);
       })
@@ -188,7 +185,7 @@ export default function BookEditor() {
     return () => {
       cancelled = true;
     };
-  }, [offlineGate]);
+  }, []);
 
   const _setShowMetadata = (next: boolean) => {
     setShowMetadata(next);

@@ -57,6 +57,7 @@ import {
     type StoryEntityLinkOut,
     type StoryEntityOut,
 } from "../api/client"
+import {getStorage} from "../storage";
 import {imageUrlFor} from "../utils/imageUrl"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
@@ -126,7 +127,7 @@ export default function Storyboard({
 
     useEffect(() => {
         let cancelled = false
-        api.storyBible
+        getStorage().storyBible
             .getInfo()
             .then(() => {
                 if (!cancelled) setStoryBibleAvailable(true)
@@ -155,7 +156,7 @@ export default function Storyboard({
     useEffect(() => {
         if (!storyBibleAvailable) return
         let cancelled = false
-        api.storyBible
+        getStorage().storyBible
             .listEntities(bookId)
             .then((rows) => {
                 if (!cancelled) setEntities(rows)
@@ -172,7 +173,7 @@ export default function Storyboard({
             return
         }
         let cancelled = false
-        Promise.all(entityFilter.map((id) => api.storyBible.appearances(id)))
+        Promise.all(entityFilter.map((id) => getStorage().storyBible.appearances(id)))
             .then((perEntity) => {
                 if (cancelled) return
                 // Intersection of page_ids across all selected entities.
@@ -220,7 +221,7 @@ export default function Storyboard({
     useEffect(() => {
         if (!storyBibleAvailable) return
         let cancelled = false
-        api.storyBible
+        getStorage().storyBible
             .continuityCheck(bookId)
             .then((rows) => {
                 if (cancelled) return
@@ -630,7 +631,7 @@ function StoryboardCard({
     useEffect(() => {
         if (!storyBibleAvailable) return
         let cancelled = false
-        api.storyBible
+        getStorage().storyBible
             .pageEntities(page.id)
             .then((rows) => {
                 if (!cancelled) setLinks(rows)
@@ -666,7 +667,7 @@ function StoryboardCard({
         // Idempotent: ignore a drop of an entity already linked here.
         if (links.some((l) => l.entity_id === entityId)) return
         try {
-            const link = await api.storyBible.createLink({
+            const link = await getStorage().storyBible.createLink({
                 entity_id: entityId,
                 page_id: page.id,
             })

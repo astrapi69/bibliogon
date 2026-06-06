@@ -1,0 +1,174 @@
+{
+  "character": {
+    "id": "character",
+    "label_key": "ui.story_bible.character",
+    "description_key": "ui.story_bible.character_description",
+    "icon": "User",
+    "default": true,
+    "extra_fields": [
+      {
+        "name": "aliases",
+        "type": "text",
+        "label_key": "ui.story_bible.character_field_aliases",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "role",
+        "type": "text",
+        "label_key": "ui.story_bible.character_field_role",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "traits",
+        "type": "text",
+        "label_key": "ui.story_bible.character_field_traits",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "arc_notes",
+        "type": "text",
+        "label_key": "ui.story_bible.character_field_arc_notes",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "relationships",
+        "type": "text",
+        "label_key": "ui.story_bible.character_field_relationships",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ]
+  },
+  "setting": {
+    "id": "setting",
+    "label_key": "ui.story_bible.setting",
+    "description_key": "ui.story_bible.setting_description",
+    "icon": "MapPin",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "setting_type",
+        "type": "text",
+        "label_key": "ui.story_bible.setting_field_type",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "geography",
+        "type": "text",
+        "label_key": "ui.story_bible.setting_field_geography",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "significance",
+        "type": "text",
+        "label_key": "ui.story_bible.setting_field_significance",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ]
+  },
+  "plot_point": {
+    "id": "plot_point",
+    "label_key": "ui.story_bible.plot_point",
+    "description_key": "ui.story_bible.plot_point_description",
+    "icon": "Milestone",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "timeline_position",
+        "type": "number",
+        "label_key": "ui.story_bible.plot_point_field_timeline_position",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "story_beat",
+        "type": "enum",
+        "label_key": "ui.story_bible.plot_point_field_beat",
+        "values": [
+          "setup",
+          "inciting_incident",
+          "rising_action",
+          "climax",
+          "falling_action",
+          "resolution"
+        ],
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "involved_characters",
+        "type": "text",
+        "label_key": "ui.story_bible.plot_point_field_involved",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ]
+  },
+  "item": {
+    "id": "item",
+    "label_key": "ui.story_bible.item",
+    "description_key": "ui.story_bible.item_description",
+    "icon": "Package",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "significance",
+        "type": "text",
+        "label_key": "ui.story_bible.item_field_significance",
+        "values": null,
+        "min": null,
+        "max": null
+      },
+      {
+        "name": "current_holder",
+        "type": "text",
+        "label_key": "ui.story_bible.item_field_current_holder",
+        "values": null,
+        "min": null,
+        "max": null
+      }
+    ]
+  },
+  "lore": {
+    "id": "lore",
+    "label_key": "ui.story_bible.lore",
+    "description_key": "ui.story_bible.lore_description",
+    "icon": "BookMarked",
+    "default": false,
+    "extra_fields": [
+      {
+        "name": "category",
+        "type": "enum",
+        "label_key": "ui.story_bible.lore_field_category",
+        "values": [
+          "magic",
+          "technology",
+          "culture",
+          "history",
+          "religion",
+          "language",
+          "other"
+        ],
+        "min": null,
+        "max": null
+      }
+    ]
+  }
+}

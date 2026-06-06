@@ -49,6 +49,7 @@ import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
 import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
 import {api, ApiError, SaveAbortedError} from "../api/client";
+import {getStorage} from "../storage";
 import {notify} from "../utils/notify";
 import {editorToMarkdown} from "../utils/tiptap-markdown";
 
@@ -730,7 +731,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         const query = text.trim();
         if (!mentionBookId || !query) return;
         try {
-            const matches = await api.storyBible.listEntities(mentionBookId, undefined, query);
+            const matches = await getStorage().storyBible.listEntities(mentionBookId, undefined, query);
             if (matches.length && onOpenStoryEntity) {
                 onOpenStoryEntity(matches[0].id);
             } else {

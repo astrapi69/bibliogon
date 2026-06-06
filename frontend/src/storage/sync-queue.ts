@@ -175,5 +175,7 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     // Chapter labels: local-only offline writes (replay deferred, like
     // authors); straight passthrough so the seam stays complete.
     chapterLabels: base.chapterLabels,
+    // Story Bible: local-only offline writes (replay deferred); passthrough.
+    storyBible: base.storyBible,
   };
 }

@@ -150,6 +150,78 @@ describe("DexieStorage — chapter labels", () => {
   });
 });
 
+describe("DexieStorage — story bible", () => {
+  it("entity CRUD + relationships + links + export round-trip", async () => {
+    // Entity types come from the seeded registry.
+    const types = await dexieStorage.storyBible.listEntityTypes();
+    expect(Object.keys(types)).toContain("character");
+
+    const hero = await dexieStorage.storyBible.createEntity("b1", {
+      entity_type: "character",
+      name: "Hero",
+      description: "The protagonist.",
+    });
+    const villain = await dexieStorage.storyBible.createEntity("b1", {
+      entity_type: "character",
+      name: "Villain",
+      relationships: [{ target_entity_id: hero.id, relationship_type: "rival" }],
+    });
+    expect(hero.position).toBe(0);
+    expect(hero.entity_metadata).toEqual({});
+
+    // List is book-scoped + type/search filterable.
+    await dexieStorage.storyBible.createEntity("other", {
+      entity_type: "setting",
+      name: "Elsewhere",
+    });
+    expect((await dexieStorage.storyBible.listEntities("b1")).map((e) => e.name)).toEqual([
+      "Hero",
+      "Villain",
+    ]);
+    expect(
+      (await dexieStorage.storyBible.listEntities("b1", undefined, "vill")).map(
+        (e) => e.name,
+      ),
+    ).toEqual(["Villain"]);
+
+    // Relationships resolve to the full target entity.
+    const rels = await dexieStorage.storyBible.getRelationships("b1", villain.id);
+    expect(rels).toHaveLength(1);
+    expect(rels[0].relationship_type).toBe("rival");
+    expect(rels[0].target.name).toBe("Hero");
+
+    // Links embed their entity; appearances + pageEntities read them back.
+    const link = await dexieStorage.storyBible.createLink({
+      entity_id: hero.id,
+      page_id: "p1",
+      role: "lead",
+    });
+    expect(link.entity.name).toBe("Hero");
+    expect((await dexieStorage.storyBible.pageEntities("p1")).map((l) => l.entity.name)).toEqual([
+      "Hero",
+    ]);
+    expect(await dexieStorage.storyBible.appearances(hero.id)).toHaveLength(1);
+
+    // Markdown export groups by type.
+    const exported = await dexieStorage.storyBible.exportBible("b1");
+    expect(exported.format).toBe("markdown");
+    expect(exported.content).toContain("# Story Bible");
+    expect(exported.content).toContain("### Hero");
+
+    // Deleting an entity cascades its links + drops stale relationships.
+    await dexieStorage.storyBible.deleteEntity(hero.id);
+    expect(await dexieStorage.storyBible.appearances(hero.id)).toEqual([]);
+    expect(await dexieStorage.storyBible.pageEntities("p1")).toEqual([]);
+    expect(await dexieStorage.storyBible.getRelationships("b1", villain.id)).toEqual([]);
+
+    // Text-analysis methods are empty offline (not an error).
+    expect(await dexieStorage.storyBible.autoDetect("b1")).toEqual([]);
+    expect(await dexieStorage.storyBible.continuityCheck("b1")).toEqual([]);
+    // getInfo reports availability so the UI un-gates.
+    expect((await dexieStorage.storyBible.getInfo()).plugin).toBe("story-bible");
+  });
+});
+
 describe("DexieStorage — publishing surfaces (offline defaults)", () => {
   it("returns empty publications/platforms + an empty plugin-status map", async () => {
     // These backend-only reads must resolve to empty offline so opening

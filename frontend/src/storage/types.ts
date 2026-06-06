@@ -125,6 +125,29 @@ export interface ChapterLabelStorage {
   remove: typeof api.chapterLabels.remove;
 }
 
+/** Story Bible: per-book fiction-entity database + entity-page/chapter links.
+ *  Entity + link CRUD and relationship resolution work offline against the
+ *  Dexie storyEntities / storyEntityPageLinks tables (+ the seeded entity-type
+ *  registry). The text-analysis methods (autoDetect / continuityCheck) return
+ *  empty offline, and exportBible is generated client-side. */
+export interface StoryBibleStorage {
+  getInfo: typeof api.storyBible.getInfo;
+  listEntityTypes: typeof api.storyBible.listEntityTypes;
+  listEntities: typeof api.storyBible.listEntities;
+  createEntity: typeof api.storyBible.createEntity;
+  getEntity: typeof api.storyBible.getEntity;
+  updateEntity: typeof api.storyBible.updateEntity;
+  deleteEntity: typeof api.storyBible.deleteEntity;
+  getRelationships: typeof api.storyBible.getRelationships;
+  autoDetect: typeof api.storyBible.autoDetect;
+  appearances: typeof api.storyBible.appearances;
+  pageEntities: typeof api.storyBible.pageEntities;
+  createLink: typeof api.storyBible.createLink;
+  deleteLink: typeof api.storyBible.deleteLink;
+  continuityCheck: typeof api.storyBible.continuityCheck;
+  exportBible: typeof api.storyBible.exportBible;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -141,4 +164,5 @@ export interface IStorageService {
   articlePlatforms: ArticlePlatformStorage;
   editorPluginStatus: EditorPluginStatusStorage;
   chapterLabels: ChapterLabelStorage;
+  storyBible: StoryBibleStorage;
 }

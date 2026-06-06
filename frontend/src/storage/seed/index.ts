@@ -13,11 +13,13 @@ import type {
     BookTypeDef,
     ContentTypeDef,
     DiscoveredPlugin,
+    StoryEntityTypeDef,
 } from "../../api/client";
 
 import seedSettings from "./seed-settings.json";
 import seedBookTypes from "./seed-book-types.json";
 import seedContentTypes from "./seed-content-types.json";
+import seedStoryEntityTypes from "./seed-story-entity-types.json";
 import seedPluginMetadata from "./seed-plugin-metadata.json";
 import i18nDe from "./seed-i18n-de.json";
 import i18nEn from "./seed-i18n-en.json";
@@ -41,6 +43,12 @@ export const SEED_BOOK_TYPES = seedBookTypes as unknown as Record<
 export const SEED_CONTENT_TYPES = seedContentTypes as unknown as Record<
     string,
     ContentTypeDef
+>;
+
+/** {id: StoryEntityTypeDef} (mirrors GET /api/story-bible/entity-types). */
+export const SEED_STORY_ENTITY_TYPES = seedStoryEntityTypes as unknown as Record<
+    string,
+    StoryEntityTypeDef
 >;
 
 /** Standard visible plugins (mirrors GET /api/settings/plugins/discovered). */

@@ -19,6 +19,7 @@ import {ReactRenderer} from "@tiptap/react"
 import type {Editor, Range} from "@tiptap/core"
 
 import {api, type StoryEntityOut} from "../api/client"
+import {getStorage} from "../storage";
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
 import styles from "./storyBibleMention.module.css"
 
@@ -199,7 +200,7 @@ export function createStoryBibleMention(bookId: string, labels: MentionLabels = 
             char: "@",
             items: async ({query}: {query: string}) => {
                 try {
-                    return await api.storyBible.listEntities(bookId, undefined, query)
+                    return await getStorage().storyBible.listEntities(bookId, undefined, query)
                 } catch {
                     return []
                 }

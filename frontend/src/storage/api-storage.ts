@@ -28,6 +28,7 @@ import type {
   IStorageService,
   PublicationStorage,
   SettingsStorage,
+  StoryBibleStorage,
   WritingSessionsStorage,
 } from "./types";
 
@@ -80,5 +81,8 @@ export const apiStorage: IStorageService = {
   },
   get chapterLabels(): ChapterLabelStorage {
     return api.chapterLabels;
+  },
+  get storyBible(): StoryBibleStorage {
+    return api.storyBible;
   },
 };

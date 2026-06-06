@@ -26,6 +26,7 @@ import {
     type StoryEntityLinkOut,
     type StoryEntityOut,
 } from "../api/client"
+import {getStorage} from "../storage";
 import {useI18n} from "../hooks/useI18n"
 import {relationshipColor} from "./relationshipColors"
 import {entityTypeColor} from "./storyBibleIcons"
@@ -83,7 +84,7 @@ export default function StoryboardArcView({
         let cancelled = false
         Promise.all(
             entities.map((e) =>
-                api.storyBible
+                getStorage().storyBible
                     .appearances(e.id)
                     .then((rows) => [e.id, rows] as const)
                     .catch(() => [e.id, [] as StoryEntityLinkOut[]] as const),

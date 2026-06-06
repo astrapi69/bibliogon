@@ -138,6 +138,29 @@ test.describe("Offline PWA (Dexie mode)", () => {
         expect(download.suggestedFilename()).toMatch(/\.md$/);
     });
 
+    test("story bible works offline: add an entity, it persists in Dexie", async ({
+        page,
+    }) => {
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Saga");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Saga").first()).toBeVisible({ timeout: 10000 });
+        await page.getByText("Saga").first().click();
+        await page.waitForURL(/\/book\//);
+
+        // The Story Bible is un-gated offline (seam getInfo reports available).
+        await page.getByTestId("story-bible-toggle").click();
+        await expect(page.getByTestId("story-bible-sidebar")).toBeVisible();
+
+        // Add a character; the seeded entity-type registry drives the group.
+        await page.getByTestId("story-bible-group-toggle-character").click();
+        await page.getByTestId("story-bible-add-character").click();
+        await page.getByTestId("story-bible-add-input-character").fill("Frodo");
+        await page.getByTestId("story-bible-add-save-character").click();
+        await expect(page.getByText("Frodo").first()).toBeVisible();
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {

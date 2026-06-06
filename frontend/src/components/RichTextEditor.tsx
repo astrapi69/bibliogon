@@ -42,6 +42,7 @@ import { useEffect, useRef } from "react";
 
 import { useI18n } from "../hooks/useI18n";
 import { api } from "../api/client";
+import {getStorage} from "../storage";
 import { notify } from "../utils/notify";
 import EditorContextMenu from "./EditorContextMenu";
 import {
@@ -194,7 +195,7 @@ export default function RichTextEditor({
     const query = text.trim();
     if (!mentionBookId || !onMentionClick || !query) return;
     try {
-      const matches = await api.storyBible.listEntities(
+      const matches = await getStorage().storyBible.listEntities(
         mentionBookId,
         undefined,
         query,

@@ -111,6 +111,18 @@ def generate_content_types() -> None:
     _write_json("seed-content-types.json", data)
 
 
+def generate_story_entity_types() -> None:
+    from app.services.story_entity_registry import load_story_entity_types
+
+    data = {
+        type_id: definition.model_dump(mode="json")
+        for type_id, definition in load_story_entity_types().items()
+    }
+    if not data:
+        raise SystemExit("ERROR: load_story_entity_types() returned nothing")
+    _write_json("seed-story-entity-types.json", data)
+
+
 def generate_plugin_metadata() -> None:
     plugins = []
     for name in VISIBLE_PLUGINS:
@@ -143,6 +155,7 @@ def main() -> None:
     generate_settings()
     generate_book_types()
     generate_content_types()
+    generate_story_entity_types()
     generate_plugin_metadata()
     print("Done.")
 

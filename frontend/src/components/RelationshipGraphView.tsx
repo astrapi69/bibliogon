@@ -23,6 +23,7 @@ import {
   type StoryEntityRelationship,
   type RelationshipType,
 } from "../api/client";
+import {getStorage} from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { useDialog } from "./AppDialog";
 import { notify } from "../utils/notify";
@@ -152,7 +153,7 @@ export default function RelationshipGraphView({
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const list = await api.storyBible.listEntities(bookId);
+      const list = await getStorage().storyBible.listEntities(bookId);
       setEntities(list);
       setNodes(buildNodes(list, positionsRef.current));
       setEdges(buildEdges(list));
@@ -252,7 +253,7 @@ export default function RelationshipGraphView({
       return;
     }
     try {
-      await api.storyBible.updateEntity(source.id, {
+      await getStorage().storyBible.updateEntity(source.id, {
         relationships: addRelationship(
           source,
           pending.target,
@@ -285,7 +286,7 @@ export default function RelationshipGraphView({
     );
     if (!ok) return;
     try {
-      await api.storyBible.updateEntity(source.id, {
+      await getStorage().storyBible.updateEntity(source.id, {
         relationships: removeRelationship(source, edge.target),
       });
       await load();

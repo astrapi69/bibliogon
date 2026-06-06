@@ -18,6 +18,7 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import type {JSONContent} from "@tiptap/react";
 import {ArrowLeft, MapPin, Plus, Trash2, Users, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
+import {getStorage} from "../storage";
 import type {
     RelationshipType,
     StoryEntityExtraField,
@@ -80,8 +81,8 @@ export default function StoryEntityEditor({
         let cancelled = false;
         setLoading(true);
         Promise.all([
-            api.storyBible.getEntity(entityId),
-            api.storyBible.listEntityTypes(),
+            getStorage().storyBible.getEntity(entityId),
+            getStorage().storyBible.listEntityTypes(),
         ])
             .then(([row, typeMap]) => {
                 if (cancelled) return;
@@ -128,24 +129,31 @@ export default function StoryEntityEditor({
 
     useEffect(() => {
         let cancelled = false;
-        api.storyBible
+        getStorage().storyBible
             .appearances(entityId)
             .then((rows) => {
                 if (!cancelled) setAppearances(rows);
             })
             .catch(() => {});
         if (bookId) {
-            api.pages
-                .list(bookId)
-                .then((rows) => {
-                    if (cancelled) return;
-                    setPagePos(
-                        Object.fromEntries(rows.map((p) => [p.id, p.position])),
-                    );
-                })
-                .catch(() => {});
-            api.books
-                .get(bookId)
+            // Page positions only matter for pageable books; skip the call
+            // offline until the pages seam lands (P3d) so the Story-Bible
+            // editor fires no /api in Dexie mode.
+            if (getStorage().mode !== "dexie") {
+                api.pages
+                    .list(bookId)
+                    .then((rows) => {
+                        if (cancelled) return;
+                        setPagePos(
+                            Object.fromEntries(
+                                rows.map((p) => [p.id, p.position]),
+                            ),
+                        );
+                    })
+                    .catch(() => {});
+            }
+            getStorage()
+                .books.get(bookId)
                 .then((book) => {
                     if (cancelled) return;
                     setChapterTitles(
@@ -155,7 +163,7 @@ export default function StoryEntityEditor({
                     );
                 })
                 .catch(() => {});
-            api.storyBible
+            getStorage().storyBible
                 .listEntities(bookId)
                 .then((rows) => {
                     if (cancelled) return;
@@ -171,7 +179,7 @@ export default function StoryEntityEditor({
     const handleRemoveAppearance = useCallback(
         async (linkId: string) => {
             try {
-                await api.storyBible.deleteLink(linkId);
+                await getStorage().storyBible.deleteLink(linkId);
                 setApprRefresh((k) => k + 1);
                 onChanged();
             } catch (err) {
@@ -192,7 +200,7 @@ export default function StoryEntityEditor({
     const persist = useCallback(
         async (patch: Parameters<typeof api.storyBible.updateEntity>[1]) => {
             try {
-                const updated = await api.storyBible.updateEntity(
+                const updated = await getStorage().storyBible.updateEntity(
                     entityId,
                     patch,
                 );
@@ -263,7 +271,7 @@ export default function StoryEntityEditor({
         );
         if (!ok) return;
         try {
-            await api.storyBible.deleteEntity(entity.id);
+            await getStorage().storyBible.deleteEntity(entity.id);
             onDeleted();
         } catch (err) {
             notify.error(

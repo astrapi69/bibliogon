@@ -2,7 +2,7 @@
  * StoryBibleSidebar — a per-book Story Bible panel that mounts
  * alongside the ChapterSidebar in BookEditor (STORY-BIBLE-PLUGIN-01
  * Session 2 C4). Gated on plugin-story-bible being active (the
- * parent only mounts this when ``api.storyBible.getInfo()``
+ * parent only mounts this when ``getStorage().storyBible.getInfo()``
  * resolved).
  *
  * Shows the book's entities grouped by entity type (Characters,
@@ -19,6 +19,7 @@
 import {useCallback, useEffect, useMemo, useState} from "react";
 import {ChevronDown, ChevronRight, Download, Plus, Sparkles, Trash2, X} from "lucide-react";
 import {api, ApiError} from "../api/client";
+import {getStorage} from "../storage";
 import type {
     StoryEntityAutoDetectProposal,
     StoryEntityOut,
@@ -79,7 +80,7 @@ export default function StoryBibleSidebar({
     const handleAutoDetect = useCallback(async () => {
         setDetecting(true);
         try {
-            const found = await api.storyBible.autoDetect(bookId);
+            const found = await getStorage().storyBible.autoDetect(bookId);
             setProposals(found);
             if (found.length === 0) {
                 notify.info(
@@ -105,7 +106,7 @@ export default function StoryBibleSidebar({
         try {
             for (const p of proposals) {
                 try {
-                    await api.storyBible.createLink({
+                    await getStorage().storyBible.createLink({
                         entity_id: p.entity_id,
                         page_id: p.page_id ?? null,
                         chapter_id: p.chapter_id ?? null,
@@ -129,7 +130,7 @@ export default function StoryBibleSidebar({
     }, [proposals, t]);
 
     const refreshEntities = useCallback(async () => {
-        const rows = await api.storyBible.listEntities(bookId);
+        const rows = await getStorage().storyBible.listEntities(bookId);
         setEntities(rows);
     }, [bookId]);
 
@@ -137,8 +138,8 @@ export default function StoryBibleSidebar({
         let cancelled = false;
         setLoading(true);
         Promise.all([
-            api.storyBible.listEntityTypes(),
-            api.storyBible.listEntities(bookId),
+            getStorage().storyBible.listEntityTypes(),
+            getStorage().storyBible.listEntities(bookId),
         ])
             .then(([typeMap, rows]) => {
                 if (cancelled) return;
@@ -189,7 +190,7 @@ export default function StoryBibleSidebar({
         const name = newName.trim();
         if (!name) return;
         try {
-            await api.storyBible.createEntity(bookId, {
+            await getStorage().storyBible.createEntity(bookId, {
                 entity_type: typeId,
                 name,
             });
@@ -221,7 +222,7 @@ export default function StoryBibleSidebar({
         );
         if (!ok) return;
         try {
-            await api.storyBible.deleteEntity(entity.id);
+            await getStorage().storyBible.deleteEntity(entity.id);
             await refreshEntities();
         } catch (err) {
             notify.error(
@@ -238,7 +239,7 @@ export default function StoryBibleSidebar({
     // C12: export the Story Bible as a downloadable Markdown file.
     const handleExport = async () => {
         try {
-            const {filename, content} = await api.storyBible.exportBible(bookId);
+            const {filename, content} = await getStorage().storyBible.exportBible(bookId);
             const blob = new Blob([content], {type: "text/markdown"});
             const url = URL.createObjectURL(blob);
             const a = document.createElement("a");
