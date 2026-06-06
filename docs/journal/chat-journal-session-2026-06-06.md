@@ -102,13 +102,28 @@ The per-book fiction-entity database now works on the backendless build:
 
 ## Remaining (tracked in #34)
 
-P3 still open (each a focused sub-project; the Dexie tables already exist from
-offline-download, so it's seam-methods + un-gate + wire, same as the shipped
-ones):
-- **pages** (picture-book) + **comics**: un-gate the editors, CRUD over the
-  existing `pages` / `comicPanels` / `comicBubbles` tables.
-- **comments**: needs a new Dexie table (schema bump) + admin CRUD.
-- **assets**: IndexedDB blobs (binary) — most complex, last.
+## 9. P3 — picture-book pages + comic panels/bubbles offline (1b1e23c4)
+
+`PageStorage` + `ComicsStorage` seams + apiStorage getters + sync-queue
+passthrough; DexieStorage CRUD over the existing `pages` / `comicPanels` /
+`comicBubbles` tables (scoped, position-ordered, cascade-on-delete, backend
+bubble defaults mirrored; `comics.getInfo` reports available). Routed the 8
+page/comic call sites through `getStorage()`; ComicBookEditor skips its
+`api.assets` thumbnail probe offline (images = P3e). Removed the three
+BookEditor offline gates (page/comic editor, prose Storyboard, relationship
+graph) — all render offline now. Dexie round-trip tests (pages reorder +
+panel/bubble cascade) + offline E2E (picture-book → add page). Fixed a
+lazy-import teardown race in useStorageMode.test. Vitest 2740; build green.
+Pushed live.
+
+## Remaining (tracked in #34)
+
+- **comments**: needs a new Dexie table (schema bump) + admin CRUD. Low offline
+  value until P4 (no offline data source — comments come from Medium import).
+- **assets**: IndexedDB blobs (binary upload + blob-URL serving) — unlocks
+  images in the picture-book/comic editors offline. Most complex; last.
+- **P4**: AI via the user's own provider key + client-side Medium import; plus
+  the deferred Settings > Export engine chooser.
 
 P4 — AI via the user's own provider key + client-side Medium import. Plus the
 deferred export-engine chooser. All multi-session.
