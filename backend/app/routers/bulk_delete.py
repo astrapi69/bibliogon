@@ -54,10 +54,9 @@ from typing import cast
 
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
-from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app.models import Article, ArticleComment, Book
+from app.repositories.bulk import BulkRepository, get_bulk_repository
 
 logger = logging.getLogger(__name__)
 
@@ -90,7 +89,7 @@ def _bulk_delete(
     model: type[Article] | type[Book] | type[ArticleComment],
     ids: list[str],
     permanent: bool,
-    db: Session,
+    repo: BulkRepository,
 ) -> BulkDeleteResponse:
     """Shared core. Same shape for Article / Book / ArticleComment;
     the SQLAlchemy cascade configuration on each model handles child
@@ -102,13 +101,12 @@ def _bulk_delete(
     # Single query loads every requested row in one round-trip. We
     # don't pre-filter ``deleted_at`` here because both code paths
     # need to know whether a requested ID actually exists.
-    # ``cast`` because SQLAlchemy's ``db.query(model).all()`` returns
-    # ``list[Base]`` (the declarative-base superclass), but the caller
-    # always passes Article / Book / ArticleComment so the runtime
-    # rows DO carry the expected attributes.
+    # ``cast`` because the generic ``repo.get_by_ids`` returns
+    # ``list[Any]``, but the caller always passes Article / Book /
+    # ArticleComment so the runtime rows DO carry the expected attributes.
     rows = cast(
         "list[Article | Book | ArticleComment]",
-        db.query(model).filter(model.id.in_(ids)).all(),
+        repo.get_by_ids(model, ids),
     )
     by_id: dict[str, Article | Book | ArticleComment] = {row.id: row for row in rows}
 
@@ -120,7 +118,7 @@ def _bulk_delete(
 
         if permanent:
             try:
-                db.delete(row)
+                repo.delete(row)
                 deleted_count += 1
             except Exception as exc:  # noqa: BLE001 - boundary handler
                 logger.exception("bulk-delete: failed on %s", row_id)
@@ -141,7 +139,7 @@ def _bulk_delete(
                 logger.exception("bulk-delete: failed on %s", row_id)
                 failed.append(_FailedItem(id=row_id, error=str(exc)))
 
-    db.commit()
+    repo.commit()
     return BulkDeleteResponse(
         deleted_count=deleted_count,
         skipped_already_trashed=skipped,
@@ -152,25 +150,25 @@ def _bulk_delete(
 @articles_router.post("/bulk-delete", response_model=BulkDeleteResponse)
 def bulk_delete_articles(
     body: BulkDeleteRequest,
-    db: Session = Depends(get_db),
+    repo: BulkRepository = Depends(get_bulk_repository),
 ) -> BulkDeleteResponse:
-    return _bulk_delete(Article, body.ids, body.permanent, db)
+    return _bulk_delete(Article, body.ids, body.permanent, repo)
 
 
 @books_router.post("/bulk-delete", response_model=BulkDeleteResponse)
 def bulk_delete_books(
     body: BulkDeleteRequest,
-    db: Session = Depends(get_db),
+    repo: BulkRepository = Depends(get_bulk_repository),
 ) -> BulkDeleteResponse:
-    return _bulk_delete(Book, body.ids, body.permanent, db)
+    return _bulk_delete(Book, body.ids, body.permanent, repo)
 
 
 @comments_router.post("/bulk-delete", response_model=BulkDeleteResponse)
 def bulk_delete_comments(
     body: BulkDeleteRequest,
-    db: Session = Depends(get_db),
+    repo: BulkRepository = Depends(get_bulk_repository),
 ) -> BulkDeleteResponse:
-    return _bulk_delete(ArticleComment, body.ids, body.permanent, db)
+    return _bulk_delete(ArticleComment, body.ids, body.permanent, repo)
 
 
 # ---------------------------------------------------------------------------
@@ -205,7 +203,7 @@ class BulkRestoreResponse(BaseModel):
 def _bulk_restore(
     model: type[Article] | type[Book],
     ids: list[str],
-    db: Session,
+    repo: BulkRepository,
 ) -> BulkRestoreResponse:
     """Shared core. Same shape as ``_bulk_delete`` but inverse:
     clear ``deleted_at`` on every row whose ``deleted_at IS NOT NULL``.
@@ -220,7 +218,7 @@ def _bulk_restore(
 
     rows = cast(
         "list[Article | Book]",
-        db.query(model).filter(model.id.in_(ids)).all(),
+        repo.get_by_ids(model, ids),
     )
     by_id: dict[str, Article | Book] = {row.id: row for row in rows}
 
@@ -239,7 +237,7 @@ def _bulk_restore(
             logger.exception("bulk-restore: failed on %s", row_id)
             failed.append(_RestoreFailedItem(id=row_id, error=str(exc)))
 
-    db.commit()
+    repo.commit()
     return BulkRestoreResponse(
         restored_count=restored_count,
         skipped_not_in_trash=skipped,
@@ -250,14 +248,14 @@ def _bulk_restore(
 @articles_router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
 def bulk_restore_articles(
     body: BulkRestoreRequest,
-    db: Session = Depends(get_db),
+    repo: BulkRepository = Depends(get_bulk_repository),
 ) -> BulkRestoreResponse:
-    return _bulk_restore(Article, body.ids, db)
+    return _bulk_restore(Article, body.ids, repo)
 
 
 @books_router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
 def bulk_restore_books(
     body: BulkRestoreRequest,
-    db: Session = Depends(get_db),
+    repo: BulkRepository = Depends(get_bulk_repository),
 ) -> BulkRestoreResponse:
-    return _bulk_restore(Book, body.ids, db)
+    return _bulk_restore(Book, body.ids, repo)
