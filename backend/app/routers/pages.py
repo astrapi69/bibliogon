@@ -24,17 +24,16 @@ import json
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app.models import Book, Page
+from app.repositories.pages import PageRepository, get_page_repository
 from app.schemas import PageCreate, PageOut, PagesReorder, PageUpdate
 from app.services.book_type_registry import pageable_book_types
 
 router = APIRouter(prefix="/books", tags=["pages"])
 
 
-def _get_pageable_book_or_400(book_id: str, db: Session) -> Book:
+def _get_pageable_book_or_400(book_id: str, repo: PageRepository) -> Book:
     """Resolve the book and enforce the page-based book_type gate.
 
     Returns the Book row when it exists, is not soft-deleted, and is
@@ -50,7 +49,7 @@ def _get_pageable_book_or_400(book_id: str, db: Session) -> Book:
     Adding a new page-based book type means flipping its
     content_model field, not editing this file.
     """
-    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
+    book = repo.get_book(book_id)
     if not book:
         raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
     pageable = pageable_book_types()
@@ -78,10 +77,13 @@ def _serialize_layout_config(config: dict[str, Any] | None) -> str | None:
 
 
 @router.get("/{book_id}/pages", response_model=list[PageOut])
-def list_pages(book_id: str, db: Session = Depends(get_db)) -> list[Page]:
+def list_pages(
+    book_id: str,
+    repo: PageRepository = Depends(get_page_repository),
+) -> list[Page]:
     """List a book's pages ordered by position ascending."""
-    _get_pageable_book_or_400(book_id, db)
-    return db.query(Page).filter(Page.book_id == book_id).order_by(Page.position.asc()).all()
+    _get_pageable_book_or_400(book_id, repo)
+    return list(repo.list(book_id))
 
 
 @router.post(
@@ -89,20 +91,18 @@ def list_pages(book_id: str, db: Session = Depends(get_db)) -> list[Page]:
     response_model=PageOut,
     status_code=status.HTTP_201_CREATED,
 )
-def create_page(book_id: str, payload: PageCreate, db: Session = Depends(get_db)) -> Page:
+def create_page(
+    book_id: str,
+    payload: PageCreate,
+    repo: PageRepository = Depends(get_page_repository),
+) -> Page:
     """Append a new page to the end of a book.
 
     Position is the (max existing position + 1), or 1 if the book has
     no pages yet. Use POST .../reorder to move pages after creation.
     """
-    _get_pageable_book_or_400(book_id, db)
-    max_pos = (
-        db.query(Page.position)
-        .filter(Page.book_id == book_id)
-        .order_by(Page.position.desc())
-        .first()
-    )
-    next_position = (max_pos[0] + 1) if max_pos else 1
+    _get_pageable_book_or_400(book_id, repo)
+    next_position = repo.next_position(book_id)
     page = Page(
         book_id=book_id,
         position=next_position,
@@ -115,10 +115,7 @@ def create_page(book_id: str, payload: PageCreate, db: Session = Depends(get_db)
         mood_color=payload.mood_color,
         act_group=payload.act_group,
     )
-    db.add(page)
-    db.commit()
-    db.refresh(page)
-    return page
+    return repo.add(page)
 
 
 @router.patch("/{book_id}/pages/{page_id}", response_model=PageOut)
@@ -126,15 +123,15 @@ def update_page(
     book_id: str,
     page_id: str,
     payload: PageUpdate,
-    db: Session = Depends(get_db),
+    repo: PageRepository = Depends(get_page_repository),
 ) -> Page:
     """Update a page's layout / text / image / bubble config.
 
     Position is NOT mutable here. Use POST .../reorder for position
     changes so the entire reorder runs in one atomic transaction.
     """
-    _get_pageable_book_or_400(book_id, db)
-    page = db.query(Page).filter(Page.id == page_id, Page.book_id == book_id).first()
+    _get_pageable_book_or_400(book_id, repo)
+    page = repo.get(book_id, page_id)
     if not page:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
     update_data = payload.model_dump(exclude_unset=True)
@@ -142,16 +139,14 @@ def update_page(
         update_data["layout_config"] = _serialize_layout_config(update_data["layout_config"])
     for key, value in update_data.items():
         setattr(page, key, value)
-    db.commit()
-    db.refresh(page)
-    return page
+    return repo.save(page)
 
 
 @router.delete("/{book_id}/pages/{page_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_page(
     book_id: str,
     page_id: str,
-    db: Session = Depends(get_db),
+    repo: PageRepository = Depends(get_page_repository),
 ) -> None:
     """Delete a page and shift remaining pages' positions down.
 
@@ -159,24 +154,18 @@ def delete_page(
     Runs in one transaction so a partial failure leaves no rows
     half-reordered.
     """
-    _get_pageable_book_or_400(book_id, db)
-    page = db.query(Page).filter(Page.id == page_id, Page.book_id == book_id).first()
+    _get_pageable_book_or_400(book_id, repo)
+    page = repo.get(book_id, page_id)
     if not page:
         raise HTTPException(status_code=404, detail=f"Page {page_id} not found")
-    deleted_position = page.position
-    db.delete(page)
-    # Shift every page after the deleted one down by 1.
-    db.query(Page).filter(Page.book_id == book_id, Page.position > deleted_position).update(
-        {Page.position: Page.position - 1}, synchronize_session=False
-    )
-    db.commit()
+    repo.delete_and_compact(book_id, page)
 
 
 @router.post("/{book_id}/pages/reorder", response_model=list[PageOut])
 def reorder_pages(
     book_id: str,
     payload: PagesReorder,
-    db: Session = Depends(get_db),
+    repo: PageRepository = Depends(get_page_repository),
 ) -> list[Page]:
     """Apply a new order to the book's pages in a single transaction.
 
@@ -184,8 +173,8 @@ def reorder_pages(
     (any missing or extra id is a 400; this catches stale clients
     that submit a reorder against an out-of-date page set).
     """
-    _get_pageable_book_or_400(book_id, db)
-    pages = db.query(Page).filter(Page.book_id == book_id).all()
+    _get_pageable_book_or_400(book_id, repo)
+    pages = list(repo.list(book_id))
     existing_ids = {p.id for p in pages}
     requested_ids = set(payload.page_ids)
     if existing_ids != requested_ids:
@@ -206,8 +195,8 @@ def reorder_pages(
     sentinel_base = len(pages) + 1000
     for offset, page in enumerate(pages, start=1):
         page.position = sentinel_base + offset
-    db.flush()
+    repo.flush()
     for new_position, page_id in enumerate(payload.page_ids, start=1):
         pages_by_id[page_id].position = new_position
-    db.commit()
-    return db.query(Page).filter(Page.book_id == book_id).order_by(Page.position.asc()).all()
+    repo.commit()
+    return list(repo.list(book_id))
