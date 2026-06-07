@@ -13,7 +13,8 @@ import {useEffect, useRef, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {RotateCcw, Trash, Trash2} from "lucide-react";
 
-import {api, ApiError, type ArticleComment} from "../api/client";
+import {ApiError, type ArticleComment} from "../api/client";
+import {getStorage} from "../storage";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {RadixSelect} from "./RadixSelect";
@@ -63,7 +64,7 @@ export default function CommentsAdminSection() {
     // Bug 10: view-mode toggle. ``"active"`` is the historical
     // CommentsAdmin behaviour (lists rows with ``deleted_at IS
     // NULL``); ``"trash"`` lists soft-deleted rows via
-    // ``api.comments.listTrashed`` and swaps per-row Delete for
+    // ``getStorage().comments.listTrashed`` and swaps per-row Delete for
     // Restore + Permanent-Delete. Mirrors the AD / BD
     // ``trash-toggle`` pattern (see Dashboard.tsx / ArticleList.tsx).
     const [viewMode, setViewMode] = useState<ViewMode>("active");
@@ -112,8 +113,8 @@ export default function CommentsAdminSection() {
         setLoadError(null);
         const fetcher =
             viewMode === "trash"
-                ? api.comments.listTrashed()
-                : api.comments.list({
+                ? getStorage().comments.listTrashed()
+                : getStorage().comments.list({
                       importedFrom: filters.importedFrom || undefined,
                       orphansOnly: filters.orphansOnly,
                       limit: pageLimit,
@@ -156,8 +157,8 @@ export default function CommentsAdminSection() {
     // is a dedicated ``GET /comments/trash/count`` endpoint; until
     // then the existing list endpoint is sufficient.
     const refreshTrashCount = () => {
-        api.comments
-            .listTrashed()
+        getStorage()
+            .comments.listTrashed()
             .then((rows) => setTrashCount(rows.length))
             .catch(() => {
                 /* badge is non-critical; silent failure is OK */
@@ -208,7 +209,7 @@ export default function CommentsAdminSection() {
         if (!ok) return;
         setPendingReclassify(row.id);
         try {
-            const result = await api.comments.reclassifyAsArticle(row.id);
+            const result = await getStorage().comments.reclassifyAsArticle(row.id);
             // Optimistically drop from the visible list — the comment
             // no longer exists. Also reconcile selection so the bar's
             // count never references an orphan id (per the
@@ -264,7 +265,7 @@ export default function CommentsAdminSection() {
         if (!ok) return;
         setPendingDelete(row.id);
         try {
-            await api.comments.delete(row.id);
+            await getStorage().comments.delete(row.id);
             // Optimistically drop from the visible list; cheaper
             // than a full refetch and matches the
             // "delete-and-move-on" mental model. Reconcile selection
@@ -301,7 +302,7 @@ export default function CommentsAdminSection() {
             .filter((id) => selection.isSelected(id));
         if (ordered.length < 2) return;
         try {
-            const result = await api.comments.bulkDelete(ordered, false);
+            const result = await getStorage().comments.bulkDelete(ordered, false);
             setRows((prev) =>
                 prev.filter(
                     (r) =>
@@ -341,7 +342,7 @@ export default function CommentsAdminSection() {
         const {ids} = bulkDeleteDialog;
         setBulkDeleteDialog(null);
         try {
-            const result = await api.comments.bulkDelete(ids, true);
+            const result = await getStorage().comments.bulkDelete(ids, true);
             setRows((prev) => prev.filter((r) => !ids.includes(r.id)));
             selection.clear();
             refreshTrashCount();
@@ -367,7 +368,7 @@ export default function CommentsAdminSection() {
     const handleRestore = async (row: ArticleComment) => {
         setPendingRestore(row.id);
         try {
-            await api.comments.restore(row.id);
+            await getStorage().comments.restore(row.id);
             // Optimistically drop from the trash list; the row is
             // now alive in the active list.
             setRows((prev) => prev.filter((c) => c.id !== row.id));
@@ -406,7 +407,7 @@ export default function CommentsAdminSection() {
         if (!ok) return;
         setPendingPermanent(row.id);
         try {
-            await api.comments.permanentDelete(row.id);
+            await getStorage().comments.permanentDelete(row.id);
             setRows((prev) => prev.filter((c) => c.id !== row.id));
             selection.remove(row.id);
             refreshTrashCount();
@@ -436,7 +437,7 @@ export default function CommentsAdminSection() {
             .filter((id) => selection.isSelected(id));
         if (ordered.length === 0) return;
         try {
-            const result = await api.comments.bulkRestore(ordered);
+            const result = await getStorage().comments.bulkRestore(ordered);
             setRows((prev) =>
                 prev.filter(
                     (r) =>
@@ -492,7 +493,7 @@ export default function CommentsAdminSection() {
         if (!ok) return;
         setEmptyingTrash(true);
         try {
-            await api.comments.emptyTrash();
+            await getStorage().comments.emptyTrash();
             setRows([]);
             setTrashCount(0);
             selection.clear();
