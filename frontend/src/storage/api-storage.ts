@@ -24,6 +24,7 @@ import type {
   BookTypesStorage,
   ChapterLabelStorage,
   ChapterStorage,
+  CommentStorage,
   ComicsStorage,
   ContentTypesStorage,
   CoverStorage,
@@ -114,5 +115,15 @@ export const apiStorage: IStorageService = {
   },
   get covers(): CoverStorage {
     return api.covers;
+  },
+  get comments(): CommentStorage {
+    return {
+      ...api.comments,
+      // Online, comments are created server-side (the Medium importer); the
+      // offline-only create has no api counterpart.
+      create: async () => {
+        throw new Error("comments.create is offline-only");
+      },
+    };
   },
 };

@@ -22,7 +22,7 @@
  * DOMAINS here are Bibliogon's, not adaptive-learner's.
  */
 
-import type { api } from "../api/client";
+import type { api, ArticleComment } from "../api/client";
 
 /** Which backend `getStorage()` resolves to. */
 export type StorageMode = "api" | "dexie";
@@ -209,6 +209,25 @@ export interface CoverStorage {
   delete: typeof api.covers.delete;
 }
 
+/**
+ * Imported article comments + the soft-delete / trash lifecycle. The nine
+ * api-mirroring members make the comments-admin work offline against a Dexie
+ * table; `create` is offline-only (the Medium importer creates comments in the
+ * browser — online they are created server-side, so api mode has no create).
+ */
+export interface CommentStorage {
+  list: typeof api.comments.list;
+  delete: typeof api.comments.delete;
+  reclassifyAsArticle: typeof api.comments.reclassifyAsArticle;
+  bulkDelete: typeof api.comments.bulkDelete;
+  listTrashed: typeof api.comments.listTrashed;
+  restore: typeof api.comments.restore;
+  permanentDelete: typeof api.comments.permanentDelete;
+  emptyTrash: typeof api.comments.emptyTrash;
+  bulkRestore: typeof api.comments.bulkRestore;
+  create(comment: ArticleComment): Promise<ArticleComment>;
+}
+
 export interface IStorageService {
   /** The backend this instance is. Lets the UI show "Current mode: …". */
   readonly mode: StorageMode;
@@ -230,4 +249,5 @@ export interface IStorageService {
   comics: ComicsStorage;
   assets: AssetStorage;
   covers: CoverStorage;
+  comments: CommentStorage;
 }

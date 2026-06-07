@@ -399,3 +399,94 @@ describe("DexieStorage — covers", () => {
     expect(await dexieStorage.assets.getBlob("bk", "cover-bk.png")).toBeNull();
   });
 });
+
+describe("DexieStorage — comments (admin + trash lifecycle)", () => {
+  let seq = 0;
+  const makeComment = (over: Partial<import("../api/client").ArticleComment> = {}) => {
+    seq += 1;
+    const ts = `2020-01-${String(seq).padStart(2, "0")}T00:00:00Z`;
+    return {
+      id: `c${seq}`,
+      author: "Reader",
+      body_text: "Nice post!",
+      body_json: null,
+      language: "en",
+      published_at: null,
+      canonical_url: null,
+      responds_to_article_id: null,
+      responds_to_url: null,
+      imported_from: "medium",
+      imported_at: ts,
+      source_filename: "x.html",
+      created_at: ts,
+      updated_at: ts,
+      ...over,
+    };
+  };
+
+  it("create -> list -> soft-delete -> listTrashed -> restore", async () => {
+    await dexieStorage.comments.create(makeComment({ id: "k1" }));
+    expect((await dexieStorage.comments.list()).map((c) => c.id)).toEqual(["k1"]);
+    // Returned shape has no deleted_at (matches the API ArticleComment).
+    expect("deleted_at" in (await dexieStorage.comments.list())[0]).toBe(false);
+
+    await dexieStorage.comments.delete("k1");
+    expect(await dexieStorage.comments.list()).toHaveLength(0);
+    expect((await dexieStorage.comments.listTrashed()).map((c) => c.id)).toEqual(["k1"]);
+
+    await dexieStorage.comments.restore("k1");
+    expect((await dexieStorage.comments.list()).map((c) => c.id)).toEqual(["k1"]);
+    expect(await dexieStorage.comments.listTrashed()).toHaveLength(0);
+  });
+
+  it("filters by importedFrom + orphansOnly, orders newest-first, caps to limit", async () => {
+    await dexieStorage.comments.create(makeComment({ id: "a", imported_from: "medium", responds_to_article_id: null }));
+    await dexieStorage.comments.create(makeComment({ id: "b", imported_from: "medium", responds_to_article_id: "art-1" }));
+    await dexieStorage.comments.create(makeComment({ id: "c", imported_from: "manual", responds_to_article_id: null }));
+
+    const medium = await dexieStorage.comments.list({ importedFrom: "medium" });
+    expect(medium.map((c) => c.id).sort()).toEqual(["a", "b"]);
+    const orphans = await dexieStorage.comments.list({ orphansOnly: true });
+    expect(orphans.map((c) => c.id).sort()).toEqual(["a", "c"]);
+    // Newest created_at first; limit clamps.
+    expect((await dexieStorage.comments.list({ limit: 1 }))).toHaveLength(1);
+  });
+
+  it("bulkDelete (soft) -> bulkRestore; bulkDelete (permanent) hard-removes", async () => {
+    await dexieStorage.comments.create(makeComment({ id: "p1" }));
+    await dexieStorage.comments.create(makeComment({ id: "p2" }));
+    const res = await dexieStorage.comments.bulkDelete(["p1", "p2"], false);
+    expect(res.deleted_count).toBe(2);
+    expect(await dexieStorage.comments.list()).toHaveLength(0);
+    await dexieStorage.comments.bulkRestore(["p1", "p2"]);
+    expect(await dexieStorage.comments.list()).toHaveLength(2);
+
+    await dexieStorage.comments.bulkDelete(["p1"], true);
+    expect(await offlineDb.articleComments.get("p1")).toBeUndefined();
+  });
+
+  it("permanentDelete + emptyTrash hard-remove trashed rows", async () => {
+    await dexieStorage.comments.create(makeComment({ id: "t1" }));
+    await dexieStorage.comments.create(makeComment({ id: "t2" }));
+    await dexieStorage.comments.delete("t1");
+    await dexieStorage.comments.delete("t2");
+    await dexieStorage.comments.permanentDelete("t1");
+    expect(await offlineDb.articleComments.get("t1")).toBeUndefined();
+    await dexieStorage.comments.emptyTrash();
+    expect(await offlineDb.articleComments.count()).toBe(0);
+  });
+
+  it("reclassifyAsArticle creates an article from the comment + removes it", async () => {
+    await dexieStorage.comments.create(
+      makeComment({ id: "r1", body_text: "This deserves its own piece.", author: "Sam" }),
+    );
+    const result = await dexieStorage.comments.reclassifyAsArticle("r1");
+    expect(result.success).toBe(true);
+    expect(result.deleted_comment_id).toBe("r1");
+    expect(await offlineDb.articleComments.get("r1")).toBeUndefined();
+    const article = await offlineDb.articles.get(result.article_id);
+    expect(article?.title).toBe("This deserves its own piece.");
+    expect(article?.author).toBe("Sam");
+    expect(article?.content_json).toContain("This deserves its own piece.");
+  });
+});

@@ -186,5 +186,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     // straight passthrough so the seam stays complete.
     assets: base.assets,
     covers: base.covers,
+    // Comments: local-only offline writes (soft-delete / trash / reclassify);
+    // replay deferred, passthrough.
+    comments: base.comments,
   };
 }

@@ -30,11 +30,13 @@ import Dexie, { type Table } from "dexie";
 
 import type {
   Article,
+  ArticleComment,
   Asset,
   Author,
   AuthorCreate,
   AuthorUpdate,
   Book,
+  BulkDeleteResponse,
   BookDetail,
   BookTypeDef,
   Chapter,
@@ -99,6 +101,11 @@ export interface AssetRow {
   createdAt: string;
 }
 
+/** An imported article comment held offline (P3 comments). The API
+ *  `ArticleComment` plus a `deleted_at` for the soft-delete / trash lifecycle
+ *  (the API model hides the column; the trash endpoints expose the state). */
+export type CommentRow = ArticleComment & { deleted_at: string | null };
+
 /** A queued offline mutation awaiting replay against the API on
  *  reconnect (mobile-sync P3-C5). Created by the queueing-storage
  *  wrapper on every offline write; drained by the sync engine (C6). */
@@ -153,6 +160,7 @@ class BibliogonOfflineDB extends Dexie {
   pluginMetaRef!: Table<KeyedBlob<DiscoveredPlugin[]>, string>;
   authors!: Table<Author, string>;
   assets!: Table<AssetRow, string>;
+  articleComments!: Table<CommentRow, string>;
 
   constructor() {
     // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -204,6 +212,12 @@ class BibliogonOfflineDB extends Dexie {
     // raw-IndexedDB read. The `blob` field holds the file body natively.
     this.version(7).stores({
       assets: "id, bookId, filename, [bookId+filename]",
+    });
+    // v8 (Maximal Offline P3): imported article comments + the soft-delete /
+    // trash lifecycle. Indexed by source (filter), responds_to_article_id
+    // (orphan filter), deleted_at (active vs trash), created_at (ordering).
+    this.version(8).stores({
+      articleComments: "id, imported_from, responds_to_article_id, deleted_at, created_at",
     });
   }
 }
@@ -1168,7 +1182,122 @@ export const dexieStorage: IStorageService = {
       if (ids.length) await offlineDb.assets.bulkDelete(ids);
     },
   },
+
+  comments: {
+    list: async (params = {}) => {
+      let rows = (await offlineDb.articleComments.toArray()).filter(
+        (c) => !c.deleted_at,
+      );
+      if (params.importedFrom) {
+        rows = rows.filter((c) => c.imported_from === params.importedFrom);
+      }
+      if (params.orphansOnly) {
+        rows = rows.filter((c) => !c.responds_to_article_id);
+      }
+      rows.sort((a, b) => b.created_at.localeCompare(a.created_at));
+      return rows.slice(0, params.limit ?? 100).map(stripDeletedAt);
+    },
+    delete: async (id) => {
+      // Soft-delete: move to trash (deleted_at set). Idempotent.
+      await offlineDb.articleComments.update(id, { deleted_at: nowIso() });
+    },
+    reclassifyAsArticle: async (id) => {
+      const comment = await offlineDb.articleComments.get(id);
+      if (!comment) notFound("Comment", id);
+      const title =
+        comment.body_text.length > 200
+          ? comment.body_text.slice(0, 200) + "..."
+          : comment.body_text || "(untitled)";
+      const article = await dexieStorage.articles.create({
+        title,
+        author: comment.author,
+        language: comment.language,
+        content_type: "blogpost",
+      });
+      await dexieStorage.articles.update(article.id, {
+        content_json: comment.body_json ?? commentTextToDoc(comment.body_text),
+        canonical_url: comment.canonical_url,
+        status: "draft",
+      });
+      await offlineDb.articleComments.delete(id);
+      return {
+        success: true,
+        article_id: article.id,
+        deleted_comment_id: id,
+      };
+    },
+    bulkDelete: async (ids, permanent) => {
+      if (permanent) {
+        await offlineDb.articleComments.bulkDelete(ids);
+      } else {
+        await Promise.all(
+          ids.map((id) =>
+            offlineDb.articleComments.update(id, { deleted_at: nowIso() }),
+          ),
+        );
+      }
+      const response: BulkDeleteResponse = {
+        deleted_count: ids.length,
+        skipped_already_trashed: [],
+        failed: [],
+      };
+      return response;
+    },
+    listTrashed: async () => {
+      const rows = (await offlineDb.articleComments.toArray()).filter(
+        (c) => !!c.deleted_at,
+      );
+      rows.sort((a, b) => (b.deleted_at ?? "").localeCompare(a.deleted_at ?? ""));
+      return rows.map(stripDeletedAt);
+    },
+    restore: async (id) => {
+      await offlineDb.articleComments.update(id, { deleted_at: null });
+      const row = await offlineDb.articleComments.get(id);
+      if (!row) notFound("Comment", id);
+      return stripDeletedAt(row);
+    },
+    permanentDelete: async (id) => {
+      await offlineDb.articleComments.delete(id);
+    },
+    emptyTrash: async () => {
+      const ids = (await offlineDb.articleComments
+        .toArray()
+        .then((rows) => rows.filter((c) => !!c.deleted_at).map((c) => c.id)));
+      if (ids.length) await offlineDb.articleComments.bulkDelete(ids);
+    },
+    bulkRestore: async (ids) => {
+      await Promise.all(
+        ids.map((id) =>
+          offlineDb.articleComments.update(id, { deleted_at: null }),
+        ),
+      );
+      return { restored_count: ids.length, skipped_not_in_trash: [], failed: [] };
+    },
+    create: async (comment) => {
+      const row: CommentRow = { ...comment, deleted_at: null };
+      await offlineDb.articleComments.put(row);
+      return stripDeletedAt(row);
+    },
+  },
 };
+
+/** Drop the offline-only `deleted_at` so the returned shape matches the API
+ *  `ArticleComment` exactly. */
+function stripDeletedAt(row: CommentRow): ArticleComment {
+  const { deleted_at: _deleted_at, ...comment } = row;
+  return comment;
+}
+
+/** Wrap a comment's plain body text in a minimal TipTap doc (used when a
+ *  reclassified comment has no `body_json`). */
+function commentTextToDoc(text: string): string {
+  return JSON.stringify({
+    type: "doc",
+    content: text
+      ? [{ type: "paragraph", content: [{ type: "text", text }] }]
+      : [],
+  });
+}
 
 /** Map an IndexedDB asset row to the API `Asset` shape components expect
  *  (the server-only `path` is irrelevant offline). */
