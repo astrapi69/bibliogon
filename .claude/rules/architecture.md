@@ -163,9 +163,38 @@ For complex plugin UIs: Web Components as custom elements (compiled JS bundle in
 - Conversion (JSON -> Markdown, JSON -> HTML) is a plugin responsibility (export plugin).
 - TipTap JSON in the DB: Chapter.content field.
 
+## Repository pattern (Service <-> Data boundary)
+
+The Service layer (routers + service modules) talks to the Data layer
+ONLY through repository interfaces, never through a raw SQLAlchemy
+`Session`. This keeps the data backend swappable and the consumers
+testable without a real DB.
+
+- **Interfaces** live in `backend/app/repositories/<entity>.py` as an
+  abstract base (`abc.ABC` + `@abstractmethod`), e.g. `AuthorRepository`.
+  They expose intent-named methods (`get`, `list`, `add`, `save`,
+  `delete`, `slug_exists`, ...), never `Session` primitives.
+- **Implementations** are SQLAlchemy-backed (`SqlAlchemy<Entity>Repository`)
+  in the same module, extending `repositories.base.SQLAlchemyRepository`
+  (which holds the `Session` and centralises commit/refresh).
+- **Injection**: each module exposes a `get_<entity>_repository` provider
+  that builds the SQLAlchemy implementation from `Depends(get_db)`.
+  Routers/services declare `repo: <Entity>Repository = Depends(...)` and
+  call repository methods.
+- **No `db.query` / `session.add` / `session.commit` outside the
+  repository implementations.** A consumer (router or service) that
+  imports `Session` or touches a query is a layer violation.
+- Repositories contain **no HTTP concepts** (no `HTTPException`, no
+  status codes) and **no business rules** — those stay in the
+  router/service. Repositories are persistence-only.
+
+Migration is incremental, one entity per commit; `authors` is the
+reference implementation. Until an entity is migrated its router may
+still use the `Session` idiom, but new code uses a repository.
+
 ## Persistence
 
-- Backend: SQLAlchemy + SQLite.
+- Backend: SQLAlchemy + SQLite, accessed via the repository layer above.
 - Frontend: no local storage for book data. Everything via the API.
 - Assets: local on the filesystem, managed through /api/assets/.
 - Backup: .bgb files (ZIP), restore brings the entire state back.
@@ -174,10 +203,12 @@ For complex plugin UIs: Web Components as custom elements (compiled JS bundle in
 ## Data flow
 
 ```
-UI (React) -> API client -> FastAPI router -> service/plugin -> SQLAlchemy -> SQLite
+UI (React) -> API client -> FastAPI router -> service -> repository interface -> SQLAlchemy impl -> SQLite
 ```
 
-Unidirectional. No direct DB access from routers. No frontend code in the backend.
+Unidirectional. Routers/services reach the DB only through repository
+interfaces. No direct DB access from routers. No frontend code in the
+backend.
 
 ## Error handling
 
