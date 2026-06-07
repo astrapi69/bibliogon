@@ -43,7 +43,6 @@ Endpoints:
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
@@ -51,6 +50,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import ArticleComment
+from app.repositories.comments import CommentRepository, get_comment_repository
 from app.routers.articles import CommentOut
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ router = APIRouter(prefix="/comments", tags=["comments"])
 
 @router.get("", response_model=list[CommentOut])
 def list_comments(
-    db: Session = Depends(get_db),
+    repo: CommentRepository = Depends(get_comment_repository),
     imported_from: str | None = Query(
         default=None,
         description=(
@@ -84,30 +84,34 @@ def list_comments(
     descending so the newest imports surface first - mirrors the
     Articles dashboard's "newest first" UX expectation.
     """
-    query = db.query(ArticleComment).filter(ArticleComment.deleted_at.is_(None))
-    if imported_from is not None:
-        query = query.filter(ArticleComment.imported_from == imported_from)
-    if orphans_only:
-        query = query.filter(ArticleComment.responds_to_article_id.is_(None))
-    return query.order_by(ArticleComment.imported_at.desc()).limit(limit).all()
+    return list(
+        repo.list(
+            imported_from=imported_from,
+            orphans_only=orphans_only,
+            limit=limit,
+        )
+    )
 
 
 @router.delete("/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_comment(comment_id: str, db: Session = Depends(get_db)) -> None:
+def delete_comment(
+    comment_id: str,
+    repo: CommentRepository = Depends(get_comment_repository),
+) -> None:
     """Soft-delete a comment. ``deleted_at`` is stamped, the row
     stays in the DB; the user can restore it via
     ``POST /api/comments/trash/{id}/restore`` or permanently
     remove it via ``DELETE /api/comments/trash/{id}``.
+
+    Already-trashed comments respond 204 idempotently so the admin
+    view's bulk-delete-by-id flow stays clean.
     """
-    comment = db.query(ArticleComment).filter(ArticleComment.id == comment_id).first()
+    comment = repo.get(comment_id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
     if comment.deleted_at is not None:
-        # Already soft-deleted; respond 204 idempotently so the
-        # admin view's bulk-delete-by-id flow stays clean.
         return
-    comment.deleted_at = datetime.now(UTC)
-    db.commit()
+    repo.soft_delete(comment)
 
 
 # ---------------------------------------------------------------------------
@@ -126,23 +130,23 @@ def delete_comment(comment_id: str, db: Session = Depends(get_db)) -> None:
 
 
 @router.get("/trash/list", response_model=list[CommentOut])
-def list_trashed_comments(db: Session = Depends(get_db)) -> list[ArticleComment]:
+def list_trashed_comments(
+    repo: CommentRepository = Depends(get_comment_repository),
+) -> list[ArticleComment]:
     """List every comment currently in the trash, newest first.
 
     Mirror of ``GET /api/articles/trash/list``. Newest-trashed-
     first ordering matches the user's mental model when the
     trash view is opened immediately after a bulk move-to-trash.
     """
-    return (
-        db.query(ArticleComment)
-        .filter(ArticleComment.deleted_at.is_not(None))
-        .order_by(ArticleComment.deleted_at.desc())
-        .all()
-    )
+    return list(repo.list_trashed())
 
 
 @router.post("/trash/{comment_id}/restore", response_model=CommentOut)
-def restore_comment(comment_id: str, db: Session = Depends(get_db)) -> ArticleComment:
+def restore_comment(
+    comment_id: str,
+    repo: CommentRepository = Depends(get_comment_repository),
+) -> ArticleComment:
     """Restore a trashed comment.
 
     404 when the id is unknown OR not currently in the trash.
@@ -151,38 +155,30 @@ def restore_comment(comment_id: str, db: Session = Depends(get_db)) -> ArticleCo
     see a clear error, not a silent success that masks the
     multi-tab race.
     """
-    comment = (
-        db.query(ArticleComment)
-        .filter(
-            ArticleComment.id == comment_id,
-            ArticleComment.deleted_at.is_not(None),
-        )
-        .first()
-    )
+    comment = repo.get_trashed(comment_id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found in trash")
-    comment.deleted_at = None
-    db.commit()
-    db.refresh(comment)
-    return comment
+    return repo.restore(comment)
 
 
 @router.delete("/trash/empty", status_code=status.HTTP_204_NO_CONTENT)
-def empty_comment_trash(db: Session = Depends(get_db)) -> None:
+def empty_comment_trash(
+    repo: CommentRepository = Depends(get_comment_repository),
+) -> None:
     """Permanently delete every comment currently in the trash.
 
     Comments are a leaf in the data model (no cascade children),
-    so this is a straight ``db.delete`` per row — no on-disk
+    so this is a straight hard-delete per row — no on-disk
     cleanup parallel to ``empty_article_trash``'s ``rmtree``.
     """
-    rows = db.query(ArticleComment).filter(ArticleComment.deleted_at.is_not(None)).all()
-    for comment in rows:
-        db.delete(comment)
-    db.commit()
+    repo.delete_many(repo.list_trashed())
 
 
 @router.delete("/trash/{comment_id}", status_code=status.HTTP_204_NO_CONTENT)
-def permanent_delete_comment(comment_id: str, db: Session = Depends(get_db)) -> None:
+def permanent_delete_comment(
+    comment_id: str,
+    repo: CommentRepository = Depends(get_comment_repository),
+) -> None:
     """Permanently remove one comment from the trash.
 
     404 when the id is unknown OR not currently in the trash.
@@ -191,18 +187,10 @@ def permanent_delete_comment(comment_id: str, db: Session = Depends(get_db)) -> 
     first; a single-step hard-delete-without-trash path doesn't
     exist by design.
     """
-    comment = (
-        db.query(ArticleComment)
-        .filter(
-            ArticleComment.id == comment_id,
-            ArticleComment.deleted_at.is_not(None),
-        )
-        .first()
-    )
+    comment = repo.get_trashed(comment_id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found in trash")
-    db.delete(comment)
-    db.commit()
+    repo.delete(comment)
 
 
 # ---------------------------------------------------------------------------
@@ -238,7 +226,7 @@ class BulkRestoreResponse(BaseModel):
 @router.post("/trash/bulk-restore", response_model=BulkRestoreResponse)
 def bulk_restore_comments(
     body: BulkRestoreRequest,
-    db: Session = Depends(get_db),
+    repo: CommentRepository = Depends(get_comment_repository),
 ) -> BulkRestoreResponse:
     """Restore multiple trashed comments in one round-trip.
 
@@ -259,7 +247,7 @@ def bulk_restore_comments(
     skipped: list[str] = []
     failed: list[_BulkRestoreFailed] = []
 
-    rows = db.query(ArticleComment).filter(ArticleComment.id.in_(body.ids)).all()
+    rows = repo.get_by_ids(body.ids)
     by_id = {row.id: row for row in rows}
 
     for row_id in body.ids:
@@ -277,7 +265,7 @@ def bulk_restore_comments(
             logger.exception("bulk-restore: failed on %s", row_id)
             failed.append(_BulkRestoreFailed(id=row_id, error=str(exc)))
 
-    db.commit()
+    repo.commit()
     return BulkRestoreResponse(
         restored_count=restored_count,
         skipped_not_in_trash=skipped,
@@ -311,6 +299,7 @@ class ReclassifyAsArticleResponse(BaseModel):
 )
 def reclassify_comment_as_article(
     comment_id: str,
+    repo: CommentRepository = Depends(get_comment_repository),
     db: Session = Depends(get_db),
 ) -> ReclassifyAsArticleResponse:
     """Move an ArticleComment to Article.
@@ -332,11 +321,15 @@ def reclassify_comment_as_article(
     notice a misclassification post-trash.
 
     Field translation lives in
-    ``app.services.reclassify.comment_to_article``.
+    ``app.services.reclassify.comment_to_article``. That service still
+    takes the request ``Session`` directly (it creates an Article +
+    provenance row); the ``db`` parameter stays until the cross-entity
+    reclassify path is migrated, and it is the same request session
+    that backs ``repo``.
     """
     from app.services.reclassify import comment_to_article
 
-    comment = db.query(ArticleComment).filter(ArticleComment.id == comment_id).first()
+    comment = repo.get(comment_id)
     if comment is None:
         raise HTTPException(status_code=404, detail="Comment not found")
 
