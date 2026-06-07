@@ -2,11 +2,11 @@ import re
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import text
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app.models import Book, Chapter, ChapterVersion
+from app.models import Chapter, ChapterVersion
+from app.repositories.chapters import ChapterRepository, get_chapter_repository
 from app.schemas import (
     ChapterCreate,
     ChapterFork,
@@ -29,64 +29,43 @@ VERSION_RETENTION = 20
 router = APIRouter(prefix="/books/{book_id}/chapters", tags=["chapters"])
 
 
-def _get_book_or_404(book_id: str, db: Session) -> Book:
-    book = db.query(Book).filter(Book.id == book_id).first()
-    if not book:
+def _ensure_book(book_id: str, repo: ChapterRepository) -> None:
+    """Raise 404 when ``book_id`` does not exist."""
+    if not repo.book_exists(book_id):
         raise HTTPException(status_code=404, detail="Book not found")
-    return book
-
-
-def _trim_auto_versions(db: Session, chapter_id: str) -> None:
-    """Keep only the last ``VERSION_RETENTION`` AUTOMATIC versions per
-    chapter. Manual snapshots (``is_manual = 1``) are never trimmed.
-
-    Run after the commit that wrote a new version so the row just
-    written is never a deletion candidate.
-    """
-    db.execute(
-        text(
-            "DELETE FROM chapter_versions "
-            "WHERE chapter_id = :cid AND is_manual = 0 AND id NOT IN ("
-            "  SELECT id FROM chapter_versions "
-            "  WHERE chapter_id = :cid AND is_manual = 0 "
-            "  ORDER BY created_at DESC, version DESC "
-            "  LIMIT :keep"
-            ")"
-        ),
-        {"cid": chapter_id, "keep": VERSION_RETENTION},
-    )
-    db.commit()
 
 
 @router.get("", response_model=list[ChapterOut])
-def list_chapters(book_id: str, db: Session = Depends(get_db)):
-    _get_book_or_404(book_id, db)
-    return db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
+def list_chapters(
+    book_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
+    _ensure_book(book_id, repo)
+    return list(repo.list(book_id))
 
 
 @router.post("", response_model=ChapterOut, status_code=status.HTTP_201_CREATED)
-def create_chapter(book_id: str, payload: ChapterCreate, db: Session = Depends(get_db)):
-    _get_book_or_404(book_id, db)
+def create_chapter(
+    book_id: str,
+    payload: ChapterCreate,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
+    _ensure_book(book_id, repo)
 
     if payload.position is None:
-        max_pos = (
-            db.query(Chapter.position)
-            .filter(Chapter.book_id == book_id)
-            .order_by(Chapter.position.desc())
-            .first()
-        )
-        payload.position = (max_pos[0] + 1) if max_pos else 0
+        payload.position = repo.next_position(book_id)
 
     chapter = Chapter(book_id=book_id, **payload.model_dump())
-    db.add(chapter)
-    db.commit()
-    db.refresh(chapter)
-    return chapter
+    return repo.add(chapter)
 
 
 @router.get("/{chapter_id}", response_model=ChapterOut)
-def get_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+def get_chapter(
+    book_id: str,
+    chapter_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     return chapter
@@ -94,9 +73,13 @@ def get_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
 
 @router.patch("/{chapter_id}", response_model=ChapterOut)
 def update_chapter(
-    book_id: str, chapter_id: str, payload: ChapterUpdate, db: Session = Depends(get_db)
+    book_id: str,
+    chapter_id: str,
+    payload: ChapterUpdate,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+    db: Session = Depends(get_db),
 ):
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     # Optimistic lock: reject if the client's expected version does not
@@ -125,7 +108,7 @@ def update_chapter(
         title=chapter.title,
         version=chapter.version,
     )
-    db.add(snapshot)
+    repo.stage_version(snapshot)
 
     # Word count BEFORE the update, to record the day's net writing
     # delta (WRITING-GOALS-PROGRESS-TRACKING-01) when content changes.
@@ -144,10 +127,8 @@ def update_chapter(
             chapter_id=chapter.id,
         )
 
-    db.commit()
-    db.refresh(chapter)
-
-    _trim_auto_versions(db, chapter.id)
+    repo.commit_refresh(chapter)
+    repo.trim_auto_versions(chapter.id, VERSION_RETENTION)
 
     return chapter
 
@@ -156,18 +137,16 @@ def update_chapter(
 
 
 @router.get("/{chapter_id}/versions", response_model=list[ChapterVersionSummary])
-def list_chapter_versions(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
+def list_chapter_versions(
+    book_id: str,
+    chapter_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
     """Return version metadata (no content) for a chapter, newest first."""
-    _get_book_or_404(book_id, db)
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
-    if not chapter:
+    _ensure_book(book_id, repo)
+    if repo.get(book_id, chapter_id) is None:
         raise HTTPException(status_code=404, detail="Chapter not found")
-    return (
-        db.query(ChapterVersion)
-        .filter(ChapterVersion.chapter_id == chapter_id)
-        .order_by(ChapterVersion.version.desc())
-        .all()
-    )
+    return list(repo.list_versions(chapter_id))
 
 
 @router.get(
@@ -175,19 +154,13 @@ def list_chapter_versions(book_id: str, chapter_id: str, db: Session = Depends(g
     response_model=ChapterVersionRead,
 )
 def get_chapter_version(
-    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+    book_id: str,
+    chapter_id: str,
+    version_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
-    _get_book_or_404(book_id, db)
-    version = (
-        db.query(ChapterVersion)
-        .join(Chapter, ChapterVersion.chapter_id == Chapter.id)
-        .filter(
-            ChapterVersion.id == version_id,
-            ChapterVersion.chapter_id == chapter_id,
-            Chapter.book_id == book_id,
-        )
-        .first()
-    )
+    _ensure_book(book_id, repo)
+    version = repo.get_version(book_id, chapter_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
     return version
@@ -198,7 +171,10 @@ def get_chapter_version(
     response_model=ChapterOut,
 )
 def restore_chapter_version(
-    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+    book_id: str,
+    chapter_id: str,
+    version_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
     """Restore a chapter's content and title from a historic version.
 
@@ -206,18 +182,11 @@ def restore_chapter_version(
     overwrites content + title with the version's values and bumps
     the chapter version counter.
     """
-    _get_book_or_404(book_id, db)
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    _ensure_book(book_id, repo)
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
-    version = (
-        db.query(ChapterVersion)
-        .filter(
-            ChapterVersion.id == version_id,
-            ChapterVersion.chapter_id == chapter_id,
-        )
-        .first()
-    )
+    version = repo.get_version_in_chapter(chapter_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
 
@@ -228,15 +197,13 @@ def restore_chapter_version(
         title=chapter.title,
         version=chapter.version,
     )
-    db.add(snapshot)
+    repo.stage_version(snapshot)
 
     chapter.content = version.content
     chapter.title = version.title
     chapter.version += 1
-    db.commit()
-    db.refresh(chapter)
-
-    _trim_auto_versions(db, chapter.id)
+    repo.commit_refresh(chapter)
+    repo.trim_auto_versions(chapter.id, VERSION_RETENTION)
 
     return chapter
 
@@ -250,7 +217,7 @@ def create_chapter_snapshot(
     book_id: str,
     chapter_id: str,
     payload: ChapterSnapshotCreate,
-    db: Session = Depends(get_db),
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
     """Take a Scrivener-style manual snapshot of the chapter's CURRENT
     saved state (CHAPTER-SNAPSHOTS-01).
@@ -260,8 +227,8 @@ def create_chapter_snapshot(
     It is exempt from the last-20 retention trim, so it survives until
     the user deletes it explicitly.
     """
-    _get_book_or_404(book_id, db)
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    _ensure_book(book_id, repo)
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
 
@@ -273,10 +240,7 @@ def create_chapter_snapshot(
         name=payload.name,
         is_manual=True,
     )
-    db.add(snapshot)
-    db.commit()
-    db.refresh(snapshot)
-    return snapshot
+    return repo.add_version(snapshot)
 
 
 @router.get(
@@ -284,7 +248,10 @@ def create_chapter_snapshot(
     response_model=ChapterVersionDiff,
 )
 def diff_chapter_version(
-    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+    book_id: str,
+    chapter_id: str,
+    version_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
     """Line-oriented diff between a stored version and the chapter's
     CURRENT content (CHAPTER-SNAPSHOTS-01).
@@ -293,18 +260,11 @@ def diff_chapter_version(
     lines were in the snapshot but are gone. Both sides are flattened
     from TipTap JSON to line-broken plain text before diffing.
     """
-    _get_book_or_404(book_id, db)
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    _ensure_book(book_id, repo)
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
-    version = (
-        db.query(ChapterVersion)
-        .filter(
-            ChapterVersion.id == version_id,
-            ChapterVersion.chapter_id == chapter_id,
-        )
-        .first()
-    )
+    version = repo.get_version_in_chapter(chapter_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
 
@@ -324,7 +284,10 @@ def diff_chapter_version(
     status_code=status.HTTP_204_NO_CONTENT,
 )
 def delete_chapter_version(
-    book_id: str, chapter_id: str, version_id: str, db: Session = Depends(get_db)
+    book_id: str,
+    chapter_id: str,
+    version_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
     """Delete a MANUAL snapshot (CHAPTER-SNAPSHOTS-01).
 
@@ -332,17 +295,8 @@ def delete_chapter_version(
     managed by the retention trim and rejected here with a 400 so the
     history stays a faithful record of saves.
     """
-    _get_book_or_404(book_id, db)
-    version = (
-        db.query(ChapterVersion)
-        .join(Chapter, ChapterVersion.chapter_id == Chapter.id)
-        .filter(
-            ChapterVersion.id == version_id,
-            ChapterVersion.chapter_id == chapter_id,
-            Chapter.book_id == book_id,
-        )
-        .first()
-    )
+    _ensure_book(book_id, repo)
+    version = repo.get_version(book_id, chapter_id, version_id)
     if not version:
         raise HTTPException(status_code=404, detail="Version not found")
     if not version.is_manual:
@@ -350,8 +304,7 @@ def delete_chapter_version(
             status_code=400,
             detail="Only manual snapshots can be deleted",
         )
-    db.delete(version)
-    db.commit()
+    repo.delete_version(version)
 
 
 @router.post(
@@ -363,7 +316,7 @@ def fork_chapter(
     book_id: str,
     chapter_id: str,
     payload: ChapterFork,
-    db: Session = Depends(get_db),
+    repo: ChapterRepository = Depends(get_chapter_repository),
 ):
     """PS-13: clone the user's local edit into a NEW chapter inserted
     after the source chapter.
@@ -377,20 +330,17 @@ def fork_chapter(
     Returns the newly created chapter, ready for the frontend to
     refresh its list and (optionally) navigate to.
     """
-    _get_book_or_404(book_id, db)
-    source = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+    _ensure_book(book_id, repo)
+    source = repo.get(book_id, chapter_id)
     if not source:
         raise HTTPException(status_code=404, detail="Chapter not found")
 
     new_position = source.position + 1
     # Bump positions of everything below the source to keep the list
-    # gap-free + the insert deterministic. SQLAlchemy emits an
-    # UPDATE ... WHERE ... so this is one round-trip regardless of
-    # chapter count.
-    db.query(Chapter).filter(
-        Chapter.book_id == book_id,
-        Chapter.position >= new_position,
-    ).update({Chapter.position: Chapter.position + 1}, synchronize_session=False)
+    # gap-free + the insert deterministic. One UPDATE ... WHERE ...
+    # round-trip regardless of chapter count, staged with the insert
+    # so both land in repo.add's commit.
+    repo.bump_positions_from(book_id, new_position)
 
     new_title = (payload.title or "").strip() or f"{source.title} (Local Draft)"
     new_chapter = Chapter(
@@ -400,15 +350,16 @@ def fork_chapter(
         position=new_position,
         chapter_type=source.chapter_type,
     )
-    db.add(new_chapter)
-    db.commit()
-    db.refresh(new_chapter)
-    return new_chapter
+    return repo.add(new_chapter)
 
 
 @router.delete("/{chapter_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db)):
-    chapter = db.query(Chapter).filter(Chapter.id == chapter_id, Chapter.book_id == book_id).first()
+def delete_chapter(
+    book_id: str,
+    chapter_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
+    chapter = repo.get(book_id, chapter_id)
     if not chapter:
         raise HTTPException(status_code=404, detail="Chapter not found")
     # Cascade: delete AI review files linked to this chapter's slug. The
@@ -419,14 +370,17 @@ def delete_chapter(book_id: str, chapter_id: str, db: Session = Depends(get_db))
     chapter_slug = slugify(chapter.title or chapter_id)
     delete_reviews_for_chapter(book_id, chapter_slug)
 
-    db.delete(chapter)
-    db.commit()
+    repo.delete(chapter)
 
 
 @router.put("/reorder", response_model=list[ChapterOut])
-def reorder_chapters(book_id: str, payload: ChapterReorder, db: Session = Depends(get_db)):
-    _get_book_or_404(book_id, db)
-    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
+def reorder_chapters(
+    book_id: str,
+    payload: ChapterReorder,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+):
+    _ensure_book(book_id, repo)
+    chapters = repo.list(book_id)
     chapter_map = {c.id: c for c in chapters}
 
     for position, chapter_id in enumerate(payload.chapter_ids):
@@ -436,8 +390,8 @@ def reorder_chapters(book_id: str, payload: ChapterReorder, db: Session = Depend
             )
         chapter_map[chapter_id].position = position
 
-    db.commit()
-    return db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
+    repo.commit()
+    return list(repo.list(book_id))
 
 
 # Common alternative anchors for special chapter types (write-book-template
@@ -457,14 +411,17 @@ _TYPE_ANCHORS: dict[str, list[str]] = {
 
 
 @router.post("/validate-toc")
-def validate_toc(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+def validate_toc(
+    book_id: str,
+    repo: ChapterRepository = Depends(get_chapter_repository),
+) -> dict[str, Any]:
     """Validate TOC links against actual chapter titles.
 
     Finds all anchor links in TOC chapters and checks if they match
     chapter titles or explicit anchors in the book.
     """
-    _get_book_or_404(book_id, db)
-    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
+    _ensure_book(book_id, repo)
+    chapters = list(repo.list(book_id))
 
     toc_chapters = [c for c in chapters if c.chapter_type == "toc"]
     if not toc_chapters:
