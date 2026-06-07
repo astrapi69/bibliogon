@@ -22,6 +22,12 @@ from app.ai.template_schema import extract_body_text
 from app.database import SessionLocal, get_db
 from app.models import Article, ArticleComment
 from app.paths import get_upload_dir
+from app.repositories.articles import (
+    ArticleRepository,
+    SqlAlchemyArticleRepository,
+    get_article_repository,
+)
+from app.repositories.comments import CommentRepository, get_comment_repository
 from app.schemas import ArticleCreate, ArticleOut, ArticleUpdate
 
 logger = logging.getLogger(__name__)
@@ -85,11 +91,8 @@ def cleanup_expired_article_trash() -> int:
     db: Session = SessionLocal()
     count = 0
     try:
-        expired = (
-            db.query(Article)
-            .filter(Article.deleted_at.is_not(None), Article.deleted_at < cutoff)
-            .all()
-        )
+        repo = SqlAlchemyArticleRepository(db)
+        expired = repo.list_expired_trash(cutoff)
         for article in expired:
             asset_dir = get_upload_dir() / "articles" / article.id
             if asset_dir.exists():
@@ -101,10 +104,9 @@ def cleanup_expired_article_trash() -> int:
                         asset_dir,
                         exc,
                     )
-            db.delete(article)
-            count += 1
+        count = len(expired)
         if count:
-            db.commit()
+            repo.delete_all(expired)
             logger.info(
                 "Auto-deleted %d expired article trash items (older than %d days)",
                 count,
@@ -116,7 +118,10 @@ def cleanup_expired_article_trash() -> int:
 
 
 @router.post("", response_model=ArticleOut, status_code=status.HTTP_201_CREATED)
-def create_article(payload: ArticleCreate, db: Session = Depends(get_db)) -> Article:
+def create_article(
+    payload: ArticleCreate,
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> Article:
     """Create a draft article. ``status`` always starts at ``draft`` -
     publish via PATCH after the user is happy with the content.
 
@@ -137,10 +142,7 @@ def create_article(payload: ArticleCreate, db: Session = Depends(get_db)) -> Art
         kwargs["article_metadata"] = json.dumps(payload.article_metadata)
 
     article = Article(**kwargs)
-    db.add(article)
-    db.commit()
-    db.refresh(article)
-    return article
+    return repo.add(article)
 
 
 @router.get("", response_model=list[ArticleOut])
@@ -150,7 +152,7 @@ def list_articles(
     tag: str | None = Query(default=None, max_length=100),
     topic: str | None = Query(default=None, max_length=100),
     limit: int | None = Query(default=None, ge=1, le=1000),
-    db: Session = Depends(get_db),
+    repo: ArticleRepository = Depends(get_article_repository),
 ) -> list[Article]:
     """List live articles with optional filters (status, series, tag, topic).
 
@@ -171,28 +173,20 @@ def list_articles(
     "return everything" behaviour; the ArticleList dashboard passes
     the user-selected page size.
     """
-    query = db.query(Article).filter(Article.deleted_at.is_(None))
-    if article_status is not None:
-        if article_status not in _ALLOWED_STATUSES:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"status must be one of {_ALLOWED_STATUSES}",
-            )
-        query = query.filter(Article.status == article_status)
-    if series is not None:
-        query = query.filter(Article.series == series)
-    if topic is not None:
-        query = query.filter(Article.topic == topic)
-    if tag is not None:
-        # JSON-string match: tags column stores `["a", "b", "c"]`;
-        # search for `"<tag>"` literal so we don't accidentally match
-        # a tag that is only a substring of another.
-        needle = json.dumps(tag)
-        query = query.filter(Article.tags.like(f"%{needle}%"))
-    query = query.order_by(Article.updated_at.desc())
-    if limit is not None:
-        query = query.limit(limit)
-    return query.all()
+    if article_status is not None and article_status not in _ALLOWED_STATUSES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"status must be one of {_ALLOWED_STATUSES}",
+        )
+    return list(
+        repo.list(
+            status=article_status,
+            series=series,
+            tag=tag,
+            topic=topic,
+            limit=limit,
+        )
+    )
 
 
 # --- Trash ---
@@ -202,35 +196,33 @@ def list_articles(
 
 
 @router.get("/trash/list", response_model=list[ArticleOut])
-def list_trashed_articles(db: Session = Depends(get_db)) -> list[Article]:
+def list_trashed_articles(
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> list[Article]:
     """List every article currently in the trash, newest first."""
-    return (
-        db.query(Article)
-        .filter(Article.deleted_at.is_not(None))
-        .order_by(Article.deleted_at.desc())
-        .all()
-    )
+    return list(repo.list_trashed())
 
 
 @router.post("/trash/{article_id}/restore", response_model=ArticleOut)
-def restore_article(article_id: str, db: Session = Depends(get_db)) -> Article:
+def restore_article(
+    article_id: str,
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> Article:
     """Restore a trashed article. 404 when the id is unknown OR not
     in the trash."""
-    article = (
-        db.query(Article).filter(Article.id == article_id, Article.deleted_at.is_not(None)).first()
-    )
+    article = repo.get_trashed(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found in trash")
     article.deleted_at = None
-    db.commit()
-    db.refresh(article)
-    return article
+    return repo.save(article)
 
 
 @router.delete("/trash/empty", status_code=status.HTTP_204_NO_CONTENT)
-def empty_article_trash(db: Session = Depends(get_db)) -> None:
+def empty_article_trash(
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> None:
     """Permanently delete every article currently in the trash."""
-    expired = db.query(Article).filter(Article.deleted_at.is_not(None)).all()
+    expired = repo.list_trashed()
     for article in expired:
         asset_dir = get_upload_dir() / "articles" / article.id
         if asset_dir.exists():
@@ -238,17 +230,17 @@ def empty_article_trash(db: Session = Depends(get_db)) -> None:
                 shutil.rmtree(asset_dir)
             except OSError as exc:
                 logger.warning("empty_article_trash: rmtree %s failed: %s", asset_dir, exc)
-        db.delete(article)
-    db.commit()
+    repo.delete_all(expired)
 
 
 @router.delete("/trash/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
-def permanent_delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
+def permanent_delete_article(
+    article_id: str,
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> None:
     """Permanently remove a single article from the trash + its
     on-disk assets. 404 when the id is not in the trash."""
-    article = (
-        db.query(Article).filter(Article.id == article_id, Article.deleted_at.is_not(None)).first()
-    )
+    article = repo.get_trashed(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found in trash")
     asset_dir = get_upload_dir() / "articles" / article_id
@@ -257,16 +249,18 @@ def permanent_delete_article(article_id: str, db: Session = Depends(get_db)) -> 
             shutil.rmtree(asset_dir)
         except OSError as exc:
             logger.warning("permanent_delete_article: rmtree %s failed: %s", asset_dir, exc)
-    db.delete(article)
-    db.commit()
+    repo.delete(article)
 
 
 @router.get("/{article_id}", response_model=ArticleOut)
-def get_article(article_id: str, db: Session = Depends(get_db)) -> Article:
+def get_article(
+    article_id: str,
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> Article:
     """Get an article by id. Returns trashed articles too so the
     editor's restore-via-direct-url flow keeps working; the front-
     end's article list filters trashed entries out."""
-    article = db.query(Article).filter(Article.id == article_id).first()
+    article = repo.get(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
     return article
@@ -302,7 +296,11 @@ class CommentOut(BaseModel):
 
 
 @router.get("/{article_id}/comments", response_model=list[CommentOut])
-def list_article_comments(article_id: str, db: Session = Depends(get_db)) -> list[ArticleComment]:
+def list_article_comments(
+    article_id: str,
+    repo: ArticleRepository = Depends(get_article_repository),
+    comment_repo: CommentRepository = Depends(get_comment_repository),
+) -> list[ArticleComment]:
     """List comments that respond to this article.
 
     Returns soft-deleted-filtered comments ordered by their
@@ -310,16 +308,9 @@ def list_article_comments(article_id: str, db: Session = Depends(get_db)) -> lis
     doesn't exist so the editor can distinguish "no comments
     yet" (200 + []) from "wrong article id" (404).
     """
-    article = db.query(Article).filter(Article.id == article_id).first()
-    if article is None:
+    if repo.get(article_id) is None:
         raise HTTPException(status_code=404, detail="Article not found")
-    return (
-        db.query(ArticleComment)
-        .filter(ArticleComment.responds_to_article_id == article_id)
-        .filter(ArticleComment.deleted_at.is_(None))
-        .order_by(ArticleComment.published_at.asc().nullslast())
-        .all()
-    )
+    return list(comment_repo.list_for_article(article_id))
 
 
 # ---------------------------------------------------------------------------
@@ -361,6 +352,7 @@ class ReclassifyAsCommentResponse(BaseModel):
 def reclassify_article_as_comment(
     article_id: str,
     payload: ReclassifyAsCommentRequest,
+    repo: ArticleRepository = Depends(get_article_repository),
     db: Session = Depends(get_db),
 ) -> ReclassifyAsCommentResponse:
     """Move an Article to ArticleComment.
@@ -377,15 +369,21 @@ def reclassify_article_as_comment(
     400 when ``responds_to_article_id`` references an article
     that doesn't exist — silently flipping the FK to NULL would
     confuse the user.
+
+    The ``article_to_comment`` service still takes the request
+    ``Session`` directly (it inserts a comment + deletes the article
+    atomically); the ``db`` parameter stays until that cross-entity
+    path is migrated, and it is the same request session that backs
+    ``repo``.
     """
     from app.services.reclassify import article_to_comment
 
-    article = db.query(Article).filter(Article.id == article_id).first()
+    article = repo.get(article_id)
     if article is None:
         raise HTTPException(status_code=404, detail="Article not found")
 
     if payload.responds_to_article_id is not None:
-        target = db.query(Article).filter(Article.id == payload.responds_to_article_id).first()
+        target = repo.get(payload.responds_to_article_id)
         if target is None:
             raise HTTPException(
                 status_code=400,
@@ -411,7 +409,9 @@ def reclassify_article_as_comment(
 
 @router.patch("/{article_id}", response_model=ArticleOut)
 def update_article(
-    article_id: str, payload: ArticleUpdate, db: Session = Depends(get_db)
+    article_id: str,
+    payload: ArticleUpdate,
+    repo: ArticleRepository = Depends(get_article_repository),
 ) -> Article:
     """Partial update. Only fields present in the body are written.
 
@@ -420,7 +420,7 @@ def update_article(
     ``title`` / ``subtitle`` / ``author`` / ``language`` /
     ``status``. Same endpoint serves both shapes.
     """
-    article = db.query(Article).filter(Article.id == article_id).first()
+    article = repo.get(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -437,9 +437,7 @@ def update_article(
         updates["article_metadata"] = json.dumps(updates["article_metadata"])
     for key, value in updates.items():
         setattr(article, key, value)
-    db.commit()
-    db.refresh(article)
-    return article
+    return repo.save(article)
 
 
 # --- AI metadata generation (SEO title / SEO description / tags) ---
@@ -457,7 +455,7 @@ class _GenerateMetaRequest(BaseModel):
 async def generate_article_meta(
     article_id: str,
     request: _GenerateMetaRequest,
-    db: Session = Depends(get_db),
+    repo: ArticleRepository = Depends(get_article_repository),
 ) -> dict:
     """Single-shot AI generation for SEO title / description / tags.
 
@@ -488,7 +486,7 @@ async def generate_article_meta(
             detail=f"field must be one of {_AI_META_FIELDS}",
         )
 
-    article = db.query(Article).filter(Article.id == article_id).first()
+    article = repo.get(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -527,8 +525,7 @@ async def generate_article_meta(
 
     if tokens_used:
         article.ai_tokens_used = (article.ai_tokens_used or 0) + tokens_used
-        db.add(article)
-        db.commit()
+        repo.save(article)
 
     if result_format == "string":
         # Strip enclosing quotes the model often adds despite the
@@ -545,7 +542,10 @@ async def generate_article_meta(
 
 
 @router.delete("/{article_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
+def delete_article(
+    article_id: str,
+    repo: ArticleRepository = Depends(get_article_repository),
+) -> None:
     """Move article to trash by default; hard-delete when
     ``app.delete_permanently`` is true in app.yaml.
 
@@ -563,7 +563,7 @@ def delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
     Mirrors ``books.delete_book``; same ``delete_permanently``
     setting governs both entities so the user has one switch.
     """
-    article = db.query(Article).filter(Article.id == article_id).first()
+    article = repo.get(article_id)
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
@@ -574,7 +574,6 @@ def delete_article(article_id: str, db: Session = Depends(get_db)) -> None:
                 shutil.rmtree(asset_dir)
             except OSError as exc:
                 logger.warning("delete_article: could not remove %s: %s", asset_dir, exc)
-        db.delete(article)
+        repo.delete(article)
     else:
-        article.deleted_at = datetime.now(UTC)
-    db.commit()
+        repo.soft_delete(article)

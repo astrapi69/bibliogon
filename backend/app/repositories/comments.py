@@ -46,6 +46,10 @@ class CommentRepository(ABC):
         """Return every trashed comment, newest-trashed first."""
 
     @abstractmethod
+    def list_for_article(self, article_id: str) -> Sequence[ArticleComment]:
+        """Return non-deleted comments responding to ``article_id``."""
+
+    @abstractmethod
     def get_by_ids(self, ids: Sequence[str]) -> Sequence[ArticleComment]:
         """Return the comments whose ids are in ``ids`` (any state)."""
 
@@ -111,6 +115,15 @@ class SqlAlchemyCommentRepository(SQLAlchemyRepository, CommentRepository):
             self._db.query(ArticleComment)
             .filter(ArticleComment.deleted_at.is_not(None))
             .order_by(ArticleComment.deleted_at.desc())
+            .all()
+        )
+
+    def list_for_article(self, article_id: str) -> Sequence[ArticleComment]:
+        return (
+            self._db.query(ArticleComment)
+            .filter(ArticleComment.responds_to_article_id == article_id)
+            .filter(ArticleComment.deleted_at.is_(None))
+            .order_by(ArticleComment.published_at.asc().nullslast())
             .all()
         )
 
