@@ -16,13 +16,14 @@
 import { strFromU8, unzipSync } from "fflate";
 
 import type {
+  ArticleComment,
   ArticleStatus,
   MediumImportErroredItem,
+  MediumImportImportedCommentItem,
   MediumImportImportedItem,
   MediumImportPreviewItem,
   MediumImportPreviewResponse,
   MediumImportResponse,
-  MediumImportSkippedCommentItem,
   MediumImportSkippedItem,
 } from "../api/client";
 import { getStorage } from "../storage";
@@ -131,9 +132,10 @@ export async function importParsed(
   }
 
   const imported: MediumImportImportedItem[] = [];
+  const importedComments: MediumImportImportedCommentItem[] = [];
   const skipped: MediumImportSkippedItem[] = [];
   const errored: MediumImportErroredItem[] = [];
-  const skippedComments: MediumImportSkippedCommentItem[] = [];
+  const now = new Date().toISOString();
 
   for (const filename of selectedFilenames) {
     const post = parsed.get(filename);
@@ -142,7 +144,32 @@ export async function importParsed(
       continue;
     }
     if (post.isComment) {
-      skippedComments.push({ filename, reason: "mode_skip" });
+      // Offline data source: comment-shaped posts are created in the Dexie
+      // comments store (the backend importer routes these to article_comments;
+      // Medium comments are always orphans -> responds_to_article_id null).
+      const comment: ArticleComment = {
+        id: crypto.randomUUID(),
+        author: post.author || null,
+        body_text: gatherDocText(post.contentDoc),
+        body_json: JSON.stringify(post.contentDoc),
+        language: post.detectedLanguage ?? settings.defaultLanguage,
+        published_at: post.publishedAt,
+        canonical_url: post.canonicalUrl || null,
+        responds_to_article_id: null,
+        responds_to_url: null,
+        imported_from: "medium",
+        imported_at: now,
+        source_filename: filename,
+        created_at: now,
+        updated_at: now,
+      };
+      const stored = await storage.comments.create(comment);
+      importedComments.push({
+        id: stored.id,
+        filename,
+        body_preview: bodyPreview(post.contentDoc),
+        responds_to_article_id: null,
+      });
       continue;
     }
     if (!post.canonicalUrl) {
@@ -199,10 +226,10 @@ export async function importParsed(
     imported,
     skipped,
     errored,
-    imported_comments_count: 0,
-    skipped_comments_count: skippedComments.length,
-    imported_comments: [],
-    skipped_comments: skippedComments,
+    imported_comments_count: importedComments.length,
+    skipped_comments_count: 0,
+    imported_comments: importedComments,
+    skipped_comments: [],
   };
 }
 

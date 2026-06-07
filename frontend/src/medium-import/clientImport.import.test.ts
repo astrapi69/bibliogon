@@ -84,15 +84,33 @@ describe("importParsed", () => {
     expect(art.language).toBe("el");
   });
 
-  it("skips comment-classified posts (reported under skipped_comments)", async () => {
+  it("creates comment-classified posts in the offline comments store", async () => {
     const parsed = new Map([
-      ["c.html", makeParsed({ isComment: true, canonicalUrl: "https://m/c" })],
+      [
+        "c.html",
+        makeParsed({
+          isComment: true,
+          canonicalUrl: "https://m/c",
+          author: "Reader",
+          contentDoc: {
+            type: "doc",
+            content: [{ type: "paragraph", content: [{ type: "text", text: "Nice post!" }] }],
+          },
+        }),
+      ],
     ]);
     const res = await importParsed(parsed, ["c.html"], SETTINGS);
     expect(res.imported_count).toBe(0);
-    expect(res.skipped_comments_count).toBe(1);
-    expect(res.skipped_comments?.[0]).toEqual({ filename: "c.html", reason: "mode_skip" });
+    expect(res.imported_comments_count).toBe(1);
+    expect(res.imported_comments?.[0].filename).toBe("c.html");
+    expect(res.skipped_comments_count).toBe(0);
+    // Created as a comment, not an article.
     expect(await offlineDb.articles.count()).toBe(0);
+    expect(await offlineDb.articleComments.count()).toBe(1);
+    const comment = (await offlineDb.articleComments.toArray())[0];
+    expect(comment.imported_from).toBe("medium");
+    expect(comment.body_text).toContain("Nice post!");
+    expect(comment.responds_to_article_id).toBeNull();
   });
 
   it("dedups against an existing canonical_url (skipExistingCanonicalUrls)", async () => {
