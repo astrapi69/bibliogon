@@ -265,6 +265,47 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // afterEach proves the whole flow fired zero /api calls.
     });
 
+    test("comments work offline: imported comment -> admin -> soft-delete -> trash -> restore", async ({
+        page,
+    }) => {
+        // Import the fixture (1 article + 1 comment) offline.
+        await page.goto("/articles/import/medium");
+        await page.getByTestId("medium-import-upload-input").setInputFiles(MEDIUM_ZIP);
+        await page.getByTestId("medium-import-start").click();
+        await expect(page.getByTestId("medium-import-preview-section")).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByTestId("medium-import-preview-import-btn").click();
+        await expect(page.getByTestId("medium-import-result")).toBeVisible({
+            timeout: 10000,
+        });
+
+        // The imported comment shows in Settings > Kommentare (from Dexie).
+        await page.goto("/settings?tab=comments");
+        await expect(page.getByTestId("comments-admin-section")).toBeVisible();
+        await expect(page.getByText("Thanks, great post!").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // Soft-delete it (confirm dialog) — moves it to trash.
+        await page
+            .locator('[data-testid^="comments-admin-delete-"]')
+            .first()
+            .click();
+        await page.getByTestId("app-dialog-confirm").click();
+        await expect(page.getByText("Thanks, great post!")).toHaveCount(0);
+
+        // It now shows in the trash view; restore brings it back.
+        await page.getByTestId("comments-trash-toggle").click();
+        await expect(page.getByText("Thanks, great post!").first()).toBeVisible();
+        await page
+            .locator('[data-testid^="comments-trash-restore-"]')
+            .first()
+            .click();
+        await page.getByTestId("comments-active-toggle").click();
+        await expect(page.getByText("Thanks, great post!").first()).toBeVisible();
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {
