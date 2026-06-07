@@ -21,6 +21,7 @@ from pydantic import ValidationError
 from app.database import SessionLocal
 from app.main import app
 from app.models import Author
+from app.repositories.authors import SqlAlchemyAuthorRepository
 from app.routers.authors import _slugify, _unique_slug
 from app.schemas import AuthorCreate
 
@@ -112,7 +113,7 @@ def test_slugify(name: str, expected: str):
 def test_unique_slug_no_collision_returns_base():
     db = SessionLocal()
     try:
-        assert _unique_slug(db, "fresh-slug") == "fresh-slug"
+        assert _unique_slug(SqlAlchemyAuthorRepository(db), "fresh-slug") == "fresh-slug"
     finally:
         db.close()
 
@@ -122,7 +123,7 @@ def test_unique_slug_single_collision_appends_2():
     try:
         db.add(Author(name="X", slug="taken"))
         db.commit()
-        assert _unique_slug(db, "taken") == "taken-2"
+        assert _unique_slug(SqlAlchemyAuthorRepository(db), "taken") == "taken-2"
     finally:
         db.close()
 
@@ -133,7 +134,7 @@ def test_unique_slug_chained_collisions_increment_suffix():
         for slug in ("popular", "popular-2", "popular-3"):
             db.add(Author(name=slug, slug=slug))
         db.commit()
-        assert _unique_slug(db, "popular") == "popular-4"
+        assert _unique_slug(SqlAlchemyAuthorRepository(db), "popular") == "popular-4"
     finally:
         db.close()
 

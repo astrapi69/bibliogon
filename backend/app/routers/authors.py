@@ -38,10 +38,9 @@ import re
 import unicodedata
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.orm import Session
 
-from app.database import get_db
 from app.models import Author
+from app.repositories.authors import AuthorRepository, get_author_repository
 from app.schemas import AuthorCreate, AuthorOut, AuthorUpdate
 
 router = APIRouter(prefix="/authors", tags=["authors"])
@@ -90,12 +89,12 @@ def _slugify(name: str) -> str:
     return slug or "author"
 
 
-def _unique_slug(db: Session, base: str) -> str:
+def _unique_slug(repo: AuthorRepository, base: str) -> str:
     """Return ``base`` or ``base-N`` for the lowest free ``N >= 2``."""
-    if not db.query(Author).filter(Author.slug == base).first():
+    if not repo.slug_exists(base):
         return base
     suffix = 2
-    while db.query(Author).filter(Author.slug == f"{base}-{suffix}").first():
+    while repo.slug_exists(f"{base}-{suffix}"):
         suffix += 1
     return f"{base}-{suffix}"
 
@@ -107,7 +106,7 @@ def _unique_slug(db: Session, base: str) -> str:
 
 @router.get("", response_model=list[AuthorOut])
 def list_authors(
-    db: Session = Depends(get_db),
+    repo: AuthorRepository = Depends(get_author_repository),
     search: str | None = Query(
         default=None,
         description=(
@@ -118,64 +117,63 @@ def list_authors(
     limit: int = Query(default=200, ge=1, le=1000),
 ) -> list[Author]:
     """List authors ordered by name, newest-tiebreak by created_at desc."""
-    query = db.query(Author)
-    if search and search.strip():
-        query = query.filter(Author.name.ilike(f"%{search.strip()}%"))
-    return query.order_by(Author.name.asc(), Author.created_at.desc()).limit(limit).all()
+    return list(repo.list(search=search, limit=limit))
 
 
 @router.get("/{author_id}", response_model=AuthorOut)
-def get_author(author_id: str, db: Session = Depends(get_db)) -> Author:
-    author = db.query(Author).filter(Author.id == author_id).first()
+def get_author(
+    author_id: str,
+    repo: AuthorRepository = Depends(get_author_repository),
+) -> Author:
+    author = repo.get(author_id)
     if author is None:
         raise HTTPException(status_code=404, detail=f"Author {author_id} not found")
     return author
 
 
 @router.post("", response_model=AuthorOut, status_code=status.HTTP_201_CREATED)
-def create_author(payload: AuthorCreate, db: Session = Depends(get_db)) -> Author:
+def create_author(
+    payload: AuthorCreate,
+    repo: AuthorRepository = Depends(get_author_repository),
+) -> Author:
     """Create an author. Slug is server-generated and collision-suffixed."""
     base_slug = _slugify(payload.name)
-    slug = _unique_slug(db, base_slug)
+    slug = _unique_slug(repo, base_slug)
     author = Author(name=payload.name, slug=slug, bio=payload.bio)
-    db.add(author)
-    db.commit()
-    db.refresh(author)
-    return author
+    return repo.add(author)
 
 
 @router.patch("/{author_id}", response_model=AuthorOut)
 def update_author(
     author_id: str,
     payload: AuthorUpdate,
-    db: Session = Depends(get_db),
+    repo: AuthorRepository = Depends(get_author_repository),
 ) -> Author:
     """Partial update. Slug is immutable; name edits do not regenerate it."""
-    author = db.query(Author).filter(Author.id == author_id).first()
+    author = repo.get(author_id)
     if author is None:
         raise HTTPException(status_code=404, detail=f"Author {author_id} not found")
     fields = payload.model_dump(exclude_unset=True)
     for key, value in fields.items():
         setattr(author, key, value)
-    db.commit()
-    db.refresh(author)
-    return author
+    return repo.save(author)
 
 
 @router.delete("/{author_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_author(author_id: str, db: Session = Depends(get_db)) -> None:
+def delete_author(
+    author_id: str,
+    repo: AuthorRepository = Depends(get_author_repository),
+) -> None:
     """Hard-delete. Idempotent: already-gone returns 204 too.
 
-    No FK references the authors table (the Authors-DB stays
-    decoupled from the free-text ``author`` columns on Book /
+    Deleting an absent author is a no-op (not a 404) so the frontend's
+    "delete -> refetch" cycle works even if the row was already removed
+    in another tab. No FK references the authors table (the Authors-DB
+    stays decoupled from the free-text ``author`` columns on Book /
     Article / ArticleComment per D5), so hard-delete is safe — no
     cascading rows to worry about.
     """
-    author = db.query(Author).filter(Author.id == author_id).first()
+    author = repo.get(author_id)
     if author is None:
-        # Idempotent semantics: deleting an absent author is a no-op,
-        # not a 404. Lets the frontend's "delete -> refetch" cycle
-        # work even if the row was already removed in another tab.
         return
-    db.delete(author)
-    db.commit()
+    repo.delete(author)
