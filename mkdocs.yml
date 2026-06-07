@@ -65,6 +65,7 @@ plugins:
         Beziehungsgraph: Relationship graph
         Paginierung: Pagination
         Papierkorb und Wiederherstellung: Trash and restore
+        Bibliogon als Web-App: Using Bibliogon as a Web App
         Offline-Modus und LAN-Zugriff: Offline mode and LAN access
         Formatierung: Formatting
         Anzeige-Einstellungen: Display settings
@@ -77,6 +78,7 @@ plugins:
         Kapitelstatus und Labels: Chapter status and labels
         Schreibmodus: Composition mode
         Kontextmenü: Context menu
+        Im Browser: In the browser
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
         Git-URL: Git URL
@@ -150,12 +152,14 @@ nav:
   - Comic-Panels anordnen: de/books/comic-panels.md
 - Story-Bibel:
   - Übersicht: de/story-bible.md
+  - Offline: de/story-bible/offline.md
   - Erwähnungen und Auto-Erkennung: de/story-bible/mentions.md
   - Arc-Ansicht und Kontinuität: de/story-bible/arc-view.md
   - Beziehungsgraph: de/story-bible/relationship-graph.md
 - Dashboard:
   - Paginierung: de/dashboard/pagination.md
   - Papierkorb und Wiederherstellung: de/dashboard/trash-and-restore.md
+- Bibliogon als Web-App: de/web-app.md
 - Offline-Modus und LAN-Zugriff: de/offline-lan.md
 - Editor:
   - Übersicht: de/editor/uebersicht.md
@@ -171,6 +175,7 @@ nav:
   - Schreibmodus: de/editor/composition-mode.md
   - Kontextmenü: de/editor/context-menu.md
 - Export:
+  - Im Browser: de/export/browser.md
   - EPUB: de/export/epub.md
   - PDF: de/export/pdf.md
   - Audiobook: de/export/audiobook.md

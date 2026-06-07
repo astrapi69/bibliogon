@@ -91,6 +91,10 @@ navigation:
           en: Overview
         slug: story-bible
       - title:
+          de: Offline
+          en: Offline
+        slug: story-bible/offline
+      - title:
           de: Erwähnungen und Auto-Erkennung
           en: Mentions and auto-detect
         slug: story-bible/mentions
@@ -117,6 +121,12 @@ navigation:
           de: Papierkorb und Wiederherstellung
           en: Trash and restore
         slug: dashboard/trash-and-restore
+
+  - title:
+      de: Bibliogon als Web-App
+      en: Using Bibliogon as a Web App
+    slug: web-app
+    icon: globe
 
   - title:
       de: Offline-Modus und LAN-Zugriff
@@ -185,6 +195,10 @@ navigation:
     slug: export
     icon: download
     children:
+      - title:
+          de: Im Browser
+          en: In the browser
+        slug: export/browser
       - title:
           de: EPUB
           en: EPUB
