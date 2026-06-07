@@ -1,9 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-01 (v0.43.0 released — the Story Bible integration depth release; 10 commits since v0.42.0. Prose Storyboard (chapter-card grid for prose books, shared `StoryboardAnnotations` module, Storyboard button on every book type), entity relationships (ally/rival/family/mentor/romantic/neutral) + Arc-View relationship lines, @-mention autocomplete of Story Bible entities in the chapter + page editors, and auto-detect of entity mentions in existing text. Backend pytest 2468, Vitest 2568, all green.)
+Last updated: 2026-06-07 (Maximal-Offline arc — the static GitHub-Pages PWA now does everything the desktop does except the four genuinely browser-impossible features. See "Recently shipped" + "Architecture principles" below.)
 Latest release: v0.47.1 (2026-06-05) — see [changelog/releases/v0.47.1.md](../changelog/releases/v0.47.1.md) for the full per-release notes.
-Previous release: v0.42.0 (2026-05-30) — the Story Bible release; `plugin-story-bible` + the deep Story Bible ↔ Storyboard integration (entity-page linking, badges, appearance tracker, Arc View timeline, continuity checker, Markdown export).
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
@@ -17,73 +16,85 @@ per-tier list.
 
 ---
 
-## Recently shipped (v0.36.0)
+## Recently shipped — Maximal-Offline arc (v0.37.0 → v0.47.1)
 
-Three strategic streams matured together:
+The static GitHub-Pages build (`astrapi69.github.io/bibliogon/`) boots
+with **no backend** and supports full authoring offline, firing zero
+`/api` requests. Completed:
 
-1. **plugin-comics v1.0.0 → v1.1.0** — multi-panel + multi-bubble
-   comic-book editor for `book_type='comic_book'`, 8 CRUD endpoints,
-   WeasyPrint PDF walker (7 grid templates + 6 bubble-type CSS
-   variants + SVG triangle tail primitive), `ComicBookEditor` with
-   `LayoutConfigComicPanel` / `ComicPanelGrid` / `ComicBubble`,
-   `export_execute` hookspec wiring (eliminating cross-plugin
-   reverse-imports).
-2. **KDP Publishing Wizard Phase 1 + Phase 2** — 5-step XState v5
-   wizard (Metadata + CoverValidation + Pricing + Arc + Export
-   package) with `BookPublishingState` server-side persistence,
-   `ArcReviewer` schema, conflict-resolution banner when book
-   metadata changes mid-wizard. `WizardShell` + `WizardNav`
-   primitives extracted (RCU 3-site).
-3. **PluginForge v0.7.0 → v0.10.0 adoption arc** — 3-source plugin-
-   metadata pattern codified, `target_application` / `app_id`
-   declaration, `min_app_version` moved from YAML to class attribute,
-   `DiscoveryResult` severity filtering, `/api/admin/rediscover`
-   endpoint, single-router-per-plugin convention completed.
+- **Offline PWA foundation** — `IStorageService` seam (`getStorage()`
+  routes to `ApiStorage` online / `DexieStorage` IndexedDB offline);
+  seeded IndexedDB (settings / 8 i18n catalogs / book+content-type
+  registries / plugin list via `make generate-seed-data`); a single
+  `guardedFetch()` egress in `client.ts` rejects every `/api` call on
+  the backendless build; offline E2E hard-gate (`route.abort('**/api/**')`).
+- **CRUD offline** — books, chapters, articles, settings, writing
+  sessions, plus Story Bible (entities / links / relationships),
+  picture-book pages, comic panels + bubbles, storyboard annotations,
+  chapter labels — all routed through the seam.
+- **Client-side export** — 6 browser formats (Markdown / HTML / Text /
+  PDF / EPUB / DOCX) with no Pandoc; **Export-Engine chooser**
+  (auto / client / backend) in Settings > Verhalten.
+- **Client-side Medium import** — in-browser ZIP parse (`fflate`) +
+  HTML→TipTap walker (DOMParser) + dedup via the seam.
+- **Assets/media offline** — uploads routed through the seam, stored as
+  `ArrayBuffer` in IndexedDB; service-worker intercept serves them;
+  `useAssetUrl` resolver + storage-quota warning.
+- **GH Pages deploy split** — app on `/bibliogon/`, docs on
+  `/bibliogondocs/`, `404.html` SPA redirect; both auto-deploy on push.
+- **SW auto-update** + Settings > Über (version / build hash / date).
+- **Responsive / mobile** — header hamburger collapse (Tailwind 1200px
+  breakpoint), full responsive audit + fixes (list-view scroll, Story
+  Bible overlay, 16px inputs, 44px coarse touch targets), collapsible
+  BookEditor / ArticleEditor / ComicEditor / PageEditor sidebars.
+- **Foundation** — Dialog → Pages migration; Tailwind v4 + shadcn/ui
+  (token-mapped, Preflight-omitted); LAN Mode Phase 1.
 
-Plus 17 other coherent surfaces: Book-Types SSoT (book-types.yaml +
-BookTypeRegistry + GET /api/book-types + `useBookTypes` hook +
-10 migrated surfaces), picture-book PDF format dropdown + bleed /
-crop marks, speech-bubble `bubbles[0]` wrapper with Tier 1 visual
-style + Tier 2 typography, multi-book-type GetStarted (3-card
-picker + per-type sample books), Author input migrated to Pattern A
-Datalist (4 surfaces + `AuthorSelectInput` extraction), browser-
-native fullscreen across 3 editors (`useFullscreenToggle` hook),
-Alt+Z word-wrap toggle, About-Dialog 9th Settings tab +
-`/api/system/info`, Backups consolidation (Version-History +
-Compare-Backups moved Dashboard → Settings > Backups), page-delete
-UI, Medium-import excerpt auto-fill + `<br>` preservation,
-`BulkActionBar` 3-site RCU extraction, Story-tab metadata
-(`Book.book_idea`), KDP categories wired to 26-entry catalog,
-user-overlay plugin-enable lifespan migration, I18N-articles
-namespace cleanup.
+Backend-only surfaces (Pandoc/LaTeX export, Git sync/backup, audiobook
+TTS, LAN mode) are gated offline with a translated "requires the
+desktop app" hint (`useOfflineFeatureGate()`).
 
-10 new lessons-learned rules filed (Single-Router-Per-Plugin,
-Pre-Coding-Reality-Check, Audit-Methodology design-intent-axis,
-CRUD-shipping List endpoint mandatory, Foundation-Override
-extension, Stale-bundle false-positive class, Plain `git status`
-multi-tool discipline, Periodic backlog re-prioritization,
-Architecture-doc Pre-Inspection consultation, Operational gaps
-masquerade as wired infrastructure).
+## In progress
 
-**Post-release housekeeping (2026-05-25):** Dashboard pagination
-(DASHBOARD-PAGINATION-LOAD-MORE-01 — 8 commits, `usePagedList` +
-`PageSizeSelector`, Book + Article dashboards). Stale-backlog
-audit closed COMMENTS-ADMIN-PAGINATION-01 (already shipped at
-filing time). Trigger audits annotated on
-BOOK-TYPE-CARD-COMPONENT-EXTRACT-01 + KDP-WIZARD-RESUME-AT-STEP-01.
+- **AI via user-provided API key** — direct browser→provider call,
+  key stored in Dexie (never sent anywhere but the provider). Next up.
+- **Comments offline** — deferred until the client Medium import path
+  provides a data source (see "Articles-vs-Books / half-wired
+  lifecycle" lessons).
+
+## Planned
+
+- **Full `aiFill` template port** (v1b, multi-session) — the
+  three-workflow `.biblio.yaml` round-trip offline.
+- **Plugin TypeScript port** — audit done, execution pending.
+- **KDP Publishing Wizard** refinements (P2 backlog).
+
+## Architecture principles
+
+- **DEXIE-MODE-REGEL — Maximal Offline.** Every feature works offline
+  in the same commit that ships it, OR is explicitly gated offline in
+  that commit. The gate is the exception (the four browser-impossible
+  features); the seam is the default. See
+  [.claude/rules/architecture.md](../.claude/rules/architecture.md).
+- **`guardedFetch()` single choke point** — one egress in `client.ts`
+  rejects all `/api` traffic on the backendless build.
+- **`IStorageService` seam** — `getStorage()` routes reads/writes to
+  `ApiStorage` (online) or `DexieStorage` (IndexedDB, offline).
+- **Tailwind-first** (supersedes the former CSS-first rule) — new
+  visual work via Tailwind utilities; `global.css` is frozen.
+- **No inline comments, docstrings only** — see
+  [.claude/rules/code-hygiene.md](../.claude/rules/code-hygiene.md).
+- **Aster-E2E-Gate** — Playwright smoke must pass in a real browser
+  before any release tag (see release-workflow.md Pre-Release Gate).
 
 ---
 
 ## Current focus
 
-All Phase 2 themes (Distribution, Templates, Polish, Git-based
-backup, Donations, Core import orchestrator, plugin-git-sync,
-Article authoring, plugin-comics, plugin-kinderbuch, KDP wizard,
-PluginForge adoption, Dashboard pagination) are complete or
-deliberately deferred. The remaining open work is a small set
-of trigger-gated polish items, two new feature requests (Book
-git-repo URL + editor display settings), a passive validation
-track, and two upstream-blocked dependency upgrades.
+All Phase 2 themes and the Maximal-Offline arc (above) are complete
+or deliberately deferred. Active work is the "In progress" + "Planned"
+items above; everything else is the trigger-gated polish + upstream-
+blocked backlog in the tiers below.
 
 ---
 
