@@ -6,22 +6,17 @@ from typing import Any
 import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import ValidationError
-from sqlalchemy import or_
-from sqlalchemy.orm import Session, joinedload
 
-from app.database import get_db
-from app.models import (
-    Article,
-    Asset,
-    Book,
-    BookTemplate,
-    Chapter,
-    ChapterLabel,
-    ComicBubble,
-    ComicPanel,
-    Page,
-    StoryEntity,
-    StoryEntityPageLink,
+from app.models import Article, Book, Chapter
+from app.repositories.articles import ArticleRepository, get_article_repository
+from app.repositories.books import (
+    BookRepository,
+    SqlAlchemyBookRepository,
+    get_book_repository,
+)
+from app.repositories.templates import (
+    BookTemplateRepository,
+    get_book_template_repository,
 )
 from app.schemas import (
     BookCreate,
@@ -125,15 +120,9 @@ def cleanup_expired_trash() -> int:
 
     db = SessionLocal()
     try:
+        repo = SqlAlchemyBookRepository(db)
         cutoff = datetime.now(UTC) - timedelta(days=days)
-        expired = (
-            db.query(Book)
-            .filter(
-                Book.deleted_at.is_not(None),
-                Book.deleted_at < cutoff,
-            )
-            .all()
-        )
+        expired = repo.list_expired_trash(cutoff)
         count = len(expired)
         for book in expired:
             logger.info(
@@ -142,9 +131,8 @@ def cleanup_expired_trash() -> int:
                 book.title,
                 book.deleted_at,
             )
-            db.delete(book)
         if count > 0:
-            db.commit()
+            repo.delete_all(expired)
             logger.info("Auto-deleted %d expired trash items (older than %d days)", count, days)
         return count
     finally:
@@ -154,7 +142,7 @@ def cleanup_expired_trash() -> int:
 @router.get("", response_model=list[BookOut])
 def list_books(
     limit: int | None = Query(default=None, ge=1, le=1000),
-    db: Session = Depends(get_db),
+    repo: BookRepository = Depends(get_book_repository),
 ):
     """List all active (non-deleted) books.
 
@@ -164,21 +152,18 @@ def list_books(
     (BookEditor navigation, backup, etc.); the Dashboard's
     pagination passes the user-selected page size.
     """
-    query = db.query(Book).filter(Book.deleted_at.is_(None)).order_by(Book.updated_at.desc())
-    if limit is not None:
-        query = query.limit(limit)
-    return query.all()
+    return list(repo.list(limit=limit))
 
 
 @router.post("", response_model=BookOut, status_code=status.HTTP_201_CREATED)
-def create_book(payload: BookCreate, db: Session = Depends(get_db)):
+def create_book(
+    payload: BookCreate,
+    repo: BookRepository = Depends(get_book_repository),
+):
     data = payload.model_dump()
     data["author"] = _validate_author(data.get("author"), _allow_books_without_author())
     book = Book(**data)
-    db.add(book)
-    db.commit()
-    db.refresh(book)
-    return book
+    return repo.add(book)
 
 
 @router.post(
@@ -186,13 +171,17 @@ def create_book(payload: BookCreate, db: Session = Depends(get_db)):
     response_model=BookDetail,
     status_code=status.HTTP_201_CREATED,
 )
-def create_book_from_template(payload: BookFromTemplateCreate, db: Session = Depends(get_db)):
+def create_book_from_template(
+    payload: BookFromTemplateCreate,
+    repo: BookRepository = Depends(get_book_repository),
+    template_repo: BookTemplateRepository = Depends(get_book_template_repository),
+):
     """Create a new book with chapters pre-filled from a template.
 
     The book and all its chapters are persisted in a single commit -
     if any chapter insert fails the book insert rolls back with it.
     """
-    template = db.query(BookTemplate).filter(BookTemplate.id == payload.template_id).first()
+    template = template_repo.get(payload.template_id)
     if template is None:
         raise HTTPException(status_code=404, detail="Template not found")
 
@@ -208,11 +197,10 @@ def create_book_from_template(payload: BookFromTemplateCreate, db: Session = Dep
         series_index=payload.series_index,
         description=description,
     )
-    db.add(book)
-    db.flush()  # assign book.id for the chapter FKs
+    repo.flush_new(book)  # assign book.id for the chapter FKs
 
     for tpl_chapter in sorted(template.chapters, key=lambda c: c.position):
-        db.add(
+        repo.stage(
             Chapter(
                 book_id=book.id,
                 title=tpl_chapter.title,
@@ -222,9 +210,7 @@ def create_book_from_template(payload: BookFromTemplateCreate, db: Session = Dep
             )
         )
 
-    db.commit()
-    db.refresh(book)
-    return book
+    return repo.commit_refresh(book)
 
 
 # --- Article-to-book conversion (Phase 1) ---
@@ -251,7 +237,9 @@ def _wrap_text_as_tiptap_doc(text: str | None) -> str:
     )
 
 
-def _resolve_articles_or_422(article_ids: list[str], db: Session) -> list[Article]:
+def _resolve_articles_or_422(
+    article_ids: list[str], article_repo: ArticleRepository
+) -> list[Article]:
     """Load articles and validate every input id.
 
     All offending ids surface in a single 422 (Q10 + Q11 confirmation:
@@ -261,7 +249,7 @@ def _resolve_articles_or_422(article_ids: list[str], db: Session) -> list[Articl
     starting permutation when ``sort_strategy=manual`` reuses the
     input order.
     """
-    rows = db.query(Article).filter(Article.id.in_(article_ids)).all()
+    rows = list(article_repo.get_by_ids(article_ids))
     by_id: dict[str, Article] = {a.id: a for a in rows}
 
     not_found_ids = [aid for aid in article_ids if aid not in by_id]
@@ -499,7 +487,11 @@ def _shared_series(articles: list[Article]) -> str | None:
     response_model=BookDetail,
     status_code=status.HTTP_201_CREATED,
 )
-def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Depends(get_db)):
+def create_book_from_articles(
+    payload: BookFromArticlesCreate,
+    repo: BookRepository = Depends(get_book_repository),
+    article_repo: ArticleRepository = Depends(get_article_repository),
+):
     """Create a Book by copying selected Articles into Chapters.
 
     Article-to-book conversion (Phase 1). Original Articles are left
@@ -521,7 +513,7 @@ def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Dep
     """
     author = _validate_author(payload.author, _allow_books_without_author())
 
-    articles = _resolve_articles_or_422(payload.article_ids, db)
+    articles = _resolve_articles_or_422(payload.article_ids, article_repo)
 
     manual_order = (
         _validate_manual_order_or_422(payload.article_ids, payload.manual_order)
@@ -556,8 +548,7 @@ def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Dep
             else (single_article.featured_image_url if single_article else None)
         ),
     )
-    db.add(book)
-    db.flush()  # assign book.id for chapter FKs
+    repo.flush_new(book)  # assign book.id for chapter FKs
 
     use_article_title = payload.chapter_settings.use_article_title_as_chapter_title
 
@@ -582,22 +573,24 @@ def create_book_from_articles(payload: BookFromArticlesCreate, db: Session = Dep
     )
 
     for chapter in chapters:
-        db.add(chapter)
+        repo.stage(chapter)
 
-    db.commit()
-    db.refresh(book)
-    return book
+    return repo.commit_refresh(book)
 
 
 @router.get("/{book_id}", response_model=BookDetail)
-def get_book(book_id: str, include_content: bool = True, db: Session = Depends(get_db)):
+def get_book(
+    book_id: str,
+    include_content: bool = True,
+    repo: BookRepository = Depends(get_book_repository),
+):
     """Get a single book with its chapters.
 
     When include_content=false, chapter content is replaced with an empty
     string to reduce payload size for large books (100+ chapters). The
     frontend fetches individual chapter content on demand.
     """
-    book = db.query(Book).options(joinedload(Book.chapters)).filter(Book.id == book_id).first()
+    book = repo.get_with_chapters(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     if not include_content:
@@ -611,7 +604,10 @@ def get_book(book_id: str, include_content: bool = True, db: Session = Depends(g
 
 
 @router.get("/{book_id}/full")
-def get_book_full(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]:
+def get_book_full(
+    book_id: str,
+    repo: BookRepository = Depends(get_book_repository),
+) -> dict[str, Any]:
     """Return the complete book graph in one request for offline download.
 
     Avoids the N+1 round-trips a mobile client would otherwise make when
@@ -620,45 +616,22 @@ def get_book_full(book_id: str, db: Session = Depends(get_db)) -> dict[str, Any]
     DexieStorage stores. Binary asset FILES are not included — only asset
     metadata; the client fetches images via the asset endpoint.
     """
-    book = db.query(Book).filter(Book.id == book_id).first()
-    if not book:
+    graph = repo.load_book_graph(book_id)
+    if graph is None:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
-    pages = db.query(Page).filter(Page.book_id == book_id).all()
-    chapter_ids = [c.id for c in chapters]
-    page_ids = [p.id for p in pages]
-    panels = db.query(ComicPanel).filter(ComicPanel.page_id.in_(page_ids)).all() if page_ids else []
-    panel_ids = [p.id for p in panels]
-    bubbles = (
-        db.query(ComicBubble).filter(ComicBubble.panel_id.in_(panel_ids)).all() if panel_ids else []
-    )
-    entities = db.query(StoryEntity).filter(StoryEntity.book_id == book_id).all()
-    links = (
-        db.query(StoryEntityPageLink)
-        .filter(
-            or_(
-                StoryEntityPageLink.page_id.in_(page_ids),
-                StoryEntityPageLink.chapter_id.in_(chapter_ids),
-            )
-        )
-        .all()
-        if (page_ids or chapter_ids)
-        else []
-    )
-    labels = db.query(ChapterLabel).filter(ChapterLabel.book_id == book_id).all()
-    assets = db.query(Asset).filter(Asset.book_id == book_id).all()
-
     return {
-        "book": serialize_row(book),
-        "chapters": [serialize_row(r) for r in chapters],
-        "pages": [serialize_row(r) for r in pages],
-        "comic_panels": [serialize_row(r) for r in panels],
-        "comic_bubbles": [serialize_row(r) for r in bubbles],
-        "story_entities": [serialize_row(r) for r in entities],
-        "story_entity_page_links": [serialize_row(r) for r in links],
-        "chapter_labels": [serialize_row(r) for r in labels],
-        "assets": [serialize_row(r) for r in assets],
+        "book": serialize_row(graph["book"]),
+        "chapters": [serialize_row(r) for r in graph["chapters"]],
+        "pages": [serialize_row(r) for r in graph["pages"]],
+        "comic_panels": [serialize_row(r) for r in graph["comic_panels"]],
+        "comic_bubbles": [serialize_row(r) for r in graph["comic_bubbles"]],
+        "story_entities": [serialize_row(r) for r in graph["story_entities"]],
+        "story_entity_page_links": [
+            serialize_row(r) for r in graph["story_entity_page_links"]
+        ],
+        "chapter_labels": [serialize_row(r) for r in graph["chapter_labels"]],
+        "assets": [serialize_row(r) for r in graph["assets"]],
     }
 
 
@@ -669,7 +642,7 @@ _IMMUTABLE_BOOK_FIELDS = ("book_type",)
 def update_book(
     book_id: str,
     payload: dict[str, Any] = Body(...),
-    db: Session = Depends(get_db),
+    repo: BookRepository = Depends(get_book_repository),
 ):
     # Phase-4 immutability guard. book_type is set at book creation
     # and never changes. The BookUpdate Pydantic schema deliberately
@@ -687,7 +660,7 @@ def update_book(
             ),
         )
 
-    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
+    book = repo.get_active(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
     # The router validates the payload manually (instead of via a
@@ -729,60 +702,51 @@ def update_book(
         ) and isinstance(value, list):
             value = json.dumps(value)
         setattr(book, key, value)
-    db.commit()
-    db.refresh(book)
-    return book
+    return repo.save(book)
 
 
 @router.delete("/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_book(book_id: str, db: Session = Depends(get_db)):
+def delete_book(book_id: str, repo: BookRepository = Depends(get_book_repository)):
     """Delete a book. Moves to trash by default, permanently if configured."""
-    book = db.query(Book).filter(Book.id == book_id).first()
+    book = repo.get(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
     if _is_permanent_delete():
-        db.delete(book)
+        repo.delete(book)
     else:
-        book.deleted_at = datetime.now(UTC)
-    db.commit()
+        repo.soft_delete(book)
 
 
 # --- Trash ---
 
 
 @router.get("/trash/list", response_model=list[BookOut])
-def list_trash(db: Session = Depends(get_db)):
+def list_trash(repo: BookRepository = Depends(get_book_repository)):
     """List all books in the trash."""
-    return (
-        db.query(Book).filter(Book.deleted_at.is_not(None)).order_by(Book.deleted_at.desc()).all()
-    )
+    return list(repo.list_trashed())
 
 
 @router.post("/trash/{book_id}/restore", response_model=BookOut)
-def restore_book(book_id: str, db: Session = Depends(get_db)):
+def restore_book(book_id: str, repo: BookRepository = Depends(get_book_repository)):
     """Restore a book from the trash."""
-    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_not(None)).first()
+    book = repo.get_trashed(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found in trash")
     book.deleted_at = None
-    db.commit()
-    db.refresh(book)
-    return book
+    return repo.save(book)
 
 
 @router.delete("/trash/empty", status_code=status.HTTP_204_NO_CONTENT)
-def empty_trash(db: Session = Depends(get_db)):
+def empty_trash(repo: BookRepository = Depends(get_book_repository)):
     """Permanently delete all books in the trash."""
-    db.query(Book).filter(Book.deleted_at.is_not(None)).delete()
-    db.commit()
+    repo.empty_trash()
 
 
 @router.delete("/trash/{book_id}", status_code=status.HTTP_204_NO_CONTENT)
-def permanent_delete(book_id: str, db: Session = Depends(get_db)):
+def permanent_delete(book_id: str, repo: BookRepository = Depends(get_book_repository)):
     """Permanently delete a book from the trash."""
-    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_not(None)).first()
+    book = repo.get_trashed(book_id)
     if not book:
         raise HTTPException(status_code=404, detail="Book not found in trash")
-    db.delete(book)
-    db.commit()
+    repo.delete(book)

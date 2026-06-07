@@ -36,6 +36,10 @@ class ArticleRepository(ABC):
         """Return the article only if it is currently in the trash."""
 
     @abstractmethod
+    def get_by_ids(self, ids: Sequence[str]) -> Sequence[Article]:
+        """Return the articles whose ids are in ``ids`` (any state)."""
+
+    @abstractmethod
     def list(
         self,
         *,
@@ -88,6 +92,11 @@ class SqlAlchemyArticleRepository(SQLAlchemyRepository, ArticleRepository):
             .filter(Article.id == article_id, Article.deleted_at.is_not(None))
             .first()
         )
+
+    def get_by_ids(self, ids: Sequence[str]) -> Sequence[Article]:
+        if not ids:
+            return []
+        return self._db.query(Article).filter(Article.id.in_(list(ids))).all()
 
     def list(
         self,
