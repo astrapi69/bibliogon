@@ -34,6 +34,13 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import TrashCard from "../components/trash/TrashCard";
+import {
+    EntityTrashView,
+    EntityEmptyState,
+    RESTORE_ACTION_ID,
+    PERMANENT_DELETE_ACTION_ID,
+} from "@astrapi69/entity-kit";
+import {bookDescriptor} from "../descriptors/bookDescriptor";
 import styles from "./Dashboard.module.css";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
@@ -103,6 +110,14 @@ export default function Dashboard() {
     // Settings UI. See ``useTrashViewMode`` for the rationale.
     const { mode: trashViewMode, setMode: setTrashViewMode } =
         useTrashViewMode("books");
+    /**
+     * entity-kit PoC flag. `?entitykit=1` renders the trash list via the
+     * generic `EntityTrashView` from `@astrapi69/entity-kit`; without it the
+     * existing TrashCard grid / list rendering is used unchanged, so Aster can
+     * A/B the two without a code change.
+     */
+    const useEntityKitTrash =
+        new URLSearchParams(location.search).get("entitykit") === "1";
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C5: paged display of the
     // active (non-trash) book list. Slices ``filters.filteredBooks``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -725,6 +740,48 @@ export default function Dashboard() {
                                 icon={<Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>}
                                 title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
                             />
+                        ) : useEntityKitTrash ? (
+                            <div data-testid="trash-entitykit">
+                                <EntityTrashView
+                                    items={trash}
+                                    descriptor={bookDescriptor}
+                                    onAction={(actionId, book) => {
+                                        if (actionId === RESTORE_ACTION_ID) {
+                                            void handleRestore(book);
+                                        } else if (actionId === PERMANENT_DELETE_ACTION_ID) {
+                                            void handlePermanentDelete(book.id);
+                                        }
+                                    }}
+                                    restoreLabel={t("ui.dashboard.restore_book", "Wiederherstellen")}
+                                    permanentDeleteLabel={t("ui.dashboard.delete_permanent", "Endgültig löschen")}
+                                    deletedAtLabel={t("ui.dashboard.deleted_at", "Gelöscht am")}
+                                    emptyState={
+                                        <EntityEmptyState
+                                            title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
+                                        />
+                                    }
+                                    classNames={{
+                                        container: "rounded-[var(--radius-md)] border border-border",
+                                        list: {
+                                            root: "overflow-x-auto",
+                                            table: "w-full border-collapse text-foreground",
+                                            head: "border-b border-border",
+                                            header: "px-3 py-2 text-left text-sm font-semibold text-muted-foreground",
+                                            headerActions: "px-3 py-2 text-right",
+                                            sortButton: "inline-flex items-center gap-1",
+                                            row: "border-b border-border",
+                                            cell: "px-3 py-2 align-middle",
+                                            actionsCell: "px-3 py-2 text-right whitespace-nowrap",
+                                            actions: "inline-flex gap-2 justify-end",
+                                            actionButton: "btn btn-primary btn-sm",
+                                            dangerActionButton: "btn btn-danger btn-sm",
+                                            pagination: "flex items-center gap-2 p-2",
+                                            pageButton: "btn btn-secondary btn-sm",
+                                            pageStatus: "text-sm text-muted-foreground",
+                                        },
+                                    }}
+                                />
+                            </div>
                         ) : trashViewMode === "grid" ? (
                             <div className={styles.grid} data-testid="trash-grid">
                                 {trash.map((book) => (
