@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-07 (Maximal-Offline arc — the static GitHub-Pages PWA now does everything the desktop does except the four genuinely browser-impossible features. See "Recently shipped" + "Architecture principles" below.)
+Last updated: 2026-06-08 (Maximal-Offline arc — the static GitHub-Pages PWA now does everything the desktop does except the four genuinely browser-impossible features. AI "Fill with AI" template fill (1b) now runs offline too. See "Recently shipped" + "Architecture principles" below.)
 Latest release: v0.47.1 (2026-06-05) — see [changelog/releases/v0.47.1.md](../changelog/releases/v0.47.1.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
@@ -57,15 +57,29 @@ desktop app" hint (`useOfflineFeatureGate()`).
 ## In progress
 
 - **AI via user-provided API key** — direct browser→provider call,
-  key stored in Dexie (never sent anywhere but the provider). Next up.
+  key stored in Dexie (never sent anywhere but the provider). The
+  single-field SEO/marketing generator (1a) AND the in-editor
+  "Fill with AI" template fill (1b) now run offline browser-direct
+  via `frontend/src/ai/` (templateApply + per-entity fill prompts +
+  the `aiFill` orchestrator). Offline fill covers the editor-visible
+  field-classes (article seo/tags/topic/excerpt; book marketing_copy/
+  tags/description_genre); the JSON-shaped prompts replace the
+  backend's YAML to avoid a browser YAML parser.
 - **Comments offline** — deferred until the client Medium import path
   provides a data source (see "Articles-vs-Books / half-wired
   lifecycle" lessons).
 
 ## Planned
 
-- **Full `aiFill` template port** (v1b, multi-session) — the
-  three-workflow `.biblio.yaml` round-trip offline.
+- **AI offline — remaining surfaces** (follow-up to 1b). Three
+  field-classes whose target columns are not on the Dexie/API entity
+  shape stay backend/online-only offline: article `image_prompts`
+  (featured_image_prompt + inline_image_prompts), book `cover_prompt`
+  (cover_image_prompt) and `chapter_summaries` (needs the chapter-
+  reconcile pipeline + a Dexie column). The `.biblio.yaml` template
+  export/import round-trip also stays gated offline (file round-trip +
+  browser YAML parser); the in-editor Fill workflow (1b, shipped) does
+  not need it.
 - **Plugin TypeScript port** — audit done, execution pending.
 - **KDP Publishing Wizard** refinements (P2 backlog).
 
