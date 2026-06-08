@@ -1114,6 +1114,7 @@ export const dexieStorage: IStorageService = {
 
   assets: {
     list: async (bookId) => {
+      await ensureSeeded();
       const rows = await offlineDb.assets
         .where("bookId")
         .equals(bookId)
@@ -1131,9 +1132,11 @@ export const dexieStorage: IStorageService = {
       return assetRowToMeta(row);
     },
     delete: async (_bookId, assetId) => {
+      await ensureSeeded();
       await offlineDb.assets.delete(assetId);
     },
     getBlob: async (bookId, filename) => {
+      await ensureSeeded();
       const row = await offlineDb.assets
         .where("[bookId+filename]")
         .equals([bookId, filename])
@@ -1346,6 +1349,7 @@ export async function storeAssetBlob(
   assetType: string,
   id?: string,
 ): Promise<AssetRow> {
+  await ensureSeeded();
   const data = await blobToArrayBuffer(blob);
   const existing = (await offlineDb.assets
     .where("[bookId+filename]")
