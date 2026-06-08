@@ -400,6 +400,12 @@ export default function StoryBibleSidebar({
                                     onClick={() => {
                                         setAddingType(type.id);
                                         setNewName("");
+                                        setCollapsed((prev) => {
+                                            if (!prev.has(type.id)) return prev;
+                                            const next = new Set(prev);
+                                            next.delete(type.id);
+                                            return next;
+                                        });
                                     }}
                                     data-testid={`story-bible-add-${type.id}`}
                                     aria-label={t(

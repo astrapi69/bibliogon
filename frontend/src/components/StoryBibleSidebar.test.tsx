@@ -172,6 +172,19 @@ describe("StoryBibleSidebar", () => {
         );
     });
 
+    it("reveals the add form when the group is collapsed (add expands it)", async () => {
+        render(<StoryBibleSidebar bookId="b1" onClose={vi.fn()} onSelectEntity={vi.fn()} />);
+        await screen.findByTestId("story-bible-group-character");
+        fireEvent.click(screen.getByTestId("story-bible-group-toggle-character"));
+        expect(
+            screen.queryByTestId("story-bible-add-input-character"),
+        ).toBeNull();
+        fireEvent.click(screen.getByTestId("story-bible-add-character"));
+        expect(
+            await screen.findByTestId("story-bible-add-input-character"),
+        ).toBeTruthy();
+    });
+
     it("deletes an entity after confirmation", async () => {
         mockListEntities.mockResolvedValue([
             entity("c1", "character", "Alice"),

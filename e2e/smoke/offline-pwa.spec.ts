@@ -251,8 +251,10 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.goto("/settings?tab=ai");
         await expect(page.getByTestId("ai-assistant-settings")).toBeVisible();
 
-        // Enable AI, pick OpenAI (auto-fills base_url + model), enter a key.
-        await page.getByTestId("ai-enabled").click();
+        // AI is enabled by default in the seeded config, so the provider
+        // section is interactive without toggling ai-enabled (which would turn
+        // it OFF and make the section pointer-events:none). Pick OpenAI
+        // (auto-fills base_url + model), enter a key.
         await page.getByTestId("ai-provider-trigger").click();
         await page.getByTestId("ai-provider-item-openai").click();
         await page.getByTestId("ai-api-key-input").fill("sk-test");
