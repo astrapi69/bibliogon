@@ -18,14 +18,14 @@ describe("bookDescriptor", () => {
     const book = makeBook({id: "b1", title: "Dune", author: "Frank Herbert"});
     expect(bookDescriptor.getId(book)).toBe("b1");
     expect(bookDescriptor.displayName(book)).toBe("Dune");
-    expect(bookDescriptor.shortDescription(book)).toBe("Frank Herbert");
+    expect(bookDescriptor.shortDescription?.(book)).toBe("Frank Herbert");
   });
 
   it("falls back to subtitle then empty string for the short description", () => {
-    expect(bookDescriptor.shortDescription(makeBook({author: null, subtitle: "A Saga"}))).toBe(
+    expect(bookDescriptor.shortDescription?.(makeBook({author: null, subtitle: "A Saga"}))).toBe(
       "A Saga",
     );
-    expect(bookDescriptor.shortDescription(makeBook({author: null, subtitle: null}))).toBe("");
+    expect(bookDescriptor.shortDescription?.(makeBook({author: null, subtitle: null}))).toBe("");
   });
 
   it("treats every fetched trash item as deleted (host pre-filters)", () => {
