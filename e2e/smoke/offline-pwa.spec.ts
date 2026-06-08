@@ -14,13 +14,15 @@
  * `/api` directly and 404 on a backendless host).
  */
 
-import {fileURLToPath} from "node:url";
+import * as path from "node:path";
 
 import {test, expect} from "../fixtures/base";
 
-const MEDIUM_ZIP = fileURLToPath(
-    new URL("../fixtures/medium-export.zip", import.meta.url),
-);
+// Resolve the fixture via __dirname (CJS) rather than import.meta.url: the
+// latter forces Playwright to load this spec as ESM, which breaks the runner's
+// require shim ("require is not defined in ES module scope") under the e2e
+// package's default CommonJS module mode.
+const MEDIUM_ZIP = path.join(__dirname, "..", "fixtures", "medium-export.zip");
 
 // Smoke tests mutate the viewport / storage mode; run this file serially so
 // the shared per-test recorder below is never raced.
