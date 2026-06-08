@@ -19,6 +19,8 @@
 
 import {test, expect} from "../fixtures/base";
 
+const API = "http://localhost:8000/api";
+
 const ABOVE = 1280; // > 1200 breakpoint -> full bar
 const BELOW = 1100; // < 1200 breakpoint -> hamburger
 const REFERENCE_WIDTH = 1440; // single-line guaranteed
@@ -38,6 +40,24 @@ async function headerHeight(
 }
 
 test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
+    // Two tests below persist a UI language (es) + default book type
+    // (picture_book) to the SHARED backend dev DB. Without a reset they leak
+    // into every later desktop smoke test, which then renders in Spanish (text
+    // assertions fail) or sees the wrong default type. Restore the defaults
+    // after each test via the API, preserving the rest of ui.defaults (the PATCH
+    // shallow-merges app but replaces ui.defaults wholesale).
+    test.afterEach(async ({page}) => {
+        const cfg = await (await page.request.get(`${API}/settings/app`)).json();
+        const uiDefaults =
+            (cfg.ui?.defaults as Record<string, unknown> | undefined) ?? {};
+        await page.request.patch(`${API}/settings/app`, {
+            data: {
+                app: {default_language: "de"},
+                ui: {defaults: {...uiDefaults, book_type: "prose"}},
+            },
+        });
+    });
+
     test("full inline bar above the breakpoint, hamburger hidden", async ({
         page,
     }) => {
