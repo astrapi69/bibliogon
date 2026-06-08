@@ -2117,6 +2117,7 @@
     },
     "ai_template": {
       "editor_section": "AI Template",
+      "offline_configure_key": "Configure your API key in Settings > AI to use AI fill offline.",
       "panel": {
         "title": "AI Template",
         "fill": "Fill with AI",

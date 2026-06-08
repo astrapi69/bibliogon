@@ -2048,6 +2048,7 @@ ui:
     filter_genre: "Tür"
   ai_template:
     editor_section: "Yapay Zekâ Şablonu"
+    offline_configure_key: "Çevrimdışı yapay zekâ doldurmasını kullanmak için API anahtarınızı Ayarlar > Yapay Zekâ bölümünde yapılandırın."
     panel:
       title: "Yapay Zekâ Şablonu"
       fill: "Yapay zekâyla doldur"

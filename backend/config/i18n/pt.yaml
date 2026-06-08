@@ -2048,6 +2048,7 @@ ui:
     filter_genre: "Género"
   ai_template:
     editor_section: "Modelo de IA"
+    offline_configure_key: "Configure a sua chave de API em Definições > IA para usar o preenchimento com IA offline."
     panel:
       title: "Modelo de IA"
       fill: "Preencher com IA"

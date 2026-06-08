@@ -2048,6 +2048,7 @@ ui:
     filter_genre: "Genre"
   ai_template:
     editor_section: "Modèle IA"
+    offline_configure_key: "Configurez votre clé API dans Paramètres > IA pour utiliser le remplissage IA hors ligne."
     panel:
       title: "Modèle IA"
       fill: "Remplir avec l'IA"

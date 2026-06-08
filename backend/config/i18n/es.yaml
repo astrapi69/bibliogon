@@ -2048,6 +2048,7 @@ ui:
     filter_genre: "Género"
   ai_template:
     editor_section: "Plantilla de IA"
+    offline_configure_key: "Configura tu clave de API en Ajustes > IA para usar el relleno con IA sin conexión."
     panel:
       title: "Plantilla de IA"
       fill: "Rellenar con IA"

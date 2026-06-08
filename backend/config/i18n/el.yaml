@@ -2048,6 +2048,7 @@ ui:
     filter_genre: "Είδος"
   ai_template:
     editor_section: "Πρότυπο AI"
+    offline_configure_key: "Ρυθμίστε το κλειδί API σας στις Ρυθμίσεις > AI για να χρησιμοποιήσετε τη συμπλήρωση AI εκτός σύνδεσης."
     panel:
       title: "Πρότυπο AI"
       fill: "Συμπλήρωση με AI"

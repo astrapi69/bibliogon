@@ -1,4 +1,4 @@
-import {useState} from "react"
+import {useState, useEffect} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {Sparkles, Download, Upload, X} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
@@ -10,6 +10,10 @@ import type {
     AiFillResponse,
     AiTemplateImportResult,
 } from "../api/client"
+import {getAiConfig, isAiConfigured} from "../ai/llmClient"
+import {aiFillArticle, aiFillBook} from "../ai/aiFill"
+import {ARTICLE_OFFLINE_FILL_CLASSES} from "../ai/articleFillPrompts"
+import {BOOK_OFFLINE_FILL_CLASSES} from "../ai/bookFillPrompts"
 import FieldClassDialog, {
     type FieldClassDialogResult,
 } from "./FieldClassDialog"
@@ -63,6 +67,34 @@ export default function AITemplatePanel({
     const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
     const namespace = kind === "article" ? api.articles : api.books
 
+    // Offline, the AI plugin probe is empty (backend-only); Fill instead runs
+    // browser-direct via the user's own key, so availability follows whether
+    // an AI key is configured in Settings rather than the offline feature gate.
+    const [offlineAiReady, setOfflineAiReady] = useState(false)
+    useEffect(() => {
+        if (!offlineGate) return
+        let cancelled = false
+        void getAiConfig().then((config) => {
+            if (!cancelled) setOfflineAiReady(isAiConfigured(config))
+        })
+        return () => {
+            cancelled = true
+        }
+    }, [offlineGate])
+
+    const offlineSupportedClasses =
+        kind === "article" ? ARTICLE_OFFLINE_FILL_CLASSES : BOOK_OFFLINE_FILL_CLASSES
+    // Fill is the one workflow that works offline (browser-direct). Export +
+    // Import stay gated offline (they round-trip a .biblio.yaml file; out of
+    // this scope). Offline without a key: disabled with a "configure key" hint.
+    const fillBlockedOffline = offlineGate && !offlineAiReady
+    const fillTitle = fillBlockedOffline
+        ? t(
+              "ui.ai_template.offline_configure_key",
+              "Configure your API key in Settings > AI to use Fill offline.",
+          )
+        : undefined
+
     // Per-button loading flags so the user can tell which action is
     // in flight when they kicked off two close together (rare, but
     // explicit beats ambiguous).
@@ -80,7 +112,11 @@ export default function AITemplatePanel({
     const handleFillSubmit = async (req: FieldClassDialogResult) => {
         setFillLoading(true)
         try {
-            const result = (await namespace.aiFill(id, req)) as AiFillResponse
+            const result = offlineGate
+                ? kind === "article"
+                    ? await aiFillArticle(id, req)
+                    : await aiFillBook(id, req)
+                : ((await namespace.aiFill(id, req)) as AiFillResponse)
             const updated = result.updated_fields.length
             const skipped = result.skipped_fields.length
             const errors = Object.keys(result.field_class_errors).length
@@ -112,7 +148,9 @@ export default function AITemplatePanel({
             const detail =
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.ai_template.fill.toast.error", "AI-fill failed")
+                    : err instanceof Error
+                      ? err.message
+                      : t("ui.ai_template.fill.toast.error", "AI-fill failed")
             notify.error(detail, err)
         } finally {
             setFillLoading(false)
@@ -232,8 +270,8 @@ export default function AITemplatePanel({
                     type="button"
                     className={btnClass}
                     onClick={() => setShowFillDialog(true)}
-                    disabled={fillLoading || offlineGate}
-                    title={offlineGate ? offlineMsg : undefined}
+                    disabled={fillLoading || fillBlockedOffline}
+                    title={fillTitle}
                     data-testid="ai-template-fill"
                 >
                     <Sparkles size={14} style={{marginRight: 6}}/>
@@ -268,6 +306,7 @@ export default function AITemplatePanel({
                 onClose={() => setShowFillDialog(false)}
                 onSubmit={handleFillSubmit}
                 kind={kind}
+                availableClasses={offlineGate ? offlineSupportedClasses : undefined}
                 loading={fillLoading}
             />
 

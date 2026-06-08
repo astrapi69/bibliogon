@@ -38,6 +38,11 @@ interface Props {
     onSubmit: (request: FieldClassDialogResult) => void
     /** Drives the available field-class list. */
     kind: FieldClassKind
+    /** Optional whitelist of field-class ids to offer. When set, only
+     *  these classes render (used offline, where only the field-classes
+     *  whose targets exist on the Dexie/API shape are supported). When
+     *  omitted, all classes for the kind are shown. */
+    availableClasses?: string[]
     /** Disables the submit button while the parent runs the action.
      *  The dialog stays open during submission so the parent can
      *  close it on success or leave it open on error. */
@@ -174,12 +179,16 @@ export default function FieldClassDialog({
     onClose,
     onSubmit,
     kind,
+    availableClasses,
     loading = false,
     title,
     submitLabel,
 }: Props) {
     const {t} = useI18n()
-    const classes = kind === "article" ? ARTICLE_CLASSES : BOOK_CLASSES
+    const allClasses = kind === "article" ? ARTICLE_CLASSES : BOOK_CLASSES
+    const classes = availableClasses
+        ? allClasses.filter((cls) => availableClasses.includes(cls.id))
+        : allClasses
 
     const [selected, setSelected] = useState<Set<string>>(new Set())
     const [force, setForce] = useState(false)

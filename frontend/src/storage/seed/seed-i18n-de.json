@@ -2117,6 +2117,7 @@
     },
     "ai_template": {
       "editor_section": "KI-Vorlage",
+      "offline_configure_key": "Konfiguriere deinen API-Schlüssel unter Einstellungen > KI, um die KI-Füllung offline zu nutzen.",
       "panel": {
         "title": "KI-Vorlage",
         "fill": "Mit KI füllen",

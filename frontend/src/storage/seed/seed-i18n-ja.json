@@ -2117,6 +2117,7 @@
     },
     "ai_template": {
       "editor_section": "AI テンプレート",
+      "offline_configure_key": "オフラインでAI入力を使うには、設定 > AI でAPIキーを設定してください。",
       "panel": {
         "title": "AI テンプレート",
         "fill": "AI で入力",
