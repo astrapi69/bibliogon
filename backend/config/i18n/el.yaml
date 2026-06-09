@@ -150,6 +150,8 @@ ui:
     empty_trash: "Άδειασμα κάδου"
     trash_empty: "Ο κάδος είναι άδειος"
     restore_book: "Επαναφορά"
+    trash_col_title: "Τίτλος"
+    trash_col_author: "Συγγραφέας"
     restored: "Το βιβλίο επαναφέρθηκε."
     restore_failed: "Η επαναφορά απέτυχε."
     delete_permanent: "Οριστική διαγραφή"

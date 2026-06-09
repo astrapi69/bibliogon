@@ -150,6 +150,8 @@ ui:
     empty_trash: "Vaciar papelera"
     trash_empty: "La papelera esta vacia"
     restore_book: "Restaurar"
+    trash_col_title: "Título"
+    trash_col_author: "Autor"
     restored: "Libro restaurado."
     restore_failed: "Restauración fallida."
     delete_permanent: "Eliminar permanentemente"

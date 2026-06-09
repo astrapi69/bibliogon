@@ -150,6 +150,8 @@ ui:
     empty_trash: "Empty trash"
     trash_empty: "Trash is empty"
     restore_book: "Restore"
+    trash_col_title: "Title"
+    trash_col_author: "Author"
     restored: "Book restored."
     restore_failed: "Restore failed."
     delete_permanent: "Delete permanently"

@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from "react";
+import {useEffect, useMemo, useRef, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {api, ApiError, Book} from "../api/client";
 import {getStorage} from "../storage";
@@ -28,19 +28,20 @@ import {BookTypeIcon} from "../utils/bookTypeIcon";
 import SplitButton, {type SplitButtonDropdownItem} from "../components/SplitButton";
 import {
     Plus, BookOpen, Download, Upload, FolderUp,
-    Settings, HelpCircle, Rocket, Trash2, RotateCcw, Trash, ChevronLeft,
-    Menu, Search, SlidersHorizontal, FileText,
+    Settings, HelpCircle, Rocket, Trash2, Trash, ChevronLeft,
+    Menu, Search, SlidersHorizontal, FileText, LayoutGrid, List as ListIcon,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
-import TrashCard from "../components/trash/TrashCard";
 import {
     EntityTrashView,
+    EntityTileView,
+    EntityViewSwitcher,
     EntityEmptyState,
     RESTORE_ACTION_ID,
     PERMANENT_DELETE_ACTION_ID,
 } from "@astrapi69/entity-kit";
-import {bookDescriptor} from "../descriptors/bookDescriptor";
+import {makeBookDescriptor} from "../descriptors/bookDescriptor";
 import styles from "./Dashboard.module.css";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
@@ -110,14 +111,9 @@ export default function Dashboard() {
     // Settings UI. See ``useTrashViewMode`` for the rationale.
     const { mode: trashViewMode, setMode: setTrashViewMode } =
         useTrashViewMode("books");
-    /**
-     * entity-kit PoC flag. `?entitykit=1` renders the trash list via the
-     * generic `EntityTrashView` from `@astrapi69/entity-kit`; without it the
-     * existing TrashCard grid / list rendering is used unchanged, so Aster can
-     * A/B the two without a code change.
-     */
-    const useEntityKitTrash =
-        new URLSearchParams(location.search).get("entitykit") === "1";
+    // entity-kit descriptor for the book trash surface, rebuilt when the
+    // locale changes so the column + action labels stay localized.
+    const trashDescriptor = useMemo(() => makeBookDescriptor(t), [t]);
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C5: paged display of the
     // active (non-trash) book list. Slices ``filters.filteredBooks``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -472,6 +468,13 @@ export default function Dashboard() {
         selection.remove(id);
     };
 
+    // Shared handler for both trash views (EntityTrashView list + EntityTileView
+    // grid), which emit the same restore / permanent-delete action ids.
+    const handleTrashAction = (actionId: string, book: Book) => {
+        if (actionId === RESTORE_ACTION_ID) void handleRestore(book);
+        else if (actionId === PERMANENT_DELETE_ACTION_ID) void handlePermanentDelete(book.id);
+    };
+
     const handleEmptyTrash = async () => {
         if (!await dialog.confirm(t("ui.dashboard.empty_trash_title", "Papierkorb leeren"), t("ui.dashboard.empty_trash_warning", "Alle Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgaengig gemacht werden."), "danger")) return;
         await api.books.emptyTrash();
@@ -732,7 +735,30 @@ export default function Dashboard() {
                                     <Trash size={14}/> {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
                                 </button>
                             )}
-                            <ViewToggle mode={trashViewMode} onChange={setTrashViewMode} />
+                            <EntityViewSwitcher
+                                mode={trashViewMode === "grid" ? "tile" : "list"}
+                                onChange={(m) =>
+                                    setTrashViewMode(m === "tile" ? "grid" : "list")
+                                }
+                                options={[
+                                    {
+                                        mode: "list",
+                                        label: t("ui.dashboard.view_list", "Listen-Ansicht"),
+                                        icon: <ListIcon size={16}/>,
+                                    },
+                                    {
+                                        mode: "tile",
+                                        label: t("ui.dashboard.view_grid", "Kachel-Ansicht"),
+                                        icon: <LayoutGrid size={16}/>,
+                                    },
+                                ]}
+                                classNames={{
+                                    group: "inline-flex overflow-hidden rounded-[var(--radius-sm)] border border-border bg-card",
+                                    button: "inline-flex items-center px-[10px] py-[6px] text-muted-foreground",
+                                    activeButton: "bg-primary text-white",
+                                    label: "sr-only",
+                                }}
+                            />
                         </div>
                         {trash.length === 0 ? (
                             <EmptyState
@@ -740,21 +766,32 @@ export default function Dashboard() {
                                 icon={<Trash2 size={48} strokeWidth={1} color="var(--text-muted)"/>}
                                 title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
                             />
-                        ) : useEntityKitTrash ? (
-                            <div data-testid="trash-entitykit">
+                        ) : trashViewMode === "grid" ? (
+                            <div data-testid="trash-grid">
+                                <EntityTileView
+                                    items={trash}
+                                    descriptor={trashDescriptor}
+                                    onAction={handleTrashAction}
+                                    classNames={{
+                                        grid: "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]",
+                                        tile: "flex flex-col gap-1 rounded-[var(--radius-md)] border border-border p-3 bg-card",
+                                        title: "font-semibold",
+                                        subtitle: "text-sm text-muted-foreground",
+                                        actions: "mt-2 flex gap-2",
+                                        actionButton: "btn btn-primary btn-sm",
+                                        dangerActionButton: "btn btn-danger btn-sm",
+                                    }}
+                                />
+                            </div>
+                        ) : (
+                            <div data-testid="trash-list">
                                 <EntityTrashView
                                     items={trash}
-                                    descriptor={bookDescriptor}
-                                    onAction={(actionId, book) => {
-                                        if (actionId === RESTORE_ACTION_ID) {
-                                            void handleRestore(book);
-                                        } else if (actionId === PERMANENT_DELETE_ACTION_ID) {
-                                            void handlePermanentDelete(book.id);
-                                        }
-                                    }}
+                                    descriptor={trashDescriptor}
+                                    prefiltered
+                                    onAction={handleTrashAction}
                                     restoreLabel={t("ui.dashboard.restore_book", "Wiederherstellen")}
                                     permanentDeleteLabel={t("ui.dashboard.delete_permanent", "Endgültig löschen")}
-                                    deletedAtLabel={t("ui.dashboard.deleted_at", "Gelöscht am")}
                                     emptyState={
                                         <EntityEmptyState
                                             title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
@@ -782,52 +819,6 @@ export default function Dashboard() {
                                     }}
                                 />
                             </div>
-                        ) : trashViewMode === "grid" ? (
-                            <div className={styles.grid} data-testid="trash-grid">
-                                {trash.map((book) => (
-                                    <TrashCard
-                                        key={book.id}
-                                        title={book.title}
-                                        subtitle={book.author}
-                                        onRestore={() => handleRestore(book)}
-                                        onPermanentDelete={() => handlePermanentDelete(book.id)}
-                                        restoreLabel={t("ui.dashboard.restore_book", "Wiederherstellen")}
-                                        deletePermanentLabel={t("ui.dashboard.delete_permanent", "Endgültig löschen")}
-                                        cardTestId={`trash-card-${book.id}`}
-                                        restoreTestId={`trash-restore-${book.id}`}
-                                        permanentTestId={`trash-delete-permanent-${book.id}`}
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <ul className={styles.trashList} data-testid="trash-list">
-                                {trash.map((book) => (
-                                    <li
-                                        key={book.id}
-                                        className={styles.trashRow}
-                                        data-testid={`trash-row-${book.id}`}
-                                    >
-                                        <div style={{flex: 1, minWidth: 0}}>
-                                            <strong>{book.title}</strong>
-                                            <p style={{color: "var(--text-muted)", fontSize: "0.8125rem", margin: "4px 0 0 0"}}>{book.author}</p>
-                                        </div>
-                                        <button
-                                            className="btn btn-primary btn-sm"
-                                            data-testid={`trash-restore-${book.id}`}
-                                            onClick={() => handleRestore(book)}
-                                        >
-                                            <RotateCcw size={12}/> {t("ui.dashboard.restore_book", "Wiederherstellen")}
-                                        </button>
-                                        <button
-                                            className="btn btn-danger btn-sm"
-                                            data-testid={`trash-delete-permanent-${book.id}`}
-                                            onClick={() => handlePermanentDelete(book.id)}
-                                        >
-                                            <Trash size={12}/> {t("ui.dashboard.delete_permanent", "Endgültig löschen")}
-                                        </button>
-                                    </li>
-                                ))}
-                            </ul>
                         )}
                     </div>
                 ) : loading ? (

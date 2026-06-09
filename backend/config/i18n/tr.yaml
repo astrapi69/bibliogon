@@ -150,6 +150,8 @@ ui:
     empty_trash: "Cop kutusunu bosalt"
     trash_empty: "Cop kutusu bos"
     restore_book: "Geri yukle"
+    trash_col_title: "Başlık"
+    trash_col_author: "Yazar"
     restored: "Kitap geri yuklendi."
     restore_failed: "Geri yukleme basarisiz."
     delete_permanent: "Kalici olarak sil"

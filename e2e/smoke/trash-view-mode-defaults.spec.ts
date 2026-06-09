@@ -151,7 +151,7 @@ test.describe("Trash view-mode default settings (Bug 3)", () => {
         // Open trash, toggle to list.
         await gotoDashboardSettled(page);
         await page.getByTestId("trash-toggle").click();
-        await page.getByTestId("view-toggle-list").click();
+        await page.getByTestId("view-list").click();
         await expect(page.getByTestId("trash-list")).toBeVisible({timeout: 10000});
 
         // Re-open Settings — the saved value should STILL be grid,

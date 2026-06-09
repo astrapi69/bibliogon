@@ -154,6 +154,8 @@
       "empty_trash": "Esvaziar lixeira",
       "trash_empty": "A lixeira esta vazia",
       "restore_book": "Restaurar",
+      "trash_col_title": "Título",
+      "trash_col_author": "Autor",
       "restored": "Livro restaurado.",
       "restore_failed": "Falha ao restaurar.",
       "delete_permanent": "Excluir permanentemente",

@@ -154,6 +154,8 @@
       "empty_trash": "Vider la corbeille",
       "trash_empty": "La corbeille est vide",
       "restore_book": "Restaurer",
+      "trash_col_title": "Titre",
+      "trash_col_author": "Auteur",
       "restored": "Livre restaure.",
       "restore_failed": "Echec de la restauration.",
       "delete_permanent": "Supprimer definitivement",

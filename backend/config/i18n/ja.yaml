@@ -150,6 +150,8 @@ ui:
     empty_trash: "ゴミ箱を空にする"
     trash_empty: "ゴミ箱は空です"
     restore_book: "復元"
+    trash_col_title: "タイトル"
+    trash_col_author: "著者"
     restored: "本を復元しました。"
     restore_failed: "復元に失敗しました。"
     delete_permanent: "完全に削除"

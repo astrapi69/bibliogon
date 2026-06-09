@@ -135,11 +135,11 @@ test.describe("Books trash - optimistic restore", () => {
             await route.continue().catch(() => {});
         });
 
-        const restoreButton = page.getByTestId(`trash-restore-${book.id}`);
+        const restoreButton = page.getByTestId(`book-${book.id}-restore`);
         await restoreButton.click();
 
         // Optimistic-update assertion.
-        await expect(page.getByTestId(`trash-card-${book.id}`)).toBeHidden({timeout: 500});
+        await expect(page.getByTestId(`book-${book.id}`)).toBeHidden({timeout: 500});
 
         resolveRestore();
         await page.unroute(`**/api/books/trash/${book.id}/restore`);
@@ -165,10 +165,10 @@ test.describe("Books trash - optimistic restore", () => {
             });
         });
 
-        await page.getByTestId(`trash-restore-${book.id}`).click();
+        await page.getByTestId(`book-${book.id}-restore`).click();
 
         // Revert: the trash card reappears with the same testid.
-        await expect(page.getByTestId(`trash-card-${book.id}`)).toBeVisible({timeout: 2000});
+        await expect(page.getByTestId(`book-${book.id}`)).toBeVisible({timeout: 2000});
 
         await page.unroute(`**/api/books/trash/${book.id}/restore`);
     });

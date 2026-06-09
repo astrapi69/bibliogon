@@ -90,7 +90,7 @@ test.describe("Trash - move to trash", () => {
         await moveBookToTrashViaUI(page, bookId);
         await openTrashView(page);
 
-        await expect(page.getByTestId(`trash-card-${bookId}`)).toBeVisible();
+        await expect(page.getByTestId(`book-${bookId}`)).toBeVisible();
     });
 
     test("the trash toggle shows a badge with the trash count", async ({page}) => {
@@ -116,10 +116,10 @@ test.describe("Trash - restore", () => {
         await moveBookToTrashViaUI(page, bookId);
 
         await openTrashView(page);
-        await page.getByTestId(`trash-restore-${bookId}`).click();
+        await page.getByTestId(`book-${bookId}-restore`).click();
 
         // Trash card is gone from the trash view.
-        await expect(page.getByTestId(`trash-card-${bookId}`)).not.toBeVisible();
+        await expect(page.getByTestId(`book-${bookId}`)).not.toBeVisible();
 
         // Leave trash view to verify the book shows up on the main
         // dashboard grid. The trash toggle is a view switch, not a
@@ -151,10 +151,10 @@ test.describe("Trash - permanent delete from trash view", () => {
         await moveBookToTrashViaUI(page, bookId);
         await openTrashView(page);
 
-        await page.getByTestId(`trash-delete-permanent-${bookId}`).click();
+        await page.getByTestId(`book-${bookId}-permanentDelete`).click();
         await acceptDialog(page);
 
-        await expect(page.getByTestId(`trash-card-${bookId}`)).not.toBeVisible();
+        await expect(page.getByTestId(`book-${bookId}`)).not.toBeVisible();
 
         // Gone from both lists.
         const books = await getBooks();
@@ -204,18 +204,18 @@ test.describe("Trash - empty trash", () => {
         }
 
         await openTrashView(page);
-        await expect(page.getByTestId(`trash-card-${alpha.id}`)).toBeVisible();
-        await expect(page.getByTestId(`trash-card-${beta.id}`)).toBeVisible();
-        await expect(page.getByTestId(`trash-card-${gamma.id}`)).toBeVisible();
+        await expect(page.getByTestId(`book-${alpha.id}`)).toBeVisible();
+        await expect(page.getByTestId(`book-${beta.id}`)).toBeVisible();
+        await expect(page.getByTestId(`book-${gamma.id}`)).toBeVisible();
 
         await page.getByTestId("trash-empty").click();
         await acceptDialog(page);
 
         // Trash is now empty - the empty-state placeholder renders.
         await expect(page.getByTestId("trash-empty-state")).toBeVisible();
-        await expect(page.getByTestId(`trash-card-${alpha.id}`)).not.toBeVisible();
-        await expect(page.getByTestId(`trash-card-${beta.id}`)).not.toBeVisible();
-        await expect(page.getByTestId(`trash-card-${gamma.id}`)).not.toBeVisible();
+        await expect(page.getByTestId(`book-${alpha.id}`)).not.toBeVisible();
+        await expect(page.getByTestId(`book-${beta.id}`)).not.toBeVisible();
+        await expect(page.getByTestId(`book-${gamma.id}`)).not.toBeVisible();
 
         const trash = await getTrashList();
         expect(trash).toHaveLength(0);

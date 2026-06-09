@@ -150,6 +150,8 @@ ui:
     empty_trash: "Papierkorb leeren"
     trash_empty: "Papierkorb ist leer"
     restore_book: "Wiederherstellen"
+    trash_col_title: "Titel"
+    trash_col_author: "Autor"
     restored: "Buch wiederhergestellt."
     restore_failed: "Wiederherstellen fehlgeschlagen."
     delete_permanent: "Endgültig löschen"
