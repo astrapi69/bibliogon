@@ -28,6 +28,11 @@ The AI assistant is disabled by default. Your text is only sent to the AI provid
 
 LM Studio is ideal if you want AI assistance without sending your text to a cloud service.
 
+> **Using the web app (no backend)?** The AI assistant calls your provider
+> directly from the browser with your own key. See
+> [AI offline (your own API key)](ai/offline.md) for the browser-direct setup,
+> the CORS/Anthropic-header details, and what works offline.
+
 ## Text suggestions
 
 In the editor, select some text, then click the AI button in the toolbar. Four modes are available:

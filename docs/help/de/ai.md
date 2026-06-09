@@ -28,6 +28,11 @@ Der KI-Assistent ist standardmäßig deaktiviert. Dein Text wird nur an den KI-A
 
 LM Studio ist ideal, wenn du KI-Hilfe nutzen möchtest, ohne deinen Text an einen Cloud-Dienst zu senden.
 
+> **Web-App (ohne Backend)?** Der KI-Assistent ruft deinen Anbieter direkt aus
+> dem Browser mit deinem eigenen Schlüssel auf. Siehe
+> [KI offline (eigener API-Schlüssel)](ai/offline.md) für die Browser-direkte
+> Einrichtung, die CORS-/Anthropic-Header-Details und was offline funktioniert.
+
 ## Textvorschläge
 
 Markiere im Editor einen Text und klicke den KI-Button in der Toolbar. Vier Modi stehen zur Verfügung:

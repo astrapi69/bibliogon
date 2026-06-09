@@ -4,6 +4,13 @@ Bibliogon importiert ein Medium-HTML-Archiv und erzeugt pro
 Beitrag einen **Artikel**, einen **Publication**-Eintrag und
 einen Provenienz-Datensatz.
 
+> **Die meisten wollen den In-App-Import.** Öffne **Artikel → Aus Medium
+> importieren**, lege das ZIP ab, sieh dir die Vorschau an und importiere —
+> siehe [Medium-Import](../articles/medium-import.md) für diesen Ablauf (er
+> läuft auch clientseitig in der Offline-Web-App). Diese Seite ist die
+> **Backend-API-/Automatisierungs-Referenz** (`curl`) für skriptgesteuerte
+> oder serverseitige Massenimporte.
+
 ## Schritt 1 - Archiv von Medium holen
 
 1. Bei [medium.com](https://medium.com) anmelden.
@@ -20,9 +27,9 @@ das Backend sauber gestartet ist. Diese Log-Zeilen müssen
 erscheinen:
 
 ```
-INFO  app.main: Plugin discovery: 11 entry points found via 'bibliogon.plugins' group: ..., medium-import, ...
-INFO  app.main: Plugins enabled in config (11): ..., medium-import
-INFO  app.main: Plugins loaded (11/11 enabled): ..., medium-import, ...
+INFO  app.main: Plugin discovery: ... entry points found via 'bibliogon.plugins' group: ..., medium-import, ...
+INFO  app.main: Plugins enabled in config: ..., medium-import
+INFO  app.main: Plugins loaded: ..., medium-import, ...
 ```
 
 Wenn die dritte Zeile weniger geladene Plugins zeigt als die
@@ -32,9 +39,9 @@ loaded` erscheint, siehe **Fehlersuche** unten.
 ## Schritt 3 - Import starten
 
 Die Bulk-Import-API nimmt einen einzelnen `multipart/form-data`
-POST entgegen. Eine in der App eingebettete UI ist für v2 geplant
-(Backlog-Eintrag `MEDIUM-IMPORT-V2-01`); bis dahin per Shell mit
-`curl`:
+POST entgegen. Der In-App-Import (Artikel → Aus Medium importieren)
+ist der normale Weg; `curl` ist für skriptgesteuerte oder
+serverseitige Massenimporte:
 
 ```bash
 curl -X POST http://localhost:7880/api/medium-import/import \
@@ -232,15 +239,16 @@ canonical URL" - das HTML hat keinen
 `<a class="p-canonical">`-Link, was bei sehr alten Medium-Posts
 selten vorkommen kann.
 
-## Einschränkungen (v1)
+## Einschränkungen des `curl`-Wegs
 
 - Sequenzielle Verarbeitung. Bei 200 Beiträgen dauert es einige
   Minuten, während die Bilder heruntergeladen werden.
 - Bild-Download-Fehler werden auf Bild-Ebene stumm behandelt
   (im `conversion_warnings`-Feld der Provenienz festgehalten,
   nicht in der Response-Zusammenfassung sichtbar).
-- Keine selektive Import-UI. Alles importieren, dann archivieren
-  was nicht behalten werden soll. Die Dry-Run-Vorschau kommt
-  in v2.
-- Keine KI-gestützte Tag-Inferenz. Tags bleiben standardmäßig
-  leer; auf der v2-Roadmap.
+- Die `curl`-API importiert alles im ZIP. Für eine **Vorschau**
+  und **Auswahl einzelner Beiträge** vor dem Import nutze den
+  In-App-Import (Artikel → Aus Medium importieren).
+- Keine automatische Tag-Inferenz. Tags bleiben standardmäßig
+  leer (Medium entfernt sie aus dem Export); füge sie pro Artikel
+  nachträglich hinzu.

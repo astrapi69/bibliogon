@@ -4,6 +4,12 @@ Bibliogon imports a Medium HTML export ZIP and produces one
 **Article** + one **Publication** entry + one provenance record
 per post.
 
+> **Most users want the in-app importer.** Open **Articles → Import from
+> Medium**, drop in the ZIP, preview, and import — see
+> [Medium import](../articles/medium-import.md) for that flow (it also runs
+> client-side in the offline web app). This page is the **backend API /
+> automation reference** (`curl`) for scripted or bulk server-side imports.
+
 ## Step 1 - Get the export from Medium
 
 1. Sign in to [medium.com](https://medium.com).
@@ -18,9 +24,9 @@ The plugin runs in the backend. Before importing, check that the
 backend started cleanly. Look for these log lines:
 
 ```
-INFO  app.main: Plugin discovery: 11 entry points found via 'bibliogon.plugins' group: ..., medium-import, ...
-INFO  app.main: Plugins enabled in config (11): ..., medium-import
-INFO  app.main: Plugins loaded (11/11 enabled): ..., medium-import, ...
+INFO  app.main: Plugin discovery: ... entry points found via 'bibliogon.plugins' group: ..., medium-import, ...
+INFO  app.main: Plugins enabled in config: ..., medium-import
+INFO  app.main: Plugins loaded: ..., medium-import, ...
 ```
 
 If the third line shows fewer plugins loaded than enabled, or if
@@ -30,8 +36,8 @@ you see `WARNING: Plugins enabled in config but not loaded`, see
 ## Step 3 - Run the import
 
 The bulk-import API takes a single `multipart/form-data` POST. The
-in-app Settings UI is planned for v2 (see backlog
-`MEDIUM-IMPORT-V2-01`); for now run it from a shell with `curl`:
+in-app importer (Articles → Import from Medium) is the normal path;
+use `curl` for scripted or server-side bulk imports:
 
 ```bash
 curl -X POST http://localhost:7880/api/medium-import/import \
@@ -221,14 +227,15 @@ URL", which means the HTML doesn't carry a `<a class="p-canonical">`
 link - rare in real Medium exports but possible for very old
 posts.
 
-## Limitations (v1)
+## Limitations of the `curl` path
 
 - Sequential processing. A 200-post archive takes a few minutes
   while images download.
 - Image-download failures are silent at the per-image level
   (recorded in the article's `conversion_warnings` provenance
   field, not surfaced in the response).
-- No selective-import UI. Import everything; archive what you
-  do not want afterwards. The dry-run preview lands in v2.
-- No AI-driven tag inference. Tags are empty by default; this is
-  on the v2 roadmap.
+- The `curl` API imports everything in the ZIP. For a **preview**
+  and **per-post selection** before importing, use the in-app
+  importer (Articles → Import from Medium).
+- No automatic tag inference. Tags are empty by default (Medium
+  strips them from the export); add them per article afterwards.
