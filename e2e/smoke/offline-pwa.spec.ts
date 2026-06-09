@@ -223,7 +223,13 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(preview).toHaveAttribute("src", /^blob:/);
 
         // Persist cover_image to the book row (Dexie), then reload from scratch.
+        // Wait for the save to COMPLETE before navigating: the button re-enables
+        // only after the awaited books.update commits (handleSave: setSaving(false)
+        // runs after onSave resolves). Navigating on the bare click() destroys the
+        // JS context mid-write, so cover_image never persists and the reload shows
+        // the empty cover state (the deterministic failure this guards).
         await page.getByTestId("metadata-save").click();
+        await expect(page.getByTestId("metadata-save")).toBeEnabled();
         await page.goto(`/book/${bookId}?view=metadata`);
         await page.getByTestId("metadata-tab-design").click();
         const reloaded = page.getByTestId("cover-preview-img");
