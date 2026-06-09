@@ -119,9 +119,7 @@ class SqlAlchemyBookRepository(SQLAlchemyRepository, BookRepository):
 
     def list(self, *, limit: int | None = None) -> Sequence[Book]:
         query = (
-            self._db.query(Book)
-            .filter(Book.deleted_at.is_(None))
-            .order_by(Book.updated_at.desc())
+            self._db.query(Book).filter(Book.deleted_at.is_(None)).order_by(Book.updated_at.desc())
         )
         if limit is not None:
             query = query.limit(limit)
@@ -139,18 +137,10 @@ class SqlAlchemyBookRepository(SQLAlchemyRepository, BookRepository):
         )
 
     def get_active(self, book_id: str) -> Book | None:
-        return (
-            self._db.query(Book)
-            .filter(Book.id == book_id, Book.deleted_at.is_(None))
-            .first()
-        )
+        return self._db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
 
     def get_trashed(self, book_id: str) -> Book | None:
-        return (
-            self._db.query(Book)
-            .filter(Book.id == book_id, Book.deleted_at.is_not(None))
-            .first()
-        )
+        return self._db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_not(None)).first()
 
     def list_trashed(self) -> Sequence[Book]:
         return (

@@ -64,26 +64,15 @@ class SqlAlchemyPageRepository(SQLAlchemyRepository, PageRepository):
     """SQLAlchemy-backed :class:`PageRepository`."""
 
     def get_book(self, book_id: str) -> Book | None:
-        return (
-            self._db.query(Book)
-            .filter(Book.id == book_id, Book.deleted_at.is_(None))
-            .first()
-        )
+        return self._db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
 
     def list(self, book_id: str) -> Sequence[Page]:
         return (
-            self._db.query(Page)
-            .filter(Page.book_id == book_id)
-            .order_by(Page.position.asc())
-            .all()
+            self._db.query(Page).filter(Page.book_id == book_id).order_by(Page.position.asc()).all()
         )
 
     def get(self, book_id: str, page_id: str) -> Page | None:
-        return (
-            self._db.query(Page)
-            .filter(Page.id == page_id, Page.book_id == book_id)
-            .first()
-        )
+        return self._db.query(Page).filter(Page.id == page_id, Page.book_id == book_id).first()
 
     def next_position(self, book_id: str) -> int:
         max_pos = (

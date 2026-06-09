@@ -28,9 +28,7 @@ def _ensure_book(book_id: str, repo: ChapterLabelRepository) -> None:
         raise HTTPException(status_code=404, detail="Book not found")
 
 
-def _get_label_or_404(
-    book_id: str, label_id: str, repo: ChapterLabelRepository
-) -> ChapterLabel:
+def _get_label_or_404(book_id: str, label_id: str, repo: ChapterLabelRepository) -> ChapterLabel:
     label = repo.get(book_id, label_id)
     if not label:
         raise HTTPException(status_code=404, detail="Chapter label not found")

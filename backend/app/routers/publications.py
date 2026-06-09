@@ -88,9 +88,7 @@ def _validate_or_400(platform: str, metadata: dict[str, Any]) -> None:
         )
 
 
-def _check_drift(
-    pub: Publication, article: Article, repo: PublicationRepository
-) -> Publication:
+def _check_drift(pub: Publication, article: Article, repo: PublicationRepository) -> Publication:
     """Persist ``out_of_sync`` if the live snapshot diverges.
 
     Only published publications are subject to drift. Once a

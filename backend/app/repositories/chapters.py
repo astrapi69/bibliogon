@@ -74,15 +74,11 @@ class ChapterRepository(ABC):
         """Return a chapter's versions, newest version first."""
 
     @abstractmethod
-    def get_version(
-        self, book_id: str, chapter_id: str, version_id: str
-    ) -> ChapterVersion | None:
+    def get_version(self, book_id: str, chapter_id: str, version_id: str) -> ChapterVersion | None:
         """Return a version scoped to both chapter and owning book."""
 
     @abstractmethod
-    def get_version_in_chapter(
-        self, chapter_id: str, version_id: str
-    ) -> ChapterVersion | None:
+    def get_version_in_chapter(self, chapter_id: str, version_id: str) -> ChapterVersion | None:
         """Return a version scoped to its chapter (no book join)."""
 
     @abstractmethod
@@ -165,9 +161,7 @@ class SqlAlchemyChapterRepository(SQLAlchemyRepository, ChapterRepository):
             .all()
         )
 
-    def get_version(
-        self, book_id: str, chapter_id: str, version_id: str
-    ) -> ChapterVersion | None:
+    def get_version(self, book_id: str, chapter_id: str, version_id: str) -> ChapterVersion | None:
         return (
             self._db.query(ChapterVersion)
             .join(Chapter, ChapterVersion.chapter_id == Chapter.id)
@@ -179,9 +173,7 @@ class SqlAlchemyChapterRepository(SQLAlchemyRepository, ChapterRepository):
             .first()
         )
 
-    def get_version_in_chapter(
-        self, chapter_id: str, version_id: str
-    ) -> ChapterVersion | None:
+    def get_version_in_chapter(self, chapter_id: str, version_id: str) -> ChapterVersion | None:
         return (
             self._db.query(ChapterVersion)
             .filter(

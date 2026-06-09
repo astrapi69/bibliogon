@@ -68,11 +68,7 @@ class SqlAlchemyAuthorRepository(SQLAlchemyRepository, AuthorRepository):
         query = self._db.query(Author)
         if search and search.strip():
             query = query.filter(Author.name.ilike(f"%{search.strip()}%"))
-        return (
-            query.order_by(Author.name.asc(), Author.created_at.desc())
-            .limit(limit)
-            .all()
-        )
+        return query.order_by(Author.name.asc(), Author.created_at.desc()).limit(limit).all()
 
     def slug_exists(self, slug: str) -> bool:
         return self._db.query(Author).filter(Author.slug == slug).first() is not None

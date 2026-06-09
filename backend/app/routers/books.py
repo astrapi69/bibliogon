@@ -627,9 +627,7 @@ def get_book_full(
         "comic_panels": [serialize_row(r) for r in graph["comic_panels"]],
         "comic_bubbles": [serialize_row(r) for r in graph["comic_bubbles"]],
         "story_entities": [serialize_row(r) for r in graph["story_entities"]],
-        "story_entity_page_links": [
-            serialize_row(r) for r in graph["story_entity_page_links"]
-        ],
+        "story_entity_page_links": [serialize_row(r) for r in graph["story_entity_page_links"]],
         "chapter_labels": [serialize_row(r) for r in graph["chapter_labels"]],
         "assets": [serialize_row(r) for r in graph["assets"]],
     }

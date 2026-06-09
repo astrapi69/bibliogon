@@ -94,9 +94,7 @@ class SqlAlchemyChapterLabelRepository(SQLAlchemyRepository, ChapterLabelReposit
         return label
 
     def delete(self, label: ChapterLabel) -> None:
-        self._db.execute(
-            update(Chapter).where(Chapter.label_id == label.id).values(label_id=None)
-        )
+        self._db.execute(update(Chapter).where(Chapter.label_id == label.id).values(label_id=None))
         self._db.delete(label)
         self._db.commit()
 

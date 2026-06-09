@@ -70,10 +70,7 @@ class SqlAlchemyBookTemplateRepository(SQLAlchemyRepository, BookTemplateReposit
         )
 
     def name_exists(self, name: str) -> bool:
-        return (
-            self._db.query(BookTemplate).filter(BookTemplate.name == name).first()
-            is not None
-        )
+        return self._db.query(BookTemplate).filter(BookTemplate.name == name).first() is not None
 
     def add(self, template: BookTemplate) -> BookTemplate:
         self._db.add(template)

@@ -55,9 +55,7 @@ class ChapterTemplateRepository(ABC):
         """Delete ``template``."""
 
 
-class SqlAlchemyChapterTemplateRepository(
-    SQLAlchemyRepository, ChapterTemplateRepository
-):
+class SqlAlchemyChapterTemplateRepository(SQLAlchemyRepository, ChapterTemplateRepository):
     """SQLAlchemy-backed :class:`ChapterTemplateRepository`."""
 
     def list(self) -> Sequence[ChapterTemplate]:
@@ -68,16 +66,11 @@ class SqlAlchemyChapterTemplateRepository(
         )
 
     def get(self, template_id: str) -> ChapterTemplate | None:
-        return (
-            self._db.query(ChapterTemplate)
-            .filter(ChapterTemplate.id == template_id)
-            .first()
-        )
+        return self._db.query(ChapterTemplate).filter(ChapterTemplate.id == template_id).first()
 
     def name_exists(self, name: str) -> bool:
         return (
-            self._db.query(ChapterTemplate).filter(ChapterTemplate.name == name).first()
-            is not None
+            self._db.query(ChapterTemplate).filter(ChapterTemplate.name == name).first() is not None
         )
 
     def existing_ids(self, candidate_ids: Sequence[str]) -> set[str]:

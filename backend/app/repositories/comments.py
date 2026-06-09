@@ -84,9 +84,7 @@ class SqlAlchemyCommentRepository(SQLAlchemyRepository, CommentRepository):
         orphans_only: bool,
         limit: int,
     ) -> Sequence[ArticleComment]:
-        query = self._db.query(ArticleComment).filter(
-            ArticleComment.deleted_at.is_(None)
-        )
+        query = self._db.query(ArticleComment).filter(ArticleComment.deleted_at.is_(None))
         if imported_from is not None:
             query = query.filter(ArticleComment.imported_from == imported_from)
         if orphans_only:
@@ -94,11 +92,7 @@ class SqlAlchemyCommentRepository(SQLAlchemyRepository, CommentRepository):
         return query.order_by(ArticleComment.imported_at.desc()).limit(limit).all()
 
     def get(self, comment_id: str) -> ArticleComment | None:
-        return (
-            self._db.query(ArticleComment)
-            .filter(ArticleComment.id == comment_id)
-            .first()
-        )
+        return self._db.query(ArticleComment).filter(ArticleComment.id == comment_id).first()
 
     def get_trashed(self, comment_id: str) -> ArticleComment | None:
         return (
@@ -130,11 +124,7 @@ class SqlAlchemyCommentRepository(SQLAlchemyRepository, CommentRepository):
     def get_by_ids(self, ids: Sequence[str]) -> Sequence[ArticleComment]:
         if not ids:
             return []
-        return (
-            self._db.query(ArticleComment)
-            .filter(ArticleComment.id.in_(list(ids)))
-            .all()
-        )
+        return self._db.query(ArticleComment).filter(ArticleComment.id.in_(list(ids))).all()
 
     def soft_delete(self, comment: ArticleComment) -> None:
         comment.deleted_at = datetime.now(UTC)
