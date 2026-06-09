@@ -33,7 +33,10 @@ async function seedBook(title: string): Promise<string> {
 
 async function openEditor(page: Page, bookId: string) {
     await page.goto(`/book/${bookId}`);
-    await expect(page.getByTestId("book-editor-sidebar")).toBeVisible();
+    // Wait for the sidebar to mount, not to be visible: below the menu
+    // breakpoint it renders collapsed (width 0), which Playwright reports as
+    // hidden. The per-test width assertions cover the open/closed state.
+    await expect(page.getByTestId("book-editor-sidebar")).toBeAttached();
 }
 
 async function sidebarWidth(page: Page): Promise<number> {

@@ -1650,6 +1650,8 @@ input[type="checkbox"] {
 }
 
 html.composition-mode .sidebar-wrapper,
+html.composition-mode [data-testid="book-editor-sidebar"],
+html.composition-mode [data-testid="book-editor-sidebar-toggle"],
 html.composition-mode .editor-chrome-toolbar {
     display: none;
 }
