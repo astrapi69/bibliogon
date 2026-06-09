@@ -40,11 +40,8 @@
     "max_upload_mb": 500
   },
   "author": {
-    "name": "Asterios Raptis",
-    "pen_names": [
-      "Draven Quantum",
-      "Stelio Moon"
-    ]
+    "name": "",
+    "pen_names": []
   },
   "plugins": {
     "config_dir": "config/plugins",

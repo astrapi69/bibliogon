@@ -73,9 +73,12 @@ def generate_i18n() -> None:
 def generate_settings() -> None:
     """Emit the offline settings seed from app.yaml.
 
-    Blanks the AI api_key so no secret ships in the committed seed, and adds
-    the ``_secrets_managed_externally`` flag the getApp endpoint injects so the
-    seed matches the API response shape.
+    Blanks the AI api_key so no secret ships in the committed seed, blanks the
+    author defaults so a developer's local (gitignored) app.yaml never leaks
+    personal data into the public seed, and adds the
+    ``_secrets_managed_externally`` flag the getApp endpoint injects so the seed
+    matches the API response shape. The offline build starts with an empty
+    author profile, matching app.yaml.example.
     """
     config = _load_yaml(CONFIG_DIR / "app.yaml")
     if not isinstance(config, dict):
@@ -83,6 +86,10 @@ def generate_settings() -> None:
     ai = config.get("ai")
     if isinstance(ai, dict) and "api_key" in ai:
         ai["api_key"] = ""
+    author = config.get("author")
+    if isinstance(author, dict):
+        author["name"] = ""
+        author["pen_names"] = []
     config["_secrets_managed_externally"] = False
     _write_json("seed-settings.json", config)
 
