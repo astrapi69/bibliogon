@@ -4,6 +4,66 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.48.0] - 2026-06-09
+
+The **Maximal Offline** release — the largest in the project's history (111
+commits since v0.47.0). The static GitHub Pages PWA reaches full desktop
+feature parity: it does everything the desktop does through a seeded IndexedDB
+and the `IStorageService` seam, fires zero `/api` requests (enforced by a
+`guardedFetch()` choke point + E2E hard gate), and gates only the four
+genuinely browser-impossible features. No schema migrations; existing data,
+backups (`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- Maximal Offline: the GH Pages PWA reaches full desktop feature parity. Story
+  Bible, Storyboard, picture-book and comic editors, authors, chapter-labels,
+  publications and article-platforms all read/write through the storage seam
+  and work entirely offline against a seeded IndexedDB.
+- Client-side export engine: 6 formats in the browser with no Pandoc (Markdown,
+  HTML, plain text, PDF, EPUB, DOCX).
+- Export-engine chooser in Settings > Export (`auto` / `client` / `backend`).
+- AI offline: `AiGenerateButton` and the full `.biblio.yaml` template-fill flow
+  run browser-direct against the user's own provider key.
+- Client-side Medium import (`DOMParser` + `fflate` ZIP).
+- `guardedFetch()` single egress choke point (zero `/api` in Dexie mode).
+- `IStorageService` seam extended to all data entities.
+- Seed pipeline: `make generate-seed-data` emits 12 committed JSON files;
+  `DexieStorage.ensureSeeded()` populates reference tables on first init.
+- Settings > About: version, build hash, build date.
+- Service-worker auto-update (on focus, visibility change, hourly).
+- GitHub Pages deploy infrastructure (split app/docs deploy, `404.html` SPA
+  redirect).
+- `@astrapi69/entity-kit` integration PoC (book TrashView).
+- Responsive mobile: audit + fixes, collapsible sidebars, 44px touch targets.
+- Repository-pattern migration (11 routers/entities).
+- Help docs: Web-App usage, Browser Export, Story Bible offline (DE + EN);
+  ROADMAP updated to current state.
+
+### Fixed
+- DexieStorage lazy-load race (empty dropdowns, cover cold-load).
+- Settings forms clobber (parent-gate + per-form guards).
+- Offline connectivity monitor now starts mid-session.
+- Article `.split` crash (`t()` undefined-key hardening).
+- Menu single-line header (fixed 1200px Tailwind breakpoint, no toggling).
+- Settings "skip non-destructive confirmations" persistence.
+- View-mode toggle-during-load revert.
+- Picture-book / comic add-page-during-load clobber.
+- Article grid-to-list flash (detaching bulk-action-bar).
+- Convert-to-book wizard sort-strategy listbox race.
+- Seed privacy: no personal data in the committed seed JSON.
+- Offline-guard toasts suppressed (`console.warn`, not user-visible).
+- Credentials chain (secret fallback `app.yaml` < override < env-var) + `app.paths`.
+- ESM/CJS load error in the offline-PWA E2E spec.
+
+### Changed
+- DEXIE-MODE-REGEL → Maximal Offline: the web app does everything via Dexie;
+  the offline gate is the exception, for the four browser-impossible features
+  only (`architecture.md`).
+- CSS-first superseded by Tailwind-first: new visual work uses Tailwind;
+  `global.css` is frozen (`coding-standards.md`).
+- No inline comments rule: explanations live in docstrings / TSDoc
+  (`code-hygiene.md`).
+
 ## [0.47.1] - 2026-06-05
 
 Patch release fixing the offline PWA's first-render data loading. No schema
