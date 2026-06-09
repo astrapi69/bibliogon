@@ -162,6 +162,9 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     // no need to re-fetch on every book change. Failure stays at
     // empty list; CategoryInput remains free-text-capable.
     useEffect(() => {
+        // KDP category catalog is a backend-only convenience; offline the field
+        // stays free-text. Skip the fetch so dexie mode fires no /api call.
+        if (offline) return;
         let cancelled = false;
         api.kdp.listCategories()
             .then((catalog) => {
@@ -175,7 +178,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         return () => {
             cancelled = true;
         };
-    }, []);
+    }, [offline]);
 
     // BOOK-REPOSITORY-URL-FIELD-01 C3: fetch the GitSyncMapping
     // status for this book on mount + on book.id change. When
@@ -185,6 +188,10 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     // Silent failure: gitSyncStatus stays null, the field falls
     // back to free-input editing Book.repository_url.
     useEffect(() => {
+        // Git-sync is a backend-only (category-3) feature; offline the
+        // Repository-URL field stays free-input. Skip the status probe so dexie
+        // mode fires no /api call.
+        if (offline) return;
         let cancelled = false;
         api.gitSync
             .status(book.id)
@@ -199,7 +206,7 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
         return () => {
             cancelled = true;
         };
-    }, [book.id]);
+    }, [book.id, offline]);
 
     // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
     // selection — free-text input + autocomplete suggestions union'd

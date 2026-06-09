@@ -16,6 +16,7 @@ import {
   TranslationSiblingsResponse,
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { notify } from "../utils/notify";
 
 /**
@@ -32,6 +33,7 @@ import { notify } from "../utils/notify";
  */
 export default function TranslationLinks({ bookId }: { bookId: string }) {
   const { t } = useI18n();
+  const { offline } = useOfflineFeatureGate();
   const navigate = useNavigate();
   const [data, setData] = useState<TranslationSiblingsResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -39,8 +41,13 @@ export default function TranslationLinks({ bookId }: { bookId: string }) {
   const [showLinkPicker, setShowLinkPicker] = useState(false);
 
   useEffect(() => {
+    // Translations are a backend-only feature (cross-book grouping in the
+    // server DB); offline there are no siblings, so skip the fetch and render
+    // the unlinked state without firing an /api call.
+    if (offline) return;
     void load();
-  }, [bookId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookId, offline]);
 
   async function load(): Promise<void> {
     setLoading(true);

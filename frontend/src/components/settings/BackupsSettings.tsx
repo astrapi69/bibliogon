@@ -27,6 +27,8 @@ import {useEffect, useState} from "react";
 import {GitCompare, Trash2} from "lucide-react";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
+import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
+import {OfflineFeatureNotice} from "../OfflineFeatureNotice";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
 import BackupCompareDialog from "../BackupCompareDialog";
@@ -48,16 +50,20 @@ const sectionStyle: React.CSSProperties = {
 
 export function BackupsSettings() {
     const {t} = useI18n();
+    const {offline} = useOfflineFeatureGate();
     const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
 
     useEffect(() => {
+        // Backup history is backend-only (.bgb archives + the server-side
+        // history store); offline skip the fetch so dexie mode fires no /api.
+        if (offline) return;
         api.backup
             .history(20)
             .then(setBackupHistory)
             .catch(() => {});
-    }, []);
+    }, [offline]);
 
     const handleDeleteEntry = async (entry: BackupHistoryEntry) => {
         const previous = backupHistory;
@@ -152,7 +158,9 @@ export function BackupsSettings() {
                         </button>
                     )}
                 </div>
-                {backupHistory.length === 0 ? (
+                {offline ? (
+                    <OfflineFeatureNotice testId="backups-offline-notice"/>
+                ) : backupHistory.length === 0 ? (
                     <p
                         data-testid="backups-history-empty"
                         style={{margin: 0, color: "var(--text-muted)", fontSize: "0.875rem"}}

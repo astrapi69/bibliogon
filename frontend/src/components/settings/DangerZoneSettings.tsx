@@ -213,12 +213,22 @@ export function DangerZoneSettings() {
                 className="btn btn-danger"
                 data-testid="danger-zone-reset-button"
                 onClick={openDialog}
+                disabled={offlineGate}
+                title={offlineGate ? offlineMsg : undefined}
             >
                 <AlertTriangle size={16} aria-hidden="true" />
                 <span style={{marginLeft: 6}}>
                     {t("ui.settings.danger_zone.reset_button", "Alles zurücksetzen")}
                 </span>
             </button>
+            {offlineGate && (
+                <p
+                    data-testid="danger-zone-offline-notice"
+                    style={{marginTop: 8, fontSize: "0.8125rem", color: "var(--text-muted)"}}
+                >
+                    {offlineMsg}
+                </p>
+            )}
 
             <Dialog.Root open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
                 <Dialog.Portal>

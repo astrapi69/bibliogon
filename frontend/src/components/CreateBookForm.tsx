@@ -11,6 +11,7 @@ import {
 import { getStorage } from "../storage";
 import { useBookTypes } from "../hooks/useBookTypes";
 import { useI18n } from "../hooks/useI18n";
+import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import { useDialog } from "./AppDialog";
 import { notify } from "../utils/notify";
 import { EnhancedTextarea } from "./textarea/EnhancedTextarea";
@@ -116,6 +117,8 @@ export default function CreateBookForm({
   const [series, setSeries] = useState("");
   const [seriesIndex, setSeriesIndex] = useState("");
 
+  const { offline } = useOfflineFeatureGate();
+
   // Template state
   const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
   const [templatesError, setTemplatesError] = useState<string | null>(null);
@@ -220,9 +223,14 @@ export default function CreateBookForm({
   }, [author, globalAuthors]);
   const showAddToAuthorsCheckbox = !authorAlreadyInDb;
 
-  // Fetch templates the first time the user switches into template mode
+  // Fetch templates the first time the user switches into template mode.
+  // Templates are a backend-only feature; offline the list is empty (no /api).
   useEffect(() => {
     if (mode !== "template" || templates !== null) return;
+    if (offline) {
+      setTemplates([]);
+      return;
+    }
     api.templates
       .list()
       .then((list) => {
@@ -233,7 +241,7 @@ export default function CreateBookForm({
         setTemplates([]);
         setTemplatesError(String(err?.message || err));
       });
-  }, [mode, templates]);
+  }, [mode, templates, offline]);
 
   // When a template is picked, pre-fill language + description from it
   useEffect(() => {
