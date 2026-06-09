@@ -1572,6 +1572,11 @@ export class ApiError extends Error {
   /** Structured error body when the backend returned a dict in `detail`.
    *  Used by the audiobook overwrite warning (409 audiobook_exists). */
   detailBody?: Record<string, unknown>;
+  /** True when this error is the backendless-offline guard rejecting an `/api`
+   *  call before any network request (see `guardedFetch`). Consumers downgrade
+   *  it to a console warning instead of a user-facing error toast: a
+   *  backend-only surface being unavailable offline is expected, not a fault. */
+  offline = false;
 
   constructor(
     status: number,
@@ -1640,14 +1645,14 @@ export function guardedFetch(
   init?: RequestInit,
 ): Promise<Response> {
   if (isBackendlessOffline()) {
-    return Promise.reject(
-      new ApiError(
-        503,
-        `Offline: ${input} requires the Bibliogon backend.`,
-        String(input).split("?")[0],
-        init?.method || "GET",
-      ),
+    const offlineError = new ApiError(
+      503,
+      `Offline: ${input} requires the Bibliogon backend.`,
+      String(input).split("?")[0],
+      init?.method || "GET",
     );
+    offlineError.offline = true;
+    return Promise.reject(offlineError);
   }
   return init === undefined
     ? globalThis.fetch(input)

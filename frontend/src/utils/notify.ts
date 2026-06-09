@@ -215,8 +215,15 @@ function recordToast(level: string, message: string) {
 
 export const notify = {
   error: (message: string, apiError?: unknown) => {
-    recordToast('error', message)
     const err = apiError instanceof ApiError ? apiError : undefined
+    // The backendless-offline guard rejecting an /api call is expected, not a
+    // fault: a backend-only surface is simply unavailable offline. Downgrade to
+    // a console warning so the user never sees a red toast for it.
+    if (err?.offline) {
+      console.warn(`[offline] ${message} (${err.endpoint})`)
+      return
+    }
+    recordToast('error', message)
     return toast.error(React.createElement(ErrorContent, {message, apiError: err}), {
       autoClose: 15000,
       closeOnClick: false,

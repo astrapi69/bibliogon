@@ -56,6 +56,21 @@ describe('notify.error', () => {
     expect(() => notify.error('oops', 'string error')).not.toThrow()
     expect(() => notify.error('oops', undefined)).not.toThrow()
   })
+
+  it('suppresses the toast for an offline-guard ApiError (warns instead)', () => {
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    const offlineErr = new ApiError(
+      503,
+      'Offline: /api/translations/x requires the Bibliogon backend.',
+      '/api/translations/x',
+      'GET',
+    )
+    offlineErr.offline = true
+    notify.error('Konnte Übersetzungen nicht laden.', offlineErr)
+    expect(toast.error).not.toHaveBeenCalled()
+    expect(warnSpy).toHaveBeenCalled()
+    warnSpy.mockRestore()
+  })
 })
 
 describe('notify (other levels)', () => {
