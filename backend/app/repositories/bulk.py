@@ -43,7 +43,8 @@ class SqlAlchemyBulkRepository(SQLAlchemyRepository, BulkRepository):
     def get_by_ids(self, model: Any, ids: Sequence[str]) -> list[Any]:
         if not ids:
             return []
-        return self._db.query(model).filter(model.id.in_(list(ids))).all()
+        rows: list[Any] = self._db.query(model).filter(model.id.in_(list(ids))).all()
+        return rows
 
     def delete(self, row: Any) -> None:
         self._db.delete(row)
