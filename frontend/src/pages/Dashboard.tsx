@@ -773,11 +773,11 @@ export default function Dashboard() {
                                     descriptor={trashDescriptor}
                                     onAction={handleTrashAction}
                                     classNames={{
-                                        grid: "grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]",
-                                        tile: "flex flex-col gap-1 rounded-[var(--radius-md)] border border-border p-3 bg-card",
+                                        grid: "grid gap-3 auto-rows-fr [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]",
+                                        tile: "flex h-full flex-col gap-1 rounded-[var(--radius-md)] border border-border p-3 bg-card",
                                         title: "font-semibold",
                                         subtitle: "text-sm text-muted-foreground",
-                                        actions: "mt-2 flex gap-2",
+                                        actions: "mt-auto flex gap-2 pt-2",
                                         actionButton: "btn btn-primary btn-sm",
                                         dangerActionButton: "btn btn-danger btn-sm",
                                     }}
