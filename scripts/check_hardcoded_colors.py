@@ -78,6 +78,13 @@ ALLOWLIST = {
     # CHAPTER-STATUS-LABELS-01. (Status-dot colors use theme tokens in
     # ChapterStatusLabel.module.css, not hardcoded hex.)
     "frontend/src/components/ChapterStatusLabel.tsx",
+    # Client-side export engine output styling (v0.48.0). These hex
+    # values style the STANDALONE exported HTML/PDF documents, which
+    # are self-contained artifacts with no access to the app's
+    # ``var(--*)`` theme tokens - the colours must be concrete and
+    # baked into the exported file, not theme-referenced.
+    "frontend/src/export/formatHtml.ts",
+    "frontend/src/export/formatPdf.ts",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
