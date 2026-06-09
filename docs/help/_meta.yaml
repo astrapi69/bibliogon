@@ -188,6 +188,10 @@ navigation:
           de: Kontextmenü
           en: Context menu
         slug: editor/context-menu
+      - title:
+          de: Seitenleisten ein- und ausklappen
+          en: Collapsible sidebars
+        slug: editor/sidebars
 
   - title:
       de: Export
@@ -312,6 +316,10 @@ navigation:
           de: KI-Vorlagen (Artikel + Bücher)
           en: AI Templates (Articles + Books)
         slug: ai/ai-templates
+      - title:
+          de: KI offline (eigener API-Schlüssel)
+          en: AI offline (your own API key)
+        slug: ai/offline
 
   - title:
       de: Themes

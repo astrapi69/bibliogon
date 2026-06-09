@@ -2,6 +2,18 @@
 
 Bibliogon importiert das gesamte Medium-Archiv, das du über "Download your information" erhältst. Jeder Beitrag wird ein Bibliogon-Artikel mit Provenienz-Metadaten und (optional) lokal heruntergeladenen Bildern.
 
+> **Läuft im Browser — funktioniert offline.** Das ZIP wird komplett
+> **clientseitig** geparst und die Artikel werden clientseitig angelegt, der
+> Import funktioniert also auch in der Offline-Web-App **ohne Backend**. Drei
+> Dinge verhalten sich offline anders: Bilder bleiben als **Medium-CDN-URLs**
+> erhalten (sie laden im Editor, wenn du online bist, statt lokal
+> heruntergeladen zu werden); erkannte **Kommentare werden übersprungen** (der
+> Offline-Build hat keinen Kommentar-Speicher); und die **Sprache** des
+> Artikels kommt aus deiner Standardsprache-Einstellung, mit automatischer
+> Erkennung für nicht-lateinische Schriften (Griechisch, Japanisch,
+> Kyrillisch). Die Duplikat-Erkennung über die kanonische URL funktioniert
+> online wie offline gleich.
+
 ## Wann verwenden
 
 - Du verlässt Medium und möchtest eine strukturierte lokale Kopie jedes Beitrags.

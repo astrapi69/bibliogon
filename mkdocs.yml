@@ -78,6 +78,7 @@ plugins:
         Kapitelstatus und Labels: Chapter status and labels
         Schreibmodus: Composition mode
         Kontextmenü: Context menu
+        Seitenleisten ein- und ausklappen: Collapsible sidebars
         Im Browser: In the browser
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
@@ -95,6 +96,7 @@ plugins:
         Deinstallieren: Uninstall
         KI-Assistent: AI Assistant
         KI-Vorlagen (Artikel + Bücher): AI Templates (Articles + Books)
+        KI offline (eigener API-Schlüssel): AI offline (your own API key)
         Tastenkürzel: Keyboard Shortcuts
         Git-Sicherung: Git Backup
         Grundlagen: Basics
@@ -174,6 +176,7 @@ nav:
   - Kapitelstatus und Labels: de/editor/chapter-status-labels.md
   - Schreibmodus: de/editor/composition-mode.md
   - Kontextmenü: de/editor/context-menu.md
+  - Seitenleisten ein- und ausklappen: de/editor/sidebars.md
 - Export:
   - Im Browser: de/export/browser.md
   - EPUB: de/export/epub.md
@@ -201,6 +204,7 @@ nav:
 - KI-Assistent:
   - Übersicht: de/ai.md
   - KI-Vorlagen (Artikel + Bücher): de/ai/ai-templates.md
+  - KI offline (eigener API-Schlüssel): de/ai/offline.md
 - Themes: de/themes.md
 - Tastenkürzel: de/shortcuts.md
 - Git-Sicherung:

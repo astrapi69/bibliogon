@@ -28,3 +28,11 @@ These shortcuts work when the editor has focus.
 | Ctrl+Shift+B | Blockquote |
 | Ctrl+Z | Undo |
 | Ctrl+Y | Redo |
+
+## Writing modes
+
+| Shortcut | Action |
+|---|---|
+| Ctrl+Shift+D | Toggle [composition mode](editor/composition-mode.md) (distraction-free) |
+| Esc | Exit composition mode |
+| Ctrl+Shift+F (or F11) | Toggle fullscreen |

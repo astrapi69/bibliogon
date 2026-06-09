@@ -29,6 +29,14 @@ Diese Tastenkürzel funktionieren, wenn der Editor den Fokus hat.
 | Ctrl+Z | Rückgängig |
 | Ctrl+Y | Wiederholen |
 
+## Schreibmodi
+
+| Tastenkürzel | Aktion |
+|---|---|
+| Ctrl+Shift+D | [Schreibmodus](editor/composition-mode.md) umschalten (ablenkungsfrei) |
+| Esc | Schreibmodus verlassen |
+| Ctrl+Shift+F (oder F11) | Vollbild umschalten |
+
 ## Hinweise
 
 Für Überschriften 4 bis 6 stehen keine Standard-Tastenkürzel zur Verfügung. Diese Überschriftenebenen können über die Toolbar oder im Markdown-Modus gesetzt werden.
