@@ -27,6 +27,10 @@ interface Props {
     activePageId: string | null
     onSelect: (pageId: string) => void
     onAddPage: () => void
+    /** Disables the add-page button (e.g. while the parent's initial
+     *  pages.list is still resolving, so a click cannot race the load
+     *  and get clobbered). Defaults to enabled. */
+    addDisabled?: boolean
     onReorder: (pageIds: string[]) => void
     /** Optional: per-row delete affordance. When provided, each row
      *  renders a Trash2 button at the trailing edge with testid
@@ -50,6 +54,7 @@ export default function PageThumbnails({
     activePageId,
     onSelect,
     onAddPage,
+    addDisabled = false,
     onReorder,
     onDelete,
     testidNamespace = "page-editor",
@@ -81,6 +86,7 @@ export default function PageThumbnails({
                     type="button"
                     className={`btn-sidebar-icon ${styles.addBtn}`}
                     onClick={onAddPage}
+                    disabled={addDisabled}
                     data-testid={`${testidNamespace}-add-page`}
                     title={t("ui.page_editor.add_page", "Add page")}
                     aria-label={t("ui.page_editor.add_page", "Add page")}

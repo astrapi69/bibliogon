@@ -78,6 +78,11 @@ export default function PageEditor({
     const [pages, setPages] = useState<Page[]>([])
     const [activePageId, setActivePageId] = useState<string | null>(null)
     const [loadError, setLoadError] = useState<string | null>(null)
+    // True until the mount-time pages.list resolves. Gates the add-page
+    // button so a click during the load window cannot fire handleAddPage
+    // before the list lands - otherwise the late list-resolve setPages()
+    // clobbers the optimistically-added page back to the empty state.
+    const [loading, setLoading] = useState(true)
 
     // EDITOR-FULLSCREEN-NATIVE-01: browser-native fullscreen
     // toggle, hosted in the page-editor header alongside Theme +
@@ -104,6 +109,9 @@ export default function PageEditor({
             .catch((err: unknown) => {
                 if (cancelled) return
                 setLoadError(err instanceof Error ? err.message : String(err))
+            })
+            .finally(() => {
+                if (!cancelled) setLoading(false)
             })
         return () => {
             cancelled = true
@@ -470,6 +478,7 @@ export default function PageEditor({
                         onAddPage={handleAddPage}
                         onReorder={handleReorder}
                         onDelete={handleDeletePage}
+                        addDisabled={loading}
                     />
                 </aside>
                     </div>
