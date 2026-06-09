@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-06-08 (Maximal-Offline arc — the static GitHub-Pages PWA now does everything the desktop does except the four genuinely browser-impossible features. AI "Fill with AI" template fill (1b) now runs offline too. See "Recently shipped" + "Architecture principles" below.)
-Latest release: v0.47.1 (2026-06-05) — see [changelog/releases/v0.47.1.md](../changelog/releases/v0.47.1.md) for the full per-release notes.
+Latest release: v0.48.0 (2026-06-09) — see [changelog/releases/v0.48.0.md](../changelog/releases/v0.48.0.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
