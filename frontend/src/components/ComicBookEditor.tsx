@@ -117,6 +117,11 @@ export default function ComicBookEditor({
   const [pluginError, setPluginError] = useState<string | null>(null);
   const [pages, setPages] = useState<Page[]>([]);
   const [pagesError, setPagesError] = useState<string | null>(null);
+  // True until the mount-time pages.list resolves. Gates the add-page
+  // button so a click during the load window cannot fire handleAddPage
+  // before the list lands (the late resolve would otherwise clobber the
+  // optimistically-created page). Mirrors PageEditor.tsx.
+  const [pagesLoading, setPagesLoading] = useState(true);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [panels, setPanels] = useState<ComicPanelOut[]>([]);
   const [bubblesByPanel, setBubblesByPanel] = useState<
@@ -178,6 +183,9 @@ export default function ComicBookEditor({
         if (cancelled) return;
         const detail = err instanceof ApiError ? err.detail : String(err);
         setPagesError(detail);
+      })
+      .finally(() => {
+        if (!cancelled) setPagesLoading(false);
       });
     return () => {
       cancelled = true;
@@ -1082,6 +1090,7 @@ export default function ComicBookEditor({
               setSelectedBubbleId(null);
             }}
             onAddPage={handleAddPage}
+            addDisabled={pagesLoading}
             onReorder={handleReorderPages}
             onDelete={handleDeletePage}
             testidNamespace="comic-book-editor"
