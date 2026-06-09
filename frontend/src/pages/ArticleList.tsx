@@ -87,7 +87,11 @@ export default function ArticleList() {
     // "Neuer Artikel" creates this type (CreateArticlePage applies it);
     // its label reflects the default's registry default_title_key.
     const [defaultContentType, setDefaultContentType] = useState("blogpost");
-    const { mode: viewMode, setMode: setViewMode } = useViewMode("articles");
+    const {
+        mode: viewMode,
+        setMode: setViewMode,
+        loading: viewModeLoading,
+    } = useViewMode("articles");
     // Trash surface keeps an INDEPENDENT view-mode read from a separate
     // YAML key (``ui.dashboard.articles_trash_view``). In-trash toggles
     // are session-local (no YAML write); persistence is only via the
@@ -1055,7 +1059,7 @@ export default function ArticleList() {
                 </div>
             ) : null}
 
-            {showTrash ? null : loading ? (
+            {showTrash ? null : loading || viewModeLoading ? (
                 <p
                     data-testid="article-list-loading"
                     style={{ padding: 16, color: "var(--text-muted)" }}
