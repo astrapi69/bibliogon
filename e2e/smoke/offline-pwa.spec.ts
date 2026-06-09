@@ -353,6 +353,63 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Jane Offline").first()).toBeVisible();
     });
 
+    test("settings danger-zone is gated offline: reset disabled, no /api", async ({
+        page,
+    }) => {
+        // Backend-only full-system reset (POST /api/system/reset). Offline the
+        // trigger is disabled and an offline notice replaces it; the surface
+        // must fire no /api on mount.
+        await page.goto("/settings?tab=danger_zone");
+        await expect(page.getByTestId("danger-zone-section")).toBeVisible();
+        await expect(page.getByTestId("danger-zone-reset-button")).toBeDisabled();
+        await expect(page.getByTestId("danger-zone-offline-notice")).toBeVisible();
+        // The destructive dialog never opens, so no reset prepare/exec call.
+        // afterEach proves zero /api.
+    });
+
+    test("settings backups history is gated offline: notice shown, no /api", async ({
+        page,
+    }) => {
+        // Backup history is backend-only (.bgb archives + server-side store).
+        // Offline the history fetch is skipped and the OfflineFeatureNotice
+        // renders in place of the history list.
+        await page.goto("/settings?tab=backups");
+        await expect(page.getByTestId("backups-settings")).toBeVisible();
+        await expect(page.getByTestId("backups-offline-notice")).toBeVisible();
+        // The history list (which would require the skipped fetch) is absent.
+        await expect(page.getByTestId("backups-history-list")).toHaveCount(0);
+    });
+
+    test("book metadata tabs open offline with no /api and no error toast", async ({
+        page,
+    }) => {
+        // The metadata editor fetches the KDP category catalog + the git-sync
+        // mapping on mount; both are backend-only and skipped offline. Opening
+        // the general + publisher tabs must fire no /api and surface no error
+        // toast (the offline guard downgrades those to console.warn).
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Metadata Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Metadata Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+        await page.getByText("Metadata Book").first().click();
+        await page.waitForURL(/\/book\//);
+        const bookId = page.url().match(/\/book\/([^/?]+)/)?.[1];
+        expect(bookId).toBeTruthy();
+
+        await page.goto(`/book/${bookId}?view=metadata`);
+        // General is the default tab; its mount triggers the gated kdp fetch.
+        await expect(page.getByTestId("metadata-tab-general")).toBeVisible();
+        // Publisher hosts the git-sync-aware repo-URL field.
+        await page.getByTestId("metadata-tab-publisher").click();
+        await expect(page.getByTestId("metadata-tab-publisher")).toBeVisible();
+        // No red error toast from a doomed offline /api call.
+        await expect(page.locator(".Toastify__toast--error")).toHaveCount(0);
+        // afterEach proves zero /api across both tab mounts.
+    });
+
     test("medium import works offline: parse a zip + create articles in Dexie", async ({
         page,
     }) => {
