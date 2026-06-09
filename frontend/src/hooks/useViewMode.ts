@@ -10,7 +10,7 @@
  * feels instant. Errors surface through the standard notify channel
  * so the user knows the preference did not persist.
  */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { api, ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import type { ViewMode } from "../components/ViewToggle";
@@ -44,13 +44,18 @@ export function useViewMode(scope: DashboardScope): {
 } {
     const [mode, setLocalMode] = useState<ViewMode>("grid");
     const [loading, setLoading] = useState(true);
+    // Set once the user toggles the view. The async mount-load below must
+    // not clobber a toggle made during the load window (a fast user - or an
+    // E2E - that switches view before getApp() resolves would otherwise be
+    // reverted to the stored value).
+    const userTouchedRef = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
         api.settings
             .getApp()
             .then((config) => {
-                if (cancelled) return;
+                if (cancelled || userTouchedRef.current) return;
                 const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
                 const dashboard = (ui.dashboard as Record<string, unknown> | undefined) ?? {};
                 const stored = dashboard[readDashboardKey(scope)];
@@ -72,6 +77,7 @@ export function useViewMode(scope: DashboardScope): {
 
     const setMode = useCallback(
         (next: ViewMode) => {
+            userTouchedRef.current = true;
             setLocalMode(next);
             // Read current ui.dashboard so we keep the OTHER scope's
             // preference intact. Backend PATCH applies a shallow .update
@@ -137,13 +143,15 @@ export function useTrashViewMode(scope: TrashScope): {
 } {
     const [mode, setLocalMode] = useState<ViewMode>("grid");
     const [loading, setLoading] = useState(true);
+    // See useViewMode: don't let the async mount-load clobber a mid-load toggle.
+    const userTouchedRef = useRef(false);
 
     useEffect(() => {
         let cancelled = false;
         api.settings
             .getApp()
             .then((config) => {
-                if (cancelled) return;
+                if (cancelled || userTouchedRef.current) return;
                 const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
                 const dashboard = (ui.dashboard as Record<string, unknown> | undefined) ?? {};
                 const stored = dashboard[readTrashKey(scope)];
@@ -166,6 +174,7 @@ export function useTrashViewMode(scope: TrashScope): {
     // Local-only setMode: no API write. Setting Persisting happens
     // via the Settings UI's RadixSelect, not via every toggle click.
     const setMode = useCallback((next: ViewMode) => {
+        userTouchedRef.current = true;
         setLocalMode(next);
     }, []);
 
