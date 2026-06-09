@@ -107,11 +107,21 @@ test.describe("Article-to-book conversion", () => {
         // aria-hidden background as intercepting pointer events even
         // though the option is the topmost element at its coordinates
         // (real users click it fine).
-        await page
-            .getByTestId(
-                "convert-to-book-wizard-selection-sort-strategy-item-title_asc",
-            )
-            .click({force: true})
+        const sortItem = page.getByTestId(
+            "convert-to-book-wizard-selection-sort-strategy-item-title_asc",
+        )
+        await sortItem.click({force: true})
+        // The force-click commits the selection but can leave the Radix
+        // listbox OPEN (force bypasses the pointer handling that auto-
+        // closes it). A lingering open listbox keeps the step-0 footer
+        // "Weiter" button shifting/covered, so the later click times out
+        // on the actionability "stable" check. Nudge it closed (Escape
+        // only dismisses the popup; the value is already committed) and
+        // wait for it to be gone before touching the footer.
+        if (await sortItem.isVisible().catch(() => false)) {
+            await page.keyboard.press("Escape")
+        }
+        await expect(sortItem).toBeHidden()
 
         // Verify every article appears as a sortable row.
         for (const article of [a, b, c]) {
