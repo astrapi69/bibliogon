@@ -70,6 +70,11 @@ test.describe("Get-Started multi-book-type onboarding smoke", () => {
         await page.goto("/get-started");
         await page.evaluate(() => localStorage.removeItem("bibliogon-onboarding"));
         await page.reload();
+        // Let useBookTypes() resolve before navigating: if it lands after the
+        // step-2 nav it re-renders and bounces the step back to 1, dropping the
+        // sample-button row mid-assertion (the flake this guards). Siblings #3-5
+        // already wait here.
+        await page.waitForLoadState("networkidle").catch(() => {});
 
         // Click step #2 indicator to navigate to create-book.
         await page.getByRole("button", {name: "2", exact: true}).click();
