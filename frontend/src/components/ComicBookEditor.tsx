@@ -722,6 +722,24 @@ export default function ComicBookEditor({
     ],
   );
 
+  const handleUploadPanelImage = useCallback(
+    async (panelId: string, file: File) => {
+      if (!activePageId) return;
+      try {
+        const asset = await getStorage().assets.upload(bookId, file, "figure");
+        await getStorage().comics.updatePanel(bookId, panelId, {
+          image_asset_id: asset.id,
+        });
+        await refreshPanelsAndBubbles(activePageId);
+        await refreshAssets();
+      } catch (err) {
+        const detail = err instanceof ApiError ? err.detail : String(err);
+        setPagesError(detail);
+      }
+    },
+    [activePageId, bookId, refreshAssets, refreshPanelsAndBubbles],
+  );
+
   // COMIC-PANEL-CROSS-PAGE-MOVE-01 Phase 1: same-page panel
   // reorder. ``panelIds`` is the full ordered id-list emitted by
   // ComicPanelGrid's dnd-kit SortableContext on drop. Optimistically
@@ -1152,6 +1170,7 @@ export default function ComicBookEditor({
                   onBubbleDragEnd={handleBubbleDragEnd}
                   onBubbleTailDragEnd={handleBubbleTailDragEnd}
                   onPanelReorder={handlePanelReorder}
+                  onPanelUploadImage={handleUploadPanelImage}
                 />
               </div>
 

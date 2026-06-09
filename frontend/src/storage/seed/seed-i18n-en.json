@@ -3123,6 +3123,8 @@
       }
     },
     "comic_book_editor": {
+      "panel_upload_image": "Upload image",
+      "panel_replace_image": "Replace image",
       "back": "Back",
       "show_metadata": "Open book metadata",
       "overflow_title": "Too many panels for this template",

@@ -2959,6 +2959,8 @@ ui:
       mysterious: "神秘的"
       gentle: "柔らか"
   comic_book_editor:
+    panel_upload_image: "画像をアップロード"
+    panel_replace_image: "画像を置き換える"
     back: "戻る"
     overflow_title: "このテンプレートにはコマが多すぎます"
     overflow_message: "選択したテンプレートでは {target} コマしか配置できませんが、このページには {current} コマあります。超過した {excess} コマを移動するか削除する必要があります。"

@@ -2959,6 +2959,8 @@ ui:
       mysterious: "Misterioso"
       gentle: "Suave"
   comic_book_editor:
+    panel_upload_image: "Carregar imagem"
+    panel_replace_image: "Substituir imagem"
     back: "Voltar"
     overflow_title: "Demasiados quadros para este modelo"
     overflow_message: "O modelo selecionado permite apenas {target} quadro(s), mas esta página tem {current}. {excess} quadro(s) em excesso têm de ser movidos ou eliminados."

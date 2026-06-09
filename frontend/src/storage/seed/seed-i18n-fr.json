@@ -3123,6 +3123,8 @@
       }
     },
     "comic_book_editor": {
+      "panel_upload_image": "Importer une image",
+      "panel_replace_image": "Remplacer l'image",
       "back": "Retour",
       "overflow_title": "Trop de cases pour ce modèle",
       "overflow_message": "Le modèle sélectionné n'autorise que {target} case(s), mais cette page en compte {current}. {excess} case(s) en trop doivent être déplacées ou supprimées.",

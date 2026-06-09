@@ -2959,6 +2959,8 @@ ui:
       mysterious: "Μυστηριώδες"
       gentle: "Ευγενικό"
   comic_book_editor:
+    panel_upload_image: "Μεταφόρτωση εικόνας"
+    panel_replace_image: "Αντικατάσταση εικόνας"
     back: "Πίσω"
     overflow_title: "Πάρα πολλά καρέ για αυτό το πρότυπο"
     overflow_message: "Το επιλεγμένο πρότυπο επιτρέπει μόνο {target} καρέ, αλλά αυτή η σελίδα έχει {current}. {excess} επιπλέον καρέ πρέπει να μετακινηθούν ή να διαγραφούν."

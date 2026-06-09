@@ -110,4 +110,54 @@ describe("ComicPanel", () => {
         const el = screen.getByTestId("comic-panel-p1") as HTMLElement;
         expect(el.style.border).toContain("dashed");
     });
+
+    it("renders no upload affordance without onUploadImage", () => {
+        render(<ComicPanel panel={makePanel()} bubbles={[]} />);
+        expect(screen.queryByTestId("comic-panel-upload-p1")).toBeNull();
+        expect(screen.queryByTestId("comic-panel-upload-input-p1")).toBeNull();
+    });
+
+    it("renders the upload affordance on an empty panel when onUploadImage is set", () => {
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={vi.fn()}
+            />,
+        );
+        expect(screen.getByTestId("comic-panel-upload-p1")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("comic-panel-upload-input-p1"),
+        ).toBeInTheDocument();
+    });
+
+    it("renders the upload affordance alongside the image on a filled panel", () => {
+        const {container} = render(
+            <ComicPanel
+                panel={makePanel({image_asset_id: "a1"})}
+                bubbles={[]}
+                imageUrl="/api/assets/a1"
+                onUploadImage={vi.fn()}
+            />,
+        );
+        expect(container.querySelector("img")).not.toBeNull();
+        expect(screen.getByTestId("comic-panel-upload-p1")).toBeInTheDocument();
+    });
+
+    it("fires onUploadImage with the picked file from the panel input", () => {
+        const onUploadImage = vi.fn();
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={onUploadImage}
+            />,
+        );
+        const file = new File(["x"], "panel.png", {type: "image/png"});
+        fireEvent.change(screen.getByTestId("comic-panel-upload-input-p1"), {
+            target: {files: [file]},
+        });
+        expect(onUploadImage).toHaveBeenCalledTimes(1);
+        expect(onUploadImage.mock.calls[0][0]).toBe(file);
+    });
 });

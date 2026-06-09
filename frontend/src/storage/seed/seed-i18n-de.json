@@ -3123,6 +3123,8 @@
       }
     },
     "comic_book_editor": {
+      "panel_upload_image": "Bild hochladen",
+      "panel_replace_image": "Bild ersetzen",
       "back": "Zurück",
       "overflow_title": "Zu viele Panels für diese Vorlage",
       "overflow_message": "Die ausgewählte Vorlage erlaubt nur {target} Panel(s), aber die Seite hat {current}. {excess} überzählige Panel(s) müssen verschoben oder gelöscht werden.",

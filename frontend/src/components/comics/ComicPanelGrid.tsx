@@ -160,6 +160,11 @@ interface ComicPanelGridProps {
    *  whole panel — carries the drag listeners, so in-panel bubble
    *  drag + panel-select click stay unaffected. */
   onPanelReorder?: (panelIds: string[]) => void;
+  /** When provided, each panel renders an in-panel image-upload
+   *  affordance; the callback receives the target panel id + the
+   *  picked file. The caller owns the upload + persist. Omitted on
+   *  read-only grids (PageCanvas preview, ComicGridTemplatePicker). */
+  onPanelUploadImage?: (panelId: string, file: File) => void;
 }
 
 export function ComicPanelGrid({
@@ -174,6 +179,7 @@ export function ComicPanelGrid({
   onBubbleDragEnd,
   onBubbleTailDragEnd,
   onPanelReorder,
+  onPanelUploadImage,
 }: ComicPanelGridProps) {
   const templateId = resolveComicGridTemplate(layoutConfig);
   const gridCss = GRID_TEMPLATE_CSS[templateId];
@@ -226,6 +232,11 @@ export function ComicPanelGrid({
         onBubbleClick={onBubbleClick}
         onBubbleDragEnd={onBubbleDragEnd}
         onBubbleTailDragEnd={onBubbleTailDragEnd}
+        onUploadImage={
+          onPanelUploadImage
+            ? (file) => onPanelUploadImage(panel.id, file)
+            : undefined
+        }
       />
     );
   };

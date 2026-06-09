@@ -3123,6 +3123,8 @@
       }
     },
     "comic_book_editor": {
+      "panel_upload_image": "Görsel yükle",
+      "panel_replace_image": "Görseli değiştir",
       "back": "Geri",
       "overflow_title": "Bu şablon için çok fazla panel var",
       "overflow_message": "Seçili şablon yalnızca {target} panele izin veriyor ancak bu sayfada {current} panel var. Fazladan {excess} panel taşınmalı veya silinmelidir.",

@@ -3123,6 +3123,8 @@
       }
     },
     "comic_book_editor": {
+      "panel_upload_image": "Subir imagen",
+      "panel_replace_image": "Reemplazar imagen",
       "back": "Atrás",
       "overflow_title": "Demasiadas viñetas para esta plantilla",
       "overflow_message": "La plantilla seleccionada solo permite {target} viñeta(s), pero esta página tiene {current}. Se deben mover o eliminar {excess} viñeta(s) sobrantes.",

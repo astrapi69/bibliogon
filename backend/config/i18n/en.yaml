@@ -2969,6 +2969,8 @@ ui:
       mysterious: "Mysterious"
       gentle: "Gentle"
   comic_book_editor:
+    panel_upload_image: "Upload image"
+    panel_replace_image: "Replace image"
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.
     show_metadata: "Open book metadata"
