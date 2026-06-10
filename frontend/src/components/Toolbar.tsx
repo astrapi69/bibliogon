@@ -33,6 +33,7 @@ import {
     AlignRight,
     AlignJustify,
     Highlighter,
+    Sigma,
     Subscript,
     Superscript,
     Table as TableIcon,
@@ -198,6 +199,17 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
             active: editor.isActive("superscript"),
             title: t("ui.toolbar.superscript", "Hochgestellt"),
             testId: "toolbar-superscript",
+            hidden: markdownMode,
+        },
+        {
+            icon: <Sigma size={16}/>,
+            action: () => {
+                editor.chain().focus().insertContent("$$").run();
+                editor.commands.setTextSelection(editor.state.selection.head - 1);
+            },
+            active: false,
+            title: t("ui.toolbar.formula", "Formel"),
+            testId: "toolbar-formula",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},

@@ -30,6 +30,8 @@ import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
 import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
+import Mathematics from "@tiptap/extension-mathematics";
+import "katex/dist/katex.min.css";
 import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
 import {FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType} from "../data/fix-issue-prompts";
 
@@ -393,6 +395,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             Footnotes,
             FootnoteReference,
             Footnote,
+            Mathematics.configure({
+                katexOptions: {throwOnError: false},
+            }),
             SearchAndReplace.configure({
                 searchResultClass: "search-result",
                 disableRegex: true,
