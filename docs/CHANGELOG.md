@@ -4,6 +4,63 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.49.0] - 2026-06-10
+
+The **editor v3 + offline depth + quality-infrastructure** release (38 commits
+since v0.48.0). The TipTap editor moves to v3 with node-based math (KaTeX,
+inline `$...$` and block `$$...$$`) and a Formel toolbar button, and LaTeX
+joins the client-side export formats. Several more surfaces go fully offline
+(writing history, book trash, Danger-Zone reset, author profiles), the
+BookEditor sidebar tools collapse into a viewport-responsive "Werkzeuge" group,
+and the project gains a quality-infrastructure baseline (coverage measurement,
+dependency security scanning in CI, ESLint flat config + Prettier). No schema
+migrations; existing data, backups (`.bgb`) and projects (`.bgp`) are
+unaffected.
+
+### Added
+- TipTap v2 -> v3 migration with a prosemirror-search adapter.
+- Node-based math on TipTap v3: inline `$...$` and block `$$...$$` rendered with
+  KaTeX, input + paste rules, and a Formel toolbar button that inserts/edits
+  math via a LaTeX prompt.
+- LaTeX (`.tex`) as a 7th client-side export format.
+- Writing History works offline: stats are aggregated client-side from the
+  `writingSessions` Dexie table (summary, streaks, per-book and per-chapter
+  breakdowns) instead of showing a "requires desktop app" gate.
+- Settings Danger Zone reset works offline (Dexie wipe + reseed).
+- Authors-Database: an `is_profile_author` flag, a Profile -> DB sync button,
+  and a Profile badge; author identity is plumbed through the storage seam.
+- Comics: per-panel image-upload affordance in the canvas.
+- BookEditor sidebar tools collapse into a "Werkzeuge" group (Radix
+  Collapsible) so the chapter list keeps its space.
+- Quality infrastructure: coverage baseline + `coverage-backend` /
+  `coverage-frontend` targets; dependency security scanning (`npm audit` +
+  `pip-audit`) in CI plus `make audit*`; ESLint flat config + Prettier.
+
+### Changed
+- The sidebar "Werkzeuge" group default is viewport-responsive: expanded on
+  desktop, collapsed on narrow viewports; an explicit toggle still persists.
+
+### Fixed
+- Autosave 409 self-conflict: the chapter version is tracked in an authoritative
+  ref (seeded on load, updated from each save response), so a rapid second
+  autosave no longer resends a stale version.
+- Book delete in offline/Dexie mode now soft-deletes (moves to trash,
+  restorable) instead of hard-deleting; the full trash lifecycle (list, restore,
+  permanent-delete, empty-trash, bulk) works offline through the storage seam.
+- Author profiles: pen names auto-save and populate dropdowns; profiles load
+  through the storage seam so pseudonyms show offline; the author dropdown lists
+  profile authors only, not the whole database.
+- Articles: Medium import is reachable offline and the status badge defaults to
+  draft.
+- Create-book: the template tab switcher is hidden when no templates exist, and
+  the From-Template tab is hidden offline.
+- BookEditor: clicking a chapter switches the editor content and keeps the
+  sidebar open above 768px.
+- Editor: draft recovery re-runs once the v3 editor instance is ready;
+  `immediatelyRender: false` on the main editor.
+- Accessibility: aria-labels on icon-only buttons (axe `button-name`).
+- Consistent button classes (`btn btn-sm`) across the bulk-action bars.
+
 ## [0.48.0] - 2026-06-09
 
 The **Maximal Offline** release — the largest in the project's history (111
