@@ -860,6 +860,9 @@
       "add_pen_name": "Agregar",
       "add_pen_name_placeholder": "Agregar nuevo seudonimo",
       "author_saved": "Perfil del autor guardado",
+      "author_sync_to_db": "Añadir a la base de datos",
+      "author_sync_to_db_done": "Autores del perfil añadidos a la base de datos",
+      "author_sync_to_db_error": "No se pudieron añadir los autores del perfil a la base de datos",
       "plugin_settings": "Configuracion de plugins",
       "plugin_settings_description": "Activar, configurar o eliminar plugins instalados.",
       "install_zip": "Instalar ZIP",
@@ -1020,6 +1023,7 @@
     },
     "authors_database": {
       "title": "Base de datos de autores",
+      "profile_badge": "Perfil",
       "description": "Catalogo de otros autores que alimenta las sugerencias de autocompletado en asistentes y editores. Tu propia identidad esta arriba en \"Perfil de autor\".",
       "hint": "Colección de autores conocidos para el asistente de libros. Los libros y artículos existentes son independientes — los cambios aquí solo afectan a las nuevas sugerencias.",
       "search_placeholder": "Buscar por nombre…",

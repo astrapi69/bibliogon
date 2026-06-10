@@ -1,6 +1,8 @@
 import {useEffect, useState} from "react";
-import {Save, Plus, X} from "lucide-react";
+import {Save, Plus, X, Database} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
+import {getStorage} from "../../storage";
+import {notify} from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 
@@ -16,6 +18,7 @@ export function AuthorSettings({config, onSave, saving}: {
         Array.isArray(author.pen_names) ? (author.pen_names as string[]) : []
     );
     const [newPenName, setNewPenName] = useState("");
+    const [syncing, setSyncing] = useState(false);
 
     useEffect(() => {
         setName((author.name as string) || "");
@@ -32,6 +35,61 @@ export function AuthorSettings({config, onSave, saving}: {
 
     const removePenName = (index: number) => {
         setPenNames(penNames.filter((_, i) => i !== index));
+    };
+
+    const profileNames = [name, ...penNames]
+        .map((entry) => entry.trim())
+        .filter(Boolean);
+    const uniqueProfileNames = [...new Set(profileNames)];
+
+    /**
+     * Mirror the profile authors (real name + pen names) into the
+     * Authors-Database as ``is_profile_author`` rows. Opt-in and
+     * one-directional: an existing entry matched by name (trim +
+     * case-insensitive) is promoted via PATCH instead of duplicated;
+     * a missing one is created. Never writes Authors-DB back into the
+     * profile.
+     */
+    const handleSyncToDatabase = async () => {
+        setSyncing(true);
+        try {
+            const existing = await getStorage().authors.list({});
+            for (const profileName of uniqueProfileNames) {
+                const match = existing.find(
+                    (entry) =>
+                        entry.name.trim().toLowerCase() ===
+                        profileName.toLowerCase(),
+                );
+                if (match) {
+                    if (!match.is_profile_author) {
+                        await getStorage().authors.update(match.id, {
+                            is_profile_author: true,
+                        });
+                    }
+                } else {
+                    await getStorage().authors.create({
+                        name: profileName,
+                        is_profile_author: true,
+                    });
+                }
+            }
+            notify.success(
+                t(
+                    "ui.settings.author_sync_to_db_done",
+                    "Profil-Autoren in die Datenbank übernommen",
+                ),
+            );
+        } catch (err) {
+            notify.error(
+                t(
+                    "ui.settings.author_sync_to_db_error",
+                    "Übernehmen in die Datenbank fehlgeschlagen",
+                ),
+                err,
+            );
+        } finally {
+            setSyncing(false);
+        }
     };
 
     return (
@@ -107,15 +165,25 @@ export function AuthorSettings({config, onSave, saving}: {
                     </div>
                 </div>
 
-                <button
-                    className="btn btn-primary"
-                    style={{marginTop: 16}}
-                    disabled={saving}
-                    onClick={() => onSave({author: {name, pen_names: penNames}})}
-                    data-testid="author-save"
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                        className="btn btn-primary"
+                        disabled={saving}
+                        onClick={() => onSave({author: {name, pen_names: penNames}})}
+                        data-testid="author-save"
+                    >
+                        <Save size={14}/> {t("ui.common.save", "Speichern")}
+                    </button>
+                    <button
+                        className="btn btn-secondary"
+                        disabled={saving || syncing || uniqueProfileNames.length === 0}
+                        onClick={handleSyncToDatabase}
+                        data-testid="author-sync-to-db"
+                    >
+                        <Database size={14}/>{" "}
+                        {t("ui.settings.author_sync_to_db", "In Datenbank übernehmen")}
+                    </button>
+                </div>
             </div>
         </div>
     );

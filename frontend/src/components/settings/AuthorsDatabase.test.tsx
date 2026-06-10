@@ -168,6 +168,23 @@ describe("AuthorsDatabase", () => {
         expect(screen.getByTestId("authors-database-row-a2")).toBeTruthy();
     });
 
+    it("shows the Profile badge only on is_profile_author rows", async () => {
+        listMock.mockImplementation(async () => [
+            makeAuthor({id: "p1", name: "My Pen", is_profile_author: true}),
+            makeAuthor({id: "c1", name: "Stephen King", slug: "stephen-king"}),
+        ]);
+        render(<AuthorsDatabase/>);
+        await waitFor(() =>
+            expect(screen.getByTestId("authors-database-row-p1")).toBeTruthy(),
+        );
+        expect(
+            screen.getByTestId("authors-database-profile-badge-p1"),
+        ).toBeTruthy();
+        expect(
+            screen.queryByTestId("authors-database-profile-badge-c1"),
+        ).toBeNull();
+    });
+
     it("reveals the add form when the add toggle is clicked", async () => {
         render(<AuthorsDatabase/>);
         await waitFor(() =>

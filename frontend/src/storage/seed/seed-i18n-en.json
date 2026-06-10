@@ -845,6 +845,9 @@
       "add_pen_name": "Add",
       "add_pen_name_placeholder": "Add new pen name",
       "author_saved": "Author profile saved",
+      "author_sync_to_db": "Add to database",
+      "author_sync_to_db_done": "Profile authors added to the database",
+      "author_sync_to_db_error": "Could not add profile authors to the database",
       "plugin_settings": "Plugin Settings",
       "plugin_settings_description": "Enable, configure or remove installed plugins.",
       "install_zip": "Install ZIP",
@@ -1005,6 +1008,7 @@
     },
     "authors_database": {
       "title": "Authors Database",
+      "profile_badge": "Profile",
       "description": "Catalogue of other authors that powers autocomplete suggestions in wizards and editors. Your own identity lives above under \"Author profile\".",
       "hint": "Collection of known authors for the book wizard. Existing books and articles are independent — changes here only affect new suggestions.",
       "search_placeholder": "Search by name…",

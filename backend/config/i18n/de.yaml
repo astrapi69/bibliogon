@@ -818,6 +818,9 @@ ui:
     add_pen_name: "Hinzufügen"
     add_pen_name_placeholder: "Neues Pseudonym hinzufügen"
     author_saved: "Autorenprofil gespeichert"
+    author_sync_to_db: "In Datenbank übernehmen"
+    author_sync_to_db_done: "Profil-Autoren in die Datenbank übernommen"
+    author_sync_to_db_error: "Übernehmen in die Datenbank fehlgeschlagen"
     plugin_settings: "Plugin-Einstellungen"
     plugin_settings_description: "Installierte Plugins aktivieren, konfigurieren oder entfernen."
     install_zip: "ZIP installieren"
@@ -977,6 +980,7 @@ ui:
     export_engine_backend: "Backend (Pandoc/LaTeX, nur online)"
   authors_database:
     title: "Autoren-Datenbank"
+    profile_badge: "Profil"
     description: "Katalog anderer Autoren als Quelle für Autocomplete-Vorschläge in Wizards und Editoren. Deine eigene Identität pflegst du oben unter \"Autorenprofil\"."
     hint: "Sammlung bekannter Autoren für den Buch-Wizard. Bestehende Bücher und Artikel sind unabhängig — Änderungen hier wirken sich nur auf neue Vorschläge aus."
     search_placeholder: "Nach Name suchen…"

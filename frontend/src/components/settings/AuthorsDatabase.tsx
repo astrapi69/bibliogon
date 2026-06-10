@@ -369,7 +369,17 @@ export function AuthorsDatabase() {
                                 ) : (
                                     <div style={{display: "flex", alignItems: "flex-start", gap: 8}}>
                                         <div style={{flex: 1, minWidth: 0}}>
-                                            <div style={{fontWeight: 500}}>{author.name}</div>
+                                            <div className="flex items-center gap-2">
+                                                <span style={{fontWeight: 500}}>{author.name}</span>
+                                                {author.is_profile_author && (
+                                                    <span
+                                                        className="inline-flex items-center rounded-[var(--radius-sm)] bg-primary px-2 py-0.5 text-xs font-medium text-primary-foreground"
+                                                        data-testid={`authors-database-profile-badge-${author.id}`}
+                                                    >
+                                                        {t("ui.authors_database.profile_badge", "Profil")}
+                                                    </span>
+                                                )}
+                                            </div>
                                             <div
                                                 style={{
                                                     fontSize: "0.75rem",

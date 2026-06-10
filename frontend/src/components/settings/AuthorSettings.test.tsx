@@ -4,13 +4,53 @@
  * Settings.tsx in PLUGIN-SETTINGS-TESTID-COVERAGE-01.
  */
 
-import {describe, it, expect, vi} from "vitest";
-import {render, screen, fireEvent} from "@testing-library/react";
+import {describe, it, expect, vi, beforeEach} from "vitest";
+import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import {AuthorSettings} from "./AuthorSettings";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
 }));
+
+const listMock = vi.fn<() => Promise<unknown[]>>(async () => []);
+const createMock = vi.fn(async (data: {name: string}) => ({
+    id: "new",
+    name: data.name,
+    slug: data.name,
+    bio: null,
+    is_profile_author: true,
+    created_at: "",
+    updated_at: "",
+}));
+const updateMock = vi.fn(async () => ({}));
+
+vi.mock("../../storage", () => ({
+    getStorage: () => ({
+        authors: {
+            list: (...args: unknown[]) => listMock(...(args as [])),
+            create: (...args: unknown[]) => createMock(...(args as [{name: string}])),
+            update: (...args: unknown[]) => updateMock(...(args as [])),
+        },
+    }),
+}));
+
+const notifySuccess = vi.fn();
+const notifyError = vi.fn();
+vi.mock("../../utils/notify", () => ({
+    notify: {
+        success: (...a: unknown[]) => notifySuccess(...a),
+        error: (...a: unknown[]) => notifyError(...a),
+    },
+}));
+
+beforeEach(() => {
+    listMock.mockReset();
+    createMock.mockClear();
+    updateMock.mockClear();
+    notifySuccess.mockClear();
+    notifyError.mockClear();
+    listMock.mockResolvedValue([]);
+});
 
 describe("AuthorSettings", () => {
     it("renders the root testid + real-name input", () => {
@@ -81,5 +121,64 @@ describe("AuthorSettings", () => {
         render(<AuthorSettings config={{}} onSave={() => {}} saving={false}/>);
         const add = screen.getByTestId("author-pen-name-add") as HTMLButtonElement;
         expect(add.disabled).toBe(true);
+    });
+
+    it("sync-to-database button is disabled when the profile is empty", () => {
+        render(<AuthorSettings config={{}} onSave={() => {}} saving={false}/>);
+        const sync = screen.getByTestId("author-sync-to-db") as HTMLButtonElement;
+        expect(sync.disabled).toBe(true);
+    });
+
+    it("sync creates missing profile authors and promotes existing matches", async () => {
+        listMock.mockResolvedValue([
+            {
+                id: "e1",
+                name: "Pen",
+                slug: "pen",
+                bio: null,
+                is_profile_author: false,
+                created_at: "",
+                updated_at: "",
+            },
+        ]);
+        render(
+            <AuthorSettings
+                config={{author: {name: "Real", pen_names: ["Pen"]}}}
+                onSave={() => {}}
+                saving={false}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("author-sync-to-db"));
+        await waitFor(() => expect(notifySuccess).toHaveBeenCalled());
+        expect(createMock).toHaveBeenCalledWith({
+            name: "Real",
+            is_profile_author: true,
+        });
+        expect(updateMock).toHaveBeenCalledWith("e1", {is_profile_author: true});
+    });
+
+    it("sync skips an existing entry already flagged as profile author", async () => {
+        listMock.mockResolvedValue([
+            {
+                id: "e1",
+                name: "Real",
+                slug: "real",
+                bio: null,
+                is_profile_author: true,
+                created_at: "",
+                updated_at: "",
+            },
+        ]);
+        render(
+            <AuthorSettings
+                config={{author: {name: "Real", pen_names: []}}}
+                onSave={() => {}}
+                saving={false}
+            />,
+        );
+        fireEvent.click(screen.getByTestId("author-sync-to-db"));
+        await waitFor(() => expect(notifySuccess).toHaveBeenCalled());
+        expect(createMock).not.toHaveBeenCalled();
+        expect(updateMock).not.toHaveBeenCalled();
     });
 });

@@ -815,6 +815,9 @@ ui:
     add_pen_name: "Adicionar"
     add_pen_name_placeholder: "Adicionar novo pseudonimo"
     author_saved: "Perfil do autor salvo"
+    author_sync_to_db: "Adicionar à base de dados"
+    author_sync_to_db_done: "Autores do perfil adicionados à base de dados"
+    author_sync_to_db_error: "Não foi possível adicionar os autores do perfil à base de dados"
     plugin_settings: "Configuracoes de plugins"
     plugin_settings_description: "Ativar, configurar ou remover plugins instalados."
     install_zip: "Instalar ZIP"
@@ -974,6 +977,7 @@ ui:
     export_engine_backend: "Backend (Pandoc/LaTeX, apenas online)"
   authors_database:
     title: "Base de dados de autores"
+    profile_badge: "Perfil"
     description: "Catalogo de outros autores que alimenta as sugestoes de preenchimento automatico em assistentes e editores. A sua propria identidade encontra-se acima em \"Perfil de autor\"."
     hint: "Coleção de autores conhecidos para o assistente de livros. Os livros e artigos existentes são independentes — as alterações aqui só afetam as novas sugestões."
     search_placeholder: "Pesquisar por nome…"

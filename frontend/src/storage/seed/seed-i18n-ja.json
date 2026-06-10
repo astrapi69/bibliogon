@@ -845,6 +845,9 @@
       "add_pen_name": "追加",
       "add_pen_name_placeholder": "新しいペンネームを追加",
       "author_saved": "著者プロフィールを保存しました",
+      "author_sync_to_db": "データベースに追加",
+      "author_sync_to_db_done": "プロフィールの著者をデータベースに追加しました",
+      "author_sync_to_db_error": "プロフィールの著者をデータベースに追加できませんでした",
       "plugin_settings": "プラグイン設定",
       "plugin_settings_description": "インストール済みプラグインの有効化、設定、削除。",
       "install_zip": "ZIPをインストール",
@@ -1005,6 +1008,7 @@
     },
     "authors_database": {
       "title": "著者データベース",
+      "profile_badge": "プロフィール",
       "description": "ウィザードやエディタでのオートコンプリート候補のソースとなる、他の著者のカタログ。あなた自身のアイデンティティは上の「著者プロファイル」にあります。",
       "hint": "本ウィザード用の既知の著者のコレクションです。既存の本や記事は独立しており、ここでの変更は新しい候補にのみ反映されます。",
       "search_placeholder": "名前で検索…",

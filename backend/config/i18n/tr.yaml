@@ -829,6 +829,9 @@ ui:
     add_pen_name: "Ekle"
     add_pen_name_placeholder: "Yeni takma ad ekle"
     author_saved: "Yazar profili kaydedildi"
+    author_sync_to_db: "Veritabanına ekle"
+    author_sync_to_db_done: "Profil yazarları veritabanına eklendi"
+    author_sync_to_db_error: "Profil yazarları veritabanına eklenemedi"
     plugin_settings: "Eklenti ayarlari"
     plugin_settings_description: "Yuklenmis eklentileri etkinlestirin, yapilandirin veya kaldirin."
     install_zip: "ZIP kur"
@@ -988,6 +991,7 @@ ui:
     export_engine_backend: "Backend (Pandoc/LaTeX, yalnızca çevrimiçi)"
   authors_database:
     title: "Yazarlar Veritabanı"
+    profile_badge: "Profil"
     description: "Sihirbazlar ve editorlerdeki otomatik tamamlama onerilerini besleyen diger yazarlar katalogu. Kendi kimliginiz yukarida \"Yazar profili\" altinda yer alir."
     hint: "Kitap sihirbazı için bilinen yazarların listesi. Mevcut kitaplar ve makaleler bağımsızdır — buradaki değişiklikler yalnızca yeni önerileri etkiler."
     search_placeholder: "Ada göre ara…"
