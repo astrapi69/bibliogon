@@ -74,11 +74,12 @@ const mockDeleteTemplate = vi.fn()
 const mockConfirm = vi.fn()
 const mockListAuthors = vi.fn()
 const mockCreateAuthor = vi.fn()
+let mockAppConfig: Record<string, unknown> = {author: {name: "", pen_names: []}}
 
 vi.mock("../api/client", () => ({
   api: {
     settings: {
-      getApp: vi.fn().mockResolvedValue({author: {name: "", pen_names: []}}),
+      getApp: vi.fn(async () => mockAppConfig),
     },
     templates: {
       list: () => mockListTemplates(),
@@ -133,6 +134,7 @@ describe("CreateBookForm", () => {
     mockCreateAuthor.mockReset()
     // Default: Authors-DB is empty; create returns whatever was sent.
     offlineValue = false
+    mockAppConfig = {author: {name: "", pen_names: []}}
     mockListAuthors.mockResolvedValue([])
     mockCreateAuthor.mockImplementation((data) =>
       Promise.resolve({
@@ -609,13 +611,36 @@ describe("CreateBookForm", () => {
    * Phase 2 pattern). Carried over unchanged from the modal.
    */
   describe("Authors-Database integration", () => {
-    it("fetches global Authors-DB on mount and exposes datalist", async () => {
+    it("datalist lists profile authors (real name + pen names) only", async () => {
+      mockAppConfig = {
+        author: {name: "Real Name", pen_names: ["Pen One", "Pen Two"]},
+      }
+      renderForm()
+      await waitFor(() =>
+        expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
+      )
+      await waitFor(() =>
+        expect(
+          screen.getByTestId("create-book-author-suggestion-Real Name"),
+        ).toBeTruthy(),
+      )
+      expect(
+        screen.getByTestId("create-book-author-suggestion-Pen One"),
+      ).toBeTruthy()
+      expect(
+        screen.getByTestId("create-book-author-suggestion-Pen Two"),
+      ).toBeTruthy()
+    })
+
+    it("does NOT list Authors-DB entries as suggestions (profile-only)", async () => {
+      mockAppConfig = {author: {name: "Real Name", pen_names: []}}
       mockListAuthors.mockResolvedValue([
         {
           id: "a1",
-          name: "Aster Raptis",
-          slug: "aster-raptis",
+          name: "Stephen King",
+          slug: "stephen-king",
           bio: null,
+          is_profile_author: false,
           created_at: "2026-05-19T00:00:00Z",
           updated_at: "2026-05-19T00:00:00Z",
         },
@@ -625,11 +650,9 @@ describe("CreateBookForm", () => {
       await waitFor(() =>
         expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
       )
-      await waitFor(() =>
-        expect(
-          screen.getByTestId("create-book-author-suggestion-Aster Raptis"),
-        ).toBeTruthy(),
-      )
+      expect(
+        screen.queryByTestId("create-book-author-suggestion-Stephen King"),
+      ).toBeNull()
     })
 
     it("Add-to-Authors-DB checkbox is VISIBLE when typed author is new", async () => {

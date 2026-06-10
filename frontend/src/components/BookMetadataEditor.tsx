@@ -209,10 +209,10 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
     }, [book.id, offline]);
 
     // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
-    // selection — free-text input + autocomplete suggestions union'd
-    // from the user-profile names + Authors-DB. Mirrors the
-    // CreateBookModal + ConvertToBookWizard precedent shipped via
-    // AuthorSelectInput.
+    // selection. The dropdown lists ONLY the user's profile authors
+    // (real name + pen names); the Authors-Database is loaded purely to
+    // gate the "Add to database" checkbox, never to feed suggestions —
+    // a book's author is the user's identity, not a catalog entry.
     const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
     const [addAuthorToDb, setAddAuthorToDb] = useState(true);
     useEffect(() => {
@@ -240,15 +240,8 @@ export default function BookMetadataEditor({book, onSave, onBack, allBooks, onNa
                 out.push(trimmed);
             }
         }
-        for (const a of globalAuthors) {
-            const trimmed = a.name.trim();
-            if (trimmed && !seen.has(trimmed)) {
-                seen.add(trimmed);
-                out.push(trimmed);
-            }
-        }
         return out;
-    }, [authorProfile, globalAuthors]);
+    }, [authorProfile]);
     const showAddToAuthorsCheckbox = useMemo(() => {
         const trimmed = (form.author ?? "").trim().toLowerCase();
         if (!trimmed) return false;

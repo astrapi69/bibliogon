@@ -192,8 +192,11 @@ export default function CreateBookForm({
     };
   }, []);
 
-  // Union of authorChoices + globalAuthors.name, deduped + ordered
-  // (user-identity choices first). Powers the <datalist> below.
+  // The book-author dropdown lists ONLY the user's profile authors
+  // (real name + pen names). The Authors-Database is a catalog of OTHER
+  // known authors (co-authors, imported names) and is deliberately kept
+  // out of the suggestions — your book is your identity. Deduped +
+  // trimmed, profile order preserved.
   const authorSuggestions = useMemo(() => {
     const seen = new Set<string>();
     const out: string[] = [];
@@ -204,15 +207,8 @@ export default function CreateBookForm({
         out.push(trimmed);
       }
     }
-    for (const a of globalAuthors) {
-      const trimmed = a.name.trim();
-      if (trimmed && !seen.has(trimmed)) {
-        seen.add(trimmed);
-        out.push(trimmed);
-      }
-    }
     return out;
-  }, [authorChoices, globalAuthors]);
+  }, [authorChoices]);
 
   // True when the typed author matches an existing Authors-DB entry
   // (trim + case-insensitive). Controls the "Add to Authors-Database"
