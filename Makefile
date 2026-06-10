@@ -285,11 +285,8 @@ coverage-frontend: test-coverage-frontend ## Alias of test-coverage-frontend (se
 
 audit: audit-backend audit-frontend ## Run both dependency security audits
 
-audit-backend: ## pip-audit (known advisories ignored; tracked in #47)
+audit-backend: ## pip-audit (only weasyprint CVE-2025-68616 ignored; tracked in #47)
 	cd backend && poetry run pip-audit --skip-editable \
-	  --ignore-vuln CVE-2026-34993 \
-	  --ignore-vuln CVE-2026-47265 \
-	  --ignore-vuln PYSEC-2026-196 \
 	  --ignore-vuln CVE-2025-68616
 
 audit-frontend: ## npm audit (high/critical only)

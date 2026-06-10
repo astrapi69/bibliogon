@@ -53,14 +53,13 @@ jobs:
       # Dependency security scan. --skip-editable drops the path-installed
       # plugins (not on PyPI); the --ignore-vuln list is the currently-known
       # advisories tracked in #47 (remove each when its bump lands). New
-      # advisories break the build.
+      # advisories break the build. aiohttp (CVE-2026-34993, CVE-2026-47265)
+      # + pip (PYSEC-2026-196) remediated 2026-06-10; only weasyprint's
+      # CVE-2025-68616 remains (66 -> 68 is a render-risky major, deferred).
       - name: Security audit (pip)
         working-directory: backend
         run: >-
           poetry run pip-audit --skip-editable
-          --ignore-vuln CVE-2026-34993
-          --ignore-vuln CVE-2026-47265
-          --ignore-vuln PYSEC-2026-196
           --ignore-vuln CVE-2025-68616
 
       - name: Run backend tests
