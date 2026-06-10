@@ -118,6 +118,7 @@ export default function CreateBookForm({
   const [seriesIndex, setSeriesIndex] = useState("");
 
   const { offline } = useOfflineFeatureGate();
+  const showTemplateTabs = supportsTemplateCatalog && !offline;
 
   // Template state
   const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
@@ -343,8 +344,10 @@ export default function CreateBookForm({
     <div>
       <Tabs.Root value={mode} onValueChange={(v) => setMode(v as Mode)}>
         {/* BOOK-TYPES-SSOT-YAML-01 C6: tab visibility driven by
-         *  capabilities.template_catalog flag in book-types.yaml. */}
-        {supportsTemplateCatalog && (
+         *  capabilities.template_catalog flag in book-types.yaml.
+         *  Offline (Dexie) mode also hides the switcher — templates are
+         *  backend-only, so the form shows directly with no empty tab. */}
+        {showTemplateTabs && (
           <Tabs.List className="radix-tabs-list" style={{ marginBottom: 12 }}>
             <Tabs.Trigger
               value="blank"

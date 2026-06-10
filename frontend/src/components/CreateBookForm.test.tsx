@@ -112,6 +112,11 @@ vi.mock("../utils/notify", () => ({
   notify: {success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 
+let offlineValue = false
+vi.mock("../storage/useOfflineFeatureGate", () => ({
+  useOfflineFeatureGate: () => ({offline: offlineValue, message: "requires desktop"}),
+}))
+
 describe("CreateBookForm", () => {
   const onCancel = vi.fn()
   const onCreate = vi.fn()
@@ -127,6 +132,7 @@ describe("CreateBookForm", () => {
     mockListAuthors.mockReset()
     mockCreateAuthor.mockReset()
     // Default: Authors-DB is empty; create returns whatever was sent.
+    offlineValue = false
     mockListAuthors.mockResolvedValue([])
     mockCreateAuthor.mockImplementation((data) =>
       Promise.resolve({
@@ -548,6 +554,17 @@ describe("CreateBookForm", () => {
       )
       expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
       expect(screen.queryByTestId("create-book-mode-blank")).toBeNull()
+    })
+
+    it("offline (Dexie) mode: prose hides the template tab, form shows directly", async () => {
+      offlineValue = true
+      renderForm()
+      await waitFor(() =>
+        expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),
+      )
+      expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
+      expect(screen.queryByTestId("create-book-mode-blank")).toBeNull()
+      expect(screen.getByPlaceholderText("Autorenname oder Pen Name")).toBeTruthy()
     })
 
     it("submit with bookType='picture_book' threads book_type into onCreate", async () => {
