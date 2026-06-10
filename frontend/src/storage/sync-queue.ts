@@ -120,6 +120,15 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
         await base.books.delete(id);
         await enqueue("book", "delete", id, null, null);
       },
+      // Trash lifecycle (Finding 7): local-only offline operations
+      // (replay deferred, like comments) — straight passthrough so the
+      // dashboard trash view works offline without a queue entry.
+      listTrash: base.books.listTrash,
+      restore: base.books.restore,
+      permanentDelete: base.books.permanentDelete,
+      emptyTrash: base.books.emptyTrash,
+      bulkRestore: base.books.bulkRestore,
+      bulkDelete: base.books.bulkDelete,
     },
     chapters: {
       list: base.chapters.list,

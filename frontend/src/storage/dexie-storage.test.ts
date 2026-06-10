@@ -44,7 +44,7 @@ describe("DexieStorage — books", () => {
     expect(await dexieStorage.books.list()).toHaveLength(0);
   });
 
-  it("get(id, true) embeds chapters sorted by position; delete cascades them", async () => {
+  it("get(id, true) embeds chapters sorted by position; soft-delete keeps them, permanent-delete cascades", async () => {
     const book = await dexieStorage.books.create({ title: "Mit Kapiteln" });
     await dexieStorage.chapters.create(book.id, { title: "Zwei", position: 1 });
     await dexieStorage.chapters.create(book.id, { title: "Eins", position: 0 });
@@ -52,7 +52,12 @@ describe("DexieStorage — books", () => {
     const detail = await dexieStorage.books.get(book.id, true);
     expect(detail.chapters.map((c) => c.title)).toEqual(["Eins", "Zwei"]);
 
+    // Soft-delete leaves the chapters intact (so a restore is whole).
     await dexieStorage.books.delete(book.id);
+    expect(await dexieStorage.chapters.list(book.id)).toHaveLength(2);
+
+    // Permanent-delete cascades the child graph away.
+    await dexieStorage.books.permanentDelete(book.id);
     expect(await dexieStorage.chapters.list(book.id)).toHaveLength(0);
   });
 
@@ -60,6 +65,70 @@ describe("DexieStorage — books", () => {
     await expect(dexieStorage.books.get("nope")).rejects.toThrow(
       /not available offline/,
     );
+  });
+});
+
+describe("DexieStorage — books trash lifecycle (Finding 7)", () => {
+  it("delete soft-deletes: gone from list, present in listTrash, restorable", async () => {
+    const book = await dexieStorage.books.create({ title: "Trash Me" });
+
+    await dexieStorage.books.delete(book.id);
+    expect(await dexieStorage.books.list()).toHaveLength(0);
+
+    const trashed = await dexieStorage.books.listTrash();
+    expect(trashed.map((b) => b.id)).toEqual([book.id]);
+
+    const restored = await dexieStorage.books.restore(book.id);
+    expect(restored.id).toBe(book.id);
+    expect(await dexieStorage.books.list()).toHaveLength(1);
+    expect(await dexieStorage.books.listTrash()).toHaveLength(0);
+  });
+
+  it("permanentDelete removes a trashed book for good", async () => {
+    const book = await dexieStorage.books.create({ title: "Permanent" });
+    await dexieStorage.books.delete(book.id);
+
+    await dexieStorage.books.permanentDelete(book.id);
+    expect(await dexieStorage.books.list()).toHaveLength(0);
+    expect(await dexieStorage.books.listTrash()).toHaveLength(0);
+  });
+
+  it("emptyTrash removes every trashed book but keeps active ones", async () => {
+    const active = await dexieStorage.books.create({ title: "Active" });
+    const a = await dexieStorage.books.create({ title: "A" });
+    const b = await dexieStorage.books.create({ title: "B" });
+    await dexieStorage.books.delete(a.id);
+    await dexieStorage.books.delete(b.id);
+
+    await dexieStorage.books.emptyTrash();
+    expect(await dexieStorage.books.listTrash()).toHaveLength(0);
+    expect((await dexieStorage.books.list()).map((x) => x.id)).toEqual([
+      active.id,
+    ]);
+  });
+
+  it("bulkDelete soft path trashes; bulkRestore brings them back", async () => {
+    const a = await dexieStorage.books.create({ title: "A" });
+    const b = await dexieStorage.books.create({ title: "B" });
+
+    const del = await dexieStorage.books.bulkDelete([a.id, b.id], false);
+    expect(del.deleted_count).toBe(2);
+    expect(await dexieStorage.books.list()).toHaveLength(0);
+    expect(await dexieStorage.books.listTrash()).toHaveLength(2);
+
+    const res = await dexieStorage.books.bulkRestore([a.id, b.id]);
+    expect(res.restored_count).toBe(2);
+    expect(await dexieStorage.books.list()).toHaveLength(2);
+    expect(await dexieStorage.books.listTrash()).toHaveLength(0);
+  });
+
+  it("bulkDelete permanent path hard-deletes immediately", async () => {
+    const a = await dexieStorage.books.create({ title: "A" });
+    const b = await dexieStorage.books.create({ title: "B" });
+
+    await dexieStorage.books.bulkDelete([a.id, b.id], true);
+    expect(await dexieStorage.books.list()).toHaveLength(0);
+    expect(await dexieStorage.books.listTrash()).toHaveLength(0);
   });
 });
 
