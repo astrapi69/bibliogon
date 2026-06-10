@@ -50,6 +50,19 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
+      # Dependency security scan. --skip-editable drops the path-installed
+      # plugins (not on PyPI); the --ignore-vuln list is the currently-known
+      # advisories tracked in #47 (remove each when its bump lands). New
+      # advisories break the build.
+      - name: Security audit (pip)
+        working-directory: backend
+        run: >-
+          poetry run pip-audit --skip-editable
+          --ignore-vuln CVE-2026-34993
+          --ignore-vuln CVE-2026-47265
+          --ignore-vuln PYSEC-2026-196
+          --ignore-vuln CVE-2025-68616
+
       - name: Run backend tests
         working-directory: backend
         # ``-q`` instead of ``-v``: 1601 tests printed verbose is
@@ -127,6 +140,12 @@ jobs:
       - name: Install dependencies
         working-directory: frontend
         run: npm ci
+
+      # Only high/critical advisories break the build (moderate noise is
+      # filtered). Currently 0 vulnerabilities.
+      - name: Security audit (npm)
+        working-directory: frontend
+        run: npm audit --audit-level=high
 
       - name: TypeScript type check
         working-directory: frontend
