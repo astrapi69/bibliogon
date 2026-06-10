@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-08 (Maximal-Offline arc — the static GitHub-Pages PWA now does everything the desktop does except the four genuinely browser-impossible features. AI "Fill with AI" template fill (1b) now runs offline too. See "Recently shipped" + "Architecture principles" below.)
+Last updated: 2026-06-10 (Docs reconciliation — AI offline (1a+1b) moved from "In progress" to "Recently shipped" now that it ships in v0.48.0; the empty "In progress" section was removed and "Comments offline" moved to "Planned". See "Recently shipped" + "Architecture principles" below.)
 Latest release: v0.48.0 (2026-06-09) — see [changelog/releases/v0.48.0.md](../changelog/releases/v0.48.0.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
@@ -16,7 +16,7 @@ per-tier list.
 
 ---
 
-## Recently shipped — Maximal-Offline arc (v0.37.0 → v0.47.1)
+## Recently shipped — Maximal-Offline arc (v0.37.0 → v0.48.0)
 
 The static GitHub-Pages build (`astrapi69.github.io/bibliogon/`) boots
 with **no backend** and supports full authoring offline, firing zero
@@ -37,6 +37,11 @@ with **no backend** and supports full authoring offline, firing zero
   (auto / client / backend) in Settings > Verhalten.
 - **Client-side Medium import** — in-browser ZIP parse (`fflate`) +
   HTML→TipTap walker (DOMParser) + dedup via the seam.
+- **AI offline** — the single-field SEO/marketing generator (1a) AND the
+  in-editor "Fill with AI" template fill (1b) run browser-direct against
+  the user's own provider key (stored in Dexie, sent only to the provider)
+  via `frontend/src/ai/`. Covers the editor-visible field-classes (article
+  seo/tags/topic/excerpt; book marketing_copy/tags/description_genre).
 - **Assets/media offline** — uploads routed through the seam, stored as
   `ArrayBuffer` in IndexedDB; service-worker intercept serves them;
   `useAssetUrl` resolver + storage-quota warning.
@@ -54,23 +59,12 @@ Backend-only surfaces (Pandoc/LaTeX export, Git sync/backup, audiobook
 TTS, LAN mode) are gated offline with a translated "requires the
 desktop app" hint (`useOfflineFeatureGate()`).
 
-## In progress
-
-- **AI via user-provided API key** — direct browser→provider call,
-  key stored in Dexie (never sent anywhere but the provider). The
-  single-field SEO/marketing generator (1a) AND the in-editor
-  "Fill with AI" template fill (1b) now run offline browser-direct
-  via `frontend/src/ai/` (templateApply + per-entity fill prompts +
-  the `aiFill` orchestrator). Offline fill covers the editor-visible
-  field-classes (article seo/tags/topic/excerpt; book marketing_copy/
-  tags/description_genre); the JSON-shaped prompts replace the
-  backend's YAML to avoid a browser YAML parser.
-- **Comments offline** — deferred until the client Medium import path
-  provides a data source (see "Articles-vs-Books / half-wired
-  lifecycle" lessons).
-
 ## Planned
 
+- **Comments offline** — the importer now exists (client Medium import
+  shipped), but the comments admin/editor surface is still online-only;
+  bringing it through the seam is deferred (see "Articles-vs-Books /
+  half-wired lifecycle" lessons).
 - **AI offline — remaining surfaces** (follow-up to 1b). Three
   field-classes whose target columns are not on the Dexie/API entity
   shape stay backend/online-only offline: article `image_prompts`
@@ -106,9 +100,9 @@ desktop app" hint (`useOfflineFeatureGate()`).
 ## Current focus
 
 All Phase 2 themes and the Maximal-Offline arc (above) are complete
-or deliberately deferred. Active work is the "In progress" + "Planned"
-items above; everything else is the trigger-gated polish + upstream-
-blocked backlog in the tiers below.
+or deliberately deferred. Active work is the "Planned" items above;
+everything else is the trigger-gated polish + upstream-blocked backlog
+in the tiers below.
 
 ---
 
