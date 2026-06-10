@@ -125,7 +125,12 @@ export default function OrderedListEditor({items, onChange, label, addPlaceholde
                     onKeyDown={(e) => e.key === "Enter" && add()}
                     placeholder={addPlaceholder || t("ui.common.add_entry", "Neuen Eintrag hinzufügen...")}
                 />
-                <button style={itemStyles.addBtn} onClick={add} disabled={!newItem.trim()}>
+                <button
+                    style={itemStyles.addBtn}
+                    onClick={add}
+                    disabled={!newItem.trim()}
+                    aria-label={addPlaceholder || t("ui.common.add_entry", "Neuen Eintrag hinzufügen...")}
+                >
                     <Plus size={12}/>
                 </button>
             </div>
