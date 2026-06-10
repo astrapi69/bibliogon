@@ -111,6 +111,39 @@ describe("AuthorSettings", () => {
         expect(onSave).toHaveBeenCalledWith({author: {name: "Y", pen_names: ["P1"]}});
     });
 
+    it("auto-saves immediately when a pen name is added (no Speichern click)", () => {
+        const onSave = vi.fn();
+        render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={onSave} saving={false}/>);
+        fireEvent.change(screen.getByTestId("author-pen-name-input"), {
+            target: {value: "TestPen"},
+        });
+        fireEvent.click(screen.getByTestId("author-pen-name-add"));
+        expect(onSave).toHaveBeenCalledWith({author: {name: "X", pen_names: ["TestPen"]}});
+    });
+
+    it("auto-saves immediately when a pen name is removed", () => {
+        const onSave = vi.fn();
+        render(<AuthorSettings config={{author: {name: "X", pen_names: ["Keep", "Drop"]}}} onSave={onSave} saving={false}/>);
+        fireEvent.click(screen.getByTestId("author-pen-name-remove-1"));
+        expect(onSave).toHaveBeenCalledWith({author: {name: "X", pen_names: ["Keep"]}});
+    });
+
+    it("auto-saves the real name on blur when it changed", () => {
+        const onSave = vi.fn();
+        render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={onSave} saving={false}/>);
+        const real = screen.getByTestId("author-real-name");
+        fireEvent.change(real, {target: {value: "New Name"}});
+        fireEvent.blur(real);
+        expect(onSave).toHaveBeenCalledWith({author: {name: "New Name", pen_names: []}});
+    });
+
+    it("does not save on blur when the real name is unchanged", () => {
+        const onSave = vi.fn();
+        render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={onSave} saving={false}/>);
+        fireEvent.blur(screen.getByTestId("author-real-name"));
+        expect(onSave).not.toHaveBeenCalled();
+    });
+
     it("disables save while saving=true", () => {
         render(<AuthorSettings config={{}} onSave={() => {}} saving={true}/>);
         const btn = screen.getByTestId("author-save") as HTMLButtonElement;

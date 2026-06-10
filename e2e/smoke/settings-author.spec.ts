@@ -77,12 +77,12 @@ test.describe("Settings - autoren tab (author profile)", () => {
         await expect(page.getByTestId("author-real-name")).toHaveValue("E2E Author");
     });
 
-    test("pen-name add via Add button persists", async ({page}) => {
+    test("pen-name add persists immediately (auto-save, no Speichern click)", async ({page}) => {
         await page.goto("/settings?tab=autoren");
         await page.waitForLoadState("networkidle");
 
-        // Add + verify it stuck before saving (a late re-init can reset
-        // the pen-name list under full-suite load); retry until stable.
+        // Add + verify it stuck (a late re-init can reset the pen-name list
+        // under full-suite load); retry until stable.
         await expect(async () => {
             await page.getByTestId("author-pen-name-input").fill("E2E Pseudonym");
             await page.getByTestId("author-pen-name-add").click();
@@ -91,30 +91,44 @@ test.describe("Settings - autoren tab (author profile)", () => {
             );
         }).toPass({timeout: 10_000});
 
-        // Save commits to the backend.
-        await page.getByTestId("author-save").click();
+        // Auto-save: the add persists WITHOUT a Speichern click.
         await expect
             .poll(async () => (await getAuthor()).pen_names || [])
             .toContain("E2E Pseudonym");
     });
 
-    test("pen-name remove drops the entry on save", async ({page}) => {
+    test("pen-name remove persists immediately (auto-save)", async ({page}) => {
         await patchAuthor({pen_names: ["Keep", "Drop"]});
         await page.goto("/settings?tab=autoren");
         await page.waitForLoadState("networkidle");
 
-        // Both seeded entries are present.
         await expect(page.getByTestId("author-pen-name-0")).toContainText("Keep");
         await expect(page.getByTestId("author-pen-name-1")).toContainText("Drop");
 
-        // Remove "Drop" (index 1).
+        // Remove "Drop" (index 1) - persists on its own, no Speichern click.
         await page.getByTestId("author-pen-name-remove-1").click();
         await expect(page.getByTestId("author-pen-name-1")).toHaveCount(0);
-
-        // Save persists the deletion.
-        await page.getByTestId("author-save").click();
         await expect
             .poll(async () => (await getAuthor()).pen_names || [])
             .toEqual(["Keep"]);
+    });
+
+    test("a saved pen name is an option in the create-book author dropdown", async ({page}) => {
+        await patchAuthor({name: "Real Author", pen_names: ["Draven Quantum"]});
+        await page.goto("/books/new");
+
+        // The author field is a datalist; its options are the profile names
+        // (real name + every pen name), so the pen name must be selectable.
+        const datalist = page.getByTestId("create-book-author-datalist");
+        await expect(datalist).toBeAttached();
+        await expect
+            .poll(async () =>
+                datalist.evaluate((el) =>
+                    Array.from(el.querySelectorAll("option")).map(
+                        (o) => (o as HTMLOptionElement).value,
+                    ),
+                ),
+            )
+            .toEqual(expect.arrayContaining(["Real Author", "Draven Quantum"]));
     });
 });

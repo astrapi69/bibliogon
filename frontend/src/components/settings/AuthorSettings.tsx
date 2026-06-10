@@ -29,12 +29,23 @@ export function AuthorSettings({config, onSave, saving}: {
     const addPenName = () => {
         const trimmed = newPenName.trim();
         if (!trimmed || penNames.includes(trimmed)) return;
-        setPenNames([...penNames, trimmed]);
+        const next = [...penNames, trimmed];
+        setPenNames(next);
         setNewPenName("");
+        onSave({author: {name, pen_names: next}});
     };
 
     const removePenName = (index: number) => {
-        setPenNames(penNames.filter((_, i) => i !== index));
+        const next = penNames.filter((_, i) => i !== index);
+        setPenNames(next);
+        onSave({author: {name, pen_names: next}});
+    };
+
+    const saveNameIfChanged = () => {
+        const savedName = ((author.name as string) || "").trim();
+        if (name.trim() !== savedName) {
+            onSave({author: {name, pen_names: penNames}});
+        }
     };
 
     const profileNames = [name, ...penNames]
@@ -105,6 +116,7 @@ export function AuthorSettings({config, onSave, saving}: {
                         className="input"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
+                        onBlur={saveNameIfChanged}
                         placeholder={t("ui.settings.real_name_placeholder", "Dein vollstaendiger Name")}
                         data-testid="author-real-name"
                     />
