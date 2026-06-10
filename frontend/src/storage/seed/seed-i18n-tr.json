@@ -655,7 +655,7 @@
       "genre_placeholder": "Tur secin...",
       "description": "Aciklama",
       "description_placeholder": "Kisa aciklama (istege bagli)",
-      "mode_blank": "Bos",
+      "mode_blank": "Yeni oluştur",
       "mode_template": "Sablondan",
       "template_picker_title": "Sablon sec",
       "template_chapter_count": "{count} bolum",

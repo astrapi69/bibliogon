@@ -624,7 +624,7 @@ ui:
     genre_placeholder: "ジャンルを選択..."
     description: "説明"
     description_placeholder: "短い説明 (任意)"
-    mode_blank: "空白"
+    mode_blank: "新規作成"
     mode_template: "テンプレートから"
     template_picker_title: "テンプレートを選択"
     template_chapter_count: "{count} 章"

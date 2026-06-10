@@ -640,7 +640,7 @@
       "genre_placeholder": "Choose genre...",
       "description": "Description",
       "description_placeholder": "Short description (optional)",
-      "mode_blank": "Blank",
+      "mode_blank": "Create new",
       "mode_template": "From template",
       "template_picker_title": "Choose a template",
       "template_chapter_count": "{count} chapters",

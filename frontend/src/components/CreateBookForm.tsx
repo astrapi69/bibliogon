@@ -118,7 +118,6 @@ export default function CreateBookForm({
   const [seriesIndex, setSeriesIndex] = useState("");
 
   const { offline } = useOfflineFeatureGate();
-  const showTemplateTabs = supportsTemplateCatalog && !offline;
 
   // Template state
   const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
@@ -220,10 +219,14 @@ export default function CreateBookForm({
   }, [author, globalAuthors]);
   const showAddToAuthorsCheckbox = !authorAlreadyInDb;
 
-  // Fetch templates the first time the user switches into template mode.
-  // Templates are a backend-only feature; offline the list is empty (no /api).
+  // Eagerly load the template catalog so the tab switcher can be shown ONLY
+  // when at least one template exists - mode-agnostic (API or Dexie). A tab
+  // that only ever says "Keine Vorlagen verfügbar" is noise, so an empty list
+  // (no templates created yet, offline, or a fetch error) hides the switcher
+  // and renders the create form directly. Templates are backend-only; offline
+  // the list is empty and fires no /api.
   useEffect(() => {
-    if (mode !== "template" || templates !== null) return;
+    if (!supportsTemplateCatalog || templates !== null) return;
     if (offline) {
       setTemplates([]);
       return;
@@ -238,7 +241,11 @@ export default function CreateBookForm({
         setTemplates([]);
         setTemplatesError(String(err?.message || err));
       });
-  }, [mode, templates, offline]);
+  }, [supportsTemplateCatalog, templates, offline]);
+
+  // The tab switcher appears only when the loaded catalog has >= 1 template.
+  const showTemplateTabs =
+    supportsTemplateCatalog && (templates?.length ?? 0) > 0;
 
   // When a template is picked, pre-fill language + description from it
   useEffect(() => {
@@ -350,7 +357,7 @@ export default function CreateBookForm({
               className="radix-tab-trigger"
               data-testid="create-book-mode-blank"
             >
-              {t("ui.create_book.mode_blank", "Leer")}
+              {t("ui.create_book.mode_blank", "Neu erstellen")}
             </Tabs.Trigger>
             <Tabs.Trigger
               value="template"

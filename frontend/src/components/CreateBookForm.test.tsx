@@ -132,6 +132,10 @@ describe("CreateBookForm", () => {
     mockConfirm.mockReset()
     mockListAuthors.mockReset()
     mockCreateAuthor.mockReset()
+    // Templates are now eager-loaded on mount; default to an empty catalog so
+    // the switcher is hidden unless a test seeds templates. (Tests that need
+    // the tab switcher set mockListTemplates.mockResolvedValue(FAKE_TEMPLATES).)
+    mockListTemplates.mockResolvedValue([])
     // Default: Authors-DB is empty; create returns whatever was sent.
     offlineValue = false
     mockAppConfig = {author: {name: "", pen_names: []}}
@@ -329,8 +333,10 @@ describe("CreateBookForm", () => {
    * Radix Tabs reacts to the pointerdown event, not to a plain click. In
    * the happy-dom environment we dispatch the pointer/mouse sequence.
    */
-  function clickTab(testId: string) {
-    const el = screen.getByTestId(testId)
+  // The tab switcher is now shown only after the eager template fetch resolves
+  // with >= 1 template, so wait for the tab to appear before driving it.
+  async function clickTab(testId: string) {
+    const el = await screen.findByTestId(testId)
     fireEvent.pointerDown(el, {button: 0})
     fireEvent.mouseDown(el, {button: 0})
     fireEvent.pointerUp(el, {button: 0})
@@ -368,17 +374,31 @@ describe("CreateBookForm", () => {
     },
   ]
 
-  it("renders both mode tabs", async () => {
+  it("renders both mode tabs when templates exist", async () => {
+    mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
+    renderForm()
+    // The switcher appears only after the eager fetch resolves with >= 1 row.
+    expect(await screen.findByTestId("create-book-mode-blank")).toBeTruthy()
+    expect(screen.getByTestId("create-book-mode-template")).toBeTruthy()
+  })
+
+  it("hides the switcher and shows the form directly when no templates exist", async () => {
     mockListTemplates.mockResolvedValue([])
     renderForm()
-    expect(screen.getByTestId("create-book-mode-blank")).toBeTruthy()
-    expect(screen.getByTestId("create-book-mode-template")).toBeTruthy()
+    await waitFor(() =>
+      expect(
+        screen.getByPlaceholderText("Der Titel deines Buches"),
+      ).toBeTruthy(),
+    )
+    // A switcher with only an empty "Aus Vorlage" tab is noise - it's gone.
+    expect(screen.queryByTestId("create-book-mode-blank")).toBeNull()
+    expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
   })
 
   it("switching to template mode fetches and shows templates", async () => {
     mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
     renderForm()
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
 
     await waitFor(() => {
       expect(mockListTemplates).toHaveBeenCalledTimes(1)
@@ -402,7 +422,7 @@ describe("CreateBookForm", () => {
     })
 
     // Switch to template mode
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
 
     await waitFor(() => {
       expect(screen.getByText("Sci-Fi Novel")).toBeTruthy()
@@ -427,7 +447,7 @@ describe("CreateBookForm", () => {
       target: {value: "Aster"},
     })
 
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
     await waitFor(() => {
       expect(screen.getByText("Memoir")).toBeTruthy()
     })
@@ -445,29 +465,27 @@ describe("CreateBookForm", () => {
     expect(arg.language).toBe("de")
   })
 
-  it("shows 'no templates' state when the list is empty", async () => {
+  it("empty catalog hides the switcher (no empty 'Aus Vorlage' tab)", async () => {
     mockListTemplates.mockResolvedValue([])
     renderForm()
-    clickTab("create-book-mode-template")
-
     await waitFor(() => {
       expect(mockListTemplates).toHaveBeenCalled()
     })
-    await waitFor(() => {
-      // Fallback text from t("ui.create_book.template_empty", "Keine Vorlagen verfügbar")
-      expect(screen.getByText(/Keine Vorlagen/i)).toBeTruthy()
-    })
+    // No switcher: the form is shown directly, no template tab to land on an
+    // empty "Keine Vorlagen verfügbar" state.
+    expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
+    expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy()
   })
 
-  it("shows error state when template fetch fails", async () => {
+  it("a failed template fetch also hides the switcher (degrades to the form)", async () => {
     mockListTemplates.mockRejectedValue(new Error("boom"))
     renderForm()
-    clickTab("create-book-mode-template")
-
     await waitFor(() => {
-      // Fallback text from t("ui.create_book.template_load_error", "Vorlagen konnten nicht geladen werden")
-      expect(screen.getByText(/konnten nicht geladen/i)).toBeTruthy()
+      expect(mockListTemplates).toHaveBeenCalled()
     })
+    // On error the catalog is treated as empty: no switcher, form shows.
+    expect(screen.queryByTestId("create-book-mode-template")).toBeNull()
+    expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy()
   })
 
   // --- User template delete flow (TM-05) ---
@@ -487,7 +505,7 @@ describe("CreateBookForm", () => {
   it("user templates have a delete button, builtins show a badge", async () => {
     mockListTemplates.mockResolvedValue([FAKE_TEMPLATES[0], USER_TPL])
     renderForm()
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
 
     await waitFor(() => {
       expect(screen.getByText("My Custom")).toBeTruthy()
@@ -507,7 +525,7 @@ describe("CreateBookForm", () => {
     mockConfirm.mockResolvedValue(true)
     mockDeleteTemplate.mockResolvedValue(undefined)
     renderForm()
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
 
     await waitFor(() => {
       expect(screen.getByTestId("template-delete-tpl-user")).toBeTruthy()
@@ -525,7 +543,7 @@ describe("CreateBookForm", () => {
     mockListTemplates.mockResolvedValue([USER_TPL])
     mockConfirm.mockResolvedValue(false)
     renderForm()
-    clickTab("create-book-mode-template")
+    await clickTab("create-book-mode-template")
 
     await waitFor(() => {
       expect(screen.getByTestId("template-delete-tpl-user")).toBeTruthy()
@@ -541,7 +559,8 @@ describe("CreateBookForm", () => {
   // --- bookType prop (template-tab + payload threading) ---
 
   describe("bookType prop (picture-book branch)", () => {
-    it("defaults to prose: Template tab is visible", async () => {
+    it("defaults to prose: Template tab is visible when templates exist", async () => {
+      mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
       renderForm()
       await waitFor(() =>
         expect(screen.getByTestId("create-book-mode-template")).toBeTruthy(),
@@ -550,6 +569,7 @@ describe("CreateBookForm", () => {
     })
 
     it("with bookType='picture_book': Template tab hides", async () => {
+      mockListTemplates.mockResolvedValue(FAKE_TEMPLATES)
       renderForm("picture_book")
       await waitFor(() =>
         expect(screen.getByPlaceholderText("Der Titel deines Buches")).toBeTruthy(),

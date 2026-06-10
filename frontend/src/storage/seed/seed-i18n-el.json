@@ -640,7 +640,7 @@
       "genre_placeholder": "Επιλέξτε είδος...",
       "description": "Περιγραφή",
       "description_placeholder": "Σύντομη περιγραφή (προαιρετικό)",
-      "mode_blank": "Κενό",
+      "mode_blank": "Δημιουργία νέου",
       "mode_template": "Από πρότυπο",
       "template_picker_title": "Επιλέξτε πρότυπο",
       "template_chapter_count": "{count} κεφάλαια",

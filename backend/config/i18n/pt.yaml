@@ -624,7 +624,7 @@ ui:
     genre_placeholder: "Escolher genero..."
     description: "Descricao"
     description_placeholder: "Breve descricao (opcional)"
-    mode_blank: "Em branco"
+    mode_blank: "Criar novo"
     mode_template: "A partir de modelo"
     template_picker_title: "Escolha um modelo"
     template_chapter_count: "{count} capitulos"
