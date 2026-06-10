@@ -126,7 +126,7 @@ export default function BookBulkActionBar({
 
             <button
                 type="button"
-                className="btn-primary"
+                className="btn btn-sm btn-primary"
                 data-testid="book-bulk-export"
                 disabled={disabled}
                 title={offlineGate ? offlineMsg : undefined}

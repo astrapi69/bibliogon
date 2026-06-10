@@ -71,7 +71,7 @@ export default function BulkActionBar({
             {children}
             <button
                 type="button"
-                className="btn-ghost"
+                className="btn btn-sm btn-ghost"
                 data-testid={clearTestId}
                 onClick={onClear}
             >

@@ -7,6 +7,7 @@
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
+       lint-frontend format-frontend \
        check-blockers archive-task archive-task-dry install-hooks \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
@@ -413,6 +414,16 @@ check-types-frontend: ## Run tsc --noEmit on frontend
 	@echo ""
 	@echo "=== TypeScript Frontend ==="
 	cd frontend && npx tsc --noEmit
+
+lint-frontend: ## Run ESLint on the frontend (non-blocking baseline; see docs/audits/eslint-baseline.md)
+	@echo ""
+	@echo "=== ESLint Frontend ==="
+	cd frontend && npx eslint "src/**/*.{ts,tsx}"
+
+format-frontend: ## Check Prettier formatting on the frontend (use ARGS=--write on changed files only; never the whole tree)
+	@echo ""
+	@echo "=== Prettier Frontend ==="
+	cd frontend && npx prettier --check $(if $(ARGS),$(ARGS),"src/**/*.{ts,tsx}")
 
 # --- E2E Tests ---
 
