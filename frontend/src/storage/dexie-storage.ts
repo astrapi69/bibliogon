@@ -428,9 +428,18 @@ function buildAuthor(data: AuthorCreate, id: string): Author {
     name: data.name,
     slug: slugify(data.name),
     bio: data.bio ?? null,
+    is_profile_author: data.is_profile_author ?? false,
     created_at: ts,
     updated_at: ts,
   };
+}
+
+/** Coerce a stored author row so ``is_profile_author`` is always a
+ *  boolean. Rows written before the flag existed lack the property;
+ *  default them to false so the type holds and the profile badge
+ *  renders correctly. */
+function normalizeAuthorRow(row: Author): Author {
+  return { ...row, is_profile_author: row.is_profile_author ?? false };
 }
 
 function buildStoryEntity(
@@ -732,12 +741,12 @@ export const dexieStorage: IStorageService = {
         rows = rows.filter((author) => author.name.toLowerCase().includes(query));
       }
       rows.sort((left, right) => left.name.localeCompare(right.name));
-      return rows.slice(0, limit);
+      return rows.slice(0, limit).map(normalizeAuthorRow);
     },
     get: async (id) => {
       const row = await offlineDb.authors.get(id);
       if (!row) notFound("Author", id);
-      return row;
+      return normalizeAuthorRow(row);
     },
     create: async (data: AuthorCreate) => {
       const row = buildAuthor(data, newId());
@@ -747,7 +756,12 @@ export const dexieStorage: IStorageService = {
     update: async (id, data: AuthorUpdate) => {
       const existing = await offlineDb.authors.get(id);
       if (!existing) notFound("Author", id);
-      const merged: Author = { ...existing, ...data, id, updated_at: nowIso() };
+      const merged: Author = normalizeAuthorRow({
+        ...existing,
+        ...data,
+        id,
+        updated_at: nowIso(),
+      });
       await offlineDb.authors.put(merged);
       return merged;
     },

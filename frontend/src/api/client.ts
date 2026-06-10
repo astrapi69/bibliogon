@@ -571,6 +571,10 @@ export interface Author {
   name: string;
   slug: string;
   bio: string | null;
+  /** True for rows mirrored from the user's author profile (real name
+   *  + pen names) via the opt-in Profile->DB sync. Drives the "Profile"
+   *  badge in the Authors-Database list. */
+  is_profile_author: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -578,11 +582,13 @@ export interface Author {
 export interface AuthorCreate {
   name: string;
   bio?: string | null;
+  is_profile_author?: boolean;
 }
 
 export interface AuthorUpdate {
   name?: string;
   bio?: string | null;
+  is_profile_author?: boolean;
 }
 
 /** UX-FU-02: a file uploaded against an Article (currently only

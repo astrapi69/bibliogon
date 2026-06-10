@@ -45,6 +45,7 @@ const createMock = vi.fn<(...args: unknown[]) => Promise<Author>>(
             name: data.name,
             slug: data.name.toLowerCase().replace(/\s+/g, "-"),
             bio: data.bio ?? null,
+            is_profile_author: false,
             created_at: "2026-05-16T00:00:00Z",
             updated_at: "2026-05-16T00:00:00Z",
         };
@@ -58,6 +59,7 @@ const updateMock = vi.fn<(id: string, data: unknown) => Promise<Author>>(
             name: payload.name ?? "Unchanged",
             slug: "slug-" + id,
             bio: payload.bio ?? null,
+            is_profile_author: false,
             created_at: "2026-05-16T00:00:00Z",
             updated_at: "2026-05-16T00:00:00Z",
         };
@@ -112,6 +114,7 @@ function makeAuthor(overrides: Partial<Author> = {}): Author {
         name: "Asterios Raptis",
         slug: "asterios-raptis",
         bio: "writer + maker",
+        is_profile_author: false,
         created_at: "2026-05-16T00:00:00Z",
         updated_at: "2026-05-16T00:00:00Z",
         ...overrides,
