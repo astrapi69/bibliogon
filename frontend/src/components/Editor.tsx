@@ -631,7 +631,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         setAiPromptType((prev) => (prev === "fix_issue" ? "improve" : prev));
     }, [chapterId]);
 
-    // Check for recovery draft when chapter loads
+    // Check for recovery draft when chapter loads. ``editor`` is in the deps
+    // because ``immediatelyRender: false`` (TipTap v3) makes ``useEditor``
+    // return ``null`` on the first render and the instance only on a later
+    // one; without re-running when it arrives, the guard below bails on the
+    // initial null and the recovery banner never appears.
     useEffect(() => {
         if (!chapterId || !editor) return;
         const activeChapter = chapterId;
@@ -641,7 +645,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             }
         });
         serverContentHash.current = hashContent(content);
-    }, [chapterId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [chapterId, editor]);
 
     // Cleanup old drafts on mount
     useEffect(() => { cleanupOldDrafts(draftMaxAgeDays); }, [draftMaxAgeDays]);
