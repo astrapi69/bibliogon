@@ -69,6 +69,35 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+Deferred dependency bumps from the 2026-06-10 sweep (#52); full context in
+`docs/audits/deps-update-2026-06-10.md`:
+
+- [ ] **DEPS-RADIX-POPPER-1.3.0-LOOP-01** — the @radix-ui/* minor releases
+  (react-dropdown-menu 2.1.17, react-select 2.3.0, react-tooltip 1.2.9, …)
+  exact-pin `@radix-ui/react-popper@1.3.0`, which throws "Maximum update
+  depth exceeded" (infinite ref-setting loop) under React 19.2.7, crashing
+  every Radix popper surface. The whole radix family is held at baseline.
+  Bump the family together once popper 1.3.x is fixed upstream (or a 1.3.1
+  lands); verify dropdown/select/tooltip render in Vitest + a real browser.
+- [ ] **DEPS-DOMPURIFY-3.4.8-REGRESSION-01** — dompurify pinned exact 3.4.7;
+  3.4.8+ drops the leading top-level element of the input under happy-dom,
+  breaking `sanitizeAmazonHtml` + the HTML-preview sanitizer. Verify in a
+  real browser whether 3.4.9 is actually broken (vs a happy-dom-only test
+  artifact); if browser-safe, adapt the tests; else track the dompurify /
+  happy-dom upstream fix before un-pinning.
+- [ ] **DEPS-KATEX-0.17-01** — katex 0.16.47 → 0.17.0 deferred. Math
+  rendering (node-based math in editor v3); a render regression isn't
+  catchable by Vitest. Bump in a session that visually verifies inline
+  `$...$` + block `$$...$$` rendering.
+- [ ] **DEPS-ELEVENLABS-2.X-01** — elevenlabs 0.2.27 → 2.52.0 deferred. A
+  full API rewrite; the audiobook plugin's tests mock the TTS engine, so
+  green pytest would not validate it. Needs a dedicated session with a real
+  ElevenLabs API call against the new client.
+- [ ] **DEPS-PYTHON-MULTIPART-0.0.32-01** — python-multipart 0.0.27 → 0.0.32
+  deferred. Out-of-caret; blocked by plugin `medium-import` pinning ^0.0.27.
+  Needs a coordinated backend + plugin-constraint bump (re-lock all plugin
+  lockfiles per the two-installation-paths rule).
+
 - [ ] **ARTICLE-HEADER-900PX-WRAP-01** — the Article-Dashboard header
   (`article-list-header`) wraps to two lines at 900px in the German
   (default) locale: ~71px single-line at 1440px, ~97px at 900px. The
