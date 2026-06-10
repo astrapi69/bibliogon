@@ -31,6 +31,34 @@ repos:
       - id: ruff-format
         files: ^backend/app/
 
+  # Code-level SAST. Runs the full recursive scan (pass_filenames: false) at
+  # MEDIUM severity + MEDIUM confidence, the same gate as CI and
+  # `make security-backend`. `bandit[toml]` is required to read the
+  # [tool.bandit] exclude_dirs from backend/pyproject.toml. `files:` limits
+  # WHEN the hook fires (any touched Python under the scanned roots).
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.9.4
+    hooks:
+      - id: bandit
+        name: bandit (Python SAST)
+        args:
+          [
+            "-c",
+            "backend/pyproject.toml",
+            "--severity-level",
+            "medium",
+            "--confidence-level",
+            "medium",
+            "-q",
+            "-r",
+            "backend/app",
+            "plugins",
+            "scripts",
+          ]
+        pass_filenames: false
+        files: ^(backend/app|plugins|scripts)/.*\.py$
+        additional_dependencies: ["bandit[toml]"]
+
   - repo: local
     hooks:
       - id: roadmap-archive-reminder

@@ -63,6 +63,16 @@ jobs:
           --ignore-vuln PYSEC-2026-196
           --ignore-vuln CVE-2025-68616
 
+      # Code-level SAST. Scans backend/app + plugins + scripts at MEDIUM
+      # severity + MEDIUM confidence (LOW is too noisy). Accepted findings
+      # are #nosec-annotated; baseline at docs/audits/bandit-baseline-2026-06-10.md.
+      - name: Security analysis (bandit)
+        working-directory: backend
+        run: >-
+          poetry run bandit -c pyproject.toml
+          -r app ../plugins ../scripts
+          --severity-level medium --confidence-level medium -q
+
       - name: Run backend tests
         working-directory: backend
         # ``-q`` instead of ``-v``: 1601 tests printed verbose is

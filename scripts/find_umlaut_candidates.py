@@ -555,12 +555,12 @@ def main() -> int:
     parser.add_argument(
         "file_list",
         nargs="?",
-        default="/tmp/in-scope-files.txt",
+        default="/tmp/in-scope-files.txt",  # nosec B108
         help="File listing in-scope paths (default /tmp/in-scope-files.txt).",
     )
     parser.add_argument(
         "--output",
-        default="/tmp/umlaut-candidates.json",
+        default="/tmp/umlaut-candidates.json",  # nosec B108
         help="JSON output path (default /tmp/umlaut-candidates.json).",
     )
     args = parser.parse_args()

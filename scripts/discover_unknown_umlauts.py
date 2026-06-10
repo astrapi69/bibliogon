@@ -283,7 +283,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--file-list",
-        default="/tmp/in-scope-files.txt",
+        default="/tmp/in-scope-files.txt",  # nosec B108
         help="In-scope file list (default /tmp/in-scope-files.txt).",
     )
     parser.add_argument(
