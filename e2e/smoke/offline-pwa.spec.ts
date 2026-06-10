@@ -365,6 +365,20 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Thanks, great post!").first()).toBeVisible();
     });
 
+    test("writing history works offline: computed from Dexie, not desktop-gated (Finding 6)", async ({
+        page,
+    }) => {
+        await page.goto("/writing-history");
+        // The view renders (no "requires desktop app" gate) and computes
+        // from the Dexie writingSessions table — empty until the user
+        // writes, but functional and firing no /api.
+        await expect(page.getByTestId("writing-history-view")).toBeVisible();
+        await expect(page.getByTestId("writing-history-offline")).toHaveCount(0);
+        await expect(page.getByTestId("writing-history-empty")).toBeVisible();
+        // CSV export is backend-only, so it is hidden offline.
+        await expect(page.getByTestId("writing-history-export-csv")).toHaveCount(0);
+    });
+
     test("settings default-type dropdowns are populated from the seeded registries", async ({
         page,
     }) => {

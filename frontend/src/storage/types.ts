@@ -94,6 +94,21 @@ export interface WritingSessionsStorage {
   list: typeof api.writingSessions.list;
 }
 
+/**
+ * Writing-history stats (Finding 6). Computed server-side in `api` mode;
+ * aggregated client-side from the `writingSessions` Dexie table offline
+ * (summary + streaks, per-book and per-chapter breakdowns) so the
+ * Writing-History view works without the desktop backend. `exportCsvUrl`
+ * stays on `api.writingStats` directly (backend-only) — the offline view
+ * hides the CSV button rather than mirroring it. The `typeof api.*`
+ * typing keeps these from drifting from the real client.
+ */
+export interface WritingStatsStorage {
+  summary: typeof api.writingStats.summary;
+  byBook: typeof api.writingStats.byBook;
+  byChapter: typeof api.writingStats.byChapter;
+}
+
 /** The global Authors-Database. Pure CRUD, so it works offline against a
  *  Dexie table (the user can add + pick authors on the backendless PWA). */
 export interface AuthorStorage {
@@ -253,6 +268,7 @@ export interface IStorageService {
   bookTypes: BookTypesStorage;
   contentTypes: ContentTypesStorage;
   writingSessions: WritingSessionsStorage;
+  writingStats: WritingStatsStorage;
   authors: AuthorStorage;
   publications: PublicationStorage;
   articlePlatforms: ArticlePlatformStorage;
