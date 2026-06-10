@@ -364,6 +364,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     };
 
     const editor = useEditor({
+        immediatelyRender: false,
         extensions: [
             StarterKit.configure({link: false, underline: false}),
             Figure.configure({
