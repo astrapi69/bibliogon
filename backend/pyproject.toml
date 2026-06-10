@@ -51,6 +51,7 @@ pytest-cov = "^7.1.0"
 ruff = "^0.15.11"
 pre-commit = "^4.5.1"
 pip-audit = "^2.10.0"
+bandit = "^1.9.4"
 
 [tool.ruff]
 line-length = 100
@@ -171,6 +172,14 @@ tests_dir = [
     "tests/test_platform_schema.py",
 ]
 do_not_mutate = ["app/main.py", "app/database.py"]
+
+[tool.bandit]
+# Code-level SAST (Python). Targets (backend/app, plugins, scripts) are
+# passed on the command line by `make security-backend`, the CI step, and
+# the pre-commit hook; the gate runs at MEDIUM severity + MEDIUM confidence
+# (LOW is too noisy). This section carries only the shared path exclusions.
+# Baseline + accepted findings: docs/audits/bandit-baseline-2026-06-10.md
+exclude_dirs = ["*/tests/*", "*/__pycache__/*", "*/.venv/*", "*/node_modules/*"]
 
 [build-system]
 requires = ["poetry-core"]

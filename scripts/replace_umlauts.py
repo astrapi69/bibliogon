@@ -74,7 +74,10 @@ def prompt(path: Path, clean_streak: int, total: int, idx: int) -> str:
 
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("--report", default="/tmp/umlaut-candidates.json")
+    ap.add_argument(
+        "--report",
+        default="/tmp/umlaut-candidates.json",  # nosec B108
+    )
     ap.add_argument(
         "--dry-run",
         action="store_true",

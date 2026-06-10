@@ -69,6 +69,23 @@ store.
 
 ## P3 - Infrastructure / Quality
 
+- [ ] **VISUAL-REGRESSION-SCREENSHOTS-01** — Playwright screenshot-based
+  visual regression to catch CSS regressions across the 12 theme variants
+  (6 palettes x light/dark). Especially valuable after the Tailwind-v4
+  migration and the responsive fixes, where a token/utility change can
+  silently shift one variant. Shape: a one-off baseline session that
+  screenshots every major view in every theme, then the comparison runs
+  automatically on each change. Filed 2026-06-10 (user note). Quality
+  upgrade, not a bugfix — set up in a quiet session, no time pressure.
+  No prompt to start yet.
+
+- [ ] **MULTI-BROWSER-E2E-01** — run the Playwright suite on Firefox +
+  WebKit in addition to Chromium. WebKit/Safari is the high-value target:
+  the offline PWA runs in WebKit on iPhones, so a Dexie/IndexedDB bug that
+  only manifests in Safari would otherwise never be found. Filed
+  2026-06-10 (user note). Quality upgrade, not a bugfix — set up in a
+  quiet session, no time pressure. No prompt to start yet.
+
 - [ ] **ARTICLE-HEADER-900PX-WRAP-01** — the Article-Dashboard header
   (`article-list-header`) wraps to two lines at 900px in the German
   (default) locale: ~71px single-line at 1440px, ~97px at 900px. The

@@ -84,7 +84,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output",
-        default="/tmp/in-scope-files.txt",
+        default="/tmp/in-scope-files.txt",  # nosec B108
         help="Output path (default /tmp/in-scope-files.txt).",
     )
     args = parser.parse_args()
