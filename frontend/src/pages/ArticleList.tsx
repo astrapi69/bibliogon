@@ -825,8 +825,6 @@ export default function ArticleList() {
                                             <DropdownMenu.Item
                                                 className="hamburger-menu-item"
                                                 data-testid="article-medium-import-btn"
-                                                disabled={offlineGate}
-                                                title={offlineGate ? offlineMsg : undefined}
                                                 onSelect={() => navigate("/articles/import/medium")}
                                             >
                                                 <Upload size={14} />
@@ -1579,10 +1577,13 @@ function ArticleRow({
                 />
                 <Badge
                     testId={`article-list-row-status-${article.id}`}
-                    variant={publicationStatusVariant(article.status)}
+                    variant={publicationStatusVariant(article.status ?? "draft")}
                     size="sm"
                 >
-                    {t(`ui.articles.status_${article.status}`, article.status)}
+                    {t(
+                        `ui.articles.status_${article.status ?? "draft"}`,
+                        article.status ?? "draft",
+                    )}
                 </Badge>
             </div>
             <div className={layout.gridCellLang}>

@@ -101,10 +101,13 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                     />
                     <Badge
                         testId={`article-card-status-${article.id}`}
-                        variant={publicationStatusVariant(article.status)}
+                        variant={publicationStatusVariant(article.status ?? "draft")}
                         size="sm"
                     >
-                        {t(`ui.articles.status_${article.status}`, article.status)}
+                        {t(
+                            `ui.articles.status_${article.status ?? "draft"}`,
+                            article.status ?? "draft",
+                        )}
                     </Badge>
                     <span className={styles.lang}>{(article.language || "??").toUpperCase()}</span>
                     <span className={styles.date}>
