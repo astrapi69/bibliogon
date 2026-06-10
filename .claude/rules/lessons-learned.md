@@ -5095,3 +5095,78 @@ strands mockImplementationOnce" + "React useEffect deps + i18n test
 mocks" in this file). Re-run clears the red; the underlying mock-
 stability fix in the specific storyboard test is separate, lower-tier
 work — do not bundle it into an unrelated feature.
+
+## react-router setSearchParams: multiple calls in one tick clobber (stale snapshot)
+
+Filed 2026-06-10 (BookEditor chapter-switch blocker, fix `8288adec`).
+In react-router (verified on v7.16), calling `setSearchParams` more than
+once inside the same event handler / tick CLOBBERS: each call resolves
+its argument against the **render-time `searchParams` snapshot**, not the
+state produced by the prior call's navigate. The second `navigate` wins
+and overwrites the first's param.
+
+Crucially, the **functional updater form does NOT save you**. The hook is
+implemented as:
+
+```js
+const newSearchParams = createSearchParams(
+  typeof nextInit === "function"
+    ? nextInit(new URLSearchParams(searchParams))   // <- closure value, stale
+    : nextInit,
+);
+navigate("?" + newSearchParams, navigateOptions);
+```
+
+`nextInit(prev)` receives `new URLSearchParams(searchParams)` from the
+render closure. Within one synchronous tick `searchParams` (memoised off
+`location.search`) has not recomputed, so a second call's `prev` is the
+SAME stale value as the first's — the functional form reads exactly what
+the value form reads. It does not see the param the first call just set.
+
+### Concrete incident
+
+BookEditor's chapter-select handler did two writes in one tick — set
+`?chapter=` (via `setActiveChapterId`) then clear `?view=` (via
+`_setShowMetadata(false)`). Both built `URLSearchParams` from the same
+stale snapshot; the view-clear navigate clobbered the chapter set, so
+`?chapter=` never changed and the content-load effect kept the previous
+chapter on screen. Symptom: clicking a sidebar chapter did nothing.
+
+### Rule
+
+When an action needs to change MORE THAN ONE search param, do it in a
+SINGLE `setSearchParams` call that mutates all of them:
+
+```js
+setSearchParams((prev) => {
+  const params = new URLSearchParams(prev);
+  params.set("chapter", id);
+  params.delete("view");
+  return params;
+}, { replace: true });
+```
+
+One call → one navigate → no clobber. Do NOT chain
+`setActiveChapterId(id)` + `_setShowView(false)` and expect both to land.
+
+### Detection
+
+Grep a component for two `setSearchParams` (or helpers that wrap it) in
+the same handler body:
+
+```
+grep -nE "setSearchParams|_setShow[A-Z]|setActiveChapterId" <file>.tsx
+```
+
+Two such calls reachable in one event handler that touch DIFFERENT params
+are a clobber candidate. (Two calls that BOTH unconditionally `set` the
+SAME param are safe — the last set wins, which is the intended result.)
+
+### Regression-pinning
+
+Render the component under a real `MemoryRouter`, add a `LocationProbe`
+(`useLocation().search`) sibling, drive the handler, and assert the probe
+shows ALL the expected params. Such a test fails on the pre-fix
+double-write (`expected '?chapter=a' to contain 'chapter=b'`) and passes
+after — a genuine pin. See `BookEditor.test.tsx` "chapter switch updates
+?chapter= (regression)".
