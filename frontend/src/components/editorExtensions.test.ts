@@ -39,8 +39,8 @@ import CharacterCount from "@tiptap/extension-character-count";
 import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { Footnotes, FootnoteReference, Footnote } from "tiptap-footnotes";
-import Mathematics from "@tiptap/extension-mathematics";
 
+import { InlineMathDollar, BlockMathDollar } from "../extensions/math";
 import { SearchAndReplace } from "../extensions/searchAndReplace";
 
 function buildEditor(content?: unknown): Editor {
@@ -66,7 +66,8 @@ function buildEditor(content?: unknown): Editor {
       Footnotes,
       FootnoteReference,
       Footnote,
-      Mathematics.configure({ katexOptions: { throwOnError: false } }),
+      InlineMathDollar.configure({ katexOptions: { throwOnError: false } }),
+      BlockMathDollar.configure({ katexOptions: { throwOnError: false } }),
       SearchAndReplace.configure({ disableRegex: true }),
     ],
     ...(content ? { content } : {}),
