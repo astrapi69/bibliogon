@@ -326,6 +326,7 @@ ui:
     rename_chapter: "名前を変更"
     back_to_dashboard: "ダッシュボードに戻る"
     metadata: "メタデータ"
+    tools: "ツール"
     export: "エクスポート..."
     export_disabled: "まず章を作成してください"
     export_book: "本をエクスポート"

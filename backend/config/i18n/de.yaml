@@ -326,6 +326,7 @@ ui:
     rename_chapter: "Umbenennen"
     back_to_dashboard: "Zurück zum Dashboard"
     metadata: "Metadaten"
+    tools: "Werkzeuge"
     export: "Exportieren..."
     export_disabled: "Erstelle zuerst ein Kapitel"
     export_book: "Buch exportieren"

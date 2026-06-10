@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
+import * as Collapsible from "@radix-ui/react-collapsible";
 import { Chapter, ChapterType } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import {
@@ -11,6 +12,7 @@ import {
   Download,
   FileText,
   ListChecks,
+  Wrench,
   Pencil,
   BookmarkPlus,
   History,
@@ -509,6 +511,14 @@ export default function ChapterSidebar({
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
+  // The secondary book-tool buttons (Storyboard, Story Bible, Git, ...) live
+  // in a Collapsible so they don't squeeze the chapter list on short
+  // viewports. Collapsed by default; the choice persists across sessions.
+  const [toolsOpen, setToolsOpen] = useState(
+    () =>
+      typeof localStorage !== "undefined" &&
+      localStorage.getItem("bibliogon.sidebar_tools_open") === "1",
+  );
 
   const toggleSection = (key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -809,6 +819,38 @@ export default function ChapterSidebar({
         >
           <FileText size={14} /> {t("ui.sidebar.metadata", "Metadaten")}
         </button>
+        <Collapsible.Root
+          open={toolsOpen}
+          onOpenChange={(open) => {
+            setToolsOpen(open);
+            try {
+              localStorage.setItem(
+                "bibliogon.sidebar_tools_open",
+                open ? "1" : "0",
+              );
+            } catch {
+              /* private mode / no storage - non-critical */
+            }
+          }}
+        >
+          <Collapsible.Trigger asChild>
+            <button
+              className="btn-sidebar-block"
+              style={{ marginBottom: 6, justifyContent: "space-between" }}
+              data-testid="chapter-sidebar-tools-toggle"
+              aria-label={t("ui.sidebar.tools", "Werkzeuge")}
+            >
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <Wrench size={14} /> {t("ui.sidebar.tools", "Werkzeuge")}
+              </span>
+              {toolsOpen ? (
+                <ChevronDown size={14} />
+              ) : (
+                <ChevronRight size={14} />
+              )}
+            </button>
+          </Collapsible.Trigger>
+          <Collapsible.Content>
         {onShowStoryboard && (
           <button
             className={`btn-sidebar-block ${storyboardActive ? "is-active" : ""}`}
@@ -935,6 +977,8 @@ export default function ChapterSidebar({
             </button>
           </Tooltip>
         )}
+          </Collapsible.Content>
+        </Collapsible.Root>
         <Tooltip
           content={
             chapters.length === 0

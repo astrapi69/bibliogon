@@ -326,6 +326,7 @@ ui:
     rename_chapter: "Yeniden adlandir"
     back_to_dashboard: "Panele don"
     metadata: "Meta veriler"
+    tools: "Araçlar"
     export: "Disa aktar..."
     export_disabled: "Once bir bolum olusturun"
     export_book: "Kitabi disa aktar"

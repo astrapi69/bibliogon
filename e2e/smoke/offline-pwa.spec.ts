@@ -158,6 +158,8 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.waitForURL(/\/book\//);
 
         // The Story Bible is un-gated offline (seam getInfo reports available).
+        // Story Bible lives in the collapsible sidebar tools group - expand it.
+        await page.getByTestId("chapter-sidebar-tools-toggle").click();
         await page.getByTestId("story-bible-toggle").click();
         await expect(page.getByTestId("story-bible-sidebar")).toBeVisible();
 

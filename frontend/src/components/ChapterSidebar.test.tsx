@@ -18,7 +18,7 @@
  */
 
 import React from "react";
-import {describe, it, expect, vi} from "vitest";
+import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 import fs from "node:fs";
 import path from "node:path";
@@ -71,6 +71,12 @@ function renderSidebar(chapters: Chapter[] = [makeChapter()]) {
 }
 
 describe("ChapterSidebar - Story Bible action button (BOOK-EDITOR-STORY-BIBLE-BUTTON-01)", () => {
+    // The tools-Collapsible persists its open state in localStorage; clear it
+    // so each test starts from the collapsed default.
+    beforeEach(() => {
+        localStorage.clear();
+    });
+
     function renderWithStoryBible(onStoryBible?: () => void) {
         return render(
             <ChapterSidebar
@@ -94,19 +100,35 @@ describe("ChapterSidebar - Story Bible action button (BOOK-EDITOR-STORY-BIBLE-BU
 
     it("renders the Story-Bibel button in the Actions footer when onStoryBible is provided", () => {
         renderWithStoryBible(vi.fn());
+        // Secondary tools live in a collapsed Collapsible; expand it first.
+        fireEvent.click(screen.getByTestId("chapter-sidebar-tools-toggle"));
         expect(screen.getByTestId("story-bible-toggle")).toBeTruthy();
     });
 
     it("hides the Story-Bibel button when onStoryBible is omitted (plugin inactive)", () => {
         renderWithStoryBible(undefined);
+        fireEvent.click(screen.getByTestId("chapter-sidebar-tools-toggle"));
         expect(screen.queryByTestId("story-bible-toggle")).toBeNull();
     });
 
     it("calls onStoryBible when the button is clicked", () => {
         const onStoryBible = vi.fn();
         renderWithStoryBible(onStoryBible);
+        fireEvent.click(screen.getByTestId("chapter-sidebar-tools-toggle"));
         fireEvent.click(screen.getByTestId("story-bible-toggle"));
         expect(onStoryBible).toHaveBeenCalledTimes(1);
+    });
+
+    it("keeps the secondary tools collapsed by default and expands on toggle", () => {
+        renderWithStoryBible(vi.fn());
+        // Collapsed by default: the secondary tool buttons are not in the DOM.
+        expect(screen.queryByTestId("story-bible-toggle")).toBeNull();
+        expect(screen.queryByTestId("chapter-sidebar-storyboard")).toBeNull();
+        // Metadaten + Exportieren stay outside the Collapsible (always visible).
+        expect(screen.getByTestId("chapter-sidebar-tools-toggle")).toBeTruthy();
+        // Expand -> secondary tools appear.
+        fireEvent.click(screen.getByTestId("chapter-sidebar-tools-toggle"));
+        expect(screen.getByTestId("story-bible-toggle")).toBeTruthy();
     });
 });
 

@@ -134,6 +134,9 @@ test.describe("responsive — Story Bible sidebar overlays content", () => {
         // Below the menu breakpoint the chapter sidebar (which hosts the
         // Story-Bible toggle) starts collapsed -- open it first.
         await page.getByTestId("book-editor-sidebar-toggle").click();
+        // Story Bible lives in the collapsible sidebar tools group - expand it
+        // before probing the toggle's visibility.
+        await page.getByTestId("chapter-sidebar-tools-toggle").click();
         const toggle = page.getByTestId("story-bible-toggle");
         if (!(await toggle.isVisible().catch(() => false))) {
             test.skip(true, "Story Bible plugin not active in this build");

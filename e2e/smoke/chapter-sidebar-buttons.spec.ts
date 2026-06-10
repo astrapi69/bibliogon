@@ -72,6 +72,8 @@ test.describe("ChapterSidebar button unification", () => {
     }) => {
         await page.goto(`/book/${bookId}`);
         await expect(page.getByTestId("chapter-sidebar-footer")).toBeVisible();
+        // Save-as-template lives in the collapsible sidebar tools group.
+        await page.getByTestId("chapter-sidebar-tools-toggle").click();
 
         const button = page.getByTestId("sidebar-save-as-template");
         const cs = await button.evaluate((el) => {
