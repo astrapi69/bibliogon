@@ -302,6 +302,22 @@ async function doSeed(): Promise<void> {
   }
 }
 
+/**
+ * Drop and re-seed the offline database back to the first-install state.
+ *
+ * Deletes every user-created table, reopens the schema, resets the seed
+ * memoization, and re-runs the idempotent seed so the app boots with
+ * default settings plus the committed reference catalogs. Backs the
+ * Settings Danger Zone reset in Dexie (offline) mode, where there is no
+ * backend ``POST /api/system/reset`` to call.
+ */
+export async function resetOfflineDatabase(): Promise<void> {
+  await offlineDb.delete();
+  await offlineDb.open();
+  seedPromise = null;
+  await ensureSeeded();
+}
+
 function buildBook(
   data: import("../api/client").BookCreate,
   id: string,

@@ -16,15 +16,24 @@
  *                       the user-typed RESET keystrokes
  *   typing            → text input gates the destructive button;
  *                       button stays disabled until input === "RESET"
- *   submitting        → API call in flight, all buttons disabled,
+ *   submitting        → reset in flight, all buttons disabled,
  *                       spinner on the destructive button
  *   done              → toast success → localStorage / sessionStorage
  *                       wiped → Dexie BibliogonDB dropped → navigate
  *                       to Dashboard which re-fires onboarding state
  *
- * Failure modes (any 400 / 422 / 5xx from the backend) surface as
- * an error toast and return the dialog to the ``typing`` state so
- * the user can retry without re-opening it.
+ * Storage-mode split: in API mode the wipe is the backend
+ * ``POST /api/system/reset`` (HMAC-token-gated). In Dexie (offline)
+ * mode there is no backend, so the wipe is ``resetOfflineDatabase()``
+ * which drops and re-seeds the IndexedDB store — no token, no
+ * ``/api`` request. The destructive action is therefore NOT gated
+ * offline; only the ``.bgb`` backup-create button stays gated
+ * (it genuinely needs the backend).
+ *
+ * Failure modes (any 400 / 422 / 5xx from the backend, or an
+ * IndexedDB error offline) surface as an error toast and return the
+ * dialog to the ``typing`` state so the user can retry without
+ * re-opening it.
  *
  * Testid namespace: ``danger-zone-*`` (section root, reset button,
  * dialog root, warning text, backup link, RESET input, final
@@ -39,6 +48,7 @@ import {useNavigate} from "react-router-dom";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
+import {resetOfflineDatabase} from "../../storage/dexie-storage";
 import {notify} from "../../utils/notify";
 import {db} from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
@@ -103,11 +113,10 @@ export function DangerZoneSettings() {
         setDialogOpen(true);
         setState("typing");
         setResetText("");
-        // Pre-fetch the token in the background so the user's RESET-
-        // typing keystrokes don't race the prepare-call. If the
-        // prepare fails the destructive button stays disabled with
-        // an error toast - we DON'T close the dialog because the
-        // user has already committed to the flow.
+        if (offlineGate) {
+            setToken(null);
+            return;
+        }
         try {
             const prepared = await api.system.resetPrepare();
             setToken(prepared.token);
@@ -118,7 +127,7 @@ export function DangerZoneSettings() {
             );
             setToken(null);
         }
-    }, [t]);
+    }, [offlineGate, t]);
 
     const closeDialog = useCallback(() => {
         // Block close while a destructive call is in flight - the
@@ -133,18 +142,15 @@ export function DangerZoneSettings() {
     }, [state]);
 
     const executeReset = useCallback(async () => {
-        if (state !== "typing" || token === null || resetText !== "RESET") return;
+        if (state !== "typing" || resetText !== "RESET") return;
+        if (!offlineGate && token === null) return;
         setState("submitting");
         try {
-            await api.system.reset(token, "RESET");
-            // Post-reset cleanup: every browser-side artifact must
-            // be cleared too. ``localStorage.clear()`` resets all 14
-            // bibliogon-* preference keys + SSE F5-recovery handles;
-            // ``sessionStorage.clear()`` covers any future use;
-            // ``db.delete()`` drops the entire Dexie ``BibliogonDB``
-            // (chapter drafts). Errors here are non-fatal - the
-            // backend has already succeeded; we log and continue
-            // to the redirect.
+            if (offlineGate) {
+                await resetOfflineDatabase();
+            } else {
+                await api.system.reset(token as string, "RESET");
+            }
             try {
                 localStorage.clear();
                 sessionStorage.clear();
@@ -157,28 +163,23 @@ export function DangerZoneSettings() {
                 console.warn("Failed to drop Dexie BibliogonDB after reset:", idbErr);
             }
             notify.success(t("ui.settings.danger_zone.reset_complete", "Alle Daten wurden gelöscht."));
-            // Navigate to the Dashboard root - the fresh-app
-            // onboarding state re-fires because we just cleared the
-            // bibliogon-onboarding flag from localStorage.
             navigate("/");
         } catch (err) {
             notify.error(
                 t("ui.settings.danger_zone.reset_error", "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen."),
                 err,
             );
-            // Re-arm the dialog so the user can retry without
-            // closing + reopening. Fresh token to avoid the original
-            // having expired by the time they finish reading the
-            // error.
             setState("typing");
-            try {
-                const prepared = await api.system.resetPrepare();
-                setToken(prepared.token);
-            } catch {
-                setToken(null);
+            if (!offlineGate) {
+                try {
+                    const prepared = await api.system.resetPrepare();
+                    setToken(prepared.token);
+                } catch {
+                    setToken(null);
+                }
             }
         }
-    }, [navigate, resetText, state, t, token]);
+    }, [navigate, offlineGate, resetText, state, t, token]);
 
     const handleBackupClick = useCallback(() => {
         if (offlineGate) return;
@@ -191,7 +192,8 @@ export function DangerZoneSettings() {
         window.open(api.backup.exportUrl(false), "_blank", "noopener");
     }, [offlineGate]);
 
-    const destructiveEnabled = state === "typing" && token !== null && resetText === "RESET";
+    const destructiveEnabled =
+        state === "typing" && resetText === "RESET" && (offlineGate || token !== null);
 
     return (
         <div style={sectionStyle} data-testid="danger-zone-section">
@@ -213,22 +215,12 @@ export function DangerZoneSettings() {
                 className="btn btn-danger"
                 data-testid="danger-zone-reset-button"
                 onClick={openDialog}
-                disabled={offlineGate}
-                title={offlineGate ? offlineMsg : undefined}
             >
                 <AlertTriangle size={16} aria-hidden="true" />
                 <span style={{marginLeft: 6}}>
                     {t("ui.settings.danger_zone.reset_button", "Alles zurücksetzen")}
                 </span>
             </button>
-            {offlineGate && (
-                <p
-                    data-testid="danger-zone-offline-notice"
-                    style={{marginTop: 8, fontSize: "0.8125rem", color: "var(--text-muted)"}}
-                >
-                    {offlineMsg}
-                </p>
-            )}
 
             <Dialog.Root open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
                 <Dialog.Portal>

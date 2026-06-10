@@ -29,9 +29,22 @@ const navigateMock = vi.fn();
 const notifySuccess = vi.fn();
 const notifyError = vi.fn();
 const dbDeleteMock = vi.fn(async () => undefined);
+const resetOfflineDbMock = vi.fn(async () => undefined);
+let offlineModeValue = false;
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
+}));
+
+vi.mock("../../storage/useOfflineFeatureGate", () => ({
+    useOfflineFeatureGate: () => ({
+        offline: offlineModeValue,
+        message: "requires desktop app",
+    }),
+}));
+
+vi.mock("../../storage/dexie-storage", () => ({
+    resetOfflineDatabase: () => resetOfflineDbMock(),
 }));
 
 vi.mock("react-router-dom", async () => {
@@ -103,12 +116,10 @@ function renderWithRouter() {
 
 describe("DangerZoneSettings", () => {
     beforeEach(() => {
+        vi.clearAllMocks();
         localStorage.clear();
         sessionStorage.clear();
-        navigateMock.mockClear();
-        notifySuccess.mockClear();
-        notifyError.mockClear();
-        dbDeleteMock.mockClear();
+        offlineModeValue = false;
     });
 
     afterEach(() => {
@@ -207,6 +218,43 @@ describe("DangerZoneSettings", () => {
         await waitFor(() => {
             expect(api.system.reset).toHaveBeenCalledWith("test-token-abc", "RESET");
         });
+        await waitFor(() => {
+            expect(localStorage.getItem("bibliogon-theme")).toBeNull();
+            expect(sessionStorage.getItem("scratch")).toBeNull();
+            expect(dbDeleteMock).toHaveBeenCalled();
+            expect(notifySuccess).toHaveBeenCalled();
+            expect(navigateMock).toHaveBeenCalledWith("/");
+        });
+    });
+
+    it("offline mode: reset button is not gated", () => {
+        offlineModeValue = true;
+        renderWithRouter();
+        const button = screen.getByTestId("danger-zone-reset-button") as HTMLButtonElement;
+        expect(button.disabled).toBe(false);
+    });
+
+    it("offline mode: reset wipes Dexie + reseeds without any /api call", async () => {
+        offlineModeValue = true;
+        localStorage.setItem("bibliogon-theme", "dark");
+        sessionStorage.setItem("scratch", "x");
+
+        const {api} = await import("../../api/client");
+        renderWithRouter();
+        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
+        await screen.findByTestId("danger-zone-dialog");
+        expect(api.system.resetPrepare).not.toHaveBeenCalled();
+
+        const input = screen.getByTestId("danger-zone-reset-input") as HTMLInputElement;
+        fireEvent.change(input, {target: {value: "RESET"}});
+        const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
+        await waitFor(() => expect(button.disabled).toBe(false));
+        fireEvent.click(button);
+
+        await waitFor(() => {
+            expect(resetOfflineDbMock).toHaveBeenCalled();
+        });
+        expect(api.system.reset).not.toHaveBeenCalled();
         await waitFor(() => {
             expect(localStorage.getItem("bibliogon-theme")).toBeNull();
             expect(sessionStorage.getItem("scratch")).toBeNull();
