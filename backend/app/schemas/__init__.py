@@ -1768,6 +1768,7 @@ class AuthorCreate(BaseModel):
 
     name: str = Field(min_length=1, max_length=300)
     bio: str | None = None
+    is_profile_author: bool = False
 
 
 class AuthorUpdate(BaseModel):
@@ -1780,6 +1781,7 @@ class AuthorUpdate(BaseModel):
 
     name: str | None = Field(default=None, min_length=1, max_length=300)
     bio: str | None = None
+    is_profile_author: bool | None = None
 
 
 class AuthorOut(BaseModel):
@@ -1789,6 +1791,7 @@ class AuthorOut(BaseModel):
     name: str
     slug: str
     bio: str | None
+    is_profile_author: bool
     created_at: datetime
     updated_at: datetime
 

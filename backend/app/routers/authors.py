@@ -139,7 +139,12 @@ def create_author(
     """Create an author. Slug is server-generated and collision-suffixed."""
     base_slug = _slugify(payload.name)
     slug = _unique_slug(repo, base_slug)
-    author = Author(name=payload.name, slug=slug, bio=payload.bio)
+    author = Author(
+        name=payload.name,
+        slug=slug,
+        bio=payload.bio,
+        is_profile_author=payload.is_profile_author,
+    )
     return repo.add(author)
 
 

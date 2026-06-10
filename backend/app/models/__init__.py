@@ -1101,6 +1101,12 @@ class Author(Base):
 
     Surfaced in Settings via a new "Authors-Database" tab sibling
     to the existing personal-identity "Author" tab (Finding 1).
+
+    ``is_profile_author`` marks rows mirrored from the user's author
+    profile (real name + pen names) via the opt-in "Add to database"
+    button. It drives the "Profile" badge in the Authors-Database
+    list. The mirror is one-directional (profile -> DB only); editing
+    a DB row never writes back to the profile.
     """
 
     __tablename__ = "authors"
@@ -1113,6 +1119,9 @@ class Author(Base):
     # the unique index is enforceable at the DB layer.
     slug: Mapped[str] = mapped_column(String(300), nullable=False, unique=True)
     bio: Mapped[str | None] = mapped_column(Text, nullable=True)
+    is_profile_author: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default="0"
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=_utcnow)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), default=_utcnow, onupdate=_utcnow

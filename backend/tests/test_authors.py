@@ -353,3 +353,46 @@ def test_delete_is_idempotent(client):
     """
     resp = client.delete("/api/authors/never-existed")
     assert resp.status_code == 204
+
+
+# ---------------------------------------------------------------------------
+# is_profile_author (Profile -> DB mirror flag)
+# ---------------------------------------------------------------------------
+
+
+def test_create_defaults_is_profile_author_false(client):
+    resp = client.post("/api/authors", json={"name": "Plain Catalog Entry"})
+    assert resp.status_code == 201
+    assert resp.json()["is_profile_author"] is False
+
+
+def test_create_with_is_profile_author_true(client):
+    resp = client.post(
+        "/api/authors",
+        json={"name": "My Pen Name", "is_profile_author": True},
+    )
+    assert resp.status_code == 201
+    assert resp.json()["is_profile_author"] is True
+
+
+def test_patch_promotes_to_profile_author(client):
+    created = client.post("/api/authors", json={"name": "Later Promoted"}).json()
+    assert created["is_profile_author"] is False
+    resp = client.patch(
+        f"/api/authors/{created['id']}",
+        json={"is_profile_author": True},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["is_profile_author"] is True
+
+
+def test_patch_without_flag_preserves_is_profile_author(client):
+    created = client.post(
+        "/api/authors",
+        json={"name": "Stays Profile", "is_profile_author": True},
+    ).json()
+    resp = client.patch(f"/api/authors/{created['id']}", json={"bio": "edit"})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["bio"] == "edit"
+    assert body["is_profile_author"] is True
