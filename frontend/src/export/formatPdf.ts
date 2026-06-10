@@ -18,6 +18,10 @@ type PdfContent = Record<string, unknown>;
 function inlineRuns(nodes: TipTapNode[]): PdfRun[] {
   const runs: PdfRun[] = [];
   for (const node of nodes) {
+    if ((node.type as string) === "inlineMath") {
+      runs.push({ text: `$${(node.attrs as { latex?: string })?.latex || ""}$` });
+      continue;
+    }
     if ((node.type as string) !== "text") {
       const nested = node.content as TipTapNode[] | undefined;
       if (nested) runs.push(...inlineRuns(nested));
@@ -76,6 +80,13 @@ function nodeToPdf(node: TipTapNode): PdfContent[] {
         {
           text: content.map((n) => (n.text as string) || "").join(""),
           preserveLeadingSpaces: true,
+          margin: [0, 0, 0, 8],
+        },
+      ];
+    case "blockMath":
+      return [
+        {
+          text: `$$${(node.attrs as { latex?: string })?.latex || ""}$$`,
           margin: [0, 0, 0, 8],
         },
       ];

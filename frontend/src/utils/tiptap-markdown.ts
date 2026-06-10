@@ -118,6 +118,12 @@ export function nodeToMarkdown(node: TipTapNode): string {
     if (type === "horizontalRule") {
         return "---";
     }
+    if (type === "inlineMath") {
+        return `$${(attrs?.latex as string) || ""}$`;
+    }
+    if (type === "blockMath") {
+        return `$$${(attrs?.latex as string) || ""}$$`;
+    }
     if (type === "text") {
         let text = (node.text as string) || "";
         const marks = node.marks as Record<string, unknown>[] | undefined;
@@ -222,6 +228,12 @@ export function nodeToPlainText(node: TipTapNode): string {
     }
     if (type === "horizontalRule") {
         return "---";
+    }
+    if (type === "inlineMath") {
+        return `$${((node.attrs as {latex?: string})?.latex) || ""}$`;
+    }
+    if (type === "blockMath") {
+        return `$$${((node.attrs as {latex?: string})?.latex) || ""}$$`;
     }
     if (type === "text") {
         const text = (node.text as string) || "";

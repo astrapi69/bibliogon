@@ -1502,6 +1502,7 @@
       "subscript": "Tiefgestellt",
       "superscript": "Hochgestellt",
       "formula": "Formel",
+      "formula_block": "Block-Formel",
       "heading1": "Überschrift 1",
       "heading2": "Überschrift 2",
       "heading3": "Überschrift 3",

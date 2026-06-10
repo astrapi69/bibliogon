@@ -95,6 +95,10 @@ export function nodeToHtml(node: TipTapNode): string {
       return "<hr />";
     case "hardBreak":
       return "<br />";
+    case "inlineMath":
+      return escapeHtml(`$${(attrs?.latex as string) || ""}$`);
+    case "blockMath":
+      return `<p>${escapeHtml(`$$${(attrs?.latex as string) || ""}$$`)}</p>`;
     case "text":
       return textNodeToHtml(node);
     default:

@@ -34,6 +34,7 @@ import {
     AlignJustify,
     Highlighter,
     Sigma,
+    SquareSigma,
     Subscript,
     Superscript,
     Table as TableIcon,
@@ -203,13 +204,18 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         },
         {
             icon: <Sigma size={16}/>,
-            action: () => {
-                editor.chain().focus().insertContent("$$").run();
-                editor.commands.setTextSelection(editor.state.selection.head - 1);
-            },
-            active: false,
+            action: () => editor.chain().focus().insertInlineMath({latex: ""}).run(),
+            active: editor.isActive("inlineMath"),
             title: t("ui.toolbar.formula", "Formel"),
             testId: "toolbar-formula",
+            hidden: markdownMode,
+        },
+        {
+            icon: <SquareSigma size={16}/>,
+            action: () => editor.chain().focus().insertBlockMath({latex: ""}).run(),
+            active: editor.isActive("blockMath"),
+            title: t("ui.toolbar.formula_block", "Block-Formel"),
+            testId: "toolbar-formula-block",
             hidden: markdownMode,
         },
         {type: "separator" as const, hidden: markdownMode},
