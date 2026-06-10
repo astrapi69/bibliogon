@@ -19,6 +19,7 @@ export function buildBookDocument(
     subtitle: book.subtitle ?? undefined,
     author: book.author ?? undefined,
     language: book.language ?? undefined,
+    kind: "book",
     sections: ordered.map((chapter) => ({
       heading: chapter.title,
       doc: parseTipTap(chapter.content),
@@ -34,6 +35,7 @@ export function buildArticleDocument(article: Article): ExportDocument {
     subtitle: article.subtitle ?? undefined,
     author: article.author ?? undefined,
     language: article.language ?? undefined,
+    kind: "article",
     sections: [{ heading: "", doc: parseTipTap(article.content_json) }],
   };
 }

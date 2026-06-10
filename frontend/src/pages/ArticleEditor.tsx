@@ -411,7 +411,7 @@ export default function ArticleEditor() {
     // AR editor-parity Phase 3: export this article. Single-button-
     // per-format row (no modal) - the format set is small (4) and
     // each button kicks off a download immediately.
-    type ExportFormat = "markdown" | "html" | "pdf" | "docx";
+    type ExportFormat = "markdown" | "html" | "pdf" | "docx" | "latex";
     const [exporting, setExporting] = useState<ExportFormat | null>(null);
 
     // AI metadata generation: SEO title / SEO description / tags.
@@ -495,14 +495,19 @@ export default function ArticleEditor() {
         if (!article || exporting) return;
         setExporting(fmt);
         try {
-            if (getStorage().mode === "dexie") {
-                // Offline: render the file in the browser (no Pandoc backend).
+            // Offline renders in the browser (no Pandoc backend). LaTeX is
+            // always client-side — there is no backend `.tex` path, so it
+            // takes the client engine regardless of connectivity.
+            if (getStorage().mode === "dexie" || fmt === "latex") {
                 const { downloadExport, buildArticleDocument } = await import(
                     "../export"
                 );
                 await downloadExport(buildArticleDocument(article), fmt);
             } else {
-                await api.articleExport.download(article.id, fmt);
+                await api.articleExport.download(
+                    article.id,
+                    fmt as "markdown" | "html" | "pdf" | "docx",
+                );
             }
             notify.success(
                 t("ui.articles.export_success", "Export gestartet."),
@@ -1167,7 +1172,7 @@ export default function ArticleEditor() {
                         data-testid="article-editor-export-panel"
                         style={{ display: "flex", flexWrap: "wrap", gap: 6 }}
                     >
-                        {(["markdown", "html", "pdf", "docx"] as const).map((fmt) => (
+                        {(["markdown", "html", "pdf", "docx", "latex"] as const).map((fmt) => (
                             <button
                                 key={fmt}
                                 type="button"

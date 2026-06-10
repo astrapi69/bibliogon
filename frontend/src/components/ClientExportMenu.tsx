@@ -32,6 +32,7 @@ const FORMAT_LABELS: Record<ExportFormat, string> = {
   pdf: "PDF",
   epub: "EPUB",
   docx: "DOCX",
+  latex: "LaTeX",
 };
 
 interface Props {

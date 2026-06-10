@@ -29,11 +29,23 @@ export interface ExportDocument {
   author?: string;
   /** BCP47-ish language code (e.g. "de"); used for EPUB metadata. */
   language?: string;
+  /** Source kind. Drives format-specific structure that depends on it
+   *  (e.g. LaTeX uses `\documentclass{book}` + `\chapter` for books,
+   *  `\documentclass{article}` + `\section` for articles). Defaults to
+   *  book-style when absent. */
+  kind?: "book" | "article";
   sections: ExportSection[];
 }
 
 /** The export formats offered by the client-side engine. */
-export type ExportFormat = "markdown" | "html" | "text" | "pdf" | "epub" | "docx";
+export type ExportFormat =
+  | "markdown"
+  | "html"
+  | "text"
+  | "pdf"
+  | "epub"
+  | "docx"
+  | "latex";
 
 /**
  * Parse a stored TipTap `content_json` string into a node tree. Tolerates an

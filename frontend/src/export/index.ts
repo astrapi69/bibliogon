@@ -11,6 +11,7 @@ import { downloadBlob, downloadText, slugifyFilename } from "./download";
 import { toDocxBlob } from "./formatDocx";
 import { toEpubBlob } from "./formatEpub";
 import { toHtml } from "./formatHtml";
+import { toLatex } from "./formatLatex";
 import { toMarkdown } from "./formatMarkdown";
 import { toText } from "./formatText";
 import { toPdfBlob } from "./formatPdf";
@@ -36,6 +37,7 @@ const FORMAT_SPECS: Record<ExportFormat, FormatSpec> = {
     mime: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     binary: true,
   },
+  latex: { ext: "tex", mime: "application/x-latex", binary: false },
 };
 
 /** All formats the client-side engine can produce, in display order. */
@@ -46,6 +48,7 @@ export const EXPORT_FORMATS: ExportFormat[] = [
   "pdf",
   "epub",
   "docx",
+  "latex",
 ];
 
 /** Produce + download `doc` in `format`. Binary formats lazy-load their
@@ -63,7 +66,9 @@ export async function downloadExport(
         ? toMarkdown(doc)
         : format === "html"
           ? toHtml(doc)
-          : toText(doc);
+          : format === "latex"
+            ? toLatex(doc)
+            : toText(doc);
     downloadText(payload, filename, spec.mime);
     return;
   }
