@@ -10,10 +10,11 @@
  *
  * 1. **BookMetadataEditor**: opens the editor, asserts the
  *    author field is an `<input>` (not a `<select>`) with the
- *    pre-filled value. Verifies the datalist exposes authors-DB
- *    + profile suggestions. Tests the "Add to Authors-DB"
- *    checkbox: typing a NEW name + ticking the checkbox + saving
- *    creates the author via api.authors.create BEFORE the book
+ *    pre-filled value. Verifies the datalist exposes the user's
+ *    profile author suggestions (the Authors-DB feeds only the
+ *    add-to-DB checkbox, never the datalist). Tests the "Add to
+ *    Authors-DB" checkbox: typing a NEW name + ticking the checkbox
+ *    + saving creates the author via api.authors.create BEFORE the book
  *    PATCH. Verified via GET /api/authors post-save.
  *
  * 2. **ArticleEditor**: opens an article, asserts the author
@@ -60,9 +61,13 @@ test.describe("Editor author field — Pattern A Datalist", () => {
             author: "Existing Author",
         })
 
-        // Pre-seed one named author in the Authors-DB so the
-        // datalist has at least one suggestion to expose.
-        await postJson<AuthorRow>("/authors", {name: "Pre-Seeded Author"})
+        // Seed the user's author PROFILE so the datalist has a suggestion.
+        // The BookMetadataEditor datalist lists ONLY profile authors (real
+        // name + pen names); the Authors-DB is loaded purely to gate the
+        // "Add to database" checkbox, never to feed the suggestions (a book's
+        // author is the user's identity, not a catalog entry). So the
+        // suggestion must be a profile entry, NOT a `POST /authors` row.
+        await postJson("/settings/author/pen-name", {name: "Pre-Seeded Author"})
 
         await page.goto(`/book/${book.id}?view=metadata`)
         const authorInput = page.getByTestId("metadata-author")
@@ -72,9 +77,9 @@ test.describe("Editor author field — Pattern A Datalist", () => {
         // Pattern B.
         await expect(authorInput).toHaveAttribute("list", /metadata-author-suggestions/i)
 
-        // Datalist exists + carries the pre-seeded author. The options
-        // come from BookMetadataEditor's async /api/authors fetch, so
-        // poll until the option appears rather than reading once.
+        // Datalist exists + carries the profile author. The options come from
+        // the user's author profile (app settings), resolved asynchronously,
+        // so poll until the option appears rather than reading once.
         const datalist = page.getByTestId("metadata-author-datalist")
         await expect(datalist).toBeAttached()
         await expect

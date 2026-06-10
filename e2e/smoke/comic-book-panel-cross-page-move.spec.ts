@@ -16,14 +16,16 @@
  *    is disabled + flagged data-full in the menu.
  *
  * Panel roots are comic-panel-{id}; the reorder wrapper/handle use
- * the comic-reorder-* namespace, so [data-testid^="comic-panel-"]
- * (minus image/bubble) counts only the panels on the active page.
+ * the comic-reorder-* namespace, and the per-panel image-upload
+ * affordance adds comic-panel-upload-* / -upload-input-* testids, so
+ * [data-testid^="comic-panel-"] (minus image/bubble/upload) counts
+ * only the panels on the active page.
  */
 
 import { test, expect, createComicBook } from "../fixtures/base";
 
 const PANEL_SEL =
-  '[data-testid^="comic-panel-"]:not([data-testid*="-image-"]):not([data-testid*="-bubble-"])';
+  '[data-testid^="comic-panel-"]:not([data-testid*="-image-"]):not([data-testid*="-bubble-"]):not([data-testid*="-upload"])';
 
 test.describe("Comic-book cross-page panel move smoke (Phase 2)", () => {
   test("moves a panel to another page; both pages' counts update", async ({

@@ -359,18 +359,24 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Jane Offline").first()).toBeVisible();
     });
 
-    test("settings danger-zone is gated offline: reset disabled, no /api", async ({
+    test("settings danger-zone reset works offline: enabled, no /api", async ({
         page,
     }) => {
-        // Backend-only full-system reset (POST /api/system/reset). Offline the
-        // trigger is disabled and an offline notice replaces it; the surface
-        // must fire no /api on mount.
+        // The full-system reset works offline via a Dexie wipe + reseed (NOT
+        // the backend POST /api/system/reset). The trigger therefore stays
+        // ENABLED offline - only the .bgb backup-create button is gated.
+        // Opening the tab must fire no /api on mount.
         await page.goto("/settings?tab=danger_zone");
         await expect(page.getByTestId("danger-zone-section")).toBeVisible();
-        await expect(page.getByTestId("danger-zone-reset-button")).toBeDisabled();
-        await expect(page.getByTestId("danger-zone-offline-notice")).toBeVisible();
-        // The destructive dialog never opens, so no reset prepare/exec call.
-        // afterEach proves zero /api.
+        await expect(page.getByTestId("danger-zone-reset-button")).toBeEnabled();
+        // The old offline gate-notice on the reset trigger is gone now that
+        // the reset itself runs offline.
+        await expect(
+            page.getByTestId("danger-zone-offline-notice"),
+        ).toHaveCount(0);
+        // We do NOT click reset here - it would wipe the offline DB mid-suite;
+        // the Dexie-wipe-and-reseed path is covered by
+        // DangerZoneSettings.test.tsx. afterEach proves zero /api on mount.
     });
 
     test("settings backups history is gated offline: notice shown, no /api", async ({

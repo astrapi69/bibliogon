@@ -54,7 +54,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
             // which overmatched nth(1) and read as a "collapsed
             // panel". Per LL "Prefix testid selectors match every
             // nested testid that shares the prefix".
-            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
+            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"]):not([data-testid*="-upload"])',
         ).first();
         await expect(panel).toBeVisible();
         const bbox = await panel.boundingBox();
@@ -91,7 +91,7 @@ test.describe("Comic-book multi-panel layout smoke", () => {
         // panel". Per LL "Prefix testid selectors match every
         // nested testid that shares the prefix".
         const panels = page.locator(
-            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"])',
+            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-bubble-"]):not([data-testid*="-image-"]):not([data-testid*="-upload"])',
         );
 
         // Add 2 panels into the grid_2x2 layout. Add-panel POSTs +
