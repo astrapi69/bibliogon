@@ -155,8 +155,8 @@ export default function CreateBookForm({
 
   // Load author profile on mount
   useEffect(() => {
-    api.settings
-      .getApp()
+    getStorage()
+      .settings.getApp()
       .then((config) => {
         const authorConfig = (config.author || {}) as Record<string, unknown>;
         const realName = (authorConfig.name as string) || "";

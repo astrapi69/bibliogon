@@ -1,20 +1,14 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 
-vi.mock("../api/client", () => ({
-    api: {
-        settings: {
-            getApp: vi.fn(),
-        },
-    },
+const mockGetApp = vi.fn();
+
+vi.mock("../storage", () => ({
+    getStorage: () => ({ settings: { getApp: mockGetApp } }),
 }));
 
 describe("useAuthorProfile", () => {
-    let mockGetApp: ReturnType<typeof vi.fn>;
-
-    beforeEach(async () => {
-        const { api } = await import("../api/client");
-        mockGetApp = vi.mocked(api.settings.getApp);
+    beforeEach(() => {
         mockGetApp.mockReset();
     });
 

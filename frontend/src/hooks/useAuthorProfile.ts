@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { getStorage } from "../storage";
 
 /**
  * Author profile from app settings.
@@ -31,8 +31,8 @@ export function useAuthorProfile(): AuthorProfile | null {
     const [profile, setProfile] = useState<AuthorProfile | null>(null);
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const authorConfig = (config.author || {}) as Record<

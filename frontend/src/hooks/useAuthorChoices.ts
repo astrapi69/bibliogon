@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { getStorage } from "../storage";
 
 /**
  * Load the author name + pen names from app settings.
@@ -22,8 +22,8 @@ export function useAuthorChoices(): string[] {
     const [choices, setChoices] = useState<string[]>([]);
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const authorConfig = (config.author || {}) as Record<
