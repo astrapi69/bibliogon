@@ -15,8 +15,8 @@
 
 import React from "react";
 import {describe, it, expect, vi, beforeEach} from "vitest";
-import {render, screen, waitFor} from "@testing-library/react";
-import {MemoryRouter, Route, Routes} from "react-router-dom";
+import {render, screen, waitFor, fireEvent} from "@testing-library/react";
+import {MemoryRouter, Route, Routes, useLocation} from "react-router-dom";
 
 import BookEditor from "./BookEditor";
 import type {BookDetail, BookTypeDef} from "../api/client";
@@ -191,7 +191,24 @@ vi.mock("../components/Editor", () => ({
     }),
 }));
 vi.mock("../components/ChapterSidebar", () => ({
-    default: () => <div data-testid="chapter-sidebar-stub" />,
+    // Render a select-button per chapter so tests can drive the real
+    // BookEditor ``onSelect`` handler (chapter-switch regression pins).
+    default: (props: {
+        chapters?: Array<{id: string; title: string}>;
+        onSelect: (id: string) => void;
+    }) => (
+        <div data-testid="chapter-sidebar-stub">
+            {(props.chapters ?? []).map((ch) => (
+                <button
+                    key={ch.id}
+                    data-testid={`chapter-select-${ch.id}`}
+                    onClick={() => props.onSelect(ch.id)}
+                >
+                    {ch.title}
+                </button>
+            ))}
+        </div>
+    ),
 }));
 vi.mock("../components/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
@@ -495,5 +512,105 @@ describe("BookEditor — accessibility (axe)", () => {
             expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
         );
         await expectNoA11yViolations(container);
+    });
+});
+
+// --- Chapter-switch regression (clobbered ?chapter= URL write) ---
+//
+// Selecting a sidebar chapter calls BookEditor's onSelect, which must
+// land the new chapter id in the ``?chapter=`` URL param. The bug:
+// onSelect issued two separate setSearchParams calls in one tick
+// (set chapter, then clear view); react-router resolves each against
+// the render-time snapshot, so the second navigate clobbered the
+// first and ``?chapter=`` never changed — the editor stayed on the
+// previous chapter. selectChapter now writes both in one call.
+
+function makeChapter(
+    id: string,
+    title: string,
+    position: number,
+): import("../api/client").Chapter {
+    return {
+        id,
+        book_id: "b1",
+        title,
+        content: "{}",
+        position,
+        chapter_type: "chapter",
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        version: 1,
+    } as import("../api/client").Chapter;
+}
+
+function LocationProbe() {
+    const loc = useLocation();
+    return <div data-testid="location-search">{loc.search}</div>;
+}
+
+function renderEditorWithProbe(bookId: string, search = "") {
+    return render(
+        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+            <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
+                <Routes>
+                    <Route path="/book/:bookId" element={<BookEditor />} />
+                </Routes>
+                <LocationProbe />
+            </MemoryRouter>
+        </BookTypesProvider>,
+    );
+}
+
+describe("BookEditor - chapter switch updates ?chapter= (regression)", () => {
+    const proseWithChapters = () =>
+        makeBook({
+            id: "b1",
+            book_type: "prose",
+            title: "Prose",
+            chapters: [
+                makeChapter("a", "Chapter A", 0),
+                makeChapter("b", "Chapter B", 1),
+                makeChapter("c", "Chapter C", 2),
+            ],
+        });
+
+    it("clicking another chapter moves ?chapter= to that chapter", async () => {
+        getBookMock.mockResolvedValue(proseWithChapters());
+        renderEditorWithProbe("b1", "?chapter=a");
+        await waitFor(() =>
+            expect(screen.getByTestId("chapter-select-b")).toBeTruthy(),
+        );
+        expect(screen.getByTestId("location-search").textContent).toContain(
+            "chapter=a",
+        );
+
+        fireEvent.click(screen.getByTestId("chapter-select-b"));
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("location-search").textContent,
+            ).toContain("chapter=b"),
+        );
+        // The previous chapter id must be gone (the clobber left it at "a").
+        expect(screen.getByTestId("location-search").textContent).not.toContain(
+            "chapter=a",
+        );
+    });
+
+    it("selecting a chapter from the metadata view sets ?chapter= and clears ?view=", async () => {
+        getBookMock.mockResolvedValue(proseWithChapters());
+        renderEditorWithProbe("b1", "?view=metadata&chapter=a");
+        await waitFor(() =>
+            expect(screen.getByTestId("chapter-select-c")).toBeTruthy(),
+        );
+
+        fireEvent.click(screen.getByTestId("chapter-select-c"));
+        await waitFor(() =>
+            expect(
+                screen.getByTestId("location-search").textContent,
+            ).toContain("chapter=c"),
+        );
+        const search = screen.getByTestId("location-search").textContent ?? "";
+        expect(search).not.toContain("view=metadata");
+        expect(search).not.toContain("chapter=a");
     });
 });

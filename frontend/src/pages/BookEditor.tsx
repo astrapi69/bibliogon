@@ -210,10 +210,15 @@ export default function BookEditor() {
       setShowOutline(false);
       setShowRelationships(false);
     }
-    const params = new URLSearchParams(searchParams);
-    if (next) params.set("view", "metadata");
-    else if (params.get("view") === "metadata") params.delete("view");
-    setSearchParams(params, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set("view", "metadata");
+        else if (params.get("view") === "metadata") params.delete("view");
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const _setShowStoryboard = (next: boolean) => {
@@ -223,10 +228,15 @@ export default function BookEditor() {
       setShowOutline(false);
       setShowRelationships(false);
     }
-    const params = new URLSearchParams(searchParams);
-    if (next) params.set("view", "storyboard");
-    else if (params.get("view") === "storyboard") params.delete("view");
-    setSearchParams(params, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set("view", "storyboard");
+        else if (params.get("view") === "storyboard") params.delete("view");
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const _setShowOutline = (next: boolean) => {
@@ -236,10 +246,15 @@ export default function BookEditor() {
       setShowStoryboard(false);
       setShowRelationships(false);
     }
-    const params = new URLSearchParams(searchParams);
-    if (next) params.set("view", "outline");
-    else if (params.get("view") === "outline") params.delete("view");
-    setSearchParams(params, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set("view", "outline");
+        else if (params.get("view") === "outline") params.delete("view");
+        return params;
+      },
+      { replace: true },
+    );
   };
 
   const _setShowRelationships = (next: boolean) => {
@@ -249,10 +264,15 @@ export default function BookEditor() {
       setShowStoryboard(false);
       setShowOutline(false);
     }
-    const params = new URLSearchParams(searchParams);
-    if (next) params.set("view", "relationships");
-    else if (params.get("view") === "relationships") params.delete("view");
-    setSearchParams(params, { replace: true });
+    setSearchParams(
+      (prev) => {
+        const params = new URLSearchParams(prev);
+        if (next) params.set("view", "relationships");
+        else if (params.get("view") === "relationships") params.delete("view");
+        return params;
+      },
+      { replace: true },
+    );
   };
   // Dialog->Pages C6: the active chapter lives in the URL (``?chapter=``)
   // rather than local state, so a chapter selection is deep-linkable and
@@ -262,14 +282,47 @@ export default function BookEditor() {
   const activeChapterId = searchParams.get("chapter");
   const setActiveChapterId = useCallback(
     (next: string | null | ((prev: string | null) => string | null)) => {
-      const params = new URLSearchParams(searchParams);
-      const resolved =
-        typeof next === "function" ? next(params.get("chapter")) : next;
-      if (resolved) params.set("chapter", resolved);
-      else params.delete("chapter");
-      setSearchParams(params, { replace: true });
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          const resolved =
+            typeof next === "function" ? next(params.get("chapter")) : next;
+          if (resolved) params.set("chapter", resolved);
+          else params.delete("chapter");
+          return params;
+        },
+        { replace: true },
+      );
     },
-    [searchParams, setSearchParams],
+    [setSearchParams],
+  );
+  // Selecting a chapter must set ``?chapter=`` AND clear any ``?view=`` in a
+  // SINGLE setSearchParams call. react-router's setSearchParams resolves its
+  // argument against the render-time ``searchParams`` snapshot, so two
+  // separate calls in one event handler (e.g. setActiveChapterId then
+  // _setShowMetadata(false)) both read the stale snapshot and the second
+  // navigate clobbers the first - the URL never gains the new chapter and the
+  // editor stays on the old one. One atomic write avoids the clobber; the
+  // ``?view=`` reconcile effect mirrors the cleared view into the booleans,
+  // and they are also cleared here for an immediate render.
+  const selectChapter = useCallback(
+    (chapterId: string) => {
+      setShowMetadata(false);
+      setShowStoryboard(false);
+      setShowOutline(false);
+      setShowRelationships(false);
+      setSelectedStoryEntityId(null);
+      setSearchParams(
+        (prev) => {
+          const params = new URLSearchParams(prev);
+          params.set("chapter", chapterId);
+          params.delete("view");
+          return params;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
   );
   const [pendingFocus, setPendingFocus] = useState<{
     chapterId: string;
@@ -400,8 +453,7 @@ export default function BookEditor() {
       type: findingType,
       seq: (prev?.seq ?? 0) + 1,
     }));
-    setActiveChapterId(chapterId);
-    _setShowMetadata(false);
+    selectChapter(chapterId);
     closeSidebarOnNarrow();
   };
 
@@ -854,9 +906,7 @@ export default function BookEditor() {
           chapters={book.chapters}
           activeChapterId={showMetadata ? null : activeChapterId}
           onSelect={(id) => {
-            setActiveChapterId(id);
-            _setShowMetadata(false);
-            setSelectedStoryEntityId(null);
+            selectChapter(id);
             closeSidebarOnNarrow();
           }}
           onAdd={handleAddChapter}
@@ -960,8 +1010,7 @@ export default function BookEditor() {
             bookTitle={book.title}
             onBack={() => _setShowStoryboard(false)}
             onSelectChapter={(chapterId) => {
-              setActiveChapterId(chapterId);
-              _setShowStoryboard(false);
+              selectChapter(chapterId);
             }}
           />
         ) : showOutline ? (
@@ -970,8 +1019,7 @@ export default function BookEditor() {
             bookTitle={book.title}
             onBack={() => _setShowOutline(false)}
             onSelectChapter={(chapterId) => {
-              setActiveChapterId(chapterId);
-              _setShowOutline(false);
+              selectChapter(chapterId);
             }}
           />
         ) : showRelationships ? (
