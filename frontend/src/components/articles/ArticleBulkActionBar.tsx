@@ -172,7 +172,7 @@ export default function ArticleBulkActionBar({
 
             <button
                 type="button"
-                className="btn-primary"
+                className="btn btn-sm btn-primary"
                 data-testid="article-bulk-export"
                 disabled={disabled}
                 title={offlineGate ? offlineMsg : undefined}
