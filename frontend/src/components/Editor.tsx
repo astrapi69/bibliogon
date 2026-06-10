@@ -17,17 +17,17 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
-import Table from "@tiptap/extension-table";
+import {Table} from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Color from "@tiptap/extension-color";
-import TextStyle from "@tiptap/extension-text-style";
+import {TextStyle} from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
 import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
-import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
+import {SearchAndReplace} from "../extensions/searchAndReplace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
 import Mathematics from "@tiptap/extension-mathematics";
@@ -365,7 +365,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
     const editor = useEditor({
         extensions: [
-            StarterKit,
+            StarterKit.configure({link: false, underline: false}),
             Figure.configure({
                 allowBase64: true,
             }),
@@ -399,7 +399,6 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 katexOptions: {throwOnError: false},
             }),
             SearchAndReplace.configure({
-                searchResultClass: "search-result",
                 disableRegex: true,
             }),
             Placeholder.configure({

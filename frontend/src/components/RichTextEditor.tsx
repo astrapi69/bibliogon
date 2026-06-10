@@ -34,7 +34,7 @@ import { useEditor, EditorContent, type Editor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import TextAlign from "@tiptap/extension-text-align";
 import Underline from "@tiptap/extension-underline";
-import TextStyle from "@tiptap/extension-text-style";
+import {TextStyle} from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import FontFamily from "@tiptap/extension-font-family";
 import type { JSONContent } from "@tiptap/core";
@@ -112,8 +112,9 @@ export default function RichTextEditor({
   // Default (no mark) renders Atkinson Hyperlegible per D11
   // backward-compat.
   const editor = useEditor({
+    immediatelyRender: false,
     extensions: [
-      StarterKit,
+      StarterKit.configure({ underline: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
       Underline,
       TextStyle,
@@ -176,7 +177,7 @@ export default function RichTextEditor({
       // fire onChange in response to a programmatic
       // content swap. Otherwise the parent's onChange
       // would echo back into the content prop and loop.
-      editor.commands.setContent(next, false);
+      editor.commands.setContent(next, {emitUpdate: false});
     }
   }, [editor, content]);
 

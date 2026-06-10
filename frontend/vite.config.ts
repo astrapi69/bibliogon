@@ -109,6 +109,10 @@ export default defineConfig({
       workbox: {
         // Precache static assets, skip API calls
         globPatterns: ["**/*.{js,css,html,svg,png,woff2}"],
+        // The offline PWA must precache its app-shell entry chunk so it
+        // boots with no network; that chunk exceeds Workbox's conservative
+        // 2 MiB default, so raise the per-file precache ceiling to 5 MiB.
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
         // Offline asset intercept (P3c): a dependency-free fetch listener
         // that serves book images from IndexedDB for the two /assets URL
         // shapes. importScripts injects it at the TOP of the generated SW,
@@ -150,34 +154,24 @@ export default defineConfig({
       output: {
         manualChunks: (id: string) => {
           if (!id.includes("node_modules")) return undefined;
+          // KaTeX is large + self-contained — its own chunk keeps it out
+          // of the entry bundle (and under the 2 MiB PWA precache limit).
+          if (id.includes("/node_modules/katex/")) return "vendor-katex";
+          // All TipTap + ProseMirror packages (incl. the many v3 StarterKit
+          // sub-extensions and the community editor extensions) share one
+          // editor chunk. Prefix-matched so new @tiptap/* sub-packages are
+          // captured automatically rather than leaking into the entry bundle.
+          if (
+            id.includes("/node_modules/@tiptap/") ||
+            id.includes("/node_modules/prosemirror-") ||
+            id.includes("/node_modules/@pentestpad/") ||
+            id.includes("/node_modules/@intevation/tiptap-") ||
+            id.includes("/node_modules/tiptap-footnotes/")
+          ) {
+            return "vendor-tiptap";
+          }
           const chunkMap: Record<string, string[]> = {
             "vendor-react": ["react", "react-dom", "react-router-dom"],
-            "vendor-tiptap": [
-              "@tiptap/react",
-              "@tiptap/starter-kit",
-              "@tiptap/extension-image",
-              "@tiptap/extension-link",
-              "@tiptap/extension-table",
-              "@tiptap/extension-table-row",
-              "@tiptap/extension-table-cell",
-              "@tiptap/extension-table-header",
-              "@tiptap/extension-task-list",
-              "@tiptap/extension-task-item",
-              "@tiptap/extension-text-align",
-              "@tiptap/extension-text-style",
-              "@tiptap/extension-underline",
-              "@tiptap/extension-subscript",
-              "@tiptap/extension-superscript",
-              "@tiptap/extension-highlight",
-              "@tiptap/extension-color",
-              "@tiptap/extension-typography",
-              "@tiptap/extension-character-count",
-              "@tiptap/extension-placeholder",
-              "@tiptap/extension-code-block-lowlight",
-              "@pentestpad/tiptap-extension-figure",
-              "@sereneinserenade/tiptap-search-and-replace",
-              "tiptap-footnotes",
-            ],
             "vendor-ui": [
               "@radix-ui/react-context-menu",
               "@radix-ui/react-dialog",
