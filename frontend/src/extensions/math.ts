@@ -25,7 +25,7 @@
  * inline ``$...$`` anywhere converts to an inline node.
  */
 
-import { InputRule } from "@tiptap/core";
+import { InputRule, nodePasteRule } from "@tiptap/core";
 import { InlineMath, BlockMath } from "@tiptap/extension-mathematics";
 
 /** Matches a single-``$`` inline expression not adjacent to another ``$``
@@ -36,6 +36,16 @@ export const INLINE_MATH_INPUT_RULE = /(?<!\$)\$([^$\n]+?)\$(?!\$)/;
 /** Matches a whole textblock that is exactly ``$$...$$``. Capture group 1 is
  *  the LaTeX body. */
 export const BLOCK_MATH_INPUT_RULE = /^\$\$([^$\n]+?)\$\$$/;
+
+/** Paste-rule variants of the two rules above. Paste rules iterate every
+ *  match in the pasted text, so they must be global. The block variant is NOT
+ *  anchored to the textblock (unlike the input rule) because pasted ``$$...$$``
+ *  can sit anywhere in the clipboard text; ``nodePasteRule`` -> ``insertContentAt``
+ *  lifts the block node into place. The two stay mutually exclusive: the inline
+ *  rule needs a non-``$`` right after the opening ``$``, so ``$$...$$`` never
+ *  matches it. */
+export const INLINE_MATH_PASTE_RULE = /(?<!\$)\$([^$\n]+?)\$(?!\$)/g;
+export const BLOCK_MATH_PASTE_RULE = /(?<!\$)\$\$([^$\n]+?)\$\$(?!\$)/g;
 
 export const InlineMathDollar = InlineMath.extend({
   addInputRules() {
@@ -50,6 +60,15 @@ export const InlineMathDollar = InlineMath.extend({
             this.type.create({ latex }),
           );
         },
+      }),
+    ];
+  },
+  addPasteRules() {
+    return [
+      nodePasteRule({
+        find: INLINE_MATH_PASTE_RULE,
+        type: this.type,
+        getAttributes: (match) => ({ latex: match[1] }),
       }),
     ];
   },
@@ -85,6 +104,15 @@ export const BlockMathDollar = BlockMath.extend({
             node,
           );
         },
+      }),
+    ];
+  },
+  addPasteRules() {
+    return [
+      nodePasteRule({
+        find: BLOCK_MATH_PASTE_RULE,
+        type: this.type,
+        getAttributes: (match) => ({ latex: match[1] }),
       }),
     ];
   },

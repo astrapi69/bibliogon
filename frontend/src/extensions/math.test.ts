@@ -20,6 +20,8 @@ import {
   BlockMathDollar,
   INLINE_MATH_INPUT_RULE,
   BLOCK_MATH_INPUT_RULE,
+  INLINE_MATH_PASTE_RULE,
+  BLOCK_MATH_PASTE_RULE,
 } from "./math";
 
 function buildEditor(): Editor {
@@ -88,6 +90,47 @@ describe("math input rules in a live editor", () => {
   it("typing $$x+1$$ creates a blockMath node (not inlineMath)", () => {
     const editor = buildEditor();
     typeWithTrigger(editor, "$$x+1$", "$");
+    const types = nodeTypes(editor);
+    expect(types).toContain("blockMath");
+    expect(types).not.toContain("inlineMath");
+    editor.destroy();
+  });
+});
+
+describe("math paste-rule regexes", () => {
+  it("inline paste rule is global and captures the latex", () => {
+    expect(INLINE_MATH_PASTE_RULE.flags).toContain("g");
+    const matches = [..."$E=mc^2$".matchAll(INLINE_MATH_PASTE_RULE)];
+    expect(matches).toHaveLength(1);
+    expect(matches[0][1]).toBe("E=mc^2");
+  });
+
+  it("inline paste rule does NOT match a $$...$$ block", () => {
+    expect([..."$$x$$".matchAll(INLINE_MATH_PASTE_RULE)]).toHaveLength(0);
+  });
+
+  it("block paste rule is global and matches $$...$$", () => {
+    expect(BLOCK_MATH_PASTE_RULE.flags).toContain("g");
+    const matches = [..."$$\\int x$$".matchAll(BLOCK_MATH_PASTE_RULE)];
+    expect(matches).toHaveLength(1);
+    expect(matches[0][1]).toBe("\\int x");
+  });
+});
+
+describe("math paste rules in a live editor", () => {
+  it("pasting $E=mc^2$ creates an inlineMath node", () => {
+    const editor = buildEditor();
+    editor.commands.focus();
+    editor.view.pasteText("$E=mc^2$");
+    expect(nodeTypes(editor)).toContain("inlineMath");
+    expect(JSON.stringify(editor.getJSON())).toContain("E=mc^2");
+    editor.destroy();
+  });
+
+  it("pasting $$\\int x$$ creates a blockMath node (not inlineMath)", () => {
+    const editor = buildEditor();
+    editor.commands.focus();
+    editor.view.pasteText("$$\\int_0^1 f(x)\\,dx$$");
     const types = nodeTypes(editor);
     expect(types).toContain("blockMath");
     expect(types).not.toContain("inlineMath");

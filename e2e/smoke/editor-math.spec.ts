@@ -54,3 +54,46 @@ test.describe('Editor math typing', () => {
     await expect(editor).not.toContainText('$$')
   })
 })
+
+/** Dispatch a synthetic paste of plain text into the focused element so the
+ *  editor's paste rules run (TipTap paste rules fire on paste, not on typing). */
+async function pasteText(page: import('@playwright/test').Page, text: string) {
+  await page.evaluate((value) => {
+    const dt = new DataTransfer()
+    dt.setData('text/plain', value)
+    const event = new ClipboardEvent('paste', {
+      clipboardData: dt,
+      bubbles: true,
+      cancelable: true,
+    })
+    document.activeElement?.dispatchEvent(event)
+  }, text)
+}
+
+test.describe('Editor math paste', () => {
+  test('pasting $E=mc^2$ renders inline KaTeX', async ({page}) => {
+    const book = await createBook('Paste Inline Math')
+    await createChapter(book.id, 'Math Chapter')
+
+    await openEditor(page, book.id)
+    const editor = page.locator('.ProseMirror').first()
+    await editor.click()
+    await pasteText(page, '$E=mc^2$')
+
+    await expect(editor.locator('.katex')).toBeVisible({timeout: 5000})
+    await expect(editor).not.toContainText('$E=mc^2$')
+  })
+
+  test('pasting $$\\int x$$ renders block KaTeX', async ({page}) => {
+    const book = await createBook('Paste Block Math')
+    await createChapter(book.id, 'Math Chapter')
+
+    await openEditor(page, book.id)
+    const editor = page.locator('.ProseMirror').first()
+    await editor.click()
+    await pasteText(page, '$$\\int_0^1 f(x)\\,dx$$')
+
+    await expect(editor.locator('.katex')).toBeVisible({timeout: 5000})
+    await expect(editor).not.toContainText('$$')
+  })
+})
