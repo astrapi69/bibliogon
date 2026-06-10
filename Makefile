@@ -2,7 +2,7 @@
        install install-backend install-frontend install-plugins install-e2e \
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
-       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins \
+       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
@@ -274,6 +274,10 @@ test-coverage-frontend: ## Frontend coverage report (coverage/)
 	@echo ""
 	@echo "=== Frontend Coverage ==="
 	cd frontend && npm run test:coverage
+
+coverage-backend: test-coverage-backend ## Alias of test-coverage-backend (see docs/audits/coverage-baseline.md)
+
+coverage-frontend: test-coverage-frontend ## Alias of test-coverage-frontend (see docs/audits/coverage-baseline.md)
 
 test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import ## Run plugin tests with coverage
 
