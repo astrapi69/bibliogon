@@ -161,6 +161,14 @@ jobs:
         working-directory: frontend
         run: npx tsc --noEmit
 
+      # Fail the build on any new circular dependency. Baseline is 0
+      # (docs/audits/circular-deps-baseline.md). Run via npx (pinned
+      # major): madge@8's optional typescript peer is <6.1 while the
+      # frontend is on TS 6, so a pinned devDependency would break npm ci.
+      - name: Circular dependency check (madge)
+        working-directory: frontend
+        run: npx --yes madge@8 --circular --extensions ts,tsx src/
+
       - name: Run Vitest
         working-directory: frontend
         run: npx vitest run

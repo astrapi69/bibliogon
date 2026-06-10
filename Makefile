@@ -3,7 +3,7 @@
        test test-backend test-plugins test-e2e test-e2e-ui \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
-       audit audit-backend audit-frontend security-backend bandit-backend \
+       audit audit-backend audit-frontend security-backend bandit-backend circular-deps \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
@@ -302,6 +302,14 @@ security-backend: bandit-backend audit-backend ## bandit SAST + pip-audit (backe
 bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: docs/audits/bandit-baseline-2026-06-10.md)
 	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
+
+# --- Circular dependency check (mirrors the madge step in ci.yml) ---
+# Run via npx (pinned major): madge@8's optional typescript peer is <6.1,
+# the frontend is on TS 6, so a pinned devDependency would break npm ci.
+# See docs/audits/circular-deps-baseline.md.
+
+circular-deps: ## madge: fail on any circular TS dependency in frontend/src
+	cd frontend && npx --yes madge@8 --circular --extensions ts,tsx src/
 
 test-coverage-plugins: test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import ## Run plugin tests with coverage
 
