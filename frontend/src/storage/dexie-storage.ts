@@ -37,6 +37,7 @@ import type {
   AuthorUpdate,
   Book,
   BulkDeleteResponse,
+  BulkRestoreResponse,
   BookDetail,
   BookTypeDef,
   Chapter,
@@ -77,8 +78,13 @@ interface I18nCatalogRow {
 }
 
 /** A book row carries the offline-availability flag the Selection UI
- *  (C3) sets; it is structurally a `Book` plus that optional marker. */
-export type OfflineBookRow = Book & { offline_available?: boolean };
+ *  (C3) sets plus a `deleted_at` for the soft-delete / trash lifecycle
+ *  (Finding 7). `Book` exposes neither column, so both are local-only
+ *  extensions; `deleted_at` null means an active (non-trashed) book. */
+export type OfflineBookRow = Book & {
+  offline_available?: boolean;
+  deleted_at?: string | null;
+};
 
 /** Minimal shape for the not-yet-method-backed graph tables: a primary
  *  `id` plus arbitrary columns. C3 populates these during download. */
@@ -218,6 +224,14 @@ class BibliogonOfflineDB extends Dexie {
     // (orphan filter), deleted_at (active vs trash), created_at (ordering).
     this.version(8).stores({
       articleComments: "id, imported_from, responds_to_article_id, deleted_at, created_at",
+    });
+    // v9 (Finding 7): the book soft-delete / trash lifecycle. Adds
+    // deleted_at to the books index so the active list and the trash
+    // list can each filter on it. Existing rows have no deleted_at,
+    // which reads as null (active) — Dexie indexes them as absent and
+    // the in-code filters treat absent/null identically.
+    this.version(9).stores({
+      books: "id, updated_at, offline_available, status, deleted_at",
     });
   }
 }
@@ -368,6 +382,7 @@ function buildBook(
     audiobook_skip_chapter_types: [],
     created_at: ts,
     updated_at: ts,
+    deleted_at: null,
   };
 }
 
@@ -492,11 +507,48 @@ function notFound(kind: string, id: string): never {
   throw new Error(`${kind} not available offline: ${id}`);
 }
 
+/** Hard-delete a set of books and cascade their child rows in one
+ *  transaction (IndexedDB has no foreign keys). Used by the permanent
+ *  paths (permanent-delete / empty-trash / bulk-delete with
+ *  permanent=true); the plain `delete` is a soft-delete and never
+ *  cascades, so a restore brings the whole graph back. */
+async function hardDeleteBooks(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await offlineDb.transaction(
+    "rw",
+    [
+      offlineDb.books,
+      offlineDb.chapters,
+      offlineDb.pages,
+      offlineDb.chapterLabels,
+      offlineDb.writingSessions,
+      offlineDb.storyEntities,
+      offlineDb.assets,
+    ],
+    async () => {
+      await offlineDb.books.bulkDelete(ids);
+      await offlineDb.chapters.where("book_id").anyOf(ids).delete();
+      await offlineDb.pages.where("book_id").anyOf(ids).delete();
+      await offlineDb.chapterLabels.where("book_id").anyOf(ids).delete();
+      await offlineDb.writingSessions.where("book_id").anyOf(ids).delete();
+      await offlineDb.storyEntities.where("book_id").anyOf(ids).delete();
+      await offlineDb.assets.where("bookId").anyOf(ids).delete();
+    },
+  );
+}
+
+/** Ids of all books currently in the trash (deleted_at set). */
+async function trashedBookIds(): Promise<string[]> {
+  const rows = await offlineDb.books.toArray();
+  return rows.filter((b) => b.deleted_at).map((b) => b.id);
+}
+
 export const dexieStorage: IStorageService = {
   mode: "dexie",
 
   books: {
-    list: async () => offlineDb.books.toArray(),
+    list: async () =>
+      (await offlineDb.books.toArray()).filter((b) => !b.deleted_at),
 
     get: async (id, includeContent = false) => {
       const book = await offlineDb.books.get(id);
@@ -533,28 +585,57 @@ export const dexieStorage: IStorageService = {
     },
 
     delete: async (id) => {
-      // Manual cascade — IndexedDB has no foreign keys.
-      await offlineDb.transaction(
-        "rw",
-        [
-          offlineDb.books,
-          offlineDb.chapters,
-          offlineDb.pages,
-          offlineDb.chapterLabels,
-          offlineDb.writingSessions,
-          offlineDb.storyEntities,
-          offlineDb.assets,
-        ],
-        async () => {
-          await offlineDb.books.delete(id);
-          await offlineDb.chapters.where("book_id").equals(id).delete();
-          await offlineDb.pages.where("book_id").equals(id).delete();
-          await offlineDb.chapterLabels.where("book_id").equals(id).delete();
-          await offlineDb.writingSessions.where("book_id").equals(id).delete();
-          await offlineDb.storyEntities.where("book_id").equals(id).delete();
-          await offlineDb.assets.where("bookId").equals(id).delete();
-        },
+      // Soft-delete: move to trash (deleted_at set). The child graph is
+      // left intact so a restore brings the book back whole; the cascade
+      // runs only on the permanent paths (hardDeleteBooks). Idempotent.
+      await offlineDb.books.update(id, { deleted_at: nowIso() });
+    },
+
+    listTrash: async () =>
+      (await offlineDb.books.toArray()).filter((b) => !!b.deleted_at),
+
+    restore: async (id) => {
+      await offlineDb.books.update(id, { deleted_at: null });
+      const row = await offlineDb.books.get(id);
+      if (!row) notFound("Book", id);
+      return row;
+    },
+
+    permanentDelete: async (id) => {
+      await hardDeleteBooks([id]);
+    },
+
+    emptyTrash: async () => {
+      await hardDeleteBooks(await trashedBookIds());
+    },
+
+    bulkRestore: async (ids) => {
+      await Promise.all(
+        ids.map((id) => offlineDb.books.update(id, { deleted_at: null })),
       );
+      const response: BulkRestoreResponse = {
+        restored_count: ids.length,
+        skipped_not_in_trash: [],
+        failed: [],
+      };
+      return response;
+    },
+
+    bulkDelete: async (ids, permanent) => {
+      if (permanent) {
+        await hardDeleteBooks(ids);
+      } else {
+        const ts = nowIso();
+        await Promise.all(
+          ids.map((id) => offlineDb.books.update(id, { deleted_at: ts })),
+        );
+      }
+      const response: BulkDeleteResponse = {
+        deleted_count: ids.length,
+        skipped_already_trashed: [],
+        failed: [],
+      };
+      return response;
     },
   },
 

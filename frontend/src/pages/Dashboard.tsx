@@ -221,7 +221,7 @@ export default function Dashboard() {
             .filter((id) => selection.isSelected(id));
         if (ordered.length < 2 || ordered.length > BOOK_BULK_LIMIT_HARD) return;
         try {
-            const result = await api.books.bulkDelete(ordered, permanent);
+            const result = await getStorage().books.bulkDelete(ordered, permanent);
             setBooks((prev) =>
                 prev.filter(
                     (b) =>
@@ -255,7 +255,7 @@ export default function Dashboard() {
                         // surfaces partial failures via the response
                         // shape instead of Promise.all's first-rejection
                         // wins.
-                        const undoResult = await api.books.bulkRestore(undone);
+                        const undoResult = await getStorage().books.bulkRestore(undone);
                         loadBooks();
                         loadTrash();
                         if (undoResult.failed.length > 0) {
@@ -302,7 +302,7 @@ export default function Dashboard() {
         const { ids } = bulkDeleteDialog;
         setBulkDeleteDialog(null);
         try {
-            const result = await api.books.bulkDelete(ids, true);
+            const result = await getStorage().books.bulkDelete(ids, true);
             setBooks((prev) => prev.filter((b) => !ids.includes(b.id)));
             selection.clear();
             notify.success(
@@ -354,9 +354,10 @@ export default function Dashboard() {
     };
 
     const loadTrash = async () => {
-        if (offlineGate) return;
         try {
-            const data = await api.books.listTrash();
+            // Routes through the storage seam: ApiStorage online,
+            // DexieStorage offline (soft-deleted books). (Finding 7)
+            const data = await getStorage().books.listTrash();
             setTrash(data);
         } catch (err) {
             console.error("Failed to load trash:", err);
@@ -424,7 +425,7 @@ export default function Dashboard() {
             "danger",
         )) return;
         await getStorage().books.delete(id);
-        try { await api.books.permanentDelete(id); } catch { /* already in trash */ }
+        try { await getStorage().books.permanentDelete(id); } catch { /* already in trash */ }
         setBooks((prev) => prev.filter((b) => b.id !== id));
         // Reconcile bulk-selection state.
         selection.remove(id);
@@ -440,7 +441,7 @@ export default function Dashboard() {
         // perception-lag the 2026-05-14 user report surfaced.
         setTrash((prev) => prev.filter((b) => b.id !== book.id));
         try {
-            const restored = await api.books.restore(book.id);
+            const restored = await getStorage().books.restore(book.id);
             setBooks((prev) => {
                 if (prev.some((b) => b.id === restored.id)) return prev;
                 return [restored, ...prev];
@@ -459,7 +460,7 @@ export default function Dashboard() {
 
     const handlePermanentDelete = async (id: string) => {
         if (!await dialog.confirm(t("ui.dashboard.delete_permanent_title", "Endgültig löschen"), t("ui.dashboard.delete_permanent_warning", "Buch endgültig löschen? Dies kann nicht rückgaengig gemacht werden."), "danger")) return;
-        await api.books.permanentDelete(id);
+        await getStorage().books.permanentDelete(id);
         setTrash((prev) => prev.filter((b) => b.id !== id));
         // Defensive: same as ArticleList — if the book was soft-deleted
         // in another tab and the id was still in this tab's live-list
@@ -477,7 +478,7 @@ export default function Dashboard() {
 
     const handleEmptyTrash = async () => {
         if (!await dialog.confirm(t("ui.dashboard.empty_trash_title", "Papierkorb leeren"), t("ui.dashboard.empty_trash_warning", "Alle Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgaengig gemacht werden."), "danger")) return;
-        await api.books.emptyTrash();
+        await getStorage().books.emptyTrash();
         setTrash([]);
     };
 

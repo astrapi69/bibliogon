@@ -20,7 +20,8 @@ const identityTranslate: TranslateFn = (_key, fallback) => fallback;
  * labels are i18n factories resolved at render time; pass the `useI18n` `t` for
  * localized labels.
  *
- * The trash list is pre-filtered server-side (`api.books.listTrash`), so
+ * The trash list is pre-filtered by the storage seam (`getStorage().books.listTrash`
+ * — ApiStorage online, DexieStorage offline), so
  * `isDeleted` returns `true` unconditionally and both views are rendered with
  * `prefiltered`. `deletedAt` is omitted: `BookOut` emits no deletion timestamp
  * and entity-kit auto-hides the column when the descriptor omits it. Restore +

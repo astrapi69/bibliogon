@@ -119,6 +119,53 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Offline Book").first()).toBeVisible();
     });
 
+    test("book trash works offline: soft-delete -> trash -> restore (Finding 7)", async ({
+        page,
+    }) => {
+        // Create a prose book offline (returns to the dashboard).
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Trash Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Trash Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // Soft-delete via the card menu — moves it to the trash (Dexie
+        // deleted_at), so it vanishes from the library but the trash
+        // badge appears.
+        await page
+            .locator('[data-testid^="book-card-menu-"]')
+            .filter({ hasNot: page.locator("[data-testid*='-delete']") })
+            .first()
+            .click();
+        await page
+            .locator(
+                '[data-testid^="book-card-menu-delete-"]:not([data-testid*="permanent"])',
+            )
+            .first()
+            .click();
+        await expect(page.getByText("Trash Book")).toHaveCount(0);
+        await expect(page.getByTestId("trash-badge")).toHaveText("1");
+
+        // Open the trash — the soft-deleted book shows there.
+        await page.getByTestId("trash-toggle").click();
+        await expect(page.getByTestId("trash-view")).toBeVisible();
+        await expect(page.getByText("Trash Book").first()).toBeVisible();
+
+        // Restore brings it back to the active library.
+        await page
+            .locator('[data-testid="trash-grid"] [data-testid$="-restore"]')
+            .first()
+            .click();
+        await page.getByTestId("trash-toggle").click();
+        await expect(page.getByText("Trash Book").first()).toBeVisible();
+
+        // Persisted across reload (restore cleared deleted_at in Dexie).
+        await page.reload();
+        await expect(page.getByText("Trash Book").first()).toBeVisible();
+    });
+
     test("export a book offline downloads a file via the client engine", async ({
         page,
     }) => {

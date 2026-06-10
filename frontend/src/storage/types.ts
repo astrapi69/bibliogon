@@ -27,12 +27,26 @@ import type { api, ArticleComment } from "../api/client";
 /** Which backend `getStorage()` resolves to. */
 export type StorageMode = "api" | "dexie";
 
+/**
+ * Books, plus the soft-delete / trash lifecycle (Finding 7). `delete` is a
+ * soft-delete (moves the book to trash); the trash members mirror the
+ * existing `/api/books/trash/*` endpoints so the dashboard trash view works
+ * offline against Dexie. Method names match the `api.books.*` client
+ * (`listTrash`, not `listTrashed`) so the `typeof` typing keeps the seam from
+ * drifting from the real client.
+ */
 export interface BookStorage {
   list: typeof api.books.list;
   get: typeof api.books.get;
   create: typeof api.books.create;
   update: typeof api.books.update;
   delete: typeof api.books.delete;
+  listTrash: typeof api.books.listTrash;
+  restore: typeof api.books.restore;
+  permanentDelete: typeof api.books.permanentDelete;
+  emptyTrash: typeof api.books.emptyTrash;
+  bulkRestore: typeof api.books.bulkRestore;
+  bulkDelete: typeof api.books.bulkDelete;
 }
 
 export interface ChapterStorage {
