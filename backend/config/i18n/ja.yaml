@@ -1448,6 +1448,7 @@ ui:
     superscript: "上付き文字"
     formula: "数式"
     formula_block: "ブロック数式"
+    formula_prompt: "LaTeX 数式を入力:"
     heading1: "見出し 1"
     heading2: "見出し 2"
     heading3: "見出し 3"

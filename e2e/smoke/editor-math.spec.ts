@@ -55,6 +55,29 @@ test.describe('Editor math typing', () => {
   })
 })
 
+test.describe('Editor math toolbar button', () => {
+  test('Formel button prompts for LaTeX and inserts an inline formula', async ({
+    page,
+  }) => {
+    const book = await createBook('Toolbar Math')
+    await createChapter(book.id, 'Math Chapter')
+
+    await openEditor(page, book.id)
+    const editor = page.locator('.ProseMirror').first()
+    await editor.click()
+
+    // The math node is an atom (no inline typing): the button opens a prompt
+    // for the LaTeX, then inserts the rendered node.
+    await page.getByTestId('toolbar-formula').click()
+    const promptInput = page.getByRole('textbox')
+    await expect(promptInput).toBeVisible({timeout: 5000})
+    await promptInput.fill('E=mc^2')
+    await page.getByTestId('app-dialog-confirm').click()
+
+    await expect(editor.locator('.katex')).toBeVisible({timeout: 5000})
+  })
+})
+
 /** Dispatch a synthetic paste of plain text into the focused element so the
  *  editor's paste rules run (TipTap paste rules fire on paste, not on typing). */
 async function pasteText(page: import('@playwright/test').Page, text: string) {

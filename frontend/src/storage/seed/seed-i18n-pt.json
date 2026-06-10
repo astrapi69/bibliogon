@@ -1488,6 +1488,7 @@
       "superscript": "Sobrescrito",
       "formula": "Fórmula",
       "formula_block": "Fórmula em bloco",
+      "formula_prompt": "Insira a fórmula LaTeX:",
       "heading1": "Titulo 1",
       "heading2": "Titulo 2",
       "heading3": "Titulo 3",

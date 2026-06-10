@@ -1448,6 +1448,7 @@ ui:
     superscript: "Εκθέτης"
     formula: "Μαθηματικός τύπος"
     formula_block: "Μαθηματικός τύπος (μπλοκ)"
+    formula_prompt: "Εισαγάγετε τύπο LaTeX:"
     heading1: "Επικεφαλίδα 1"
     heading2: "Επικεφαλίδα 2"
     heading3: "Επικεφαλίδα 3"

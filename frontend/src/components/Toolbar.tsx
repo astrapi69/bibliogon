@@ -1,6 +1,7 @@
 import {Editor} from "@tiptap/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
+import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import {copyToClipboard} from "../utils/clipboard";
 import {
@@ -104,7 +105,40 @@ interface Props {
 
 export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggleSearch, focusMode, onToggleFocus, compositionMode, onToggleComposition, isFullscreen, onToggleFullscreen, spellcheckActive, onToggleSpellcheck, onPreviewAudio, previewLoading, previewDisabledReason, aiPanelActive, onToggleAi, aiDisabledReason, spellcheckDisabledReason, styleCheckActive, styleCheckLoading, onToggleStyleCheck, documentTitle, documentSubtitle}: Props) {
     const {t} = useI18n();
+    const dialog = useDialog();
     if (!editor) return null;
+
+    // Math nodes are atoms (no inline typing): inserting one needs the LaTeX
+    // up front, and the v3 insert*Math commands are a no-op on empty latex.
+    // Prompt for the LaTeX, then insert - or update the node in place when a
+    // math node is already selected (so the same button edits an existing
+    // formula). KaTeX re-renders live from the node's latex attribute.
+    const promptForMath = async (kind: "inline" | "block") => {
+        const nodeName = kind === "inline" ? "inlineMath" : "blockMath";
+        const isActive = editor.isActive(nodeName);
+        const current = isActive
+            ? ((editor.getAttributes(nodeName).latex as string | undefined) ?? "")
+            : "";
+        const latex = await dialog.prompt(
+            kind === "inline"
+                ? t("ui.toolbar.formula", "Formel")
+                : t("ui.toolbar.formula_block", "Block-Formel"),
+            t("ui.toolbar.formula_prompt", "LaTeX-Formel eingeben:"),
+            "E=mc^2",
+            current,
+        );
+        if (latex === null) return;
+        const trimmed = latex.trim();
+        if (!trimmed) return;
+        const chain = editor.chain().focus();
+        if (kind === "inline") {
+            if (isActive) chain.updateInlineMath({latex: trimmed}).run();
+            else chain.insertInlineMath({latex: trimmed}).run();
+        } else {
+            if (isActive) chain.updateBlockMath({latex: trimmed}).run();
+            else chain.insertBlockMath({latex: trimmed}).run();
+        }
+    };
 
     const handleCopy = async (mode: "markdown" | "plain") => {
         const metadata: DocumentMetadata = {
@@ -204,7 +238,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         },
         {
             icon: <Sigma size={16}/>,
-            action: () => editor.chain().focus().insertInlineMath({latex: ""}).run(),
+            action: () => { void promptForMath("inline"); },
             active: editor.isActive("inlineMath"),
             title: t("ui.toolbar.formula", "Formel"),
             testId: "toolbar-formula",
@@ -212,7 +246,7 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         },
         {
             icon: <SquareSigma size={16}/>,
-            action: () => editor.chain().focus().insertBlockMath({latex: ""}).run(),
+            action: () => { void promptForMath("block"); },
             active: editor.isActive("blockMath"),
             title: t("ui.toolbar.formula_block", "Block-Formel"),
             testId: "toolbar-formula-block",

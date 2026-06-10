@@ -1484,6 +1484,7 @@ ui:
     superscript: "Exposant"
     formula: "Formule"
     formula_block: "Formule en bloc"
+    formula_prompt: "Saisir la formule LaTeX :"
     heading1: "Titre 1"
     heading2: "Titre 2"
     heading3: "Titre 3"

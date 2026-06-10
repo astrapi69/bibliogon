@@ -1503,6 +1503,7 @@
       "superscript": "Hochgestellt",
       "formula": "Formel",
       "formula_block": "Block-Formel",
+      "formula_prompt": "LaTeX-Formel eingeben:",
       "heading1": "Überschrift 1",
       "heading2": "Überschrift 2",
       "heading3": "Überschrift 3",
