@@ -45,13 +45,24 @@ vi.mock("../api/client", () => ({
   BASE: "http://test/api",
   api: {
     writingStats: {
-      summary: (...a: unknown[]) => summary(...a),
-      byBook: (...a: unknown[]) => byBook(...a),
-      byChapter: (...a: unknown[]) => byChapter(...a),
       exportCsvUrl: (days: number) =>
         `http://test/api/writing-stats/export.csv?days=${days}`,
     },
   },
+}));
+
+vi.mock("../storage", () => ({
+  getStorage: () => ({
+    writingStats: {
+      summary: (...a: unknown[]) => summary(...a),
+      byBook: (...a: unknown[]) => byBook(...a),
+      byChapter: (...a: unknown[]) => byChapter(...a),
+    },
+  }),
+}));
+
+vi.mock("../storage/useOfflineFeatureGate", () => ({
+  useOfflineFeatureGate: () => ({ offline: false, message: "" }),
 }));
 
 const SUMMARY = {

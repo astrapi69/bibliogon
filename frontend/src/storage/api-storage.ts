@@ -36,6 +36,7 @@ import type {
   SettingsStorage,
   StoryBibleStorage,
   WritingSessionsStorage,
+  WritingStatsStorage,
 } from "./types";
 
 /**
@@ -72,6 +73,9 @@ export const apiStorage: IStorageService = {
   },
   get writingSessions(): WritingSessionsStorage {
     return api.writingSessions;
+  },
+  get writingStats(): WritingStatsStorage {
+    return api.writingStats;
   },
   get authors(): AuthorStorage {
     return api.authors;

@@ -119,7 +119,11 @@ describe("ChapterSidebar - Story Bible action button (BOOK-EDITOR-STORY-BIBLE-BU
         expect(onStoryBible).toHaveBeenCalledTimes(1);
     });
 
-    it("keeps the secondary tools collapsed by default and expands on toggle", () => {
+    it("collapses the tools by default on a narrow viewport and expands on toggle", () => {
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            value: 800,
+        });
         renderWithStoryBible(vi.fn());
         // Collapsed by default: the secondary tool buttons are not in the DOM.
         expect(screen.queryByTestId("story-bible-toggle")).toBeNull();
@@ -129,6 +133,26 @@ describe("ChapterSidebar - Story Bible action button (BOOK-EDITOR-STORY-BIBLE-BU
         // Expand -> secondary tools appear.
         fireEvent.click(screen.getByTestId("chapter-sidebar-tools-toggle"));
         expect(screen.getByTestId("story-bible-toggle")).toBeTruthy();
+    });
+
+    it("expands the tools by default on a desktop viewport (Issue #42)", () => {
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            value: 1400,
+        });
+        renderWithStoryBible(vi.fn());
+        // No stored preference + desktop width -> tools open from the start.
+        expect(screen.getByTestId("story-bible-toggle")).toBeTruthy();
+    });
+
+    it("an explicit collapse preference wins over the desktop default", () => {
+        localStorage.setItem("bibliogon.sidebar_tools_open", "0");
+        Object.defineProperty(window, "innerWidth", {
+            configurable: true,
+            value: 1400,
+        });
+        renderWithStoryBible(vi.fn());
+        expect(screen.queryByTestId("story-bible-toggle")).toBeNull();
     });
 });
 

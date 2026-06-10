@@ -23,8 +23,12 @@ test.describe("Story Bible sidebar", () => {
     test("create, open, rename and delete an entity", async ({page}) => {
         await page.goto(`/book/${bookId}`);
 
-        // Story Bible lives in the collapsible sidebar tools group - expand it.
-        await page.getByTestId("chapter-sidebar-tools-toggle").click();
+        // Story Bible lives in the collapsible sidebar tools group; expand it
+        // if collapsed (viewport-responsive default — Issue #42).
+        const toolsToggle = page.getByTestId("chapter-sidebar-tools-toggle");
+        if ((await toolsToggle.getAttribute("data-state")) === "closed") {
+            await toolsToggle.click();
+        }
         // The toggle only renders when the plugin is mounted.
         const toggle = page.getByTestId("story-bible-toggle");
         await expect(toggle).toBeVisible();
@@ -78,7 +82,10 @@ test.describe("Story Bible sidebar", () => {
         // regressions without environment-dependent screenshots.
         await page.setViewportSize({width: 1400, height: 900});
         await page.goto(`/book/${bookId}`);
-        await page.getByTestId("chapter-sidebar-tools-toggle").click();
+        const toolsToggle = page.getByTestId("chapter-sidebar-tools-toggle");
+        if ((await toolsToggle.getAttribute("data-state")) === "closed") {
+            await toolsToggle.click();
+        }
         await page.getByTestId("story-bible-toggle").click();
         const sidebar = page.getByTestId("story-bible-sidebar");
         await expect(sidebar).toBeVisible();

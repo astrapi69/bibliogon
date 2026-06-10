@@ -158,6 +158,81 @@ describe("DexieStorage — chapters", () => {
   });
 });
 
+describe("DexieStorage — writing stats (Finding 6)", () => {
+  const doc = (text: string): string =>
+    JSON.stringify({
+      type: "doc",
+      content: [{ type: "paragraph", content: [{ type: "text", text }] }],
+    });
+
+  it("records a per-chapter words-written delta on content update", async () => {
+    const book = await dexieStorage.books.create({ title: "Saga" });
+    const ch = await dexieStorage.chapters.create(book.id, { title: "One" });
+
+    await dexieStorage.chapters.update(book.id, ch.id, {
+      version: 0,
+      content: doc("one two three four five"),
+    });
+
+    const summary = await dexieStorage.writingStats.summary(90);
+    expect(summary.total_words).toBe(5);
+    expect(summary.days_active).toBe(1);
+    expect(summary.current_streak).toBe(1);
+    expect(summary.daily).toHaveLength(1);
+  });
+
+  it("floors deletions to zero (gross words, never negative)", async () => {
+    const book = await dexieStorage.books.create({ title: "Saga" });
+    const ch = await dexieStorage.chapters.create(book.id, {
+      title: "One",
+      content: doc("a b c d"),
+    });
+
+    await dexieStorage.chapters.update(book.id, ch.id, {
+      version: 0,
+      content: doc("a b c d e f"),
+    });
+    await dexieStorage.chapters.update(book.id, ch.id, {
+      version: 1,
+      content: doc("a"),
+    });
+
+    const summary = await dexieStorage.writingStats.summary(90);
+    expect(summary.total_words).toBe(2);
+  });
+
+  it("breaks totals down by book and by chapter", async () => {
+    const book = await dexieStorage.books.create({ title: "Alpha" });
+    const c1 = await dexieStorage.chapters.create(book.id, { title: "Opening" });
+    const c2 = await dexieStorage.chapters.create(book.id, { title: "Middle" });
+    await dexieStorage.chapters.update(book.id, c1.id, {
+      version: 0,
+      content: doc("one two three"),
+    });
+    await dexieStorage.chapters.update(book.id, c2.id, {
+      version: 0,
+      content: doc("four five"),
+    });
+
+    const byBook = await dexieStorage.writingStats.byBook(90);
+    expect(byBook).toHaveLength(1);
+    expect(byBook[0]).toMatchObject({ book_id: book.id, total_words: 5 });
+
+    const byChapter = await dexieStorage.writingStats.byChapter(book.id, 90);
+    expect(byChapter.map((c) => [c.chapter_title, c.total_words])).toEqual([
+      ["Opening", 3],
+      ["Middle", 2],
+    ]);
+  });
+
+  it("summary is empty when no sessions exist", async () => {
+    const summary = await dexieStorage.writingStats.summary(90);
+    expect(summary.total_words).toBe(0);
+    expect(summary.daily).toEqual([]);
+    expect(summary.best_day).toBeNull();
+  });
+});
+
 describe("DexieStorage — articles", () => {
   it("create -> get -> list (status filter) -> update -> delete", async () => {
     const a = await dexieStorage.articles.create({ title: "Notiz" });

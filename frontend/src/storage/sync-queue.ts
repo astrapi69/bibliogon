@@ -176,6 +176,8 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
     bookTypes: base.bookTypes,
     contentTypes: base.contentTypes,
     writingSessions: base.writingSessions,
+    // Writing-history stats: read-only aggregation, no queue entry.
+    writingStats: base.writingStats,
     authors: base.authors,
     // Read-only publishing surfaces: straight passthrough, no queue entry.
     publications: base.publications,

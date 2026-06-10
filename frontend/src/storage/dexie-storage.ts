@@ -52,7 +52,10 @@ import type {
   StoryEntityOut,
   StoryEntityRelationshipResolved,
   StoryEntityTypeDef,
+  WritingBookStats,
+  WritingChapterStats,
   WritingSession,
+  WritingStatsSummary,
 } from "../api/client";
 import type { IStorageService } from "./types";
 import {
@@ -105,6 +108,19 @@ export interface AssetRow {
   assetType: string;
   data: ArrayBuffer;
   createdAt: string;
+}
+
+/** A per-day, per-(book, chapter) writing-progress row held offline
+ *  (Finding 6). Mirrors the backend ``writing_sessions`` grain: ``day``
+ *  is an ISO calendar date (``YYYY-MM-DD``), ``words_written`` is the
+ *  gross words written that day (floored at 0). Recorded by the offline
+ *  chapter-update path and aggregated by the writingStats reads. */
+export interface WritingSessionRow {
+  id: string;
+  day: string;
+  words_written: number;
+  book_id: string | null;
+  chapter_id: string | null;
 }
 
 /** An imported article comment held offline (P3 comments). The API
@@ -686,6 +702,16 @@ export const dexieStorage: IStorageService = {
         updated_at: nowIso(),
       };
       await offlineDb.chapters.put(merged);
+      // Record the day's net words-written delta (Finding 6) so the
+      // offline Writing-History view has data, mirroring the backend
+      // chapter-PATCH handler. Only a content change moves the counter.
+      if (data.content !== undefined) {
+        await recordWritingProgress(
+          bookId,
+          chapterId,
+          countWords(merged.content) - countWords(existing.content),
+        );
+      }
       return merged;
     },
 
@@ -805,13 +831,27 @@ export const dexieStorage: IStorageService = {
 
   writingSessions: {
     /**
-     * Writing history is server-computed; offline it returns empty so the
-     * writing-history page renders its empty state.
+     * Global day-aggregated word totals for the most recent ``days``
+     * calendar days, newest first (mirrors the backend ``recent_sessions``).
+     * Drives the dashboard daily-goal + streak widget offline.
      */
-    list: async (_days = 30) => {
-      void _days;
-      return [] as WritingSession[];
+    list: async (days = 30) => {
+      const byDay = await aggregateGlobalByDay();
+      return [...byDay.entries()]
+        .map(([day, words_written]) => ({ day, words_written }))
+        .sort((a, b) => b.day.localeCompare(a.day))
+        .slice(0, Math.max(1, days)) as WritingSession[];
     },
+  },
+
+  // Writing-history stats (Finding 6): aggregated from the writingSessions
+  // Dexie table so the view works offline. exportCsvUrl stays backend-only
+  // (the offline view hides the CSV button).
+  writingStats: {
+    summary: async (days = 90) => computeWritingSummary(days),
+    byBook: async (days = 90) => computeWritingByBook(days),
+    byChapter: async (bookId, days = 90) =>
+      computeWritingByChapter(bookId, days),
   },
 
   authors: {
@@ -1411,6 +1451,248 @@ function commentTextToDoc(text: string): string {
       ? [{ type: "paragraph", content: [{ type: "text", text }] }]
       : [],
   });
+}
+
+// --- writing-history stats (Finding 6) -----------------------------------
+
+/** Today as an ISO calendar date (``YYYY-MM-DD``, UTC), matching the
+ *  ``writing_sessions.day`` grain. */
+function todayIsoDate(): string {
+  return nowIso().slice(0, 10);
+}
+
+/** Shift an ISO calendar date by ``n`` days (UTC-stable). */
+function addDaysIso(iso: string, n: number): string {
+  const date = new Date(`${iso}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + n);
+  return date.toISOString().slice(0, 10);
+}
+
+/** First day of an inclusive ``days``-day window ending today. */
+function windowStartIso(days: number, today: string): string {
+  return addDaysIso(today, -(Math.max(1, days) - 1));
+}
+
+/** Flatten a TipTap node tree to plain text for word counting (mirrors
+ *  the backend ``_flatten_tiptap``; join char is irrelevant to a
+ *  whitespace word split). */
+function flattenWritingText(node: unknown): string {
+  if (typeof node !== "object" || node === null) return "";
+  const record = node as Record<string, unknown>;
+  if (typeof record.text === "string") return record.text;
+  const content = record.content;
+  if (!Array.isArray(content)) return "";
+  return content.map(flattenWritingText).join(" ");
+}
+
+/** Word count of a chapter's stored content (TipTap JSON string or legacy
+ *  plain text), mirroring the backend ``count_words``. */
+function countWords(content: string | null | undefined): number {
+  const raw = (content ?? "").trim();
+  if (!raw) return 0;
+  let plain = raw;
+  if (raw.startsWith("{")) {
+    try {
+      plain = flattenWritingText(JSON.parse(raw));
+    } catch {
+      plain = raw;
+    }
+  }
+  const tokens = plain.split(/\s+/).filter(Boolean);
+  return tokens.length;
+}
+
+/** Add ``delta`` gross words (floored at 0) to today's
+ *  ``(book_id, chapter_id)`` session, upserting the row. Mirrors the
+ *  backend ``record_progress``. */
+async function recordWritingProgress(
+  bookId: string,
+  chapterId: string,
+  delta: number,
+): Promise<void> {
+  const words = Math.max(0, delta);
+  const day = todayIsoDate();
+  const rows = (await offlineDb.writingSessions
+    .where("book_id")
+    .equals(bookId)
+    .toArray()) as unknown as WritingSessionRow[];
+  const existing = rows.find(
+    (row) => row.chapter_id === chapterId && row.day === day,
+  );
+  if (existing) {
+    await offlineDb.writingSessions.update(existing.id, {
+      words_written: (existing.words_written ?? 0) + words,
+    } as Partial<GraphRow>);
+  } else {
+    const row: WritingSessionRow = {
+      id: newId(),
+      day,
+      words_written: words,
+      book_id: bookId,
+      chapter_id: chapterId,
+    };
+    await offlineDb.writingSessions.add(row as unknown as GraphRow);
+  }
+}
+
+/** All offline writing-session rows in the typed shape. */
+async function allWritingSessionRows(): Promise<WritingSessionRow[]> {
+  return (await offlineDb.writingSessions.toArray()) as unknown as WritingSessionRow[];
+}
+
+/** Global per-day word totals across all books/chapters (day -> words). */
+async function aggregateGlobalByDay(): Promise<Map<string, number>> {
+  const byDay = new Map<string, number>();
+  for (const row of await allWritingSessionRows()) {
+    byDay.set(
+      row.day,
+      (byDay.get(row.day) ?? 0) + Math.max(0, row.words_written ?? 0),
+    );
+  }
+  return byDay;
+}
+
+/** ``(current, longest)`` streaks over the set of active (net-positive)
+ *  day strings, mirroring the backend ``_compute_streaks``. */
+function computeWritingStreaks(
+  activeDays: Set<string>,
+  today: string,
+): [number, number] {
+  if (!activeDays.size) return [0, 0];
+  let longest = 0;
+  for (const day of activeDays) {
+    if (activeDays.has(addDaysIso(day, -1))) continue;
+    let length = 1;
+    let cursor = day;
+    while (activeDays.has(addDaysIso(cursor, 1))) {
+      cursor = addDaysIso(cursor, 1);
+      length += 1;
+    }
+    longest = Math.max(longest, length);
+  }
+  let current = 0;
+  let cursor = activeDays.has(today) ? today : addDaysIso(today, -1);
+  while (activeDays.has(cursor)) {
+    current += 1;
+    cursor = addDaysIso(cursor, -1);
+  }
+  return [current, longest];
+}
+
+/** Global summary stats over the window (mirrors ``summary_stats``). */
+async function computeWritingSummary(
+  days: number,
+): Promise<WritingStatsSummary> {
+  const today = todayIsoDate();
+  const start = windowStartIso(days, today);
+  const byDay = await aggregateGlobalByDay();
+  const daily = [...byDay.entries()]
+    .filter(([day]) => day >= start && day <= today)
+    .map(([day, words_written]) => ({ day, words_written }))
+    .sort((a, b) => a.day.localeCompare(b.day));
+  const total = daily.reduce((sum, d) => sum + d.words_written, 0);
+  const positive = daily.filter((d) => d.words_written > 0);
+  const daysActive = positive.length;
+  const avg = daysActive ? Math.round(total / daysActive) : 0;
+  const best = positive.length
+    ? positive.reduce((m, d) => (d.words_written > m.words_written ? d : m))
+    : null;
+  const [current, longest] = computeWritingStreaks(
+    new Set(positive.map((d) => d.day)),
+    today,
+  );
+  return {
+    total_words: total,
+    days_active: daysActive,
+    avg_per_active_day: avg,
+    best_day: best,
+    current_streak: current,
+    longest_streak: longest,
+    daily,
+  };
+}
+
+/** Per-book totals + daily series over the window, most words first
+ *  (mirrors ``per_book_totals``). Sessions whose book is absent locally
+ *  are skipped, matching the server's inner join on Book. */
+async function computeWritingByBook(
+  days: number,
+): Promise<WritingBookStats[]> {
+  const today = todayIsoDate();
+  const start = windowStartIso(days, today);
+  const titleOf = new Map(
+    (await offlineDb.books.toArray()).map((book) => [book.id, book.title]),
+  );
+  const perBookDay = new Map<string, Map<string, number>>();
+  for (const row of await allWritingSessionRows()) {
+    if (!row.book_id || row.day < start || row.day > today) continue;
+    const dayMap = perBookDay.get(row.book_id) ?? new Map<string, number>();
+    dayMap.set(
+      row.day,
+      (dayMap.get(row.day) ?? 0) + Math.max(0, row.words_written ?? 0),
+    );
+    perBookDay.set(row.book_id, dayMap);
+  }
+  const result: WritingBookStats[] = [];
+  for (const [bookId, dayMap] of perBookDay) {
+    const title = titleOf.get(bookId);
+    if (title === undefined) continue;
+    const daily = [...dayMap.entries()]
+      .map(([day, words_written]) => ({ day, words_written }))
+      .sort((a, b) => a.day.localeCompare(b.day));
+    const total = daily.reduce((sum, d) => sum + d.words_written, 0);
+    result.push({
+      book_id: bookId,
+      book_title: title,
+      total_words: total,
+      daily,
+    });
+  }
+  result.sort((a, b) => b.total_words - a.total_words);
+  return result;
+}
+
+/** Per-chapter totals for one book over the window, most words first;
+ *  deleted-chapter words collapse into a single null-id bucket (mirrors
+ *  ``per_chapter_totals``). */
+async function computeWritingByChapter(
+  bookId: string,
+  days: number,
+): Promise<WritingChapterStats[]> {
+  const today = todayIsoDate();
+  const start = windowStartIso(days, today);
+  const titleOf = new Map(
+    (await offlineDb.chapters.where("book_id").equals(bookId).toArray()).map(
+      (chapter) => [chapter.id, chapter.title],
+    ),
+  );
+  const perChapter = new Map<string, number>();
+  let deletedTotal = 0;
+  for (const row of await allWritingSessionRows()) {
+    if (row.book_id !== bookId || row.day < start || row.day > today) continue;
+    const words = Math.max(0, row.words_written ?? 0);
+    if (!row.chapter_id || !titleOf.has(row.chapter_id)) {
+      deletedTotal += words;
+      continue;
+    }
+    perChapter.set(row.chapter_id, (perChapter.get(row.chapter_id) ?? 0) + words);
+  }
+  const result: WritingChapterStats[] = [...perChapter.entries()].map(
+    ([chapterId, total]) => ({
+      chapter_id: chapterId,
+      chapter_title: titleOf.get(chapterId) ?? "",
+      total_words: total,
+    }),
+  );
+  result.sort((a, b) => b.total_words - a.total_words);
+  if (deletedTotal) {
+    result.push({
+      chapter_id: null,
+      chapter_title: "",
+      total_words: deletedTotal,
+    });
+  }
+  return result;
 }
 
 /** Map an IndexedDB asset row to the API `Asset` shape components expect

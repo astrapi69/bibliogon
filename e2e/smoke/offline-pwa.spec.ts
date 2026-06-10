@@ -205,8 +205,12 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.waitForURL(/\/book\//);
 
         // The Story Bible is un-gated offline (seam getInfo reports available).
-        // Story Bible lives in the collapsible sidebar tools group - expand it.
-        await page.getByTestId("chapter-sidebar-tools-toggle").click();
+        // Story Bible lives in the collapsible sidebar tools group; expand it
+        // if collapsed (the default is viewport-responsive — Issue #42).
+        const toolsToggle = page.getByTestId("chapter-sidebar-tools-toggle");
+        if ((await toolsToggle.getAttribute("data-state")) === "closed") {
+            await toolsToggle.click();
+        }
         await page.getByTestId("story-bible-toggle").click();
         await expect(page.getByTestId("story-bible-sidebar")).toBeVisible();
 
@@ -363,6 +367,20 @@ test.describe("Offline PWA (Dexie mode)", () => {
             .click();
         await page.getByTestId("comments-active-toggle").click();
         await expect(page.getByText("Thanks, great post!").first()).toBeVisible();
+    });
+
+    test("writing history works offline: computed from Dexie, not desktop-gated (Finding 6)", async ({
+        page,
+    }) => {
+        await page.goto("/writing-history");
+        // The view renders (no "requires desktop app" gate) and computes
+        // from the Dexie writingSessions table — empty until the user
+        // writes, but functional and firing no /api.
+        await expect(page.getByTestId("writing-history-view")).toBeVisible();
+        await expect(page.getByTestId("writing-history-offline")).toHaveCount(0);
+        await expect(page.getByTestId("writing-history-empty")).toBeVisible();
+        // CSV export is backend-only, so it is hidden offline.
+        await expect(page.getByTestId("writing-history-export-csv")).toHaveCount(0);
     });
 
     test("settings default-type dropdowns are populated from the seeded registries", async ({

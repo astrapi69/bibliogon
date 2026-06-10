@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 import { Chapter, ChapterType } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
+import { SIDEBAR_MENU_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
 import {
   Plus,
   Trash2,
@@ -273,6 +274,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({
           <button
             className={`btn-sidebar-icon ${styles.deleteReveal}`}
             data-testid={`chapter-delete-${chapter.id}`}
+            aria-label={deleteLabel}
             onClick={(e) => {
               e.stopPropagation();
               onDelete(chapter.id);
@@ -513,12 +515,21 @@ export default function ChapterSidebar({
   >({});
   // The secondary book-tool buttons (Storyboard, Story Bible, Git, ...) live
   // in a Collapsible so they don't squeeze the chapter list on short
-  // viewports. Collapsed by default; the choice persists across sessions.
-  const [toolsOpen, setToolsOpen] = useState(
-    () =>
-      typeof localStorage !== "undefined" &&
-      localStorage.getItem("bibliogon.sidebar_tools_open") === "1",
-  );
+  // viewports. An explicit user toggle persists across sessions; with no
+  // stored preference the default is viewport-responsive — expanded on
+  // desktop (room for both), collapsed on narrow viewports (the chapter
+  // list needs the space).
+  const [toolsOpen, setToolsOpen] = useState(() => {
+    if (typeof localStorage !== "undefined") {
+      const stored = localStorage.getItem("bibliogon.sidebar_tools_open");
+      if (stored === "1") return true;
+      if (stored === "0") return false;
+    }
+    return (
+      typeof window !== "undefined" &&
+      window.innerWidth >= SIDEBAR_MENU_BREAKPOINT_PX
+    );
+  });
 
   const toggleSection = (key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -535,6 +546,7 @@ export default function ChapterSidebar({
             className="btn-sidebar-icon"
             onClick={onBack}
             data-testid="chapter-sidebar-back"
+            aria-label={t("ui.sidebar.back_to_dashboard", "Zurück zum Dashboard")}
           >
             <ChevronLeft size={18} />
           </button>
@@ -599,6 +611,7 @@ export default function ChapterSidebar({
                 <button
                   className="btn-sidebar-icon"
                   data-testid="chapter-add-trigger"
+                  aria-label={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}
                 >
                   <Plus size={14} />
                 </button>

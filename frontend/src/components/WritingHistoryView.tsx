@@ -25,9 +25,9 @@ import {
   type WritingBookStats,
   type WritingChapterStats,
 } from "../api/client";
+import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
-import { OfflineFeatureNotice } from "./OfflineFeatureNotice";
 import { notify } from "../utils/notify";
 import { LoadingIndicator } from "./LoadingIndicator";
 import styles from "./WritingHistoryView.module.css";
@@ -45,14 +45,13 @@ export default function WritingHistoryView() {
   const [chapters, setChapters] = useState<WritingChapterStats[] | null>(null);
 
   const reload = useCallback(async () => {
-    if (offline) return;
     setLoading(true);
     setExpandedBook(null);
     setChapters(null);
     try {
       const [summaryData, bookData] = await Promise.all([
-        api.writingStats.summary(days),
-        api.writingStats.byBook(days),
+        getStorage().writingStats.summary(days),
+        getStorage().writingStats.byBook(days),
       ]);
       setSummary(summaryData);
       setBooks(bookData);
@@ -85,7 +84,7 @@ export default function WritingHistoryView() {
     setExpandedBook(bookId);
     setChapters(null);
     try {
-      setChapters(await api.writingStats.byChapter(bookId, days));
+      setChapters(await getStorage().writingStats.byChapter(bookId, days));
     } catch {
       notify.error(
         t(
@@ -98,14 +97,6 @@ export default function WritingHistoryView() {
 
   const maxBookWords =
     books?.reduce((m, b) => Math.max(m, b.total_words), 0) || 1;
-
-  if (offline) {
-    return (
-      <div data-testid="writing-history-view">
-        <OfflineFeatureNotice testId="writing-history-offline" />
-      </div>
-    );
-  }
 
   return (
     <div data-testid="writing-history-view">
@@ -125,14 +116,16 @@ export default function WritingHistoryView() {
             </button>
           ))}
         </div>
-        <a
-          className="btn btn-secondary btn-sm"
-          href={api.writingStats.exportCsvUrl(days)}
-          data-testid="writing-history-export-csv"
-        >
-          <Download size={14} aria-hidden />
-          {t("ui.writing_stats.export_csv", "CSV exportieren")}
-        </a>
+        {!offline && (
+          <a
+            className="btn btn-secondary btn-sm"
+            href={api.writingStats.exportCsvUrl(days)}
+            data-testid="writing-history-export-csv"
+          >
+            <Download size={14} aria-hidden />
+            {t("ui.writing_stats.export_csv", "CSV exportieren")}
+          </a>
+        )}
       </div>
 
       {loading ? (
