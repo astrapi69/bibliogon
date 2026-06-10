@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   api,
@@ -347,6 +347,14 @@ export default function BookEditor() {
   } | null>(null);
   const [contentLoading, setContentLoading] = useState(false);
 
+  // Authoritative per-chapter version (chapterId -> version). Seeded on
+  // content load and updated synchronously from every successful save /
+  // rename / conflict response, so a rapid second autosave sends the
+  // post-bump version instead of the stale one from the lagging `book`
+  // state (the 409 self-conflict). The api client's per-chapter
+  // AbortController already gives latest-save-wins at the network layer.
+  const chapterVersions = useRef<Record<string, number>>({});
+
   // Fetch chapter content when active chapter changes
   useEffect(() => {
     if (!bookId || !activeChapterId) {
@@ -357,7 +365,10 @@ export default function BookEditor() {
     setContentLoading(true);
     getStorage()
       .chapters.get(bookId, activeChapterId)
-      .then((ch) => setLoadedContent({ id: ch.id, content: ch.content }))
+      .then((ch) => {
+        chapterVersions.current[ch.id] = ch.version;
+        setLoadedContent({ id: ch.id, content: ch.content });
+      })
       .catch(() => notify.error(t("ui.common.error", "Fehler beim Laden")))
       .finally(() => setContentLoading(false));
   }, [bookId, activeChapterId]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -568,8 +579,9 @@ export default function BookEditor() {
     try {
       const updated = await getStorage().chapters.update(bookId, chapterId, {
         title: newTitle,
-        version: current.version,
+        version: chapterVersions.current[chapterId] ?? current.version,
       });
+      chapterVersions.current[updated.id] = updated.version;
       setBook((prev) => {
         if (!prev) return prev;
         return {
@@ -626,8 +638,9 @@ export default function BookEditor() {
       // conflict resolution dialog.
       const updated = await getStorage().chapters.update(bookId, activeChapterId, {
         content,
-        version: current.version,
+        version: chapterVersions.current[activeChapterId] ?? current.version,
       });
+      chapterVersions.current[updated.id] = updated.version;
       setBook((prev) => {
         if (!prev) return prev;
         return {
@@ -649,6 +662,7 @@ export default function BookEditor() {
           typeof body.current_version === "number" &&
           typeof body.server_content === "string"
         ) {
+          chapterVersions.current[activeChapterId] = body.current_version;
           setConflict({
             chapterId: activeChapterId,
             localContent: content,
@@ -670,6 +684,7 @@ export default function BookEditor() {
         content: info.localContent,
         version: info.serverVersion,
       });
+      chapterVersions.current[updated.id] = updated.version;
       setBook((prev) => {
         if (!prev) return prev;
         return {
@@ -696,6 +711,7 @@ export default function BookEditor() {
 
   const resolveConflictDiscardLocal = (info: ConflictInfo) => {
     if (!bookId) return;
+    chapterVersions.current[info.chapterId] = info.serverVersion;
     setBook((prev) => {
       if (!prev) return prev;
       return {
@@ -730,6 +746,9 @@ export default function BookEditor() {
       // Reload the book so the new chapter shows up + every
       // position bumped on the server is reflected in state.
       const fresh = await getStorage().books.get(bookId);
+      for (const ch of fresh.chapters) {
+        chapterVersions.current[ch.id] = ch.version;
+      }
       setBook(fresh);
       // Source chapter keeps the server's content; load that
       // into the editor so the user sees the canonical version.

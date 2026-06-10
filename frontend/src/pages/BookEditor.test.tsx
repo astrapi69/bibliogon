@@ -15,11 +15,11 @@
 
 import React from "react";
 import {describe, it, expect, vi, beforeEach} from "vitest";
-import {render, screen, waitFor, fireEvent} from "@testing-library/react";
+import {act, render, screen, waitFor, fireEvent} from "@testing-library/react";
 import {MemoryRouter, Route, Routes, useLocation} from "react-router-dom";
 
 import BookEditor from "./BookEditor";
-import type {BookDetail, BookTypeDef} from "../api/client";
+import type {BookDetail, BookTypeDef, Chapter} from "../api/client";
 import {BookTypesProvider} from "../hooks/useBookTypes";
 import {expectNoA11yViolations} from "../test-utils/a11y";
 
@@ -92,6 +92,13 @@ const navigateMock = vi.fn();
 const getBookMock = vi.fn<(id: string) => Promise<BookDetail>>();
 const updateBookMock = vi.fn();
 const listPagesMock = vi.fn();
+const getChapterMock = vi.fn();
+const updateChapterMock = vi.fn();
+// Captures the latest `onSave` the (stubbed) Editor receives, so the
+// autosave-version-race test can invoke a stale-closure save directly.
+const editorOnSaveHolder: {
+  current: ((content: string) => void | Promise<void>) | null;
+} = {current: null};
 
 vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual<typeof import("react-router-dom")>(
@@ -143,6 +150,11 @@ vi.mock("../api/client", async () => {
                 update: (...args: unknown[]) => updateBookMock(...args),
                 list: vi.fn(async () => []),
             },
+            chapters: {
+                ...actual.api.chapters,
+                get: (...args: unknown[]) => getChapterMock(...args),
+                update: (...args: unknown[]) => updateChapterMock(...args),
+            },
             settings: {
                 ...actual.api.settings,
                 getApp: vi.fn(async () => ({})),
@@ -180,7 +192,10 @@ vi.mock("../api/client", async () => {
 // doesn't load TipTap / plugin status / metadata editor. The
 // picture-book branch returns before any of these mount.
 vi.mock("../components/Editor", () => ({
-    default: () => <div data-testid="editor-stub" />,
+    default: (props: {onSave?: (content: string) => void | Promise<void>}) => {
+        editorOnSaveHolder.current = props.onSave ?? null;
+        return <div data-testid="editor-stub" />;
+    },
     pluginsForContentKind: () => ({
         markdownMode: false,
         focusMode: false,
@@ -292,6 +307,77 @@ beforeEach(() => {
     updateBookMock.mockReset();
     listPagesMock.mockReset();
     listPagesMock.mockResolvedValue([]);
+    getChapterMock.mockReset();
+    updateChapterMock.mockReset();
+    editorOnSaveHolder.current = null;
+    // Default: resolve the requested chapter so the content-load effect
+    // never hits the real network (the routing + chapter-switch tests
+    // don't configure it themselves).
+    getChapterMock.mockImplementation(
+        async (_bookId: string, chapterId: string) =>
+            makeChapterRow({id: chapterId}),
+    );
+});
+
+function makeChapterRow(overrides: Partial<Chapter> = {}): Chapter {
+    return {
+        id: "c1",
+        book_id: "b1",
+        title: "One",
+        content: '{"type":"doc","content":[]}',
+        position: 0,
+        chapter_type: "chapter",
+        version: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        ...overrides,
+    };
+}
+
+describe("BookEditor - autosave version race (Issue #41)", () => {
+    it("a rapid second autosave sends the post-bump version, not the stale one", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({id: "b1", chapters: [makeChapterRow()]}),
+        );
+        getChapterMock.mockResolvedValue(makeChapterRow({version: 1}));
+        updateChapterMock.mockImplementation(
+            async (
+                _bookId: string,
+                _chapterId: string,
+                data: {version: number; content?: string},
+            ) => makeChapterRow({version: data.version + 1, content: data.content}),
+        );
+
+        render(
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <MemoryRouter initialEntries={["/book/b1?chapter=c1"]}>
+                    <Routes>
+                        <Route path="/book/:bookId" element={<BookEditor />} />
+                    </Routes>
+                </MemoryRouter>
+            </BookTypesProvider>,
+        );
+
+        await waitFor(() => expect(screen.getByTestId("editor-stub")).toBeTruthy());
+        await waitFor(() =>
+            expect(editorOnSaveHolder.current).toBeTypeOf("function"),
+        );
+
+        // Drive two saves through the SAME (first-render) onSave closure,
+        // the lagging-state path the bug took: without the version ref the
+        // second save would resend version 1 and 409 against the server.
+        const staleSave = editorOnSaveHolder.current!;
+        await act(async () => {
+            await staleSave('{"type":"doc","content":[{"type":"paragraph"}]}');
+        });
+        await act(async () => {
+            await staleSave('{"type":"doc","content":[{"type":"paragraph"},{}]}');
+        });
+
+        expect(updateChapterMock).toHaveBeenCalledTimes(2);
+        expect(updateChapterMock.mock.calls[0][2].version).toBe(1);
+        expect(updateChapterMock.mock.calls[1][2].version).toBe(2);
+    });
 });
 
 describe("BookEditor - book_type routing (Commit 6)", () => {
