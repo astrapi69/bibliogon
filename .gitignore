@@ -88,3 +88,4 @@ tmp/
 # Pre-commit's end-of-file-fixer would otherwise endlessly modify the
 # lock file, turning CI red on every push.
 /.claude/scheduled_tasks.lock
+/.claude/settings.json
