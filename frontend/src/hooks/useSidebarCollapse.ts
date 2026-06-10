@@ -22,6 +22,13 @@ import {useCollapsibleState} from "./useCollapsibleState";
  *  expanded. Mirrors the Tailwind ``menu`` breakpoint (75rem). */
 export const SIDEBAR_MENU_BREAKPOINT_PX = 1200;
 
+/** Viewport width (px) below which selecting a sidebar item auto-collapses
+ *  the sidebar (after navigating) so the editor gets the full screen. Above
+ *  this true-mobile width the sidebar stays open on item-select and is only
+ *  closed via the toggle, so users can click through chapters without it
+ *  closing on every click. */
+export const SIDEBAR_MOBILE_BREAKPOINT_PX = 768;
+
 export interface SidebarCollapseState {
     open: boolean;
     toggle: () => void;

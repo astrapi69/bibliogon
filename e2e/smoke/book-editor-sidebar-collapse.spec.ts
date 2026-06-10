@@ -23,12 +23,22 @@ import type {Page} from "@playwright/test";
 
 const NARROW = {width: 1024, height: 800};
 const WIDE = {width: 1440, height: 900};
+const MOBILE = {width: 600, height: 800};
 
 async function seedBook(title: string): Promise<string> {
     const book = await createBook(title);
     await createChapter(book.id, "Kapitel 1", "");
     await createChapter(book.id, "Kapitel 2", "");
     return book.id;
+}
+
+async function seedBookReturningChapter(
+    title: string,
+): Promise<{bookId: string; secondChapterId: string}> {
+    const book = await createBook(title);
+    await createChapter(book.id, "Kapitel 1", "");
+    const ch2 = await createChapter(book.id, "Kapitel 2", "");
+    return {bookId: book.id, secondChapterId: ch2.id};
 }
 
 async function openEditor(page: Page, bookId: string) {
@@ -77,6 +87,45 @@ test.describe("BookEditor sidebar collapse", () => {
             .toBeGreaterThan(200);
 
         await page.getByTestId("chapter-sidebar-collapse").click();
+        await expect.poll(() => sidebarWidth(page)).toBeLessThanOrEqual(1);
+    });
+
+    test("chapter click navigates WITHOUT closing the sidebar above the mobile breakpoint", async ({
+        page,
+    }) => {
+        const {bookId, secondChapterId} =
+            await seedBookReturningChapter("Stay Open On Select");
+        // 1024 is below the menu breakpoint (fixed overlay) but ABOVE the
+        // 768 mobile breakpoint, so a chapter click must NOT auto-close the
+        // sidebar — the user can click through chapters with it open.
+        await page.setViewportSize(NARROW);
+        await openEditor(page, bookId);
+
+        await page.getByTestId("book-editor-sidebar-toggle").click();
+        await expect.poll(() => sidebarWidth(page)).toBeGreaterThan(200);
+
+        await page.getByTestId(`chapter-item-${secondChapterId}`).click();
+        await expect(
+            page.getByTestId(`chapter-item-${secondChapterId}`),
+        ).toBeVisible();
+        // The sidebar stays open after the chapter navigation.
+        expect(await sidebarWidth(page)).toBeGreaterThan(200);
+    });
+
+    test("chapter click navigates THEN collapses on a mobile viewport", async ({
+        page,
+    }) => {
+        const {bookId, secondChapterId} =
+            await seedBookReturningChapter("Mobile Collapse On Select");
+        await page.setViewportSize(MOBILE);
+        await openEditor(page, bookId);
+
+        await page.getByTestId("book-editor-sidebar-toggle").click();
+        await expect.poll(() => sidebarWidth(page)).toBeGreaterThan(200);
+
+        await page.getByTestId(`chapter-item-${secondChapterId}`).click();
+        // Below 768 the sidebar auto-collapses after the navigation so the
+        // editor gets the full screen.
         await expect.poll(() => sidebarWidth(page)).toBeLessThanOrEqual(1);
     });
 

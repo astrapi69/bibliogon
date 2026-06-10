@@ -35,7 +35,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
 import {
   useSidebarCollapse,
-  SIDEBAR_MENU_BREAKPOINT_PX,
+  SIDEBAR_MOBILE_BREAKPOINT_PX,
 } from "../hooks/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { BookOpen, Plus } from "lucide-react";
@@ -95,7 +95,7 @@ export default function BookEditor() {
   const closeSidebarOnNarrow = useCallback(() => {
     if (
       typeof window !== "undefined" &&
-      window.innerWidth < SIDEBAR_MENU_BREAKPOINT_PX
+      window.innerWidth < SIDEBAR_MOBILE_BREAKPOINT_PX
     ) {
       setSidebarOpen(false);
     }
@@ -939,7 +939,10 @@ export default function BookEditor() {
         />
       </div>
 
-      <main id="main-content" className={styles.content}>
+      <main
+        id="main-content"
+        className={`${styles.content} ${sidebarOpen ? "" : "pl-14"}`}
+      >
         {selectedStoryEntityId ? (
           <StoryEntityEditor
             key={selectedStoryEntityId}
