@@ -49,7 +49,14 @@ test.describe("Comic-book editor full Add/Delete CRUD cycle", () => {
         ).toBeVisible();
 
         // Step 2: Add Panel — panel count goes 0 → 1.
-        const panels = page.locator('[data-testid^="comic-panel-"]');
+        // Scoped to the canvas grid + excluding the per-panel upload
+        // affordance (``comic-panel-upload-*`` / ``-upload-input-*``): a bare
+        // ``[data-testid^="comic-panel-"]`` overmatches those plus the
+        // selected-panel side-pane's ``comic-panel-image/tier/background-*``
+        // controls. Same prefix-overmatch anti-pattern as the bubble selector.
+        const panels = page.locator(
+            '[data-testid="comic-page-grid"] [data-testid^="comic-panel-"]:not([data-testid*="-upload"])',
+        );
         await expect(panels).toHaveCount(0);
         await page.getByTestId("comic-book-editor-add-panel").click();
         await expect(panels).toHaveCount(1);

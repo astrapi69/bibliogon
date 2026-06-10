@@ -126,6 +126,37 @@ describe("toLatex (book)", () => {
   });
 });
 
+describe("toLatex (v3 math nodes)", () => {
+  it("serializes inlineMath + blockMath nodes to $...$ / $$...$$", () => {
+    const doc: ExportDocument = {
+      title: "Math",
+      kind: "article",
+      sections: [
+        {
+          heading: "",
+          doc: {
+            type: "doc",
+            content: [
+              {
+                type: "paragraph",
+                content: [
+                  { type: "text", text: "Energy " },
+                  { type: "inlineMath", attrs: { latex: "E = mc^2" } },
+                  { type: "text", text: " indeed." },
+                ],
+              },
+              { type: "blockMath", attrs: { latex: "\\int_0^1 f(x)\\,dx" } },
+            ],
+          },
+        },
+      ],
+    };
+    const tex = toLatex(doc);
+    expect(tex).toContain("Energy $E = mc^2$ indeed.");
+    expect(tex).toContain("$$\\int_0^1 f(x)\\,dx$$");
+  });
+});
+
 describe("toLatex (article)", () => {
   const tex = toLatex(ARTICLE);
 

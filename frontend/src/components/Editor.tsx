@@ -17,20 +17,20 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
-import Table from "@tiptap/extension-table";
+import {Table} from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Color from "@tiptap/extension-color";
-import TextStyle from "@tiptap/extension-text-style";
+import {TextStyle} from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
 import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
-import SearchAndReplace from "@sereneinserenade/tiptap-search-and-replace";
+import {SearchAndReplace} from "../extensions/searchAndReplace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
-import Mathematics from "@tiptap/extension-mathematics";
+import {InlineMathDollar, BlockMathDollar} from "../extensions/math";
 import "katex/dist/katex.min.css";
 import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
 import {FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType} from "../data/fix-issue-prompts";
@@ -364,8 +364,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     };
 
     const editor = useEditor({
+        immediatelyRender: false,
         extensions: [
-            StarterKit,
+            StarterKit.configure({link: false, underline: false}),
             Figure.configure({
                 allowBase64: true,
             }),
@@ -395,11 +396,13 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             Footnotes,
             FootnoteReference,
             Footnote,
-            Mathematics.configure({
+            InlineMathDollar.configure({
+                katexOptions: {throwOnError: false},
+            }),
+            BlockMathDollar.configure({
                 katexOptions: {throwOnError: false},
             }),
             SearchAndReplace.configure({
-                searchResultClass: "search-result",
                 disableRegex: true,
             }),
             Placeholder.configure({
@@ -628,7 +631,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         setAiPromptType((prev) => (prev === "fix_issue" ? "improve" : prev));
     }, [chapterId]);
 
-    // Check for recovery draft when chapter loads
+    // Check for recovery draft when chapter loads. ``editor`` is in the deps
+    // because ``immediatelyRender: false`` (TipTap v3) makes ``useEditor``
+    // return ``null`` on the first render and the instance only on a later
+    // one; without re-running when it arrives, the guard below bails on the
+    // initial null and the recovery banner never appears.
     useEffect(() => {
         if (!chapterId || !editor) return;
         const activeChapter = chapterId;
@@ -638,7 +645,8 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             }
         });
         serverContentHash.current = hashContent(content);
-    }, [chapterId]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [chapterId, editor]);
 
     // Cleanup old drafts on mount
     useEffect(() => { cleanupOldDrafts(draftMaxAgeDays); }, [draftMaxAgeDays]);

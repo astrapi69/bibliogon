@@ -124,6 +124,10 @@ function nodeToLatex(node: TipTapNode, depth: number, kind: "book" | "article" =
       return "\\hrule\n\n";
     case "hardBreak":
       return "\\\\\n";
+    case "inlineMath":
+      return `$${(attrs?.latex as string) || ""}$`;
+    case "blockMath":
+      return `$$${(attrs?.latex as string) || ""}$$\n\n`;
     case "text":
       return textNodeToLatex(node);
     default:

@@ -54,6 +54,25 @@ vi.mock("../utils/notify", () => ({
     },
 }));
 
+const promptMock = vi.fn<
+    (
+        title: string,
+        message: string,
+        placeholder?: string,
+        defaultValue?: string,
+    ) => Promise<string | null>
+>(async () => "E=mc^2");
+
+vi.mock("./AppDialog", () => ({
+    useDialog: () => ({
+        prompt: (...args: [string, string, string?, string?]) =>
+            promptMock(...args),
+        confirm: vi.fn(async () => true),
+        alert: vi.fn(),
+        choose: vi.fn(),
+    }),
+}));
+
 // --- Helpers ---------------------------------------------------------------
 
 function makeEditor(doc: object): TiptapEditor {
@@ -89,6 +108,8 @@ beforeEach(() => {
     copyToClipboardMock.mockImplementation(async () => true);
     notifySuccess.mockClear();
     notifyError.mockClear();
+    promptMock.mockClear();
+    promptMock.mockImplementation(async () => "E=mc^2");
 });
 
 // --- Tests -----------------------------------------------------------------
@@ -233,5 +254,107 @@ describe("Toolbar composition mode toggle (COMPOSITION-DISTRACTION-FREE-MODE-01)
         expect(
             screen.getByTestId("toolbar-composition").getAttribute("aria-pressed"),
         ).toBe("true");
+    });
+});
+
+// --- Math formula buttons (TipTap v3 atom-node insert/edit via prompt) ------
+
+interface MathCall {
+    cmd: string;
+    arg: unknown;
+}
+
+function makeMathEditor(opts: { active?: boolean; latex?: string } = {}): {
+    editor: TiptapEditor;
+    calls: MathCall[];
+} {
+    const calls: MathCall[] = [];
+    const chain: Record<string, unknown> = {};
+    const record = (cmd: string) => (arg: unknown) => {
+        calls.push({ cmd, arg });
+        return chain;
+    };
+    chain.focus = () => chain;
+    chain.insertInlineMath = record("insertInlineMath");
+    chain.updateInlineMath = record("updateInlineMath");
+    chain.insertBlockMath = record("insertBlockMath");
+    chain.updateBlockMath = record("updateBlockMath");
+    chain.run = () => true;
+    const editor = {
+        getJSON: () => sampleDoc,
+        isActive: () => opts.active ?? false,
+        getAttributes: () => ({ latex: opts.latex ?? "" }),
+        chain: () => chain,
+        can: () => ({
+            chain: () => ({
+                focus: () => ({
+                    undo: () => ({ run: () => false }),
+                    redo: () => ({ run: () => false }),
+                }),
+            }),
+        }),
+    } as unknown as TiptapEditor;
+    return { editor, calls };
+}
+
+describe("Toolbar math formula buttons (TipTap v3)", () => {
+    it("clicking Formel prompts for LaTeX and inserts an inline math node", async () => {
+        const { editor, calls } = makeMathEditor();
+        render(<Toolbar editor={editor} {...requiredProps} />);
+        fireEvent.click(screen.getByTestId("toolbar-formula"));
+        await waitFor(() => expect(promptMock).toHaveBeenCalledTimes(1));
+        await waitFor(() =>
+            expect(calls.find((c) => c.cmd === "insertInlineMath")).toBeTruthy(),
+        );
+        expect(calls.find((c) => c.cmd === "insertInlineMath")?.arg).toEqual({
+            latex: "E=mc^2",
+        });
+    });
+
+    it("clicking Block-Formel inserts a block math node", async () => {
+        const { editor, calls } = makeMathEditor();
+        render(<Toolbar editor={editor} {...requiredProps} />);
+        fireEvent.click(screen.getByTestId("toolbar-formula-block"));
+        await waitFor(() =>
+            expect(calls.find((c) => c.cmd === "insertBlockMath")).toBeTruthy(),
+        );
+        expect(calls.find((c) => c.cmd === "insertBlockMath")?.arg).toEqual({
+            latex: "E=mc^2",
+        });
+    });
+
+    it("inserts nothing when the prompt is cancelled (null)", async () => {
+        promptMock.mockResolvedValueOnce(null);
+        const { editor, calls } = makeMathEditor();
+        render(<Toolbar editor={editor} {...requiredProps} />);
+        fireEvent.click(screen.getByTestId("toolbar-formula"));
+        await waitFor(() => expect(promptMock).toHaveBeenCalledTimes(1));
+        expect(calls).toHaveLength(0);
+    });
+
+    it("inserts nothing when the prompt returns blank", async () => {
+        promptMock.mockResolvedValueOnce("   ");
+        const { editor, calls } = makeMathEditor();
+        render(<Toolbar editor={editor} {...requiredProps} />);
+        fireEvent.click(screen.getByTestId("toolbar-formula"));
+        await waitFor(() => expect(promptMock).toHaveBeenCalledTimes(1));
+        expect(calls).toHaveLength(0);
+    });
+
+    it("updates the selected math node in place (prefilled with its latex)", async () => {
+        promptMock.mockResolvedValueOnce("a^2+b^2");
+        const { editor, calls } = makeMathEditor({ active: true, latex: "x" });
+        render(<Toolbar editor={editor} {...requiredProps} />);
+        fireEvent.click(screen.getByTestId("toolbar-formula"));
+        await waitFor(() =>
+            expect(calls.find((c) => c.cmd === "updateInlineMath")).toBeTruthy(),
+        );
+        // The current latex is passed as the prompt's default value.
+        expect(promptMock.mock.calls[0][3]).toBe("x");
+        expect(calls.find((c) => c.cmd === "updateInlineMath")?.arg).toEqual({
+            latex: "a^2+b^2",
+        });
+        // It must NOT insert a second node.
+        expect(calls.find((c) => c.cmd === "insertInlineMath")).toBeUndefined();
     });
 });

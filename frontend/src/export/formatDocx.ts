@@ -16,6 +16,12 @@ function inlineRuns(nodes: TipTapNode[], docx: DocxModule): InstanceType<DocxMod
   const { TextRun } = docx;
   const runs: InstanceType<DocxModule["TextRun"]>[] = [];
   for (const node of nodes) {
+    if ((node.type as string) === "inlineMath") {
+      runs.push(
+        new TextRun({ text: `$${(node.attrs as { latex?: string })?.latex || ""}$` }),
+      );
+      continue;
+    }
     if ((node.type as string) !== "text") {
       const nested = node.content as TipTapNode[] | undefined;
       if (nested) runs.push(...inlineRuns(nested, docx));
@@ -93,6 +99,14 @@ function nodeToParagraphs(
         }),
       ];
     }
+    case "blockMath":
+      return [
+        new Paragraph({
+          children: [
+            new TextRun({ text: `$$${(node.attrs as { latex?: string })?.latex || ""}$$` }),
+          ],
+        }),
+      ];
     default:
       return content.length
         ? [new Paragraph({ children: inlineRuns(content, docx) })]
