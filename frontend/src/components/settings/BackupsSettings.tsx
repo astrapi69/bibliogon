@@ -93,7 +93,7 @@ export function BackupsSettings() {
             );
         } catch (err) {
             if (err instanceof BackupImportError) {
-                notify.error(t("ui.backups.import_invalid", "Ungültiges Backup-Format"));
+                notify.error(t("ui.backups.import_invalid", "Ungültiges Backup-Format"), err);
             } else {
                 notify.error(
                     t("ui.backups.import_full_error", "Backup-Import fehlgeschlagen"),
