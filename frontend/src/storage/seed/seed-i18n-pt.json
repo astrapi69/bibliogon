@@ -180,6 +180,14 @@
       }
     },
     "backups": {
+      "full_backup_title": "Cópia de segurança completa (JSON)",
+      "full_backup_description": "Exporta ou importa todos os dados (livros, capítulos, artigos, autores, definições, story bible) como um único ficheiro JSON. Também funciona offline.",
+      "export_full": "Exportar cópia de segurança",
+      "import_full": "Importar cópia de segurança",
+      "import_result": "{books} livros, {chapters} capítulos, {articles} artigos importados. {skipped_books} ignorados.",
+      "import_invalid": "Formato de cópia de segurança inválido",
+      "import_full_error": "Falha na importação da cópia de segurança",
+      "export_full_error": "Falha na exportação da cópia de segurança",
       "version_history": "Historico de versoes",
       "no_history": "Nenhum backup criado ainda.",
       "compare_backups": "Comparar copias de seguranca",

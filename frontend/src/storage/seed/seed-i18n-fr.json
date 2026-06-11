@@ -180,6 +180,14 @@
       }
     },
     "backups": {
+      "full_backup_title": "Sauvegarde complète (JSON)",
+      "full_backup_description": "Exporte ou importe toutes les données (livres, chapitres, articles, auteurs, paramètres, bible de l'histoire) dans un seul fichier JSON. Fonctionne aussi hors ligne.",
+      "export_full": "Exporter la sauvegarde",
+      "import_full": "Importer la sauvegarde",
+      "import_result": "{books} livres, {chapters} chapitres, {articles} articles importés. {skipped_books} ignorés.",
+      "import_invalid": "Format de sauvegarde non valide",
+      "import_full_error": "Échec de l'importation de la sauvegarde",
+      "export_full_error": "Échec de l'exportation de la sauvegarde",
       "version_history": "Historique des versions",
       "no_history": "Aucune sauvegarde creee.",
       "compare_backups": "Comparer les sauvegardes",

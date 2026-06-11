@@ -23,14 +23,17 @@
  * history empty state, compare button, dialog).
  */
 
-import {useEffect, useState} from "react";
-import {GitCompare, Trash2} from "lucide-react";
+import {type ChangeEvent, useEffect, useRef, useState} from "react";
+import {GitCompare, Trash2, Download, Upload} from "lucide-react";
 import {api} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
 import {OfflineFeatureNotice} from "../OfflineFeatureNotice";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
+import {downloadBlob} from "../../export/download";
+import {backupFilename, exportFullBackup} from "../../export/backupExport";
+import {BackupImportError, importFullBackup} from "../../export/backupImport";
 import BackupCompareDialog from "../BackupCompareDialog";
 import {SectionHeader} from "./SectionHeader";
 
@@ -54,6 +57,59 @@ export function BackupsSettings() {
     const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
+    const [fullBackupBusy, setFullBackupBusy] = useState(false);
+    const importInputRef = useRef<HTMLInputElement | null>(null);
+
+    const handleFullExport = async () => {
+        setFullBackupBusy(true);
+        try {
+            const now = new Date().toISOString();
+            const blob = await exportFullBackup(now);
+            downloadBlob(blob, backupFilename(now));
+        } catch (err) {
+            notify.error(
+                t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"),
+                err,
+            );
+        } finally {
+            setFullBackupBusy(false);
+        }
+    };
+
+    const handleFullImportFile = async (file: File) => {
+        setFullBackupBusy(true);
+        try {
+            const result = await importFullBackup(file);
+            const counts = result.imported;
+            notify.success(
+                t(
+                    "ui.backups.import_result",
+                    "{books} Bücher, {chapters} Kapitel, {articles} Artikel importiert. {skipped_books} übersprungen.",
+                )
+                    .replace("{books}", String(counts.books))
+                    .replace("{chapters}", String(counts.chapters))
+                    .replace("{articles}", String(counts.articles))
+                    .replace("{skipped_books}", String(result.skipped.books)),
+            );
+        } catch (err) {
+            if (err instanceof BackupImportError) {
+                notify.error(t("ui.backups.import_invalid", "Ungültiges Backup-Format"));
+            } else {
+                notify.error(
+                    t("ui.backups.import_full_error", "Backup-Import fehlgeschlagen"),
+                    err,
+                );
+            }
+        } finally {
+            setFullBackupBusy(false);
+        }
+    };
+
+    const handleImportInputChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (file) await handleFullImportFile(file);
+    };
 
     useEffect(() => {
         // Backup history is backend-only (.bgb archives + the server-side
@@ -112,6 +168,48 @@ export function BackupsSettings() {
                 title={t("ui.settings.tab_backups", "Backups")}
                 description={t("ui.settings.backups_description", "Backup-Historie einsehen und .bgb-Dateien miteinander vergleichen.")}
             />
+
+            <div style={sectionStyle} data-testid="backups-fulldata-section">
+                <h3 style={{margin: "0 0 8px 0", fontSize: "1rem"}}>
+                    {t("ui.backups.full_backup_title", "Vollständiges Backup (JSON)")}
+                </h3>
+                <p style={{margin: "0 0 12px 0", color: "var(--text-muted)", fontSize: "0.875rem"}}>
+                    {t(
+                        "ui.backups.full_backup_description",
+                        "Exportiert oder importiert alle Daten (Bücher, Kapitel, Artikel, Autoren, Einstellungen, Story Bible) als eine JSON-Datei. Funktioniert auch offline.",
+                    )}
+                </p>
+                <div className="flex flex-wrap gap-2">
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleFullExport}
+                        disabled={fullBackupBusy}
+                        data-testid="backups-export-full"
+                        style={{gap: 6}}
+                    >
+                        <Download size={14}/>
+                        {t("ui.backups.export_full", "Backup exportieren")}
+                    </button>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => importInputRef.current?.click()}
+                        disabled={fullBackupBusy}
+                        data-testid="backups-import-full"
+                        style={{gap: 6}}
+                    >
+                        <Upload size={14}/>
+                        {t("ui.backups.import_full", "Backup importieren")}
+                    </button>
+                    <input
+                        ref={importInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        className="hidden"
+                        onChange={handleImportInputChange}
+                        data-testid="backups-import-input"
+                    />
+                </div>
+            </div>
 
             <div style={sectionStyle}>
                 <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>
