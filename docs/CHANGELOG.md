@@ -4,6 +4,68 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.50.0] - 2026-06-11
+
+The **full-data backup + testing-infrastructure** release (25 commits since
+v0.49.0). A single **JSON backup bundle** now exports and imports the entire
+workspace — books and chapters (with content), articles, authors, settings and
+story-bible entities — through the storage seam, so it works identically online
+and offline; a **BACKUP-AKZEPTANZTEST** end-to-end gate exercises the whole
+export -> reset -> import -> verify cycle and caught a real export bug on its
+first run. The Danger-Zone reset gains a **backup-before-reset** dialog. Two new
+automated quality gates land: **Playwright visual regression** (36 screenshot
+baselines across 3 views x 12 theme variants) and **axe-core accessibility**
+checks (5 routes) — the latter surfaced a WCAG-AA contrast bug that is fixed
+across 7 theme variants. The storage seam is tightened to **strict dual-storage**
+(zero direct `api.*` CRUD from components), Settings lists **auto-save**, the
+authors database gets **JSON export/import**, and Python **bandit** SAST +
+**madge** circular-dependency detection join CI. No schema migrations; existing
+data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- Full-data **backup export** as a single JSON bundle (books + chapters with
+  content, articles, authors, settings, story-bible entities, writing sessions,
+  chapter labels), read entirely through the storage seam so it works offline
+  (Dexie) and online (API). (#59)
+- Full-data **backup import** from the JSON bundle: settings are overwritten
+  except the author profile, duplicates are skipped (authors by name/slug,
+  everything else by id, never overwritten), and child entities are re-parented
+  to the freshly-created books. UI in Settings > Backups. (#60)
+- **Backup-before-reset dialog** in the Danger Zone: "create backup" runs the
+  full export and continues to the reset confirmation, "continue without backup",
+  or "cancel". (#62)
+- **BACKUP-AKZEPTANZTEST**: a `.claude/rules` discipline plus
+  `e2e/smoke/backup-acceptance.spec.ts` gate that fills the app, exports a full
+  backup, resets, imports, and verifies the whole entity graph against the live
+  backend. (#61)
+- **Authors database export/import** as JSON with duplicate detection by
+  name/slug. (#56)
+- **Playwright visual-regression testing**: 36 committed screenshot baselines
+  across 3 views (Dashboard, BookEditor, Settings) x 6 palettes x light/dark,
+  with date-mock / font-settle / fixed-timezone hardening for determinism. (#53)
+- **axe-core accessibility checks** in Playwright across 5 main routes
+  (WCAG 2.0 A/AA). (#54)
+- **bandit** Python SAST in pre-commit + CI. (#50)
+- **madge** circular-dependency detection as a CI gate (0 cycles). (#51)
+
+### Fixed
+- **WCAG-AA contrast** of the active settings-tab link (`--accent` on
+  `--bg-hover`): below 4.5:1 in 7 of 12 theme variants (warm-literary,
+  cool-modern, nord, studio, notebook in light; cool-modern and nord in dark).
+  Darkened the accent (light) or the hover background (dark) by the minimal
+  amount; `verify-theme` now guards this pair across all 12 variants. (#55)
+- **Settings lists lose unsaved items on navigation**: the article-topics list
+  now persists immediately on add/remove instead of only on an explicit Save
+  click (same bug class as the #37 author-pseudonym fix). (#57)
+
+### Changed
+- **Strict dual-storage**: the 4 remaining direct `api.*` CRUD calls in
+  components (graph-layout persistence, template source fetch) route through
+  `getStorage()`, so every data path works in offline (Dexie) mode. (#58)
+- Dependency updates: uvicorn 0.49.0, mypy 2.1.0, `@types/node` 25,
+  `@vitejs/plugin-react` 6.0.2, plus patch/minor bumps; aiohttp dropped after
+  remediation. (#52)
+
 ## [0.49.0] - 2026-06-10
 
 The **editor v3 + offline depth + quality-infrastructure** release (38 commits
