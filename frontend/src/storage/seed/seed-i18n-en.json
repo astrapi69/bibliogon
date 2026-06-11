@@ -805,6 +805,11 @@
       "group_system": "System",
       "group_info": "Info",
       "danger_zone": {
+        "backup_first_title": "Create a backup first?",
+        "backup_first_message": "All books, articles, chapters, authors, settings and story-bible data will be permanently deleted.",
+        "create_backup": "Create backup",
+        "continue_without_backup": "Continue without backup",
+        "backup_export_error": "Backup export failed",
         "title": "Danger Zone",
         "description": "Resets the entire app to its first-install state. All books, articles, chapters, comments, uploads, settings and the AI API key will be permanently deleted.",
         "reset_button": "Reset Everything",

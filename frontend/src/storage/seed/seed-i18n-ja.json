@@ -805,6 +805,11 @@
       "group_system": "システム",
       "group_info": "情報",
       "danger_zone": {
+        "backup_first_title": "先にバックアップを作成しますか？",
+        "backup_first_message": "すべての書籍、記事、章、著者、設定、ストーリーバイブルのデータが完全に削除されます。",
+        "create_backup": "バックアップを作成",
+        "continue_without_backup": "バックアップせずに続行",
+        "backup_export_error": "バックアップのエクスポートに失敗しました",
         "title": "危険ゾーン",
         "description": "アプリ全体を初回インストール時の状態にリセットします。すべての本、記事、章、コメント、アップロード、設定、AI API キーが完全に削除されます。",
         "reset_button": "すべてリセット",

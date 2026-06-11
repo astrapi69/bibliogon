@@ -790,6 +790,11 @@ ui:
     group_system: "Système"
     group_info: "Informations"
     danger_zone:
+      backup_first_title: "Créer d'abord une sauvegarde ?"
+      backup_first_message: "Tous les livres, articles, chapitres, auteurs, paramètres et données de la bible de l'histoire seront définitivement supprimés."
+      create_backup: "Créer une sauvegarde"
+      continue_without_backup: "Continuer sans sauvegarde"
+      backup_export_error: "Échec de l'exportation de la sauvegarde"
       title: "Zone sensible"
       description: "Réinitialise toute l'application à son état d'origine après installation. Tous les livres, articles, chapitres, commentaires, fichiers importés, paramètres et la clé d'API IA seront supprimés définitivement."
       reset_button: "Tout réinitialiser"

@@ -790,6 +790,11 @@ ui:
     group_system: "Sistema"
     group_info: "Información"
     danger_zone:
+      backup_first_title: "¿Crear primero una copia de seguridad?"
+      backup_first_message: "Todos los libros, artículos, capítulos, autores, ajustes y datos de la biblia de la historia se eliminarán de forma permanente."
+      create_backup: "Crear copia de seguridad"
+      continue_without_backup: "Continuar sin copia de seguridad"
+      backup_export_error: "Error al exportar la copia de seguridad"
       title: "Zona de peligro"
       description: "Restablece toda la aplicación a su estado de primera instalación. Todos los libros, artículos, capítulos, comentarios, archivos subidos, ajustes y la clave de API de IA se eliminarán de forma permanente."
       reset_button: "Restablecer todo"

@@ -776,6 +776,11 @@ ui:
     group_system: "Sistema"
     group_info: "Informações"
     danger_zone:
+      backup_first_title: "Criar primeiro uma cópia de segurança?"
+      backup_first_message: "Todos os livros, artigos, capítulos, autores, definições e dados da story bible serão eliminados permanentemente."
+      create_backup: "Criar cópia de segurança"
+      continue_without_backup: "Continuar sem cópia de segurança"
+      backup_export_error: "Falha na exportação da cópia de segurança"
       title: "Zona de perigo"
       description: "Repõe toda a aplicação no estado de primeira instalação. Todos os livros, artigos, capítulos, comentários, ficheiros carregados, definições e a chave da API de IA serão eliminados permanentemente."
       reset_button: "Repor tudo"

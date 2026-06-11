@@ -820,6 +820,11 @@
       "group_system": "Sistem",
       "group_info": "Bilgi",
       "danger_zone": {
+        "backup_first_title": "Önce yedek oluşturulsun mu?",
+        "backup_first_message": "Tüm kitaplar, makaleler, bölümler, yazarlar, ayarlar ve story bible verileri kalıcı olarak silinecek.",
+        "create_backup": "Yedek oluştur",
+        "continue_without_backup": "Yedek olmadan devam et",
+        "backup_export_error": "Yedek dışa aktarma başarısız oldu",
         "title": "Tehlikeli Bölge",
         "description": "Tüm uygulamayı ilk kurulum durumuna sıfırlar. Tüm kitaplar, makaleler, bölümler, yorumlar, yüklemeler, ayarlar ve yapay zekâ API anahtarı kalıcı olarak silinir.",
         "reset_button": "Her Şeyi Sıfırla",

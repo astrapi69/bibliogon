@@ -805,6 +805,11 @@
       "group_system": "System",
       "group_info": "Info",
       "danger_zone": {
+        "backup_first_title": "Zuerst ein Backup erstellen?",
+        "backup_first_message": "Alle Bücher, Artikel, Kapitel, Autoren, Einstellungen und Story-Bible-Daten werden unwiderruflich gelöscht.",
+        "create_backup": "Backup erstellen",
+        "continue_without_backup": "Ohne Backup fortfahren",
+        "backup_export_error": "Backup-Export fehlgeschlagen",
         "title": "Gefahrenzone",
         "description": "Setzt die gesamte App auf den Erstinstallationszustand zurück. Alle Bücher, Artikel, Kapitel, Kommentare, Uploads, Einstellungen und der KI-API-Schlüssel werden unwiderruflich gelöscht.",
         "reset_button": "Alles zurücksetzen",
