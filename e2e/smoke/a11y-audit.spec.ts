@@ -32,15 +32,6 @@ test.describe("a11y: WCAG 2.0 A/AA audit", () => {
 
             const results = await new AxeBuilder({page})
                 .withTags(["wcag2a", "wcag2aa"])
-                // Known, tracked theme-token contrast bug (#55): the ACTIVE
-                // settings-tab link uses --accent on --bg-hover, which is
-                // 4.43 vs the 4.5 AA threshold in warm-literary light. The
-                // fix is a verify-theme-coordinated theme pass, not part of
-                // wiring axe. Exclude ONLY this single element — the
-                // color-contrast RULE stays enabled on every other element
-                // of the route, so a NEW contrast regression still fails.
-                // Remove this exclude when #55 lands.
-                .exclude('[data-testid^="settings-tab-"][aria-current="page"]')
                 .analyze();
 
             expect(results.violations).toEqual([]);

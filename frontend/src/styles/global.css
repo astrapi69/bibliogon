@@ -181,7 +181,7 @@
      * audit gap for --text across all 10 theme variants. */
     --text: var(--text-primary);
 
-    --accent: #b45309;
+    --accent: #ae5008;
     --accent-hover: #92400e;
     --accent-light: #fef3c7;
     --accent-subtle: #fde68a;
@@ -246,7 +246,7 @@
     --text-inverse: #f8fafc;
     --text-sidebar: #334155;
 
-    --accent: #276ee2;
+    --accent: #2363cb;
     --accent-hover: #2563eb;
     --accent-light: #dbeafe;
     --accent-subtle: #bfdbfe;
@@ -278,7 +278,7 @@
     --text-inverse: #eceff4;
     --text-sidebar: #3b4252;
 
-    --accent: #4c6f9a;
+    --accent: #446389;
     --accent-hover: #81a1c1;
     --accent-light: #d8e2ef;
     --accent-subtle: #b8cce2;
@@ -349,7 +349,7 @@
     --bg-secondary: #1e293b;
     --bg-sidebar: #0f172a;
     --bg-card: #1e293b;
-    --bg-hover: #334155;
+    --bg-hover: #2d394b;
     --bg-editor: #0f172a;
 
     --surface-2: #334155;
@@ -377,7 +377,7 @@
     --bg-secondary: #3b4252;
     --bg-sidebar: #2e3440;
     --bg-card: #3b4252;
-    --bg-hover: #434c5e;
+    --bg-hover: #404859;
     --bg-editor: #2e3440;
 
     --surface-2: #434c5e;
@@ -499,7 +499,7 @@
     --text-inverse: #f7f8fa;
     --text-sidebar: #4a5159;
 
-    --accent: #008074;
+    --accent: #00746a;
     --accent-hover: #0f766e;
     --accent-light: #ccfbf1;
     --accent-subtle: #99f6e4;
@@ -574,7 +574,7 @@
     --text-inverse: #fdfcf7;
     --text-sidebar: #4b5563;
 
-    --accent: #2970e4;
+    --accent: #2566cf;
     --accent-hover: #2563eb;
     --accent-light: #dbeafe;
     --accent-subtle: #bfdbfe;
