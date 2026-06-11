@@ -53,7 +53,7 @@ export interface BackupBundleV1 {
     data: BackupData;
 }
 
-const ALL_WRITING_SESSION_DAYS = 36500;
+const MAX_WRITING_SESSION_DAYS = 366;
 const AUTHOR_LIST_LIMIT = 1000;
 
 /**
@@ -62,8 +62,10 @@ const AUTHOR_LIST_LIMIT = 1000;
  * read goes through ``getStorage()``.
  *
  * Core entities (settings, author profile, authors, books + chapters
- * with content, articles with content, story-bible entities, writing
- * sessions, chapter labels) are fully populated. Page-level storyboard,
+ * with content, articles with content, story-bible entities, chapter
+ * labels) are fully populated. Writing sessions cover the last 366 days
+ * (the backend list cap) and are informational only — they have no seam
+ * ``create`` and are not restored on import. Page-level storyboard,
  * per-article publications, and the platform registry are reserved
  * (emitted empty) in v1 — see the field docs.
  *
@@ -77,7 +79,7 @@ export async function buildBackupBundle(exportedAt: string): Promise<BackupBundl
         storage.authors.list({limit: AUTHOR_LIST_LIMIT}),
         storage.books.list(),
         storage.articles.list(),
-        storage.writingSessions.list(ALL_WRITING_SESSION_DAYS),
+        storage.writingSessions.list(MAX_WRITING_SESSION_DAYS),
     ]);
 
     const backupBooks = await Promise.all(
