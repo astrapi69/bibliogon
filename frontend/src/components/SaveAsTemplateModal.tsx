@@ -6,6 +6,7 @@ import {
   BookTemplate,
   BookTemplateChapter,
 } from "../api/client";
+import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import { EnhancedTextarea } from "./textarea/EnhancedTextarea";
@@ -97,7 +98,7 @@ export default function SaveAsTemplateModal({
     }
     // Preserve content: fetch the book again with content so we get the
     // full chapter bodies (BookEditor loads without content for speed).
-    const full = await api.books.get(book.id, true);
+    const full = await getStorage().books.get(book.id, true);
     return full.chapters.map((c) => ({
       position: c.position,
       title: c.title,

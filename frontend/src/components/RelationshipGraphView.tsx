@@ -18,7 +18,6 @@ import { toPng } from "html-to-image";
 import { X, RotateCcw, Download } from "lucide-react";
 
 import {
-  api,
   type StoryEntityOut,
   type StoryEntityRelationship,
   type RelationshipType,
@@ -174,7 +173,7 @@ export default function RelationshipGraphView({
     (_e: MouseEvent | TouchEvent, node: Node) => {
       const next = { ...positionsRef.current, [node.id]: node.position };
       positionsRef.current = next;
-      void api.books.update(bookId, { graph_layout: next }).catch(() => {
+      void getStorage().books.update(bookId, { graph_layout: next }).catch(() => {
         notify.error(
           t(
             "ui.relationship_graph.save_failed",
@@ -191,7 +190,7 @@ export default function RelationshipGraphView({
     positionsRef.current = {};
     setNodes(buildNodes(entities, {}));
     try {
-      await api.books.update(bookId, { graph_layout: {} });
+      await getStorage().books.update(bookId, { graph_layout: {} });
     } catch {
       notify.error(
         t(

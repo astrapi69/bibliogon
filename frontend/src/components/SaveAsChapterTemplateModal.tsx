@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api, ApiError, Chapter, ChapterTemplate } from "../api/client";
+import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import {
@@ -109,7 +110,7 @@ export default function SaveAsChapterTemplateModal({
         if (contentMode === "preserve") {
           // BookEditor's `book` holds chapters without content; fetch the
           // current chapter fresh so we save the actual body.
-          const full = await api.chapters.get(bookId, chapter.id);
+          const full = await getStorage().chapters.get(bookId, chapter.id);
           content = full.content;
         }
         await api.chapterTemplates.create({
