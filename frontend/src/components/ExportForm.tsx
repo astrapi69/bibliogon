@@ -6,6 +6,8 @@ import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useDialog} from "./AppDialog";
 import {useI18n} from "../hooks/useI18n";
 import {RadixSelect} from "./RadixSelect";
+import {useFeature} from "@astrapi69/feature-strategy-react";
+import {FEATURES} from "../features/featureConfig";
 import {Toggle} from "./settings/Toggle";
 import {notify} from "../utils/notify";
 import OrderedListEditor from "./OrderedListEditor";
@@ -87,6 +89,12 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
 
     const currentOrder = sectionOrders[bookType] || sectionOrders.ebook || sectionOrders.default || [];
     const selectedFormatLabel = FORMATS.find((f) => f.id === format);
+
+    // The audiobook format is TTS-backed and cannot run in the browser; hide
+    // it offline (Dexie mode resolves `tts` to `hidden`). The other formats
+    // export client-side, so the dialog itself stays available offline.
+    const tts = useFeature(FEATURES.TTS);
+    const availableFormats = FORMATS.filter((f) => f.id !== "audiobook" || tts.isActive);
 
     // The audiobook export hands off to a global context so the progress
     // modal lives at the App root - that lets the user minimize it,
@@ -237,7 +245,7 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
             <div style={{marginBottom: 20}}>
                 <label className="label">{t("ui.export_dialog.format", "Format")}</label>
                 <div className={styles.formatGrid}>
-                    {FORMATS.map((f) => (
+                    {availableFormats.map((f) => (
                         <button
                             key={f.id}
                             className={`${styles.formatBtn} ${format === f.id ? styles.formatBtnActive : ""}`}
