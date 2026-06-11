@@ -120,17 +120,18 @@ test.describe('Chapter drag-and-drop reorder', () => {
     const handle = page.getByTestId(`drag-handle-${firstId}`)
     await expect(handle).toBeVisible()
 
-    // Focus the drag handle and use keyboard DnD. Brief stabiliser
-    // delays around the Space/ArrowDown sequence make @dnd-kit's
-    // KeyboardSensor reliable under Playwright; without them the
-    // pickup/move/drop events occasionally batch and the drop lands
-    // before the move has committed.
+    // Focus the drag handle and use keyboard DnD. Wait for focus
+    // deterministically (not a fixed delay) before the pickup, and
+    // keep stabiliser delays around the Space/ArrowDown sequence so
+    // @dnd-kit's KeyboardSensor stays reliable under Playwright;
+    // without them the pickup/move/drop events occasionally batch on
+    // a loaded machine and the drop lands before the move commits.
     await handle.focus()
-    await page.waitForTimeout(50)
+    await expect(handle).toBeFocused()
     await page.keyboard.press('Space')  // pick up
-    await page.waitForTimeout(50)
+    await page.waitForTimeout(120)
     await page.keyboard.press('ArrowDown')  // move down one position
-    await page.waitForTimeout(50)
+    await page.waitForTimeout(120)
     await page.keyboard.press('Space')  // drop
 
     // Poll API until the new order lands. The server reorder fires

@@ -36,11 +36,17 @@ test.describe("Settings > Backups tab (BOOKDASHBOARD-CLEANUP-01 C5)", () => {
 
         // Compare-Backups dialog opens on click.
         await page.getByTestId("backups-compare-btn").click();
-        // BackupCompareDialog uses Radix Dialog - look for its
-        // 2 file inputs, the canonical post-open assertion in
-        // BackupCompareDialog.test.tsx.
-        const fileInputs = page.locator('input[type="file"]');
-        await expect(fileInputs).toHaveCount(2, {timeout: 2000});
+        // BackupCompareDialog uses Radix Dialog (role="dialog") and
+        // holds its 2 .bgb file inputs. Scope the locator to the
+        // dialog: the Backups tab also renders the full-data JSON
+        // backup importer (a 3rd page-level file input, added with
+        // the #59/#60 backup feature), so an unscoped page query
+        // resolves to 3.
+        const dialog = page.getByRole("dialog");
+        await expect(dialog).toBeVisible();
+        await expect(dialog.locator('input[type="file"]')).toHaveCount(2, {
+            timeout: 2000,
+        });
     });
 
     test("Dashboard no longer renders the moved affordances + EmptyState centre +Create-Book stays", async ({
