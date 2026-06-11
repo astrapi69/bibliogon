@@ -81,6 +81,7 @@ export default function BookEditor() {
     const offlineGate = mode === "dexie";
     const gitSyncFeature = useFeature(FEATURES.GIT_SYNC);
     const gitBackupFeature = useFeature(FEATURES.GIT_BACKUP);
+    const versionHistoryFeature = useFeature(FEATURES.VERSION_HISTORY);
     const bookTypesSnapshot = useBookTypes();
     const {
         open: sidebarOpen,
@@ -914,7 +915,11 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
+                    onShowVersions={
+                        versionHistoryFeature.isActive
+                            ? (id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)
+                            : undefined
+                    }
                     showMetadata={showMetadata}
                     onReorder={handleReorder}
                     hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}

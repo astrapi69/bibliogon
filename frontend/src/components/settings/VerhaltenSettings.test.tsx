@@ -10,8 +10,19 @@
  */
 
 import {describe, it, expect, vi} from "vitest";
-import {render, screen, fireEvent} from "@testing-library/react";
+import type {ReactElement} from "react";
+import {render as rtlRender, screen, fireEvent} from "@testing-library/react";
 import {VerhaltenSettings} from "./VerhaltenSettings";
+import {FeatureTestProvider} from "../../features/FeatureTestProvider";
+
+/**
+ * VerhaltenSettings calls `useFeature` (for the pandoc-export engine gate),
+ * so every render needs a FeatureProvider ancestor. Wrap through the real
+ * registry; defaults to online (`api`) so the existing assertions are
+ * unchanged, with an opt-in `mode` for the offline gate test.
+ */
+const render = (ui: ReactElement, opts?: {mode?: "api" | "dexie"}) =>
+    rtlRender(<FeatureTestProvider mode={opts?.mode ?? "api"}>{ui}</FeatureTestProvider>);
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -137,6 +148,29 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                 behavior: expect.objectContaining({export_engine: "client"}),
             }),
         );
+    });
+
+    it("offers the Backend (Pandoc) engine option online", () => {
+        const config = {...baseConfig, behavior: {export_engine: "backend"}};
+        render(<VerhaltenSettings config={config} onSave={vi.fn()} saving={false}/>, {
+            mode: "api",
+        });
+        // The select trigger reflects the matched option's label.
+        expect(
+            screen.getByTestId("settings-export-engine-trigger"),
+        ).toHaveTextContent(/Pandoc/);
+    });
+
+    it("hides the Backend (Pandoc) engine option offline (pandoc-export gated)", () => {
+        const config = {...baseConfig, behavior: {export_engine: "backend"}};
+        render(<VerhaltenSettings config={config} onSave={vi.fn()} saving={false}/>, {
+            mode: "dexie",
+        });
+        // Backend engine is filtered out in dexie mode, so the orphaned value
+        // has no option to label the trigger with -> "Pandoc" is gone.
+        expect(
+            screen.getByTestId("settings-export-engine-trigger"),
+        ).not.toHaveTextContent(/Pandoc/);
     });
 
     it("threads the default book-type + content-type through the save payload", () => {

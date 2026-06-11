@@ -173,6 +173,7 @@ export default function Editor({
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const { t } = useI18n();
     const aiGen = useFeature(FEATURES.AI_GENERATE);
+    const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
     const aiGenTitle = aiGen.isDisabled
         ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
         : undefined;
@@ -1878,7 +1879,7 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
-                            onTakeSnapshot={bookId && chapterId ? handleTakeSnapshot : undefined}
+                            onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
                             <div
                                 onClick={(e) => {
@@ -1893,7 +1894,7 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
-                            onTakeSnapshot={bookId && chapterId ? handleTakeSnapshot : undefined}
+                            onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
                             <div>
                                 <EditorContent editor={editor} />

@@ -14,6 +14,7 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
 import ExportForm from "./ExportForm"
+import {FeatureTestProvider} from "../features/FeatureTestProvider"
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -97,8 +98,15 @@ describe("ExportForm", () => {
     vi.spyOn(window, "open").mockImplementation(() => null)
   })
 
-  function renderDialog(overrides: Partial<typeof defaultProps> = {}) {
-    return render(<ExportForm {...defaultProps} {...overrides} />)
+  function renderDialog(
+    overrides: Partial<typeof defaultProps> = {},
+    mode: "api" | "dexie" = "api",
+  ) {
+    return render(
+      <FeatureTestProvider mode={mode}>
+        <ExportForm {...defaultProps} {...overrides} />
+      </FeatureTestProvider>,
+    )
   }
 
   // --- Format selection ---
@@ -112,6 +120,15 @@ describe("ExportForm", () => {
     expect(screen.getByText("Markdown")).toBeTruthy()
     expect(screen.getByText("Projekt (ZIP)")).toBeTruthy()
     expect(screen.getByText("Audiobook (MP3)")).toBeTruthy()
+  })
+
+  it("hides the Audiobook (MP3) format offline (tts gated)", () => {
+    renderDialog({}, "dexie")
+    // TTS is backend-only -> hidden in dexie mode; the other six
+    // client-side formats remain available.
+    expect(screen.queryByText("Audiobook (MP3)")).toBeNull()
+    expect(screen.getByText("EPUB")).toBeTruthy()
+    expect(screen.getByText("Markdown")).toBeTruthy()
   })
 
   it("EPUB is selected by default", () => {
