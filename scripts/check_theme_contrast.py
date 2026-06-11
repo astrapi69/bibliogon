@@ -58,6 +58,12 @@ PAIRS: list[tuple[str, str, str, float, str | None]] = [
     ("--text-sidebar", "--bg-sidebar", "sidebar text / sidebar", 4.5, None),
     ("--text-inverse", "--accent", "button label / accent", 4.5, None),
     ("--accent", "--bg-card", "accent link/icon / card", 3.0, None),
+    # Active settings-tab link: accent-coloured 14px label on the hover
+    # background. Body-size text, so the 4.5 bar applies. This pair was
+    # missing, which let the accent/bg-hover contrast bug slip past
+    # verify-theme in 7 of 12 variants and only get caught by axe-core on
+    # the default theme (#55).
+    ("--accent", "--bg-hover", "active tab text / hover", 4.5, None),
 ]
 
 # Keys are captured WITH the leading "--" so they match the PAIRS
