@@ -6,6 +6,8 @@ import {useContentTypes} from "../../hooks/useContentTypes";
 import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
+import {useFeature} from "@astrapi69/feature-strategy-react";
+import {FEATURES} from "../../features/featureConfig";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";
@@ -42,6 +44,11 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const [exportEngine, setExportEngine] = useState<ExportEngine>(
         asExportEngine(behavior.export_engine),
     );
+    // The backend (Pandoc/LaTeX) engine needs the desktop backend; hide that
+    // option offline (Dexie mode resolves `pandoc-export` to `hidden`). The
+    // export pipeline already forces the client engine offline regardless of
+    // the stored preference.
+    const pandocExport = useFeature(FEATURES.PANDOC_EXPORT);
 
     // The parent loads `config` asynchronously (getApp); this effect
     // re-hydrates the form once the real config arrives. A late arrival
@@ -214,7 +221,9 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         options={[
                             {value: "auto", label: t("ui.settings.export_engine_auto", "Automatisch (empfohlen)")},
                             {value: "client", label: t("ui.settings.export_engine_client", "Browser (offline-fähig)")},
-                            {value: "backend", label: t("ui.settings.export_engine_backend", "Backend (Pandoc/LaTeX, nur online)")},
+                            ...(pandocExport.isActive
+                                ? [{value: "backend", label: t("ui.settings.export_engine_backend", "Backend (Pandoc/LaTeX, nur online)")}]
+                                : []),
                         ]}
                     />
                 </div>
