@@ -1026,7 +1026,13 @@
       "deleted": "Autor gelöscht",
       "delete_error": "Löschen fehlgeschlagen",
       "delete_title": "Autor löschen?",
-      "delete_message": "Möchtest du \"{name}\" wirklich aus der Datenbank entfernen? Bestehende Bücher und Artikel bleiben unverändert."
+      "delete_message": "Möchtest du \"{name}\" wirklich aus der Datenbank entfernen? Bestehende Bücher und Artikel bleiben unverändert.",
+      "export": "Autoren exportieren",
+      "import": "Autoren importieren",
+      "import_result": "{imported} Autoren importiert, {skipped} übersprungen",
+      "invalid_file": "Ungültiges Dateiformat",
+      "import_error": "Import fehlgeschlagen",
+      "export_error": "Export fehlgeschlagen"
     },
     "translation": {
       "provider": "Anbieter",

@@ -1041,7 +1041,13 @@
       "deleted": "Yazar silindi",
       "delete_error": "Silme başarısız oldu",
       "delete_title": "Yazar silinsin mi?",
-      "delete_message": "\"{name}\" adlı yazarı veritabanından kaldırmak istediğinizden emin misiniz? Mevcut kitaplar ve makaleler değişmeden kalır."
+      "delete_message": "\"{name}\" adlı yazarı veritabanından kaldırmak istediğinizden emin misiniz? Mevcut kitaplar ve makaleler değişmeden kalır.",
+      "export": "Yazarları dışa aktar",
+      "import": "Yazarları içe aktar",
+      "import_result": "{imported} yazar içe aktarıldı, {skipped} atlandı",
+      "invalid_file": "Geçersiz dosya biçimi",
+      "import_error": "İçe aktarma başarısız oldu",
+      "export_error": "Dışa aktarma başarısız oldu"
     },
     "translation": {
       "provider": "Saglayici",

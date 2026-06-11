@@ -998,6 +998,12 @@ ui:
     delete_error: "Delete failed"
     delete_title: "Delete author?"
     delete_message: "Are you sure you want to remove \"{name}\" from the database? Existing books and articles remain unchanged."
+    export: "Export authors"
+    import: "Import authors"
+    import_result: "{imported} authors imported, {skipped} skipped"
+    invalid_file: "Invalid file format"
+    import_error: "Import failed"
+    export_error: "Export failed"
   translation:
     provider: "Provider"
     deepl_api_key: "DeepL API key"

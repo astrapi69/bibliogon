@@ -996,6 +996,12 @@ ui:
     delete_error: "Η διαγραφή απέτυχε"
     delete_title: "Διαγραφή συγγραφέα;"
     delete_message: "Είστε βέβαιοι ότι θέλετε να αφαιρέσετε τον «{name}» από τη βάση δεδομένων; Τα υπάρχοντα βιβλία και άρθρα παραμένουν αμετάβλητα."
+    export: "Εξαγωγή συγγραφέων"
+    import: "Εισαγωγή συγγραφέων"
+    import_result: "{imported} συγγραφείς εισήχθησαν, {skipped} παραλείφθηκαν"
+    invalid_file: "Μη έγκυρη μορφή αρχείου"
+    import_error: "Η εισαγωγή απέτυχε"
+    export_error: "Η εξαγωγή απέτυχε"
   translation:
     provider: "Πάροχος"
     deepl_api_key: "Κλειδί API DeepL"

@@ -1041,7 +1041,13 @@
       "deleted": "Auteur supprimé",
       "delete_error": "Échec de la suppression",
       "delete_title": "Supprimer l'auteur ?",
-      "delete_message": "Voulez-vous vraiment retirer « {name} » de la base de données ? Les livres et articles existants restent inchangés."
+      "delete_message": "Voulez-vous vraiment retirer « {name} » de la base de données ? Les livres et articles existants restent inchangés.",
+      "export": "Exporter les auteurs",
+      "import": "Importer des auteurs",
+      "import_result": "{imported} auteurs importés, {skipped} ignorés",
+      "invalid_file": "Format de fichier non valide",
+      "import_error": "Échec de l'importation",
+      "export_error": "Échec de l'exportation"
     },
     "translation": {
       "provider": "Fournisseur",

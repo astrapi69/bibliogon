@@ -1026,7 +1026,13 @@
       "deleted": "著者を削除しました",
       "delete_error": "削除に失敗しました",
       "delete_title": "著者を削除しますか？",
-      "delete_message": "「{name}」をデータベースから削除してもよろしいですか？既存の本や記事は変更されません。"
+      "delete_message": "「{name}」をデータベースから削除してもよろしいですか？既存の本や記事は変更されません。",
+      "export": "著者をエクスポート",
+      "import": "著者をインポート",
+      "import_result": "{imported}人の著者をインポート、{skipped}人をスキップ",
+      "invalid_file": "無効なファイル形式",
+      "import_error": "インポートに失敗しました",
+      "export_error": "エクスポートに失敗しました"
     },
     "translation": {
       "provider": "プロバイダ",

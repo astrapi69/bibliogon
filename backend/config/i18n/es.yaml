@@ -1010,6 +1010,12 @@ ui:
     delete_error: "Falló la eliminación"
     delete_title: "¿Eliminar autor?"
     delete_message: "¿Seguro que quieres quitar a \"{name}\" de la base de datos? Los libros y artículos existentes no se modifican."
+    export: "Exportar autores"
+    import: "Importar autores"
+    import_result: "{imported} autores importados, {skipped} omitidos"
+    invalid_file: "Formato de archivo no válido"
+    import_error: "La importación falló"
+    export_error: "La exportación falló"
   translation:
     provider: "Proveedor"
     deepl_api_key: "Clave API de DeepL"
