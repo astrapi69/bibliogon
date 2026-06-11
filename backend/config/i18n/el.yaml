@@ -1,6 +1,7 @@
 ui:
   feature:
     requires_desktop_app: "Αυτή η λειτουργία απαιτεί την εφαρμογή Bibliogon για υπολογιστή"
+    requires_ai_key: "Αυτή η λειτουργία απαιτεί διαμορφωμένο κλειδί AI (Ρυθμίσεις > Βοηθός AI)"
   story_bible:
     title: "Story Bible"
     close: "Κλείσιμο του Story Bible"

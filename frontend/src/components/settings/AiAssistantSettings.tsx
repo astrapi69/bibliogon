@@ -1,24 +1,29 @@
-import {useEffect, useState} from "react";
-import {Save, Eye, EyeOff} from "lucide-react";
-import {api} from "../../api/client";
-import {aiChat} from "../../ai/llmClient";
-import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
-import {useI18n} from "../../hooks/useI18n";
-import {AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset} from "../../utils/aiProviders";
-import {notify} from "../../utils/notify";
+import { useEffect, useState } from "react";
+import { Save, Eye, EyeOff } from "lucide-react";
+import { api } from "../../api/client";
+import { aiChat } from "../../ai/llmClient";
+import { useStorageMode } from "../../storage/useStorageMode";
+import { useI18n } from "../../hooks/useI18n";
+import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
+import { notify } from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
-import {HelpText} from "./HelpText";
-import {SectionHeader} from "./SectionHeader";
-import {Toggle} from "./Toggle";
+import { RadixSelect } from "../RadixSelect";
+import { HelpText } from "./HelpText";
+import { SectionHeader } from "./SectionHeader";
+import { Toggle } from "./Toggle";
 
-export function AiAssistantSettings({config, onSave, saving}: {
+export function AiAssistantSettings({
+    config,
+    onSave,
+    saving,
+}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => Promise<void> | void;
     saving: boolean;
 }) {
-    const {t} = useI18n();
-    const {offline} = useOfflineFeatureGate();
+    const { t } = useI18n();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
     const aiConfig = (config.ai || {}) as Record<string, unknown>;
 
     const [aiEnabled, setAiEnabled] = useState(Boolean(aiConfig.enabled));
@@ -62,7 +67,7 @@ export function AiAssistantSettings({config, onSave, saving}: {
         if (!secretsExternal) {
             aiPayload.api_key = aiApiKey;
         }
-        return {ai: aiPayload};
+        return { ai: aiPayload };
     };
 
     return (
@@ -70,13 +75,19 @@ export function AiAssistantSettings({config, onSave, saving}: {
             <div className={styles.section}>
                 <SectionHeader
                     title={t("ui.settings.ai_title", "KI-Assistent")}
-                    description={t("ui.settings.ai_description", "Anbieter, API-Schlüssel und Modell für die KI-Funktionen im Editor.")}
+                    description={t(
+                        "ui.settings.ai_description",
+                        "Anbieter, API-Schlüssel und Modell für die KI-Funktionen im Editor.",
+                    )}
                 />
                 <div className={styles.card}>
                     <div className="field">
                         <Toggle
                             label={t("ui.settings.ai_enable", "KI-Funktionen aktivieren")}
-                            description={t("ui.settings.ai_enable_hint", "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.")}
+                            description={t(
+                                "ui.settings.ai_enable_hint",
+                                "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.",
+                            )}
                             checked={aiEnabled}
                             onChange={setAiEnabled}
                             testId="ai-enabled"
@@ -84,9 +95,17 @@ export function AiAssistantSettings({config, onSave, saving}: {
                         />
                     </div>
 
-                    <div style={{opacity: aiEnabled ? 1 : 0.4, pointerEvents: aiEnabled ? "auto" : "none"}} aria-disabled={!aiEnabled}>
+                    <div
+                        style={{
+                            opacity: aiEnabled ? 1 : 0.4,
+                            pointerEvents: aiEnabled ? "auto" : "none",
+                        }}
+                        aria-disabled={!aiEnabled}
+                    >
                         <div className="field">
-                            <label className="label">{t("ui.settings.ai_provider", "KI-Anbieter")}</label>
+                            <label className="label">
+                                {t("ui.settings.ai_provider", "KI-Anbieter")}
+                            </label>
                             <RadixSelect
                                 value={aiProvider}
                                 onValueChange={(val) => {
@@ -115,49 +134,91 @@ export function AiAssistantSettings({config, onSave, saving}: {
                             />
                         </div>
                         <div className="field">
-                            <label className="label">{t("ui.settings.ai_base_url", "Base URL")}</label>
-                            <input className="input" value={aiBaseUrl} onChange={(e) => setAiBaseUrl(e.target.value)}
+                            <label className="label">
+                                {t("ui.settings.ai_base_url", "Base URL")}
+                            </label>
+                            <input
+                                className="input"
+                                value={aiBaseUrl}
+                                onChange={(e) => setAiBaseUrl(e.target.value)}
                                 data-testid="ai-base-url"
-                                placeholder="https://api.openai.com/v1" style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                                placeholder="https://api.openai.com/v1"
+                                style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}
+                            />
                         </div>
                         <div className="field">
                             <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
-                            <input className="input" value={aiModel} onChange={(e) => setAiModel(e.target.value)}
+                            <input
+                                className="input"
+                                value={aiModel}
+                                onChange={(e) => setAiModel(e.target.value)}
                                 list="ai-model-suggestions"
                                 data-testid="ai-model"
-                                placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_model_lmstudio", "Vom Server bereitgestellt") : ""}
-                                style={{fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
+                                placeholder={
+                                    aiProvider === "lmstudio"
+                                        ? t(
+                                              "ui.settings.ai_model_lmstudio",
+                                              "Vom Server bereitgestellt",
+                                          )
+                                        : ""
+                                }
+                                style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}
+                            />
                             <datalist id="ai-model-suggestions">
-                                {(getProviderPreset(aiProvider)?.model_suggestions || []).map((m) => (
-                                    <option key={m} value={m}/>
-                                ))}
+                                {(getProviderPreset(aiProvider)?.model_suggestions || []).map(
+                                    (m) => (
+                                        <option key={m} value={m} />
+                                    ),
+                                )}
                             </datalist>
                         </div>
-                        <div style={{display: "flex", gap: 12}}>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.settings.ai_temperature", "Temperature")}</label>
-                                <input className="input" type="number" min="0" max="2" step="0.1"
+                        <div style={{ display: "flex", gap: 12 }}>
+                            <div className="field" style={{ flex: 1 }}>
+                                <label className="label">
+                                    {t("ui.settings.ai_temperature", "Temperature")}
+                                </label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    min="0"
+                                    max="2"
+                                    step="0.1"
                                     data-testid="ai-temperature"
-                                    value={aiTemp} onChange={(e) => setAiTemp(e.target.value)}/>
+                                    value={aiTemp}
+                                    onChange={(e) => setAiTemp(e.target.value)}
+                                />
                             </div>
-                            <div className="field" style={{flex: 1}}>
-                                <label className="label">{t("ui.settings.ai_max_tokens", "Max Tokens")}</label>
-                                <input className="input" type="number" min="256" max="32768" step="256"
+                            <div className="field" style={{ flex: 1 }}>
+                                <label className="label">
+                                    {t("ui.settings.ai_max_tokens", "Max Tokens")}
+                                </label>
+                                <input
+                                    className="input"
+                                    type="number"
+                                    min="256"
+                                    max="32768"
+                                    step="256"
                                     data-testid="ai-max-tokens"
-                                    value={aiMaxTokens} onChange={(e) => setAiMaxTokens(e.target.value)}/>
+                                    value={aiMaxTokens}
+                                    onChange={(e) => setAiMaxTokens(e.target.value)}
+                                />
                             </div>
                         </div>
                         {secretsExternal ? (
                             <div className="field" data-testid="ai-api-key-external-note">
-                                <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
-                                <div style={{
-                                    padding: 12,
-                                    border: "1px solid var(--border)",
-                                    borderRadius: "var(--radius-sm)",
-                                    background: "var(--bg-secondary)",
-                                    color: "var(--text-muted)",
-                                    fontSize: "0.8125rem",
-                                }}>
+                                <label className="label">
+                                    {t("ui.settings.ai_api_key", "API Key")}
+                                </label>
+                                <div
+                                    style={{
+                                        padding: 12,
+                                        border: "1px solid var(--border)",
+                                        borderRadius: "var(--radius-sm)",
+                                        background: "var(--bg-secondary)",
+                                        color: "var(--text-muted)",
+                                        fontSize: "0.8125rem",
+                                    }}
+                                >
                                     {t(
                                         "ui.settings.ai_api_key_external_note",
                                         "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern.",
@@ -166,37 +227,69 @@ export function AiAssistantSettings({config, onSave, saving}: {
                             </div>
                         ) : (
                             <div className="field">
-                                <label className="label">{t("ui.settings.ai_api_key", "API Key")}</label>
-                                <div style={{display: "flex", gap: 8}}>
-                                    <input className="input" type={showAiKey ? "text" : "password"}
+                                <label className="label">
+                                    {t("ui.settings.ai_api_key", "API Key")}
+                                </label>
+                                <div style={{ display: "flex", gap: 8 }}>
+                                    <input
+                                        className="input"
+                                        type={showAiKey ? "text" : "password"}
                                         data-testid="ai-api-key-input"
-                                        value={aiApiKey} onChange={(e) => setAiApiKey(e.target.value)}
-                                        placeholder={aiProvider === "lmstudio" ? t("ui.settings.ai_key_not_required", "Nicht erforderlich") : "sk-..."}
-                                        style={{flex: 1, fontFamily: "var(--font-mono)", fontSize: "0.8125rem"}}/>
-                                    <button className="btn btn-ghost btn-sm" onClick={() => setShowAiKey(!showAiKey)}
+                                        value={aiApiKey}
+                                        onChange={(e) => setAiApiKey(e.target.value)}
+                                        placeholder={
+                                            aiProvider === "lmstudio"
+                                                ? t(
+                                                      "ui.settings.ai_key_not_required",
+                                                      "Nicht erforderlich",
+                                                  )
+                                                : "sk-..."
+                                        }
+                                        style={{
+                                            flex: 1,
+                                            fontFamily: "var(--font-mono)",
+                                            fontSize: "0.8125rem",
+                                        }}
+                                    />
+                                    <button
+                                        className="btn btn-ghost btn-sm"
+                                        onClick={() => setShowAiKey(!showAiKey)}
                                         data-testid="ai-api-key-toggle"
-                                        title={showAiKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}>
-                                        {showAiKey ? <EyeOff size={14}/> : <Eye size={14}/>}
+                                        title={
+                                            showAiKey
+                                                ? t("ui.common.hide", "Ausblenden")
+                                                : t("ui.common.show", "Anzeigen")
+                                        }
+                                    >
+                                        {showAiKey ? <EyeOff size={14} /> : <Eye size={14} />}
                                     </button>
                                 </div>
                                 <HelpText>
-                                    {t("ui.settings.ai_key_hint", "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.")}
+                                    {t(
+                                        "ui.settings.ai_key_hint",
+                                        "Der API-Schlüssel wird nur lokal gespeichert und nur an den in 'Base URL' angegebenen Dienst übertragen.",
+                                    )}
                                 </HelpText>
                             </div>
                         )}
                         {aiProvider === "lmstudio" && (
-                            <HelpText style={{marginTop: 0, marginBottom: 8}}>
-                                {t("ui.settings.ai_lmstudio_hint", "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.")}
+                            <HelpText style={{ marginTop: 0, marginBottom: 8 }}>
+                                {t(
+                                    "ui.settings.ai_lmstudio_hint",
+                                    "Lokal laufend, kein API-Schlüssel nötig. Modelle werden vom LM Studio Server bereitgestellt.",
+                                )}
                             </HelpText>
                         )}
-                        <div style={{display: "flex", gap: 8, alignItems: "center", marginTop: 8}}>
+                        <div
+                            style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}
+                        >
                             <button
                                 className="btn btn-primary"
                                 disabled={saving}
                                 onClick={() => onSave(buildSaveData())}
                                 data-testid="ai-save"
                             >
-                                <Save size={14}/> {t("ui.common.save", "Speichern")}
+                                <Save size={14} /> {t("ui.common.save", "Speichern")}
                             </button>
                             <button
                                 className="btn btn-ghost btn-sm"
@@ -219,14 +312,31 @@ export function AiAssistantSettings({config, onSave, saving}: {
                                                         model: aiModel,
                                                         api_key: aiApiKey,
                                                     },
-                                                    [{role: "user", content: "Reply with the single word: OK"}],
-                                                    {maxTokens: 16},
+                                                    [
+                                                        {
+                                                            role: "user",
+                                                            content:
+                                                                "Reply with the single word: OK",
+                                                        },
+                                                    ],
+                                                    { maxTokens: 16 },
                                                 );
                                                 setAiTestStatus("ok");
-                                                notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+                                                notify.success(
+                                                    t(
+                                                        "ui.settings.ai_test_ok",
+                                                        "Verbindung erfolgreich",
+                                                    ),
+                                                );
                                             } catch (err) {
                                                 setAiTestStatus("fail");
-                                                notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"), err);
+                                                notify.error(
+                                                    t(
+                                                        "ui.settings.ai_test_fail",
+                                                        "Verbindung fehlgeschlagen",
+                                                    ),
+                                                    err,
+                                                );
                                             }
                                             setTimeout(() => setAiTestStatus("idle"), 3000);
                                             return;
@@ -235,33 +345,77 @@ export function AiAssistantSettings({config, onSave, saving}: {
                                         const data = await api.ai.testConnection();
                                         if (data.success) {
                                             setAiTestStatus("ok");
-                                            notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+                                            notify.success(
+                                                t(
+                                                    "ui.settings.ai_test_ok",
+                                                    "Verbindung erfolgreich",
+                                                ),
+                                            );
                                         } else {
                                             const errorKey = data.error_key || "error";
                                             const detail = data.error_detail || "";
                                             setAiTestStatus("fail");
                                             const errorMessages: Record<string, string> = {
-                                                auth_error: t("ui.settings.ai_err_auth", "API-Schlüssel ungültig"),
-                                                rate_limited: t("ui.settings.ai_err_rate", "Rate Limit erreicht. Bitte später erneut versuchen."),
-                                                offline: t("ui.settings.ai_err_offline", "Server nicht erreichbar"),
-                                                timeout: t("ui.settings.ai_err_timeout", "Zeitüberschreitung"),
-                                                model_not_found: t("ui.settings.ai_err_model", "Modell nicht verfügbar"),
-                                                invalid_request: t("ui.settings.ai_err_invalid", "Ungültige Anfrage"),
-                                                server_error: t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter"),
-                                                disabled: t("ui.settings.ai_err_disabled", "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent."),
+                                                auth_error: t(
+                                                    "ui.settings.ai_err_auth",
+                                                    "API-Schlüssel ungültig",
+                                                ),
+                                                rate_limited: t(
+                                                    "ui.settings.ai_err_rate",
+                                                    "Rate Limit erreicht. Bitte später erneut versuchen.",
+                                                ),
+                                                offline: t(
+                                                    "ui.settings.ai_err_offline",
+                                                    "Server nicht erreichbar",
+                                                ),
+                                                timeout: t(
+                                                    "ui.settings.ai_err_timeout",
+                                                    "Zeitüberschreitung",
+                                                ),
+                                                model_not_found: t(
+                                                    "ui.settings.ai_err_model",
+                                                    "Modell nicht verfügbar",
+                                                ),
+                                                invalid_request: t(
+                                                    "ui.settings.ai_err_invalid",
+                                                    "Ungültige Anfrage",
+                                                ),
+                                                server_error: t(
+                                                    "ui.settings.ai_err_server",
+                                                    "Server-Fehler beim Anbieter",
+                                                ),
+                                                disabled: t(
+                                                    "ui.settings.ai_err_disabled",
+                                                    "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > KI-Assistent.",
+                                                ),
                                             };
-                                            const baseMessage = errorMessages[errorKey] || t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
-                                            const fullMessage = detail ? `${baseMessage}: ${detail}` : baseMessage;
+                                            const baseMessage =
+                                                errorMessages[errorKey] ||
+                                                t(
+                                                    "ui.settings.ai_test_fail",
+                                                    "Verbindung fehlgeschlagen",
+                                                );
+                                            const fullMessage = detail
+                                                ? `${baseMessage}: ${detail}`
+                                                : baseMessage;
                                             notify.warning(fullMessage);
                                         }
                                     } catch (err) {
                                         setAiTestStatus("fail");
-                                        notify.error(t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"), err);
+                                        notify.error(
+                                            t(
+                                                "ui.settings.ai_test_fail",
+                                                "Verbindung fehlgeschlagen",
+                                            ),
+                                            err,
+                                        );
                                     }
                                     setTimeout(() => setAiTestStatus("idle"), 3000);
                                 }}
                             >
-                                {aiTestStatus === "testing" ? t("ui.common.loading", "Laden...") : t("ui.settings.ai_test", "Verbindung testen")}
+                                {aiTestStatus === "testing"
+                                    ? t("ui.common.loading", "Laden...")
+                                    : t("ui.settings.ai_test", "Verbindung testen")}
                             </button>
                         </div>
                     </div>

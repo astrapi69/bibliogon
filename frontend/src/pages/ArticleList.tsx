@@ -32,7 +32,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
-import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
@@ -41,8 +42,8 @@ import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
 import ContentTypeBadge from "../components/articles/ContentTypeBadge";
 import CommentsCountBadge from "../components/articles/CommentsCountBadge";
-import {Badge} from "../components/Badge";
-import {publicationStatusVariant} from "../utils/publicationStatusBadge";
+import { Badge } from "../components/Badge";
+import { publicationStatusVariant } from "../utils/publicationStatusBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
     type BulkExportMode,
@@ -59,7 +60,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import TrashCard from "../components/trash/TrashCard";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
-import FieldClassDialog, {type FieldClassDialogResult} from "../components/FieldClassDialog";
+import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
@@ -76,7 +77,8 @@ import { EmptyState } from "../components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
-    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
+    const bgbImport = useFeature(FEATURES.BGB_IMPORT);
+    const offline = bgbImport.isHidden;
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -96,8 +98,7 @@ export default function ArticleList() {
     // YAML key (``ui.dashboard.articles_trash_view``). In-trash toggles
     // are session-local (no YAML write); persistence is only via the
     // Settings UI. See ``useTrashViewMode`` for the rationale.
-    const { mode: trashViewMode, setMode: setTrashViewMode } =
-        useTrashViewMode("articles");
+    const { mode: trashViewMode, setMode: setTrashViewMode } = useTrashViewMode("articles");
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
@@ -138,9 +139,7 @@ export default function ArticleList() {
      *  even if the parent selection changes (it shouldn't, the page
      *  freezes interactions behind the dialog, but the snapshot
      *  decouples the two state machines). */
-    const [convertToBookArticles, setConvertToBookArticles] = useState<
-        Article[] | null
-    >(null);
+    const [convertToBookArticles, setConvertToBookArticles] = useState<Article[] | null>(null);
 
     const handleOpenConvertToBook = () => {
         const ids = new Set(selection.selectedIds);
@@ -229,10 +228,7 @@ export default function ArticleList() {
             const message =
                 err instanceof ApiError
                     ? err.detail
-                    : t(
-                          "ui.ai_template.bulk.export_failed",
-                          "Bulk template export failed",
-                      );
+                    : t("ui.ai_template.bulk.export_failed", "Bulk template export failed");
             notify.error(message, err);
         }
     };
@@ -268,7 +264,9 @@ export default function ArticleList() {
             // visible list right away rather than re-fetching the
             // whole collection.
             setArticles((prev) =>
-                prev.filter((a) => !ordered.includes(a.id) || result.failed.some((f) => f.id === a.id)),
+                prev.filter(
+                    (a) => !ordered.includes(a.id) || result.failed.some((f) => f.id === a.id),
+                ),
             );
             void loadTrash();
             selection.clear();
@@ -287,13 +285,12 @@ export default function ArticleList() {
                 async () => {
                     try {
                         const undone = ordered.filter(
-                            (id) => !result.skipped_already_trashed.includes(id)
-                                && !result.failed.some((f) => f.id === id),
+                            (id) =>
+                                !result.skipped_already_trashed.includes(id) &&
+                                !result.failed.some((f) => f.id === id),
                         );
                         if (undone.length === 0) {
-                            notify.info(
-                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
-                            );
+                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
                             return;
                         }
                         const undoResult = await api.articles.bulkRestore(undone);
@@ -310,13 +307,14 @@ export default function ArticleList() {
                                     .replace("{failed}", String(undoResult.failed.length)),
                             );
                         } else {
-                            notify.info(
-                                t("ui.bulk_delete.toast_undone", "Wiederhergestellt"),
-                            );
+                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
                         }
                     } catch (undoErr) {
                         notify.error(
-                            t("ui.bulk_delete.toast_undo_failed", "Wiederherstellen fehlgeschlagen"),
+                            t(
+                                "ui.bulk_delete.toast_undo_failed",
+                                "Wiederherstellen fehlgeschlagen",
+                            ),
                             undoErr,
                         );
                     }
@@ -324,10 +322,7 @@ export default function ArticleList() {
                 t("ui.bulk_delete.undo_label", "Rückgängig"),
             );
         } catch (err) {
-            notify.error(
-                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
-                err,
-            );
+            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
         }
     };
 
@@ -348,16 +343,13 @@ export default function ArticleList() {
             setArticles((prev) => prev.filter((a) => !ids.includes(a.id)));
             selection.clear();
             notify.success(
-                t(
-                    "ui.bulk_delete.toast_deleted_permanent",
-                    "{count} endgültig gelöscht",
-                ).replace("{count}", String(result.deleted_count)),
+                t("ui.bulk_delete.toast_deleted_permanent", "{count} endgültig gelöscht").replace(
+                    "{count}",
+                    String(result.deleted_count),
+                ),
             );
         } catch (err) {
-            notify.error(
-                t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"),
-                err,
-            );
+            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
         }
     };
 
@@ -393,12 +385,12 @@ export default function ArticleList() {
      *  separately). Articles dashboard exposes the action so users
      *  do not have to navigate to the books dashboard to trigger it. */
     const handleBackupExport = () => {
-        if (offlineGate) return;
+        if (offline) return;
         window.open(api.backup.exportUrl(), "_blank");
     };
 
     const loadTrash = async () => {
-        if (offlineGate) return;
+        if (offline) return;
         try {
             const rows = await api.articles.listTrash();
             setTrash(rows);
@@ -424,10 +416,7 @@ export default function ArticleList() {
             .then((config) => {
                 if (cancelled) return;
                 const uiConfig = (config.ui || {}) as Record<string, unknown>;
-                const uiDefaults = (uiConfig.defaults || {}) as Record<
-                    string,
-                    unknown
-                >;
+                const uiDefaults = (uiConfig.defaults || {}) as Record<string, unknown>;
                 const ct = uiDefaults.content_type;
                 if (typeof ct === "string") setDefaultContentType(ct);
             })
@@ -448,15 +437,10 @@ export default function ArticleList() {
             // disappeared must not stay in the BulkActionBar count.
             selection.remove(article.id);
             void loadTrash();
-            notify.info(
-                t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"),
-            );
+            notify.info(t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"));
         } catch (err) {
             if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
-                    err,
-                );
+                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
             }
         }
     }
@@ -489,15 +473,10 @@ export default function ArticleList() {
             // disappeared must not stay in the BulkActionBar count.
             selection.remove(article.id);
             void loadTrash();
-            notify.success(
-                t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
-            );
+            notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
         } catch (err) {
             if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
-                    err,
-                );
+                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
             }
         }
     }
@@ -519,9 +498,7 @@ export default function ArticleList() {
                 if (prev.some((a) => a.id === restored.id)) return prev;
                 return [restored, ...prev];
             });
-            notify.success(
-                t("ui.articles.restored", "Artikel wiederhergestellt."),
-            );
+            notify.success(t("ui.articles.restored", "Artikel wiederhergestellt."));
         } catch (err) {
             // Revert the optimistic trash removal so the user
             // does not lose visibility of the row that failed to
@@ -530,10 +507,7 @@ export default function ArticleList() {
                 if (prev.some((a) => a.id === article.id)) return prev;
                 return [article, ...prev];
             });
-            notify.error(
-                t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."),
-                err,
-            );
+            notify.error(t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."), err);
         }
     }
 
@@ -555,15 +529,10 @@ export default function ArticleList() {
             // now so the BulkActionBar count never references an
             // article that no longer exists anywhere.
             selection.remove(article.id);
-            notify.success(
-                t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."),
-            );
+            notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
         } catch (err) {
             if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
-                    err,
-                );
+                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
             }
         }
     }
@@ -583,10 +552,7 @@ export default function ArticleList() {
             setTrash([]);
         } catch (err) {
             if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.delete_failed", "Löschen fehlgeschlagen."),
-                    err,
-                );
+                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
             }
         }
     }
@@ -694,9 +660,7 @@ export default function ArticleList() {
                             primaryContent={
                                 <>
                                     <Plus size={16} />
-                                    <span className="hide-mobile">
-                                        {newArticleLabel}
-                                    </span>
+                                    <span className="hide-mobile">{newArticleLabel}</span>
                                 </>
                             }
                             onPrimaryClick={() => navigate(newArticleHref)}
@@ -718,21 +682,13 @@ export default function ArticleList() {
                                         id: at.id,
                                         content: (
                                             <>
-                                                <ContentTypeIcon
-                                                    iconName={at.icon}
-                                                    size={14}
-                                                />
-                                                <span
-                                                    style={{ marginLeft: 6 }}
-                                                >
+                                                <ContentTypeIcon iconName={at.icon} size={14} />
+                                                <span style={{ marginLeft: 6 }}>
                                                     {t(at.label_key, at.id)}
                                                 </span>
                                             </>
                                         ),
-                                        onSelect: () =>
-                                            navigate(
-                                                `/articles/new?type=${at.id}`,
-                                            ),
+                                        onSelect: () => navigate(`/articles/new?type=${at.id}`),
                                     }),
                                 )}
                             groupTestId="new-article-group"
@@ -789,15 +745,17 @@ export default function ArticleList() {
                                 ``article-backup-export-btn`` testid are
                                 preserved on the dropdown item. */}
                             <div className={layout.importGroup} data-testid="article-import-group">
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="article-import-wizard-btn"
-                                    onClick={() => !offlineGate && setImportWizardOpen(true)}
-                                    disabled={offlineGate}
-                                    title={offlineGate ? offlineMsg : t("ui.dashboard.import", "Importieren")}
-                                >
-                                    <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
-                                </button>
+                                {!offline && (
+                                    <button
+                                        className="btn btn-secondary btn-sm"
+                                        data-testid="article-import-wizard-btn"
+                                        onClick={() => setImportWizardOpen(true)}
+                                        title={t("ui.dashboard.import", "Importieren")}
+                                    >
+                                        <Upload size={14} />{" "}
+                                        {t("ui.dashboard.import", "Importieren")}
+                                    </button>
+                                )}
                                 <DropdownMenu.Root>
                                     <DropdownMenu.Trigger asChild>
                                         <button
@@ -829,22 +787,26 @@ export default function ArticleList() {
                                             >
                                                 <Upload size={14} />
                                                 <span style={{ marginLeft: 6 }}>
-                                                    {t("ui.medium_import.nav_label", "Aus Medium importieren")}
+                                                    {t(
+                                                        "ui.medium_import.nav_label",
+                                                        "Aus Medium importieren",
+                                                    )}
                                                 </span>
                                             </DropdownMenu.Item>
                                             <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                data-testid="article-backup-export-btn"
-                                                disabled={articles.length === 0 || offlineGate}
-                                                title={offlineGate ? offlineMsg : undefined}
-                                                onSelect={handleBackupExport}
-                                            >
-                                                <Download size={14} />
-                                                <span style={{ marginLeft: 6 }}>
-                                                    {t("ui.dashboard.backup", "Backup")}
-                                                </span>
-                                            </DropdownMenu.Item>
+                                            {!offline && (
+                                                <DropdownMenu.Item
+                                                    className="hamburger-menu-item"
+                                                    data-testid="article-backup-export-btn"
+                                                    disabled={articles.length === 0}
+                                                    onSelect={handleBackupExport}
+                                                >
+                                                    <Download size={14} />
+                                                    <span style={{ marginLeft: 6 }}>
+                                                        {t("ui.dashboard.backup", "Backup")}
+                                                    </span>
+                                                </DropdownMenu.Item>
+                                            )}
                                         </DropdownMenu.Content>
                                     </DropdownMenu.Portal>
                                 </DropdownMenu.Root>
@@ -904,286 +866,292 @@ export default function ArticleList() {
                             breakpoint (Tailwind `menu:hidden`). Viewport-only,
                             so it never toggles on language / default-type. */}
                         <div className="menu:hidden">
-                        <DropdownMenu.Root>
-                            <DropdownMenu.Trigger asChild>
-                                <button
-                                    className="btn-icon"
-                                    data-testid="article-list-mobile-menu"
-                                    aria-label={t("ui.dashboard.menu", "Menü")}
-                                >
-                                    <Menu size={20} />
-                                </button>
-                            </DropdownMenu.Trigger>
-                            <DropdownMenu.Portal>
-                                <DropdownMenu.Content
-                                    className="hamburger-menu-content"
-                                    align="end"
-                                    sideOffset={4}
-                                >
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        data-testid="article-list-mobile-menu-books"
-                                        onSelect={() => navigate("/")}
+                            <DropdownMenu.Root>
+                                <DropdownMenu.Trigger asChild>
+                                    <button
+                                        className="btn-icon"
+                                        data-testid="article-list-mobile-menu"
+                                        aria-label={t("ui.dashboard.menu", "Menü")}
                                     >
-                                        <BookOpen size={16} /> {t("ui.dashboard.books_nav", "Bücher")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        disabled={offlineGate}
-                                        onSelect={handleBackupExport}
+                                        <Menu size={20} />
+                                    </button>
+                                </DropdownMenu.Trigger>
+                                <DropdownMenu.Portal>
+                                    <DropdownMenu.Content
+                                        className="hamburger-menu-content"
+                                        align="end"
+                                        sideOffset={4}
                                     >
-                                        <Download size={16} /> {t("ui.dashboard.backup", "Backup")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        disabled={offlineGate}
-                                        onSelect={() => setImportWizardOpen(true)}
-                                    >
-                                        <Upload size={16} /> {t("ui.dashboard.import", "Importieren")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        onSelect={() => setShowTrash(!showTrash)}
-                                    >
-                                        <Trash size={16} /> {t("ui.articles.trash_title", "Papierkorb")}
-                                        {trash.length > 0 ? ` (${trash.length})` : ""}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        onSelect={() => navigate("/get-started")}
-                                    >
-                                        <Rocket size={16} /> {t("ui.get_started.title", "Erste Schritte")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        onSelect={() => openHelp()}
-                                    >
-                                        <HelpCircle size={16} /> {t("ui.dashboard.help", "Hilfe")}
-                                    </DropdownMenu.Item>
-                                    <DropdownMenu.Item
-                                        className="hamburger-menu-item"
-                                        onSelect={() => navigate("/settings")}
-                                    >
-                                        <Settings size={16} /> {t("ui.settings.title", "Einstellungen")}
-                                    </DropdownMenu.Item>
-                                </DropdownMenu.Content>
-                            </DropdownMenu.Portal>
-                        </DropdownMenu.Root>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            data-testid="article-list-mobile-menu-books"
+                                            onSelect={() => navigate("/")}
+                                        >
+                                            <BookOpen size={16} />{" "}
+                                            {t("ui.dashboard.books_nav", "Bücher")}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                        {!offline && (
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                onSelect={handleBackupExport}
+                                            >
+                                                <Download size={16} />{" "}
+                                                {t("ui.dashboard.backup", "Backup")}
+                                            </DropdownMenu.Item>
+                                        )}
+                                        {!offline && (
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                onSelect={() => setImportWizardOpen(true)}
+                                            >
+                                                <Upload size={16} />{" "}
+                                                {t("ui.dashboard.import", "Importieren")}
+                                            </DropdownMenu.Item>
+                                        )}
+                                        <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => setShowTrash(!showTrash)}
+                                        >
+                                            <Trash size={16} />{" "}
+                                            {t("ui.articles.trash_title", "Papierkorb")}
+                                            {trash.length > 0 ? ` (${trash.length})` : ""}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Separator className="hamburger-menu-separator" />
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => navigate("/get-started")}
+                                        >
+                                            <Rocket size={16} />{" "}
+                                            {t("ui.get_started.title", "Erste Schritte")}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => openHelp()}
+                                        >
+                                            <HelpCircle size={16} />{" "}
+                                            {t("ui.dashboard.help", "Hilfe")}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => navigate("/settings")}
+                                        >
+                                            <Settings size={16} />{" "}
+                                            {t("ui.settings.title", "Einstellungen")}
+                                        </DropdownMenu.Item>
+                                    </DropdownMenu.Content>
+                                </DropdownMenu.Portal>
+                            </DropdownMenu.Root>
                         </div>
                     </div>
                 </div>
             </header>
             <main id="main-content" className={layout.main}>
-            {/* Page title row mirrors the books-dashboard ``mainHeader``
+                {/* Page title row mirrors the books-dashboard ``mainHeader``
                 shape: heading + count + ViewToggle inline. Hidden in
                 trash mode; TrashPanel renders its own header that
                 matches the books-trash chrome (chevron + icon + title
                 + count + empty-trash + ViewToggle). */}
-            {!showTrash && (
-                <div className={layout.mainHeader}>
-                    <h2 className={layout.heading}>
-                        <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
-                        {t("ui.articles.list_heading", "Artikel")}
-                    </h2>
-                    <span className={layout.articleCount}>
-                        {articles.length}{" "}
-                        {articles.length === 1
-                            ? t("ui.articles.count_singular", "Artikel")
-                            : t("ui.articles.count_plural", "Artikel")}
-                    </span>
-                    <ViewToggle mode={viewMode} onChange={setViewMode} />
-                </div>
-            )}
+                {!showTrash && (
+                    <div className={layout.mainHeader}>
+                        <h2 className={layout.heading}>
+                            <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
+                            {t("ui.articles.list_heading", "Artikel")}
+                        </h2>
+                        <span className={layout.articleCount}>
+                            {articles.length}{" "}
+                            {articles.length === 1
+                                ? t("ui.articles.count_singular", "Artikel")
+                                : t("ui.articles.count_plural", "Artikel")}
+                        </span>
+                        <ViewToggle mode={viewMode} onChange={setViewMode} />
+                    </div>
+                )}
 
-            {showTrash ? (
-                <TrashPanel
-                    trash={trash}
-                    viewMode={trashViewMode}
-                    setViewMode={setTrashViewMode}
-                    onBack={() => setShowTrash(false)}
-                    onRestore={(a) => void handleRestore(a)}
-                    onPermanentDelete={(a) => void handlePermanentDelete(a)}
-                    onEmptyTrash={() => void handleEmptyTrash()}
-                />
-            ) : null}
+                {showTrash ? (
+                    <TrashPanel
+                        trash={trash}
+                        viewMode={trashViewMode}
+                        setViewMode={setTrashViewMode}
+                        onBack={() => setShowTrash(false)}
+                        onRestore={(a) => void handleRestore(a)}
+                        onPermanentDelete={(a) => void handlePermanentDelete(a)}
+                        onEmptyTrash={() => void handleEmptyTrash()}
+                    />
+                ) : null}
 
-            {!showTrash ? <ArticleFilterBar filters={filters} /> : null}
-            {!showTrash && selection.count > 0 ? (
-                <ArticleBulkActionBar
-                    count={selection.count}
-                    onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
-                    onBulkAiTemplateExport={() => void handleBulkArticleAiTemplateExport()}
-                    onBulkAiTemplateImport={() => setBulkArticleAiImportOpen(true)}
-                    onBulkAiFill={() => setBulkArticleAiFillFieldsOpen(true)}
-                    onBulkDelete={() => void handleBulkDelete(false)}
-                    onBulkDeletePermanent={handleBulkDeletePermanentRequest}
-                    onConvertToBook={handleOpenConvertToBook}
-                    onClear={selection.clear}
-                    t={t}
-                />
-            ) : null}
-            {!showTrash && filters.filteredArticles.length > 0 ? (
-                <div className={layout.bulkSelectAll}>
-                    <label>
-                        <input
-                            type="checkbox"
-                            data-testid="article-bulk-select-all"
-                            checked={
-                                selection.count > 0 &&
-                                selection.count === filters.filteredArticles.length
-                            }
-                            ref={(el) => {
-                                if (el)
-                                    el.indeterminate =
-                                        selection.count > 0 &&
-                                        selection.count < filters.filteredArticles.length;
-                            }}
-                            onChange={(e) => {
-                                if (e.target.checked) {
-                                    selection.selectAll(
-                                        filters.filteredArticles.map((a) => a.id),
-                                    );
-                                } else {
-                                    selection.clear();
+                {!showTrash ? <ArticleFilterBar filters={filters} /> : null}
+                {!showTrash && selection.count > 0 ? (
+                    <ArticleBulkActionBar
+                        count={selection.count}
+                        onExport={(fmt, mode) => void handleBulkExport(fmt, mode)}
+                        onBulkAiTemplateExport={() => void handleBulkArticleAiTemplateExport()}
+                        onBulkAiTemplateImport={() => setBulkArticleAiImportOpen(true)}
+                        onBulkAiFill={() => setBulkArticleAiFillFieldsOpen(true)}
+                        onBulkDelete={() => void handleBulkDelete(false)}
+                        onBulkDeletePermanent={handleBulkDeletePermanentRequest}
+                        onConvertToBook={handleOpenConvertToBook}
+                        onClear={selection.clear}
+                        t={t}
+                    />
+                ) : null}
+                {!showTrash && filters.filteredArticles.length > 0 ? (
+                    <div className={layout.bulkSelectAll}>
+                        <label>
+                            <input
+                                type="checkbox"
+                                data-testid="article-bulk-select-all"
+                                checked={
+                                    selection.count > 0 &&
+                                    selection.count === filters.filteredArticles.length
                                 }
-                            }}
-                        />
-                        {" "}
-                        {t("ui.articles.bulk.select_all", "Select all")}
-                    </label>
-                </div>
-            ) : null}
+                                ref={(el) => {
+                                    if (el)
+                                        el.indeterminate =
+                                            selection.count > 0 &&
+                                            selection.count < filters.filteredArticles.length;
+                                }}
+                                onChange={(e) => {
+                                    if (e.target.checked) {
+                                        selection.selectAll(
+                                            filters.filteredArticles.map((a) => a.id),
+                                        );
+                                    } else {
+                                        selection.clear();
+                                    }
+                                }}
+                            />{" "}
+                            {t("ui.articles.bulk.select_all", "Select all")}
+                        </label>
+                    </div>
+                ) : null}
 
-            {showTrash ? null : loading || viewModeLoading ? (
-                <p
-                    data-testid="article-list-loading"
-                    style={{ padding: 16, color: "var(--text-muted)" }}
-                >
-                    {t("ui.common.loading", "Laedt...")}
-                </p>
-            ) : articles.length === 0 ? (
-                <ArticleListEmptyState onCreate={() => navigate("/articles/new")} />
-            ) : filters.filteredArticles.length === 0 ? (
-                <EmptyState
-                    testId="article-list-filter-empty"
-                    icon={<Search size={32} className="muted" />}
-                    body={t(
-                        "ui.articles.empty_filtered",
-                        "Keine Artikel passen zu den aktuellen Filtern.",
-                    )}
-                    actions={
-                        <button
-                            type="button"
-                            className="btn btn-secondary btn-sm"
-                            onClick={filters.resetFilters}
-                            data-testid="article-list-filter-reset"
-                        >
-                            {t("ui.articles.reset_filters", "Filter zurücksetzen")}
-                        </button>
-                    }
-                />
-            ) : (() => {
-                // C6: slice to ``paged.limit`` for render. Selection
-                // semantics unchanged — select-all still operates on
-                // the full filtered set, not just the visible page.
-                const visibleArticles = filters.filteredArticles.slice(
-                    0,
-                    paged.limit,
-                );
-                const hasMore =
-                    filters.filteredArticles.length > visibleArticles.length;
-                return (
-                    <>
-                        {viewMode === "grid" ? (
-                            <div className={layout.grid} data-testid="article-list">
-                                {visibleArticles.map((a) => (
+                {showTrash ? null : loading || viewModeLoading ? (
+                    <p
+                        data-testid="article-list-loading"
+                        style={{ padding: 16, color: "var(--text-muted)" }}
+                    >
+                        {t("ui.common.loading", "Laedt...")}
+                    </p>
+                ) : articles.length === 0 ? (
+                    <ArticleListEmptyState onCreate={() => navigate("/articles/new")} />
+                ) : filters.filteredArticles.length === 0 ? (
+                    <EmptyState
+                        testId="article-list-filter-empty"
+                        icon={<Search size={32} className="muted" />}
+                        body={t(
+                            "ui.articles.empty_filtered",
+                            "Keine Artikel passen zu den aktuellen Filtern.",
+                        )}
+                        actions={
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm"
+                                onClick={filters.resetFilters}
+                                data-testid="article-list-filter-reset"
+                            >
+                                {t("ui.articles.reset_filters", "Filter zurücksetzen")}
+                            </button>
+                        }
+                    />
+                ) : (
+                    (() => {
+                        // C6: slice to ``paged.limit`` for render. Selection
+                        // semantics unchanged — select-all still operates on
+                        // the full filtered set, not just the visible page.
+                        const visibleArticles = filters.filteredArticles.slice(0, paged.limit);
+                        const hasMore = filters.filteredArticles.length > visibleArticles.length;
+                        return (
+                            <>
+                                {viewMode === "grid" ? (
+                                    <div className={layout.grid} data-testid="article-list">
+                                        {visibleArticles.map((a) => (
+                                            <div
+                                                key={a.id}
+                                                className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
+                                            >
+                                                <input
+                                                    type="checkbox"
+                                                    className={layout.tileCheckbox}
+                                                    data-testid={`article-bulk-check-${a.id}`}
+                                                    checked={selection.isSelected(a.id)}
+                                                    onChange={() => selection.toggle(a.id)}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                    aria-label={t(
+                                                        "ui.articles.bulk.select_all",
+                                                        "Select",
+                                                    )}
+                                                />
+                                                <ArticleCard
+                                                    article={a}
+                                                    onClick={() => navigate(`/articles/${a.id}`)}
+                                                    onDelete={() => void handleDelete(a)}
+                                                    onDeletePermanent={() =>
+                                                        void handleDeletePermanentFromList(a)
+                                                    }
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <ul
+                                            className={`${layout.list} min-w-[820px] menu:min-w-0`}
+                                            data-testid="article-list"
+                                        >
+                                            {visibleArticles.map((a) => (
+                                                <ArticleRow
+                                                    key={a.id}
+                                                    article={a}
+                                                    onOpen={() => navigate(`/articles/${a.id}`)}
+                                                    onDelete={() => void handleDelete(a)}
+                                                    onDeletePermanent={() =>
+                                                        void handleDeletePermanentFromList(a)
+                                                    }
+                                                    isSelected={selection.isSelected(a.id)}
+                                                    onToggleSelect={() => selection.toggle(a.id)}
+                                                />
+                                            ))}
+                                        </ul>
+                                    </div>
+                                )}
+                                {filters.filteredArticles.length > 0 && (
                                     <div
-                                        key={a.id}
-                                        className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
+                                        data-testid="article-list-pagination"
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "center",
+                                            alignItems: "center",
+                                            gap: 16,
+                                            marginTop: 16,
+                                            paddingBottom: 8,
+                                            flexWrap: "wrap",
+                                        }}
                                     >
-                                        <input
-                                            type="checkbox"
-                                            className={layout.tileCheckbox}
-                                            data-testid={`article-bulk-check-${a.id}`}
-                                            checked={selection.isSelected(a.id)}
-                                            onChange={() => selection.toggle(a.id)}
-                                            onClick={(e) => e.stopPropagation()}
-                                            aria-label={t(
-                                                "ui.articles.bulk.select_all",
-                                                "Select",
-                                            )}
-                                        />
-                                        <ArticleCard
-                                            article={a}
-                                            onClick={() => navigate(`/articles/${a.id}`)}
-                                            onDelete={() => void handleDelete(a)}
-                                            onDeletePermanent={() => void handleDeletePermanentFromList(a)}
+                                        {hasMore && (
+                                            <button
+                                                type="button"
+                                                className="btn btn-secondary"
+                                                data-testid="article-list-load-more"
+                                                onClick={paged.loadMore}
+                                            >
+                                                {t("ui.dashboard.load_more", "Mehr laden")} (
+                                                {visibleArticles.length} /{" "}
+                                                {filters.filteredArticles.length})
+                                            </button>
+                                        )}
+                                        <PageSizeSelector
+                                            value={paged.pageSize}
+                                            onChange={paged.setPageSize}
+                                            data-testid="article-list-page-size"
                                         />
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <div className="overflow-x-auto">
-                            <ul
-                                className={`${layout.list} min-w-[820px] menu:min-w-0`}
-                                data-testid="article-list"
-                            >
-                                {visibleArticles.map((a) => (
-                                    <ArticleRow
-                                        key={a.id}
-                                        article={a}
-                                        onOpen={() => navigate(`/articles/${a.id}`)}
-                                        onDelete={() => void handleDelete(a)}
-                                        onDeletePermanent={() => void handleDeletePermanentFromList(a)}
-                                        isSelected={selection.isSelected(a.id)}
-                                        onToggleSelect={() => selection.toggle(a.id)}
-                                    />
-                                ))}
-                            </ul>
-                            </div>
-                        )}
-                        {filters.filteredArticles.length > 0 && (
-                            <div
-                                data-testid="article-list-pagination"
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "center",
-                                    alignItems: "center",
-                                    gap: 16,
-                                    marginTop: 16,
-                                    paddingBottom: 8,
-                                    flexWrap: "wrap",
-                                }}
-                            >
-                                {hasMore && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-secondary"
-                                        data-testid="article-list-load-more"
-                                        onClick={paged.loadMore}
-                                    >
-                                        {t(
-                                            "ui.dashboard.load_more",
-                                            "Mehr laden",
-                                        )}
-                                        {" "}
-                                        ({visibleArticles.length} /{" "}
-                                        {filters.filteredArticles.length})
-                                    </button>
                                 )}
-                                <PageSizeSelector
-                                    value={paged.pageSize}
-                                    onChange={paged.setPageSize}
-                                    data-testid="article-list-page-size"
-                                />
-                            </div>
-                        )}
-                    </>
-                );
-            })()}
+                            </>
+                        );
+                    })()
+                )}
             </main>
             <ImportWizardModal
                 open={importWizardOpen}
@@ -1248,7 +1216,10 @@ export default function ArticleList() {
                         inlineImageCount: req.inline_image_count,
                     });
                 }}
-                title={t("ui.bulk_ai_fill.field_class_dialog_title", "Bulk AI fill: pick field-classes")}
+                title={t(
+                    "ui.bulk_ai_fill.field_class_dialog_title",
+                    "Bulk AI fill: pick field-classes",
+                )}
                 submitLabel={t("ui.bulk_ai_fill.field_class_dialog_submit", "Continue to estimate")}
             />
             {bulkArticleAiFillConfirm && (
@@ -1301,9 +1272,7 @@ function TrashPanel({
                 <ChevronLeft size={18} />
             </button>
             <Trash2 size={20} className="muted" />
-            <h2 className={layout.heading}>
-                {t("ui.articles.trash_title", "Papierkorb")}
-            </h2>
+            <h2 className={layout.heading}>{t("ui.articles.trash_title", "Papierkorb")}</h2>
             <span className={layout.articleCount}>
                 {trash.length}{" "}
                 {trash.length === 1
@@ -1361,7 +1330,10 @@ function TrashPanel({
                             onRestore={() => onRestore(a)}
                             onPermanentDelete={() => onPermanentDelete(a)}
                             restoreLabel={t("ui.articles.restore", "Wiederherstellen")}
-                            deletePermanentLabel={t("ui.articles.delete_permanent", "Endgültig löschen")}
+                            deletePermanentLabel={t(
+                                "ui.articles.delete_permanent",
+                                "Endgültig löschen",
+                            )}
                             cardTestId={`article-trash-card-${a.id}`}
                             restoreTestId={`article-trash-restore-${a.id}`}
                             permanentTestId={`article-trash-permanent-${a.id}`}
@@ -1478,10 +1450,7 @@ function ArticleRow({
     // the import timestamp. Native articles with no publications
     // fall back to updated_at unchanged.
     const displayDateRaw = article.original_published_at ?? article.updated_at;
-    const updated = useMemo(
-        () => formatLocaleDate(displayDateRaw, lang),
-        [displayDateRaw, lang],
-    );
+    const updated = useMemo(() => formatLocaleDate(displayDateRaw, lang), [displayDateRaw, lang]);
 
     return (
         <li
@@ -1556,13 +1525,9 @@ function ArticleRow({
                 </div>
             </div>
             <div className={layout.gridCellAuthor}>
-                {article.author?.trim()
-                    ? article.author
-                    : t("ui.articles.no_author", "—")}
+                {article.author?.trim() ? article.author : t("ui.articles.no_author", "—")}
             </div>
-            <div className={layout.gridCellTopic}>
-                {article.topic ?? "—"}
-            </div>
+            <div className={layout.gridCellTopic}>{article.topic ?? "—"}</div>
             <div className={layout.gridCellStatus}>
                 {/* ARTICLE-TYPES-SSOT-01 C7 (2026-05-29): badge
                  *  surfaces the article's content_type alongside
@@ -1573,7 +1538,7 @@ function ArticleRow({
                     contentType={article.content_type}
                     testId={`article-list-row-type-${article.id}`}
                     className={layout.statusBadge}
-                    style={{marginRight: 6}}
+                    style={{ marginRight: 6 }}
                 />
                 <Badge
                     testId={`article-list-row-status-${article.id}`}
@@ -1586,9 +1551,7 @@ function ArticleRow({
                     )}
                 </Badge>
             </div>
-            <div className={layout.gridCellLang}>
-                {(article.language || "??").toUpperCase()}
-            </div>
+            <div className={layout.gridCellLang}>{(article.language || "??").toUpperCase()}</div>
             <div className={layout.gridCellDate}>{updated}</div>
             <div className={layout.gridCellActions}>
                 {onDelete ? (
@@ -1634,10 +1597,7 @@ function ArticleRow({
                                             style={{ color: "var(--danger)" }}
                                         >
                                             <AlertTriangle size={14} />{" "}
-                                            {t(
-                                                "ui.articles.delete_permanent",
-                                                "Endgültig löschen",
-                                            )}
+                                            {t("ui.articles.delete_permanent", "Endgültig löschen")}
                                         </DropdownMenu.Item>
                                     </>
                                 ) : null}

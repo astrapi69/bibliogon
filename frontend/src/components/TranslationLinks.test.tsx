@@ -14,6 +14,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { FeatureTestProvider } from "../features/FeatureTestProvider";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
@@ -55,13 +56,7 @@ vi.mock("../api/client", () => ({
     ApiError: class extends Error {
         status: number;
         detail: string;
-        constructor(
-            status: number,
-            detail: string,
-            _url = "",
-            _method = "GET",
-            _stack = "",
-        ) {
+        constructor(status: number, detail: string, _url = "", _method = "GET", _stack = "") {
             super(detail);
             this.status = status;
             this.detail = detail;
@@ -130,9 +125,11 @@ describe("TranslationLinks", () => {
         mockList.mockResolvedValueOnce(payload);
         await act(async () => {
             render(
-                <MemoryRouter>
-                    <TranslationLinks bookId="book-1" />
-                </MemoryRouter>,
+                <FeatureTestProvider>
+                    <MemoryRouter>
+                        <TranslationLinks bookId="book-1" />
+                    </MemoryRouter>
+                </FeatureTestProvider>,
             );
         });
         await waitFor(() => expect(mockList).toHaveBeenCalledTimes(1));
@@ -140,9 +137,7 @@ describe("TranslationLinks", () => {
 
     it("renders the unlinked state with a Link button", async () => {
         await renderRow(unlinked);
-        expect(
-            screen.getByTestId("translation-links-row-unlinked"),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("translation-links-row-unlinked")).toBeInTheDocument();
         expect(screen.getByTestId("translation-link-btn")).toBeInTheDocument();
     });
 
@@ -181,9 +176,7 @@ describe("TranslationLinks", () => {
         await waitFor(() => expect(mockBooksList).toHaveBeenCalledTimes(1));
 
         // Self is excluded; only book-2 + book-3 are pickable.
-        expect(
-            screen.queryByTestId("translation-link-pick-book-1"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId("translation-link-pick-book-1")).not.toBeInTheDocument();
         const pick2 = screen.getByTestId("translation-link-pick-book-2");
         fireEvent.click(pick2);
 

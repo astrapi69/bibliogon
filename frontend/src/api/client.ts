@@ -1623,7 +1623,7 @@ const saveControllers = new Map<string, AbortController>();
  * NOT the LAN auto-offline case (connectivity-driven): there the seam still
  * serves data from Dexie, direct api.* calls degrade gracefully (caught), and
  * the sync engine replays on reconnect. Those surfaces are UI-gated
- * (useOfflineFeatureGate). This guard's job is the no-backend build.
+ * via the feature registry (useFeature). This guard's job is the no-backend build.
  */
 function isBackendlessOffline(): boolean {
   try {

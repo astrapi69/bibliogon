@@ -6,9 +6,19 @@
  * in C4 — tests for those land in the same commit.
  */
 
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
-import {render, screen, waitFor, fireEvent} from "@testing-library/react";
-import {AboutSettings} from "./AboutSettings";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { AboutSettings } from "./AboutSettings";
+
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}));
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -19,9 +29,7 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 vi.mock("../../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../../api/client")>(
-        "../../api/client",
-    );
+    const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client");
     return {
         ...actual,
         api: {
@@ -43,24 +51,23 @@ vi.mock("../../api/client", async () => {
 // pinned at the unit layer. discoveredPlugins is a shared mock so both
 // online and offline tests configure the same plugin payload.
 const storageMock = vi.hoisted(() => ({
-    mode: {current: "api" as "api" | "dexie"},
+    mode: { current: "api" as "api" | "dexie" },
     discoveredPlugins: vi.fn(),
 }));
 
 vi.mock("../../storage", async () => {
-    const actual =
-        await vi.importActual<typeof import("../../storage")>("../../storage");
+    const actual = await vi.importActual<typeof import("../../storage")>("../../storage");
     return {
         ...actual,
         getStorage: () =>
             ({
                 mode: storageMock.mode.current,
-                settings: {discoveredPlugins: storageMock.discoveredPlugins},
+                settings: { discoveredPlugins: storageMock.discoveredPlugins },
             }) as unknown as ReturnType<typeof actual.getStorage>,
     };
 });
 
-import {api, type DiscoveredPlugin} from "../../api/client";
+import { api, type DiscoveredPlugin } from "../../api/client";
 
 const FIXTURE = {
     app: {
@@ -93,8 +100,8 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         loaded: true,
         license_tier: "core",
         has_license: true,
-        display_name: {de: "Comic", en: "Comics"},
-        description: {de: "Comic-Authoring", en: "Comic authoring"},
+        display_name: { de: "Comic", en: "Comics" },
+        description: { de: "Comic-Authoring", en: "Comic authoring" },
         version: "1.0.0",
         filter_reason: null,
         load_error_message: null,
@@ -109,8 +116,8 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         loaded: true,
         license_tier: "core",
         has_license: true,
-        display_name: {en: "Amazon KDP"},
-        description: {en: "KDP metadata + cover validation"},
+        display_name: { en: "Amazon KDP" },
+        description: { en: "KDP metadata + cover validation" },
         version: "1.0.0",
         filter_reason: null,
         load_error_message: null,
@@ -125,7 +132,7 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
         loaded: false,
         license_tier: "core",
         has_license: true,
-        display_name: {en: "Comments"},
+        display_name: { en: "Comments" },
         description: {},
         version: "1.0.0",
         filter_reason: null,
@@ -140,9 +147,7 @@ describe("AboutSettings", () => {
     beforeEach(() => {
         storageMock.mode.current = "api";
         vi.mocked(api.system.info).mockImplementation(async () => FIXTURE);
-        storageMock.discoveredPlugins.mockImplementation(
-            async () => PLUGINS_FIXTURE,
-        );
+        storageMock.discoveredPlugins.mockImplementation(async () => PLUGINS_FIXTURE);
     });
 
     afterEach(() => {
@@ -152,18 +157,14 @@ describe("AboutSettings", () => {
 
     it("renders loading state initially", () => {
         // Block the resolve so the loading state stays visible.
-        vi.mocked(api.system.info).mockImplementation(
-            () => new Promise(() => {}),
-        );
+        vi.mocked(api.system.info).mockImplementation(() => new Promise(() => {}));
         render(<AboutSettings appConfig={{}} />);
         expect(screen.getByTestId("about-settings-loading")).toBeTruthy();
     });
 
     it("renders content after /api/system/info resolves", async () => {
         render(<AboutSettings appConfig={{}} />);
-        await waitFor(() =>
-            expect(screen.getByTestId("about-settings-content")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("about-settings-content")).toBeTruthy());
         expect(api.system.info).toHaveBeenCalledOnce();
     });
 
@@ -199,9 +200,7 @@ describe("AboutSettings", () => {
             render(<AboutSettings appConfig={{}} />);
             const repo = await screen.findByTestId("about-repository-link");
             const issues = await screen.findByTestId("about-issues-link");
-            expect(repo.getAttribute("href")).toBe(
-                "https://github.com/astrapi69/bibliogon",
-            );
+            expect(repo.getAttribute("href")).toBe("https://github.com/astrapi69/bibliogon");
             expect(repo.getAttribute("target")).toBe("_blank");
             expect(repo.getAttribute("rel")).toContain("noopener");
             expect(issues.getAttribute("href")).toBe(
@@ -212,7 +211,7 @@ describe("AboutSettings", () => {
         it("falls back to 'Unknown' when authors list is empty", async () => {
             vi.mocked(api.system.info).mockImplementation(async () => ({
                 ...FIXTURE,
-                app: {...FIXTURE.app, authors: []},
+                app: { ...FIXTURE.app, authors: [] },
             }));
             render(<AboutSettings appConfig={{}} />);
             const authors = await screen.findByTestId("about-authors");
@@ -230,18 +229,10 @@ describe("AboutSettings", () => {
             const platform = await screen.findByTestId("about-platform");
             expect(platform.textContent).toMatch(/Linux/);
             expect(platform.textContent).toMatch(/x86_64/);
-            expect(screen.getByTestId("about-dep-fastapi").textContent).toBe(
-                "0.136.1",
-            );
-            expect(screen.getByTestId("about-dep-sqlalchemy").textContent).toBe(
-                "2.0.49",
-            );
-            expect(screen.getByTestId("about-dep-pydantic").textContent).toBe(
-                "2.13.4",
-            );
-            expect(screen.getByTestId("about-dep-pluginforge").textContent).toBe(
-                "0.5.0",
-            );
+            expect(screen.getByTestId("about-dep-fastapi").textContent).toBe("0.136.1");
+            expect(screen.getByTestId("about-dep-sqlalchemy").textContent).toBe("2.0.49");
+            expect(screen.getByTestId("about-dep-pydantic").textContent).toBe("2.13.4");
+            expect(screen.getByTestId("about-dep-pluginforge").textContent).toBe("0.5.0");
         });
 
         it("renders 'Unknown' for null dependency versions", async () => {
@@ -272,9 +263,7 @@ describe("AboutSettings", () => {
 
         it("renders localized display_name + version", async () => {
             render(<AboutSettings appConfig={{}} />);
-            const comicsRow = await screen.findByTestId(
-                "about-plugin-row-comics",
-            );
+            const comicsRow = await screen.findByTestId("about-plugin-row-comics");
             // useI18n mock uses lang='en'; getLocalized resolves
             // english key from the dict.
             expect(comicsRow.textContent).toContain("Comics");
@@ -282,24 +271,20 @@ describe("AboutSettings", () => {
         });
 
         it("falls back to slug when display_name dict is empty", async () => {
-            storageMock.discoveredPlugins.mockImplementation(
-                async () => [
-                    {
-                        ...PLUGINS_FIXTURE[0],
-                        name: "noname",
-                        display_name: {},
-                    },
-                ],
-            );
+            storageMock.discoveredPlugins.mockImplementation(async () => [
+                {
+                    ...PLUGINS_FIXTURE[0],
+                    name: "noname",
+                    display_name: {},
+                },
+            ]);
             render(<AboutSettings appConfig={{}} />);
             const row = await screen.findByTestId("about-plugin-row-noname");
             expect(row.textContent).toContain("noname");
         });
 
         it("renders empty-state when no plugins active", async () => {
-            storageMock.discoveredPlugins.mockImplementation(
-                async () => [],
-            );
+            storageMock.discoveredPlugins.mockImplementation(async () => []);
             render(<AboutSettings appConfig={{}} />);
             const empty = await screen.findByTestId("about-plugins-empty");
             expect(empty.textContent).toBe("Keine Plugins aktiv.");
@@ -328,11 +313,7 @@ describe("AboutSettings", () => {
         });
 
         it("does NOT render donations wrapper when donations.enabled is false", async () => {
-            render(
-                <AboutSettings
-                    appConfig={{donations: {enabled: false, channels: []}}}
-                />,
-            );
+            render(<AboutSettings appConfig={{ donations: { enabled: false, channels: [] } }} />);
             await screen.findByTestId("about-plugins-section");
             expect(screen.queryByTestId("about-donations-section")).toBeNull();
         });
@@ -340,7 +321,7 @@ describe("AboutSettings", () => {
 
     describe("Error path", () => {
         it("renders error message when /api/system/info fails", async () => {
-            const {ApiError} = await import("../../api/client");
+            const { ApiError } = await import("../../api/client");
             vi.mocked(api.system.info).mockImplementation(async () => {
                 throw new ApiError(500, "boom", "/system/info", "GET");
             });
@@ -363,9 +344,7 @@ describe("AboutSettings", () => {
             // Build provenance comes from build-time literals -> still shown.
             const version = await screen.findByTestId("about-app-version");
             expect(version.textContent).toBe(`v${__APP_VERSION__}`);
-            expect(screen.getByTestId("about-build-hash").textContent).toBe(
-                __BUILD_HASH__,
-            );
+            expect(screen.getByTestId("about-build-hash").textContent).toBe(__BUILD_HASH__);
 
             // The plugin list reads the seeded Dexie registry -> still shown.
             expect(screen.getByTestId("about-plugins-section")).toBeTruthy();

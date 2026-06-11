@@ -37,7 +37,7 @@ import { useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
-import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { useStorageMode } from "../storage/useStorageMode";
 import {
     api,
     ApiError,
@@ -45,10 +45,7 @@ import {
     type MediumImportResponse,
 } from "../api/client";
 import { getStorage } from "../storage";
-import {
-    importParsed,
-    parseMediumZip,
-} from "../medium-import/clientImport";
+import { importParsed, parseMediumZip } from "../medium-import/clientImport";
 import type { ParsedPost } from "../medium-import/walker";
 import { notify } from "../utils/notify";
 import { useMediumImportJob } from "../contexts/MediumImportJobContext";
@@ -64,7 +61,8 @@ type Phase = "idle" | "uploading" | "previewing" | "importing";
 export default function MediumImportPage() {
     const navigate = useNavigate();
     const { t } = useI18n();
-    const { offline } = useOfflineFeatureGate();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
     const job = useMediumImportJob();
 
     const [file, setFile] = useState<File | null>(null);
@@ -79,18 +77,14 @@ export default function MediumImportPage() {
     );
     const [uploadLoaded, setUploadLoaded] = useState(0);
     const [uploadTotal, setUploadTotal] = useState(0);
-    const [preview, setPreview] = useState<MediumImportPreviewResponse | null>(
-        null,
-    );
+    const [preview, setPreview] = useState<MediumImportPreviewResponse | null>(null);
     const [selected, setSelected] = useState<Set<string>>(new Set());
 
     // Offline (dexie) parse runs entirely in the browser: the parsed posts are
     // held here between the preview and import steps (no server-side cache),
     // and the import result is local (there is no SSE job offline).
     const parsedRef = useRef<Map<string, ParsedPost>>(new Map());
-    const [offlineResult, setOfflineResult] = useState<MediumImportResponse | null>(
-        null,
-    );
+    const [offlineResult, setOfflineResult] = useState<MediumImportResponse | null>(null);
 
     // MediumImportJobContext.result is the source of truth online (survives
     // navigation); offline uses the local result. Either renders the same
@@ -136,10 +130,7 @@ export default function MediumImportPage() {
             const message =
                 err instanceof ApiError
                     ? err.detail
-                    : t(
-                          "ui.medium_import.toast.preview_failed",
-                          "Vorschau fehlgeschlagen",
-                      );
+                    : t("ui.medium_import.toast.preview_failed", "Vorschau fehlgeschlagen");
             notify.error(message, err);
         }
     }, [file, t, job, offline]);
@@ -154,15 +145,11 @@ export default function MediumImportPage() {
                 const defaultLanguage =
                     ((app.app as Record<string, unknown> | undefined)
                         ?.default_language as string) || "en";
-                const response = await importParsed(
-                    parsedRef.current,
-                    Array.from(selected),
-                    {
-                        defaultStatus: "draft",
-                        defaultLanguage,
-                        skipExistingCanonicalUrls: true,
-                    },
-                );
+                const response = await importParsed(parsedRef.current, Array.from(selected), {
+                    defaultStatus: "draft",
+                    defaultLanguage,
+                    skipExistingCanonicalUrls: true,
+                });
                 setOfflineResult(response);
                 setPreview(null);
                 setSelected(new Set());
@@ -196,10 +183,7 @@ export default function MediumImportPage() {
             const message =
                 err instanceof ApiError
                     ? err.detail
-                    : t(
-                          "ui.medium_import.toast.import_failed",
-                          "Import fehlgeschlagen",
-                      );
+                    : t("ui.medium_import.toast.import_failed", "Import fehlgeschlagen");
             notify.error(message, err);
         }
     }, [preview, selected, t, job, offline]);
@@ -245,10 +229,7 @@ export default function MediumImportPage() {
             setPhase("previewing");
             const message =
                 job.errorMessage ||
-                t(
-                    "ui.medium_import.toast.import_failed",
-                    "Import fehlgeschlagen",
-                );
+                t("ui.medium_import.toast.import_failed", "Import fehlgeschlagen");
             notify.error(message);
             job.clear();
         } else if (job.phase === "cancelled") {
@@ -375,16 +356,10 @@ export default function MediumImportPage() {
                   scroll past Settings.
                 */}
                 {(preview || isImporting) && inPreview && (
-                    <section
-                        className={styles.card}
-                        data-testid="medium-import-preview-section"
-                    >
+                    <section className={styles.card} data-testid="medium-import-preview-section">
                         <h2 className={styles.cardHeader}>
                             {preview
-                                ? t(
-                                      "ui.medium_import.preview.card_title",
-                                      "Vorschau & Auswahl",
-                                  )
+                                ? t("ui.medium_import.preview.card_title", "Vorschau & Auswahl")
                                 : t(
                                       "ui.medium_import.preview.in_progress_card_title",
                                       "Import läuft",
@@ -421,27 +396,17 @@ export default function MediumImportPage() {
                                 >
                                     <Upload size={14} />{" "}
                                     {isImporting
-                                        ? t(
-                                              "ui.medium_import.preview.importing",
-                                              "Importiert …",
-                                          )
+                                        ? t("ui.medium_import.preview.importing", "Importiert …")
                                         : t(
                                               "ui.medium_import.preview.import_selected",
                                               "{count} Beiträge importieren",
-                                          ).replace(
-                                              "{count}",
-                                              String(selected.size),
-                                          )}
+                                          ).replace("{count}", String(selected.size))}
                                 </button>
                             )}
                             <button
                                 type="button"
                                 className="btn btn-secondary"
-                                onClick={
-                                    isImporting
-                                        ? handleCancelImport
-                                        : handleCancelPreview
-                                }
+                                onClick={isImporting ? handleCancelImport : handleCancelPreview}
                                 data-testid="medium-import-preview-cancel-btn"
                             >
                                 <X size={14} />{" "}
@@ -450,10 +415,7 @@ export default function MediumImportPage() {
                                           "ui.medium_import.preview.cancel_import",
                                           "Import abbrechen",
                                       )
-                                    : t(
-                                          "ui.medium_import.preview.cancel",
-                                          "Abbrechen",
-                                      )}
+                                    : t("ui.medium_import.preview.cancel", "Abbrechen")}
                             </button>
                             {isImporting && (
                                 <button
@@ -483,12 +445,8 @@ export default function MediumImportPage() {
                                 asyncImported={job.importedCount}
                                 asyncSkipped={job.skippedCount}
                                 asyncErrored={job.erroredCount}
-                                asyncImportedComments={
-                                    job.importedCommentsCount
-                                }
-                                asyncSkippedComments={
-                                    job.skippedCommentsCount
-                                }
+                                asyncImportedComments={job.importedCommentsCount}
+                                asyncSkippedComments={job.skippedCommentsCount}
                             />
                         )}
                         {preview && (
@@ -561,10 +519,7 @@ export default function MediumImportPage() {
                                           "ui.medium_import.upload.previewing",
                                           "Vorschau wird geladen …",
                                       )
-                                    : t(
-                                          "ui.medium_import.upload.start",
-                                          "Vorschau & Auswahl",
-                                      )}
+                                    : t("ui.medium_import.upload.start", "Vorschau & Auswahl")}
                             </button>
                         </div>
                     )}

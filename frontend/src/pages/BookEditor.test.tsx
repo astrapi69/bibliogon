@@ -14,14 +14,15 @@
  */
 
 import React from "react";
-import {describe, it, expect, vi, beforeEach} from "vitest";
-import {act, render, screen, waitFor, fireEvent} from "@testing-library/react";
-import {MemoryRouter, Route, Routes, useLocation} from "react-router-dom";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { act, render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import BookEditor from "./BookEditor";
-import type {BookDetail, BookTypeDef, Chapter} from "../api/client";
-import {BookTypesProvider} from "../hooks/useBookTypes";
-import {expectNoA11yViolations} from "../test-utils/a11y";
+import type { BookDetail, BookTypeDef, Chapter } from "../api/client";
+import { BookTypesProvider } from "../hooks/useBookTypes";
+import { FeatureTestProvider } from "../features/FeatureTestProvider";
+import { expectNoA11yViolations } from "../test-utils/a11y";
 
 // BOOK-TYPES-SSOT-YAML-01 C6: BookEditor now reads the registry
 // to dispatch the editor component. Static snapshot covers
@@ -97,13 +98,11 @@ const updateChapterMock = vi.fn();
 // Captures the latest `onSave` the (stubbed) Editor receives, so the
 // autosave-version-race test can invoke a stale-closure save directly.
 const editorOnSaveHolder: {
-  current: ((content: string) => void | Promise<void>) | null;
-} = {current: null};
+    current: ((content: string) => void | Promise<void>) | null;
+} = { current: null };
 
 vi.mock("react-router-dom", async () => {
-    const actual = await vi.importActual<typeof import("react-router-dom")>(
-        "react-router-dom",
-    );
+    const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
     return {
         ...actual,
         useNavigate: () => navigateMock,
@@ -137,9 +136,7 @@ vi.mock("../utils/notify", () => ({
 }));
 
 vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>(
-        "../api/client",
-    );
+    const actual = await vi.importActual<typeof import("../api/client")>("../api/client");
     return {
         ...actual,
         api: {
@@ -161,11 +158,11 @@ vi.mock("../api/client", async () => {
             },
             git: {
                 ...actual.api.git,
-                syncStatus: vi.fn(async () => ({state: null})),
+                syncStatus: vi.fn(async () => ({ state: null })),
             },
             gitSync: {
                 ...actual.api.gitSync,
-                status: vi.fn(async () => ({mapped: false})),
+                status: vi.fn(async () => ({ mapped: false })),
             },
             pages: {
                 ...actual.api.pages,
@@ -192,7 +189,7 @@ vi.mock("../api/client", async () => {
 // doesn't load TipTap / plugin status / metadata editor. The
 // picture-book branch returns before any of these mount.
 vi.mock("../components/Editor", () => ({
-    default: (props: {onSave?: (content: string) => void | Promise<void>}) => {
+    default: (props: { onSave?: (content: string) => void | Promise<void> }) => {
         editorOnSaveHolder.current = props.onSave ?? null;
         return <div data-testid="editor-stub" />;
     },
@@ -209,7 +206,7 @@ vi.mock("../components/ChapterSidebar", () => ({
     // Render a select-button per chapter so tests can drive the real
     // BookEditor ``onSelect`` handler (chapter-switch regression pins).
     default: (props: {
-        chapters?: Array<{id: string; title: string}>;
+        chapters?: Array<{ id: string; title: string }>;
         onSelect: (id: string) => void;
     }) => (
         <div data-testid="chapter-sidebar-stub">
@@ -228,13 +225,13 @@ vi.mock("../components/ChapterSidebar", () => ({
 vi.mock("../components/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
 }));
-vi.mock("../components/ConflictResolutionDialog", () => ({default: () => null}));
-vi.mock("../components/SaveAsTemplateModal", () => ({default: () => null}));
-vi.mock("../components/ChapterTemplatePickerModal", () => ({default: () => null}));
-vi.mock("../components/SaveAsChapterTemplateModal", () => ({default: () => null}));
-vi.mock("../components/EmptyState", () => ({EmptyState: () => null}));
+vi.mock("../components/ConflictResolutionDialog", () => ({ default: () => null }));
+vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
+vi.mock("../components/ChapterTemplatePickerModal", () => ({ default: () => null }));
+vi.mock("../components/SaveAsChapterTemplateModal", () => ({ default: () => null }));
+vi.mock("../components/EmptyState", () => ({ EmptyState: () => null }));
 vi.mock("../components/LoadingIndicator", () => ({
-    LoadingIndicator: ({testId}: {testId?: string}) => (
+    LoadingIndicator: ({ testId }: { testId?: string }) => (
         <div data-testid={testId ?? "loading"}>loading</div>
     ),
 }));
@@ -286,18 +283,20 @@ function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
         updated_at: new Date().toISOString(),
         chapters: [],
     } as BookDetail;
-    return {...base, ...overrides};
+    return { ...base, ...overrides };
 }
 
 function renderEditor(bookId: string) {
     return render(
-        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
-            <MemoryRouter initialEntries={[`/book/${bookId}`]}>
-                <Routes>
-                    <Route path="/book/:bookId" element={<BookEditor />} />
-                </Routes>
-            </MemoryRouter>
-        </BookTypesProvider>,
+        <FeatureTestProvider>
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <MemoryRouter initialEntries={[`/book/${bookId}`]}>
+                    <Routes>
+                        <Route path="/book/:bookId" element={<BookEditor />} />
+                    </Routes>
+                </MemoryRouter>
+            </BookTypesProvider>
+        </FeatureTestProvider>,
     );
 }
 
@@ -313,9 +312,8 @@ beforeEach(() => {
     // Default: resolve the requested chapter so the content-load effect
     // never hits the real network (the routing + chapter-switch tests
     // don't configure it themselves).
-    getChapterMock.mockImplementation(
-        async (_bookId: string, chapterId: string) =>
-            makeChapterRow({id: chapterId}),
+    getChapterMock.mockImplementation(async (_bookId: string, chapterId: string) =>
+        makeChapterRow({ id: chapterId }),
     );
 });
 
@@ -336,32 +334,30 @@ function makeChapterRow(overrides: Partial<Chapter> = {}): Chapter {
 
 describe("BookEditor - autosave version race (Issue #41)", () => {
     it("a rapid second autosave sends the post-bump version, not the stale one", async () => {
-        getBookMock.mockResolvedValue(
-            makeBook({id: "b1", chapters: [makeChapterRow()]}),
-        );
-        getChapterMock.mockResolvedValue(makeChapterRow({version: 1}));
+        getBookMock.mockResolvedValue(makeBook({ id: "b1", chapters: [makeChapterRow()] }));
+        getChapterMock.mockResolvedValue(makeChapterRow({ version: 1 }));
         updateChapterMock.mockImplementation(
             async (
                 _bookId: string,
                 _chapterId: string,
-                data: {version: number; content?: string},
-            ) => makeChapterRow({version: data.version + 1, content: data.content}),
+                data: { version: number; content?: string },
+            ) => makeChapterRow({ version: data.version + 1, content: data.content }),
         );
 
         render(
-            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
-                <MemoryRouter initialEntries={["/book/b1?chapter=c1"]}>
-                    <Routes>
-                        <Route path="/book/:bookId" element={<BookEditor />} />
-                    </Routes>
-                </MemoryRouter>
-            </BookTypesProvider>,
+            <FeatureTestProvider>
+                <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                    <MemoryRouter initialEntries={["/book/b1?chapter=c1"]}>
+                        <Routes>
+                            <Route path="/book/:bookId" element={<BookEditor />} />
+                        </Routes>
+                    </MemoryRouter>
+                </BookTypesProvider>
+            </FeatureTestProvider>,
         );
 
         await waitFor(() => expect(screen.getByTestId("editor-stub")).toBeTruthy());
-        await waitFor(() =>
-            expect(editorOnSaveHolder.current).toBeTypeOf("function"),
-        );
+        await waitFor(() => expect(editorOnSaveHolder.current).toBeTypeOf("function"));
 
         // Drive two saves through the SAME (first-render) onSave closure,
         // the lagging-state path the bug took: without the version ref the
@@ -383,15 +379,11 @@ describe("BookEditor - autosave version race (Issue #41)", () => {
 describe("BookEditor - book_type routing (Commit 6)", () => {
     it("mounts <PageEditor> when book.book_type === 'picture_book'", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "pb1", book_type: "picture_book", title: "My Picture Book"}),
+            makeBook({ id: "pb1", book_type: "picture_book", title: "My Picture Book" }),
         );
         renderEditor("pb1");
-        await waitFor(() =>
-            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
-        );
-        expect(
-            screen.getByTestId("page-editor-root").getAttribute("data-book-id"),
-        ).toBe("pb1");
+        await waitFor(() => expect(screen.getByTestId("page-editor-root")).toBeTruthy());
+        expect(screen.getByTestId("page-editor-root").getAttribute("data-book-id")).toBe("pb1");
         // The chapter-side wrapper must NOT mount.
         expect(screen.queryByTestId("book-editor")).toBeNull();
         expect(screen.queryByTestId("chapter-sidebar-stub")).toBeNull();
@@ -399,41 +391,33 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
 
     it("renders the book title in PageEditor's header", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "pb1", book_type: "picture_book", title: "My Picture Book"}),
+            makeBook({ id: "pb1", book_type: "picture_book", title: "My Picture Book" }),
         );
         renderEditor("pb1");
-        await waitFor(() =>
-            expect(screen.getByText("My Picture Book")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByText("My Picture Book")).toBeTruthy());
     });
 
     it("falls through to the chapter editor when book_type === 'prose'", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "b1", book_type: "prose", title: "Prose Book"}),
+            makeBook({ id: "b1", book_type: "prose", title: "Prose Book" }),
         );
         renderEditor("b1");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-editor")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-editor")).toBeTruthy());
         // The page-editor surface must NOT mount.
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
 
     it("mounts <ComicBookEditor> when book.book_type === 'comic_book' (plugin-comics Session 1)", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "cb1", book_type: "comic_book", title: "Comic Book"}),
+            makeBook({ id: "cb1", book_type: "comic_book", title: "Comic Book" }),
         );
         renderEditor("cb1");
         // The comic-book editor placeholder mounts; neither the
         // chapter-side wrapper nor the page-editor surface should.
-        await waitFor(() =>
-            expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy(),
+        await waitFor(() => expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy());
+        expect(screen.getByTestId("comic-book-editor-root").getAttribute("data-book-id")).toBe(
+            "cb1",
         );
-        expect(
-            screen
-                .getByTestId("comic-book-editor-root")
-                .getAttribute("data-book-id"),
-        ).toBe("cb1");
         expect(screen.queryByTestId("book-editor")).toBeNull();
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
@@ -441,9 +425,7 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
     it("renders the not-found state when the book load fails", async () => {
         getBookMock.mockRejectedValue(new Error("404"));
         renderEditor("missing");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-editor-not-found")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-editor-not-found")).toBeTruthy());
     });
 });
 
@@ -459,50 +441,44 @@ describe("BookEditor - book_type routing (Commit 6)", () => {
 
 function renderEditorAtPath(bookId: string, search = "") {
     return render(
-        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
-            <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
-                <Routes>
-                    <Route path="/book/:bookId" element={<BookEditor />} />
-                </Routes>
-            </MemoryRouter>
-        </BookTypesProvider>,
+        <FeatureTestProvider>
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
+                    <Routes>
+                        <Route path="/book/:bookId" element={<BookEditor />} />
+                    </Routes>
+                </MemoryRouter>
+            </BookTypesProvider>
+        </FeatureTestProvider>,
     );
 }
 
 describe("BookEditor - picture-book metadata routing (Session 5 Commit 2)", () => {
     it("picture_book without ?view=metadata: renders PageEditor with the show-metadata button", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+            makeBook({ id: "pb1", book_type: "picture_book", title: "PB" }),
         );
         renderEditor("pb1");
-        await waitFor(() =>
-            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("page-editor-root")).toBeTruthy());
         expect(screen.getByTestId("page-editor-show-metadata")).toBeTruthy();
         expect(screen.queryByTestId("book-metadata-editor-stub")).toBeNull();
     });
 
     it("picture_book + ?view=metadata: renders BookMetadataEditor (not PageEditor)", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+            makeBook({ id: "pb1", book_type: "picture_book", title: "PB" }),
         );
         renderEditorAtPath("pb1", "?view=metadata");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy());
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
 
     it("prose flow unaffected: chapter editor still renders without ?view=metadata", async () => {
         // Regression pin — Session 5 must not touch the prose
         // BookEditor flow.
-        getBookMock.mockResolvedValue(
-            makeBook({id: "b1", book_type: "prose", title: "Prose"}),
-        );
+        getBookMock.mockResolvedValue(makeBook({ id: "b1", book_type: "prose", title: "Prose" }));
         renderEditor("b1");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-editor")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-editor")).toBeTruthy());
         expect(screen.queryByTestId("page-editor-root")).toBeNull();
     });
 
@@ -512,13 +488,9 @@ describe("BookEditor - picture-book metadata routing (Session 5 Commit 2)", () =
         // div) is the parent; the BookMetadataEditor mounts INSIDE
         // it for prose. The chapter wrapper testid is therefore
         // present in both views.
-        getBookMock.mockResolvedValue(
-            makeBook({id: "b1", book_type: "prose", title: "Prose"}),
-        );
+        getBookMock.mockResolvedValue(makeBook({ id: "b1", book_type: "prose", title: "Prose" }));
         renderEditorAtPath("b1", "?view=metadata");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-editor")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-editor")).toBeTruthy());
     });
 });
 
@@ -538,17 +510,13 @@ describe("BookEditor - picture-book metadata routing (Session 5 Commit 2)", () =
 describe("BookEditor - comic-book metadata routing (COMIC-BOOK-EDITOR-METADATA-BUTTON-01)", () => {
     it("comic_book without ?view=metadata: renders ComicBookEditor with the show-metadata button", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "cb1", book_type: "comic_book", title: "CB"}),
+            makeBook({ id: "cb1", book_type: "comic_book", title: "CB" }),
         );
         renderEditor("cb1");
-        await waitFor(() =>
-            expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("comic-book-editor-root")).toBeTruthy());
         // The new metadata button is rendered (onShowMetadata prop
         // wired through BookEditor → ComicBookEditor).
-        expect(
-            screen.getByTestId("comic-book-editor-show-metadata"),
-        ).toBeTruthy();
+        expect(screen.getByTestId("comic-book-editor-show-metadata")).toBeTruthy();
         // BookMetadataEditor stub is NOT rendered yet — only after
         // the button click flips showMetadata.
         expect(screen.queryByTestId("book-metadata-editor-stub")).toBeNull();
@@ -556,12 +524,10 @@ describe("BookEditor - comic-book metadata routing (COMIC-BOOK-EDITOR-METADATA-B
 
     it("comic_book + ?view=metadata: renders BookMetadataEditor (not ComicBookEditor)", async () => {
         getBookMock.mockResolvedValue(
-            makeBook({id: "cb1", book_type: "comic_book", title: "CB"}),
+            makeBook({ id: "cb1", book_type: "comic_book", title: "CB" }),
         );
         renderEditorAtPath("cb1", "?view=metadata");
-        await waitFor(() =>
-            expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("book-metadata-editor-stub")).toBeTruthy());
         // The comic-book editor root is NOT mounted while the
         // metadata view is active — same in-place swap pattern as
         // picture_book.
@@ -572,12 +538,10 @@ describe("BookEditor - comic-book metadata routing (COMIC-BOOK-EDITOR-METADATA-B
         // Regression pin: the comic-book branch addition must not
         // touch the picture_book OR prose paths.
         getBookMock.mockResolvedValue(
-            makeBook({id: "pb1", book_type: "picture_book", title: "PB"}),
+            makeBook({ id: "pb1", book_type: "picture_book", title: "PB" }),
         );
         renderEditor("pb1");
-        await waitFor(() =>
-            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("page-editor-root")).toBeTruthy());
         // Picture-book still mounts PageEditor (NOT ComicBookEditor)
         // — confirms the branch ordering didn't fall through.
         expect(screen.queryByTestId("comic-book-editor-root")).toBeNull();
@@ -593,10 +557,8 @@ describe("BookEditor — accessibility (axe)", () => {
                 title: "My Picture Book",
             }),
         );
-        const {container} = renderEditor("pb1");
-        await waitFor(() =>
-            expect(screen.getByTestId("page-editor-root")).toBeTruthy(),
-        );
+        const { container } = renderEditor("pb1");
+        await waitFor(() => expect(screen.getByTestId("page-editor-root")).toBeTruthy());
         await expectNoA11yViolations(container);
     });
 });
@@ -611,11 +573,7 @@ describe("BookEditor — accessibility (axe)", () => {
 // first and ``?chapter=`` never changed — the editor stayed on the
 // previous chapter. selectChapter now writes both in one call.
 
-function makeChapter(
-    id: string,
-    title: string,
-    position: number,
-): import("../api/client").Chapter {
+function makeChapter(id: string, title: string, position: number): import("../api/client").Chapter {
     return {
         id,
         book_id: "b1",
@@ -636,14 +594,16 @@ function LocationProbe() {
 
 function renderEditorWithProbe(bookId: string, search = "") {
     return render(
-        <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
-            <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
-                <Routes>
-                    <Route path="/book/:bookId" element={<BookEditor />} />
-                </Routes>
-                <LocationProbe />
-            </MemoryRouter>
-        </BookTypesProvider>,
+        <FeatureTestProvider>
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <MemoryRouter initialEntries={[`/book/${bookId}${search}`]}>
+                    <Routes>
+                        <Route path="/book/:bookId" element={<BookEditor />} />
+                    </Routes>
+                    <LocationProbe />
+                </MemoryRouter>
+            </BookTypesProvider>
+        </FeatureTestProvider>,
     );
 }
 
@@ -663,37 +623,25 @@ describe("BookEditor - chapter switch updates ?chapter= (regression)", () => {
     it("clicking another chapter moves ?chapter= to that chapter", async () => {
         getBookMock.mockResolvedValue(proseWithChapters());
         renderEditorWithProbe("b1", "?chapter=a");
-        await waitFor(() =>
-            expect(screen.getByTestId("chapter-select-b")).toBeTruthy(),
-        );
-        expect(screen.getByTestId("location-search").textContent).toContain(
-            "chapter=a",
-        );
+        await waitFor(() => expect(screen.getByTestId("chapter-select-b")).toBeTruthy());
+        expect(screen.getByTestId("location-search").textContent).toContain("chapter=a");
 
         fireEvent.click(screen.getByTestId("chapter-select-b"));
         await waitFor(() =>
-            expect(
-                screen.getByTestId("location-search").textContent,
-            ).toContain("chapter=b"),
+            expect(screen.getByTestId("location-search").textContent).toContain("chapter=b"),
         );
         // The previous chapter id must be gone (the clobber left it at "a").
-        expect(screen.getByTestId("location-search").textContent).not.toContain(
-            "chapter=a",
-        );
+        expect(screen.getByTestId("location-search").textContent).not.toContain("chapter=a");
     });
 
     it("selecting a chapter from the metadata view sets ?chapter= and clears ?view=", async () => {
         getBookMock.mockResolvedValue(proseWithChapters());
         renderEditorWithProbe("b1", "?view=metadata&chapter=a");
-        await waitFor(() =>
-            expect(screen.getByTestId("chapter-select-c")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("chapter-select-c")).toBeTruthy());
 
         fireEvent.click(screen.getByTestId("chapter-select-c"));
         await waitFor(() =>
-            expect(
-                screen.getByTestId("location-search").textContent,
-            ).toContain("chapter=c"),
+            expect(screen.getByTestId("location-search").textContent).toContain("chapter=c"),
         );
         const search = screen.getByTestId("location-search").textContent ?? "";
         expect(search).not.toContain("view=metadata");

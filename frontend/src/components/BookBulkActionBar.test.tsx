@@ -5,100 +5,68 @@
  * books only support ZIP-of-individuals output).
  */
 
-import {describe, it, expect, vi} from "vitest"
-import {render, screen, fireEvent} from "@testing-library/react"
+import { describe, it, expect, vi } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 
-import BookBulkActionBar from "./BookBulkActionBar"
+import BookBulkActionBar from "./BookBulkActionBar";
 
-const t = (_k: string, fallback?: string) => fallback || _k
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}));
+
+const t = (_k: string, fallback?: string) => fallback || _k;
 
 describe("BookBulkActionBar", () => {
     it("disables Export at count 0", () => {
-        render(
-            <BookBulkActionBar
-                count={0}
-                onExport={() => {}}
-                onClear={() => {}}
-                t={t}
-            />,
-        )
-        const btn = screen.getByTestId("book-bulk-export") as HTMLButtonElement
-        expect(btn.disabled).toBe(true)
-    })
+        render(<BookBulkActionBar count={0} onExport={() => {}} onClear={() => {}} t={t} />);
+        const btn = screen.getByTestId("book-bulk-export") as HTMLButtonElement;
+        expect(btn.disabled).toBe(true);
+    });
 
     it("shows soft warning when count > 50", () => {
-        render(
-            <BookBulkActionBar
-                count={51}
-                onExport={() => {}}
-                onClear={() => {}}
-                t={t}
-            />,
-        )
-        expect(screen.getByTestId("book-bulk-warning")).toBeTruthy()
-        expect(screen.queryByTestId("book-bulk-error")).toBeNull()
-    })
+        render(<BookBulkActionBar count={51} onExport={() => {}} onClear={() => {}} t={t} />);
+        expect(screen.getByTestId("book-bulk-warning")).toBeTruthy();
+        expect(screen.queryByTestId("book-bulk-error")).toBeNull();
+    });
 
     it("shows hard error and disables Export when count > 200", () => {
-        render(
-            <BookBulkActionBar
-                count={201}
-                onExport={() => {}}
-                onClear={() => {}}
-                t={t}
-            />,
-        )
-        expect(screen.getByTestId("book-bulk-error")).toBeTruthy()
-        const btn = screen.getByTestId("book-bulk-export") as HTMLButtonElement
-        expect(btn.disabled).toBe(true)
-    })
+        render(<BookBulkActionBar count={201} onExport={() => {}} onClear={() => {}} t={t} />);
+        expect(screen.getByTestId("book-bulk-error")).toBeTruthy();
+        const btn = screen.getByTestId("book-bulk-export") as HTMLButtonElement;
+        expect(btn.disabled).toBe(true);
+    });
 
     it("Export button passes selected format (no mode argument)", () => {
-        const spy = vi.fn()
-        render(
-            <BookBulkActionBar
-                count={3}
-                onExport={spy}
-                onClear={() => {}}
-                t={t}
-            />,
-        )
+        const spy = vi.fn();
+        render(<BookBulkActionBar count={3} onExport={spy} onClear={() => {}} t={t} />);
         fireEvent.change(screen.getByTestId("book-bulk-format-trigger"), {
-            target: {value: "pdf"},
-        })
-        fireEvent.click(screen.getByTestId("book-bulk-export"))
-        expect(spy).toHaveBeenCalledWith("pdf")
-    })
+            target: { value: "pdf" },
+        });
+        fireEvent.click(screen.getByTestId("book-bulk-export"));
+        expect(spy).toHaveBeenCalledWith("pdf");
+    });
 
     it("Clear button fires onClear", () => {
-        const spy = vi.fn()
-        render(
-            <BookBulkActionBar
-                count={2}
-                onExport={() => {}}
-                onClear={spy}
-                t={t}
-            />,
-        )
-        fireEvent.click(screen.getByTestId("book-bulk-clear"))
-        expect(spy).toHaveBeenCalled()
-    })
-})
+        const spy = vi.fn();
+        render(<BookBulkActionBar count={2} onExport={() => {}} onClear={spy} t={t} />);
+        fireEvent.click(screen.getByTestId("book-bulk-clear"));
+        expect(spy).toHaveBeenCalled();
+    });
+});
 
 // --- UNIVERSAL-AI-TEMPLATE-02 Session 2 commit 6: AI dropdown ---
 
 describe("BookBulkActionBar AI dropdown", () => {
     it("does NOT render the AI dropdown when handlers are absent", () => {
-        render(
-            <BookBulkActionBar
-                count={3}
-                onExport={() => {}}
-                onClear={() => {}}
-                t={t}
-            />,
-        )
-        expect(screen.queryByTestId("book-bulk-ai-menu")).toBeNull()
-    })
+        render(<BookBulkActionBar count={3} onExport={() => {}} onClear={() => {}} t={t} />);
+        expect(screen.queryByTestId("book-bulk-ai-menu")).toBeNull();
+    });
 
     it("renders the AI dropdown when both AI handlers are passed", () => {
         render(
@@ -110,9 +78,9 @@ describe("BookBulkActionBar AI dropdown", () => {
                 onBulkAiTemplateImport={() => {}}
                 t={t}
             />,
-        )
-        expect(screen.getByTestId("book-bulk-ai-menu")).toBeTruthy()
-    })
+        );
+        expect(screen.getByTestId("book-bulk-ai-menu")).toBeTruthy();
+    });
 
     it("disables the AI dropdown over the 50-book cap", () => {
         render(
@@ -124,10 +92,10 @@ describe("BookBulkActionBar AI dropdown", () => {
                 onBulkAiTemplateImport={() => {}}
                 t={t}
             />,
-        )
-        const trigger = screen.getByTestId("book-bulk-ai-menu") as HTMLButtonElement
-        expect(trigger.disabled).toBe(true)
-    })
+        );
+        const trigger = screen.getByTestId("book-bulk-ai-menu") as HTMLButtonElement;
+        expect(trigger.disabled).toBe(true);
+    });
 
     it("AI dropdown trigger is enabled within the cap so onSelect handlers can fire", () => {
         // Radix DropdownMenu portals its items behind a pointer-
@@ -135,8 +103,8 @@ describe("BookBulkActionBar AI dropdown", () => {
         // does not reproduce. The Playwright smoke spec covers
         // the actual menu open + click; here we pin the prop-
         // threading contract.
-        const exportSpy = vi.fn()
-        const importSpy = vi.fn()
+        const exportSpy = vi.fn();
+        const importSpy = vi.fn();
         render(
             <BookBulkActionBar
                 count={3}
@@ -146,10 +114,10 @@ describe("BookBulkActionBar AI dropdown", () => {
                 onBulkAiTemplateImport={importSpy}
                 t={t}
             />,
-        )
-        const trigger = screen.getByTestId("book-bulk-ai-menu") as HTMLButtonElement
-        expect(trigger.disabled).toBe(false)
-        expect(exportSpy).not.toHaveBeenCalled()
-        expect(importSpy).not.toHaveBeenCalled()
-    })
-})
+        );
+        const trigger = screen.getByTestId("book-bulk-ai-menu") as HTMLButtonElement;
+        expect(trigger.disabled).toBe(false);
+        expect(exportSpy).not.toHaveBeenCalled();
+        expect(importSpy).not.toHaveBeenCalled();
+    });
+});

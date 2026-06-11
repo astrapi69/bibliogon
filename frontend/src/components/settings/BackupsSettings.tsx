@@ -23,19 +23,19 @@
  * history empty state, compare button, dialog).
  */
 
-import {type ChangeEvent, useEffect, useRef, useState} from "react";
-import {GitCompare, Trash2, Download, Upload} from "lucide-react";
-import {api} from "../../api/client";
-import {useI18n} from "../../hooks/useI18n";
-import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
-import {OfflineFeatureNotice} from "../OfflineFeatureNotice";
-import {useDialog} from "../AppDialog";
-import {notify} from "../../utils/notify";
-import {downloadBlob} from "../../export/download";
-import {backupFilename, exportFullBackup} from "../../export/backupExport";
-import {BackupImportError, importFullBackup} from "../../export/backupImport";
+import { type ChangeEvent, useEffect, useRef, useState } from "react";
+import { GitCompare, Trash2, Download, Upload } from "lucide-react";
+import { api } from "../../api/client";
+import { useI18n } from "../../hooks/useI18n";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../../features/featureConfig";
+import { useDialog } from "../AppDialog";
+import { notify } from "../../utils/notify";
+import { downloadBlob } from "../../export/download";
+import { backupFilename, exportFullBackup } from "../../export/backupExport";
+import { BackupImportError, importFullBackup } from "../../export/backupImport";
 import BackupCompareDialog from "../BackupCompareDialog";
-import {SectionHeader} from "./SectionHeader";
+import { SectionHeader } from "./SectionHeader";
 
 interface BackupHistoryEntry {
     timestamp: string;
@@ -52,8 +52,10 @@ const sectionStyle: React.CSSProperties = {
 };
 
 export function BackupsSettings() {
-    const {t} = useI18n();
-    const {offline} = useOfflineFeatureGate();
+    const { t } = useI18n();
+    const compare = useFeature(FEATURES.BACKUP_COMPARE);
+    const history = useFeature(FEATURES.BACKUP_HISTORY);
+    const offline = history.isHidden;
     const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
@@ -67,10 +69,7 @@ export function BackupsSettings() {
             const blob = await exportFullBackup(now);
             downloadBlob(blob, backupFilename(now));
         } catch (err) {
-            notify.error(
-                t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"),
-                err,
-            );
+            notify.error(t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"), err);
         } finally {
             setFullBackupBusy(false);
         }
@@ -123,17 +122,12 @@ export function BackupsSettings() {
 
     const handleDeleteEntry = async (entry: BackupHistoryEntry) => {
         const previous = backupHistory;
-        setBackupHistory((prev) =>
-            prev.filter((e) => e.timestamp !== entry.timestamp),
-        );
+        setBackupHistory((prev) => prev.filter((e) => e.timestamp !== entry.timestamp));
         try {
             await api.backup.deleteHistoryEntry(entry.timestamp);
         } catch (err: unknown) {
             setBackupHistory(previous);
-            notify.error(
-                t("ui.backups.delete_entry_failed", "Could not delete entry"),
-                err,
-            );
+            notify.error(t("ui.backups.delete_entry_failed", "Could not delete entry"), err);
         }
     };
 
@@ -152,28 +146,34 @@ export function BackupsSettings() {
             await api.backup.clearHistory();
         } catch (err: unknown) {
             setBackupHistory(previous);
-            notify.error(
-                t("ui.backups.clear_all_failed", "Could not clear version history"),
-                err,
-            );
+            notify.error(t("ui.backups.clear_all_failed", "Could not clear version history"), err);
         }
     };
 
     return (
         <div
             data-testid="backups-settings"
-            style={{display: "flex", flexDirection: "column", gap: 16}}
+            style={{ display: "flex", flexDirection: "column", gap: 16 }}
         >
             <SectionHeader
                 title={t("ui.settings.tab_backups", "Backups")}
-                description={t("ui.settings.backups_description", "Backup-Historie einsehen und .bgb-Dateien miteinander vergleichen.")}
+                description={t(
+                    "ui.settings.backups_description",
+                    "Backup-Historie einsehen und .bgb-Dateien miteinander vergleichen.",
+                )}
             />
 
             <div style={sectionStyle} data-testid="backups-fulldata-section">
-                <h3 style={{margin: "0 0 8px 0", fontSize: "1rem"}}>
+                <h3 style={{ margin: "0 0 8px 0", fontSize: "1rem" }}>
                     {t("ui.backups.full_backup_title", "Vollständiges Backup (JSON)")}
                 </h3>
-                <p style={{margin: "0 0 12px 0", color: "var(--text-muted)", fontSize: "0.875rem"}}>
+                <p
+                    style={{
+                        margin: "0 0 12px 0",
+                        color: "var(--text-muted)",
+                        fontSize: "0.875rem",
+                    }}
+                >
                     {t(
                         "ui.backups.full_backup_description",
                         "Exportiert oder importiert alle Daten (Bücher, Kapitel, Artikel, Autoren, Einstellungen, Story Bible) als eine JSON-Datei. Funktioniert auch offline.",
@@ -185,9 +185,9 @@ export function BackupsSettings() {
                         onClick={handleFullExport}
                         disabled={fullBackupBusy}
                         data-testid="backups-export-full"
-                        style={{gap: 6}}
+                        style={{ gap: 6 }}
                     >
-                        <Download size={14}/>
+                        <Download size={14} />
                         {t("ui.backups.export_full", "Backup exportieren")}
                     </button>
                     <button
@@ -195,9 +195,9 @@ export function BackupsSettings() {
                         onClick={() => importInputRef.current?.click()}
                         disabled={fullBackupBusy}
                         data-testid="backups-import-full"
-                        style={{gap: 6}}
+                        style={{ gap: 6 }}
                     >
-                        <Upload size={14}/>
+                        <Upload size={14} />
                         {t("ui.backups.import_full", "Backup importieren")}
                     </button>
                     <input
@@ -211,132 +211,159 @@ export function BackupsSettings() {
                 </div>
             </div>
 
-            <div style={sectionStyle}>
-                <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>
-                    <h3 style={{margin: 0, fontSize: "1rem"}}>
-                        {t("ui.backups.compare_backups", "Backups vergleichen")}
-                    </h3>
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setShowCompareDialog(true)}
-                        data-testid="backups-compare-btn"
-                        style={{gap: 6}}
-                        title={t(
-                            "ui.backups.compare_backups_tooltip",
-                            "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
-                        )}
-                    >
-                        <GitCompare size={14}/>
-                        {t("ui.backups.compare_backups", "Backups vergleichen")}
-                    </button>
-                </div>
-                <p style={{margin: 0, color: "var(--text-muted)", fontSize: "0.875rem"}}>
-                    {t(
-                        "ui.backups.compare_backups_tooltip",
-                        "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
-                    )}
-                </p>
-            </div>
-
-            <div style={sectionStyle} data-testid="backups-history-section">
-                <div style={{display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12}}>
-                    <h3 style={{margin: 0, fontSize: "1rem"}}>
-                        {t("ui.backups.version_history", "Versionsgeschichte")}
-                        {backupHistory.length > 0 && ` (${backupHistory.length})`}
-                    </h3>
-                    {backupHistory.length > 0 && (
-                        <button
-                            className="btn btn-secondary btn-sm"
-                            onClick={handleClearAll}
-                            data-testid="backups-history-clear-all"
-                            style={{gap: 6}}
+            {!compare.isHidden && (
+                <>
+                    <div style={sectionStyle}>
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: 12,
+                            }}
                         >
-                            <Trash2 size={14}/>
-                            {t("ui.backups.clear_all", "Alle löschen")}
-                        </button>
-                    )}
-                </div>
-                {offline ? (
-                    <OfflineFeatureNotice testId="backups-offline-notice"/>
-                ) : backupHistory.length === 0 ? (
-                    <p
-                        data-testid="backups-history-empty"
-                        style={{margin: 0, color: "var(--text-muted)", fontSize: "0.875rem"}}
-                    >
-                        {t("ui.backups.no_history", "Noch keine Backups erstellt.")}
-                    </p>
-                ) : (
-                    <div
-                        data-testid="backups-history-list"
-                        style={{display: "flex", flexDirection: "column", gap: 4}}
-                    >
-                        {backupHistory.map((entry, i) => (
-                            <div
-                                key={i}
-                                data-testid={`backups-history-entry-${i}`}
+                            <h3 style={{ margin: 0, fontSize: "1rem" }}>
+                                {t("ui.backups.compare_backups", "Backups vergleichen")}
+                            </h3>
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                onClick={() => setShowCompareDialog(true)}
+                                data-testid="backups-compare-btn"
+                                style={{ gap: 6 }}
+                                title={t(
+                                    "ui.backups.compare_backups_tooltip",
+                                    "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
+                                )}
+                            >
+                                <GitCompare size={14} />
+                                {t("ui.backups.compare_backups", "Backups vergleichen")}
+                            </button>
+                        </div>
+                        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.875rem" }}>
+                            {t(
+                                "ui.backups.compare_backups_tooltip",
+                                "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
+                            )}
+                        </p>
+                    </div>
+                </>
+            )}
+
+            {!history.isHidden && (
+                <>
+                    <div style={sectionStyle} data-testid="backups-history-section">
+                        <div
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                marginBottom: 12,
+                            }}
+                        >
+                            <h3 style={{ margin: 0, fontSize: "1rem" }}>
+                                {t("ui.backups.version_history", "Versionsgeschichte")}
+                                {backupHistory.length > 0 && ` (${backupHistory.length})`}
+                            </h3>
+                            {backupHistory.length > 0 && (
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    onClick={handleClearAll}
+                                    data-testid="backups-history-clear-all"
+                                    style={{ gap: 6 }}
+                                >
+                                    <Trash2 size={14} />
+                                    {t("ui.backups.clear_all", "Alle löschen")}
+                                </button>
+                            )}
+                        </div>
+                        {backupHistory.length === 0 ? (
+                            <p
+                                data-testid="backups-history-empty"
                                 style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 12,
-                                    padding: "8px 12px",
-                                    borderRadius: "var(--radius-sm)",
-                                    background: "var(--bg-card)",
-                                    border: "1px solid var(--border)",
-                                    fontSize: "0.8125rem",
+                                    margin: 0,
+                                    color: "var(--text-muted)",
+                                    fontSize: "0.875rem",
                                 }}
                             >
-                                <span
-                                    style={{
-                                        padding: "2px 6px",
-                                        borderRadius: 3,
-                                        fontSize: "0.6875rem",
-                                        fontWeight: 600,
-                                        textTransform: "uppercase",
-                                        background:
-                                            entry.action === "backup"
-                                                ? "var(--accent-light)"
-                                                : "var(--success-light, rgba(34,197,94,0.12))",
-                                        color:
-                                            entry.action === "backup"
-                                                ? "var(--accent)"
-                                                : "var(--success, #16a34a)",
-                                    }}
-                                >
-                                    {entry.action}
-                                </span>
-                                <span style={{color: "var(--text-secondary)"}}>
-                                    {new Date(entry.timestamp).toLocaleString()}
-                                </span>
-                                <span>
-                                    {entry.book_count}{" "}
-                                    {t("ui.dashboard.book_plural", "Bücher")}
-                                </span>
-                                {entry.filename && (
-                                    <span
+                                {t("ui.backups.no_history", "Noch keine Backups erstellt.")}
+                            </p>
+                        ) : (
+                            <div
+                                data-testid="backups-history-list"
+                                style={{ display: "flex", flexDirection: "column", gap: 4 }}
+                            >
+                                {backupHistory.map((entry, i) => (
+                                    <div
+                                        key={i}
+                                        data-testid={`backups-history-entry-${i}`}
                                         style={{
-                                            color: "var(--text-muted)",
-                                            fontSize: "0.75rem",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 12,
+                                            padding: "8px 12px",
+                                            borderRadius: "var(--radius-sm)",
+                                            background: "var(--bg-card)",
+                                            border: "1px solid var(--border)",
+                                            fontSize: "0.8125rem",
                                         }}
                                     >
-                                        {entry.filename}
-                                    </span>
-                                )}
-                                <button
-                                    type="button"
-                                    className="btn btn-icon btn-sm"
-                                    onClick={() => handleDeleteEntry(entry)}
-                                    data-testid={`backups-history-entry-${i}-delete`}
-                                    title={t("ui.backups.delete_entry", "Eintrag löschen")}
-                                    aria-label={t("ui.backups.delete_entry", "Eintrag löschen")}
-                                    style={{marginLeft: "auto"}}
-                                >
-                                    <Trash2 size={14}/>
-                                </button>
+                                        <span
+                                            style={{
+                                                padding: "2px 6px",
+                                                borderRadius: 3,
+                                                fontSize: "0.6875rem",
+                                                fontWeight: 600,
+                                                textTransform: "uppercase",
+                                                background:
+                                                    entry.action === "backup"
+                                                        ? "var(--accent-light)"
+                                                        : "var(--success-light, rgba(34,197,94,0.12))",
+                                                color:
+                                                    entry.action === "backup"
+                                                        ? "var(--accent)"
+                                                        : "var(--success, #16a34a)",
+                                            }}
+                                        >
+                                            {entry.action}
+                                        </span>
+                                        <span style={{ color: "var(--text-secondary)" }}>
+                                            {new Date(entry.timestamp).toLocaleString()}
+                                        </span>
+                                        <span>
+                                            {entry.book_count}{" "}
+                                            {t("ui.dashboard.book_plural", "Bücher")}
+                                        </span>
+                                        {entry.filename && (
+                                            <span
+                                                style={{
+                                                    color: "var(--text-muted)",
+                                                    fontSize: "0.75rem",
+                                                }}
+                                            >
+                                                {entry.filename}
+                                            </span>
+                                        )}
+                                        <button
+                                            type="button"
+                                            className="btn btn-icon btn-sm"
+                                            onClick={() => handleDeleteEntry(entry)}
+                                            data-testid={`backups-history-entry-${i}-delete`}
+                                            title={t("ui.backups.delete_entry", "Eintrag löschen")}
+                                            aria-label={t(
+                                                "ui.backups.delete_entry",
+                                                "Eintrag löschen",
+                                            )}
+                                            style={{ marginLeft: "auto" }}
+                                        >
+                                            <Trash2 size={14} />
+                                        </button>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
+                        )}
                     </div>
-                )}
-            </div>
+                </>
+            )}
 
             <BackupCompareDialog
                 open={showCompareDialog}

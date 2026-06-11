@@ -1,21 +1,17 @@
-import {useEffect, useState} from "react";
-import {useParams} from "react-router-dom";
-import {ApiError, BookDetail, api} from "../api/client";
+import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
+import { ApiError, BookDetail, api } from "../api/client";
 import ClientExportMenu from "../components/ClientExportMenu";
 import ExportForm from "../components/ExportForm";
-import {PageLayout} from "../components/PageLayout";
-import {LoadingIndicator} from "../components/LoadingIndicator";
-import {buildBookDocument} from "../export";
-import {
-    asExportEngine,
-    type ExportEngine,
-    shouldUseClientEngine,
-} from "../export/engine";
-import {getStorage} from "../storage";
-import {useGoBack} from "../hooks/useGoBack";
-import {useI18n} from "../hooks/useI18n";
-import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
-import {notify} from "../utils/notify";
+import { PageLayout } from "../components/PageLayout";
+import { LoadingIndicator } from "../components/LoadingIndicator";
+import { buildBookDocument } from "../export";
+import { asExportEngine, type ExportEngine, shouldUseClientEngine } from "../export/engine";
+import { getStorage } from "../storage";
+import { useGoBack } from "../hooks/useGoBack";
+import { useI18n } from "../hooks/useI18n";
+import { useStorageMode } from "../storage/useStorageMode";
+import { notify } from "../utils/notify";
 
 /**
  * Full-page export surface (Dialog->Pages migration C3). Replaces
@@ -28,9 +24,10 @@ import {notify} from "../utils/notify";
  * browser via the client-side export engine (Markdown/HTML/Text/PDF/EPUB/DOCX).
  */
 export default function ExportPage() {
-    const {t} = useI18n();
-    const {offline} = useOfflineFeatureGate();
-    const {bookId} = useParams<{bookId: string}>();
+    const { t } = useI18n();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
+    const { bookId } = useParams<{ bookId: string }>();
     const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
     const [book, setBook] = useState<BookDetail | null>(null);
     const [loading, setLoading] = useState(true);
@@ -64,9 +61,7 @@ export default function ExportPage() {
         let cancelled = false;
         // The client engine needs the chapter CONTENT for in-browser rendering;
         // the Pandoc form only needs the title + manual-TOC flag.
-        const loader = useClient
-            ? getStorage().books.get(bookId, true)
-            : api.books.get(bookId);
+        const loader = useClient ? getStorage().books.get(bookId, true) : api.books.get(bookId);
         loader
             .then((data) => {
                 if (!cancelled) setBook(data);
@@ -91,9 +86,7 @@ export default function ExportPage() {
     const title = book
         ? `${t("ui.export_dialog.title", "Export")}: ${book.title}`
         : t("ui.export_dialog.title", "Export");
-    const hasManualToc = book
-        ? book.chapters.some((ch) => ch.chapter_type === "toc")
-        : false;
+    const hasManualToc = book ? book.chapters.some((ch) => ch.chapter_type === "toc") : false;
 
     return (
         <PageLayout
@@ -106,15 +99,15 @@ export default function ExportPage() {
             {loading ? (
                 <LoadingIndicator testId="export-page-loading" variant="block" />
             ) : !book ? (
-                <p style={{color: "var(--text-muted)"}} data-testid="export-page-error">
+                <p style={{ color: "var(--text-muted)" }} data-testid="export-page-error">
                     {t("ui.book_editor.load_error", "Buch konnte nicht geladen werden.")}
                 </p>
             ) : useClient ? (
                 <div
                     data-testid="export-page-client"
-                    style={{display: "flex", flexDirection: "column", gap: 12}}
+                    style={{ display: "flex", flexDirection: "column", gap: 12 }}
                 >
-                    <p style={{color: "var(--text-muted)", margin: 0}}>
+                    <p style={{ color: "var(--text-muted)", margin: 0 }}>
                         {offline
                             ? t(
                                   "ui.export.client_hint",

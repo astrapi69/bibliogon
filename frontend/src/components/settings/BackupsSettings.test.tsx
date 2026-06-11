@@ -18,9 +18,19 @@
  *   here.
  */
 
-import {describe, it, expect, vi, beforeEach} from "vitest";
-import {render, screen, waitFor, fireEvent} from "@testing-library/react";
-import {BackupsSettings} from "./BackupsSettings";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, waitFor, fireEvent } from "@testing-library/react";
+import { BackupsSettings } from "./BackupsSettings";
+
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}));
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -37,8 +47,7 @@ vi.mock("../../api/client", () => ({
     api: {
         backup: {
             history: (...args: unknown[]) => mockHistory(...args),
-            deleteHistoryEntry: (...args: unknown[]) =>
-                mockDeleteHistoryEntry(...args),
+            deleteHistoryEntry: (...args: unknown[]) => mockDeleteHistoryEntry(...args),
             clearHistory: (...args: unknown[]) => mockClearHistory(...args),
         },
     },
@@ -67,12 +76,8 @@ vi.mock("../../utils/notify", () => ({
 // Stub the dialog so we don't pull in its Radix Portal +
 // fetch/XHR fixtures (covered by BackupCompareDialog.test.tsx).
 vi.mock("../BackupCompareDialog", () => ({
-    default: ({open}: {open: boolean; onClose: () => void}) =>
-        open ? (
-            <div data-testid="stub-backup-compare-dialog">
-                stub-compare-dialog-open
-            </div>
-        ) : null,
+    default: ({ open }: { open: boolean; onClose: () => void }) =>
+        open ? <div data-testid="stub-backup-compare-dialog">stub-compare-dialog-open</div> : null,
 }));
 
 describe("BackupsSettings", () => {
@@ -108,9 +113,7 @@ describe("BackupsSettings", () => {
     it("shows the empty-state message when history is empty", async () => {
         mockHistory.mockResolvedValue([]);
         render(<BackupsSettings />);
-        await waitFor(() =>
-            expect(screen.getByTestId("backups-history-empty")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("backups-history-empty")).toBeTruthy());
         expect(screen.getByText("Noch keine Backups erstellt.")).toBeTruthy();
     });
 
@@ -143,17 +146,13 @@ describe("BackupsSettings", () => {
         const button = screen.getByTestId("backups-compare-btn");
         expect(screen.queryByTestId("stub-backup-compare-dialog")).toBeNull();
         fireEvent.click(button);
-        await waitFor(() =>
-            expect(screen.getByTestId("stub-backup-compare-dialog")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("stub-backup-compare-dialog")).toBeTruthy());
     });
 
     it("handles api.backup.history rejection without throwing", async () => {
         mockHistory.mockRejectedValue(new Error("network"));
         render(<BackupsSettings />);
-        await waitFor(() =>
-            expect(screen.getByTestId("backups-history-empty")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("backups-history-empty")).toBeTruthy());
         // No row, no list - the catch-all silently degrades to empty.
         expect(screen.queryByTestId("backups-history-list")).toBeNull();
     });
@@ -163,22 +162,46 @@ describe("BackupsSettings", () => {
      */
     it("renders a per-entry delete button next to each history entry", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
-            {timestamp: "2026-05-17T10:00:00Z", action: "restore", book_count: 1, filename: "b.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
+            {
+                timestamp: "2026-05-17T10:00:00Z",
+                action: "restore",
+                book_count: 1,
+                filename: "b.bgb",
+            },
         ]);
         render(<BackupsSettings />);
-        await waitFor(() => expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy());
+        await waitFor(() =>
+            expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy(),
+        );
         expect(screen.getByTestId("backups-history-entry-1-delete")).toBeTruthy();
     });
 
     it("clicking the per-entry delete button calls api.backup.deleteHistoryEntry + removes from list", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
-            {timestamp: "2026-05-17T10:00:00Z", action: "restore", book_count: 1, filename: "b.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
+            {
+                timestamp: "2026-05-17T10:00:00Z",
+                action: "restore",
+                book_count: 1,
+                filename: "b.bgb",
+            },
         ]);
-        mockDeleteHistoryEntry.mockResolvedValue({status: "deleted"});
+        mockDeleteHistoryEntry.mockResolvedValue({ status: "deleted" });
         render(<BackupsSettings />);
-        await waitFor(() => expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy());
+        await waitFor(() =>
+            expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy(),
+        );
         fireEvent.click(screen.getByTestId("backups-history-entry-0-delete"));
         await waitFor(() =>
             expect(mockDeleteHistoryEntry).toHaveBeenCalledWith("2026-05-18T10:00:00Z"),
@@ -191,11 +214,18 @@ describe("BackupsSettings", () => {
 
     it("restores the entry + fires notify.error when delete API fails", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
         ]);
         mockDeleteHistoryEntry.mockRejectedValue(new Error("boom"));
         render(<BackupsSettings />);
-        await waitFor(() => expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy());
+        await waitFor(() =>
+            expect(screen.getByTestId("backups-history-entry-0-delete")).toBeTruthy(),
+        );
         fireEvent.click(screen.getByTestId("backups-history-entry-0-delete"));
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalled());
         // Entry restored because the optimistic remove was rolled back.
@@ -211,7 +241,12 @@ describe("BackupsSettings", () => {
 
     it("shows the Clear-all button when history has entries", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
         ]);
         render(<BackupsSettings />);
         await waitFor(() => expect(screen.getByTestId("backups-history-clear-all")).toBeTruthy());
@@ -219,7 +254,12 @@ describe("BackupsSettings", () => {
 
     it("Clear-all confirm-cancel leaves history intact", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
         ]);
         mockConfirm.mockResolvedValue(false);
         render(<BackupsSettings />);
@@ -232,11 +272,21 @@ describe("BackupsSettings", () => {
 
     it("Clear-all confirm-OK calls api.backup.clearHistory + empties the list", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
-            {timestamp: "2026-05-17T10:00:00Z", action: "restore", book_count: 1, filename: "b.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
+            {
+                timestamp: "2026-05-17T10:00:00Z",
+                action: "restore",
+                book_count: 1,
+                filename: "b.bgb",
+            },
         ]);
         mockConfirm.mockResolvedValue(true);
-        mockClearHistory.mockResolvedValue({status: "cleared"});
+        mockClearHistory.mockResolvedValue({ status: "cleared" });
         render(<BackupsSettings />);
         await waitFor(() => expect(screen.getByTestId("backups-history-clear-all")).toBeTruthy());
         fireEvent.click(screen.getByTestId("backups-history-clear-all"));
@@ -246,7 +296,12 @@ describe("BackupsSettings", () => {
 
     it("restores the list + fires notify.error when clearHistory API fails", async () => {
         mockHistory.mockResolvedValue([
-            {timestamp: "2026-05-18T10:00:00Z", action: "backup", book_count: 1, filename: "a.bgb"},
+            {
+                timestamp: "2026-05-18T10:00:00Z",
+                action: "backup",
+                book_count: 1,
+                filename: "a.bgb",
+            },
         ]);
         mockConfirm.mockResolvedValue(true);
         mockClearHistory.mockRejectedValue(new Error("boom"));

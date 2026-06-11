@@ -14,6 +14,16 @@ import { MemoryRouter } from "react-router-dom";
 
 import ArticleList from "./ArticleList";
 import { api } from "../api/client";
+
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}));
 import type { Article, ContentTypeDef } from "../api/client";
 import { ContentTypesProvider } from "../hooks/useContentTypes";
 
@@ -70,10 +80,7 @@ vi.mock("../hooks/useI18n", () => ({
 
 const navigateMock = vi.fn();
 vi.mock("react-router-dom", async () => {
-    const actual =
-        await vi.importActual<typeof import("react-router-dom")>(
-            "react-router-dom",
-        );
+    const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
     return {
         ...actual,
         useNavigate: () => navigateMock,
@@ -126,13 +133,7 @@ vi.mock("../api/client", () => ({
     ApiError: class extends Error {
         status: number;
         detail: string;
-        constructor(
-            status: number,
-            detail: string,
-            _url = "",
-            _method = "GET",
-            _stack = "",
-        ) {
+        constructor(status: number, detail: string, _url = "", _method = "GET", _stack = "") {
             super(detail);
             this.status = status;
             this.detail = detail;
@@ -215,9 +216,7 @@ describe("ArticleList", () => {
 
     it("renders empty state with CTA when list is empty", async () => {
         await renderList([]);
-        await waitFor(() =>
-            expect(screen.getByTestId("article-list-empty")).toBeInTheDocument(),
-        );
+        await waitFor(() => expect(screen.getByTestId("article-list-empty")).toBeInTheDocument());
         expect(screen.getByTestId("article-list-empty-cta")).toBeTruthy();
     });
 
@@ -226,20 +225,14 @@ describe("ArticleList", () => {
             makeArticle({ id: "a-1", title: "First" }),
             makeArticle({ id: "a-2", title: "Second", status: "published" }),
         ]);
-        await waitFor(() =>
-            expect(screen.getByTestId("article-list")).toBeInTheDocument(),
-        );
-        expect(
-            screen.getByTestId("article-list-row-a-1").textContent,
-        ).toContain("First");
-        expect(
-            screen.getByTestId("article-list-row-a-2").textContent,
-        ).toContain("Second");
+        await waitFor(() => expect(screen.getByTestId("article-list")).toBeInTheDocument());
+        expect(screen.getByTestId("article-list-row-a-1").textContent).toContain("First");
+        expect(screen.getByTestId("article-list-row-a-2").textContent).toContain("Second");
         // Component passes the raw status as t() fallback; the test
         // mock returns the fallback verbatim (no transform).
-        expect(
-            screen.getByTestId("article-list-row-status-a-2").textContent,
-        ).toContain("published");
+        expect(screen.getByTestId("article-list-row-status-a-2").textContent).toContain(
+            "published",
+        );
     });
 
     it("clicking a row navigates to the editor", async () => {
@@ -318,14 +311,10 @@ describe("ArticleList", () => {
             makeArticle({ id: "no-comments", title: "Zero comments", comments_count: 0 }),
         ]);
         await screen.findByTestId("article-list-row-with-comments");
-        const badge = screen.getByTestId(
-            "article-list-row-comments-count-with-comments",
-        );
+        const badge = screen.getByTestId("article-list-row-comments-count-with-comments");
         expect(badge.textContent).toContain("5");
         // Zero-count row does NOT render the badge.
-        expect(
-            screen.queryByTestId("article-list-row-comments-count-no-comments"),
-        ).toBeNull();
+        expect(screen.queryByTestId("article-list-row-comments-count-no-comments")).toBeNull();
     });
 
     it("list row badge is hidden when comments_count is undefined (legacy API responses)", async () => {
@@ -335,9 +324,7 @@ describe("ArticleList", () => {
         // span).
         await renderList([makeArticle({ id: "legacy", title: "Legacy" })]);
         await screen.findByTestId("article-list-row-legacy");
-        expect(
-            screen.queryByTestId("article-list-row-comments-count-legacy"),
-        ).toBeNull();
+        expect(screen.queryByTestId("article-list-row-comments-count-legacy")).toBeNull();
     });
 
     it("status filter narrows the rendered list (client-side)", async () => {
@@ -368,13 +355,9 @@ describe("ArticleList", () => {
         // Dialog->Pages migration (C2): the split-button no longer
         // creates inline; it routes to the /articles/new create page.
         await renderList([makeArticle()]);
-        await waitFor(() =>
-            expect(screen.getByTestId("article-list-new")).toBeInTheDocument(),
-        );
+        await waitFor(() => expect(screen.getByTestId("article-list-new")).toBeInTheDocument());
         fireEvent.click(screen.getByTestId("article-list-new"));
-        await waitFor(() =>
-            expect(navigateMock).toHaveBeenCalledWith("/articles/new"),
-        );
+        await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/articles/new"));
         expect(mockCreate).not.toHaveBeenCalled();
     });
 
@@ -388,24 +371,16 @@ describe("ArticleList", () => {
         await renderList([makeArticle({ id: "live-back-1" })]);
 
         await waitFor(() =>
-            expect(
-                screen.getByTestId("article-list-trash-toggle"),
-            ).toBeInTheDocument(),
+            expect(screen.getByTestId("article-list-trash-toggle")).toBeInTheDocument(),
         );
         fireEvent.click(screen.getByTestId("article-list-trash-toggle"));
-        await waitFor(() =>
-            expect(screen.getByTestId("article-trash-panel")).toBeInTheDocument(),
-        );
+        await waitFor(() => expect(screen.getByTestId("article-trash-panel")).toBeInTheDocument());
 
         fireEvent.click(screen.getByTestId("article-trash-back"));
         await waitFor(() =>
-            expect(
-                screen.queryByTestId("article-trash-panel"),
-            ).not.toBeInTheDocument(),
+            expect(screen.queryByTestId("article-trash-panel")).not.toBeInTheDocument(),
         );
-        expect(
-            screen.getByTestId("article-list-row-live-back-1"),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("article-list-row-live-back-1")).toBeInTheDocument();
     });
 
     it("trash view respects viewMode toggle (list <-> grid)", async () => {
@@ -420,22 +395,14 @@ describe("ArticleList", () => {
         await renderList([makeArticle({ id: "live-1" })]);
 
         await waitFor(() =>
-            expect(
-                screen.getByTestId("article-list-trash-toggle"),
-            ).toBeInTheDocument(),
+            expect(screen.getByTestId("article-list-trash-toggle")).toBeInTheDocument(),
         );
         fireEvent.click(screen.getByTestId("article-list-trash-toggle"));
 
         // Default mock view is "list" -> trash list rendered.
-        await waitFor(() =>
-            expect(screen.getByTestId("article-trash-list")).toBeInTheDocument(),
-        );
-        expect(
-            screen.queryByTestId("article-trash-grid"),
-        ).not.toBeInTheDocument();
-        expect(
-            screen.getByTestId("article-trash-row-tr-1"),
-        ).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByTestId("article-trash-list")).toBeInTheDocument());
+        expect(screen.queryByTestId("article-trash-grid")).not.toBeInTheDocument();
+        expect(screen.getByTestId("article-trash-row-tr-1")).toBeInTheDocument();
 
         // Flip to grid via the TrashPanel's local ViewToggle.
         // ArticleList hides the global ViewToggle when ``showTrash``
@@ -445,28 +412,18 @@ describe("ArticleList", () => {
         // calls ``setTrashViewMode("grid")`` per Bug 3's decoupled
         // hook contract.
         fireEvent.click(screen.getByTestId("view-toggle-grid"));
-        await waitFor(() =>
-            expect(screen.getByTestId("article-trash-grid")).toBeInTheDocument(),
-        );
-        expect(
-            screen.queryByTestId("article-trash-list"),
-        ).not.toBeInTheDocument();
-        expect(
-            screen.getByTestId("article-trash-card-tr-1"),
-        ).toBeInTheDocument();
+        await waitFor(() => expect(screen.getByTestId("article-trash-grid")).toBeInTheDocument());
+        expect(screen.queryByTestId("article-trash-list")).not.toBeInTheDocument();
+        expect(screen.getByTestId("article-trash-card-tr-1")).toBeInTheDocument();
     });
 
     it("empty-state CTA also navigates to the create page", async () => {
         await renderList([]);
         await waitFor(() =>
-            expect(
-                screen.getByTestId("article-list-empty-cta"),
-            ).toBeInTheDocument(),
+            expect(screen.getByTestId("article-list-empty-cta")).toBeInTheDocument(),
         );
         fireEvent.click(screen.getByTestId("article-list-empty-cta"));
-        await waitFor(() =>
-            expect(navigateMock).toHaveBeenCalledWith("/articles/new"),
-        );
+        await waitFor(() => expect(navigateMock).toHaveBeenCalledWith("/articles/new"));
         expect(mockCreate).not.toHaveBeenCalled();
     });
 });

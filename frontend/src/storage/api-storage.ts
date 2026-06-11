@@ -44,8 +44,8 @@ import type {
  * returned via getters so the reference resolves at CALL time, not at
  * module-import time. Capturing `api.books.create` at the top level froze
  * the import and threw under partial `api/client` test mocks once this
- * module entered the dashboard import graph (via useOfflineFeatureGate ->
- * useStorageMode). Getters keep the zero-overhead delegation while
+ * module entered the dashboard import graph (via useStorageMode ->
+ * connectivity). Getters keep the zero-overhead delegation while
  * deferring access - the documented "no frozen imports" fix.
  */
 export const apiStorage: IStorageService = {
