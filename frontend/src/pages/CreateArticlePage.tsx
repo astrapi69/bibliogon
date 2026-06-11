@@ -84,6 +84,19 @@ export default function CreateArticlePage() {
     setExplicit(true);
   };
 
+  // Apply a valid ?type= deep-link once the content-type registry has
+  // loaded. The registry is fetched async, so on the first render it may
+  // be empty -> requestedValid is false -> selectedType initialises to the
+  // default. When the registry resolves the deep-linked type must still be
+  // applied (and treated as an explicit choice). Idempotent; the user's
+  // manual dropdown pick always wins.
+  useEffect(() => {
+    if (userChoseTypeRef.current) return;
+    if (!requested || !typesSnapshot.types[requested]) return;
+    setSelectedType(requested as ContentType);
+    setExplicit(true);
+  }, [requested, typesSnapshot]);
+
   // Apply the configured default content-type once it has loaded AND
   // the registry knows it. Skipped when the user deep-linked an
   // explicit ?type= or already picked a type by hand. Setting the type
