@@ -12,16 +12,19 @@ import { MemoryRouter, Routes, Route } from "react-router-dom";
 
 import GitSyncPage from "./GitSyncPage";
 import type { GitSyncMappingStatus } from "../api/client";
+import { FeatureTestProvider } from "../features/FeatureTestProvider";
 
 /** Render GitSyncPage at its route so useParams/useGoBack resolve. */
 function renderAt() {
-  return render(
-    <MemoryRouter initialEntries={["/books/book-1/git-sync"]}>
-      <Routes>
-        <Route path="/books/:bookId/git-sync" element={<GitSyncPage />} />
-      </Routes>
-    </MemoryRouter>,
-  );
+    return render(
+        <FeatureTestProvider>
+            <MemoryRouter initialEntries={["/books/book-1/git-sync"]}>
+                <Routes>
+                    <Route path="/books/:bookId/git-sync" element={<GitSyncPage />} />
+                </Routes>
+            </MemoryRouter>
+        </FeatureTestProvider>,
+    );
 }
 
 vi.mock("../hooks/useI18n", () => ({
@@ -48,23 +51,15 @@ vi.mock("../api/client", () => ({
             unifiedCommit: (...args: unknown[]) => mockUnifiedCommit(...args),
             diff: vi.fn(),
             resolve: vi.fn(),
-            getCredentialStatus: (...args: unknown[]) =>
-                mockGetCredentialStatus(...args),
+            getCredentialStatus: (...args: unknown[]) => mockGetCredentialStatus(...args),
             putCredential: (...args: unknown[]) => mockPutCredential(...args),
-            deleteCredential: (...args: unknown[]) =>
-                mockDeleteCredential(...args),
+            deleteCredential: (...args: unknown[]) => mockDeleteCredential(...args),
         },
     },
     ApiError: class extends Error {
         status: number;
         detail: string;
-        constructor(
-            status: number,
-            detail: string,
-            _url = "",
-            _method = "GET",
-            _stack = "",
-        ) {
+        constructor(status: number, detail: string, _url = "", _method = "GET", _stack = "") {
             super(detail);
             this.status = status;
             this.detail = detail;
@@ -150,9 +145,7 @@ describe("GitSyncPage", () => {
     it("renders unmapped notice when book has no GitSyncMapping", async () => {
         await renderDialog(unmapped);
         expect(screen.getByTestId("git-sync-unmapped")).toBeInTheDocument();
-        expect(
-            screen.queryByTestId("git-sync-commit-form"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-commit-form")).not.toBeInTheDocument();
     });
 
     it("renders mapping summary + commit form when mapped + clone clean", async () => {
@@ -162,27 +155,19 @@ describe("GitSyncPage", () => {
             "github.com/foo/bar.git",
         );
         expect(screen.getByTestId("git-sync-branch").textContent).toBe("main");
-        expect(
-            screen.queryByTestId("git-sync-dirty-warning"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-dirty-warning")).not.toBeInTheDocument();
         expect(screen.getByTestId("git-sync-commit-btn")).not.toBeDisabled();
     });
 
     it("surfaces dirty-warning when working tree is dirty", async () => {
         await renderDialog(mappedDirty);
-        expect(
-            screen.getByTestId("git-sync-dirty-warning"),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("git-sync-dirty-warning")).toBeInTheDocument();
     });
 
     it("renders clone-missing notice when dirty=null (clone vanished)", async () => {
         await renderDialog(cloneMissing);
-        expect(
-            screen.getByTestId("git-sync-clone-missing"),
-        ).toBeInTheDocument();
-        expect(
-            screen.queryByTestId("git-sync-commit-form"),
-        ).not.toBeInTheDocument();
+        expect(screen.getByTestId("git-sync-clone-missing")).toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-commit-form")).not.toBeInTheDocument();
     });
 
     it("commit happy path: posts payload + shows last result", async () => {
@@ -208,9 +193,7 @@ describe("GitSyncPage", () => {
             message: "custom subject",
             push: false,
         });
-        await waitFor(() =>
-            expect(screen.getByTestId("git-sync-last-result")).toBeInTheDocument(),
-        );
+        await waitFor(() => expect(screen.getByTestId("git-sync-last-result")).toBeInTheDocument());
         expect(mockNotify.success).toHaveBeenCalledTimes(1);
     });
 
@@ -218,15 +201,19 @@ describe("GitSyncPage", () => {
         await renderDialog(mappedClean);
         const { ApiError } = await import("../api/client");
         mockCommit.mockRejectedValueOnce(
-            new ApiError(409, "Working tree is identical to HEAD", "/git-sync/x/commit", "POST", ""),
+            new ApiError(
+                409,
+                "Working tree is identical to HEAD",
+                "/git-sync/x/commit",
+                "POST",
+                "",
+            ),
         );
 
         fireEvent.click(screen.getByTestId("git-sync-commit-btn"));
 
         await waitFor(() => expect(mockNotify.warning).toHaveBeenCalledTimes(1));
-        expect(
-            screen.queryByTestId("git-sync-last-result"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-last-result")).not.toBeInTheDocument();
         expect(mockNotify.error).not.toHaveBeenCalled();
     });
 
@@ -274,20 +261,14 @@ describe("GitSyncPage", () => {
 
     it("hides the unified-commit button when core git is not initialized", async () => {
         await renderDialog(mappedClean);
-        expect(
-            screen.queryByTestId("git-sync-unified-commit-btn"),
-        ).not.toBeInTheDocument();
-        expect(
-            screen.queryByTestId("git-sync-unified-banner"),
-        ).not.toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-unified-commit-btn")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("git-sync-unified-banner")).not.toBeInTheDocument();
     });
 
     it("shows the unified-commit button + banner when core git is initialized", async () => {
         await renderDialog(mappedCleanWithCoreGit);
         expect(screen.getByTestId("git-sync-unified-banner")).toBeInTheDocument();
-        expect(
-            screen.getByTestId("git-sync-unified-commit-btn"),
-        ).toBeInTheDocument();
+        expect(screen.getByTestId("git-sync-unified-commit-btn")).toBeInTheDocument();
         // Single-subsystem button is still present (user can still pick).
         expect(screen.getByTestId("git-sync-commit-btn")).toBeInTheDocument();
     });
@@ -314,9 +295,7 @@ describe("GitSyncPage", () => {
         });
         fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
 
-        await waitFor(() =>
-            expect(mockUnifiedCommit).toHaveBeenCalledTimes(1),
-        );
+        await waitFor(() => expect(mockUnifiedCommit).toHaveBeenCalledTimes(1));
         const [bookId, payload] = mockUnifiedCommit.mock.calls[0];
         expect(bookId).toBe("book-1");
         expect(payload).toEqual({
@@ -325,9 +304,7 @@ describe("GitSyncPage", () => {
         });
 
         await waitFor(() =>
-            expect(
-                screen.getByTestId("git-sync-unified-result"),
-            ).toBeInTheDocument(),
+            expect(screen.getByTestId("git-sync-unified-result")).toBeInTheDocument(),
         );
         const coreRow = screen.getByTestId("git-sync-unified-row-core");
         const pluginRow = screen.getByTestId("git-sync-unified-row-plugin");
@@ -350,12 +327,8 @@ describe("GitSyncPage", () => {
         });
         fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
 
-        await waitFor(() =>
-            expect(mockUnifiedCommit).toHaveBeenCalledTimes(1),
-        );
-        await waitFor(() =>
-            expect(mockNotify.warning).toHaveBeenCalledTimes(1),
-        );
+        await waitFor(() => expect(mockUnifiedCommit).toHaveBeenCalledTimes(1));
+        await waitFor(() => expect(mockNotify.warning).toHaveBeenCalledTimes(1));
         expect(mockNotify.success).not.toHaveBeenCalled();
     });
 
@@ -363,19 +336,11 @@ describe("GitSyncPage", () => {
         await renderDialog(mappedCleanWithCoreGit);
         const { ApiError } = await import("../api/client");
         mockUnifiedCommit.mockRejectedValueOnce(
-            new ApiError(
-                503,
-                "lock busy",
-                "/git-sync/x/unified-commit",
-                "POST",
-                "",
-            ),
+            new ApiError(503, "lock busy", "/git-sync/x/unified-commit", "POST", ""),
         );
         fireEvent.click(screen.getByTestId("git-sync-unified-commit-btn"));
 
-        await waitFor(() =>
-            expect(mockNotify.warning).toHaveBeenCalledTimes(1),
-        );
+        await waitFor(() => expect(mockNotify.warning).toHaveBeenCalledTimes(1));
         expect(mockNotify.error).not.toHaveBeenCalled();
     });
 
@@ -386,12 +351,10 @@ describe("GitSyncPage", () => {
         await act(async () => {
             renderAt();
         });
-        await waitFor(() =>
-            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
+        await waitFor(() => expect(screen.getByTestId("git-sync-credentials")).toBeTruthy());
+        expect(screen.getByTestId("git-sync-credential-status").textContent).toContain(
+            "nicht gesetzt",
         );
-        expect(
-            screen.getByTestId("git-sync-credential-status").textContent,
-        ).toContain("nicht gesetzt");
     });
 
     it("renders 'configured' + Remove button when has_credential is true", async () => {
@@ -399,12 +362,10 @@ describe("GitSyncPage", () => {
         await act(async () => {
             renderAt();
         });
-        await waitFor(() =>
-            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
+        await waitFor(() => expect(screen.getByTestId("git-sync-credentials")).toBeTruthy());
+        expect(screen.getByTestId("git-sync-credential-status").textContent).toContain(
+            "konfiguriert",
         );
-        expect(
-            screen.getByTestId("git-sync-credential-status").textContent,
-        ).toContain("konfiguriert");
         expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy();
     });
 
@@ -417,22 +378,15 @@ describe("GitSyncPage", () => {
         await act(async () => {
             renderAt();
         });
-        await waitFor(() =>
-            expect(screen.getByTestId("git-sync-credentials")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("git-sync-credentials")).toBeTruthy());
 
         fireEvent.click(screen.getByTestId("git-sync-credential-toggle"));
-        const input = screen.getByTestId(
-            "git-sync-credential-input",
-        ) as HTMLInputElement;
+        const input = screen.getByTestId("git-sync-credential-input") as HTMLInputElement;
         fireEvent.change(input, { target: { value: "ghp_top_secret" } });
         fireEvent.click(screen.getByTestId("git-sync-credential-save"));
 
         await waitFor(() =>
-            expect(mockPutCredential).toHaveBeenCalledWith(
-                "book-1",
-                "ghp_top_secret",
-            ),
+            expect(mockPutCredential).toHaveBeenCalledWith("book-1", "ghp_top_secret"),
         );
         await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
     });
@@ -446,15 +400,11 @@ describe("GitSyncPage", () => {
         await act(async () => {
             renderAt();
         });
-        await waitFor(() =>
-            expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy(),
-        );
+        await waitFor(() => expect(screen.getByTestId("git-sync-credential-remove")).toBeTruthy());
 
         fireEvent.click(screen.getByTestId("git-sync-credential-remove"));
 
-        await waitFor(() =>
-            expect(mockDeleteCredential).toHaveBeenCalledWith("book-1"),
-        );
+        await waitFor(() => expect(mockDeleteCredential).toHaveBeenCalledWith("book-1"));
         await waitFor(() => expect(mockStatus).toHaveBeenCalledTimes(2));
     });
 });
