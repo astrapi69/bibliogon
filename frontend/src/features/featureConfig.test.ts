@@ -21,14 +21,16 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, DEXIE_NO_KEY)).toBe("disabled");
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, DEXIE_WITH_KEY)).toBe("active");
         expect(featureRegistry.getState(FEATURES.AI_FILL, DEXIE_NO_KEY)).toBe("disabled");
-        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(
-            "disabled",
-        );
-        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_WITH_KEY)).toBe(
-            "active",
-        );
         expect(featureRegistry.getReason(FEATURES.AI_GENERATE, DEXIE_NO_KEY)).toBe(
             FEATURE_REASON.REQUIRES_AI_KEY,
+        );
+    });
+
+    it("hides ai-template-file-io offline (backend-only, key-independent)", () => {
+        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe("hidden");
+        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_WITH_KEY)).toBe(
+            "hidden",
         );
     });
 
