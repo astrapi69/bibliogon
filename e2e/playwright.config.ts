@@ -112,7 +112,15 @@ export default defineConfig({
             // committed — they ARE the baseline.
             name: "visual",
             testDir: "./visual",
-            use: {browserName: "chromium", viewport: {width: 1440, height: 900}},
+            // Fixed timezone so a server-derived date renders as the same
+            // calendar day on every machine (a UTC-vs-local boundary could
+            // otherwise shift the date text across runners). Pairs with the
+            // spec's frozen browser clock.
+            use: {
+                browserName: "chromium",
+                viewport: {width: 1440, height: 900},
+                timezoneId: "Europe/Berlin",
+            },
         },
     ],
 });
