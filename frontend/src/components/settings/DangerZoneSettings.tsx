@@ -41,18 +41,18 @@
  * "Testid namespace pinning prevents silent E2E skips".
  */
 
-import {useCallback, useState} from "react";
+import { useCallback, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import {AlertTriangle, X} from "lucide-react";
-import {useNavigate} from "react-router-dom";
-import {api} from "../../api/client";
-import {useI18n} from "../../hooks/useI18n";
-import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
-import {resetOfflineDatabase} from "../../storage/dexie-storage";
-import {notify} from "../../utils/notify";
-import {downloadBlob} from "../../export/download";
-import {backupFilename, exportFullBackup} from "../../export/backupExport";
-import {db} from "../../db/drafts";
+import { AlertTriangle, X } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { api } from "../../api/client";
+import { useI18n } from "../../hooks/useI18n";
+import { useStorageMode } from "../../storage/useStorageMode";
+import { resetOfflineDatabase } from "../../storage/dexie-storage";
+import { notify } from "../../utils/notify";
+import { downloadBlob } from "../../export/download";
+import { backupFilename, exportFullBackup } from "../../export/backupExport";
+import { db } from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
 
 type DialogState = "idle" | "choosing" | "typing" | "submitting";
@@ -94,8 +94,9 @@ const resetInputStyle: React.CSSProperties = {
 };
 
 export function DangerZoneSettings() {
-    const {t} = useI18n();
-    const {offline: offlineGate} = useOfflineFeatureGate();
+    const { t } = useI18n();
+    const { mode } = useStorageMode();
+    const offlineGate = mode === "dexie";
     const navigate = useNavigate();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [state, setState] = useState<DialogState>("idle");
@@ -179,11 +180,16 @@ export function DangerZoneSettings() {
             } catch (idbErr) {
                 console.warn("Failed to drop Dexie BibliogonDB after reset:", idbErr);
             }
-            notify.success(t("ui.settings.danger_zone.reset_complete", "Alle Daten wurden gelöscht."));
+            notify.success(
+                t("ui.settings.danger_zone.reset_complete", "Alle Daten wurden gelöscht."),
+            );
             navigate("/");
         } catch (err) {
             notify.error(
-                t("ui.settings.danger_zone.reset_error", "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen."),
+                t(
+                    "ui.settings.danger_zone.reset_error",
+                    "Zurücksetzen fehlgeschlagen. Bitte erneut versuchen.",
+                ),
                 err,
             );
             setState("typing");
@@ -205,7 +211,7 @@ export function DangerZoneSettings() {
         <div style={sectionStyle} data-testid="danger-zone-section">
             <div style={headerRowStyle}>
                 <AlertTriangle size={20} aria-hidden="true" />
-                <h2 className={styles.sectionTitle} style={{margin: 0}}>
+                <h2 className={styles.sectionTitle} style={{ margin: 0 }}>
                     {t("ui.settings.danger_zone.title", "Gefahrenzone")}
                 </h2>
             </div>
@@ -213,7 +219,7 @@ export function DangerZoneSettings() {
                 {t(
                     "ui.settings.danger_zone.description",
                     "Setzt die gesamte App auf den Erstinstallationszustand zurück. " +
-                    "Alle Bücher, Artikel, Kapitel, Kommentare, Uploads, Einstellungen und der KI-API-Schlüssel werden unwiderruflich gelöscht.",
+                        "Alle Bücher, Artikel, Kapitel, Kommentare, Uploads, Einstellungen und der KI-API-Schlüssel werden unwiderruflich gelöscht.",
                 )}
             </p>
             <button
@@ -223,12 +229,17 @@ export function DangerZoneSettings() {
                 onClick={openDialog}
             >
                 <AlertTriangle size={16} aria-hidden="true" />
-                <span style={{marginLeft: 6}}>
+                <span style={{ marginLeft: 6 }}>
                     {t("ui.settings.danger_zone.reset_button", "Alles zurücksetzen")}
                 </span>
             </button>
 
-            <Dialog.Root open={dialogOpen} onOpenChange={(open) => { if (!open) closeDialog(); }}>
+            <Dialog.Root
+                open={dialogOpen}
+                onOpenChange={(open) => {
+                    if (!open) closeDialog();
+                }}
+            >
                 <Dialog.Portal>
                     <Dialog.Overlay className="dialog-overlay" />
                     <Dialog.Content
@@ -241,10 +252,17 @@ export function DangerZoneSettings() {
                         {state === "choosing" ? (
                             <div data-testid="danger-zone-precheck">
                                 <div className="dialog-header">
-                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                        <AlertTriangle size={22} style={{color: "var(--danger)"}} aria-hidden="true" />
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                        <AlertTriangle
+                                            size={22}
+                                            style={{ color: "var(--danger)" }}
+                                            aria-hidden="true"
+                                        />
                                         <Dialog.Title className="dialog-title">
-                                            {t("ui.settings.danger_zone.backup_first_title", "Zuerst ein Backup erstellen?")}
+                                            {t(
+                                                "ui.settings.danger_zone.backup_first_title",
+                                                "Zuerst ein Backup erstellen?",
+                                            )}
                                         </Dialog.Title>
                                     </div>
                                     <Dialog.Close asChild>
@@ -257,7 +275,10 @@ export function DangerZoneSettings() {
                                         </button>
                                     </Dialog.Close>
                                 </div>
-                                <Dialog.Description className="dialog-message" data-testid="danger-zone-precheck-message">
+                                <Dialog.Description
+                                    className="dialog-message"
+                                    data-testid="danger-zone-precheck-message"
+                                >
                                     {t(
                                         "ui.settings.danger_zone.backup_first_message",
                                         "Alle Bücher, Artikel, Kapitel, Autoren, Einstellungen und Story-Bible-Daten werden unwiderruflich gelöscht.",
@@ -278,7 +299,10 @@ export function DangerZoneSettings() {
                                         data-testid="danger-zone-continue-without-backup"
                                         onClick={proceedToConfirm}
                                     >
-                                        {t("ui.settings.danger_zone.continue_without_backup", "Ohne Backup fortfahren")}
+                                        {t(
+                                            "ui.settings.danger_zone.continue_without_backup",
+                                            "Ohne Backup fortfahren",
+                                        )}
                                     </button>
                                     <button
                                         type="button"
@@ -287,17 +311,27 @@ export function DangerZoneSettings() {
                                         onClick={handleCreateBackup}
                                         disabled={backupBusy}
                                     >
-                                        {t("ui.settings.danger_zone.create_backup", "Backup erstellen")}
+                                        {t(
+                                            "ui.settings.danger_zone.create_backup",
+                                            "Backup erstellen",
+                                        )}
                                     </button>
                                 </div>
                             </div>
                         ) : (
                             <>
                                 <div className="dialog-header">
-                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                        <AlertTriangle size={22} style={{color: "var(--danger)"}} aria-hidden="true" />
+                                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                                        <AlertTriangle
+                                            size={22}
+                                            style={{ color: "var(--danger)" }}
+                                            aria-hidden="true"
+                                        />
                                         <Dialog.Title className="dialog-title">
-                                            {t("ui.settings.danger_zone.reset_dialog_title", "Alles unwiderruflich löschen?")}
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_title",
+                                                "Alles unwiderruflich löschen?",
+                                            )}
                                         </Dialog.Title>
                                     </div>
                                     <Dialog.Close asChild>
@@ -312,20 +346,53 @@ export function DangerZoneSettings() {
                                     </Dialog.Close>
                                 </div>
 
-                                <Dialog.Description className="dialog-message" data-testid="danger-zone-warning">
-                                    <p style={{marginTop: 0}}>
+                                <Dialog.Description
+                                    className="dialog-message"
+                                    data-testid="danger-zone-warning"
+                                >
+                                    <p style={{ marginTop: 0 }}>
                                         {t(
                                             "ui.settings.danger_zone.reset_dialog_warning_intro",
                                             "Diese Aktion kann NICHT rückgängig gemacht werden. Gelöscht werden:",
                                         )}
                                     </p>
                                     <ul style={dialogWarningListStyle}>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_books", "Alle Bücher und Kapitel")}</li>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_articles", "Alle Artikel und Kommentare")}</li>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_uploads", "Alle hochgeladenen Bilder und Assets")}</li>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_settings", "Alle Einstellungen und Voreinstellungen")}</li>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_ai_key", "Der KI-API-Schlüssel")}</li>
-                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_drafts", "Alle ungespeicherten Entwürfe im Browser")}</li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_books",
+                                                "Alle Bücher und Kapitel",
+                                            )}
+                                        </li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_articles",
+                                                "Alle Artikel und Kommentare",
+                                            )}
+                                        </li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_uploads",
+                                                "Alle hochgeladenen Bilder und Assets",
+                                            )}
+                                        </li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_settings",
+                                                "Alle Einstellungen und Voreinstellungen",
+                                            )}
+                                        </li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_ai_key",
+                                                "Der KI-API-Schlüssel",
+                                            )}
+                                        </li>
+                                        <li>
+                                            {t(
+                                                "ui.settings.danger_zone.reset_dialog_warning_drafts",
+                                                "Alle ungespeicherten Entwürfe im Browser",
+                                            )}
+                                        </li>
                                     </ul>
                                     <p>
                                         {t(
@@ -335,8 +402,11 @@ export function DangerZoneSettings() {
                                     </p>
                                 </Dialog.Description>
 
-                                <div style={{marginTop: 16}}>
-                                    <label htmlFor="danger-zone-reset-input" style={{display: "block", fontSize: 14, fontWeight: 500}}>
+                                <div style={{ marginTop: 16 }}>
+                                    <label
+                                        htmlFor="danger-zone-reset-input"
+                                        style={{ display: "block", fontSize: 14, fontWeight: 500 }}
+                                    >
                                         {t(
                                             "ui.settings.danger_zone.reset_confirm_prompt",
                                             "Tippe RESET um zu bestätigen",
@@ -375,8 +445,14 @@ export function DangerZoneSettings() {
                                         disabled={!destructiveEnabled}
                                     >
                                         {state === "submitting"
-                                            ? t("ui.settings.danger_zone.reset_submitting", "Wird gelöscht...")
-                                            : t("ui.settings.danger_zone.reset_final_button", "Endgültig löschen")}
+                                            ? t(
+                                                  "ui.settings.danger_zone.reset_submitting",
+                                                  "Wird gelöscht...",
+                                              )
+                                            : t(
+                                                  "ui.settings.danger_zone.reset_final_button",
+                                                  "Endgültig löschen",
+                                              )}
                                     </button>
                                 </div>
                             </>

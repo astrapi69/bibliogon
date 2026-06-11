@@ -15,10 +15,10 @@
  * Playwright smoke at ``e2e/smoke/danger-zone.spec.ts``.
  */
 
-import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
-import {render, screen, fireEvent, waitFor, cleanup} from "@testing-library/react";
-import {BrowserRouter} from "react-router-dom";
-import {DangerZoneSettings} from "./DangerZoneSettings";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import { BrowserRouter } from "react-router-dom";
+import { DangerZoneSettings } from "./DangerZoneSettings";
 
 const navigateMock = vi.fn();
 const notifySuccess = vi.fn();
@@ -30,11 +30,15 @@ const downloadBlobMock = vi.fn();
 let offlineModeValue = false;
 
 vi.mock("../../hooks/useI18n", () => ({
-    useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
+    useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),
 }));
 
-vi.mock("../../storage/useOfflineFeatureGate", () => ({
-    useOfflineFeatureGate: () => ({offline: offlineModeValue, message: "requires desktop app"}),
+vi.mock("../../storage/useStorageMode", () => ({
+    useStorageMode: () => ({
+        mode: offlineModeValue ? "dexie" : "api",
+        online: !offlineModeValue,
+        offlineEnabled: offlineModeValue,
+    }),
 }));
 
 vi.mock("../../storage/dexie-storage", () => ({
@@ -52,7 +56,7 @@ vi.mock("../../export/download", () => ({
 
 vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
-    return {...actual, useNavigate: () => navigateMock};
+    return { ...actual, useNavigate: () => navigateMock };
 });
 
 vi.mock("../../utils/notify", () => ({
@@ -64,7 +68,7 @@ vi.mock("../../utils/notify", () => ({
     },
 }));
 
-vi.mock("../../db/drafts", () => ({db: {delete: () => dbDeleteMock()}}));
+vi.mock("../../db/drafts", () => ({ db: { delete: () => dbDeleteMock() } }));
 
 vi.mock("../../api/client", async () => {
     const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client");
@@ -79,7 +83,7 @@ vi.mock("../../api/client", async () => {
                     expires_at: Math.floor(Date.now() / 1000) + 300,
                     ttl_seconds: 300,
                 })),
-                reset: vi.fn(async () => ({status: "reset"})),
+                reset: vi.fn(async () => ({ status: "reset" })),
             },
         },
     };
@@ -119,7 +123,7 @@ describe("DangerZoneSettings", () => {
     });
 
     it("clicking reset opens the choosing dialog WITHOUT calling prepare", async () => {
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
         await screen.findByTestId("danger-zone-precheck");
@@ -130,7 +134,7 @@ describe("DangerZoneSettings", () => {
     });
 
     it("continue-without-backup advances to confirm + calls prepare", async () => {
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         await advanceToConfirm();
         expect(screen.getByTestId("danger-zone-warning")).toBeTruthy();
@@ -149,24 +153,30 @@ describe("DangerZoneSettings", () => {
     });
 
     it("final-delete is disabled with empty + lowercase input", async () => {
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         await advanceToConfirm();
         await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
         expect(button.disabled).toBe(true);
-        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "reset"}});
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {
+            target: { value: "reset" },
+        });
         expect(button.disabled).toBe(true);
     });
 
     it("final-delete enables when input is exactly 'RESET'", async () => {
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         await advanceToConfirm();
         await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
-        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {
+            target: { value: "RESET" },
+        });
         await waitFor(() => {
-            const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
+            const button = screen.getByTestId(
+                "danger-zone-final-delete-button",
+            ) as HTMLButtonElement;
             expect(button.disabled).toBe(false);
         });
     });
@@ -175,11 +185,13 @@ describe("DangerZoneSettings", () => {
         localStorage.setItem("bibliogon-theme", "dark");
         sessionStorage.setItem("scratch", "x");
 
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         await advanceToConfirm();
         await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
-        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {
+            target: { value: "RESET" },
+        });
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
         await waitFor(() => expect(button.disabled).toBe(false));
         fireEvent.click(button);
@@ -207,11 +219,13 @@ describe("DangerZoneSettings", () => {
         offlineModeValue = true;
         localStorage.setItem("bibliogon-theme", "dark");
 
-        const {api} = await import("../../api/client");
+        const { api } = await import("../../api/client");
         renderWithRouter();
         await advanceToConfirm();
         expect(api.system.resetPrepare).not.toHaveBeenCalled();
-        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {
+            target: { value: "RESET" },
+        });
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
         await waitFor(() => expect(button.disabled).toBe(false));
         fireEvent.click(button);
