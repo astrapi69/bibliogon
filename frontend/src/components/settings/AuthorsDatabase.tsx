@@ -1,13 +1,21 @@
-import {useEffect, useState} from "react";
-import {Plus, Edit2, Trash2, Save, X, Search} from "lucide-react";
+import {type ChangeEvent, useEffect, useRef, useState} from "react";
+import {Plus, Edit2, Trash2, Save, X, Search, Download, Upload} from "lucide-react";
 import {type Author} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {useDialog} from "../AppDialog";
 import {notify} from "../../utils/notify";
+import {downloadText} from "../../export/download";
 import styles from "../../pages/Settings.module.css";
 import SearchClearButton from "../SearchClearButton";
 import {SectionHeader} from "./SectionHeader";
+import {
+    AuthorsImportError,
+    authorsExportFilename,
+    buildAuthorsExport,
+    parseAuthorsImport,
+    planAuthorsImport,
+} from "./authorsImportExport";
 
 /** Authors-Database tab (Bug 8 Phase 1, Commit 5).
  *
@@ -40,6 +48,8 @@ export function AuthorsDatabase() {
     const [editName, setEditName] = useState("");
     const [editBio, setEditBio] = useState("");
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [busy, setBusy] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement | null>(null);
 
     const loadAuthors = async (searchTerm?: string) => {
         try {
@@ -166,6 +176,82 @@ export function AuthorsDatabase() {
         }
     };
 
+    /** Export the whole authors DB as a downloaded JSON file. Works
+     *  through the storage seam, so it is identical online and offline. */
+    const handleExport = async () => {
+        setBusy(true);
+        try {
+            const rows = await getStorage().authors.list({limit: 1000});
+            const envelope = buildAuthorsExport(rows, new Date().toISOString());
+            downloadText(
+                JSON.stringify(envelope, null, 2),
+                authorsExportFilename(envelope.exported_at),
+                "application/json",
+            );
+        } catch (err) {
+            notify.error(
+                t("ui.authors_database.export_error", "Export fehlgeschlagen"),
+                err,
+            );
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** Read a selected JSON file, skip duplicates (by name or slug), and
+     *  create the new authors. Profile authors land in the DB as normal
+     *  rows; the ``is_profile_author`` flag is never honoured on import. */
+    const handleImportFile = async (file: File) => {
+        setBusy(true);
+        try {
+            const envelope = parseAuthorsImport(await file.text());
+            const existing = await getStorage().authors.list({limit: 1000});
+            const plan = planAuthorsImport(envelope.authors, existing);
+            let imported = 0;
+            let skipped = plan.skipped;
+            for (const name of plan.toCreate) {
+                try {
+                    await getStorage().authors.create({name});
+                    imported++;
+                } catch {
+                    skipped++;
+                }
+            }
+            notify.success(
+                t(
+                    "ui.authors_database.import_result",
+                    "{imported} Autoren importiert, {skipped} übersprungen",
+                )
+                    .replace("{imported}", String(imported))
+                    .replace("{skipped}", String(skipped)),
+            );
+            await loadAuthors(search.trim() || undefined);
+        } catch (err) {
+            if (err instanceof AuthorsImportError) {
+                notify.error(
+                    t("ui.authors_database.invalid_file", "Ungültiges Dateiformat"),
+                );
+            } else {
+                notify.error(
+                    t("ui.authors_database.import_error", "Import fehlgeschlagen"),
+                    err,
+                );
+            }
+        } finally {
+            setBusy(false);
+        }
+    };
+
+    /** File-input change handler. Resets the input value afterwards so the
+     *  same file can be re-selected to trigger a second import. */
+    const handleImportInputChange = async (
+        event: ChangeEvent<HTMLInputElement>,
+    ) => {
+        const file = event.target.files?.[0];
+        event.target.value = "";
+        if (file) await handleImportFile(file);
+    };
+
     return (
         <div className={styles.section} data-testid="authors-database-section">
             <SectionHeader
@@ -230,6 +316,30 @@ export function AuthorsDatabase() {
                             <Plus size={14}/> {t("ui.authors_database.add", "Hinzufügen")}
                         </button>
                     )}
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={handleExport}
+                        disabled={busy}
+                        data-testid="authors-database-export"
+                    >
+                        <Download size={14}/> {t("ui.authors_database.export", "Autoren exportieren")}
+                    </button>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={busy}
+                        data-testid="authors-database-import"
+                    >
+                        <Upload size={14}/> {t("ui.authors_database.import", "Autoren importieren")}
+                    </button>
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept=".json,application/json"
+                        className="hidden"
+                        onChange={handleImportInputChange}
+                        data-testid="authors-database-import-input"
+                    />
                 </div>
 
                 {/* Add form */}

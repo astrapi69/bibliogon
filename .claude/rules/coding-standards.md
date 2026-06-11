@@ -319,6 +319,44 @@ import, and (where applicable) replayed by the offline sync queue.
 - When a new model/column is added, extend the backup serializer in the SAME
   change - a column the DB has but `.bgb` lacks is silent data loss on restore.
 
+## BACKUP-AKZEPTANZTEST
+
+The client-side full-data backup (`frontend/src/export/backupExport.ts`
++ `backupImport.ts`, surfaced in Settings > Backups and the Danger-Zone
+pre-reset dialog) reads and writes EVERY user entity through the
+`getStorage()` seam. Because it touches the whole storage surface, it is
+the single most sensitive consumer of the seam - a gap anywhere (a
+missing Dexie method, a list that omits content, a child entity that
+isn't re-parented on restore) shows up as silent data loss in the
+backup.
+
+**Rule:** any change to storage schemas, Dexie tables, entity types, the
+`IStorageService` seam, or the backup/restore path MUST pass the full
+backup cycle:
+
+1. Fill the app with test data (at minimum: 1 book with 3 chapters
+   carrying content, 1 article, 3 authors, 1 story-bible entity, and a
+   changed setting such as theme + language).
+2. Export a full backup (`exportFullBackup`).
+3. Danger-Zone reset (wipe everything).
+4. Import the backup (`importFullBackup`).
+5. Verify EVERY entity matches step 1.
+
+A broken cycle is a **release blocker**. The gate lives at
+`e2e/smoke/backup-acceptance.spec.ts` (export -> reset -> import ->
+verify against the live backend). Green there means the storage seam
+works end-to-end.
+
+Do NOT make the acceptance test pass by loosening assertions. A red
+acceptance test is a real bug in the seam or the backup path - find it,
+don't silence it. When a new restorable entity is added, extend BOTH the
+export gatherer AND the import restorer AND this acceptance test's
+fixture + verification in the same change (the same discipline as
+BACKUP-PARITY-PIN above, applied to the client-side JSON bundle). When an
+entity is genuinely NOT restorable through the seam (e.g. writing
+sessions have no `create`), say so explicitly in the importer's TSDoc and
+do not silently drop it.
+
 ## Synced-rule reconciliation notes (2026-06-05)
 
 Two adaptive-learner rules conflicted with standing Bibliogon directives. Both

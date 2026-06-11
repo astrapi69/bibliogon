@@ -50,10 +50,12 @@ import {useI18n} from "../../hooks/useI18n";
 import {useOfflineFeatureGate} from "../../storage/useOfflineFeatureGate";
 import {resetOfflineDatabase} from "../../storage/dexie-storage";
 import {notify} from "../../utils/notify";
+import {downloadBlob} from "../../export/download";
+import {backupFilename, exportFullBackup} from "../../export/backupExport";
 import {db} from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
 
-type DialogState = "idle" | "typing" | "submitting";
+type DialogState = "idle" | "choosing" | "typing" | "submitting";
 
 const sectionStyle: React.CSSProperties = {
     padding: 16,
@@ -84,15 +86,6 @@ const dialogWarningListStyle: React.CSSProperties = {
     lineHeight: 1.6,
 };
 
-const backupCalloutStyle: React.CSSProperties = {
-    padding: 12,
-    margin: "12px 0",
-    border: "1px solid var(--border)",
-    borderRadius: 6,
-    backgroundColor: "var(--bg-card)",
-    fontSize: 14,
-};
-
 const resetInputStyle: React.CSSProperties = {
     fontFamily: "monospace",
     fontSize: 16,
@@ -102,17 +95,23 @@ const resetInputStyle: React.CSSProperties = {
 
 export function DangerZoneSettings() {
     const {t} = useI18n();
-    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
+    const {offline: offlineGate} = useOfflineFeatureGate();
     const navigate = useNavigate();
     const [dialogOpen, setDialogOpen] = useState(false);
     const [state, setState] = useState<DialogState>("idle");
     const [token, setToken] = useState<string | null>(null);
     const [resetText, setResetText] = useState("");
+    const [backupBusy, setBackupBusy] = useState(false);
 
-    const openDialog = useCallback(async () => {
+    const openDialog = useCallback(() => {
         setDialogOpen(true);
-        setState("typing");
+        setState("choosing");
         setResetText("");
+        setToken(null);
+    }, []);
+
+    const proceedToConfirm = useCallback(async () => {
+        setState("typing");
         if (offlineGate) {
             setToken(null);
             return;
@@ -128,6 +127,24 @@ export function DangerZoneSettings() {
             setToken(null);
         }
     }, [offlineGate, t]);
+
+    const handleCreateBackup = useCallback(async () => {
+        setBackupBusy(true);
+        try {
+            const now = new Date().toISOString();
+            const blob = await exportFullBackup(now);
+            downloadBlob(blob, backupFilename(now));
+        } catch (err) {
+            notify.error(
+                t("ui.settings.danger_zone.backup_export_error", "Backup-Export fehlgeschlagen"),
+                err,
+            );
+            setBackupBusy(false);
+            return;
+        }
+        setBackupBusy(false);
+        await proceedToConfirm();
+    }, [proceedToConfirm, t]);
 
     const closeDialog = useCallback(() => {
         // Block close while a destructive call is in flight - the
@@ -181,17 +198,6 @@ export function DangerZoneSettings() {
         }
     }, [navigate, offlineGate, resetText, state, t, token]);
 
-    const handleBackupClick = useCallback(() => {
-        if (offlineGate) return;
-        // Triggers a download via the existing backup-export URL.
-        // Opening in a new tab + immediately closing is the
-        // standard browser idiom for "save this file" without
-        // disrupting the parent page (which still has the dialog
-        // open). The browser handles the .bgb download natively;
-        // no JS coordination needed.
-        window.open(api.backup.exportUrl(false), "_blank", "noopener");
-    }, [offlineGate]);
-
     const destructiveEnabled =
         state === "typing" && resetText === "RESET" && (offlineGate || token !== null);
 
@@ -232,111 +238,149 @@ export function DangerZoneSettings() {
                             if (state === "submitting") e.preventDefault();
                         }}
                     >
-                        <div className="dialog-header">
-                            <div style={{display: "flex", alignItems: "center", gap: 10}}>
-                                <AlertTriangle size={22} style={{color: "var(--danger)"}} aria-hidden="true" />
-                                <Dialog.Title className="dialog-title">
-                                    {t("ui.settings.danger_zone.reset_dialog_title", "Alles unwiderruflich löschen?")}
-                                </Dialog.Title>
+                        {state === "choosing" ? (
+                            <div data-testid="danger-zone-precheck">
+                                <div className="dialog-header">
+                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                        <AlertTriangle size={22} style={{color: "var(--danger)"}} aria-hidden="true" />
+                                        <Dialog.Title className="dialog-title">
+                                            {t("ui.settings.danger_zone.backup_first_title", "Zuerst ein Backup erstellen?")}
+                                        </Dialog.Title>
+                                    </div>
+                                    <Dialog.Close asChild>
+                                        <button
+                                            className="btn-icon"
+                                            onClick={closeDialog}
+                                            aria-label={t("ui.common.cancel", "Abbrechen")}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </Dialog.Close>
+                                </div>
+                                <Dialog.Description className="dialog-message" data-testid="danger-zone-precheck-message">
+                                    {t(
+                                        "ui.settings.danger_zone.backup_first_message",
+                                        "Alle Bücher, Artikel, Kapitel, Autoren, Einstellungen und Story-Bible-Daten werden unwiderruflich gelöscht.",
+                                    )}
+                                </Dialog.Description>
+                                <div className="dialog-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        data-testid="danger-zone-precheck-cancel"
+                                        onClick={closeDialog}
+                                    >
+                                        {t("ui.common.cancel", "Abbrechen")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-secondary"
+                                        data-testid="danger-zone-continue-without-backup"
+                                        onClick={proceedToConfirm}
+                                    >
+                                        {t("ui.settings.danger_zone.continue_without_backup", "Ohne Backup fortfahren")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-primary"
+                                        data-testid="danger-zone-create-backup"
+                                        onClick={handleCreateBackup}
+                                        disabled={backupBusy}
+                                    >
+                                        {t("ui.settings.danger_zone.create_backup", "Backup erstellen")}
+                                    </button>
+                                </div>
                             </div>
-                            <Dialog.Close asChild>
-                                <button
-                                    className="btn-icon"
-                                    onClick={closeDialog}
-                                    aria-label={t("ui.common.cancel", "Abbrechen")}
-                                    disabled={state === "submitting"}
-                                >
-                                    <X size={16} />
-                                </button>
-                            </Dialog.Close>
-                        </div>
+                        ) : (
+                            <>
+                                <div className="dialog-header">
+                                    <div style={{display: "flex", alignItems: "center", gap: 10}}>
+                                        <AlertTriangle size={22} style={{color: "var(--danger)"}} aria-hidden="true" />
+                                        <Dialog.Title className="dialog-title">
+                                            {t("ui.settings.danger_zone.reset_dialog_title", "Alles unwiderruflich löschen?")}
+                                        </Dialog.Title>
+                                    </div>
+                                    <Dialog.Close asChild>
+                                        <button
+                                            className="btn-icon"
+                                            onClick={closeDialog}
+                                            aria-label={t("ui.common.cancel", "Abbrechen")}
+                                            disabled={state === "submitting"}
+                                        >
+                                            <X size={16} />
+                                        </button>
+                                    </Dialog.Close>
+                                </div>
 
-                        <Dialog.Description className="dialog-message" data-testid="danger-zone-warning">
-                            <p style={{marginTop: 0}}>
-                                {t(
-                                    "ui.settings.danger_zone.reset_dialog_warning_intro",
-                                    "Diese Aktion kann NICHT rückgängig gemacht werden. Gelöscht werden:",
-                                )}
-                            </p>
-                            <ul style={dialogWarningListStyle}>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_books", "Alle Bücher und Kapitel")}</li>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_articles", "Alle Artikel und Kommentare")}</li>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_uploads", "Alle hochgeladenen Bilder und Assets")}</li>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_settings", "Alle Einstellungen und Voreinstellungen")}</li>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_ai_key", "Der KI-API-Schlüssel")}</li>
-                                <li>{t("ui.settings.danger_zone.reset_dialog_warning_drafts", "Alle ungespeicherten Entwürfe im Browser")}</li>
-                            </ul>
-                            <p>
-                                {t(
-                                    "ui.settings.danger_zone.reset_dialog_warning_keeps",
-                                    "Erhalten bleiben: Die App selbst und der Launcher-Installationsstatus.",
-                                )}
-                            </p>
-                        </Dialog.Description>
+                                <Dialog.Description className="dialog-message" data-testid="danger-zone-warning">
+                                    <p style={{marginTop: 0}}>
+                                        {t(
+                                            "ui.settings.danger_zone.reset_dialog_warning_intro",
+                                            "Diese Aktion kann NICHT rückgängig gemacht werden. Gelöscht werden:",
+                                        )}
+                                    </p>
+                                    <ul style={dialogWarningListStyle}>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_books", "Alle Bücher und Kapitel")}</li>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_articles", "Alle Artikel und Kommentare")}</li>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_uploads", "Alle hochgeladenen Bilder und Assets")}</li>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_settings", "Alle Einstellungen und Voreinstellungen")}</li>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_ai_key", "Der KI-API-Schlüssel")}</li>
+                                        <li>{t("ui.settings.danger_zone.reset_dialog_warning_drafts", "Alle ungespeicherten Entwürfe im Browser")}</li>
+                                    </ul>
+                                    <p>
+                                        {t(
+                                            "ui.settings.danger_zone.reset_dialog_warning_keeps",
+                                            "Erhalten bleiben: Die App selbst und der Launcher-Installationsstatus.",
+                                        )}
+                                    </p>
+                                </Dialog.Description>
 
-                        <div style={backupCalloutStyle} data-testid="danger-zone-backup-offer">
-                            <p style={{margin: "0 0 8px 0"}}>
-                                {t(
-                                    "ui.settings.danger_zone.reset_dialog_backup_offer",
-                                    "Möchtest du vorher ein Backup erstellen?",
-                                )}
-                            </p>
-                            <button
-                                type="button"
-                                className="btn btn-secondary"
-                                data-testid="danger-zone-backup-button"
-                                onClick={handleBackupClick}
-                                disabled={state === "submitting" || offlineGate}
-                                title={offlineGate ? offlineMsg : undefined}
-                            >
-                                {t("ui.settings.danger_zone.reset_dialog_backup_button", "Backup erstellen")}
-                            </button>
-                        </div>
+                                <div style={{marginTop: 16}}>
+                                    <label htmlFor="danger-zone-reset-input" style={{display: "block", fontSize: 14, fontWeight: 500}}>
+                                        {t(
+                                            "ui.settings.danger_zone.reset_confirm_prompt",
+                                            "Tippe RESET um zu bestätigen",
+                                        )}
+                                    </label>
+                                    <input
+                                        id="danger-zone-reset-input"
+                                        type="text"
+                                        className="input"
+                                        style={resetInputStyle}
+                                        data-testid="danger-zone-reset-input"
+                                        value={resetText}
+                                        onChange={(e) => setResetText(e.target.value)}
+                                        disabled={state === "submitting"}
+                                        autoComplete="off"
+                                        autoCapitalize="characters"
+                                        spellCheck={false}
+                                    />
+                                </div>
 
-                        <div style={{marginTop: 16}}>
-                            <label htmlFor="danger-zone-reset-input" style={{display: "block", fontSize: 14, fontWeight: 500}}>
-                                {t(
-                                    "ui.settings.danger_zone.reset_confirm_prompt",
-                                    "Tippe RESET um zu bestätigen",
-                                )}
-                            </label>
-                            <input
-                                id="danger-zone-reset-input"
-                                type="text"
-                                className="input"
-                                style={resetInputStyle}
-                                data-testid="danger-zone-reset-input"
-                                value={resetText}
-                                onChange={(e) => setResetText(e.target.value)}
-                                disabled={state === "submitting"}
-                                autoComplete="off"
-                                autoCapitalize="characters"
-                                spellCheck={false}
-                            />
-                        </div>
-
-                        <div className="dialog-footer">
-                            <button
-                                type="button"
-                                className="btn btn-ghost"
-                                data-testid="danger-zone-cancel-button"
-                                onClick={closeDialog}
-                                disabled={state === "submitting"}
-                            >
-                                {t("ui.common.cancel", "Abbrechen")}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-danger"
-                                data-testid="danger-zone-final-delete-button"
-                                onClick={executeReset}
-                                disabled={!destructiveEnabled}
-                            >
-                                {state === "submitting"
-                                    ? t("ui.settings.danger_zone.reset_submitting", "Wird gelöscht...")
-                                    : t("ui.settings.danger_zone.reset_final_button", "Endgültig löschen")}
-                            </button>
-                        </div>
+                                <div className="dialog-footer">
+                                    <button
+                                        type="button"
+                                        className="btn btn-ghost"
+                                        data-testid="danger-zone-cancel-button"
+                                        onClick={closeDialog}
+                                        disabled={state === "submitting"}
+                                    >
+                                        {t("ui.common.cancel", "Abbrechen")}
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        data-testid="danger-zone-final-delete-button"
+                                        onClick={executeReset}
+                                        disabled={!destructiveEnabled}
+                                    >
+                                        {state === "submitting"
+                                            ? t("ui.settings.danger_zone.reset_submitting", "Wird gelöscht...")
+                                            : t("ui.settings.danger_zone.reset_final_button", "Endgültig löschen")}
+                                    </button>
+                                </div>
+                            </>
+                        )}
                     </Dialog.Content>
                 </Dialog.Portal>
             </Dialog.Root>

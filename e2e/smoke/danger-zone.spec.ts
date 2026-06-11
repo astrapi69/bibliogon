@@ -42,9 +42,11 @@ test.describe("Settings - Danger Zone", () => {
         // Open the dialog.
         await resetBtn.click();
         await expect(page.getByTestId("danger-zone-dialog")).toBeVisible();
+        // Intermediate "backup first?" dialog → continue without backup.
+        await expect(page.getByTestId("danger-zone-precheck")).toBeVisible();
+        await expect(page.getByTestId("danger-zone-create-backup")).toBeVisible();
+        await page.getByTestId("danger-zone-continue-without-backup").click();
         await expect(page.getByTestId("danger-zone-warning")).toBeVisible();
-        await expect(page.getByTestId("danger-zone-backup-offer")).toBeVisible();
-        await expect(page.getByTestId("danger-zone-backup-button")).toBeVisible();
         const input = page.getByTestId("danger-zone-reset-input");
         await expect(input).toBeVisible();
         const finalBtn = page.getByTestId("danger-zone-final-delete-button");
@@ -77,9 +79,9 @@ test.describe("Settings - Danger Zone", () => {
 
         await page.goto("/settings?tab=danger_zone");
         await page.getByTestId("danger-zone-reset-button").click();
-        await expect(page.getByTestId("danger-zone-dialog")).toBeVisible();
+        await expect(page.getByTestId("danger-zone-precheck")).toBeVisible();
 
-        await page.getByTestId("danger-zone-cancel-button").click();
+        await page.getByTestId("danger-zone-precheck-cancel").click();
         await expect(page.getByTestId("danger-zone-dialog")).not.toBeVisible();
 
         // The book still exists - cancel did not fire the reset.

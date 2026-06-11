@@ -180,6 +180,14 @@
       }
     },
     "backups": {
+      "full_backup_title": "Copia de seguridad completa (JSON)",
+      "full_backup_description": "Exporta o importa todos los datos (libros, capítulos, artículos, autores, ajustes, biblia de la historia) como un único archivo JSON. También funciona sin conexión.",
+      "export_full": "Exportar copia de seguridad",
+      "import_full": "Importar copia de seguridad",
+      "import_result": "{books} libros, {chapters} capítulos, {articles} artículos importados. {skipped_books} omitidos.",
+      "import_invalid": "Formato de copia de seguridad no válido",
+      "import_full_error": "Error al importar la copia de seguridad",
+      "export_full_error": "Error al exportar la copia de seguridad",
       "version_history": "Historial de versiones",
       "no_history": "Aun no se han creado copias de seguridad.",
       "compare_backups": "Comparar copias de seguridad",
@@ -812,6 +820,11 @@
       "group_system": "Sistema",
       "group_info": "Información",
       "danger_zone": {
+        "backup_first_title": "¿Crear primero una copia de seguridad?",
+        "backup_first_message": "Todos los libros, artículos, capítulos, autores, ajustes y datos de la biblia de la historia se eliminarán de forma permanente.",
+        "create_backup": "Crear copia de seguridad",
+        "continue_without_backup": "Continuar sin copia de seguridad",
+        "backup_export_error": "Error al exportar la copia de seguridad",
         "title": "Zona de peligro",
         "description": "Restablece toda la aplicación a su estado de primera instalación. Todos los libros, artículos, capítulos, comentarios, archivos subidos, ajustes y la clave de API de IA se eliminarán de forma permanente.",
         "reset_button": "Restablecer todo",
@@ -1041,7 +1054,13 @@
       "deleted": "Autor eliminado",
       "delete_error": "Falló la eliminación",
       "delete_title": "¿Eliminar autor?",
-      "delete_message": "¿Seguro que quieres quitar a \"{name}\" de la base de datos? Los libros y artículos existentes no se modifican."
+      "delete_message": "¿Seguro que quieres quitar a \"{name}\" de la base de datos? Los libros y artículos existentes no se modifican.",
+      "export": "Exportar autores",
+      "import": "Importar autores",
+      "import_result": "{imported} autores importados, {skipped} omitidos",
+      "invalid_file": "Formato de archivo no válido",
+      "import_error": "La importación falló",
+      "export_error": "La exportación falló"
     },
     "translation": {
       "provider": "Proveedor",

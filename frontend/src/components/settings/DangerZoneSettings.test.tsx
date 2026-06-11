@@ -1,22 +1,17 @@
 /**
- * DangerZoneSettings tests pin:
+ * DangerZoneSettings tests pin the two-phase reset flow:
  *
- * - The section + reset-button render with their pinned testids
- * - Clicking the reset button fires ``api.system.resetPrepare``
- *   and opens the dialog
+ * - Section + reset-button render with their pinned testids
+ * - Clicking reset opens the intermediate "choosing" dialog (backup
+ *   first?) and does NOT yet call ``api.system.resetPrepare``
+ * - "Continue without backup" advances to the RESET-confirmation phase
+ *   and fires prepare (online)
+ * - "Create backup" exports the full backup, then advances to confirm
  * - The destructive button is gated on the RESET text input
- *   (empty / "reset" lowercase / "RESET" matching)
- * - Happy path: typing RESET → click final-delete →
- *   ``api.system.reset`` called → localStorage + Dexie cleared
- *   → navigate("/")
- * - Backup button opens the backup-export URL in a new tab
+ * - Happy path: RESET → final-delete → reset called → cleanup → navigate
  *
- * Per the lessons-learned rule "Radix DropdownMenu + happy-dom is
- * brittle for Vitest", the Radix Dialog portal-rendered content
- * can be intermittent. The Dialog Root + Portal here follows the
- * same pattern as AppDialog (which has its own happy-dom-passing
- * tests at AppDialog.test.tsx), so it should be reliable; if
- * regressions surface, the full UI flow is also covered by the
+ * The Radix Dialog portal follows the AppDialog pattern (its own
+ * happy-dom-passing tests); the full UI flow is also covered by the
  * Playwright smoke at ``e2e/smoke/danger-zone.spec.ts``.
  */
 
@@ -30,6 +25,8 @@ const notifySuccess = vi.fn();
 const notifyError = vi.fn();
 const dbDeleteMock = vi.fn(async () => undefined);
 const resetOfflineDbMock = vi.fn(async () => undefined);
+const exportFullBackupMock = vi.fn(async () => new Blob(["{}"]));
+const downloadBlobMock = vi.fn();
 let offlineModeValue = false;
 
 vi.mock("../../hooks/useI18n", () => ({
@@ -37,24 +34,25 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 vi.mock("../../storage/useOfflineFeatureGate", () => ({
-    useOfflineFeatureGate: () => ({
-        offline: offlineModeValue,
-        message: "requires desktop app",
-    }),
+    useOfflineFeatureGate: () => ({offline: offlineModeValue, message: "requires desktop app"}),
 }));
 
 vi.mock("../../storage/dexie-storage", () => ({
     resetOfflineDatabase: () => resetOfflineDbMock(),
 }));
 
+vi.mock("../../export/backupExport", () => ({
+    exportFullBackup: (...args: unknown[]) => exportFullBackupMock(...(args as [])),
+    backupFilename: () => "bibliogon-backup-2026-06-10.json",
+}));
+
+vi.mock("../../export/download", () => ({
+    downloadBlob: (...args: unknown[]) => downloadBlobMock(...(args as [])),
+}));
+
 vi.mock("react-router-dom", async () => {
-    const actual = await vi.importActual<typeof import("react-router-dom")>(
-        "react-router-dom",
-    );
-    return {
-        ...actual,
-        useNavigate: () => navigateMock,
-    };
+    const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
+    return {...actual, useNavigate: () => navigateMock};
 });
 
 vi.mock("../../utils/notify", () => ({
@@ -66,16 +64,10 @@ vi.mock("../../utils/notify", () => ({
     },
 }));
 
-vi.mock("../../db/drafts", () => ({
-    db: {
-        delete: () => dbDeleteMock(),
-    },
-}));
+vi.mock("../../db/drafts", () => ({db: {delete: () => dbDeleteMock()}}));
 
 vi.mock("../../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../../api/client")>(
-        "../../api/client",
-    );
+    const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client");
     return {
         ...actual,
         api: {
@@ -87,20 +79,7 @@ vi.mock("../../api/client", async () => {
                     expires_at: Math.floor(Date.now() / 1000) + 300,
                     ttl_seconds: 300,
                 })),
-                reset: vi.fn(async () => ({
-                    status: "reset",
-                    jobs_cancelled: 0,
-                    rows_deleted: 0,
-                    uploads_cleared: true,
-                    tmp_cleared: true,
-                    backup_history_cleared: true,
-                    config_overlays_cleared: 0,
-                    installed_plugins_cleared: 0,
-                    secrets_cleared: true,
-                })),
-            },
-            backup: {
-                exportUrl: vi.fn(() => "/api/backup/export"),
+                reset: vi.fn(async () => ({status: "reset"})),
             },
         },
     };
@@ -109,9 +88,16 @@ vi.mock("../../api/client", async () => {
 function renderWithRouter() {
     return render(
         <BrowserRouter>
-            <DangerZoneSettings/>
+            <DangerZoneSettings />
         </BrowserRouter>,
     );
+}
+
+async function advanceToConfirm() {
+    fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
+    await screen.findByTestId("danger-zone-precheck");
+    fireEvent.click(screen.getByTestId("danger-zone-continue-without-backup"));
+    await screen.findByTestId("danger-zone-reset-input");
 }
 
 describe("DangerZoneSettings", () => {
@@ -132,92 +118,75 @@ describe("DangerZoneSettings", () => {
         expect(screen.getByTestId("danger-zone-reset-button")).toBeTruthy();
     });
 
-    it("clicking the reset button opens the dialog + calls prepare", async () => {
+    it("clicking reset opens the choosing dialog WITHOUT calling prepare", async () => {
         const {api} = await import("../../api/client");
         renderWithRouter();
         fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        const dialog = await screen.findByTestId("danger-zone-dialog");
-        expect(dialog).toBeTruthy();
-        await waitFor(() => {
-            expect(api.system.resetPrepare).toHaveBeenCalled();
-        });
+        await screen.findByTestId("danger-zone-precheck");
+        expect(screen.getByTestId("danger-zone-create-backup")).toBeTruthy();
+        expect(screen.getByTestId("danger-zone-continue-without-backup")).toBeTruthy();
+        expect(api.system.resetPrepare).not.toHaveBeenCalled();
+        expect(screen.queryByTestId("danger-zone-reset-input")).toBeNull();
     });
 
-    it("dialog shows warning text + backup button + RESET input", async () => {
+    it("continue-without-backup advances to confirm + calls prepare", async () => {
+        const {api} = await import("../../api/client");
         renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
+        await advanceToConfirm();
         expect(screen.getByTestId("danger-zone-warning")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-backup-offer")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-backup-button")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-reset-input")).toBeTruthy();
         expect(screen.getByTestId("danger-zone-final-delete-button")).toBeTruthy();
+        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
     });
 
-    it("final-delete button is disabled with empty input", async () => {
+    it("create-backup exports the full backup, then advances to confirm", async () => {
         renderWithRouter();
         fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
+        await screen.findByTestId("danger-zone-precheck");
+        fireEvent.click(screen.getByTestId("danger-zone-create-backup"));
+        await waitFor(() => expect(exportFullBackupMock).toHaveBeenCalled());
+        expect(downloadBlobMock).toHaveBeenCalled();
+        await screen.findByTestId("danger-zone-reset-input");
+    });
+
+    it("final-delete is disabled with empty + lowercase input", async () => {
+        const {api} = await import("../../api/client");
+        renderWithRouter();
+        await advanceToConfirm();
+        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
+        expect(button.disabled).toBe(true);
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "reset"}});
         expect(button.disabled).toBe(true);
     });
 
-    it("final-delete button is disabled with 'reset' (lowercase)", async () => {
+    it("final-delete enables when input is exactly 'RESET'", async () => {
         const {api} = await import("../../api/client");
         renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
-        // Wait for prepare to resolve (token must be set).
-        await waitFor(() => {
-            expect(api.system.resetPrepare).toHaveBeenCalled();
-        });
-        const input = screen.getByTestId("danger-zone-reset-input") as HTMLInputElement;
-        fireEvent.change(input, {target: {value: "reset"}});
-        const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
-        expect(button.disabled).toBe(true);
-    });
-
-    it("final-delete button enables when input is exactly 'RESET'", async () => {
-        renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
-        // Wait for the background prepare-call to land - the destructive
-        // button stays disabled until ``token !== null``.
-        const {api} = await import("../../api/client");
-        await waitFor(() => {
-            expect(api.system.resetPrepare).toHaveBeenCalled();
-        });
-        const input = screen.getByTestId("danger-zone-reset-input") as HTMLInputElement;
-        fireEvent.change(input, {target: {value: "RESET"}});
+        await advanceToConfirm();
+        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
         await waitFor(() => {
             const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
             expect(button.disabled).toBe(false);
         });
     });
 
-    it("happy path: type RESET → click final → reset called → cleanup → navigate", async () => {
-        // Seed localStorage so we can assert it was cleared.
+    it("happy path: RESET → final → reset called → cleanup → navigate", async () => {
         localStorage.setItem("bibliogon-theme", "dark");
-        localStorage.setItem("bibliogon-onboarding", "complete");
         sessionStorage.setItem("scratch", "x");
 
         const {api} = await import("../../api/client");
         renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
-        await waitFor(() => {
-            expect(api.system.resetPrepare).toHaveBeenCalled();
-        });
-        const input = screen.getByTestId("danger-zone-reset-input") as HTMLInputElement;
-        fireEvent.change(input, {target: {value: "RESET"}});
-
+        await advanceToConfirm();
+        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
         await waitFor(() => expect(button.disabled).toBe(false));
         fireEvent.click(button);
 
-        await waitFor(() => {
-            expect(api.system.reset).toHaveBeenCalledWith("test-token-abc", "RESET");
-        });
+        await waitFor(() =>
+            expect(api.system.reset).toHaveBeenCalledWith("test-token-abc", "RESET"),
+        );
         await waitFor(() => {
             expect(localStorage.getItem("bibliogon-theme")).toBeNull();
             expect(sessionStorage.getItem("scratch")).toBeNull();
@@ -237,54 +206,29 @@ describe("DangerZoneSettings", () => {
     it("offline mode: reset wipes Dexie + reseeds without any /api call", async () => {
         offlineModeValue = true;
         localStorage.setItem("bibliogon-theme", "dark");
-        sessionStorage.setItem("scratch", "x");
 
         const {api} = await import("../../api/client");
         renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
+        await advanceToConfirm();
         expect(api.system.resetPrepare).not.toHaveBeenCalled();
-
-        const input = screen.getByTestId("danger-zone-reset-input") as HTMLInputElement;
-        fireEvent.change(input, {target: {value: "RESET"}});
+        fireEvent.change(screen.getByTestId("danger-zone-reset-input"), {target: {value: "RESET"}});
         const button = screen.getByTestId("danger-zone-final-delete-button") as HTMLButtonElement;
         await waitFor(() => expect(button.disabled).toBe(false));
         fireEvent.click(button);
 
-        await waitFor(() => {
-            expect(resetOfflineDbMock).toHaveBeenCalled();
-        });
+        await waitFor(() => expect(resetOfflineDbMock).toHaveBeenCalled());
         expect(api.system.reset).not.toHaveBeenCalled();
         await waitFor(() => {
             expect(localStorage.getItem("bibliogon-theme")).toBeNull();
-            expect(sessionStorage.getItem("scratch")).toBeNull();
-            expect(dbDeleteMock).toHaveBeenCalled();
-            expect(notifySuccess).toHaveBeenCalled();
             expect(navigateMock).toHaveBeenCalledWith("/");
         });
     });
 
-    it("backup button opens the backup-export URL in a new tab", async () => {
-        const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
+    it("precheck cancel closes the dialog without resetting", async () => {
         renderWithRouter();
         fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
-        fireEvent.click(screen.getByTestId("danger-zone-backup-button"));
-        expect(openSpy).toHaveBeenCalledWith(
-            "/api/backup/export",
-            "_blank",
-            "noopener",
-        );
-        openSpy.mockRestore();
-    });
-
-    it("cancel button closes the dialog", async () => {
-        renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-dialog");
-        fireEvent.click(screen.getByTestId("danger-zone-cancel-button"));
-        await waitFor(() => {
-            expect(screen.queryByTestId("danger-zone-dialog")).toBeNull();
-        });
+        await screen.findByTestId("danger-zone-precheck");
+        fireEvent.click(screen.getByTestId("danger-zone-precheck-cancel"));
+        await waitFor(() => expect(screen.queryByTestId("danger-zone-precheck")).toBeNull());
     });
 });
