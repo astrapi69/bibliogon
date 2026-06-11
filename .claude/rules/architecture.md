@@ -286,28 +286,46 @@ the following is true on the backendless (`VITE_STORAGE_MODE=dexie`) build:
    user's own key (stored in Dexie, never sent anywhere but the provider).
 2. **Gated offline (the EXCEPTION):** ONLY for the genuinely
    browser-impossible features — **Pandoc/LaTeX export, Git sync/backup,
-   audiobook TTS, and LAN mode**. The trigger is disabled with the translated
-   `ui.feature.requires_desktop_app` hint via `useOfflineFeatureGate()` /
-   `OfflineFeatureNotice`, and the surface fires NO `/api` request offline
-   (the `guardedFetch()` egress is the backstop, not a license to skip the
-   gate). Do NOT gate a feature merely because it currently calls `api.*` —
-   route it through the seam instead. A new gate outside the four listed
+   audiobook TTS, and LAN mode**. The trigger resolves through the central
+   feature registry (`@astrapi69/feature-strategy`, `useFeature(id)` — see
+   `src/features/featureConfig.ts`) to `hidden` (no git/TTS/Pandoc/LAN host in
+   a browser → not rendered) or `disabled` (the user can act, e.g. configure an
+   AI key → visible with a translated hint). The surface fires NO `/api`
+   request offline (the `guardedFetch()` egress is the backstop, not a license
+   to skip the gate). Do NOT gate a feature merely because it currently calls
+   `api.*` — route it through the seam instead. A new gate outside the listed
    features needs explicit justification.
 
 The offline E2E (`e2e/smoke/offline-pwa.spec.ts`) enforces literal zero
 `/api` calls in dexie mode for every surface it touches - a new feature that
 forgets both the seam AND the gate fails it.
 
-### FUNKTION-NICHT-VERFUEGBAR — overridden for Bibliogon
+### Three-state feature visibility (replaces FUNKTION-NICHT-VERFUEGBAR)
 
-The upstream adaptive-learner rule "FUNKTION-NICHT-VERFUEGBAR" (do NOT render
-an unavailable function at all - no disabled state, no hint) is **overridden
-for Bibliogon** (user-adjudicated 2026-06-05).
+Updated 2026-06-11 (#63). Offline feature gating runs through
+`@astrapi69/feature-strategy` (a central registry + conditional strategy,
+mounted via `AppFeatureProvider`; consumers call `useFeature(id)`). Every gated
+feature resolves to one of three states:
 
-Bibliogon uses "disable + explain, do not hide" for unavailable features in
-offline mode. Backend-only features are shown with a disabled trigger and a
-translated "requires desktop app" hint (`OfflineFeatureNotice` /
-`useOfflineFeatureGate`). This is a conscious product decision: hiding features
-makes the app look feature-poor; disabling with explanation shows the full
-scope and motivates the desktop download. The adaptive-learner
-FUNKTION-NICHT-VERFUEGBAR rule (render nothing) does not apply to Bibliogon.
+- **active:** the feature works. Full interaction.
+- **disabled:** the feature is reachable but locked, shown with an explanation
+  of why (e.g. "configure an API key"). The user CAN act to change the state.
+  Used for the AI features offline without a key (`ai-generate`, `ai-fill`,
+  `ai-template-file-io`).
+- **hidden:** the feature is irrelevant in the current mode. Not rendered — no
+  button, no menu item. The user can do NOTHING to make it available (no git
+  binary, no TTS engine, no Pandoc, no LAN host in a browser). Used for
+  `git-sync`, `git-backup`, `tts`, `lan-mode`, `backup-compare`,
+  `backup-history`, `bgb-import`, `pandoc-export`, `version-history`,
+  `translation-links`, `kdp-category-catalog`, `bulk-export`,
+  `writing-history-csv`, `book-templates`.
+
+The earlier "disable + explain, do not hide" rule (and the upstream
+adaptive-learner "FUNKTION-NICHT-VERFUEGBAR" render-nothing rule) are BOTH
+superseded: `hidden` is correct when the user has no action to take; `disabled`
+is correct when they do. Genuine routing (online-vs-offline implementation
+choice — export engine, Medium parse, Danger-Zone reset, AI path) stays a
+`useStorageMode()` logic branch, NOT a registry gate. The descriptor
+`defaultState` carries the normal state; the strategy holds ONLY the
+key-dependent + dexie-hidden rules and abstains for everything else; unknown
+ids fail closed to `hidden`. See `src/features/featureConfig.ts`.
