@@ -22,7 +22,7 @@ import {
 import { useDialog } from "../components/AppDialog";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURE } from "../features/featureConfig";
+import { FEATURES } from "../features/featureConfig";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
@@ -34,7 +34,7 @@ import { notify } from "../utils/notify";
  */
 export default function GitBackupPage() {
     const { t } = useI18n();
-    const gitBackup = useFeature(FEATURE.GIT_BACKUP);
+    const gitBackup = useFeature(FEATURES.GIT_BACKUP);
     const offline = !gitBackup.isActive;
     const { bookId = "" } = useParams<{ bookId: string }>();
     const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");

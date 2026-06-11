@@ -14,7 +14,7 @@ import { Toggle } from "../components/settings/Toggle";
 import { notify } from "../utils/notify";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURE } from "../features/featureConfig";
+import { FEATURES } from "../features/featureConfig";
 import { useGoBack } from "../hooks/useGoBack";
 
 /**
@@ -25,7 +25,7 @@ import { useGoBack } from "../hooks/useGoBack";
  */
 export default function GitSyncPage() {
     const { t } = useI18n();
-    const gitSync = useFeature(FEATURE.GIT_SYNC);
+    const gitSync = useFeature(FEATURES.GIT_SYNC);
     const offline = !gitSync.isActive;
     const { bookId = "" } = useParams<{ bookId: string }>();
     const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");

@@ -22,33 +22,51 @@ export interface FeatureContext {
 }
 
 /**
- * Stable feature identifiers used across the registry, the consumers and the
- * tests. Grouped by the verdict bucket they belong to.
+ * Stable feature identifiers. Every gating site references one of these
+ * constants rather than a bare string. Grouped by verdict bucket: the
+ * grouping is documentation only — the actual verdict comes from the
+ * descriptor `defaultState` plus the strategy rules below.
  */
-export const FEATURE = {
+export const FEATURES = {
+    EXPORT: "export",
+    STORY_BIBLE: "story-bible",
+    STORYBOARD: "storyboard",
+    PICTURE_BOOK: "picture-book",
+    COMICS: "comics",
+    MEDIUM_IMPORT: "medium-import",
+    WRITING_HISTORY: "writing-history",
+    DANGER_ZONE_RESET: "danger-zone-reset",
+    BOOK_IMPORT_JSON: "book-import-json",
+    AUTHORS_EXPORT: "authors-export",
+    BACKUP_EXPORT: "backup-export",
+    BACKUP_IMPORT: "backup-import",
+
+    AI_FILL: "ai-fill",
+    AI_GENERATE: "ai-generate",
+    AI_TEMPLATE_FILE_IO: "ai-template-file-io",
+
     GIT_SYNC: "git-sync",
     GIT_BACKUP: "git-backup",
+    TTS: "tts",
     LAN_MODE: "lan-mode",
     BACKUP_COMPARE: "backup-compare",
     BACKUP_HISTORY: "backup-history",
     BGB_IMPORT: "bgb-import",
-    BGB_EXPORT: "bgb-export",
-    TRANSLATION_LINKS: "translation-links",
-    BOOK_TEMPLATES: "book-templates",
-    WRITING_HISTORY_CSV: "writing-history-csv",
-    BULK_EXPORT: "bulk-export",
-    KDP_CATEGORY_CATALOG: "kdp-category-catalog",
-    TTS: "tts",
     PANDOC_EXPORT: "pandoc-export",
     VERSION_HISTORY: "version-history",
-    AI_GENERATE: "ai-generate",
-    AI_FILL: "ai-fill",
+    TRANSLATION_LINKS: "translation-links",
+    KDP_CATEGORY_CATALOG: "kdp-category-catalog",
+    BULK_EXPORT: "bulk-export",
+    WRITING_HISTORY_CSV: "writing-history-csv",
+    BOOK_TEMPLATES: "book-templates",
 } as const;
 
 /**
  * i18n keys used as the {@link FeatureCondition.reason} for restrictive
  * verdicts. The registry stays React-free, so the key (not the translated
  * string) travels with the verdict; consumers resolve it through `t()`.
+ * Bibliogon catalogs namespace UI strings under `ui.*`, so these are
+ * `ui.feature.*` rather than the bare tokens the integration prompt sketched.
  */
 export const FEATURE_REASON = {
     REQUIRES_DESKTOP_APP: "ui.feature.requires_desktop_app",
@@ -56,52 +74,58 @@ export const FEATURE_REASON = {
 } as const;
 
 /**
- * Features that genuinely cannot work in a browser (no git binary, no TTS
- * engine, no Pandoc, no LAN host, no backend round-trip). Hidden in Dexie
- * mode; active online. The strategy abstains online so the descriptor default
- * (`active`) wins.
+ * Always-usable features in both modes. They carry only a descriptor
+ * (`defaultState: 'active'`) and no strategy rule, so the strategy abstains
+ * and the default wins everywhere. Listed here only to register the
+ * descriptors; the grouping is not consulted at evaluation time.
  */
-const DEXIE_HIDDEN: readonly string[] = [
-    FEATURE.GIT_SYNC,
-    FEATURE.GIT_BACKUP,
-    FEATURE.LAN_MODE,
-    FEATURE.BACKUP_COMPARE,
-    FEATURE.BACKUP_HISTORY,
-    FEATURE.BGB_IMPORT,
-    FEATURE.BGB_EXPORT,
-    FEATURE.TRANSLATION_LINKS,
-    FEATURE.BOOK_TEMPLATES,
-    FEATURE.WRITING_HISTORY_CSV,
-    FEATURE.BULK_EXPORT,
-    FEATURE.KDP_CATEGORY_CATALOG,
-    FEATURE.TTS,
-    FEATURE.PANDOC_EXPORT,
-    FEATURE.VERSION_HISTORY,
+const ALWAYS_ACTIVE: readonly string[] = [
+    FEATURES.EXPORT,
+    FEATURES.STORY_BIBLE,
+    FEATURES.STORYBOARD,
+    FEATURES.PICTURE_BOOK,
+    FEATURES.COMICS,
+    FEATURES.MEDIUM_IMPORT,
+    FEATURES.WRITING_HISTORY,
+    FEATURES.DANGER_ZONE_RESET,
+    FEATURES.BOOK_IMPORT_JSON,
+    FEATURES.AUTHORS_EXPORT,
+    FEATURES.BACKUP_EXPORT,
+    FEATURES.BACKUP_IMPORT,
 ];
 
 /**
  * AI features that work browser-direct WITH a configured key. Disabled in
- * Dexie mode only when no key is configured; active otherwise (online uses the
- * backend AI path, offline-with-key uses the user's own provider).
+ * Dexie mode only when no key is configured; active otherwise (online uses
+ * the backend AI path, offline-with-key uses the user's own provider).
  */
-const KEY_DEPENDENT: readonly string[] = [FEATURE.AI_GENERATE, FEATURE.AI_FILL];
+const NEEDS_KEY: readonly string[] = [
+    FEATURES.AI_FILL,
+    FEATURES.AI_GENERATE,
+    FEATURES.AI_TEMPLATE_FILE_IO,
+];
 
 /**
- * Features that are always usable in both modes. They carry only a descriptor
- * (`defaultState: 'active'`) and no strategy rule, so the strategy abstains and
- * the default wins everywhere.
+ * Features that genuinely cannot work in a browser (no git binary, no TTS
+ * engine, no Pandoc, no LAN host, no backend round-trip). Hidden in Dexie
+ * mode; active online (the strategy abstains online so the descriptor
+ * default wins).
  */
-const ALWAYS_ACTIVE: readonly string[] = [
-    "export",
-    "story-bible",
-    "storyboard",
-    "picture-book",
-    "comics",
-    "medium-import",
-    "writing-history",
-    "danger-zone-reset",
-    "book-import-json",
-    "authors-export",
+const DEXIE_HIDDEN: readonly string[] = [
+    FEATURES.GIT_SYNC,
+    FEATURES.GIT_BACKUP,
+    FEATURES.TTS,
+    FEATURES.LAN_MODE,
+    FEATURES.BACKUP_COMPARE,
+    FEATURES.BACKUP_HISTORY,
+    FEATURES.BGB_IMPORT,
+    FEATURES.PANDOC_EXPORT,
+    FEATURES.VERSION_HISTORY,
+    FEATURES.TRANSLATION_LINKS,
+    FEATURES.KDP_CATEGORY_CATALOG,
+    FEATURES.BULK_EXPORT,
+    FEATURES.WRITING_HISTORY_CSV,
+    FEATURES.BOOK_TEMPLATES,
 ];
 
 function descriptor(id: string): FeatureDescriptor {
@@ -109,17 +133,10 @@ function descriptor(id: string): FeatureDescriptor {
 }
 
 const DESCRIPTORS: readonly FeatureDescriptor[] = [
-    ...DEXIE_HIDDEN,
-    ...KEY_DEPENDENT,
     ...ALWAYS_ACTIVE,
+    ...NEEDS_KEY,
+    ...DEXIE_HIDDEN,
 ].map(descriptor);
-
-function dexieHiddenCondition(): FeatureCondition<FeatureContext> {
-    return {
-        evaluate: (ctx) => (ctx?.mode === "dexie" ? "hidden" : undefined),
-        reason: FEATURE_REASON.REQUIRES_DESKTOP_APP,
-    };
-}
 
 function keyDependentCondition(): FeatureCondition<FeatureContext> {
     return {
@@ -128,17 +145,24 @@ function keyDependentCondition(): FeatureCondition<FeatureContext> {
     };
 }
 
+function dexieHiddenCondition(): FeatureCondition<FeatureContext> {
+    return {
+        evaluate: (ctx) => (ctx?.mode === "dexie" ? "hidden" : undefined),
+        reason: FEATURE_REASON.REQUIRES_DESKTOP_APP,
+    };
+}
+
 function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     const rules: Record<string, FeatureCondition<FeatureContext>> = {};
+    for (const id of NEEDS_KEY) rules[id] = keyDependentCondition();
     for (const id of DEXIE_HIDDEN) rules[id] = dexieHiddenCondition();
-    for (const id of KEY_DEPENDENT) rules[id] = keyDependentCondition();
     return rules;
 }
 
 /**
  * The application feature registry. A module constant (not a component-level
  * memo): descriptors registered once, the conditional strategy holding rules
- * only for the hidden + key-dependent buckets. Unruled features abstain and
+ * only for the needs-key + dexie-hidden buckets. Unruled features abstain and
  * fall back to their `active` default; unknown ids fail closed to `hidden`.
  */
 export const featureRegistry = new FeatureRegistry<FeatureContext>();
