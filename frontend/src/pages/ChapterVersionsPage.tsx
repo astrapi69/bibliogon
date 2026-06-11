@@ -1,6 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
+import { useFeature } from "@astrapi69/feature-strategy-react";
 import ChapterVersionsView from "../components/ChapterVersionsView";
 import { PageLayout } from "../components/PageLayout";
+import { FEATURES } from "../features/featureConfig";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 
@@ -24,6 +26,11 @@ export default function ChapterVersionsPage() {
   const editorUrl =
     bookId && chapterId ? `/book/${bookId}?chapter=${chapterId}` : "/";
   const goBack = useGoBack(editorUrl);
+  // Chapter snapshots are backend-only; offline (Dexie) this route is not
+  // reachable through the UI (the trigger is gated), and a direct deep-link
+  // renders nothing rather than firing /api. Mirrors GitSyncPage's guard.
+  const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
+  if (versionHistory.isHidden) return null;
 
   return (
     <PageLayout
