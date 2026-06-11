@@ -1,25 +1,19 @@
-import {useState, useEffect} from "react"
-import * as Dialog from "@radix-ui/react-dialog"
-import {Sparkles, Download, Upload, X} from "lucide-react"
-import {useI18n} from "../hooks/useI18n"
-import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate"
-import {Toggle} from "./settings/Toggle"
-import {notify} from "../utils/notify"
-import {api, ApiError} from "../api/client"
-import type {
-    AiFillResponse,
-    AiTemplateImportResult,
-} from "../api/client"
-import {getAiConfig, isAiConfigured} from "../ai/llmClient"
-import {aiFillArticle, aiFillBook} from "../ai/aiFill"
-import {ARTICLE_OFFLINE_FILL_CLASSES} from "../ai/articleFillPrompts"
-import {BOOK_OFFLINE_FILL_CLASSES} from "../ai/bookFillPrompts"
-import FieldClassDialog, {
-    type FieldClassDialogResult,
-} from "./FieldClassDialog"
-import TemplateImportDropZone, {
-    TemplateImportFilePreview,
-} from "./TemplateImportDropZone"
+import { useState } from "react";
+import * as Dialog from "@radix-ui/react-dialog";
+import { Sparkles, Download, Upload, X } from "lucide-react";
+import { useI18n } from "../hooks/useI18n";
+import { useStorageMode } from "../storage/useStorageMode";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
+import { Toggle } from "./settings/Toggle";
+import { notify } from "../utils/notify";
+import { api, ApiError } from "../api/client";
+import type { AiFillResponse, AiTemplateImportResult } from "../api/client";
+import { aiFillArticle, aiFillBook } from "../ai/aiFill";
+import { ARTICLE_OFFLINE_FILL_CLASSES } from "../ai/articleFillPrompts";
+import { BOOK_OFFLINE_FILL_CLASSES } from "../ai/bookFillPrompts";
+import FieldClassDialog, { type FieldClassDialogResult } from "./FieldClassDialog";
+import TemplateImportDropZone, { TemplateImportFilePreview } from "./TemplateImportDropZone";
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 3/10. Three first-
 // class buttons that orchestrate the per-record AI-template
@@ -32,94 +26,79 @@ import TemplateImportDropZone, {
 // based on the ``kind`` prop. Toast feedback uses the project's
 // notify wrapper so error toasts get the "Report Issue" link.
 
-export type AITemplateKind = "article" | "book"
+export type AITemplateKind = "article" | "book";
 
 interface Props {
-    kind: AITemplateKind
+    kind: AITemplateKind;
     /** The record id (article or book). */
-    id: string
+    id: string;
     /** Called after a successful Fill or Import so the parent can
      *  refresh its local state (the panel does not own the record). */
-    onApplied?: () => void
+    onApplied?: () => void;
     /** Optional layout hint. ``compact`` reduces the button padding
      *  for tight sidebar real estate. */
-    layout?: "default" | "compact"
+    layout?: "default" | "compact";
 }
 
 function downloadBlob(blob: Blob, filename: string): void {
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = filename
-    document.body.appendChild(link)
-    link.click()
-    link.remove()
-    URL.revokeObjectURL(url)
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
 }
 
-export default function AITemplatePanel({
-    kind,
-    id,
-    onApplied,
-    layout = "default",
-}: Props) {
-    const {t} = useI18n()
-    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
-    const namespace = kind === "article" ? api.articles : api.books
-
-    // Offline, the AI plugin probe is empty (backend-only); Fill instead runs
-    // browser-direct via the user's own key, so availability follows whether
-    // an AI key is configured in Settings rather than the offline feature gate.
-    const [offlineAiReady, setOfflineAiReady] = useState(false)
-    useEffect(() => {
-        if (!offlineGate) return
-        let cancelled = false
-        void getAiConfig().then((config) => {
-            if (!cancelled) setOfflineAiReady(isAiConfigured(config))
-        })
-        return () => {
-            cancelled = true
-        }
-    }, [offlineGate])
+export default function AITemplatePanel({ kind, id, onApplied, layout = "default" }: Props) {
+    const { t } = useI18n();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
+    const aiFill = useFeature(FEATURES.AI_FILL);
+    const fileIo = useFeature(FEATURES.AI_TEMPLATE_FILE_IO);
+    const namespace = kind === "article" ? api.articles : api.books;
 
     const offlineSupportedClasses =
-        kind === "article" ? ARTICLE_OFFLINE_FILL_CLASSES : BOOK_OFFLINE_FILL_CLASSES
-    // Fill is the one workflow that works offline (browser-direct). Export +
-    // Import stay gated offline (they round-trip a .biblio.yaml file; out of
-    // this scope). Offline without a key: disabled with a "configure key" hint.
-    const fillBlockedOffline = offlineGate && !offlineAiReady
-    const fillTitle = fillBlockedOffline
+        kind === "article" ? ARTICLE_OFFLINE_FILL_CLASSES : BOOK_OFFLINE_FILL_CLASSES;
+    const fillTitle = aiFill.isDisabled
         ? t(
               "ui.ai_template.offline_configure_key",
               "Configure your API key in Settings > AI to use Fill offline.",
           )
-        : undefined
+        : undefined;
+    const fileIoTitle = fileIo.isDisabled
+        ? t(
+              "ui.ai_template.offline_configure_key",
+              "Configure your API key in Settings > AI to use Fill offline.",
+          )
+        : undefined;
 
     // Per-button loading flags so the user can tell which action is
     // in flight when they kicked off two close together (rare, but
     // explicit beats ambiguous).
-    const [fillLoading, setFillLoading] = useState(false)
-    const [exportLoading, setExportLoading] = useState(false)
-    const [importLoading, setImportLoading] = useState(false)
+    const [fillLoading, setFillLoading] = useState(false);
+    const [exportLoading, setExportLoading] = useState(false);
+    const [importLoading, setImportLoading] = useState(false);
 
-    const [showFillDialog, setShowFillDialog] = useState(false)
-    const [showImportDialog, setShowImportDialog] = useState(false)
-    const [importFile, setImportFile] = useState<File | null>(null)
-    const [importForce, setImportForce] = useState(false)
+    const [showFillDialog, setShowFillDialog] = useState(false);
+    const [showImportDialog, setShowImportDialog] = useState(false);
+    const [importFile, setImportFile] = useState<File | null>(null);
+    const [importForce, setImportForce] = useState(false);
 
     // ----- Fill -----
 
     const handleFillSubmit = async (req: FieldClassDialogResult) => {
-        setFillLoading(true)
+        setFillLoading(true);
         try {
-            const result = offlineGate
+            const result = offline
                 ? kind === "article"
                     ? await aiFillArticle(id, req)
                     : await aiFillBook(id, req)
-                : ((await namespace.aiFill(id, req)) as AiFillResponse)
-            const updated = result.updated_fields.length
-            const skipped = result.skipped_fields.length
-            const errors = Object.keys(result.field_class_errors).length
+                : ((await namespace.aiFill(id, req)) as AiFillResponse);
+            const updated = result.updated_fields.length;
+            const skipped = result.skipped_fields.length;
+            const errors = Object.keys(result.field_class_errors).length;
 
             if (errors > 0) {
                 notify.warning(
@@ -130,7 +109,7 @@ export default function AITemplatePanel({
                         .replace("{updated}", String(updated))
                         .replace("{skipped}", String(skipped))
                         .replace("{errors}", String(errors)),
-                )
+                );
             } else {
                 notify.success(
                     t(
@@ -140,70 +119,72 @@ export default function AITemplatePanel({
                         .replace("{updated}", String(updated))
                         .replace("{skipped}", String(skipped))
                         .replace("{tokens}", String(result.tokens_used)),
-                )
+                );
             }
-            setShowFillDialog(false)
-            onApplied?.()
+            setShowFillDialog(false);
+            onApplied?.();
         } catch (err) {
             const detail =
                 err instanceof ApiError
                     ? err.detail
                     : err instanceof Error
                       ? err.message
-                      : t("ui.ai_template.fill.toast.error", "AI-fill failed")
-            notify.error(detail, err)
+                      : t("ui.ai_template.fill.toast.error", "AI-fill failed");
+            notify.error(detail, err);
         } finally {
-            setFillLoading(false)
+            setFillLoading(false);
         }
-    }
+    };
 
     // ----- Export -----
 
     const handleExport = async () => {
-        setExportLoading(true)
+        setExportLoading(true);
         try {
-            const {blob, filename} = await namespace.aiTemplate.export(id)
-            downloadBlob(blob, filename)
+            const { blob, filename } = await namespace.aiTemplate.export(id);
+            downloadBlob(blob, filename);
             notify.success(
-                t("ui.ai_template.export.toast.success", "Template exported: {filename}")
-                    .replace("{filename}", filename),
-            )
+                t("ui.ai_template.export.toast.success", "Template exported: {filename}").replace(
+                    "{filename}",
+                    filename,
+                ),
+            );
         } catch (err) {
             const detail =
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.ai_template.export.toast.error", "Export failed")
-            notify.error(detail, err)
+                    : t("ui.ai_template.export.toast.error", "Export failed");
+            notify.error(detail, err);
         } finally {
-            setExportLoading(false)
+            setExportLoading(false);
         }
-    }
+    };
 
     // ----- Import -----
 
     const openImportDialog = () => {
-        setImportFile(null)
-        setImportForce(false)
-        setShowImportDialog(true)
-    }
+        setImportFile(null);
+        setImportForce(false);
+        setShowImportDialog(true);
+    };
 
     const closeImportDialog = () => {
-        setShowImportDialog(false)
-    }
+        setShowImportDialog(false);
+    };
 
     const handleImportSubmit = async () => {
-        if (!importFile) return
-        setImportLoading(true)
+        if (!importFile) return;
+        setImportLoading(true);
         try {
-            const yamlText = await importFile.text()
+            const yamlText = await importFile.text();
             const result = (await namespace.aiTemplate.import(
                 id,
                 yamlText,
                 importForce,
-            )) as AiTemplateImportResult
-            const updated = result.updated_fields.length
-            const skipped = result.skipped_fields.length
-            const dropped = result.dropped_chapter_summaries?.length ?? 0
+            )) as AiTemplateImportResult;
+            const updated = result.updated_fields.length;
+            const skipped = result.skipped_fields.length;
+            const dropped = result.dropped_chapter_summaries?.length ?? 0;
 
             if (updated === 0) {
                 notify.info(
@@ -211,7 +192,7 @@ export default function AITemplatePanel({
                         "ui.ai_template.import.toast.noop",
                         "Import complete: no fields updated ({skipped} skipped)",
                     ).replace("{skipped}", String(skipped)),
-                )
+                );
             } else {
                 notify.success(
                     t(
@@ -220,7 +201,7 @@ export default function AITemplatePanel({
                     )
                         .replace("{updated}", String(updated))
                         .replace("{skipped}", String(skipped)),
-                )
+                );
             }
             if (dropped > 0) {
                 // Surface the reconciliation drops as a follow-up
@@ -230,23 +211,22 @@ export default function AITemplatePanel({
                         "ui.ai_template.import.toast.dropped_summaries",
                         "{dropped} chapter summary entr(y/ies) could not be matched and were dropped",
                     ).replace("{dropped}", String(dropped)),
-                )
+                );
             }
-            setShowImportDialog(false)
-            onApplied?.()
+            setShowImportDialog(false);
+            onApplied?.();
         } catch (err) {
             const detail =
                 err instanceof ApiError
                     ? err.detail
-                    : t("ui.ai_template.import.toast.error", "Import failed")
-            notify.error(detail, err)
+                    : t("ui.ai_template.import.toast.error", "Import failed");
+            notify.error(detail, err);
         } finally {
-            setImportLoading(false)
+            setImportLoading(false);
         }
-    }
+    };
 
-    const btnClass =
-        layout === "compact" ? "btn btn-secondary btn-sm" : "btn btn-secondary"
+    const btnClass = layout === "compact" ? "btn btn-secondary btn-sm" : "btn btn-secondary";
 
     return (
         <div
@@ -262,41 +242,41 @@ export default function AITemplatePanel({
                 border: "1px solid var(--border, #e5e7eb)",
             }}
         >
-            <div style={{fontWeight: 600, fontSize: "0.875rem"}}>
+            <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>
                 {t("ui.ai_template.panel.title", "AI Template")}
             </div>
-            <div style={{display: "flex", flexWrap: "wrap", gap: 8}}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
                 <button
                     type="button"
                     className={btnClass}
                     onClick={() => setShowFillDialog(true)}
-                    disabled={fillLoading || fillBlockedOffline}
+                    disabled={fillLoading || aiFill.isDisabled}
                     title={fillTitle}
                     data-testid="ai-template-fill"
                 >
-                    <Sparkles size={14} style={{marginRight: 6}}/>
+                    <Sparkles size={14} style={{ marginRight: 6 }} />
                     {t("ui.ai_template.panel.fill", "Fill with AI")}
                 </button>
                 <button
                     type="button"
                     className={btnClass}
                     onClick={handleExport}
-                    disabled={exportLoading || offlineGate}
-                    title={offlineGate ? offlineMsg : undefined}
+                    disabled={exportLoading || fileIo.isDisabled}
+                    title={fileIoTitle}
                     data-testid="ai-template-export"
                 >
-                    <Download size={14} style={{marginRight: 6}}/>
+                    <Download size={14} style={{ marginRight: 6 }} />
                     {t("ui.ai_template.panel.export", "Export template")}
                 </button>
                 <button
                     type="button"
                     className={btnClass}
                     onClick={openImportDialog}
-                    disabled={importLoading || offlineGate}
-                    title={offlineGate ? offlineMsg : undefined}
+                    disabled={importLoading || fileIo.isDisabled}
+                    title={fileIoTitle}
                     data-testid="ai-template-import"
                 >
-                    <Upload size={14} style={{marginRight: 6}}/>
+                    <Upload size={14} style={{ marginRight: 6 }} />
                     {t("ui.ai_template.panel.import", "Import filled template")}
                 </button>
             </div>
@@ -306,16 +286,18 @@ export default function AITemplatePanel({
                 onClose={() => setShowFillDialog(false)}
                 onSubmit={handleFillSubmit}
                 kind={kind}
-                availableClasses={offlineGate ? offlineSupportedClasses : undefined}
+                availableClasses={offline ? offlineSupportedClasses : undefined}
                 loading={fillLoading}
             />
 
             <Dialog.Root
                 open={showImportDialog}
-                onOpenChange={(open) => { if (!open) closeImportDialog() }}
+                onOpenChange={(open) => {
+                    if (!open) closeImportDialog();
+                }}
             >
                 <Dialog.Portal>
-                    <Dialog.Overlay className="dialog-overlay"/>
+                    <Dialog.Overlay className="dialog-overlay" />
                     <Dialog.Content
                         className="dialog-content dialog-content-wide"
                         data-testid="ai-template-import-dialog"
@@ -323,10 +305,7 @@ export default function AITemplatePanel({
                     >
                         <div className="dialog-header">
                             <Dialog.Title className="dialog-title">
-                                {t(
-                                    "ui.ai_template.import_dialog.title",
-                                    "Import filled template",
-                                )}
+                                {t("ui.ai_template.import_dialog.title", "Import filled template")}
                             </Dialog.Title>
                             <Dialog.Close asChild>
                                 <button
@@ -335,7 +314,7 @@ export default function AITemplatePanel({
                                     onClick={closeImportDialog}
                                     aria-label={t("ui.common.close", "Schließen")}
                                 >
-                                    <X size={16}/>
+                                    <X size={16} />
                                 </button>
                             </Dialog.Close>
                         </div>
@@ -345,13 +324,13 @@ export default function AITemplatePanel({
                                 "Drop a filled .biblio.yaml here. The template's reference.id must match this record.",
                             )}
                         </Dialog.Description>
-                        <div style={{marginTop: 12}}>
+                        <div style={{ marginTop: 12 }}>
                             <TemplateImportDropZone
                                 mode="single"
                                 onFile={setImportFile}
                                 loading={importLoading}
                             />
-                            {importFile && <TemplateImportFilePreview file={importFile}/>}
+                            {importFile && <TemplateImportFilePreview file={importFile} />}
                         </div>
                         <div
                             style={{
@@ -375,7 +354,7 @@ export default function AITemplatePanel({
                                 )}
                             />
                         </div>
-                        <div className="dialog-footer" style={{marginTop: 16}}>
+                        <div className="dialog-footer" style={{ marginTop: 16 }}>
                             <button
                                 type="button"
                                 className="btn btn-ghost"
@@ -392,15 +371,12 @@ export default function AITemplatePanel({
                                 disabled={!importFile || importLoading}
                                 data-testid="ai-template-import-submit"
                             >
-                                {t(
-                                    "ui.ai_template.import_dialog.submit",
-                                    "Import",
-                                )}
+                                {t("ui.ai_template.import_dialog.submit", "Import")}
                             </button>
                         </div>
                     </Dialog.Content>
                 </Dialog.Portal>
             </Dialog.Root>
         </div>
-    )
+    );
 }
