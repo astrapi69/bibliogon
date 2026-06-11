@@ -1,12 +1,22 @@
-import {useEffect, useRef, useCallback, useState} from "react";
-import {useEditorPluginStatus, isPluginAvailable, pluginDisabledMessage} from "../hooks/useEditorPluginStatus";
-import {useFlushOnUnload} from "../hooks/useFlushOnUnload";
-import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
-import {useTypewriterScroll} from "../hooks/useTypewriterScroll";
-import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts";
-import {useEditor, EditorContent, type Editor as TiptapEditor} from "@tiptap/react";
-import {saveDraft, deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent} from "../db/drafts";
-import {reviewString, NON_PROSE_CHAPTER_TYPES} from "../data/ai-review-strings";
+import { useEffect, useRef, useCallback, useState } from "react";
+import {
+    useEditorPluginStatus,
+    isPluginAvailable,
+    pluginDisabledMessage,
+} from "../hooks/useEditorPluginStatus";
+import { useFlushOnUnload } from "../hooks/useFlushOnUnload";
+import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
+import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
+import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
+import {
+    saveDraft,
+    deleteDraft,
+    checkForRecovery,
+    cleanupOldDrafts,
+    hashContent,
+} from "../db/drafts";
+import { reviewString, NON_PROSE_CHAPTER_TYPES } from "../data/ai-review-strings";
 import StarterKit from "@tiptap/starter-kit";
 import Link from "@tiptap/extension-link";
 import Placeholder from "@tiptap/extension-placeholder";
@@ -17,23 +27,23 @@ import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import Highlight from "@tiptap/extension-highlight";
 import Typography from "@tiptap/extension-typography";
-import {Table} from "@tiptap/extension-table";
+import { Table } from "@tiptap/extension-table";
 import TableRow from "@tiptap/extension-table-row";
 import TableCell from "@tiptap/extension-table-cell";
 import TableHeader from "@tiptap/extension-table-header";
 import TaskList from "@tiptap/extension-task-list";
 import TaskItem from "@tiptap/extension-task-item";
 import Color from "@tiptap/extension-color";
-import {TextStyle} from "@tiptap/extension-text-style";
+import { TextStyle } from "@tiptap/extension-text-style";
 import Figure from "@pentestpad/tiptap-extension-figure";
-import {Footnotes, FootnoteReference, Footnote} from "tiptap-footnotes";
-import {SearchAndReplace} from "../extensions/searchAndReplace";
+import { Footnotes, FootnoteReference, Footnote } from "tiptap-footnotes";
+import { SearchAndReplace } from "../extensions/searchAndReplace";
 import OfficePaste from "@intevation/tiptap-extension-office-paste";
 import Focus from "@tiptap/extension-focus";
-import {InlineMathDollar, BlockMathDollar} from "../extensions/math";
+import { InlineMathDollar, BlockMathDollar } from "../extensions/math";
 import "katex/dist/katex.min.css";
-import {StyleCheckExtension} from "../extensions/StyleCheckExtension";
-import {FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType} from "../data/fix-issue-prompts";
+import { StyleCheckExtension } from "../extensions/StyleCheckExtension";
+import { FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType } from "../data/fix-issue-prompts";
 
 type Translator = (key: string, fallback: string) => string;
 
@@ -45,16 +55,21 @@ const ISSUE_TYPE_LABELS: Record<FixIssueType, (t: Translator) => string> = {
 };
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
-import {buildMentionLabels, createStoryBibleMention, handleMentionClick} from "./storyBibleMention";
+import {
+    buildMentionLabels,
+    createStoryBibleMention,
+    handleMentionClick,
+} from "./storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
-import {useEditorDisplaySettings} from "../hooks/useEditorDisplaySettings";
-import {useI18n} from "../hooks/useI18n";
-import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate";
-import {api, ApiError, SaveAbortedError} from "../api/client";
-import {getStorage} from "../storage";
-import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota";
-import {notify} from "../utils/notify";
-import {editorToMarkdown} from "../utils/tiptap-markdown";
+import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
+import { useI18n } from "../hooks/useI18n";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
+import { api, ApiError, SaveAbortedError } from "../api/client";
+import { getStorage } from "../storage";
+import { warnIfOfflineStorageNearlyFull } from "../utils/storageQuota";
+import { notify } from "../utils/notify";
+import { editorToMarkdown } from "../utils/tiptap-markdown";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -69,10 +84,10 @@ export interface BookContext {
 // ContentKind + pluginsForContentKind live in editor-gates.ts so
 // they can be imported from non-DOM unit tests without pulling in
 // the entire TipTap extension graph.
-export {pluginsForContentKind} from "./editor-gates";
-export type {ContentKind, PluginGates} from "./editor-gates";
-import type {ContentKind} from "./editor-gates";
-import {pluginsForContentKind as pluginsForKind} from "./editor-gates";
+export { pluginsForContentKind } from "./editor-gates";
+export type { ContentKind, PluginGates } from "./editor-gates";
+import type { ContentKind } from "./editor-gates";
+import { pluginsForContentKind as pluginsForKind } from "./editor-gates";
 import styles from "./Editor.module.css";
 
 interface Props {
@@ -120,7 +135,7 @@ interface Props {
      *  used as a dep so repeated navigations to the same type re-fire
      *  the jump even when chapter did not change. Set by BookEditor in
      *  response to a Quality-tab click. */
-    initialFocus?: {type: string; seq: number};
+    initialFocus?: { type: string; seq: number };
     /** When set, enables Story Bible @-mention autocomplete scoped to
      *  this book (STORY-BIBLE C13). BookEditor passes the bookId only
      *  when plugin-story-bible is active. */
@@ -130,13 +145,37 @@ interface Props {
     onOpenStoryEntity?: (entityId: string) => void;
 }
 
-export default function Editor({content, onSave, placeholder, contentKind = "book-chapter", bookId, chapterId, chapterTitle, chapterType = "chapter", chapterVersion, targetWords, bookContext, documentTitle, documentSubtitle, autosaveDebounceMs = 800, draftSaveDebounceMs = 2000, draftMaxAgeDays = 30, aiContextChars = 2000, initialFocus, mentionBookId, onOpenStoryEntity}: Props) {
+export default function Editor({
+    content,
+    onSave,
+    placeholder,
+    contentKind = "book-chapter",
+    bookId,
+    chapterId,
+    chapterTitle,
+    chapterType = "chapter",
+    chapterVersion,
+    targetWords,
+    bookContext,
+    documentTitle,
+    documentSubtitle,
+    autosaveDebounceMs = 800,
+    draftSaveDebounceMs = 2000,
+    draftMaxAgeDays = 30,
+    aiContextChars = 2000,
+    initialFocus,
+    mentionBookId,
+    onOpenStoryEntity,
+}: Props) {
     const gates = pluginsForKind(contentKind);
     const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const lastSaved = useRef(content);
     const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-    const {t} = useI18n();
-    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate();
+    const { t } = useI18n();
+    const aiGen = useFeature(FEATURES.AI_GENERATE);
+    const aiGenTitle = aiGen.isDisabled
+        ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
+        : undefined;
     const [markdownMode, setMarkdownMode] = useState(false);
     const [showSearch, setShowSearch] = useState(false);
     const [focusMode, setFocusMode] = useState(false);
@@ -149,18 +188,29 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     // the paper column. Escape exits; Ctrl+Shift+D toggles.
     const [compositionMode, setCompositionMode] = useState(false);
     const [showSpellcheck, setShowSpellcheck] = useState(false);
-    const [spellcheckResults, setSpellcheckResults] = useState<{message: string; short_message: string; offset: number; length: number; replacements: string[]; rule_id: string}[]>([]);
+    const [spellcheckResults, setSpellcheckResults] = useState<
+        {
+            message: string;
+            short_message: string;
+            offset: number;
+            length: number;
+            replacements: string[];
+            rule_id: string;
+        }[]
+    >([]);
     const [spellcheckLoading, setSpellcheckLoading] = useState(false);
     const [styleCheckActive, setStyleCheckActive] = useState(false);
     const [styleCheckLoading, setStyleCheckLoading] = useState(false);
     const [previewLoading, setPreviewLoading] = useState(false);
     const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
-    const {status: pluginStatus} = useEditorPluginStatus();
+    const { status: pluginStatus } = useEditorPluginStatus();
     const [showAiPanel, setShowAiPanel] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState("");
     const [aiReview, setAiReview] = useState("");
     const [aiLoading, setAiLoading] = useState(false);
-    const [aiPromptType, setAiPromptType] = useState<"improve" | "shorten" | "expand" | "custom" | "review" | "fix_issue">("improve");
+    const [aiPromptType, setAiPromptType] = useState<
+        "improve" | "shorten" | "expand" | "custom" | "review" | "fix_issue"
+    >("improve");
     const [aiCustomPrompt, setAiCustomPrompt] = useState("");
     // activeIssue is set by the navigate-to-issue flow (initialFocus
     // effect) and cleared on chapter switch. Used by the AI "fix issue"
@@ -175,7 +225,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         length: number;
     } | null>(null);
     // New for v0.20.x AI review extension. See docs/explorations/ai-review-extension.md.
-    const [reviewFocus, setReviewFocus] = useState<"style" | "consistency" | "beta_reader">("style");
+    const [reviewFocus, setReviewFocus] = useState<"style" | "consistency" | "beta_reader">(
+        "style",
+    );
     const [reviewDownloadUrl, setReviewDownloadUrl] = useState<string | null>(null);
     const [reviewStatusMsg, setReviewStatusMsg] = useState<string | null>(null);
     const [reviewCostLabel, setReviewCostLabel] = useState<string | null>(null);
@@ -188,7 +240,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const wordGoal = targetWords ?? null;
     const [searchTerm, setSearchTerm] = useState("");
     const [replaceTerm, setReplaceTerm] = useState("");
-    const [recoveryDraft, setRecoveryDraft] = useState<{content: string; savedAt: number} | null>(null);
+    const [recoveryDraft, setRecoveryDraft] = useState<{ content: string; savedAt: number } | null>(
+        null,
+    );
     const serverContentHash = useRef(hashContent(content));
     const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     // Pending "saved" -> "idle" reset. Tracked so a NEW save cycle can
@@ -219,9 +273,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const fullscreen = useFullscreenToggle();
     useKeyboardShortcuts([
         ...(fullscreen.isSupported
-            ? [{keys: "ctrl+shift+f", handler: () => void fullscreen.toggle()}]
+            ? [{ keys: "ctrl+shift+f", handler: () => void fullscreen.toggle() }]
             : []),
-        {keys: "ctrl+shift+d", handler: () => setCompositionMode((v) => !v)},
+        { keys: "ctrl+shift+d", handler: () => setCompositionMode((v) => !v) },
     ]);
 
     // COMPOSITION-DISTRACTION-FREE-MODE-01: drive the root-level
@@ -283,8 +337,13 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
                 if (!isConflict && !isOffline) {
                     notify.saveError(
-                        t("ui.editor.save_failed", "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert."),
-                        () => { void performSave(json); },
+                        t(
+                            "ui.editor.save_failed",
+                            "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert.",
+                        ),
+                        () => {
+                            void performSave(json);
+                        },
                         t("ui.editor.save_retry", "Erneut versuchen"),
                     );
                 }
@@ -308,9 +367,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             // A new edit starts a fresh save cycle; cancel any pending
             // "saved" -> "idle" reset so it can't flip the indicator to
             // idle mid-cycle.
-            if (idleTimer.current) { clearTimeout(idleTimer.current); idleTimer.current = null; }
+            if (idleTimer.current) {
+                clearTimeout(idleTimer.current);
+                idleTimer.current = null;
+            }
             setSaveStatus("saving");
-            saveTimer.current = setTimeout(() => { void performSave(json); }, autosaveDebounceMs);
+            saveTimer.current = setTimeout(() => {
+                void performSave(json);
+            }, autosaveDebounceMs);
 
             // Save draft to IndexedDB (parallel to server save, independent debounce).
             // This is the safety net: even if the server save later fails, the
@@ -322,7 +386,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 }, draftSaveDebounceMs);
             }
         },
-        [performSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs]
+        [performSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs],
     );
 
     // Flush pending saves on tab close / page unload / backgrounding. Uses
@@ -351,7 +415,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         try {
             const asset = await getStorage().assets.upload(bookId, file, "figure");
             const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
-            editorRef.current?.chain().focus().setImage({src, alt: file.name}).run();
+            editorRef.current?.chain().focus().setImage({ src, alt: file.name }).run();
             void warnIfOfflineStorageNearlyFull(
                 t(
                     "ui.offline.storage_almost_full",
@@ -366,7 +430,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     const editor = useEditor({
         immediatelyRender: false,
         extensions: [
-            StarterKit.configure({link: false, underline: false}),
+            StarterKit.configure({ link: false, underline: false }),
             Figure.configure({
                 allowBase64: true,
             }),
@@ -382,14 +446,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             Underline,
             Subscript,
             Superscript,
-            Highlight.configure({multicolor: true}),
+            Highlight.configure({ multicolor: true }),
             Typography,
-            Table.configure({resizable: true}),
+            Table.configure({ resizable: true }),
             TableRow,
             TableCell,
             TableHeader,
             TaskList,
-            TaskItem.configure({nested: true}),
+            TaskItem.configure({ nested: true }),
             CharacterCount,
             TextStyle,
             Color,
@@ -397,10 +461,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             FootnoteReference,
             Footnote,
             InlineMathDollar.configure({
-                katexOptions: {throwOnError: false},
+                katexOptions: { throwOnError: false },
             }),
             BlockMathDollar.configure({
-                katexOptions: {throwOnError: false},
+                katexOptions: { throwOnError: false },
             }),
             SearchAndReplace.configure({
                 disableRegex: true,
@@ -419,7 +483,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 : []),
         ],
         content: parseContent(content),
-        onUpdate: ({editor}) => {
+        onUpdate: ({ editor }) => {
             syncCountsRef.current(editor);
             const json = JSON.stringify(editor.getJSON());
             debouncedSave(json);
@@ -507,15 +571,23 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     }, [editor]);
 
     // Keep ref in sync for async callbacks (image upload)
-    useEffect(() => { editorRef.current = editor; }, [editor]);
+    useEffect(() => {
+        editorRef.current = editor;
+    }, [editor]);
 
     // Keep the flush callback fresh: on every render capture the current
     // chapterId, bookId, and editor. Invoked from beforeunload/pagehide/
     // visibilitychange handlers installed by `useFlushOnUnload` above.
     useEffect(() => {
         flushPendingSaveRef.current = () => {
-            if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
-            if (draftTimer.current) { clearTimeout(draftTimer.current); draftTimer.current = null; }
+            if (saveTimer.current) {
+                clearTimeout(saveTimer.current);
+                saveTimer.current = null;
+            }
+            if (draftTimer.current) {
+                clearTimeout(draftTimer.current);
+                draftTimer.current = null;
+            }
             const editorInstance = editorRef.current;
             if (!editorInstance || !chapterId || !bookId) return;
             let json: string;
@@ -569,7 +641,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 setStyleCheckActive(true);
                 const match = result.findings.find((f) => f.type === initialFocus.type);
                 if (!match) {
-                    notify.info(t("ui.metadata.quality_nav_no_issues", "Keine Treffer in diesem Kapitel"));
+                    notify.info(
+                        t("ui.metadata.quality_nav_no_issues", "Keine Treffer in diesem Kapitel"),
+                    );
                     return;
                 }
                 // Offsets are plain-text; convert via a temp doc walk
@@ -596,16 +670,21 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     return undefined;
                 });
                 if (from === null) return;
-                editor.chain()
+                editor
+                    .chain()
                     .focus()
-                    .setTextSelection({from, to: to ?? from})
+                    .setTextSelection({ from, to: to ?? from })
                     .scrollIntoView()
                     .run();
                 // Arm the "fix issue" AI mode for this finding. The AI
                 // panel stays closed until the user clicks; the button
                 // on the quality tab is diagnosis, not remediation.
                 setActiveIssue({
-                    type: match.type as "filler_word" | "passive_voice" | "adverb" | "long_sentence",
+                    type: match.type as
+                        | "filler_word"
+                        | "passive_voice"
+                        | "adverb"
+                        | "long_sentence",
                     offset: match.offset,
                     length: match.length,
                 });
@@ -620,7 +699,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 // style check failure: nothing to jump to
             }
         })();
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [editor, initialFocus?.type, initialFocus?.seq]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Clear activeIssue on chapter switch. The finding offsets belong
@@ -641,7 +722,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         const activeChapter = chapterId;
         checkForRecovery(chapterId, content, new Date().toISOString()).then((draft) => {
             if (draft && activeChapter === chapterId) {
-                setRecoveryDraft({content: draft.content, savedAt: draft.savedAt});
+                setRecoveryDraft({ content: draft.content, savedAt: draft.savedAt });
             }
         });
         serverContentHash.current = hashContent(content);
@@ -649,8 +730,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     }, [chapterId, editor]);
 
     // Cleanup old drafts on mount
-    useEffect(() => { cleanupOldDrafts(draftMaxAgeDays); }, [draftMaxAgeDays]);
-
+    useEffect(() => {
+        cleanupOldDrafts(draftMaxAgeDays);
+    }, [draftMaxAgeDays]);
 
     // Cleanup timer
     useEffect(() => {
@@ -683,17 +765,24 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 if (cancelled) return;
                 const tokens = Number(payload.input_tokens || 0);
                 const cost = typeof payload.cost_usd === "number" ? payload.cost_usd : null;
-                const tokensLabel = tokens >= 1000 ? `${Math.round(tokens / 100) / 10}k` : `${tokens}`;
+                const tokensLabel =
+                    tokens >= 1000 ? `${Math.round(tokens / 100) / 10}k` : `${tokens}`;
                 if (cost !== null) {
-                    setReviewCostLabel(`~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}, ~$${cost.toFixed(3)}`);
+                    setReviewCostLabel(
+                        `~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}, ~$${cost.toFixed(3)}`,
+                    );
                 } else {
-                    setReviewCostLabel(`~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}`);
+                    setReviewCostLabel(
+                        `~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}`,
+                    );
                 }
             })
             .catch(() => {
                 if (!cancelled) setReviewCostLabel(null);
             });
-        return () => { cancelled = true; };
+        return () => {
+            cancelled = true;
+        };
     }, [showAiPanel, aiPromptType, editor, chapterId, t]);
 
     const handleToggleMarkdown = () => {
@@ -741,7 +830,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             await api.chapters.createSnapshot(bookId, chapterId, null);
             notify.success(t("ui.versions.snapshot_taken", "Snapshot erstellt."));
         } catch {
-            notify.error(t("ui.versions.snapshot_failed", "Snapshot konnte nicht erstellt werden."));
+            notify.error(
+                t("ui.versions.snapshot_failed", "Snapshot konnte nicht erstellt werden."),
+            );
         }
     };
 
@@ -751,7 +842,11 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         const query = text.trim();
         if (!mentionBookId || !query) return;
         try {
-            const matches = await getStorage().storyBible.listEntities(mentionBookId, undefined, query);
+            const matches = await getStorage().storyBible.listEntities(
+                mentionBookId,
+                undefined,
+                query,
+            );
             if (matches.length && onOpenStoryEntity) {
                 onOpenStoryEntity(matches[0].id);
             } else {
@@ -782,7 +877,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             }
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"), err);
+            notify.error(
+                detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"),
+                err,
+            );
             setSpellcheckResults([]);
         }
         setSpellcheckLoading(false);
@@ -818,8 +916,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         setPreviewLoading(true);
         try {
             // Use selected text or first N chars of chapter
-            const {from, to} = editor.state.selection;
-            let text = from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
+            const { from, to } = editor.state.selection;
+            let text =
+                from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
             if (text.length > aiContextChars) text = text.slice(0, aiContextChars);
             if (!text.trim()) {
                 notify.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
@@ -834,7 +933,10 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 setPreviewAudioUrl(URL.createObjectURL(blob));
             } catch (err) {
                 const detail = err instanceof ApiError ? err.detail : null;
-                notify.error(detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"), err);
+                notify.error(
+                    detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"),
+                    err,
+                );
                 setPreviewLoading(false);
                 return;
             }
@@ -853,9 +955,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         ed: TiptapEditor,
         issueOffset: number,
         issueLength: number,
-    ): {from: number; to: number} | null => {
+    ): { from: number; to: number } | null => {
         const plain = ed.getText();
-        const {start, end} = findEnclosingSentence(plain, issueOffset, issueLength);
+        const { start, end } = findEnclosingSentence(plain, issueOffset, issueLength);
         const doc = ed.state.doc;
         let charCount = 0;
         let from: number | null = null;
@@ -881,7 +983,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         if (from === null) return null;
         if (to === null) to = from;
         if (to < from) return null;
-        return {from, to};
+        return { from, to };
     };
 
     const handleAiSuggest = async () => {
@@ -900,13 +1002,15 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 notify.info(t("ui.editor.ai_fix_issue_none", "Kein Problem ausgewählt"));
                 return;
             }
-            editor.chain().focus().setTextSelection({from: range.from, to: range.to}).run();
+            editor.chain().focus().setTextSelection({ from: range.from, to: range.to }).run();
         }
 
-        const {from, to} = editor.state.selection;
+        const { from, to } = editor.state.selection;
         const selectedText = from !== to ? editor.state.doc.textBetween(from, to, "\n") : "";
         if (!selectedText.trim()) {
-            notify.info(t("ui.editor.ai_select_text", "Markiere zuerst einen Text für AI-Vorschläge"));
+            notify.info(
+                t("ui.editor.ai_select_text", "Markiere zuerst einen Text für AI-Vorschläge"),
+            );
             return;
         }
         setShowAiPanel(true);
@@ -928,35 +1032,42 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             // Article: chapterTitle slot holds the article title.
             if (chapterTitle) contextLines.push(`Article: ${chapterTitle}`);
         }
-        const toneHint = contentKind === "article"
-            ? "Match an engaging, accessible online-publication tone. The output should read well as a standalone article."
-            : "Match the tone and style appropriate for this genre and language.";
-        const contextBlock = contextLines.length > 0
-            ? `\n\nContext:\n${contextLines.join("\n")}\n\n${toneHint}`
-            : "";
+        const toneHint =
+            contentKind === "article"
+                ? "Match an engaging, accessible online-publication tone. The output should read well as a standalone article."
+                : "Match the tone and style appropriate for this genre and language.";
+        const contextBlock =
+            contextLines.length > 0
+                ? `\n\nContext:\n${contextLines.join("\n")}\n\n${toneHint}`
+                : "";
 
         const fixIssuePrompt = activeIssue
             ? FIX_ISSUE_PROMPTS[activeIssue.type] + contextBlock
             : "";
 
-        const basePrompts: Record<string, string> = contentKind === "article"
-            ? {
-                improve: `You are a professional editor for online publications. Improve the following article excerpt: fix grammar, improve clarity, sharpen voice for online readers. Return only the improved text.${contextBlock}`,
-                shorten: `You are a professional editor. Tighten the following article excerpt without losing meaning. Favor punchy phrasing suitable for online reading. Return only the shortened text.${contextBlock}`,
-                expand: `You are a professional writer for online publications. Expand the following article excerpt with concrete detail and examples. Keep the tone engaging. Return only the expanded text.${contextBlock}`,
-                custom: (aiCustomPrompt || "Improve this article excerpt.") + contextBlock,
-                fix_issue: fixIssuePrompt,
-            }
-            : {
-                improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
-                shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
-                expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
-                custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
-                fix_issue: fixIssuePrompt,
-            };
+        const basePrompts: Record<string, string> =
+            contentKind === "article"
+                ? {
+                      improve: `You are a professional editor for online publications. Improve the following article excerpt: fix grammar, improve clarity, sharpen voice for online readers. Return only the improved text.${contextBlock}`,
+                      shorten: `You are a professional editor. Tighten the following article excerpt without losing meaning. Favor punchy phrasing suitable for online reading. Return only the shortened text.${contextBlock}`,
+                      expand: `You are a professional writer for online publications. Expand the following article excerpt with concrete detail and examples. Keep the tone engaging. Return only the expanded text.${contextBlock}`,
+                      custom: (aiCustomPrompt || "Improve this article excerpt.") + contextBlock,
+                      fix_issue: fixIssuePrompt,
+                  }
+                : {
+                      improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
+                      shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
+                      expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
+                      custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
+                      fix_issue: fixIssuePrompt,
+                  };
 
         try {
-            const data = await api.ai.generate(selectedText, basePrompts[aiPromptType], bookId || "");
+            const data = await api.ai.generate(
+                selectedText,
+                basePrompts[aiPromptType],
+                bookId || "",
+            );
             setAiSuggestion(data.content || "");
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : null;
@@ -968,16 +1079,22 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
     const handleAiApply = () => {
         if (!editor || !aiSuggestion) return;
-        const {from, to} = editor.state.selection;
+        const { from, to } = editor.state.selection;
         if (from !== to) {
-            editor.chain().focus().deleteRange({from, to}).insertContentAt(from, aiSuggestion).run();
+            editor
+                .chain()
+                .focus()
+                .deleteRange({ from, to })
+                .insertContentAt(from, aiSuggestion)
+                .run();
             notify.success(t("ui.editor.ai_applied", "AI-Vorschlag übernommen"));
         }
         setShowAiPanel(false);
         setAiSuggestion("");
     };
 
-    const bookLanguage = bookContext?.language || document.documentElement.getAttribute("lang") || "de";
+    const bookLanguage =
+        bookContext?.language || document.documentElement.getAttribute("lang") || "de";
 
     const handleAiReview = async () => {
         if (!editor) return;
@@ -1023,13 +1140,19 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
         reviewEventSource.current = es;
         es.onmessage = (ev) => {
             try {
-                const parsed = JSON.parse(ev.data) as {type: string; data: Record<string, unknown>};
+                const parsed = JSON.parse(ev.data) as {
+                    type: string;
+                    data: Record<string, unknown>;
+                };
                 if (parsed.type === "review_start") {
                     setReviewStatusMsg(reviewString(bookLanguage, "status_analyzing"));
                 } else if (parsed.type === "review_llm_call") {
                     setReviewStatusMsg(reviewString(bookLanguage, "status_generating"));
                 } else if (parsed.type === "review_done") {
-                    const url = typeof parsed.data.download_url === "string" ? parsed.data.download_url : null;
+                    const url =
+                        typeof parsed.data.download_url === "string"
+                            ? parsed.data.download_url
+                            : null;
                     setReviewDownloadUrl(url);
                 } else if (parsed.type === "stream_end") {
                     es.close();
@@ -1064,10 +1187,13 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
     };
 
     const statusLabel =
-        saveStatus === "saving" ? t("ui.editor.saving", "Speichert...") :
-        saveStatus === "saved" ? t("ui.editor.saved", "Gespeichert") :
-        saveStatus === "error" ? t("ui.editor.save_failed_short", "Speichern fehlgeschlagen") :
-        "";
+        saveStatus === "saving"
+            ? t("ui.editor.saving", "Speichert...")
+            : saveStatus === "saved"
+              ? t("ui.editor.saved", "Gespeichert")
+              : saveStatus === "error"
+                ? t("ui.editor.save_failed_short", "Speichern fehlgeschlagen")
+                : "";
 
     const handleRestore = () => {
         if (editor && recoveryDraft) {
@@ -1096,14 +1222,27 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             {/* Recovery dialog */}
             {recoveryDraft && (
                 <div className={styles.recoveryBanner} data-testid="recovery-banner">
-                    <div style={{flex: 1}}>
-                        <strong>{t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}</strong>
-                        <p style={{margin: "4px 0 0", fontSize: "0.8125rem", color: "var(--text-secondary)"}}>
-                            {t("ui.editor.recovery_desc", "Änderungen vom {timestamp} gefunden, die nicht gespeichert wurden.")
-                                .replace("{timestamp}", new Date(recoveryDraft.savedAt).toLocaleString())}
+                    <div style={{ flex: 1 }}>
+                        <strong>
+                            {t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}
+                        </strong>
+                        <p
+                            style={{
+                                margin: "4px 0 0",
+                                fontSize: "0.8125rem",
+                                color: "var(--text-secondary)",
+                            }}
+                        >
+                            {t(
+                                "ui.editor.recovery_desc",
+                                "Änderungen vom {timestamp} gefunden, die nicht gespeichert wurden.",
+                            ).replace(
+                                "{timestamp}",
+                                new Date(recoveryDraft.savedAt).toLocaleString(),
+                            )}
                         </p>
                     </div>
-                    <div style={{display: "flex", gap: 8}}>
+                    <div style={{ display: "flex", gap: 8 }}>
                         <button className="btn btn-primary btn-sm" onClick={handleRestore}>
                             {t("ui.editor.recovery_restore", "Wiederherstellen")}
                         </button>
@@ -1118,34 +1257,62 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 bar via global CSS (display:contents = layout-neutral
                 when not in composition mode). */}
             <div className="editor-chrome-toolbar">
-            <Toolbar
-                editor={editor}
-                markdownMode={markdownMode}
-                onToggleMarkdown={handleToggleMarkdown}
-                onToggleSearch={() => setShowSearch(!showSearch)}
-                focusMode={focusMode}
-                onToggleFocus={() => setFocusMode(!focusMode)}
-                compositionMode={compositionMode}
-                onToggleComposition={() => setCompositionMode(!compositionMode)}
-                isFullscreen={fullscreen.isFullscreen}
-                onToggleFullscreen={
-                    fullscreen.isSupported ? () => void fullscreen.toggle() : undefined
-                }
-                spellcheckActive={showSpellcheck}
-                onToggleSpellcheck={isPluginAvailable(pluginStatus, "grammar") ? handleToggleSpellcheck : undefined}
-                onPreviewAudio={gates.showAudiobook && isPluginAvailable(pluginStatus, "audiobook") ? handlePreviewAudio : undefined}
-                previewLoading={previewLoading}
-                previewDisabledReason={gates.showAudiobook && !isPluginAvailable(pluginStatus, "audiobook") ? pluginDisabledMessage(pluginStatus, "audiobook") : undefined}
-                aiPanelActive={showAiPanel}
-                onToggleAi={isPluginAvailable(pluginStatus, "ai") ? () => setShowAiPanel(!showAiPanel) : undefined}
-                aiDisabledReason={!isPluginAvailable(pluginStatus, "ai") ? pluginDisabledMessage(pluginStatus, "ai") : undefined}
-                spellcheckDisabledReason={!isPluginAvailable(pluginStatus, "grammar") ? pluginDisabledMessage(pluginStatus, "grammar") : undefined}
-                styleCheckActive={styleCheckActive}
-                styleCheckLoading={styleCheckLoading}
-                onToggleStyleCheck={isPluginAvailable(pluginStatus, "ms-tools") ? handleToggleStyleCheck : undefined}
-                documentTitle={documentTitle ?? chapterTitle}
-                documentSubtitle={documentSubtitle}
-            />
+                <Toolbar
+                    editor={editor}
+                    markdownMode={markdownMode}
+                    onToggleMarkdown={handleToggleMarkdown}
+                    onToggleSearch={() => setShowSearch(!showSearch)}
+                    focusMode={focusMode}
+                    onToggleFocus={() => setFocusMode(!focusMode)}
+                    compositionMode={compositionMode}
+                    onToggleComposition={() => setCompositionMode(!compositionMode)}
+                    isFullscreen={fullscreen.isFullscreen}
+                    onToggleFullscreen={
+                        fullscreen.isSupported ? () => void fullscreen.toggle() : undefined
+                    }
+                    spellcheckActive={showSpellcheck}
+                    onToggleSpellcheck={
+                        isPluginAvailable(pluginStatus, "grammar")
+                            ? handleToggleSpellcheck
+                            : undefined
+                    }
+                    onPreviewAudio={
+                        gates.showAudiobook && isPluginAvailable(pluginStatus, "audiobook")
+                            ? handlePreviewAudio
+                            : undefined
+                    }
+                    previewLoading={previewLoading}
+                    previewDisabledReason={
+                        gates.showAudiobook && !isPluginAvailable(pluginStatus, "audiobook")
+                            ? pluginDisabledMessage(pluginStatus, "audiobook")
+                            : undefined
+                    }
+                    aiPanelActive={showAiPanel}
+                    onToggleAi={
+                        isPluginAvailable(pluginStatus, "ai")
+                            ? () => setShowAiPanel(!showAiPanel)
+                            : undefined
+                    }
+                    aiDisabledReason={
+                        !isPluginAvailable(pluginStatus, "ai")
+                            ? pluginDisabledMessage(pluginStatus, "ai")
+                            : undefined
+                    }
+                    spellcheckDisabledReason={
+                        !isPluginAvailable(pluginStatus, "grammar")
+                            ? pluginDisabledMessage(pluginStatus, "grammar")
+                            : undefined
+                    }
+                    styleCheckActive={styleCheckActive}
+                    styleCheckLoading={styleCheckLoading}
+                    onToggleStyleCheck={
+                        isPluginAvailable(pluginStatus, "ms-tools")
+                            ? handleToggleStyleCheck
+                            : undefined
+                    }
+                    documentTitle={documentTitle ?? chapterTitle}
+                    documentSubtitle={documentSubtitle}
+                />
             </div>
 
             {/* Floating exit affordance, only in composition mode
@@ -1164,9 +1331,9 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
             )}
 
             {/* EDITOR-DISPLAY-SETTINGS-01 C4: editor-display popover.
-              * Sits just below the Toolbar, right-aligned so it does
-              * not crowd the toolbar's left-aligned formatting buttons.
-              * Click opens a panel with the 4 controls + reset. */}
+             * Sits just below the Toolbar, right-aligned so it does
+             * not crowd the toolbar's left-aligned formatting buttons.
+             * Click opens a panel with the 4 controls + reset. */}
             <div
                 style={{
                     display: "flex",
@@ -1186,12 +1353,16 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
 
             {/* TTS Preview Player */}
             {previewAudioUrl && (
-                <div style={{
-                    display: "flex", alignItems: "center", gap: 8,
-                    padding: "6px 12px",
-                    background: "var(--bg-secondary)",
-                    borderBottom: "1px solid var(--border)",
-                }}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        padding: "6px 12px",
+                        background: "var(--bg-secondary)",
+                        borderBottom: "1px solid var(--border)",
+                    }}
+                >
                     {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                     <audio
                         controls
@@ -1201,7 +1372,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             URL.revokeObjectURL(previewAudioUrl);
                             setPreviewAudioUrl(null);
                         }}
-                        style={{height: 32, flex: 1, maxWidth: 400}}
+                        style={{ height: 32, flex: 1, maxWidth: 400 }}
                     />
                     <button
                         className="btn-icon"
@@ -1210,7 +1381,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             setPreviewAudioUrl(null);
                         }}
                         title={t("ui.common.close", "Schließen")}
-                        style={{padding: 4, fontSize: "1rem", lineHeight: 1}}
+                        style={{ padding: 4, fontSize: "1rem", lineHeight: 1 }}
                     >
                         &#x2715;
                     </button>
@@ -1222,61 +1393,111 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 <div className={styles.aiPanel}>
                     <div className={styles.aiHeader}>
                         <strong>{t("ui.editor.ai_assistant", "AI-Assistent")}</strong>
-                        <div style={{display: "flex", gap: 4, marginLeft: "auto", flexWrap: "wrap"}}>
+                        <div
+                            style={{
+                                display: "flex",
+                                gap: 4,
+                                marginLeft: "auto",
+                                flexWrap: "wrap",
+                            }}
+                        >
                             {activeIssue && (
                                 <button
                                     key="fix_issue"
                                     data-testid="ai-fix-issue-mode"
                                     className={`btn btn-sm ${aiPromptType === "fix_issue" ? "btn-primary" : "btn-ghost"}`}
-                                    onClick={() => { setAiPromptType("fix_issue"); setAiSuggestion(""); setAiReview(""); }}
-                                    style={{padding: "2px 8px", fontSize: "0.75rem"}}
+                                    onClick={() => {
+                                        setAiPromptType("fix_issue");
+                                        setAiSuggestion("");
+                                        setAiReview("");
+                                    }}
+                                    style={{ padding: "2px 8px", fontSize: "0.75rem" }}
                                 >
                                     {t("ui.editor.ai_fix_issue", "Problem beheben")}
                                 </button>
                             )}
-                            {(["improve", "shorten", "expand", "custom", "review"] as const).map((type) => (
-                                <button
-                                    key={type}
-                                    className={`btn btn-sm ${aiPromptType === type ? "btn-primary" : "btn-ghost"}`}
-                                    onClick={() => { setAiPromptType(type); setAiSuggestion(""); setAiReview(""); }}
-                                    style={{padding: "2px 8px", fontSize: "0.75rem"}}
-                                >
-                                    {type === "improve" ? t("ui.editor.ai_improve", "Verbessern")
-                                        : type === "shorten" ? t("ui.editor.ai_shorten", "Kürzen")
-                                        : type === "expand" ? t("ui.editor.ai_expand", "Erweitern")
-                                        : type === "custom" ? t("ui.editor.ai_custom", "Eigener Prompt")
-                                        : t("ui.editor.ai_review", "Review")}
-                                </button>
-                            ))}
+                            {(["improve", "shorten", "expand", "custom", "review"] as const).map(
+                                (type) => (
+                                    <button
+                                        key={type}
+                                        className={`btn btn-sm ${aiPromptType === type ? "btn-primary" : "btn-ghost"}`}
+                                        onClick={() => {
+                                            setAiPromptType(type);
+                                            setAiSuggestion("");
+                                            setAiReview("");
+                                        }}
+                                        style={{ padding: "2px 8px", fontSize: "0.75rem" }}
+                                    >
+                                        {type === "improve"
+                                            ? t("ui.editor.ai_improve", "Verbessern")
+                                            : type === "shorten"
+                                              ? t("ui.editor.ai_shorten", "Kürzen")
+                                              : type === "expand"
+                                                ? t("ui.editor.ai_expand", "Erweitern")
+                                                : type === "custom"
+                                                  ? t("ui.editor.ai_custom", "Eigener Prompt")
+                                                  : t("ui.editor.ai_review", "Review")}
+                                    </button>
+                                ),
+                            )}
                         </div>
-                        <button className="btn btn-ghost btn-sm" onClick={() => { setShowAiPanel(false); setAiReview(""); }}>&times;</button>
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => {
+                                setShowAiPanel(false);
+                                setAiReview("");
+                            }}
+                        >
+                            &times;
+                        </button>
                     </div>
                     {aiPromptType === "custom" && (
                         <input
                             className="input"
-                            style={{margin: "6px 16px", width: "calc(100% - 32px)", fontSize: "0.8125rem"}}
-                            placeholder={t("ui.editor.ai_custom_placeholder", "z.B. Mache den Ton formeller...")}
+                            style={{
+                                margin: "6px 16px",
+                                width: "calc(100% - 32px)",
+                                fontSize: "0.8125rem",
+                            }}
+                            placeholder={t(
+                                "ui.editor.ai_custom_placeholder",
+                                "z.B. Mache den Ton formeller...",
+                            )}
                             value={aiCustomPrompt}
                             onChange={(e) => setAiCustomPrompt(e.target.value)}
                         />
                     )}
                     {aiPromptType === "review" ? (
                         <>
-                            <div style={{padding: "4px 16px"}}>
-                                <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                                    {t("ui.editor.ai_review_hint", "Analysiert das gesamte Kapitel auf Stil, Kohaerenz und Pacing.")}
+                            <div style={{ padding: "4px 16px" }}>
+                                <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
+                                    {t(
+                                        "ui.editor.ai_review_hint",
+                                        "Analysiert das gesamte Kapitel auf Stil, Kohaerenz und Pacing.",
+                                    )}
                                 </small>
                             </div>
                             <div
                                 role="radiogroup"
                                 aria-label={t("ui.editor.ai_review_focus", "Review-Fokus")}
-                                style={{padding: "4px 16px", display: "flex", gap: 12, flexWrap: "wrap"}}
+                                style={{
+                                    padding: "4px 16px",
+                                    display: "flex",
+                                    gap: 12,
+                                    flexWrap: "wrap",
+                                }}
                             >
                                 {(["style", "consistency", "beta_reader"] as const).map((value) => (
                                     <label
                                         key={value}
                                         data-testid={`ai-review-focus-${value}`}
-                                        style={{display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.8125rem", cursor: "pointer"}}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: 4,
+                                            fontSize: "0.8125rem",
+                                            cursor: "pointer",
+                                        }}
                                     >
                                         <input
                                             type="radio"
@@ -1289,8 +1510,14 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                         {value === "style"
                                             ? t("ui.editor.ai_review_focus_style", "Stil")
                                             : value === "consistency"
-                                                ? t("ui.editor.ai_review_focus_consistency", "Konsistenz")
-                                                : t("ui.editor.ai_review_focus_beta_reader", "Testleser")}
+                                              ? t(
+                                                    "ui.editor.ai_review_focus_consistency",
+                                                    "Konsistenz",
+                                                )
+                                              : t(
+                                                    "ui.editor.ai_review_focus_beta_reader",
+                                                    "Testleser",
+                                                )}
                                     </label>
                                 ))}
                             </div>
@@ -1306,30 +1533,55 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     {reviewString(bookLanguage, "non_prose_warning")}
                                 </div>
                             )}
-                            <div style={{padding: "6px 16px", display: "flex", gap: 8, alignItems: "center"}}>
+                            <div
+                                style={{
+                                    padding: "6px 16px",
+                                    display: "flex",
+                                    gap: 8,
+                                    alignItems: "center",
+                                }}
+                            >
                                 <button
                                     data-testid="ai-review-start"
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiReview}
-                                    disabled={aiLoading || offlineGate}
-                                    title={offlineGate ? offlineMsg : undefined}
+                                    disabled={aiLoading || aiGen.isDisabled}
+                                    title={aiGenTitle}
                                 >
                                     {aiLoading
-                                        ? (reviewStatusMsg || t("ui.editor.ai_loading", "Denke nach..."))
+                                        ? reviewStatusMsg ||
+                                          t("ui.editor.ai_loading", "Denke nach...")
                                         : t("ui.editor.ai_review_start", "Kapitel reviewen")}
                                 </button>
                                 {reviewCostLabel && !aiLoading && (
-                                    <small data-testid="ai-review-cost" style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
+                                    <small
+                                        data-testid="ai-review-cost"
+                                        style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}
+                                    >
                                         {reviewCostLabel}
                                     </small>
                                 )}
                             </div>
                             {aiReview && (
                                 <div className={styles.aiSuggestion}>
-                                    <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)", lineHeight: 1.6}}>
+                                    <div
+                                        style={{
+                                            fontSize: "0.8125rem",
+                                            whiteSpace: "pre-wrap",
+                                            color: "var(--text-primary)",
+                                            lineHeight: 1.6,
+                                        }}
+                                    >
                                         {aiReview}
                                     </div>
-                                    <div style={{display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap"}}>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            gap: 8,
+                                            marginTop: 8,
+                                            flexWrap: "wrap",
+                                        }}
+                                    >
                                         {reviewDownloadUrl && (
                                             <a
                                                 data-testid="ai-review-download"
@@ -1339,10 +1591,19 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                                 rel="noopener noreferrer"
                                                 download
                                             >
-                                                {t("ui.editor.ai_review_download", "Bericht herunterladen")}
+                                                {t(
+                                                    "ui.editor.ai_review_download",
+                                                    "Bericht herunterladen",
+                                                )}
                                             </a>
                                         )}
-                                        <button className="btn btn-ghost btn-sm" onClick={() => { setAiReview(""); setReviewDownloadUrl(null); }}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => {
+                                                setAiReview("");
+                                                setReviewDownloadUrl(null);
+                                            }}
+                                        >
                                             {t("ui.editor.ai_review_close", "Schließen")}
                                         </button>
                                     </div>
@@ -1352,39 +1613,71 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                     ) : (
                         <>
                             {aiPromptType === "fix_issue" && activeIssue && (
-                                <div data-testid="ai-fix-issue-hint" style={{padding: "4px 16px"}}>
-                                    <small style={{color: "var(--text-muted)", fontSize: "0.75rem"}}>
-                                        {t("ui.editor.ai_fix_issue_hint", "AI formuliert den markierten Satz um.")} ({ISSUE_TYPE_LABELS[activeIssue.type](t)})
+                                <div
+                                    data-testid="ai-fix-issue-hint"
+                                    style={{ padding: "4px 16px" }}
+                                >
+                                    <small
+                                        style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}
+                                    >
+                                        {t(
+                                            "ui.editor.ai_fix_issue_hint",
+                                            "AI formuliert den markierten Satz um.",
+                                        )}{" "}
+                                        ({ISSUE_TYPE_LABELS[activeIssue.type](t)})
                                     </small>
                                 </div>
                             )}
-                            <div style={{padding: "6px 16px", display: "flex", gap: 8}}>
+                            <div style={{ padding: "6px 16px", display: "flex", gap: 8 }}>
                                 <button
-                                    data-testid={aiPromptType === "fix_issue" ? "ai-fix-issue-run" : undefined}
+                                    data-testid={
+                                        aiPromptType === "fix_issue"
+                                            ? "ai-fix-issue-run"
+                                            : undefined
+                                    }
                                     className="btn btn-primary btn-sm"
                                     onClick={handleAiSuggest}
-                                    disabled={aiLoading || offlineGate || (aiPromptType === "fix_issue" && !activeIssue)}
-                                    title={offlineGate ? offlineMsg : undefined}
+                                    disabled={
+                                        aiLoading ||
+                                        aiGen.isDisabled ||
+                                        (aiPromptType === "fix_issue" && !activeIssue)
+                                    }
+                                    title={aiGenTitle}
                                 >
                                     {aiLoading
-                                        ? (aiPromptType === "fix_issue" && activeIssue
-                                            ? t("ui.editor.ai_fix_issue_loading", "AI arbeitet am Satz...")
-                                            : t("ui.editor.ai_loading", "Denke nach..."))
-                                        : (aiPromptType === "fix_issue"
-                                            ? t("ui.editor.ai_fix_issue_run", "Vorschlag generieren")
-                                            : t("ui.editor.ai_suggest", "Vorschlag generieren"))}
+                                        ? aiPromptType === "fix_issue" && activeIssue
+                                            ? t(
+                                                  "ui.editor.ai_fix_issue_loading",
+                                                  "AI arbeitet am Satz...",
+                                              )
+                                            : t("ui.editor.ai_loading", "Denke nach...")
+                                        : aiPromptType === "fix_issue"
+                                          ? t("ui.editor.ai_fix_issue_run", "Vorschlag generieren")
+                                          : t("ui.editor.ai_suggest", "Vorschlag generieren")}
                                 </button>
                             </div>
                             {aiSuggestion && (
                                 <div className={styles.aiSuggestion}>
-                                    <div style={{fontSize: "0.8125rem", whiteSpace: "pre-wrap", color: "var(--text-primary)"}}>
+                                    <div
+                                        style={{
+                                            fontSize: "0.8125rem",
+                                            whiteSpace: "pre-wrap",
+                                            color: "var(--text-primary)",
+                                        }}
+                                    >
                                         {aiSuggestion}
                                     </div>
-                                    <div style={{display: "flex", gap: 8, marginTop: 8}}>
-                                        <button className="btn btn-primary btn-sm" onClick={handleAiApply}>
+                                    <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                                        <button
+                                            className="btn btn-primary btn-sm"
+                                            onClick={handleAiApply}
+                                        >
                                             {t("ui.editor.ai_apply", "Übernehmen")}
                                         </button>
-                                        <button className="btn btn-ghost btn-sm" onClick={() => setAiSuggestion("")}>
+                                        <button
+                                            className="btn btn-ghost btn-sm"
+                                            onClick={() => setAiSuggestion("")}
+                                        >
                                             {t("ui.editor.ai_discard", "Verwerfen")}
                                         </button>
                                     </div>
@@ -1424,19 +1717,39 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             if (e.key === "Escape") setShowSearch(false);
                         }}
                     />
-                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.previousSearchResult()}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => editor.commands.previousSearchResult()}
+                    >
                         &lt;
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.nextSearchResult()}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => editor.commands.nextSearchResult()}
+                    >
                         &gt;
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.replace()}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => editor.commands.replace()}
+                    >
                         {t("ui.editor.replace_one", "Ersetzen")}
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => editor.commands.replaceAll()}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => editor.commands.replaceAll()}
+                    >
                         {t("ui.editor.replace_all", "Alle")}
                     </button>
-                    <button className="btn btn-ghost btn-sm" onClick={() => { setShowSearch(false); setSearchTerm(""); setReplaceTerm(""); editor.commands.setSearchTerm(""); }}>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={() => {
+                            setShowSearch(false);
+                            setSearchTerm("");
+                            setReplaceTerm("");
+                            editor.commands.setSearchTerm("");
+                        }}
+                    >
                         &times;
                     </button>
                 </div>
@@ -1447,23 +1760,55 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 <div className={styles.spellcheckPanel}>
                     <div className={styles.spellcheckHeader}>
                         <strong>{t("ui.editor.spellcheck", "Rechtschreibprüfung")}</strong>
-                        {spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{t("ui.editor.checking", "Prüfe...")}</span>}
-                        {!spellcheckLoading && <span style={{color: "var(--text-muted)", marginLeft: 8}}>{spellcheckResults.length} {t("ui.editor.issues", "Probleme")}</span>}
-                        <button className="btn btn-ghost btn-sm" style={{marginLeft: "auto"}} onClick={handleToggleSpellcheck}>&times;</button>
+                        {spellcheckLoading && (
+                            <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>
+                                {t("ui.editor.checking", "Prüfe...")}
+                            </span>
+                        )}
+                        {!spellcheckLoading && (
+                            <span style={{ color: "var(--text-muted)", marginLeft: 8 }}>
+                                {spellcheckResults.length} {t("ui.editor.issues", "Probleme")}
+                            </span>
+                        )}
+                        <button
+                            className="btn btn-ghost btn-sm"
+                            style={{ marginLeft: "auto" }}
+                            onClick={handleToggleSpellcheck}
+                        >
+                            &times;
+                        </button>
                     </div>
                     {spellcheckResults.length > 0 && (
                         <div className={styles.spellcheckList}>
                             {spellcheckResults.map((issue, i) => (
                                 <div key={i} className={styles.spellcheckItem}>
-                                    <div style={{fontSize: "0.8125rem", color: "var(--text-primary)"}}>
+                                    <div
+                                        style={{
+                                            fontSize: "0.8125rem",
+                                            color: "var(--text-primary)",
+                                        }}
+                                    >
                                         {issue.message}
                                     </div>
                                     {issue.replacements.length > 0 && (
-                                        <div style={{fontSize: "0.75rem", color: "var(--accent)", marginTop: 2}}>
-                                            {t("ui.editor.suggestions", "Vorschläge")}: {issue.replacements.join(", ")}
+                                        <div
+                                            style={{
+                                                fontSize: "0.75rem",
+                                                color: "var(--accent)",
+                                                marginTop: 2,
+                                            }}
+                                        >
+                                            {t("ui.editor.suggestions", "Vorschläge")}:{" "}
+                                            {issue.replacements.join(", ")}
                                         </div>
                                     )}
-                                    <div style={{fontSize: "0.6875rem", color: "var(--text-muted)", marginTop: 2}}>
+                                    <div
+                                        style={{
+                                            fontSize: "0.6875rem",
+                                            color: "var(--text-muted)",
+                                            marginTop: 2,
+                                        }}
+                                    >
                                         {issue.rule_id}
                                     </div>
                                 </div>
@@ -1489,26 +1834,38 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                 {/* Progress bar for the word target */}
                 {wordGoal && wordGoal > 0 && (
                     <div className={styles.goalProgress}>
-                        <div className={styles.goalProgressFill} style={{
-                            width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
-                            background: wordCount >= wordGoal ? "var(--success)" : "var(--accent)",
-                        }}/>
+                        <div
+                            className={styles.goalProgressFill}
+                            style={{
+                                width: `${Math.min(100, (wordCount / wordGoal) * 100)}%`,
+                                background:
+                                    wordCount >= wordGoal ? "var(--success)" : "var(--accent)",
+                            }}
+                        />
                     </div>
                 )}
                 {statusLabel && (
-                    <span className={styles.saveStatus} style={{
-                        color:
-                            saveStatus === "saving" ? "var(--text-muted)" :
-                            saveStatus === "error" ? "var(--danger, #b91c1c)" :
-                            "var(--accent)",
-                    }} data-testid={`editor-save-status-${saveStatus}`}>
+                    <span
+                        className={styles.saveStatus}
+                        style={{
+                            color:
+                                saveStatus === "saving"
+                                    ? "var(--text-muted)"
+                                    : saveStatus === "error"
+                                      ? "var(--danger, #b91c1c)"
+                                      : "var(--accent)",
+                        }}
+                        data-testid={`editor-save-status-${saveStatus}`}
+                    >
                         {statusLabel}
                     </span>
                 )}
             </div>
 
             <div className={styles.editorArea}>
-                <div className={`${styles.editorContainer} ${focusMode || compositionMode ? "focus-mode" : ""} ${compositionMode ? "composition-surface" : ""}`}>
+                <div
+                    className={`${styles.editorContainer} ${focusMode || compositionMode ? "focus-mode" : ""} ${compositionMode ? "composition-surface" : ""}`}
+                >
                     {markdownMode ? (
                         <textarea
                             className={styles.markdownEditor}
@@ -1528,7 +1885,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                                     handleMentionClick(e, onOpenStoryEntity);
                                 }}
                             >
-                                <EditorContent editor={editor}/>
+                                <EditorContent editor={editor} />
                             </div>
                         </EditorContextMenu>
                     ) : (
@@ -1539,7 +1896,7 @@ export default function Editor({content, onSave, placeholder, contentKind = "boo
                             onTakeSnapshot={bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
                             <div>
-                                <EditorContent editor={editor}/>
+                                <EditorContent editor={editor} />
                             </div>
                         </EditorContextMenu>
                     )}
@@ -1571,7 +1928,10 @@ function markdownToHtml(md: string): string {
                 codeBlockContent = [];
                 inCodeBlock = false;
             } else {
-                if (inList) { htmlLines.push(inList === "ul" ? "</ul>" : "</ol>"); inList = null; }
+                if (inList) {
+                    htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
+                    inList = null;
+                }
                 inCodeBlock = true;
             }
             continue;
@@ -1589,7 +1949,10 @@ function markdownToHtml(md: string): string {
 
         // Empty line
         if (line.trim() === "") {
-            if (inList) { htmlLines.push(inList === "ul" ? "</ul>" : "</ol>"); inList = null; }
+            if (inList) {
+                htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
+                inList = null;
+            }
             continue;
         }
 
@@ -1646,7 +2009,7 @@ function markdownToHtml(md: string): string {
             if (captionMatch) {
                 htmlLines.push(
                     `<figure><img src="${imgMatch[2]}" alt="${imgMatch[1]}" />` +
-                    `<figcaption>${captionMatch[1]}</figcaption></figure>`
+                        `<figcaption>${captionMatch[1]}</figcaption></figure>`,
                 );
                 i++; // skip caption line
             } else {
@@ -1666,12 +2029,14 @@ function markdownToHtml(md: string): string {
 }
 
 function inlineMarkdown(text: string): string {
-    return text
-        // Images must be before links (both use [...](...)  syntax)
-        .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
-        .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-        .replace(/\*(.+?)\*/g, "<em>$1</em>")
-        .replace(/~~(.+?)~~/g, "<s>$1</s>")
-        .replace(/`(.+?)`/g, "<code>$1</code>")
-        .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>');
+    return (
+        text
+            // Images must be before links (both use [...](...)  syntax)
+            .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
+            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+            .replace(/\*(.+?)\*/g, "<em>$1</em>")
+            .replace(/~~(.+?)~~/g, "<s>$1</s>")
+            .replace(/`(.+?)`/g, "<code>$1</code>")
+            .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
+    );
 }
