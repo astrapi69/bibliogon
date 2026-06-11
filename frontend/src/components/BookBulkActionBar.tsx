@@ -11,48 +11,49 @@
  * — the same set the per-book ``/batch`` endpoint already handles.
  */
 
-import {useState} from "react"
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu"
-import {ChevronDown, Sparkles, Trash2} from "lucide-react"
+import { useState } from "react";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { ChevronDown, Sparkles, Trash2 } from "lucide-react";
 
-import BulkActionBar from "./BulkActionBar"
-import {RadixSelect} from "./RadixSelect"
-import {useOfflineFeatureGate} from "../storage/useOfflineFeatureGate"
-import styles from "./BookBulkActionBar.module.css"
+import BulkActionBar from "./BulkActionBar";
+import { RadixSelect } from "./RadixSelect";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
+import styles from "./BookBulkActionBar.module.css";
 
-export type BookBulkExportFormat = "epub" | "pdf" | "docx"
+export type BookBulkExportFormat = "epub" | "pdf" | "docx";
 
-export const BOOK_BULK_LIMIT_WARNING = 50
-export const BOOK_BULK_LIMIT_HARD = 200
+export const BOOK_BULK_LIMIT_WARNING = 50;
+export const BOOK_BULK_LIMIT_HARD = 200;
 
 /** Server-side cap for bulk AI-template + AI-fill batches (per
  *  S8). Selections above this trigger 422 on the backend, so we
  *  disable the AI dropdown items past it. */
-export const BOOK_AI_BULK_LIMIT = 50
+export const BOOK_AI_BULK_LIMIT = 50;
 
 interface Props {
-    count: number
-    onExport: (format: BookBulkExportFormat) => void
-    onClear: () => void
+    count: number;
+    onExport: (format: BookBulkExportFormat) => void;
+    onClear: () => void;
     /** Soft-delete: moves selection to trash. Undo offered in toast. */
-    onBulkDelete?: (permanent: false) => void
+    onBulkDelete?: (permanent: false) => void;
     /** Permanent-delete: opens TypeToConfirmDialog (parent renders). */
-    onBulkDeletePermanent?: () => void
+    onBulkDeletePermanent?: () => void;
     /** UNIVERSAL-AI-TEMPLATE-02: open the per-selection bulk
      *  AI-template export flow. AI handlers are optional; the
      *  bar only renders the AI dropdown when at least the
      *  template-export + template-import pair is wired so a
      *  partial wiring does not produce a half-broken UI. */
-    onBulkAiTemplateExport?: () => void
+    onBulkAiTemplateExport?: () => void;
     /** UNIVERSAL-AI-TEMPLATE-02: open the bulk AI-template import
      *  dialog. */
-    onBulkAiTemplateImport?: () => void
+    onBulkAiTemplateImport?: () => void;
     /** UNIVERSAL-AI-TEMPLATE-02 commit 8: open the bulk AI-fill
      *  flow (FieldClassDialog -> BulkAiFillConfirmDialog ->
      *  start). Optional; the dropdown still renders without it
      *  but the third menu item is hidden. */
-    onBulkAiFill?: () => void
-    t: (key: string, fallback?: string) => string
+    onBulkAiFill?: () => void;
+    t: (key: string, fallback?: string) => string;
 }
 
 export default function BookBulkActionBar({
@@ -66,17 +67,21 @@ export default function BookBulkActionBar({
     onBulkAiFill,
     t,
 }: Props) {
-    const [format, setFormat] = useState<BookBulkExportFormat>("epub")
-    const {offline: offlineGate, message: offlineMsg} = useOfflineFeatureGate()
+    const [format, setFormat] = useState<BookBulkExportFormat>("epub");
+    const bulkExport = useFeature(FEATURES.BULK_EXPORT);
+    const aiGen = useFeature(FEATURES.AI_GENERATE);
+    const aiGenTitle = aiGen.isDisabled
+        ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
+        : undefined;
 
-    const overLimit = count > BOOK_BULK_LIMIT_HARD
-    const overWarning = count > BOOK_BULK_LIMIT_WARNING && !overLimit
-    const disabled = count === 0 || overLimit || offlineGate
+    const overLimit = count > BOOK_BULK_LIMIT_HARD;
+    const overWarning = count > BOOK_BULK_LIMIT_WARNING && !overLimit;
+    const disabled = count === 0 || overLimit;
 
-    const renderCount = t(
-        "ui.dashboard.bulk.selected_count",
-        "{count} selected",
-    ).replace("{count}", String(count))
+    const renderCount = t("ui.dashboard.bulk.selected_count", "{count} selected").replace(
+        "{count}",
+        String(count),
+    );
 
     return (
         <BulkActionBar
@@ -89,51 +94,55 @@ export default function BookBulkActionBar({
             countTestId="book-bulk-count"
             clearTestId="book-bulk-clear"
         >
-            <span className={styles.label}>
-                {t("ui.dashboard.bulk.format_label", "Format")}
-            </span>
-            <RadixSelect
-                testId="book-bulk-format"
-                className="is-narrow"
-                value={format}
-                onValueChange={(next) =>
-                    setFormat(next as BookBulkExportFormat)
-                }
-                disabled={disabled}
-                ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
-                options={[
-                    {value: "epub", label: "EPUB"},
-                    {value: "pdf", label: "PDF"},
-                    {value: "docx", label: "DOCX"},
-                ]}
-            />
+            {bulkExport.isActive && (
+                <>
+                    <span className={styles.label}>
+                        {t("ui.dashboard.bulk.format_label", "Format")}
+                    </span>
+                    <RadixSelect
+                        testId="book-bulk-format"
+                        className="is-narrow"
+                        value={format}
+                        onValueChange={(next) => setFormat(next as BookBulkExportFormat)}
+                        disabled={disabled}
+                        ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
+                        options={[
+                            { value: "epub", label: "EPUB" },
+                            { value: "pdf", label: "PDF" },
+                            { value: "docx", label: "DOCX" },
+                        ]}
+                    />
 
-            <div className={styles.spacer} />
+                    <div className={styles.spacer} />
 
-            {overWarning ? (
-                <span className={styles.warning} data-testid="book-bulk-warning">
-                    {t(
-                        "ui.dashboard.bulk.limit_warning_50",
-                        "Selecting more than 50 books may take a while.",
-                    )}
-                </span>
-            ) : null}
-            {overLimit ? (
-                <span className={styles.error} data-testid="book-bulk-error">
-                    {t("ui.dashboard.bulk.limit_error_200", "Maximum 200 books per export.")}
-                </span>
-            ) : null}
+                    {overWarning ? (
+                        <span className={styles.warning} data-testid="book-bulk-warning">
+                            {t(
+                                "ui.dashboard.bulk.limit_warning_50",
+                                "Selecting more than 50 books may take a while.",
+                            )}
+                        </span>
+                    ) : null}
+                    {overLimit ? (
+                        <span className={styles.error} data-testid="book-bulk-error">
+                            {t(
+                                "ui.dashboard.bulk.limit_error_200",
+                                "Maximum 200 books per export.",
+                            )}
+                        </span>
+                    ) : null}
 
-            <button
-                type="button"
-                className="btn btn-sm btn-primary"
-                data-testid="book-bulk-export"
-                disabled={disabled}
-                title={offlineGate ? offlineMsg : undefined}
-                onClick={() => onExport(format)}
-            >
-                {t("ui.dashboard.bulk.export_button", "Export")}
-            </button>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-primary"
+                        data-testid="book-bulk-export"
+                        disabled={disabled}
+                        onClick={() => onExport(format)}
+                    >
+                        {t("ui.dashboard.bulk.export_button", "Export")}
+                    </button>
+                </>
+            )}
             {onBulkAiTemplateExport && onBulkAiTemplateImport && (
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>
@@ -141,22 +150,20 @@ export default function BookBulkActionBar({
                             type="button"
                             className="btn btn-secondary btn-sm"
                             data-testid="book-bulk-ai-menu"
-                            disabled={count === 0 || count > BOOK_AI_BULK_LIMIT || offlineGate}
+                            disabled={count === 0 || count > BOOK_AI_BULK_LIMIT || aiGen.isDisabled}
                             title={
-                                offlineGate
-                                    ? offlineMsg
+                                aiGen.isDisabled
+                                    ? aiGenTitle
                                     : count > BOOK_AI_BULK_LIMIT
-                                    ? t(
-                                          "ui.ai_template.bulk.over_cap",
-                                          "Maximum 50 books per AI batch",
-                                      )
-                                    : undefined
+                                      ? t(
+                                            "ui.ai_template.bulk.over_cap",
+                                            "Maximum 50 books per AI batch",
+                                        )
+                                      : undefined
                             }
                         >
-                            <Sparkles size={14}/>{" "}
-                            {t("ui.ai_template.bulk.menu_button", "KI")}
-                            {" "}
-                            <ChevronDown size={12}/>
+                            <Sparkles size={14} /> {t("ui.ai_template.bulk.menu_button", "KI")}{" "}
+                            <ChevronDown size={12} />
                         </button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Portal>
@@ -170,10 +177,7 @@ export default function BookBulkActionBar({
                                 onSelect={onBulkAiTemplateExport}
                                 data-testid="book-bulk-ai-template-export"
                             >
-                                {t(
-                                    "ui.ai_template.bulk.menu_export",
-                                    "Vorlagen exportieren (ZIP)",
-                                )}
+                                {t("ui.ai_template.bulk.menu_export", "Vorlagen exportieren (ZIP)")}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                                 className="hamburger-menu-item"
@@ -191,10 +195,7 @@ export default function BookBulkActionBar({
                                     onSelect={onBulkAiFill}
                                     data-testid="book-bulk-ai-fill"
                                 >
-                                    {t(
-                                        "ui.ai_template.bulk.menu_fill",
-                                        "Mit KI füllen...",
-                                    )}
+                                    {t("ui.ai_template.bulk.menu_fill", "Mit KI füllen...")}
                                 </DropdownMenu.Item>
                             )}
                         </DropdownMenu.Content>
@@ -218,8 +219,7 @@ export default function BookBulkActionBar({
                                     : undefined
                             }
                         >
-                            <Trash2 size={14} />{" "}
-                            {t("ui.bulk_delete.delete_button", "Löschen")}{" "}
+                            <Trash2 size={14} /> {t("ui.bulk_delete.delete_button", "Löschen")}{" "}
                             <ChevronDown size={12} />
                         </button>
                     </DropdownMenu.Trigger>
@@ -234,14 +234,11 @@ export default function BookBulkActionBar({
                                 onSelect={() => onBulkDelete(false)}
                                 data-testid="book-bulk-delete-trash"
                             >
-                                {t(
-                                    "ui.bulk_delete.option_trash",
-                                    "In Papierkorb verschieben",
-                                )}
+                                {t("ui.bulk_delete.option_trash", "In Papierkorb verschieben")}
                             </DropdownMenu.Item>
                             <DropdownMenu.Item
                                 className="hamburger-menu-item"
-                                style={{color: "var(--danger)"}}
+                                style={{ color: "var(--danger)" }}
                                 onSelect={onBulkDeletePermanent}
                                 data-testid="book-bulk-delete-permanent"
                             >
@@ -252,5 +249,5 @@ export default function BookBulkActionBar({
                 </DropdownMenu.Root>
             )}
         </BulkActionBar>
-    )
+    );
 }
