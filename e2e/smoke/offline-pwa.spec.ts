@@ -66,16 +66,18 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.goto("/");
         // The create split-button needs the seeded book-types to render.
         await expect(page.getByTestId("new-book-group")).toBeVisible();
-        // A localized label proves the seeded catalog loaded.
-        await expect(page.getByTestId("backup-export-btn")).toContainText(
-            "Backup",
-        );
+        // The localized create-button label proves the seeded i18n catalog
+        // loaded ("Neues Buch" / "New book").
+        await expect(page.getByTestId("new-book-group")).toContainText(/Buch|Book/i);
     });
 
-    test("backend-only backup action is disabled offline", async ({page}) => {
+    test("backend-only backup + import actions are hidden offline", async ({page}) => {
         await page.goto("/");
         await expect(page.getByTestId("new-book-group")).toBeVisible();
-        await expect(page.getByTestId("backup-export-btn")).toBeDisabled();
+        // The .bgb backup-export + backend import-wizard are backend-only;
+        // hidden offline (not merely disabled) via the feature registry.
+        await expect(page.getByTestId("backup-export-btn")).toHaveCount(0);
+        await expect(page.getByTestId("import-wizard-btn")).toHaveCount(0);
     });
 
     test("settings persist to Dexie across reload", async ({page}) => {
@@ -446,16 +448,17 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // DangerZoneSettings.test.tsx. afterEach proves zero /api on mount.
     });
 
-    test("settings backups history is gated offline: notice shown, no /api", async ({
+    test("settings backups: history + compare hidden offline, JSON backup stays, no /api", async ({
         page,
     }) => {
-        // Backup history is backend-only (.bgb archives + server-side store).
-        // Offline the history fetch is skipped and the OfflineFeatureNotice
-        // renders in place of the history list.
+        // Backup history + compare are backend-only (.bgb archives +
+        // server-side store); hidden offline via the feature registry. The
+        // JSON full-backup section works offline (Dexie) and stays visible.
         await page.goto("/settings?tab=backups");
         await expect(page.getByTestId("backups-settings")).toBeVisible();
-        await expect(page.getByTestId("backups-offline-notice")).toBeVisible();
-        // The history list (which would require the skipped fetch) is absent.
+        await expect(page.getByTestId("backups-fulldata-section")).toBeVisible();
+        await expect(page.getByTestId("backups-history-section")).toHaveCount(0);
+        await expect(page.getByTestId("backups-compare-btn")).toHaveCount(0);
         await expect(page.getByTestId("backups-history-list")).toHaveCount(0);
     });
 
@@ -518,5 +521,43 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Real Article").first()).toBeVisible({
             timeout: 10000,
         });
+    });
+
+    // ----- Net-new feature-strategy gates (#67) -----
+    //
+    // tts + ai-template-file-io are also gated hidden offline, but have no
+    // reachable offline E2E surface here: ExportForm (which carries the
+    // audiobook/MP3 option behind the `tts` gate) is never rendered offline -
+    // ExportPage forces the client engine - and the AITemplatePanel
+    // Export/Import buttons live in the article/book editor sidebar. Their
+    // hidden-offline behaviour is pinned by the Vitest component tests
+    // (ExportForm.test.tsx, AITemplatePanel.offline.test.tsx). The two gates
+    // below DO have a reachable offline surface and are asserted here.
+
+    test("version-history (chapter snapshots) deep-link renders nothing offline, no /api", async ({
+        page,
+    }) => {
+        // Chapter snapshots are backend-only; the route resolves
+        // `version-history` to hidden and returns null BEFORE mounting
+        // ChapterVersionsView, so a direct deep-link fires no /api.
+        await page.goto("/books/offline-x/chapters/offline-y/snapshots");
+        await expect(page.getByTestId("chapter-versions-page")).toHaveCount(0);
+        // The afterEach zero-/api gate proves no snapshot fetch fired.
+    });
+
+    test("export-engine 'Backend (Pandoc/LaTeX)' option is hidden offline", async ({
+        page,
+    }) => {
+        await page.goto("/settings?tab=verhalten");
+        await expect(page.getByTestId("verhalten-settings")).toBeVisible();
+        await page.getByTestId("settings-export-engine-trigger").click();
+        // Client/auto stay; the backend (Pandoc/LaTeX) option is dropped
+        // because `pandoc-export` resolves to hidden offline.
+        await expect(
+            page.getByTestId("settings-export-engine-item-client"),
+        ).toBeVisible();
+        await expect(
+            page.getByTestId("settings-export-engine-item-backend"),
+        ).toHaveCount(0);
     });
 });
