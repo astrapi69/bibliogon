@@ -4,6 +4,15 @@ import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 
+/**
+ * Article-topics list (Settings > Themen).
+ *
+ * Add and remove persist immediately through ``onSave`` so an item is
+ * never lost by navigating away before clicking "Speichern" (the #37
+ * unsaved-list bug class). The explicit Save button stays as a manual
+ * fallback. Online (API) and offline (Dexie) share the ``onSave`` ->
+ * ``settings.updateApp`` persistence path.
+ */
 export function TopicsSettings({config, onSave, saving}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
@@ -35,13 +44,17 @@ export function TopicsSettings({config, onSave, saving}: {
         const trimmed = newTopic.trim();
         if (!trimmed || topics.includes(trimmed)) return;
         userEdited.current = true;
-        setTopics([...topics, trimmed]);
+        const next = [...topics, trimmed];
+        setTopics(next);
         setNewTopic("");
+        onSave({topics: next});
     };
 
     const removeTopic = (index: number) => {
         userEdited.current = true;
-        setTopics(topics.filter((_, i) => i !== index));
+        const next = topics.filter((_, i) => i !== index);
+        setTopics(next);
+        onSave({topics: next});
     };
 
     return (
