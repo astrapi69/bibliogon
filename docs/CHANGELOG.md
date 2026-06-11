@@ -57,6 +57,10 @@ data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
 - **Settings lists lose unsaved items on navigation**: the article-topics list
   now persists immediately on add/remove instead of only on an explicit Save
   click (same bug class as the #37 author-pseudonym fix). (#57)
+- **Create-article deep-link type race**: `/articles/new?type=<type>` could
+  create the article with the default content type when the content-type
+  registry resolved after the first render; the deep-linked type is now
+  re-applied once the registry loads. (#65)
 
 ### Changed
 - **Strict dual-storage**: the 4 remaining direct `api.*` CRUD calls in
