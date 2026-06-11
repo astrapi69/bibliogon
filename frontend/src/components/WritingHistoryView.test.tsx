@@ -59,10 +59,6 @@ vi.mock("../storage", () => ({
     }),
 }));
 
-vi.mock("../storage/useOfflineFeatureGate", () => ({
-    useOfflineFeatureGate: () => ({ offline: false, message: "" }),
-}));
-
 const SUMMARY = {
     total_words: 1234,
     days_active: 7,

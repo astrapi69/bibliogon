@@ -25,7 +25,7 @@ import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal
 import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
-import { useOfflineFeatureGate } from "../storage/useOfflineFeatureGate";
+import { useStorageMode } from "../storage/useStorageMode";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
@@ -77,7 +77,8 @@ export default function BookEditor() {
     const navigate = useNavigate();
     const dialog = useDialog();
     const { t } = useI18n();
-    const { offline: offlineGate } = useOfflineFeatureGate();
+    const { mode } = useStorageMode();
+    const offlineGate = mode === "dexie";
     const gitSyncFeature = useFeature(FEATURES.GIT_SYNC);
     const gitBackupFeature = useFeature(FEATURES.GIT_BACKUP);
     const bookTypesSnapshot = useBookTypes();
