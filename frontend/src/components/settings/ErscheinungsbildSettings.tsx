@@ -85,6 +85,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             localStorage.setItem("bibliogon-app-theme", val);
                         }}
                         testId="palette-select"
+                        ariaLabel={t("ui.settings.theme", "Theme")}
                         options={PALETTES.map((p) => ({
                             value: p.id,
                             label: t(`ui.themes.${p.id.replace(/-/g, "_")}`, p.label),
@@ -104,6 +105,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                                 value={booksView}
                                 onValueChange={onEdit(setBooksView)}
                                 testId="settings-books-view"
+                                ariaLabel={t("ui.settings.dashboard_books_view_label", "Bücher-Dashboard: Standard-Ansicht")}
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
                                     {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
@@ -118,6 +120,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                                 value={articlesView}
                                 onValueChange={onEdit(setArticlesView)}
                                 testId="settings-articles-view"
+                                ariaLabel={t("ui.settings.dashboard_articles_view_label", "Artikel-Dashboard: Standard-Ansicht")}
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
                                     {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
@@ -141,6 +144,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                                 value={booksTrashView}
                                 onValueChange={onEdit(setBooksTrashView)}
                                 testId="settings-books-trash-view"
+                                ariaLabel={t("ui.settings.dashboard_books_trash_view_label", "Bücher-Papierkorb: Standard-Ansicht")}
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
                                     {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
@@ -164,6 +168,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                                 value={articlesTrashView}
                                 onValueChange={onEdit(setArticlesTrashView)}
                                 testId="settings-articles-trash-view"
+                                ariaLabel={t("ui.settings.dashboard_articles_trash_view_label", "Artikel-Papierkorb: Standard-Ansicht")}
                                 options={[
                                     {value: "grid", label: t("ui.dashboard.view_grid", "Kachel-Ansicht")},
                                     {value: "list", label: t("ui.dashboard.view_list", "Listen-Ansicht")},
