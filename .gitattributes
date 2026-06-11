@@ -16,3 +16,8 @@
 *.sh         text eol=lf
 *.template   text eol=lf
 install.sh   text eol=lf
+
+# Visual-regression baseline screenshots (VISUAL-REGRESSION-SCREENSHOTS-01)
+# are committed PNGs. Mark them binary so git never attempts line-ending
+# normalisation or text diffs on them.
+*.png        binary
