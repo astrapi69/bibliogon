@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.49.0**
+**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.50.0**
 
 ## Story Bible
 
