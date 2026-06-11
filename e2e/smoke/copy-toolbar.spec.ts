@@ -69,7 +69,13 @@ test.describe("Toolbar Copy split-button (F3)", () => {
         await page.goto(`/articles/${article.id}`);
 
         await page.getByTestId("toolbar-copy-chevron").click();
-        await page.getByTestId("toolbar-copy-plain-item").click();
+        // Wait for the Radix portal menu item to render before clicking
+        // it. Under sustained full-suite load the portal opens a beat
+        // after the chevron click; clicking immediately raced the open
+        // and hit the action timeout.
+        const plainItem = page.getByTestId("toolbar-copy-plain-item");
+        await expect(plainItem).toBeVisible();
+        await plainItem.click();
 
         // react-toastify renders the toast outside the main app tree;
         // match on the toast container role + the i18n fallback.
