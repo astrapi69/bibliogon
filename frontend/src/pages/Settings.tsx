@@ -1,30 +1,45 @@
-import {useEffect, useMemo, useState} from "react";
-import {useLocation, useNavigate, useSearchParams} from "react-router-dom";
-import {api} from "../api/client";
-import {getStorage} from "../storage";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
+import { api } from "../api/client";
+import { getStorage } from "../storage";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
-import {ChevronLeft, Home} from "lucide-react";
-import {notify} from "../utils/notify";
-import {useI18n} from "../hooks/useI18n";
-import SupportSection, {getDonationsConfig} from "../components/SupportSection";
+import { ChevronLeft, Home } from "lucide-react";
+import { notify } from "../utils/notify";
+import { useI18n } from "../hooks/useI18n";
+import SupportSection, { getDonationsConfig } from "../components/SupportSection";
 import CommentsAdminSection from "../components/CommentsAdminSection";
-import {ErscheinungsbildSettings} from "../components/settings/ErscheinungsbildSettings";
-import {VerhaltenSettings} from "../components/settings/VerhaltenSettings";
-import {EditorSettings} from "../components/settings/EditorSettings";
-import {ErweitertSettings} from "../components/settings/ErweitertSettings";
-import {AiAssistantSettings} from "../components/settings/AiAssistantSettings";
-import {AutorenSettings} from "../components/settings/AutorenSettings";
-import {TopicsSettings} from "../components/settings/TopicsSettings";
-import {PluginSettings} from "../components/settings/PluginSettings";
-import {AboutSettings} from "../components/settings/AboutSettings";
-import {BackupsSettings} from "../components/settings/BackupsSettings";
-import {DangerZoneSettings} from "../components/settings/DangerZoneSettings";
-import {SettingsSidebar, type SidebarGroup} from "../components/settings/SettingsSidebar";
-import {SettingsMobileMenu} from "../components/settings/SettingsMobileMenu";
+import { ErscheinungsbildSettings } from "../components/settings/ErscheinungsbildSettings";
+import { VerhaltenSettings } from "../components/settings/VerhaltenSettings";
+import { EditorSettings } from "../components/settings/EditorSettings";
+import { ErweitertSettings } from "../components/settings/ErweitertSettings";
+import { AiAssistantSettings } from "../components/settings/AiAssistantSettings";
+import { AI_CONFIG_CHANGED_EVENT } from "../features/useHasAiKey";
+import { AutorenSettings } from "../components/settings/AutorenSettings";
+import { TopicsSettings } from "../components/settings/TopicsSettings";
+import { PluginSettings } from "../components/settings/PluginSettings";
+import { AboutSettings } from "../components/settings/AboutSettings";
+import { BackupsSettings } from "../components/settings/BackupsSettings";
+import { DangerZoneSettings } from "../components/settings/DangerZoneSettings";
+import { SettingsSidebar, type SidebarGroup } from "../components/settings/SettingsSidebar";
+import { SettingsMobileMenu } from "../components/settings/SettingsMobileMenu";
 import styles from "./Settings.module.css";
 
-const VALID_SETTINGS_TABS = ["erscheinungsbild", "verhalten", "editor", "ai", "autoren", "topics", "plugins", "comments", "backups", "support", "about", "erweitert", "danger_zone"] as const;
+const VALID_SETTINGS_TABS = [
+    "erscheinungsbild",
+    "verhalten",
+    "editor",
+    "ai",
+    "autoren",
+    "topics",
+    "plugins",
+    "comments",
+    "backups",
+    "support",
+    "about",
+    "erweitert",
+    "danger_zone",
+] as const;
 type SettingsTab = (typeof VALID_SETTINGS_TABS)[number];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
@@ -58,8 +73,8 @@ export default function Settings() {
         }
     };
     const [searchParams, setSearchParams] = useSearchParams();
-    const {setLang: setGlobalLang} = useI18n();
-    const {t} = useI18n();
+    const { setLang: setGlobalLang } = useI18n();
+    const { t } = useI18n();
     const [appConfig, setAppConfig] = useState<Record<string, unknown>>({});
     // Gate the settings forms on the FIRST app-config load. The forms
     // hydrate their local state from `config`; rendering them before the
@@ -78,9 +93,10 @@ export default function Settings() {
     // additionally redirects ?tab=author + ?tab=authors_database
     // → autoren via LEGACY_TAB_REDIRECTS.
     const rawTab = searchParams.get("tab");
-    const redirected = rawTab && rawTab in LEGACY_TAB_REDIRECTS ? LEGACY_TAB_REDIRECTS[rawTab] : null;
-    const initialTab: SettingsTab = redirected
-        ?? (isSettingsTab(rawTab) ? (rawTab as SettingsTab) : "erscheinungsbild");
+    const redirected =
+        rawTab && rawTab in LEGACY_TAB_REDIRECTS ? LEGACY_TAB_REDIRECTS[rawTab] : null;
+    const initialTab: SettingsTab =
+        redirected ?? (isSettingsTab(rawTab) ? (rawTab as SettingsTab) : "erscheinungsbild");
     const [activeTab, setActiveTab] = useState<SettingsTab>(initialTab);
 
     const handleTabChange = (next: string) => {
@@ -91,7 +107,7 @@ export default function Settings() {
         // with one entry per tab click.
         const params = new URLSearchParams(searchParams);
         params.set("tab", next);
-        setSearchParams(params, {replace: true});
+        setSearchParams(params, { replace: true });
     };
 
     useEffect(() => {
@@ -153,29 +169,71 @@ export default function Settings() {
                 key: "darstellung",
                 label: t("ui.settings.group_darstellung", "Darstellung"),
                 items: [
-                    {value: "erscheinungsbild", label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"), testId: "settings-tab-erscheinungsbild"},
-                    {value: "verhalten", label: t("ui.settings.tab_verhalten", "Verhalten"), testId: "settings-tab-verhalten"},
-                    {value: "editor", label: t("ui.settings.tab_editor", "Editor"), testId: "settings-tab-editor"},
+                    {
+                        value: "erscheinungsbild",
+                        label: t("ui.settings.tab_erscheinungsbild", "Erscheinungsbild"),
+                        testId: "settings-tab-erscheinungsbild",
+                    },
+                    {
+                        value: "verhalten",
+                        label: t("ui.settings.tab_verhalten", "Verhalten"),
+                        testId: "settings-tab-verhalten",
+                    },
+                    {
+                        value: "editor",
+                        label: t("ui.settings.tab_editor", "Editor"),
+                        testId: "settings-tab-editor",
+                    },
                 ],
             },
             {
                 key: "inhalt",
                 label: t("ui.settings.group_inhalt", "Inhalt"),
                 items: [
-                    {value: "ai", label: t("ui.settings.tab_ai", "KI-Assistent"), testId: "settings-tab-ai"},
-                    {value: "autoren", label: t("ui.settings.tab_autoren", "Autoren"), testId: "settings-tab-autoren"},
-                    {value: "topics", label: t("ui.settings.tab_topics", "Themen"), testId: "settings-tab-topics"},
+                    {
+                        value: "ai",
+                        label: t("ui.settings.tab_ai", "KI-Assistent"),
+                        testId: "settings-tab-ai",
+                    },
+                    {
+                        value: "autoren",
+                        label: t("ui.settings.tab_autoren", "Autoren"),
+                        testId: "settings-tab-autoren",
+                    },
+                    {
+                        value: "topics",
+                        label: t("ui.settings.tab_topics", "Themen"),
+                        testId: "settings-tab-topics",
+                    },
                 ],
             },
             {
                 key: "system",
                 label: t("ui.settings.group_system", "System"),
                 items: [
-                    {value: "plugins", label: t("ui.settings.tab_plugins", "Plugins"), testId: "settings-tab-plugins"},
-                    {value: "comments", label: t("ui.settings.tab_comments", "Kommentare"), testId: "settings-tab-comments"},
-                    {value: "backups", label: t("ui.settings.tab_backups", "Backups"), testId: "settings-tab-backups"},
+                    {
+                        value: "plugins",
+                        label: t("ui.settings.tab_plugins", "Plugins"),
+                        testId: "settings-tab-plugins",
+                    },
+                    {
+                        value: "comments",
+                        label: t("ui.settings.tab_comments", "Kommentare"),
+                        testId: "settings-tab-comments",
+                    },
+                    {
+                        value: "backups",
+                        label: t("ui.settings.tab_backups", "Backups"),
+                        testId: "settings-tab-backups",
+                    },
                     ...(hasWhiteLabel
-                        ? [{value: "erweitert", label: t("ui.settings.tab_erweitert", "Erweitert"), testId: "settings-tab-erweitert"}]
+                        ? [
+                              {
+                                  value: "erweitert",
+                                  label: t("ui.settings.tab_erweitert", "Erweitert"),
+                                  testId: "settings-tab-erweitert",
+                              },
+                          ]
                         : []),
                 ],
             },
@@ -183,9 +241,19 @@ export default function Settings() {
                 key: "info",
                 label: t("ui.settings.group_info", "Info"),
                 items: [
-                    {value: "about", label: t("ui.settings.tab_about", "Über"), testId: "settings-tab-about"},
+                    {
+                        value: "about",
+                        label: t("ui.settings.tab_about", "Über"),
+                        testId: "settings-tab-about",
+                    },
                     ...(hasDonations
-                        ? [{value: "support", label: t("ui.donations.tab", "Unterstützen"), testId: "settings-tab-support"}]
+                        ? [
+                              {
+                                  value: "support",
+                                  label: t("ui.donations.tab", "Unterstützen"),
+                                  testId: "settings-tab-support",
+                              },
+                          ]
                         : []),
                 ],
             },
@@ -197,7 +265,11 @@ export default function Settings() {
                 // drives the red accent + visual separation.
                 variant: "danger",
                 items: [
-                    {value: "danger_zone", label: t("ui.settings.tab_danger_zone", "Gefahrenzone"), testId: "settings-tab-danger-zone"},
+                    {
+                        value: "danger_zone",
+                        label: t("ui.settings.tab_danger_zone", "Gefahrenzone"),
+                        testId: "settings-tab-danger-zone",
+                    },
                 ],
             },
         ];
@@ -216,7 +288,7 @@ export default function Settings() {
                             data-testid="settings-nav-back"
                             aria-label={t("ui.dashboard.back", "Zurück")}
                         >
-                            <ChevronLeft size={18}/>
+                            <ChevronLeft size={18} />
                         </button>
                         <h1 className={styles.title}>{t("ui.settings.title", "Einstellungen")}</h1>
                     </div>
@@ -228,10 +300,10 @@ export default function Settings() {
                             aria-label={t("ui.dashboard.title", "Dashboard")}
                             title={t("ui.dashboard.title", "Dashboard")}
                         >
-                            <Home size={18}/>
+                            <Home size={18} />
                         </button>
-                        <FullscreenButton testidPrefix="settings"/>
-                        <ThemeToggle/>
+                        <FullscreenButton testidPrefix="settings" />
+                        <ThemeToggle />
                     </div>
                 </div>
             </header>
@@ -255,191 +327,279 @@ export default function Settings() {
                     {!appLoaded ? (
                         <p data-testid="settings-loading">{t("ui.common.loading", "Lädt…")}</p>
                     ) : (
-                    <>
-                    {activeTab === "erscheinungsbild" && (
-                        <ErscheinungsbildSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.saved", "Gespeichert"));
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "verhalten" && (
-                        <VerhaltenSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    // Live language switch without reload
-                                    const newLang = (data.app as Record<string, unknown>)?.default_language as string;
-                                    if (newLang) setGlobalLang(newLang);
-                                    showMessage(t("ui.settings.saved", "Gespeichert"));
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "editor" && (
-                        <EditorSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.saved", "Gespeichert"));
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "ai" && (
-                        <AiAssistantSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.saved", "Gespeichert"));
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "autoren" && (
-                        <AutorenSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.author_saved", "Autorenprofil gespeichert"));
-                                } catch {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "topics" && (
-                        <TopicsSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.topics_saved", "Themen gespeichert"));
-                                } catch {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "plugins" && (
-                        <PluginSettings
-                            configs={pluginConfigs}
-                            appConfig={appConfig}
-                            onReload={loadData}
-                            onSavePlugin={async (name, settings) => {
-                                try {
-                                    const updated = await api.settings.updatePlugin(name, settings);
-                                    setPluginConfigs((prev) => ({...prev, [name]: updated as Record<string, unknown>}));
-                                    showMessage(`${name} ${t("ui.settings.saved", "gespeichert")}`);
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                            }}
-                            onTogglePlugin={async (name, enable) => {
-                                try {
-                                    if (enable) {
-                                        await api.settings.enablePlugin(name);
-                                    } else {
-                                        await api.settings.disablePlugin(name);
-                                    }
-                                    const app = await getStorage().settings.getApp();
-                                    setAppConfig(app);
-                                    showMessage(`${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`);
-                                } catch (err) {
-                                    showMessage(t("ui.common.error", "Fehler"), true);
-                                }
-                            }}
-                            onAddPlugin={async (data) => {
-                                try {
-                                    await api.settings.createPlugin(data);
-                                    const plugins = await api.settings.listPlugins();
-                                    setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
-                                    showMessage(`${data.name} hinzugefügt`);
-                                } catch (err) {
-                                    showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
-                                }
-                            }}
-                            onRemovePlugin={async (name) => {
-                                try {
-                                    await api.settings.deletePlugin(name);
-                                    const [plugins, app] = await Promise.all([
-                                        api.settings.listPlugins(),
-                                        getStorage().settings.getApp(),
-                                    ]);
-                                    setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
-                                    setAppConfig(app);
-                                    showMessage(`${name} ${t("ui.common.remove", "entfernt")}`);
-                                } catch (err) {
-                                    showMessage(`${t("ui.common.error", "Fehler")}: ${err}`, true);
-                                }
-                            }}
-                        />
-                    )}
-                    {activeTab === "comments" && <CommentsAdminSection />}
-                    {activeTab === "backups" && <BackupsSettings />}
-                    {activeTab === "support" && hasDonations && (
-                        <SupportSection config={getDonationsConfig(appConfig)!} />
-                    )}
-                    {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
-                    {activeTab === "erweitert" && hasWhiteLabel && (
-                        <ErweitertSettings
-                            config={appConfig}
-                            onSave={async (data) => {
-                                setSaving(true);
-                                try {
-                                    const updated = await getStorage().settings.updateApp(data);
-                                    setAppConfig(updated);
-                                    showMessage(t("ui.settings.saved", "Gespeichert"));
-                                } catch (err) {
-                                    showMessage(t("ui.settings.save_error", "Fehler beim Speichern"), true);
-                                }
-                                setSaving(false);
-                            }}
-                            saving={saving}
-                        />
-                    )}
-                    {activeTab === "danger_zone" && <DangerZoneSettings />}
-                    </>
+                        <>
+                            {activeTab === "erscheinungsbild" && (
+                                <ErscheinungsbildSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "verhalten" && (
+                                <VerhaltenSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            // Live language switch without reload
+                                            const newLang = (data.app as Record<string, unknown>)
+                                                ?.default_language as string;
+                                            if (newLang) setGlobalLang(newLang);
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "editor" && (
+                                <EditorSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "ai" && (
+                                <AiAssistantSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            window.dispatchEvent(
+                                                new Event(AI_CONFIG_CHANGED_EVENT),
+                                            );
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "autoren" && (
+                                <AutorenSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.author_saved",
+                                                    "Autorenprofil gespeichert",
+                                                ),
+                                            );
+                                        } catch {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "topics" && (
+                                <TopicsSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(
+                                                t("ui.settings.topics_saved", "Themen gespeichert"),
+                                            );
+                                        } catch {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "plugins" && (
+                                <PluginSettings
+                                    configs={pluginConfigs}
+                                    appConfig={appConfig}
+                                    onReload={loadData}
+                                    onSavePlugin={async (name, settings) => {
+                                        try {
+                                            const updated = await api.settings.updatePlugin(
+                                                name,
+                                                settings,
+                                            );
+                                            setPluginConfigs((prev) => ({
+                                                ...prev,
+                                                [name]: updated as Record<string, unknown>,
+                                            }));
+                                            showMessage(
+                                                `${name} ${t("ui.settings.saved", "gespeichert")}`,
+                                            );
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                    }}
+                                    onTogglePlugin={async (name, enable) => {
+                                        try {
+                                            if (enable) {
+                                                await api.settings.enablePlugin(name);
+                                            } else {
+                                                await api.settings.disablePlugin(name);
+                                            }
+                                            const app = await getStorage().settings.getApp();
+                                            setAppConfig(app);
+                                            showMessage(
+                                                `${name} ${enable ? t("ui.settings.active", "aktiviert") : t("ui.settings.inactive", "deaktiviert")}`,
+                                            );
+                                        } catch (err) {
+                                            showMessage(t("ui.common.error", "Fehler"), true);
+                                        }
+                                    }}
+                                    onAddPlugin={async (data) => {
+                                        try {
+                                            await api.settings.createPlugin(data);
+                                            const plugins = await api.settings.listPlugins();
+                                            setPluginConfigs(
+                                                plugins as Record<string, Record<string, unknown>>,
+                                            );
+                                            showMessage(`${data.name} hinzugefügt`);
+                                        } catch (err) {
+                                            showMessage(
+                                                `${t("ui.common.error", "Fehler")}: ${err}`,
+                                                true,
+                                            );
+                                        }
+                                    }}
+                                    onRemovePlugin={async (name) => {
+                                        try {
+                                            await api.settings.deletePlugin(name);
+                                            const [plugins, app] = await Promise.all([
+                                                api.settings.listPlugins(),
+                                                getStorage().settings.getApp(),
+                                            ]);
+                                            setPluginConfigs(
+                                                plugins as Record<string, Record<string, unknown>>,
+                                            );
+                                            setAppConfig(app);
+                                            showMessage(
+                                                `${name} ${t("ui.common.remove", "entfernt")}`,
+                                            );
+                                        } catch (err) {
+                                            showMessage(
+                                                `${t("ui.common.error", "Fehler")}: ${err}`,
+                                                true,
+                                            );
+                                        }
+                                    }}
+                                />
+                            )}
+                            {activeTab === "comments" && <CommentsAdminSection />}
+                            {activeTab === "backups" && <BackupsSettings />}
+                            {activeTab === "support" && hasDonations && (
+                                <SupportSection config={getDonationsConfig(appConfig)!} />
+                            )}
+                            {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
+                            {activeTab === "erweitert" && hasWhiteLabel && (
+                                <ErweitertSettings
+                                    config={appConfig}
+                                    onSave={async (data) => {
+                                        setSaving(true);
+                                        try {
+                                            const updated =
+                                                await getStorage().settings.updateApp(data);
+                                            setAppConfig(updated);
+                                            showMessage(t("ui.settings.saved", "Gespeichert"));
+                                        } catch (err) {
+                                            showMessage(
+                                                t(
+                                                    "ui.settings.save_error",
+                                                    "Fehler beim Speichern",
+                                                ),
+                                                true,
+                                            );
+                                        }
+                                        setSaving(false);
+                                    }}
+                                    saving={saving}
+                                />
+                            )}
+                            {activeTab === "danger_zone" && <DangerZoneSettings />}
+                        </>
                     )}
                 </main>
             </div>

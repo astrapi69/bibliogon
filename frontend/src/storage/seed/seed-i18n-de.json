@@ -1,7 +1,8 @@
 {
   "ui": {
     "feature": {
-      "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App"
+      "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App",
+      "requires_ai_key": "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)"
     },
     "story_bible": {
       "title": "Story-Bibel",
