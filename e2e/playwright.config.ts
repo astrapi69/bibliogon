@@ -17,6 +17,18 @@ export default defineConfig({
     // runs locally, so it needs the same resilience.
     retries: process.env.CI ? 2 : 1,
     timeout: 30_000,
+    // Visual-regression tolerance for the `visual` project's
+    // toHaveScreenshot() assertions. A 1% per-pixel-ratio budget
+    // absorbs sub-pixel font-rendering and antialiasing drift between
+    // machines while still failing on a real layout/colour regression.
+    // animations:disabled freezes CSS transitions so a screenshot taken
+    // mid-transition cannot flake the diff.
+    expect: {
+        toHaveScreenshot: {
+            maxDiffPixelRatio: 0.01,
+            animations: "disabled",
+        },
+    },
     use: {
         baseURL: "http://localhost:5173",
         actionTimeout: 10_000,
@@ -85,6 +97,22 @@ export default defineConfig({
             name: "screenshots",
             testDir: "./screenshots",
             use: {browserName: "chromium", viewport: {width: 1280, height: 800}},
+        },
+        {
+            // VISUAL-REGRESSION-SCREENSHOTS-01 pixel-diff suite. Run with:
+            //   npx playwright test --project=visual
+            // Regenerate the committed baseline with:
+            //   npx playwright test --project=visual --update-snapshots
+            //
+            // Kept out of the smoke gate: visual tests are slow and only
+            // meaningful against a committed baseline PNG. A fixed
+            // desktop viewport pins the layout so a window-size change in
+            // CI/local cannot shift every diff. Snapshots are stored next
+            // to the spec (theme-regression.spec.ts-snapshots/) and are
+            // committed — they ARE the baseline.
+            name: "visual",
+            testDir: "./visual",
+            use: {browserName: "chromium", viewport: {width: 1440, height: 900}},
         },
     ],
 });
