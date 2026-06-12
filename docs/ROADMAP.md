@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-06-10 (Docs reconciliation — AI offline (1a+1b) moved from "In progress" to "Recently shipped" now that it ships in v0.48.0; the empty "In progress" section was removed and "Comments offline" moved to "Planned". See "Recently shipped" + "Architecture principles" below.)
-Latest release: v0.50.0 (2026-06-11) — see [changelog/releases/v0.50.0.md](../changelog/releases/v0.50.0.md) for the full per-release notes.
+Latest release: v0.51.0 (2026-06-12) — see [changelog/releases/v0.51.0.md](../changelog/releases/v0.51.0.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
