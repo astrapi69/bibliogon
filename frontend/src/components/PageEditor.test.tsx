@@ -10,11 +10,28 @@
 
 import React from "react";
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import {
+  render as rtlRender,
+  screen,
+  fireEvent,
+  waitFor,
+} from "@testing-library/react";
 
 import PageEditor from "./PageEditor";
 import type { Page } from "../api/client";
 import { expectNoA11yViolations } from "../test-utils/a11y";
+import { FeatureTestProvider } from "../features/FeatureTestProvider";
+
+// PdfExportControls (mounted inside the editor header) uses useFeature,
+// which requires a FeatureProvider. Wrap every render so the real
+// registry is present; api mode keeps pandoc-export active, matching
+// these tests' working-export assumptions.
+function render(
+  ui: React.ReactElement,
+  options?: Parameters<typeof rtlRender>[1],
+) {
+  return rtlRender(<FeatureTestProvider>{ui}</FeatureTestProvider>, options);
+}
 
 class ResizeObserverStub {
   observe() {}

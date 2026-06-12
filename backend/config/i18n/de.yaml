@@ -31,6 +31,10 @@ ui:
     requires_desktop_app: "Diese Funktion benötigt die Bibliogon Desktop-App"
     requires_ai_key: "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)"
     not_yet_available: "Diese Funktion ist noch nicht verfügbar."
+  not_found:
+    title: "Seite nicht gefunden"
+    description: "Die angeforderte Seite existiert nicht oder wurde verschoben."
+    back_home: "Zurück zum Dashboard"
   story_bible:
     title: "Story-Bibel"
     close: "Story-Bibel schließen"

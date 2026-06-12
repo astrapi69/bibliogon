@@ -12,11 +12,28 @@
  * namespace.
  */
 
+import type {ReactElement} from "react";
 import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
-import {render, screen, fireEvent, waitFor} from "@testing-library/react";
+import {
+    render as rtlRender,
+    screen,
+    fireEvent,
+    waitFor,
+} from "@testing-library/react";
 
 import ComicBookEditor from "./ComicBookEditor";
 import {expectNoA11yViolations} from "../test-utils/a11y";
+import {FeatureTestProvider} from "../features/FeatureTestProvider";
+
+// PdfExportControls (mounted in the comic editor header) uses useFeature,
+// which requires a FeatureProvider. Wrap every render so the real registry
+// is present; api mode keeps pandoc-export active.
+function render(
+    ui: ReactElement,
+    options?: Parameters<typeof rtlRender>[1],
+) {
+    return rtlRender(<FeatureTestProvider>{ui}</FeatureTestProvider>, options);
+}
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
