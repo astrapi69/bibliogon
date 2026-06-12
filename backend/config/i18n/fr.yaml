@@ -35,6 +35,8 @@ ui:
     title: "Page introuvable"
     description: "La page demandée n'existe pas ou a été déplacée."
     back_home: "Retour au tableau de bord"
+  author_select:
+    custom_option: "Autre nom…"
   story_bible:
     title: "Story Bible"
     close: "Fermer la Story Bible"

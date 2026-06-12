@@ -215,3 +215,95 @@ describe("AuthorSelectInput", () => {
         );
     });
 });
+
+/**
+ * Profile-select mode (the #pen-names fix). When `profileChoices` is passed,
+ * the control becomes a real <select> listing every profile identity as an
+ * option — so a pen name is visible/selectable even when the field is
+ * pre-filled with the real name. A native <datalist> filtered those options
+ * by the typed value, which is what hid the pen names in the browser.
+ */
+describe("AuthorSelectInput — profile select mode", () => {
+    function selectProps(overrides: Record<string, unknown> = {}) {
+        return {
+            value: "Asterios Raptis",
+            onChange: vi.fn(),
+            suggestions: ["Asterios Raptis", "Draven Quantum"],
+            profileChoices: ["Asterios Raptis", "Draven Quantum"],
+            customOptionLabel: "Anderer Name …",
+            showAddToAuthorsCheckbox: false,
+            addToAuthorsDb: false,
+            onAddToAuthorsDbChange: vi.fn(),
+            testidPrefix: "test-prefix",
+            addToAuthorsLabel: "",
+            ...overrides,
+        };
+    }
+
+    it("renders a <select> (not the filtered datalist) when profileChoices is set", () => {
+        render(<AuthorSelectInput {...selectProps()} />);
+        const select = screen.getByTestId(
+            "test-prefix-author-select",
+        ) as HTMLSelectElement;
+        expect(select.tagName).toBe("SELECT");
+        // The free-text input is NOT mounted while a profile name is selected.
+        expect(screen.queryByTestId("test-prefix-author")).toBeNull();
+    });
+
+    it("lists the real name AND every pen name as its own option, even with the real name pre-filled", () => {
+        render(<AuthorSelectInput {...selectProps()} />);
+        const select = screen.getByTestId(
+            "test-prefix-author-select",
+        ) as HTMLSelectElement;
+        expect(select.value).toBe("Asterios Raptis");
+        expect(
+            screen.getByTestId("test-prefix-author-option-Asterios Raptis"),
+        ).toBeInTheDocument();
+        // The pen name is a real, visible option (the regression: it used to
+        // be hidden by the datalist filter behind the pre-filled real name).
+        expect(
+            screen.getByTestId("test-prefix-author-option-Draven Quantum"),
+        ).toBeInTheDocument();
+    });
+
+    it("selecting a pen name fires onChange with that name", () => {
+        const onChange = vi.fn();
+        render(<AuthorSelectInput {...selectProps({onChange})} />);
+        fireEvent.change(screen.getByTestId("test-prefix-author-select"), {
+            target: {value: "Draven Quantum"},
+        });
+        expect(onChange).toHaveBeenCalledWith("Draven Quantum");
+    });
+
+    it("choosing the custom option reveals the free-text input", () => {
+        render(<AuthorSelectInput {...selectProps()} />);
+        expect(screen.queryByTestId("test-prefix-author")).toBeNull();
+        fireEvent.change(screen.getByTestId("test-prefix-author-select"), {
+            target: {value: "__author_custom__"},
+        });
+        expect(screen.getByTestId("test-prefix-author")).toBeInTheDocument();
+        expect(
+            screen.getByTestId("test-prefix-author-datalist"),
+        ).toBeInTheDocument();
+    });
+
+    it("a non-profile value (e.g. a co-author) opens in custom free-text mode", () => {
+        render(
+            <AuthorSelectInput
+                {...selectProps({value: "Ghostwriter X"})}
+            />,
+        );
+        const input = screen.getByTestId(
+            "test-prefix-author",
+        ) as HTMLInputElement;
+        expect(input.value).toBe("Ghostwriter X");
+    });
+
+    it("falls back to the free-text datalist when profileChoices is empty", () => {
+        render(
+            <AuthorSelectInput {...selectProps({profileChoices: []})} />,
+        );
+        expect(screen.queryByTestId("test-prefix-author-select")).toBeNull();
+        expect(screen.getByTestId("test-prefix-author")).toBeInTheDocument();
+    });
+});

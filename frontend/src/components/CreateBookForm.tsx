@@ -507,6 +507,11 @@ export default function CreateBookForm({
                         value={author}
                         onChange={setAuthor}
                         suggestions={authorSuggestions}
+                        profileChoices={authorSuggestions}
+                        customOptionLabel={t(
+                            "ui.author_select.custom_option",
+                            "Anderer Name …",
+                        )}
                         showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
                         addToAuthorsDb={addToAuthorsDb}
                         onAddToAuthorsDbChange={setAddToAuthorsDb}

@@ -626,22 +626,24 @@ describe("CreateBookForm", () => {
      * Phase 2 pattern). Carried over unchanged from the modal.
      */
     describe("Authors-Database integration", () => {
-        it("datalist lists profile authors (real name + pen names) only", async () => {
+        it("author select lists profile authors (real name + pen names) as options", async () => {
+            // The profile authors render as a real <select> so every pen name
+            // is a visible option even though the field is pre-filled with the
+            // real name (a native <datalist> filtered the pen names out in the
+            // browser — the #pen-names bug).
             mockAppConfig = {
                 author: { name: "Real Name", pen_names: ["Pen One", "Pen Two"] },
             };
             renderForm();
             await waitFor(() =>
-                expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
+                expect(screen.getByTestId("create-book-author-select")).toBeTruthy(),
             );
-            await waitFor(() =>
-                expect(screen.getByTestId("create-book-author-suggestion-Real Name")).toBeTruthy(),
-            );
-            expect(screen.getByTestId("create-book-author-suggestion-Pen One")).toBeTruthy();
-            expect(screen.getByTestId("create-book-author-suggestion-Pen Two")).toBeTruthy();
+            expect(screen.getByTestId("create-book-author-option-Real Name")).toBeTruthy();
+            expect(screen.getByTestId("create-book-author-option-Pen One")).toBeTruthy();
+            expect(screen.getByTestId("create-book-author-option-Pen Two")).toBeTruthy();
         });
 
-        it("does NOT list Authors-DB entries as suggestions (profile-only)", async () => {
+        it("does NOT list Authors-DB entries as options (profile-only)", async () => {
             mockAppConfig = { author: { name: "Real Name", pen_names: [] } };
             mockListAuthors.mockResolvedValue([
                 {
@@ -657,9 +659,9 @@ describe("CreateBookForm", () => {
             renderForm();
             await waitFor(() => expect(mockListAuthors).toHaveBeenCalled());
             await waitFor(() =>
-                expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
+                expect(screen.getByTestId("create-book-author-select")).toBeTruthy(),
             );
-            expect(screen.queryByTestId("create-book-author-suggestion-Stephen King")).toBeNull();
+            expect(screen.queryByTestId("create-book-author-option-Stephen King")).toBeNull();
         });
 
         it("Add-to-Authors-DB checkbox is VISIBLE when typed author is new", async () => {

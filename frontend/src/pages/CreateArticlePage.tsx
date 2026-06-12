@@ -13,6 +13,7 @@ import {
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
+import AuthorSelectInput from "../components/AuthorSelectInput";
 
 /**
  * Full-page article-creation surface (Dialog->Pages migration C2).
@@ -238,22 +239,26 @@ export default function CreateArticlePage() {
 
       <div className="field">
         <label className="label">{t("ui.create_book.author", "Autor")}</label>
-        <input
-          className="input"
-          list="create-article-author-choices"
+        <AuthorSelectInput
           value={author}
-          onChange={(e) => setAuthor(e.target.value)}
+          onChange={setAuthor}
+          suggestions={authorChoices}
+          profileChoices={authorChoices}
+          customOptionLabel={t(
+            "ui.author_select.custom_option",
+            "Anderer Name …",
+          )}
+          showAddToAuthorsCheckbox={false}
+          addToAuthorsDb={false}
+          onAddToAuthorsDbChange={() => {}}
+          addToAuthorsLabel=""
+          testidPrefix="create-article"
+          inputTestId="create-article-author"
           placeholder={t(
             "ui.create_book.author_placeholder",
             "Autorenname oder Pen Name",
           )}
-          data-testid="create-article-author"
         />
-        <datalist id="create-article-author-choices">
-          {authorChoices.map((name) => (
-            <option key={name} value={name} />
-          ))}
-        </datalist>
       </div>
 
       <div className="field">
