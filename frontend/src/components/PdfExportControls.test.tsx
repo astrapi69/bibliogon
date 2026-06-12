@@ -26,6 +26,21 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import PdfExportControls from "./PdfExportControls"
 import {ApiError} from "./../api/client"
+import {FeatureTestProvider} from "../features/FeatureTestProvider"
+
+/**
+ * Render the controls inside the real feature registry. Defaults to
+ * `api` mode where pandoc-export is active (the existing tests assume a
+ * working Export-PDF button); `dexie` mode exercises the desktop-only
+ * gate (picture-book/comic PDF is backend-rendered, so it disables
+ * offline instead of firing `/api`).
+ */
+function renderControls(
+    ui: React.ReactElement,
+    mode: "api" | "dexie" = "api",
+) {
+    return render(<FeatureTestProvider mode={mode}>{ui}</FeatureTestProvider>)
+}
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -80,7 +95,7 @@ afterEach(() => {
 
 describe("PdfExportControls - render", () => {
     it("renders the 5 KDP picture-book formats in the dropdown", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -95,13 +110,13 @@ describe("PdfExportControls - render", () => {
     })
 
     it("renders the bleed-marks checkbox + Export PDF button", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         expect(await screen.findByTestId("pe-pdf-bleed-toggle")).toBeTruthy()
         expect(screen.getByTestId("pe-export-pdf")).toBeTruthy()
     })
 
     it("testidPrefix scopes all 3 testids to the parent surface", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="metadata" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="metadata" />)
         expect(
             await screen.findByTestId("metadata-pdf-format-trigger"),
         ).toBeTruthy()
@@ -112,7 +127,7 @@ describe("PdfExportControls - render", () => {
 
 describe("PdfExportControls - workspace-default initialisation", () => {
     it("defaults to 8.5x8.5 + bleed=false when app.yaml has no picture_book", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -133,7 +148,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
                 },
             },
         })
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -146,7 +161,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
 
     it("falls back to legacy localStorage format on first mount after upgrade", async () => {
         localStorage.setItem("bibliogon-picture-book-format", "8x10")
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -158,7 +173,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
             "bibliogon-picture-book-bleed-marks",
             "true",
         )
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const toggle = (await screen.findByTestId(
             "pe-pdf-bleed-toggle",
         )) as HTMLInputElement
@@ -167,7 +182,7 @@ describe("PdfExportControls - workspace-default initialisation", () => {
 
     it("unknown legacy localStorage format falls back to default", async () => {
         localStorage.setItem("bibliogon-picture-book-format", "garbage")
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -180,7 +195,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
     it("pushes legacy localStorage value to app.yaml when app.yaml is empty", async () => {
         localStorage.setItem("bibliogon-picture-book-format", "8.5x11")
         localStorage.setItem("bibliogon-picture-book-bleed-marks", "true")
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         await waitFor(() => expect(mockUpdateApp).toHaveBeenCalledTimes(1))
         expect(mockUpdateApp).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -213,7 +228,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
             },
         })
         localStorage.setItem("bibliogon-picture-book-format", "8x10")
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         await waitFor(() => expect(mockGetApp).toHaveBeenCalled())
         // Give the effect a chance to NOT call updateApp.
         await new Promise((resolve) => setTimeout(resolve, 20))
@@ -226,7 +241,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
     })
 
     it("inline format change does NOT write to localStorage or app.yaml", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = (await screen.findByTestId(
             "pe-pdf-format-trigger",
         )) as HTMLSelectElement
@@ -241,7 +256,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
     })
 
     it("inline bleed toggle does NOT write to localStorage", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const toggle = await screen.findByTestId("pe-pdf-bleed-toggle")
         fireEvent.click(toggle)
         expect(
@@ -252,7 +267,7 @@ describe("PdfExportControls - one-time legacy migration", () => {
 
 describe("PdfExportControls - export query-param emission", () => {
     it("default state (8.5x8.5 + bleed=false) sends empty params", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         await screen.findByTestId("pe-export-pdf")
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
         await waitFor(() =>
@@ -266,7 +281,7 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("non-default format alone passes picture_book_format only", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = await screen.findByTestId("pe-pdf-format-trigger")
         fireEvent.change(select, {target: {value: "8.5x11"}})
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
@@ -279,7 +294,7 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("bleed=true alone passes picture_book_bleed_marks=true only", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const toggle = await screen.findByTestId("pe-pdf-bleed-toggle")
         fireEvent.click(toggle)
         fireEvent.click(screen.getByTestId("pe-export-pdf"))
@@ -292,7 +307,7 @@ describe("PdfExportControls - export query-param emission", () => {
     })
 
     it("format + bleed both non-default pass both query params", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const select = await screen.findByTestId("pe-pdf-format-trigger")
         fireEvent.change(select, {target: {value: "11x8.5"}})
         fireEvent.click(screen.getByTestId("pe-pdf-bleed-toggle"))
@@ -314,7 +329,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 resolveDownload = resolve
             }),
         )
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = (await screen.findByTestId(
             "pe-export-pdf",
         )) as HTMLButtonElement
@@ -331,7 +346,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 resolveDownload = resolve
             }),
         )
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = await screen.findByTestId("pe-export-pdf")
         fireEvent.click(btn)
         await waitFor(() =>
@@ -352,7 +367,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
                 "GET",
             ),
         )
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = await screen.findByTestId("pe-export-pdf")
         fireEvent.click(btn)
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
@@ -363,7 +378,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
 
     it("non-ApiError rejection still surfaces a fallback error toast", async () => {
         mockDocumentExportDownload.mockRejectedValue(new Error("Network"))
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = await screen.findByTestId("pe-export-pdf")
         fireEvent.click(btn)
         await waitFor(() => expect(mockNotifyError).toHaveBeenCalledTimes(1))
@@ -376,7 +391,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
         mockDocumentExportDownload.mockRejectedValue(
             new ApiError(500, "Boom", "/books/b1/export/pdf", "GET"),
         )
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = (await screen.findByTestId(
             "pe-export-pdf",
         )) as HTMLButtonElement
@@ -388,7 +403,7 @@ describe("PdfExportControls - exporting state + error handling", () => {
 
 describe("PdfExportControls - compact (comic header variant)", () => {
     it("renders an icon-only Export button with aria-label + title, no visible text", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
         const btn = (await screen.findByTestId(
             "cb-export-pdf",
         )) as HTMLButtonElement
@@ -402,13 +417,13 @@ describe("PdfExportControls - compact (comic header variant)", () => {
     })
 
     it("gives the format dropdown a VISIBLE label (mirrors the Layout picker)", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
         await screen.findByTestId("cb-pdf-format-trigger")
         expect(screen.getByText("PDF format")).toBeTruthy()
     })
 
     it("renders the bleed control via the shared Toggle, testid preserved", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="cb" compact />)
         const toggle = (await screen.findByTestId(
             "cb-pdf-bleed-toggle",
         )) as HTMLInputElement
@@ -419,11 +434,38 @@ describe("PdfExportControls - compact (comic header variant)", () => {
     })
 
     it("non-compact (default) still shows the visible Export button text", async () => {
-        render(<PdfExportControls bookId="b1" testidPrefix="pe" />)
+        renderControls(<PdfExportControls bookId="b1" testidPrefix="pe" />)
         const btn = (await screen.findByTestId(
             "pe-export-pdf",
         )) as HTMLButtonElement
         expect(btn.textContent ?? "").toContain("Export as PDF")
         expect(btn.getAttribute("aria-label")).toBeNull()
+    })
+})
+
+describe("PdfExportControls - offline (pandoc-export desktop-only)", () => {
+    it("disables the Export-PDF button with the desktop-app reason offline", async () => {
+        renderControls(
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
+            "dexie",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        expect(btn.disabled).toBe(true)
+        expect(btn.getAttribute("title")).toBe(
+            "This feature requires the Bibliogon desktop app",
+        )
+    })
+
+    it("never fires the export /api call offline", async () => {
+        renderControls(
+            <PdfExportControls bookId="b1" testidPrefix="pe" />,
+            "dexie",
+        )
+        const btn = await screen.findByTestId("pe-export-pdf")
+        fireEvent.click(btn)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        expect(mockDocumentExportDownload).not.toHaveBeenCalled()
     })
 })
