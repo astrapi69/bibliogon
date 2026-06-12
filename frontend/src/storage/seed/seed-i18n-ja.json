@@ -31,7 +31,8 @@
     },
     "feature": {
       "requires_desktop_app": "この機能には Bibliogon デスクトップアプリが必要です",
-      "requires_ai_key": "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）"
+      "requires_ai_key": "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）",
+      "not_yet_available": "この機能はまだ利用できません。"
     },
     "story_bible": {
       "title": "Story Bible",
@@ -648,6 +649,8 @@
       "html_desc": "ウェブ版",
       "markdown": "Markdown",
       "markdown_desc": "プレーンテキスト",
+      "latex": "LaTeX (.tex)",
+      "latex_desc": "LaTeX ソース",
       "project": "プロジェクト (ZIP)",
       "project_desc": "Manuscriptaプロジェクト構造",
       "audiobook": "オーディオブック (MP3)",
@@ -3232,8 +3235,8 @@
       "menu_label": "エクスポート",
       "success": "エクスポートを作成しました。",
       "failed": "エクスポートに失敗しました。",
-      "client_hint": "ブラウザで直接オフラインエクスポート。Pandoc PDF（LaTeX）にはデスクトップアプリを使用してください。",
-      "client_engine_hint": "設定でブラウザエクスポートが選択されています。Pandoc PDF（LaTeX）には、エクスポートエンジンを「バックエンド」に設定してください。"
+      "client_hint": "ブラウザで直接オフラインエクスポート。Pandoc PDFにはデスクトップアプリを使用してください。",
+      "client_engine_hint": "設定でブラウザエクスポートが選択されています。Pandoc PDFには、エクスポートエンジンを「バックエンド」に設定してください。"
     },
     "about": {
       "heading": "Bibliogon について",
@@ -3243,6 +3246,7 @@
       "version_heading": "バージョン",
       "app_label": "Bibliogon",
       "build_label": "ビルド",
+      "branch_label": "ブランチ",
       "build_date_label": "ビルド日時",
       "license_label": "ライセンス",
       "credits_heading": "クレジット",
@@ -3254,7 +3258,19 @@
       "platform_label": "プラットフォーム",
       "plugins_heading": "プラグイン",
       "plugins_empty": "有効なプラグインはありません。",
-      "dep_unknown": "不明"
+      "dep_unknown": "不明",
+      "storage_label": "ストレージ",
+      "storage_indexeddb": "ローカルブラウザストレージ (IndexedDB)",
+      "storage_sqlite": "SQLite (デスクトップ)",
+      "data_dir_label": "データディレクトリ",
+      "data_dir_browser": "ブラウザストレージ (IndexedDB)",
+      "contributors_heading": "貢献者",
+      "author_label": "著者",
+      "built_with_label": "使用技術",
+      "ai_assistance_label": "AI アシスタンス",
+      "ai_assistance_value": "Claude (Anthropic) - アーキテクチャ、コード、コンテンツ、ドキュメント",
+      "resources_heading": "ライセンスとリソース",
+      "docs_label": "ドキュメント"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",

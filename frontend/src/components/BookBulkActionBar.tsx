@@ -73,6 +73,14 @@ export default function BookBulkActionBar({
     const aiGenTitle = aiGen.isDisabled
         ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
         : undefined;
+    // Batch export is backend-only (Pandoc). Policy #78: visible + disabled
+    // with a reason offline, never hidden.
+    const bulkExportTitle = bulkExport.isActive
+        ? undefined
+        : t(
+              bulkExport.reason ?? "ui.feature.requires_desktop_app",
+              "This feature requires the Bibliogon desktop app",
+          );
 
     const overLimit = count > BOOK_BULK_LIMIT_HARD;
     const overWarning = count > BOOK_BULK_LIMIT_WARNING && !overLimit;
@@ -94,18 +102,16 @@ export default function BookBulkActionBar({
             countTestId="book-bulk-count"
             clearTestId="book-bulk-clear"
         >
-            {bulkExport.isActive && (
-                <>
-                    <span className={styles.label}>
-                        {t("ui.dashboard.bulk.format_label", "Format")}
-                    </span>
-                    <RadixSelect
-                        testId="book-bulk-format"
-                        className="is-narrow"
-                        value={format}
-                        onValueChange={(next) => setFormat(next as BookBulkExportFormat)}
-                        disabled={disabled}
-                        ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
+            <span className={styles.label}>
+                {t("ui.dashboard.bulk.format_label", "Format")}
+            </span>
+            <RadixSelect
+                testId="book-bulk-format"
+                className="is-narrow"
+                value={format}
+                onValueChange={(next) => setFormat(next as BookBulkExportFormat)}
+                disabled={disabled || !bulkExport.isActive}
+                ariaLabel={t("ui.dashboard.bulk.format_label", "Format")}
                         options={[
                             { value: "epub", label: "EPUB" },
                             { value: "pdf", label: "PDF" },
@@ -136,13 +142,12 @@ export default function BookBulkActionBar({
                         type="button"
                         className="btn btn-sm btn-primary"
                         data-testid="book-bulk-export"
-                        disabled={disabled}
+                        disabled={disabled || !bulkExport.isActive}
+                        title={bulkExportTitle}
                         onClick={() => onExport(format)}
                     >
                         {t("ui.dashboard.bulk.export_button", "Export")}
                     </button>
-                </>
-            )}
             {onBulkAiTemplateExport && onBulkAiTemplateImport && (
                 <DropdownMenu.Root>
                     <DropdownMenu.Trigger asChild>

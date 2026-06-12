@@ -23,6 +23,7 @@ import { useDialog } from "../components/AppDialog";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
+import { FeatureNotice } from "../features/FeatureNotice";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
@@ -263,7 +264,19 @@ export default function GitBackupPage() {
         }
     }
 
-    if (gitBackup.isHidden) return null;
+    if (!gitBackup.isActive) {
+        return (
+            <PageLayout
+                title={t("ui.git.title", "Git-Sicherung")}
+                testId="git-backup-page"
+                maxWidth="lg"
+                onBack={goBack}
+                backLabel={t("ui.common.back", "Zurück")}
+            >
+                <FeatureNotice reason={gitBackup.reason} testId="git-backup-disabled" />
+            </PageLayout>
+        );
+    }
 
     return (
         <PageLayout

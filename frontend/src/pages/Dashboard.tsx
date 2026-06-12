@@ -86,10 +86,15 @@ export default function Dashboard() {
     const { t } = useI18n();
     // bgb-import is the registry gate for the backend backup/restore family.
     // The sibling .bgb backup-export has no dedicated id in the feature
-    // contract; both are backend-only and always co-hidden offline, so the
-    // .bgb export rides on bgb-import's hidden state.
+    // contract; both are backend-only and co-disabled offline (policy #78:
+    // visible + explained, never hidden), so the .bgb export rides on
+    // bgb-import's disabled state + reason.
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
-    const offline = bgbImport.isHidden;
+    const offline = !bgbImport.isActive;
+    const backupOfflineHint = t(
+        bgbImport.reason ?? "ui.feature.requires_desktop_app",
+        "This feature requires the Bibliogon desktop app",
+    );
     // Import works in both modes: API mode opens the backend ImportWizardModal,
     // Dexie mode opens the client-side OfflineImportDialog. The .bgb gate moves
     // inside that dialog (FEATURES.BGB_IMPORT via the Feature component).
@@ -631,16 +636,15 @@ export default function Dashboard() {
                                 {t("ui.dashboard.articles_nav", "Artikel")}
                             </button>
                             <div className={styles.headerSeparator} />
-                            {!offline && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="backup-export-btn"
-                                    onClick={handleBackupExport}
-                                    disabled={books.length === 0}
-                                >
-                                    <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
-                                </button>
-                            )}
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="backup-export-btn"
+                                onClick={handleBackupExport}
+                                disabled={offline || books.length === 0}
+                                title={offline ? backupOfflineHint : undefined}
+                            >
+                                <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
+                            </button>
                             <button
                                 className="btn btn-secondary btn-sm"
                                 data-testid="import-wizard-btn"
@@ -727,15 +731,15 @@ export default function Dashboard() {
                                             {t("ui.dashboard.articles_nav", "Artikel")}
                                         </DropdownMenu.Item>
                                         <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                        {!offline && (
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                onSelect={handleBackupExport}
-                                            >
-                                                <Download size={16} />{" "}
-                                                {t("ui.dashboard.backup", "Backup")}
-                                            </DropdownMenu.Item>
-                                        )}
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={handleBackupExport}
+                                            disabled={offline}
+                                            title={offline ? backupOfflineHint : undefined}
+                                        >
+                                            <Download size={16} />{" "}
+                                            {t("ui.dashboard.backup", "Backup")}
+                                        </DropdownMenu.Item>
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
                                             onSelect={() => setImportWizardOpen(true)}

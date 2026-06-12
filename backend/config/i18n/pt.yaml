@@ -30,6 +30,7 @@ ui:
   feature:
     requires_desktop_app: "Esta funcionalidade requer a aplicação de ambiente de trabalho do Bibliogon"
     requires_ai_key: "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)"
+    not_yet_available: "Este recurso ainda não está disponível."
   story_bible:
     title: "Story Bible"
     close: "Fechar a Story Bible"
@@ -632,6 +633,8 @@ ui:
     html_desc: "Versao web"
     markdown: "Markdown"
     markdown_desc: "Texto simples"
+    latex: "LaTeX (.tex)"
+    latex_desc: "Código-fonte LaTeX"
     project: "Projeto (ZIP)"
     project_desc: "Estrutura de projeto Manuscripta"
     audiobook: "Audiolivro (MP3)"
@@ -3065,8 +3068,8 @@ ui:
     menu_label: "Exportar"
     success: "Exportação criada."
     failed: "Falha na exportação."
-    client_hint: "Exportação offline diretamente no navegador. Para PDF com Pandoc (LaTeX), use o aplicativo de desktop."
-    client_engine_hint: "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc (LaTeX), defina o motor de exportação para «Backend»."
+    client_hint: "Exportação offline diretamente no navegador. Para PDF com Pandoc, use o aplicativo de desktop."
+    client_engine_hint: "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc, defina o motor de exportação para «Backend»."
   about:
     heading: "Acerca do Bibliogon"
     description: "Versao, info do sistema, plugins instalados e canais de doacao."
@@ -3075,6 +3078,7 @@ ui:
     version_heading: "Versão"
     app_label: "Bibliogon"
     build_label: "Build"
+    branch_label: "Branch"
     build_date_label: "Data de compilação"
     license_label: "Licença"
     credits_heading: "Créditos"
@@ -3087,6 +3091,18 @@ ui:
     plugins_heading: "Plugins"
     plugins_empty: "Nenhum plugin ativo."
     dep_unknown: "Desconhecido"
+    storage_label: "Armazenamento"
+    storage_indexeddb: "Armazenamento local do navegador (IndexedDB)"
+    storage_sqlite: "SQLite (Computador)"
+    data_dir_label: "Diretório de dados"
+    data_dir_browser: "Armazenamento do navegador (IndexedDB)"
+    contributors_heading: "Colaboradores"
+    author_label: "Autor"
+    built_with_label: "Construído com"
+    ai_assistance_label: "Assistência de IA"
+    ai_assistance_value: "Claude (Anthropic) - arquitetura, código, conteúdo, documentação"
+    resources_heading: "Licença e recursos"
+    docs_label: "Documentação"
   kdp_publishing_wizard:
     # KDP-PUBLISHING-WIZARD-01 Phase 1 MVP. 3-step wizard:
     # MetadataChecklist + CoverValidation + ExportPackage.

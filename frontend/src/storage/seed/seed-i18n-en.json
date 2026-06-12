@@ -31,7 +31,8 @@
     },
     "feature": {
       "requires_desktop_app": "This feature requires the Bibliogon desktop app",
-      "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)"
+      "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)",
+      "not_yet_available": "This feature is not yet available."
     },
     "story_bible": {
       "title": "Story Bible",
@@ -648,6 +649,8 @@
       "html_desc": "Web version",
       "markdown": "Markdown",
       "markdown_desc": "Plain text",
+      "latex": "LaTeX (.tex)",
+      "latex_desc": "LaTeX source",
       "project": "Project (ZIP)",
       "project_desc": "Manuscripta project structure",
       "audiobook": "Audiobook (MP3)",
@@ -3232,8 +3235,8 @@
       "menu_label": "Export",
       "success": "Export created.",
       "failed": "Export failed.",
-      "client_hint": "Offline export straight in the browser. For Pandoc PDF (LaTeX) use the desktop app.",
-      "client_engine_hint": "Browser export is selected in Settings. For Pandoc PDF (LaTeX), set the export engine to \"Backend\"."
+      "client_hint": "Offline export straight in the browser. For Pandoc PDF use the desktop app.",
+      "client_engine_hint": "Browser export is selected in Settings. For Pandoc PDF, set the export engine to \"Backend\"."
     },
     "about": {
       "heading": "About Bibliogon",
@@ -3243,6 +3246,7 @@
       "version_heading": "Version",
       "app_label": "Bibliogon",
       "build_label": "Build",
+      "branch_label": "Branch",
       "build_date_label": "Build date",
       "license_label": "License",
       "credits_heading": "Credits",
@@ -3254,7 +3258,19 @@
       "platform_label": "Platform",
       "plugins_heading": "Plugins",
       "plugins_empty": "No plugins active.",
-      "dep_unknown": "Unknown"
+      "dep_unknown": "Unknown",
+      "storage_label": "Storage",
+      "storage_indexeddb": "Local browser storage (IndexedDB)",
+      "storage_sqlite": "SQLite (Desktop)",
+      "data_dir_label": "Data directory",
+      "data_dir_browser": "Browser storage (IndexedDB)",
+      "contributors_heading": "Contributors",
+      "author_label": "Author",
+      "built_with_label": "Built with",
+      "ai_assistance_label": "AI assistance",
+      "ai_assistance_value": "Claude (Anthropic) - architecture, code, content, documentation",
+      "resources_heading": "License & Resources",
+      "docs_label": "Documentation"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publish to KDP",

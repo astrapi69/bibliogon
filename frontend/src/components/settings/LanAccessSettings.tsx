@@ -16,6 +16,7 @@ import { api, type LanAccessInfo } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
+import { FeatureNotice } from "../../features/FeatureNotice";
 import { SectionHeader } from "./SectionHeader";
 
 const sectionStyle: React.CSSProperties = {
@@ -65,7 +66,19 @@ export function LanAccessSettings() {
         };
     }, [offline]);
 
-    if (lanMode.isHidden || !info) return null;
+    if (!lanMode.isActive) {
+        return (
+            <section style={sectionStyle} data-testid="lan-access-section">
+                <SectionHeader
+                    title={t("ui.lan_access.heading")}
+                    description={t("ui.lan_access.description")}
+                    testId="lan-access-header"
+                />
+                <FeatureNotice reason={lanMode.reason} testId="lan-access-disabled" />
+            </section>
+        );
+    }
+    if (!info) return null;
 
     return (
         <section style={sectionStyle} data-testid="lan-access-section">

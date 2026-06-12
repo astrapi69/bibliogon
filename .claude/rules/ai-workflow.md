@@ -466,7 +466,9 @@ live in `docs/archive/roadmap/YYYY-MM.md`.
 
 A task is done when ALL of:
 
-- Code is implemented and merged to `main`.
+- Code is implemented and merged to `develop` (gitflow #79 — feature/fix
+  branches merge to `develop`, never directly to `main`; only releases
+  reach `main`).
 - Tests for the change are green (`make test`).
 - Documentation is updated (CLAUDE.md, API docs, help articles).
 - CHANGELOG entry exists if the change is user-facing.

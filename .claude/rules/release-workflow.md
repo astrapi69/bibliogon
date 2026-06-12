@@ -7,6 +7,30 @@ Prompt triggers: "release new version", "new release", "deploy new version"
 
 ---
 
+## Gitflow branch flow (#79)
+
+Active development lives on `develop` (the GitHub default branch); `main`
+holds releases only. A release is the ONLY path from `develop` to `main`:
+
+```
+develop  (feature/* and fix/* merged here during the cycle)
+   │
+   ├─ branch  release/vX.Y.Z   from develop
+   │     version bump + CHANGELOG + make release-test on release/*
+   │     Aster E2E gate (smoke) green
+   │
+   ├─ merge   release/vX.Y.Z → main   (--no-ff) + annotated tag vX.Y.Z
+   ├─ merge   release/vX.Y.Z → develop   (carry the version bump + CHANGELOG back)
+   └─ delete  release/vX.Y.Z
+```
+
+Only the release-branch → `main` merge (and its tag) touches `main`. The
+Aster-E2E gate below runs on the release branch BEFORE the `main` merge.
+The hand-driven `git push origin main --tags` steps further down happen on
+that release→main merge, not on day-to-day development.
+
+---
+
 ## Ground rules
 
 - Do not skip manual steps: the checklist at the end is mandatory

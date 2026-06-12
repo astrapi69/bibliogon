@@ -15,8 +15,10 @@ name: Deploy app to GitHub Pages
 # mixed content); see MOBILE-LAN-SYNC-01 in the backlog.
 
 on:
+  # Gitflow (#79): the live app site tracks `develop` so Aster can test the
+  # development build; `main` is kept too so a release merge still redeploys.
   push:
-    branches: [main]
+    branches: [develop, main]
     paths:
       - 'frontend/**'
       - '.github/workflows/deploy-pages.yml'

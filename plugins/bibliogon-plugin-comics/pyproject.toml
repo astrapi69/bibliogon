@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-comics"
-version = "0.50.0"
+version = "0.51.0"
 description = "Comics plugin for Bibliogon - panel-based pages, multi-bubble, comic-specific layouts (Phase 1: scaffolding)"
 authors = ["astrapi69"]
 license = "MIT"

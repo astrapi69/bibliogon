@@ -119,7 +119,7 @@ export default function CreateBookForm({
     const [seriesIndex, setSeriesIndex] = useState("");
 
     const bookTemplates = useFeature(FEATURES.BOOK_TEMPLATES);
-    const offline = bookTemplates.isHidden;
+    const offline = !bookTemplates.isActive;
 
     // Template state
     const [templates, setTemplates] = useState<BookTemplate[] | null>(null);

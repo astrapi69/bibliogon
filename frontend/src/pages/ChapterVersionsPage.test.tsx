@@ -1,10 +1,11 @@
 /**
  * ChapterVersionsPage offline guard.
  *
- * Chapter snapshots are backend-only (`version-history` resolves to `hidden`
- * in Dexie mode). The page must render nothing offline so a direct deep-link
- * fires no `/api`, and render normally online. The layout + view + i18n are
- * stubbed so the test isolates the feature guard.
+ * Chapter snapshots are backend-only (`version-history` resolves to `disabled`
+ * in Dexie mode, policy #78). The page chrome stays visible offline but renders
+ * a disabled notice instead of the live view, so a direct deep-link fires no
+ * `/api`; online it renders normally. The layout + view + i18n are stubbed so
+ * the test isolates the feature guard.
  */
 
 import { describe, it, expect, vi } from "vitest";
@@ -53,9 +54,14 @@ describe("ChapterVersionsPage offline guard", () => {
         expect(screen.getByTestId("cv-view")).toBeInTheDocument();
     });
 
-    it("renders nothing offline (version-history hidden in dexie mode)", () => {
-        const { container } = renderPage("dexie");
-        expect(screen.queryByTestId("chapter-versions-page")).toBeNull();
-        expect(container.textContent).toBe("");
+    it("renders the disabled notice offline (no live view, no /api)", () => {
+        renderPage("dexie");
+        // Page chrome stays visible; the live snapshots view does NOT mount
+        // (it would fire /api), the disabled notice does.
+        expect(screen.getByTestId("chapter-versions-page")).toBeInTheDocument();
+        expect(screen.queryByTestId("cv-view")).toBeNull();
+        expect(
+            screen.getByTestId("chapter-versions-disabled"),
+        ).toBeInTheDocument();
     });
 });

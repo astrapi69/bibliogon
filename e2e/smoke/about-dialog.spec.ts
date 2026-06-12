@@ -44,9 +44,10 @@ test.describe("Settings > About tab (About-Dialog C6)", () => {
         // donations.enabled — assert presence-or-skipped, not
         // a hard requirement.
         await expect(page.getByTestId("about-version-section")).toBeVisible();
-        await expect(page.getByTestId("about-credits-section")).toBeVisible();
-        await expect(page.getByTestId("about-plugins-section")).toBeVisible();
         await expect(page.getByTestId("about-system-section")).toBeVisible();
+        await expect(page.getByTestId("about-plugins-section")).toBeVisible();
+        await expect(page.getByTestId("about-contributors-section")).toBeVisible();
+        await expect(page.getByTestId("about-resources-section")).toBeVisible();
 
         // Version chip renders v{semver}. The regex pins the
         // shape, not a specific number — so a release bump
@@ -64,9 +65,10 @@ test.describe("Settings > About tab (About-Dialog C6)", () => {
         );
         await expect(repoLink).toHaveAttribute("target", "_blank");
 
-        // Python + platform always populated.
+        // Client-side platform always populated; the backend Python row
+        // renders here too in API mode (the E2E runs against the backend).
+        await expect(page.getByTestId("about-platform-client")).toBeVisible();
         await expect(page.getByTestId("about-python-version")).toBeVisible();
-        await expect(page.getByTestId("about-platform")).toBeVisible();
 
         // Plugin list: comics row must be present (cross-feature
         // regression pin — fires if plugin-comics ever gets

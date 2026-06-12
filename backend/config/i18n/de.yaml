@@ -30,6 +30,7 @@ ui:
   feature:
     requires_desktop_app: "Diese Funktion benötigt die Bibliogon Desktop-App"
     requires_ai_key: "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)"
+    not_yet_available: "Diese Funktion ist noch nicht verfügbar."
   story_bible:
     title: "Story-Bibel"
     close: "Story-Bibel schließen"
@@ -635,6 +636,8 @@ ui:
     html_desc: "Web-Version"
     markdown: "Markdown"
     markdown_desc: "Rohtext"
+    latex: "LaTeX (.tex)"
+    latex_desc: "LaTeX-Quelltext"
     project: "Projekt (ZIP)"
     project_desc: "Manuscripta-Projektstruktur"
     audiobook: "Audiobook (MP3)"
@@ -3075,8 +3078,8 @@ ui:
     menu_label: "Exportieren"
     success: "Export erstellt."
     failed: "Export fehlgeschlagen."
-    client_hint: "Offline-Export direkt im Browser. Für Pandoc-PDF (LaTeX) die Desktop-App nutzen."
-    client_engine_hint: "Browser-Export ist in den Einstellungen gewählt. Für Pandoc-PDF (LaTeX) die Export-Engine auf „Backend“ stellen."
+    client_hint: "Offline-Export direkt im Browser. Für Pandoc-PDF die Desktop-App nutzen."
+    client_engine_hint: "Browser-Export ist in den Einstellungen gewählt. Für Pandoc-PDF die Export-Engine auf „Backend“ stellen."
   about:
     heading: "Über Bibliogon"
     description: "Version, System-Info, installierte Plugins und Spenden-Kanäle."
@@ -3085,6 +3088,7 @@ ui:
     version_heading: "Version"
     app_label: "Bibliogon"
     build_label: "Build"
+    branch_label: "Branch"
     build_date_label: "Build-Datum"
     license_label: "Lizenz"
     credits_heading: "Mitwirkende"
@@ -3097,6 +3101,18 @@ ui:
     plugins_heading: "Plugins"
     plugins_empty: "Keine Plugins aktiv."
     dep_unknown: "Unbekannt"
+    storage_label: "Speicher"
+    storage_indexeddb: "Lokaler Browser-Speicher (IndexedDB)"
+    storage_sqlite: "SQLite (Desktop)"
+    data_dir_label: "Datenverzeichnis"
+    data_dir_browser: "Browser-Speicher (IndexedDB)"
+    contributors_heading: "Mitwirkende"
+    author_label: "Autor"
+    built_with_label: "Gebaut mit"
+    ai_assistance_label: "KI-Assistenz"
+    ai_assistance_value: "Claude (Anthropic) - Architektur, Code, Content, Dokumentation"
+    resources_heading: "Lizenz & Ressourcen"
+    docs_label: "Dokumentation"
   kdp_publishing_wizard:
     # KDP-PUBLISHING-WIZARD-01 Phase 1 MVP. 3-step wizard:
     # MetadataChecklist + CoverValidation + ExportPackage.
