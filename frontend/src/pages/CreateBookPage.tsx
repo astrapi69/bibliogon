@@ -66,8 +66,8 @@ export default function CreateBookPage() {
   useEffect(() => {
     if (requestedValid) return; // explicit type wins; no fetch needed
     let cancelled = false;
-    api.settings
-      .getApp()
+    getStorage()
+      .settings.getApp()
       .then((config) => {
         if (cancelled) return;
         const uiConfig = (config.ui || {}) as Record<string, unknown>;

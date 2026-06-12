@@ -22,7 +22,7 @@
  * the page sizes colliding.
  */
 import { useCallback, useEffect, useState } from "react";
-import { api, ApiError } from "../api/client";
+import { ApiError } from "../api/client";
 import { getStorage } from "../storage";
 
 export type PageSize = 10 | 25 | 50 | 100;
@@ -66,8 +66,8 @@ export function usePagedList(scope: PagedListScope): UsePagedListResult {
 
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
@@ -101,8 +101,8 @@ export function usePagedList(scope: PagedListScope): UsePagedListResult {
             // page size, books_view, etc.) is not clobbered. Mirrors
             // the useViewMode write-through pattern in this same
             // module family.
-            api.settings
-                .getApp()
+            getStorage()
+                .settings.getApp()
                 .then((config) => {
                     const ui =
                         (config.ui as Record<string, unknown> | undefined) ?? {};
