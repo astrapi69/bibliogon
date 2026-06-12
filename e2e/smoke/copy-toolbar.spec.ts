@@ -14,9 +14,29 @@
  * unit-tested in utils/tiptap-markdown.test.ts.
  */
 
+import type {Page} from "@playwright/test";
+
 import {test, expect} from "../fixtures/base";
 
 const API = "http://localhost:8000/api";
+
+/**
+ * Open the Copy split-button's Radix menu, retrying the chevron click.
+ *
+ * The editor must be mounted first (a mid-hydration click is lost when the
+ * toolbar re-renders on editor load). Even after that, under sustained
+ * full-suite load the Radix portal occasionally drops the opening click, so
+ * re-click until the menu items render - `toPass` retries the whole block.
+ */
+async function openCopyMenu(page: Page): Promise<void> {
+    await expect(page.locator(".ProseMirror")).toBeVisible();
+    await expect(async () => {
+        await page.getByTestId("toolbar-copy-chevron").click();
+        await expect(page.getByTestId("toolbar-copy-markdown-item")).toBeVisible({
+            timeout: 1500,
+        });
+    }).toPass({timeout: 15000});
+}
 
 async function postJson<T>(path: string, body: unknown): Promise<T> {
     const res = await fetch(`${API}${path}`, {
@@ -47,13 +67,7 @@ test.describe("Toolbar Copy split-button (F3)", () => {
         });
         await page.goto(`/articles/${article.id}`);
 
-        // Wait for the TipTap editor to finish mounting before driving the
-        // toolbar. Clicking the Radix chevron mid-hydration loses the click
-        // (the toolbar re-renders when the editor loads) and the portal
-        // never opens, which is the full-suite-load flake this guards.
-        await expect(page.locator(".ProseMirror")).toBeVisible();
-
-        await page.getByTestId("toolbar-copy-chevron").click();
+        await openCopyMenu(page);
 
         await expect(
             page.getByTestId("toolbar-copy-markdown-item"),
@@ -74,18 +88,8 @@ test.describe("Toolbar Copy split-button (F3)", () => {
         });
         await page.goto(`/articles/${article.id}`);
 
-        // Wait for the TipTap editor to finish mounting before driving the
-        // toolbar (see the chevron-menu test above for the lost-click race).
-        await expect(page.locator(".ProseMirror")).toBeVisible();
-
-        await page.getByTestId("toolbar-copy-chevron").click();
-        // Wait for the Radix portal menu item to render before clicking
-        // it. Under sustained full-suite load the portal opens a beat
-        // after the chevron click; clicking immediately raced the open
-        // and hit the action timeout.
-        const plainItem = page.getByTestId("toolbar-copy-plain-item");
-        await expect(plainItem).toBeVisible();
-        await plainItem.click();
+        await openCopyMenu(page);
+        await page.getByTestId("toolbar-copy-plain-item").click();
 
         // react-toastify renders the toast outside the main app tree;
         // match on the toast container role + the i18n fallback.
