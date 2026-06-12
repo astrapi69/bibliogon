@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-10 (Docs reconciliation — AI offline (1a+1b) moved from "In progress" to "Recently shipped" now that it ships in v0.48.0; the empty "In progress" section was removed and "Comments offline" moved to "Planned". See "Recently shipped" + "Architecture principles" below.)
+Last updated: 2026-06-12 (v0.51.0+ reconciliation — Recently-shipped arc extended through v0.51.0 (feature registry #78, gitflow #79, offline import wizard #76/#82, client-side .bgb import #99, About expansion #84/#87/#97, LaTeX in the export UI #89, offline Help + Getting Started, custom 404); "Comments offline" moved from "Planned" to shipped; DEP-02 (TipTap 3) marked resolved.)
 Latest release: v0.51.0 (2026-06-12) — see [changelog/releases/v0.51.0.md](../changelog/releases/v0.51.0.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
@@ -10,13 +10,13 @@ ROADMAP entries cross-reference backlog items by ID rather than
 duplicating their bodies.
 
 Tasks are sorted by priority tier (P0 most urgent, P5 most
-speculative). Active backlog at 57 items (P3=17 + P4=28 + P5=12;
-P0=P1=P2=0) + 2 BLOCKED-on-upstream entries; see backlog for the
-per-tier list.
+speculative). Per-tier item lists and counts live in
+[docs/backlog.md](backlog.md) (single source of truth — the counts
+drift too fast to duplicate here).
 
 ---
 
-## Recently shipped — Maximal-Offline arc (v0.37.0 → v0.48.0)
+## Recently shipped — Maximal-Offline arc (v0.37.0 → v0.51.0)
 
 The static GitHub-Pages build (`astrapi69.github.io/bibliogon/`) boots
 with **no backend** and supports full authoring offline, firing zero
@@ -54,17 +54,49 @@ with **no backend** and supports full authoring offline, firing zero
   BookEditor / ArticleEditor / ComicEditor / PageEditor sidebars.
 - **Foundation** — Dialog → Pages migration; Tailwind v4 + shadcn/ui
   (token-mapped, Preflight-omitted); LAN Mode Phase 1.
+- **Editor v3 + quality infra (v0.49.0)** — TipTap v3 with the
+  `prosemirror-search` adapter (the DEP-02 unblock path) and
+  node-based KaTeX math (inline `$...$` + block `$$...$$`); LaTeX
+  joins the client-side export formats; coverage baseline +
+  dependency security scanning + ESLint flat config + Prettier.
+- **Full-data backup + test gates (v0.50.0)** — single JSON backup
+  bundle for the whole workspace through the `IStorageService` seam
+  (works identically online/offline) + the BACKUP-AKZEPTANZTEST E2E
+  gate (export → reset → import → verify); Playwright visual
+  regression baselines + axe-core a11y checks; strict dual-storage
+  (zero direct `api.*` CRUD from components).
+- **Feature registry (v0.51.0, #78)** — offline gating unified behind
+  `@astrapi69/feature-strategy` (`useFeature(id)` via
+  `AppFeatureProvider`): every gated surface resolves to **active**,
+  **disabled-with-reason**, or **hidden**; the whole desktop-only set
+  moved onto the registry. Replaces `useOfflineFeatureGate()`.
+- **Offline import wizard (v0.51.0, #76/#82 + #99)** — browser format
+  detector (`detectFormat`) + router (`importFile`): Markdown / Text /
+  HTML become a new book + chapter, JSON full-data backups restore,
+  Medium ZIPs import client-side — and `.bgb` backups now parse
+  client-side too (#99), all with zero `/api` calls.
+- **About page depth (v0.51.0, #84/#87/#97)** — build branch,
+  client-side System section (storage mode + platform), Contributors /
+  Built-with / AI-assistance, donation links, License & Resources;
+  the PWA's curated plugin list carries a browser-availability hint.
+- **Offline Help + Getting Started + 404** — the in-app help and the
+  Getting-Started guide work from seeded data offline; unknown routes
+  render a custom 404 page.
+- **LaTeX in the export UI (v0.51.0, #89)** — `.tex` selectable in
+  both modes via the client engine (no Pandoc gate).
+- **Comments offline** — imported article comments live in Dexie with
+  the full admin → soft-delete → trash → restore cycle offline
+  (E2E-pinned in `offline-pwa.spec.ts`).
+- **Gitflow (#79)** — `develop` = active development (GitHub default),
+  `main` = releases only.
 
-Backend-only surfaces (Pandoc/LaTeX export, Git sync/backup, audiobook
-TTS, LAN mode) are gated offline with a translated "requires the
-desktop app" hint (`useOfflineFeatureGate()`).
+Genuinely browser-impossible surfaces (Pandoc-based export, Git
+sync/backup, audiobook TTS, LAN mode) resolve to **disabled** with a
+translated "requires the desktop app" reason via the feature registry —
+per policy #78, nothing the user owns is hidden.
 
 ## Planned
 
-- **Comments offline** — the importer now exists (client Medium import
-  shipped), but the comments admin/editor surface is still online-only;
-  bringing it through the seam is deferred (see "Articles-vs-Books /
-  half-wired lifecycle" lessons).
 - **AI offline — remaining surfaces** (follow-up to 1b). Three
   field-classes whose target columns are not on the Dexie/API entity
   shape stay backend/online-only offline: article `image_prompts`
@@ -75,7 +107,8 @@ desktop app" hint (`useOfflineFeatureGate()`).
   browser YAML parser); the in-editor Fill workflow (1b, shipped) does
   not need it.
 - **Plugin TypeScript port** — audit done, execution pending.
-- **KDP Publishing Wizard** refinements (P2 backlog).
+- **KDP Publishing Wizard** refinements (P3 backlog, "KDP Wizard
+  Refinements" theme below).
 
 ## Architecture principles
 
@@ -88,6 +121,11 @@ desktop app" hint (`useOfflineFeatureGate()`).
   rejects all `/api` traffic on the backendless build.
 - **`IStorageService` seam** — `getStorage()` routes reads/writes to
   `ApiStorage` (online) or `DexieStorage` (IndexedDB, offline).
+- **Three-state feature visibility (#78)** — gated surfaces resolve
+  via the central feature registry (`@astrapi69/feature-strategy`,
+  `useFeature(id)`) to active / disabled-with-reason / hidden;
+  nothing the user owns is hidden. Genuine online-vs-offline routing
+  stays a `useStorageMode()` logic branch, not a registry gate.
 - **Tailwind-first** (supersedes the former CSS-first rule) — new
   visual work via Tailwind utilities; `global.css` is frozen.
 - **No inline comments, docstrings only** — see
@@ -371,12 +409,11 @@ Items waiting on external triggers. Re-audit monthly via
 `make check-blockers`. Do not attempt to advance these without an
 unblock signal.
 
-- **DEP-02**: TipTap 2 → 3 migration. Blocks on upstream npm
-  publish of `@sereneinserenade/tiptap-search-and-replace@0.2.0`
-  ([issue #19](https://github.com/sereneinserenade/tiptap-search-and-replace/issues/19)).
-  Pre-audit at [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md).
-  Next re-audit: 2026-06-02. Alternative unblock path: write
-  the `prosemirror-search` adapter fallback (~50-80 LOC).
+- ~~**DEP-02**: TipTap 2 → 3 migration~~ — **RESOLVED, shipped in
+  v0.49.0**: the editor moved to TipTap v3 via the listed alternative
+  unblock path (the `prosemirror-search` adapter), without waiting on
+  the upstream `tiptap-search-and-replace` publish. Pre-audit at
+  [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md).
 - **DEP-05**: elevenlabs SDK 0.2.27 → 2.45.0 migration (complete
   SDK rewrite). Blocks on paid-API access for migration testing.
   Plan a focused session, not a side bump — the 0.2 → 2.x
