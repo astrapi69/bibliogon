@@ -85,10 +85,12 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         expect(bundle.data.story_bible.entities).toHaveLength(1);
         expect(bundle.data.authors.length).toBeGreaterThanOrEqual(3);
 
-        // 3. Danger-Zone reset (without backup) → everything wiped.
+        // 3. Danger-Zone reset → everything wiped. The reset button opens
+        // the RESET-confirmation dialog directly (the backup choice is a
+        // separate page-level button, already exercised via the Backups tab
+        // export above).
         await page.goto("/settings?tab=danger_zone");
         await page.getByTestId("danger-zone-reset-button").click();
-        await page.getByTestId("danger-zone-continue-without-backup").click();
         await page.getByTestId("danger-zone-reset-input").fill("RESET");
         const finalBtn = page.getByTestId("danger-zone-final-delete-button");
         await expect(finalBtn).toBeEnabled({timeout: 5000});

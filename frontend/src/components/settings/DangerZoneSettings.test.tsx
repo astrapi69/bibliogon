@@ -1,13 +1,13 @@
 /**
- * DangerZoneSettings tests pin the two-phase reset flow:
+ * DangerZoneSettings tests pin the reset flow:
  *
- * - Section + reset-button render with their pinned testids
- * - Clicking reset opens the intermediate "choosing" dialog (backup
- *   first?) and does NOT yet call ``api.system.resetPrepare``
- * - "Continue without backup" advances to the RESET-confirmation phase
- *   and fires prepare (online)
- * - "Create backup" exports the full backup, then advances to confirm
+ * - Section + page-level "Backup erstellen" + reset buttons render
+ * - The page "Backup erstellen" button exports a full JSON backup and
+ *   stays on the page (no dialog)
+ * - Clicking reset opens the RESET-confirmation dialog directly and
+ *   fires ``api.system.resetPrepare`` in the background (online)
  * - The destructive button is gated on the RESET text input
+ * - Cancel closes the dialog without resetting
  * - Happy path: RESET → final-delete → reset called → cleanup → navigate
  *
  * The Radix Dialog portal follows the AppDialog pattern (its own
@@ -99,8 +99,6 @@ function renderWithRouter() {
 
 async function advanceToConfirm() {
     fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-    await screen.findByTestId("danger-zone-precheck");
-    fireEvent.click(screen.getByTestId("danger-zone-continue-without-backup"));
     await screen.findByTestId("danger-zone-reset-input");
 }
 
@@ -116,40 +114,34 @@ describe("DangerZoneSettings", () => {
         cleanup();
     });
 
-    it("renders the section root + reset button", () => {
+    it("renders the section root + page backup button + reset button", () => {
         renderWithRouter();
         expect(screen.getByTestId("danger-zone-section")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-reset-button")).toBeTruthy();
-    });
-
-    it("clicking reset opens the choosing dialog WITHOUT calling prepare", async () => {
-        const { api } = await import("../../api/client");
-        renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-precheck");
+        // The backup button is on the page, visible immediately - not in a dialog.
         expect(screen.getByTestId("danger-zone-create-backup")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-continue-without-backup")).toBeTruthy();
-        expect(api.system.resetPrepare).not.toHaveBeenCalled();
+        expect(screen.getByTestId("danger-zone-reset-button")).toBeTruthy();
+        // No reset dialog is open at rest.
         expect(screen.queryByTestId("danger-zone-reset-input")).toBeNull();
     });
 
-    it("continue-without-backup advances to confirm + calls prepare", async () => {
-        const { api } = await import("../../api/client");
+    it("page backup button exports a full backup and stays on the page", async () => {
         renderWithRouter();
-        await advanceToConfirm();
-        expect(screen.getByTestId("danger-zone-warning")).toBeTruthy();
-        expect(screen.getByTestId("danger-zone-final-delete-button")).toBeTruthy();
-        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
-    });
-
-    it("create-backup exports the full backup, then advances to confirm", async () => {
-        renderWithRouter();
-        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-precheck");
         fireEvent.click(screen.getByTestId("danger-zone-create-backup"));
         await waitFor(() => expect(exportFullBackupMock).toHaveBeenCalled());
         expect(downloadBlobMock).toHaveBeenCalled();
+        // No reset dialog opened by the backup action.
+        expect(screen.queryByTestId("danger-zone-reset-input")).toBeNull();
+    });
+
+    it("clicking reset opens the confirm dialog directly + fires prepare", async () => {
+        const { api } = await import("../../api/client");
+        renderWithRouter();
+        fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
+        // Straight to the RESET confirmation - no intermediate precheck.
         await screen.findByTestId("danger-zone-reset-input");
+        expect(screen.getByTestId("danger-zone-warning")).toBeTruthy();
+        expect(screen.getByTestId("danger-zone-final-delete-button")).toBeTruthy();
+        await waitFor(() => expect(api.system.resetPrepare).toHaveBeenCalled());
     });
 
     it("final-delete is disabled with empty + lowercase input", async () => {
@@ -238,11 +230,11 @@ describe("DangerZoneSettings", () => {
         });
     });
 
-    it("precheck cancel closes the dialog without resetting", async () => {
+    it("cancel closes the confirm dialog without resetting", async () => {
         renderWithRouter();
         fireEvent.click(screen.getByTestId("danger-zone-reset-button"));
-        await screen.findByTestId("danger-zone-precheck");
-        fireEvent.click(screen.getByTestId("danger-zone-precheck-cancel"));
-        await waitFor(() => expect(screen.queryByTestId("danger-zone-precheck")).toBeNull());
+        await screen.findByTestId("danger-zone-reset-input");
+        fireEvent.click(screen.getByTestId("danger-zone-cancel-button"));
+        await waitFor(() => expect(screen.queryByTestId("danger-zone-reset-input")).toBeNull());
     });
 });
