@@ -124,6 +124,34 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("offline-import-confirm")).toHaveCount(0);
     });
 
+    test("article-list import opens the offline dialog (not the backend wizard), no /api (#82)", async ({
+        page,
+    }) => {
+        await page.goto("/articles");
+        // Regression for #82: ArticleList used to mount the backend
+        // ImportWizardModal unconditionally, so its import trigger fired
+        // POST /api/import/detect offline (guardedFetch 503). It must open
+        // the client-side OfflineImportDialog instead, like the Dashboard.
+        const importBtn = page.getByTestId("article-import-wizard-btn");
+        await expect(importBtn).toBeVisible();
+        await expect(importBtn).toBeEnabled();
+        await importBtn.click();
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await expect(page.getByTestId("import-wizard-modal")).toHaveCount(0);
+        // A full client-side import: picking a file must not hit /api (the
+        // hard gate aborts + records any /api call for this suite).
+        await page.getByTestId("offline-import-input").setInputFiles({
+            name: "from-articles.md",
+            mimeType: "text/markdown",
+            buffer: Buffer.from("# Imported From Articles\n\nBody."),
+        });
+        await expect(
+            page.getByTestId("offline-import-format-markdown"),
+        ).toBeVisible();
+        await page.getByTestId("offline-import-confirm").click();
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+    });
+
     test("settings persist to Dexie across reload", async ({page}) => {
         await page.goto("/settings?tab=verhalten");
         await expect(page.getByTestId("verhalten-settings")).toBeVisible();

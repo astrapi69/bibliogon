@@ -71,6 +71,8 @@ import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";
+import OfflineImportDialog from "../components/import/OfflineImportDialog";
+import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
 import { EmptyState } from "../components/EmptyState";
 
@@ -78,14 +80,20 @@ export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
-    // The backend import-wizard + .bgb backup-export are desktop-only. Policy
-    // #78: visible + disabled with a reason offline, never hidden. The offline
-    // article-import path is Medium (the chevron item, always available).
+    // The .bgb backup-export remains desktop-only. Policy #78: visible +
+    // disabled with a reason offline, never hidden. `offline` gates only the
+    // backup-export controls; import itself works offline via the
+    // OfflineImportDialog (see the storage-mode routing below).
     const offline = !bgbImport.isActive;
     const offlineHint = t(
         bgbImport.reason ?? "ui.feature.requires_desktop_app",
         "This feature requires the Bibliogon desktop app",
     );
+    // Import works in both modes: API mode opens the backend ImportWizardModal,
+    // Dexie mode opens the client-side OfflineImportDialog (markdown/text/html/
+    // JSON backup/Medium ZIP all client-side; .bgb shows the desktop hint).
+    const { mode } = useStorageMode();
+    const isDexie = mode === "dexie";
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -756,8 +764,7 @@ export default function ArticleList() {
                                     className="btn btn-secondary btn-sm"
                                     data-testid="article-import-wizard-btn"
                                     onClick={() => setImportWizardOpen(true)}
-                                    disabled={offline}
-                                    title={offline ? offlineHint : t("ui.dashboard.import", "Importieren")}
+                                    title={t("ui.dashboard.import", "Importieren")}
                                 >
                                     <Upload size={14} />{" "}
                                     {t("ui.dashboard.import", "Importieren")}
@@ -908,8 +915,6 @@ export default function ArticleList() {
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
                                             onSelect={() => setImportWizardOpen(true)}
-                                            disabled={offline}
-                                            title={offline ? offlineHint : undefined}
                                         >
                                             <Upload size={16} />{" "}
                                             {t("ui.dashboard.import", "Importieren")}
@@ -1158,18 +1163,25 @@ export default function ArticleList() {
                     })()
                 )}
             </main>
-            <ImportWizardModal
-                open={importWizardOpen}
-                onClose={() => setImportWizardOpen(false)}
-                onImported={() => {
-                    // .bgb imports may carry articles + their trash
-                    // siblings (deleted_at preserved). Refresh both
-                    // lists so the live grid AND the trash badge
-                    // surface freshly-imported rows immediately.
-                    void refreshArticles();
-                    void loadTrash();
-                }}
-            />
+            {isDexie ? (
+                <OfflineImportDialog
+                    open={importWizardOpen}
+                    onClose={() => setImportWizardOpen(false)}
+                    onImported={() => {
+                        void refreshArticles();
+                        void loadTrash();
+                    }}
+                />
+            ) : (
+                <ImportWizardModal
+                    open={importWizardOpen}
+                    onClose={() => setImportWizardOpen(false)}
+                    onImported={() => {
+                        void refreshArticles();
+                        void loadTrash();
+                    }}
+                />
+            )}
             {convertToBookArticles && (
                 <ConvertToBookWizard
                     open
