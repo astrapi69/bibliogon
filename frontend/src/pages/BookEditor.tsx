@@ -533,7 +533,7 @@ export default function BookEditor() {
                 t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefügt"),
             );
         } catch (err) {
-            notify.error(t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"));
+            notify.error(t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"), err);
             throw err;
         }
     };
