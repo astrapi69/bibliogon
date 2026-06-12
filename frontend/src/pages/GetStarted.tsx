@@ -238,7 +238,12 @@ export default function GetStarted() {
                                 {isComplete ? <Check size={32}/> : (ICON_MAP[step.icon] || <Rocket size={32}/>)}
                             </div>
                             <div style={{flex: 1}}>
-                                <h2 className={styles.stepTitle}>{step.title}</h2>
+                                <h2
+                                    className={styles.stepTitle}
+                                    data-testid="getstarted-step-title"
+                                >
+                                    {step.title}
+                                </h2>
                                 <p className={styles.stepDesc}>{step.description}</p>
                             </div>
                         </div>

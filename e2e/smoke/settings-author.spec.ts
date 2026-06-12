@@ -117,13 +117,15 @@ test.describe("Settings - autoren tab (author profile)", () => {
         await patchAuthor({name: "Real Author", pen_names: ["Draven Quantum"]});
         await page.goto("/books/new");
 
-        // The author field is a datalist; its options are the profile names
-        // (real name + every pen name), so the pen name must be selectable.
-        const datalist = page.getByTestId("create-book-author-datalist");
-        await expect(datalist).toBeAttached();
+        // With a pen name configured the author field is a real <select> of
+        // profile identities (a native <datalist> filtered its options by the
+        // pre-filled real name, hiding pen names - #103). Every profile name
+        // must be a selectable option.
+        const select = page.getByTestId("create-book-author-select");
+        await expect(select).toBeVisible();
         await expect
             .poll(async () =>
-                datalist.evaluate((el) =>
+                select.evaluate((el) =>
                     Array.from(el.querySelectorAll("option")).map(
                         (o) => (o as HTMLOptionElement).value,
                     ),

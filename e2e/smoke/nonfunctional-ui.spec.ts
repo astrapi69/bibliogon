@@ -64,11 +64,11 @@ test.describe("Non-functional UI offline (Dexie mode)", () => {
         page,
     }) => {
         await page.goto("/get-started");
-        // The first guide step ("choose-book-type") renders the book-type
-        // grid; an empty guide (the pre-fix offline state) would crash before
-        // this. Its presence proves the seed-backed guide loaded.
-        await expect(
-            page.getByTestId("getstarted-book-type-grid"),
-        ).toBeVisible();
+        // The step title renders `steps[currentStep].title` from the seed-backed
+        // guide; an empty guide (the pre-fix offline state) leaves `steps` empty
+        // and renders nothing here. A non-empty title proves the guide loaded.
+        const stepTitle = page.getByTestId("getstarted-step-title");
+        await expect(stepTitle).toBeVisible();
+        await expect(stepTitle).not.toBeEmpty();
     });
 });

@@ -21,9 +21,10 @@ const API = "http://localhost:8000/api";
 
 /**
  * Fill the author field. AuthorSelectInput swaps the plain
- * <input data-testid="create-book-author"> for a Radix Select
- * (data-testid="create-book-author-select") when a profile author name
- * is configured; settings load async, so race the two variants.
+ * <input data-testid="create-book-author"> for a native <select>
+ * (data-testid="create-book-author-select") when the profile has 2+ names
+ * (i.e. at least one pen name). Settings load async, so race the two
+ * variants; pick the first real profile option in the select case.
  */
 async function pickAuthor(page: Page, fallbackName: string) {
     await page.getByTestId("create-book-title").waitFor({state: "visible"});
@@ -34,8 +35,13 @@ async function pickAuthor(page: Page, fallbackName: string) {
         select.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
     ]);
     if (await select.count()) {
-        await select.click();
-        await page.locator('[role="option"]').first().click();
+        const value = await select.evaluate((el) => {
+            const opt = Array.from((el as HTMLSelectElement).options).find(
+                (o) => o.value && o.value !== "__author_custom__",
+            );
+            return opt ? opt.value : "";
+        });
+        if (value) await select.selectOption(value);
         return;
     }
     await input.fill(fallbackName);

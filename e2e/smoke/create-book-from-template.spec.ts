@@ -48,12 +48,12 @@ async function clickTab(page: Page, testId: string) {
 }
 
 /**
- * Fill the author field in CreateBookModal. The modal swaps the plain
- * <input data-testid="create-book-author"> for a Radix Select with
- * data-testid="create-book-author-select" when `config.author.name` is
- * configured. Settings load asynchronously, so the input variant can
- * appear first and then detach when the Select replaces it - wait for
- * the title field to be stable, then race the two variants.
+ * Fill the author field in CreateBookModal. The form swaps the plain
+ * <input data-testid="create-book-author"> for a native <select> with
+ * data-testid="create-book-author-select" when the profile has 2+ names
+ * (at least one pen name). Settings load asynchronously, so the input
+ * variant can appear first and then detach when the select replaces it -
+ * wait for the title field to be stable, then race the two variants.
  */
 async function pickAuthor(page: Page, fallbackName: string) {
     // Title field renders first and is stable; gate on it before
@@ -67,8 +67,13 @@ async function pickAuthor(page: Page, fallbackName: string) {
         select.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
     ]);
     if (await select.count()) {
-        await select.click();
-        await page.locator('[role="option"]').first().click();
+        const value = await select.evaluate((el) => {
+            const opt = Array.from((el as HTMLSelectElement).options).find(
+                (o) => o.value && o.value !== "__author_custom__",
+            );
+            return opt ? opt.value : "";
+        });
+        if (value) await select.selectOption(value);
         return;
     }
     await input.fill(fallbackName);
