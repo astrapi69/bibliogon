@@ -54,14 +54,28 @@ test("?type= is applied to the created article", async ({page}) => {
 
     await expect(page).toHaveURL(/\/articles\/(?!new$)[^/]+$/, {timeout: 10_000});
 
-    const created = await page.evaluate(async () => {
-        const r = await fetch("/api/articles");
-        const articles = await r.json();
-        return (
-            articles as {id: string; title: string; content_type: string}[]
-        ).find((a) => a.title === "E2E Tutorial Article");
-    });
-    expect(created?.content_type).toBe("tutorial");
+    // Poll rather than read once: the editor URL changes the moment the
+    // create POST resolves, but the article list can lag a beat behind that
+    // commit, so a single fetch races the read-after-write and returns
+    // undefined (the #65 flake). Poll until the row is visible with its
+    // resolved type.
+    await expect
+        .poll(
+            async () =>
+                page.evaluate(async () => {
+                    const r = await fetch("/api/articles");
+                    const articles = (await r.json()) as {
+                        title: string;
+                        content_type: string;
+                    }[];
+                    return (
+                        articles.find((a) => a.title === "E2E Tutorial Article")
+                            ?.content_type ?? null
+                    );
+                }),
+            {timeout: 10_000},
+        )
+        .toBe("tutorial");
 });
 
 test("back button returns to the article list", async ({page}) => {
