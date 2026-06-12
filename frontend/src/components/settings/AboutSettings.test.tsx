@@ -180,11 +180,13 @@ describe("AboutSettings", () => {
             expect(section.textContent).toMatch(/MIT/);
         });
 
-        it("renders build hash + build date from build-time literals", async () => {
+        it("renders build hash + branch + build date from build-time literals", async () => {
             render(<AboutSettings appConfig={{}} />);
             const hash = await screen.findByTestId("about-build-hash");
+            const branch = await screen.findByTestId("about-build-branch");
             const date = await screen.findByTestId("about-build-date");
             expect(hash.textContent).toBe(__BUILD_HASH__);
+            expect(branch.textContent).toBe(__BUILD_BRANCH__);
             expect(date.textContent).toBeTruthy();
         });
     });

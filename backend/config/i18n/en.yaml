@@ -3087,6 +3087,7 @@ ui:
     version_heading: "Version"
     app_label: "Bibliogon"
     build_label: "Build"
+    branch_label: "Branch"
     build_date_label: "Build date"
     license_label: "License"
     credits_heading: "Credits"

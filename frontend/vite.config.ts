@@ -21,8 +21,23 @@ function gitShortHash(): string {
     return "unknown";
   }
 }
+// Branch the build came from, so Settings > About can show whether a build
+// is a `main` release, a `develop` build, or a feature branch under test.
+// CI overrides via VITE_BUILD_BRANCH; otherwise prefer GITHUB_REF_NAME (set
+// by GitHub Actions, where the checkout is a detached HEAD so
+// `git rev-parse --abbrev-ref HEAD` would report "HEAD"); fall back to git
+// for local builds.
+function gitBranch(): string {
+  try {
+    return execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "unknown";
+  }
+}
 const buildHash = process.env.VITE_BUILD_HASH || gitShortHash();
 const buildDate = process.env.VITE_BUILD_DATE || new Date().toISOString();
+const buildBranch =
+  process.env.VITE_BUILD_BRANCH || process.env.GITHUB_REF_NAME || gitBranch();
 
 // GitHub-Pages / sub-path support. The deployed base path is injected at
 // build time via VITE_BASE_URL (e.g. "/bibliogon/" for GitHub Pages);
@@ -44,6 +59,7 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(pkg.version),
     __BUILD_HASH__: JSON.stringify(buildHash),
     __BUILD_DATE__: JSON.stringify(buildDate),
+    __BUILD_BRANCH__: JSON.stringify(buildBranch),
   },
   resolve: {
     // ``@`` -> ``src`` alias for the shadcn/ui convention
