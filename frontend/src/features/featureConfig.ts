@@ -99,11 +99,7 @@ const ALWAYS_ACTIVE: readonly string[] = [
  * Dexie mode only when no key is configured; active otherwise (online uses
  * the backend AI path, offline-with-key uses the user's own provider).
  */
-const NEEDS_KEY: readonly string[] = [
-    FEATURES.AI_FILL,
-    FEATURES.AI_GENERATE,
-    FEATURES.AI_TEMPLATE_FILE_IO,
-];
+const NEEDS_KEY: readonly string[] = [FEATURES.AI_FILL, FEATURES.AI_GENERATE];
 
 /**
  * Features that genuinely cannot work in a browser (no git binary, no TTS
@@ -126,6 +122,10 @@ const DEXIE_HIDDEN: readonly string[] = [
     FEATURES.BULK_EXPORT,
     FEATURES.WRITING_HISTORY_CSV,
     FEATURES.BOOK_TEMPLATES,
+    // ai-template-file-io: the .biblio.yaml Export/Import round-trip calls
+    // backend /api with no offline path, so it cannot run in the browser even
+    // with a configured AI key — hidden offline, not key-dependent.
+    FEATURES.AI_TEMPLATE_FILE_IO,
 ];
 
 function descriptor(id: string): FeatureDescriptor {
