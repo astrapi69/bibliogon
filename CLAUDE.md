@@ -163,6 +163,7 @@ bibliogon/
 - Plugins: standalone packages under plugins/, depends_on as a class attribute, all free (licensing dormant)
 - Export: manuscripta (PyPI), plugin config in export.yaml is 1:1 the manuscripta format
 - Commits: English, conventional (feat/fix/refactor/docs)
+- Branching (gitflow, #79): `develop` = active development (GitHub default branch); `main` = releases only. Branch `feature/*`/`fix/*`/`chore/*` from `develop`, PR against `develop`. Only the release flow merges to `main` (+ tag), then back to `develop`. See `.claude/rules/release-workflow.md`.
 - E2E: data-testid selectors only, no brittle CSS or XPath. Claude Code writes specs, Aster runs them.
 - Secrets NEVER in committed config files. Three-layer chain: project `backend/config/app.yaml` (defaults) < `~/.config/bibliogon/secrets.yaml` (user override, gitignored) < env-vars (`BIBLIOGON_AI_API_KEY`). Details in [docs/configuration.md](docs/configuration.md). When editing AI-assisted, do NOT set `ai.api_key` in `app.yaml` — leave it `""` and route the value via override or env-var.
 

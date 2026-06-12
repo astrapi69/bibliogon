@@ -54,10 +54,15 @@
 
 ## Git
 
+- **Gitflow (#79):** `develop` is the active-development branch (the GitHub
+  default); `main` holds releases only. Branch `feature/*` / `fix/*` /
+  `chore/*` FROM `develop` and open PRs AGAINST `develop`. Only the
+  release flow merges to `main` (see release-workflow.md). Never develop
+  directly on `main`.
 - Conventional Commits: feat:, fix:, refactor:, docs:, test:, chore:
 - Provide a scope when it's clear: feat(export): ..., fix(editor): ...
 - One commit per logical change, not everything in one.
-- Branch naming: feature/{name}, fix/{name}, chore/{name}
+- Branch naming: feature/{name}, fix/{name}, chore/{name} (from `develop`)
 - Do not add `Co-Authored-By` trailers attributing non-human
   collaborators (AI tools, automation bots, MCP agents). Human
   co-authors are attributed via the standard GitHub mechanism.
