@@ -428,7 +428,7 @@ function ContributorsSection({ t }: { t: T }) {
                     border: "1px solid var(--border, #ddd)",
                     borderRadius: 12,
                     fontSize: "0.8rem",
-                    backgroundColor: "var(--surface, #fff)",
+                    backgroundColor: "var(--bg-card, #fff)",
                     textDecoration: "none",
                   }}
                 >
