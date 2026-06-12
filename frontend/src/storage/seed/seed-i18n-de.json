@@ -1,5 +1,34 @@
 {
   "ui": {
+    "offline_import": {
+      "title": "Importieren",
+      "drop_zone": "Datei hier ablegen oder klicken",
+      "accepted": "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip). .bgb benötigt die Desktop-App.",
+      "file_label": "Datei:",
+      "detecting": "Format wird erkannt …",
+      "detected_label": "Erkanntes Format:",
+      "import_as": "Import als:",
+      "as_new_book": "Neues Buch (Dateiinhalt wird erstes Kapitel)",
+      "as_existing_book": "Neues Kapitel in bestehendes Buch",
+      "choose_book_placeholder": "Buch wählen …",
+      "bgb_desktop_hint": "bgb-Import benötigt die Desktop-App.",
+      "unknown_hint": "Dieses Format kann offline nicht importiert werden.",
+      "import_btn": "Importieren",
+      "importing": "Importiere …",
+      "cancel_btn": "Abbrechen",
+      "error": "Import fehlgeschlagen: {error}",
+      "success_book": "Buch importiert: {title}",
+      "success_chapter_existing": "Kapitel zu {book} hinzugefügt",
+      "success_backup": "Backup importiert: {books} Bücher, {articles} Artikel",
+      "success_medium": "Medium-Import: {imported} importiert",
+      "format_markdown": "Markdown (.md)",
+      "format_text": "Text (.txt)",
+      "format_html": "HTML (.html)",
+      "format_json_backup": "Volldaten-Backup (JSON)",
+      "format_medium_zip": "Medium-Export (.zip)",
+      "format_bgb": "Bibliogon-Backup (.bgb)",
+      "format_unknown": "Unbekannt"
+    },
     "feature": {
       "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App",
       "requires_ai_key": "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)"
