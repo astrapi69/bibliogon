@@ -3244,6 +3244,7 @@
       "version_heading": "Versión",
       "app_label": "Bibliogon",
       "build_label": "Build",
+      "branch_label": "Rama",
       "build_date_label": "Fecha de compilación",
       "license_label": "Licencia",
       "credits_heading": "Créditos",

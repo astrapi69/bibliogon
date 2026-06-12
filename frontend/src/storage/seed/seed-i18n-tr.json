@@ -3244,6 +3244,7 @@
       "version_heading": "Sürüm",
       "app_label": "Bibliogon",
       "build_label": "Build",
+      "branch_label": "Branch",
       "build_date_label": "Yapım tarihi",
       "license_label": "Lisans",
       "credits_heading": "Katkıda Bulunanlar",

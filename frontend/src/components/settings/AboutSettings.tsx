@@ -191,6 +191,12 @@ function VersionSection({
           {__BUILD_HASH__}
         </dd>
         <dt>
+          <strong>{t("ui.about.branch_label", "Branch")}</strong>
+        </dt>
+        <dd data-testid="about-build-branch" style={{ margin: 0 }}>
+          {__BUILD_BRANCH__}
+        </dd>
+        <dt>
           <strong>{t("ui.about.build_date_label", "Build-Datum")}</strong>
         </dt>
         <dd data-testid="about-build-date" style={{ margin: 0 }}>

@@ -3244,6 +3244,7 @@
       "version_heading": "バージョン",
       "app_label": "Bibliogon",
       "build_label": "ビルド",
+      "branch_label": "ブランチ",
       "build_date_label": "ビルド日時",
       "license_label": "ライセンス",
       "credits_heading": "クレジット",
