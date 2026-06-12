@@ -664,6 +664,8 @@
       "html_desc": "Web surumu",
       "markdown": "Markdown",
       "markdown_desc": "Duz metin",
+      "latex": "LaTeX (.tex)",
+      "latex_desc": "LaTeX kaynak kodu",
       "project": "Proje (ZIP)",
       "project_desc": "Manuscripta proje yapisi",
       "audiobook": "Sesli kitap (MP3)",
@@ -3233,8 +3235,8 @@
       "menu_label": "Dışa aktar",
       "success": "Dışa aktarma oluşturuldu.",
       "failed": "Dışa aktarma başarısız.",
-      "client_hint": "Çevrimdışı dışa aktarma doğrudan tarayıcıda. Pandoc PDF (LaTeX) için masaüstü uygulamasını kullanın.",
-      "client_engine_hint": "Tarayıcı dışa aktarması Ayarlar'da seçili. Pandoc PDF (LaTeX) için dışa aktarma motorunu \"Backend\" olarak ayarlayın."
+      "client_hint": "Çevrimdışı dışa aktarma doğrudan tarayıcıda. Pandoc PDF için masaüstü uygulamasını kullanın.",
+      "client_engine_hint": "Tarayıcı dışa aktarması Ayarlar'da seçili. Pandoc PDF için dışa aktarma motorunu \"Backend\" olarak ayarlayın."
     },
     "about": {
       "heading": "Bibliogon Hakkında",
