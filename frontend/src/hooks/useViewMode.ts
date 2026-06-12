@@ -1,17 +1,24 @@
 /**
  * Per-dashboard view-mode preference (grid vs list) backed by the
  * existing ``app.yaml`` ``ui.dashboard.*_view`` keys. Reads on mount,
- * writes on change. Falls back to ``grid`` when the API call fails or
- * the key is unset (matching legacy behaviour for users who upgraded
- * before the toggle shipped).
+ * writes on change. Falls back to ``grid`` when the settings read
+ * fails or the key is unset (matching legacy behaviour for users who
+ * upgraded before the toggle shipped).
  *
  * The hook owns the optimistic update: ``setMode`` flips local state
- * immediately and fires the PATCH in the background so the toggle
- * feels instant. Errors surface through the standard notify channel
- * so the user knows the preference did not persist.
+ * immediately and fires the persist in the background so the toggle
+ * feels instant. A failed persist rolls the optimistic state back so
+ * the UI never claims a fake-saved preference.
+ *
+ * All settings reads/writes go through the ``getStorage()`` seam, NOT
+ * the raw ``api.settings`` client (#106): in Dexie mode the raw client
+ * rejects via ``guardedFetch`` BEFORE any network request, which (a)
+ * never trips the offline E2E's ``/api`` hard gate and (b) used to
+ * fire the rollback catch — the toggle visibly snapped back to grid,
+ * i.e. "clicking Liste does nothing" on the GitHub-Pages PWA.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, ApiError } from "../api/client";
+import { ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import type { ViewMode } from "../components/ViewToggle";
 
@@ -52,8 +59,8 @@ export function useViewMode(scope: DashboardScope): {
 
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled || userTouchedRef.current) return;
                 const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
@@ -65,7 +72,7 @@ export function useViewMode(scope: DashboardScope): {
             })
             .catch(() => {
                 // Silent fallback to "grid" - keeps the dashboard
-                // usable when the settings endpoint is unreachable.
+                // usable when the settings read fails.
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
@@ -82,8 +89,8 @@ export function useViewMode(scope: DashboardScope): {
             // Read current ui.dashboard so we keep the OTHER scope's
             // preference intact. Backend PATCH applies a shallow .update
             // on ``ui`` so we must hand back the whole ``dashboard`` block.
-            api.settings
-                .getApp()
+            getStorage()
+                .settings.getApp()
                 .then((config) => {
                     const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
                     const dashboard =
@@ -148,8 +155,8 @@ export function useTrashViewMode(scope: TrashScope): {
 
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled || userTouchedRef.current) return;
                 const ui = (config.ui as Record<string, unknown> | undefined) ?? {};
@@ -161,7 +168,7 @@ export function useTrashViewMode(scope: TrashScope): {
             })
             .catch(() => {
                 // Silent fallback to "grid" - keeps the trash view
-                // usable when the settings endpoint is unreachable.
+                // usable when the settings read fails.
             })
             .finally(() => {
                 if (!cancelled) setLoading(false);
