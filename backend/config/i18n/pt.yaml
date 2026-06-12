@@ -31,6 +31,10 @@ ui:
     requires_desktop_app: "Esta funcionalidade requer a aplicação de ambiente de trabalho do Bibliogon"
     requires_ai_key: "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)"
     not_yet_available: "Este recurso ainda não está disponível."
+  not_found:
+    title: "Página não encontrada"
+    description: "A página solicitada não existe ou foi movida."
+    back_home: "Voltar ao painel"
   story_bible:
     title: "Story Bible"
     close: "Fechar a Story Bible"

@@ -8,6 +8,7 @@ import MediumImportPage from "./pages/MediumImportPage";
 import Settings from "./pages/Settings";
 import Help from "./pages/Help";
 import GetStarted from "./pages/GetStarted";
+import NotFoundPage from "./pages/NotFoundPage";
 // Dialog->Pages migration: new full-page surfaces are lazy-loaded so
 // they create their own chunks (the rest of the routes stay eager).
 const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
@@ -295,6 +296,14 @@ export default function App() {
                                                         element={
                                                             <ErrorBoundary surface="shortcuts">
                                                                 <ShortcutsPage />
+                                                            </ErrorBoundary>
+                                                        }
+                                                    />
+                                                    <Route
+                                                        path="*"
+                                                        element={
+                                                            <ErrorBoundary surface="not-found">
+                                                                <NotFoundPage />
                                                             </ErrorBoundary>
                                                         }
                                                     />

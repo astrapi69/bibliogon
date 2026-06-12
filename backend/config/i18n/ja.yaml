@@ -31,6 +31,10 @@ ui:
     requires_desktop_app: "この機能には Bibliogon デスクトップアプリが必要です"
     requires_ai_key: "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）"
     not_yet_available: "この機能はまだ利用できません。"
+  not_found:
+    title: "ページが見つかりません"
+    description: "リクエストされたページは存在しないか、移動されました。"
+    back_home: "ダッシュボードに戻る"
   story_bible:
     title: "Story Bible"
     close: "Story Bible を閉じる"

@@ -31,6 +31,10 @@ ui:
     requires_desktop_app: "Cette fonctionnalité nécessite l'application de bureau Bibliogon"
     requires_ai_key: "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)"
     not_yet_available: "Cette fonctionnalité n'est pas encore disponible."
+  not_found:
+    title: "Page introuvable"
+    description: "La page demandée n'existe pas ou a été déplacée."
+    back_home: "Retour au tableau de bord"
   story_bible:
     title: "Story Bible"
     close: "Fermer la Story Bible"
