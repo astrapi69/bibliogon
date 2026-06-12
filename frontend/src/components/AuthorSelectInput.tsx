@@ -31,7 +31,11 @@
  * the Tier1Section RCU pattern (testidPrefix-style n-site reuse).
  */
 
+import {useState} from "react";
 import {Toggle} from "./settings/Toggle";
+
+/** Select value used for the "type a custom name" escape option. */
+const CUSTOM_VALUE = "__author_custom__";
 
 interface AuthorSelectInputProps {
     /** Current author value (controlled). */
@@ -43,6 +47,21 @@ interface AuthorSelectInputProps {
      *  article-author names, etc.) with globalAuthors from
      *  api.authors.list. */
     suggestions: string[];
+
+    /** The user's profile identities (real name + pen names). When
+     *  provided and non-empty, the control renders a real <select>
+     *  dropdown listing every profile name as its own option plus a
+     *  "custom name" escape that reveals the free-text input. This
+     *  fixes the native <datalist> filtering its options by the
+     *  pre-filled value (which hid pen names whenever the field was
+     *  pre-set to the real name). Omit it (or pass []) to keep the
+     *  pure free-text + datalist behaviour (e.g. the import wizard,
+     *  where any author name may be typed). */
+    profileChoices?: string[];
+    /** Already-translated label for the "type a custom name" option
+     *  in the profile <select>. Required only when profileChoices is
+     *  used. */
+    customOptionLabel?: string;
 
     /** Whether to render the "Add to Authors-DB" checkbox. Caller
      *  computes this: typically `value.trim() !== "" && NOT in
@@ -89,6 +108,8 @@ export default function AuthorSelectInput({
     value,
     onChange,
     suggestions,
+    profileChoices,
+    customOptionLabel,
     showAddToAuthorsCheckbox,
     addToAuthorsDb,
     onAddToAuthorsDbChange,
@@ -106,10 +127,24 @@ export default function AuthorSelectInput({
     const resolvedInputId = inputId ?? resolvedInputTestId;
     const checkboxLabel = addToAuthorsLabel.replace("{name}", value.trim());
 
-    return (
+    const hasProfileSelect =
+        Array.isArray(profileChoices) && profileChoices.length > 0;
+    const valueIsChoice = hasProfileSelect && profileChoices!.includes(value);
+    // Custom mode = the free-text input is shown. Entered explicitly via the
+    // "custom name" option, or implicitly when the current value is a
+    // non-empty name that is NOT one of the profile identities (editing a
+    // book whose author is a co-author / imported / ghostwritten name).
+    const [customMode, setCustomMode] = useState(
+        hasProfileSelect ? !valueIsChoice && value.trim() !== "" : false,
+    );
+    const inCustom =
+        hasProfileSelect &&
+        (customMode || (!valueIsChoice && value.trim() !== ""));
+
+    const freeText = (
         <>
             <input
-                id={resolvedInputId}
+                id={inCustom ? resolvedInputId : `${resolvedInputId}-custom`}
                 className={inputClassName ?? "input"}
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
@@ -130,14 +165,75 @@ export default function AuthorSelectInput({
                     />
                 ))}
             </datalist>
-            {showAddToAuthorsCheckbox && (
+        </>
+    );
+
+    const checkbox = showAddToAuthorsCheckbox && (
+        <div style={{marginTop: 8}}>
+            <Toggle
+                checked={addToAuthorsDb}
+                onChange={onAddToAuthorsDbChange}
+                label={checkboxLabel}
+                testId={`${testidPrefix}-add-to-authors-checkbox`}
+            />
+        </div>
+    );
+
+    if (!hasProfileSelect) {
+        return (
+            <>
+                {freeText}
+                {checkbox}
+            </>
+        );
+    }
+
+    const selectValue = inCustom
+        ? CUSTOM_VALUE
+        : valueIsChoice
+          ? value
+          : "";
+    const handleSelectChange = (next: string) => {
+        if (next === CUSTOM_VALUE) {
+            setCustomMode(true);
+            return;
+        }
+        setCustomMode(false);
+        onChange(next);
+    };
+
+    return (
+        <>
+            <select
+                id={inCustom ? undefined : resolvedInputId}
+                className={inputClassName ?? "input"}
+                value={selectValue}
+                onChange={(e) => handleSelectChange(e.target.value)}
+                data-testid={`${testidPrefix}-author-select`}
+            >
+                {!valueIsChoice && !inCustom && (
+                    <option value="">{placeholder ?? "—"}</option>
+                )}
+                {profileChoices!.map((name) => (
+                    <option
+                        key={name}
+                        value={name}
+                        data-testid={`${testidPrefix}-author-option-${name}`}
+                    >
+                        {name}
+                    </option>
+                ))}
+                <option
+                    value={CUSTOM_VALUE}
+                    data-testid={`${testidPrefix}-author-option-custom`}
+                >
+                    {customOptionLabel ?? "Custom name…"}
+                </option>
+            </select>
+            {inCustom && (
                 <div style={{marginTop: 8}}>
-                    <Toggle
-                        checked={addToAuthorsDb}
-                        onChange={onAddToAuthorsDbChange}
-                        label={checkboxLabel}
-                        testId={`${testidPrefix}-add-to-authors-checkbox`}
-                    />
+                    {freeText}
+                    {checkbox}
                 </div>
             )}
         </>

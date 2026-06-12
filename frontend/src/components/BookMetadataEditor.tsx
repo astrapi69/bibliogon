@@ -1221,6 +1221,11 @@ function AuthorSelectField({
                 value={value}
                 onChange={onChange}
                 suggestions={suggestions}
+                profileChoices={suggestions}
+                customOptionLabel={t(
+                    "ui.author_select.custom_option",
+                    "Anderer Name …",
+                )}
                 showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
                 addToAuthorsDb={addToAuthorsDb}
                 onAddToAuthorsDbChange={onAddToAuthorsDbChange}
