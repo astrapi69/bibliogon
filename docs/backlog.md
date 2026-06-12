@@ -1562,27 +1562,6 @@ Scrivener analysis items 8-10 (filed 2026-06-01 from
 
 ## P5 - Speculative / Nice-to-have
 
-- **IMPORT-WIZARD-CLIENT-SIDE-MARKDOWN-01** (P5, filed
-  2026-06-12 from the closure of the offline import-wizard leak,
-  issue #74): a client-side Markdown/TXT import path inside the
-  project-import wizard so it works in Dexie mode instead of
-  being hidden offline. Scope: single `.md`/`.markdown`/`.txt`
-  file -> one book + one chapter, parsed in the browser
-  (Markdown -> HTML -> TipTap, reusing the Medium `walker` shape /
-  the `markdown` lib pattern) and persisted via `getStorage()`.
-  The other wizard formats (`.zip` write-book-template, `.docx`,
-  `.epub`, git URL, `.bgb`) stay backend-only/hidden offline
-  (Pandoc / ZIP-orchestrator / git-binary). Would require a
-  client-side format detector + import router in the wizard, plus
-  routing the offline trigger through the seam instead of
-  `/api/import/*`. Not a bugfix - a separate feature. Trigger:
-  user wants to import loose Markdown/TXT on the backendless PWA,
-  OR a dedicated offline-import session is scheduled. Note: the
-  two import paths that already work offline (JSON full-data
-  backup via Settings > Backups; Medium via
-  `/articles/import/medium`) are unaffected - this only extends
-  the project-import wizard.
-
 - **FRONTEND-LINT-FORMAT-SETUP-01** (P5, filed 2026-05-30):
   the frontend Prettier/ESLint path is not operative in the
   current checkout — no `.prettierrc` resolves (default Prettier

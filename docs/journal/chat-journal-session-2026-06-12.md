@@ -56,3 +56,43 @@
 - Net result: the project-import wizard is now fully offline-gated;
   JSON + Medium import continue to work offline through their own
   surfaces.
+
+## 2. Import wizard works offline — client-side detection + routing (issue #76)
+
+- Original prompt: "NICHT verstecken. IMPLEMENTIEREN. Maximal Offline heisst:
+  die Funktion funktioniert, nicht 'der Button ist weg'." + a full spec
+  (client-side format detection, import router, md/txt/html importers, offline
+  dialog, .bgb the only gate). Plus a follow-up: the .bgb gate must use the
+  feature-strategy library (`useFeature`/`<Feature>`), not an ad-hoc `offline`
+  boolean (the point of #63).
+- Goal: make the project-import flow actually WORK in Dexie mode instead of
+  being hidden. Supersedes #74.
+- Result:
+  - Reverted #74: the empty-state "Projekt importieren" button (and the two
+    header import triggers) are visible offline again and open a working
+    client-side dialog.
+  - New `frontend/src/import/`: `detectFormat.ts` (extension-first + content
+    probe for json-backup/medium-zip), `htmlToTipTap.ts` (one DOM->TipTap
+    walker serving both HTML and Markdown-via-`marked`; emits `imageFigure`),
+    `chapterImporters.ts` (md/txt/html -> new book + chapter, or appended to an
+    existing book, all via `getStorage()`), `importRouter.ts` (dispatch;
+    `OfflineNotSupportedError` for `.bgb`, `UnknownFormatError` otherwise;
+    reuses `importFullBackup` + the Medium client importer).
+  - New `OfflineImportDialog.tsx`: detect -> "import as new book / chapter in
+    existing book" for md/txt/html; direct flow for JSON backup + Medium; the
+    `.bgb` path is gated through `<Feature id={FEATURES.BGB_IMPORT}>` (the
+    library component, not a raw boolean) and shows the desktop-app hint.
+  - Dashboard routes by `useStorageMode()`: `dexie` -> OfflineImportDialog,
+    `api` -> the untouched backend ImportWizardModal. The import triggers no
+    longer derive an `offline` boolean from BGB_IMPORT; that gate moved inside
+    the dialog where it belongs.
+  - New dependency: `marked` 16.4.1 (Markdown -> HTML; single package, 0 vulns).
+  - i18n: 27 `ui.offline_import.*` keys in all 8 catalogs + reseed.
+  - Tests: 26 Vitest cases across detect/html/importers/router (101 green in the
+    touched/depended sweep). Offline E2E updated: import triggers now visible;
+    a markdown file -> new book + chapter via Dexie; `.bgb` shows the hint.
+    The spec's hard `route.abort('**/api/**')` gate enforces zero `/api`.
+  - Removed the now-implemented `IMPORT-WIZARD-CLIENT-SIDE-MARKDOWN-01` backlog
+    entry.
+  - Backend import code unchanged; API-mode behaviour unchanged.
+- Commit: branch `feature/import-wizard-offline-client-side` (Closes #76).

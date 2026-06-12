@@ -47,6 +47,7 @@ import {
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
+import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import {
     EntityTrashView,
     EntityTileView,
@@ -76,6 +77,7 @@ import DonationOnboardingDialog, {
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
+import { useStorageMode } from "../storage/useStorageMode";
 
 export default function Dashboard() {
     const dialog = useDialog();
@@ -88,6 +90,11 @@ export default function Dashboard() {
     // .bgb export rides on bgb-import's hidden state.
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
     const offline = bgbImport.isHidden;
+    // Import works in both modes: API mode opens the backend ImportWizardModal,
+    // Dexie mode opens the client-side OfflineImportDialog. The .bgb gate moves
+    // inside that dialog (FEATURES.BGB_IMPORT via the Feature component).
+    const { mode } = useStorageMode();
+    const isDexie = mode === "dexie";
     const { theme, toggle: toggleTheme } = useTheme();
     const [books, setBooks] = useState<Book[]>([]);
     const [trash, setTrash] = useState<Book[]>([]);
@@ -634,15 +641,13 @@ export default function Dashboard() {
                                     <Download size={14} /> {t("ui.dashboard.backup", "Backup")}
                                 </button>
                             )}
-                            {!offline && (
-                                <button
-                                    className="btn btn-secondary btn-sm"
-                                    data-testid="import-wizard-btn"
-                                    onClick={() => setImportWizardOpen(true)}
-                                >
-                                    <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
-                                </button>
-                            )}
+                            <button
+                                className="btn btn-secondary btn-sm"
+                                data-testid="import-wizard-btn"
+                                onClick={() => setImportWizardOpen(true)}
+                            >
+                                <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
+                            </button>
                             <div className={styles.headerSeparator} />
                             <button
                                 className="btn-icon"
@@ -731,15 +736,13 @@ export default function Dashboard() {
                                                 {t("ui.dashboard.backup", "Backup")}
                                             </DropdownMenu.Item>
                                         )}
-                                        {!offline && (
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                onSelect={() => setImportWizardOpen(true)}
-                                            >
-                                                <Upload size={16} />{" "}
-                                                {t("ui.dashboard.import", "Importieren")}
-                                            </DropdownMenu.Item>
-                                        )}
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => setImportWizardOpen(true)}
+                                        >
+                                            <Upload size={16} />{" "}
+                                            {t("ui.dashboard.import", "Importieren")}
+                                        </DropdownMenu.Item>
                                         <DropdownMenu.Separator className="hamburger-menu-separator" />
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"
@@ -955,16 +958,14 @@ export default function Dashboard() {
                                     <Plus size={16} />{" "}
                                     {t("ui.dashboard.create_book", "Buch erstellen")}
                                 </button>
-                                {!offline && (
-                                    <button
-                                        className="btn btn-secondary"
-                                        onClick={() => setImportWizardOpen(true)}
-                                        data-testid="dashboard-empty-import"
-                                    >
-                                        <FolderUp size={16} />{" "}
-                                        {t("ui.dashboard.import_project", "Projekt importieren")}
-                                    </button>
-                                )}
+                                <button
+                                    className="btn btn-secondary"
+                                    onClick={() => setImportWizardOpen(true)}
+                                    data-testid="dashboard-empty-import"
+                                >
+                                    <FolderUp size={16} />{" "}
+                                    {t("ui.dashboard.import_project", "Projekt importieren")}
+                                </button>
                                 <button
                                     className="btn btn-secondary"
                                     onClick={() => navigate("/get-started")}
@@ -1190,11 +1191,19 @@ export default function Dashboard() {
                 )}
             </main>
 
-            <ImportWizardModal
-                open={importWizardOpen}
-                onClose={() => setImportWizardOpen(false)}
-                onImported={() => loadBooks()}
-            />
+            {isDexie ? (
+                <OfflineImportDialog
+                    open={importWizardOpen}
+                    onClose={() => setImportWizardOpen(false)}
+                    onImported={() => loadBooks()}
+                />
+            ) : (
+                <ImportWizardModal
+                    open={importWizardOpen}
+                    onClose={() => setImportWizardOpen(false)}
+                    onImported={() => loadBooks()}
+                />
+            )}
             {donationsConfig ? (
                 <DonationOnboardingDialog
                     open={showDonationOnboarding}

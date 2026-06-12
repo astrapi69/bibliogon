@@ -1,5 +1,34 @@
 {
   "ui": {
+    "offline_import": {
+      "title": "Importer",
+      "drop_zone": "Déposez un fichier ici ou cliquez pour parcourir",
+      "accepted": "Markdown, texte, HTML, sauvegarde JSON, export Medium (.zip). .bgb nécessite l'application de bureau.",
+      "file_label": "Fichier :",
+      "detecting": "Détection du format …",
+      "detected_label": "Format détecté :",
+      "import_as": "Importer comme :",
+      "as_new_book": "Nouveau livre (le fichier devient le premier chapitre)",
+      "as_existing_book": "Nouveau chapitre dans un livre existant",
+      "choose_book_placeholder": "Choisir un livre …",
+      "bgb_desktop_hint": "L'import .bgb nécessite l'application de bureau.",
+      "unknown_hint": "Ce format ne peut pas être importé hors ligne.",
+      "import_btn": "Importer",
+      "importing": "Import en cours …",
+      "cancel_btn": "Annuler",
+      "error": "Échec de l'import : {error}",
+      "success_book": "Livre importé : {title}",
+      "success_chapter_existing": "Chapitre ajouté à {book}",
+      "success_backup": "Sauvegarde importée : {books} livres, {articles} articles",
+      "success_medium": "Import Medium : {imported} importés",
+      "format_markdown": "Markdown (.md)",
+      "format_text": "Texte (.txt)",
+      "format_html": "HTML (.html)",
+      "format_json_backup": "Sauvegarde complète (JSON)",
+      "format_medium_zip": "Export Medium (.zip)",
+      "format_bgb": "Sauvegarde Bibliogon (.bgb)",
+      "format_unknown": "Inconnu"
+    },
     "feature": {
       "requires_desktop_app": "Cette fonctionnalité nécessite l'application de bureau Bibliogon",
       "requires_ai_key": "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)"

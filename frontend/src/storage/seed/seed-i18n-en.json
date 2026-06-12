@@ -1,5 +1,34 @@
 {
   "ui": {
+    "offline_import": {
+      "title": "Import",
+      "drop_zone": "Drop a file here or click to browse",
+      "accepted": "Markdown, text, HTML, JSON backup, Medium export (.zip). .bgb needs the desktop app.",
+      "file_label": "File:",
+      "detecting": "Detecting format …",
+      "detected_label": "Detected format:",
+      "import_as": "Import as:",
+      "as_new_book": "New book (the file becomes the first chapter)",
+      "as_existing_book": "New chapter in an existing book",
+      "choose_book_placeholder": "Choose a book …",
+      "bgb_desktop_hint": ".bgb import needs the desktop app.",
+      "unknown_hint": "This format cannot be imported offline.",
+      "import_btn": "Import",
+      "importing": "Importing …",
+      "cancel_btn": "Cancel",
+      "error": "Import failed: {error}",
+      "success_book": "Book imported: {title}",
+      "success_chapter_existing": "Chapter added to {book}",
+      "success_backup": "Backup imported: {books} books, {articles} articles",
+      "success_medium": "Medium import: {imported} imported",
+      "format_markdown": "Markdown (.md)",
+      "format_text": "Text (.txt)",
+      "format_html": "HTML (.html)",
+      "format_json_backup": "Full-data backup (JSON)",
+      "format_medium_zip": "Medium export (.zip)",
+      "format_bgb": "Bibliogon backup (.bgb)",
+      "format_unknown": "Unknown"
+    },
     "feature": {
       "requires_desktop_app": "This feature requires the Bibliogon desktop app",
       "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)"

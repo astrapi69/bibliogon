@@ -71,17 +71,55 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("new-book-group")).toContainText(/Buch|Book/i);
     });
 
-    test("backend-only backup + import actions are hidden offline", async ({page}) => {
+    test("backend backup-export is hidden offline; import is available", async ({page}) => {
         await page.goto("/");
         await expect(page.getByTestId("new-book-group")).toBeVisible();
-        // The .bgb backup-export + backend import-wizard are backend-only;
-        // hidden offline (not merely disabled) via the feature registry.
+        // The .bgb backup-EXPORT is backend-only -> hidden offline.
         await expect(page.getByTestId("backup-export-btn")).toHaveCount(0);
-        await expect(page.getByTestId("import-wizard-btn")).toHaveCount(0);
-        // The empty-state "Projekt importieren" button opens the same
-        // backend import wizard; it must be hidden offline too (a fresh
-        // Dexie boot has zero books, so the empty state renders).
-        await expect(page.getByTestId("dashboard-empty-import")).toHaveCount(0);
+        // Import now WORKS offline (client-side OfflineImportDialog), so its
+        // triggers are visible rather than hidden (#76 supersedes #74).
+        await expect(page.getByTestId("import-wizard-btn")).toBeVisible();
+        await expect(page.getByTestId("dashboard-empty-import")).toBeVisible();
+    });
+
+    test("markdown import works offline: file -> new book + chapter via Dexie", async ({
+        page,
+    }) => {
+        await page.goto("/");
+        await page.getByTestId("dashboard-empty-import").click();
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await page.getByTestId("offline-import-input").setInputFiles({
+            name: "my-offline-novel.md",
+            mimeType: "text/markdown",
+            buffer: Buffer.from("# My Offline Novel\n\nChapter one body."),
+        });
+        // Client-side detection -> markdown, default target is a new book.
+        await expect(
+            page.getByTestId("offline-import-format-markdown"),
+        ).toBeVisible();
+        await page.getByTestId("offline-import-confirm").click();
+        // The dialog closes and the new book (read back from Dexie) appears.
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+        await expect(page.getByText("My Offline Novel")).toBeVisible();
+    });
+
+    test("bgb import shows the desktop-app hint offline (the one gate)", async ({
+        page,
+    }) => {
+        await page.goto("/");
+        await page.getByTestId("dashboard-empty-import").click();
+        await page.getByTestId("offline-import-input").setInputFiles({
+            name: "backup.bgb",
+            mimeType: "application/octet-stream",
+            buffer: Buffer.from("PK bgb archive placeholder"),
+        });
+        // .bgb is the only offline-unsupported format: a FEATURES.BGB_IMPORT
+        // gate (the Feature component) renders the desktop-app hint and no
+        // generic import button.
+        await expect(
+            page.getByTestId("offline-import-bgb-hint"),
+        ).toBeVisible();
+        await expect(page.getByTestId("offline-import-confirm")).toHaveCount(0);
     });
 
     test("settings persist to Dexie across reload", async ({page}) => {
