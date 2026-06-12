@@ -2,7 +2,7 @@ ui:
   offline_import:
     title: "Importar"
     drop_zone: "Suelta un archivo aquí o haz clic para elegir"
-    accepted: "Markdown, texto, HTML, copia JSON, exportación de Medium (.zip). .bgb requiere la aplicación de escritorio."
+    accepted: "Markdown, texto, HTML, copia JSON, exportación de Medium (.zip), copia (.bgb)."
     file_label: "Archivo:"
     detecting: "Detectando formato …"
     detected_label: "Formato detectado:"

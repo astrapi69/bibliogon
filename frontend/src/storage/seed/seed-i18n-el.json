@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "Εισαγωγή",
       "drop_zone": "Αφήστε ένα αρχείο εδώ ή κάντε κλικ για επιλογή",
-      "accepted": "Markdown, κείμενο, HTML, αντίγραφο JSON, εξαγωγή Medium (.zip). Το .bgb απαιτεί την εφαρμογή υπολογιστή.",
+      "accepted": "Markdown, κείμενο, HTML, αντίγραφο JSON, εξαγωγή Medium (.zip), αντίγραφο (.bgb).",
       "file_label": "Αρχείο:",
       "detecting": "Ανίχνευση μορφής …",
       "detected_label": "Μορφή που εντοπίστηκε:",

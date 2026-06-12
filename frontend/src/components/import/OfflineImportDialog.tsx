@@ -6,9 +6,10 @@
  * ({@link detectImportFormat}) and imports it through {@link importFile} - all
  * via the `getStorage()` seam, firing zero `/api` requests. Markdown / Text /
  * HTML offer a "new book" vs "append to existing book" choice; the JSON
- * full-data backup and the Medium ZIP run their existing offline importers;
- * `.bgb` is gated through the feature registry (`FEATURES.BGB_IMPORT`) and
- * shows the desktop-app hint.
+ * full-data backup, the Medium ZIP, and the `.bgb` full-data backup all run
+ * their client-side importers. The `FEATURES.BGB_IMPORT` gate is now active
+ * everywhere (the `.bgb` parser is browser-side), so the desktop hint only
+ * shows if the feature is ever explicitly disabled.
  *
  * The backend import wizard (API mode) is untouched: the Dashboard mounts this
  * dialog only when `useStorageMode()` reports `dexie`.
@@ -102,7 +103,7 @@ export default function OfflineImportDialog({
                       "Kapitel zu {book} hinzugefügt",
                   ).replace("{book}", result.result.bookTitle);
         }
-        if (result.kind === "backup") {
+        if (result.kind === "backup" || result.kind === "bgb-backup") {
             return t(
                 "ui.offline_import.success_backup",
                 "Backup importiert: {books} Bücher, {articles} Artikel",
@@ -201,7 +202,7 @@ export default function OfflineImportDialog({
                                 )}
                                 hint={t(
                                     "ui.offline_import.accepted",
-                                    "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip). .bgb benötigt die Desktop-App.",
+                                    "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip), Backup (.bgb).",
                                 )}
                             />
                         )}

@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "İçe aktar",
       "drop_zone": "Dosyayı buraya bırakın veya tıklayın",
-      "accepted": "Markdown, metin, HTML, JSON yedeği, Medium dışa aktarımı (.zip). .bgb masaüstü uygulaması gerektirir.",
+      "accepted": "Markdown, metin, HTML, JSON yedeği, Medium dışa aktarımı (.zip), yedek (.bgb).",
       "file_label": "Dosya:",
       "detecting": "Biçim algılanıyor …",
       "detected_label": "Algılanan biçim:",
