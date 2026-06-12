@@ -1,6 +1,8 @@
 import {useEffect, useRef, useState} from "react";
 import {Download, ChevronDown, ChevronUp, Headphones, AlertTriangle, CheckCircle, Clock, RefreshCw} from "lucide-react";
 import {ApiError, AudiobookClassification, DryRunResult, api} from "../api/client";
+import {getStorage} from "../storage";
+import {buildBookDocument, downloadExport} from "../export";
 import HelpLink from "./help/HelpLink";
 import {useAudiobookJob} from "../contexts/AudiobookJobContext";
 import {useDialog} from "./AppDialog";
@@ -37,6 +39,7 @@ const FORMATS: FormatDef[] = [
     {id: "docx", labelKey: "ui.formats.docx", labelFallback: "Word", descKey: "ui.formats.docx_desc", descFallback: "Für Lektorate"},
     {id: "html", labelKey: "ui.formats.html", labelFallback: "HTML", descKey: "ui.formats.html_desc", descFallback: "Web-Version"},
     {id: "markdown", labelKey: "ui.formats.markdown", labelFallback: "Markdown", descKey: "ui.formats.markdown_desc", descFallback: "Rohtext"},
+    {id: "latex", labelKey: "ui.formats.latex", labelFallback: "LaTeX (.tex)", descKey: "ui.formats.latex_desc", descFallback: "LaTeX-Quelltext"},
     {id: "project", labelKey: "ui.formats.project", labelFallback: "Projekt (ZIP)", descKey: "ui.formats.project_desc", descFallback: "Manuscripta-Projektstruktur"},
     {id: "audiobook", labelKey: "ui.formats.audiobook", labelFallback: "Audiobook (MP3)", descKey: "ui.formats.audiobook_desc", descFallback: "TTS-generiertes Hörbuch"},
 ];
@@ -116,6 +119,11 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
             return;
         }
 
+        if (format === "latex") {
+            await _exportLatexClientSide();
+            return;
+        }
+
         const params = new URLSearchParams();
         if (bookType !== "ebook") params.set("book_type", bookType);
         if (tocDepth !== 2) params.set("toc_depth", String(tocDepth));
@@ -143,6 +151,24 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
                 const detail = err instanceof ApiError ? err.detail : String(err);
                 notify.error(detail, err);
             }
+        } finally {
+            setExporting(false);
+        }
+    };
+
+    /** LaTeX (.tex) has no backend exporter (the backend's only LaTeX use is
+     *  Pandoc rendering PDF via xelatex). It is generated in-browser by the
+     *  client export engine, so this path fetches the book WITH chapter
+     *  content through the storage seam and hands it to `downloadExport` -
+     *  identical in API and Dexie modes, firing no `/api` export request. */
+    const _exportLatexClientSide = async () => {
+        try {
+            const full = await getStorage().books.get(bookId, true);
+            await downloadExport(buildBookDocument(full, full.chapters), "latex");
+            onDone();
+        } catch (err) {
+            const detail = err instanceof ApiError ? err.detail : String(err);
+            notify.error(detail, err instanceof ApiError ? err : undefined);
         } finally {
             setExporting(false);
         }

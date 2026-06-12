@@ -649,6 +649,8 @@
       "html_desc": "Versao web",
       "markdown": "Markdown",
       "markdown_desc": "Texto simples",
+      "latex": "LaTeX (.tex)",
+      "latex_desc": "Código-fonte LaTeX",
       "project": "Projeto (ZIP)",
       "project_desc": "Estrutura de projeto Manuscripta",
       "audiobook": "Audiolivro (MP3)",
@@ -3233,8 +3235,8 @@
       "menu_label": "Exportar",
       "success": "Exportação criada.",
       "failed": "Falha na exportação.",
-      "client_hint": "Exportação offline diretamente no navegador. Para PDF com Pandoc (LaTeX), use o aplicativo de desktop.",
-      "client_engine_hint": "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc (LaTeX), defina o motor de exportação para «Backend»."
+      "client_hint": "Exportação offline diretamente no navegador. Para PDF com Pandoc, use o aplicativo de desktop.",
+      "client_engine_hint": "A exportação do navegador está selecionada nas Definições. Para PDF com Pandoc, defina o motor de exportação para «Backend»."
     },
     "about": {
       "heading": "Acerca do Bibliogon",
