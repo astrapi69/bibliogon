@@ -955,14 +955,16 @@ export default function Dashboard() {
                                     <Plus size={16} />{" "}
                                     {t("ui.dashboard.create_book", "Buch erstellen")}
                                 </button>
-                                <button
-                                    className="btn btn-secondary"
-                                    onClick={() => setImportWizardOpen(true)}
-                                    data-testid="dashboard-empty-import"
-                                >
-                                    <FolderUp size={16} />{" "}
-                                    {t("ui.dashboard.import_project", "Projekt importieren")}
-                                </button>
+                                {!offline && (
+                                    <button
+                                        className="btn btn-secondary"
+                                        onClick={() => setImportWizardOpen(true)}
+                                        data-testid="dashboard-empty-import"
+                                    >
+                                        <FolderUp size={16} />{" "}
+                                        {t("ui.dashboard.import_project", "Projekt importieren")}
+                                    </button>
+                                )}
                                 <button
                                     className="btn btn-secondary"
                                     onClick={() => navigate("/get-started")}

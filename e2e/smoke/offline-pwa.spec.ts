@@ -78,6 +78,10 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // hidden offline (not merely disabled) via the feature registry.
         await expect(page.getByTestId("backup-export-btn")).toHaveCount(0);
         await expect(page.getByTestId("import-wizard-btn")).toHaveCount(0);
+        // The empty-state "Projekt importieren" button opens the same
+        // backend import wizard; it must be hidden offline too (a fresh
+        // Dexie boot has zero books, so the empty state renders).
+        await expect(page.getByTestId("dashboard-empty-import")).toHaveCount(0);
     });
 
     test("settings persist to Dexie across reload", async ({page}) => {
