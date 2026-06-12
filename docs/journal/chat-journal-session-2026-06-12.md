@@ -96,3 +96,26 @@
     entry.
   - Backend import code unchanged; API-mode behaviour unchanged.
 - Commit: branch `feature/import-wizard-offline-client-side` (Closes #76).
+
+## Release v0.51.0 (12:40)
+
+- Goal: cut the v0.51.0 release per the gitflow release workflow.
+- Version: minor bump 0.50.0 -> 0.51.0 (many `feat:` since v0.50.0:
+  feature-strategy foundation + three-state offline visibility, client-side
+  offline import wizard, About expansion + build branch, LaTeX export UI;
+  no breaking changes).
+- Prep: `make sync-versions` propagated the canonical bump to frontend,
+  launcher (+ spec/__init__), 12 plugins, install.sh/.ps1; CHANGELOG.md +
+  `changelog/releases/v0.51.0.md`; version headers bumped in README,
+  README-de, CLAUDE.md, ROADMAP, backlog (verify-docs-completeness).
+- Gate: `make release-test` green (full suite + tsc + ruff + mypy +
+  pre-commit + verify-docs-discipline/completeness + verify-plugin-locks +
+  verify-theme + launcher PyInstaller build). Initial run FAILED on
+  verify-docs-completeness (5 doc headers still at v0.50.0); fixed + re-ran
+  the post-docs gates green.
+- Pre-Release Gate: Aster ran `npx playwright test --project=smoke` and
+  confirmed the E2E gate green before tagging.
+- Released: merged `release/v0.51.0` -> `main` (--no-ff), tagged `v0.51.0`,
+  pushed main + tag, `gh release create`, merged back into `develop`,
+  deleted the release branch.
+- Commit: `c6857e94` (release prep) + the main/develop merges; tag `v0.51.0`.
