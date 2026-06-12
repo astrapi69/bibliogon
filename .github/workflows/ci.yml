@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
   pull_request:
-    branches: [main]
+    branches: [main, develop]
 
 # Defensive opt-in: any JavaScript-runtime action still declaring
 # Node 20 (third-party or stragglers) is coerced to Node 24. After
