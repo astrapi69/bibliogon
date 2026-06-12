@@ -175,7 +175,12 @@ export function AboutSettings({ appConfig }: Props) {
               dependency rows inside System are gated on systemInfo. */}
           <VersionSection t={t} lang={lang} />
           <SystemInfoSection info={systemInfo} offline={offline} t={t} />
-          <PluginListSection plugins={plugins} t={t} lang={lang} />
+          <PluginListSection
+            plugins={plugins}
+            offline={offline}
+            t={t}
+            lang={lang}
+          />
           <ContributorsSection t={t} />
           {donationsConfig ? (
             <article data-testid="about-donations-section" style={sectionStyle}>
@@ -531,13 +536,20 @@ function ResourcesSection({ t }: { t: T }) {
  *  payload (C1 — added display_name + description + version
  *  fields). Filters to plugins that are ENABLED in the config —
  *  matches the user-overlay activation semantics so the About
- *  list only shows what's actually mounted. */
+ *  list only shows what's actually mounted.
+ *
+ *  In Dexie mode (the backendless PWA) the list comes from the
+ *  curated seed registry (export/help/getstarted — the plugins
+ *  whose function exists client-side), so a hint clarifies that
+ *  these run directly in the browser (#97). */
 function PluginListSection({
   plugins,
+  offline,
   t,
   lang,
 }: {
   plugins: DiscoveredPlugin[];
+  offline: boolean;
   t: T;
   lang: string;
 }) {
@@ -553,6 +565,22 @@ function PluginListSection({
       <h3 style={{ marginTop: 0, marginBottom: 12 }}>
         {t("ui.about.plugins_heading", "Plugins")}
       </h3>
+      {offline ? (
+        <p
+          data-testid="about-plugins-browser-hint"
+          style={{
+            marginTop: 0,
+            marginBottom: 12,
+            color: "var(--text-muted)",
+            fontSize: "0.85rem",
+          }}
+        >
+          {t(
+            "ui.about.plugins_browser_hint",
+            "Diese Plugins sind direkt in diesem Browser verfügbar.",
+          )}
+        </p>
+      ) : null}
       <ul
         data-testid="about-plugins-list"
         style={{ listStyle: "none", padding: 0, margin: 0 }}

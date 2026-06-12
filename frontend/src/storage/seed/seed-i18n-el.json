@@ -3258,6 +3258,7 @@
       "platform_label": "Πλατφόρμα",
       "plugins_heading": "Plugins",
       "plugins_empty": "Δεν υπάρχουν ενεργά plugins.",
+      "plugins_browser_hint": "Αυτά τα plugins είναι διαθέσιμα απευθείας σε αυτό το πρόγραμμα περιήγησης.",
       "dep_unknown": "Άγνωστο",
       "storage_label": "Αποθήκευση",
       "storage_indexeddb": "Τοπική αποθήκευση προγράμματος περιήγησης (IndexedDB)",

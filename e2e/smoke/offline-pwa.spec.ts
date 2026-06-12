@@ -191,6 +191,27 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("settings-tab-plugins")).toHaveCount(0);
     });
 
+    test("About > Plugins lists the curated browser plugins with the hint (#97)", async ({
+        page,
+    }) => {
+        await page.goto("/settings?tab=about");
+        await expect(page.getByTestId("about-settings-content")).toBeVisible({
+            timeout: 5000,
+        });
+        // The seeded Dexie registry deliberately curates the 3 plugins whose
+        // function exists client-side (export/help/getstarted); the section
+        // stays visible per policy #78 and carries the browser hint.
+        await expect(page.getByTestId("about-plugins-section")).toBeVisible();
+        await expect(
+            page.getByTestId("about-plugins-browser-hint"),
+        ).toBeVisible();
+        await expect(page.getByTestId("about-plugin-row-export")).toBeVisible();
+        await expect(page.getByTestId("about-plugin-row-help")).toBeVisible();
+        await expect(
+            page.getByTestId("about-plugin-row-getstarted"),
+        ).toBeVisible();
+    });
+
     test("create a book offline, reload - persisted in Dexie", async ({
         page,
     }) => {
