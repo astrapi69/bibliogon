@@ -3089,6 +3089,18 @@ ui:
     plugins_heading: "Eklentiler"
     plugins_empty: "Etkin eklenti yok."
     dep_unknown: "Bilinmiyor"
+    storage_label: "Depolama"
+    storage_indexeddb: "Yerel tarayıcı depolaması (IndexedDB)"
+    storage_sqlite: "SQLite (Masaüstü)"
+    data_dir_label: "Veri dizini"
+    data_dir_browser: "Tarayıcı depolaması (IndexedDB)"
+    contributors_heading: "Katkıda Bulunanlar"
+    author_label: "Yazar"
+    built_with_label: "Şununla geliştirildi"
+    ai_assistance_label: "Yapay zeka desteği"
+    ai_assistance_value: "Claude (Anthropic) - mimari, kod, içerik, dokümantasyon"
+    resources_heading: "Lisans ve Kaynaklar"
+    docs_label: "Dokümantasyon"
   kdp_publishing_wizard:
     # KDP-PUBLISHING-WIZARD-01 Phase 1 MVP. 3-step wizard:
     # MetadataChecklist + CoverValidation + ExportPackage.

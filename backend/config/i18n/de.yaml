@@ -3099,6 +3099,18 @@ ui:
     plugins_heading: "Plugins"
     plugins_empty: "Keine Plugins aktiv."
     dep_unknown: "Unbekannt"
+    storage_label: "Speicher"
+    storage_indexeddb: "Lokaler Browser-Speicher (IndexedDB)"
+    storage_sqlite: "SQLite (Desktop)"
+    data_dir_label: "Datenverzeichnis"
+    data_dir_browser: "Browser-Speicher (IndexedDB)"
+    contributors_heading: "Mitwirkende"
+    author_label: "Autor"
+    built_with_label: "Gebaut mit"
+    ai_assistance_label: "KI-Assistenz"
+    ai_assistance_value: "Claude (Anthropic) - Architektur, Code, Content, Dokumentation"
+    resources_heading: "Lizenz & Ressourcen"
+    docs_label: "Dokumentation"
   kdp_publishing_wizard:
     # KDP-PUBLISHING-WIZARD-01 Phase 1 MVP. 3-step wizard:
     # MetadataChecklist + CoverValidation + ExportPackage.

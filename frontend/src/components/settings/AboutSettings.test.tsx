@@ -1,14 +1,18 @@
 /**
  * Vitest coverage for the AboutSettings component.
  *
- * Pins the Settings > About tab's section contracts (Version,
- * Credits, System-Info). Plugin-List + Donation-Channels arrive
- * in C4 — tests for those land in the same commit.
+ * Pins the Settings > About tab's section contracts. Issue #87
+ * reorganises the panel into five offline-capable sections:
+ * Version, System, Contributors, Support, License & Resources.
+ * The Contributors + License & Resources sections are static
+ * client-side data, so they render identically online (api mode)
+ * and offline (dexie mode). The System section's storage label
+ * switches on the storage mode.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
-import { AboutSettings } from "./AboutSettings";
+import { AboutSettings, parseUserAgent } from "./AboutSettings";
 
 vi.mock("@astrapi69/feature-strategy-react", () => ({
     useFeature: () => ({
@@ -47,9 +51,10 @@ vi.mock("../../api/client", async () => {
 
 // Storage seam mock: a mutable mode lets a test flip to "dexie" (the
 // backendless GitHub-Pages build) so the offline About-render path —
-// systemInfo null, build provenance + plugin list still shown — is
-// pinned at the unit layer. discoveredPlugins is a shared mock so both
-// online and offline tests configure the same plugin payload.
+// systemInfo null, build provenance + plugin list + the client-side
+// sections still shown — is pinned at the unit layer.
+// discoveredPlugins is a shared mock so both online and offline tests
+// configure the same plugin payload.
 const storageMock = vi.hoisted(() => ({
     mode: { current: "api" as "api" | "dexie" },
     discoveredPlugins: vi.fn(),
@@ -169,15 +174,13 @@ describe("AboutSettings", () => {
     });
 
     describe("Version section", () => {
-        it("renders the build version from the build-time literal + license", async () => {
+        it("renders the build version from the build-time literal", async () => {
             render(<AboutSettings appConfig={{}} />);
             const version = await screen.findByTestId("about-app-version");
             // Sourced from the Vite __APP_VERSION__ literal (the running
             // build), not the backend systemInfo.version, so it is correct
             // offline and identifies the bundle against a stale SW.
             expect(version.textContent).toBe(`v${__APP_VERSION__}`);
-            const section = screen.getByTestId("about-version-section");
-            expect(section.textContent).toMatch(/MIT/);
         });
 
         it("renders build hash + branch + build date from build-time literals", async () => {
@@ -189,48 +192,72 @@ describe("AboutSettings", () => {
             expect(branch.textContent).toBe(__BUILD_BRANCH__);
             expect(date.textContent).toBeTruthy();
         });
+
+        it("does NOT render the license inside the version section (moved to Resources)", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const section = await screen.findByTestId("about-version-section");
+            expect(section.textContent).not.toMatch(/MIT/);
+        });
     });
 
-    describe("Credits section", () => {
-        it("renders authors list", async () => {
-            render(<AboutSettings appConfig={{}} />);
-            const authors = await screen.findByTestId("about-authors");
-            expect(authors.textContent).toBe("Asterios Raptis");
+    describe("parseUserAgent", () => {
+        it("parses a Chrome-on-Windows UA", () => {
+            const ua =
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
+            expect(parseUserAgent(ua)).toBe("Windows · Chrome 124.0");
         });
 
-        it("renders repository + issues links with target=_blank", async () => {
-            render(<AboutSettings appConfig={{}} />);
-            const repo = await screen.findByTestId("about-repository-link");
-            const issues = await screen.findByTestId("about-issues-link");
-            expect(repo.getAttribute("href")).toBe("https://github.com/astrapi69/bibliogon");
-            expect(repo.getAttribute("target")).toBe("_blank");
-            expect(repo.getAttribute("rel")).toContain("noopener");
-            expect(issues.getAttribute("href")).toBe(
-                "https://github.com/astrapi69/bibliogon/issues",
+        it("parses a Firefox-on-Linux UA", () => {
+            const ua =
+                "Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0";
+            expect(parseUserAgent(ua)).toBe("Linux · Firefox 125.0");
+        });
+
+        it("parses a Safari-on-macOS UA", () => {
+            const ua =
+                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 " +
+                "(KHTML, like Gecko) Version/17.4 Safari/605.1.15";
+            expect(parseUserAgent(ua)).toBe("macOS · Safari 17.4");
+        });
+
+        it("parses an Edge-on-Windows UA (Edg token before Chrome)", () => {
+            const ua =
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36 Edg/124.0.0.0";
+            expect(parseUserAgent(ua)).toBe("Windows · Edge 124.0");
+        });
+
+        it("falls back to the raw UA when unparseable", () => {
+            expect(parseUserAgent("totally-unknown-agent")).toBe(
+                "totally-unknown-agent",
             );
         });
-
-        it("falls back to 'Unknown' when authors list is empty", async () => {
-            vi.mocked(api.system.info).mockImplementation(async () => ({
-                ...FIXTURE,
-                app: { ...FIXTURE.app, authors: [] },
-            }));
-            render(<AboutSettings appConfig={{}} />);
-            const authors = await screen.findByTestId("about-authors");
-            // Fallback uses i18n "Unbekannt" which the test mock
-            // returns verbatim via the t(key, fallback) shim.
-            expect(authors.textContent).toBe("Unbekannt");
-        });
     });
 
-    describe("System-Info section", () => {
-        it("renders Python + platform + 4 dependencies", async () => {
+    describe("System section (client-side)", () => {
+        it("renders the SQLite storage label + platform in api mode", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const storage = await screen.findByTestId("about-storage");
+            // api-mode storage label fallback returned verbatim by the mock t().
+            expect(storage.textContent).toBe("SQLite (Desktop)");
+            const platform = screen.getByTestId("about-platform-client");
+            expect(platform).toBeTruthy();
+        });
+
+        it("renders the IndexedDB storage label in dexie mode", async () => {
+            storageMock.mode.current = "dexie";
+            render(<AboutSettings appConfig={{}} />);
+            const storage = await screen.findByTestId("about-storage");
+            expect(storage.textContent).toBe("Lokaler Browser-Speicher (IndexedDB)");
+            const dataDir = screen.getByTestId("about-data-dir");
+            expect(dataDir.textContent).toBe("Browser-Speicher (IndexedDB)");
+        });
+
+        it("renders Python + the 4 backend dependency rows in api mode", async () => {
             render(<AboutSettings appConfig={{}} />);
             const py = await screen.findByTestId("about-python-version");
             expect(py.textContent).toBe("3.12.3");
-            const platform = await screen.findByTestId("about-platform");
-            expect(platform.textContent).toMatch(/Linux/);
-            expect(platform.textContent).toMatch(/x86_64/);
             expect(screen.getByTestId("about-dep-fastapi").textContent).toBe("0.136.1");
             expect(screen.getByTestId("about-dep-sqlalchemy").textContent).toBe("2.0.49");
             expect(screen.getByTestId("about-dep-pydantic").textContent).toBe("2.13.4");
@@ -250,6 +277,70 @@ describe("AboutSettings", () => {
             // Fallback uses i18n "Unbekannt"; test mock returns
             // the fallback string verbatim.
             expect(dep.textContent).toBe("Unbekannt");
+        });
+    });
+
+    describe("Contributors section", () => {
+        it("renders author + built-with + ai-assistance in api mode", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const author = await screen.findByTestId("about-author");
+            expect(author.getAttribute("href")).toBe("https://github.com/astrapi69");
+            expect(author.getAttribute("target")).toBe("_blank");
+            expect(author.getAttribute("rel")).toContain("noopener");
+            expect(author.textContent).toContain("Asterios Raptis");
+
+            const builtWith = screen.getByTestId("about-built-with");
+            expect(builtWith.textContent).toContain("React");
+            expect(builtWith.textContent).toContain("Dexie");
+            expect(builtWith.textContent).toContain("Playwright");
+
+            const ai = screen.getByTestId("about-ai-assistance");
+            expect(ai.textContent).toContain("Claude (Anthropic)");
+        });
+
+        it("renders author + built-with + ai-assistance offline (dexie mode)", async () => {
+            storageMock.mode.current = "dexie";
+            render(<AboutSettings appConfig={{}} />);
+            expect(await screen.findByTestId("about-author")).toBeTruthy();
+            expect(screen.getByTestId("about-built-with")).toBeTruthy();
+            expect(screen.getByTestId("about-ai-assistance")).toBeTruthy();
+        });
+    });
+
+    describe("License & Resources section", () => {
+        it("renders license + repository + docs + issues links with target=_blank", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const license = await screen.findByTestId("about-license");
+            const repo = screen.getByTestId("about-repository-link");
+            const docs = screen.getByTestId("about-docs-link");
+            const issues = screen.getByTestId("about-issues-link");
+
+            expect(license.getAttribute("href")).toBe(
+                "https://github.com/astrapi69/bibliogon/blob/main/LICENSE",
+            );
+            expect(license.getAttribute("target")).toBe("_blank");
+            expect(license.getAttribute("rel")).toContain("noopener");
+            expect(license.textContent).toContain("MIT");
+
+            expect(repo.getAttribute("href")).toBe("https://github.com/astrapi69/bibliogon");
+            expect(repo.getAttribute("target")).toBe("_blank");
+
+            expect(docs.getAttribute("href")).toBe(
+                "https://astrapi69.github.io/bibliogon/docs/",
+            );
+            expect(docs.getAttribute("target")).toBe("_blank");
+
+            expect(issues.getAttribute("href")).toBe(
+                "https://github.com/astrapi69/bibliogon/issues",
+            );
+            expect(issues.getAttribute("target")).toBe("_blank");
+        });
+
+        it("renders the Resources section offline (dexie mode)", async () => {
+            storageMock.mode.current = "dexie";
+            render(<AboutSettings appConfig={{}} />);
+            expect(await screen.findByTestId("about-license")).toBeTruthy();
+            expect(screen.getByTestId("about-docs-link")).toBeTruthy();
         });
     });
 
@@ -339,7 +430,7 @@ describe("AboutSettings", () => {
     });
 
     describe("Offline (dexie) mode", () => {
-        it("renders build provenance + plugins without the backend, hiding backend-only sections", async () => {
+        it("renders build provenance + plugins + client-side sections without the backend", async () => {
             storageMock.mode.current = "dexie";
             render(<AboutSettings appConfig={{}} />);
 
@@ -352,11 +443,16 @@ describe("AboutSettings", () => {
             expect(screen.getByTestId("about-plugins-section")).toBeTruthy();
             expect(screen.getByTestId("about-plugin-row-comics")).toBeTruthy();
 
-            // No backend: /api/system/info is never called, and the
-            // systemInfo-dependent sections are omitted (not errored).
+            // Client-side sections render offline.
+            expect(screen.getByTestId("about-system-section")).toBeTruthy();
+            expect(screen.getByTestId("about-contributors-section")).toBeTruthy();
+            expect(screen.getByTestId("about-resources-section")).toBeTruthy();
+
+            // No backend: /api/system/info is never called, the backend
+            // dependency rows are omitted, and nothing errors.
             expect(api.system.info).not.toHaveBeenCalled();
-            expect(screen.queryByTestId("about-credits-section")).toBeNull();
-            expect(screen.queryByTestId("about-system-section")).toBeNull();
+            expect(screen.queryByTestId("about-python-version")).toBeNull();
+            expect(screen.queryByTestId("about-dep-fastapi")).toBeNull();
             expect(screen.queryByTestId("about-settings-error")).toBeNull();
         });
     });
