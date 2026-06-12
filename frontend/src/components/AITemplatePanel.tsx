@@ -67,6 +67,14 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
               "Configure your API key in Settings > AI to use Fill offline.",
           )
         : undefined;
+    // The .biblio.yaml Export/Import round-trip is desktop-only (backend file
+    // round-trip); offline it stays visible but disabled with the reason.
+    const fileIoTitle = fileIo.isActive
+        ? undefined
+        : t(
+              fileIo.reason ?? "ui.feature.requires_desktop_app",
+              "This feature requires the Bibliogon desktop app",
+          );
 
     // Per-button loading flags so the user can tell which action is
     // in flight when they kicked off two close together (rare, but
@@ -251,30 +259,28 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
                     <Sparkles size={14} style={{ marginRight: 6 }} />
                     {t("ui.ai_template.panel.fill", "Fill with AI")}
                 </button>
-                {!fileIo.isHidden && (
-                    <>
-                        <button
-                            type="button"
-                            className={btnClass}
-                            onClick={handleExport}
-                            disabled={exportLoading}
-                            data-testid="ai-template-export"
-                        >
-                            <Download size={14} style={{ marginRight: 6 }} />
-                            {t("ui.ai_template.panel.export", "Export template")}
-                        </button>
-                        <button
-                            type="button"
-                            className={btnClass}
-                            onClick={openImportDialog}
-                            disabled={importLoading}
-                            data-testid="ai-template-import"
-                        >
-                            <Upload size={14} style={{ marginRight: 6 }} />
-                            {t("ui.ai_template.panel.import", "Import filled template")}
-                        </button>
-                    </>
-                )}
+                <button
+                    type="button"
+                    className={btnClass}
+                    onClick={handleExport}
+                    disabled={exportLoading || !fileIo.isActive}
+                    title={fileIoTitle}
+                    data-testid="ai-template-export"
+                >
+                    <Download size={14} style={{ marginRight: 6 }} />
+                    {t("ui.ai_template.panel.export", "Export template")}
+                </button>
+                <button
+                    type="button"
+                    className={btnClass}
+                    onClick={openImportDialog}
+                    disabled={importLoading || !fileIo.isActive}
+                    title={fileIoTitle}
+                    data-testid="ai-template-import"
+                >
+                    <Upload size={14} style={{ marginRight: 6 }} />
+                    {t("ui.ai_template.panel.import", "Import filled template")}
+                </button>
             </div>
 
             <FieldClassDialog

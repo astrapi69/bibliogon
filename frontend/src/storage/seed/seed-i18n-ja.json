@@ -31,7 +31,8 @@
     },
     "feature": {
       "requires_desktop_app": "この機能には Bibliogon デスクトップアプリが必要です",
-      "requires_ai_key": "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）"
+      "requires_ai_key": "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）",
+      "not_yet_available": "この機能はまだ利用できません。"
     },
     "story_bible": {
       "title": "Story Bible",

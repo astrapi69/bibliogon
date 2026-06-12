@@ -103,7 +103,7 @@ export default function WritingHistoryView() {
                         </button>
                     ))}
                 </div>
-                {csv.isActive && (
+                {csv.isActive ? (
                     <a
                         className="btn btn-secondary btn-sm"
                         href={api.writingStats.exportCsvUrl(days)}
@@ -112,6 +112,20 @@ export default function WritingHistoryView() {
                         <Download size={14} aria-hidden />
                         {t("ui.writing_stats.export_csv", "CSV exportieren")}
                     </a>
+                ) : (
+                    <button
+                        type="button"
+                        className="btn btn-secondary btn-sm"
+                        disabled
+                        data-testid="writing-history-export-csv"
+                        title={t(
+                            csv.reason ?? "ui.feature.requires_desktop_app",
+                            "This feature requires the Bibliogon desktop app",
+                        )}
+                    >
+                        <Download size={14} aria-hidden />
+                        {t("ui.writing_stats.export_csv", "CSV exportieren")}
+                    </button>
                 )}
             </div>
 

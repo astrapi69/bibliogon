@@ -9,7 +9,7 @@ import { FeatureTestProvider } from "../features/FeatureTestProvider";
 // from the FeatureProvider context (hasAiKey), not a one-shot getAiConfig probe:
 // Fill is disabled offline without a key, active with one. Export/Import
 // (ai-template-file-io) call backend /api with no offline path, so they are
-// hidden offline regardless of the key (#67).
+// visible but disabled offline regardless of the key (#67, policy #78).
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -102,16 +102,24 @@ describe("AITemplatePanel offline (article)", () => {
         expect(fill.getAttribute("title")).toContain("Settings > AI");
     });
 
-    it("hides Export and Import offline without a key (backend-only)", () => {
+    it("disables Export and Import offline without a key (backend-only, policy #78)", () => {
         renderPanel("article", "a1", false);
-        expect(screen.queryByTestId("ai-template-export")).toBeNull();
-        expect(screen.queryByTestId("ai-template-import")).toBeNull();
+        expect(
+            (screen.getByTestId("ai-template-export") as HTMLButtonElement).disabled,
+        ).toBe(true);
+        expect(
+            (screen.getByTestId("ai-template-import") as HTMLButtonElement).disabled,
+        ).toBe(true);
     });
 
-    it("hides Export and Import offline even with a key (backend-only, no offline path)", () => {
+    it("disables Export and Import offline even with a key (backend-only, no offline path)", () => {
         renderPanel("article", "a1", true);
-        expect(screen.queryByTestId("ai-template-export")).toBeNull();
-        expect(screen.queryByTestId("ai-template-import")).toBeNull();
+        expect(
+            (screen.getByTestId("ai-template-export") as HTMLButtonElement).disabled,
+        ).toBe(true);
+        expect(
+            (screen.getByTestId("ai-template-import") as HTMLButtonElement).disabled,
+        ).toBe(true);
     });
 });
 

@@ -302,30 +302,36 @@ forgets both the seam AND the gate fails it.
 
 ### Three-state feature visibility (replaces FUNKTION-NICHT-VERFUEGBAR)
 
-Updated 2026-06-11 (#63). Offline feature gating runs through
+Updated 2026-06-12 (#78). Offline feature gating runs through
 `@astrapi69/feature-strategy` (a central registry + conditional strategy,
 mounted via `AppFeatureProvider`; consumers call `useFeature(id)`). Every gated
 feature resolves to one of three states:
 
 - **active:** the feature works. Full interaction.
-- **disabled:** the feature is reachable but locked, shown with an explanation
-  of why (e.g. "configure an API key"). The user CAN act to change the state.
-  Used for the AI features offline without a key (`ai-generate`, `ai-fill`,
-  `ai-template-file-io`).
-- **hidden:** the feature is irrelevant in the current mode. Not rendered — no
-  button, no menu item. The user can do NOTHING to make it available (no git
-  binary, no TTS engine, no Pandoc, no LAN host in a browser). Used for
-  `git-sync`, `git-backup`, `tts`, `lan-mode`, `backup-compare`,
-  `backup-history`, `bgb-import`, `pandoc-export`, `version-history`,
-  `translation-links`, `kdp-category-catalog`, `bulk-export`,
-  `writing-history-csv`, `book-templates`.
+- **disabled:** the feature is visible but locked, shown with an explanation of
+  why. The user may or may not be able to act on it. Three sub-reasons:
+  - `ui.feature.requires_ai_key` — configure a provider key (the AI features
+    offline without a key: `ai-generate`, `ai-fill`). The user CAN act.
+  - `ui.feature.requires_desktop_app` — genuinely impossible in this deployment
+    (no git binary, no TTS engine, no Pandoc, no LAN host, no backend
+    round-trip). Used by the whole `DESKTOP_ONLY` set: `git-sync`,
+    `git-backup`, `tts`, `lan-mode`, `backup-compare`, `backup-history`,
+    `bgb-import`, `pandoc-export`, `version-history`, `translation-links`,
+    `kdp-category-catalog`, `bulk-export`, `writing-history-csv`,
+    `book-templates`, `ai-template-file-io`. The user cannot act, but the
+    disabled control communicates that a desktop app exists.
+  - `ui.feature.not_yet_available` — declared but not yet implemented.
+- **hidden:** ONLY for dev feature-flags during development (≈never in product
+  UI). Nothing the user owns is hidden. The library's fail-closed default
+  (unknown ids → hidden) is a typo safety net, NOT a UI policy.
 
-The earlier "disable + explain, do not hide" rule (and the upstream
-adaptive-learner "FUNKTION-NICHT-VERFUEGBAR" render-nothing rule) are BOTH
-superseded: `hidden` is correct when the user has no action to take; `disabled`
-is correct when they do. Genuine routing (online-vs-offline implementation
-choice — export engine, Medium parse, Danger-Zone reset, AI path) stays a
-`useStorageMode()` logic branch, NOT a registry gate. The descriptor
-`defaultState` carries the normal state; the strategy holds ONLY the
-key-dependent + dexie-hidden rules and abstains for everything else; unknown
-ids fail closed to `hidden`. See `src/features/featureConfig.ts`.
+**Policy #78: nothing the user owns is hidden — it is active or disabled with a
+reason.** Disabled buttons carry a `title` tooltip; whole disabled sections/pages
+render a header + `<FeatureNotice reason={…}/>` card (`src/features/FeatureNotice.tsx`)
+instead of dead, greyed-out controls — and crucially do NOT mount the live
+control, so they fire no `/api` offline. Genuine routing (online-vs-offline
+implementation choice — export engine + format lists, Medium parse, Danger-Zone
+reset, AI path) stays a `useStorageMode()` / `isActive`-list logic branch, NOT a
+registry gate. The descriptor `defaultState` carries the normal state; the
+strategy holds ONLY the key-dependent (`disabled`) + desktop-only (`disabled`)
+rules and abstains for everything else. See `src/features/featureConfig.ts`.

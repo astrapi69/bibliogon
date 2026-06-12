@@ -3,6 +3,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import ChapterVersionsView from "../components/ChapterVersionsView";
 import { PageLayout } from "../components/PageLayout";
 import { FEATURES } from "../features/featureConfig";
+import { FeatureNotice } from "../features/FeatureNotice";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 
@@ -26,11 +27,10 @@ export default function ChapterVersionsPage() {
   const editorUrl =
     bookId && chapterId ? `/book/${bookId}?chapter=${chapterId}` : "/";
   const goBack = useGoBack(editorUrl);
-  // Chapter snapshots are backend-only; offline (Dexie) this route is not
-  // reachable through the UI (the trigger is gated), and a direct deep-link
-  // renders nothing rather than firing /api. Mirrors GitSyncPage's guard.
+  // Chapter snapshots are backend-only. Offline (Dexie) the feature resolves
+  // to `disabled`: the page chrome stays visible and explains why, instead of
+  // a live view that would fire /api (policy #78). The UI trigger is gated too.
   const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
-  if (versionHistory.isHidden) return null;
 
   return (
     <PageLayout
@@ -40,7 +40,12 @@ export default function ChapterVersionsPage() {
       onBack={goBack}
       backLabel={t("ui.common.back", "Zurück")}
     >
-      {bookId && chapterId ? (
+      {!versionHistory.isActive ? (
+        <FeatureNotice
+          reason={versionHistory.reason}
+          testId="chapter-versions-disabled"
+        />
+      ) : bookId && chapterId ? (
         <ChapterVersionsView
           bookId={bookId}
           chapterId={chapterId}

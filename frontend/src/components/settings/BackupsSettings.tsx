@@ -29,6 +29,7 @@ import { api } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
+import { FeatureNotice } from "../../features/FeatureNotice";
 import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
 import { downloadBlob } from "../../export/download";
@@ -55,7 +56,7 @@ export function BackupsSettings() {
     const { t } = useI18n();
     const compare = useFeature(FEATURES.BACKUP_COMPARE);
     const history = useFeature(FEATURES.BACKUP_HISTORY);
-    const offline = history.isHidden;
+    const offline = !history.isActive;
     const dialog = useDialog();
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
@@ -211,45 +212,57 @@ export function BackupsSettings() {
                 </div>
             </div>
 
-            {!compare.isHidden && (
-                <>
-                    <div style={sectionStyle}>
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                marginBottom: 12,
-                            }}
-                        >
-                            <h3 style={{ margin: 0, fontSize: "1rem" }}>
-                                {t("ui.backups.compare_backups", "Backups vergleichen")}
-                            </h3>
-                            <button
-                                className="btn btn-secondary btn-sm"
-                                onClick={() => setShowCompareDialog(true)}
-                                data-testid="backups-compare-btn"
-                                style={{ gap: 6 }}
-                                title={t(
-                                    "ui.backups.compare_backups_tooltip",
-                                    "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
-                                )}
-                            >
-                                <GitCompare size={14} />
-                                {t("ui.backups.compare_backups", "Backups vergleichen")}
-                            </button>
-                        </div>
-                        <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.875rem" }}>
-                            {t(
-                                "ui.backups.compare_backups_tooltip",
-                                "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
-                            )}
-                        </p>
-                    </div>
-                </>
-            )}
+            <div style={sectionStyle}>
+                <div
+                    style={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                        marginBottom: 12,
+                    }}
+                >
+                    <h3 style={{ margin: 0, fontSize: "1rem" }}>
+                        {t("ui.backups.compare_backups", "Backups vergleichen")}
+                    </h3>
+                    <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setShowCompareDialog(true)}
+                        disabled={!compare.isActive}
+                        data-testid="backups-compare-btn"
+                        style={{ gap: 6 }}
+                        title={
+                            compare.isActive
+                                ? t(
+                                      "ui.backups.compare_backups_tooltip",
+                                      "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
+                                  )
+                                : t(
+                                      compare.reason ??
+                                          "ui.feature.requires_desktop_app",
+                                      "This feature requires the Bibliogon desktop app",
+                                  )
+                        }
+                    >
+                        <GitCompare size={14} />
+                        {t("ui.backups.compare_backups", "Backups vergleichen")}
+                    </button>
+                </div>
+                {compare.isActive ? (
+                    <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.875rem" }}>
+                        {t(
+                            "ui.backups.compare_backups_tooltip",
+                            "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
+                        )}
+                    </p>
+                ) : (
+                    <FeatureNotice
+                        reason={compare.reason}
+                        testId="backups-compare-disabled"
+                    />
+                )}
+            </div>
 
-            {!history.isHidden && (
+            {history.isActive ? (
                 <>
                     <div style={sectionStyle} data-testid="backups-history-section">
                         <div
@@ -363,6 +376,16 @@ export function BackupsSettings() {
                         )}
                     </div>
                 </>
+            ) : (
+                <div style={sectionStyle} data-testid="backups-history-section">
+                    <h3 style={{ margin: "0 0 12px 0", fontSize: "1rem" }}>
+                        {t("ui.backups.version_history", "Versionsgeschichte")}
+                    </h3>
+                    <FeatureNotice
+                        reason={history.reason}
+                        testId="backups-history-disabled"
+                    />
+                </div>
             )}
 
             <BackupCompareDialog

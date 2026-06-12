@@ -7,10 +7,11 @@ const DEXIE_NO_KEY: FeatureContext = { mode: "dexie", hasAiKey: false };
 const DEXIE_WITH_KEY: FeatureContext = { mode: "dexie", hasAiKey: true };
 
 describe("featureRegistry", () => {
-    it("resolves dexie-hidden features to active online, hidden offline", () => {
+    it("resolves desktop-only features to active online, disabled offline", () => {
         expect(featureRegistry.getState(FEATURES.GIT_SYNC, API)).toBe("active");
-        expect(featureRegistry.getState(FEATURES.GIT_SYNC, DEXIE_NO_KEY)).toBe("hidden");
-        expect(featureRegistry.getState(FEATURES.TTS, DEXIE_WITH_KEY)).toBe("hidden");
+        expect(featureRegistry.getState(FEATURES.GIT_SYNC, DEXIE_NO_KEY)).toBe("disabled");
+        // Desktop-only features stay disabled offline even with an AI key.
+        expect(featureRegistry.getState(FEATURES.TTS, DEXIE_WITH_KEY)).toBe("disabled");
         expect(featureRegistry.getReason(FEATURES.GIT_SYNC, DEXIE_NO_KEY)).toBe(
             FEATURE_REASON.REQUIRES_DESKTOP_APP,
         );
@@ -26,11 +27,16 @@ describe("featureRegistry", () => {
         );
     });
 
-    it("hides ai-template-file-io offline (backend-only, key-independent)", () => {
+    it("disables ai-template-file-io offline (backend-only, key-independent)", () => {
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, API)).toBe("active");
-        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe("hidden");
+        expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(
+            "disabled",
+        );
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_WITH_KEY)).toBe(
-            "hidden",
+            "disabled",
+        );
+        expect(featureRegistry.getReason(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(
+            FEATURE_REASON.REQUIRES_DESKTOP_APP,
         );
     });
 
@@ -42,7 +48,18 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState(FEATURES.BACKUP_IMPORT, DEXIE_NO_KEY)).toBe("active");
     });
 
-    it("fails closed to hidden for unknown ids", () => {
+    it("never hides a registered product feature in any mode (policy #78)", () => {
+        for (const id of Object.values(FEATURES)) {
+            for (const ctx of [API, DEXIE_NO_KEY, DEXIE_WITH_KEY]) {
+                expect(
+                    featureRegistry.getState(id, ctx),
+                    `${id} must be active or disabled, never hidden`,
+                ).not.toBe("hidden");
+            }
+        }
+    });
+
+    it("fails closed to hidden for unknown ids (library safety net, not UI policy)", () => {
         expect(featureRegistry.getState("does-not-exist", DEXIE_NO_KEY)).toBe("hidden");
         expect(featureRegistry.getState("does-not-exist", API)).toBe("hidden");
     });

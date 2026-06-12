@@ -71,14 +71,16 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("new-book-group")).toContainText(/Buch|Book/i);
     });
 
-    test("backend backup-export is hidden offline; import is available", async ({page}) => {
+    test("backend backup-export is visible+disabled offline; import works", async ({page}) => {
         await page.goto("/");
         await expect(page.getByTestId("new-book-group")).toBeVisible();
-        // The .bgb backup-EXPORT is backend-only -> hidden offline.
-        await expect(page.getByTestId("backup-export-btn")).toHaveCount(0);
-        // Import now WORKS offline (client-side OfflineImportDialog), so its
-        // triggers are visible rather than hidden (#76 supersedes #74).
+        // Policy #78: desktop-only features are VISIBLE + DISABLED (with a
+        // reason), never hidden. The .bgb backup-export is backend-only.
+        await expect(page.getByTestId("backup-export-btn")).toBeVisible();
+        await expect(page.getByTestId("backup-export-btn")).toBeDisabled();
+        // Import WORKS offline (client-side OfflineImportDialog): visible + enabled.
         await expect(page.getByTestId("import-wizard-btn")).toBeVisible();
+        await expect(page.getByTestId("import-wizard-btn")).toBeEnabled();
         await expect(page.getByTestId("dashboard-empty-import")).toBeVisible();
     });
 
@@ -423,8 +425,10 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("writing-history-view")).toBeVisible();
         await expect(page.getByTestId("writing-history-offline")).toHaveCount(0);
         await expect(page.getByTestId("writing-history-empty")).toBeVisible();
-        // CSV export is backend-only, so it is hidden offline.
-        await expect(page.getByTestId("writing-history-export-csv")).toHaveCount(0);
+        // CSV export is backend-only: visible + disabled offline (policy #78),
+        // not hidden.
+        await expect(page.getByTestId("writing-history-export-csv")).toBeVisible();
+        await expect(page.getByTestId("writing-history-export-csv")).toBeDisabled();
     });
 
     test("settings default-type dropdowns are populated from the seeded registries", async ({
@@ -490,17 +494,21 @@ test.describe("Offline PWA (Dexie mode)", () => {
         // DangerZoneSettings.test.tsx. afterEach proves zero /api on mount.
     });
 
-    test("settings backups: history + compare hidden offline, JSON backup stays, no /api", async ({
+    test("settings backups: history + compare visible+disabled offline, JSON backup stays, no /api", async ({
         page,
     }) => {
         // Backup history + compare are backend-only (.bgb archives +
-        // server-side store); hidden offline via the feature registry. The
-        // JSON full-backup section works offline (Dexie) and stays visible.
+        // server-side store); policy #78: visible + disabled offline (header +
+        // notice card), never hidden. The JSON full-backup section works
+        // offline (Dexie) and stays fully active.
         await page.goto("/settings?tab=backups");
         await expect(page.getByTestId("backups-settings")).toBeVisible();
         await expect(page.getByTestId("backups-fulldata-section")).toBeVisible();
-        await expect(page.getByTestId("backups-history-section")).toHaveCount(0);
-        await expect(page.getByTestId("backups-compare-btn")).toHaveCount(0);
+        await expect(page.getByTestId("backups-history-section")).toBeVisible();
+        await expect(page.getByTestId("backups-history-disabled")).toBeVisible();
+        await expect(page.getByTestId("backups-compare-btn")).toBeDisabled();
+        await expect(page.getByTestId("backups-compare-disabled")).toBeVisible();
+        // The live history list is replaced by the notice, so it fires no /api.
         await expect(page.getByTestId("backups-history-list")).toHaveCount(0);
     });
 
@@ -576,14 +584,15 @@ test.describe("Offline PWA (Dexie mode)", () => {
     // (ExportForm.test.tsx, AITemplatePanel.offline.test.tsx). The two gates
     // below DO have a reachable offline surface and are asserted here.
 
-    test("version-history (chapter snapshots) deep-link renders nothing offline, no /api", async ({
+    test("version-history (chapter snapshots) deep-link shows disabled notice offline, no /api", async ({
         page,
     }) => {
-        // Chapter snapshots are backend-only; the route resolves
-        // `version-history` to hidden and returns null BEFORE mounting
-        // ChapterVersionsView, so a direct deep-link fires no /api.
+        // Chapter snapshots are backend-only; policy #78: the page chrome stays
+        // visible and resolves `version-history` to a disabled notice BEFORE
+        // mounting ChapterVersionsView, so a direct deep-link fires no /api.
         await page.goto("/books/offline-x/chapters/offline-y/snapshots");
-        await expect(page.getByTestId("chapter-versions-page")).toHaveCount(0);
+        await expect(page.getByTestId("chapter-versions-page")).toBeVisible();
+        await expect(page.getByTestId("chapter-versions-disabled")).toBeVisible();
         // The afterEach zero-/api gate proves no snapshot fetch fired.
     });
 

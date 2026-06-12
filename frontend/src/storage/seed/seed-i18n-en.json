@@ -31,7 +31,8 @@
     },
     "feature": {
       "requires_desktop_app": "This feature requires the Bibliogon desktop app",
-      "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)"
+      "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)",
+      "not_yet_available": "This feature is not yet available."
     },
     "story_bible": {
       "title": "Story Bible",
