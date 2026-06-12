@@ -1,16 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import {
-    importFile,
-    OfflineNotSupportedError,
-    UnknownFormatError,
-} from "./importRouter";
+import { importFile, UnknownFormatError } from "./importRouter";
 
 const {
     importMarkdownAsChapter,
     importTextAsChapter,
     importHtmlAsChapter,
     importFullBackup,
+    importBgbFile,
     parseMediumZip,
     importParsed,
     getApp,
@@ -40,6 +37,10 @@ const {
         imported: { books: 2, articles: 1 },
         skipped: {},
     })),
+    importBgbFile: vi.fn(async () => ({
+        imported: { books: 1, chapters: 3 },
+        skipped: {},
+    })),
     parseMediumZip: vi.fn(async () => ({
         preview: { items: [{ filename: "p1.html" }, { filename: "p2.html" }] },
         parsed: new Map(),
@@ -54,6 +55,7 @@ vi.mock("./chapterImporters", () => ({
     importHtmlAsChapter,
 }));
 vi.mock("../export/backupImport", () => ({ importFullBackup }));
+vi.mock("./bgbImport", () => ({ importBgbFile }));
 vi.mock("../medium-import/clientImport", () => ({ parseMediumZip, importParsed }));
 vi.mock("../storage", () => ({
     getStorage: () => ({ settings: { getApp } }),
@@ -108,10 +110,10 @@ describe("importFile routing", () => {
         );
     });
 
-    it("throws OfflineNotSupportedError for bgb", async () => {
-        await expect(importFile(file("x.bgb"), "bgb")).rejects.toBeInstanceOf(
-            OfflineNotSupportedError,
-        );
+    it("routes bgb to the client-side importBgbFile", async () => {
+        const out = await importFile(file("x.bgb"), "bgb");
+        expect(out.kind).toBe("bgb-backup");
+        expect(importBgbFile).toHaveBeenCalledWith(expect.any(File));
     });
 
     it("throws UnknownFormatError for unknown", async () => {

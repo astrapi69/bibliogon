@@ -23,6 +23,9 @@ import {test, expect} from "../fixtures/base";
 // require shim ("require is not defined in ES module scope") under the e2e
 // package's default CommonJS module mode.
 const MEDIUM_ZIP = path.join(__dirname, "..", "fixtures", "medium-export.zip");
+// A minimal full-data backup (manifest + 1 book "BGB Restored Book" + 1
+// chapter) for the offline .bgb import test (#99).
+const BACKUP_BGB = path.join(__dirname, "..", "fixtures", "backup.bgb");
 
 // Smoke tests mutate the viewport / storage mode; run this file serially so
 // the shared per-test recorder below is never raced.
@@ -109,23 +112,21 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("My Offline Novel").first()).toBeVisible();
     });
 
-    test("bgb import shows the desktop-app hint offline (the one gate)", async ({
+    test("bgb import works offline: file -> book + chapter via Dexie (#99)", async ({
         page,
     }) => {
         await page.goto("/");
         await page.getByTestId("dashboard-empty-import").click();
-        await page.getByTestId("offline-import-input").setInputFiles({
-            name: "backup.bgb",
-            mimeType: "application/octet-stream",
-            buffer: Buffer.from("PK bgb archive placeholder"),
-        });
-        // .bgb is the only offline-unsupported format: a FEATURES.BGB_IMPORT
-        // gate (the Feature component) renders the desktop-app hint and no
-        // generic import button.
-        await expect(
-            page.getByTestId("offline-import-bgb-hint"),
-        ).toBeVisible();
-        await expect(page.getByTestId("offline-import-confirm")).toHaveCount(0);
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await page.getByTestId("offline-import-input").setInputFiles(BACKUP_BGB);
+        // .bgb now parses client-side: the FEATURES.BGB_IMPORT gate is active,
+        // so the import button shows (not the desktop-app hint).
+        await expect(page.getByTestId("offline-import-format-bgb")).toBeVisible();
+        await expect(page.getByTestId("offline-import-bgb-hint")).toHaveCount(0);
+        await page.getByTestId("offline-import-bgb-confirm").click();
+        // The dialog closes and the restored book (read back from Dexie) appears.
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+        await expect(page.getByText("BGB Restored Book").first()).toBeVisible();
     });
 
     test("article-list import opens the offline dialog (not the backend wizard), no /api (#82)", async ({

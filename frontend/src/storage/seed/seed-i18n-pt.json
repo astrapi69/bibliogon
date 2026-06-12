@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "Importar",
       "drop_zone": "Solte um arquivo aqui ou clique para escolher",
-      "accepted": "Markdown, texto, HTML, backup JSON, exportação do Medium (.zip). .bgb requer o aplicativo de desktop.",
+      "accepted": "Markdown, texto, HTML, backup JSON, exportação do Medium (.zip), backup (.bgb).",
       "file_label": "Arquivo:",
       "detecting": "Detectando formato …",
       "detected_label": "Formato detectado:",

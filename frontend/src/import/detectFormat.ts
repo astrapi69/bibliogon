@@ -12,9 +12,8 @@ import { unzipSync } from "fflate";
 
 /**
  * The set of formats the offline import path recognises. Everything that is
- * not a supported client-side format resolves to `unknown`; `bgb` is detected
- * but routed to the desktop-only path (the ZIP project archive needs the
- * backend orchestrator).
+ * not a supported client-side format resolves to `unknown`; `bgb` (the
+ * full-data backup archive) is parsed client-side by `importBgbFile`.
  */
 export type ImportFormat =
     | "json-backup"
@@ -112,4 +111,5 @@ export const OFFLINE_SUPPORTED_FORMATS: readonly ImportFormat[] = [
     "markdown",
     "text",
     "html",
+    "bgb",
 ];

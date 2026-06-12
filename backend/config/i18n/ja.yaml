@@ -2,7 +2,7 @@ ui:
   offline_import:
     title: "インポート"
     drop_zone: "ファイルをここにドロップ、またはクリックして選択"
-    accepted: "Markdown、テキスト、HTML、JSONバックアップ、Mediumエクスポート（.zip）。.bgb はデスクトップアプリが必要です。"
+    accepted: "Markdown、テキスト、HTML、JSONバックアップ、Mediumエクスポート（.zip）、バックアップ（.bgb）。"
     file_label: "ファイル:"
     detecting: "形式を検出中 …"
     detected_label: "検出された形式:"
