@@ -175,6 +175,22 @@ test.describe("Offline PWA (Dexie mode)", () => {
         ).toContainText(/English|Englisch/);
     });
 
+    test("hides the empty Plugins tab in Dexie mode", async ({page}) => {
+        await page.goto("/settings");
+        // Settings loaded (the default appearance tab is present)...
+        await expect(
+            page.getByTestId("settings-tab-erscheinungsbild"),
+        ).toBeVisible();
+        // ...but plugins are a backend concept: no plugin configs offline, so
+        // the Plugins tab is an empty container and is not rendered.
+        await expect(page.getByTestId("settings-tab-plugins")).toHaveCount(0);
+
+        // A stale deep-link to ?tab=plugins falls back to the default tab.
+        await page.goto("/settings?tab=plugins");
+        await expect(page).toHaveURL(/[?&]tab=erscheinungsbild(\b|$)/);
+        await expect(page.getByTestId("settings-tab-plugins")).toHaveCount(0);
+    });
+
     test("create a book offline, reload - persisted in Dexie", async ({
         page,
     }) => {
