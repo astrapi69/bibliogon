@@ -39,6 +39,9 @@
       "description": "Η ζητούμενη σελίδα δεν υπάρχει ή έχει μετακινηθεί.",
       "back_home": "Επιστροφή στον πίνακα ελέγχου"
     },
+    "author_select": {
+      "custom_option": "Άλλο όνομα…"
+    },
     "story_bible": {
       "title": "Story Bible",
       "close": "Κλείσιμο του Story Bible",

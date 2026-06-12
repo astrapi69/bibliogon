@@ -35,6 +35,8 @@ ui:
     title: "Página não encontrada"
     description: "A página solicitada não existe ou foi movida."
     back_home: "Voltar ao painel"
+  author_select:
+    custom_option: "Outro nome…"
   story_bible:
     title: "Story Bible"
     close: "Fechar a Story Bible"

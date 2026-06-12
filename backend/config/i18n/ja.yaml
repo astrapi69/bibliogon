@@ -35,6 +35,8 @@ ui:
     title: "ページが見つかりません"
     description: "リクエストされたページは存在しないか、移動されました。"
     back_home: "ダッシュボードに戻る"
+  author_select:
+    custom_option: "別の名前…"
   story_bible:
     title: "Story Bible"
     close: "Story Bible を閉じる"

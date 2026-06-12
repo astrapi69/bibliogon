@@ -35,6 +35,8 @@ ui:
     title: "Seite nicht gefunden"
     description: "Die angeforderte Seite existiert nicht oder wurde verschoben."
     back_home: "Zurück zum Dashboard"
+  author_select:
+    custom_option: "Anderer Name …"
   story_bible:
     title: "Story-Bibel"
     close: "Story-Bibel schließen"

@@ -35,6 +35,8 @@ ui:
     title: "Page not found"
     description: "The requested page does not exist or has been moved."
     back_home: "Back to Dashboard"
+  author_select:
+    custom_option: "Other name…"
   story_bible:
     title: "Story Bible"
     close: "Close Story Bible"
