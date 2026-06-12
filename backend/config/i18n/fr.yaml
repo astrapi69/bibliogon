@@ -3090,6 +3090,7 @@ ui:
     platform_label: "Plateforme"
     plugins_heading: "Plugins"
     plugins_empty: "Aucun plugin actif."
+    plugins_browser_hint: "Ces plugins sont disponibles directement dans ce navigateur."
     dep_unknown: "Inconnu"
     storage_label: "Stockage"
     storage_indexeddb: "Stockage local du navigateur (IndexedDB)"

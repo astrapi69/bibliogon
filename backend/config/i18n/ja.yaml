@@ -3090,6 +3090,7 @@ ui:
     platform_label: "プラットフォーム"
     plugins_heading: "プラグイン"
     plugins_empty: "有効なプラグインはありません。"
+    plugins_browser_hint: "これらのプラグインはこのブラウザーで直接利用できます。"
     dep_unknown: "不明"
     storage_label: "ストレージ"
     storage_indexeddb: "ローカルブラウザストレージ (IndexedDB)"

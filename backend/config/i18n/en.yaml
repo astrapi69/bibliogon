@@ -3101,6 +3101,7 @@ ui:
     platform_label: "Platform"
     plugins_heading: "Plugins"
     plugins_empty: "No plugins active."
+    plugins_browser_hint: "These plugins are available directly in this browser."
     dep_unknown: "Unknown"
     storage_label: "Storage"
     storage_indexeddb: "Local browser storage (IndexedDB)"

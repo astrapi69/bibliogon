@@ -3258,6 +3258,7 @@
       "platform_label": "Platform",
       "plugins_heading": "Eklentiler",
       "plugins_empty": "Etkin eklenti yok.",
+      "plugins_browser_hint": "Bu eklentiler doğrudan bu tarayıcıda kullanılabilir.",
       "dep_unknown": "Bilinmiyor",
       "storage_label": "Depolama",
       "storage_indexeddb": "Yerel tarayıcı depolaması (IndexedDB)",
