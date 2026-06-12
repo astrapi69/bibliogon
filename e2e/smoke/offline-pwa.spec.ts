@@ -101,8 +101,12 @@ test.describe("Offline PWA (Dexie mode)", () => {
         ).toBeVisible();
         await page.getByTestId("offline-import-confirm").click();
         // The dialog closes and the new book (read back from Dexie) appears.
+        // .first(): the title matches multiple nodes (the book card's cover
+        // placeholder heading + the card title, plus the success toast),
+        // so scope to the first like the other book-appearance assertions
+        // in this spec ("Offline Book" / "Trash Book").
         await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
-        await expect(page.getByText("My Offline Novel")).toBeVisible();
+        await expect(page.getByText("My Offline Novel").first()).toBeVisible();
     });
 
     test("bgb import shows the desktop-app hint offline (the one gate)", async ({
