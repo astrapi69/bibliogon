@@ -1,6 +1,6 @@
 # Bibliogon
 
-Open-Source-Toolkit für Self-Publishing-Autorinnen und -Autoren. Bücher, Artikel, Bilderbücher, Comics und Multi-Plattform-Content-Workflows. Schreibe mit einer integrierten **Story-Bibel**, die deine Figuren, Orte und Handlungspunkte konsistent hält, und exportiere nach EPUB / PDF / Hörbuch. Offline-zuerst, Plugin-basiert, local-first.
+Open-Source-Toolkit für Self-Publishing-Autorinnen und -Autoren. Bücher, Artikel, Bilderbücher, Comics und Multi-Plattform-Content-Workflows. Schreibe mit einer integrierten **Story-Bibel**, die deine Figuren, Orte und Handlungspunkte konsistent hält, und exportiere nach EPUB / PDF / Hörbuch. Plugin-basiert und local-first — läuft komplett offline im Browser (GitHub-Pages-PWA) oder selbst gehostet via Docker.
 
 Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wiederverwendbaren Plugin-Framework auf Basis von [pluggy](https://pluggy.readthedocs.io/).
 
@@ -24,12 +24,12 @@ Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederke
 
 ## Funktionen
 
-- WYSIWYG- und Markdown-Editor (TipTap mit 15 offiziellen + 1 Community-Erweiterung, 24 Toolbar-Buttons)
+- WYSIWYG- und Markdown-Editor (TipTap v3) mit Node-basierten Mathe-Formeln (KaTeX, inline `$...$` + Block `$$...$$`) und eingebauter Editor-Suche (prosemirror-search)
 - **Story-Bibel** — buchspezifische Datenbank für Figuren / Schauplätze / Handlung / Gegenstände / Lore mit Beziehungen, @-Erwähnungen, Auto-Erkennung, Arc-Timeline und Kontinuitätsprüfung (siehe oben)
 - Komplette Buchstruktur mit Kapiteltypen für jeden Abschnitt (Vorwort, Geleitwort, Prolog, Widmung, Teil, Epilog, Nachwort, Index, Auch vom Autor, Leseprobe, Call to Action, ...)
 - Genre-Katalog für Roman, Sachbuch, Fachbuch, Biografie, Lyrik, Kinderbuch, Fantasy, Thriller, Liebesroman, Kochbuch, Reise und mehr
 - Drag-and-Drop-Kapitelreihenfolge mit klappbaren Abschnitten
-- EPUB-, PDF-, Word-, HTML-, Markdown-Export über [manuscripta](https://github.com/astrapi69/manuscripta)
+- Zwei Export-Engines: client-seitig im Browser (Markdown, HTML, Text, PDF, EPUB, DOCX, LaTeX — funktioniert offline) und Desktop über [manuscripta](https://github.com/astrapi69/manuscripta)/Pandoc
 - Hörbuch-Erzeugung mit 5 TTS-Engines (Edge TTS, Google Cloud TTS, Google Translate, pyttsx3, ElevenLabs)
 - Content-Hash-Cache: unveränderte Kapitel werden nicht neu erzeugt (spart Geld bei kostenpflichtigen Engines)
 - Kostenschätzung und Ersparnis-Tracking für kostenpflichtige TTS-Engines
@@ -59,6 +59,17 @@ Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederke
 - Titel direkt im Editor bearbeiten (Buch, Artikel, Bilderbuch, Comic) über eine gemeinsame Stift-Umschalt-Komponente; bei veröffentlichten oder archivierten Werken erscheint zuerst ein Warnbanner, damit eine Titeländerung bewusst auf der Veröffentlichungsplattform nachgezogen wird
 - Veröffentlichungs-Status-Lebenszyklus (Entwurf / Bereit / Veröffentlicht / Archiviert), geteilt von Büchern und Artikeln, mit Status-Badge auf jeder Dashboard-Karte und Listenzeile
 - Sprachabhängige Datumsformatierung, die der aktiven UI-Sprache auf allen Surfaces folgt
+
+## Offline-Web-App (PWA)
+
+Bibliogon läuft als vollständig offline-fähige Progressive Web App auf GitHub Pages — ohne Backend, ohne Installation: **[astrapi69.github.io/bibliogon](https://astrapi69.github.io/bibliogon/)**. Alle Daten liegen im Browser (IndexedDB, local-first); der Backend-lose Build feuert null `/api`-Requests (per hartem E2E-Gate erzwungen).
+
+- **Komplettes Schreiben offline:** Bücher, Kapitel, Artikel, Bilderbücher, Comics, Story-Bibel, Storyboard, Autoren und Publikationen lesen und schreiben über den Storage-Seam gegen eine geseedete IndexedDB.
+- **Import-Wizard offline:** Markdown- / Text- / HTML-Dateien werden zu einem neuen Buch + Kapitel; JSON-Voll-Backups und `.bgb`-Backups werden client-seitig wiederhergestellt; Medium-ZIP-Exporte importieren direkt im Browser.
+- **Client-seitige Export-Engine:** Markdown, HTML, Text, PDF, EPUB, DOCX und LaTeX — erzeugt im Browser, kein Pandoc nötig.
+- **KI offline:** eigener Provider-Key; Aufrufe gehen direkt vom Browser zum Provider, der Key bleibt lokal gespeichert und wird nirgendwo sonst hingeschickt.
+- **Backup & Restore:** ein einzelnes JSON-Bundle exportiert/importiert den gesamten Arbeitsbereich. Die In-App-Hilfe und der Erste-Schritte-Guide funktionieren ebenfalls offline, und unbekannte Routen bekommen eine eigene 404-Seite.
+- **Dreistufige Feature-Sichtbarkeit:** jede gegatete Oberfläche löst über eine zentrale Feature-Registry ([@astrapi69/feature-strategy](https://www.npmjs.com/package/@astrapi69/feature-strategy)) zu *aktiv*, *deaktiviert mit Begründung* oder *versteckt* auf. Nichts, was dir gehört, wird versteckt — die im Browser tatsächlich unmöglichen Features (Pandoc-basierter Export, Git-Sync/-Backup, Hörbuch-TTS, LAN-Modus) erscheinen deaktiviert mit dem Hinweis "erfordert die Desktop-App", statt stillschweigend zu verschwinden.
 
 ## Bilderbuch-Autorenschaft
 
@@ -179,6 +190,10 @@ make install    # Alle Abhaengigkeiten installieren (Poetry, npm, Plugins)
 make dev        # Backend (8000) + Frontend (5173) parallel starten
 make test       # Alle Tests ausfuehren (Backend + Plugins + Frontend)
 ```
+
+Bibliogon folgt **Gitflow**: `develop` ist der aktive Entwicklungsbranch (der GitHub-Default), `main` trägt ausschließlich Releases. `feature/*`- / `fix/*`-Branches gehen von `develop` ab, Pull Requests laufen gegen `develop`.
+
+Quality-Gates: Backend- + Plugin-pytest und Frontend-Vitest mit Coverage-Tracking (aktuelle Zahlen in [docs/audits/current-coverage.md](docs/audits/current-coverage.md)), `ruff` + `mypy`, ESLint (Flat Config) + Prettier, `bandit`-SAST und `madge`-Zirkular-Abhängigkeits-Erkennung in der CI, Playwright-E2E mit Visual-Regression-Baselines und axe-core-Barrierefreiheits-Checks, Theme-/Kontrast-Gates (`make verify-theme`) sowie ein vollständiges Backup-Akzeptanz-Gate (Export → Reset → Import → Verifikation).
 
 Vollständige Entwicklungsdokumentation siehe [CLAUDE.md](CLAUDE.md).
 
