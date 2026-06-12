@@ -3256,7 +3256,19 @@
       "platform_label": "Πλατφόρμα",
       "plugins_heading": "Plugins",
       "plugins_empty": "Δεν υπάρχουν ενεργά plugins.",
-      "dep_unknown": "Άγνωστο"
+      "dep_unknown": "Άγνωστο",
+      "storage_label": "Αποθήκευση",
+      "storage_indexeddb": "Τοπική αποθήκευση προγράμματος περιήγησης (IndexedDB)",
+      "storage_sqlite": "SQLite (Επιφάνεια εργασίας)",
+      "data_dir_label": "Κατάλογος δεδομένων",
+      "data_dir_browser": "Αποθήκευση προγράμματος περιήγησης (IndexedDB)",
+      "contributors_heading": "Συντελεστές",
+      "author_label": "Συγγραφέας",
+      "built_with_label": "Δημιουργήθηκε με",
+      "ai_assistance_label": "Βοήθεια ΤΝ",
+      "ai_assistance_value": "Claude (Anthropic) - αρχιτεκτονική, κώδικας, περιεχόμενο, τεκμηρίωση",
+      "resources_heading": "Άδεια χρήσης & Πόροι",
+      "docs_label": "Τεκμηρίωση"
     },
     "kdp_publishing_wizard": {
       "open_button": "Δημοσίευση στο KDP",

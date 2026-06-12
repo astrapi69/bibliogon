@@ -3256,7 +3256,19 @@
       "platform_label": "プラットフォーム",
       "plugins_heading": "プラグイン",
       "plugins_empty": "有効なプラグインはありません。",
-      "dep_unknown": "不明"
+      "dep_unknown": "不明",
+      "storage_label": "ストレージ",
+      "storage_indexeddb": "ローカルブラウザストレージ (IndexedDB)",
+      "storage_sqlite": "SQLite (デスクトップ)",
+      "data_dir_label": "データディレクトリ",
+      "data_dir_browser": "ブラウザストレージ (IndexedDB)",
+      "contributors_heading": "貢献者",
+      "author_label": "著者",
+      "built_with_label": "使用技術",
+      "ai_assistance_label": "AI アシスタンス",
+      "ai_assistance_value": "Claude (Anthropic) - アーキテクチャ、コード、コンテンツ、ドキュメント",
+      "resources_heading": "ライセンスとリソース",
+      "docs_label": "ドキュメント"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",
