@@ -47,6 +47,12 @@ test.describe("Toolbar Copy split-button (F3)", () => {
         });
         await page.goto(`/articles/${article.id}`);
 
+        // Wait for the TipTap editor to finish mounting before driving the
+        // toolbar. Clicking the Radix chevron mid-hydration loses the click
+        // (the toolbar re-renders when the editor loads) and the portal
+        // never opens, which is the full-suite-load flake this guards.
+        await expect(page.locator(".ProseMirror")).toBeVisible();
+
         await page.getByTestId("toolbar-copy-chevron").click();
 
         await expect(
@@ -67,6 +73,10 @@ test.describe("Toolbar Copy split-button (F3)", () => {
             title: "Copy plain-text article",
         });
         await page.goto(`/articles/${article.id}`);
+
+        // Wait for the TipTap editor to finish mounting before driving the
+        // toolbar (see the chevron-menu test above for the lost-click race).
+        await expect(page.locator(".ProseMirror")).toBeVisible();
 
         await page.getByTestId("toolbar-copy-chevron").click();
         // Wait for the Radix portal menu item to render before clicking
