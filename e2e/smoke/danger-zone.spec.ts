@@ -4,8 +4,9 @@
  *
  * Exercises the user-visible reset flow:
  *   1. Navigate to Settings > Danger Zone
- *   2. Click "Alles zurücksetzen" / "Reset Everything"
- *   3. Dialog opens with warning + backup link + RESET input
+ *   2. A page-level "Backup erstellen" button is visible up front
+ *   3. Click "Alles zurücksetzen" → dialog opens directly with the
+ *      warning + RESET input (no intermediate backup-first step)
  *   4. Final-delete button stays disabled with wrong input
  *      ("reset" lowercase) and enables only on exact "RESET"
  *   5. Click final-delete → backend wipe + frontend cleanup +
@@ -34,18 +35,16 @@ test.describe("Settings - Danger Zone", () => {
 
         await page.goto("/settings?tab=danger_zone");
 
-        // Section root + reset button visible.
+        // Section root + page-level backup button + reset button visible.
         await expect(page.getByTestId("danger-zone-section")).toBeVisible();
+        // "Backup erstellen" lives on the PAGE now, visible before any dialog.
+        await expect(page.getByTestId("danger-zone-create-backup")).toBeVisible();
         const resetBtn = page.getByTestId("danger-zone-reset-button");
         await expect(resetBtn).toBeVisible();
 
-        // Open the dialog.
+        // Reset opens the RESET-confirmation dialog directly (no precheck).
         await resetBtn.click();
         await expect(page.getByTestId("danger-zone-dialog")).toBeVisible();
-        // Intermediate "backup first?" dialog → continue without backup.
-        await expect(page.getByTestId("danger-zone-precheck")).toBeVisible();
-        await expect(page.getByTestId("danger-zone-create-backup")).toBeVisible();
-        await page.getByTestId("danger-zone-continue-without-backup").click();
         await expect(page.getByTestId("danger-zone-warning")).toBeVisible();
         const input = page.getByTestId("danger-zone-reset-input");
         await expect(input).toBeVisible();
@@ -79,9 +78,9 @@ test.describe("Settings - Danger Zone", () => {
 
         await page.goto("/settings?tab=danger_zone");
         await page.getByTestId("danger-zone-reset-button").click();
-        await expect(page.getByTestId("danger-zone-precheck")).toBeVisible();
+        await expect(page.getByTestId("danger-zone-reset-input")).toBeVisible();
 
-        await page.getByTestId("danger-zone-precheck-cancel").click();
+        await page.getByTestId("danger-zone-cancel-button").click();
         await expect(page.getByTestId("danger-zone-dialog")).not.toBeVisible();
 
         // The book still exists - cancel did not fire the reset.
