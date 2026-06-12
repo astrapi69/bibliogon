@@ -544,72 +544,67 @@ function PluginListSection({
   const active = plugins
     .filter((p) => p.enabled && p.loaded)
     .sort((a, b) => a.name.localeCompare(b.name));
+  // No active plugins (the backendless PWA when nothing is seeded as
+  // loaded) -> render nothing rather than an empty "Installed plugins"
+  // container.
+  if (active.length === 0) return null;
   return (
     <article data-testid="about-plugins-section" style={sectionStyle}>
       <h3 style={{ marginTop: 0, marginBottom: 12 }}>
         {t("ui.about.plugins_heading", "Plugins")}
       </h3>
-      {active.length === 0 ? (
-        <p
-          data-testid="about-plugins-empty"
-          style={{ color: "var(--text-muted)", margin: 0 }}
-        >
-          {t("ui.about.plugins_empty", "Keine Plugins aktiv.")}
-        </p>
-      ) : (
-        <ul
-          data-testid="about-plugins-list"
-          style={{ listStyle: "none", padding: 0, margin: 0 }}
-        >
-          {active.map((p) => {
-            const displayName = getLocalized(p.display_name, p.name, lang);
-            const description = getLocalized(p.description, "", lang);
-            return (
-              <li
-                key={p.name}
-                data-testid={`about-plugin-row-${p.name}`}
+      <ul
+        data-testid="about-plugins-list"
+        style={{ listStyle: "none", padding: 0, margin: 0 }}
+      >
+        {active.map((p) => {
+          const displayName = getLocalized(p.display_name, p.name, lang);
+          const description = getLocalized(p.description, "", lang);
+          return (
+            <li
+              key={p.name}
+              data-testid={`about-plugin-row-${p.name}`}
+              style={{
+                padding: "8px 0",
+                borderBottom: "1px solid var(--border)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 2,
+              }}
+            >
+              <div
                 style={{
-                  padding: "8px 0",
-                  borderBottom: "1px solid var(--border)",
                   display: "flex",
-                  flexDirection: "column",
-                  gap: 2,
+                  alignItems: "center",
+                  gap: 8,
                 }}
               >
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                  }}
-                >
-                  <strong>{displayName}</strong>
-                  {p.version ? (
-                    <span
-                      style={{
-                        color: "var(--text-muted)",
-                        fontSize: "0.85rem",
-                      }}
-                    >
-                      v{p.version}
-                    </span>
-                  ) : null}
-                </div>
-                {description ? (
+                <strong>{displayName}</strong>
+                {p.version ? (
                   <span
                     style={{
                       color: "var(--text-muted)",
                       fontSize: "0.85rem",
                     }}
                   >
-                    {description}
+                    v{p.version}
                   </span>
                 ) : null}
-              </li>
-            );
-          })}
-        </ul>
-      )}
+              </div>
+              {description ? (
+                <span
+                  style={{
+                    color: "var(--text-muted)",
+                    fontSize: "0.85rem",
+                  }}
+                >
+                  {description}
+                </span>
+              ) : null}
+            </li>
+          );
+        })}
+      </ul>
     </article>
   );
 }

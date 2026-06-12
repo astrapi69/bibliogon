@@ -376,11 +376,13 @@ describe("AboutSettings", () => {
             expect(row.textContent).toContain("noname");
         });
 
-        it("renders empty-state when no plugins active", async () => {
+        it("does not render the plugins section when no plugins are active", async () => {
             storageMock.discoveredPlugins.mockImplementation(async () => []);
             render(<AboutSettings appConfig={{}} />);
-            const empty = await screen.findByTestId("about-plugins-empty");
-            expect(empty.textContent).toBe("Keine Plugins aktiv.");
+            // Wait for the always-present version section so the async load
+            // has settled, then assert the empty plugins section is absent.
+            await screen.findByTestId("about-version-section");
+            expect(screen.queryByTestId("about-plugins-section")).toBeNull();
         });
     });
 
