@@ -306,4 +306,17 @@ describe("AuthorSelectInput — profile select mode", () => {
         expect(screen.queryByTestId("test-prefix-author-select")).toBeNull();
         expect(screen.getByTestId("test-prefix-author")).toBeInTheDocument();
     });
+
+    it("stays free-text for a single-name profile (no pen names to pick between)", () => {
+        render(
+            <AuthorSelectInput
+                {...selectProps({
+                    profileChoices: ["Asterios Raptis"],
+                    suggestions: ["Asterios Raptis"],
+                })}
+            />,
+        );
+        expect(screen.queryByTestId("test-prefix-author-select")).toBeNull();
+        expect(screen.getByTestId("test-prefix-author")).toBeInTheDocument();
+    });
 });

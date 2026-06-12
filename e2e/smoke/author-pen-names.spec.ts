@@ -43,7 +43,7 @@ test.describe("Author pen names (Dexie mode)", () => {
         page,
     }) => {
         // 1. Set the real name + add a pen name (auto-saved through the seam).
-        await page.goto("/settings?tab=author");
+        await page.goto("/settings?tab=autoren");
         await page.getByTestId("author-real-name").fill("Asterios Raptis");
         await page.getByTestId("author-real-name").blur();
         await page.getByTestId("author-pen-name-input").fill("Draven Quantum");
@@ -52,30 +52,50 @@ test.describe("Author pen names (Dexie mode)", () => {
             "Draven Quantum",
         );
 
+        // The Dexie write is async; reload Settings to confirm it actually
+        // landed in IndexedDB before the create forms read it (otherwise the
+        // navigation can race the flush and read a stale profile).
+        await page.reload();
+        await expect(page.getByTestId("author-real-name")).toHaveValue(
+            "Asterios Raptis",
+        );
+        await expect(page.getByTestId("author-pen-name-0")).toContainText(
+            "Draven Quantum",
+        );
+
         // 2. Create book: the select lists the real name AND the pen name.
+        const bookSelect = page.getByTestId("create-book-author-select");
         await page.goto("/books/new");
-        await expect(
-            page.getByTestId("create-book-author-select"),
-        ).toBeVisible();
-        await expect(
-            page.getByTestId("create-book-author-option-Asterios Raptis"),
-        ).toBeAttached();
-        await expect(
-            page.getByTestId("create-book-author-option-Draven Quantum"),
-        ).toBeAttached();
+        await expect(bookSelect).toBeVisible();
+        await expect
+            .poll(async () =>
+                bookSelect.evaluate((el) =>
+                    Array.from(
+                        (el as HTMLSelectElement).querySelectorAll("option"),
+                    ).map((o) => (o as HTMLOptionElement).value),
+                ),
+            )
+            .toEqual(
+                expect.arrayContaining(["Asterios Raptis", "Draven Quantum"]),
+            );
 
         // 3. Create article: same options.
+        const articleSelect = page.getByTestId("create-article-author-select");
         await page.goto("/articles/new");
-        await expect(
-            page.getByTestId("create-article-author-select"),
-        ).toBeVisible();
-        await expect(
-            page.getByTestId("create-article-author-option-Draven Quantum"),
-        ).toBeAttached();
+        await expect(articleSelect).toBeVisible();
+        await expect
+            .poll(async () =>
+                articleSelect.evaluate((el) =>
+                    Array.from(
+                        (el as HTMLSelectElement).querySelectorAll("option"),
+                    ).map((o) => (o as HTMLOptionElement).value),
+                ),
+            )
+            .toEqual(expect.arrayContaining(["Draven Quantum"]));
     });
 
     test("pen name persists across reload (not transient)", async ({page}) => {
-        await page.goto("/settings?tab=author");
+        await page.goto("/settings?tab=autoren");
         await page.getByTestId("author-real-name").fill("Asterios Raptis");
         await page.getByTestId("author-real-name").blur();
         await page.getByTestId("author-pen-name-input").fill("Draven Quantum");

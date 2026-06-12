@@ -643,7 +643,9 @@ describe("CreateBookForm", () => {
             expect(screen.getByTestId("create-book-author-option-Pen Two")).toBeTruthy();
         });
 
-        it("does NOT list Authors-DB entries as options (profile-only)", async () => {
+        it("does NOT list Authors-DB entries as suggestions (profile-only)", async () => {
+            // A single-name profile (no pen names) keeps the free-text +
+            // datalist control; the datalist still lists profile names only.
             mockAppConfig = { author: { name: "Real Name", pen_names: [] } };
             mockListAuthors.mockResolvedValue([
                 {
@@ -659,9 +661,9 @@ describe("CreateBookForm", () => {
             renderForm();
             await waitFor(() => expect(mockListAuthors).toHaveBeenCalled());
             await waitFor(() =>
-                expect(screen.getByTestId("create-book-author-select")).toBeTruthy(),
+                expect(screen.getByTestId("create-book-author-datalist")).toBeTruthy(),
             );
-            expect(screen.queryByTestId("create-book-author-option-Stephen King")).toBeNull();
+            expect(screen.queryByTestId("create-book-author-suggestion-Stephen King")).toBeNull();
         });
 
         it("Add-to-Authors-DB checkbox is VISIBLE when typed author is new", async () => {

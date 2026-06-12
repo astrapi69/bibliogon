@@ -48,15 +48,16 @@ interface AuthorSelectInputProps {
      *  api.authors.list. */
     suggestions: string[];
 
-    /** The user's profile identities (real name + pen names). When
-     *  provided and non-empty, the control renders a real <select>
-     *  dropdown listing every profile name as its own option plus a
-     *  "custom name" escape that reveals the free-text input. This
-     *  fixes the native <datalist> filtering its options by the
-     *  pre-filled value (which hid pen names whenever the field was
-     *  pre-set to the real name). Omit it (or pass []) to keep the
-     *  pure free-text + datalist behaviour (e.g. the import wizard,
-     *  where any author name may be typed). */
+    /** The user's profile identities (real name + pen names). When it
+     *  holds 2+ names (i.e. at least one pen name exists), the control
+     *  renders a real <select> dropdown listing every profile name as
+     *  its own option plus a "custom name" escape that reveals the
+     *  free-text input. This fixes the native <datalist> filtering its
+     *  options by the pre-filled value (which hid pen names whenever the
+     *  field was pre-set to the real name). With 0 or 1 entry (no pen
+     *  names) the pure free-text + datalist input stays — a single-name
+     *  profile needs no picker, and free-text typing stays the default
+     *  (e.g. the import wizard, where any author name may be typed). */
     profileChoices?: string[];
     /** Already-translated label for the "type a custom name" option
      *  in the profile <select>. Required only when profileChoices is
@@ -127,8 +128,12 @@ export default function AuthorSelectInput({
     const resolvedInputId = inputId ?? resolvedInputTestId;
     const checkboxLabel = addToAuthorsLabel.replace("{name}", value.trim());
 
+    // Only switch to the <select> when there is something to pick BETWEEN —
+    // i.e. at least one pen name beside the real name. A single-name profile
+    // keeps the free-text input (no regression for the common case, and
+    // co-authors stay typeable without detouring through a "custom" option).
     const hasProfileSelect =
-        Array.isArray(profileChoices) && profileChoices.length > 0;
+        Array.isArray(profileChoices) && profileChoices.length >= 2;
     const valueIsChoice = hasProfileSelect && profileChoices!.includes(value);
     // Custom mode = the free-text input is shown. Entered explicitly via the
     // "custom name" option, or implicitly when the current value is a
