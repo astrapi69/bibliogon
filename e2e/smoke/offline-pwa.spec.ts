@@ -235,6 +235,59 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Offline Book").first()).toBeVisible();
     });
 
+    test("view switcher works offline: BD + AD grid -> list -> grid, persists (#106)", async ({
+        page,
+    }) => {
+        // Pre-#106, useViewMode read settings via the RAW api client:
+        // guardedFetch rejected offline (before any network request, so
+        // this suite's /api hard gate never saw it) and the rollback
+        // catch snapped the optimistic toggle straight back to grid -
+        // clicking "Liste" visibly did nothing on the PWA.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Switcher Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Switcher Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // BD: grid -> list renders the list view...
+        await page.getByTestId("view-toggle-list").click();
+        await expect(page.getByTestId("book-list-view")).toBeVisible();
+
+        // ...the preference persists in the Dexie settings store...
+        await page.reload();
+        await expect(page.getByTestId("book-list-view")).toBeVisible();
+
+        // ...and toggling back to grid works too.
+        await page.getByTestId("view-toggle-grid").click();
+        await expect(page.getByTestId("book-list-view")).toHaveCount(0);
+
+        // AD: same cycle. Create an article so list rows can render.
+        await page.goto("/articles/new");
+        await page.getByTestId("create-article-title").fill("Switcher Article");
+        await page.getByTestId("create-article-submit").click();
+        await page.goto("/articles");
+        await expect(page.getByText("Switcher Article").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        await page.getByTestId("view-toggle-list").click();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']").first(),
+        ).toBeVisible();
+
+        await page.reload();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']").first(),
+        ).toBeVisible();
+
+        await page.getByTestId("view-toggle-grid").click();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']"),
+        ).toHaveCount(0);
+    });
+
     test("book trash works offline: soft-delete -> trash -> restore (Finding 7)", async ({
         page,
     }) => {
