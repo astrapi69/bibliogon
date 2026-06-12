@@ -2,6 +2,7 @@ import React from "react"
 import {Check} from "lucide-react"
 import type {PageLayout} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
+import {CollapsibleConfigSection} from "./CollapsibleConfigSection"
 import styles from "./LayoutPicker.module.css"
 
 interface Props {
@@ -151,9 +152,11 @@ export default function LayoutPicker({selected, onChange, disabled}: Props) {
             data-testid="page-editor-layout-picker"
             className={styles.container}
         >
-            <h3 className={styles.heading}>
-                {t("ui.page_editor.layout_heading", "Layout")}
-            </h3>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-picker"
+                heading={t("ui.page_editor.layout_heading", "Layout")}
+                testidPrefix="page-editor-layout-picker"
+            >
             {LAYOUT_CATEGORIES.map((category) => (
                 <div
                     key={category.id}
@@ -171,6 +174,7 @@ export default function LayoutPicker({selected, onChange, disabled}: Props) {
                     </div>
                 </div>
             ))}
+            </CollapsibleConfigSection>
         </div>
     )
 }

@@ -21,6 +21,7 @@
 
 import * as Collapsible from "@radix-ui/react-collapsible";
 
+import {COLLAPSIBLE_CONTENT_ANIMATION} from "../CollapsibleConfigSection";
 import {useCollapsibleState} from "../../hooks/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
@@ -107,7 +108,9 @@ export function Tier2Section({
                     {t(`${i18nKeyPrefix}.tier2.heading`, "Typografie")}
                 </button>
             </Collapsible.Trigger>
-            <Collapsible.Content className={styles.sectionContent}>
+            <Collapsible.Content
+                className={`${styles.sectionContent} ${COLLAPSIBLE_CONTENT_ANIMATION}`}
+            >
                 <label className={styles.selectLabel}>
                     <span className={styles.legend}>
                         {t(

@@ -29,6 +29,7 @@ import {useState} from "react";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
 
+import {CollapsibleConfigSection} from "../CollapsibleConfigSection";
 import {Tier1Section} from "./Tier1Section";
 import {Tier2Section} from "./Tier2Section";
 import type {ComicBubbleData} from "./ComicBubble";
@@ -137,12 +138,11 @@ export function LayoutConfigComicBubble({
                 padding: "14px",
             }}
         >
-            <h4 style={{margin: 0}}>
-                {t(
-                    "ui.page_editor.config.comic_bubble.heading",
-                    "Sprechblase",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-comic-bubble-config"
+                heading={t( "ui.page_editor.config.comic_bubble.heading", "Sprechblase", )}
+                testidPrefix="layout-config-comic-bubble"
+            >
 
             {/* Bubble-type radio (6 canonical) */}
             <fieldset
@@ -387,6 +387,7 @@ export function LayoutConfigComicBubble({
                 testidPrefix="comic-bubble"
                 i18nKeyPrefix="ui.page_editor.config.comic_bubble"
             />
+        </CollapsibleConfigSection>
         </div>
     );
 }

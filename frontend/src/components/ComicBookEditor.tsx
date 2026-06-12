@@ -1054,12 +1054,16 @@ export default function ComicBookEditor({
           minHeight: 480,
         }}
       >
+        {/* #109: anchored ABSOLUTE inside the relative editor body
+          * (below the header), not fixed to the viewport - the fixed
+          * variant sat ON the header and overlapped the back button
+          * (left) / ThemeToggle (right). */}
         {!sidebars.left.open && (
           <SidebarToggleButton
             open={false}
             onToggle={sidebars.left.toggle}
             testId="comic-book-editor-thumbnails-toggle"
-            className="fixed left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+            className="absolute left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
           />
         )}
         {!sidebars.right.open && (
@@ -1067,7 +1071,7 @@ export default function ComicBookEditor({
             open={false}
             onToggle={sidebars.right.toggle}
             testId="comic-book-editor-side-pane-toggle"
-            className="fixed right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+            className="absolute right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
           />
         )}
         <div
@@ -1118,6 +1122,12 @@ export default function ComicBookEditor({
         </div>
 
         <section
+          className={[
+            !sidebars.left.open ? "pl-14" : "",
+            !sidebars.right.open ? "pr-14" : "",
+          ]
+            .filter(Boolean)
+            .join(" ")}
           style={{
             display: "flex",
             flexDirection: "column",

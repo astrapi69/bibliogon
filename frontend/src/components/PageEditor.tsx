@@ -432,12 +432,16 @@ export default function PageEditor({
                 <ThemeToggle variant="dark" />
             </header>
             <div className={styles.body} style={{position: "relative"}}>
+                {/* #109: anchored ABSOLUTE inside the relative body (below
+                  * the header), not fixed to the viewport — the fixed
+                  * variant sat ON the header and overlapped the back
+                  * button (left) / ThemeToggle (right). */}
                 {!sidebars.left.open && (
                     <SidebarToggleButton
                         open={false}
                         onToggle={sidebars.left.toggle}
                         testId="page-editor-thumbnails-toggle"
-                        className="fixed left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                        className="absolute left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
                     />
                 )}
                 {!sidebars.right.open && (
@@ -445,7 +449,7 @@ export default function PageEditor({
                         open={false}
                         onToggle={sidebars.right.toggle}
                         testId="page-editor-properties-toggle"
-                        className="fixed right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                        className="absolute right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
                     />
                 )}
                 <div
@@ -485,7 +489,17 @@ export default function PageEditor({
                 </div>
                 <main
                     data-testid="page-editor-canvas"
-                    className={`${styles.canvas} flex-1`}
+                    className={[
+                        styles.canvas,
+                        "flex-1",
+                        // #109: keep the canvas clear of the absolute expand
+                        // buttons while a sidebar is collapsed (BookEditor
+                        // pl-14 precedent).
+                        !sidebars.left.open ? "pl-14" : "",
+                        !sidebars.right.open ? "pr-14" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
                     aria-label={t("ui.page_editor.canvas_pane", "Canvas")}
                     data-active-page-id={activePageId ?? ""}
                 >

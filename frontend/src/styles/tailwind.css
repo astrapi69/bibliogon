@@ -95,3 +95,36 @@
 @theme {
     --breakpoint-menu: 75rem;
 }
+
+/*
+ * Radix-Collapsible open/close height animation (#109). Radix exposes
+ * the measured content height as ``--radix-collapsible-content-height``;
+ * the keyframes animate between 0 and that value, and consumers opt in
+ * via ``data-[state=open]:animate-collapsible-down`` +
+ * ``data-[state=closed]:animate-collapsible-up`` (+ ``overflow-hidden``)
+ * on ``Collapsible.Content``. Shared by every collapsible section in
+ * the picture-book / comic editor sidebars so all sections animate
+ * consistently (the Tier sections previously snapped open/closed).
+ */
+@theme {
+    --animate-collapsible-down: collapsible-down 200ms ease-out;
+    --animate-collapsible-up: collapsible-up 200ms ease-out;
+
+    @keyframes collapsible-down {
+        from {
+            height: 0;
+        }
+        to {
+            height: var(--radix-collapsible-content-height);
+        }
+    }
+
+    @keyframes collapsible-up {
+        from {
+            height: var(--radix-collapsible-content-height);
+        }
+        to {
+            height: 0;
+        }
+    }
+}
