@@ -34,6 +34,11 @@
       "requires_ai_key": "Bu özellik yapılandırılmış bir yapay zeka anahtarı gerektirir (Ayarlar > Yapay Zeka Asistanı)",
       "not_yet_available": "Bu özellik henüz kullanılamıyor."
     },
+    "not_found": {
+      "title": "Sayfa bulunamadı",
+      "description": "İstenen sayfa mevcut değil veya taşınmış.",
+      "back_home": "Panoya dön"
+    },
     "story_bible": {
       "title": "Story Bible",
       "close": "Story Bible'ı kapat",

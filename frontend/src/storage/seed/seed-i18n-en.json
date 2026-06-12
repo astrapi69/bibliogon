@@ -34,6 +34,11 @@
       "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)",
       "not_yet_available": "This feature is not yet available."
     },
+    "not_found": {
+      "title": "Page not found",
+      "description": "The requested page does not exist or has been moved.",
+      "back_home": "Back to Dashboard"
+    },
     "story_bible": {
       "title": "Story Bible",
       "close": "Close Story Bible",
