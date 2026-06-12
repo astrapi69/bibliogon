@@ -13,8 +13,8 @@
       "fr": "Export de livre"
     },
     "description": {
-      "de": "EPUB, PDF, DOCX, HTML und Projektstruktur-Export via manuscripta/Pandoc",
-      "en": "EPUB, PDF, DOCX, HTML and project structure export via manuscripta/Pandoc"
+      "de": "Exportiert Bücher und Artikel in verschiedene Formate (Markdown, HTML, Text, PDF, EPUB, DOCX, LaTeX)",
+      "en": "Exports books and articles to multiple formats (Markdown, HTML, Text, PDF, EPUB, DOCX, LaTeX)"
     },
     "version": "1.0.0",
     "filter_reason": null,
