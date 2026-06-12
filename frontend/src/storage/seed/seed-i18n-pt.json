@@ -31,7 +31,8 @@
     },
     "feature": {
       "requires_desktop_app": "Esta funcionalidade requer a aplicação de ambiente de trabalho do Bibliogon",
-      "requires_ai_key": "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)"
+      "requires_ai_key": "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)",
+      "not_yet_available": "Este recurso ainda não está disponível."
     },
     "story_bible": {
       "title": "Story Bible",

@@ -98,6 +98,12 @@ export default function ArticleBulkActionBar({
     const aiGenTitle = aiGen.isDisabled
         ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
         : undefined;
+    // Batch export is backend-only (Pandoc). Policy #78: visible + disabled
+    // with a reason offline, never hidden.
+    const bulkExportTitle = t(
+        bulkExport.reason ?? "ui.feature.requires_desktop_app",
+        "This feature requires the Bibliogon desktop app",
+    );
 
     const overLimit = count > BULK_LIMIT_HARD;
     const overWarning = count > BULK_LIMIT_WARNING && !overLimit;
@@ -121,7 +127,7 @@ export default function ArticleBulkActionBar({
             countTestId="article-bulk-count"
             clearTestId="article-bulk-clear"
         >
-            {bulkExport.isActive && (
+            {bulkExport.isActive ? (
                 <>
                     <span className={styles.label}>
                         {t("ui.articles.bulk.format_label", "Format")}
@@ -194,6 +200,16 @@ export default function ArticleBulkActionBar({
                         {t("ui.articles.bulk.export_button", "Export")}
                     </button>
                 </>
+            ) : (
+                <button
+                    type="button"
+                    className="btn btn-sm btn-primary"
+                    data-testid="article-bulk-export"
+                    disabled
+                    title={bulkExportTitle}
+                >
+                    {t("ui.articles.bulk.export_button", "Export")}
+                </button>
             )}
             {onBulkAiTemplateExport && onBulkAiTemplateImport && (
                 <DropdownMenu.Root>

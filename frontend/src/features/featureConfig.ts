@@ -71,6 +71,7 @@ export const FEATURES = {
 export const FEATURE_REASON = {
     REQUIRES_DESKTOP_APP: "ui.feature.requires_desktop_app",
     REQUIRES_AI_KEY: "ui.feature.requires_ai_key",
+    NOT_YET_AVAILABLE: "ui.feature.not_yet_available",
 } as const;
 
 /**
@@ -103,11 +104,16 @@ const NEEDS_KEY: readonly string[] = [FEATURES.AI_FILL, FEATURES.AI_GENERATE];
 
 /**
  * Features that genuinely cannot work in a browser (no git binary, no TTS
- * engine, no Pandoc, no LAN host, no backend round-trip). Hidden in Dexie
- * mode; active online (the strategy abstains online so the descriptor
- * default wins).
+ * engine, no Pandoc, no LAN host, no backend round-trip). In Dexie mode they
+ * resolve to `disabled` with the desktop-app reason (per the policy: nothing
+ * the user owns is hidden — it stays visible and explained); online the
+ * strategy abstains so the descriptor `active` default wins.
+ *
+ * `ai-template-file-io` is in this bucket rather than the key-dependent one:
+ * the `.biblio.yaml` Export/Import round-trip calls backend `/api` with no
+ * offline path, so it stays desktop-only even with a configured AI key.
  */
-const DEXIE_HIDDEN: readonly string[] = [
+const DESKTOP_ONLY: readonly string[] = [
     FEATURES.GIT_SYNC,
     FEATURES.GIT_BACKUP,
     FEATURES.TTS,
@@ -122,9 +128,6 @@ const DEXIE_HIDDEN: readonly string[] = [
     FEATURES.BULK_EXPORT,
     FEATURES.WRITING_HISTORY_CSV,
     FEATURES.BOOK_TEMPLATES,
-    // ai-template-file-io: the .biblio.yaml Export/Import round-trip calls
-    // backend /api with no offline path, so it cannot run in the browser even
-    // with a configured AI key — hidden offline, not key-dependent.
     FEATURES.AI_TEMPLATE_FILE_IO,
 ];
 
@@ -135,7 +138,7 @@ function descriptor(id: string): FeatureDescriptor {
 const DESCRIPTORS: readonly FeatureDescriptor[] = [
     ...ALWAYS_ACTIVE,
     ...NEEDS_KEY,
-    ...DEXIE_HIDDEN,
+    ...DESKTOP_ONLY,
 ].map(descriptor);
 
 function keyDependentCondition(): FeatureCondition<FeatureContext> {
@@ -145,9 +148,9 @@ function keyDependentCondition(): FeatureCondition<FeatureContext> {
     };
 }
 
-function dexieHiddenCondition(): FeatureCondition<FeatureContext> {
+function desktopOnlyCondition(): FeatureCondition<FeatureContext> {
     return {
-        evaluate: (ctx) => (ctx?.mode === "dexie" ? "hidden" : undefined),
+        evaluate: (ctx) => (ctx?.mode === "dexie" ? "disabled" : undefined),
         reason: FEATURE_REASON.REQUIRES_DESKTOP_APP,
     };
 }
@@ -155,15 +158,17 @@ function dexieHiddenCondition(): FeatureCondition<FeatureContext> {
 function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     const rules: Record<string, FeatureCondition<FeatureContext>> = {};
     for (const id of NEEDS_KEY) rules[id] = keyDependentCondition();
-    for (const id of DEXIE_HIDDEN) rules[id] = dexieHiddenCondition();
+    for (const id of DESKTOP_ONLY) rules[id] = desktopOnlyCondition();
     return rules;
 }
 
 /**
  * The application feature registry. A module constant (not a component-level
  * memo): descriptors registered once, the conditional strategy holding rules
- * only for the needs-key + dexie-hidden buckets. Unruled features abstain and
- * fall back to their `active` default; unknown ids fail closed to `hidden`.
+ * only for the needs-key + desktop-only buckets. Unruled features abstain and
+ * fall back to their `active` default. Unknown ids fail closed to `hidden` -
+ * that is the library's typo safety net, not the UI policy (no product
+ * feature is ever hidden; user-owned features are active or disabled).
  */
 export const featureRegistry = new FeatureRegistry<FeatureContext>();
 featureRegistry.registerAll(DESCRIPTORS);

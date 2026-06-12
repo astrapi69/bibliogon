@@ -78,7 +78,14 @@ export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
-    const offline = bgbImport.isHidden;
+    // The backend import-wizard + .bgb backup-export are desktop-only. Policy
+    // #78: visible + disabled with a reason offline, never hidden. The offline
+    // article-import path is Medium (the chevron item, always available).
+    const offline = !bgbImport.isActive;
+    const offlineHint = t(
+        bgbImport.reason ?? "ui.feature.requires_desktop_app",
+        "This feature requires the Bibliogon desktop app",
+    );
     const articleTypesSnapshot = useContentTypes();
     const [articles, setArticles] = useState<Article[]>([]);
     const [trash, setTrash] = useState<Article[]>([]);
@@ -745,17 +752,16 @@ export default function ArticleList() {
                                 ``article-backup-export-btn`` testid are
                                 preserved on the dropdown item. */}
                             <div className={layout.importGroup} data-testid="article-import-group">
-                                {!offline && (
-                                    <button
-                                        className="btn btn-secondary btn-sm"
-                                        data-testid="article-import-wizard-btn"
-                                        onClick={() => setImportWizardOpen(true)}
-                                        title={t("ui.dashboard.import", "Importieren")}
-                                    >
-                                        <Upload size={14} />{" "}
-                                        {t("ui.dashboard.import", "Importieren")}
-                                    </button>
-                                )}
+                                <button
+                                    className="btn btn-secondary btn-sm"
+                                    data-testid="article-import-wizard-btn"
+                                    onClick={() => setImportWizardOpen(true)}
+                                    disabled={offline}
+                                    title={offline ? offlineHint : t("ui.dashboard.import", "Importieren")}
+                                >
+                                    <Upload size={14} />{" "}
+                                    {t("ui.dashboard.import", "Importieren")}
+                                </button>
                                 <DropdownMenu.Root>
                                     <DropdownMenu.Trigger asChild>
                                         <button
@@ -794,19 +800,18 @@ export default function ArticleList() {
                                                 </span>
                                             </DropdownMenu.Item>
                                             <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                            {!offline && (
-                                                <DropdownMenu.Item
-                                                    className="hamburger-menu-item"
-                                                    data-testid="article-backup-export-btn"
-                                                    disabled={articles.length === 0}
-                                                    onSelect={handleBackupExport}
-                                                >
-                                                    <Download size={14} />
-                                                    <span style={{ marginLeft: 6 }}>
-                                                        {t("ui.dashboard.backup", "Backup")}
-                                                    </span>
-                                                </DropdownMenu.Item>
-                                            )}
+                                            <DropdownMenu.Item
+                                                className="hamburger-menu-item"
+                                                data-testid="article-backup-export-btn"
+                                                disabled={offline || articles.length === 0}
+                                                title={offline ? offlineHint : undefined}
+                                                onSelect={handleBackupExport}
+                                            >
+                                                <Download size={14} />
+                                                <span style={{ marginLeft: 6 }}>
+                                                    {t("ui.dashboard.backup", "Backup")}
+                                                </span>
+                                            </DropdownMenu.Item>
                                         </DropdownMenu.Content>
                                     </DropdownMenu.Portal>
                                 </DropdownMenu.Root>
@@ -891,24 +896,24 @@ export default function ArticleList() {
                                             {t("ui.dashboard.books_nav", "Bücher")}
                                         </DropdownMenu.Item>
                                         <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                        {!offline && (
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                onSelect={handleBackupExport}
-                                            >
-                                                <Download size={16} />{" "}
-                                                {t("ui.dashboard.backup", "Backup")}
-                                            </DropdownMenu.Item>
-                                        )}
-                                        {!offline && (
-                                            <DropdownMenu.Item
-                                                className="hamburger-menu-item"
-                                                onSelect={() => setImportWizardOpen(true)}
-                                            >
-                                                <Upload size={16} />{" "}
-                                                {t("ui.dashboard.import", "Importieren")}
-                                            </DropdownMenu.Item>
-                                        )}
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={handleBackupExport}
+                                            disabled={offline}
+                                            title={offline ? offlineHint : undefined}
+                                        >
+                                            <Download size={16} />{" "}
+                                            {t("ui.dashboard.backup", "Backup")}
+                                        </DropdownMenu.Item>
+                                        <DropdownMenu.Item
+                                            className="hamburger-menu-item"
+                                            onSelect={() => setImportWizardOpen(true)}
+                                            disabled={offline}
+                                            title={offline ? offlineHint : undefined}
+                                        >
+                                            <Upload size={16} />{" "}
+                                            {t("ui.dashboard.import", "Importieren")}
+                                        </DropdownMenu.Item>
                                         <DropdownMenu.Separator className="hamburger-menu-separator" />
                                         <DropdownMenu.Item
                                             className="hamburger-menu-item"

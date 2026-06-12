@@ -26,8 +26,6 @@ import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useStorageMode } from "../storage/useStorageMode";
-import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURES } from "../features/featureConfig";
 import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { BookOpen, Plus } from "lucide-react";
@@ -79,9 +77,6 @@ export default function BookEditor() {
     const { t } = useI18n();
     const { mode } = useStorageMode();
     const offlineGate = mode === "dexie";
-    const gitSyncFeature = useFeature(FEATURES.GIT_SYNC);
-    const gitBackupFeature = useFeature(FEATURES.GIT_BACKUP);
-    const versionHistoryFeature = useFeature(FEATURES.VERSION_HISTORY);
     const bookTypesSnapshot = useBookTypes();
     const {
         open: sidebarOpen,
@@ -873,18 +868,10 @@ export default function BookEditor() {
                     onBack={() => navigate("/")}
                     onCollapse={() => setSidebarOpen(false)}
                     onExport={handleExport}
-                    onGitBackup={
-                        gitBackupFeature.isHidden
-                            ? undefined
-                            : () => navigate(`/books/${bookId}/git-backup`)
-                    }
+                    onGitBackup={() => navigate(`/books/${bookId}/git-backup`)}
                     offlineSlot={bookId ? <OfflineToggleButton bookId={bookId} /> : undefined}
                     gitSyncState={gitSyncState}
-                    onGitSync={
-                        gitSyncFeature.isHidden
-                            ? undefined
-                            : () => navigate(`/books/${bookId}/git-sync`)
-                    }
+                    onGitSync={() => navigate(`/books/${bookId}/git-sync`)}
                     gitSyncMapped={gitSyncMapped}
                     onMetadata={() => {
                         setSelectedStoryEntityId(null);
@@ -915,10 +902,8 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={
-                        versionHistoryFeature.isActive
-                            ? (id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)
-                            : undefined
+                    onShowVersions={(id) =>
+                        navigate(`/books/${bookId}/chapters/${id}/snapshots`)
                     }
                     showMetadata={showMetadata}
                     onReorder={handleReorder}

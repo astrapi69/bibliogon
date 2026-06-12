@@ -30,6 +30,7 @@ ui:
   feature:
     requires_desktop_app: "Cette fonctionnalité nécessite l'application de bureau Bibliogon"
     requires_ai_key: "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)"
+    not_yet_available: "Cette fonctionnalité n'est pas encore disponible."
   story_bible:
     title: "Story Bible"
     close: "Fermer la Story Bible"

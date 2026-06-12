@@ -15,6 +15,7 @@ import { notify } from "../utils/notify";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
+import { FeatureNotice } from "../features/FeatureNotice";
 import { useGoBack } from "../hooks/useGoBack";
 
 /**
@@ -158,7 +159,19 @@ export default function GitSyncPage() {
         }
     }
 
-    if (gitSync.isHidden) return null;
+    if (!gitSync.isActive) {
+        return (
+            <PageLayout
+                title={t("ui.git_sync.title", "Sync zu Git-Repository")}
+                testId="git-sync-page"
+                maxWidth="lg"
+                onBack={goBack}
+                backLabel={t("ui.common.back", "Zurück")}
+            >
+                <FeatureNotice reason={gitSync.reason} testId="git-sync-disabled" />
+            </PageLayout>
+        );
+    }
 
     return (
         <PageLayout
