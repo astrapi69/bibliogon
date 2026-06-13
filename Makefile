@@ -13,7 +13,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
-       lock-all-plugins verify-plugin-locks verify-theme \
+       lock-all-plugins verify-plugin-locks verify-theme verify-components check-cohesion \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -592,6 +592,9 @@ verify-theme: ## Theme-system gates: token completeness/undefined refs + WCAG co
 
 verify-components: ## Advisory (non-blocking): CSS-module classes that re-declare a shared control surface (CSS-first rule)
 	@python3 scripts/check_component_classes.py
+
+check-cohesion: ## File-size cohesion guard: WARN >500, ERROR >1000 (blocks new God-files); see .filesize-whitelist + .filesize-baseline
+	@bash scripts/check-file-sizes.sh
 
 # --- Release ---
 # Aggregate Makefile targets for the release-workflow.md mechanical steps
