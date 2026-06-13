@@ -629,7 +629,7 @@ export default function ArticleEditor() {
     return (
         <div data-testid="article-editor" className={layout.page}>
             <h1 className="sr-only">{article.title || "Bibliogon"}</h1>
-            <header className={layout.header}>
+            <header className={`${layout.header} flex-wrap`}>
                 <SidebarToggleButton
                     open={sidebarOpen}
                     onToggle={toggleSidebar}
@@ -643,7 +643,9 @@ export default function ArticleEditor() {
                     title={t("ui.articles.back_to_list_tooltip", "Zur Artikelliste")}
                 >
                     <ArrowLeft size={14} />
-                    {t("ui.articles.back_to_list", "Zur Liste")}
+                    <span className="hidden sm:inline">
+                        {t("ui.articles.back_to_list", "Zur Liste")}
+                    </span>
                 </button>
                 <button
                     type="button"
@@ -653,7 +655,9 @@ export default function ArticleEditor() {
                     title={t("ui.articles.back_to_dashboard_tooltip", "Zum Dashboard")}
                 >
                     <Home size={14} />
-                    {t("ui.articles.back_to_dashboard", "Dashboard")}
+                    <span className="hidden sm:inline">
+                        {t("ui.articles.back_to_dashboard", "Dashboard")}
+                    </span>
                 </button>
                 <EditableTitle
                     value={article.title}
