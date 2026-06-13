@@ -127,6 +127,14 @@ naming. Refactoring is not optional, it is scheduled.
 - Cohesion Watcher (#113) prevents new god-files from forming.
 - `.filesize-baseline` tracks the 18 remaining god-files as visible debt.
   Each entry is a split-TODO.
+- Complexity Watcher (#139) surfaces over-complex functions: radon
+  cyclomatic complexity + ruff `C901` (Python) and ESLint `complexity`
+  (TypeScript), threshold 20. Runs warn-only in
+  `.github/workflows/complexity-check.yml` (and `make check-complexity`)
+  with the same defense-in-depth logic as the cohesion watcher -
+  visibility first, harden later. `ruff` `C901` is deliberately not in the
+  blocking `select` yet (two functions already exceed the threshold);
+  promoting it is a Phase-2 follow-up after those are split.
 
 ## 6. Git Hygiene and Code Review
 
@@ -189,7 +197,7 @@ coordinates handoffs and resolves conflicts with reality.
 | Layer architecture | `guardedFetch`, `settingsSeamGuard`, cohesion watcher | Code review for boundary violations |
 | Test coverage | Vitest, tsc strict, pre-commit hooks | Aster-E2E-Gate (smoke suite), Coverage Illusion review |
 | Security/deps | **Gap: no CI scan yet** | Manual dependency review |
-| Refactoring | Cohesion watcher, `.filesize-baseline` | Refactoring intervals, scope decisions |
+| Refactoring | Cohesion watcher, complexity watcher, `.filesize-baseline` | Refactoring intervals, scope decisions |
 | Git hygiene | Pre-commit hooks, linting | Diff review, issue discipline |
 
 ## See Also
@@ -198,4 +206,5 @@ coordinates handoffs and resolves conflicts with reality.
 - `docs/audits/clean-code-audit.md` - Principle 5
 - `.filesize-baseline` - Principle 5, god-file tracking
 - `.github/workflows/cohesion-check.yml` - Principle 5
+- `.github/workflows/complexity-check.yml` - Principle 5
 - `scripts/check-file-sizes.sh` - Principle 2 and 5
