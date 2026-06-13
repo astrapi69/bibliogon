@@ -10,12 +10,15 @@ export default defineConfig({
     workers: 1, // SQLite = no parallelism
     // A serial 400+-test browser suite against a live backend has an
     // irreducible tail of load/timing/order flakiness (Radix portals
-    // not yet open, async PATCH/refresh not yet landed, etc.). One
-    // retry absorbs that tail so a flaky-but-passing test doesn't fail
-    // the gate, while a DETERMINISTIC failure still fails both attempts
-    // and is caught. Local matches CI (was local:0) — the smoke gate
-    // runs locally, so it needs the same resilience.
-    retries: process.env.CI ? 2 : 1,
+    // not yet open, async PATCH/refresh not yet landed, etc.). Retries
+    // absorb that tail so a flaky-but-passing test doesn't fail the gate,
+    // while a DETERMINISTIC failure still fails every attempt and is
+    // caught. Local matches CI (2) — the smoke gate runs locally, so it
+    // needs the same resilience. With local:1, a flake that failed both
+    // its attempts under sustained load (the same load condition spanning
+    // attempt + single retry) turned the run red; the second retry absorbs
+    // that without hiding a real failure (which fails all three).
+    retries: 2,
     timeout: 30_000,
     // Visual-regression tolerance for the `visual` project's
     // toHaveScreenshot() assertions. A 1% per-pixel-ratio budget
