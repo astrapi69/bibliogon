@@ -317,7 +317,10 @@ export default function PageEditor({
             data-book-id={bookId}
             className={styles.layout}
         >
-            <header data-testid="page-editor-header" className={styles.header}>
+            <header
+                data-testid="page-editor-header"
+                className={`${styles.header} flex-wrap`}
+            >
                 <button
                     type="button"
                     onClick={onBack}
@@ -351,7 +354,7 @@ export default function PageEditor({
                         )}
                     >
                         <FileText size={14} />
-                        <span>
+                        <span className="hidden sm:inline">
                             {t(
                                 "ui.page_editor.show_metadata",
                                 "Open book metadata",
@@ -371,7 +374,7 @@ export default function PageEditor({
                         )}
                     >
                         <LayoutGrid size={14} />
-                        <span>
+                        <span className="hidden sm:inline">
                             {t(
                                 "ui.page_editor.show_storyboard",
                                 "Storyboard",
@@ -400,7 +403,7 @@ export default function PageEditor({
                         ) : (
                             <Maximize2 size={14} />
                         )}
-                        <span>
+                        <span className="hidden sm:inline">
                             {fullscreen.isFullscreen
                                 ? t(
                                       "ui.toolbar.exit_fullscreen",
