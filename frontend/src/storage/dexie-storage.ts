@@ -637,18 +637,19 @@ export const dexieStorage: IStorageService = {
       return row;
     },
 
-    update: async (id, data) => {
-      const existing = await offlineDb.books.get(id);
-      if (!existing) notFound("Book", id);
-      const merged: OfflineBookRow = {
-        ...existing,
-        ...data,
-        id,
-        updated_at: nowIso(),
-      };
-      await offlineDb.books.put(merged);
-      return merged;
-    },
+    update: async (id, data) =>
+      serializedUpdate("books", id, async () => {
+        const existing = await offlineDb.books.get(id);
+        if (!existing) notFound("Book", id);
+        const merged: OfflineBookRow = {
+          ...existing,
+          ...data,
+          id,
+          updated_at: nowIso(),
+        };
+        await offlineDb.books.put(merged);
+        return merged;
+      }),
 
     delete: async (id) => {
       // Soft-delete: move to trash (deleted_at set). The child graph is
@@ -739,31 +740,32 @@ export const dexieStorage: IStorageService = {
       return chapter;
     },
 
-    update: async (bookId, chapterId, data) => {
-      const existing = await offlineDb.chapters.get(chapterId);
-      if (!existing || existing.book_id !== bookId)
-        notFound("Chapter", chapterId);
-      const merged: Chapter = {
-        ...existing,
-        ...data,
-        id: chapterId,
-        book_id: bookId,
-        version: existing.version + 1,
-        updated_at: nowIso(),
-      };
-      await offlineDb.chapters.put(merged);
-      // Record the day's net words-written delta (Finding 6) so the
-      // offline Writing-History view has data, mirroring the backend
-      // chapter-PATCH handler. Only a content change moves the counter.
-      if (data.content !== undefined) {
-        await recordWritingProgress(
-          bookId,
-          chapterId,
-          countWords(merged.content) - countWords(existing.content),
-        );
-      }
-      return merged;
-    },
+    update: async (bookId, chapterId, data) =>
+      serializedUpdate("chapters", chapterId, async () => {
+        const existing = await offlineDb.chapters.get(chapterId);
+        if (!existing || existing.book_id !== bookId)
+          notFound("Chapter", chapterId);
+        const merged: Chapter = {
+          ...existing,
+          ...data,
+          id: chapterId,
+          book_id: bookId,
+          version: existing.version + 1,
+          updated_at: nowIso(),
+        };
+        await offlineDb.chapters.put(merged);
+        // Record the day's net words-written delta (Finding 6) so the
+        // offline Writing-History view has data, mirroring the backend
+        // chapter-PATCH handler. Only a content change moves the counter.
+        if (data.content !== undefined) {
+          await recordWritingProgress(
+            bookId,
+            chapterId,
+            countWords(merged.content) - countWords(existing.content),
+          );
+        }
+        return merged;
+      }),
 
     delete: async (bookId, chapterId) => {
       await offlineDb.chapters.delete(chapterId);
@@ -800,18 +802,19 @@ export const dexieStorage: IStorageService = {
       return row;
     },
 
-    update: async (id, data) => {
-      const existing = await offlineDb.articles.get(id);
-      if (!existing) notFound("Article", id);
-      const merged: Article = {
-        ...existing,
-        ...data,
-        id,
-        updated_at: nowIso(),
-      };
-      await offlineDb.articles.put(merged);
-      return merged;
-    },
+    update: async (id, data) =>
+      serializedUpdate("articles", id, async () => {
+        const existing = await offlineDb.articles.get(id);
+        if (!existing) notFound("Article", id);
+        const merged: Article = {
+          ...existing,
+          ...data,
+          id,
+          updated_at: nowIso(),
+        };
+        await offlineDb.articles.put(merged);
+        return merged;
+      }),
 
     delete: async (id) => {
       await offlineDb.articles.delete(id);
@@ -925,18 +928,19 @@ export const dexieStorage: IStorageService = {
       await offlineDb.authors.add(row);
       return row;
     },
-    update: async (id, data: AuthorUpdate) => {
-      const existing = await offlineDb.authors.get(id);
-      if (!existing) notFound("Author", id);
-      const merged: Author = normalizeAuthorRow({
-        ...existing,
-        ...data,
-        id,
-        updated_at: nowIso(),
-      });
-      await offlineDb.authors.put(merged);
-      return merged;
-    },
+    update: async (id, data: AuthorUpdate) =>
+      serializedUpdate("authors", id, async () => {
+        const existing = await offlineDb.authors.get(id);
+        if (!existing) notFound("Author", id);
+        const merged: Author = normalizeAuthorRow({
+          ...existing,
+          ...data,
+          id,
+          updated_at: nowIso(),
+        });
+        await offlineDb.authors.put(merged);
+        return merged;
+      }),
     delete: async (id) => {
       await offlineDb.authors.delete(id);
     },
@@ -987,13 +991,14 @@ export const dexieStorage: IStorageService = {
       await offlineDb.chapterLabels.add(row as unknown as GraphRow);
       return row;
     },
-    update: async (_bookId, labelId, data) => {
-      const existing = await offlineDb.chapterLabels.get(labelId);
-      if (!existing) notFound("ChapterLabel", labelId);
-      const merged = { ...existing, ...data } as unknown as ChapterLabel;
-      await offlineDb.chapterLabels.put(merged as unknown as GraphRow);
-      return merged;
-    },
+    update: async (_bookId, labelId, data) =>
+      serializedUpdate("chapter_labels", labelId, async () => {
+        const existing = await offlineDb.chapterLabels.get(labelId);
+        if (!existing) notFound("ChapterLabel", labelId);
+        const merged = { ...existing, ...data } as unknown as ChapterLabel;
+        await offlineDb.chapterLabels.put(merged as unknown as GraphRow);
+        return merged;
+      }),
     remove: async (_bookId, labelId) => {
       await offlineDb.chapterLabels.delete(labelId);
     },
@@ -1044,17 +1049,18 @@ export const dexieStorage: IStorageService = {
       return row as unknown as StoryEntityOut;
     },
 
-    updateEntity: async (entityId, data) => {
-      const existing = await offlineDb.storyEntities.get(entityId);
-      if (!existing) notFound("StoryEntity", entityId);
-      const merged = {
-        ...existing,
-        ...data,
-        updated_at: nowIso(),
-      } as unknown as StoryEntityOut;
-      await offlineDb.storyEntities.put(merged as unknown as GraphRow);
-      return merged;
-    },
+    updateEntity: async (entityId, data) =>
+      serializedUpdate("story_entities", entityId, async () => {
+        const existing = await offlineDb.storyEntities.get(entityId);
+        if (!existing) notFound("StoryEntity", entityId);
+        const merged = {
+          ...existing,
+          ...data,
+          updated_at: nowIso(),
+        } as unknown as StoryEntityOut;
+        await offlineDb.storyEntities.put(merged as unknown as GraphRow);
+        return merged;
+      }),
 
     deleteEntity: async (entityId) => {
       await offlineDb.storyEntities.delete(entityId);
@@ -1157,17 +1163,18 @@ export const dexieStorage: IStorageService = {
       await offlineDb.pages.add(row as unknown as GraphRow);
       return row;
     },
-    update: async (_bookId, pageId, data) => {
-      const existing = await offlineDb.pages.get(pageId);
-      if (!existing) notFound("Page", pageId);
-      const merged = {
-        ...existing,
-        ...data,
-        updated_at: nowIso(),
-      } as unknown as Page;
-      await offlineDb.pages.put(merged as unknown as GraphRow);
-      return merged;
-    },
+    update: async (_bookId, pageId, data) =>
+      serializedUpdate("pages", pageId, async () => {
+        const existing = await offlineDb.pages.get(pageId);
+        if (!existing) notFound("Page", pageId);
+        const merged = {
+          ...existing,
+          ...data,
+          updated_at: nowIso(),
+        } as unknown as Page;
+        await offlineDb.pages.put(merged as unknown as GraphRow);
+        return merged;
+      }),
     delete: async (_bookId, pageId) => {
       // Cascade the page's comic panels + their bubbles.
       const panelIds = (await offlineDb.comicPanels
@@ -1233,17 +1240,18 @@ export const dexieStorage: IStorageService = {
       await offlineDb.comicPanels.add(row as unknown as GraphRow);
       return row;
     },
-    updatePanel: async (_bookId, panelId, data) => {
-      const existing = await offlineDb.comicPanels.get(panelId);
-      if (!existing) notFound("ComicPanel", panelId);
-      const merged = {
-        ...existing,
-        ...data,
-        updated_at: nowIso(),
-      } as unknown as ComicPanelOut;
-      await offlineDb.comicPanels.put(merged as unknown as GraphRow);
-      return merged;
-    },
+    updatePanel: async (_bookId, panelId, data) =>
+      serializedUpdate("comic_panels", panelId, async () => {
+        const existing = await offlineDb.comicPanels.get(panelId);
+        if (!existing) notFound("ComicPanel", panelId);
+        const merged = {
+          ...existing,
+          ...data,
+          updated_at: nowIso(),
+        } as unknown as ComicPanelOut;
+        await offlineDb.comicPanels.put(merged as unknown as GraphRow);
+        return merged;
+      }),
     deletePanel: async (_bookId, panelId) => {
       const bubbleIds = (await offlineDb.comicBubbles
         .where("panel_id")
@@ -1298,17 +1306,18 @@ export const dexieStorage: IStorageService = {
       await offlineDb.comicBubbles.add(row as unknown as GraphRow);
       return row;
     },
-    updateBubble: async (_bookId, bubbleId, data) => {
-      const existing = await offlineDb.comicBubbles.get(bubbleId);
-      if (!existing) notFound("ComicBubble", bubbleId);
-      const merged = {
-        ...existing,
-        ...data,
-        updated_at: nowIso(),
-      } as unknown as ComicBubbleOut;
-      await offlineDb.comicBubbles.put(merged as unknown as GraphRow);
-      return merged;
-    },
+    updateBubble: async (_bookId, bubbleId, data) =>
+      serializedUpdate("comic_bubbles", bubbleId, async () => {
+        const existing = await offlineDb.comicBubbles.get(bubbleId);
+        if (!existing) notFound("ComicBubble", bubbleId);
+        const merged = {
+          ...existing,
+          ...data,
+          updated_at: nowIso(),
+        } as unknown as ComicBubbleOut;
+        await offlineDb.comicBubbles.put(merged as unknown as GraphRow);
+        return merged;
+      }),
     deleteBubble: async (_bookId, bubbleId) => {
       await offlineDb.comicBubbles.delete(bubbleId);
     },
