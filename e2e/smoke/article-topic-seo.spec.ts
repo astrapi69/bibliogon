@@ -100,10 +100,20 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         await expect(sidebar).toBeVisible({timeout: 15_000});
         await expect(editor).toBeVisible({timeout: 15_000});
 
-        const sidebarBox = await sidebar.boundingBox();
-        const editorBox = await editor.boundingBox();
-        if (!sidebarBox || !editorBox) throw new Error("missing bounding boxes");
-        expect(sidebarBox.x).toBeLessThan(editorBox.x);
+        // Poll the box comparison: boundingBox() can transiently return null
+        // right after toBeVisible while the editor is still settling under
+        // load (the "missing bounding boxes" flake). Retry until both boxes
+        // resolve, then assert the sidebar is left of the editor.
+        await expect
+            .poll(
+                async () => {
+                    const s = await sidebar.boundingBox();
+                    const e = await editor.boundingBox();
+                    return s && e ? s.x < e.x : null;
+                },
+                {timeout: 10_000},
+            )
+            .toBe(true);
     });
 
     test("SEO Title and SEO Description persist", async ({page}) => {
