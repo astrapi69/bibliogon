@@ -39,6 +39,7 @@ import React, {useCallback, useEffect, useRef, useState} from "react"
 import {Download, Loader2} from "lucide-react"
 import {useFeature} from "@astrapi69/feature-strategy-react"
 import {api, ApiError} from "../api/client"
+import {getStorage} from "../storage"
 import {FEATURES} from "../features/featureConfig"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
@@ -162,8 +163,8 @@ export default function PdfExportControls({
     // localStorage values for the one-time migration.
     useEffect(() => {
         let cancelled = false
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return
                 const ui =
@@ -199,8 +200,8 @@ export default function PdfExportControls({
                     (!hasCfgBleed && legacyBleed !== null)
                 if (needsMigration && !migratedRef.current) {
                     migratedRef.current = true
-                    api.settings
-                        .updateApp({
+                    getStorage()
+                        .settings.updateApp({
                             ui: {
                                 ...ui,
                                 picture_book: {

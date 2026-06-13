@@ -426,8 +426,8 @@ export default function ArticleList() {
     // Settings after changing the default. Silent fail: keep "blogpost".
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const uiConfig = (config.ui || {}) as Record<string, unknown>;

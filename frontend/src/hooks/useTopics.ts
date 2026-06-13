@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { getStorage } from "../storage";
 
 /**
  * Article topics from app settings (AR-02 Phase 2.1).
@@ -22,8 +22,8 @@ export function useTopics(): string[] | null {
     const [topics, setTopics] = useState<string[] | null>(null);
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const raw = (config as Record<string, unknown>).topics;

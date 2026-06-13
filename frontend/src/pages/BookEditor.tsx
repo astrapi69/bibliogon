@@ -407,8 +407,8 @@ export default function BookEditor() {
             }
         };
         void runLoad();
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((cfg) => {
                 if (cancelled) return;
                 const ed = (cfg as Record<string, unknown>).editor as
