@@ -10,9 +10,22 @@
  * Run by Aster.
  */
 
+import type {Page} from "@playwright/test";
+
 import {test, expect} from "../fixtures/base";
 
 test.describe.configure({mode: "serial"});
+
+/**
+ * Wait until BOTH Autoren-tab seam writes have committed. The flow fires two
+ * saves: blurring the real-name field auto-saves it, then the Add button
+ * saves the pen name. Each "saved" toast renders only after its `updateApp`
+ * resolves, so waiting for both toasts gates a reload/navigation that would
+ * otherwise abort the in-flight IndexedDB write and lose the pen name.
+ */
+async function expectProfileSaved(page: Page): Promise<void> {
+    await expect(page.locator(".Toastify__toast--success")).toHaveCount(2);
+}
 
 let apiHits: string[] = [];
 
@@ -51,6 +64,7 @@ test.describe("Author pen names (Dexie mode)", () => {
         await expect(page.getByTestId("author-pen-name-0")).toContainText(
             "Draven Quantum",
         );
+        await expectProfileSaved(page);
 
         // The Dexie write is async; reload Settings to confirm it actually
         // landed in IndexedDB before the create forms read it (otherwise the
@@ -103,6 +117,9 @@ test.describe("Author pen names (Dexie mode)", () => {
         await expect(page.getByTestId("author-pen-name-0")).toContainText(
             "Draven Quantum",
         );
+        // Gate the reload on both seam writes committing - otherwise reload
+        // aborts the in-flight IndexedDB write and the pen name is lost.
+        await expectProfileSaved(page);
 
         await page.reload();
         await expect(page.getByTestId("author-pen-name-0")).toContainText(
