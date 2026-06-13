@@ -13,7 +13,7 @@
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
-       lock-all-plugins verify-plugin-locks verify-theme verify-components check-cohesion \
+       lock-all-plugins verify-plugin-locks verify-theme verify-components check-cohesion check-complexity \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -595,6 +595,11 @@ verify-components: ## Advisory (non-blocking): CSS-module classes that re-declar
 
 check-cohesion: ## File-size cohesion guard: WARN >500, ERROR >1000 (blocks new God-files); see .filesize-whitelist + .filesize-baseline
 	@bash scripts/check-file-sizes.sh
+
+check-complexity: ## Complexity watcher (warn-only): radon CC + ruff C901 (Python) + ESLint complexity (TS). Needs `pip install radon`
+	radon cc backend/app/ -a -nb
+	cd backend && poetry run ruff check app/ --select C901 --exit-zero
+	cd frontend && npx eslint --rule 'complexity: ["warn", 20]' src/ || true
 
 # --- Release ---
 # Aggregate Makefile targets for the release-workflow.md mechanical steps

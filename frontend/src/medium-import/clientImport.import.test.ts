@@ -153,4 +153,60 @@ describe("importParsed", () => {
     expect(res.errored_count).toBe(1);
     expect(res.errored[0].filename).toBe("bad.html");
   });
+
+  it("sets featured_image_url to the first body image (#134)", async () => {
+    const parsed = new Map([
+      [
+        "withimg.html",
+        makeParsed({
+          canonicalUrl: "https://m/withimg",
+          images: [
+            { src: "https://cdn-images-1.medium.com/first.png", alt: "", caption: "", dataImageId: "" },
+            { src: "https://cdn-images-1.medium.com/second.png", alt: "", caption: "", dataImageId: "" },
+          ],
+        }),
+      ],
+      ["noimg.html", makeParsed({ canonicalUrl: "https://m/noimg", images: [] })],
+    ]);
+    await importParsed(parsed, ["withimg.html", "noimg.html"], SETTINGS);
+
+    const rows = await offlineDb.articles.toArray();
+    const withImg = rows.find((r) => r.canonical_url === "https://m/withimg");
+    const noImg = rows.find((r) => r.canonical_url === "https://m/noimg");
+    expect(withImg?.featured_image_url).toBe(
+      "https://cdn-images-1.medium.com/first.png",
+    );
+    expect(noImg?.featured_image_url).toBeNull();
+  });
+
+  it("reports progress once per selected post with a running tally (#133)", async () => {
+    const parsed = new Map([
+      ["a.html", makeParsed({ canonicalUrl: "https://m/a" })],
+      ["b.html", makeParsed({ canonicalUrl: "https://m/b" })],
+    ]);
+    const onProgress = vi.fn();
+    await importParsed(parsed, ["a.html", "b.html"], SETTINGS, onProgress);
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    // First post: nothing done yet.
+    expect(onProgress).toHaveBeenNthCalledWith(1, {
+      current: 1,
+      total: 2,
+      filename: "a.html",
+      imported: 0,
+      skipped: 0,
+      errored: 0,
+      importedComments: 0,
+    });
+    // Second post: the first article is already imported.
+    expect(onProgress).toHaveBeenNthCalledWith(2, {
+      current: 2,
+      total: 2,
+      filename: "b.html",
+      imported: 1,
+      skipped: 0,
+      errored: 0,
+      importedComments: 0,
+    });
+  });
 });
