@@ -16,6 +16,7 @@
  */
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Feature } from "@astrapi69/feature-strategy-react";
 import { FolderUp, Upload, X } from "lucide-react";
@@ -53,6 +54,7 @@ export default function OfflineImportDialog({
     onImported,
 }: OfflineImportDialogProps) {
     const { t } = useI18n();
+    const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [format, setFormat] = useState<ImportFormat | null>(null);
     const [detecting, setDetecting] = useState(false);
@@ -83,6 +85,20 @@ export default function OfflineImportDialog({
         setFormat(null);
         setDetecting(true);
         const detected = await detectImportFormat(picked);
+        if (detected === "medium-zip") {
+            // Medium archives have their own dedicated page with a
+            // preview/select + progress + result flow (#132). Hand the
+            // file off there instead of importing it inline: the generic
+            // dialog has no preview, no per-post selection, and no
+            // progress feedback. The page picks the file up from
+            // location.state and continues with "Vorschau & Auswahl".
+            setDetecting(false);
+            handleClose();
+            navigate("/articles/import/medium", {
+                state: { pendingMediumFile: picked },
+            });
+            return;
+        }
         setFormat(detected);
         setDetecting(false);
         if (CHAPTER_FORMATS.includes(detected)) {

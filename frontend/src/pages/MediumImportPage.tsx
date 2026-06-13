@@ -33,7 +33,7 @@
  * running job instead of dropping the progress UI.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
@@ -60,6 +60,7 @@ type Phase = "idle" | "uploading" | "previewing" | "importing";
 
 export default function MediumImportPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useI18n();
     const { mode } = useStorageMode();
     const offline = mode === "dexie";
@@ -90,6 +91,21 @@ export default function MediumImportPage() {
     // navigation); offline uses the local result. Either renders the same
     // MediumImportResult panel.
     const result = job.result ?? offlineResult;
+
+    // Hand-off from the generic OfflineImportDialog (#132): a Medium ZIP
+    // dropped in the general import dialog routes here with the file in
+    // location.state instead of being imported inline. Pick it up once on
+    // mount and clear the history state so a back-nav or reload does not
+    // re-trigger. The user still confirms via "Vorschau & Auswahl".
+    useEffect(() => {
+        const handed = (location.state as { pendingMediumFile?: File } | null)
+            ?.pendingMediumFile;
+        if (handed instanceof File) {
+            setFile(handed);
+            navigate(location.pathname, { replace: true, state: null });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const isBusy = phase !== "idle";
     const isUploading = phase === "uploading";
