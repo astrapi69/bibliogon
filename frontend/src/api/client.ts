@@ -1,3 +1,5 @@
+import { ApiError } from "./errors";
+
 // --- Types ---
 
 export type ChapterType =
@@ -1568,41 +1570,10 @@ export class SaveAbortedError extends Error {
   }
 }
 
-export class ApiError extends Error {
-  status: number;
-  detail: string;
-  endpoint: string;
-  method: string;
-  stacktrace: string;
-  timestamp: string;
-  /** Structured error body when the backend returned a dict in `detail`.
-   *  Used by the audiobook overwrite warning (409 audiobook_exists). */
-  detailBody?: Record<string, unknown>;
-  /** True when this error is the backendless-offline guard rejecting an `/api`
-   *  call before any network request (see `guardedFetch`). Consumers downgrade
-   *  it to a console warning instead of a user-facing error toast: a
-   *  backend-only surface being unavailable offline is expected, not a fault. */
-  offline = false;
-
-  constructor(
-    status: number,
-    detail: string,
-    endpoint: string,
-    method: string,
-    stacktrace = "",
-    detailBody?: Record<string, unknown>,
-  ) {
-    super(detail);
-    this.name = "ApiError";
-    this.status = status;
-    this.detail = detail;
-    this.endpoint = endpoint;
-    this.method = method;
-    this.stacktrace = stacktrace;
-    this.timestamp = new Date().toISOString();
-    this.detailBody = detailBody;
-  }
-}
+// `ApiError` moved to ./errors to break the api/client <-> help/offlineHelp
+// circular dependency (#114). Re-exported here so existing
+// `import { ApiError } from "../api/client"` call sites keep working.
+export { ApiError };
 
 // --- Fetch helper ---
 

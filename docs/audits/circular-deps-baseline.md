@@ -59,6 +59,21 @@ artifact (and requires Graphviz `dot`). Re-run on demand:
 cd frontend && npx --yes madge@8 --image graph.svg --extensions ts,tsx src/
 ```
 
+## Update 2026-06-13 — regression fixed + type-import policy (#114)
+
+A cycle `api/client.ts <-> help/offlineHelp.ts` slipped onto `develop` via
+`88d0e394` (offline help). madge runs on `pull_request`, so it did not gate
+the direct merge that introduced it; every later PR then went red. Fixed by
+extracting `ApiError` into `frontend/src/api/errors.ts` (re-exported from
+`client.ts` for the 54 existing importers) so `offlineHelp` no longer
+value-imports the client. Baseline back to **0**.
+
+A `frontend/.madgerc` now sets `detectiveOptions.ts.skipTypeImports: true`.
+`import type` declarations are erased at compile time and cannot form a
+runtime initialization cycle, so madge excludes them — the gate stays focused
+on real (value/runtime) cycles. `offlineHelp`'s remaining edges to `client`
+(the 4 response types) are type-only and therefore not counted.
+
 ## Regenerating this baseline
 
 ```bash

@@ -18,7 +18,7 @@
  * `plugins/bibliogon-plugin-getstarted/bibliogon_getstarted/guide.py`).
  */
 
-import { ApiError } from "../api/client";
+import { ApiError } from "../api/errors";
 import type {
     BookType,
     HelpNavItem,
