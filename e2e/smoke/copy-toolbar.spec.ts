@@ -30,11 +30,17 @@ const API = "http://localhost:8000/api";
  */
 async function openCopyMenu(page: Page): Promise<void> {
     await expect(page.locator(".ProseMirror")).toBeVisible();
+    const markdownItem = page.getByTestId("toolbar-copy-markdown-item");
     await expect(async () => {
-        await page.getByTestId("toolbar-copy-chevron").click();
-        await expect(page.getByTestId("toolbar-copy-markdown-item")).toBeVisible({
-            timeout: 1500,
-        });
+        // Click the chevron only when the menu is not already open. The
+        // chevron TOGGLES the Radix menu, so a blind re-click on retry could
+        // close an already-open menu and leave it shut when this helper
+        // returns. Guarding on visibility makes the retry idempotent
+        // (open-or-stay-open, never open-then-close).
+        if (!(await markdownItem.isVisible())) {
+            await page.getByTestId("toolbar-copy-chevron").click();
+        }
+        await expect(markdownItem).toBeVisible({timeout: 1500});
     }).toPass({timeout: 15000});
 }
 

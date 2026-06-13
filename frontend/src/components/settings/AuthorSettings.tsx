@@ -1,4 +1,4 @@
-import {useEffect, useState} from "react";
+import {useEffect, useRef, useState} from "react";
 import {Save, Plus, X, Database} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {getStorage} from "../../storage";
@@ -19,10 +19,20 @@ export function AuthorSettings({config, onSave, saving}: {
     );
     const [newPenName, setNewPenName] = useState("");
     const [syncing, setSyncing] = useState(false);
+    const initialized = useRef(false);
 
     useEffect(() => {
+        // Seed the editable state from the persisted profile ONCE, when
+        // settings first load. Re-syncing on every `config` change would
+        // clobber in-flight local edits: the parent replaces `config` after
+        // each save, and a pen name added right after a real-name blur-save
+        // can be reset to [] when the slower name-save's reload lands last
+        // (the #103 / flaky author-pen-names regression). A reload remounts
+        // this component and re-reads from storage, so persistence still holds.
+        if (initialized.current) return;
         setName((author.name as string) || "");
         setPenNames(Array.isArray(author.pen_names) ? (author.pen_names as string[]) : []);
+        initialized.current = true;
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
 
