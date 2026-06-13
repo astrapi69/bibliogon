@@ -32,6 +32,7 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
         id: "blogpost",
         label_key: "ui.content_types.blogpost",
         description_key: "ui.content_types.blogpost_description",
+        default_title_key: "ui.content_types.blogpost_default_title",
         icon: "FileText",
         default: true,
         extra_fields: [],
@@ -40,6 +41,7 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
         id: "tutorial",
         label_key: "ui.content_types.tutorial",
         description_key: "ui.content_types.tutorial_description",
+        default_title_key: "ui.content_types.tutorial_default_title",
         icon: "GraduationCap",
         default: false,
         extra_fields: [],
@@ -72,7 +74,17 @@ const TEST_ARTICLE_TYPES: Record<string, ContentTypeDef> = {
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
-        t: (_: string, fallback: string) => fallback,
+        // Resolve the content-type default-title keys so the SplitButton
+        // primary label is observable (issue #122); every other key falls
+        // through to the fallback verbatim, preserving the existing
+        // status/CTA assertions.
+        t: (key: string, fallback: string) => {
+            const overrides: Record<string, string> = {
+                "ui.content_types.blogpost_default_title": "Neuer Blogpost",
+                "ui.content_types.tutorial_default_title": "Neues Tutorial",
+            };
+            return overrides[key] ?? fallback;
+        },
         lang: "en",
         setLang: vi.fn(),
     }),
@@ -262,6 +274,43 @@ describe("ArticleList", () => {
         await waitFor(() => expect(api.settings.getApp).toHaveBeenCalled());
         fireEvent.click(btn);
         expect(navigateMock).toHaveBeenCalledWith("/articles/new?type=tutorial");
+    });
+
+    // Issue #122: the SplitButton primary LABEL must always reflect the
+    // configured default content-type's title, including the registry
+    // default (blogpost). Mirrors the Book Dashboard's newBookLabel. Red
+    // on pre-fix code (which showed the generic "Neuer Artikel" whenever
+    // the default equalled the registry default).
+    it("primary label reflects the registry-default content type (blogpost -> 'Neuer Blogpost')", async () => {
+        vi.mocked(api.settings.getApp).mockResolvedValue({
+            ui: {
+                dashboard: {
+                    articles_view: "list",
+                    articles_trash_view: "list",
+                },
+                defaults: { content_type: "blogpost" },
+            },
+        });
+        await renderList([]);
+        const btn = await screen.findByTestId("article-list-new");
+        await waitFor(() => expect(api.settings.getApp).toHaveBeenCalled());
+        await waitFor(() => expect(btn.textContent).toContain("Neuer Blogpost"));
+    });
+
+    it("primary label reflects a non-default configured content type (tutorial -> 'Neues Tutorial')", async () => {
+        vi.mocked(api.settings.getApp).mockResolvedValue({
+            ui: {
+                dashboard: {
+                    articles_view: "list",
+                    articles_trash_view: "list",
+                },
+                defaults: { content_type: "tutorial" },
+            },
+        });
+        await renderList([]);
+        const btn = await screen.findByTestId("article-list-new");
+        await waitFor(() => expect(api.settings.getApp).toHaveBeenCalled());
+        await waitFor(() => expect(btn.textContent).toContain("Neues Tutorial"));
     });
 
     it("primary uses bare /articles/new when the default is the registry default (blogpost)", async () => {

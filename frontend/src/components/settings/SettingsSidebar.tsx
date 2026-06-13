@@ -62,8 +62,18 @@ export function SettingsSidebar({groups, activeTab, onChange}: Props) {
                         >
                             {group.items.map((item) => {
                                 const isActive = item.value === activeTab;
+                                // Indent the sub-item label one level deeper
+                                // than the category header (.groupLabel) so the
+                                // two levels read as a hierarchy. Tailwind-first:
+                                // ``indent-[12px]`` (text-indent) is a property
+                                // the .link module class doesn't set, so the
+                                // layered utility applies cleanly over the
+                                // unlayered module padding. text-indent keeps the
+                                // full-width 44px touch target intact (only the
+                                // label shifts, not the click box).
                                 const linkClass = [
                                     styles.link,
+                                    "indent-[12px]",
                                     isActive ? styles.linkActive : "",
                                     isDanger ? styles.linkDanger : "",
                                 ].filter(Boolean).join(" ");
