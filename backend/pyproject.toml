@@ -80,6 +80,17 @@ ignore = [
 "app/main.py" = ["E402"]                # setup_logging() before imports is intentional
 "app/licensing.py" = ["E402"]           # LICENSING_ENABLED flag before imports is intentional
 
+[tool.ruff.lint.mccabe]
+# Cyclomatic-complexity threshold for the C901 rule (same value as the
+# TypeScript ESLint `complexity` rule). C901 is deliberately NOT in the
+# blocking `select` above: the complexity watcher (#139) runs it warn-only
+# via `ruff check --select C901 --exit-zero`, mirroring the cohesion
+# watcher (#113) "visibility first, harden later" approach. Adding it to
+# `select` now would hard-fail pre-commit + the release gate on the two
+# pre-existing >20 functions. Promote to `select` in a Phase-2 follow-up
+# once those are split.
+max-complexity = 20
+
 [tool.mypy]
 python_version = "3.12"
 warn_return_any = true
