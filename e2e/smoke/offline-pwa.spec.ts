@@ -267,6 +267,15 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.goto("/articles/new");
         await page.getByTestId("create-article-title").fill("Switcher Article");
         await page.getByTestId("create-article-submit").click();
+        // Create resolves the Dexie write, then navigates to the editor
+        // (/articles/:id). Wait for that nav so the following goto("/articles")
+        // cannot tear down the in-flight IndexedDB commit - otherwise the list
+        // reads empty ("0 Artikel") and this serial block fails+retries (#106).
+        await page.waitForURL(
+            (url) =>
+                /\/articles\/[^/]+$/.test(url.pathname) &&
+                !url.pathname.endsWith("/new"),
+        );
         await page.goto("/articles");
         await expect(page.getByText("Switcher Article").first()).toBeVisible({
             timeout: 10000,
