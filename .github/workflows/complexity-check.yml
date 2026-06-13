@@ -1,10 +1,9 @@
-name: Komplexitäts-Check
+name: Complexity Check
 
-# Komplexitäts-Watcher (#139). Defense-in-Depth wie der Kohäsions-Watcher
-# (#113): Sichtbarkeit zuerst, härter schalten später. Phase 1 ist reine
-# Visibility - jeder Schritt endet mit exit 0, auch bei Findings, damit der
-# Watcher nie einen Merge blockiert. Härteres Schalten (Blocker für neue
-# Verstöße) ist eine spätere Phase.
+# Complexity watcher (#139). Defense-in-depth like the cohesion watcher
+# (#113): visibility first, harden later. Phase 1 is pure visibility - every
+# step ends with exit 0, even on findings, so the watcher never blocks a
+# merge. Harder gating (blocking new violations) is a later phase.
 
 on:
   pull_request:
@@ -17,7 +16,7 @@ on:
       - "frontend/src/**/*.jsx"
       - ".github/workflows/complexity-check.yml"
   schedule:
-    - cron: "0 6 * * 1"  # wöchentlich, Montag 06:00 UTC
+    - cron: "0 6 * * 1"  # weekly, Monday 06:00 UTC
   workflow_dispatch:
 
 env:
@@ -38,16 +37,16 @@ jobs:
           python -m venv /tmp/cxenv
           /tmp/cxenv/bin/pip install --quiet --upgrade pip
           /tmp/cxenv/bin/pip install --quiet radon ruff
-          echo "=== radon Cyclomatic Complexity (Average; Rank B und schlechter) ==="
+          echo "=== radon cyclomatic complexity (average; rank B and worse) ==="
           /tmp/cxenv/bin/radon cc backend/app/ -a -nb
           echo ""
-          echo "=== radon: Funktionen mit Rank E oder F (Komplexitäts-Warnung) ==="
+          echo "=== radon: functions with rank E or F (complexity warning) ==="
           /tmp/cxenv/bin/radon cc backend/app/ -ne
           echo ""
           echo "=== ruff C901 (max-complexity=20, warn-only) ==="
-          # --exit-zero: warn-only. C901 ist bewusst NICHT im blockierenden
-          # `select` der pyproject.toml; die Schwelle (max-complexity=20)
-          # kommt aus [tool.ruff.lint.mccabe].
+          # --exit-zero: warn-only. C901 is deliberately NOT in the blocking
+          # `select` of pyproject.toml; the threshold (max-complexity=20)
+          # comes from [tool.ruff.lint.mccabe].
           (cd backend && /tmp/cxenv/bin/ruff check app/ --select C901 --exit-zero)
 
   typescript-complexity:
@@ -65,6 +64,6 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          echo "=== ESLint complexity (Schwelle 20, warn-only) ==="
-          # `|| true`: der Watcher blockiert nie (Phase 1, reine Visibility).
+          echo "=== ESLint complexity (threshold 20, warn-only) ==="
+          # `|| true`: the watcher never blocks (Phase 1, pure visibility).
           npx eslint --rule 'complexity: ["warn", 20]' src/ || true

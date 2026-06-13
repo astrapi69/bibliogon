@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
-# check-file-sizes.sh - Kohäsions-Watcher für CI
+# check-file-sizes.sh - cohesion watcher for CI
 #
-# Zwei Schwellenwerte:
-#   WARN_THRESHOLD (default 500)   - Warnung im PR, kein Fail
-#   ERROR_THRESHOLD (default 1000) - CI blockiert den Merge
+# Two thresholds:
+#   WARN_THRESHOLD (default 500)   - warning in the PR, no fail
+#   ERROR_THRESHOLD (default 1000) - CI blocks the merge
 #
-# Zwei Listen (gleiches Format: ein Pfad pro Zeile, # = Kommentar):
-#   .filesize-whitelist - bewusst grosse, kohäsive Dateien (Datenmodelle,
-#                         Schemas, statische Daten). Dauerhaft erlaubt.
-#   .filesize-baseline  - bereits existierende God-Files (gemischte Concerns),
-#                         die noch gesplittet werden muessen. Eingefroren auf
-#                         "nicht schlimmer als heute": sie blocken den Merge
-#                         NICHT, aber neue God-Files schon. Jeder Eintrag ist
-#                         ein Split-TODO; keine neuen Eintraege hinzufuegen.
+# Two lists (same format: one path per line, # = comment):
+#   .filesize-whitelist - deliberately large, cohesive files (data models,
+#                         schemas, static data). Permanently allowed.
+#   .filesize-baseline  - already existing god-files (mixed concerns) that
+#                         still need to be split. Frozen at "no worse than
+#                         today": they do NOT block the merge, but new
+#                         god-files do. Each entry is a split TODO; do not
+#                         add new entries.
 #
-# Tests und generierte Verzeichnisse (mutants/, dev-dist/, site/, coverage/)
-# werden NICHT geprueft - die Richtlinie zielt auf Produktiv-Quellcode.
+# Tests and generated directories (mutants/, dev-dist/, site/, coverage/)
+# are NOT checked - the policy targets production source code.
 #
-# Exit-Codes:
-#   0 = alles sauber, nur Warnungen, oder nur Baseline-Schuld
-#   1 = mindestens eine NEUE Datei ueber ERROR_THRESHOLD (nicht ge-whitelistet
-#       und nicht in der Baseline)
+# Exit codes:
+#   0 = all clean, only warnings, or only baseline debt
+#   1 = at least one NEW file over ERROR_THRESHOLD (not whitelisted and not
+#       in the baseline)
 
 set -euo pipefail
 
@@ -33,13 +33,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$REPO_ROOT"
 
-# --- Listen laden ---
+# --- Load lists ---
 load_list() {
     local file="$1"
     [[ -f "$file" ]] || return 0
     while IFS= read -r line; do
-        line="${line%%#*}"        # Kommentare entfernen
-        line="${line// /}"        # Whitespace trimmen
+        line="${line%%#*}"        # strip comments
+        line="${line// /}"        # trim whitespace
         [[ -z "$line" ]] && continue
         printf '%s\n' "$line"
     done < "$file"
@@ -51,9 +51,9 @@ while IFS= read -r entry; do WHITELISTED["$entry"]=1; done < <(load_list "$WHITE
 declare -A BASELINED
 while IFS= read -r entry; do BASELINED["$entry"]=1; done < <(load_list "$BASELINE_FILE")
 
-# --- Dateien finden ---
-# Produktiv-Quellcode (Python + TypeScript/JavaScript/JSX/TSX), ohne
-# generierte Verzeichnisse und ohne Tests.
+# --- Find files ---
+# Production source code (Python + TypeScript/JavaScript/JSX/TSX), without
+# generated directories and without tests.
 FILES=$(find . \
     -type f \( -name "*.py" -o -name "*.ts" -o -name "*.tsx" -o -name "*.js" -o -name "*.jsx" \) \
     ! -path "*/node_modules/*" \
@@ -78,17 +78,17 @@ FILES=$(find . \
     ! -name "*_test.py" \
     | sort)
 
-# --- Zaehlen und bewerten ---
+# --- Count and evaluate ---
 warnings=0
 errors=0
 grandfathered=0
 total_checked=0
 
-printf "\n=== Kohäsions-Check: Dateigrößen ===\n"
-printf "Warn-Schwelle: %d Zeilen | Error-Schwelle: %d Zeilen\n\n" "$WARN_THRESHOLD" "$ERROR_THRESHOLD"
+printf "\n=== Cohesion check: file sizes ===\n"
+printf "Warn threshold: %d lines | Error threshold: %d lines\n\n" "$WARN_THRESHOLD" "$ERROR_THRESHOLD"
 
 for filepath in $FILES; do
-    # Pfad normalisieren (./foo/bar.py -> foo/bar.py)
+    # Normalize path (./foo/bar.py -> foo/bar.py)
     relpath="${filepath#./}"
     lines=$(wc -l < "$filepath")
     total_checked=$((total_checked + 1))
@@ -116,41 +116,41 @@ for filepath in $FILES; do
     fi
 done
 
-# --- Stale-Baseline-Hinweis: Eintraege, die jetzt unter der Warn-Schwelle
-#     liegen (z.B. nach einem Split), sollten aus der Baseline entfernt werden,
-#     damit die Ratsche greift. ---
+# --- Stale-baseline hint: entries that now sit below the warn threshold
+#     (e.g. after a split) should be removed from the baseline so the
+#     ratchet engages. ---
 stale=0
 for entry in "${!BASELINED[@]}"; do
     if [[ -f "$entry" ]]; then
         elines=$(wc -l < "$entry")
         if [[ "$elines" -le "$WARN_THRESHOLD" ]]; then
-            printf "  NOTE  %6d  %s  (unter Schwelle - aus .filesize-baseline entfernen)\n" "$elines" "$entry"
+            printf "  NOTE  %6d  %s  (below threshold - remove from .filesize-baseline)\n" "$elines" "$entry"
             stale=$((stale + 1))
         fi
     else
-        printf "  NOTE       -  %s  (Baseline-Pfad existiert nicht mehr - Eintrag entfernen)\n" "$entry"
+        printf "  NOTE       -  %s  (baseline path no longer exists - remove entry)\n" "$entry"
         stale=$((stale + 1))
     fi
 done
 
-printf "\n--- Ergebnis ---\n"
-printf "Geprüft: %d Dateien\n" "$total_checked"
-printf "Warnungen: %d (> %d Zeilen)\n" "$warnings" "$WARN_THRESHOLD"
-printf "Grandfathered: %d (Baseline-Schuld, > %d Zeilen)\n" "$grandfathered" "$ERROR_THRESHOLD"
-printf "Fehler: %d (neue Dateien > %d Zeilen)\n" "$errors" "$ERROR_THRESHOLD"
-[[ "$stale" -gt 0 ]] && printf "Veraltete Baseline-Eintraege: %d\n" "$stale"
+printf "\n--- Result ---\n"
+printf "Checked: %d files\n" "$total_checked"
+printf "Warnings: %d (> %d lines)\n" "$warnings" "$WARN_THRESHOLD"
+printf "Grandfathered: %d (baseline debt, > %d lines)\n" "$grandfathered" "$ERROR_THRESHOLD"
+printf "Errors: %d (new files > %d lines)\n" "$errors" "$ERROR_THRESHOLD"
+[[ "$stale" -gt 0 ]] && printf "Stale baseline entries: %d\n" "$stale"
 
 if [[ "$errors" -gt 0 ]]; then
-    printf "\nKohäsions-Richtlinie verletzt. %d neue Datei(en) über %d Zeilen.\n" "$errors" "$ERROR_THRESHOLD"
-    printf "Optionen: Aufsplitten oder (nur fuer bewusst kohäsive Dateien)\n"
-    printf "in .filesize-whitelist eintragen (mit Begründung).\n"
-    printf "God-Files mit gemischten Concerns gehoeren NICHT auf die Whitelist.\n"
+    printf "\nCohesion policy violated. %d new file(s) over %d lines.\n" "$errors" "$ERROR_THRESHOLD"
+    printf "Options: split them, or (only for deliberately cohesive files)\n"
+    printf "add them to .filesize-whitelist (with a justification).\n"
+    printf "God-files with mixed concerns do NOT belong on the whitelist.\n"
     exit 1
 fi
 
 if [[ "$warnings" -gt 0 ]]; then
-    printf "\n%d Datei(en) über %d Zeilen. Kein Blocker, aber Refactoring empfohlen.\n" "$warnings" "$WARN_THRESHOLD"
+    printf "\n%d file(s) over %d lines. Not a blocker, but refactoring recommended.\n" "$warnings" "$WARN_THRESHOLD"
 fi
 
-printf "\nKohäsions-Check bestanden.\n"
+printf "\nCohesion check passed.\n"
 exit 0
