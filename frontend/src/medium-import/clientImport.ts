@@ -106,6 +106,27 @@ export interface ClientImportSettings {
   skipExistingCanonicalUrls: boolean;
 }
 
+/** Snapshot of import progress, reported once per processed post so the UI
+ *  can render a determinate bar + running tally in the offline path. */
+export interface ImportProgress {
+  /** 1-based index of the post about to be processed. */
+  current: number;
+  /** Total selected posts. */
+  total: number;
+  /** Filename of the post about to be processed. */
+  filename: string;
+  /** Articles created so far (before this post). */
+  imported: number;
+  /** Posts skipped so far (duplicates). */
+  skipped: number;
+  /** Posts that errored so far. */
+  errored: number;
+  /** Comments created so far. */
+  importedComments: number;
+}
+
+export type ImportProgressCallback = (progress: ImportProgress) => void;
+
 /**
  * Create the selected parsed posts as offline articles via the storage seam.
  *
@@ -124,6 +145,7 @@ export async function importParsed(
   parsed: Map<string, ParsedPost>,
   selectedFilenames: string[],
   settings: ClientImportSettings,
+  onProgress?: ImportProgressCallback,
 ): Promise<MediumImportResponse> {
   const storage = getStorage();
   const byCanonical = new Map<string, string>();
@@ -137,7 +159,21 @@ export async function importParsed(
   const errored: MediumImportErroredItem[] = [];
   const now = new Date().toISOString();
 
-  for (const filename of selectedFilenames) {
+  for (let i = 0; i < selectedFilenames.length; i++) {
+    const filename = selectedFilenames[i];
+    // Reported BEFORE processing this post, so the counts reflect the
+    // posts already done. Each iteration awaits real IndexedDB writes,
+    // which yield to the event loop and let the bar repaint between
+    // posts (no artificial delay needed).
+    onProgress?.({
+      current: i + 1,
+      total: selectedFilenames.length,
+      filename,
+      imported: imported.length,
+      skipped: skipped.length,
+      errored: errored.length,
+      importedComments: importedComments.length,
+    });
     const post = parsed.get(filename);
     if (!post) {
       errored.push({ filename, error: "not found in preview" });

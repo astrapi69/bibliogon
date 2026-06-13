@@ -86,6 +86,19 @@ export default function MediumImportPage() {
     // and the import result is local (there is no SSE job offline).
     const parsedRef = useRef<Map<string, ParsedPost>>(new Map());
     const [offlineResult, setOfflineResult] = useState<MediumImportResponse | null>(null);
+    // Offline import has no SSE job; this drives the same
+    // MediumImportProgress "processing-async" UI from the importParsed
+    // progress callback so the user sees "X von Y Beiträgen" + a running
+    // tally instead of an instant, feedback-free import (#133).
+    const [offlineProgress, setOfflineProgress] = useState({
+        current: 0,
+        total: 0,
+        filename: "",
+        imported: 0,
+        skipped: 0,
+        errored: 0,
+        importedComments: 0,
+    });
 
     // MediumImportJobContext.result is the source of truth online (survives
     // navigation); offline uses the local result. Either renders the same
@@ -161,11 +174,25 @@ export default function MediumImportPage() {
                 const defaultLanguage =
                     ((app.app as Record<string, unknown> | undefined)
                         ?.default_language as string) || "en";
-                const response = await importParsed(parsedRef.current, Array.from(selected), {
-                    defaultStatus: "draft",
-                    defaultLanguage,
-                    skipExistingCanonicalUrls: true,
+                setOfflineProgress({
+                    current: 0,
+                    total: selected.size,
+                    filename: "",
+                    imported: 0,
+                    skipped: 0,
+                    errored: 0,
+                    importedComments: 0,
                 });
+                const response = await importParsed(
+                    parsedRef.current,
+                    Array.from(selected),
+                    {
+                        defaultStatus: "draft",
+                        defaultLanguage,
+                        skipExistingCanonicalUrls: true,
+                    },
+                    setOfflineProgress,
+                );
                 setOfflineResult(response);
                 setPreview(null);
                 setSelected(new Set());
@@ -455,14 +482,22 @@ export default function MediumImportPage() {
                         {isImporting && (
                             <MediumImportProgress
                                 phase="processing-async"
-                                asyncCurrent={job.current}
-                                asyncTotal={job.total}
-                                asyncCurrentFilename={job.currentFilename}
-                                asyncImported={job.importedCount}
-                                asyncSkipped={job.skippedCount}
-                                asyncErrored={job.erroredCount}
-                                asyncImportedComments={job.importedCommentsCount}
-                                asyncSkippedComments={job.skippedCommentsCount}
+                                asyncCurrent={offline ? offlineProgress.current : job.current}
+                                asyncTotal={offline ? offlineProgress.total : job.total}
+                                asyncCurrentFilename={
+                                    offline ? offlineProgress.filename : job.currentFilename
+                                }
+                                asyncImported={
+                                    offline ? offlineProgress.imported : job.importedCount
+                                }
+                                asyncSkipped={offline ? offlineProgress.skipped : job.skippedCount}
+                                asyncErrored={offline ? offlineProgress.errored : job.erroredCount}
+                                asyncImportedComments={
+                                    offline
+                                        ? offlineProgress.importedComments
+                                        : job.importedCommentsCount
+                                }
+                                asyncSkippedComments={offline ? 0 : job.skippedCommentsCount}
                             />
                         )}
                         {preview && (

@@ -153,4 +153,35 @@ describe("importParsed", () => {
     expect(res.errored_count).toBe(1);
     expect(res.errored[0].filename).toBe("bad.html");
   });
+
+  it("reports progress once per selected post with a running tally (#133)", async () => {
+    const parsed = new Map([
+      ["a.html", makeParsed({ canonicalUrl: "https://m/a" })],
+      ["b.html", makeParsed({ canonicalUrl: "https://m/b" })],
+    ]);
+    const onProgress = vi.fn();
+    await importParsed(parsed, ["a.html", "b.html"], SETTINGS, onProgress);
+
+    expect(onProgress).toHaveBeenCalledTimes(2);
+    // First post: nothing done yet.
+    expect(onProgress).toHaveBeenNthCalledWith(1, {
+      current: 1,
+      total: 2,
+      filename: "a.html",
+      imported: 0,
+      skipped: 0,
+      errored: 0,
+      importedComments: 0,
+    });
+    // Second post: the first article is already imported.
+    expect(onProgress).toHaveBeenNthCalledWith(2, {
+      current: 2,
+      total: 2,
+      filename: "b.html",
+      imported: 1,
+      skipped: 0,
+      errored: 0,
+      importedComments: 0,
+    });
+  });
 });
