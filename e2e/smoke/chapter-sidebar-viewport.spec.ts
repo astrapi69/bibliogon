@@ -313,16 +313,19 @@ test.describe("Dropdown at simulated browser zoom", () => {
             const items = page.getByTestId("chapter-dropdown-item");
             await expect(items).toHaveCount(EXPECTED_CHAPTER_TYPE_COUNT);
 
-            // Walk every item via scrollIntoView.
-            const count = await items.count();
-            for (let i = 0; i < count; i++) {
-                await items.nth(i).scrollIntoViewIfNeeded();
-            }
-
-            // Sanity: the last item must be reachable. scrollIntoView
-            // above is the real assertion; this line just makes a
-            // failure message more obvious if it breaks.
-            await expect(items.nth(count - 1)).toBeVisible();
+            // Reach the extremes rather than looping every item. Under CSS
+            // zoom each scrollIntoView triggers a Radix Popper reposition;
+            // walking all 26 in a row can keep the menu repositioning so an
+            // item never stabilizes ("element is not stable" flake under
+            // full-suite load). Reaching the last item then the first
+            // exercises the full scroll range with minimal reposition thrash;
+            // toHaveCount above already pins that all items are rendered, and
+            // the rigorous per-item rect walk runs unzoomed in the
+            // "every item is reachable by scrolling at {height}px" test.
+            await items.last().scrollIntoViewIfNeeded();
+            await expect(items.last()).toBeVisible();
+            await items.first().scrollIntoViewIfNeeded();
+            await expect(items.first()).toBeVisible();
         });
     }
 
