@@ -74,10 +74,18 @@ test.describe("AI-template Workflow C (external YAML round-trip)", () => {
         });
         await page.goto(`/articles/${article.id}`);
 
-        await page.getByTestId("ai-template-import").click();
-        await expect(
-            page.getByTestId("ai-template-import-dialog"),
-        ).toBeVisible();
+        // Idempotent open: click the trigger only while the dialog isn't
+        // shown, retrying via toPass. Under sustained full-suite load the
+        // Radix dialog occasionally drops the opening click; a blind single
+        // click + assert then fails both attempts and reds the run. Guarding
+        // on the dialog's visibility makes the open retry-safe.
+        const importDialog = page.getByTestId("ai-template-import-dialog");
+        await expect(async () => {
+            if (!(await importDialog.isVisible())) {
+                await page.getByTestId("ai-template-import").click();
+            }
+            await expect(importDialog).toBeVisible({timeout: 1500});
+        }).toPass({timeout: 15000});
         await expect(page.getByTestId("template-import-dropzone")).toBeVisible();
         await expect(page.getByTestId("ai-template-import-force")).toBeVisible();
         await expect(
