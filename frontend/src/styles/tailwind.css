@@ -20,6 +20,24 @@
 @import "tailwindcss/utilities.css" layer(utilities);
 
 /*
+ * Dialog overflow guard. Long unbroken strings (SHA hashes, URLs,
+ * file names) would otherwise stretch a dialog past its max-width and
+ * spill over the edge. ``overflow-wrap`` is an inherited property, and
+ * Radix sets ``role="dialog"`` / ``role="alertdialog"`` on every
+ * dialog content node at runtime, so this single base-layer rule wraps
+ * the text inside EVERY dialog (the shared ``DialogContent`` base AND
+ * the raw-Radix dialogs) without per-component edits. Lives in the
+ * Tailwind entry (an ``@apply`` directive), not global.css, per the
+ * Tailwind-first rule.
+ */
+@layer base {
+    [role="dialog"],
+    [role="alertdialog"] {
+        @apply [overflow-wrap:anywhere];
+    }
+}
+
+/*
  * Token bridge. ``inline`` makes every generated utility emit the
  * referenced custom property AT THE POINT OF USE rather than capturing
  * a static value, so runtime palette + dark-mode switching (driven by
