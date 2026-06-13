@@ -9,39 +9,28 @@
  * ``DialogContent`` base AND every raw-Radix dialog) without per-component
  * edits.
  *
- * jsdom/happy-dom cannot compute ``overflow-wrap`` cascade + inheritance,
- * so this pin lives in E2E. It opens a real AppDialog confirm (the
- * app-wide ``useDialog().confirm`` surface, rendered via the shared base)
- * and asserts the computed value on the dialog node. A removal of the
+ * jsdom/happy-dom cannot compute the cascade, so this pin lives in E2E. It
+ * opens the Import wizard - a raw-Radix ``Dialog.Content`` (so it doubly
+ * proves the rule reaches the raw dialogs, not just the shared base) - and
+ * asserts the computed ``overflow-wrap`` on the dialog node. Removing the
  * tailwind.css rule turns the computed value back to ``normal`` and fails
  * this test.
  */
 
 import {test, expect} from "../fixtures/base";
 
-const API = "http://localhost:8000/api";
-
 test.describe("Issue #131: dialog overflow-wrap guard", () => {
-    test("AppDialog confirm inherits overflow-wrap: anywhere", async ({page}) => {
-        const res = await fetch(`${API}/books`, {
-            method: "POST",
-            headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({title: "Overflow guard target", author: "Asterios"}),
-        });
-        expect(res.ok).toBeTruthy();
-        const book = (await res.json()) as {id: string};
-
+    test("a dialog inherits overflow-wrap: anywhere", async ({page}) => {
         await page.goto("/");
-        const kebab = page.getByTestId(`book-card-menu-${book.id}`);
-        await expect(kebab).toBeVisible({timeout: 5000});
-        await kebab.click();
+        await page.getByTestId("import-wizard-btn").click();
 
-        await page.getByTestId(`book-card-menu-delete-${book.id}`).click();
+        const modal = page.getByTestId("import-wizard-modal");
+        await expect(modal).toBeVisible();
 
-        const dialog = page.getByRole("dialog");
-        await expect(dialog).toBeVisible();
-
-        const overflowWrap = await dialog.evaluate(
+        // The Content node carries role="dialog" at runtime, so the
+        // base-layer rule applies to it directly.
+        await expect(modal).toHaveAttribute("role", "dialog");
+        const overflowWrap = await modal.evaluate(
             (el) => getComputedStyle(el).overflowWrap,
         );
         expect(overflowWrap).toBe("anywhere");
