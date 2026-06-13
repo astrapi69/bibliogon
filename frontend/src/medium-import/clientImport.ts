@@ -235,6 +235,11 @@ export async function importParsed(
         content_json: JSON.stringify(post.contentDoc),
         status: settings.defaultStatus,
         canonical_url: post.canonicalUrl,
+        // Featured image = the post's first body image (a Medium CDN URL;
+        // offline does no download, so the CDN src is used verbatim). The
+        // article-card thumbnail reads featured_image_url. Mirrors the
+        // backend importer's set_first_image_as_featured default (#134).
+        featured_image_url: post.images.length > 0 ? post.images[0].src : null,
         seo_title: title,
         seo_description: subtitle,
         excerpt: subtitle || bodyExcerpt(post.contentDoc),
