@@ -5,13 +5,13 @@
  * reusing the existing offline importers where they already exist
  * (`importFullBackup` for the JSON backup bundle, the Medium client importer
  * for a Medium ZIP) and the new single-file chapter importers for
- * Markdown/Text/HTML. `.bgb` is the one offline-unsupported format (the ZIP
- * project archive needs the desktop/backend orchestrator); anything else is an
- * `UnknownFormatError`.
+ * Markdown/Text/HTML, and the new client-side `.bgb` parser
+ * (`importBgbFile`). Anything else is an `UnknownFormatError`.
  */
 
 import type { MediumImportResponse } from "../api/client";
 import { importFullBackup, type ImportResult } from "../export/backupImport";
+import { importBgbFile, type BgbImportResult } from "./bgbImport";
 import { importParsed, parseMediumZip } from "../medium-import/clientImport";
 import { getStorage } from "../storage";
 import {
@@ -47,6 +47,7 @@ export type ImportFileResult =
           result: ChapterImportResult;
       }
     | { kind: "backup"; format: "json-backup"; result: ImportResult }
+    | { kind: "bgb-backup"; format: "bgb"; result: BgbImportResult }
     | { kind: "medium"; format: "medium-zip"; result: MediumImportResponse };
 
 export interface ImportFileOptions {
@@ -83,7 +84,6 @@ async function importMediumAll(
  * @param format - the {@link ImportFormat} from `detectImportFormat`.
  * @param options - destination for chapter imports + an injectable clock.
  * @returns the {@link ImportFileResult} for the source kind.
- * @throws {@link OfflineNotSupportedError} for `bgb`.
  * @throws {@link UnknownFormatError} for `unknown`.
  */
 export async function importFile(
@@ -125,7 +125,11 @@ export async function importFile(
                 result: await importMediumAll(file, options.now ?? Date.now()),
             };
         case "bgb":
-            throw new OfflineNotSupportedError("bgb");
+            return {
+                kind: "bgb-backup",
+                format,
+                result: await importBgbFile(file),
+            };
         default:
             throw new UnknownFormatError();
     }

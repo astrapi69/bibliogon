@@ -1,5 +1,5 @@
 import {useState, useEffect, useCallback, createContext, useContext} from "react";
-import {api} from "../api/client";
+import {getStorage} from "../storage";
 import {useI18n} from "../hooks/useI18n";
 import {
     Dialog,
@@ -77,8 +77,8 @@ export function DialogProvider({children}: {children: React.ReactNode}) {
     const [skipNonDestructive, setSkipNonDestructive] = useState(false);
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const behavior =

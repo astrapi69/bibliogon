@@ -2,6 +2,7 @@ import React from "react"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
 import {RadixSelect} from "./RadixSelect"
+import {CollapsibleConfigSection} from "./CollapsibleConfigSection"
 import {Tier1Section} from "./comics/Tier1Section"
 import {Tier2Section} from "./comics/Tier2Section"
 import styles from "./LayoutConfigImageRow.module.css"
@@ -167,9 +168,11 @@ export function LayoutConfigImageTopTextBottom({
         : "ui.page_editor.config.image_top_text"
     return (
         <div className={styles.container} data-testid={testid}>
-            <h4 className={styles.heading}>
-                {t(headingKey, headingFallback)}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t(headingKey, headingFallback)}
+                testidPrefix={testid}
+            >
             <ImagePositionRadio
                 value={position}
                 onChange={(next) => onChange({image_position: next})}
@@ -200,6 +203,7 @@ export function LayoutConfigImageTopTextBottom({
                 testidPrefix={tierPrefix}
                 i18nKeyPrefix={tierI18nPrefix}
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -237,9 +241,11 @@ export function LayoutConfigImageLeftTextRight({
     const sliderTestidBase = flipDirection ? "image-right" : "image-left"
     return (
         <div className={styles.container} data-testid={testid}>
-            <h4 className={styles.heading}>
-                {t(headingKey, headingFallback)}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t(headingKey, headingFallback)}
+                testidPrefix={testid}
+            >
             <label className={styles.fieldLabel}>
                 <span className={styles.legend}>
                     {t(
@@ -294,6 +300,7 @@ export function LayoutConfigImageLeftTextRight({
                 testidPrefix={tierPrefix}
                 i18nKeyPrefix={tierI18nPrefix}
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -329,12 +336,11 @@ export function LayoutConfigTwoImagesTextCenter({
             className={styles.container}
             data-testid="layout-config-two-images-text-center"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.two_images_text_center.heading",
-                    "Zwei Bilder mit zentriertem Text",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.two_images_text_center.heading", "Zwei Bilder mit zentriertem Text", )}
+                testidPrefix="layout-config-two-images-text-center"
+            >
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
@@ -352,6 +358,7 @@ export function LayoutConfigTwoImagesTextCenter({
                 testidPrefix="two-images-text-center"
                 i18nKeyPrefix="ui.page_editor.config.two_images_text_center"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -374,12 +381,11 @@ export function LayoutConfigSplitHorizontal({config, onChange}: BaseProps) {
             className={styles.container}
             data-testid="layout-config-split-horizontal"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.split_horizontal.heading",
-                    "Zwei Bilder nebeneinander",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.split_horizontal.heading", "Zwei Bilder nebeneinander", )}
+                testidPrefix="layout-config-split-horizontal"
+            >
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
@@ -397,6 +403,7 @@ export function LayoutConfigSplitHorizontal({config, onChange}: BaseProps) {
                 testidPrefix="split-horizontal"
                 i18nKeyPrefix="ui.page_editor.config.split_horizontal"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -420,12 +427,11 @@ export function LayoutConfigSplitVertical({config, onChange}: BaseProps) {
             className={styles.container}
             data-testid="layout-config-split-vertical"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.split_vertical.heading",
-                    "Zwei Bilder gestapelt",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.split_vertical.heading", "Zwei Bilder gestapelt", )}
+                testidPrefix="layout-config-split-vertical"
+            >
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
@@ -443,6 +449,7 @@ export function LayoutConfigSplitVertical({config, onChange}: BaseProps) {
                 testidPrefix="split-vertical"
                 i18nKeyPrefix="ui.page_editor.config.split_vertical"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -486,12 +493,11 @@ export function LayoutConfigImageBorderTextCenter({
             className={styles.container}
             data-testid="layout-config-image-border-text-center"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.image_border_text_center.heading",
-                    "Bild als Rahmen, zentrierter Text",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.image_border_text_center.heading", "Bild als Rahmen, zentrierter Text", )}
+                testidPrefix="layout-config-image-border-text-center"
+            >
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
@@ -539,6 +545,7 @@ export function LayoutConfigImageBorderTextCenter({
                 testidPrefix="image-border-text-center"
                 i18nKeyPrefix="ui.page_editor.config.image_border_text_center"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -557,17 +564,17 @@ export function LayoutConfigImageFullNoText({config, onChange}: BaseProps) {
             className={styles.container}
             data-testid="layout-config-image-full-no-text"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.image_full_no_text.heading",
-                    "Vollbild (kein Text)",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.image_full_no_text.heading", "Vollbild (kein Text)", )}
+                testidPrefix="layout-config-image-full-no-text"
+            >
             <ImageFitDropdown
                 value={fit}
                 onChange={(next) => onChange({image_fit: next})}
                 testid="image-full-no-text-image-fit"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }
@@ -678,12 +685,11 @@ export function LayoutConfigImageFullTextOverlay({
             className={styles.container}
             data-testid="layout-config-image-full-text-overlay"
         >
-            <h4 className={styles.heading}>
-                {t(
-                    "ui.page_editor.config.image_full_text_overlay.heading",
-                    "Vollbild",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t( "ui.page_editor.config.image_full_text_overlay.heading", "Vollbild", )}
+                testidPrefix="layout-config-image-full-text-overlay"
+            >
             <label className={styles.fieldLabel}>
                 <span className={styles.legend}>
                     {t("ui.page_editor.config.text_position", "Text position")}
@@ -852,6 +858,7 @@ export function LayoutConfigImageFullTextOverlay({
                 testidPrefix="overlay-text"
                 i18nKeyPrefix="ui.page_editor.config.overlay_text"
             />
+        </CollapsibleConfigSection>
         </div>
     )
 }

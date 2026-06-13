@@ -1,3 +1,5 @@
+import { ApiError } from "./errors";
+
 // --- Types ---
 
 export type ChapterType =
@@ -1568,41 +1570,10 @@ export class SaveAbortedError extends Error {
   }
 }
 
-export class ApiError extends Error {
-  status: number;
-  detail: string;
-  endpoint: string;
-  method: string;
-  stacktrace: string;
-  timestamp: string;
-  /** Structured error body when the backend returned a dict in `detail`.
-   *  Used by the audiobook overwrite warning (409 audiobook_exists). */
-  detailBody?: Record<string, unknown>;
-  /** True when this error is the backendless-offline guard rejecting an `/api`
-   *  call before any network request (see `guardedFetch`). Consumers downgrade
-   *  it to a console warning instead of a user-facing error toast: a
-   *  backend-only surface being unavailable offline is expected, not a fault. */
-  offline = false;
-
-  constructor(
-    status: number,
-    detail: string,
-    endpoint: string,
-    method: string,
-    stacktrace = "",
-    detailBody?: Record<string, unknown>,
-  ) {
-    super(detail);
-    this.name = "ApiError";
-    this.status = status;
-    this.detail = detail;
-    this.endpoint = endpoint;
-    this.method = method;
-    this.stacktrace = stacktrace;
-    this.timestamp = new Date().toISOString();
-    this.detailBody = detailBody;
-  }
-}
+// `ApiError` moved to ./errors to break the api/client <-> help/offlineHelp
+// circular dependency (#114). Re-exported here so existing
+// `import { ApiError } from "../api/client"` call sites keep working.
+export { ApiError };
 
 // --- Fetch helper ---
 
@@ -3820,36 +3791,75 @@ export const api = {
       >
     >("/editor/plugin-status"),
 
+  // Help content is bundled into the offline seed (generated from the
+  // docs/help markdown + help.yaml SSoT). On the backendless PWA these
+  // methods resolve from that seed via a lazy import so the help page +
+  // panel work offline; online they hit the backend help plugin. The
+  // lazy import keeps the ~1 MB of help docs out of the eager bundle.
   help: {
     // Legacy endpoints (kept for backward compat)
-    shortcuts: (lang: string = "de") =>
-      request<{ keys: string; action: string }[]>(
+    shortcuts: async (lang: string = "de") => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineShortcuts(lang);
+      }
+      return request<{ keys: string; action: string }[]>(
         `/help/shortcuts?lang=${lang}`,
-      ),
+      );
+    },
 
-    faq: (lang: string = "de") =>
-      request<{ question: string; answer: string }[]>(`/help/faq?lang=${lang}`),
+    faq: async (lang: string = "de") => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineFaq(lang);
+      }
+      return request<{ question: string; answer: string }[]>(
+        `/help/faq?lang=${lang}`,
+      );
+    },
 
-    about: () => request<Record<string, string>>("/help/about"),
+    about: async () => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineAbout();
+      }
+      return request<Record<string, string>>("/help/about");
+    },
 
     // New docs-based endpoints
-    navigation: (locale: string = "de") =>
-      request<HelpNavItem[]>(`/help/navigation/${locale}`),
+    navigation: async (locale: string = "de") => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineNavigation(locale);
+      }
+      return request<HelpNavItem[]>(`/help/navigation/${locale}`);
+    },
 
-    page: (locale: string, slug: string) =>
-      request<HelpPage>(`/help/page/${locale}/${slug}`),
+    page: async (locale: string, slug: string) => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlinePage(locale, slug);
+      }
+      return request<HelpPage>(`/help/page/${locale}/${slug}`);
+    },
 
-    search: (locale: string, query: string) =>
-      request<{ results: HelpSearchResult[] }>(
+    search: async (locale: string, query: string) => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineSearch(
+          locale,
+          query,
+        );
+      }
+      return request<{ results: HelpSearchResult[] }>(
         `/help/search/${locale}?q=${encodeURIComponent(query)}`,
-      ),
+      );
+    },
   },
 
   getStarted: {
-    guide: (lang: string = "de") =>
-      request<
+    guide: async (lang: string = "de") => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineGuide(lang);
+      }
+      return request<
         { id: string; title: string; description: string; icon: string }[]
-      >(`/get-started/guide?lang=${lang}`),
+      >(`/get-started/guide?lang=${lang}`);
+    },
 
     // GETSTARTED-MULTIBOOK-TYPES-UPDATE-01 C3: sample-book response
     // varies by book_type:
@@ -3857,8 +3867,14 @@ export const api = {
     //   - picture_book / comic_book: carries ``pages: [...]``
     // The TypeScript shape unions both so the caller branches on
     // ``book_type`` (or just checks ``"chapters" in resp``).
-    sampleBook: (lang: string = "de", bookType: BookType = "prose") =>
-      request<{
+    sampleBook: async (lang: string = "de", bookType: BookType = "prose") => {
+      if (isBackendlessOffline()) {
+        return (await import("../help/offlineHelp")).offlineSampleBook(
+          lang,
+          bookType,
+        );
+      }
+      return request<{
         title: string;
         author: string;
         language: string;
@@ -3871,7 +3887,8 @@ export const api = {
           layout_config?: Record<string, unknown>;
           image_asset_id?: string | null;
         }[];
-      }>(`/get-started/sample-book?lang=${lang}&book_type=${bookType}`),
+      }>(`/get-started/sample-book?lang=${lang}&book_type=${bookType}`);
+    },
   },
 
   pluginInstall: {

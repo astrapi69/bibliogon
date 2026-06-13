@@ -27,6 +27,31 @@ const PREAMBLE_PACKAGES = [
 const MATH_SPAN = /(\$\$[\s\S]*?\$\$|\$[^$]*?\$)/g;
 const BACKSLASH_SENTINEL = "\u0000";
 
+const RULE_SENTINEL = String.fromCharCode(1);
+
+/** Markdown heading-ID syntax (`{#chapter-1}`) that markdown-imported books
+ *  carry inside heading text. It is an in-document anchor with no LaTeX
+ *  meaning and must be stripped, not escaped. */
+const MARKDOWN_ANCHOR = /\s*\{#[^}]*\}/g;
+
+/** A run of 3+ em-dashes / horizontal bars - a scene break or horizontal rule
+ *  pasted as Unicode. Rendered as a real LaTeX rule instead of leaking the
+ *  raw characters into the output. */
+const EM_DASH_RULE = /[\u2014\u2015]{3,}/g;
+const RULE_LATEX = "\\bigskip\\noindent\\rule{\\textwidth}{0.4pt}\\bigskip";
+
+/** Remove markdown heading-ID anchors (`{#...}`) from a string. Runs BEFORE
+ *  escaping so the `{ # }` are dropped rather than turned into `\{\#...\}`
+ *  artifacts. */
+export function stripMarkdownAnchor(text: string): string {
+  return text.replace(MARKDOWN_ANCHOR, "");
+}
+
+/** Normalize a heading for comparison (anchor-stripped, trimmed, lowercased). */
+function normalizeHeading(text: string): string {
+  return stripMarkdownAnchor(text).trim().toLowerCase();
+}
+
 /**
  * Escape a prose run for LaTeX, leaving inline/block math (`$...$`,
  * `$$...$$`) untouched — that content is already LaTeX and must compile
@@ -35,18 +60,20 @@ const BACKSLASH_SENTINEL = "\u0000";
  */
 export function escapeLatex(text: string): string {
   const parts = text.split(MATH_SPAN);
-  return parts
-    .map((part, index) => (index % 2 === 1 ? part : escapeLatexProse(part)))
-    .join("");
+  return parts.map((part, index) => (index % 2 === 1 ? part : escapeLatexProse(part))).join("");
 }
 
 function escapeLatexProse(text: string): string {
   return text
+    .replace(EM_DASH_RULE, RULE_SENTINEL)
     .replace(/\\/g, BACKSLASH_SENTINEL)
     .replace(/([&%$#_{}])/g, "\\$1")
     .replace(/~/g, "\\textasciitilde{}")
     .replace(/\^/g, "\\textasciicircum{}")
-    .replace(new RegExp(BACKSLASH_SENTINEL, "g"), "\\textbackslash{}");
+    .split(BACKSLASH_SENTINEL)
+    .join("\\textbackslash{}")
+    .split(RULE_SENTINEL)
+    .join(RULE_LATEX);
 }
 
 function textNodeToLatex(node: TipTapNode): string {
@@ -62,7 +89,7 @@ function textNodeToLatex(node: TipTapNode): string {
     else if (type === "underline") out = `\\underline{${out}}`;
     else if (type === "link") {
       const href = ((mark.attrs as Record<string, unknown>)?.href as string) || "";
-      out = `\\href{${href}}{${out}}`;
+      if (href && !href.startsWith("#")) out = `\\href{${href}}{${out}}`;
     }
   }
   return out;
@@ -70,6 +97,55 @@ function textNodeToLatex(node: TipTapNode): string {
 
 function inlineToLatex(nodes: TipTapNode[]): string {
   return nodes.map((node) => nodeToLatex(node, 0)).join("");
+}
+
+/** Inline serializer for heading content: strips markdown heading-ID anchors
+ *  (`{#...}`) from text nodes before escaping (Bug 1). Fragment-link marks are
+ *  already reduced to plain text by `textNodeToLatex`. */
+function headingInlineToLatex(nodes: TipTapNode[]): string {
+  return nodes
+    .map((node) =>
+      node.type === "text"
+        ? textNodeToLatex({
+            ...node,
+            text: stripMarkdownAnchor((node.text as string) || ""),
+          })
+        : nodeToLatex(node, 0),
+    )
+    .join("");
+}
+
+/** Concatenated plain text of an inline node list (marks/anchors ignored),
+ *  used to compare a body heading against its section heading for dedup. */
+function plainInlineText(nodes: TipTapNode[]): string {
+  return nodes
+    .map((node) => {
+      if (node.type === "text") return (node.text as string) || "";
+      const childContent = node.content as TipTapNode[] | undefined;
+      return childContent ? plainInlineText(childContent) : "";
+    })
+    .join("");
+}
+
+/** `images/<filename>` derived from a stored image `src` (which is an
+ *  `/api/books/.../assets/file/<filename>` URL - meaningless to LaTeX). */
+function imageFilename(src: string): string {
+  const withoutFragment = src.split(/[?#]/)[0];
+  return withoutFragment.split("/").pop() || "image";
+}
+
+/** `\includegraphics` against a relative `images/<filename>` path, wrapped in
+ *  `\IfFileExists` so the document still compiles (showing an alt-text
+ *  placeholder box) when the image file is not shipped alongside the `.tex`. */
+function includeGraphicsWithFallback(src: string, alt: string): string {
+  const filename = imageFilename(src);
+  const path = `images/${filename}`;
+  const placeholder = escapeLatex((alt || filename).trim());
+  return (
+    `\\IfFileExists{${path}}` +
+    `{\\includegraphics[width=\\linewidth]{${path}}}` +
+    `{\\fbox{\\parbox{0.8\\linewidth}{\\centering ${placeholder}}}}`
+  );
 }
 
 /** Map an in-content heading level to a LaTeX sectioning command. Articles
@@ -95,14 +171,17 @@ function nodeToLatex(node: TipTapNode, depth: number, kind: "book" | "article" =
       return `${inlineToLatex(content)}\n\n`;
     case "heading": {
       const command = headingCommand((attrs?.level as number) || 1, kind);
-      return `\\${command}{${inlineToLatex(content)}}\n\n`;
+      return `\\${command}{${headingInlineToLatex(content)}}\n\n`;
     }
     case "bulletList":
       return `\\begin{itemize}\n${content.map((n) => nodeToLatex(n, depth, kind)).join("")}\\end{itemize}\n\n`;
     case "orderedList":
       return `\\begin{enumerate}\n${content.map((n) => nodeToLatex(n, depth, kind)).join("")}\\end{enumerate}\n\n`;
     case "listItem":
-      return `  \\item ${content.map((n) => nodeToLatex(n, depth, kind)).join("").trim()}\n`;
+      return `  \\item ${content
+        .map((n) => nodeToLatex(n, depth, kind))
+        .join("")
+        .trim()}\n`;
     case "blockquote":
       return `\\begin{quote}\n${content.map((n) => nodeToLatex(n, depth, kind)).join("")}\\end{quote}\n\n`;
     case "codeBlock": {
@@ -112,13 +191,15 @@ function nodeToLatex(node: TipTapNode, depth: number, kind: "book" | "article" =
     case "imageFigure":
     case "figure": {
       const src = (attrs?.src as string) || "";
+      const alt = (attrs?.alt as string) || "";
       const caption = content.length ? inlineToLatex(content) : "";
       const captionLine = caption ? `\\caption{${caption}}\n` : "";
-      return `\\begin{figure}[h]\n\\centering\n\\includegraphics[width=\\linewidth]{${src}}\n${captionLine}\\end{figure}\n\n`;
+      return `\\begin{figure}[h]\n\\centering\n${includeGraphicsWithFallback(src, alt)}\n${captionLine}\\end{figure}\n\n`;
     }
     case "image": {
       const src = (attrs?.src as string) || "";
-      return `\\includegraphics[width=\\linewidth]{${src}}\n\n`;
+      const alt = (attrs?.alt as string) || "";
+      return `${includeGraphicsWithFallback(src, alt)}\n\n`;
     }
     case "horizontalRule":
       return "\\hrule\n\n";
@@ -135,8 +216,47 @@ function nodeToLatex(node: TipTapNode, depth: number, kind: "book" | "article" =
   }
 }
 
-function bodyToLatex(doc: TipTapNode, kind: "book" | "article"): string {
-  const content = (doc.content as TipTapNode[] | undefined) || [];
+/** Set of localized "Table of Contents" chapter titles (the 8 i18n catalogs
+ *  plus accented variants). A markdown-imported ToC chapter is a manual
+ *  duplicate of the auto-generated `\tableofcontents` and is skipped. */
+const TOC_HEADINGS = new Set([
+  "table of contents",
+  "inhaltsverzeichnis",
+  "indice",
+  "índice",
+  "table des matieres",
+  "table des matières",
+  "πίνακας περιεχομένων",
+  "sumario",
+  "sumário",
+  "icindekiler",
+  "içindekiler",
+  "目次",
+]);
+
+/** True when a chapter heading names a table-of-contents chapter (Bug 3). */
+function isTableOfContentsHeading(heading: string): boolean {
+  return TOC_HEADINGS.has(normalizeHeading(heading));
+}
+
+/**
+ * Serialize a section body. When the body's first node is a heading that
+ * repeats the section heading (markdown-imported books store the chapter title
+ * both as the chapter title and as the body's first heading), that leading
+ * heading is dropped so the chapter is not emitted twice (Bug 6).
+ */
+function bodyToLatex(doc: TipTapNode, kind: "book" | "article", sectionHeading = ""): string {
+  let content = (doc.content as TipTapNode[] | undefined) || [];
+  const first = content[0];
+  if (
+    sectionHeading.trim() &&
+    first &&
+    first.type === "heading" &&
+    normalizeHeading(plainInlineText((first.content as TipTapNode[]) || [])) ===
+      normalizeHeading(sectionHeading)
+  ) {
+    content = content.slice(1);
+  }
   return content.map((node) => nodeToLatex(node, 0, kind)).join("");
 }
 
@@ -166,11 +286,13 @@ export function toLatex(doc: ExportDocument): string {
   ].join("\n");
 
   const body = doc.sections
+    .filter((section) => !isTableOfContentsHeading(section.heading))
     .map((section) => {
-      const heading = section.heading.trim()
-        ? `\\${sectionCommand}{${escapeLatex(section.heading)}}\n\n`
+      const cleanHeading = stripMarkdownAnchor(section.heading);
+      const heading = cleanHeading.trim()
+        ? `\\${sectionCommand}{${escapeLatex(cleanHeading)}}\n\n`
         : "";
-      return `${heading}${bodyToLatex(section.doc, kind)}`;
+      return `${heading}${bodyToLatex(section.doc, kind, section.heading)}`;
     })
     .join("\n")
     .trimEnd();

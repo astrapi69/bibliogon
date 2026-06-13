@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "İçe aktar",
       "drop_zone": "Dosyayı buraya bırakın veya tıklayın",
-      "accepted": "Markdown, metin, HTML, JSON yedeği, Medium dışa aktarımı (.zip). .bgb masaüstü uygulaması gerektirir.",
+      "accepted": "Markdown, metin, HTML, JSON yedeği, Medium dışa aktarımı (.zip), yedek (.bgb).",
       "file_label": "Dosya:",
       "detecting": "Biçim algılanıyor …",
       "detected_label": "Algılanan biçim:",
@@ -33,6 +33,14 @@
       "requires_desktop_app": "Bu özellik Bibliogon masaüstü uygulamasını gerektirir",
       "requires_ai_key": "Bu özellik yapılandırılmış bir yapay zeka anahtarı gerektirir (Ayarlar > Yapay Zeka Asistanı)",
       "not_yet_available": "Bu özellik henüz kullanılamıyor."
+    },
+    "not_found": {
+      "title": "Sayfa bulunamadı",
+      "description": "İstenen sayfa mevcut değil veya taşınmış.",
+      "back_home": "Panoya dön"
+    },
+    "author_select": {
+      "custom_option": "Başka ad…"
     },
     "story_bible": {
       "title": "Story Bible",
@@ -3258,6 +3266,7 @@
       "platform_label": "Platform",
       "plugins_heading": "Eklentiler",
       "plugins_empty": "Etkin eklenti yok.",
+      "plugins_browser_hint": "Bu eklentiler doğrudan bu tarayıcıda kullanılabilir.",
       "dep_unknown": "Bilinmiyor",
       "storage_label": "Depolama",
       "storage_indexeddb": "Yerel tarayıcı depolaması (IndexedDB)",

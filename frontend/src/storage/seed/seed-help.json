@@ -1,0 +1,1612 @@
+{
+  "shortcuts": {
+    "de": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Fett"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Kursiv"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Durchgestrichen"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline-Code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Überschrift 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Überschrift 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Überschrift 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Aufzählung"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Nummerierung"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Zitat"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Rückgängig"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Wiederholen"
+      }
+    ],
+    "en": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "es": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "fr": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "el": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "pt": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "tr": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ],
+    "ja": [
+      {
+        "keys": "Ctrl+B",
+        "action": "Bold"
+      },
+      {
+        "keys": "Ctrl+I",
+        "action": "Italic"
+      },
+      {
+        "keys": "Ctrl+Shift+X",
+        "action": "Strikethrough"
+      },
+      {
+        "keys": "Ctrl+E",
+        "action": "Inline code"
+      },
+      {
+        "keys": "Ctrl+Shift+1",
+        "action": "Heading 1"
+      },
+      {
+        "keys": "Ctrl+Shift+2",
+        "action": "Heading 2"
+      },
+      {
+        "keys": "Ctrl+Shift+3",
+        "action": "Heading 3"
+      },
+      {
+        "keys": "Ctrl+Shift+8",
+        "action": "Bullet list"
+      },
+      {
+        "keys": "Ctrl+Shift+9",
+        "action": "Ordered list"
+      },
+      {
+        "keys": "Ctrl+Shift+B",
+        "action": "Blockquote"
+      },
+      {
+        "keys": "Ctrl+Z",
+        "action": "Undo"
+      },
+      {
+        "keys": "Ctrl+Shift+Z",
+        "action": "Redo"
+      }
+    ]
+  },
+  "faq": {
+    "de": [
+      {
+        "question": "Was ist Bibliogon?",
+        "answer": "Bibliogon ist eine Open-Source-Plattform zum Schreiben und Exportieren von Büchern. Sie läuft komplett offline im Browser, speichert lokal in SQLite und ist über Plugins erweiterbar."
+      },
+      {
+        "question": "Funktioniert Bibliogon offline?",
+        "answer": "Ja. Bibliogon nutzt SQLite und speichert alles lokal. Frontend und Backend laufen auf deinem Rechner. Nur Plugins die externe APIs nutzen (z.B. Grammatikprüfung via LanguageTool) brauchen Internet."
+      },
+      {
+        "question": "Welches Format wird intern gespeichert?",
+        "answer": "Kapitelinhalte werden als TipTap-JSON gespeichert - ein strukturiertes, maschinenlesbares Format. Beim Export wird dieses automatisch in Markdown konvertiert. Du kannst jederzeit zwischen WYSIWYG- und Markdown-Modus wechseln."
+      },
+      {
+        "question": "Wie erstelle ich ein neues Buch?",
+        "answer": "Klicke auf 'Neues Buch' im Dashboard. Gib Titel und Autor ein (Pflichtfelder). Optional kannst du Untertitel, Sprache, Reihe und Band angeben. Nach dem Erstellen erscheint das Buch auf dem Dashboard."
+      },
+      {
+        "question": "Welche Kapiteltypen gibt es?",
+        "answer": "31 Kapiteltypen in 3 Gruppen: Front Matter (Half-Title, Titelseite, Copyright, Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Sektion, Teil, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Schlussfolgerung, Schlussgedanken, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band, Weitere Bücher, Leseprobe, Call to Action). Alle waehlbar über das '+'-Dropdown in der Sidebar. Die Marketing-Typen (Weitere Bücher, Leseprobe, Call to Action) werden bei der Audiobook-Generierung per Default übersprungen."
+      },
+      {
+        "question": "Wie ordne ich Kapitel um?",
+        "answer": "Ziehe Kapitel per Drag-and-Drop in der Sidebar in die gewünschte Reihenfolge. Die Sortierung wird innerhalb der jeweiligen Sektion beibehalten (Front Matter, Kapitel, Back Matter)."
+      },
+      {
+        "question": "Was ist der Markdown-Modus?",
+        "answer": "Im Editor kannst du zwischen WYSIWYG und Markdown umschalten (Button rechts in der Toolbar). Im Markdown-Modus siehst und bearbeitest du den Rohtext mit Markdown-Syntax. Im WYSIWYG-Modus siehst du den formatierten Text mit der Formatting-Toolbar."
+      },
+      {
+        "question": "Wie funktioniert das automatische Speichern?",
+        "answer": "Änderungen werden automatisch 800ms nach dem letzten Tastendruck gespeichert. In der Statusleiste unter dem Editor siehst du 'Speichert...' während des Speicherns und 'Gespeichert' wenn abgeschlossen. Du musst nie manuell speichern."
+      },
+      {
+        "question": "Was zeigt der Wortzähler?",
+        "answer": "Der Wortzähler in der Statusleiste zeigt die Anzahl der Wörter im aktuell ausgewählten Kapitel. Er aktualisiert sich in Echtzeit beim Tippen."
+      },
+      {
+        "question": "Wie exportiere ich mein Buch?",
+        "answer": "Klicke 'Exportieren...' in der Sidebar. Es öffnet sich ein Dialog wo du Format (EPUB, PDF, Word, HTML, Markdown, Projekt-ZIP), Buchtyp (E-Book, Taschenbuch, Hardcover) und Inhaltsverzeichnis-Tiefe wählen kannst. Optional kannst du die Kapitelreihenfolge für diesen Export anpassen."
+      },
+      {
+        "question": "Welche Export-Formate werden unterstützt?",
+        "answer": "6 Formate: EPUB (E-Book), PDF (Druck), Word/DOCX (Lektorate), HTML (Web), Markdown (Rohtext), Projekt-ZIP (.bgp, komplette manuscripta-Projektstruktur). Der Export nutzt manuscripta und Pandoc im Hintergrund."
+      },
+      {
+        "question": "Was ist die Kapitelreihenfolge (Section Order)?",
+        "answer": "Die Kapitelreihenfolge bestimmt, welche Abschnitte in welcher Reihenfolge im exportierten Buch erscheinen (z.B. Inhaltsverzeichnis, Vorwort, Kapitel, Glossar, Impressum). Sie kann global in den Einstellungen und pro Export im Export-Dialog angepasst werden. Verschiedene Buchtypen (E-Book, Taschenbuch) können unterschiedliche Reihenfolgen haben."
+      },
+      {
+        "question": "Wie funktioniert das Backup?",
+        "answer": "Klicke 'Backup' im Dashboard. Alle Bücher, Kapitel und Assets werden als .bgb-Datei (Bibliogon Backup) exportiert. Zum Wiederherstellen klicke 'Restore' und wähle die .bgb-Datei. Achtung: .bgb-Dateien können nur über 'Restore' importiert werden, nicht über 'Import'."
+      },
+      {
+        "question": "Was ist der Unterschied zwischen Backup, Import und Export?",
+        "answer": "Backup (.bgb) sichert ALLE Bücher mit allen Metadaten und stellt sie 1:1 wieder her. Import (.bgp/.zip) importiert ein einzelnes Buch aus einem write-book-template Projekt. Export erzeugt fertige Buchformate (EPUB, PDF) oder Projektstrukturen (.bgp) für ein einzelnes Buch. Die verschiedenen Dateiformate verhindern Verwechslungen."
+      },
+      {
+        "question": "Kann ich ein bestehendes Projekt importieren?",
+        "answer": "Ja. Klicke 'Import' im Dashboard und wähle eine .bgp-Datei (aus Bibliogon-Export) oder eine .zip-Datei (write-book-template Projektstruktur). Das Buch wird mit allen Kapiteln und Metadaten importiert."
+      },
+      {
+        "question": "Wie funktioniert der Papierkorb?",
+        "answer": "Gelöschte Bücher werden standardmäßig in den Papierkorb verschoben (Soft-Delete). Klicke das Papierkorb-Icon im Dashboard um gelöschte Bücher zu sehen. Dort kannst du einzelne Bücher wiederherstellen oder endgültig löschen. 'Papierkorb leeren' löscht alle Bücher endgültig. In den Einstellungen kannst du unter 'delete_permanently' auch direktes Löschen ohne Papierkorb aktivieren."
+      },
+      {
+        "question": "Wo finde ich die Einstellungen?",
+        "answer": "Klicke das Zahnrad-Icon im Dashboard. Die Einstellungen haben drei Bereiche: Allgemein (Sprache, Titel, Theme), Plugins (aktivieren/deaktivieren, Konfiguration), und Lizenzen (Premium-Plugin-Schlüssel)."
+      },
+      {
+        "question": "Welche Themes gibt es?",
+        "answer": "Drei Themes, jeweils mit Light- und Dark-Modus (6 Kombinationen): Warm Literary (Standard, Amber-Akzent, Serif-Schrift), Cool Modern (Blau, Sans-Serif), und Nord (Arktisch-Blau, inspiriert vom beliebten Nord-Farbschema). Das Theme wählst du in Einstellungen > Allgemein, Dark/Light Mode per Sonnen/Mond-Icon."
+      },
+      {
+        "question": "Welche Plugins sind verfügbar?",
+        "answer": "9 Plugins: Export (EPUB/PDF/DOCX/HTML), Hilfe (In-App Hilfe), Erste Schritte (Onboarding), Grammatik (LanguageTool), Kinderbuch (Bild-Layout), KDP (Amazon-Metadaten), Audiobook (TTS), Übersetzung (DeepL/LLM), Manuskript-Tools (Stilprüfung). Alle Plugins sind kostenlos und können unter Einstellungen > Plugins aktiviert werden."
+      },
+      {
+        "question": "Kann ich eigene Plugins hinzufügen?",
+        "answer": "Ja. Unter Einstellungen > Plugins klicke 'Plugin hinzufügen'. Gib Name, Anzeigename und Beschreibung ein. Das Plugin braucht einen installierten Python-Entry-Point unter der Gruppe 'bibliogon.plugins'. Details zur Plugin-Entwicklung findest du im PluginForge-Wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Wo finde ich eine Einfuehrung?",
+        "answer": "Klicke das Raketen-Icon im Dashboard oder gehe zu 'Erste Schritte'. Dort findest du eine Schritt-für-Schritt-Anleitung mit Fortschrittsanzeige und kannst ein Beispielbuch erstellen um die Funktionen kennenzulernen."
+      },
+      {
+        "question": "Was bedeuten die Dateiendungen .bgb, .bgp und .zip?",
+        "answer": ".bgb (Bibliogon Backup) enthält ein komplettes Backup aller Bücher - nur über 'Restore' importierbar. .bgp (Bibliogon Project) enthält ein einzelnes Buch als Projektstruktur - über 'Import' importierbar. .zip sind externe write-book-template Projekte - ebenfalls über 'Import' importierbar. Die unterschiedlichen Endungen verhindern Verwechslungen."
+      },
+      {
+        "question": "Wie bearbeite ich Buch-Metadaten (ISBN, Verlag, Keywords)?",
+        "answer": "Öffne dein Buch im Editor und klicke 'Metadaten' in der Sidebar (unterhalb der Kapitelliste). Dort findest du 5 Sektionen: Allgemein (Untertitel, Edition, Datum), Verlag (Name, Stadt), ISBN/ASIN (E-Book, Taschenbuch, Hardcover), Marketing (Keywords, HTML-Beschreibung für Amazon, Rückseitentexte) und Design (Cover-Pfad, Custom CSS). Alle Felder werden pro Buch gespeichert."
+      },
+      {
+        "question": "Kann ich Metadaten von einem anderen Buch übernehmen?",
+        "answer": "Ja. Im Metadaten-Editor klicke 'Von Buch übernehmen'. Es werden Verlag, Stadt, Autoren-Bio und Custom CSS vom gewählten Buch kopiert. Buchspezifische Felder (ISBN, Cover, Beschreibung) bleiben unverändert."
+      },
+      {
+        "question": "Welche Kapiteltypen gibt es jetzt?",
+        "answer": "31 Kapiteltypen in 3 Gruppen: Front Matter (Half-Title, Titelseite, Copyright, Inhaltsverzeichnis, Widmung, Motto, Vorwort, Geleitwort, Prolog, Einleitung), Kapitel (regulaeres Kapitel, Sektion, Teil, Teil-Einleitung, Interludium), Back Matter (Epilog, Nachwort, Schlussfolgerung, Schlussgedanken, Über den Autor, Danksagung, Anhang, Literatur, Endnoten, Glossar, Stichwortverzeichnis, Impressum, Nächster Band, Weitere Bücher, Leseprobe, Call to Action). Alle waehlbar über das '+'-Dropdown in der Sidebar. Die Marketing-Typen (Weitere Bücher, Leseprobe, Call to Action) werden bei der Audiobook-Generierung per Default übersprungen."
+      },
+      {
+        "question": "Wie installiere ich ein Drittanbieter-Plugin?",
+        "answer": "Gehe zu Einstellungen > Plugins und klicke 'ZIP installieren'. Wähle die Plugin-ZIP-Datei aus. Das Plugin wird automatisch extrahiert, registriert und aktiviert. Die ZIP-Datei muss eine plugin.yaml und ein Python-Paket mit plugin.py enthalten."
+      },
+      {
+        "question": "Wie deinstalliere ich ein Plugin?",
+        "answer": "Installierte Plugins können über Einstellungen > Plugins deaktiviert oder vollständig entfernt werden. Beim Entfernen werden die Plugin-Dateien und die Konfiguration gelöscht."
+      },
+      {
+        "question": "Können Plugins eigene UI-Komponenten mitbringen?",
+        "answer": "Ja. Plugins deklarieren UI-Erweiterungen über ein Manifest (get_frontend_manifest). Vordefinierte Slots: Sidebar-Aktionen, Toolbar-Buttons, Editor-Panels, Einstellungen-Abschnitte, Export-Optionen. Für komplexe UIs können Plugins Web Components als Custom Elements liefern."
+      },
+      {
+        "question": "Wie starte ich Bibliogon in Produktion?",
+        "answer": "Kopiere .env.example nach .env, setze BIBLIOGON_SECRET_KEY auf einen zufaelligen Wert, und fuehre 'make prod' aus. Die App ist dann unter Port 8080 erreichbar. Daten werden in einem Docker-Volume persistent gespeichert."
+      },
+      {
+        "question": "Was sind Vorlagen und welche sind mitgeliefert?",
+        "answer": "Vorlagen sind wiederverwendbare Strukturen. Buchvorlagen fuellen ein neues Buch mit einer Kapitelliste (Titel, Typ, Reihenfolge); 5 Genres sind mitgeliefert: Kinderbilderbuch, Science-Fiction-Roman, Sachbuch / How-To, Philosophie, Memoiren. Kapitelvorlagen fuellen ein einzelnes Kapitel mit einer TipTap-JSON-Gliederung; 4 sind mitgeliefert: Interview, FAQ, Rezept, Fotoreportage. Mitgelieferte Vorlagen sind schreibgeschuetzt (Schloss-Badge), eigene Vorlagen kann man per Muelleimer-Button löschen."
+      },
+      {
+        "question": "Wie erstelle ich ein Buch aus einer Vorlage?",
+        "answer": "Im Dashboard auf 'Neues Buch' klicken, am oberen Rand des Dialogs auf den Tab 'Aus Vorlage' wechseln, eine Karte auswählen, Titel und Autor eintragen und 'Erstellen' klicken. Sprache und Beschreibung sind aus der Vorlage vorbelegt, aber editierbar. Das Buch wird mit allen Kapiteln in einem einzigen Datenbank-Commit erstellt."
+      },
+      {
+        "question": "Wie speichere ich ein Buch als eigene Vorlage?",
+        "answer": "Buch im Editor öffnen, in der Sidebar-Fusszeile 'Als Vorlage speichern' anklicken. Name (Pflicht, eindeutig) und Beschreibung eintragen. Beim Content-Modus zwischen 'Leere Platzhalter' (nur Struktur, empfohlen) und 'Inhalt übernehmen' (voller Kapiteltext) wählen. 'Kapitelvorschau' ausklappen, um die Liste vor dem Speichern zu prüfen. Bei Namenskonflikt (409) zeigt das Namensfeld einen Inline-Fehler."
+      },
+      {
+        "question": "Wie erstelle ich ein Kapitel aus einer Vorlage?",
+        "answer": "In der Editor-Sidebar auf das '+'-Icon klicken, in der Gruppe 'Kapitel' auf 'Aus Vorlage...' klicken. Eine Karte auswählen und auf 'Einfügen' klicken. Das Kapitel wird am Ende der Liste angehaengt, mit Titel, Kapiteltyp und Inhalt aus der Vorlage. Den Titel kannst du per Doppelklick inline umbenennen."
+      },
+      {
+        "question": "Wie speichere ich ein Kapitel als eigene Vorlage?",
+        "answer": "Rechtsklick auf das Kapitel in der Sidebar, 'Als Vorlage speichern' aus dem Kontextmenue. Name (vorbelegt mit Kapiteltitel) und Beschreibung eintragen. 'Leerer Platzhalter' speichert nur die Struktur, 'Inhalt übernehmen' kopiert den aktuellen Kapiteltext in die Vorlage."
+      },
+      {
+        "question": "Wie lösche ich eine eigene Vorlage?",
+        "answer": "Den Vorlagen-Picker öffnen (Buch oder Kapitel). Eigene Vorlagen haben einen Muelleimer-Button in der Kartenkopfzeile. Klick darauf, Bestätigungsdialog, fertig. Mitgelieferte Vorlagen (mit Schloss-Badge) haben diesen Button nicht und können nicht gelöscht werden; der Server antwortet mit 403."
+      },
+      {
+        "question": "Wie importiere ich ein Buch aus einem Git-Repository?",
+        "answer": "Dashboard -> Importieren. Oben im Assistenten gibt es ein Feld 'Import aus einer Git-URL': URL einfügen, 'Klonen + Importieren' klicken. Bibliogon klont das Repo in ein temporaeres Verzeichnis und importiert es wie ein write-book-template-Projekt. Aktuell nur öffentliche HTTPS-Repos; Authentifizierung, Branch-Auswahl und Smart-Merge folgen in späteren Phasen."
+      },
+      {
+        "question": "Wie kontrolliere ich, welche Metadaten-Felder importiert werden?",
+        "answer": "Ab v0.22 zeigt Schritt 3 des Import-Assistenten jedes Feld des Buch-Metadaten-Editors als eigene Zeile mit Checkbox + editierbarem Wert. Titel und Autor sind Pflichtfelder. Jede andere Zeile kannst du abwählen (dann bleibt die Spalte leer) oder den Wert vor dem Import editieren. Langformige Felder (CSS, Rückseitentext, Autoren-Bio) sind zuklappbar. Abschnitte, deren Felder alle leer sind, verbergen sich hinter 'Felder hinzufügen'."
+      }
+    ],
+    "en": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "es": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "fr": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "el": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "pt": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "tr": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ],
+    "ja": [
+      {
+        "question": "What is Bibliogon?",
+        "answer": "Bibliogon is an open-source platform for writing and exporting books. It runs entirely offline in the browser, stores locally in SQLite, and is extensible via plugins."
+      },
+      {
+        "question": "Does Bibliogon work offline?",
+        "answer": "Yes. Bibliogon uses SQLite and stores everything locally. Frontend and backend run on your machine. Only plugins using external APIs (e.g. grammar checking via LanguageTool) need internet."
+      },
+      {
+        "question": "What format is used internally?",
+        "answer": "Chapter content is stored as TipTap JSON - a structured, machine-readable format. During export, this is automatically converted to Markdown. You can switch between WYSIWYG and Markdown mode at any time."
+      },
+      {
+        "question": "How do I create a new book?",
+        "answer": "Click 'New Book' on the dashboard. Enter title and author (required). Optionally add subtitle, language, series and volume. After creation, the book appears on the dashboard."
+      },
+      {
+        "question": "What chapter types are available?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I reorder chapters?",
+        "answer": "Drag and drop chapters in the sidebar to reorder them. Sorting is maintained within each section (Front Matter, Chapters, Back Matter)."
+      },
+      {
+        "question": "What is Markdown mode?",
+        "answer": "In the editor you can switch between WYSIWYG and Markdown mode (button on the right of the toolbar). In Markdown mode you see and edit raw text with Markdown syntax. In WYSIWYG mode you see formatted text with the formatting toolbar."
+      },
+      {
+        "question": "How does autosave work?",
+        "answer": "Changes are saved automatically 800ms after the last keystroke. In the status bar below the editor you see 'Saving...' during save and 'Saved' when complete. You never need to save manually."
+      },
+      {
+        "question": "What does the word counter show?",
+        "answer": "The word counter in the status bar shows the number of words in the currently selected chapter. It updates in real time as you type."
+      },
+      {
+        "question": "How do I export my book?",
+        "answer": "Click 'Export...' in the sidebar. A dialog opens where you choose format (EPUB, PDF, Word, HTML, Markdown, Project ZIP), book type (eBook, Paperback, Hardcover) and table of contents depth. Optionally you can customize the chapter order for this export."
+      },
+      {
+        "question": "Which export formats are supported?",
+        "answer": "6 formats: EPUB (eBook), PDF (print), Word/DOCX (editing), HTML (web), Markdown (raw text), Project ZIP (.bgp, full manuscripta project structure). Export uses manuscripta and Pandoc under the hood."
+      },
+      {
+        "question": "What is the section order?",
+        "answer": "The section order determines which sections appear in which order in the exported book (e.g. table of contents, preface, chapters, glossary, imprint). It can be customized globally in settings and per export in the export dialog. Different book types (eBook, paperback) can have different orders."
+      },
+      {
+        "question": "How does backup work?",
+        "answer": "Click 'Backup' on the dashboard. All books, chapters and assets are exported as .bgb file (Bibliogon Backup). To restore, click 'Restore' and select the .bgb file. Note: .bgb files can only be imported via 'Restore', not via 'Import'."
+      },
+      {
+        "question": "What is the difference between backup, import and export?",
+        "answer": "Backup (.bgb) saves ALL books with all metadata and restores them 1:1. Import (.bgp/.zip) imports a single book from a write-book-template project. Export creates finished book formats (EPUB, PDF) or project structures (.bgp) for a single book. The different file formats prevent mix-ups."
+      },
+      {
+        "question": "Can I import an existing project?",
+        "answer": "Yes. Click 'Import' on the dashboard and select a .bgp file (from Bibliogon export) or a .zip file (write-book-template project structure). The book is imported with all chapters and metadata."
+      },
+      {
+        "question": "How does the trash work?",
+        "answer": "Deleted books are moved to trash by default (soft delete). Click the trash icon on the dashboard to see deleted books. There you can restore individual books or permanently delete them. 'Empty trash' permanently deletes all books. In settings you can enable direct deletion without trash via 'delete_permanently'."
+      },
+      {
+        "question": "Where do I find the settings?",
+        "answer": "Click the gear icon on the dashboard. Settings have three sections: General (language, title, theme), Plugins (enable/disable, configuration), and Licenses (premium plugin keys)."
+      },
+      {
+        "question": "Which themes are available?",
+        "answer": "Three themes, each with light and dark mode (6 combinations): Warm Literary (default, amber accent, serif font), Cool Modern (blue, sans-serif), and Nord (arctic blue, inspired by the popular Nord color scheme). Choose the theme in Settings > General, toggle dark/light mode via the sun/moon icon."
+      },
+      {
+        "question": "Which plugins are available?",
+        "answer": "9 plugins: Export (EPUB/PDF/DOCX/HTML), Help (in-app help), Get Started (onboarding), Grammar (LanguageTool), Children's Book (image layout), KDP (Amazon metadata), Audiobook (TTS), Translation (DeepL/LLM), Manuscript Tools (style checks). All plugins are free and can be activated under Settings > Plugins."
+      },
+      {
+        "question": "Can I add custom plugins?",
+        "answer": "Yes. Under Settings > Plugins click 'Add plugin'. Enter name, display name and description. The plugin needs an installed Python entry point under the group 'bibliogon.plugins'. Plugin development details are in the PluginForge wiki (github.com/astrapi69/pluginforge)."
+      },
+      {
+        "question": "Where can I find an introduction?",
+        "answer": "Click the rocket icon on the dashboard or go to 'Get Started'. There you find a step-by-step guide with progress tracking and can create a sample book to explore the features."
+      },
+      {
+        "question": "What do the file extensions .bgb, .bgp and .zip mean?",
+        "answer": ".bgb (Bibliogon Backup) contains a complete backup of all books - only importable via 'Restore'. .bgp (Bibliogon Project) contains a single book as project structure - importable via 'Import'. .zip are external write-book-template projects - also importable via 'Import'. The different extensions prevent mix-ups."
+      },
+      {
+        "question": "How do I edit book metadata (ISBN, publisher, keywords)?",
+        "answer": "Open your book in the editor and click 'Metadata' in the sidebar (below the chapter list). There you find 5 sections: General (subtitle, edition, date), Publisher (name, city), ISBN/ASIN (eBook, paperback, hardcover), Marketing (keywords, HTML description for Amazon, backpage texts) and Design (cover path, custom CSS). All fields are saved per book."
+      },
+      {
+        "question": "Can I copy metadata from another book?",
+        "answer": "Yes. In the metadata editor click 'Copy from book'. Publisher, city, author bio and custom CSS are copied from the selected book. Book-specific fields (ISBN, cover, description) remain unchanged."
+      },
+      {
+        "question": "What chapter types are available now?",
+        "answer": "31 chapter types in 3 groups: Front Matter (Half-Title, Title Page, Copyright, Table of Contents, Dedication, Epigraph, Preface, Foreword, Prologue, Introduction), Chapters (regular chapter, Section, Part, Part Intro, Interlude), Back Matter (Epilogue, Afterword, Conclusion, Final Thoughts, About the Author, Acknowledgments, Appendix, Bibliography, Endnotes, Glossary, Index, Imprint, Next in Series, Also By Author, Excerpt, Call to Action). All selectable via the '+' dropdown in the sidebar. Marketing types (Also By Author, Excerpt, Call to Action) are skipped by default during audiobook generation."
+      },
+      {
+        "question": "How do I install a third-party plugin?",
+        "answer": "Go to Settings > Plugins and click 'Install ZIP'. Select the plugin ZIP file. The plugin is automatically extracted, registered, and activated. The ZIP file must contain a plugin.yaml and a Python package with plugin.py."
+      },
+      {
+        "question": "How do I uninstall a plugin?",
+        "answer": "Installed plugins can be disabled or completely removed via Settings > Plugins. Removing a plugin deletes the plugin files and its configuration."
+      },
+      {
+        "question": "Can plugins provide their own UI components?",
+        "answer": "Yes. Plugins declare UI extensions via a manifest (get_frontend_manifest). Predefined slots: sidebar actions, toolbar buttons, editor panels, settings sections, export options. For complex UIs, plugins can ship Web Components as Custom Elements."
+      },
+      {
+        "question": "How do I start Bibliogon in production?",
+        "answer": "Copy .env.example to .env, set BIBLIOGON_SECRET_KEY to a random value, and run 'make prod'. The app will be available on port 8080. Data is persistently stored in a Docker volume."
+      },
+      {
+        "question": "What are templates and which ones ship with Bibliogon?",
+        "answer": "Templates are reusable structures. Book templates pre-fill a new book with a chapter list (title, type, order); 5 genres ship with the app: Children's Picture Book, Sci-Fi Novel, Non-Fiction / How-To, Philosophy, Memoir. Chapter templates pre-fill a single chapter with a TipTap JSON outline; 4 ship with the app: Interview, FAQ, Recipe, Photo Report. Built-in templates are read-only (lock badge); user templates are deletable via a trash icon."
+      },
+      {
+        "question": "How do I create a book from a template?",
+        "answer": "Click 'New Book' on the dashboard, switch to the 'From template' tab at the top of the dialog, pick a card, fill in title and author, and click 'Create'. Language and description are pre-filled from the template but editable. The book is created with all chapters in a single database commit."
+      },
+      {
+        "question": "How do I save a book as my own template?",
+        "answer": "Open the book in the editor, click 'Save as template' in the sidebar footer. Enter a name (required, unique) and a description. For content mode pick 'Empty placeholders' (structure only, recommended) or 'Preserve content' (full chapter bodies). Expand 'Preview chapters' to confirm the list before saving. On name collision (409) the name field shows an inline error."
+      },
+      {
+        "question": "How do I create a chapter from a template?",
+        "answer": "In the editor sidebar, click the '+' icon, then 'From template...' in the 'Chapter' group. Pick a card and click 'Insert'. The chapter is appended with the title, chapter type, and content from the template. Double-click the title to rename inline."
+      },
+      {
+        "question": "How do I save a chapter as my own template?",
+        "answer": "Right-click the chapter in the sidebar and select 'Save as template' from the context menu. Enter a name (pre-filled with the chapter title) and a description. 'Empty placeholder' saves structure only; 'Preserve content' copies the current chapter body into the template."
+      },
+      {
+        "question": "How do I delete a user template?",
+        "answer": "Open the template picker (book or chapter). User templates have a trash icon in the card header. Click it, confirm the dialog, and it's gone. Built-in templates (marked with a lock badge) do not have this icon and cannot be deleted; the server responds with 403."
+      },
+      {
+        "question": "How do I import a book from a git repository?",
+        "answer": "Dashboard -> Import. At the top of the wizard there is an 'Import from a git URL' field: paste a URL, click 'Clone + Import'. Bibliogon clones the repository into a temporary directory and imports it like a write-book-template project. Public HTTPS repos only in this version; authentication, branch selection, and smart-merge come in later phases."
+      },
+      {
+        "question": "How do I control which metadata fields get imported?",
+        "answer": "From v0.22 Step 3 of the import wizard shows every Book Metadata Editor field as a row with a checkbox + editable value. Title and author are mandatory. Any other row can be deselected (column stays empty) or edited before import. Long-form fields (CSS, back-cover text, author bio) are collapsible. Sections where all fields are empty hide behind an 'Add fields' toggle."
+      }
+    ]
+  },
+  "about": {
+    "name": "Bibliogon",
+    "description": "Open-source book authoring platform",
+    "website": "https://github.com/astrapi69/bibliogon",
+    "license": "MIT"
+  }
+}

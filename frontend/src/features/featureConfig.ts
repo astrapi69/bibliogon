@@ -93,6 +93,10 @@ const ALWAYS_ACTIVE: readonly string[] = [
     FEATURES.AUTHORS_EXPORT,
     FEATURES.BACKUP_EXPORT,
     FEATURES.BACKUP_IMPORT,
+    // `.bgb` full-data backup import runs client-side (`importBgbFile`):
+    // unzip + JSON parse + storage-seam writes, no Pandoc/Git, so it works
+    // in Dexie mode like every other offline importer (#99).
+    FEATURES.BGB_IMPORT,
 ];
 
 /**
@@ -120,7 +124,6 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.LAN_MODE,
     FEATURES.BACKUP_COMPARE,
     FEATURES.BACKUP_HISTORY,
-    FEATURES.BGB_IMPORT,
     FEATURES.PANDOC_EXPORT,
     FEATURES.VERSION_HISTORY,
     FEATURES.TRANSLATION_LINKS,

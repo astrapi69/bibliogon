@@ -4,6 +4,73 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+## [0.52.0] - 2026-06-13
+
+The **offline-depth + stability-hardening** release. The offline import wizard
+now also restores **`.bgb` full-data backups** entirely client-side (browser
+format detection, no `/api`), and the **Medium import** moves to the dedicated
+page with per-post progress and first-image thumbnails. Author **pen names**
+become a proper `<select>` (no more free-text datalist), the **view-switcher +
+responsive sidebars** land across more surfaces, and the **Article / picture-book
+editors** wrap their header toolbars on narrow viewports. Under the hood the
+**storage seam is hardened** — nine direct-seam bypasses removed with a
+`settingsSeamGuard` enforcement test, and all read-modify-write methods now go
+through a single serialized write-queue, closing a settings-clobber data-loss
+path. Two CI watchers join the gate (**cohesion** file-size + **complexity**
+radon/ruff-C901/ESLint, both warn-only), the **Vibe-Coding policy** is written
+down, and a long tail of **E2E smoke flakes** is stabilized. Six systematic
+**LaTeX export** bugs are fixed. No schema migrations; existing data, backups
+(`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- **Offline `.bgb` import**: the client-side import wizard now detects and
+  restores `.bgb` full-data backups in the browser via the storage seam, with
+  no `/api` calls. (#100)
+- **View-switcher + responsive sidebars** across more surfaces, plus the
+  accompanying docs. (#108)
+- **Cohesion watcher** (CI): a file-size guard that warns on growing files and
+  blocks new god-files, with a whitelist + grandfathered baseline. (#113)
+- **Complexity watcher** (CI): radon cyclomatic complexity + ruff `C901`
+  (Python) and ESLint `complexity` (TypeScript), threshold 20, warn-only
+  (`make check-complexity`). (#140)
+- **Vibe-Coding policy** documented in `docs/VIBE-CODING-POLICY.md` and the
+  rule set. (#119)
+
+### Changed
+- **Author pen names** now use a closed `<select>` instead of a free-text
+  datalist. (#104, #110)
+- **Storage-seam enforcement**: nine direct-seam bypasses routed back through
+  `getStorage()`, pinned by a `settingsSeamGuard` enforcement test. (#111)
+- **Serialized write-queue**: ten read-modify-write storage methods now share a
+  single per-(table,id) write-queue, so concurrent updates can't interleave.
+  (#126)
+- **Article-dashboard label** reflects the configured default content type, and
+  Settings sidebar sub-items are indented under their category headers. (#124)
+- **About > Plugins** is clarified as browser-available in the PWA. (#98)
+- **CI/scripts language** standardized to English (workflows + shell scripts).
+  (#146)
+
+### Fixed
+- **Settings clobber / data loss**: settings writes are queued so a slow write
+  can no longer overwrite a newer one. (#121)
+- **Dialog overflow**: long unbroken strings (SHA hashes, URLs, file names) now
+  wrap inside every dialog instead of spilling over the edge. (#140, #142)
+- **Medium import**: ZIPs route to the dedicated import page (preview / select /
+  progress) instead of an inline, feedback-free import; per-post progress is
+  shown and the first body image becomes the article thumbnail. (#140)
+- **Responsive editors**: the Article and picture-book editor header toolbars
+  wrap on narrow viewports instead of overflowing. (#140)
+- **LaTeX export**: six systematic `.tex` export bugs corrected. (#94)
+- **Non-functional UI audit**: 404 handling, the Help page, GetStarted, and the
+  PDF-export feature gate. (#102)
+- **Empty Settings surfaces in Dexie mode**: the empty Plugins tab and About
+  plugins section are hidden offline. (#96)
+- **Circular dependency** between the offline-help and API client resolved.
+  (#115)
+- **E2E smoke stability**: offline serial destabilizer (#117), chapter-sidebar
+  zoom walk (#128), backup-acceptance verify race (#130), ai-template /
+  article-topic flakes (#137), and the copy-toolbar Radix-detach race (#144).
+
 ## [0.51.0] - 2026-06-12
 
 The **offline-feature-strategy + import-wizard + About-depth** release. Offline

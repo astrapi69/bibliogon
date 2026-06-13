@@ -23,6 +23,9 @@ import {test, expect} from "../fixtures/base";
 // require shim ("require is not defined in ES module scope") under the e2e
 // package's default CommonJS module mode.
 const MEDIUM_ZIP = path.join(__dirname, "..", "fixtures", "medium-export.zip");
+// A minimal full-data backup (manifest + 1 book "BGB Restored Book" + 1
+// chapter) for the offline .bgb import test (#99).
+const BACKUP_BGB = path.join(__dirname, "..", "fixtures", "backup.bgb");
 
 // Smoke tests mutate the viewport / storage mode; run this file serially so
 // the shared per-test recorder below is never raced.
@@ -109,23 +112,21 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("My Offline Novel").first()).toBeVisible();
     });
 
-    test("bgb import shows the desktop-app hint offline (the one gate)", async ({
+    test("bgb import works offline: file -> book + chapter via Dexie (#99)", async ({
         page,
     }) => {
         await page.goto("/");
         await page.getByTestId("dashboard-empty-import").click();
-        await page.getByTestId("offline-import-input").setInputFiles({
-            name: "backup.bgb",
-            mimeType: "application/octet-stream",
-            buffer: Buffer.from("PK bgb archive placeholder"),
-        });
-        // .bgb is the only offline-unsupported format: a FEATURES.BGB_IMPORT
-        // gate (the Feature component) renders the desktop-app hint and no
-        // generic import button.
-        await expect(
-            page.getByTestId("offline-import-bgb-hint"),
-        ).toBeVisible();
-        await expect(page.getByTestId("offline-import-confirm")).toHaveCount(0);
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await page.getByTestId("offline-import-input").setInputFiles(BACKUP_BGB);
+        // .bgb now parses client-side: the FEATURES.BGB_IMPORT gate is active,
+        // so the import button shows (not the desktop-app hint).
+        await expect(page.getByTestId("offline-import-format-bgb")).toBeVisible();
+        await expect(page.getByTestId("offline-import-bgb-hint")).toHaveCount(0);
+        await page.getByTestId("offline-import-bgb-confirm").click();
+        // The dialog closes and the restored book (read back from Dexie) appears.
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+        await expect(page.getByText("BGB Restored Book").first()).toBeVisible();
     });
 
     test("article-list import opens the offline dialog (not the backend wizard), no /api (#82)", async ({
@@ -175,6 +176,43 @@ test.describe("Offline PWA (Dexie mode)", () => {
         ).toContainText(/English|Englisch/);
     });
 
+    test("hides the empty Plugins tab in Dexie mode", async ({page}) => {
+        await page.goto("/settings");
+        // Settings loaded (the default appearance tab is present)...
+        await expect(
+            page.getByTestId("settings-tab-erscheinungsbild"),
+        ).toBeVisible();
+        // ...but plugins are a backend concept: no plugin configs offline, so
+        // the Plugins tab is an empty container and is not rendered.
+        await expect(page.getByTestId("settings-tab-plugins")).toHaveCount(0);
+
+        // A stale deep-link to ?tab=plugins falls back to the default tab.
+        await page.goto("/settings?tab=plugins");
+        await expect(page).toHaveURL(/[?&]tab=erscheinungsbild(\b|$)/);
+        await expect(page.getByTestId("settings-tab-plugins")).toHaveCount(0);
+    });
+
+    test("About > Plugins lists the curated browser plugins with the hint (#97)", async ({
+        page,
+    }) => {
+        await page.goto("/settings?tab=about");
+        await expect(page.getByTestId("about-settings-content")).toBeVisible({
+            timeout: 5000,
+        });
+        // The seeded Dexie registry deliberately curates the 3 plugins whose
+        // function exists client-side (export/help/getstarted); the section
+        // stays visible per policy #78 and carries the browser hint.
+        await expect(page.getByTestId("about-plugins-section")).toBeVisible();
+        await expect(
+            page.getByTestId("about-plugins-browser-hint"),
+        ).toBeVisible();
+        await expect(page.getByTestId("about-plugin-row-export")).toBeVisible();
+        await expect(page.getByTestId("about-plugin-row-help")).toBeVisible();
+        await expect(
+            page.getByTestId("about-plugin-row-getstarted"),
+        ).toBeVisible();
+    });
+
     test("create a book offline, reload - persisted in Dexie", async ({
         page,
     }) => {
@@ -195,6 +233,68 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.reload();
         await expect(page.getByTestId("new-book-group")).toBeVisible();
         await expect(page.getByText("Offline Book").first()).toBeVisible();
+    });
+
+    test("view switcher works offline: BD + AD grid -> list -> grid, persists (#106)", async ({
+        page,
+    }) => {
+        // Pre-#106, useViewMode read settings via the RAW api client:
+        // guardedFetch rejected offline (before any network request, so
+        // this suite's /api hard gate never saw it) and the rollback
+        // catch snapped the optimistic toggle straight back to grid -
+        // clicking "Liste" visibly did nothing on the PWA.
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-title").fill("Switcher Book");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+        await expect(page.getByText("Switcher Book").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // BD: grid -> list renders the list view...
+        await page.getByTestId("view-toggle-list").click();
+        await expect(page.getByTestId("book-list-view")).toBeVisible();
+
+        // ...the preference persists in the Dexie settings store...
+        await page.reload();
+        await expect(page.getByTestId("book-list-view")).toBeVisible();
+
+        // ...and toggling back to grid works too.
+        await page.getByTestId("view-toggle-grid").click();
+        await expect(page.getByTestId("book-list-view")).toHaveCount(0);
+
+        // AD: same cycle. Create an article so list rows can render.
+        await page.goto("/articles/new");
+        await page.getByTestId("create-article-title").fill("Switcher Article");
+        await page.getByTestId("create-article-submit").click();
+        // Create resolves the Dexie write, then navigates to the editor
+        // (/articles/:id). Wait for that nav so the following goto("/articles")
+        // cannot tear down the in-flight IndexedDB commit - otherwise the list
+        // reads empty ("0 Artikel") and this serial block fails+retries (#106).
+        await page.waitForURL(
+            (url) =>
+                /\/articles\/[^/]+$/.test(url.pathname) &&
+                !url.pathname.endsWith("/new"),
+        );
+        await page.goto("/articles");
+        await expect(page.getByText("Switcher Article").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        await page.getByTestId("view-toggle-list").click();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']").first(),
+        ).toBeVisible();
+
+        await page.reload();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']").first(),
+        ).toBeVisible();
+
+        await page.getByTestId("view-toggle-grid").click();
+        await expect(
+            page.locator("[data-testid^='article-list-row-']"),
+        ).toHaveCount(0);
     });
 
     test("book trash works offline: soft-delete -> trash -> restore (Finding 7)", async ({

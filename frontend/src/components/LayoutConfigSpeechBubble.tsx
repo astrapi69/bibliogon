@@ -2,6 +2,7 @@ import React from "react"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
 import {useI18n} from "../hooks/useI18n"
 import styles from "./LayoutConfigSpeechBubble.module.css"
+import {CollapsibleConfigSection} from "./CollapsibleConfigSection"
 import {Tier1Section} from "./comics/Tier1Section"
 import {Tier2Section} from "./comics/Tier2Section"
 import {readBubbleConfig} from "./comics/bubbleConfigReads"
@@ -137,9 +138,11 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
             className={styles.container}
             data-testid="layout-config-speech-bubble"
         >
-            <h4 className={styles.heading}>
-                {t("ui.page_editor.config.speech_bubble.heading", "Sprechblase")}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-page-editor-layout-config"
+                heading={t("ui.page_editor.config.speech_bubble.heading", "Sprechblase")}
+                testidPrefix="layout-config-speech-bubble"
+            >
 
             <fieldset
                 className={styles.anchorFieldset}
@@ -289,6 +292,7 @@ export default function LayoutConfigSpeechBubble({config, onChange}: Props) {
 
             <Tier1Section config={config} onChange={writeBubble} />
             <Tier2Section config={config} onChange={writeBubble} />
+            </CollapsibleConfigSection>
         </div>
     )
 }

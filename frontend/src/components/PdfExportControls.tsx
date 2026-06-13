@@ -37,7 +37,10 @@
 
 import React, {useCallback, useEffect, useRef, useState} from "react"
 import {Download, Loader2} from "lucide-react"
+import {useFeature} from "@astrapi69/feature-strategy-react"
 import {api, ApiError} from "../api/client"
+import {getStorage} from "../storage"
+import {FEATURES} from "../features/featureConfig"
 import {useI18n} from "../hooks/useI18n"
 import {notify} from "../utils/notify"
 import {Toggle} from "./settings/Toggle"
@@ -141,6 +144,14 @@ export default function PdfExportControls({
     compact = false,
 }: Props) {
     const {t} = useI18n()
+    // Picture-book + comic PDF rendering runs through the backend
+    // (WeasyPrint/Pandoc image-layout walker); there is no browser
+    // engine for it, so it is genuinely desktop-only. Gating here
+    // keeps the Export-PDF button from firing `/api` on the
+    // backendless PWA (where it would hard-fail / hit the offline
+    // guard). The controls stay visible + disabled-with-reason per
+    // policy #78.
+    const pandoc = useFeature(FEATURES.PANDOC_EXPORT)
     const [format, setFormat] = useState<PictureBookFormat>(
         DEFAULT_PICTURE_BOOK_FORMAT,
     )
@@ -152,8 +163,8 @@ export default function PdfExportControls({
     // localStorage values for the one-time migration.
     useEffect(() => {
         let cancelled = false
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return
                 const ui =
@@ -189,8 +200,8 @@ export default function PdfExportControls({
                     (!hasCfgBleed && legacyBleed !== null)
                 if (needsMigration && !migratedRef.current) {
                     migratedRef.current = true
-                    api.settings
-                        .updateApp({
+                    getStorage()
+                        .settings.updateApp({
                             ui: {
                                 ...ui,
                                 picture_book: {
@@ -233,7 +244,7 @@ export default function PdfExportControls({
     }, [])
 
     const handleExport = useCallback(async () => {
-        if (exporting) return
+        if (exporting || !pandoc.isActive) return
         setExporting(true)
         try {
             // PDF-KDP-FORMATS-01 + PDF-BLEED-MARKS-01: thread non-
@@ -259,7 +270,7 @@ export default function PdfExportControls({
         } finally {
             setExporting(false)
         }
-    }, [bookId, exporting, format, bleed, t])
+    }, [bookId, exporting, format, bleed, pandoc.isActive, t])
 
     const formatLabel = t("ui.page_editor.pdf_format_label", "PDF format")
     const formatSelect = (
@@ -329,7 +340,7 @@ export default function PdfExportControls({
             <button
                 type="button"
                 onClick={handleExport}
-                disabled={exporting}
+                disabled={exporting || !pandoc.isActive}
                 data-testid={`${testidPrefix}-export-pdf`}
                 // Comic header: match the other utility header buttons
                 // (Back/Metadata/Fullscreen) which all use the global
@@ -341,7 +352,15 @@ export default function PdfExportControls({
                         ? "btn btn-secondary btn-sm"
                         : (exportButtonClassName ?? controlClassName)
                 }
-                title={t("ui.page_editor.export_pdf", "Export as PDF")}
+                title={
+                    pandoc.isActive
+                        ? t("ui.page_editor.export_pdf", "Export as PDF")
+                        : t(
+                              pandoc.reason ??
+                                  "ui.feature.requires_desktop_app",
+                              "This feature requires the Bibliogon desktop app",
+                          )
+                }
                 // Comic header: icon-only utility button (matches the
                 // Fullscreen icon-button + tooltip convention); the
                 // tooltip + aria-label carry the action name.

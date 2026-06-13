@@ -659,12 +659,17 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={onBack}
             />,
         );
-        const input = screen.getByTestId("metadata-author") as HTMLInputElement;
-        expect(input.tagName).toBe("INPUT");
-        expect(input.value).toBe("Test Author");
+        // The profile authors (real name + pen names) render as a real
+        // <select> so every pen name is a visible option regardless of the
+        // pre-filled value (a native <datalist> filtered them out — #pen-names).
+        const select = screen.getByTestId(
+            "metadata-author-select",
+        ) as HTMLSelectElement;
+        expect(select.tagName).toBe("SELECT");
+        expect(select.value).toBe("Test Author");
     });
 
-    it("datalist exposes profile name + all pen names as suggestions", () => {
+    it("author select lists profile name + all pen names as options", () => {
         render(
             <BookMetadataEditor
                 book={
@@ -685,8 +690,8 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={vi.fn()}
             />,
         );
-        const datalist = screen.getByTestId("metadata-author-datalist");
-        const values = Array.from(datalist.querySelectorAll("option")).map(
+        const select = screen.getByTestId("metadata-author-select");
+        const values = Array.from(select.querySelectorAll("option")).map(
             (o) => (o as HTMLOptionElement).value,
         );
         expect(values).toContain("Test Author");
@@ -748,7 +753,7 @@ describe("BookMetadataEditor — author + language fields", () => {
         expect(screen.getByTestId("metadata-author-manage-link")).toBeInTheDocument();
     });
 
-    it("typing in the author input updates form state", () => {
+    it("selecting a pen name from the author select updates form state", () => {
         render(
             <BookMetadataEditor
                 book={
@@ -769,9 +774,11 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={vi.fn()}
             />,
         );
-        const input = screen.getByTestId("metadata-author") as HTMLInputElement;
-        fireEvent.change(input, { target: { value: "Pen One" } });
-        expect(input.value).toBe("Pen One");
+        const select = screen.getByTestId(
+            "metadata-author-select",
+        ) as HTMLSelectElement;
+        fireEvent.change(select, { target: { value: "Pen One" } });
+        expect(select.value).toBe("Pen One");
     });
 
     it("renders language input with current code", () => {

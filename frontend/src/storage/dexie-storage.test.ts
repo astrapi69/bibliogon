@@ -634,3 +634,87 @@ describe("DexieStorage — comments (admin + trash lifecycle)", () => {
     expect(article?.content_json).toContain("This deserves its own piece.");
   });
 });
+
+describe("DexieStorage — concurrent read-modify-write (serializedUpdate)", () => {
+  // Each update is a get -> shallow-merge -> put. Before serialization, two
+  // near-simultaneous updates to the SAME record both read the pre-other
+  // state, and the later put() (built from a stale read) dropped the other
+  // call's field. These pin that two concurrent updates writing DIFFERENT
+  // fields of one record both survive. They FAIL on the pre-serialization
+  // code (one field is clobbered); they pass once serializedUpdate chains
+  // the writes per record.
+
+  it("chapters.update: concurrent title + content updates both persist", async () => {
+    const book = await dexieStorage.books.create({ title: "B" });
+    const ch = await dexieStorage.chapters.create(book.id, { title: "Orig" });
+
+    await Promise.all([
+      dexieStorage.chapters.update(book.id, ch.id, {
+        version: ch.version,
+        title: "New Title",
+      }),
+      dexieStorage.chapters.update(book.id, ch.id, {
+        version: ch.version,
+        content: '{"type":"doc","content":[]}',
+      }),
+    ]);
+
+    const got = await dexieStorage.chapters.get(book.id, ch.id);
+    expect(got.title).toBe("New Title");
+    expect(got.content).toBe('{"type":"doc","content":[]}');
+  });
+
+  it("articles.update: concurrent title + content_json updates both persist", async () => {
+    const article = await dexieStorage.articles.create({ title: "Orig" });
+
+    await Promise.all([
+      dexieStorage.articles.update(article.id, { title: "New Title" }),
+      dexieStorage.articles.update(article.id, {
+        content_json: '{"type":"doc","content":[{"type":"paragraph"}]}',
+      }),
+    ]);
+
+    const got = await dexieStorage.articles.get(article.id);
+    expect(got.title).toBe("New Title");
+    expect(got.content_json).toBe(
+      '{"type":"doc","content":[{"type":"paragraph"}]}',
+    );
+  });
+
+  it("books.update: concurrent title + subtitle updates both persist", async () => {
+    const book = await dexieStorage.books.create({ title: "Orig" });
+
+    await Promise.all([
+      dexieStorage.books.update(book.id, { title: "New Title" }),
+      dexieStorage.books.update(book.id, { subtitle: "New Subtitle" }),
+    ]);
+
+    const got = await dexieStorage.books.get(book.id);
+    expect(got.title).toBe("New Title");
+    expect(got.subtitle).toBe("New Subtitle");
+  });
+
+  it("different records are not serialized against each other (per-(table,id) keying)", async () => {
+    const a = await dexieStorage.books.create({ title: "A" });
+    const b = await dexieStorage.books.create({ title: "B" });
+
+    // Two concurrent field-updates per book, across two distinct records.
+    // Each book's own pair must serialize (both fields survive), while the
+    // two books proceed on independent queues - a single global queue would
+    // still be correct here, so the value of this test is guarding that the
+    // key is per-record (different ids never block or clobber one another).
+    await Promise.all([
+      dexieStorage.books.update(a.id, { title: "A2" }),
+      dexieStorage.books.update(a.id, { subtitle: "A-sub" }),
+      dexieStorage.books.update(b.id, { title: "B2" }),
+      dexieStorage.books.update(b.id, { subtitle: "B-sub" }),
+    ]);
+
+    const gotA = await dexieStorage.books.get(a.id);
+    const gotB = await dexieStorage.books.get(b.id);
+    expect(gotA.title).toBe("A2");
+    expect(gotA.subtitle).toBe("A-sub");
+    expect(gotB.title).toBe("B2");
+    expect(gotB.subtitle).toBe("B-sub");
+  });
+});

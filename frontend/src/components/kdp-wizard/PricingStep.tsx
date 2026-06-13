@@ -22,7 +22,8 @@
 import {useEffect, useState} from "react"
 import {AlertCircle, Banknote} from "lucide-react"
 
-import {api, BookDetail} from "../../api/client"
+import {BookDetail} from "../../api/client"
+import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {useBookTypes} from "../../hooks/useBookTypes"
 import type {PricingState, RegionCode} from "./machines/types"
@@ -96,8 +97,8 @@ export default function PricingStep({book, pricing, onChange}: Props) {
         useState<RegionCode>(DEFAULT_MARKETPLACE)
     useEffect(() => {
         let cancelled = false
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return
                 const kdp =

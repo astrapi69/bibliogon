@@ -64,6 +64,24 @@ describe("LanAccessSettings", () => {
         expect(qr.getAttribute("src")).toBe("/api/lan-auth/qr.svg");
     });
 
+    it("shows the desktop-app notice (no QR/URL/PIN) in Dexie mode", () => {
+        render(
+            <FeatureTestProvider mode="dexie">
+                <LanAccessSettings />
+            </FeatureTestProvider>,
+        );
+
+        // Header stays visible; the short disabled notice replaces the full
+        // QR/URL/PIN instructions, which are useless without a backend host.
+        expect(screen.getByTestId("lan-access-header")).toBeTruthy();
+        expect(screen.getByTestId("lan-access-disabled")).toBeTruthy();
+        expect(screen.queryByTestId("lan-access-qr")).toBeNull();
+        expect(screen.queryByTestId("lan-access-url")).toBeNull();
+        expect(screen.queryByTestId("lan-access-pin")).toBeNull();
+        // And it fires no /api/lan-auth request offline.
+        expect(vi.mocked(api.lanAuth.info)).not.toHaveBeenCalled();
+    });
+
     it("renders nothing when LAN mode is off (info 404s)", async () => {
         vi.mocked(api.lanAuth.info).mockImplementation(async () => {
             throw new ApiError(404, "Not Found", "/api/lan-auth/info", "GET");

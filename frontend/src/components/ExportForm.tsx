@@ -77,8 +77,13 @@ export default function ExportForm({bookId, bookTitle, hasManualToc, onDone}: Pr
     const [sectionOrders, setSectionOrders] = useState<Record<string, string[] | null>>({});
     const [exporting, setExporting] = useState(false);
 
-    // Load default section_order from export plugin config
+    // Load default section_order from export plugin config. Backend-only
+    // data (manuscripta passthrough): the Dexie/PWA build has no plugin
+    // host, so skip the fetch offline and keep the in-code defaults -
+    // a storage-mode routing branch like Settings' listPlugins (#96),
+    // NOT a feature gate (#107).
     useEffect(() => {
+        if (getStorage().mode === "dexie") return;
         api.settings.getPlugin("export").then((config) => {
             const settings = (config.settings || {}) as Record<string, unknown>;
             const order = settings.section_order as Record<string, string[] | null> | undefined;

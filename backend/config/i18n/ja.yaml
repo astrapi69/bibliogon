@@ -2,7 +2,7 @@ ui:
   offline_import:
     title: "インポート"
     drop_zone: "ファイルをここにドロップ、またはクリックして選択"
-    accepted: "Markdown、テキスト、HTML、JSONバックアップ、Mediumエクスポート（.zip）。.bgb はデスクトップアプリが必要です。"
+    accepted: "Markdown、テキスト、HTML、JSONバックアップ、Mediumエクスポート（.zip）、バックアップ（.bgb）。"
     file_label: "ファイル:"
     detecting: "形式を検出中 …"
     detected_label: "検出された形式:"
@@ -31,6 +31,12 @@ ui:
     requires_desktop_app: "この機能には Bibliogon デスクトップアプリが必要です"
     requires_ai_key: "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）"
     not_yet_available: "この機能はまだ利用できません。"
+  not_found:
+    title: "ページが見つかりません"
+    description: "リクエストされたページは存在しないか、移動されました。"
+    back_home: "ダッシュボードに戻る"
+  author_select:
+    custom_option: "別の名前…"
   story_bible:
     title: "Story Bible"
     close: "Story Bible を閉じる"
@@ -3090,6 +3096,7 @@ ui:
     platform_label: "プラットフォーム"
     plugins_heading: "プラグイン"
     plugins_empty: "有効なプラグインはありません。"
+    plugins_browser_hint: "これらのプラグインはこのブラウザーで直接利用できます。"
     dep_unknown: "不明"
     storage_label: "ストレージ"
     storage_indexeddb: "ローカルブラウザストレージ (IndexedDB)"

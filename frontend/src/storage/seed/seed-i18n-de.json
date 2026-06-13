@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "Importieren",
       "drop_zone": "Datei hier ablegen oder klicken",
-      "accepted": "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip). .bgb benötigt die Desktop-App.",
+      "accepted": "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip), Backup (.bgb).",
       "file_label": "Datei:",
       "detecting": "Format wird erkannt …",
       "detected_label": "Erkanntes Format:",
@@ -33,6 +33,14 @@
       "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App",
       "requires_ai_key": "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)",
       "not_yet_available": "Diese Funktion ist noch nicht verfügbar."
+    },
+    "not_found": {
+      "title": "Seite nicht gefunden",
+      "description": "Die angeforderte Seite existiert nicht oder wurde verschoben.",
+      "back_home": "Zurück zum Dashboard"
+    },
+    "author_select": {
+      "custom_option": "Anderer Name …"
     },
     "story_bible": {
       "title": "Story-Bibel",
@@ -3258,6 +3266,7 @@
       "platform_label": "Plattform",
       "plugins_heading": "Plugins",
       "plugins_empty": "Keine Plugins aktiv.",
+      "plugins_browser_hint": "Diese Plugins sind direkt in diesem Browser verfügbar.",
       "dep_unknown": "Unbekannt",
       "storage_label": "Speicher",
       "storage_indexeddb": "Lokaler Browser-Speicher (IndexedDB)",

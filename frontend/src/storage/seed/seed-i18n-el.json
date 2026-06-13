@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "Εισαγωγή",
       "drop_zone": "Αφήστε ένα αρχείο εδώ ή κάντε κλικ για επιλογή",
-      "accepted": "Markdown, κείμενο, HTML, αντίγραφο JSON, εξαγωγή Medium (.zip). Το .bgb απαιτεί την εφαρμογή υπολογιστή.",
+      "accepted": "Markdown, κείμενο, HTML, αντίγραφο JSON, εξαγωγή Medium (.zip), αντίγραφο (.bgb).",
       "file_label": "Αρχείο:",
       "detecting": "Ανίχνευση μορφής …",
       "detected_label": "Μορφή που εντοπίστηκε:",
@@ -33,6 +33,14 @@
       "requires_desktop_app": "Αυτή η λειτουργία απαιτεί την εφαρμογή Bibliogon για υπολογιστή",
       "requires_ai_key": "Αυτή η λειτουργία απαιτεί διαμορφωμένο κλειδί AI (Ρυθμίσεις > Βοηθός AI)",
       "not_yet_available": "Αυτή η λειτουργία δεν είναι ακόμη διαθέσιμη."
+    },
+    "not_found": {
+      "title": "Η σελίδα δεν βρέθηκε",
+      "description": "Η ζητούμενη σελίδα δεν υπάρχει ή έχει μετακινηθεί.",
+      "back_home": "Επιστροφή στον πίνακα ελέγχου"
+    },
+    "author_select": {
+      "custom_option": "Άλλο όνομα…"
     },
     "story_bible": {
       "title": "Story Bible",
@@ -3258,6 +3266,7 @@
       "platform_label": "Πλατφόρμα",
       "plugins_heading": "Plugins",
       "plugins_empty": "Δεν υπάρχουν ενεργά plugins.",
+      "plugins_browser_hint": "Αυτά τα plugins είναι διαθέσιμα απευθείας σε αυτό το πρόγραμμα περιήγησης.",
       "dep_unknown": "Άγνωστο",
       "storage_label": "Αποθήκευση",
       "storage_indexeddb": "Τοπική αποθήκευση προγράμματος περιήγησης (IndexedDB)",

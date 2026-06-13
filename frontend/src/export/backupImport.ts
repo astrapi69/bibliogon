@@ -68,7 +68,7 @@ export function parseBackupBundle(text: string): BackupBundleV1 {
     return candidate as BackupBundleV1;
 }
 
-function bookCreateFrom(book: Book): BookCreate {
+export function bookCreateFrom(book: Book): BookCreate {
     return {
         title: book.title,
         subtitle: book.subtitle ?? undefined,
@@ -83,7 +83,7 @@ function bookCreateFrom(book: Book): BookCreate {
     };
 }
 
-function articleCreateFrom(article: Article): ArticleCreate {
+export function articleCreateFrom(article: Article): ArticleCreate {
     return {
         title: article.title,
         subtitle: article.subtitle,

@@ -6,15 +6,17 @@
  * ({@link detectImportFormat}) and imports it through {@link importFile} - all
  * via the `getStorage()` seam, firing zero `/api` requests. Markdown / Text /
  * HTML offer a "new book" vs "append to existing book" choice; the JSON
- * full-data backup and the Medium ZIP run their existing offline importers;
- * `.bgb` is gated through the feature registry (`FEATURES.BGB_IMPORT`) and
- * shows the desktop-app hint.
+ * full-data backup, the Medium ZIP, and the `.bgb` full-data backup all run
+ * their client-side importers. The `FEATURES.BGB_IMPORT` gate is now active
+ * everywhere (the `.bgb` parser is browser-side), so the desktop hint only
+ * shows if the feature is ever explicitly disabled.
  *
  * The backend import wizard (API mode) is untouched: the Dashboard mounts this
  * dialog only when `useStorageMode()` reports `dexie`.
  */
 
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Feature } from "@astrapi69/feature-strategy-react";
 import { FolderUp, Upload, X } from "lucide-react";
@@ -52,6 +54,7 @@ export default function OfflineImportDialog({
     onImported,
 }: OfflineImportDialogProps) {
     const { t } = useI18n();
+    const navigate = useNavigate();
     const [file, setFile] = useState<File | null>(null);
     const [format, setFormat] = useState<ImportFormat | null>(null);
     const [detecting, setDetecting] = useState(false);
@@ -82,6 +85,20 @@ export default function OfflineImportDialog({
         setFormat(null);
         setDetecting(true);
         const detected = await detectImportFormat(picked);
+        if (detected === "medium-zip") {
+            // Medium archives have their own dedicated page with a
+            // preview/select + progress + result flow (#132). Hand the
+            // file off there instead of importing it inline: the generic
+            // dialog has no preview, no per-post selection, and no
+            // progress feedback. The page picks the file up from
+            // location.state and continues with "Vorschau & Auswahl".
+            setDetecting(false);
+            handleClose();
+            navigate("/articles/import/medium", {
+                state: { pendingMediumFile: picked },
+            });
+            return;
+        }
         setFormat(detected);
         setDetecting(false);
         if (CHAPTER_FORMATS.includes(detected)) {
@@ -102,7 +119,7 @@ export default function OfflineImportDialog({
                       "Kapitel zu {book} hinzugefügt",
                   ).replace("{book}", result.result.bookTitle);
         }
-        if (result.kind === "backup") {
+        if (result.kind === "backup" || result.kind === "bgb-backup") {
             return t(
                 "ui.offline_import.success_backup",
                 "Backup importiert: {books} Bücher, {articles} Artikel",
@@ -201,7 +218,7 @@ export default function OfflineImportDialog({
                                 )}
                                 hint={t(
                                     "ui.offline_import.accepted",
-                                    "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip). .bgb benötigt die Desktop-App.",
+                                    "Markdown, Text, HTML, JSON-Backup, Medium-Export (.zip), Backup (.bgb).",
                                 )}
                             />
                         )}

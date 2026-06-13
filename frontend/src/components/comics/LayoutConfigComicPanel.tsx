@@ -35,6 +35,7 @@ import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {warnIfOfflineStorageNearlyFull} from "../../utils/storageQuota";
 
+import {CollapsibleConfigSection} from "../CollapsibleConfigSection";
 import {Tier1Section} from "./Tier1Section";
 import type {ComicPanelData} from "./ComicPanel";
 
@@ -102,12 +103,11 @@ export function LayoutConfigComicPanel({
                 padding: "14px",
             }}
         >
-            <h4 style={{margin: 0}}>
-                {t(
-                    "ui.page_editor.config.comic_panel.heading",
-                    "Panel",
-                )}
-            </h4>
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-comic-panel-config"
+                heading={t( "ui.page_editor.config.comic_panel.heading", "Panel", )}
+                testidPrefix="layout-config-comic-panel"
+            >
 
             <div
                 data-testid="comic-panel-image-section"
@@ -179,6 +179,7 @@ export function LayoutConfigComicPanel({
                 testidPrefix="comic-panel"
                 i18nKeyPrefix="ui.page_editor.config.comic_panel"
             />
+        </CollapsibleConfigSection>
         </div>
     );
 }

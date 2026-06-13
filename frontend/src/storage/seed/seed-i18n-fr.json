@@ -3,7 +3,7 @@
     "offline_import": {
       "title": "Importer",
       "drop_zone": "Déposez un fichier ici ou cliquez pour parcourir",
-      "accepted": "Markdown, texte, HTML, sauvegarde JSON, export Medium (.zip). .bgb nécessite l'application de bureau.",
+      "accepted": "Markdown, texte, HTML, sauvegarde JSON, export Medium (.zip), sauvegarde (.bgb).",
       "file_label": "Fichier :",
       "detecting": "Détection du format …",
       "detected_label": "Format détecté :",
@@ -33,6 +33,14 @@
       "requires_desktop_app": "Cette fonctionnalité nécessite l'application de bureau Bibliogon",
       "requires_ai_key": "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)",
       "not_yet_available": "Cette fonctionnalité n'est pas encore disponible."
+    },
+    "not_found": {
+      "title": "Page introuvable",
+      "description": "La page demandée n'existe pas ou a été déplacée.",
+      "back_home": "Retour au tableau de bord"
+    },
+    "author_select": {
+      "custom_option": "Autre nom…"
     },
     "story_bible": {
       "title": "Story Bible",
@@ -3258,6 +3266,7 @@
       "platform_label": "Plateforme",
       "plugins_heading": "Plugins",
       "plugins_empty": "Aucun plugin actif.",
+      "plugins_browser_hint": "Ces plugins sont disponibles directement dans ce navigateur.",
       "dep_unknown": "Inconnu",
       "storage_label": "Stockage",
       "storage_indexeddb": "Stockage local du navigateur (IndexedDB)",

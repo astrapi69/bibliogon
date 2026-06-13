@@ -30,11 +30,17 @@ const API = "http://localhost:8000/api";
  */
 async function openCopyMenu(page: Page): Promise<void> {
     await expect(page.locator(".ProseMirror")).toBeVisible();
+    const markdownItem = page.getByTestId("toolbar-copy-markdown-item");
     await expect(async () => {
-        await page.getByTestId("toolbar-copy-chevron").click();
-        await expect(page.getByTestId("toolbar-copy-markdown-item")).toBeVisible({
-            timeout: 1500,
-        });
+        // Click the chevron only when the menu is not already open. The
+        // chevron TOGGLES the Radix menu, so a blind re-click on retry could
+        // close an already-open menu and leave it shut when this helper
+        // returns. Guarding on visibility makes the retry idempotent
+        // (open-or-stay-open, never open-then-close).
+        if (!(await markdownItem.isVisible())) {
+            await page.getByTestId("toolbar-copy-chevron").click();
+        }
+        await expect(markdownItem).toBeVisible({timeout: 1500});
     }).toPass({timeout: 15000});
 }
 
@@ -88,13 +94,19 @@ test.describe("Toolbar Copy split-button (F3)", () => {
         });
         await page.goto(`/articles/${article.id}`);
 
-        await openCopyMenu(page);
-        await page.getByTestId("toolbar-copy-plain-item").click();
-
-        // react-toastify renders the toast outside the main app tree;
-        // match on the toast container role + the i18n fallback.
-        await expect(page.getByText(/Copied as plain text/i)).toBeVisible({
-            timeout: 5000,
-        });
+        // The Radix menu content can re-mount mid-open, detaching the item
+        // between locator-resolve and click ("element was detached from the
+        // DOM"). Retry the whole open -> click -> assert-toast block:
+        // openCopyMenu is idempotent (open-or-stay-open) and copying is
+        // idempotent, so re-running on a detach is safe. react-toastify
+        // renders the toast outside the main app tree; match the i18n
+        // fallback text.
+        await expect(async () => {
+            await openCopyMenu(page);
+            await page.getByTestId("toolbar-copy-plain-item").click();
+            await expect(page.getByText(/Copied as plain text/i)).toBeVisible({
+                timeout: 2000,
+            });
+        }).toPass({timeout: 15000});
     });
 });

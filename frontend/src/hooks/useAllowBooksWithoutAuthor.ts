@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { api } from "../api/client";
+import { getStorage } from "../storage";
 
 /**
  * Returns the value of the ``app.allow_books_without_author``
@@ -13,8 +13,8 @@ export function useAllowBooksWithoutAuthor(): boolean {
     const [allow, setAllow] = useState<boolean>(false);
     useEffect(() => {
         let cancelled = false;
-        api.settings
-            .getApp()
+        getStorage()
+            .settings.getApp()
             .then((config) => {
                 if (cancelled) return;
                 const appBlock = (config.app || {}) as Record<string, unknown>;

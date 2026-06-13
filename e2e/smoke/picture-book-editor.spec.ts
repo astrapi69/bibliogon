@@ -16,8 +16,36 @@
  */
 
 import {test, expect, createPictureBook} from "../fixtures/base"
+import type {Page} from "@playwright/test"
 
 const API = "http://localhost:8000/api"
+
+/**
+ * Set the create-book author. The field is a free-text input (placeholder
+ * "Autorenname oder Pen Name") unless the configured profile has 2+ names
+ * (i.e. a pen name), where it becomes a native <select> of profile
+ * identities (#103). Tolerate both so the smoke is independent of the
+ * local author profile.
+ */
+async function fillAuthor(page: Page, name: string) {
+    const input = page.getByPlaceholder("Autorenname oder Pen Name")
+    const select = page.getByTestId("create-book-author-select")
+    await Promise.race([
+        input.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
+        select.waitFor({state: "visible", timeout: 5000}).catch(() => {}),
+    ])
+    if (await select.count()) {
+        const value = await select.evaluate((el) => {
+            const opt = Array.from((el as HTMLSelectElement).options).find(
+                (o) => o.value && o.value !== "__author_custom__",
+            )
+            return opt ? opt.value : ""
+        })
+        if (value) await select.selectOption(value)
+        return
+    }
+    await input.fill(name)
+}
 
 interface BookRow {
     id: string
@@ -193,9 +221,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Der Titel deines Buches")
             .fill("Smoke Picture Book")
-        await page
-            .getByPlaceholder("Autorenname oder Pen Name")
-            .fill("Smoke Author")
+        await fillAuthor(page, "Smoke Author")
         await page.getByTestId("create-book-submit").click()
 
         // PageEditor mounts at /book/{id}.
@@ -232,9 +258,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Der Titel deines Buches")
             .fill("Smoke Prose Book")
-        await page
-            .getByPlaceholder("Autorenname oder Pen Name")
-            .fill("Smoke Author")
+        await fillAuthor(page, "Smoke Author")
         await page.getByTestId("create-book-submit").click()
 
         // Prose books stay on the Dashboard (no auto-navigate).
@@ -431,9 +455,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await page
             .getByPlaceholder("Der Titel deines Buches")
             .fill("Prose Metadata Smoke")
-        await page
-            .getByPlaceholder("Autorenname oder Pen Name")
-            .fill("Author")
+        await fillAuthor(page, "Author")
         await page.getByTestId("create-book-submit").click()
 
         // Navigate to the book; prose flow stays on dashboard after

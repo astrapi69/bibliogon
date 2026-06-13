@@ -37,9 +37,30 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 BACKEND_DIR = REPO_ROOT / "backend"
 CONFIG_DIR = BACKEND_DIR / "config"
 SEED_DIR = REPO_ROOT / "frontend" / "src" / "storage" / "seed"
+DOCS_HELP_ROOT = REPO_ROOT / "docs" / "help"
 
 LANGS = ["de", "en", "es", "fr", "el", "pt", "tr", "ja"]
 VISIBLE_PLUGINS = ["export", "help", "getstarted"]
+
+# Locales that actually carry authored help-doc markdown trees. Other
+# locales fall back to the default at lookup time (mirrors the backend
+# `_resolve_locale`).
+DOCS_LOCALES = ["de", "en"]
+DOCS_DEFAULT_LOCALE = "de"
+SAMPLE_BOOK_TYPES = ["prose", "picture_book", "comic_book"]
+
+
+def _localize_field(value: object, lang: str) -> str:
+    """Resolve a `{de: ..., en: ...}` localized field to a single string.
+
+    Mirrors the backend `_localize` helpers in the help + getstarted
+    plugins (lang -> en -> de fallback chain).
+    """
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        return str(value.get(lang) or value.get("en") or value.get("de") or "")
+    return "" if value is None else str(value)
 
 sys.path.insert(0, str(BACKEND_DIR))
 
@@ -156,6 +177,172 @@ def generate_plugin_metadata() -> None:
     _write_json("seed-plugin-metadata.json", plugins)
 
 
+def generate_help() -> None:
+    """Emit the legacy `/help` page content (shortcuts + faq + about).
+
+    Mirrors the help plugin's `get_shortcuts` / `get_faq` / `get_about`
+    so the `/help` page renders offline. Shortcuts + FAQ are localized
+    per catalog language; `about` is the same static dict the backend
+    returns.
+    """
+    config = _load_yaml(CONFIG_DIR / "plugins" / "help.yaml")
+    if not isinstance(config, dict):
+        raise SystemExit("ERROR: help.yaml did not parse to a mapping")
+    shortcuts_src = config.get("shortcuts", []) or []
+    faq_src = config.get("faq", []) or []
+    shortcuts = {
+        lang: [
+            {"keys": s["keys"], "action": _localize_field(s.get("action", ""), lang)}
+            for s in shortcuts_src
+        ]
+        for lang in LANGS
+    }
+    faq = {
+        lang: [
+            {
+                "question": _localize_field(item.get("question", ""), lang),
+                "answer": _localize_field(item.get("answer", ""), lang),
+            }
+            for item in faq_src
+        ]
+        for lang in LANGS
+    }
+    about = {
+        "name": "Bibliogon",
+        "description": "Open-source book authoring platform",
+        "website": "https://github.com/astrapi69/bibliogon",
+        "license": "MIT",
+    }
+    _write_json("seed-help.json", {"shortcuts": shortcuts, "faq": faq, "about": about})
+
+
+def _resolve_help_nav(items: object, locale: str) -> list[dict[str, object]]:
+    """Flatten the multilingual nav tree to a single locale.
+
+    Mirrors the help plugin's `_resolve_nav`.
+    """
+    result: list[dict[str, object]] = []
+    if not isinstance(items, list):
+        return result
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        entry: dict[str, object] = {
+            "title": _localize_field(item.get("title", {}), locale),
+            "slug": item.get("slug", ""),
+            "icon": item.get("icon", ""),
+        }
+        children = item.get("children")
+        if children:
+            entry["children"] = _resolve_help_nav(children, locale)
+        result.append(entry)
+    return result
+
+
+def generate_help_docs() -> None:
+    """Emit the docs-based help content (navigation tree + markdown pages).
+
+    For each locale that has an authored doc tree, walks
+    ``docs/help/<locale>/**/*.md`` and bundles every page's raw Markdown
+    plus the resolved navigation tree from ``_meta.yaml``. The offline
+    HelpPanel renders these directly; search runs client-side over them.
+    """
+    meta = _load_yaml(DOCS_HELP_ROOT / "_meta.yaml")
+    nav_src = meta.get("navigation", []) if isinstance(meta, dict) else []
+    for locale in DOCS_LOCALES:
+        locale_dir = DOCS_HELP_ROOT / locale
+        pages: dict[str, dict[str, object]] = {}
+        for md_file in sorted(locale_dir.rglob("*.md")):
+            slug = (
+                str(md_file.relative_to(locale_dir).with_suffix(""))
+                .replace("\\", "/")
+            )
+            pages[slug] = {
+                "slug": slug,
+                "locale": locale,
+                "content": md_file.read_text(encoding="utf-8"),
+                # Offline pages have no meaningful mtime; the consumer
+                # only displays content, so a stable 0 keeps the seed
+                # deterministic across regenerations.
+                "last_modified": 0,
+            }
+        _write_json(
+            f"seed-help-docs-{locale}.json",
+            {"navigation": _resolve_help_nav(nav_src, locale), "pages": pages},
+        )
+
+
+def _localize_sample(sample: object, lang: str, book_type: str) -> dict[str, object]:
+    """Mirror the getstarted plugin's `_localize_sample`."""
+    src = sample if isinstance(sample, dict) else {}
+    out: dict[str, object] = {
+        "title": _localize_field(src.get("title", "My First Book"), lang),
+        "author": src.get("author", "Bibliogon"),
+        "language": src.get("language", lang),
+        "book_type": src.get("book_type", book_type),
+        "description": _localize_field(src.get("description", ""), lang),
+    }
+    if book_type == "prose":
+        out["chapters"] = [
+            {
+                "title": _localize_field(ch.get("title", ""), lang),
+                "content": _localize_field(ch.get("content", ""), lang),
+            }
+            for ch in src.get("chapters", []) or []
+        ]
+    else:
+        pages = []
+        for page in src.get("pages", []) or []:
+            entry: dict[str, object] = {
+                "layout": page.get("layout", "image_top_text_bottom"),
+            }
+            if "text_content" in page:
+                entry["text_content"] = _localize_field(page["text_content"], lang)
+            if "layout_config" in page:
+                entry["layout_config"] = page["layout_config"]
+            if "image_asset_id" in page:
+                entry["image_asset_id"] = page["image_asset_id"]
+            pages.append(entry)
+        out["pages"] = pages
+    return out
+
+
+def generate_getstarted() -> None:
+    """Emit the onboarding guide steps + per-book-type sample books.
+
+    Mirrors the getstarted plugin's `get_guide_steps` /
+    `get_sample_book_data` so `/get-started` renders + creates demo
+    books offline.
+    """
+    config = _load_yaml(CONFIG_DIR / "plugins" / "getstarted.yaml")
+    if not isinstance(config, dict):
+        raise SystemExit("ERROR: getstarted.yaml did not parse to a mapping")
+    steps = (config.get("guide", {}) or {}).get("steps", []) or []
+    guide = {
+        lang: [
+            {
+                "id": step["id"],
+                "title": _localize_field(step.get("title", ""), lang),
+                "description": _localize_field(step.get("description", ""), lang),
+                "icon": step.get("icon", "circle"),
+            }
+            for step in steps
+        ]
+        for lang in LANGS
+    }
+    sample_src = config.get("sample_books", {}) or {}
+    sample_books = {
+        lang: {
+            bt: _localize_sample(sample_src.get(bt, {}), lang, bt)
+            for bt in SAMPLE_BOOK_TYPES
+        }
+        for lang in LANGS
+    }
+    _write_json(
+        "seed-getstarted.json", {"guide": guide, "sampleBooks": sample_books}
+    )
+
+
 def main() -> None:
     print("Generating offline seed data from backend YAML sources...")
     generate_i18n()
@@ -164,6 +351,9 @@ def main() -> None:
     generate_content_types()
     generate_story_entity_types()
     generate_plugin_metadata()
+    generate_help()
+    generate_help_docs()
+    generate_getstarted()
     print("Done.")
 
 

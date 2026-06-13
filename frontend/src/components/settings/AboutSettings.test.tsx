@@ -376,11 +376,22 @@ describe("AboutSettings", () => {
             expect(row.textContent).toContain("noname");
         });
 
-        it("renders empty-state when no plugins active", async () => {
+        it("does not render the plugins section when no plugins are active", async () => {
             storageMock.discoveredPlugins.mockImplementation(async () => []);
             render(<AboutSettings appConfig={{}} />);
-            const empty = await screen.findByTestId("about-plugins-empty");
-            expect(empty.textContent).toBe("Keine Plugins aktiv.");
+            // Wait for the always-present version section so the async load
+            // has settled, then assert the empty plugins section is absent.
+            await screen.findByTestId("about-version-section");
+            expect(screen.queryByTestId("about-plugins-section")).toBeNull();
+        });
+
+        it("does NOT render the browser hint in api mode", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            await screen.findByTestId("about-plugins-section");
+            // The hint clarifies the curated PWA seed list (#97); in api
+            // mode the list shows the actually-installed plugins, so no
+            // hint is rendered.
+            expect(screen.queryByTestId("about-plugins-browser-hint")).toBeNull();
         });
     });
 
@@ -439,9 +450,14 @@ describe("AboutSettings", () => {
             expect(version.textContent).toBe(`v${__APP_VERSION__}`);
             expect(screen.getByTestId("about-build-hash").textContent).toBe(__BUILD_HASH__);
 
-            // The plugin list reads the seeded Dexie registry -> still shown.
+            // The plugin list reads the seeded Dexie registry -> still shown,
+            // with the browser-availability hint (#97) clarifying that the
+            // curated seed plugins run client-side in the PWA.
             expect(screen.getByTestId("about-plugins-section")).toBeTruthy();
             expect(screen.getByTestId("about-plugin-row-comics")).toBeTruthy();
+            expect(
+                screen.getByTestId("about-plugins-browser-hint").textContent,
+            ).toBe("Diese Plugins sind direkt in diesem Browser verfügbar.");
 
             // Client-side sections render offline.
             expect(screen.getByTestId("about-system-section")).toBeTruthy();

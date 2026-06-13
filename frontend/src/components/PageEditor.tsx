@@ -317,7 +317,10 @@ export default function PageEditor({
             data-book-id={bookId}
             className={styles.layout}
         >
-            <header data-testid="page-editor-header" className={styles.header}>
+            <header
+                data-testid="page-editor-header"
+                className={`${styles.header} flex-wrap`}
+            >
                 <button
                     type="button"
                     onClick={onBack}
@@ -351,7 +354,7 @@ export default function PageEditor({
                         )}
                     >
                         <FileText size={14} />
-                        <span>
+                        <span className="hidden sm:inline">
                             {t(
                                 "ui.page_editor.show_metadata",
                                 "Open book metadata",
@@ -371,7 +374,7 @@ export default function PageEditor({
                         )}
                     >
                         <LayoutGrid size={14} />
-                        <span>
+                        <span className="hidden sm:inline">
                             {t(
                                 "ui.page_editor.show_storyboard",
                                 "Storyboard",
@@ -400,7 +403,7 @@ export default function PageEditor({
                         ) : (
                             <Maximize2 size={14} />
                         )}
-                        <span>
+                        <span className="hidden sm:inline">
                             {fullscreen.isFullscreen
                                 ? t(
                                       "ui.toolbar.exit_fullscreen",
@@ -432,12 +435,16 @@ export default function PageEditor({
                 <ThemeToggle variant="dark" />
             </header>
             <div className={styles.body} style={{position: "relative"}}>
+                {/* #109: anchored ABSOLUTE inside the relative body (below
+                  * the header), not fixed to the viewport — the fixed
+                  * variant sat ON the header and overlapped the back
+                  * button (left) / ThemeToggle (right). */}
                 {!sidebars.left.open && (
                     <SidebarToggleButton
                         open={false}
                         onToggle={sidebars.left.toggle}
                         testId="page-editor-thumbnails-toggle"
-                        className="fixed left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                        className="absolute left-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
                     />
                 )}
                 {!sidebars.right.open && (
@@ -445,7 +452,7 @@ export default function PageEditor({
                         open={false}
                         onToggle={sidebars.right.toggle}
                         testId="page-editor-properties-toggle"
-                        className="fixed right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
+                        className="absolute right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
                     />
                 )}
                 <div
@@ -485,7 +492,17 @@ export default function PageEditor({
                 </div>
                 <main
                     data-testid="page-editor-canvas"
-                    className={`${styles.canvas} flex-1`}
+                    className={[
+                        styles.canvas,
+                        "flex-1",
+                        // #109: keep the canvas clear of the absolute expand
+                        // buttons while a sidebar is collapsed (BookEditor
+                        // pl-14 precedent).
+                        !sidebars.left.open ? "pl-14" : "",
+                        !sidebars.right.open ? "pr-14" : "",
+                    ]
+                        .filter(Boolean)
+                        .join(" ")}
                     aria-label={t("ui.page_editor.canvas_pane", "Canvas")}
                     data-active-page-id={activePageId ?? ""}
                 >

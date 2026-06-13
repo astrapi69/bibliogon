@@ -83,6 +83,10 @@ export default function Settings() {
     // form area until loaded closes that window for every form at once.
     const [appLoaded, setAppLoaded] = useState(false);
     const [pluginConfigs, setPluginConfigs] = useState<Record<string, Record<string, unknown>>>({});
+    // Tracks whether the plugin-config fetch has settled (resolved, failed, or
+    // skipped in Dexie mode). Gates the empty-plugins redirect so an API-mode
+    // deep-link to ?tab=plugins is not bounced before the fetch completes.
+    const [pluginsLoaded, setPluginsLoaded] = useState(false);
     const [saving, setSaving] = useState(false);
 
     // Deep-link tab via ?tab=autoren. Falls back to "erscheinungsbild"
@@ -125,12 +129,20 @@ export default function Settings() {
         // Render the forms now (with the loaded config, or with defaults
         // if the load failed — better degraded than hung).
         setAppLoaded(true);
-        if (getStorage().mode === "dexie") return;
+        if (getStorage().mode === "dexie") {
+            // Dexie/PWA has no backend plugin host, so there are no plugin
+            // configs to load - the Plugins tab is an empty container and
+            // stays hidden (not feature-gated; just nothing to show).
+            setPluginsLoaded(true);
+            return;
+        }
         try {
             const plugins = await api.settings.listPlugins();
             setPluginConfigs(plugins as Record<string, Record<string, unknown>>);
         } catch (err) {
             console.error("Failed to load plugin configs:", err);
+        } finally {
+            setPluginsLoaded(true);
         }
     };
 
@@ -154,6 +166,12 @@ export default function Settings() {
         (appConfig.features as Record<string, unknown> | undefined)?.white_label,
     );
 
+    // Plugins are a Python/backend concept: the backendless PWA loads no
+    // plugin configs, so the Plugins tab would be an empty container. Hide
+    // the tab when there is nothing to configure (same approach as the empty
+    // "from template" tab - a missing container, NOT a feature gate).
+    const hasPlugins = Object.keys(pluginConfigs).length > 0;
+
     // White-Label gate: a stale deep-link like ?tab=erweitert lands on
     // an empty panel when the flag is off. Redirect to the default
     // tab once appConfig has loaded and confirms the flag is false.
@@ -163,6 +181,16 @@ export default function Settings() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [activeTab, hasWhiteLabel]);
+
+    // Empty-plugins gate: a deep-link to ?tab=plugins lands on an empty
+    // panel when no plugins exist (always in Dexie mode). Redirect to the
+    // default tab once the plugin fetch has settled and confirmed none.
+    useEffect(() => {
+        if (pluginsLoaded && activeTab === "plugins" && !hasPlugins) {
+            handleTabChange("erscheinungsbild");
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [activeTab, hasPlugins, pluginsLoaded]);
     const sidebarGroups: SidebarGroup[] = useMemo(() => {
         const groups: SidebarGroup[] = [
             {
@@ -211,11 +239,15 @@ export default function Settings() {
                 key: "system",
                 label: t("ui.settings.group_system", "System"),
                 items: [
-                    {
-                        value: "plugins",
-                        label: t("ui.settings.tab_plugins", "Plugins"),
-                        testId: "settings-tab-plugins",
-                    },
+                    ...(hasPlugins
+                        ? [
+                              {
+                                  value: "plugins",
+                                  label: t("ui.settings.tab_plugins", "Plugins"),
+                                  testId: "settings-tab-plugins",
+                              },
+                          ]
+                        : []),
                     {
                         value: "comments",
                         label: t("ui.settings.tab_comments", "Kommentare"),
@@ -274,7 +306,7 @@ export default function Settings() {
             },
         ];
         return groups;
-    }, [t, hasDonations, hasWhiteLabel]);
+    }, [t, hasDonations, hasWhiteLabel, hasPlugins]);
 
     return (
         <div className={styles.container}>

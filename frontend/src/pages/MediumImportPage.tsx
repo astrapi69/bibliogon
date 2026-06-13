@@ -33,7 +33,7 @@
  * running job instead of dropping the progress UI.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
 import ThemeToggle from "../components/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
@@ -60,6 +60,7 @@ type Phase = "idle" | "uploading" | "previewing" | "importing";
 
 export default function MediumImportPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { t } = useI18n();
     const { mode } = useStorageMode();
     const offline = mode === "dexie";
@@ -85,11 +86,39 @@ export default function MediumImportPage() {
     // and the import result is local (there is no SSE job offline).
     const parsedRef = useRef<Map<string, ParsedPost>>(new Map());
     const [offlineResult, setOfflineResult] = useState<MediumImportResponse | null>(null);
+    // Offline import has no SSE job; this drives the same
+    // MediumImportProgress "processing-async" UI from the importParsed
+    // progress callback so the user sees "X von Y Beiträgen" + a running
+    // tally instead of an instant, feedback-free import (#133).
+    const [offlineProgress, setOfflineProgress] = useState({
+        current: 0,
+        total: 0,
+        filename: "",
+        imported: 0,
+        skipped: 0,
+        errored: 0,
+        importedComments: 0,
+    });
 
     // MediumImportJobContext.result is the source of truth online (survives
     // navigation); offline uses the local result. Either renders the same
     // MediumImportResult panel.
     const result = job.result ?? offlineResult;
+
+    // Hand-off from the generic OfflineImportDialog (#132): a Medium ZIP
+    // dropped in the general import dialog routes here with the file in
+    // location.state instead of being imported inline. Pick it up once on
+    // mount and clear the history state so a back-nav or reload does not
+    // re-trigger. The user still confirms via "Vorschau & Auswahl".
+    useEffect(() => {
+        const handed = (location.state as { pendingMediumFile?: File } | null)
+            ?.pendingMediumFile;
+        if (handed instanceof File) {
+            setFile(handed);
+            navigate(location.pathname, { replace: true, state: null });
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     const isBusy = phase !== "idle";
     const isUploading = phase === "uploading";
@@ -145,11 +174,25 @@ export default function MediumImportPage() {
                 const defaultLanguage =
                     ((app.app as Record<string, unknown> | undefined)
                         ?.default_language as string) || "en";
-                const response = await importParsed(parsedRef.current, Array.from(selected), {
-                    defaultStatus: "draft",
-                    defaultLanguage,
-                    skipExistingCanonicalUrls: true,
+                setOfflineProgress({
+                    current: 0,
+                    total: selected.size,
+                    filename: "",
+                    imported: 0,
+                    skipped: 0,
+                    errored: 0,
+                    importedComments: 0,
                 });
+                const response = await importParsed(
+                    parsedRef.current,
+                    Array.from(selected),
+                    {
+                        defaultStatus: "draft",
+                        defaultLanguage,
+                        skipExistingCanonicalUrls: true,
+                    },
+                    setOfflineProgress,
+                );
                 setOfflineResult(response);
                 setPreview(null);
                 setSelected(new Set());
@@ -439,14 +482,22 @@ export default function MediumImportPage() {
                         {isImporting && (
                             <MediumImportProgress
                                 phase="processing-async"
-                                asyncCurrent={job.current}
-                                asyncTotal={job.total}
-                                asyncCurrentFilename={job.currentFilename}
-                                asyncImported={job.importedCount}
-                                asyncSkipped={job.skippedCount}
-                                asyncErrored={job.erroredCount}
-                                asyncImportedComments={job.importedCommentsCount}
-                                asyncSkippedComments={job.skippedCommentsCount}
+                                asyncCurrent={offline ? offlineProgress.current : job.current}
+                                asyncTotal={offline ? offlineProgress.total : job.total}
+                                asyncCurrentFilename={
+                                    offline ? offlineProgress.filename : job.currentFilename
+                                }
+                                asyncImported={
+                                    offline ? offlineProgress.imported : job.importedCount
+                                }
+                                asyncSkipped={offline ? offlineProgress.skipped : job.skippedCount}
+                                asyncErrored={offline ? offlineProgress.errored : job.erroredCount}
+                                asyncImportedComments={
+                                    offline
+                                        ? offlineProgress.importedComments
+                                        : job.importedCommentsCount
+                                }
+                                asyncSkippedComments={offline ? 0 : job.skippedCommentsCount}
                             />
                         )}
                         {preview && (

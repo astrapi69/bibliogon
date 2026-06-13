@@ -2,7 +2,7 @@ ui:
   offline_import:
     title: "Importar"
     drop_zone: "Solte um arquivo aqui ou clique para escolher"
-    accepted: "Markdown, texto, HTML, backup JSON, exportação do Medium (.zip). .bgb requer o aplicativo de desktop."
+    accepted: "Markdown, texto, HTML, backup JSON, exportação do Medium (.zip), backup (.bgb)."
     file_label: "Arquivo:"
     detecting: "Detectando formato …"
     detected_label: "Formato detectado:"
@@ -31,6 +31,12 @@ ui:
     requires_desktop_app: "Esta funcionalidade requer a aplicação de ambiente de trabalho do Bibliogon"
     requires_ai_key: "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)"
     not_yet_available: "Este recurso ainda não está disponível."
+  not_found:
+    title: "Página não encontrada"
+    description: "A página solicitada não existe ou foi movida."
+    back_home: "Voltar ao painel"
+  author_select:
+    custom_option: "Outro nome…"
   story_bible:
     title: "Story Bible"
     close: "Fechar a Story Bible"
@@ -3090,6 +3096,7 @@ ui:
     platform_label: "Plataforma"
     plugins_heading: "Plugins"
     plugins_empty: "Nenhum plugin ativo."
+    plugins_browser_hint: "Estes plugins estão disponíveis diretamente neste navegador."
     dep_unknown: "Desconhecido"
     storage_label: "Armazenamento"
     storage_indexeddb: "Armazenamento local do navegador (IndexedDB)"
