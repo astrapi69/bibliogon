@@ -1,6 +1,6 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-backend test-plugins test-e2e test-e2e-ui \
+       test test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend circular-deps \
@@ -445,6 +445,9 @@ test-e2e: ## Run Playwright e2e tests (starts servers automatically)
 
 test-e2e-ui: ## Run e2e tests with Playwright UI
 	cd e2e && npx playwright test --ui
+
+test-e2e-smoke: ## Run E2E smoke suite locally
+	cd e2e && npx playwright test --project=smoke
 
 # --- Version sync ---
 

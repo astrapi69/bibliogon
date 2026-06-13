@@ -1,0 +1,80 @@
+name: E2E Smoke Tests
+
+# Runs the Playwright smoke suite on PRs against develop. Complements (does
+# not replace) the local pre-release gate.
+#
+# The suite is NOT pure Dexie/offline - it drives the real backend API
+# (creating books/articles, the backup cycle, etc.). playwright.config.ts's
+# `webServer` already launches BOTH servers automatically: uvicorn (:8000,
+# isolated /tmp data dir, BIBLIOGON_DEBUG) and the Vite dev server (:5173,
+# which proxies /api -> :8000). So this job only has to install the deps
+# those commands need: Python + Poetry + backend deps (incl. the path-dep
+# plugins) for uvicorn, and `npm ci` in both frontend/ (the dev server) and
+# e2e/ (Playwright lives there). Retries (2) come from the existing config.
+
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - "frontend/**"
+      - "e2e/**"
+      - "package*.json"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend (uvicorn server for the E2E webServer)
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install frontend deps (Vite dev server)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install E2E deps (Playwright)
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Run smoke suite
+        working-directory: e2e
+        run: npx playwright test --project=smoke
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: e2e-test-results
+          path: e2e/test-results/
+          retention-days: 7
