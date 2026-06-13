@@ -291,6 +291,14 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 
 let seedPromise: Promise<void> | null = null;
 
+/** Serializes settings writes. `updateApp` is a read-modify-write across
+ *  awaits; two concurrent calls (e.g. a real-name blur-save firing right
+ *  before a pen-name add-save) would otherwise interleave and the slower
+ *  `put` could clobber the newer one (silent settings data loss / the flaky
+ *  author-pen-names regression). Chaining applies writes strictly in
+ *  invocation order. */
+let appSettingsWriteQueue: Promise<unknown> = Promise.resolve();
+
 /** Populate the reference tables from the committed seed. Idempotent +
  *  non-destructive: writes only an ABSENT row, so a user-edited settings
  *  row (or a newly-added i18n language on seed regen) is never clobbered.
@@ -781,19 +789,25 @@ export const dexieStorage: IStorageService = {
      * object sections merge key-by-key, scalars replace.
      */
     updateApp: async (patch) => {
-      await ensureSeeded();
-      const row = await offlineDb.appSettings.get(SETTINGS_KEY);
-      const current = (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
-      const merged: Record<string, unknown> = { ...current };
-      for (const [key, value] of Object.entries(patch)) {
-        const prev = merged[key];
-        merged[key] =
-          isPlainObject(prev) && isPlainObject(value)
-            ? { ...prev, ...value }
-            : value;
-      }
-      await offlineDb.appSettings.put({ key: SETTINGS_KEY, data: merged });
-      return merged;
+      // Serialize through appSettingsWriteQueue so a read-modify-write never
+      // interleaves with a concurrent one (see the queue's declaration).
+      const result = appSettingsWriteQueue.then(async () => {
+        await ensureSeeded();
+        const row = await offlineDb.appSettings.get(SETTINGS_KEY);
+        const current = (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
+        const merged: Record<string, unknown> = { ...current };
+        for (const [key, value] of Object.entries(patch)) {
+          const prev = merged[key];
+          merged[key] =
+            isPlainObject(prev) && isPlainObject(value)
+              ? { ...prev, ...value }
+              : value;
+        }
+        await offlineDb.appSettings.put({ key: SETTINGS_KEY, data: merged });
+        return merged;
+      });
+      appSettingsWriteQueue = result.catch(() => undefined);
+      return result;
     },
 
     discoveredPlugins: async () => {
