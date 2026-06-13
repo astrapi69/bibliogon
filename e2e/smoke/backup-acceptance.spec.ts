@@ -106,6 +106,13 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         // 4. Import the backup via the UI.
         await page.goto("/settings?tab=backups");
         await page.getByTestId("backups-import-input").setInputFiles(exportPath);
+        // importFullBackup restores the whole graph through the storage seam
+        // as separate writes, in order: settings, authors, book + its
+        // chapters, articles, story entities, labels. The test reads back
+        // from the backend, so each verified collection is POLLED until it
+        // reflects the restore - reading once (or polling only getBooks)
+        // races a still-in-progress restore (the book row appears before its
+        // chapters/articles/entities do).
         await expect
             .poll(async () => (await getBooks()).length, {timeout: 15000})
             .toBe(1);
@@ -114,19 +121,31 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         const books = await getBooks();
         expect(books[0].title).toBe("Akzeptanz Buch");
 
+        await expect
+            .poll(
+                async () =>
+                    (await getChapters(books[0].id)).map((c) => c.title).sort(),
+                {timeout: 15000},
+            )
+            .toEqual(["Kapitel 1", "Kapitel 2", "Kapitel 3"]);
         const chapters = await getChapters(books[0].id);
-        expect(chapters.map((c) => c.title).sort()).toEqual([
-            "Kapitel 1",
-            "Kapitel 2",
-            "Kapitel 3",
-        ]);
         expect(chapters.find((c) => c.title === "Kapitel 1")?.content).toContain("Inhalt eins");
 
-        const articles = await getArticles();
-        expect(articles.some((a) => a.title === "Akzeptanz Artikel")).toBe(true);
+        await expect
+            .poll(
+                async () =>
+                    (await getArticles()).some((a) => a.title === "Akzeptanz Artikel"),
+                {timeout: 15000},
+            )
+            .toBe(true);
 
-        const entities = await getEntities(books[0].id);
-        expect(entities.some((e) => e.name === "Held")).toBe(true);
+        await expect
+            .poll(
+                async () =>
+                    (await getEntities(books[0].id)).some((e) => e.name === "Held"),
+                {timeout: 15000},
+            )
+            .toBe(true);
 
         const authorNames = (await listAuthors()).map((a) => a.name);
         expect(authorNames).toEqual(
