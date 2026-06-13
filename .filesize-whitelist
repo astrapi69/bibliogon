@@ -1,0 +1,25 @@
+# .filesize-whitelist
+# Dateien, die bewusst gross aber kohäsiv sind.
+# Jeder Eintrag braucht eine Begründung.
+#
+# Kriterien (ALLE muessen zutreffen):
+#   - Ein einziger Concern (Datenstruktur, Konfiguration, Templates).
+#   - Kein gemischtes Verhalten (keine Business-Logik + IO + Rendering).
+#   - Splitting wuerde die Kohäsion verschlechtern, nicht verbessern.
+#
+# God-Files mit gemischten Concerns gehoeren NICHT hierher, sondern werden
+# gesplittet. Bereits existierende God-Files stehen uebergangsweise in
+# .filesize-baseline (Schuld-Liste), nicht hier.
+#
+# Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
+
+# --- Backend: SQLAlchemy-Datenmodell (Single-File Domain Model) ---
+# Alle Entities als Mapped-Column-Deklarationen in einer Datei = bewusste
+# Designentscheidung (siehe CLAUDE.md "Data model"). Ein Concern (Datenstruktur),
+# kein Verhalten. Splitting wuerde nur die Auffindbarkeit verschlechtern.
+backend/app/models/__init__.py
+
+# --- Backend: Pydantic-v2-Schemas (Single-File API Contract) ---
+# Reine Request/Response-Schema-Deklarationen + Field-Validatoren. Ein Concern
+# (API-Vertrag), kein IO, keine Business-Logik.
+backend/app/schemas/__init__.py

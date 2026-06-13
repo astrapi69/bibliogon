@@ -1,0 +1,43 @@
+# .filesize-baseline
+# Grandfathered God-Files: bereits existierende Produktiv-Dateien ueber
+# 1000 Zeilen mit gemischten Concerns, die noch gesplittet werden muessen.
+#
+# Diese Liste friert den Status quo ein ("nicht schlimmer als heute"), damit
+# der ERROR-Gate sofort als echter Merge-Blocker fuer NEUE God-Files greifen
+# kann, ohne unbeteiligte PRs zu blocken.
+#
+# Regeln:
+#   - Jeder Eintrag ist ein Split-TODO, KEINE Freigabe (anders als die Whitelist).
+#   - KEINE neuen Eintraege hinzufuegen. Eine neue Datei > 1000 Zeilen muss
+#     gesplittet werden, nicht baselined.
+#   - Sobald eine Datei gesplittet/unter die Schwelle gebracht wurde, den
+#     Eintrag entfernen (der Check meldet veraltete Eintraege als NOTE).
+#
+# Refactoring-Backlog dazu: docs/COHESION-AUDIT.md.
+# Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
+
+# --- Backend / Plugins ---
+backend/app/main.py
+plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf.py
+plugins/bibliogon-plugin-export/bibliogon_export/routes.py
+plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
+
+# --- Frontend: API-Client ---
+frontend/src/api/client.ts
+
+# --- Frontend: Editoren / Komponenten ---
+frontend/src/components/BookMetadataEditor.tsx
+frontend/src/components/Editor.tsx
+frontend/src/storage/dexie-storage.ts
+frontend/src/components/import-wizard/steps/PreviewPanel.tsx
+frontend/src/components/articles/ConvertToBookWizard.tsx
+frontend/src/components/ComicBookEditor.tsx
+frontend/src/components/PageCanvas.tsx
+frontend/src/components/CommentsAdminSection.tsx
+frontend/src/components/ChapterSidebar.tsx
+
+# --- Frontend: Seiten ---
+frontend/src/pages/ArticleEditor.tsx
+frontend/src/pages/ArticleList.tsx
+frontend/src/pages/Dashboard.tsx
+frontend/src/pages/BookEditor.tsx
