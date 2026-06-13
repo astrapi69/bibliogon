@@ -1,4 +1,4 @@
-name: Kohäsions-Check
+name: Cohesion Check
 
 on:
   pull_request:
@@ -18,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
-      - name: Dateigrößen prüfen
+      - name: Check file sizes
         run: |
           chmod +x scripts/check-file-sizes.sh
           scripts/check-file-sizes.sh
