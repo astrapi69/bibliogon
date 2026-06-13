@@ -118,26 +118,31 @@ export default function ArticleList() {
     const { openHelp } = useHelp();
     const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
-    // SplitButton primary reflects the configured default content-type,
-    // but ONLY when it is a SPECIFIC (non-registry-default) type. The
-    // registry default (blogpost) and the unconfigured case fall back to
-    // the generic "Neuer Artikel" label + a bare /articles/new (which
-    // CreateArticlePage renders with the generic "Neuer Text" title).
-    // When a specific default is set, the primary deep-links
-    // /articles/new?type=<default> so CreateArticlePage shows the
-    // type-specific title (e.g. "Neues Tutorial").
+    // SplitButton primary label ALWAYS reflects the configured default
+    // content-type's ``default_title_key``, mirroring the Book Dashboard's
+    // ``newBookLabel`` (which shows the default book-type's title even for
+    // the registry default). Falls back to the generic "Neuer Artikel"
+    // only when the default is unset/unknown or omits the key. (Issue
+    // #122: previously the label fell back to generic whenever the default
+    // equalled the registry default (blogpost), so a blogpost-default
+    // workspace wrongly showed "Neuer Artikel" instead of "Neuer Blogpost".)
     const registryDefaultContentType = articleTypesSnapshot.defaultId;
-    const hasSpecificDefaultContentType =
-        !!defaultContentType &&
-        defaultContentType !== registryDefaultContentType &&
-        !!articleTypesSnapshot.types[defaultContentType];
     const newArticleFallbackLabel = t("ui.articles.new", "Neuer Artikel");
-    const newArticleTitleKey = hasSpecificDefaultContentType
+    const newArticleTitleKey = defaultContentType
         ? contentTypeDefaultTitleKey(articleTypesSnapshot, defaultContentType)
         : null;
     const newArticleLabel = newArticleTitleKey
         ? t(newArticleTitleKey, newArticleFallbackLabel)
         : newArticleFallbackLabel;
+    // The primary deep-links a SPECIFIC (non-registry-default) type so
+    // CreateArticlePage renders the type-specific heading. The registry
+    // default (blogpost) and the unconfigured case use the bare
+    // /articles/new, where CreateArticlePage applies the configured
+    // default generically.
+    const hasSpecificDefaultContentType =
+        !!defaultContentType &&
+        defaultContentType !== registryDefaultContentType &&
+        !!articleTypesSnapshot.types[defaultContentType];
     const newArticleHref = hasSpecificDefaultContentType
         ? `/articles/new?type=${defaultContentType}`
         : "/articles/new";
