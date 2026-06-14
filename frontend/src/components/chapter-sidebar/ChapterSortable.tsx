@@ -1,24 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 import * as ContextMenu from "@radix-ui/react-context-menu";
 import { GripVertical, Trash2, Pencil, BookmarkPlus, History } from "lucide-react";
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-} from "@dnd-kit/core";
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
 import type { Chapter, ChapterType } from "../../api/client";
+import {
+  SortableList,
+  type SortableItemRenderProps,
+} from "../../lib/components/SortableList";
 import Tooltip from "../Tooltip";
 import styles from "../ChapterSidebar.module.css";
 
@@ -27,9 +14,9 @@ import styles from "../ChapterSidebar.module.css";
  *
  * Extracted from `ChapterSidebar.tsx` (Batch 4 god-file burn-down).
  * `SortableChapterItem` is the per-chapter row (rename + context menu +
- * drag handle); `SortableGroup` wraps a chapter group in a dnd-kit
- * `DndContext`/`SortableContext` and rebuilds the full chapter order on
- * reorder (preserving chapters outside the group). Both are props-driven.
+ * drag handle); `SortableGroup` wraps a chapter group in the shared
+ * `SortableList` and rebuilds the full chapter order on reorder
+ * (preserving chapters outside the group). Both are props-driven.
  */
 
 // --- Sortable Chapter Item ---
@@ -47,6 +34,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({
   renameLabel,
   saveTemplateLabel,
   historyLabel,
+  dnd,
 }: {
   chapter: Chapter;
   isActive: boolean;
@@ -60,6 +48,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({
   renameLabel: string;
   saveTemplateLabel: string;
   historyLabel: string;
+  dnd: SortableItemRenderProps;
 }) {
   const [editing, setEditing] = useState(false);
   const [editValue, setEditValue] = useState(chapter.title);
@@ -80,14 +69,7 @@ const SortableChapterItem = React.memo(function SortableChapterItem({
     setEditing(false);
   };
 
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: chapter.id });
+  const { attributes, listeners, setNodeRef, style, isDragging } = dnd;
 
   const className = [
     styles.item,
@@ -96,10 +78,6 @@ const SortableChapterItem = React.memo(function SortableChapterItem({
   ]
     .filter(Boolean)
     .join(" ");
-  const style: React.CSSProperties = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-  };
 
   const itemContent = (
     <div
@@ -255,23 +233,9 @@ export function SortableGroup({
   saveTemplateLabel: string;
   historyLabel: string;
 }) {
-  const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    }),
-  );
-
   const groupIds = chapters.map((ch) => ch.id);
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-
-    const oldIndex = groupIds.indexOf(active.id as string);
-    const newIndex = groupIds.indexOf(over.id as string);
-    const newGroupOrder = arrayMove(groupIds, oldIndex, newIndex);
-
+  const handleReorder = (newGroupOrder: string[]) => {
     // Rebuild full chapter order preserving non-group chapters
     const allIds = allChapters.map((ch) => ch.id);
     const result: string[] = [];
@@ -290,30 +254,27 @@ export function SortableGroup({
   };
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragEnd={handleDragEnd}
-    >
-      <SortableContext items={groupIds} strategy={verticalListSortingStrategy}>
-        {chapters.map((ch) => (
-          <SortableChapterItem
-            key={ch.id}
-            chapter={ch}
-            isActive={ch.id === activeChapterId}
-            onSelect={onSelect}
-            onDelete={onDelete}
-            onRename={onRename}
-            onSaveAsChapterTemplate={onSaveAsChapterTemplate}
-            onShowVersions={onShowVersions}
-            typeLabels={typeLabels}
-            deleteLabel={deleteLabel}
-            renameLabel={renameLabel}
-            saveTemplateLabel={saveTemplateLabel}
-            historyLabel={historyLabel}
-          />
-        ))}
-      </SortableContext>
-    </DndContext>
+    <SortableList
+      items={chapters}
+      getId={(ch) => ch.id}
+      onReorder={handleReorder}
+      renderItem={(ch, dnd) => (
+        <SortableChapterItem
+          chapter={ch}
+          isActive={ch.id === activeChapterId}
+          onSelect={onSelect}
+          onDelete={onDelete}
+          onRename={onRename}
+          onSaveAsChapterTemplate={onSaveAsChapterTemplate}
+          onShowVersions={onShowVersions}
+          typeLabels={typeLabels}
+          deleteLabel={deleteLabel}
+          renameLabel={renameLabel}
+          saveTemplateLabel={saveTemplateLabel}
+          historyLabel={historyLabel}
+          dnd={dnd}
+        />
+      )}
+    />
   );
 }
