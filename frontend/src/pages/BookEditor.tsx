@@ -25,7 +25,8 @@ import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal
 import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
-import { useStorageMode } from "../storage/useStorageMode";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
 import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { BookOpen, Plus } from "lucide-react";
@@ -75,8 +76,8 @@ export default function BookEditor() {
     const navigate = useNavigate();
     const dialog = useDialog();
     const { t } = useI18n();
-    const { mode } = useStorageMode();
-    const offlineGate = mode === "dexie";
+    const gitSync = useFeature(FEATURES.GIT_SYNC);
+    const offlineGate = !gitSync.isActive;
     const bookTypesSnapshot = useBookTypes();
     const {
         open: sidebarOpen,

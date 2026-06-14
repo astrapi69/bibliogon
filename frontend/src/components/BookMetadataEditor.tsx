@@ -18,6 +18,8 @@ import {
 import { getStorage } from "../storage";
 import { useAssetUrl } from "../hooks/useAssetUrl";
 import { useStorageMode } from "../storage/useStorageMode";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
 import { aiChat, getAiConfig, isAiConfigured } from "../ai/llmClient";
 import { buildMarketingMessages } from "../ai/marketingPrompts";
 import {
@@ -131,6 +133,12 @@ export default function BookMetadataEditor({
     const { status: pluginStatus } = useEditorPluginStatus();
     const { mode } = useStorageMode();
     const offline = mode === "dexie";
+    // Backend-only convenience probes resolve through the central feature
+    // registry instead of a raw mode check. Both are DESKTOP_ONLY, so
+    // isActive is false exactly when offline — behaviour-equivalent to the
+    // former mode==="dexie" guard, without the architecture violation.
+    const gitSyncActive = useFeature(FEATURES.GIT_SYNC).isActive;
+    const kdpCatalogActive = useFeature(FEATURES.KDP_CATEGORY_CATALOG).isActive;
     // Offline the AI plugin probe is empty (backend-only); the marketing
     // generate instead runs browser-direct, so availability follows whether
     // the user configured an AI key in Settings.
@@ -197,9 +205,10 @@ export default function BookMetadataEditor({
     // no need to re-fetch on every book change. Failure stays at
     // empty list; CategoryInput remains free-text-capable.
     useEffect(() => {
-        // KDP category catalog is a backend-only convenience; offline the field
-        // stays free-text. Skip the fetch so dexie mode fires no /api call.
-        if (offline) return;
+        // KDP category catalog is a backend-only convenience; when the
+        // feature is inactive (dexie) the field stays free-text. Skip the
+        // fetch so dexie mode fires no /api call.
+        if (!kdpCatalogActive) return;
         let cancelled = false;
         api.kdp
             .listCategories()
@@ -214,7 +223,7 @@ export default function BookMetadataEditor({
         return () => {
             cancelled = true;
         };
-    }, [offline]);
+    }, [kdpCatalogActive]);
 
     // BOOK-REPOSITORY-URL-FIELD-01 C3: fetch the GitSyncMapping
     // status for this book on mount + on book.id change. When
@@ -224,10 +233,10 @@ export default function BookMetadataEditor({
     // Silent failure: gitSyncStatus stays null, the field falls
     // back to free-input editing Book.repository_url.
     useEffect(() => {
-        // Git-sync is a backend-only (category-3) feature; offline the
-        // Repository-URL field stays free-input. Skip the status probe so dexie
-        // mode fires no /api call.
-        if (offline) return;
+        // Git-sync is a backend-only feature; when inactive (dexie) the
+        // Repository-URL field stays free-input. Skip the status probe so
+        // dexie mode fires no /api call.
+        if (!gitSyncActive) return;
         let cancelled = false;
         api.gitSync
             .status(book.id)
@@ -242,7 +251,7 @@ export default function BookMetadataEditor({
         return () => {
             cancelled = true;
         };
-    }, [book.id, offline]);
+    }, [book.id, gitSyncActive]);
 
     // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
     // selection. The dropdown lists ONLY the user's profile authors
