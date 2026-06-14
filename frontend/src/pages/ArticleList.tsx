@@ -7,24 +7,19 @@
  * redirects to the editor.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-    AlertTriangle,
     BookOpen,
     ChevronDown,
-    ChevronLeft,
     Download,
     FileText,
     HelpCircle,
     Menu,
-    MoreVertical,
     Plus,
     Rocket,
-    RotateCcw,
     Settings,
     Trash,
-    Trash2,
     Upload,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -32,7 +27,6 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
-import { useArticleImageUrl } from "../hooks/useArticleImageUrl";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
@@ -42,10 +36,6 @@ import { notify } from "../utils/notify";
 import { downloadBlob } from "../shared/utils/downloadBlob";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
-import ContentTypeBadge from "../components/articles/ContentTypeBadge";
-import CommentsCountBadge from "../components/articles/CommentsCountBadge";
-import { Badge } from "../components/Badge";
-import { publicationStatusVariant } from "../utils/publicationStatusBadge";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
     type BulkExportMode,
@@ -55,11 +45,8 @@ import { useArticleSelection } from "../components/articles/useArticleSelection"
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
-import { formatLocaleDate } from "../utils/formatDate";
-import CoverPlaceholder from "../components/CoverPlaceholder";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
-import TrashCard from "../components/trash/TrashCard";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
@@ -67,8 +54,8 @@ import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
-import PageSizeSelector from "../components/PageSizeSelector";
 import { useArticleFilters } from "../hooks/useArticleFilters";
+import { useArticleListData } from "../hooks/useArticleListData";
 import { useDialog } from "../components/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
@@ -76,6 +63,11 @@ import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
+import ArticleRow from "../components/articles/ArticleRow";
+import ArticleListEmptyState from "../components/articles/ArticleListEmptyState";
+import ArticleTrashPanel from "../components/articles/ArticleTrashPanel";
+import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
+import ListPaginationControls from "../components/ListPaginationControls";
 import { EmptyState } from "../components/EmptyState";
 
 export default function ArticleList() {
@@ -97,10 +89,7 @@ export default function ArticleList() {
     const { mode } = useStorageMode();
     const isDexie = mode === "dexie";
     const articleTypesSnapshot = useContentTypes();
-    const [articles, setArticles] = useState<Article[]>([]);
-    const [trash, setTrash] = useState<Article[]>([]);
     const [showTrash, setShowTrash] = useState(false);
-    const [loading, setLoading] = useState(true);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
     // content-type (ui.defaults.content_type). The SplitButton primary
     // "Neuer Artikel" creates this type (CreateArticlePage applies it);
@@ -118,8 +107,21 @@ export default function ArticleList() {
     const { mode: trashViewMode, setMode: setTrashViewMode } = useTrashViewMode("articles");
     const { confirm } = useDialog();
     const { openHelp } = useHelp();
-    const filters = useArticleFilters(articles, t);
     const selection = useArticleSelection();
+    const {
+        articles,
+        setArticles,
+        trash,
+        loading,
+        loadTrash,
+        refreshArticles,
+        handleDelete,
+        handleDeletePermanentFromList,
+        handleRestore,
+        handlePermanentDelete,
+        handleEmptyTrash,
+    } = useArticleListData(offline, selection, confirm, t);
+    const filters = useArticleFilters(articles, t);
     // SplitButton primary label ALWAYS reflects the configured default
     // content-type's ``default_title_key``, mirroring the Book Dashboard's
     // ``newBookLabel`` (which shows the default book-type's title even for
@@ -397,22 +399,6 @@ export default function ArticleList() {
         window.open(api.backup.exportUrl(), "_blank");
     };
 
-    const loadTrash = async () => {
-        if (offline) return;
-        try {
-            const rows = await getStorage().articles.listTrash();
-            setTrash(rows);
-        } catch (err) {
-            if (err instanceof ApiError) {
-                console.error("Failed to load article trash:", err);
-            }
-        }
-    };
-
-    useEffect(() => {
-        void loadTrash();
-    }, []);
-
     // Fetch the configured default content-type for the SplitButton
     // primary label. No cache on getApp(), and this runs on every
     // mount, so the label updates as soon as the user returns from
@@ -432,209 +418,6 @@ export default function ArticleList() {
         return () => {
             cancelled = true;
         };
-    }, []);
-
-    /** Soft-delete: moves the article to the trash. Mirrors books'
-     *  ``handleDelete`` - no confirm dialog, matching the
-     *  Dashboard pattern; the Trash panel is the safety net. */
-    async function handleDelete(article: Article): Promise<void> {
-        try {
-            await getStorage().articles.delete(article.id);
-            setArticles((prev) => prev.filter((a) => a.id !== article.id));
-            // Reconcile bulk-selection state: the row that just
-            // disappeared must not stay in the BulkActionBar count.
-            selection.remove(article.id);
-            void loadTrash();
-            notify.info(t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"));
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
-        }
-    }
-
-    /** Permanent-delete shortcut from the live list (T-10/L-6). Mirrors
-     *  Dashboard.handleDeletePermanent: confirm → soft-delete → permanent-
-     *  delete from trash → drop from state. The double call is intentional;
-     *  it matches the books behaviour and keeps the trash auto-purge code
-     *  path (cascade + on-disk asset cleanup) as the single source of
-     *  truth for hard delete. */
-    async function handleDeletePermanentFromList(article: Article): Promise<void> {
-        const ok = await confirm(
-            t("ui.articles.delete_permanent_title", "Endgültig löschen"),
-            t(
-                "ui.articles.delete_permanent_warning",
-                "Artikel endgültig löschen? Alle Publikationen und hochgeladenen Bilder gehen verloren. Dies kann nicht rückgängig gemacht werden.",
-            ),
-            "danger",
-        );
-        if (!ok) return;
-        try {
-            await getStorage().articles.delete(article.id);
-            try {
-                await getStorage().articles.permanentDelete(article.id);
-            } catch {
-                /* already in trash or already gone */
-            }
-            setArticles((prev) => prev.filter((a) => a.id !== article.id));
-            // Reconcile bulk-selection state: the row that just
-            // disappeared must not stay in the BulkActionBar count.
-            selection.remove(article.id);
-            void loadTrash();
-            notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
-        }
-    }
-
-    async function handleRestore(article: Article): Promise<void> {
-        // Optimistic update: drop the trash row immediately so the
-        // user sees the restore land before the network roundtrip
-        // completes. The POST returns the restored entity which we
-        // splice into the live list without a separate /articles
-        // refetch — chained roundtrips inside one click handler
-        // were the source of the 419ms perception-lag the
-        // 2026-05-14 user report surfaced.
-        setTrash((prev) => prev.filter((a) => a.id !== article.id));
-        try {
-            const restored = await getStorage().articles.restore(article.id);
-            setArticles((prev) => {
-                // Defensive: if the article was already in articles
-                // (extremely rare race), do not duplicate it.
-                if (prev.some((a) => a.id === restored.id)) return prev;
-                return [restored, ...prev];
-            });
-            notify.success(t("ui.articles.restored", "Artikel wiederhergestellt."));
-        } catch (err) {
-            // Revert the optimistic trash removal so the user
-            // does not lose visibility of the row that failed to
-            // restore.
-            setTrash((prev) => {
-                if (prev.some((a) => a.id === article.id)) return prev;
-                return [article, ...prev];
-            });
-            notify.error(t("ui.articles.restore_failed", "Wiederherstellen fehlgeschlagen."), err);
-        }
-    }
-
-    async function handlePermanentDelete(article: Article): Promise<void> {
-        const ok = await confirm(
-            t("ui.articles.delete_permanent_title", "Endgültig löschen"),
-            t(
-                "ui.articles.delete_permanent_warning",
-                "Artikel endgültig löschen? Alle Publikationen und hochgeladenen Bilder gehen verloren. Dies kann nicht rückgängig gemacht werden.",
-            ),
-            "danger",
-        );
-        if (!ok) return;
-        try {
-            await getStorage().articles.permanentDelete(article.id);
-            setTrash((prev) => prev.filter((a) => a.id !== article.id));
-            // Defensive: if the row was soft-deleted in another tab and
-            // its id was still in the live-list selection here, drop it
-            // now so the BulkActionBar count never references an
-            // article that no longer exists anywhere.
-            selection.remove(article.id);
-            notify.success(t("ui.articles.deleted_permanently", "Artikel endgültig gelöscht."));
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
-        }
-    }
-
-    async function handleEmptyTrash(): Promise<void> {
-        const ok = await confirm(
-            t("ui.articles.empty_trash_title", "Papierkorb leeren"),
-            t(
-                "ui.articles.empty_trash_warning",
-                "Alle Artikel im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
-            ),
-            "danger",
-        );
-        if (!ok) return;
-        try {
-            await getStorage().articles.emptyTrash();
-            setTrash([]);
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
-        }
-    }
-
-    // Centralized refresh used by mount + visibility/pageshow listeners.
-    // Wrapping it in useCallback would change identity per render only
-    // if dependencies change; here the deps are state setters
-    // (setArticles, setLoading) which are stable, so the function is
-    // effectively stable.
-    const refreshArticles = (showSpinner = false) => {
-        if (showSpinner) setLoading(true);
-        return getStorage()
-            .articles.list()
-            .then((rows) => {
-                setArticles(rows);
-            })
-            .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error("Konnte Artikelliste nicht laden.", err);
-                }
-            })
-            .finally(() => {
-                if (showSpinner) setLoading(false);
-            });
-    };
-
-    useEffect(() => {
-        let cancelled = false;
-        setLoading(true);
-        // Server-side status filter retired - useArticleFilters now
-        // owns every facet (status / topic / language / search / sort)
-        // client-side, matching the books pattern via useBookFilters.
-        getStorage()
-            .articles.list()
-            .then((rows) => {
-                if (!cancelled) setArticles(rows);
-            })
-            .catch((err) => {
-                if (err instanceof ApiError) {
-                    notify.error("Konnte Artikelliste nicht laden.", err);
-                }
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, []);
-
-    // Re-fetch when the page becomes visible again. Catches the
-    // browser bfcache restore path (back-button after import) and
-    // the tab-focus case so a freshly-imported article never stays
-    // hidden until the user hits F5.
-    useEffect(() => {
-        const onPageShow = (event: PageTransitionEvent) => {
-            if (event.persisted) {
-                void refreshArticles();
-                void loadTrash();
-            }
-        };
-        const onVisibility = () => {
-            if (document.visibilityState === "visible") {
-                void refreshArticles();
-                void loadTrash();
-            }
-        };
-        window.addEventListener("pageshow", onPageShow);
-        document.addEventListener("visibilitychange", onVisibility);
-        return () => {
-            window.removeEventListener("pageshow", onPageShow);
-            document.removeEventListener("visibilitychange", onVisibility);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     return (
@@ -972,7 +755,7 @@ export default function ArticleList() {
                 )}
 
                 {showTrash ? (
-                    <TrashPanel
+                    <ArticleTrashPanel
                         trash={trash}
                         viewMode={trashViewMode}
                         setViewMode={setTrashViewMode}
@@ -999,34 +782,17 @@ export default function ArticleList() {
                     />
                 ) : null}
                 {!showTrash && filters.filteredArticles.length > 0 ? (
-                    <div className={layout.bulkSelectAll}>
-                        <label>
-                            <input
-                                type="checkbox"
-                                data-testid="article-bulk-select-all"
-                                checked={
-                                    selection.count > 0 &&
-                                    selection.count === filters.filteredArticles.length
-                                }
-                                ref={(el) => {
-                                    if (el)
-                                        el.indeterminate =
-                                            selection.count > 0 &&
-                                            selection.count < filters.filteredArticles.length;
-                                }}
-                                onChange={(e) => {
-                                    if (e.target.checked) {
-                                        selection.selectAll(
-                                            filters.filteredArticles.map((a) => a.id),
-                                        );
-                                    } else {
-                                        selection.clear();
-                                    }
-                                }}
-                            />{" "}
-                            {t("ui.articles.bulk.select_all", "Select all")}
-                        </label>
-                    </div>
+                    <BulkSelectAllCheckbox
+                        className={layout.bulkSelectAll}
+                        testId="article-bulk-select-all"
+                        count={selection.count}
+                        total={filters.filteredArticles.length}
+                        onSelectAll={() =>
+                            selection.selectAll(filters.filteredArticles.map((a) => a.id))
+                        }
+                        onClear={selection.clear}
+                        label={t("ui.articles.bulk.select_all", "Select all")}
+                    />
                 ) : null}
 
                 {showTrash ? null : loading || viewModeLoading ? (
@@ -1119,36 +885,18 @@ export default function ArticleList() {
                                     </div>
                                 )}
                                 {filters.filteredArticles.length > 0 && (
-                                    <div
-                                        data-testid="article-list-pagination"
-                                        style={{
-                                            display: "flex",
-                                            justifyContent: "center",
-                                            alignItems: "center",
-                                            gap: 16,
-                                            marginTop: 16,
-                                            paddingBottom: 8,
-                                            flexWrap: "wrap",
-                                        }}
-                                    >
-                                        {hasMore && (
-                                            <button
-                                                type="button"
-                                                className="btn btn-secondary"
-                                                data-testid="article-list-load-more"
-                                                onClick={paged.loadMore}
-                                            >
-                                                {t("ui.dashboard.load_more", "Mehr laden")} (
-                                                {visibleArticles.length} /{" "}
-                                                {filters.filteredArticles.length})
-                                            </button>
-                                        )}
-                                        <PageSizeSelector
-                                            value={paged.pageSize}
-                                            onChange={paged.setPageSize}
-                                            data-testid="article-list-page-size"
-                                        />
-                                    </div>
+                                    <ListPaginationControls
+                                        visibleCount={visibleArticles.length}
+                                        totalCount={filters.filteredArticles.length}
+                                        hasMore={hasMore}
+                                        onLoadMore={paged.loadMore}
+                                        pageSize={paged.pageSize}
+                                        onPageSizeChange={paged.setPageSize}
+                                        t={t}
+                                        paginationTestId="article-list-pagination"
+                                        loadMoreTestId="article-list-load-more"
+                                        pageSizeTestId="article-list-page-size"
+                                    />
                                 )}
                             </>
                         );
@@ -1243,384 +991,5 @@ export default function ArticleList() {
                 />
             )}
         </div>
-    );
-}
-
-function TrashPanel({
-    trash,
-    viewMode,
-    setViewMode,
-    onBack,
-    onRestore,
-    onPermanentDelete,
-    onEmptyTrash,
-}: {
-    trash: Article[];
-    viewMode: "grid" | "list";
-    setViewMode: (mode: "grid" | "list") => void;
-    onBack: () => void;
-    onRestore: (a: Article) => void;
-    onPermanentDelete: (a: Article) => void;
-    onEmptyTrash: () => void;
-}) {
-    const { t } = useI18n();
-
-    /** Header chrome shared between empty + populated trash. Mirrors
-     *  Dashboard.tsx ``trash-view`` mainHeader: ChevronLeft + Trash2
-     *  icon + h2 title + count span + spacer + (optional) empty
-     *  action + ViewToggle. */
-    const trashHeader = (
-        <div className={layout.mainHeader}>
-            <button
-                type="button"
-                className="btn-icon"
-                onClick={onBack}
-                data-testid="article-trash-back"
-                title={t("ui.dashboard.back", "Zurück")}
-            >
-                <ChevronLeft size={18} />
-            </button>
-            <Trash2 size={20} className="muted" />
-            <h2 className={layout.heading}>{t("ui.articles.trash_title", "Papierkorb")}</h2>
-            <span className={layout.articleCount}>
-                {trash.length}{" "}
-                {trash.length === 1
-                    ? t("ui.articles.count_singular", "Artikel")
-                    : t("ui.articles.count_plural", "Artikel")}
-            </span>
-            <div style={{ flex: 1 }} />
-            {trash.length > 0 && (
-                <button
-                    type="button"
-                    className="btn btn-danger btn-sm"
-                    onClick={onEmptyTrash}
-                    data-testid="article-trash-empty-all"
-                >
-                    <Trash2 size={14} />
-                    {t("ui.articles.empty_trash", "Papierkorb leeren")}
-                </button>
-            )}
-            <ViewToggle mode={viewMode} onChange={setViewMode} />
-        </div>
-    );
-
-    if (trash.length === 0) {
-        return (
-            <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
-                {trashHeader}
-                <div
-                    data-testid="article-trash-empty"
-                    className={layout.empty}
-                    style={{ marginBottom: 16 }}
-                >
-                    <Trash size={28} className="muted" />
-                    <p style={{ color: "var(--text-muted)", margin: 0 }}>
-                        {t("ui.articles.trash_empty", "Keine gelöschten Artikel.")}
-                    </p>
-                </div>
-            </div>
-        );
-    }
-    return (
-        <div data-testid="article-trash-panel" style={{ marginBottom: 16 }}>
-            {trashHeader}
-            {viewMode === "grid" ? (
-                <div className={layout.grid} data-testid="article-trash-grid">
-                    {trash.map((a) => (
-                        <TrashCard
-                            key={a.id}
-                            title={a.title}
-                            subtitle={a.author}
-                            meta={
-                                a.deleted_at
-                                    ? `${t("ui.articles.trashed_at", "Gelöscht")}: ${new Date(a.deleted_at).toLocaleString()}`
-                                    : null
-                            }
-                            onRestore={() => onRestore(a)}
-                            onPermanentDelete={() => onPermanentDelete(a)}
-                            restoreLabel={t("ui.articles.restore", "Wiederherstellen")}
-                            deletePermanentLabel={t(
-                                "ui.articles.delete_permanent",
-                                "Endgültig löschen",
-                            )}
-                            cardTestId={`article-trash-card-${a.id}`}
-                            restoreTestId={`article-trash-restore-${a.id}`}
-                            permanentTestId={`article-trash-permanent-${a.id}`}
-                        />
-                    ))}
-                </div>
-            ) : (
-                <ul className={layout.list} data-testid="article-trash-list">
-                    {trash.map((a) => (
-                        <li
-                            key={a.id}
-                            data-testid={`article-trash-row-${a.id}`}
-                            className={layout.row}
-                            style={{ position: "relative" }}
-                        >
-                            <div style={{ flex: 1, minWidth: 0 }}>
-                                <div className={layout.rowTitle}>{a.title}</div>
-                                <div className={layout.rowMeta}>
-                                    {a.deleted_at ? (
-                                        <span>
-                                            {t("ui.articles.trashed_at", "Gelöscht")}:{" "}
-                                            {new Date(a.deleted_at).toLocaleString()}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            </div>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-ghost"
-                                onClick={() => onRestore(a)}
-                                data-testid={`article-trash-restore-${a.id}`}
-                                title={t("ui.articles.restore", "Wiederherstellen")}
-                            >
-                                <RotateCcw size={14} />
-                                {t("ui.articles.restore", "Wiederherstellen")}
-                            </button>
-                            <button
-                                type="button"
-                                className="btn btn-sm btn-ghost"
-                                onClick={() => onPermanentDelete(a)}
-                                data-testid={`article-trash-permanent-${a.id}`}
-                                title={t("ui.articles.delete_permanent", "Endgültig löschen")}
-                                style={{ color: "var(--danger)" }}
-                            >
-                                <Trash2 size={14} />
-                                {t("ui.articles.delete_permanent", "Endgültig löschen")}
-                            </button>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
-    );
-}
-
-function ArticleListEmptyState({ onCreate }: { onCreate: () => void }) {
-    const { t } = useI18n();
-    const navigate = useNavigate();
-    return (
-        <EmptyState
-            testId="article-list-empty"
-            icon={<FileText size={32} className="muted" />}
-            title={t("ui.articles.empty_heading", "Noch keine Artikel")}
-            body={t(
-                "ui.articles.empty_subtitle",
-                "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen.",
-            )}
-            actions={
-                <>
-                    <button
-                        type="button"
-                        className="btn btn-primary"
-                        onClick={onCreate}
-                        data-testid="article-list-empty-cta"
-                    >
-                        <Plus size={14} />
-                        {t("ui.articles.new", "Neuer Artikel")}
-                    </button>
-                    <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={() => navigate("/get-started")}
-                        data-testid="article-list-empty-get-started"
-                    >
-                        <Rocket size={14} />
-                        {t("ui.get_started.title", "Erste Schritte")}
-                    </button>
-                </>
-            }
-        />
-    );
-}
-
-function ArticleRow({
-    article,
-    onOpen,
-    onDelete,
-    onDeletePermanent,
-    isSelected,
-    onToggleSelect,
-}: {
-    article: Article;
-    onOpen: () => void;
-    onDelete?: () => void;
-    onDeletePermanent?: () => void;
-    isSelected?: boolean;
-    onToggleSelect?: () => void;
-}) {
-    const { t, lang } = useI18n();
-    const [menuOpen, setMenuOpen] = useState(false);
-    const [coverFailed, setCoverFailed] = useState(false);
-    // #157: resolve the featured image across storage modes (blob: URL
-    // from Dexie offline when cached, served/CDN URL online).
-    const imageUrl = useArticleImageUrl(
-        article.id,
-        article.featured_image_url,
-        article.featured_image_asset_id,
-    );
-    // Prefer original_published_at (computed server-side as the
-    // earliest Publication.published_at) over updated_at so imported
-    // articles show their canonical Medium publish date instead of
-    // the import timestamp. Native articles with no publications
-    // fall back to updated_at unchanged.
-    const displayDateRaw = article.original_published_at ?? article.updated_at;
-    const updated = useMemo(() => formatLocaleDate(displayDateRaw, lang), [displayDateRaw, lang]);
-
-    return (
-        <li
-            data-testid={`article-list-row-${article.id}`}
-            // View-agnostic id attribute — paired with the
-            // ``data-article-id`` on ArticleCard so E2E specs can
-            // target an article without knowing whether grid or
-            // list view is active. See
-            // VIEW-MODE-TESTID-PARITY-01.
-            data-article-id={article.id}
-            className={[
-                layout.gridRow,
-                onToggleSelect ? layout.gridRowSelectable : "",
-                isSelected ? layout.rowSelected : "",
-            ]
-                .filter(Boolean)
-                .join(" ")}
-            onClick={() => {
-                if (!menuOpen) onOpen();
-            }}
-        >
-            {onToggleSelect ? (
-                <div className={layout.gridCellCheckbox}>
-                    <input
-                        type="checkbox"
-                        data-testid={`article-bulk-check-${article.id}`}
-                        checked={!!isSelected}
-                        onChange={onToggleSelect}
-                        onClick={(e) => e.stopPropagation()}
-                        aria-label="Select article"
-                    />
-                </div>
-            ) : null}
-            <div className={layout.gridCellCover}>
-                <div className={layout.coverThumb}>
-                    {imageUrl && !coverFailed ? (
-                        <img
-                            src={imageUrl}
-                            alt={`${article.title} cover`}
-                            className={layout.coverThumbImg}
-                            onError={() => setCoverFailed(true)}
-                        />
-                    ) : (
-                        <CoverPlaceholder title={article.title} compact />
-                    )}
-                </div>
-            </div>
-            <div className={layout.gridCellMain}>
-                <div className={layout.titleCell}>
-                    <div className={layout.titleRow}>
-                        <span className={layout.title}>{article.title}</span>
-                        {/* LIST-VIEW-COMMENTS-COUNT-PARITY-01:
-                            badge integrated into the title row
-                            rather than added as a 10th grid column.
-                            The 720px fixed-column budget + the
-                            ~768px tablet breakpoint left no room
-                            for another fixed column without
-                            crushing the 1fr title column. Putting
-                            the badge inside the 1fr main cell uses
-                            space that's already there. */}
-                        <CommentsCountBadge
-                            count={article.comments_count}
-                            testId={`article-list-row-comments-count-${article.id}`}
-                            className={layout.commentsBadgeInline}
-                        />
-                    </div>
-                    {article.subtitle ? (
-                        <span className={layout.subtitle}>{article.subtitle}</span>
-                    ) : null}
-                </div>
-            </div>
-            <div className={layout.gridCellAuthor}>
-                {article.author?.trim() ? article.author : t("ui.articles.no_author", "—")}
-            </div>
-            <div className={layout.gridCellTopic}>{article.topic ?? "—"}</div>
-            <div className={layout.gridCellStatus}>
-                {/* ARTICLE-TYPES-SSOT-01 C7 (2026-05-29): badge
-                 *  surfaces the article's content_type alongside
-                 *  the publication status. Same visual weight as
-                 *  the status badge so users see "tutorial / draft"
-                 *  rather than just "draft" in the list view. */}
-                <ContentTypeBadge
-                    contentType={article.content_type}
-                    testId={`article-list-row-type-${article.id}`}
-                    className={layout.statusBadge}
-                    style={{ marginRight: 6 }}
-                />
-                <Badge
-                    testId={`article-list-row-status-${article.id}`}
-                    variant={publicationStatusVariant(article.status ?? "draft")}
-                    size="sm"
-                >
-                    {t(
-                        `ui.articles.status_${article.status ?? "draft"}`,
-                        article.status ?? "draft",
-                    )}
-                </Badge>
-            </div>
-            <div className={layout.gridCellLang}>{(article.language || "??").toUpperCase()}</div>
-            <div className={layout.gridCellDate}>{updated}</div>
-            <div className={layout.gridCellActions}>
-                {onDelete ? (
-                    <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
-                        <DropdownMenu.Trigger asChild>
-                            <button
-                                type="button"
-                                className="btn-icon"
-                                data-testid={`article-list-row-menu-${article.id}`}
-                                aria-label={t("ui.articles.actions_menu", "Aktionen")}
-                                onClick={(e) => e.stopPropagation()}
-                            >
-                                <MoreVertical size={16} />
-                            </button>
-                        </DropdownMenu.Trigger>
-                        <DropdownMenu.Portal>
-                            <DropdownMenu.Content
-                                className="hamburger-menu-content"
-                                align="end"
-                                sideOffset={4}
-                            >
-                                <DropdownMenu.Item
-                                    className="hamburger-menu-item"
-                                    data-testid={`article-list-row-menu-delete-${article.id}`}
-                                    onSelect={(e) => {
-                                        e.preventDefault();
-                                        onDelete();
-                                    }}
-                                >
-                                    <Trash2 size={14} />{" "}
-                                    {t("ui.articles.move_to_trash", "In den Papierkorb")}
-                                </DropdownMenu.Item>
-                                {onDeletePermanent ? (
-                                    <>
-                                        <DropdownMenu.Separator className="hamburger-menu-separator" />
-                                        <DropdownMenu.Item
-                                            className="hamburger-menu-item"
-                                            data-testid={`article-list-row-menu-delete-permanent-${article.id}`}
-                                            onSelect={(e) => {
-                                                e.preventDefault();
-                                                onDeletePermanent();
-                                            }}
-                                            style={{ color: "var(--danger)" }}
-                                        >
-                                            <AlertTriangle size={14} />{" "}
-                                            {t("ui.articles.delete_permanent", "Endgültig löschen")}
-                                        </DropdownMenu.Item>
-                                    </>
-                                ) : null}
-                            </DropdownMenu.Content>
-                        </DropdownMenu.Portal>
-                    </DropdownMenu.Root>
-                ) : null}
-            </div>
-        </li>
     );
 }
