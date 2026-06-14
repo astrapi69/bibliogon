@@ -75,7 +75,7 @@ def stub_model_config():
             "rate_limit_seconds": 0.0,
         }
 
-    with patch("app.ai.routes._get_ai_config", side_effect=_stub):
+    with patch("app.ai.config._get_ai_config", side_effect=_stub):
         yield
 
 
@@ -213,7 +213,7 @@ def test_article_estimate_per_item_and_totals(client):
 def test_article_estimate_cost_is_none_for_unknown_model(client):
     a = _create_article(client, title="X")
     with patch(
-        "app.ai.routes._get_ai_config",
+        "app.ai.config._get_ai_config",
         return_value={"model": "some-local-model", "enabled": True},
     ):
         resp = client.post(

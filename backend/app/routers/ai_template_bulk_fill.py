@@ -120,7 +120,7 @@ books_router = APIRouter(prefix="/books/bulk-ai-fill", tags=["book-ai-fill"])
 def _get_rate_limit_seconds() -> float:
     """Read ``ai.rate_limit_seconds`` from the merged config.
     Default 1.0 second between items per S7."""
-    from app.ai.routes import _get_ai_config
+    from app.ai.config import _get_ai_config
 
     cfg = _get_ai_config()
     raw = cfg.get("rate_limit_seconds", DEFAULT_RATE_LIMIT_SECONDS)
@@ -134,7 +134,7 @@ def _get_rate_limit_seconds() -> float:
 
 
 def _get_configured_model() -> str:
-    from app.ai.routes import _get_ai_config
+    from app.ai.config import _get_ai_config
 
     return str(_get_ai_config().get("model", ""))
 

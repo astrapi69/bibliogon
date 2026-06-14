@@ -128,7 +128,7 @@ def enabled_client(tmp_path):
         with open(config_path, encoding="utf-8") as f:
             return yaml.safe_load(f).get("ai", {})
 
-    with patch("app.ai.routes._get_ai_config", side_effect=mock_ai_config):
+    with patch("app.ai.config._get_ai_config", side_effect=mock_ai_config):
         yield TestClient(app)
 
 
