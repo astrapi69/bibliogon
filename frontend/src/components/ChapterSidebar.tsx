@@ -1,34 +1,19 @@
 import React, { useState } from "react";
-import * as Collapsible from "@radix-ui/react-collapsible";
 import { Chapter, ChapterType } from "../api/client";
-import {
-  FRONT_MATTER_TYPES,
-  BACK_MATTER_TYPES,
-  STRUCTURE_TYPES,
-  groupChapters,
-} from "../lib/utils/chapterGroups";
+import { groupChapters } from "../lib/utils/chapterGroups";
 import { SortableGroup } from "./chapter-sidebar/ChapterSortable";
+import ChapterAddMenu from "./chapter-sidebar/ChapterAddMenu";
+import SidebarToolsGroup from "./chapter-sidebar/SidebarToolsGroup";
 import { useI18n } from "../hooks/useI18n";
-import { SIDEBAR_MENU_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
 import {
-  Plus,
   ChevronLeft,
   ChevronDown,
   ChevronRight,
   Download,
   FileText,
-  ListChecks,
-  Wrench,
-  BookmarkPlus,
-  GitBranch,
-  BookOpen,
-  LayoutGrid,
-  Table,
-  Network,
   PanelLeftClose,
 } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
-import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import Tooltip from "./Tooltip";
 import EditableTitle from "./EditableTitle";
 import styles from "./ChapterSidebar.module.css";
@@ -173,27 +158,9 @@ export default function ChapterSidebar({
     call_to_action: t("ui.chapter_types.call_to_action", "Aufruf zur Aktion"),
   };
 
-  const [addMenuOpen, setAddMenuOpen] = useState(false);
   const [collapsedSections, setCollapsedSections] = useState<
     Record<string, boolean>
   >({});
-  // The secondary book-tool buttons (Storyboard, Story Bible, Git, ...) live
-  // in a Collapsible so they don't squeeze the chapter list on short
-  // viewports. An explicit user toggle persists across sessions; with no
-  // stored preference the default is viewport-responsive — expanded on
-  // desktop (room for both), collapsed on narrow viewports (the chapter
-  // list needs the space).
-  const [toolsOpen, setToolsOpen] = useState(() => {
-    if (typeof localStorage !== "undefined") {
-      const stored = localStorage.getItem("bibliogon.sidebar_tools_open");
-      if (stored === "1") return true;
-      if (stored === "0") return false;
-    }
-    return (
-      typeof window !== "undefined" &&
-      window.innerWidth >= SIDEBAR_MENU_BREAKPOINT_PX
-    );
-  });
 
   const toggleSection = (key: string) => {
     setCollapsedSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -267,88 +234,12 @@ export default function ChapterSidebar({
           <span className={styles.listLabel}>
             {t("ui.sidebar.content", "Inhalt")}
           </span>
-          <DropdownMenu.Root open={addMenuOpen} onOpenChange={setAddMenuOpen}>
-            <Tooltip
-              content={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}
-            >
-              <DropdownMenu.Trigger asChild>
-                <button
-                  className="btn-sidebar-icon"
-                  data-testid="chapter-add-trigger"
-                  aria-label={t("ui.sidebar.add_chapter", "Kapitel hinzufügen")}
-                >
-                  <Plus size={14} />
-                </button>
-              </DropdownMenu.Trigger>
-            </Tooltip>
-            <DropdownMenu.Portal>
-              <DropdownMenu.Content
-                className="chapter-dropdown-content"
-                align="end"
-                sideOffset={4}
-                collisionPadding={{ top: 16, bottom: 280, left: 16, right: 16 }}
-                data-testid="chapter-add-dropdown"
-              >
-                <DropdownMenu.Label className="chapter-dropdown-label">
-                  {t("ui.sidebar.front_matter", "Front Matter")}
-                </DropdownMenu.Label>
-                {FRONT_MATTER_TYPES.map((t) => (
-                  <DropdownMenu.Item
-                    key={t}
-                    className="chapter-dropdown-item"
-                    data-testid="chapter-dropdown-item"
-                    onSelect={() => onAdd(t)}
-                  >
-                    {TYPE_LABELS[t]}
-                  </DropdownMenu.Item>
-                ))}
-                <DropdownMenu.Separator className="chapter-dropdown-separator" />
-                <DropdownMenu.Label className="chapter-dropdown-label">
-                  {t("ui.sidebar.chapters", "Kapitel")}
-                </DropdownMenu.Label>
-                <DropdownMenu.Item
-                  className="chapter-dropdown-item"
-                  data-testid="chapter-dropdown-item"
-                  onSelect={() => onAdd("chapter")}
-                >
-                  {t("ui.editor.new_chapter", "Neues Kapitel")}
-                </DropdownMenu.Item>
-                {onAddFromTemplate && (
-                  <DropdownMenu.Item
-                    className="chapter-dropdown-item"
-                    data-testid="chapter-dropdown-from-template"
-                    onSelect={onAddFromTemplate}
-                  >
-                    {t("ui.editor.new_chapter_from_template", "Aus Vorlage...")}
-                  </DropdownMenu.Item>
-                )}
-                {STRUCTURE_TYPES.map((t) => (
-                  <DropdownMenu.Item
-                    key={t}
-                    className="chapter-dropdown-item"
-                    data-testid="chapter-dropdown-item"
-                    onSelect={() => onAdd(t)}
-                  >
-                    {TYPE_LABELS[t]}
-                  </DropdownMenu.Item>
-                ))}
-                <DropdownMenu.Separator className="chapter-dropdown-separator" />
-                <DropdownMenu.Label className="chapter-dropdown-label">
-                  {t("ui.sidebar.back_matter", "Back Matter")}
-                </DropdownMenu.Label>
-                {BACK_MATTER_TYPES.map((t) => (
-                  <DropdownMenu.Item
-                    key={t}
-                    className="chapter-dropdown-item"
-                    data-testid="chapter-dropdown-item"
-                    onSelect={() => onAdd(t)}
-                  >
-                    {TYPE_LABELS[t]}
-                  </DropdownMenu.Item>
-                ))}
-              </DropdownMenu.Content>
-            </DropdownMenu.Portal>
-          </DropdownMenu.Root>
+          <ChapterAddMenu
+            onAdd={onAdd}
+            onAddFromTemplate={onAddFromTemplate}
+            typeLabels={TYPE_LABELS}
+            t={t}
+          />
         </div>
 
         {/* Front Matter */}
@@ -496,166 +387,26 @@ export default function ChapterSidebar({
         >
           <FileText size={14} /> {t("ui.sidebar.metadata", "Metadaten")}
         </button>
-        <Collapsible.Root
-          open={toolsOpen}
-          onOpenChange={(open) => {
-            setToolsOpen(open);
-            try {
-              localStorage.setItem(
-                "bibliogon.sidebar_tools_open",
-                open ? "1" : "0",
-              );
-            } catch {
-              /* private mode / no storage - non-critical */
-            }
-          }}
-        >
-          <Collapsible.Trigger asChild>
-            <button
-              className="btn-sidebar-block"
-              style={{ marginBottom: 6, justifyContent: "space-between" }}
-              data-testid="chapter-sidebar-tools-toggle"
-              aria-label={t("ui.sidebar.tools", "Werkzeuge")}
-            >
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                <Wrench size={14} /> {t("ui.sidebar.tools", "Werkzeuge")}
-              </span>
-              {toolsOpen ? (
-                <ChevronDown size={14} />
-              ) : (
-                <ChevronRight size={14} />
-              )}
-            </button>
-          </Collapsible.Trigger>
-          <Collapsible.Content>
-        {onShowStoryboard && (
-          <button
-            className={`btn-sidebar-block ${storyboardActive ? "is-active" : ""}`}
-            style={{ marginBottom: 6 }}
-            onClick={onShowStoryboard}
-            data-testid="chapter-sidebar-storyboard"
-            title={t("ui.storyboard.open", "Storyboard öffnen")}
-          >
-            <LayoutGrid size={14} /> {t("ui.storyboard.title", "Storyboard")}
-          </button>
-        )}
-        {onShowOutline && (
-          <button
-            className={`btn-sidebar-block ${outlineActive ? "is-active" : ""}`}
-            style={{ marginBottom: 6 }}
-            onClick={onShowOutline}
-            data-testid="chapter-sidebar-outline"
-            title={t("ui.outliner.open", "Outliner öffnen")}
-          >
-            <Table size={14} /> {t("ui.outliner.title", "Outliner")}
-          </button>
-        )}
-        {onStoryBible && (
-          <button
-            className={`btn-sidebar-block ${storyBibleActive ? "is-active" : ""}`}
-            style={{ marginBottom: 6 }}
-            onClick={onStoryBible}
-            data-testid="story-bible-toggle"
-            title={t("ui.story_bible.open", "Story-Bibel öffnen")}
-          >
-            <BookOpen size={14} />{" "}
-            {t("ui.story_bible.sidebar_button", "Story-Bibel")}
-          </button>
-        )}
-        {onShowRelationships && (
-          <button
-            className={`btn-sidebar-block ${relationshipsActive ? "is-active" : ""}`}
-            style={{ marginBottom: 6 }}
-            onClick={onShowRelationships}
-            data-testid="chapter-sidebar-relationships"
-            title={t("ui.relationship_graph.open", "Beziehungsgraph öffnen")}
-          >
-            <Network size={14} />{" "}
-            {t("ui.relationship_graph.title", "Beziehungsgraph")}
-          </button>
-        )}
-        {offlineSlot}
-        {onGitBackup && (
-          <button
-            className="btn-sidebar-block"
-            style={{ marginBottom: 6, position: "relative" }}
-            onClick={onGitBackup}
-            data-testid="sidebar-git-backup"
-            data-git-sync-state={gitSyncState ?? ""}
-            title={gitSyncStateLabel(gitSyncState, t)}
-          >
-            <GitBranch size={14} />{" "}
-            {t("ui.sidebar.git_backup", "Git-Sicherung")}
-            {gitSyncState &&
-              ["remote_ahead", "diverged"].includes(gitSyncState) && (
-                <span
-                  aria-hidden
-                  style={{
-                    position: "absolute",
-                    top: 4,
-                    right: 6,
-                    width: 8,
-                    height: 8,
-                    borderRadius: "50%",
-                    background: "var(--accent)",
-                  }}
-                  data-testid="sidebar-git-sync-dot"
-                />
-              )}
-          </button>
-        )}
-        {gitSyncMapped && onGitSync && (
-          <button
-            className="btn-sidebar-block"
-            style={{ marginBottom: 6 }}
-            onClick={onGitSync}
-            data-testid="sidebar-git-sync"
-            title={t(
-              "ui.git_sync.sidebar_tooltip",
-              "Buchstand in das verbundene Git-Repository commiten",
-            )}
-          >
-            <GitBranch size={14} /> {t("ui.sidebar.git_sync", "Sync zum Repo")}
-          </button>
-        )}
-        {hasToc && onValidateToc && (
-          <button
-            className="btn-sidebar-block"
-            style={{ marginBottom: 6 }}
-            onClick={onValidateToc}
-          >
-            <ListChecks size={14} />{" "}
-            {t("ui.sidebar.toc_validate", "TOC prüfen")}
-          </button>
-        )}
-        {onSaveAsTemplate && (
-          <Tooltip
-            content={
-              chapters.length === 0
-                ? t(
-                    "ui.sidebar.save_template_disabled",
-                    "Erstelle zuerst ein Kapitel",
-                  )
-                : t(
-                    "ui.sidebar.save_template_tooltip",
-                    "Buchstruktur als wiederverwendbare Vorlage speichern",
-                  )
-            }
-          >
-            <button
-              className="btn-sidebar-block"
-              style={{ marginBottom: 6 }}
-              onClick={onSaveAsTemplate}
-              disabled={chapters.length === 0}
-              data-testid="sidebar-save-as-template"
-            >
-              <BookmarkPlus size={14} />{" "}
-              {t("ui.sidebar.save_as_template", "Als Vorlage speichern")}
-            </button>
-          </Tooltip>
-        )}
-          </Collapsible.Content>
-        </Collapsible.Root>
+        <SidebarToolsGroup
+          chapters={chapters}
+          onShowStoryboard={onShowStoryboard}
+          storyboardActive={storyboardActive}
+          onShowOutline={onShowOutline}
+          outlineActive={outlineActive}
+          onStoryBible={onStoryBible}
+          storyBibleActive={storyBibleActive}
+          onShowRelationships={onShowRelationships}
+          relationshipsActive={relationshipsActive}
+          offlineSlot={offlineSlot}
+          onGitBackup={onGitBackup}
+          gitSyncState={gitSyncState}
+          onGitSync={onGitSync}
+          gitSyncMapped={gitSyncMapped}
+          hasToc={hasToc}
+          onValidateToc={onValidateToc}
+          onSaveAsTemplate={onSaveAsTemplate}
+          t={t}
+        />
         <Tooltip
           content={
             chapters.length === 0
@@ -674,24 +425,4 @@ export default function ChapterSidebar({
       </div>
     </aside>
   );
-}
-
-function gitSyncStateLabel(
-  state: string | null | undefined,
-  t: (key: string, fallback: string) => string,
-): string {
-  switch (state) {
-    case "in_sync":
-      return t("ui.git.in_sync", "synchron");
-    case "local_ahead":
-      return t("ui.git.local_ahead", "lokal vorne");
-    case "remote_ahead":
-      return t("ui.git.remote_ahead", "Remote hat Änderungen");
-    case "diverged":
-      return t("ui.git.diverged_short", "divergiert");
-    case "never_synced":
-      return t("ui.git.never_synced", "noch nicht synchronisiert");
-    default:
-      return t("ui.sidebar.git_backup", "Git-Sicherung");
-  }
 }
