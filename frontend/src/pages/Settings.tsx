@@ -158,29 +158,12 @@ export default function Settings() {
     // definitions so testids + labels stay in lock-step. The mobile
     // dropdown reuses the flat list; C2 will refine the mobile UX.
     const hasDonations = Boolean(getDonationsConfig(appConfig));
-    // White-Label feature flag (features.white_label in app.yaml).
-    // Defaults to false so the "Erweitert" tab stays hidden for the
-    // typical author user; power users flip the flag in YAML to
-    // surface the SSH-key + white-label customisation panels.
-    const hasWhiteLabel = Boolean(
-        (appConfig.features as Record<string, unknown> | undefined)?.white_label,
-    );
 
     // Plugins are a Python/backend concept: the backendless PWA loads no
     // plugin configs, so the Plugins tab would be an empty container. Hide
     // the tab when there is nothing to configure (same approach as the empty
     // "from template" tab - a missing container, NOT a feature gate).
     const hasPlugins = Object.keys(pluginConfigs).length > 0;
-
-    // White-Label gate: a stale deep-link like ?tab=erweitert lands on
-    // an empty panel when the flag is off. Redirect to the default
-    // tab once appConfig has loaded and confirms the flag is false.
-    useEffect(() => {
-        if (activeTab === "erweitert" && !hasWhiteLabel) {
-            handleTabChange("erscheinungsbild");
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [activeTab, hasWhiteLabel]);
 
     // Empty-plugins gate: a deep-link to ?tab=plugins lands on an empty
     // panel when no plugins exist (always in Dexie mode). Redirect to the
@@ -258,15 +241,11 @@ export default function Settings() {
                         label: t("ui.settings.tab_backups", "Backups"),
                         testId: "settings-tab-backups",
                     },
-                    ...(hasWhiteLabel
-                        ? [
-                              {
-                                  value: "erweitert",
-                                  label: t("ui.settings.tab_erweitert", "Erweitert"),
-                                  testId: "settings-tab-erweitert",
-                              },
-                          ]
-                        : []),
+                    {
+                        value: "erweitert",
+                        label: t("ui.settings.tab_erweitert", "Erweitert"),
+                        testId: "settings-tab-erweitert",
+                    },
                 ],
             },
             {
@@ -306,7 +285,7 @@ export default function Settings() {
             },
         ];
         return groups;
-    }, [t, hasDonations, hasWhiteLabel, hasPlugins]);
+    }, [t, hasDonations, hasPlugins]);
 
     return (
         <div className={styles.container}>
@@ -606,30 +585,7 @@ export default function Settings() {
                                 <SupportSection config={getDonationsConfig(appConfig)!} />
                             )}
                             {activeTab === "about" && <AboutSettings appConfig={appConfig} />}
-                            {activeTab === "erweitert" && hasWhiteLabel && (
-                                <ErweitertSettings
-                                    config={appConfig}
-                                    onSave={async (data) => {
-                                        setSaving(true);
-                                        try {
-                                            const updated =
-                                                await getStorage().settings.updateApp(data);
-                                            setAppConfig(updated);
-                                            showMessage(t("ui.settings.saved", "Gespeichert"));
-                                        } catch (err) {
-                                            showMessage(
-                                                t(
-                                                    "ui.settings.save_error",
-                                                    "Fehler beim Speichern",
-                                                ),
-                                                true,
-                                            );
-                                        }
-                                        setSaving(false);
-                                    }}
-                                    saving={saving}
-                                />
-                            )}
+                            {activeTab === "erweitert" && <ErweitertSettings />}
                             {activeTab === "danger_zone" && <DangerZoneSettings />}
                         </>
                     )}

@@ -100,10 +100,16 @@ AI sometimes suggests outdated, insecure, or nonexistent libraries.
 
 **Enforcement:**
 
-- **Open gap.** No `pip-audit` or `npm audit` in CI. Planned as next
-  infrastructure step (warn-only Phase 1, same Defense-in-Depth approach
-  as the Cohesion Watcher).
-- #47 (weasyprint CVE) is tracked but deferred.
+- **Hard-blocking in CI** (`ci.yml`, every push/PR to `main`/`develop`):
+  `pip-audit --skip-editable`, `bandit` (medium severity + confidence),
+  and `npm audit --audit-level=high`. Matching local targets:
+  `make audit`, `make security-backend`, `make bandit-backend`.
+- **Weekly scheduled watcher** (`security-scan.yml`, #149): warn-only
+  Sunday run that surfaces new CVEs published against already-merged
+  dependencies (the push/PR gate never re-runs without a code change).
+  Local counterpart: `make check-security`.
+- #47 (weasyprint CVE) is tracked but deferred; the blocking gate
+  `--ignore-vuln`s it, the warn-only watcher keeps it visible.
 - Human review catches dependency additions in PR diffs.
 
 ## 5. Regular Refactoring
@@ -196,7 +202,7 @@ coordinates handoffs and resolves conflicts with reality.
 | Prompt precision | `.claude/rules/` | Sparring Partner writes/reviews prompts |
 | Layer architecture | `guardedFetch`, `settingsSeamGuard`, cohesion watcher | Code review for boundary violations |
 | Test coverage | Vitest, tsc strict, pre-commit hooks | Aster-E2E-Gate (smoke suite), Coverage Illusion review |
-| Security/deps | **Gap: no CI scan yet** | Manual dependency review |
+| Security/deps | pip-audit + bandit + npm audit (blocking in `ci.yml`), weekly `security-scan.yml` watcher | Manual dependency review |
 | Refactoring | Cohesion watcher, complexity watcher, `.filesize-baseline` | Refactoring intervals, scope decisions |
 | Git hygiene | Pre-commit hooks, linting | Diff review, issue discipline |
 

@@ -3,7 +3,7 @@
        test test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
-       audit audit-backend audit-frontend security-backend bandit-backend circular-deps \
+       audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
@@ -299,6 +299,17 @@ security-backend: bandit-backend audit-backend ## bandit SAST + pip-audit (backe
 bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: docs/audits/bandit-baseline-2026-06-10.md)
 	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
+
+# --- Warn-only security watcher (mirrors .github/workflows/security-scan.yml) ---
+# Local counterpart of the weekly scheduled scan. Surfaces every advisory
+# (no --ignore-vuln) and never fails the shell, so it is for visibility,
+# not gating. The blocking gate is `make audit` / `make security-backend`.
+
+check-security: ## Warn-only dependency + SAST scan (never fails; mirrors security-scan.yml)
+	-cd backend && poetry run pip-audit --skip-editable
+	-cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
+	  --severity-level medium --confidence-level medium -q
+	-cd frontend && npm audit --audit-level=high
 
 # --- Circular dependency check (mirrors the madge step in ci.yml) ---
 # Run via npx (pinned major): madge@8's optional typescript peer is <6.1,
