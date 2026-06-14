@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError, Book } from "../api/client";
 import { getStorage } from "../storage";
+import { downloadBlob } from "../shared/utils/downloadBlob";
 import WritingGoalWidget from "../components/WritingGoalWidget";
 import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
@@ -166,14 +167,7 @@ export default function Dashboard() {
         if (ordered.length > BOOK_BULK_LIMIT_HARD) return;
         try {
             const { blob, filename } = await api.books.bulkExport(ordered, format);
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, filename);
             selection.clear();
         } catch (err) {
             const message =
@@ -195,14 +189,7 @@ export default function Dashboard() {
         if (ordered.length === 0) return;
         try {
             const { blob, filename } = await api.books.bulkAiTemplate.export(ordered);
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, filename);
             notify.success(
                 t(
                     "ui.ai_template.bulk.export_success",
