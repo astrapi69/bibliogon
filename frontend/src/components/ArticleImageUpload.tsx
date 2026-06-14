@@ -1,20 +1,27 @@
-import {useRef, useState} from "react";
-import {Image as ImageIcon, Upload, X} from "lucide-react";
+import { useRef, useState } from "react";
+import { Image as ImageIcon, Upload, X } from "lucide-react";
 
-import {ApiError, api} from "../api/client";
-import {useI18n} from "../hooks/useI18n";
-import {notify} from "../utils/notify";
+import { ApiError, api } from "../api/client";
+import { getStorage } from "../storage";
+import { useI18n } from "../hooks/useI18n";
+import { useArticleImageUrl } from "../hooks/useArticleImageUrl";
+import { notify } from "../utils/notify";
 
 /** UX-FU-02: featured-image upload for the ArticleEditor sidebar.
  *
  * Mirrors {@link CoverUpload} but for articles. Drag-and-drop or
- * click-to-pick uploads to the article-scoped endpoint and the
- * resulting URL replaces the article's ``featured_image_url``.
+ * click-to-pick uploads, then ``onChange(url, assetId)`` updates the
+ * article's featured image.
  *
- * Falls back gracefully when the user has only a remote URL: the
- * URL field stays editable (rendered separately by the parent).
- * Removal hits DELETE on the asset, then clears
- * ``featured_image_url`` via the parent's onChange.
+ * - **api mode:** uploads to the article-scoped endpoint; the served URL
+ *   becomes ``featured_image_url`` (``assetId`` null).
+ * - **dexie mode (offline):** stores the bytes in the Dexie ``articleAssets``
+ *   table (#157) and sets ``featured_image_asset_id`` (``url`` null), so the
+ *   thumbnail survives offline. The preview resolves across modes via
+ *   {@link useArticleImageUrl}.
+ *
+ * Removal deletes the asset (server file in api mode, Dexie blob offline)
+ * and clears both fields.
  */
 interface Props {
     articleId: string;
@@ -22,7 +29,9 @@ interface Props {
      *  remote (https://...), or article-served
      *  (/api/articles/{id}/assets/file/{filename}). */
     value: string | null;
-    onChange: (next: string | null) => void;
+    /** Current ``featured_image_asset_id`` (dexie-only blob ref, #157). */
+    assetId?: string | null;
+    onChange: (url: string | null, assetId: string | null) => void;
 }
 
 const ACCEPTED_EXTENSIONS = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
@@ -39,11 +48,14 @@ function isLocalAsset(articleId: string, url: string | null): boolean {
     return url.startsWith(`/api/articles/${articleId}/assets/file/`);
 }
 
-export default function ArticleImageUpload({articleId, value, onChange}: Props) {
-    const {t} = useI18n();
+export default function ArticleImageUpload({ articleId, value, assetId, onChange }: Props) {
+    const { t } = useI18n();
     const inputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
     const [dragging, setDragging] = useState(false);
+    // Resolves the preview src across modes: served/CDN URL online, a blob:
+    // URL from the Dexie articleAssets table offline (#157).
+    const previewSrc = useArticleImageUrl(articleId, value, assetId ?? null);
 
     const handleFiles = async (files: FileList | null) => {
         if (!files || files.length === 0) return;
@@ -59,18 +71,26 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
         }
         setUploading(true);
         try {
-            const asset = await api.articleAssets.upload(articleId, file);
-            onChange(api.articleAssets.urlFor(articleId, asset.filename));
-            notify.success(
-                t("ui.articles.featured_image_uploaded", "Bild hochgeladen"),
-            );
+            if (getStorage().mode === "dexie") {
+                // Offline: store the bytes in Dexie and reference them by id.
+                const newAssetId = await getStorage().articleAssets.store(
+                    articleId,
+                    file,
+                    file.name,
+                    file.type,
+                );
+                onChange(null, newAssetId);
+            } else {
+                const asset = await api.articleAssets.upload(articleId, file);
+                onChange(api.articleAssets.urlFor(articleId, asset.filename), null);
+            }
+            notify.success(t("ui.articles.featured_image_uploaded", "Bild hochgeladen"));
         } catch (err) {
             const detail = err instanceof ApiError ? err.detail : String(err);
             notify.error(
-                t(
-                    "ui.articles.featured_image_upload_failed",
-                    "Upload fehlgeschlagen",
-                ) + ": " + detail,
+                t("ui.articles.featured_image_upload_failed", "Upload fehlgeschlagen") +
+                    ": " +
+                    detail,
                 err,
             );
         } finally {
@@ -80,6 +100,16 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
     };
 
     const handleRemove = async () => {
+        // Offline: drop the cached Dexie blob(s) for this article (#157).
+        if (getStorage().mode === "dexie") {
+            try {
+                await getStorage().articleAssets.deleteByArticle(articleId);
+            } catch {
+                // Soft-fail: clear the field regardless so the user is not stuck.
+            }
+            onChange(null, null);
+            return;
+        }
         // Only delete from disk if the URL is one we own. Remote URLs
         // are out of scope - clear the field but don't try to call
         // a DELETE that has no matching asset row.
@@ -105,12 +135,12 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                 }
             }
         }
-        onChange(null);
+        onChange(null, null);
     };
 
     return (
         <div data-testid="article-featured-image-upload">
-            {value ? (
+            {previewSrc ? (
                 <div
                     style={{
                         position: "relative",
@@ -122,7 +152,7 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                 >
                     <img
                         data-testid="article-featured-image-preview"
-                        src={value}
+                        src={previewSrc}
                         alt={t("ui.articles.featured_image_alt", "Beitragsbild")}
                         style={{
                             display: "block",
@@ -167,9 +197,7 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                         void handleFiles(e.dataTransfer.files);
                     }}
                     style={{
-                        border: dragging
-                            ? "2px dashed var(--accent)"
-                            : "1px dashed var(--border)",
+                        border: dragging ? "2px dashed var(--accent)" : "1px dashed var(--border)",
                         borderRadius: 4,
                         padding: "16px 8px",
                         textAlign: "center",
@@ -181,12 +209,12 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                 >
                     {uploading ? (
                         <span>
-                            <Upload size={14} style={{marginRight: 6}} />
+                            <Upload size={14} style={{ marginRight: 6 }} />
                             {t("ui.articles.featured_image_uploading", "Lädt hoch...")}
                         </span>
                     ) : (
                         <span>
-                            <ImageIcon size={14} style={{marginRight: 6}} />
+                            <ImageIcon size={14} style={{ marginRight: 6 }} />
                             {t(
                                 "ui.articles.featured_image_dropzone",
                                 "Bild ablegen oder klicken zum Auswählen",
@@ -199,7 +227,7 @@ export default function ArticleImageUpload({articleId, value, onChange}: Props) 
                 ref={inputRef}
                 type="file"
                 accept={ACCEPT_ATTR}
-                style={{display: "none"}}
+                style={{ display: "none" }}
                 onChange={(e) => void handleFiles(e.target.files)}
                 data-testid="article-featured-image-file-input"
             />
