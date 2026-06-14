@@ -36,34 +36,34 @@ export type StorageMode = "api" | "dexie";
  * drifting from the real client.
  */
 export interface BookStorage {
-  list: typeof api.books.list;
-  get: typeof api.books.get;
-  create: typeof api.books.create;
-  update: typeof api.books.update;
-  delete: typeof api.books.delete;
-  listTrash: typeof api.books.listTrash;
-  restore: typeof api.books.restore;
-  permanentDelete: typeof api.books.permanentDelete;
-  emptyTrash: typeof api.books.emptyTrash;
-  bulkRestore: typeof api.books.bulkRestore;
-  bulkDelete: typeof api.books.bulkDelete;
+    list: typeof api.books.list;
+    get: typeof api.books.get;
+    create: typeof api.books.create;
+    update: typeof api.books.update;
+    delete: typeof api.books.delete;
+    listTrash: typeof api.books.listTrash;
+    restore: typeof api.books.restore;
+    permanentDelete: typeof api.books.permanentDelete;
+    emptyTrash: typeof api.books.emptyTrash;
+    bulkRestore: typeof api.books.bulkRestore;
+    bulkDelete: typeof api.books.bulkDelete;
 }
 
 export interface ChapterStorage {
-  list: typeof api.chapters.list;
-  get: typeof api.chapters.get;
-  create: typeof api.chapters.create;
-  update: typeof api.chapters.update;
-  delete: typeof api.chapters.delete;
-  reorder: typeof api.chapters.reorder;
+    list: typeof api.chapters.list;
+    get: typeof api.chapters.get;
+    create: typeof api.chapters.create;
+    update: typeof api.chapters.update;
+    delete: typeof api.chapters.delete;
+    reorder: typeof api.chapters.reorder;
 }
 
 export interface ArticleStorage {
-  list: typeof api.articles.list;
-  get: typeof api.articles.get;
-  create: typeof api.articles.create;
-  update: typeof api.articles.update;
-  delete: typeof api.articles.delete;
+    list: typeof api.articles.list;
+    get: typeof api.articles.get;
+    create: typeof api.articles.create;
+    update: typeof api.articles.update;
+    delete: typeof api.articles.delete;
 }
 
 /**
@@ -73,25 +73,25 @@ export interface ArticleStorage {
  * `typeof api.*` typing keeps these from drifting from the real client.
  */
 export interface SettingsStorage {
-  getApp: typeof api.settings.getApp;
-  updateApp: typeof api.settings.updateApp;
-  discoveredPlugins: typeof api.settings.discoveredPlugins;
+    getApp: typeof api.settings.getApp;
+    updateApp: typeof api.settings.updateApp;
+    discoveredPlugins: typeof api.settings.discoveredPlugins;
 }
 
 export interface I18nStorage {
-  get: typeof api.i18n.get;
+    get: typeof api.i18n.get;
 }
 
 export interface BookTypesStorage {
-  list: typeof api.bookTypes.list;
+    list: typeof api.bookTypes.list;
 }
 
 export interface ContentTypesStorage {
-  list: typeof api.contentTypes.list;
+    list: typeof api.contentTypes.list;
 }
 
 export interface WritingSessionsStorage {
-  list: typeof api.writingSessions.list;
+    list: typeof api.writingSessions.list;
 }
 
 /**
@@ -104,19 +104,19 @@ export interface WritingSessionsStorage {
  * typing keeps these from drifting from the real client.
  */
 export interface WritingStatsStorage {
-  summary: typeof api.writingStats.summary;
-  byBook: typeof api.writingStats.byBook;
-  byChapter: typeof api.writingStats.byChapter;
+    summary: typeof api.writingStats.summary;
+    byBook: typeof api.writingStats.byBook;
+    byChapter: typeof api.writingStats.byChapter;
 }
 
 /** The global Authors-Database. Pure CRUD, so it works offline against a
  *  Dexie table (the user can add + pick authors on the backendless PWA). */
 export interface AuthorStorage {
-  list: typeof api.authors.list;
-  get: typeof api.authors.get;
-  create: typeof api.authors.create;
-  update: typeof api.authors.update;
-  delete: typeof api.authors.delete;
+    list: typeof api.authors.list;
+    get: typeof api.authors.get;
+    create: typeof api.authors.create;
+    update: typeof api.authors.update;
+    delete: typeof api.authors.delete;
 }
 
 /**
@@ -127,31 +127,31 @@ export interface AuthorStorage {
  * platforms via the backend and are genuinely desktop-only for now).
  */
 export interface PublicationStorage {
-  list: typeof api.publications.list;
+    list: typeof api.publications.list;
 }
 
 /** Publishing platform schemas (reference data for the publish UI).
  *  Seam-routed read so the editor's offline load returns an empty map
  *  instead of erroring; publishing itself remains backend-only. */
 export interface ArticlePlatformStorage {
-  list: typeof api.articlePlatforms.list;
+    list: typeof api.articlePlatforms.list;
 }
 
 /** Editor plugin-availability probe (AI / grammar / audiobook / ms-tools).
  *  These plugins are backend-only, so the offline probe returns an empty
  *  map (everything unavailable) from Dexie without firing `/api`. */
 export interface EditorPluginStatusStorage {
-  get: typeof api.editorPluginStatus;
+    get: typeof api.editorPluginStatus;
 }
 
 /** Per-book chapter labels (colour-coded workflow tags). Pure CRUD against a
  *  Dexie table, so the prose chapter-label manager / outliner / storyboard
  *  work offline. */
 export interface ChapterLabelStorage {
-  list: typeof api.chapterLabels.list;
-  create: typeof api.chapterLabels.create;
-  update: typeof api.chapterLabels.update;
-  remove: typeof api.chapterLabels.remove;
+    list: typeof api.chapterLabels.list;
+    create: typeof api.chapterLabels.create;
+    update: typeof api.chapterLabels.update;
+    remove: typeof api.chapterLabels.remove;
 }
 
 /** Story Bible: per-book fiction-entity database + entity-page/chapter links.
@@ -160,47 +160,47 @@ export interface ChapterLabelStorage {
  *  registry). The text-analysis methods (autoDetect / continuityCheck) return
  *  empty offline, and exportBible is generated client-side. */
 export interface StoryBibleStorage {
-  getInfo: typeof api.storyBible.getInfo;
-  listEntityTypes: typeof api.storyBible.listEntityTypes;
-  listEntities: typeof api.storyBible.listEntities;
-  createEntity: typeof api.storyBible.createEntity;
-  getEntity: typeof api.storyBible.getEntity;
-  updateEntity: typeof api.storyBible.updateEntity;
-  deleteEntity: typeof api.storyBible.deleteEntity;
-  getRelationships: typeof api.storyBible.getRelationships;
-  autoDetect: typeof api.storyBible.autoDetect;
-  appearances: typeof api.storyBible.appearances;
-  pageEntities: typeof api.storyBible.pageEntities;
-  createLink: typeof api.storyBible.createLink;
-  deleteLink: typeof api.storyBible.deleteLink;
-  continuityCheck: typeof api.storyBible.continuityCheck;
-  exportBible: typeof api.storyBible.exportBible;
+    getInfo: typeof api.storyBible.getInfo;
+    listEntityTypes: typeof api.storyBible.listEntityTypes;
+    listEntities: typeof api.storyBible.listEntities;
+    createEntity: typeof api.storyBible.createEntity;
+    getEntity: typeof api.storyBible.getEntity;
+    updateEntity: typeof api.storyBible.updateEntity;
+    deleteEntity: typeof api.storyBible.deleteEntity;
+    getRelationships: typeof api.storyBible.getRelationships;
+    autoDetect: typeof api.storyBible.autoDetect;
+    appearances: typeof api.storyBible.appearances;
+    pageEntities: typeof api.storyBible.pageEntities;
+    createLink: typeof api.storyBible.createLink;
+    deleteLink: typeof api.storyBible.deleteLink;
+    continuityCheck: typeof api.storyBible.continuityCheck;
+    exportBible: typeof api.storyBible.exportBible;
 }
 
 /** Picture-book pages. CRUD over the existing Dexie pages table, so the
  *  picture-book / comic page editor works offline. */
 export interface PageStorage {
-  list: typeof api.pages.list;
-  create: typeof api.pages.create;
-  update: typeof api.pages.update;
-  delete: typeof api.pages.delete;
-  reorder: typeof api.pages.reorder;
+    list: typeof api.pages.list;
+    create: typeof api.pages.create;
+    update: typeof api.pages.update;
+    delete: typeof api.pages.delete;
+    reorder: typeof api.pages.reorder;
 }
 
 /** Comic panels + speech bubbles. CRUD over the existing Dexie comicPanels /
  *  comicBubbles tables, so the comic editor works offline. getInfo reports
  *  available so the comic surfaces un-gate in Dexie mode. */
 export interface ComicsStorage {
-  getInfo: typeof api.comics.getInfo;
-  listPanels: typeof api.comics.listPanels;
-  createPanel: typeof api.comics.createPanel;
-  updatePanel: typeof api.comics.updatePanel;
-  deletePanel: typeof api.comics.deletePanel;
-  reorderPanels: typeof api.comics.reorderPanels;
-  listBubbles: typeof api.comics.listBubbles;
-  createBubble: typeof api.comics.createBubble;
-  updateBubble: typeof api.comics.updateBubble;
-  deleteBubble: typeof api.comics.deleteBubble;
+    getInfo: typeof api.comics.getInfo;
+    listPanels: typeof api.comics.listPanels;
+    createPanel: typeof api.comics.createPanel;
+    updatePanel: typeof api.comics.updatePanel;
+    deletePanel: typeof api.comics.deletePanel;
+    reorderPanels: typeof api.comics.reorderPanels;
+    listBubbles: typeof api.comics.listBubbles;
+    createBubble: typeof api.comics.createBubble;
+    updateBubble: typeof api.comics.updateBubble;
+    deleteBubble: typeof api.comics.deleteBubble;
 }
 
 /**
@@ -218,24 +218,37 @@ export interface ComicsStorage {
  * controlled display + upload sites.
  */
 export interface AssetStorage {
-  list: typeof api.assets.list;
-  upload: typeof api.assets.upload;
-  delete: typeof api.assets.delete;
-  getBlob(bookId: string, filename: string): Promise<Blob | null>;
-  cacheBlob(
-    bookId: string,
-    filename: string,
-    blob: Blob,
-    assetType?: string,
-  ): Promise<void>;
+    list: typeof api.assets.list;
+    upload: typeof api.assets.upload;
+    delete: typeof api.assets.delete;
+    getBlob(bookId: string, filename: string): Promise<Blob | null>;
+    cacheBlob(bookId: string, filename: string, blob: Blob, assetType?: string): Promise<void>;
+}
+
+/**
+ * Offline article featured-images (#157). Dexie-only blob plumbing with no
+ * api counterpart — in api mode the server serves the file and the resolver
+ * uses `featured_image_url` directly, so these members are stubbed there.
+ *  - `store` saves image bytes for an article and returns the generated
+ *    asset id to set on `Article.featured_image_asset_id`. Used by the
+ *    offline upload path and the Medium-import CDN cache.
+ *  - `getBlob` resolves a stored asset id to its bytes — `useArticleImageUrl`
+ *    turns this into a `blob:` URL offline.
+ *  - `deleteByArticle` drops all of an article's cached images (cascade on
+ *    article delete).
+ */
+export interface ArticleAssetStorage {
+    store(articleId: string, blob: Blob, filename: string, mimeType?: string): Promise<string>;
+    getBlob(assetId: string): Promise<Blob | null>;
+    deleteByArticle(articleId: string): Promise<void>;
 }
 
 /** Per-book cover image. Mirrors `api.covers` (upload + delete); the cover
  *  is stored in the same offline assets store under a `cover-{id}.{ext}`
  *  filename so the existing `/assets/file/{filename}` display path resolves. */
 export interface CoverStorage {
-  upload: typeof api.covers.upload;
-  delete: typeof api.covers.delete;
+    upload: typeof api.covers.upload;
+    delete: typeof api.covers.delete;
 }
 
 /**
@@ -245,39 +258,40 @@ export interface CoverStorage {
  * browser — online they are created server-side, so api mode has no create).
  */
 export interface CommentStorage {
-  list: typeof api.comments.list;
-  delete: typeof api.comments.delete;
-  reclassifyAsArticle: typeof api.comments.reclassifyAsArticle;
-  bulkDelete: typeof api.comments.bulkDelete;
-  listTrashed: typeof api.comments.listTrashed;
-  restore: typeof api.comments.restore;
-  permanentDelete: typeof api.comments.permanentDelete;
-  emptyTrash: typeof api.comments.emptyTrash;
-  bulkRestore: typeof api.comments.bulkRestore;
-  create(comment: ArticleComment): Promise<ArticleComment>;
+    list: typeof api.comments.list;
+    delete: typeof api.comments.delete;
+    reclassifyAsArticle: typeof api.comments.reclassifyAsArticle;
+    bulkDelete: typeof api.comments.bulkDelete;
+    listTrashed: typeof api.comments.listTrashed;
+    restore: typeof api.comments.restore;
+    permanentDelete: typeof api.comments.permanentDelete;
+    emptyTrash: typeof api.comments.emptyTrash;
+    bulkRestore: typeof api.comments.bulkRestore;
+    create(comment: ArticleComment): Promise<ArticleComment>;
 }
 
 export interface IStorageService {
-  /** The backend this instance is. Lets the UI show "Current mode: …". */
-  readonly mode: StorageMode;
-  books: BookStorage;
-  chapters: ChapterStorage;
-  articles: ArticleStorage;
-  settings: SettingsStorage;
-  i18n: I18nStorage;
-  bookTypes: BookTypesStorage;
-  contentTypes: ContentTypesStorage;
-  writingSessions: WritingSessionsStorage;
-  writingStats: WritingStatsStorage;
-  authors: AuthorStorage;
-  publications: PublicationStorage;
-  articlePlatforms: ArticlePlatformStorage;
-  editorPluginStatus: EditorPluginStatusStorage;
-  chapterLabels: ChapterLabelStorage;
-  storyBible: StoryBibleStorage;
-  pages: PageStorage;
-  comics: ComicsStorage;
-  assets: AssetStorage;
-  covers: CoverStorage;
-  comments: CommentStorage;
+    /** The backend this instance is. Lets the UI show "Current mode: …". */
+    readonly mode: StorageMode;
+    books: BookStorage;
+    chapters: ChapterStorage;
+    articles: ArticleStorage;
+    settings: SettingsStorage;
+    i18n: I18nStorage;
+    bookTypes: BookTypesStorage;
+    contentTypes: ContentTypesStorage;
+    writingSessions: WritingSessionsStorage;
+    writingStats: WritingStatsStorage;
+    authors: AuthorStorage;
+    publications: PublicationStorage;
+    articlePlatforms: ArticlePlatformStorage;
+    editorPluginStatus: EditorPluginStatusStorage;
+    chapterLabels: ChapterLabelStorage;
+    storyBible: StoryBibleStorage;
+    pages: PageStorage;
+    comics: ComicsStorage;
+    assets: AssetStorage;
+    articleAssets: ArticleAssetStorage;
+    covers: CoverStorage;
+    comments: CommentStorage;
 }

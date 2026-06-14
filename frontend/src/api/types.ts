@@ -11,32 +11,32 @@
 // --- Types ---
 
 export type ChapterType =
-  | "chapter"
-  | "preface"
-  | "foreword"
-  | "acknowledgments"
-  | "about_author"
-  | "appendix"
-  | "bibliography"
-  | "glossary"
-  | "epilogue"
-  | "imprint"
-  | "next_in_series"
-  | "part"
-  | "part_intro"
-  | "interlude"
-  | "toc"
-  | "dedication"
-  | "prologue"
-  | "introduction"
-  | "afterword"
-  | "final_thoughts"
-  | "index"
-  | "epigraph"
-  | "endnotes"
-  | "also_by_author"
-  | "excerpt"
-  | "call_to_action";
+    | "chapter"
+    | "preface"
+    | "foreword"
+    | "acknowledgments"
+    | "about_author"
+    | "appendix"
+    | "bibliography"
+    | "glossary"
+    | "epilogue"
+    | "imprint"
+    | "next_in_series"
+    | "part"
+    | "part_intro"
+    | "interlude"
+    | "toc"
+    | "dedication"
+    | "prologue"
+    | "introduction"
+    | "afterword"
+    | "final_thoughts"
+    | "index"
+    | "epigraph"
+    | "endnotes"
+    | "also_by_author"
+    | "excerpt"
+    | "call_to_action";
 
 /** PB-PHASE4: discriminator for the book's authoring shape.
  *  ``prose`` keeps the existing Chapter-based editor; ``picture_book``
@@ -56,34 +56,34 @@ export type BookType = "prose" | "picture_book" | "comic_book";
  *  Pydantic model. Negative-default semantics: any unspecified
  *  capability is False. */
 export interface BookTypeCapabilities {
-  ebook_export: boolean;
-  paperback_export: boolean;
-  hardcover_export: boolean;
-  audiobook_export: boolean;
-  template_catalog: boolean;
-  kdp_package_supported: boolean;
+    ebook_export: boolean;
+    paperback_export: boolean;
+    hardcover_export: boolean;
+    audiobook_export: boolean;
+    template_catalog: boolean;
+    kdp_package_supported: boolean;
 }
 
 /** BOOK-TYPES-SSOT-YAML-01: one book-type's full metadata bundle
  *  served by GET /api/book-types. Mirrors the backend BookTypeDef
  *  Pydantic model. */
 export interface BookTypeDef {
-  id: BookType;
-  label_key: string;
-  description_key: string;
-  /** i18n key for the per-type create label (Dashboard SplitButton
-   *  primary) / default new-document title. Mirrors
-   *  ContentTypeDef.default_title_key. */
-  default_title_key?: string | null;
-  icon: string;
-  /** "chapters" | "pages" — drives the editor selection + the
-   *  PAGEABLE_BOOK_TYPES gate on the backend. */
-  content_model: string;
-  editor_component: string;
-  capabilities: BookTypeCapabilities;
-  dashboard_create_visible: boolean;
-  immutable_after_create: boolean;
-  default_page_size: string | null;
+    id: BookType;
+    label_key: string;
+    description_key: string;
+    /** i18n key for the per-type create label (Dashboard SplitButton
+     *  primary) / default new-document title. Mirrors
+     *  ContentTypeDef.default_title_key. */
+    default_title_key?: string | null;
+    icon: string;
+    /** "chapters" | "pages" — drives the editor selection + the
+     *  PAGEABLE_BOOK_TYPES gate on the backend. */
+    content_model: string;
+    editor_component: string;
+    capabilities: BookTypeCapabilities;
+    dashboard_create_visible: boolean;
+    immutable_after_create: boolean;
+    default_page_size: string | null;
 }
 
 /** ARTICLE-TYPES-SSOT-01 (2026-05-29). The 8 article-types in
@@ -93,15 +93,15 @@ export interface BookTypeDef {
  *  (test_article_type_registry.py::test_literal_matches_registry)
  *  pins the parity. Mirrors the BookType pattern. */
 export type ContentType =
-  | "blogpost"
-  | "tutorial"
-  | "review"
-  | "essay"
-  | "newsletter"
-  | "interview"
-  | "listicle"
-  | "short_story"
-  | "article";
+    | "blogpost"
+    | "tutorial"
+    | "review"
+    | "essay"
+    | "newsletter"
+    | "interview"
+    | "listicle"
+    | "short_story"
+    | "article";
 
 /** ARTICLE-TYPES-SSOT-01: one per-type extra field declaration
  *  inside ContentTypeDef.extra_fields. The frontend ArticleEditor
@@ -109,45 +109,45 @@ export type ContentType =
  *  number input / enum select / date picker) and writes the value
  *  into ``Article.article_metadata[name]``. */
 export interface ContentTypeExtraField {
-  name: string;
-  /** "text" | "number" | "enum" | "date" */
-  type: string;
-  label_key: string;
-  /** Enum-specific list of allowed values. Undefined for
-   *  non-enum types. */
-  values?: string[];
-  /** Number-specific bounds. Undefined for non-number types. */
-  min?: number;
-  max?: number;
+    name: string;
+    /** "text" | "number" | "enum" | "date" */
+    type: string;
+    label_key: string;
+    /** Enum-specific list of allowed values. Undefined for
+     *  non-enum types. */
+    values?: string[];
+    /** Number-specific bounds. Undefined for non-number types. */
+    min?: number;
+    max?: number;
 }
 
 /** ARTICLE-TYPES-SSOT-01: one article-type's full metadata bundle
  *  served by GET /api/content-types. Mirrors the backend
  *  ContentTypeDef Pydantic model. */
 export interface ContentTypeDef {
-  id: ContentType;
-  label_key: string;
-  description_key: string;
-  /** i18n key for the default title of a newly-created document of
-   *  this type (AD split-button create flow). Falls back to
-   *  ``ui.articles.default_title`` when null/absent. */
-  default_title_key?: string | null;
-  icon: string;
-  /** Marks the canonical default for new articles. Exactly one
-   *  entry in the YAML registry is ``default: true``. */
-  default: boolean;
-  extra_fields: ContentTypeExtraField[];
-  /** Per-type visibility of the optional core sidebar fields
-   *  (ARTICLE-TYPES-FIELD-VISIBILITY-01). ``null`` (key omitted in
-   *  the YAML) = show ALL; an explicit list = show exactly those;
-   *  ``[]`` = show none. ArticleEditor gates Tags / Excerpt / SEO /
-   *  Canonical URL / Featured Image on this. Identity fields
-   *  (title/content/status/subtitle/author/language/topic) are
-   *  always shown and are NOT listed here. Mirrors backend
-   *  ContentTypeDef.core_fields. Optional in TS: the API always
-   *  sends it (list or null), but ``== null`` treats an absent value
-   *  identically to null ("show all"), so test fixtures may omit it. */
-  core_fields?: string[] | null;
+    id: ContentType;
+    label_key: string;
+    description_key: string;
+    /** i18n key for the default title of a newly-created document of
+     *  this type (AD split-button create flow). Falls back to
+     *  ``ui.articles.default_title`` when null/absent. */
+    default_title_key?: string | null;
+    icon: string;
+    /** Marks the canonical default for new articles. Exactly one
+     *  entry in the YAML registry is ``default: true``. */
+    default: boolean;
+    extra_fields: ContentTypeExtraField[];
+    /** Per-type visibility of the optional core sidebar fields
+     *  (ARTICLE-TYPES-FIELD-VISIBILITY-01). ``null`` (key omitted in
+     *  the YAML) = show ALL; an explicit list = show exactly those;
+     *  ``[]`` = show none. ArticleEditor gates Tags / Excerpt / SEO /
+     *  Canonical URL / Featured Image on this. Identity fields
+     *  (title/content/status/subtitle/author/language/topic) are
+     *  always shown and are NOT listed here. Mirrors backend
+     *  ContentTypeDef.core_fields. Optional in TS: the API always
+     *  sends it (list or null), but ``== null`` treats an absent value
+     *  identically to null ("show all"), so test fixtures may omit it. */
+    core_fields?: string[] | null;
 }
 
 /** PUBLICATION-STATUS-BOOK-PARITY-01 (2026-05-29). Publication-
@@ -158,155 +158,155 @@ export interface ContentTypeDef {
 export type BookStatus = "draft" | "ready" | "published" | "archived";
 
 export interface Book {
-  id: string;
-  /** ``prose`` for the existing chapter-based authoring flow;
-   *  ``picture_book`` mounts the page-based PageEditor instead.
-   *  Defaults to ``prose`` for legacy rows (the backend's
-   *  Pydantic default). */
-  book_type: BookType;
-  /** PUBLICATION-STATUS-BOOK-PARITY-01. Publication-lifecycle
-   *  column. Defaults to "draft" on every new row + on
-   *  pre-migration legacy rows. Optional in the type contract
-   *  because legacy test fixtures predating
-   *  PUBLICATION-STATUS-BOOK-PARITY-01 don't seed it; consumers
-   *  must treat ``undefined`` as ``"draft"``. Real API
-   *  responses always populate it via the backend ``BookOut``
-   *  schema. */
-  status?: BookStatus;
-  title: string;
-  subtitle: string | null;
-  /** Nullable when the user enabled
-   *  ``app.allow_books_without_author`` in Settings and the
-   *  import wizard's defer path was used (or the metadata
-   *  editor cleared the field). UI surfaces an em-dash
-   *  placeholder. */
-  author: string | null;
-  language: string;
-  genre: string | null;
-  series: string | null;
-  series_index: number | null;
-  description: string | null;
-  /** Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01). word_target:
-   *  per-book aggregate word target; word_target_deadline: optional
-   *  draft deadline (ISO date string). */
-  word_target?: number | null;
-  word_target_deadline?: string | null;
-  /** EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
-   *  ``book_idea`` is the short premise (1-2 sentences);
-   *  ``expose`` is the long-form Exposé (Plot + Characters +
-   *  Setting + Tone document). Both default null. */
-  book_idea: string | null;
-  expose: string | null;
-  edition: string | null;
-  publisher: string | null;
-  publisher_city: string | null;
-  publish_date: string | null;
-  isbn_ebook: string | null;
-  isbn_paperback: string | null;
-  isbn_hardcover: string | null;
-  asin_ebook: string | null;
-  asin_paperback: string | null;
-  asin_hardcover: string | null;
-  keywords: string[];
-  // Bug 9: Books-only subject categorisation. ``categories`` are
-  // free-text (KDP-style names + any string the user types);
-  // ``bisac_codes`` are 9-char industry codes (``^[A-Z]{3}[0-9]{6}$``,
-  // validated server-side). Both default to ``[]`` so callers can
-  // assume the arrays exist even on pre-Bug-9 rows.
-  categories: string[];
-  bisac_codes: string[];
-  html_description: string | null;
-  backpage_description: string | null;
-  backpage_author_bio: string | null;
-  cover_image: string | null;
-  custom_css: string | null;
-  /** BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL for
-   *  books tracked externally. When the book is
-   *  plugin-git-sync-managed, GitSyncMappingStatus.repo_url
-   *  takes precedence in the UI (BookMetadataEditor reads it
-   *  read-only); this column carries the value for manually-
-   *  tracked repos. */
-  repository_url: string | null;
-  ai_assisted: boolean;
-  ai_tokens_used: number;
-  tts_engine: string | null;
-  tts_voice: string | null;
-  tts_language: string | null;
-  tts_speed: string | null;
-  audiobook_merge: string | null;
-  audiobook_filename: string | null;
-  audiobook_overwrite_existing: boolean;
-  audiobook_skip_chapter_types: string[];
-  created_at: string;
-  updated_at: string;
+    id: string;
+    /** ``prose`` for the existing chapter-based authoring flow;
+     *  ``picture_book`` mounts the page-based PageEditor instead.
+     *  Defaults to ``prose`` for legacy rows (the backend's
+     *  Pydantic default). */
+    book_type: BookType;
+    /** PUBLICATION-STATUS-BOOK-PARITY-01. Publication-lifecycle
+     *  column. Defaults to "draft" on every new row + on
+     *  pre-migration legacy rows. Optional in the type contract
+     *  because legacy test fixtures predating
+     *  PUBLICATION-STATUS-BOOK-PARITY-01 don't seed it; consumers
+     *  must treat ``undefined`` as ``"draft"``. Real API
+     *  responses always populate it via the backend ``BookOut``
+     *  schema. */
+    status?: BookStatus;
+    title: string;
+    subtitle: string | null;
+    /** Nullable when the user enabled
+     *  ``app.allow_books_without_author`` in Settings and the
+     *  import wizard's defer path was used (or the metadata
+     *  editor cleared the field). UI surfaces an em-dash
+     *  placeholder. */
+    author: string | null;
+    language: string;
+    genre: string | null;
+    series: string | null;
+    series_index: number | null;
+    description: string | null;
+    /** Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01). word_target:
+     *  per-book aggregate word target; word_target_deadline: optional
+     *  draft deadline (ISO date string). */
+    word_target?: number | null;
+    word_target_deadline?: string | null;
+    /** EXPOSE-BUCHIDEE-METADATA-01: author-design metadata.
+     *  ``book_idea`` is the short premise (1-2 sentences);
+     *  ``expose`` is the long-form Exposé (Plot + Characters +
+     *  Setting + Tone document). Both default null. */
+    book_idea: string | null;
+    expose: string | null;
+    edition: string | null;
+    publisher: string | null;
+    publisher_city: string | null;
+    publish_date: string | null;
+    isbn_ebook: string | null;
+    isbn_paperback: string | null;
+    isbn_hardcover: string | null;
+    asin_ebook: string | null;
+    asin_paperback: string | null;
+    asin_hardcover: string | null;
+    keywords: string[];
+    // Bug 9: Books-only subject categorisation. ``categories`` are
+    // free-text (KDP-style names + any string the user types);
+    // ``bisac_codes`` are 9-char industry codes (``^[A-Z]{3}[0-9]{6}$``,
+    // validated server-side). Both default to ``[]`` so callers can
+    // assume the arrays exist even on pre-Bug-9 rows.
+    categories: string[];
+    bisac_codes: string[];
+    html_description: string | null;
+    backpage_description: string | null;
+    backpage_author_bio: string | null;
+    cover_image: string | null;
+    custom_css: string | null;
+    /** BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL for
+     *  books tracked externally. When the book is
+     *  plugin-git-sync-managed, GitSyncMappingStatus.repo_url
+     *  takes precedence in the UI (BookMetadataEditor reads it
+     *  read-only); this column carries the value for manually-
+     *  tracked repos. */
+    repository_url: string | null;
+    ai_assisted: boolean;
+    ai_tokens_used: number;
+    tts_engine: string | null;
+    tts_voice: string | null;
+    tts_language: string | null;
+    tts_speed: string | null;
+    audiobook_merge: string | null;
+    audiobook_filename: string | null;
+    audiobook_overwrite_existing: boolean;
+    audiobook_skip_chapter_types: string[];
+    created_at: string;
+    updated_at: string;
 }
 
 export interface BookDetail extends Book {
-  chapters: Chapter[];
-  /** Persisted relationship-graph node positions {entity_id: {x, y}}
-   *  (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
-  graph_layout?: Record<string, { x: number; y: number }> | null;
+    chapters: Chapter[];
+    /** Persisted relationship-graph node positions {entity_id: {x, y}}
+     *  (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
+    graph_layout?: Record<string, { x: number; y: number }> | null;
 }
 
 export interface Chapter {
-  id: string;
-  book_id: string;
-  title: string;
-  content: string;
-  position: number;
-  chapter_type: ChapterType;
-  created_at: string;
-  updated_at: string;
-  /** Optimistic-lock counter. Bumped by the backend on every
-   *  successful PATCH. Clients must echo it back on update.
-   */
-  version: number;
-  /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
-   *  C3). Mirror the four Page storyboard fields; edited from the prose
-   *  chapter-card Storyboard view. */
-  notes?: string | null;
-  story_beat?: string | null;
-  mood_color?: string | null;
-  act_group?: string | null;
-  /** Drafting workflow (CHAPTER-STATUS-LABELS-01). status: fixed
-   *  workflow enum (ChapterStatus). label_id: assigned ChapterLabel id
-   *  (map to name+color via the book's chapter-labels list). */
-  status?: ChapterStatus | null;
-  label_id?: string | null;
-  /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
-  target_words?: number | null;
+    id: string;
+    book_id: string;
+    title: string;
+    content: string;
+    position: number;
+    chapter_type: ChapterType;
+    created_at: string;
+    updated_at: string;
+    /** Optimistic-lock counter. Bumped by the backend on every
+     *  successful PATCH. Clients must echo it back on update.
+     */
+    version: number;
+    /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+     *  C3). Mirror the four Page storyboard fields; edited from the prose
+     *  chapter-card Storyboard view. */
+    notes?: string | null;
+    story_beat?: string | null;
+    mood_color?: string | null;
+    act_group?: string | null;
+    /** Drafting workflow (CHAPTER-STATUS-LABELS-01). status: fixed
+     *  workflow enum (ChapterStatus). label_id: assigned ChapterLabel id
+     *  (map to name+color via the book's chapter-labels list). */
+    status?: ChapterStatus | null;
+    label_id?: string | null;
+    /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
+    target_words?: number | null;
 }
 
 /** A per-day writing-session row (WRITING-GOALS-PROGRESS-TRACKING-01). */
 export interface WritingSession {
-  day: string;
-  words_written: number;
+    day: string;
+    words_written: number;
 }
 
 /** Global writing-history summary over a window (WRITING-HISTORY-STATS-01). */
 export interface WritingStatsSummary {
-  total_words: number;
-  days_active: number;
-  avg_per_active_day: number;
-  best_day: WritingSession | null;
-  current_streak: number;
-  longest_streak: number;
-  daily: WritingSession[];
+    total_words: number;
+    days_active: number;
+    avg_per_active_day: number;
+    best_day: WritingSession | null;
+    current_streak: number;
+    longest_streak: number;
+    daily: WritingSession[];
 }
 
 /** Per-book writing totals + daily series (WRITING-HISTORY-STATS-01). */
 export interface WritingBookStats {
-  book_id: string;
-  book_title: string;
-  total_words: number;
-  daily: WritingSession[];
+    book_id: string;
+    book_title: string;
+    total_words: number;
+    daily: WritingSession[];
 }
 
 /** Per-chapter writing total (WRITING-HISTORY-STATS-01). */
 export interface WritingChapterStats {
-  chapter_id: string | null;
-  chapter_title: string;
-  total_words: number;
+    chapter_id: string | null;
+    chapter_title: string;
+    total_words: number;
 }
 
 /** Per-chapter drafting workflow status (CHAPTER-STATUS-LABELS-01). */
@@ -314,11 +314,11 @@ export type ChapterStatus = "todo" | "first_draft" | "revised" | "final";
 
 /** A per-book, user-definable chapter label (CHAPTER-STATUS-LABELS-01). */
 export interface ChapterLabel {
-  id: string;
-  book_id: string;
-  name: string;
-  color: string;
-  position: number;
+    id: string;
+    book_id: string;
+    name: string;
+    color: string;
+    position: number;
 }
 
 // --- Page (PB-PHASE4: picture-book pages) ---
@@ -331,133 +331,127 @@ export interface ChapterLabel {
 // Pydantic ``PageLayout`` Literal).
 
 export type PageLayout =
-  | "speech_bubble"
-  | "image_top_text_bottom"
-  | "image_left_text_right"
-  | "image_full_text_overlay"
-  | "text_only"
-  | "comic_panel_grid"
-  // Picture-Book Layout Expansion Phase 1 (2026-05-28). Single-
-  // image layouts mirror existing geometry; multi-image layouts
-  // (Phase 2) + collage (Phase 3) extend this union in later
-  // commits. PageCanvas branches + walker + picker + i18n land
-  // in subsequent Phase 1 commits.
-  | "image_bottom_text_top"
-  | "image_right_text_left"
-  | "image_full_no_text"
-  // Picture-Book Layout Expansion Phase 2 (2026-05-28). Multi-
-  // image layouts using M1 storage (PRIMARY on Page.image_asset_id
-  // unchanged; SECONDARY in layout_config[layout].secondary_image
-  // _asset_id via the readSecondaryImageAssetId helper). Subsequent
-  // Phase 2 commits add per-layout PageCanvas branches, walker
-  // CSS, LayoutConfig bodies, picker entries, and i18n.
-  | "two_images_text_center"
-  | "split_horizontal"
-  | "split_vertical"
-  | "image_border_text_center"
-  // Picture-Book Layout Expansion Phase 3 (2026-05-28). Collage:
-  // N freely-positioned images + N optional text regions. M1
-  // rich-JSON storage in layout_config.collage.{images,
-  // text_regions, background_color}; zero schema migration.
-  | "collage";
+    | "speech_bubble"
+    | "image_top_text_bottom"
+    | "image_left_text_right"
+    | "image_full_text_overlay"
+    | "text_only"
+    | "comic_panel_grid"
+    // Picture-Book Layout Expansion Phase 1 (2026-05-28). Single-
+    // image layouts mirror existing geometry; multi-image layouts
+    // (Phase 2) + collage (Phase 3) extend this union in later
+    // commits. PageCanvas branches + walker + picker + i18n land
+    // in subsequent Phase 1 commits.
+    | "image_bottom_text_top"
+    | "image_right_text_left"
+    | "image_full_no_text"
+    // Picture-Book Layout Expansion Phase 2 (2026-05-28). Multi-
+    // image layouts using M1 storage (PRIMARY on Page.image_asset_id
+    // unchanged; SECONDARY in layout_config[layout].secondary_image
+    // _asset_id via the readSecondaryImageAssetId helper). Subsequent
+    // Phase 2 commits add per-layout PageCanvas branches, walker
+    // CSS, LayoutConfig bodies, picker entries, and i18n.
+    | "two_images_text_center"
+    | "split_horizontal"
+    | "split_vertical"
+    | "image_border_text_center"
+    // Picture-Book Layout Expansion Phase 3 (2026-05-28). Collage:
+    // N freely-positioned images + N optional text regions. M1
+    // rich-JSON storage in layout_config.collage.{images,
+    // text_regions, background_color}; zero schema migration.
+    | "collage";
 
 /** Story-structure tag for ``Page.story_beat`` (PICTURE-BOOK-
  *  STORYBOARD-VIEW-01). 6 fixed values constrain future beat-sheet
  *  templates. Keep in sync with the Pydantic ``StoryBeat`` Literal. */
-export type StoryBeat =
-  | "setup"
-  | "inciting"
-  | "rising"
-  | "climax"
-  | "falling"
-  | "resolution";
+export type StoryBeat = "setup" | "inciting" | "rising" | "climax" | "falling" | "resolution";
 
 export interface Page {
-  id: string;
-  book_id: string;
-  position: number;
-  layout: PageLayout;
-  text_content: string | null;
-  image_asset_id: string | null;
-  /** JSON object stored as text on the backend; decoded for the
-   *  API. Per-page layout configuration. Keys are layout-specific
-   *  (anchor_position + opacity for speech_bubble; image_position +
-   *  image_fit for image_top_text_bottom; split_ratio for
-   *  image_left_text_right; text_position + text_backdrop_opacity
-   *  for image_full_text_overlay; empty for text_only). NULL falls
-   *  back to per-layout defaults in PageCanvas. Renamed from
-   *  speech_bubble_config in PB-PHASE4 Session 4c when the column
-   *  was generalized beyond Layout-A. */
-  layout_config: Record<string, unknown> | null;
-  /** Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
-   *  Edited from the Storyboard view; NULL for legacy rows and any
-   *  page where the author hasn't set a value. ``story_beat``
-   *  returns the raw String value (no Literal enforcement on read
-   *  so legacy values still serialise cleanly). */
-  notes: string | null;
-  story_beat: string | null;
-  mood_color: string | null;
-  act_group: string | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    book_id: string;
+    position: number;
+    layout: PageLayout;
+    text_content: string | null;
+    image_asset_id: string | null;
+    /** JSON object stored as text on the backend; decoded for the
+     *  API. Per-page layout configuration. Keys are layout-specific
+     *  (anchor_position + opacity for speech_bubble; image_position +
+     *  image_fit for image_top_text_bottom; split_ratio for
+     *  image_left_text_right; text_position + text_backdrop_opacity
+     *  for image_full_text_overlay; empty for text_only). NULL falls
+     *  back to per-layout defaults in PageCanvas. Renamed from
+     *  speech_bubble_config in PB-PHASE4 Session 4c when the column
+     *  was generalized beyond Layout-A. */
+    layout_config: Record<string, unknown> | null;
+    /** Storyboard annotation fields (PICTURE-BOOK-STORYBOARD-VIEW-01).
+     *  Edited from the Storyboard view; NULL for legacy rows and any
+     *  page where the author hasn't set a value. ``story_beat``
+     *  returns the raw String value (no Literal enforcement on read
+     *  so legacy values still serialise cleanly). */
+    notes: string | null;
+    story_beat: string | null;
+    mood_color: string | null;
+    act_group: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface PageCreate {
-  layout: PageLayout;
-  text_content?: string | null;
-  image_asset_id?: string | null;
-  layout_config?: Record<string, unknown> | null;
-  notes?: string | null;
-  story_beat?: StoryBeat | null;
-  mood_color?: string | null;
-  act_group?: string | null;
+    layout: PageLayout;
+    text_content?: string | null;
+    image_asset_id?: string | null;
+    layout_config?: Record<string, unknown> | null;
+    notes?: string | null;
+    story_beat?: StoryBeat | null;
+    mood_color?: string | null;
+    act_group?: string | null;
 }
 
 export interface PageUpdate {
-  layout?: PageLayout;
-  text_content?: string | null;
-  image_asset_id?: string | null;
-  layout_config?: Record<string, unknown> | null;
-  notes?: string | null;
-  story_beat?: StoryBeat | null;
-  mood_color?: string | null;
-  act_group?: string | null;
+    layout?: PageLayout;
+    text_content?: string | null;
+    image_asset_id?: string | null;
+    layout_config?: Record<string, unknown> | null;
+    notes?: string | null;
+    story_beat?: StoryBeat | null;
+    mood_color?: string | null;
+    act_group?: string | null;
 }
 
 export interface StyleFinding {
-  type: string;
-  word: string;
-  offset: number;
-  length: number;
-  severity: "info" | "warning";
-  message: { de: string; en: string };
+    type: string;
+    word: string;
+    offset: number;
+    length: number;
+    severity: "info" | "warning";
+    message: { de: string; en: string };
 }
 
 export interface ChapterMetric {
-  chapter_id: string;
-  chapter: string;
-  position: number;
-  chapter_type: string;
-  empty: boolean;
-  word_count: number;
-  sentence_count: number;
-  avg_sentence_length: number;
-  flesch_reading_ease: number;
-  difficulty: string;
-  reading_time_minutes: number;
-  filler_ratio: number;
-  passive_ratio: number;
-  adverb_ratio: number;
-  adjective_ratio: number;
-  long_sentence_count: number;
-  finding_count: number;
+    chapter_id: string;
+    chapter: string;
+    position: number;
+    chapter_type: string;
+    empty: boolean;
+    word_count: number;
+    sentence_count: number;
+    avg_sentence_length: number;
+    flesch_reading_ease: number;
+    difficulty: string;
+    reading_time_minutes: number;
+    filler_ratio: number;
+    passive_ratio: number;
+    adverb_ratio: number;
+    adjective_ratio: number;
+    long_sentence_count: number;
+    finding_count: number;
 }
 
 export interface ChapterMetricsResponse {
-  book_title: string;
-  chapter_count: number;
-  chapters: ChapterMetric[];
-  averages: Record<string, number>;
+    book_title: string;
+    chapter_count: number;
+    chapters: ChapterMetric[];
+    averages: Record<string, number>;
 }
 
 // --- Article (AR-01 Phase 1 + AR-02 Phase 2) ---
@@ -474,65 +468,71 @@ export type ArticleStatus = "draft" | "ready" | "published" | "archived";
  *  relationship to Publication (fetched separately via
  *  ``api.publications.list``). */
 export interface Article {
-  id: string;
-  title: string;
-  subtitle: string | null;
-  author: string | null;
-  language: string;
-  /** ARTICLE-TYPES-SSOT-01 (2026-05-29). Article-type
-   *  discriminator. Values come from the registry served by
-   *  GET /api/content-types: blogpost (default) / tutorial /
-   *  review / essay / newsletter. ``string`` rather than
-   *  ``ContentType`` because legacy backups may still carry
-   *  unknown values until restored through the migration. */
-  content_type: string;
-  /** ARTICLE-TYPES-SSOT-01. Per-type extra fields (e.g.
-   *  tutorial ``difficulty_level``, review ``rating``). Defined
-   *  in article-types.yaml under each type's ``extra_fields``.
-   *  Empty object for blogpost + essay (no per-type fields).
-   *  Optional in the type contract because legacy test fixtures
-   *  predating ARTICLE-TYPES-SSOT-01 don't seed it; consumers
-   *  must treat ``undefined`` as ``{}``. Real API responses
-   *  always populate it via the ``ArticleOut`` Pydantic
-   *  decoder. */
-  article_metadata?: Record<string, unknown>;
-  content_json: string;
-  status: ArticleStatus;
-  /** AR-02 Phase 2 SEO defaults. Publications inherit these unless
-   *  the per-platform metadata blob overrides. */
-  canonical_url: string | null;
-  featured_image_url: string | null;
-  excerpt: string | null;
-  tags: string[];
-  /** AR-02 Phase 2.1: primary category (settings-managed) +
-   *  dedicated SEO title/description. SEO fields default to
-   *  title/excerpt at publish time when empty. */
-  topic: string | null;
-  seo_title: string | null;
-  seo_description: string | null;
-  /** Free-string series name. Mirrors ``Book.series``; flat, no
-   *  hierarchy. Drives the bulk-export "filter by series" workflow. */
-  series: string | null;
-  created_at: string;
-  updated_at: string;
-  /** Trash-bin parity with Book. ISO timestamp when the article
-   *  was soft-deleted; null while live. The default list endpoint
-   *  filters trashed entries out so the dashboard never sees them. */
-  deleted_at?: string | null;
-  /** Earliest ``Publication.published_at`` across all publications.
-   *  Computed server-side on every read; not a DB column. Null
-   *  for native articles with no publications (or where every
-   *  publication is still ``planned`` / ``scheduled``). Frontend
-   *  prefers this over ``updated_at`` for date display so imported
-   *  articles show the canonical Medium publish date instead of
-   *  the import timestamp. */
-  original_published_at?: string | null;
-  /** MEDIUM-COMMENTS-UI-01. Computed server-side via
-   *  ``Article.comments_count`` (non-soft-deleted only); not
-   *  a DB column. Drives the article-list count badge so the
-   *  dashboard can render counts without an N+1 fetch per
-   *  article. Defaults to 0 server-side. */
-  comments_count?: number;
+    id: string;
+    title: string;
+    subtitle: string | null;
+    author: string | null;
+    language: string;
+    /** ARTICLE-TYPES-SSOT-01 (2026-05-29). Article-type
+     *  discriminator. Values come from the registry served by
+     *  GET /api/content-types: blogpost (default) / tutorial /
+     *  review / essay / newsletter. ``string`` rather than
+     *  ``ContentType`` because legacy backups may still carry
+     *  unknown values until restored through the migration. */
+    content_type: string;
+    /** ARTICLE-TYPES-SSOT-01. Per-type extra fields (e.g.
+     *  tutorial ``difficulty_level``, review ``rating``). Defined
+     *  in article-types.yaml under each type's ``extra_fields``.
+     *  Empty object for blogpost + essay (no per-type fields).
+     *  Optional in the type contract because legacy test fixtures
+     *  predating ARTICLE-TYPES-SSOT-01 don't seed it; consumers
+     *  must treat ``undefined`` as ``{}``. Real API responses
+     *  always populate it via the ``ArticleOut`` Pydantic
+     *  decoder. */
+    article_metadata?: Record<string, unknown>;
+    content_json: string;
+    status: ArticleStatus;
+    /** AR-02 Phase 2 SEO defaults. Publications inherit these unless
+     *  the per-platform metadata blob overrides. */
+    canonical_url: string | null;
+    featured_image_url: string | null;
+    /** Dexie-only (#157): id of the article's featured image stored as
+     *  bytes in the offline `articleAssets` table. Set by the offline
+     *  upload path and the Medium-import CDN cache so the dashboard
+     *  thumbnail survives offline; resolved by `useArticleImageUrl`.
+     *  Absent / null in api mode (the server serves the file directly). */
+    featured_image_asset_id?: string | null;
+    excerpt: string | null;
+    tags: string[];
+    /** AR-02 Phase 2.1: primary category (settings-managed) +
+     *  dedicated SEO title/description. SEO fields default to
+     *  title/excerpt at publish time when empty. */
+    topic: string | null;
+    seo_title: string | null;
+    seo_description: string | null;
+    /** Free-string series name. Mirrors ``Book.series``; flat, no
+     *  hierarchy. Drives the bulk-export "filter by series" workflow. */
+    series: string | null;
+    created_at: string;
+    updated_at: string;
+    /** Trash-bin parity with Book. ISO timestamp when the article
+     *  was soft-deleted; null while live. The default list endpoint
+     *  filters trashed entries out so the dashboard never sees them. */
+    deleted_at?: string | null;
+    /** Earliest ``Publication.published_at`` across all publications.
+     *  Computed server-side on every read; not a DB column. Null
+     *  for native articles with no publications (or where every
+     *  publication is still ``planned`` / ``scheduled``). Frontend
+     *  prefers this over ``updated_at`` for date display so imported
+     *  articles show the canonical Medium publish date instead of
+     *  the import timestamp. */
+    original_published_at?: string | null;
+    /** MEDIUM-COMMENTS-UI-01. Computed server-side via
+     *  ``Article.comments_count`` (non-soft-deleted only); not
+     *  a DB column. Drives the article-list count badge so the
+     *  dashboard can render counts without an N+1 fetch per
+     *  article. Defaults to 0 server-side. */
+    comments_count?: number;
 }
 
 /** MEDIUM-COMMENTS-IMPORT-01 + UI-01. Short user-written response
@@ -543,31 +543,31 @@ export interface Article {
  *  every Medium-imported comment is an orphan with the URL
  *  preserved in responds_to_url for later re-linkage. */
 export interface ArticleComment {
-  id: string;
-  author: string | null;
-  body_text: string;
-  body_json: string | null;
-  language: string;
-  published_at: string | null;
-  canonical_url: string | null;
-  responds_to_article_id: string | null;
-  responds_to_url: string | null;
-  imported_from: string;
-  imported_at: string;
-  source_filename: string | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    author: string | null;
+    body_text: string;
+    body_json: string | null;
+    language: string;
+    published_at: string | null;
+    canonical_url: string | null;
+    responds_to_article_id: string | null;
+    responds_to_url: string | null;
+    imported_from: string;
+    imported_at: string;
+    source_filename: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ArticleCreate {
-  title: string;
-  subtitle?: string | null;
-  author?: string | null;
-  language?: string;
-  /** ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
-   *  "blogpost" via the backend column default when omitted. */
-  content_type?: ContentType;
-  article_metadata?: Record<string, unknown>;
+    title: string;
+    subtitle?: string | null;
+    author?: string | null;
+    language?: string;
+    /** ARTICLE-TYPES-SSOT-01. Optional on create; defaults to
+     *  "blogpost" via the backend column default when omitted. */
+    content_type?: ContentType;
+    article_metadata?: Record<string, unknown>;
 }
 
 // --- Author (Bug 8 Phase 1) ---
@@ -577,109 +577,108 @@ export interface ArticleCreate {
 // "Authors-Database" tab.
 
 export interface Author {
-  id: string;
-  name: string;
-  slug: string;
-  bio: string | null;
-  /** True for rows mirrored from the user's author profile (real name
-   *  + pen names) via the opt-in Profile->DB sync. Drives the "Profile"
-   *  badge in the Authors-Database list. */
-  is_profile_author: boolean;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    name: string;
+    slug: string;
+    bio: string | null;
+    /** True for rows mirrored from the user's author profile (real name
+     *  + pen names) via the opt-in Profile->DB sync. Drives the "Profile"
+     *  badge in the Authors-Database list. */
+    is_profile_author: boolean;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface AuthorCreate {
-  name: string;
-  bio?: string | null;
-  is_profile_author?: boolean;
+    name: string;
+    bio?: string | null;
+    is_profile_author?: boolean;
 }
 
 export interface AuthorUpdate {
-  name?: string;
-  bio?: string | null;
-  is_profile_author?: boolean;
+    name?: string;
+    bio?: string | null;
+    is_profile_author?: boolean;
 }
 
 /** UX-FU-02: a file uploaded against an Article (currently only
  *  featured_image). Mirrors the Asset type but article-scoped. */
 export interface ArticleAsset {
-  id: string;
-  article_id: string;
-  filename: string;
-  asset_type: string;
-  path: string;
-  uploaded_at: string;
+    id: string;
+    article_id: string;
+    filename: string;
+    asset_type: string;
+    path: string;
+    uploaded_at: string;
 }
 
 export interface ArticleUpdate {
-  title?: string;
-  subtitle?: string | null;
-  author?: string | null;
-  language?: string;
-  content_json?: string;
-  status?: ArticleStatus;
-  canonical_url?: string | null;
-  featured_image_url?: string | null;
-  excerpt?: string | null;
-  tags?: string[];
-  topic?: string | null;
-  seo_title?: string | null;
-  seo_description?: string | null;
-  series?: string | null;
-  /** ARTICLE-TYPES-SSOT-01. Article-type discriminator
-   *  (blogpost / tutorial / review / essay / newsletter) +
-   *  per-type extra fields (e.g. tutorial difficulty_level).
-   *  Both optional on PATCH; the backend only writes provided
-   *  keys. */
-  content_type?: ContentType;
-  article_metadata?: Record<string, unknown>;
+    title?: string;
+    subtitle?: string | null;
+    author?: string | null;
+    language?: string;
+    content_json?: string;
+    status?: ArticleStatus;
+    canonical_url?: string | null;
+    featured_image_url?: string | null;
+    /** Dexie-only (#157): set by the offline upload + Medium-import CDN
+     *  cache to reference the article's image bytes in the offline
+     *  `articleAssets` table. Not written in api mode. */
+    featured_image_asset_id?: string | null;
+    excerpt?: string | null;
+    tags?: string[];
+    topic?: string | null;
+    seo_title?: string | null;
+    seo_description?: string | null;
+    series?: string | null;
+    /** ARTICLE-TYPES-SSOT-01. Article-type discriminator
+     *  (blogpost / tutorial / review / essay / newsletter) +
+     *  per-type extra fields (e.g. tutorial difficulty_level).
+     *  Both optional on PATCH; the backend only writes provided
+     *  keys. */
+    content_type?: ContentType;
+    article_metadata?: Record<string, unknown>;
 }
 
 // --- Publication (AR-02 Phase 2) ---
 
-export type PublicationStatus =
-  | "planned"
-  | "scheduled"
-  | "published"
-  | "out_of_sync"
-  | "archived";
+export type PublicationStatus = "planned" | "scheduled" | "published" | "out_of_sync" | "archived";
 
 export interface Publication {
-  id: string;
-  article_id: string;
-  platform: string;
-  is_promo: boolean;
-  status: PublicationStatus;
-  platform_metadata: Record<string, unknown>;
-  content_snapshot_at_publish: string | null;
-  scheduled_at: string | null;
-  published_at: string | null;
-  last_verified_at: string | null;
-  notes: string | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    article_id: string;
+    platform: string;
+    is_promo: boolean;
+    status: PublicationStatus;
+    platform_metadata: Record<string, unknown>;
+    content_snapshot_at_publish: string | null;
+    scheduled_at: string | null;
+    published_at: string | null;
+    last_verified_at: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface PublicationCreate {
-  platform: string;
-  is_promo?: boolean;
-  platform_metadata?: Record<string, unknown>;
-  notes?: string | null;
-  scheduled_at?: string | null;
+    platform: string;
+    is_promo?: boolean;
+    platform_metadata?: Record<string, unknown>;
+    notes?: string | null;
+    scheduled_at?: string | null;
 }
 
 export interface PublicationUpdate {
-  status?: PublicationStatus;
-  platform_metadata?: Record<string, unknown>;
-  scheduled_at?: string | null;
-  published_at?: string | null;
-  notes?: string | null;
+    status?: PublicationStatus;
+    platform_metadata?: Record<string, unknown>;
+    scheduled_at?: string | null;
+    published_at?: string | null;
+    notes?: string | null;
 }
 
 export interface MarkPublishedRequest {
-  published_url?: string | null;
-  published_at?: string | null;
+    published_url?: string | null;
+    published_at?: string | null;
 }
 
 /** Response shape of POST /api/articles/bulk-delete,
@@ -692,9 +691,9 @@ export interface MarkPublishedRequest {
  *  already set. ``failed[]`` carries per-row errors (e.g. "not
  *  found") so the bulk action never short-circuits on one bad row. */
 export interface BulkDeleteResponse {
-  deleted_count: number;
-  skipped_already_trashed: string[];
-  failed: { id: string; error: string }[];
+    deleted_count: number;
+    skipped_already_trashed: string[];
+    failed: { id: string; error: string }[];
 }
 
 /** Response shape of POST /api/articles/trash/bulk-restore,
@@ -708,9 +707,9 @@ export interface BulkDeleteResponse {
  *  is unknown-id or per-row error so the Undo never short-
  *  circuits on one bad row. */
 export interface BulkRestoreResponse {
-  restored_count: number;
-  skipped_not_in_trash: string[];
-  failed: { id: string; error: string }[];
+    restored_count: number;
+    skipped_not_in_trash: string[];
+    failed: { id: string; error: string }[];
 }
 
 // --- UNIVERSAL-AI-TEMPLATE-02 Session 2 types -------------------------
@@ -725,26 +724,18 @@ export interface BulkRestoreResponse {
  *  "all-entries-dropped" variant fires when chapter_summaries
  *  receives entries that all fail reconciliation - distinct from
  *  "value-is-empty" so the UI can render the right message. */
-export type ApplySkipReason =
-  | "value-is-empty"
-  | "field-already-populated"
-  | "all-entries-dropped";
+export type ApplySkipReason = "value-is-empty" | "field-already-populated" | "all-entries-dropped";
 
 export type ApplySkipReasons = Record<string, ApplySkipReason>;
 
-export type ArticleFieldClass =
-  | "seo"
-  | "tags"
-  | "topic"
-  | "excerpt"
-  | "image_prompts";
+export type ArticleFieldClass = "seo" | "tags" | "topic" | "excerpt" | "image_prompts";
 
 export type BookFieldClass =
-  | "marketing_copy"
-  | "tags"
-  | "description_genre"
-  | "cover_prompt"
-  | "chapter_summaries";
+    | "marketing_copy"
+    | "tags"
+    | "description_genre"
+    | "cover_prompt"
+    | "chapter_summaries";
 
 /** One chapter_summaries entry the import / fill pipeline rejected.
  *  Reason is one of the documented values; other strings are
@@ -752,84 +743,84 @@ export type BookFieldClass =
  *  (no-matching-chapter carries chapter_id + title; summary-empty
  *  carries the original entry; not-a-mapping carries the raw entry). */
 export interface DroppedChapterSummary {
-  reason: "no-matching-chapter" | "summary-empty" | "not-a-mapping" | string;
-  chapter_id?: string | null;
-  title?: string | null;
-  entry?: unknown;
+    reason: "no-matching-chapter" | "summary-empty" | "not-a-mapping" | string;
+    chapter_id?: string | null;
+    title?: string | null;
+    entry?: unknown;
 }
 
 /** Per-record import response. ``article_id`` / ``book_id`` is
  *  present depending on the endpoint. Force flag echoes the caller's
  *  choice so a test or audit can verify the request. */
 export interface AiTemplateImportResult {
-  article_id?: string;
-  book_id?: string;
-  updated_fields: string[];
-  skipped_fields: string[];
-  skip_reasons: ApplySkipReasons;
-  /** Book-only. Empty list for article imports. */
-  dropped_chapter_summaries?: DroppedChapterSummary[];
-  force: boolean;
+    article_id?: string;
+    book_id?: string;
+    updated_fields: string[];
+    skipped_fields: string[];
+    skip_reasons: ApplySkipReasons;
+    /** Book-only. Empty list for article imports. */
+    dropped_chapter_summaries?: DroppedChapterSummary[];
+    force: boolean;
 }
 
 export interface AiFillRequest {
-  field_classes: string[];
-  force?: boolean;
-  /** Article-only. Backend ignores for book fills. None means
-   *  "use the H2 heuristic, clamped to [1, 5]". */
-  inline_image_count?: number | null;
+    field_classes: string[];
+    force?: boolean;
+    /** Article-only. Backend ignores for book fills. None means
+     *  "use the H2 heuristic, clamped to [1, 5]". */
+    inline_image_count?: number | null;
 }
 
 export interface AiFillFieldClassResult {
-  updated: string[];
-  skipped: ApplySkipReasons;
-  tokens: number;
-  cost_usd: number | null;
-  error: string | null;
-  /** Present only on the book chapter_summaries class. */
-  dropped_chapter_summaries?: DroppedChapterSummary[];
+    updated: string[];
+    skipped: ApplySkipReasons;
+    tokens: number;
+    cost_usd: number | null;
+    error: string | null;
+    /** Present only on the book chapter_summaries class. */
+    dropped_chapter_summaries?: DroppedChapterSummary[];
 }
 
 export interface AiFillResponse {
-  article_id?: string;
-  book_id?: string;
-  updated_fields: string[];
-  skipped_fields: string[];
-  skip_reasons: ApplySkipReasons;
-  field_class_results: Record<string, AiFillFieldClassResult>;
-  field_class_errors: Record<string, string>;
-  /** Book-only aggregate across all classes. Empty for articles. */
-  dropped_chapter_summaries?: DroppedChapterSummary[];
-  tokens_used: number;
-  estimated_cost_usd: number | null;
-  force: boolean;
-  /** Article-only. */
-  inline_image_count?: number;
+    article_id?: string;
+    book_id?: string;
+    updated_fields: string[];
+    skipped_fields: string[];
+    skip_reasons: ApplySkipReasons;
+    field_class_results: Record<string, AiFillFieldClassResult>;
+    field_class_errors: Record<string, string>;
+    /** Book-only aggregate across all classes. Empty for articles. */
+    dropped_chapter_summaries?: DroppedChapterSummary[];
+    tokens_used: number;
+    estimated_cost_usd: number | null;
+    force: boolean;
+    /** Article-only. */
+    inline_image_count?: number;
 }
 
 /** Per-entry result inside a bulk ZIP import response. */
 export interface BulkAiTemplateImportItem {
-  filename: string;
-  article_id?: string;
-  book_id?: string;
-  updated_fields: string[];
-  skipped_fields: string[];
-  skip_reasons: ApplySkipReasons;
-  dropped_chapter_summaries?: DroppedChapterSummary[];
+    filename: string;
+    article_id?: string;
+    book_id?: string;
+    updated_fields: string[];
+    skipped_fields: string[];
+    skip_reasons: ApplySkipReasons;
+    dropped_chapter_summaries?: DroppedChapterSummary[];
 }
 
 export interface BulkAiTemplateImportResult {
-  imported: BulkAiTemplateImportItem[];
-  failed: { filename: string; error: string }[];
-  force: boolean;
+    imported: BulkAiTemplateImportItem[];
+    failed: { filename: string; error: string }[];
+    force: boolean;
 }
 
 export interface BulkAiFillRequest {
-  ids: string[];
-  field_classes: string[];
-  force?: boolean;
-  /** Article-only. */
-  inline_image_count?: number | null;
+    ids: string[];
+    field_classes: string[];
+    force?: boolean;
+    /** Article-only. */
+    inline_image_count?: number | null;
 }
 
 /** Per-class entry inside the bulk estimate response. ``cost_usd``
@@ -838,199 +829,194 @@ export interface BulkAiFillRequest {
  *  skip the class (e.g. book chapter_summaries on a book with no
  *  chapters). */
 export interface BulkAiFillPerClassEstimate {
-  input_tokens: number;
-  output_tokens: number;
-  cost_usd: number | null;
-  note?: string;
+    input_tokens: number;
+    output_tokens: number;
+    cost_usd: number | null;
+    note?: string;
 }
 
 export interface BulkAiFillEstimateItem {
-  id: string;
-  title: string;
-  language: string;
-  /** Book-only. Drives the chapter_summaries output-token
-   *  heuristic of 50 tokens per chapter. */
-  chapter_count?: number;
-  field_class_calls: number;
-  per_class: Record<string, BulkAiFillPerClassEstimate>;
-  estimated_input_tokens: number;
-  estimated_output_tokens: number;
-  estimated_cost_usd: number | null;
+    id: string;
+    title: string;
+    language: string;
+    /** Book-only. Drives the chapter_summaries output-token
+     *  heuristic of 50 tokens per chapter. */
+    chapter_count?: number;
+    field_class_calls: number;
+    per_class: Record<string, BulkAiFillPerClassEstimate>;
+    estimated_input_tokens: number;
+    estimated_output_tokens: number;
+    estimated_cost_usd: number | null;
 }
 
 export interface BulkAiFillEstimateTotals {
-  total_items: number;
-  total_field_class_calls: number;
-  estimated_input_tokens: number;
-  estimated_output_tokens: number;
-  estimated_cost_usd: number | null;
+    total_items: number;
+    total_field_class_calls: number;
+    estimated_input_tokens: number;
+    estimated_output_tokens: number;
+    estimated_cost_usd: number | null;
 }
 
 export interface BulkAiFillEstimate {
-  model: string;
-  field_classes: string[];
-  items: BulkAiFillEstimateItem[];
-  totals: BulkAiFillEstimateTotals;
+    model: string;
+    field_classes: string[];
+    items: BulkAiFillEstimateItem[];
+    totals: BulkAiFillEstimateTotals;
 }
 
 export interface BulkAiFillStartResponse {
-  job_id: string;
+    job_id: string;
 }
 
 /** SSE event payload union. Event types mirror the backend
  *  job_store events plus the synthetic stream_end appended on
  *  terminal status. */
 export type BulkAiFillEvent =
-  | {
-      type: "start";
-      data: {
-        total: number;
-        field_classes: string[];
-        rate_limit_seconds: number;
+    | {
+          type: "start";
+          data: {
+              total: number;
+              field_classes: string[];
+              rate_limit_seconds: number;
+          };
+      }
+    | { type: "item_start"; data: { id: string; index: number; title: string } }
+    | {
+          type: "item_done";
+          data: {
+              id: string;
+              index: number;
+              updated_fields: string[];
+              skipped_fields: string[];
+              tokens: number;
+              cost_usd: number | null;
+              field_class_errors: Record<string, string>;
+              dropped_chapter_summaries?: DroppedChapterSummary[];
+          };
+      }
+    | {
+          type: "item_skipped";
+          data: {
+              id: string;
+              index: number;
+              reason: "not-found" | "no-content" | string;
+          };
+      }
+    | {
+          type: "item_error";
+          data: { id: string; index: number; error: string };
+      }
+    | {
+          type: "done";
+          data: {
+              total_items: number;
+              items_updated: number;
+              total_tokens: number;
+              total_cost_usd: number | null;
+          };
+      }
+    | {
+          type: "stream_end";
+          data: {
+              status: "completed" | "failed" | "cancelled";
+              error: string | null;
+          };
       };
-    }
-  | { type: "item_start"; data: { id: string; index: number; title: string } }
-  | {
-      type: "item_done";
-      data: {
-        id: string;
-        index: number;
-        updated_fields: string[];
-        skipped_fields: string[];
-        tokens: number;
-        cost_usd: number | null;
-        field_class_errors: Record<string, string>;
-        dropped_chapter_summaries?: DroppedChapterSummary[];
-      };
-    }
-  | {
-      type: "item_skipped";
-      data: {
-        id: string;
-        index: number;
-        reason: "not-found" | "no-content" | string;
-      };
-    }
-  | {
-      type: "item_error";
-      data: { id: string; index: number; error: string };
-    }
-  | {
-      type: "done";
-      data: {
-        total_items: number;
-        items_updated: number;
-        total_tokens: number;
-        total_cost_usd: number | null;
-      };
-    }
-  | {
-      type: "stream_end";
-      data: {
-        status: "completed" | "failed" | "cancelled";
-        error: string | null;
-      };
-    };
 
-export type BulkAiFillJobStatusName =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type BulkAiFillJobStatusName = "pending" | "running" | "completed" | "failed" | "cancelled";
 
 export interface BulkAiFillJobStatus {
-  id: string;
-  status: BulkAiFillJobStatusName;
-  progress: Record<string, unknown>;
-  result: Record<string, unknown>;
-  error: string | null;
+    id: string;
+    status: BulkAiFillJobStatusName;
+    progress: Record<string, unknown>;
+    result: Record<string, unknown>;
+    error: string | null;
 }
 
 /** Per-platform metadata schema (loaded from
  *  backend/app/data/platform_schemas.yaml). The frontend renders
  *  add-publication forms from this data. */
 export interface PlatformSchema {
-  display_name: string;
-  required_metadata: string[];
-  optional_metadata: string[];
-  max_tags?: number | null;
-  max_chars_per_post?: number | null;
-  publishing_method: string;
-  notes?: string | null;
+    display_name: string;
+    required_metadata: string[];
+    optional_metadata: string[];
+    max_tags?: number | null;
+    max_chars_per_post?: number | null;
+    publishing_method: string;
+    notes?: string | null;
 }
 
 export interface BookCreate {
-  title: string;
-  subtitle?: string;
-  author?: string | null;
-  language?: string;
-  genre?: string;
-  series?: string;
-  series_index?: number;
-  description?: string;
-  /** PB-PHASE4: omit to default 'prose' (backend default). Pass
-   *  'picture_book' from the dashboard's split-button menu to
-   *  route the new book straight into PageEditor. */
-  book_type?: "prose" | "picture_book" | "comic_book";
-  /** PUBLICATION-STATUS-BOOK-PARITY-01: optional on create;
-   *  defaults to "draft" via the backend column default when
-   *  omitted. */
-  status?: BookStatus;
+    title: string;
+    subtitle?: string;
+    author?: string | null;
+    language?: string;
+    genre?: string;
+    series?: string;
+    series_index?: number;
+    description?: string;
+    /** PB-PHASE4: omit to default 'prose' (backend default). Pass
+     *  'picture_book' from the dashboard's split-button menu to
+     *  route the new book straight into PageEditor. */
+    book_type?: "prose" | "picture_book" | "comic_book";
+    /** PUBLICATION-STATUS-BOOK-PARITY-01: optional on create;
+     *  defaults to "draft" via the backend column default when
+     *  omitted. */
+    status?: BookStatus;
 }
 
 export interface BookFromTemplateCreate extends BookCreate {
-  template_id: string;
+    template_id: string;
 }
 
 // --- Article-to-book conversion (Phase 2 wizard) ---
 
 export type BookFromArticlesSortStrategy =
-  | "date_asc"
-  | "date_desc"
-  | "title_asc"
-  | "title_desc"
-  | "manual";
+    | "date_asc"
+    | "date_desc"
+    | "title_asc"
+    | "title_desc"
+    | "manual";
 
 export interface BookFromArticlesFrontMatter {
-  include_title_page?: boolean;
-  title_page_title?: string | null;
-  include_dedication?: boolean;
-  dedication_title?: string | null;
-  dedication_text?: string | null;
-  include_introduction?: boolean;
-  introduction_title?: string | null;
-  introduction_text?: string | null;
+    include_title_page?: boolean;
+    title_page_title?: string | null;
+    include_dedication?: boolean;
+    dedication_title?: string | null;
+    dedication_text?: string | null;
+    include_introduction?: boolean;
+    introduction_title?: string | null;
+    introduction_text?: string | null;
 }
 
 export interface BookFromArticlesBackMatter {
-  include_acknowledgments?: boolean;
-  acknowledgments_title?: string | null;
-  acknowledgments_text?: string | null;
-  include_author_bio?: boolean;
-  author_bio_title?: string | null;
-  author_bio_text?: string | null;
+    include_acknowledgments?: boolean;
+    acknowledgments_title?: string | null;
+    acknowledgments_text?: string | null;
+    include_author_bio?: boolean;
+    author_bio_title?: string | null;
+    author_bio_text?: string | null;
 }
 
 export interface BookFromArticlesChapterSettings {
-  use_article_title_as_chapter_title?: boolean;
+    use_article_title_as_chapter_title?: boolean;
 }
 
 export interface BookFromArticlesCreate {
-  article_ids: string[];
-  title: string;
-  subtitle?: string | null;
-  author?: string | null;
-  language?: string;
-  series?: string | null;
-  series_index?: number | null;
-  keywords?: string[];
-  cover_image?: string | null;
-  sort_strategy?: BookFromArticlesSortStrategy;
-  manual_order?: string[] | null;
-  front_matter?: BookFromArticlesFrontMatter | null;
-  back_matter?: BookFromArticlesBackMatter | null;
-  chapter_settings?: BookFromArticlesChapterSettings;
+    article_ids: string[];
+    title: string;
+    subtitle?: string | null;
+    author?: string | null;
+    language?: string;
+    series?: string | null;
+    series_index?: number | null;
+    keywords?: string[];
+    cover_image?: string | null;
+    sort_strategy?: BookFromArticlesSortStrategy;
+    manual_order?: string[] | null;
+    front_matter?: BookFromArticlesFrontMatter | null;
+    back_matter?: BookFromArticlesBackMatter | null;
+    chapter_settings?: BookFromArticlesChapterSettings;
 }
 
 /** Shape of the 422 ``detail`` body when the validation gates reject
@@ -1044,189 +1030,189 @@ export interface BookFromArticlesCreate {
  *  / review / essay / newsletter). The wizard surface no longer
  *  needs to handle a "wrong content_type" rejection. */
 export interface BookFromArticlesValidationError {
-  code: "invalid_articles" | "manual_order_required" | "manual_order_mismatch";
-  message: string;
-  not_found_ids?: string[];
-  trashed?: Array<{ id: string; title: string }>;
-  expected_ids?: string[];
-  received_ids?: string[];
+    code: "invalid_articles" | "manual_order_required" | "manual_order_mismatch";
+    message: string;
+    not_found_ids?: string[];
+    trashed?: Array<{ id: string; title: string }>;
+    expected_ids?: string[];
+    received_ids?: string[];
 }
 
 export interface BookTemplateChapter {
-  position: number;
-  title: string;
-  chapter_type: ChapterType;
-  content: string | null;
+    position: number;
+    title: string;
+    chapter_type: ChapterType;
+    content: string | null;
 }
 
 export interface BookTemplate {
-  id: string;
-  name: string;
-  description: string;
-  genre: string;
-  language: string;
-  is_builtin: boolean;
-  created_at: string;
-  updated_at: string;
-  chapters: BookTemplateChapter[];
+    id: string;
+    name: string;
+    description: string;
+    genre: string;
+    language: string;
+    is_builtin: boolean;
+    created_at: string;
+    updated_at: string;
+    chapters: BookTemplateChapter[];
 }
 
 export interface BookTemplateCreate {
-  name: string;
-  description: string;
-  genre: string;
-  language: string;
-  is_builtin?: boolean; // server forces false on POST
-  chapters: BookTemplateChapter[];
+    name: string;
+    description: string;
+    genre: string;
+    language: string;
+    is_builtin?: boolean; // server forces false on POST
+    chapters: BookTemplateChapter[];
 }
 
 export interface ChapterTemplate {
-  id: string;
-  name: string;
-  description: string;
-  chapter_type: ChapterType;
-  content: string | null;
-  language: string;
-  is_builtin: boolean;
-  /** TM-04b sub-item 3: when non-null and non-empty, marks the
-   *  template as a group whose application inserts one chapter per
-   *  child id, in list order. ``content`` + ``chapter_type`` are
-   *  ignored at apply time for groups. */
-  child_template_ids: string[] | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    name: string;
+    description: string;
+    chapter_type: ChapterType;
+    content: string | null;
+    language: string;
+    is_builtin: boolean;
+    /** TM-04b sub-item 3: when non-null and non-empty, marks the
+     *  template as a group whose application inserts one chapter per
+     *  child id, in list order. ``content`` + ``chapter_type`` are
+     *  ignored at apply time for groups. */
+    child_template_ids: string[] | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ChapterTemplateCreate {
-  name: string;
-  description: string;
-  chapter_type: ChapterType;
-  content?: string | null;
-  language?: string;
-  child_template_ids?: string[] | null;
+    name: string;
+    description: string;
+    chapter_type: ChapterType;
+    content?: string | null;
+    language?: string;
+    child_template_ids?: string[] | null;
 }
 
 /** All fields optional - matches the backend Pydantic
  *  ChapterTemplateUpdate (PUT /api/chapter-templates/{id}). */
 export interface ChapterTemplateUpdate {
-  name?: string;
-  description?: string;
-  chapter_type?: ChapterType;
-  content?: string | null;
-  language?: string;
-  child_template_ids?: string[] | null;
+    name?: string;
+    description?: string;
+    chapter_type?: ChapterType;
+    content?: string | null;
+    language?: string;
+    child_template_ids?: string[] | null;
 }
 
 export interface ChapterCreate {
-  title: string;
-  content?: string;
-  position?: number;
-  chapter_type?: ChapterType;
+    title: string;
+    content?: string;
+    position?: number;
+    chapter_type?: ChapterType;
 }
 
 /** PATCH body for chapter updates. `version` is required and must
  *  match the server's current value, else 409.
  */
 export interface ChapterUpdatePayload {
-  version: number;
-  title?: string;
-  content?: string;
-  position?: number;
-  chapter_type?: ChapterType;
-  /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
-   *  C3). */
-  notes?: string | null;
-  story_beat?: string | null;
-  mood_color?: string | null;
-  act_group?: string | null;
-  /** Drafting workflow (CHAPTER-STATUS-LABELS-01). */
-  status?: ChapterStatus | null;
-  label_id?: string | null;
-  /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
-  target_words?: number | null;
+    version: number;
+    title?: string;
+    content?: string;
+    position?: number;
+    chapter_type?: ChapterType;
+    /** Storyboard annotation fields (STORY-BIBLE-STORYBOARD-INTEGRATION-01
+     *  C3). */
+    notes?: string | null;
+    story_beat?: string | null;
+    mood_color?: string | null;
+    act_group?: string | null;
+    /** Drafting workflow (CHAPTER-STATUS-LABELS-01). */
+    status?: ChapterStatus | null;
+    label_id?: string | null;
+    /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
+    target_words?: number | null;
 }
 
 export interface ChapterVersionSummary {
-  id: string;
-  chapter_id: string;
-  title: string;
-  version: number;
-  /** Scrivener-style label for a manual snapshot; null for auto rows. */
-  name: string | null;
-  /** True for a deliberately-taken snapshot (exempt from retention). */
-  is_manual: boolean;
-  created_at: string;
+    id: string;
+    chapter_id: string;
+    title: string;
+    version: number;
+    /** Scrivener-style label for a manual snapshot; null for auto rows. */
+    name: string | null;
+    /** True for a deliberately-taken snapshot (exempt from retention). */
+    is_manual: boolean;
+    created_at: string;
 }
 
 export interface ChapterVersionRead extends ChapterVersionSummary {
-  content: string;
+    content: string;
 }
 
 /** Line of a snapshot-vs-current diff (CHAPTER-SNAPSHOTS-01). Reuses
  *  the backup-compare line shape so the rendering pattern is shared. */
 export interface ChapterVersionDiffLine {
-  type: BackupDiffLineType;
-  text: string;
+    type: BackupDiffLineType;
+    text: string;
 }
 
 export interface ChapterVersionDiff {
-  version_id: string;
-  title_changed: boolean;
-  snapshot_title: string;
-  current_title: string;
-  lines: ChapterVersionDiffLine[];
+    version_id: string;
+    title_changed: boolean;
+    snapshot_title: string;
+    current_title: string;
+    lines: ChapterVersionDiffLine[];
 }
 
 export interface Asset {
-  id: string;
-  book_id: string;
-  filename: string;
-  asset_type: string;
-  path: string;
-  uploaded_at: string;
+    id: string;
+    book_id: string;
+    filename: string;
+    asset_type: string;
+    path: string;
+    uploaded_at: string;
 }
 
 export interface CoverUploadResponse {
-  cover_image: string;
-  filename: string;
-  width: number;
-  height: number;
-  aspect_ratio: number;
-  size_bytes: number;
+    cover_image: string;
+    filename: string;
+    width: number;
+    height: number;
+    aspect_ratio: number;
+    size_bytes: number;
 }
 
 export interface CoverLimits {
-  allowed_extensions: string[];
-  max_bytes: number;
-  max_mb: number;
+    allowed_extensions: string[];
+    max_bytes: number;
+    max_mb: number;
 }
 
 export interface GoogleCloudTTSConfig {
-  configured: boolean;
-  project_id?: string;
-  client_email?: string;
-  seeding_done?: boolean;
-  seeding_error?: string | null;
-  voice_count?: number;
+    configured: boolean;
+    project_id?: string;
+    client_email?: string;
+    seeding_done?: boolean;
+    seeding_error?: string | null;
+    voice_count?: number;
 }
 
 export interface GoogleCloudTTSUploadResponse {
-  configured: boolean;
-  project_id: string;
-  client_email: string;
-  seeding: boolean;
+    configured: boolean;
+    project_id: string;
+    client_email: string;
+    seeding: boolean;
 }
 
 export interface AudiobookVoice {
-  id: string;
-  name: string;
-  /** Locale string from the engine, e.g. "de-DE". May be empty for
-   *  multilingual engines like ElevenLabs. */
-  language?: string;
-  gender?: string;
-  /** Quality tier for engines that have multiple (e.g. Google Cloud:
-   *  standard, wavenet, neural2, studio, journey). */
-  quality?: string;
+    id: string;
+    name: string;
+    /** Locale string from the engine, e.g. "de-DE". May be empty for
+     *  multilingual engines like ElevenLabs. */
+    language?: string;
+    gender?: string;
+    /** Quality tier for engines that have multiple (e.g. Google Cloud:
+     *  standard, wavenet, neural2, studio, journey). */
+    quality?: string;
 }
 
 /** Render a voice as "Katja (de-DE, Female)".
@@ -1238,333 +1224,321 @@ export interface AudiobookVoice {
  *  consistent.
  */
 export function formatVoiceLabel(v: AudiobookVoice): string {
-  const base = v.name || v.id;
-  const meta: string[] = [];
-  if (v.language) meta.push(v.language);
-  if (v.gender) meta.push(v.gender);
-  if (v.quality && v.quality !== "standard") meta.push(v.quality);
-  return meta.length > 0 ? `${base} (${meta.join(", ")})` : base;
+    const base = v.name || v.id;
+    const meta: string[] = [];
+    if (v.language) meta.push(v.language);
+    if (v.gender) meta.push(v.gender);
+    if (v.quality && v.quality !== "standard") meta.push(v.quality);
+    return meta.length > 0 ? `${base} (${meta.join(", ")})` : base;
 }
 
 export interface AudiobookChapterFile {
-  filename: string;
-  size_bytes: number;
-  url: string;
-  title?: string;
-  position?: number;
-  duration_seconds?: number | null;
+    filename: string;
+    size_bytes: number;
+    url: string;
+    title?: string;
+    position?: number;
+    duration_seconds?: number | null;
 }
 
 export interface AudiobookMergedFile {
-  filename: string;
-  size_bytes: number;
-  url: string;
-  duration_seconds?: number | null;
+    filename: string;
+    size_bytes: number;
+    url: string;
+    duration_seconds?: number | null;
 }
 
 export interface BookAudiobook {
-  exists: boolean;
-  book_id: string;
-  status?: string;
-  created_at?: string;
-  engine?: string;
-  voice?: string;
-  language?: string;
-  speed?: string;
-  merge_mode?: string;
-  chapters?: AudiobookChapterFile[];
-  merged?: AudiobookMergedFile | null;
-  zip_url?: string;
-}
-
-export interface AudiobookClassifiedChapter {
-  chapter_id: string;
-  title: string;
-  position: number;
-  chapter_type: string;
-}
-
-export interface AudiobookClassification {
-  current: AudiobookClassifiedChapter[];
-  outdated: AudiobookClassifiedChapter[];
-  missing: AudiobookClassifiedChapter[];
-  engine: string;
-  voice: string;
-  speed: string;
-}
-
-export interface DryRunResult {
-  /** Object URL for the generated sample MP3 (revoke when done). */
-  audioUrl: string;
-  /** "free" or a decimal USD amount like "2.3400". */
-  estimatedCostUsd: string;
-  /** Number of chapters that would be generated. */
-  estimatedChapters: number;
-  engine: string;
-  voice: string;
-}
-
-export interface HelpNavItem {
-  title: string;
-  slug: string;
-  icon: string;
-  children?: HelpNavItem[];
-}
-
-export interface HelpPage {
-  slug: string;
-  locale: string;
-  content: string;
-  last_modified: number;
-}
-
-export interface HelpSearchResult {
-  slug: string;
-  title: string;
-  snippet: string;
-  score: number;
-}
-
-export type BackupDiffLineType = "unchanged" | "added" | "removed";
-
-export interface BackupDiffLine {
-  type: BackupDiffLineType;
-  text: string;
-}
-
-export interface BackupChapterDiff {
-  chapter_id: string;
-  position: number;
-  change_type: "added" | "removed" | "changed";
-  title_a: string | null;
-  title_b: string | null;
-  chapter_type_a: string | null;
-  chapter_type_b: string | null;
-  title_changed: boolean;
-  type_changed: boolean;
-  lines: BackupDiffLine[];
-  has_changes: boolean;
-}
-
-export interface BackupMetadataChange {
-  field: string;
-  before: unknown;
-  after: unknown;
-}
-
-export interface BackupBookDiff {
-  book_id: string;
-  title_a: string | null;
-  title_b: string | null;
-  metadata_changes: BackupMetadataChange[];
-  chapter_count_a: number;
-  chapter_count_b: number;
-  chapters: BackupChapterDiff[];
-}
-
-export interface BackupCompareResult {
-  summary: {
-    books_in_both: number;
-    books_only_in_a: string[];
-    books_only_in_b: string[];
-    filename_a: string | null;
-    filename_b: string | null;
-  };
-  books: BackupBookDiff[];
-}
-
-export interface AudiobookExistsError {
-  code: "audiobook_exists";
-  message: string;
-  existing: {
+    exists: boolean;
+    book_id: string;
+    status?: string;
     created_at?: string;
     engine?: string;
     voice?: string;
     language?: string;
     speed?: string;
     merge_mode?: string;
-  };
+    chapters?: AudiobookChapterFile[];
+    merged?: AudiobookMergedFile | null;
+    zip_url?: string;
+}
+
+export interface AudiobookClassifiedChapter {
+    chapter_id: string;
+    title: string;
+    position: number;
+    chapter_type: string;
+}
+
+export interface AudiobookClassification {
+    current: AudiobookClassifiedChapter[];
+    outdated: AudiobookClassifiedChapter[];
+    missing: AudiobookClassifiedChapter[];
+    engine: string;
+    voice: string;
+    speed: string;
+}
+
+export interface DryRunResult {
+    /** Object URL for the generated sample MP3 (revoke when done). */
+    audioUrl: string;
+    /** "free" or a decimal USD amount like "2.3400". */
+    estimatedCostUsd: string;
+    /** Number of chapters that would be generated. */
+    estimatedChapters: number;
+    engine: string;
+    voice: string;
+}
+
+export interface HelpNavItem {
+    title: string;
+    slug: string;
+    icon: string;
+    children?: HelpNavItem[];
+}
+
+export interface HelpPage {
+    slug: string;
+    locale: string;
+    content: string;
+    last_modified: number;
+}
+
+export interface HelpSearchResult {
+    slug: string;
+    title: string;
+    snippet: string;
+    score: number;
+}
+
+export type BackupDiffLineType = "unchanged" | "added" | "removed";
+
+export interface BackupDiffLine {
+    type: BackupDiffLineType;
+    text: string;
+}
+
+export interface BackupChapterDiff {
+    chapter_id: string;
+    position: number;
+    change_type: "added" | "removed" | "changed";
+    title_a: string | null;
+    title_b: string | null;
+    chapter_type_a: string | null;
+    chapter_type_b: string | null;
+    title_changed: boolean;
+    type_changed: boolean;
+    lines: BackupDiffLine[];
+    has_changes: boolean;
+}
+
+export interface BackupMetadataChange {
+    field: string;
+    before: unknown;
+    after: unknown;
+}
+
+export interface BackupBookDiff {
+    book_id: string;
+    title_a: string | null;
+    title_b: string | null;
+    metadata_changes: BackupMetadataChange[];
+    chapter_count_a: number;
+    chapter_count_b: number;
+    chapters: BackupChapterDiff[];
+}
+
+export interface BackupCompareResult {
+    summary: {
+        books_in_both: number;
+        books_only_in_a: string[];
+        books_only_in_b: string[];
+        filename_a: string | null;
+        filename_b: string | null;
+    };
+    books: BackupBookDiff[];
+}
+
+export interface AudiobookExistsError {
+    code: "audiobook_exists";
+    message: string;
+    existing: {
+        created_at?: string;
+        engine?: string;
+        voice?: string;
+        language?: string;
+        speed?: string;
+        merge_mode?: string;
+    };
 }
 
 // --- AI / grammar shapes ---
 
 export interface AiReviewEstimate {
-  input_tokens: number;
-  cost_usd: number | null;
+    input_tokens: number;
+    cost_usd: number | null;
 }
 
 export interface AiGenerateResponse {
-  content: string;
+    content: string;
 }
 
 export interface AiReviewSubmitRequest {
-  content: string;
-  chapter_id: string;
-  chapter_title: string;
-  chapter_type: string | null;
-  book_title: string;
-  genre: string;
-  language: string;
-  focus: string[];
-  book_id: string;
+    content: string;
+    chapter_id: string;
+    chapter_title: string;
+    chapter_type: string | null;
+    book_title: string;
+    genre: string;
+    language: string;
+    focus: string[];
+    book_id: string;
 }
 
 export interface AiGenerateMarketingRequest {
-  field: string;
-  book_title: string;
-  author: string | null;
-  genre: string;
-  language: string;
-  description: string;
-  chapter_titles: string[];
-  existing_text: string;
-  book_id: string;
+    field: string;
+    book_title: string;
+    author: string | null;
+    genre: string;
+    language: string;
+    description: string;
+    chapter_titles: string[];
+    existing_text: string;
+    book_id: string;
 }
 
 export interface AiAsyncJobSubmit {
-  job_id: string;
+    job_id: string;
 }
 
 export interface AiJobStatus {
-  status: string;
-  result?: { review?: string } & Record<string, unknown>;
+    status: string;
+    result?: { review?: string } & Record<string, unknown>;
 }
 
 export interface AiTestConnectionResult {
-  success: boolean;
-  error_key: string;
-  error_detail: string;
+    success: boolean;
+    error_key: string;
+    error_detail: string;
 }
 
 export interface GrammarMatch {
-  message: string;
-  short_message: string;
-  offset: number;
-  length: number;
-  replacements: string[];
-  rule_id: string;
+    message: string;
+    short_message: string;
+    offset: number;
+    length: number;
+    replacements: string[];
+    rule_id: string;
 }
 
 export interface GrammarCheckResponse {
-  matches: GrammarMatch[];
+    matches: GrammarMatch[];
 }
 
 // --- KDP Publishing Wizard (Phase 1 MVP) ---
 
 export interface KdpCheckMetadataRequest {
-  title: string;
-  subtitle: string | null;
-  author: string;
-  description: string | null;
-  html_description: string | null;
-  language: string;
-  keywords: string[];
-  cover_image: string | null;
-  isbn_ebook: string | null;
-  isbn_paperback: string | null;
-  publisher: string | null;
-  backpage_description: string | null;
-  chapters: Array<{ id: string; title: string }>;
-  categories: string[];
-  bisac_codes: string[];
+    title: string;
+    subtitle: string | null;
+    author: string;
+    description: string | null;
+    html_description: string | null;
+    language: string;
+    keywords: string[];
+    cover_image: string | null;
+    isbn_ebook: string | null;
+    isbn_paperback: string | null;
+    publisher: string | null;
+    backpage_description: string | null;
+    chapters: Array<{ id: string; title: string }>;
+    categories: string[];
+    bisac_codes: string[];
 }
 
 export interface KdpMetadataIssue {
-  field: string;
-  message: string;
-  severity: "error" | "warning";
+    field: string;
+    message: string;
+    severity: "error" | "warning";
 }
 
 export interface KdpMetadataCheckResult {
-  complete: boolean;
-  error_count: number;
-  warning_count: number;
-  issues: KdpMetadataIssue[];
+    complete: boolean;
+    error_count: number;
+    warning_count: number;
+    issues: KdpMetadataIssue[];
 }
 
 // --- KDP Publishing Wizard Phase 2 (C9) ---------------------------
 
-export type ReviewStatus =
-  | "invited"
-  | "sent"
-  | "received"
-  | "reviewed"
-  | "declined";
+export type ReviewStatus = "invited" | "sent" | "received" | "reviewed" | "declined";
 
 /** ARC reviewer row as the server returns it. Matches the
  *  ``ArcReviewerOut`` Pydantic schema 1:1. */
 export interface ArcReviewerApi {
-  id: string;
-  publishing_state_id: string;
-  reviewer_name: string;
-  reviewer_email: string | null;
-  review_status: ReviewStatus;
-  copy_version: string | null;
-  review_permalink: string | null;
-  review_text_excerpt: string | null;
-  invited_at: string | null;
-  reviewed_at: string | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    publishing_state_id: string;
+    reviewer_name: string;
+    reviewer_email: string | null;
+    review_status: ReviewStatus;
+    copy_version: string | null;
+    review_permalink: string | null;
+    review_text_excerpt: string | null;
+    invited_at: string | null;
+    reviewed_at: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ArcReviewerCreatePayload {
-  reviewer_name: string;
-  reviewer_email?: string | null;
+    reviewer_name: string;
+    reviewer_email?: string | null;
 }
 
 export interface ArcReviewerUpdatePayload {
-  review_status?: ReviewStatus;
-  copy_version?: string | null;
-  review_permalink?: string | null;
-  review_text_excerpt?: string | null;
-  reviewed_at?: string | null;
+    review_status?: ReviewStatus;
+    copy_version?: string | null;
+    review_permalink?: string | null;
+    review_text_excerpt?: string | null;
+    reviewed_at?: string | null;
 }
 
 /** ``book_publishing_state`` row as the server returns it.
  *  Matches the ``BookPublishingStateRead`` Pydantic schema. */
 export interface BookPublishingStateApi {
-  id: string;
-  book_id: string;
-  royalty_plan: "35" | "70" | null;
-  kdp_select_enrolled: boolean;
-  kdp_select_enrollment_date: string | null;
-  expanded_distribution: boolean;
-  prices: Record<
-    string,
-    { currency: string; list_price: number; page_count?: number }
-  >;
-  launch_checklist_state: Record<string, string>;
-  publication_target_date: string | null;
-  last_kdp_upload_at: string | null;
-  created_at: string;
-  updated_at: string;
-  arc_reviewers: ArcReviewerApi[];
+    id: string;
+    book_id: string;
+    royalty_plan: "35" | "70" | null;
+    kdp_select_enrolled: boolean;
+    kdp_select_enrollment_date: string | null;
+    expanded_distribution: boolean;
+    prices: Record<string, { currency: string; list_price: number; page_count?: number }>;
+    launch_checklist_state: Record<string, string>;
+    publication_target_date: string | null;
+    last_kdp_upload_at: string | null;
+    created_at: string;
+    updated_at: string;
+    arc_reviewers: ArcReviewerApi[];
 }
 
 /** Wrapped GET response carrying both the (nullable) state row
  *  + the related book's ``updated_at`` for client-side conflict
  *  detection (C11 banner). */
 export interface BookPublishingStateGetResponse {
-  book_id: string;
-  book_updated_at: string;
-  state: BookPublishingStateApi | null;
+    book_id: string;
+    book_updated_at: string;
+    state: BookPublishingStateApi | null;
 }
 
 export interface BookPublishingStateUpdatePayload {
-  royalty_plan?: "35" | "70" | null;
-  kdp_select_enrolled?: boolean;
-  kdp_select_enrollment_date?: string | null;
-  expanded_distribution?: boolean;
-  prices?: Record<
-    string,
-    { currency: string; list_price: number; page_count?: number }
-  >;
-  launch_checklist_state?: Record<string, string>;
-  publication_target_date?: string | null;
-  last_kdp_upload_at?: string | null;
+    royalty_plan?: "35" | "70" | null;
+    kdp_select_enrolled?: boolean;
+    kdp_select_enrollment_date?: string | null;
+    expanded_distribution?: boolean;
+    prices?: Record<string, { currency: string; list_price: number; page_count?: number }>;
+    launch_checklist_state?: Record<string, string>;
+    publication_target_date?: string | null;
+    last_kdp_upload_at?: string | null;
 }
-
 
 // `ApiError` moved to ./errors to break the api/client <-> help/offlineHelp
 // circular dependency (#114). Re-exported here so existing
@@ -1574,25 +1548,25 @@ export interface BookPublishingStateUpdatePayload {
 
 /** One successfully-imported article from a Medium archive. */
 export interface MediumImportImportedItem {
-  id: string;
-  title: string;
-  canonical_url: string;
-  warnings: string[];
+    id: string;
+    title: string;
+    canonical_url: string;
+    warnings: string[];
 }
 
 /** A post in the archive that was skipped because an article with
  *  the same canonical URL already exists. */
 export interface MediumImportSkippedItem {
-  filename: string;
-  canonical_url: string;
-  existing_article_id: string;
+    filename: string;
+    canonical_url: string;
+    existing_article_id: string;
 }
 
 /** A post in the archive that the importer could not process. The
  *  batch continues; per-post failures never abort the import. */
 export interface MediumImportErroredItem {
-  filename: string;
-  error: string;
+    filename: string;
+    error: string;
 }
 
 /** MEDIUM-COMMENTS-IMPORT-01 (v0.31.0+): a post the walker
@@ -1605,10 +1579,10 @@ export interface MediumImportErroredItem {
  *  interface so future importers that DO carry parent-references
  *  (e.g. a future Twitter / Bluesky importer) can populate it. */
 export interface MediumImportImportedCommentItem {
-  id: string;
-  filename: string;
-  body_preview: string;
-  responds_to_article_id: string | null;
+    id: string;
+    filename: string;
+    body_preview: string;
+    responds_to_article_id: string | null;
 }
 
 /** MEDIUM-COMMENTS-IMPORT-01: a comment-shaped post that was
@@ -1620,8 +1594,8 @@ export interface MediumImportImportedCommentItem {
  *      so this discards every detected comment).
  */
 export interface MediumImportSkippedCommentItem {
-  filename: string;
-  reason: string;
+    filename: string;
+    reason: string;
 }
 
 /** Response of POST /api/medium-import/import. Counts mirror the
@@ -1634,16 +1608,16 @@ export interface MediumImportSkippedCommentItem {
  *  shape. They default to 0 / empty so consumers that don't render
  *  comment surfaces don't need defensive checks. */
 export interface MediumImportResponse {
-  imported_count: number;
-  skipped_count: number;
-  errored_count: number;
-  imported: MediumImportImportedItem[];
-  skipped: MediumImportSkippedItem[];
-  errored: MediumImportErroredItem[];
-  imported_comments_count?: number;
-  skipped_comments_count?: number;
-  imported_comments?: MediumImportImportedCommentItem[];
-  skipped_comments?: MediumImportSkippedCommentItem[];
+    imported_count: number;
+    skipped_count: number;
+    errored_count: number;
+    imported: MediumImportImportedItem[];
+    skipped: MediumImportSkippedItem[];
+    errored: MediumImportErroredItem[];
+    imported_comments_count?: number;
+    skipped_comments_count?: number;
+    imported_comments?: MediumImportImportedCommentItem[];
+    skipped_comments?: MediumImportSkippedCommentItem[];
 }
 
 // --- Medium Import v2 (dry-run preview workflow) ---
@@ -1651,34 +1625,34 @@ export interface MediumImportResponse {
 /** One row in the v2 preview table. Mirrors the backend's
  *  ``_PreviewItemOut`` Pydantic model field-for-field. */
 export interface MediumImportPreviewItem {
-  filename: string;
-  title: string;
-  subtitle: string;
-  author: string;
-  published_at: string | null;
-  canonical_url: string;
-  detected_language: string | null;
-  /** "article" or "comment" — drives the badge in the preview row. */
-  classification: string;
-  /** When non-null, an existing Article carries the same
-   *  canonical_url. The v2 wizard renders a "would skip" badge
-   *  for these rows so the user knows re-selecting them is a
-   *  no-op under ``skip_existing_canonical_urls=true``. */
-  existing_article_id: string | null;
-  /** First ~120 chars of body text for comment rows; empty for
-   *  article rows. Mirrors ``ImportedComment.body_preview``
-   *  semantics so the preview and post-import result UIs surface
-   *  the same snippet for the same row. */
-  body_preview: string;
-  warnings: string[];
+    filename: string;
+    title: string;
+    subtitle: string;
+    author: string;
+    published_at: string | null;
+    canonical_url: string;
+    detected_language: string | null;
+    /** "article" or "comment" — drives the badge in the preview row. */
+    classification: string;
+    /** When non-null, an existing Article carries the same
+     *  canonical_url. The v2 wizard renders a "would skip" badge
+     *  for these rows so the user knows re-selecting them is a
+     *  no-op under ``skip_existing_canonical_urls=true``. */
+    existing_article_id: string | null;
+    /** First ~120 chars of body text for comment rows; empty for
+     *  article rows. Mirrors ``ImportedComment.body_preview``
+     *  semantics so the preview and post-import result UIs surface
+     *  the same snippet for the same row. */
+    body_preview: string;
+    warnings: string[];
 }
 
 /** A post the walker couldn't parse during the preview pass.
  *  Surfaced separately so the user understands "I see 198 rows
  *  but the ZIP had 200 posts". */
 export interface MediumImportPreviewErroredItem {
-  filename: string;
-  error: string;
+    filename: string;
+    error: string;
 }
 
 /** Response of POST /api/medium-import/preview. ``preview_id`` is
@@ -1688,11 +1662,11 @@ export interface MediumImportPreviewErroredItem {
  *  frontend uses it to warn the user before submitting a stale
  *  selection. */
 export interface MediumImportPreviewResponse {
-  preview_id: string;
-  total_posts: number;
-  items: MediumImportPreviewItem[];
-  errored: MediumImportPreviewErroredItem[];
-  expires_at: number;
+    preview_id: string;
+    total_posts: number;
+    items: MediumImportPreviewItem[];
+    errored: MediumImportPreviewErroredItem[];
+    expires_at: number;
 }
 
 /** Response of DELETE /api/medium-import/preview/{preview_id}.
@@ -1701,108 +1675,101 @@ export interface MediumImportPreviewResponse {
  *  caller's intent ("forget this preview") is satisfied either
  *  way. */
 export interface MediumImportCancelPreviewResponse {
-  deleted: boolean;
+    deleted: boolean;
 }
 
 // --- Books ---
-
 
 /** Identity returned by GET /api/comics/info. Stable shape through
  *  Session 1; Session 2 extends with the list of mounted sub-routes
  *  once panels + bubbles ship. */
 export interface ComicsPluginInfo {
-  name: string;
-  version: string;
-  session: number;
-  status: string;
-  description: string;
+    name: string;
+    version: string;
+    session: number;
+    status: string;
+    description: string;
 }
 
 /** Identity returned by GET /api/story-bible/info. Doubles as the
  *  plugin-availability probe (the request rejects with a 404 when
  *  plugin-story-bible is disabled). */
 export interface StoryBiblePluginInfo {
-  plugin: string;
-  version: string;
-  phase: string;
+    plugin: string;
+    version: string;
+    phase: string;
 }
 
 /** One per-type metadata-field declaration from the
  *  story-bible-entities.yaml SSoT (parity with the backend
  *  StoryEntityExtraField). */
 export interface StoryEntityExtraField {
-  name: string;
-  type: string;
-  label_key: string;
-  values?: string[] | null;
-  min?: number | null;
-  max?: number | null;
+    name: string;
+    type: string;
+    label_key: string;
+    values?: string[] | null;
+    min?: number | null;
+    max?: number | null;
 }
 
 /** One entity-type definition from the SSoT (parity with the
  *  backend StoryEntityTypeDef). */
 export interface StoryEntityTypeDef {
-  id: string;
-  label_key: string;
-  description_key: string;
-  icon: string;
-  default: boolean;
-  extra_fields: StoryEntityExtraField[];
+    id: string;
+    label_key: string;
+    description_key: string;
+    icon: string;
+    default: boolean;
+    extra_fields: StoryEntityExtraField[];
 }
 
 /** Entity-to-entity relationship type (STORY-BIBLE C10). Parity with
  *  the backend ``RelationshipType`` Literal. Drives the Arc View
  *  relationship-line colour mapping. */
-export type RelationshipType =
-  | "ally"
-  | "rival"
-  | "family"
-  | "mentor"
-  | "romantic"
-  | "neutral";
+export type RelationshipType = "ally" | "rival" | "family" | "mentor" | "romantic" | "neutral";
 
 /** One directed relationship from an entity to another in the same
  *  book (STORY-BIBLE C10). Parity with backend
  *  ``StoryEntityRelationship``. */
 export interface StoryEntityRelationship {
-  target_entity_id: string;
-  relationship_type: RelationshipType;
-  description?: string | null;
+    target_entity_id: string;
+    relationship_type: RelationshipType;
+    description?: string | null;
 }
 
 /** A relationship with the target resolved to a full entity object,
  *  returned by GET .../entities/{entity_id}/relationships
  *  (StoryEntityRelationshipResolved). */
 export interface StoryEntityRelationshipResolved {
-  relationship_type: RelationshipType;
-  description?: string | null;
-  target: StoryEntityOut;
+    relationship_type: RelationshipType;
+    description?: string | null;
+    target: StoryEntityOut;
 }
 
 /** A Story Bible entity row (parity with the backend
  *  StoryEntityOut). ``description`` is TipTap JSON serialised as a
  *  string; ``entity_metadata`` is the per-type extra-field object. */
 export interface StoryEntityOut {
-  id: string;
-  book_id: string;
-  entity_type: string;
-  name: string;
-  description?: string | null;
-  entity_metadata?: Record<string, unknown> | null;
-  image_asset_id?: string | null;
-  position: number;
-  relationships?: StoryEntityRelationship[] | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    book_id: string;
+    entity_type: string;
+    name: string;
+    description?: string | null;
+    entity_metadata?: Record<string, unknown> | null;
+    image_asset_id?: string | null;
+    position: number;
+    relationships?: StoryEntityRelationship[] | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface StoryEntityCreate {
-  entity_type: string;
-  name: string;
-  description?: string | null;
-  entity_metadata?: Record<string, unknown> | null;
-  image_asset_id?: string | null;
-  relationships?: StoryEntityRelationship[] | null;
+    entity_type: string;
+    name: string;
+    description?: string | null;
+    entity_metadata?: Record<string, unknown> | null;
+    image_asset_id?: string | null;
+    relationships?: StoryEntityRelationship[] | null;
 }
 
 /** A link between a Story Bible entity and a page (picture/comic) or
@@ -1810,56 +1777,56 @@ export interface StoryEntityCreate {
  *  shape embeds the entity so the page->entities direction (storyboard
  *  badges) has name + type without a second fetch. */
 export interface StoryEntityLinkOut {
-  id: string;
-  entity_id: string;
-  page_id?: string | null;
-  chapter_id?: string | null;
-  role?: string | null;
-  notes?: string | null;
-  created_at: string;
-  entity: StoryEntityOut;
+    id: string;
+    entity_id: string;
+    page_id?: string | null;
+    chapter_id?: string | null;
+    role?: string | null;
+    notes?: string | null;
+    created_at: string;
+    entity: StoryEntityOut;
 }
 
 export interface StoryEntityLinkCreate {
-  entity_id: string;
-  page_id?: string | null;
-  chapter_id?: string | null;
-  role?: string | null;
-  notes?: string | null;
+    entity_id: string;
+    page_id?: string | null;
+    chapter_id?: string | null;
+    role?: string | null;
+    notes?: string | null;
 }
 
 /** An advisory continuity warning (C11). ``page_id`` is the card to
  *  badge; ``code`` + params drive the localized message. */
 export interface ContinuityWarning {
-  code: "empty_page" | "entity_disappears" | "entity_gap";
-  page_id: string;
-  page_position: number;
-  entity_id?: string;
-  entity_name?: string;
-  gap_to_position?: number;
+    code: "empty_page" | "entity_disappears" | "entity_gap";
+    page_id: string;
+    page_position: number;
+    entity_id?: string;
+    entity_name?: string;
+    gap_to_position?: number;
 }
 
 export interface StoryEntityUpdate {
-  entity_type?: string;
-  name?: string;
-  description?: string | null;
-  entity_metadata?: Record<string, unknown> | null;
-  image_asset_id?: string | null;
-  position?: number;
-  relationships?: StoryEntityRelationship[] | null;
+    entity_type?: string;
+    name?: string;
+    description?: string | null;
+    entity_metadata?: Record<string, unknown> | null;
+    image_asset_id?: string | null;
+    position?: number;
+    relationships?: StoryEntityRelationship[] | null;
 }
 
 /** A proposed entity-appearance link found by the auto-detector
  *  (STORY-BIBLE C14). Parity with backend
  *  StoryEntityAutoDetectProposal. */
 export interface StoryEntityAutoDetectProposal {
-  entity_id: string;
-  entity_name: string;
-  entity_type: string;
-  page_id?: string | null;
-  chapter_id?: string | null;
-  ref_label: string;
-  occurrences: number;
+    entity_id: string;
+    entity_name: string;
+    entity_type: string;
+    page_id?: string | null;
+    chapter_id?: string | null;
+    ref_label: string;
+    occurrences: number;
 }
 
 /** Comic-panel + comic-bubble Session-2 shapes. Field-name parity
@@ -1869,146 +1836,140 @@ export interface StoryEntityAutoDetectProposal {
  *  unknown values from older payloads fall through gracefully at
  *  the renderer (gamma-shim default-on-read). */
 export interface ComicPanelOut {
-  id: string;
-  page_id: string;
-  position: number;
-  image_asset_id: string | null;
-  bounds: Record<string, unknown>;
-  panel_config: Record<string, unknown> | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    page_id: string;
+    position: number;
+    image_asset_id: string | null;
+    bounds: Record<string, unknown>;
+    panel_config: Record<string, unknown> | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ComicPanelCreate {
-  bounds: Record<string, unknown>;
-  image_asset_id?: string | null;
-  panel_config?: Record<string, unknown> | null;
+    bounds: Record<string, unknown>;
+    image_asset_id?: string | null;
+    panel_config?: Record<string, unknown> | null;
 }
 
 export interface ComicPanelUpdate {
-  bounds?: Record<string, unknown>;
-  image_asset_id?: string | null;
-  panel_config?: Record<string, unknown> | null;
-  // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28). Cross-page move
-  // support: when the user picks "Move to new pages" in the
-  // panel-overflow dialog, excess panels migrate by PATCHing
-  // page_id (+ position for the panel's new index within the
-  // receiving page).
-  page_id?: string;
-  position?: number;
+    bounds?: Record<string, unknown>;
+    image_asset_id?: string | null;
+    panel_config?: Record<string, unknown> | null;
+    // COMIC-PANEL-OVERFLOW-HANDLER-01 (2026-05-28). Cross-page move
+    // support: when the user picks "Move to new pages" in the
+    // panel-overflow dialog, excess panels migrate by PATCHing
+    // page_id (+ position for the panel's new index within the
+    // receiving page).
+    page_id?: string;
+    position?: number;
 }
 
 export interface ComicBubbleOut {
-  id: string;
-  panel_id: string;
-  position: number;
-  bubble_type: string;
-  anchor: Record<string, unknown>;
-  width_pct: number;
-  height_pct: number;
-  tail_direction: string;
-  tail_position_pct: number;
-  tail_length_px: number;
-  bubble_config: Record<string, unknown> | null;
-  text_content: string | null;
-  created_at: string;
-  updated_at: string;
+    id: string;
+    panel_id: string;
+    position: number;
+    bubble_type: string;
+    anchor: Record<string, unknown>;
+    width_pct: number;
+    height_pct: number;
+    tail_direction: string;
+    tail_position_pct: number;
+    tail_length_px: number;
+    bubble_config: Record<string, unknown> | null;
+    text_content: string | null;
+    created_at: string;
+    updated_at: string;
 }
 
 export interface ComicBubbleCreate {
-  bubble_type: string;
-  anchor: Record<string, unknown>;
-  width_pct?: number;
-  height_pct?: number;
-  tail_direction?: string;
-  tail_position_pct?: number;
-  tail_length_px?: number;
-  bubble_config?: Record<string, unknown> | null;
-  text_content?: string | null;
+    bubble_type: string;
+    anchor: Record<string, unknown>;
+    width_pct?: number;
+    height_pct?: number;
+    tail_direction?: string;
+    tail_position_pct?: number;
+    tail_length_px?: number;
+    bubble_config?: Record<string, unknown> | null;
+    text_content?: string | null;
 }
 
 export interface ComicBubbleUpdate {
-  bubble_type?: string;
-  anchor?: Record<string, unknown>;
-  width_pct?: number;
-  height_pct?: number;
-  tail_direction?: string;
-  tail_position_pct?: number;
-  tail_length_px?: number;
-  bubble_config?: Record<string, unknown> | null;
-  text_content?: string | null;
+    bubble_type?: string;
+    anchor?: Record<string, unknown>;
+    width_pct?: number;
+    height_pct?: number;
+    tail_direction?: string;
+    tail_position_pct?: number;
+    tail_length_px?: number;
+    bubble_config?: Record<string, unknown> | null;
+    text_content?: string | null;
 }
 
 export interface GitCommitEntry {
-  hash: string;
-  short_hash: string;
-  message: string;
-  author: string;
-  date: string;
+    hash: string;
+    short_hash: string;
+    message: string;
+    author: string;
+    date: string;
 }
 
 export interface GitRepoStatus {
-  initialized: boolean;
-  dirty: boolean;
-  uncommitted_files: number;
-  head_hash: string | null;
-  head_short_hash: string | null;
+    initialized: boolean;
+    dirty: boolean;
+    uncommitted_files: number;
+    head_hash: string | null;
+    head_short_hash: string | null;
 }
 
 export interface GitRemoteConfig {
-  url: string | null;
-  has_credential: boolean;
+    url: string | null;
+    has_credential: boolean;
 }
 
 export interface GitPushResult {
-  branch: string;
-  summary: string;
-  flags: number;
-  forced?: boolean;
+    branch: string;
+    summary: string;
+    flags: number;
+    forced?: boolean;
 }
 
 export interface GitPullResult {
-  branch: string;
-  updated: boolean;
-  fast_forward: boolean;
-  head_hash: string | null;
+    branch: string;
+    updated: boolean;
+    fast_forward: boolean;
+    head_hash: string | null;
 }
 
 export interface GitSyncStatus {
-  remote_configured: boolean;
-  has_credential: boolean;
-  ahead: number;
-  behind: number;
-  state:
-    | "no_remote"
-    | "never_synced"
-    | "in_sync"
-    | "local_ahead"
-    | "remote_ahead"
-    | "diverged";
+    remote_configured: boolean;
+    has_credential: boolean;
+    ahead: number;
+    behind: number;
+    state: "no_remote" | "never_synced" | "in_sync" | "local_ahead" | "remote_ahead" | "diverged";
 }
 
 export interface GitConflictAnalysis {
-  state: string;
-  classification: "simple" | "complex" | null;
-  local_files: string[];
-  remote_files: string[];
-  overlapping_files: string[];
-  merge_in_progress: boolean;
+    state: string;
+    classification: "simple" | "complex" | null;
+    local_files: string[];
+    remote_files: string[];
+    overlapping_files: string[];
+    merge_in_progress: boolean;
 }
 
 export interface GitMergeResult {
-  status: "merged" | "conflicts" | "already_up_to_date" | "aborted";
-  head_hash?: string | null;
-  files?: string[];
+    status: "merged" | "conflicts" | "already_up_to_date" | "aborted";
+    head_hash?: string | null;
+    files?: string[];
 }
 
 export interface SshKeyInfo {
-  exists: boolean;
-  type?: string;
-  comment?: string;
-  created_at?: string;
-  public_key?: string;
+    exists: boolean;
+    type?: string;
+    comment?: string;
+    created_at?: string;
+    public_key?: string;
 }
 
 /** PGS-02 git-sync mapping snapshot.
@@ -2018,165 +1979,158 @@ export interface SshKeyInfo {
  *  the UI can prompt re-import instead of "no changes".
  */
 export interface GitSyncMappingStatus {
-  mapped: boolean;
-  repo_url: string | null;
-  branch: string | null;
-  last_imported_commit_sha: string | null;
-  local_clone_path: string | null;
-  last_committed_at: string | null;
-  dirty: boolean | null;
-  /** PGS-05: True when core git
-   *  (``uploads/{book_id}/.git``) is also initialized for this
-   *  book. The frontend uses this together with ``mapped`` to
-   *  decide whether to render the unified "Commit everywhere"
-   *  button instead of the single-subsystem one. */
-  core_git_initialized: boolean;
-  /** PGS-02-FU-01: True when a per-book PAT is stored. The
-   *  GitSyncDialog uses this to show "Repo credentials configured"
-   *  without ever rendering the PAT itself. */
-  has_credential: boolean;
+    mapped: boolean;
+    repo_url: string | null;
+    branch: string | null;
+    last_imported_commit_sha: string | null;
+    local_clone_path: string | null;
+    last_committed_at: string | null;
+    dirty: boolean | null;
+    /** PGS-05: True when core git
+     *  (``uploads/{book_id}/.git``) is also initialized for this
+     *  book. The frontend uses this together with ``mapped`` to
+     *  decide whether to render the unified "Commit everywhere"
+     *  button instead of the single-subsystem one. */
+    core_git_initialized: boolean;
+    /** PGS-02-FU-01: True when a per-book PAT is stored. The
+     *  GitSyncDialog uses this to show "Repo credentials configured"
+     *  without ever rendering the PAT itself. */
+    has_credential: boolean;
 }
 
 export interface GitSyncCommitRequest {
-  /** Optional commit subject; backend defaults to
-   *  ``"Sync from Bibliogon at <utc-iso>"`` when null. */
-  message?: string | null;
-  /** Push to remote after committing. Currently 501; wired now
-   *  so the form can carry the toggle without a future API
-   *  shape change when push lands. */
-  push?: boolean;
+    /** Optional commit subject; backend defaults to
+     *  ``"Sync from Bibliogon at <utc-iso>"`` when null. */
+    message?: string | null;
+    /** Push to remote after committing. Currently 501; wired now
+     *  so the form can carry the toggle without a future API
+     *  shape change when push lands. */
+    push?: boolean;
 }
 
 export interface GitSyncCommitResult {
-  commit_sha: string;
-  branch: string;
-  pushed: boolean;
+    commit_sha: string;
+    branch: string;
+    pushed: boolean;
 }
 
 /** Stable classification slugs the diff endpoint returns. */
 export type GitSyncDiffClassification =
-  | "unchanged"
-  | "remote_changed"
-  | "local_changed"
-  | "both_changed"
-  | "remote_added"
-  | "local_added"
-  | "remote_removed"
-  | "local_removed"
-  /** PGS-03-FU-01: chapter file moved between identities with body
-   *  unchanged. ``rename_from`` carries the old (section, slug). */
-  | "renamed_remote"
-  | "renamed_local";
+    | "unchanged"
+    | "remote_changed"
+    | "local_changed"
+    | "both_changed"
+    | "remote_added"
+    | "local_added"
+    | "remote_removed"
+    | "local_removed"
+    /** PGS-03-FU-01: chapter file moved between identities with body
+     *  unchanged. ``rename_from`` carries the old (section, slug). */
+    | "renamed_remote"
+    | "renamed_local";
 
 export interface GitSyncDiffEntry {
-  section: "front-matter" | "chapters" | "back-matter";
-  slug: string;
-  title: string;
-  classification: GitSyncDiffClassification;
-  base_md: string | null;
-  local_md: string | null;
-  remote_md: string | null;
-  db_chapter_id: string | null;
-  /** PGS-03-FU-01: old identity for renamed_* rows. */
-  rename_from?: { section: string; slug: string } | null;
+    section: "front-matter" | "chapters" | "back-matter";
+    slug: string;
+    title: string;
+    classification: GitSyncDiffClassification;
+    base_md: string | null;
+    local_md: string | null;
+    remote_md: string | null;
+    db_chapter_id: string | null;
+    /** PGS-03-FU-01: old identity for renamed_* rows. */
+    rename_from?: { section: string; slug: string } | null;
 }
 
 export interface GitSyncDiffResponse {
-  book_id: string;
-  last_imported_commit_sha: string;
-  branch: string;
-  chapters: GitSyncDiffEntry[];
-  counts: Record<GitSyncDiffClassification, number>;
+    book_id: string;
+    last_imported_commit_sha: string;
+    branch: string;
+    chapters: GitSyncDiffEntry[];
+    counts: Record<GitSyncDiffClassification, number>;
 }
 
 export interface GitSyncResolutionEntry {
-  section: string;
-  slug: string;
-  /** PGS-03-FU-01 promoted ``mark_conflict`` (write both versions
-   *  inside git-style conflict markers) from a follow-up to a real
-   *  action. Only valid for ``both_changed`` chapters; the backend
-   *  silently skips it for any other classification. */
-  action: "keep_local" | "take_remote" | "mark_conflict";
+    section: string;
+    slug: string;
+    /** PGS-03-FU-01 promoted ``mark_conflict`` (write both versions
+     *  inside git-style conflict markers) from a follow-up to a real
+     *  action. Only valid for ``both_changed`` chapters; the backend
+     *  silently skips it for any other classification. */
+    action: "keep_local" | "take_remote" | "mark_conflict";
 }
 
 export interface GitSyncResolveResult {
-  counts: Record<
-    "updated" | "created" | "deleted" | "marked" | "renamed" | "skipped",
-    number
-  >;
+    counts: Record<"updated" | "created" | "deleted" | "marked" | "renamed" | "skipped", number>;
 }
 
 export interface GitSyncUnifiedCommitRequest {
-  message?: string | null;
-  push_core?: boolean;
-  push_plugin?: boolean;
+    message?: string | null;
+    push_core?: boolean;
+    push_plugin?: boolean;
 }
 
 /** Stable per-subsystem outcome slug. */
-export type GitSyncSubsystemStatus =
-  | "ok"
-  | "skipped"
-  | "nothing_to_commit"
-  | "failed";
+export type GitSyncSubsystemStatus = "ok" | "skipped" | "nothing_to_commit" | "failed";
 
 export interface GitSyncSubsystemResult {
-  status: GitSyncSubsystemStatus;
-  detail: string | null;
-  commit_sha: string | null;
-  pushed: boolean;
+    status: GitSyncSubsystemStatus;
+    detail: string | null;
+    commit_sha: string | null;
+    pushed: boolean;
 }
 
 export interface GitSyncUnifiedCommitResult {
-  core_git: GitSyncSubsystemResult;
-  plugin_git_sync: GitSyncSubsystemResult;
+    core_git: GitSyncSubsystemResult;
+    plugin_git_sync: GitSyncSubsystemResult;
 }
 
 /** PGS-04 sibling listing for a book. */
 export interface TranslationSibling {
-  book_id: string;
-  title: string;
-  language: string;
+    book_id: string;
+    title: string;
+    language: string;
 }
 
 export interface TranslationSiblingsResponse {
-  book_id: string;
-  translation_group_id: string | null;
-  siblings: TranslationSibling[];
+    book_id: string;
+    translation_group_id: string | null;
+    siblings: TranslationSibling[];
 }
 
 export interface TranslationLinkResult {
-  translation_group_id: string | null;
-  linked_book_ids: string[];
+    translation_group_id: string | null;
+    linked_book_ids: string[];
 }
 
 export interface TranslationImportedBook {
-  book_id: string;
-  branch: string;
-  language: string | null;
-  title: string;
+    book_id: string;
+    branch: string;
+    language: string | null;
+    title: string;
 }
 
 /** PGS-04-FU-01: a branch the multi-branch importer could not turn
  *  into a book. The wizard renders a per-entry "Attention required"
  *  row so silent skips never happen again. */
 export interface TranslationSkippedBranch {
-  branch: string;
-  /** Stable slug; the frontend switches on it for the i18n label.
-   *  - ``no_wbt_layout`` - branch lacks ``config/metadata.yaml``
-   *  - ``import_failed`` - the WBT importer raised
-   *    (typically incompatible chapter structure) */
-  reason: "no_wbt_layout" | "import_failed" | string;
-  /** Backend-truncated diagnostic (exception class + message). Safe
-   *  to render verbatim; useful in a "Report issue" body. */
-  detail: string;
+    branch: string;
+    /** Stable slug; the frontend switches on it for the i18n label.
+     *  - ``no_wbt_layout`` - branch lacks ``config/metadata.yaml``
+     *  - ``import_failed`` - the WBT importer raised
+     *    (typically incompatible chapter structure) */
+    reason: "no_wbt_layout" | "import_failed" | string;
+    /** Backend-truncated diagnostic (exception class + message). Safe
+     *  to render verbatim; useful in a "Report issue" body. */
+    detail: string;
 }
 
 export interface TranslationMultiBranchImportResult {
-  translation_group_id: string | null;
-  books: TranslationImportedBook[];
-  /** PGS-04-FU-01: empty list on a clean import; non-empty when
-   *  some branches could not be imported. */
-  skipped: TranslationSkippedBranch[];
+    translation_group_id: string | null;
+    books: TranslationImportedBook[];
+    /** PGS-04-FU-01: empty list on a clean import; non-empty when
+     *  some branches could not be imported. */
+    skipped: TranslationSkippedBranch[];
 }
 
 /** Returned by GET /api/settings/plugins/discovered. Includes the
@@ -2185,38 +2139,38 @@ export interface TranslationMultiBranchImportResult {
  *  description dicts are localized; pass through ``getLocalized``
  *  to render. */
 export interface DiscoveredPlugin {
-  name: string;
-  has_config: boolean;
-  enabled: boolean;
-  loaded: boolean;
-  license_tier: string;
-  has_license: boolean;
-  display_name: Record<string, string>;
-  description: Record<string, string>;
-  version: string | null;
-  /** PluginForge v0.6.0 FilterReason for non-activated plugins.
-   *  Null when the plugin activated cleanly. Maps to
-   *  ``settings.plugin_status_*`` i18n keys for status-column
-   *  rendering in the Plugins tab. */
-  filter_reason: string | null;
-  /** PluginForge v0.6.0 ``PluginError.user_facing_message`` from
-   *  the structured load error. Null unless the plugin failed
-   *  with an exception during init/activate (filter_reason =
-   *  ``load_failed``). */
-  load_error_message: string | null;
-  /** PluginForge v0.9.0 ``PluginState.activated_at``. ISO 8601
-   *  timestamp of the most recent successful activation. Null
-   *  when the plugin has never activated. */
-  activated_at: string | null;
-  /** PluginForge v0.9.0 ``PluginState.last_config_change``. ISO
-   *  8601 timestamp of the last ``on_config_changed`` delivery.
-   *  Null when no config refresh has happened since activation. */
-  last_config_change: string | null;
-  /** PluginForge v0.9.0 ``PluginState.source``. ``"entry_point"``
-   *  for the standard install path, ``"direct_register"`` for
-   *  plugins added via ``register_plugin()`` (ZIP installs).
-   *  Null for configured-but-not-discovered rows. */
-  source: "entry_point" | "direct_register" | null;
+    name: string;
+    has_config: boolean;
+    enabled: boolean;
+    loaded: boolean;
+    license_tier: string;
+    has_license: boolean;
+    display_name: Record<string, string>;
+    description: Record<string, string>;
+    version: string | null;
+    /** PluginForge v0.6.0 FilterReason for non-activated plugins.
+     *  Null when the plugin activated cleanly. Maps to
+     *  ``settings.plugin_status_*`` i18n keys for status-column
+     *  rendering in the Plugins tab. */
+    filter_reason: string | null;
+    /** PluginForge v0.6.0 ``PluginError.user_facing_message`` from
+     *  the structured load error. Null unless the plugin failed
+     *  with an exception during init/activate (filter_reason =
+     *  ``load_failed``). */
+    load_error_message: string | null;
+    /** PluginForge v0.9.0 ``PluginState.activated_at``. ISO 8601
+     *  timestamp of the most recent successful activation. Null
+     *  when the plugin has never activated. */
+    activated_at: string | null;
+    /** PluginForge v0.9.0 ``PluginState.last_config_change``. ISO
+     *  8601 timestamp of the last ``on_config_changed`` delivery.
+     *  Null when no config refresh has happened since activation. */
+    last_config_change: string | null;
+    /** PluginForge v0.9.0 ``PluginState.source``. ``"entry_point"``
+     *  for the standard install path, ``"direct_register"`` for
+     *  plugins added via ``register_plugin()`` (ZIP installs).
+     *  Null for configured-but-not-discovered rows. */
+    source: "entry_point" | "direct_register" | null;
 }
 
 /** Returned by GET /api/books/{id}/full — the complete book graph for
@@ -2224,15 +2178,15 @@ export interface DiscoveredPlugin {
  *  are kept as `Record<string, unknown>[]` (flat rows keyed by id);
  *  DexieStorage stores them verbatim. */
 export interface BookFullGraph {
-  book: Book;
-  chapters: Chapter[];
-  pages: Array<Record<string, unknown>>;
-  comic_panels: Array<Record<string, unknown>>;
-  comic_bubbles: Array<Record<string, unknown>>;
-  story_entities: Array<Record<string, unknown>>;
-  story_entity_page_links: Array<Record<string, unknown>>;
-  chapter_labels: Array<Record<string, unknown>>;
-  assets: Array<Record<string, unknown>>;
+    book: Book;
+    chapters: Chapter[];
+    pages: Array<Record<string, unknown>>;
+    comic_panels: Array<Record<string, unknown>>;
+    comic_bubbles: Array<Record<string, unknown>>;
+    story_entities: Array<Record<string, unknown>>;
+    story_entity_page_links: Array<Record<string, unknown>>;
+    chapter_labels: Array<Record<string, unknown>>;
+    assets: Array<Record<string, unknown>>;
 }
 
 /** Returned by GET /api/lan-auth/info when LAN mode is active.
@@ -2240,11 +2194,11 @@ export interface BookFullGraph {
  *  BIBLIOGON_LAN_MODE -- the caller treats that as "LAN mode off".
  *  See LAN-MODE-PHASE-1. */
 export interface LanAccessInfo {
-  enabled: boolean;
-  lan_ip: string;
-  port: number;
-  url: string;
-  pin: string;
+    enabled: boolean;
+    lan_ip: string;
+    port: number;
+    url: string;
+    pin: string;
 }
 
 /** Returned by GET /api/system/info. Aggregates app identity +
@@ -2253,24 +2207,24 @@ export interface LanAccessInfo {
  *  decision; dependency entries can be ``null`` when a module
  *  isn't importable so the renderer can degrade gracefully. */
 export interface SystemInfo {
-  app: {
-    name: string;
-    version: string;
-    license: string;
-    authors: string[];
-    repository_url: string;
-    issues_url: string;
-  };
-  runtime: {
-    python_version: string;
-    platform_system: string;
-    platform_release: string;
-    platform_machine: string;
-  };
-  dependencies: {
-    fastapi: string | null;
-    sqlalchemy: string | null;
-    pydantic: string | null;
-    pluginforge: string | null;
-  };
+    app: {
+        name: string;
+        version: string;
+        license: string;
+        authors: string[];
+        repository_url: string;
+        issues_url: string;
+    };
+    runtime: {
+        python_version: string;
+        platform_system: string;
+        platform_release: string;
+        platform_machine: string;
+    };
+    dependencies: {
+        fastapi: string | null;
+        sqlalchemy: string | null;
+        pydantic: string | null;
+        pluginforge: string | null;
+    };
 }

@@ -32,6 +32,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { api, ApiError, Article, BookDetail } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
+import { useArticleImageUrl } from "../hooks/useArticleImageUrl";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
@@ -758,8 +759,7 @@ export default function ArticleList() {
                                     onClick={() => setImportWizardOpen(true)}
                                     title={t("ui.dashboard.import", "Importieren")}
                                 >
-                                    <Upload size={14} />{" "}
-                                    {t("ui.dashboard.import", "Importieren")}
+                                    <Upload size={14} /> {t("ui.dashboard.import", "Importieren")}
                                 </button>
                                 <DropdownMenu.Root>
                                     <DropdownMenu.Trigger asChild>
@@ -1454,6 +1454,13 @@ function ArticleRow({
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const [coverFailed, setCoverFailed] = useState(false);
+    // #157: resolve the featured image across storage modes (blob: URL
+    // from Dexie offline when cached, served/CDN URL online).
+    const imageUrl = useArticleImageUrl(
+        article.id,
+        article.featured_image_url,
+        article.featured_image_asset_id,
+    );
     // Prefer original_published_at (computed server-side as the
     // earliest Publication.published_at) over updated_at so imported
     // articles show their canonical Medium publish date instead of
@@ -1496,9 +1503,9 @@ function ArticleRow({
             ) : null}
             <div className={layout.gridCellCover}>
                 <div className={layout.coverThumb}>
-                    {article.featured_image_url && !coverFailed ? (
+                    {imageUrl && !coverFailed ? (
                         <img
-                            src={article.featured_image_url}
+                            src={imageUrl}
                             alt={`${article.title} cover`}
                             className={layout.coverThumbImg}
                             onError={() => setCoverFailed(true)}

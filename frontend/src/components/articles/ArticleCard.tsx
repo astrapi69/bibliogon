@@ -10,12 +10,13 @@ import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
+import { useArticleImageUrl } from "../../hooks/useArticleImageUrl";
 import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
 import ContentTypeBadge from "./ContentTypeBadge";
-import {Badge} from "../Badge";
-import {publicationStatusVariant} from "../../utils/publicationStatusBadge";
+import { Badge } from "../Badge";
+import { publicationStatusVariant } from "../../utils/publicationStatusBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -36,6 +37,13 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
     const [coverFailed, setCoverFailed] = useState(false);
+    // #157: resolve the featured image across storage modes — a blob: URL
+    // from Dexie offline (when cached), the served/CDN URL online.
+    const imageUrl = useArticleImageUrl(
+        article.id,
+        article.featured_image_url,
+        article.featured_image_asset_id,
+    );
     // Prefer the canonical "first published anywhere" date for
     // imported articles; fall back to ``updated_at`` for native
     // articles that have no publications yet. See lessons-learned:
@@ -60,9 +68,9 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
             }}
         >
             <div className={styles.coverImage}>
-                {article.featured_image_url && !coverFailed ? (
+                {imageUrl && !coverFailed ? (
                     <img
-                        src={article.featured_image_url}
+                        src={imageUrl}
                         alt={`${article.title} cover`}
                         className={styles.coverImg}
                         onError={() => setCoverFailed(true)}
@@ -77,17 +85,11 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
             </div>
             <div className={styles.content}>
                 <h3 className={styles.title}>{article.title}</h3>
-                {article.subtitle ? (
-                    <p className={styles.subtitle}>{article.subtitle}</p>
-                ) : null}
+                {article.subtitle ? <p className={styles.subtitle}>{article.subtitle}</p> : null}
                 <p className={styles.author}>
-                    {article.author?.trim()
-                        ? article.author
-                        : t("ui.articles.no_author", "—")}
+                    {article.author?.trim() ? article.author : t("ui.articles.no_author", "—")}
                 </p>
-                {article.topic ? (
-                    <span className={styles.topic}>{article.topic}</span>
-                ) : null}
+                {article.topic ? <span className={styles.topic}>{article.topic}</span> : null}
                 <div className={styles.footer}>
                     {/* ARTICLE-TYPES-SSOT-01 C7 (2026-05-29):
                      *  per-type badge mirrors the status/lang/date
@@ -110,7 +112,11 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                     </Badge>
                     <span className={styles.lang}>{(article.language || "??").toUpperCase()}</span>
                     <span className={styles.date}>
-                        <Clock size={12} aria-hidden style={{ verticalAlign: -2, marginRight: 4 }} />
+                        <Clock
+                            size={12}
+                            aria-hidden
+                            style={{ verticalAlign: -2, marginRight: 4 }}
+                        />
                         {updated}
                     </span>
                     {/* MEDIUM-COMMENTS-UI-01 commit 4 / 87ab959:
