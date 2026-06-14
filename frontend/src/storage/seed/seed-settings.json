@@ -76,9 +76,6 @@
     }
   },
   "topics": [],
-  "features": {
-    "white_label": false
-  },
   "donations": {
     "enabled": true,
     "landing_page_url": null,
