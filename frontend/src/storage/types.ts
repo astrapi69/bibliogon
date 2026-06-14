@@ -64,6 +64,16 @@ export interface ArticleStorage {
     create: typeof api.articles.create;
     update: typeof api.articles.update;
     delete: typeof api.articles.delete;
+    // Trash lifecycle + bulk operations. Routed through the seam so the
+    // offline (Dexie) build supports article trash + bulk delete/restore,
+    // not just the api build (the AD bulk-delete bug was a direct api.*
+    // call that guardedFetch rejects in dexie mode).
+    listTrash: typeof api.articles.listTrash;
+    restore: typeof api.articles.restore;
+    permanentDelete: typeof api.articles.permanentDelete;
+    emptyTrash: typeof api.articles.emptyTrash;
+    bulkDelete: typeof api.articles.bulkDelete;
+    bulkRestore: typeof api.articles.bulkRestore;
 }
 
 /**
