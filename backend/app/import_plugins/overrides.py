@@ -21,32 +21,12 @@ maps to HTTP 400. The validation runs before any DB write.
 from __future__ import annotations
 
 import json
-from pathlib import Path
 from typing import Any
 
-import yaml
 from sqlalchemy.orm import Session
 
 from app.models import Book
-
-
-def _allow_books_without_author_from_yaml() -> bool:
-    """Read the advanced toggle from ``config/app.yaml``.
-
-    Used as the default for ``apply_book_overrides`` so callers that
-    don't thread a flag still respect the Settings switch. Returns
-    False on any read error to preserve the historical behaviour.
-    """
-    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
-    if not config_path.exists():
-        return False
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        return bool(config.get("app", {}).get("allow_books_without_author", False))
-    except Exception:
-        return False
-
+from app.services.app_settings import allow_books_without_author
 
 #: All Book columns the wizard can override. Mirrors the Metadata
 #: Editor's field list. Adding a new user-editable column to Book:
@@ -181,7 +161,7 @@ def apply_book_overrides(
     if not overrides:
         return
     if allow_null_author is None:
-        allow_null_author = _allow_books_without_author_from_yaml()
+        allow_null_author = allow_books_without_author()
     allowed = BOOK_IMPORT_OVERRIDE_KEYS | META_OVERRIDE_KEYS
     unknown = set(overrides) - allowed
     if unknown:
