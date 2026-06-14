@@ -38,7 +38,4 @@ frontend/src/components/ChapterSidebar.tsx
 frontend/src/storage/dexie-storage.ts
 
 # --- Frontend: Seiten ---
-frontend/src/pages/ArticleEditor.tsx
-frontend/src/pages/ArticleList.tsx
-frontend/src/pages/Dashboard.tsx
 frontend/src/pages/BookEditor.tsx

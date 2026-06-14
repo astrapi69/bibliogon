@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api, ApiError, Book } from "../api/client";
+import { api, ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import { downloadBlob } from "../shared/utils/downloadBlob";
 import WritingGoalWidget from "../components/WritingGoalWidget";
@@ -19,11 +19,11 @@ import { formatActiveBookFilters } from "../utils/formatActiveFilters";
 import { useBookSelection } from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
-import PageSizeSelector from "../components/PageSizeSelector";
 import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import { useBookFilters } from "../hooks/useBookFilters";
+import { useDashboardBookData } from "../hooks/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/useBookTypes";
 import { BookTypeIcon } from "../utils/bookTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
@@ -37,27 +37,18 @@ import {
     HelpCircle,
     Rocket,
     Trash2,
-    Trash,
-    ChevronLeft,
     Menu,
     Search,
     SlidersHorizontal,
     FileText,
-    LayoutGrid,
-    List as ListIcon,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
-import {
-    EntityTrashView,
-    EntityTileView,
-    EntityViewSwitcher,
-    EntityEmptyState,
-    RESTORE_ACTION_ID,
-    PERMANENT_DELETE_ACTION_ID,
-} from "@astrapi69/entity-kit";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
+import DashboardTrashView from "../components/DashboardTrashView";
+import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
+import ListPaginationControls from "../components/ListPaginationControls";
 import styles from "./Dashboard.module.css";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
@@ -102,10 +93,7 @@ export default function Dashboard() {
     const { mode } = useStorageMode();
     const isDexie = mode === "dexie";
     const { theme, toggle: toggleTheme } = useTheme();
-    const [books, setBooks] = useState<Book[]>([]);
-    const [trash, setTrash] = useState<Book[]>([]);
     const [showTrash, setShowTrash] = useState(false);
-    const [loading, setLoading] = useState(true);
     const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
@@ -122,8 +110,20 @@ export default function Dashboard() {
     // `bookCreated` nav-state flag; this ref makes the resulting
     // donation-onboarding check fire exactly once per arrival.
     const onboardingHandledRef = useRef(false);
-    const filters = useBookFilters(books, t);
     const selection = useBookSelection();
+    const {
+        books,
+        setBooks,
+        trash,
+        loading,
+        loadBooks,
+        loadTrash,
+        handleDelete,
+        handleDeletePermanent,
+        handleTrashAction,
+        handleEmptyTrash,
+    } = useDashboardBookData(dialog, selection, t);
+    const filters = useBookFilters(books, t);
     const { mode: viewMode, setMode: setViewMode } = useViewMode("books");
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: the SplitButton primary
     // label reflects the configured default book-type. Look up its
@@ -339,30 +339,6 @@ export default function Dashboard() {
         resetPagination();
     }, [filters.searchQuery, filters.genre, filters.language, clearBookSelection, resetPagination]);
 
-    const loadBooks = async () => {
-        try {
-            // Reads route through the storage seam: ApiStorage online,
-            // DexieStorage offline (offline-available books). (P3-C4)
-            const data = await getStorage().books.list();
-            setBooks(data);
-        } catch (err) {
-            console.error("Failed to load books:", err);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const loadTrash = async () => {
-        try {
-            // Routes through the storage seam: ApiStorage online,
-            // DexieStorage offline (soft-deleted books). (Finding 7)
-            const data = await getStorage().books.listTrash();
-            setTrash(data);
-        } catch (err) {
-            console.error("Failed to load trash:", err);
-        }
-    };
-
     useEffect(() => {
         loadBooks();
         loadTrash();
@@ -381,6 +357,7 @@ export default function Dashboard() {
                 if (typeof dt === "string") setDefaultBookType(dt);
             })
             .catch(() => {});
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const maybeShowDonationOnboarding = (wasFirstBook: boolean) => {
@@ -407,110 +384,6 @@ export default function Dashboard() {
         navigate("/", { replace: true, state: null });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, donationsConfig, books, location.state]);
-
-    const handleDelete = async (id: string) => {
-        await getStorage().books.delete(id);
-        setBooks((prev) => prev.filter((b) => b.id !== id));
-        // Reconcile bulk-selection state: the row that just
-        // disappeared must not stay in the BulkActionBar count.
-        selection.remove(id);
-        loadTrash();
-        notify.info(t("ui.dashboard.moved_to_trash", "In den Papierkorb verschoben"));
-    };
-
-    const handleDeletePermanent = async (id: string) => {
-        if (
-            !(await dialog.confirm(
-                t("ui.dashboard.delete_permanent_title", "Endgültig löschen"),
-                t(
-                    "ui.dashboard.delete_permanent_warning",
-                    "Das Buch wird unwiderruflich gelöscht. Diese Aktion kann NICHT rückgaengig gemacht werden. Nur für erfahrene Benutzer.",
-                ),
-                "danger",
-            ))
-        )
-            return;
-        await getStorage().books.delete(id);
-        try {
-            await getStorage().books.permanentDelete(id);
-        } catch {
-            /* already in trash */
-        }
-        setBooks((prev) => prev.filter((b) => b.id !== id));
-        // Reconcile bulk-selection state.
-        selection.remove(id);
-        notify.success(t("ui.dashboard.deleted_permanently", "Buch endgültig gelöscht"));
-    };
-
-    const handleRestore = async (book: Book) => {
-        // Optimistic update: drop the trash row first so the
-        // user sees the restore land before the network round-
-        // trip. The POST returns the restored entity which we
-        // splice into the live list — skipping the full
-        // /api/books refetch that produced the 419ms-class
-        // perception-lag the 2026-05-14 user report surfaced.
-        setTrash((prev) => prev.filter((b) => b.id !== book.id));
-        try {
-            const restored = await getStorage().books.restore(book.id);
-            setBooks((prev) => {
-                if (prev.some((b) => b.id === restored.id)) return prev;
-                return [restored, ...prev];
-            });
-            notify.success(t("ui.dashboard.restored", "Buch wiederhergestellt"));
-        } catch (err) {
-            // Revert the optimistic trash removal so a failed
-            // restore does not vanish the row entirely.
-            setTrash((prev) => {
-                if (prev.some((b) => b.id === book.id)) return prev;
-                return [book, ...prev];
-            });
-            notify.error(t("ui.dashboard.restore_failed", "Wiederherstellen fehlgeschlagen"), err);
-        }
-    };
-
-    const handlePermanentDelete = async (id: string) => {
-        if (
-            !(await dialog.confirm(
-                t("ui.dashboard.delete_permanent_title", "Endgültig löschen"),
-                t(
-                    "ui.dashboard.delete_permanent_warning",
-                    "Buch endgültig löschen? Dies kann nicht rückgaengig gemacht werden.",
-                ),
-                "danger",
-            ))
-        )
-            return;
-        await getStorage().books.permanentDelete(id);
-        setTrash((prev) => prev.filter((b) => b.id !== id));
-        // Defensive: same as ArticleList — if the book was soft-deleted
-        // in another tab and the id was still in this tab's live-list
-        // selection, drop it so the BulkActionBar count never
-        // references a row that's gone everywhere.
-        selection.remove(id);
-    };
-
-    // Shared handler for both trash views (EntityTrashView list + EntityTileView
-    // grid), which emit the same restore / permanent-delete action ids.
-    const handleTrashAction = (actionId: string, book: Book) => {
-        if (actionId === RESTORE_ACTION_ID) void handleRestore(book);
-        else if (actionId === PERMANENT_DELETE_ACTION_ID) void handlePermanentDelete(book.id);
-    };
-
-    const handleEmptyTrash = async () => {
-        if (
-            !(await dialog.confirm(
-                t("ui.dashboard.empty_trash_title", "Papierkorb leeren"),
-                t(
-                    "ui.dashboard.empty_trash_warning",
-                    "Alle Bücher im Papierkorb werden unwiderruflich gelöscht. Diese Aktion kann nicht rückgaengig gemacht werden.",
-                ),
-                "danger",
-            ))
-        )
-            return;
-        await getStorage().books.emptyTrash();
-        setTrash([]);
-    };
 
     const handleBackupExport = () => {
         if (offline) return;
@@ -797,133 +670,16 @@ export default function Dashboard() {
                  *  shows it) until the user actively dismisses. */}
                 {!showTrash && <WritingGoalWidget />}
                 {showTrash ? (
-                    /* Trash view */
-                    <div data-testid="trash-view">
-                        <div className={styles.mainHeader}>
-                            <button
-                                className="btn-icon"
-                                onClick={() => setShowTrash(false)}
-                                title={t("ui.dashboard.back", "Zurück")}
-                            >
-                                <ChevronLeft size={18} />
-                            </button>
-                            <Trash2 size={20} className="muted" />
-                            <h2 className={styles.mainTitle}>
-                                {t("ui.dashboard.trash", "Papierkorb")}
-                            </h2>
-                            <span className={styles.bookCount}>
-                                {trash.length}{" "}
-                                {trash.length === 1
-                                    ? t("ui.dashboard.book_singular", "Buch")
-                                    : t("ui.dashboard.book_plural", "Bücher")}
-                            </span>
-                            <div style={{ flex: 1 }} />
-                            {trash.length > 0 && (
-                                <button
-                                    className="btn btn-danger btn-sm"
-                                    data-testid="trash-empty"
-                                    onClick={handleEmptyTrash}
-                                >
-                                    <Trash size={14} />{" "}
-                                    {t("ui.dashboard.empty_trash", "Papierkorb leeren")}
-                                </button>
-                            )}
-                            <EntityViewSwitcher
-                                mode={trashViewMode === "grid" ? "tile" : "list"}
-                                onChange={(m) => setTrashViewMode(m === "tile" ? "grid" : "list")}
-                                options={[
-                                    {
-                                        mode: "list",
-                                        label: t("ui.dashboard.view_list", "Listen-Ansicht"),
-                                        icon: <ListIcon size={16} />,
-                                    },
-                                    {
-                                        mode: "tile",
-                                        label: t("ui.dashboard.view_grid", "Kachel-Ansicht"),
-                                        icon: <LayoutGrid size={16} />,
-                                    },
-                                ]}
-                                classNames={{
-                                    group: "inline-flex overflow-hidden rounded-[var(--radius-sm)] border border-border bg-card",
-                                    button: "inline-flex items-center px-[10px] py-[6px] text-muted-foreground",
-                                    activeButton: "bg-primary text-white",
-                                    label: "sr-only",
-                                }}
-                            />
-                        </div>
-                        {trash.length === 0 ? (
-                            <EmptyState
-                                testId="trash-empty-state"
-                                icon={
-                                    <Trash2 size={48} strokeWidth={1} color="var(--text-muted)" />
-                                }
-                                title={t("ui.dashboard.trash_empty", "Papierkorb ist leer")}
-                            />
-                        ) : trashViewMode === "grid" ? (
-                            <div data-testid="trash-grid">
-                                <EntityTileView
-                                    items={trash}
-                                    descriptor={trashDescriptor}
-                                    onAction={handleTrashAction}
-                                    classNames={{
-                                        grid: "grid gap-3 auto-rows-fr [grid-template-columns:repeat(auto-fill,minmax(220px,1fr))]",
-                                        tile: "flex h-full flex-col gap-1 rounded-[var(--radius-md)] border border-border p-3 bg-card",
-                                        title: "font-semibold",
-                                        subtitle: "text-sm text-muted-foreground",
-                                        actions: "mt-auto flex gap-2 pt-2",
-                                        actionButton: "btn btn-primary btn-sm",
-                                        dangerActionButton: "btn btn-danger btn-sm",
-                                    }}
-                                />
-                            </div>
-                        ) : (
-                            <div data-testid="trash-list">
-                                <EntityTrashView
-                                    items={trash}
-                                    descriptor={trashDescriptor}
-                                    prefiltered
-                                    onAction={handleTrashAction}
-                                    restoreLabel={t(
-                                        "ui.dashboard.restore_book",
-                                        "Wiederherstellen",
-                                    )}
-                                    permanentDeleteLabel={t(
-                                        "ui.dashboard.delete_permanent",
-                                        "Endgültig löschen",
-                                    )}
-                                    emptyState={
-                                        <EntityEmptyState
-                                            title={t(
-                                                "ui.dashboard.trash_empty",
-                                                "Papierkorb ist leer",
-                                            )}
-                                        />
-                                    }
-                                    classNames={{
-                                        container:
-                                            "rounded-[var(--radius-md)] border border-border",
-                                        list: {
-                                            root: "overflow-x-auto",
-                                            table: "w-full border-collapse text-foreground",
-                                            head: "border-b border-border",
-                                            header: "px-3 py-2 text-left text-sm font-semibold text-muted-foreground",
-                                            headerActions: "px-3 py-2 text-right",
-                                            sortButton: "inline-flex items-center gap-1",
-                                            row: "border-b border-border",
-                                            cell: "px-3 py-2 align-middle",
-                                            actionsCell: "px-3 py-2 text-right whitespace-nowrap",
-                                            actions: "inline-flex gap-2 justify-end",
-                                            actionButton: "btn btn-primary btn-sm",
-                                            dangerActionButton: "btn btn-danger btn-sm",
-                                            pagination: "flex items-center gap-2 p-2",
-                                            pageButton: "btn btn-secondary btn-sm",
-                                            pageStatus: "text-sm text-muted-foreground",
-                                        },
-                                    }}
-                                />
-                            </div>
-                        )}
-                    </div>
+                    <DashboardTrashView
+                        trash={trash}
+                        trashViewMode={trashViewMode}
+                        setTrashViewMode={setTrashViewMode}
+                        trashDescriptor={trashDescriptor}
+                        onBack={() => setShowTrash(false)}
+                        onEmptyTrash={handleEmptyTrash}
+                        onTrashAction={handleTrashAction}
+                        t={t}
+                    />
                 ) : loading ? (
                     <LoadingIndicator
                         testId="dashboard-loading"
@@ -1042,35 +798,19 @@ export default function Dashboard() {
                                     />
                                 ) : null}
                                 {filters.filteredBooks.length > 0 ? (
-                                    <div className={styles.bulkSelectAll}>
-                                        <label>
-                                            <input
-                                                type="checkbox"
-                                                data-testid="book-bulk-select-all"
-                                                checked={
-                                                    selection.count > 0 &&
-                                                    selection.count === filters.filteredBooks.length
-                                                }
-                                                ref={(el) => {
-                                                    if (el)
-                                                        el.indeterminate =
-                                                            selection.count > 0 &&
-                                                            selection.count <
-                                                                filters.filteredBooks.length;
-                                                }}
-                                                onChange={(e) => {
-                                                    if (e.target.checked) {
-                                                        selection.selectAll(
-                                                            filters.filteredBooks.map((b) => b.id),
-                                                        );
-                                                    } else {
-                                                        selection.clear();
-                                                    }
-                                                }}
-                                            />{" "}
-                                            {t("ui.dashboard.bulk.select_all", "Select all")}
-                                        </label>
-                                    </div>
+                                    <BulkSelectAllCheckbox
+                                        className={styles.bulkSelectAll}
+                                        testId="book-bulk-select-all"
+                                        count={selection.count}
+                                        total={filters.filteredBooks.length}
+                                        onSelectAll={() =>
+                                            selection.selectAll(
+                                                filters.filteredBooks.map((b) => b.id),
+                                            )
+                                        }
+                                        onClear={selection.clear}
+                                        label={t("ui.dashboard.bulk.select_all", "Select all")}
+                                    />
                                 ) : null}
                                 {(() => {
                                     // C5: slice to ``paged.limit`` for render.
@@ -1139,39 +879,18 @@ export default function Dashboard() {
                                                 </div>
                                             )}
                                             {filters.filteredBooks.length > 0 && (
-                                                <div
-                                                    data-testid="dashboard-pagination"
-                                                    style={{
-                                                        display: "flex",
-                                                        justifyContent: "center",
-                                                        alignItems: "center",
-                                                        gap: 16,
-                                                        marginTop: 16,
-                                                        paddingBottom: 8,
-                                                        flexWrap: "wrap",
-                                                    }}
-                                                >
-                                                    {hasMore && (
-                                                        <button
-                                                            type="button"
-                                                            className="btn btn-secondary"
-                                                            data-testid="dashboard-load-more"
-                                                            onClick={paged.loadMore}
-                                                        >
-                                                            {t(
-                                                                "ui.dashboard.load_more",
-                                                                "Mehr laden",
-                                                            )}{" "}
-                                                            ({visibleBooks.length} /{" "}
-                                                            {filters.filteredBooks.length})
-                                                        </button>
-                                                    )}
-                                                    <PageSizeSelector
-                                                        value={paged.pageSize}
-                                                        onChange={paged.setPageSize}
-                                                        data-testid="dashboard-page-size"
-                                                    />
-                                                </div>
+                                                <ListPaginationControls
+                                                    visibleCount={visibleBooks.length}
+                                                    totalCount={filters.filteredBooks.length}
+                                                    hasMore={hasMore}
+                                                    onLoadMore={paged.loadMore}
+                                                    pageSize={paged.pageSize}
+                                                    onPageSizeChange={paged.setPageSize}
+                                                    t={t}
+                                                    paginationTestId="dashboard-pagination"
+                                                    loadMoreTestId="dashboard-load-more"
+                                                    pageSizeTestId="dashboard-page-size"
+                                                />
                                             )}
                                         </>
                                     );
