@@ -25,47 +25,11 @@ from app import import_plugins as _register_core_import_handlers  # noqa: F401, 
 from app.hookspecs import BibliogonHookSpec
 from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F401, E402
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
-from app.routers import (
-    ai_template_bulk,
-    ai_template_bulk_fill,
-    article_ai_fill,
-    article_ai_template,
-    article_assets,
-    article_bulk_export,
-    article_export,
-    articles,
-    assets,
-    audiobook,
-    authors,
-    backup,
-    book_ai_fill,
-    book_ai_template,
-    book_types,
-    books,
-    bulk_delete,
-    chapter_labels,
-    chapter_templates,
-    chapters,
-    comments,
-    content_types,
-    covers,
-    git_backup,
-    git_import_backfill,
-    git_sync,
-    import_orchestrator,
-    licenses,
-    pages,
-    plugin_install,
-    publications,
-    settings,
-    system,
-    templates,
-    translations,
-    writing_stats,
-)
-from app.routers import (
-    ssh_keys as ssh_keys_router,
-)
+from app.router_registration import register_routers
+
+# Routers main itself wires at startup via ``.configure()``. The full
+# set of routers is mounted by ``register_routers`` (router_registration).
+from app.routers import licenses, plugin_install, settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 CONFIG_PATH = BASE_DIR / "config" / "app.yaml"
@@ -432,58 +396,7 @@ app.add_middleware(
     allow_headers=["Content-Type", "Authorization"],
 )
 
-app.include_router(books.router, prefix="/api")
-app.include_router(book_types.router, prefix="/api")
-app.include_router(content_types.router, prefix="/api")
-app.include_router(articles.router, prefix="/api")
-app.include_router(authors.router, prefix="/api")
-app.include_router(article_assets.router, prefix="/api")
-app.include_router(article_export.router, prefix="/api")
-app.include_router(article_bulk_export.router, prefix="/api")
-app.include_router(article_ai_template.articles_router, prefix="/api")
-app.include_router(article_ai_template.empty_router, prefix="/api")
-app.include_router(article_ai_fill.router, prefix="/api")
-app.include_router(book_ai_template.books_router, prefix="/api")
-app.include_router(book_ai_template.empty_router, prefix="/api")
-app.include_router(book_ai_fill.router, prefix="/api")
-app.include_router(ai_template_bulk.articles_router, prefix="/api")
-app.include_router(ai_template_bulk.books_router, prefix="/api")
-app.include_router(ai_template_bulk_fill.articles_router, prefix="/api")
-app.include_router(ai_template_bulk_fill.books_router, prefix="/api")
-app.include_router(bulk_delete.articles_router, prefix="/api")
-app.include_router(bulk_delete.books_router, prefix="/api")
-app.include_router(bulk_delete.comments_router, prefix="/api")
-app.include_router(comments.router, prefix="/api")
-app.include_router(publications.publications_router, prefix="/api")
-app.include_router(publications.platform_schemas_router, prefix="/api")
-app.include_router(chapters.router, prefix="/api")
-app.include_router(chapter_labels.router, prefix="/api")
-app.include_router(writing_stats.router, prefix="/api")
-app.include_router(pages.router, prefix="/api")
-app.include_router(assets.router, prefix="/api")
-app.include_router(audiobook.router, prefix="/api")
-app.include_router(covers.router, prefix="/api")
-app.include_router(backup.router, prefix="/api")
-app.include_router(import_orchestrator.router, prefix="/api")
-app.include_router(licenses.router, prefix="/api")
-app.include_router(settings.router, prefix="/api")
-app.include_router(system.router, prefix="/api")
-app.include_router(plugin_install.router, prefix="/api")
-app.include_router(templates.router, prefix="/api")
-app.include_router(chapter_templates.router, prefix="/api")
-app.include_router(git_backup.router, prefix="/api")
-app.include_router(git_import_backfill.router, prefix="/api")
-app.include_router(git_sync.router, prefix="/api")
-app.include_router(translations.router, prefix="/api")
-app.include_router(ssh_keys_router.router, prefix="/api")
-
-from app.ai.routes import router as ai_router
-
-app.include_router(ai_router, prefix="/api")
-
-from app.routers.websocket import router as ws_router
-
-app.include_router(ws_router, prefix="/api")
+register_routers(app)
 
 
 # Global exception handler: log all unhandled errors with stacktrace
