@@ -26,6 +26,11 @@ env:
 jobs:
   smoke:
     runs-on: ubuntu-latest
+    # The smoke project is the full serial regression suite (500+ tests,
+    # workers=1 against a live backend), so a run is long by nature. Cap it
+    # so a stall fails fast and visibly instead of grinding to GitHub's 6h
+    # default (the #167 "hang" was an uncapped slow run, not a true freeze).
+    timeout-minutes: 90
     steps:
       - uses: actions/checkout@v5
 
@@ -70,7 +75,11 @@ jobs:
 
       - name: Run smoke suite
         working-directory: e2e
-        run: npx playwright test --project=smoke
+        # --retries=1 (CI-only override of the config's retries:2) halves the
+        # worst-case flaky tail without hiding a deterministic failure, which
+        # still fails both attempts. The shared playwright.config.ts keeps
+        # retries:2 for local runs deliberately.
+        run: npx playwright test --project=smoke --retries=1
 
       - uses: actions/upload-artifact@v6
         if: failure()
