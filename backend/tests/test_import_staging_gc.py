@@ -16,7 +16,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.routers.import_orchestrator import _STAGING_DIR, _STAGING_TTL_SECONDS
+from app.services.import_staging import _STAGING_DIR, _STAGING_TTL_SECONDS
 
 
 @pytest.fixture(scope="module")

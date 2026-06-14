@@ -17,11 +17,8 @@ docs/explorations/core-import-orchestrator.md.
 
 from __future__ import annotations
 
-import shutil
-import tempfile
 import uuid
 from datetime import datetime
-from pathlib import Path
 from typing import Literal
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile, status
@@ -38,15 +35,16 @@ from app.import_plugins import (
 )
 from app.import_plugins.protocol import DetectedProject
 from app.models import Book, BookImportSource
+from app.services.import_staging import (
+    _STAGING_DIR,
+    drop_staged,
+    gc_stale_staging,
+    is_safe_rel_path,
+    resolve_staged,
+    stage_uploads,
+)
 
 router = APIRouter(prefix="/import", tags=["import-orchestrator"])
-
-# Staged uploads live on disk between detect and execute so execute can
-# re-read the original bytes (the handler may need to re-hash them or
-# re-extract a ZIP). TTL enforced lazily during each request.
-_STAGING_DIR = Path(tempfile.gettempdir()) / "bibliogon_import_staging"
-_STAGING_DIR.mkdir(parents=True, exist_ok=True)
-_STAGING_TTL_SECONDS = 30 * 60
 
 
 # --- Response models ---
@@ -126,13 +124,13 @@ def detect_import(
             detail="'paths' length must match 'files' length.",
         )
 
-    _gc_stale_staging()
+    gc_stale_staging()
     temp_ref = f"imp-{uuid.uuid4().hex}"
-    staging_path = _stage_uploads(files, paths, temp_ref)
+    staging_path = stage_uploads(files, paths, temp_ref)
 
     plugin = find_handler(str(staging_path))
     if plugin is None:
-        _drop_staged(temp_ref)
+        drop_staged(temp_ref)
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={
@@ -163,7 +161,7 @@ def get_staged_asset(temp_ref: str, path: str) -> FileResponse:
     missing. No auth beyond "caller has a valid temp_ref" - staging
     TTL is 30 minutes, temp_refs are UUIDs.
     """
-    if not _is_safe_rel_path(path):
+    if not is_safe_rel_path(path):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid path component.",
@@ -213,14 +211,6 @@ def get_staged_asset(temp_ref: str, path: str) -> FileResponse:
     )
 
 
-def _is_safe_rel_path(path: str) -> bool:
-    """Reject paths with ``..`` components or absolute prefixes."""
-    if not path:
-        return False
-    parts = path.replace("\\", "/").split("/")
-    return not any(p == ".." for p in parts) and not path.startswith("/")
-
-
 @router.post("/detect/git", response_model=DetectResponse)
 def detect_git_import(
     payload: GitDetectRequest,
@@ -256,7 +246,7 @@ def detect_git_import(
             },
         )
 
-    _gc_stale_staging()
+    gc_stale_staging()
     temp_ref = f"imp-{uuid.uuid4().hex}"
     payload_dir = _STAGING_DIR / temp_ref / "payload"
     payload_dir.mkdir(parents=True, exist_ok=True)
@@ -264,7 +254,7 @@ def detect_git_import(
     try:
         staging_path = remote.clone(payload.git_url, payload_dir)
     except Exception as exc:
-        _drop_staged(temp_ref)
+        drop_staged(temp_ref)
         raise HTTPException(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=f"Clone failed: {exc}",
@@ -272,7 +262,7 @@ def detect_git_import(
 
     plugin = find_handler(str(staging_path))
     if plugin is None:
-        _drop_staged(temp_ref)
+        drop_staged(temp_ref)
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail={
@@ -295,7 +285,7 @@ def execute_import(
     payload: ExecuteRequest,
     db: Session = Depends(get_db),
 ) -> ExecuteResponse:
-    staging_path = _resolve_staged(payload.temp_ref)
+    staging_path = resolve_staged(payload.temp_ref)
     if staging_path is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -303,12 +293,12 @@ def execute_import(
         )
 
     if payload.duplicate_action == "cancel":
-        _drop_staged(payload.temp_ref)
+        drop_staged(payload.temp_ref)
         return ExecuteResponse(book_id=None, status="cancelled")
 
     plugin = find_handler(str(staging_path))
     if plugin is None:
-        _drop_staged(payload.temp_ref)
+        drop_staged(payload.temp_ref)
         raise HTTPException(
             status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
             detail="Handler that matched at detect-time is no longer available.",
@@ -343,13 +333,13 @@ def execute_import(
                 allow_null_author=_allow_books_without_author(),
             )
         except MandatoryFieldMissing as exc:
-            _drop_staged(payload.temp_ref)
+            drop_staged(payload.temp_ref)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail={"field": exc.field, "message": str(exc)},
             ) from exc
         except KeyError as exc:
-            _drop_staged(payload.temp_ref)
+            drop_staged(payload.temp_ref)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=str(exc),
@@ -359,7 +349,7 @@ def execute_import(
     # handler would silently no-op which is worse than a 400.
     if payload.git_adoption and payload.git_adoption.startswith("adopt"):
         if detected.git_repo is None or not detected.git_repo.present:
-            _drop_staged(payload.temp_ref)
+            drop_staged(payload.temp_ref)
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail=(
@@ -395,19 +385,19 @@ def execute_import(
             )
             ids = [book_id] if book_id else []
     except MandatoryFieldMissing as exc:
-        _drop_staged(payload.temp_ref)
+        drop_staged(payload.temp_ref)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail={"field": exc.field, "message": str(exc)},
         ) from exc
     except KeyError as exc:
-        _drop_staged(payload.temp_ref)
+        drop_staged(payload.temp_ref)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
     except Exception as exc:
-        _drop_staged(payload.temp_ref)
+        drop_staged(payload.temp_ref)
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Import handler failed: {exc}",
@@ -452,7 +442,7 @@ def execute_import(
 
         persist_clone_after_import(db, staging_path=staging_path, book_id=book_id)
 
-    _drop_staged(payload.temp_ref)
+    drop_staged(payload.temp_ref)
 
     return ExecuteResponse(
         book_id=book_id,
@@ -480,101 +470,6 @@ def _summaries_in_order(detected: DetectedProject, created_ids: list[str]) -> li
         if match is not None:
             out.append(match)
     return out
-
-
-def _stage_uploads(files: list[UploadFile], paths: list[str] | None, temp_ref: str) -> Path:
-    """Persist one or more uploads to disk and return the path a handler
-    should inspect.
-
-    Layout: ``<STAGING_DIR>/<temp_ref>/payload/<rel>``. Single-file
-    uploads land at ``payload/<filename>`` and we return the file path.
-    Folder uploads (``paths`` aligned with ``files`` 1:1) land at their
-    ``webkitRelativePath`` position; we return ``payload/<root>`` where
-    ``<root>`` is the common first path segment.
-    """
-    payload_dir = _STAGING_DIR / temp_ref / "payload"
-    payload_dir.mkdir(parents=True, exist_ok=True)
-
-    for i, upload in enumerate(files):
-        rel = (paths[i] if paths else None) or upload.filename or f"file-{i}"
-        rel = _sanitise_rel_path(rel)
-        dest = payload_dir / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        with open(dest, "wb") as f:
-            shutil.copyfileobj(upload.file, f)
-
-    return _input_path_for_payload(payload_dir, files, paths)
-
-
-def _sanitise_rel_path(rel: str) -> str:
-    """Strip leading slashes and reject ``..`` components. Preserves the
-    ``webkitRelativePath`` layout while blocking path traversal."""
-    parts = [p for p in rel.replace("\\", "/").split("/") if p and p != "."]
-    if any(p == ".." for p in parts):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid path component in upload: {rel!r}",
-        )
-    return "/".join(parts) or "upload"
-
-
-def _input_path_for_payload(
-    payload_dir: Path,
-    files: list[UploadFile],
-    paths: list[str] | None,
-) -> Path:
-    """Work out which path the handler should see.
-
-    Single file upload -> the file itself. Folder upload -> the root
-    directory (``payload_dir / <first segment of the common path>``).
-    """
-    if len(files) == 1 and not (paths and "/" in _sanitise_rel_path(paths[0] or "")):
-        # single file: return the file path directly
-        rel = (paths[0] if paths else None) or files[0].filename or "upload"
-        return payload_dir / _sanitise_rel_path(rel)
-
-    # folder upload: shared first segment across all paths
-    roots: set[str] = set()
-    for i, upload in enumerate(files):
-        rel = (paths[i] if paths else None) or upload.filename or f"file-{i}"
-        first = _sanitise_rel_path(rel).split("/", 1)[0]
-        roots.add(first)
-    if len(roots) == 1:
-        return payload_dir / next(iter(roots))
-    return payload_dir
-
-
-def _resolve_staged(temp_ref: str) -> Path | None:
-    stage_dir = _STAGING_DIR / temp_ref / "payload"
-    if not stage_dir.is_dir():
-        return None
-    entries = list(stage_dir.iterdir())
-    if not entries:
-        return None
-    if len(entries) == 1:
-        return entries[0]
-    # Multiple roots at payload level - return the payload dir so the
-    # handler sees everything as one directory input.
-    return stage_dir
-
-
-def _drop_staged(temp_ref: str) -> None:
-    stage_dir = _STAGING_DIR / temp_ref
-    shutil.rmtree(stage_dir, ignore_errors=True)
-
-
-def _gc_stale_staging() -> None:
-    """Remove any staged upload older than the TTL. Called opportunistically
-    during detect so the temp dir never grows without bound."""
-    if not _STAGING_DIR.is_dir():
-        return
-    cutoff = datetime.now().timestamp() - _STAGING_TTL_SECONDS
-    for child in _STAGING_DIR.iterdir():
-        try:
-            if child.stat().st_mtime < cutoff:
-                shutil.rmtree(child, ignore_errors=True)
-        except OSError:
-            continue
 
 
 def _check_duplicate(db: Session, detected: DetectedProject) -> DuplicateInfo:
