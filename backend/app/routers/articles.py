@@ -11,7 +11,6 @@ import json
 import logging
 import shutil
 from datetime import UTC, datetime, timedelta
-from pathlib import Path
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
@@ -29,6 +28,7 @@ from app.repositories.articles import (
 )
 from app.repositories.comments import CommentRepository, get_comment_repository
 from app.schemas import ArticleCreate, ArticleOut, ArticleUpdate
+from app.services.app_settings import get_trash_auto_delete_config, is_permanent_delete
 
 logger = logging.getLogger(__name__)
 
@@ -40,51 +40,11 @@ _ALLOWED_STATUSES = ("draft", "ready", "published", "archived")
 # --- Auto-cleanup of expired trash (mirrors books.cleanup_expired_trash) ---
 
 
-def _is_permanent_delete() -> bool:
-    """Mirror the books behaviour: when ``app.delete_permanently`` is
-    true in app.yaml, the DELETE endpoint hard-deletes the article
-    instead of moving it to the trash. Same setting governs both
-    entities so the user has one switch."""
-    base_dir = Path(__file__).resolve().parent.parent.parent
-    config_path = base_dir / "config" / "app.yaml"
-    if not config_path.exists():
-        return False
-    try:
-        import yaml
-
-        with open(config_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        return bool(cfg.get("app", {}).get("delete_permanently", False))
-    except Exception:
-        return False
-
-
-def _trash_auto_delete_config() -> tuple[bool, int]:
-    """Read the same ``trash_auto_delete_*`` knobs the books cleanup
-    consults. Articles share one switch with books because the user
-    sets it once for the whole trash."""
-    base_dir = Path(__file__).resolve().parent.parent.parent
-    config_path = base_dir / "config" / "app.yaml"
-    if not config_path.exists():
-        return False, 30
-    try:
-        import yaml
-
-        with open(config_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-        app = cfg.get("app", {})
-        return bool(app.get("trash_auto_delete_enabled", False)), int(
-            app.get("trash_auto_delete_days", 30)
-        )
-    except Exception:
-        return False, 30
-
-
 def cleanup_expired_article_trash() -> int:
     """Permanently delete articles older than the configured trash-
     auto-delete window. Mirrors ``books.cleanup_expired_trash``;
     invoked from the FastAPI lifespan startup hook."""
-    enabled, days = _trash_auto_delete_config()
+    enabled, days = get_trash_auto_delete_config()
     if not enabled or days <= 0:
         return 0
     cutoff = datetime.now(UTC) - timedelta(days=days)
@@ -567,7 +527,7 @@ def delete_article(
     if not article:
         raise HTTPException(status_code=404, detail="Article not found")
 
-    if _is_permanent_delete():
+    if is_permanent_delete():
         asset_dir = get_upload_dir() / "articles" / article_id
         if asset_dir.exists():
             try:
