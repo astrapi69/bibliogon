@@ -18,7 +18,7 @@ from pathlib import Path
 import pytest
 import yaml
 
-from app import main as main_module
+from app import config_loader as main_module
 
 
 @pytest.fixture
@@ -111,7 +111,7 @@ def test_deprecation_warning_when_secret_in_project_only(
     → WARNING logged with file path + migration hint."""
     _write(project_yaml, {"ai": {"api_key": "sk-leaked-into-project"}})
     # Override file does NOT exist; env-var unset (fixture clears it).
-    with caplog.at_level(logging.WARNING, logger="app.main"):
+    with caplog.at_level(logging.WARNING, logger="app.config_loader"):
         triggered = main_module._has_project_secret_without_override()
     assert triggered is True
 
