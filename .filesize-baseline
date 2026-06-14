@@ -25,7 +25,6 @@ plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 # --- Frontend: Editoren / Komponenten ---
 frontend/src/components/BookMetadataEditor.tsx
 frontend/src/components/Editor.tsx
-frontend/src/storage/dexie-storage.ts
 frontend/src/components/import-wizard/steps/PreviewPanel.tsx
 frontend/src/components/articles/ConvertToBookWizard.tsx
 frontend/src/components/ComicBookEditor.tsx
