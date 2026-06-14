@@ -49,3 +49,14 @@ export class ApiError extends Error {
     this.detailBody = detailBody;
   }
 }
+
+/** Thrown by `api.chapters.update` when a newer save for the same
+ *  chapter superseded the in-flight request. Consumers should treat
+ *  this as a no-op, not an error.
+ */
+export class SaveAbortedError extends Error {
+  constructor() {
+    super("Save superseded by a newer save for the same chapter");
+    this.name = "SaveAbortedError";
+  }
+}

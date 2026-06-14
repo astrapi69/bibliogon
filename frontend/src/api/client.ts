@@ -1,4 +1,4 @@
-import { ApiError } from "./errors";
+import { ApiError, SaveAbortedError } from "./errors";
 import {
   BASE,
   guardedFetch,
@@ -7,9 +7,11 @@ import {
   _filenameFromContentDisposition,
 } from "./http";
 
-// `guardedFetch` lives in ./http (Batch 2 split). Re-exported so existing
-// `import { guardedFetch } from "../api/client"` call sites keep working.
+// `guardedFetch` lives in ./http and `SaveAbortedError` in ./errors (Batch 2
+// split). Re-exported so existing `import { guardedFetch / SaveAbortedError }
+// from "../api/client"` call sites keep working.
 export { guardedFetch };
+export { SaveAbortedError };
 
 // --- Types ---
 
@@ -1568,18 +1570,6 @@ export interface BookPublishingStateUpdatePayload {
   last_kdp_upload_at?: string | null;
 }
 
-// --- ApiError with context ---
-
-/** Thrown by `api.chapters.update` when a newer save for the same
- *  chapter superseded the in-flight request. Consumers should treat
- *  this as a no-op, not an error.
- */
-export class SaveAbortedError extends Error {
-  constructor() {
-    super("Save superseded by a newer save for the same chapter");
-    this.name = "SaveAbortedError";
-  }
-}
 
 // `ApiError` moved to ./errors to break the api/client <-> help/offlineHelp
 // circular dependency (#114). Re-exported here so existing
