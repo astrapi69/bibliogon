@@ -208,6 +208,7 @@ coordinates handoffs and resolves conflicts with reality.
 
 ## See Also
 
+- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
 - `.filesize-baseline` - Principle 5, god-file tracking
