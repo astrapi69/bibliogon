@@ -55,6 +55,7 @@ from app.routers import (
     ssh_keys as ssh_keys_router,
 )
 from app.routers.websocket import router as ws_router
+from app.routes_misc import router as misc_router
 
 
 def register_routers(app: FastAPI) -> None:
@@ -113,3 +114,4 @@ def register_routers(app: FastAPI) -> None:
     app.include_router(ssh_keys_router.router, prefix="/api")
     app.include_router(ai_router, prefix="/api")
     app.include_router(ws_router, prefix="/api")
+    app.include_router(misc_router, prefix="/api")
