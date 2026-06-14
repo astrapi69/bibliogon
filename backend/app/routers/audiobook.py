@@ -15,7 +15,6 @@ The actual TTS / generation code stays in the plugin and is gated by
 the license check on ``export_async`` and friends.
 """
 
-import json
 import logging
 import tempfile
 import zipfile
@@ -30,9 +29,17 @@ from ruamel.yaml import YAMLError as RuamelYAMLError
 from sqlalchemy.orm import Session
 
 from app import credential_store
-from app.database import SessionLocal, get_db
+from app.database import get_db
 from app.models import AudioVoice, Book
 from app.paths import get_upload_dir
+from app.services.audiobook_skip_types import (
+    resolve_book_skip_types,
+)
+from app.services.google_tts_setup import (
+    _seeding_status,
+    push_google_creds_to_engine,
+    seed_google_voices_sync,
+)
 from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 logger = logging.getLogger(__name__)
@@ -45,49 +52,6 @@ router = APIRouter(tags=["audiobook"])
 # the change persists across restarts.
 AUDIOBOOK_CONFIG_PATH = Path("config/plugins/audiobook.yaml")
 ELEVENLABS_USER_ENDPOINT = "https://api.elevenlabs.io/v1/user"
-
-
-# Mirror of the audiobook generator's built-in SKIP_TYPES default. Used
-# only as a fallback when ``Book.audiobook_skip_chapter_types`` is unset
-# or empty so the dry-run estimate stays sensible for legacy books that
-# never went through the per-book migration. Marketing back-matter
-# (also_by_author, excerpt, call_to_action) is skipped here as well so
-# the dry-run cost estimate matches the real export.
-DEFAULT_AUDIOBOOK_SKIP_TYPES: set[str] = {
-    "toc",
-    "imprint",
-    "index",
-    "bibliography",
-    "endnotes",
-    "also_by_author",
-    "excerpt",
-    "call_to_action",
-}
-
-
-def _resolve_book_skip_types(book: Book) -> set[str]:
-    """Return the lowercased skip set for one book.
-
-    Decodes the JSON-encoded ``Book.audiobook_skip_chapter_types`` Text
-    column and falls back to ``DEFAULT_AUDIOBOOK_SKIP_TYPES`` when the
-    column is null, empty, or malformed. Always returns a set so the
-    callers can use ``in`` checks.
-    """
-    raw = getattr(book, "audiobook_skip_chapter_types", None)
-    if not raw:
-        return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    if isinstance(raw, list):
-        decoded = [str(v).strip().lower() for v in raw if str(v).strip()]
-        return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    if isinstance(raw, str):
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-        if isinstance(parsed, list):
-            decoded = [str(v).strip().lower() for v in parsed if str(v).strip()]
-            return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
 
 
 def _load_yaml_config() -> dict[str, Any]:
@@ -280,64 +244,6 @@ def delete_elevenlabs_config() -> None:
 
 # --- Google Cloud TTS credentials (encrypted, Service Account JSON) ---
 
-# In-memory seeding status so the frontend can poll until voices are loaded.
-_seeding_status: dict[str, Any] = {}
-
-
-def _push_google_creds_to_engine(path: str) -> None:
-    """Best-effort: push the credentials path into the live engine module."""
-    try:
-        from bibliogon_audiobook.tts_engine import set_google_cloud_credentials_path
-    except ImportError:
-        return
-    set_google_cloud_credentials_path(path)
-
-
-def _seed_google_voices_sync(credentials_path: Path) -> None:
-    """Background: load all Google Cloud TTS voices into the DB.
-
-    Runs in a thread via BackgroundTasks. Uses its own DB session so
-    the request that triggered it is not blocked.
-    """
-    _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
-    db = SessionLocal()
-    try:
-        from manuscripta.audiobook.tts import create_adapter
-
-        adapter = create_adapter(
-            "google-cloud-tts",
-            credentials_path=str(credentials_path),
-            voice_id="placeholder",
-            language="en-US",
-        )
-        voices = adapter.list_voices()
-
-        db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
-        for v in voices:
-            db.add(
-                AudioVoice(
-                    engine=v.engine,
-                    language=v.language,
-                    voice_id=v.voice_id,
-                    display_name=v.display_name,
-                    gender=v.gender,
-                    quality=getattr(v, "quality", "standard"),
-                )
-            )
-        db.commit()
-        _seeding_status["google-cloud-tts"] = {"done": True, "error": None, "count": len(voices)}
-        logger.info("Seeded %d Google Cloud TTS voices", len(voices))
-    except Exception as e:
-        db.rollback()
-        logger.error("Google Cloud TTS voice seeding failed: %s", e, exc_info=True)
-        _seeding_status["google-cloud-tts"] = {"done": True, "error": str(e), "count": 0}
-    finally:
-        db.close()
-        # Clean up the temp credentials file
-        if credentials_path.exists():
-            credentials_path.unlink(missing_ok=True)
-
-
 MAX_CREDENTIALS_SIZE = 16 * 1024  # 16 KB
 
 
@@ -370,11 +276,11 @@ async def upload_google_credentials(
 
     # Push decrypted credentials into the engine for immediate use
     tmp_path = credential_store.load_to_tempfile()
-    _push_google_creds_to_engine(str(tmp_path))
+    push_google_creds_to_engine(str(tmp_path))
 
     # Seed voices in the background (the temp file is cleaned up inside)
     _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
-    background_tasks.add_task(_seed_google_voices_sync, tmp_path)
+    background_tasks.add_task(seed_google_voices_sync, tmp_path)
 
     return {
         "configured": True,
@@ -430,7 +336,7 @@ def test_google_credentials() -> dict[str, Any]:
 def delete_google_credentials(db: Session = Depends(get_db)) -> None:
     """Securely delete the stored credentials and all Google voices."""
     credential_store.secure_delete()
-    _push_google_creds_to_engine("")
+    push_google_creds_to_engine("")
     db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
     db.commit()
     _seeding_status.pop("google-cloud-tts", None)
@@ -469,7 +375,7 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     # Falls back to the audiobook generator's built-in SKIP_TYPES so the
     # dry-run still does something sensible for books that have not been
     # touched since the migration.
-    skip_types = _resolve_book_skip_types(book)
+    skip_types = resolve_book_skip_types(book)
     sample_text = ""
     for ch in chapters:
         if (ch.chapter_type or "").lower() in skip_types:
