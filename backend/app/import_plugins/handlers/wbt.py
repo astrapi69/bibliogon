@@ -20,21 +20,26 @@ Accepted inputs:
 
 from __future__ import annotations
 
-import hashlib
-import shutil
 import zipfile
 from pathlib import Path
 
 from sqlalchemy.orm import Session
 
 from app.database import SessionLocal
+from app.import_plugins.handlers.wbt_extraction_cache import (
+    _extracted_root,
+    _folder_signature,
+    _sha256_of_file,
+)
+from app.import_plugins.handlers.wbt_preview import (
+    _detected_assets,
+    _detected_chapters,
+)
 from app.import_plugins.protocol import (
-    DetectedAsset,
-    DetectedChapter,
     DetectedProject,
 )
 from app.models import Asset, Book, Chapter
-from app.services.backup.archive_utils import find_project_root, safe_extractall
+from app.services.backup.archive_utils import find_project_root
 from app.services.backup.project_import import _import_project_root
 
 _WBT_MARKER = "config/metadata.yaml"
@@ -394,72 +399,6 @@ def _maybe_adopt_git(
     )
 
 
-def _sha256_of_file(path: Path) -> str:
-    h = hashlib.sha256()
-    with path.open("rb") as f:
-        for chunk in iter(lambda: f.read(65536), b""):
-            h.update(chunk)
-    return h.hexdigest()
-
-
-def _folder_signature(project_root: Path) -> str:
-    """Stable identifier for a directory WBT project.
-
-    Walks the manuscript directory for relative path names (not content)
-    so re-imports of the same layout - even after in-place chapter
-    edits - collide for duplicate detection. Matches the same semantics
-    as the markdown-folder signature.
-    """
-    h = hashlib.sha256()
-    manuscript = project_root / "manuscript"
-    if manuscript.is_dir():
-        for p in sorted(manuscript.rglob("*")):
-            if p.is_file():
-                h.update(str(p.relative_to(project_root)).encode("utf-8"))
-                h.update(b"\0")
-    h.update(project_root.name.encode("utf-8"))
-    return f"signature:{h.hexdigest()}"
-
-
-def _extracted_root(zip_path: Path) -> Path:
-    """Extract the ZIP to an out-of-payload directory and return the
-    project root.
-
-    Cache key is the ZIP's SHA-256 short prefix so two different
-    archives with the same filename produce different targets - a
-    previous iteration keyed on filename stem, which made the test
-    suite see stale extraction data when the same zip name was reused
-    across tests. Keeping the extraction out of the orchestrator's
-    ``payload/`` directory avoids ``_resolve_staged`` seeing both the
-    ZIP and the extracted dir and re-dispatching to the markdown-folder
-    handler on execute. Staging GC cleans up the ``temp_ref`` tree on
-    TTL or on execute success.
-    """
-    digest = _sha256_of_file(zip_path)[:16]
-    target = zip_path.parent.parent / "wbt-extracted" / digest
-    # Sentinel guards against the "partial extraction" hazard: the
-    # previous version checked ``target.is_dir()`` only, so if a
-    # prior detect call crashed between ``mkdir`` and the end of
-    # ``extractall`` (OS signal, disk full, Ctrl+C), the dir existed
-    # with a partial tree and subsequent detects reused it silently.
-    # Symptom in the wild: a real repo imported with missing CSS,
-    # missing chapters, or wrong metadata, with no error surfaced.
-    # Now we write ``.extraction-complete`` after extractall returns
-    # and refuse to reuse the cache without it.
-    sentinel = target / ".extraction-complete"
-    if not sentinel.exists():
-        if target.exists():
-            shutil.rmtree(target, ignore_errors=True)
-        target.mkdir(parents=True, exist_ok=True)
-        with zipfile.ZipFile(zip_path, "r") as zf:
-            safe_extractall(zf, target)
-        sentinel.write_text("ok", encoding="utf-8")
-    root = find_project_root(target)
-    if root is None:
-        raise RuntimeError("Extracted ZIP has no WBT project root")
-    return root
-
-
 def _read_metadata(project_root: Path) -> dict:
     """Parse metadata.yaml into the full DetectedProject field set.
 
@@ -552,106 +491,6 @@ def _parse_keywords(raw: str | None) -> list[str] | None:
     if isinstance(parsed, list):
         return [str(k) for k in parsed]
     return [str(parsed)]
-
-
-def _detected_chapters(project_root: Path) -> list[DetectedChapter]:
-    manuscript = project_root / "manuscript"
-    if not manuscript.is_dir():
-        return []
-    md_files: list[Path] = []
-    for folder in ("chapters", "front-matter", "back-matter"):
-        sub = manuscript / folder
-        if sub.is_dir():
-            md_files.extend(sorted(sub.glob("*.md")))
-    # Fallback: flat manuscript/*.md for authors who skipped the
-    # chapter subdir convention.
-    if not md_files:
-        md_files = sorted(manuscript.glob("*.md"))
-    out: list[DetectedChapter] = []
-    for idx, path in enumerate(md_files):
-        try:
-            content = path.read_text(encoding="utf-8")
-        except (OSError, UnicodeDecodeError):
-            content = ""
-        out.append(
-            DetectedChapter(
-                title=_chapter_title(content, path.stem),
-                position=idx,
-                word_count=len(content.split()),
-                content_preview=content[:200],
-            )
-        )
-    return out
-
-
-def _chapter_title(content: str, fallback: str) -> str:
-    for line in content.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("# ") and not stripped.startswith("## "):
-            return stripped[2:].strip()
-    return fallback.replace("-", " ").strip().title() or "Untitled"
-
-
-def _detected_assets(project_root: Path) -> list[DetectedAsset]:
-    out: list[DetectedAsset] = []
-    assets_dir = project_root / "assets"
-    if not assets_dir.is_dir():
-        return out
-    for path in sorted(assets_dir.rglob("*")):
-        if not path.is_file():
-            continue
-        purpose = _purpose_from_path(path.relative_to(assets_dir))
-        try:
-            size = path.stat().st_size
-        except OSError:
-            size = 0
-        out.append(
-            DetectedAsset(
-                filename=path.name,
-                path=str(path.relative_to(project_root)),
-                size_bytes=size,
-                mime_type=_guess_mime(path),
-                purpose=purpose,
-            )
-        )
-    return out
-
-
-def _purpose_from_path(rel_path: Path) -> str:
-    parts = [p.lower() for p in rel_path.parts]
-    if not parts:
-        return "other"
-    first = parts[0]
-    if first in {"cover", "covers", "back-cover"}:
-        return "cover"
-    if first in {"author", "authors", "about-author"}:
-        return "author-asset"
-    if first in {"figures", "images", "img"}:
-        return "figure"
-    if first == "css" or rel_path.suffix.lower() == ".css":
-        return "css"
-    if first == "fonts" or rel_path.suffix.lower() in {".ttf", ".otf", ".woff", ".woff2"}:
-        return "font"
-    return "other"
-
-
-def _guess_mime(path: Path) -> str:
-    suffix = path.suffix.lower()
-    if suffix == ".png":
-        return "image/png"
-    if suffix in {".jpg", ".jpeg"}:
-        return "image/jpeg"
-    if suffix == ".webp":
-        return "image/webp"
-    if suffix == ".gif":
-        return "image/gif"
-    if suffix == ".svg":
-        return "image/svg+xml"
-    if suffix == ".css":
-        return "text/css"
-    if suffix in {".md", ".markdown"}:
-        return "text/markdown"
-    return "application/octet-stream"
 
 
 def _hard_delete_book(session: Session, book_id: str) -> None:

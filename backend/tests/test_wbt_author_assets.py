@@ -14,7 +14,8 @@ import zipfile
 from pathlib import Path
 
 from app.database import Base, SessionLocal, engine
-from app.import_plugins.handlers.wbt import WbtImportHandler, _purpose_from_path
+from app.import_plugins.handlers.wbt import WbtImportHandler
+from app.import_plugins.handlers.wbt_preview import _purpose_from_path
 from app.models import Asset
 from app.services.backup.asset_utils import _classify_asset_type
 
