@@ -35,6 +35,7 @@ interface Props {
 export default function ArticleCard({ article, onClick, onDelete, onDeletePermanent }: Props) {
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [coverFailed, setCoverFailed] = useState(false);
     // Prefer the canonical "first published anywhere" date for
     // imported articles; fall back to ``updated_at`` for native
     // articles that have no publications yet. See lessons-learned:
@@ -59,14 +60,12 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
             }}
         >
             <div className={styles.coverImage}>
-                {article.featured_image_url ? (
+                {article.featured_image_url && !coverFailed ? (
                     <img
                         src={article.featured_image_url}
                         alt={`${article.title} cover`}
                         className={styles.coverImg}
-                        onError={(e) => {
-                            (e.target as HTMLImageElement).style.display = "none";
-                        }}
+                        onError={() => setCoverFailed(true)}
                     />
                 ) : (
                     <CoverPlaceholder

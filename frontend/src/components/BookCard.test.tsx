@@ -125,4 +125,22 @@ describe("BookCard", () => {
     render(<BookCard book={makeBook()} onClick={onClick} onDelete={onDelete} />)
     expect(screen.getByTestId("book-card-menu-book-1")).toBeTruthy()
   })
+
+  it("falls back to the placeholder when the cover fails to load (regression #156)", () => {
+    render(
+      <BookCard
+        book={makeBook({cover_image: "uploads/book-1/cover/broken.jpg"})}
+        onClick={onClick}
+        onDelete={onDelete}
+      />,
+    )
+    const card = screen.getByTestId("book-card-book-1")
+    const img = card.querySelector("img")
+    expect(img).toBeTruthy()
+    fireEvent.error(img!)
+    // The broken-image element is removed and the deterministic
+    // placeholder takes its place (no broken-image icon, no empty box).
+    expect(screen.getByTestId("book-card-placeholder-book-1")).toBeTruthy()
+    expect(card.querySelector("img")).toBeNull()
+  })
 })

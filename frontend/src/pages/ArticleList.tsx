@@ -1466,6 +1466,7 @@ function ArticleRow({
 }) {
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [coverFailed, setCoverFailed] = useState(false);
     // Prefer original_published_at (computed server-side as the
     // earliest Publication.published_at) over updated_at so imported
     // articles show their canonical Medium publish date instead of
@@ -1508,14 +1509,12 @@ function ArticleRow({
             ) : null}
             <div className={layout.gridCellCover}>
                 <div className={layout.coverThumb}>
-                    {article.featured_image_url ? (
+                    {article.featured_image_url && !coverFailed ? (
                         <img
                             src={article.featured_image_url}
                             alt={`${article.title} cover`}
                             className={layout.coverThumbImg}
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                            }}
+                            onError={() => setCoverFailed(true)}
                         />
                     ) : (
                         <CoverPlaceholder title={article.title} compact />

@@ -33,6 +33,7 @@ export default function BookCard({
   const { t, lang } = useI18n();
   const [menuOpen, setMenuOpen] = useState(false);
   const [offlineAvailable, setOfflineAvailable] = useState(false);
+  const [coverFailed, setCoverFailed] = useState(false);
   const updated = formatLocaleDate(book.updated_at, lang);
 
   // Cloud badge for offline-available books (mobile-sync P3-C3). On the
@@ -67,14 +68,12 @@ export default function BookCard({
         if (!menuOpen) onClick();
       }}
     >
-      {coverUrl ? (
+      {coverUrl && !coverFailed ? (
         <img
           src={coverUrl}
           alt={`${book.title} cover`}
           className={styles.coverImage}
-          onError={(e) => {
-            (e.target as HTMLImageElement).style.display = "none";
-          }}
+          onError={() => setCoverFailed(true)}
         />
       ) : (
         <div className={styles.coverImage}>
