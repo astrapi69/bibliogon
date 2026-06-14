@@ -61,6 +61,7 @@ import {useI18n} from "../../hooks/useI18n"
 import {RadixSelect} from "../RadixSelect"
 import {notify} from "../../utils/notify"
 import {computeAuthorSuggestions} from "../../utils/computeAuthorSuggestions"
+import {useAuthorProfile, profileDisplayNames} from "../../hooks/useAuthorProfile"
 import AuthorSelectInput from "../AuthorSelectInput"
 import WizardShell, {WizardNav} from "../wizards/WizardShell"
 
@@ -326,13 +327,28 @@ export default function ConvertToBookWizard({
         return trimmed[0]
     }, [selectedArticles])
 
-    // Bug 8 Phase 2: union of article-authors + global Authors-DB
-    // names, deduped + ordered (article authors first). Powers the
-    // ``<datalist>`` attached to the Step-2 author input.
-    const authorSuggestions = useMemo(
-        () => computeAuthorSuggestions(selectedArticles, globalAuthors),
-        [selectedArticles, globalAuthors],
-    )
+    // Profile identities (real name + pen names) so the Step-2 author
+    // field offers the same pseudonym dropdown as the other author
+    // surfaces (CreateBookForm / BookMetadataEditor / CreateArticlePage).
+    const authorProfile = useAuthorProfile()
+    // Union of profile pen names + article-authors + global Authors-DB
+    // names, deduped (profile names first, then article authors). Powers
+    // both the pseudonym <select> (profileChoices) and the datalist.
+    const authorSuggestions = useMemo(() => {
+        const seen = new Set<string>()
+        const out: string[] = []
+        for (const c of [
+            ...profileDisplayNames(authorProfile),
+            ...computeAuthorSuggestions(selectedArticles, globalAuthors),
+        ]) {
+            const trimmed = c.trim()
+            if (trimmed && !seen.has(trimmed)) {
+                seen.add(trimmed)
+                out.push(trimmed)
+            }
+        }
+        return out
+    }, [authorProfile, selectedArticles, globalAuthors])
 
     // Bug 8 Phase 2: pre-fill author state when (a) the wizard
     // opens, OR (b) the selection narrows such that all remaining
@@ -789,6 +805,11 @@ export default function ConvertToBookWizard({
                     value={author}
                     onChange={setAuthor}
                     suggestions={authorSuggestions}
+                    profileChoices={profileDisplayNames(authorProfile)}
+                    customOptionLabel={t(
+                        "ui.author_select.custom_option",
+                        "Anderer Name …",
+                    )}
                     showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
                     addToAuthorsDb={addToAuthorsDb}
                     onAddToAuthorsDbChange={setAddToAuthorsDb}

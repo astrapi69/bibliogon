@@ -770,6 +770,11 @@ export default function ArticleEditor() {
                             void persistMeta({ author: next });
                         }}
                         suggestions={authorSuggestions}
+                        profileChoices={profileDisplayNames(authorProfile)}
+                        customOptionLabel={t(
+                            "ui.author_select.custom_option",
+                            "Anderer Name …",
+                        )}
                         showAddToAuthorsCheckbox={false}
                         addToAuthorsDb={false}
                         onAddToAuthorsDbChange={() => {}}
