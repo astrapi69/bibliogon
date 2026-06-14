@@ -36,6 +36,3 @@ frontend/src/components/ChapterSidebar.tsx
 # barrel), but the #210 merge (offline-article-assets, branched pre-#204)
 # reverted it back to the monolith. Re-split is a tracked follow-up.
 frontend/src/storage/dexie-storage.ts
-
-# --- Frontend: Seiten ---
-frontend/src/pages/BookEditor.tsx
