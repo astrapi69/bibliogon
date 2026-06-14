@@ -621,6 +621,10 @@ export interface ArticleUpdate {
     status?: ArticleStatus;
     canonical_url?: string | null;
     featured_image_url?: string | null;
+    /** Dexie-only (#157): set by the offline upload + Medium-import CDN
+     *  cache to reference the article's image bytes in the offline
+     *  `articleAssets` table. Not written in api mode. */
+    featured_image_asset_id?: string | null;
     excerpt?: string | null;
     tags?: string[];
     topic?: string | null;
