@@ -31,6 +31,12 @@ frontend/src/components/PageCanvas.tsx
 frontend/src/components/CommentsAdminSection.tsx
 frontend/src/components/ChapterSidebar.tsx
 
+# --- Frontend: Storage seam ---
+# Re-grandfathered: Batch 3 (#204) split this into storage/dexie/* (7-line
+# barrel), but the #210 merge (offline-article-assets, branched pre-#204)
+# reverted it back to the monolith. Re-split is a tracked follow-up.
+frontend/src/storage/dexie-storage.ts
+
 # --- Frontend: Seiten ---
 frontend/src/pages/ArticleEditor.tsx
 frontend/src/pages/ArticleList.tsx

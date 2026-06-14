@@ -158,6 +158,12 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
                 await base.articles.delete(id);
                 await enqueue("article", "delete", id, null, null);
             },
+            listTrash: base.articles.listTrash,
+            restore: base.articles.restore,
+            permanentDelete: base.articles.permanentDelete,
+            emptyTrash: base.articles.emptyTrash,
+            bulkRestore: base.articles.bulkRestore,
+            bulkDelete: base.articles.bulkDelete,
         },
         settings: base.settings,
         i18n: base.i18n,

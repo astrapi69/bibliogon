@@ -267,7 +267,7 @@ export default function ArticleList() {
             .filter((id) => selection.isSelected(id));
         if (ordered.length < 2 || ordered.length > BULK_LIMIT_HARD) return;
         try {
-            const result = await api.articles.bulkDelete(ordered, permanent);
+            const result = await getStorage().articles.bulkDelete(ordered, permanent);
             // Optimistic refresh: drop the deleted IDs from the
             // visible list right away rather than re-fetching the
             // whole collection.
@@ -301,7 +301,7 @@ export default function ArticleList() {
                             notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
                             return;
                         }
-                        const undoResult = await api.articles.bulkRestore(undone);
+                        const undoResult = await getStorage().articles.bulkRestore(undone);
                         const fresh = await getStorage().articles.list();
                         setArticles(fresh);
                         void loadTrash();
@@ -347,7 +347,7 @@ export default function ArticleList() {
         const { ids } = bulkDeleteDialog;
         setBulkDeleteDialog(null);
         try {
-            const result = await api.articles.bulkDelete(ids, true);
+            const result = await getStorage().articles.bulkDelete(ids, true);
             setArticles((prev) => prev.filter((a) => !ids.includes(a.id)));
             selection.clear();
             notify.success(
@@ -400,7 +400,7 @@ export default function ArticleList() {
     const loadTrash = async () => {
         if (offline) return;
         try {
-            const rows = await api.articles.listTrash();
+            const rows = await getStorage().articles.listTrash();
             setTrash(rows);
         } catch (err) {
             if (err instanceof ApiError) {
@@ -472,7 +472,7 @@ export default function ArticleList() {
         try {
             await getStorage().articles.delete(article.id);
             try {
-                await api.articles.permanentDelete(article.id);
+                await getStorage().articles.permanentDelete(article.id);
             } catch {
                 /* already in trash or already gone */
             }
@@ -499,7 +499,7 @@ export default function ArticleList() {
         // 2026-05-14 user report surfaced.
         setTrash((prev) => prev.filter((a) => a.id !== article.id));
         try {
-            const restored = await api.articles.restore(article.id);
+            const restored = await getStorage().articles.restore(article.id);
             setArticles((prev) => {
                 // Defensive: if the article was already in articles
                 // (extremely rare race), do not duplicate it.
@@ -530,7 +530,7 @@ export default function ArticleList() {
         );
         if (!ok) return;
         try {
-            await api.articles.permanentDelete(article.id);
+            await getStorage().articles.permanentDelete(article.id);
             setTrash((prev) => prev.filter((a) => a.id !== article.id));
             // Defensive: if the row was soft-deleted in another tab and
             // its id was still in the live-list selection here, drop it
@@ -556,7 +556,7 @@ export default function ArticleList() {
         );
         if (!ok) return;
         try {
-            await api.articles.emptyTrash();
+            await getStorage().articles.emptyTrash();
             setTrash([]);
         } catch (err) {
             if (err instanceof ApiError) {

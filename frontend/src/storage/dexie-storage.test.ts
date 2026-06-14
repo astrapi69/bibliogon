@@ -305,7 +305,7 @@ describe("DexieStorage — article assets (#157)", () => {
         expect(await dexieStorage.articleAssets.getBlob(keep)).not.toBeNull();
     });
 
-    it("deleting the article cascades to its cached images", async () => {
+    it("permanent-deleting the article cascades to its cached images (soft-delete keeps them for restore)", async () => {
         const article = await dexieStorage.articles.create({ title: "With image" });
         const assetId = await dexieStorage.articleAssets.store(
             article.id,
@@ -314,7 +314,13 @@ describe("DexieStorage — article assets (#157)", () => {
         );
         expect(await dexieStorage.articleAssets.getBlob(assetId)).not.toBeNull();
 
+        // Soft-delete (trash) keeps the cached image bytes so a restore
+        // brings the article back whole.
         await dexieStorage.articles.delete(article.id);
+        expect(await dexieStorage.articleAssets.getBlob(assetId)).not.toBeNull();
+
+        // Permanent delete (from trash) drops the cached image bytes (#157).
+        await dexieStorage.articles.permanentDelete(article.id);
         expect(await dexieStorage.articleAssets.getBlob(assetId)).toBeNull();
     });
 });
@@ -755,4 +761,48 @@ describe("DexieStorage — concurrent read-modify-write (serializedUpdate)", () 
         expect(gotB.title).toBe("B2");
         expect(gotB.subtitle).toBe("B-sub");
     });
+});
+
+describe("DexieStorage — articles trash + bulk (offline seam, Bug fix)", () => {
+  it("soft bulkDelete moves to trash; list excludes, listTrash includes; bulkRestore brings back", async () => {
+    const a1 = await dexieStorage.articles.create({ title: "A1" });
+    const a2 = await dexieStorage.articles.create({ title: "A2" });
+    const a3 = await dexieStorage.articles.create({ title: "A3" });
+    expect(await dexieStorage.articles.list()).toHaveLength(3);
+
+    const res = await dexieStorage.articles.bulkDelete([a1.id, a2.id], false);
+    expect(res.deleted_count).toBe(2);
+    expect((await dexieStorage.articles.list()).map((a) => a.id)).toEqual([
+      a3.id,
+    ]);
+    const trashIds = (await dexieStorage.articles.listTrash()).map((a) => a.id);
+    expect(trashIds.sort()).toEqual([a1.id, a2.id].sort());
+
+    const restored = await dexieStorage.articles.bulkRestore([a1.id, a2.id]);
+    expect(restored.restored_count).toBe(2);
+    expect(await dexieStorage.articles.list()).toHaveLength(3);
+    expect(await dexieStorage.articles.listTrash()).toHaveLength(0);
+  });
+
+  it("permanent bulkDelete hard-deletes (not recoverable)", async () => {
+    const a1 = await dexieStorage.articles.create({ title: "A1" });
+    await dexieStorage.articles.bulkDelete([a1.id], true);
+    expect(await dexieStorage.articles.list()).toHaveLength(0);
+    expect(await dexieStorage.articles.listTrash()).toHaveLength(0);
+  });
+
+  it("single delete soft-deletes; restore + permanentDelete + emptyTrash work", async () => {
+    const a1 = await dexieStorage.articles.create({ title: "A1" });
+    await dexieStorage.articles.delete(a1.id);
+    expect(await dexieStorage.articles.list()).toHaveLength(0);
+    expect(await dexieStorage.articles.listTrash()).toHaveLength(1);
+
+    const restored = await dexieStorage.articles.restore(a1.id);
+    expect(restored.id).toBe(a1.id);
+    expect(await dexieStorage.articles.list()).toHaveLength(1);
+
+    await dexieStorage.articles.delete(a1.id);
+    await dexieStorage.articles.emptyTrash();
+    expect(await dexieStorage.articles.listTrash()).toHaveLength(0);
+  });
 });

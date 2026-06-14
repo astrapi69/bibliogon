@@ -89,6 +89,13 @@ export type OfflineBookRow = Book & {
     deleted_at?: string | null;
 };
 
+/** An article row carries a `deleted_at` for the soft-delete / trash
+ *  lifecycle (mirrors {@link OfflineBookRow}); `deleted_at` null/absent
+ *  means an active (non-trashed) article. */
+export type OfflineArticleRow = Article & {
+    deleted_at?: string | null;
+};
+
 /** Minimal shape for the not-yet-method-backed graph tables: a primary
  *  `id` plus arbitrary columns. C3 populates these during download. */
 type GraphRow = { id: string } & Record<string, unknown>;
@@ -176,7 +183,7 @@ export interface SyncBaseline {
 class BibliogonOfflineDB extends Dexie {
     books!: Table<OfflineBookRow, string>;
     chapters!: Table<Chapter, string>;
-    articles!: Table<Article, string>;
+    articles!: Table<OfflineArticleRow, string>;
     chapterVersions!: Table<GraphRow, string>;
     pages!: Table<GraphRow, string>;
     comicPanels!: Table<GraphRow, string>;
@@ -785,7 +792,11 @@ export const dexieStorage: IStorageService = {
     articles: {
         list: async (status) => {
             const all = await offlineDb.articles.toArray();
-            const filtered = status ? all.filter((a) => a.status === status) : all;
+            // Exclude soft-deleted (trashed) rows from the main list.
+            const active = all.filter((a) => !a.deleted_at);
+            const filtered = status
+                ? active.filter((a) => a.status === status)
+                : active;
             return filtered.sort((a, b) => b.updated_at.localeCompare(a.updated_at));
         },
 
@@ -816,9 +827,78 @@ export const dexieStorage: IStorageService = {
             }),
 
         delete: async (id) => {
+            // Soft-delete: move to trash (deleted_at set). Cached
+            // featured-image bytes are kept so a restore brings the
+            // article back whole; they drop on permanent delete.
+            await offlineDb.articles.update(id, { deleted_at: nowIso() });
+        },
+
+        listTrash: async () =>
+            (await offlineDb.articles.toArray())
+                .filter((a) => !!a.deleted_at)
+                .sort((a, b) => b.updated_at.localeCompare(a.updated_at)),
+
+        restore: async (id) => {
+            await offlineDb.articles.update(id, { deleted_at: null });
+            const row = await offlineDb.articles.get(id);
+            if (!row) notFound("Article", id);
+            return row;
+        },
+
+        permanentDelete: async (id) => {
             await offlineDb.articles.delete(id);
             // #157: drop the article's cached featured-image bytes too.
             await offlineDb.articleAssets.where("articleId").equals(id).delete();
+        },
+
+        emptyTrash: async () => {
+            const trashed = (await offlineDb.articles.toArray())
+                .filter((a) => !!a.deleted_at)
+                .map((a) => a.id);
+            if (trashed.length) {
+                await offlineDb.articles.bulkDelete(trashed);
+                await offlineDb.articleAssets
+                    .where("articleId")
+                    .anyOf(trashed)
+                    .delete();
+            }
+        },
+
+        bulkDelete: async (ids, permanent) => {
+            if (permanent) {
+                await offlineDb.articles.bulkDelete(ids);
+                await offlineDb.articleAssets
+                    .where("articleId")
+                    .anyOf(ids)
+                    .delete();
+            } else {
+                const ts = nowIso();
+                await Promise.all(
+                    ids.map((id) =>
+                        offlineDb.articles.update(id, { deleted_at: ts }),
+                    ),
+                );
+            }
+            const response: BulkDeleteResponse = {
+                deleted_count: ids.length,
+                skipped_already_trashed: [],
+                failed: [],
+            };
+            return response;
+        },
+
+        bulkRestore: async (ids) => {
+            await Promise.all(
+                ids.map((id) =>
+                    offlineDb.articles.update(id, { deleted_at: null }),
+                ),
+            );
+            const response: BulkRestoreResponse = {
+                restored_count: ids.length,
+                skipped_not_in_trash: [],
+                failed: [],
+            };
+            return response;
         },
     },
 
