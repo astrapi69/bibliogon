@@ -38,6 +38,7 @@ import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContent
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import { notify } from "../utils/notify";
+import { downloadBlob } from "../shared/utils/downloadBlob";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
 import ContentTypeBadge from "../components/articles/ContentTypeBadge";
@@ -199,14 +200,7 @@ export default function ArticleList() {
         if (ordered.length > BULK_LIMIT_HARD) return; // bar already disables, double-guard.
         try {
             const { blob, filename } = await api.articles.bulkExport(ordered, format, mode);
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, filename);
             selection.clear();
         } catch (err) {
             const message =
@@ -228,14 +222,7 @@ export default function ArticleList() {
         if (ordered.length === 0) return;
         try {
             const { blob, filename } = await api.articles.bulkAiTemplate.export(ordered);
-            const url = URL.createObjectURL(blob);
-            const link = document.createElement("a");
-            link.href = url;
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            link.remove();
-            URL.revokeObjectURL(url);
+            downloadBlob(blob, filename);
             notify.success(
                 t(
                     "ui.ai_template.bulk.export_success",
