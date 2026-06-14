@@ -9,7 +9,6 @@ filesystem-isolation rule).
 """
 
 import logging
-import os
 from pathlib import Path
 from typing import Any
 
@@ -17,6 +16,9 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app import config_overlay
+from app.services.plugin_discovery import collect_available_plugins
+from app.services.plugin_license import check_plugin_license, resolve_license_tier
+from app.services.secrets_management import secrets_managed_externally
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/settings", tags=["settings"])
@@ -91,20 +93,6 @@ def _validate_ui_defaults(ui: dict[str, Any]) -> None:
             )
 
 
-def _secrets_managed_externally() -> bool:
-    """True when the user has migrated secrets to the override file
-    OR set the BIBLIOGON_AI_API_KEY env-var. Frontend reads this
-    flag to hide the API-key input; backend uses it to defensively
-    strip the same field from PATCH bodies."""
-    from app.main import _get_user_override_path
-
-    if _get_user_override_path().exists():
-        return True
-    if os.environ.get("BIBLIOGON_AI_API_KEY"):
-        return True
-    return False
-
-
 _base_dir: Path = Path(".")
 _manager: Any = None
 _license_store: Any = None
@@ -141,7 +129,7 @@ def get_app_settings() -> dict[str, Any]:
     PATCH endpoint does NOT round-trip back into ``app.yaml``.
     """
     config = config_overlay.read_app_config_merged()
-    config["_secrets_managed_externally"] = _secrets_managed_externally()
+    config["_secrets_managed_externally"] = secrets_managed_externally()
     return config
 
 
@@ -231,7 +219,7 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
     """
     current = config_overlay.load_app_config_for_edit()
 
-    if _secrets_managed_externally():
+    if secrets_managed_externally():
         for parent_key, child_key in _SECRET_FIELDS:
             section = getattr(body, parent_key, None)
             if isinstance(section, dict) and child_key in section:
@@ -332,15 +320,15 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
     plugins_cfg = app_config.get("plugins", {})
     enabled = set(plugins_cfg.get("enabled", []) or [])
     disabled = set(plugins_cfg.get("disabled", []) or [])
-    available = _collect_available_plugins(_active_plugin_names())
+    available = collect_available_plugins(_active_plugin_names(), _manager, _base_dir)
 
     result = []
     for name in config_overlay.list_merged_plugin_names():
         if name not in available:
             continue
         cfg = config_overlay.read_plugin_config_merged(name)
-        tier = _resolve_license_tier(cfg)
-        has_license = _check_plugin_license(name, tier)
+        tier = resolve_license_tier(cfg)
+        has_license = check_plugin_license(name, tier, _license_store, _license_validator)
         # About-Dialog (2026-05-18): include display_name (i18n dict)
         # + version + description from the canonical plugin config.
         # Empty/missing fields surface as ``None`` / ``{}`` so the
@@ -375,71 +363,6 @@ def list_discovered_plugins() -> list[dict[str, Any]]:
             }
         )
     return result
-
-
-def _collect_available_plugins(active: set[str]) -> set[str]:
-    """Collect all available plugin names from entry points, ZIP installs, and bundled dirs."""
-    try:
-        available = set(_manager.list_available_plugins())
-    except Exception:
-        available = set()
-    available |= active
-
-    from app.routers.plugin_install import get_installed_plugins_dir
-
-    installed_dir = get_installed_plugins_dir()
-    if installed_dir.exists():
-        for d in installed_dir.iterdir():
-            if d.is_dir() and (d / "plugin.yaml").exists():
-                available.add(d.name)
-
-    bundled_dir = _base_dir.parent / "plugins"
-    if bundled_dir.exists():
-        for d in bundled_dir.iterdir():
-            if d.is_dir() and d.name.startswith("bibliogon-plugin-"):
-                plugin_name = d.name.replace("bibliogon-plugin-", "")
-                pkg_dir = d / f"bibliogon_{plugin_name.replace('-', '_')}"
-                if (pkg_dir / "plugin.py").exists():
-                    available.add(plugin_name)
-    return available
-
-
-def _resolve_license_tier(cfg: dict[str, Any]) -> str:
-    """Resolve the license tier from a plugin's merged config dict.
-
-    Explicit ``plugin.license_tier`` (``"core"`` / ``"premium"``)
-    wins; otherwise fall back to ``plugin.license`` (``MIT``,
-    ``Free`` -> ``core``; anything else -> ``premium``).
-    """
-    meta = cfg.get("plugin", {}) if isinstance(cfg.get("plugin"), dict) else {}
-    explicit = meta.get("license_tier", "")
-    if explicit in ("core", "premium"):
-        return str(explicit)
-    license_type = meta.get("license", "MIT")
-    return "premium" if license_type not in ("MIT", "free", "Free") else "core"
-
-
-def _check_plugin_license(name: str, tier: str) -> bool:
-    """Check if a plugin has a valid license (core always True)."""
-    if tier == "core":
-        return True
-    if not _license_store or not _license_validator:
-        return False
-    key = _license_store.get(name) or _license_store.get("*")
-    if not key:
-        return False
-    try:
-        _license_validator.validate_license(key, name)
-        return True
-    except Exception:
-        wildcard = _license_store.get("*")
-        if wildcard:
-            try:
-                _license_validator.validate_license(wildcard, "*")
-                return True
-            except Exception:
-                pass
-    return False
 
 
 class PluginCreate(BaseModel):
