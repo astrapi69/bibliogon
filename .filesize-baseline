@@ -25,7 +25,6 @@ plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 frontend/src/components/BookMetadataEditor.tsx
 frontend/src/components/Editor.tsx
 frontend/src/components/PageCanvas.tsx
-frontend/src/components/ChapterSidebar.tsx
 
 # --- Frontend: Storage seam ---
 # Re-grandfathered: Batch 3 (#204) split this into storage/dexie/* (7-line
