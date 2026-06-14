@@ -25,9 +25,7 @@ def resolve_license_tier(cfg: dict[str, Any]) -> str:
     return "premium" if license_type not in ("MIT", "free", "Free") else "core"
 
 
-def check_plugin_license(
-    name: str, tier: str, license_store: Any, license_validator: Any
-) -> bool:
+def check_plugin_license(name: str, tier: str, license_store: Any, license_validator: Any) -> bool:
     """Check whether a plugin has a valid license (``core`` always True).
 
     Args:
