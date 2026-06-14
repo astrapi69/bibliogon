@@ -46,9 +46,7 @@ merged app config; default 1.0 second between items.
 
 from __future__ import annotations
 
-import asyncio
 import json
-import logging
 from typing import Any, Final
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -56,28 +54,23 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
-from app.ai.pricing import estimate_cost_usd, estimate_tokens
 from app.ai.template_schema import extract_body_text
-from app.database import SessionLocal, get_db
+from app.database import get_db
 from app.job_store import job_store
 from app.models import Article, Book
-from app.routers.article_ai_fill import (
-    _FIELD_CLASSES as _ARTICLE_FIELD_CLASSES,
-)
-from app.routers.article_ai_fill import (
-    _inline_image_count,
-    fill_article_with_ai,
-)
+from app.routers.article_ai_fill import _FIELD_CLASSES as _ARTICLE_FIELD_CLASSES
 from app.routers.book_ai_fill import (
     _FIELD_CLASSES as _BOOK_FIELD_CLASSES,
 )
 from app.routers.book_ai_fill import (
     _aggregate_book_body,
     _build_chapter_input,
-    fill_book_with_ai,
 )
-
-logger = logging.getLogger(__name__)
+from app.services.ai_bulk_fill_estimate import estimate_article_item, estimate_book_item
+from app.services.ai_bulk_fill_jobs import (
+    run_article_bulk_fill_job,
+    run_book_bulk_fill_job,
+)
 
 # Default cap on the number of items per bulk AI-fill request.
 # Configurable at runtime via ``ai.bulk.max_ai_fill`` in
@@ -117,35 +110,6 @@ def _enforce_bulk_ai_fill_cap(id_count: int) -> None:
 
 articles_router = APIRouter(prefix="/articles/bulk-ai-fill", tags=["article-ai-fill"])
 books_router = APIRouter(prefix="/books/bulk-ai-fill", tags=["book-ai-fill"])
-
-
-# ---------------------------------------------------------------------------
-# Output-token heuristics per field-class
-# ---------------------------------------------------------------------------
-
-# Each value is a "reasonable upper bound" on the LLM's output for
-# that class. The estimate is intentionally conservative (lean
-# toward over-estimating cost) so a "you will spend $X" dialog is
-# never a lower bound surprise after the fact.
-
-_ARTICLE_OUTPUT_TOKENS: dict[str, int] = {
-    "seo": 200,
-    "tags": 80,
-    "topic": 30,
-    "excerpt": 100,
-    "image_prompts": 600,  # featured + up-to-5 inline
-}
-
-_BOOK_OUTPUT_TOKENS_NON_CHAPTER: dict[str, int] = {
-    "marketing_copy": 600,
-    "tags": 100,
-    "description_genre": 220,
-    "cover_prompt": 200,
-}
-
-# Chapter-summaries scales with chapter count; ~50 tokens per
-# one-sentence summary plus the keying overhead.
-_BOOK_CHAPTER_SUMMARIES_PER_CHAPTER: Final = 50
 
 
 # ---------------------------------------------------------------------------
@@ -246,107 +210,6 @@ def _validate_book_field_classes(field_classes: list[str]) -> None:
 
 
 # ---------------------------------------------------------------------------
-# Estimate computation
-# ---------------------------------------------------------------------------
-
-
-def _estimate_article_item(
-    article: Article,
-    body_text: str,
-    field_classes: list[str],
-    inline_image_count: int | None,
-    model: str,
-) -> dict[str, Any]:
-    """Build a per-class breakdown for one article."""
-    inline_count = _inline_image_count(article, inline_image_count)
-    per_class: dict[str, dict[str, Any]] = {}
-    total_input = 0
-    total_output = 0
-
-    for class_name in field_classes:
-        spec = _ARTICLE_FIELD_CLASSES[class_name]
-        if spec.needs_inline_count:
-            system, user = spec.builder(article, body_text, inline_count=inline_count)
-        else:
-            system, user = spec.builder(article, body_text)
-        input_tokens = estimate_tokens(system) + estimate_tokens(user)
-        output_tokens = _ARTICLE_OUTPUT_TOKENS.get(class_name, 200)
-        cost = estimate_cost_usd(model, input_tokens, output_tokens)
-        per_class[class_name] = {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost_usd": cost,
-        }
-        total_input += input_tokens
-        total_output += output_tokens
-
-    item_cost = estimate_cost_usd(model, total_input, total_output)
-    return {
-        "id": article.id,
-        "title": article.title,
-        "language": article.language,
-        "field_class_calls": len(field_classes),
-        "per_class": per_class,
-        "estimated_input_tokens": total_input,
-        "estimated_output_tokens": total_output,
-        "estimated_cost_usd": item_cost,
-    }
-
-
-def _estimate_book_item(
-    book: Book,
-    body_text: str,
-    chapters_input: list[dict[str, str]],
-    field_classes: list[str],
-    model: str,
-) -> dict[str, Any]:
-    per_class: dict[str, dict[str, Any]] = {}
-    total_input = 0
-    total_output = 0
-
-    for class_name in field_classes:
-        spec = _BOOK_FIELD_CLASSES[class_name]
-        if spec.is_chapter_summaries:
-            if not chapters_input:
-                # Empty book - the worker skips this class with
-                # a per-class error; here we report zero cost.
-                per_class[class_name] = {
-                    "input_tokens": 0,
-                    "output_tokens": 0,
-                    "cost_usd": None,
-                    "note": "Book has no chapters; class will be skipped",
-                }
-                continue
-            system, user = spec.builder(book, chapters_input)
-            output_tokens = len(chapters_input) * _BOOK_CHAPTER_SUMMARIES_PER_CHAPTER
-        else:
-            system, user = spec.builder(book, body_text)
-            output_tokens = _BOOK_OUTPUT_TOKENS_NON_CHAPTER.get(class_name, 200)
-        input_tokens = estimate_tokens(system) + estimate_tokens(user)
-        cost = estimate_cost_usd(model, input_tokens, output_tokens)
-        per_class[class_name] = {
-            "input_tokens": input_tokens,
-            "output_tokens": output_tokens,
-            "cost_usd": cost,
-        }
-        total_input += input_tokens
-        total_output += output_tokens
-
-    item_cost = estimate_cost_usd(model, total_input, total_output)
-    return {
-        "id": book.id,
-        "title": book.title,
-        "language": book.language,
-        "chapter_count": len(chapters_input),
-        "field_class_calls": len(field_classes),
-        "per_class": per_class,
-        "estimated_input_tokens": total_input,
-        "estimated_output_tokens": total_output,
-        "estimated_cost_usd": item_cost,
-    }
-
-
-# ---------------------------------------------------------------------------
 # Article endpoints
 # ---------------------------------------------------------------------------
 
@@ -372,7 +235,7 @@ def estimate_article_bulk_fill(
 
     for article in articles:
         body_text = extract_body_text(article.content_json)
-        item = _estimate_article_item(
+        item = estimate_article_item(
             article, body_text, request.field_classes, request.inline_image_count, model
         )
         items.append(item)
@@ -415,7 +278,7 @@ async def start_article_bulk_fill(
     rate_limit = _get_rate_limit_seconds()
 
     async def _runner(job_id: str) -> dict[str, Any]:
-        return await _run_article_bulk_fill_job(
+        return await run_article_bulk_fill_job(
             job_id,
             list(request.ids),
             list(request.field_classes),
@@ -490,7 +353,7 @@ def estimate_book_bulk_fill(
     for book in books:
         body_text = _aggregate_book_body(book)
         chapters_input = _build_chapter_input(book)
-        item = _estimate_book_item(book, body_text, chapters_input, request.field_classes, model)
+        item = estimate_book_item(book, body_text, chapters_input, request.field_classes, model)
         items.append(item)
         total_input += item["estimated_input_tokens"]
         total_output += item["estimated_output_tokens"]
@@ -527,7 +390,7 @@ async def start_book_bulk_fill(
     rate_limit = _get_rate_limit_seconds()
 
     async def _runner(job_id: str) -> dict[str, Any]:
-        return await _run_book_bulk_fill_job(
+        return await run_book_bulk_fill_job(
             job_id,
             list(request.ids),
             list(request.field_classes),
@@ -571,254 +434,6 @@ def get_book_bulk_fill_job(job_id: str) -> dict[str, Any]:
         "result": job.result,
         "error": job.error,
     }
-
-
-# ---------------------------------------------------------------------------
-# Job workers
-# ---------------------------------------------------------------------------
-
-
-async def _run_article_bulk_fill_job(
-    job_id: str,
-    ids: list[str],
-    field_classes: list[str],
-    *,
-    force: bool,
-    inline_image_count: int | None,
-    rate_limit_seconds: float,
-) -> dict[str, Any]:
-    """Article bulk-fill worker. Opens a fresh DB session for
-    the duration of the job, processes items in input order,
-    paces between items by ``rate_limit_seconds``."""
-    from app.ai.routes import _get_client
-
-    client = _get_client()
-    items_done: list[dict[str, Any]] = []
-    total_tokens = 0
-    total_cost = 0.0
-    items_updated = 0
-    cost_known = False
-
-    job_store.publish_event(
-        job_id,
-        "start",
-        {
-            "total": len(ids),
-            "field_classes": field_classes,
-            "rate_limit_seconds": rate_limit_seconds,
-        },
-    )
-
-    with SessionLocal() as db:
-        for index, article_id in enumerate(ids):
-            article = (
-                db.query(Article)
-                .filter(Article.id == article_id)
-                .filter(Article.deleted_at.is_(None))
-                .first()
-            )
-            if article is None:
-                job_store.publish_event(
-                    job_id,
-                    "item_skipped",
-                    {"id": article_id, "index": index, "reason": "not-found"},
-                )
-                items_done.append({"id": article_id, "index": index, "skipped": "not-found"})
-                continue
-
-            body_text = extract_body_text(article.content_json)
-            if not body_text:
-                job_store.publish_event(
-                    job_id,
-                    "item_skipped",
-                    {"id": article_id, "index": index, "reason": "no-content"},
-                )
-                items_done.append({"id": article_id, "index": index, "skipped": "no-content"})
-                continue
-
-            job_store.publish_event(
-                job_id,
-                "item_start",
-                {"id": article_id, "index": index, "title": article.title},
-            )
-
-            try:
-                item_result = await fill_article_with_ai(
-                    article,
-                    body_text,
-                    field_classes,
-                    force=force,
-                    inline_image_count=inline_image_count,
-                    client=client,
-                )
-            except Exception as exc:  # noqa: BLE001 - per-item isolation
-                logger.exception("Bulk article fill failed on %s", article_id)
-                db.rollback()
-                job_store.publish_event(
-                    job_id,
-                    "item_error",
-                    {"id": article_id, "index": index, "error": str(exc)},
-                )
-                items_done.append({"id": article_id, "index": index, "error": str(exc)})
-                continue
-
-            if item_result["tokens_used"]:
-                db.add(article)
-                db.commit()
-                db.refresh(article)
-
-            if item_result["updated_fields"]:
-                items_updated += 1
-            total_tokens += item_result["tokens_used"]
-            if item_result["estimated_cost_usd"] is not None:
-                cost_known = True
-                total_cost += item_result["estimated_cost_usd"]
-
-            job_store.publish_event(
-                job_id,
-                "item_done",
-                {
-                    "id": article_id,
-                    "index": index,
-                    "updated_fields": item_result["updated_fields"],
-                    "skipped_fields": item_result["skipped_fields"],
-                    "tokens": item_result["tokens_used"],
-                    "cost_usd": item_result["estimated_cost_usd"],
-                    "field_class_errors": item_result["field_class_errors"],
-                },
-            )
-            items_done.append(item_result)
-
-            if index < len(ids) - 1 and rate_limit_seconds > 0:
-                await asyncio.sleep(rate_limit_seconds)
-
-    summary = {
-        "total_items": len(ids),
-        "items_updated": items_updated,
-        "total_tokens": total_tokens,
-        "total_cost_usd": round(total_cost, 4) if cost_known else None,
-    }
-    job_store.publish_event(job_id, "done", summary)
-    return {"items": items_done, "summary": summary}
-
-
-async def _run_book_bulk_fill_job(
-    job_id: str,
-    ids: list[str],
-    field_classes: list[str],
-    *,
-    force: bool,
-    rate_limit_seconds: float,
-) -> dict[str, Any]:
-    from app.ai.routes import _get_client
-
-    client = _get_client()
-    items_done: list[dict[str, Any]] = []
-    total_tokens = 0
-    total_cost = 0.0
-    items_updated = 0
-    cost_known = False
-
-    job_store.publish_event(
-        job_id,
-        "start",
-        {
-            "total": len(ids),
-            "field_classes": field_classes,
-            "rate_limit_seconds": rate_limit_seconds,
-        },
-    )
-
-    with SessionLocal() as db:
-        for index, book_id in enumerate(ids):
-            book = (
-                db.query(Book).filter(Book.id == book_id).filter(Book.deleted_at.is_(None)).first()
-            )
-            if book is None:
-                job_store.publish_event(
-                    job_id,
-                    "item_skipped",
-                    {"id": book_id, "index": index, "reason": "not-found"},
-                )
-                items_done.append({"id": book_id, "index": index, "skipped": "not-found"})
-                continue
-
-            body_text = _aggregate_book_body(book)
-            chapters_input = _build_chapter_input(book)
-            if not body_text and not chapters_input:
-                job_store.publish_event(
-                    job_id,
-                    "item_skipped",
-                    {"id": book_id, "index": index, "reason": "no-content"},
-                )
-                items_done.append({"id": book_id, "index": index, "skipped": "no-content"})
-                continue
-
-            job_store.publish_event(
-                job_id,
-                "item_start",
-                {"id": book_id, "index": index, "title": book.title},
-            )
-
-            try:
-                item_result = await fill_book_with_ai(
-                    book,
-                    body_text,
-                    chapters_input,
-                    field_classes,
-                    force=force,
-                    client=client,
-                )
-            except Exception as exc:  # noqa: BLE001
-                logger.exception("Bulk book fill failed on %s", book_id)
-                db.rollback()
-                job_store.publish_event(
-                    job_id,
-                    "item_error",
-                    {"id": book_id, "index": index, "error": str(exc)},
-                )
-                items_done.append({"id": book_id, "index": index, "error": str(exc)})
-                continue
-
-            if item_result["tokens_used"]:
-                db.add(book)
-                db.commit()
-                db.refresh(book)
-
-            if item_result["updated_fields"]:
-                items_updated += 1
-            total_tokens += item_result["tokens_used"]
-            if item_result["estimated_cost_usd"] is not None:
-                cost_known = True
-                total_cost += item_result["estimated_cost_usd"]
-
-            job_store.publish_event(
-                job_id,
-                "item_done",
-                {
-                    "id": book_id,
-                    "index": index,
-                    "updated_fields": item_result["updated_fields"],
-                    "skipped_fields": item_result["skipped_fields"],
-                    "tokens": item_result["tokens_used"],
-                    "cost_usd": item_result["estimated_cost_usd"],
-                    "field_class_errors": item_result["field_class_errors"],
-                    "dropped_chapter_summaries": item_result["dropped_chapter_summaries"],
-                },
-            )
-            items_done.append(item_result)
-
-            if index < len(ids) - 1 and rate_limit_seconds > 0:
-                await asyncio.sleep(rate_limit_seconds)
-
-    summary = {
-        "total_items": len(ids),
-        "items_updated": items_updated,
-        "total_tokens": total_tokens,
-        "total_cost_usd": round(total_cost, 4) if cost_known else None,
-    }
-    job_store.publish_event(job_id, "done", summary)
-    return {"items": items_done, "summary": summary}
 
 
 __all__ = ["articles_router", "books_router", "MAX_BULK_AI_FILL"]
