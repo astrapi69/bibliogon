@@ -47,6 +47,7 @@ export interface BookStorage {
     emptyTrash: typeof api.books.emptyTrash;
     bulkRestore: typeof api.books.bulkRestore;
     bulkDelete: typeof api.books.bulkDelete;
+    fromArticles: typeof api.books.fromArticles;
 }
 
 export interface ChapterStorage {

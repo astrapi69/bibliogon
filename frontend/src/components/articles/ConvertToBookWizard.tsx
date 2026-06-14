@@ -54,7 +54,6 @@ import {
     BookFromArticlesCreate,
     BookFromArticlesSortStrategy,
     BookFromArticlesValidationError,
-    api,
 } from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
@@ -542,7 +541,7 @@ export default function ConvertToBookWizard({
             }
         }
         try {
-            const book = await api.books.fromArticles(buildPayload())
+            const book = await getStorage().books.fromArticles(buildPayload())
             // WARN-I1 fix: toast-with-CTA per Phase 2 spec letter.
             // The wizard closes immediately and clears the bulk
             // selection (via ``onConverted`` page-level callback);

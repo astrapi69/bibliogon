@@ -791,6 +791,54 @@ describe("DexieStorage — articles trash + bulk (offline seam, Bug fix)", () =>
     expect(await dexieStorage.articles.listTrash()).toHaveLength(0);
   });
 
+  // Bug 1 (offline ConvertToBookWizard): the wizard called
+  // api.books.fromArticles directly, which guardedFetch rejects on the
+  // backendless build, so "Buch erstellen" did nothing. The fix routes
+  // through getStorage(); this pins the offline conversion path.
+  it("books.fromArticles builds a book + chapters from articles offline", async () => {
+    const a1 = await dexieStorage.articles.create({ title: "First" });
+    const a2 = await dexieStorage.articles.create({ title: "Second" });
+    await dexieStorage.articles.update(a1.id, {
+      content_json: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"alpha body"}]}]}',
+      tags: ["Shared", "OnlyA"],
+    });
+    await dexieStorage.articles.update(a2.id, {
+      content_json: '{"type":"doc","content":[{"type":"paragraph","content":[{"type":"text","text":"beta body"}]}]}',
+      tags: ["shared", "OnlyB"],
+    });
+
+    const book = await dexieStorage.books.fromArticles({
+      article_ids: [a1.id, a2.id],
+      title: "Collected",
+      author: "Aster",
+      sort_strategy: "manual",
+      manual_order: [a2.id, a1.id],
+      keywords: ["Extra"],
+      front_matter: { include_title_page: true },
+      chapter_settings: { use_article_title_as_chapter_title: true },
+    });
+
+    expect(book.title).toBe("Collected");
+    expect(book.author).toBe("Aster");
+    // Keywords: explicit "Extra" first, then article tags, deduped casefold
+    // ("Shared" + "shared" collapse to one).
+    expect(book.keywords).toEqual(["Extra", "Shared", "OnlyA", "OnlyB"]);
+
+    // The book persisted into Dexie (no API call involved).
+    expect((await dexieStorage.books.list()).map((b) => b.id)).toContain(book.id);
+
+    const chapters = await dexieStorage.chapters.list(book.id);
+    expect(chapters.map((c) => c.chapter_type)).toEqual([
+      "title_page",
+      "chapter",
+      "chapter",
+    ]);
+    // Manual order [a2, a1] => Second before First.
+    expect(chapters.map((c) => c.title)).toEqual(["Collected", "Second", "First"]);
+    expect(chapters[1].content).toContain("beta body");
+    expect(chapters[2].content).toContain("alpha body");
+  });
+
   it("single delete soft-deletes; restore + permanentDelete + emptyTrash work", async () => {
     const a1 = await dexieStorage.articles.create({ title: "A1" });
     await dexieStorage.articles.delete(a1.id);

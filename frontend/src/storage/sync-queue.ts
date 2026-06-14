@@ -117,6 +117,10 @@ export function makeQueueingStorage(base: IStorageService): IStorageService {
             emptyTrash: base.books.emptyTrash,
             bulkRestore: base.books.bulkRestore,
             bulkDelete: base.books.bulkDelete,
+            // Article-to-book conversion writes a book + chapters straight
+            // into Dexie; replay is deferred (like pages/comics), so it
+            // passes through without a queue entry for now.
+            fromArticles: base.books.fromArticles,
         },
         chapters: {
             list: base.chapters.list,
