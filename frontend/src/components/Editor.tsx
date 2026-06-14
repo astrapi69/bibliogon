@@ -17,32 +17,8 @@ import {
     hashContent,
 } from "../db/drafts";
 import { reviewString, NON_PROSE_CHAPTER_TYPES } from "../data/ai-review-strings";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
-import Placeholder from "@tiptap/extension-placeholder";
-import CharacterCount from "@tiptap/extension-character-count";
-import TextAlign from "@tiptap/extension-text-align";
-import Underline from "@tiptap/extension-underline";
-import Subscript from "@tiptap/extension-subscript";
-import Superscript from "@tiptap/extension-superscript";
-import Highlight from "@tiptap/extension-highlight";
-import Typography from "@tiptap/extension-typography";
-import { Table } from "@tiptap/extension-table";
-import TableRow from "@tiptap/extension-table-row";
-import TableCell from "@tiptap/extension-table-cell";
-import TableHeader from "@tiptap/extension-table-header";
-import TaskList from "@tiptap/extension-task-list";
-import TaskItem from "@tiptap/extension-task-item";
-import Color from "@tiptap/extension-color";
-import { TextStyle } from "@tiptap/extension-text-style";
-import Figure from "@pentestpad/tiptap-extension-figure";
-import { Footnotes, FootnoteReference, Footnote } from "tiptap-footnotes";
-import { SearchAndReplace } from "../extensions/searchAndReplace";
-import OfficePaste from "@intevation/tiptap-extension-office-paste";
-import Focus from "@tiptap/extension-focus";
-import { InlineMathDollar, BlockMathDollar } from "../extensions/math";
 import "katex/dist/katex.min.css";
-import { StyleCheckExtension } from "../extensions/StyleCheckExtension";
+import { buildEditorExtensions } from "./editorExtensions";
 import { FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType } from "../data/fix-issue-prompts";
 
 type Translator = (key: string, fallback: string) => string;
@@ -70,6 +46,7 @@ import { getStorage } from "../storage";
 import { warnIfOfflineStorageNearlyFull } from "../utils/storageQuota";
 import { notify } from "../utils/notify";
 import { editorToMarkdown } from "../utils/tiptap-markdown";
+import { markdownToHtml } from "../lib/utils/markdownToHtml";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -430,59 +407,12 @@ export default function Editor({
 
     const editor = useEditor({
         immediatelyRender: false,
-        extensions: [
-            StarterKit.configure({ link: false, underline: false }),
-            Figure.configure({
-                allowBase64: true,
-            }),
-            Link.configure({
-                openOnClick: false,
-                HTMLAttributes: {
-                    class: "tiptap-link",
-                },
-            }),
-            TextAlign.configure({
-                types: ["heading", "paragraph"],
-            }),
-            Underline,
-            Subscript,
-            Superscript,
-            Highlight.configure({ multicolor: true }),
-            Typography,
-            Table.configure({ resizable: true }),
-            TableRow,
-            TableCell,
-            TableHeader,
-            TaskList,
-            TaskItem.configure({ nested: true }),
-            CharacterCount,
-            TextStyle,
-            Color,
-            Footnotes,
-            FootnoteReference,
-            Footnote,
-            InlineMathDollar.configure({
-                katexOptions: { throwOnError: false },
-            }),
-            BlockMathDollar.configure({
-                katexOptions: { throwOnError: false },
-            }),
-            SearchAndReplace.configure({
-                disableRegex: true,
-            }),
-            Placeholder.configure({
-                placeholder: placeholder || "Beginne zu schreiben...",
-            }),
-            OfficePaste,
-            Focus.configure({
-                className: "has-focus",
-                mode: "deepest",
-            }),
-            StyleCheckExtension,
-            ...(mentionBookId
+        extensions: buildEditorExtensions(
+            placeholder,
+            mentionBookId
                 ? [createStoryBibleMention(mentionBookId, buildMentionLabels(t))]
-                : []),
-        ],
+                : [],
+        ),
         content: parseContent(content),
         onUpdate: ({ editor }) => {
             syncCountsRef.current(editor);
@@ -1364,7 +1294,6 @@ export default function Editor({
                         borderBottom: "1px solid var(--border)",
                     }}
                 >
-                    {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
                     <audio
                         controls
                         autoPlay
@@ -1904,140 +1833,5 @@ export default function Editor({
                 </div>
             </div>
         </div>
-    );
-}
-
-/**
- * Convert Markdown text to HTML so TipTap can parse it correctly.
- * Handles headings, bold, italic, strikethrough, code, links, lists,
- * blockquotes, code blocks, and horizontal rules.
- */
-function markdownToHtml(md: string): string {
-    const lines = md.split("\n");
-    const htmlLines: string[] = [];
-    let inCodeBlock = false;
-    let codeBlockContent: string[] = [];
-    let inList: "ul" | "ol" | null = null;
-
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
-        // Code blocks
-        if (line.startsWith("```")) {
-            if (inCodeBlock) {
-                htmlLines.push(`<pre><code>${codeBlockContent.join("\n")}</code></pre>`);
-                codeBlockContent = [];
-                inCodeBlock = false;
-            } else {
-                if (inList) {
-                    htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
-                    inList = null;
-                }
-                inCodeBlock = true;
-            }
-            continue;
-        }
-        if (inCodeBlock) {
-            codeBlockContent.push(line.replace(/</g, "&lt;").replace(/>/g, "&gt;"));
-            continue;
-        }
-
-        // Close list if current line is not a list item
-        if (inList && !line.match(/^[-*]\s/) && !line.match(/^\d+\.\s/) && line.trim() !== "") {
-            htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
-            inList = null;
-        }
-
-        // Empty line
-        if (line.trim() === "") {
-            if (inList) {
-                htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
-                inList = null;
-            }
-            continue;
-        }
-
-        // Horizontal rule
-        if (line.match(/^---+$/)) {
-            htmlLines.push("<hr>");
-            continue;
-        }
-
-        // Headings
-        const headingMatch = line.match(/^(#{1,6})\s+(.+)$/);
-        if (headingMatch) {
-            const level = headingMatch[1].length;
-            htmlLines.push(`<h${level}>${inlineMarkdown(headingMatch[2])}</h${level}>`);
-            continue;
-        }
-
-        // Blockquote
-        if (line.startsWith("> ")) {
-            htmlLines.push(`<blockquote><p>${inlineMarkdown(line.slice(2))}</p></blockquote>`);
-            continue;
-        }
-
-        // Unordered list
-        const ulMatch = line.match(/^[-*]\s+(.+)$/);
-        if (ulMatch) {
-            if (inList !== "ul") {
-                if (inList) htmlLines.push("</ol>");
-                htmlLines.push("<ul>");
-                inList = "ul";
-            }
-            htmlLines.push(`<li>${inlineMarkdown(ulMatch[1])}</li>`);
-            continue;
-        }
-
-        // Ordered list
-        const olMatch = line.match(/^\d+\.\s+(.+)$/);
-        if (olMatch) {
-            if (inList !== "ol") {
-                if (inList) htmlLines.push("</ul>");
-                htmlLines.push("<ol>");
-                inList = "ol";
-            }
-            htmlLines.push(`<li>${inlineMarkdown(olMatch[1])}</li>`);
-            continue;
-        }
-
-        // Image: ![alt](src) - standalone on a line
-        // If next line is italic (*caption*), treat as figure+figcaption
-        const imgMatch = line.match(/^!\[([^\]]*)\]\(([^)]+)\)\s*$/);
-        if (imgMatch) {
-            const nextLine = i + 1 < lines.length ? lines[i + 1] : "";
-            const captionMatch = nextLine.match(/^\*([^*]+)\*\s*$/);
-            if (captionMatch) {
-                htmlLines.push(
-                    `<figure><img src="${imgMatch[2]}" alt="${imgMatch[1]}" />` +
-                        `<figcaption>${captionMatch[1]}</figcaption></figure>`,
-                );
-                i++; // skip caption line
-            } else {
-                htmlLines.push(`<img src="${imgMatch[2]}" alt="${imgMatch[1]}" />`);
-            }
-            continue;
-        }
-
-        // Paragraph (also handle inline images)
-        htmlLines.push(`<p>${inlineMarkdown(line)}</p>`);
-    }
-
-    if (inList) htmlLines.push(inList === "ul" ? "</ul>" : "</ol>");
-    if (inCodeBlock) htmlLines.push(`<pre><code>${codeBlockContent.join("\n")}</code></pre>`);
-
-    return htmlLines.join("\n");
-}
-
-function inlineMarkdown(text: string): string {
-    return (
-        text
-            // Images must be before links (both use [...](...)  syntax)
-            .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1" />')
-            .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
-            .replace(/\*(.+?)\*/g, "<em>$1</em>")
-            .replace(/~~(.+?)~~/g, "<s>$1</s>")
-            .replace(/`(.+?)`/g, "<code>$1</code>")
-            .replace(/\[(.+?)\]\((.+?)\)/g, '<a href="$2">$1</a>')
     );
 }
