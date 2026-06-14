@@ -24,11 +24,7 @@ plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 # --- Frontend: Editoren / Komponenten ---
 frontend/src/components/BookMetadataEditor.tsx
 frontend/src/components/Editor.tsx
-frontend/src/components/import-wizard/steps/PreviewPanel.tsx
-frontend/src/components/articles/ConvertToBookWizard.tsx
-frontend/src/components/ComicBookEditor.tsx
 frontend/src/components/PageCanvas.tsx
-frontend/src/components/CommentsAdminSection.tsx
 frontend/src/components/ChapterSidebar.tsx
 
 # --- Frontend: Storage seam ---
