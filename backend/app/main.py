@@ -22,6 +22,7 @@ from pluginforge.config import load_i18n
 # bare top-level `app` package name does not shadow the `app = FastAPI(
 # ...)` assignment below (mypy attr-defined cascade otherwise).
 from app import import_plugins as _register_core_import_handlers  # noqa: F401, E402
+from app.exception_handlers import register_exception_handlers
 from app.hookspecs import BibliogonHookSpec
 from app.import_plugins import handlers as _import_plugins_handlers  # noqa: F401, E402
 from app.licensing import LicenseError, LicenseStore, LicenseValidator
@@ -399,53 +400,8 @@ app.add_middleware(
 register_routers(app)
 
 
-# Global exception handler: log all unhandled errors with stacktrace
-from fastapi import Request
-from fastapi.responses import JSONResponse
-
-from app.exceptions import BibliogonError
-
-
-@app.exception_handler(BibliogonError)
-async def bibliogon_error_handler(request: Request, exc: BibliogonError):
-    """Map typed domain errors to HTTP responses (per code-hygiene.md)."""
-    if exc.status_code >= 500:
-        logger.error(
-            "%s %s -> %s",
-            request.method,
-            request.url.path,
-            exc.detail,
-            exc_info=exc,
-        )
-    else:
-        logger.warning(
-            "%s %s -> %s %s",
-            request.method,
-            request.url.path,
-            exc.status_code,
-            exc.detail,
-        )
-    return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
-
-
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    """Log all unhandled exceptions with full stacktrace."""
-    import traceback
-
-    logger.error(
-        "Unhandled error: %s %s -> %s",
-        request.method,
-        request.url.path,
-        str(exc),
-        exc_info=True,
-    )
-    detail: dict[str, Any] = {"detail": str(exc)}
-    if DEBUG:
-        detail["stacktrace"] = traceback.format_exc()
-        detail["endpoint"] = request.url.path
-        detail["method"] = request.method
-    return JSONResponse(status_code=500, content=detail)
+# Domain + catch-all exception handlers (see app.exception_handlers).
+register_exception_handlers(app, debug=DEBUG)
 
 
 @app.get("/api/voices")
