@@ -22,9 +22,6 @@ plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf.py
 plugins/bibliogon-plugin-export/bibliogon_export/routes.py
 plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 
-# --- Frontend: API-Client ---
-frontend/src/api/client.ts
-
 # --- Frontend: Editoren / Komponenten ---
 frontend/src/components/BookMetadataEditor.tsx
 frontend/src/components/Editor.tsx
