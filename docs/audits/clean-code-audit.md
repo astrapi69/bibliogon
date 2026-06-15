@@ -47,6 +47,41 @@ die 5 Baseline-God-Files, die WARN-Zone (501–1000) als Folge-Backlog, und die
 Backend-Funktions-Länge/Parameter-Explosion (P1, Zeile 45 unten), die der
 Complexity-Watcher jetzt sichtbar macht.
 
+### Complexity-Baseline Phase 2 (2026-06-15, #279)
+
+Der Complexity-Watcher (`complexity-check.yml`, #139) ist von Schwelle **20 auf
+15** gesenkt worden — weiterhin **warn-only** (Phase 2). Quelle der Schwelle:
+`[tool.ruff.lint.mccabe] max-complexity = 15` für Python, `complexity: ["warn",
+15]` für die ESLint-Seite des Watchers. C901 bleibt bewusst aus dem blockierenden
+ruff-`select`.
+
+**Backend (`backend/app/`): 5 Funktionen > 15.** Jede trägt inline
+`# noqa: C901  # Legacy, tracked in clean-code-audit`, damit der Watcher nur noch
+**neue** Funktionen > 15 meldet:
+
+| Komplexität | Funktion | Datei |
+|---|---|---|
+| 23 | `apply_resolutions` | `app/services/git_sync_diff.py` |
+| 21 | `sanitize_git_dir` | `app/services/git_import_adopter.py` |
+| 19 | `_scan_security` | `app/services/git_import_inspector.py` |
+| 19 | `execute_multi` | `app/import_plugins/handlers/bgb.py` |
+| 18 | `execute_import` | `app/routers/import_orchestrator.py` |
+
+**Frontend (`frontend/src/`): 73 Funktionen > 15.** Diese sind **nicht** inline
+annotiert. Begründung: die `complexity`-Regel liegt nicht in der Basis-
+`eslint.config.js`, sondern wird nur vom Watcher per CLI (`--rule`) injiziert.
+73 `// eslint-disable`-Direktiven über ~50 Dateien wären (a) hoher Churn und
+(b) würden im Basis-Lint, wo die Regel aus ist, als "unused directive"-Warnungen
+auflaufen. Der Watcher ist warn-only (`|| true`), die 73 Bestands- wie auch neue
+Verletzungen erscheinen dort gleichermaßen als Warnung. Die größten Brocken
+(Top 10, zur späteren Splittung): `EnhancedTextarea` (68), `Editor` (61),
+`ComicBubble` (55), `nodeToMarkdown` (51), `PluginCard` (50), `Toolbar` (48),
+`BookEditor` (47), `BookMetadataEditor` (45), `nodeToPlainText` (41),
+`eventRecorder`-Arrow (40).
+
+**Phase 3 (später):** warn → error bei 15, erst wenn die Baseline (Backend 5 +
+Frontend 73) durch Splitting auf **< 10** gesunken ist.
+
 > Der Rest des Dokuments ist die unveränderte 2026-06-10-Analyse (Vorher-Stand;
 > Zeilenzahlen in "Metriken" sind die Werte von damals).
 

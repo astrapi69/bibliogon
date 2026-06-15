@@ -184,7 +184,7 @@ class BgbImportHandler:
 
     # --- Multi-book extension --------------------------------------------
 
-    def execute_multi(
+    def execute_multi(  # noqa: C901  # Legacy, tracked in clean-code-audit
         self,
         input_path: str,
         detected: DetectedProject,
