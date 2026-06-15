@@ -33,6 +33,21 @@ The **Compare** button opens a dialog where you can pick two `.bgb` snapshots an
 
 Useful when you want to know what changed between two backup points — for example when hunting down an accidentally deleted chapter.
 
+## Selective export
+
+A full backup always carries everything. When you only need part of your data — say the articles for a single migration, or just your author profiles — use the **Selective export** card on the same Backups tab.
+
+Tick the sections you want, then click **Export selected data**. The card groups the choices:
+
+- **Content** — books (chapters and metadata travel with each book automatically), articles.
+- **Master data** — authors / pen names, chapter labels.
+- **Extra data** — story bibles / storyboards, writing history.
+- **Configuration** — settings (theme, language, defaults).
+
+Use **Select all** / **Deselect all** at the top to flip everything at once. Books always pull their chapters with them; the chapters checkbox is shown but locked on, so you cannot accidentally export a book without its text.
+
+The result is a single JSON file with the same envelope as a full backup — only the sections you ticked are populated. To bring it back, open the [Import wizard](../import/git-url.md) and choose the JSON backup; the importer simply skips the sections that are absent. Because every read goes through the storage seam, the selective export works the same in the offline web app as on the desktop.
+
 ## Where the backup files live
 
 The actual `.bgb` files are stored in the user-specific data directory:
