@@ -114,6 +114,10 @@ export function docToPdfContent(doc: ExportDocument): PdfContent[] {
   return content;
 }
 
+/** Hard cap on a single PDF render so a misconfigured pdfmake surfaces an
+ *  error instead of an indefinitely pending promise. */
+const PDF_RENDER_TIMEOUT_MS = 30000;
+
 const PDF_STYLES = {
   title: { fontSize: 24, bold: true },
   subtitle: { fontSize: 14, italics: true, color: "#555555" },
@@ -136,7 +140,16 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
   const pdfMake: any = (pdfMakeMod as any).default ?? pdfMakeMod;
   const vfsMod = await import("pdfmake/build/vfs_fonts.js");
   const vfs = resolveVfs(vfsMod);
-  if (vfs) pdfMake.vfs = vfs;
+  if (vfs) {
+    // pdfmake 0.3 registers fonts via addVirtualFileSystem; the old
+    // ``pdfMake.vfs =`` assignment silently fails there (getBlob never
+    // calls back). Fall back to the legacy assignment for pdfmake <= 0.2.
+    if (typeof pdfMake.addVirtualFileSystem === "function") {
+      pdfMake.addVirtualFileSystem(vfs);
+    } else {
+      pdfMake.vfs = vfs;
+    }
+  }
 
   const definition = {
     content: docToPdfContent(doc),
@@ -146,9 +159,19 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
   };
 
   return new Promise<Blob>((resolve, reject) => {
+    // Watchdog: a misconfigured pdfmake can hang getBlob forever. Surface
+    // that as a visible error instead of a silently dead export button.
+    const watchdog = setTimeout(
+      () => reject(new Error("PDF generation timed out")),
+      PDF_RENDER_TIMEOUT_MS,
+    );
     try {
-      pdfMake.createPdf(definition).getBlob((blob: Blob) => resolve(blob));
+      pdfMake.createPdf(definition).getBlob((blob: Blob) => {
+        clearTimeout(watchdog);
+        resolve(blob);
+      });
     } catch (error) {
+      clearTimeout(watchdog);
       reject(error instanceof Error ? error : new Error(String(error)));
     }
   });
