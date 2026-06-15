@@ -19,6 +19,8 @@
  * - All text is truncated to 200 chars max
  */
 
+import {RingBuffer} from "../lib/utils/RingBuffer";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -120,27 +122,31 @@ export function sanitizeEvent(event: RecordedEvent): RecordedEvent {
 
 const MAX_BUFFER_SIZE = 100;
 
+/**
+ * App-specific wrapper around the generic {@link RingBuffer}.
+ *
+ * Sanitizes each event before storing it and exposes the stable
+ * `add` / `getAll` / `size` / `clear` API that the auto-capture
+ * listeners, the ErrorReportDialog, and the persistence module
+ * depend on. `getAll` returns events oldest-first.
+ */
 class EventRingBuffer {
-    private buffer: RecordedEvent[] = [];
+    private buffer = new RingBuffer<RecordedEvent>(MAX_BUFFER_SIZE);
 
     add(event: RecordedEvent): void {
-        const sanitized = sanitizeEvent(event);
-        this.buffer.push(sanitized);
-        if (this.buffer.length > MAX_BUFFER_SIZE) {
-            this.buffer.shift();
-        }
+        this.buffer.push(sanitizeEvent(event));
     }
 
     getAll(): RecordedEvent[] {
-        return [...this.buffer];
+        return this.buffer.toArray();
     }
 
     size(): number {
-        return this.buffer.length;
+        return this.buffer.size();
     }
 
     clear(): void {
-        this.buffer = [];
+        this.buffer.clear();
     }
 }
 
