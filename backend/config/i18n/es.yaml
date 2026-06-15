@@ -2138,6 +2138,13 @@ ui:
   ai_template:
     editor_section: "Plantilla de IA"
     offline_configure_key: "Configura tu clave de API en Ajustes > IA para usar el relleno con IA sin conexión."
+    intro:
+      title: "Introducción"
+      what: "Una plantilla de IA es un archivo estructurado que la IA utiliza para generar capítulos, descripciones y metadatos de tu libro, según su tipo, género y público objetivo."
+      how: "Rellena los campos que quieras y deja que la IA los complete, o exporta la plantilla, rellénala externamente e impórtala de nuevo."
+      no_key: "Aún no hay ningún proveedor de IA configurado."
+      settings_link: "Abrir Configuración → IA"
+      learn_more: "Más información"
     panel:
       title: "Plantilla de IA"
       fill: "Rellenar con IA"

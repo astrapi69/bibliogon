@@ -1,10 +1,14 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Sparkles, Download, Upload, X } from "lucide-react";
 import { useI18n } from "../hooks/useI18n";
 import { useStorageMode } from "../storage/useStorageMode";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
+import { useHasAiKey } from "../features/useHasAiKey";
+import { useHelp } from "../contexts/HelpContext";
+import { CollapsibleConfigSection } from "./CollapsibleConfigSection";
 import { Toggle } from "./settings/Toggle";
 import { notify } from "../utils/notify";
 import { api, ApiError } from "../api/client";
@@ -53,6 +57,9 @@ function downloadBlob(blob: Blob, filename: string): void {
 
 export default function AITemplatePanel({ kind, id, onApplied, layout = "default" }: Props) {
     const { t } = useI18n();
+    const navigate = useNavigate();
+    const { openHelp } = useHelp();
+    const hasAiKey = useHasAiKey();
     const { mode } = useStorageMode();
     const offline = mode === "dexie";
     const aiFill = useFeature(FEATURES.AI_FILL);
@@ -244,6 +251,54 @@ export default function AITemplatePanel({ kind, id, onApplied, layout = "default
                 border: "1px solid var(--border, #e5e7eb)",
             }}
         >
+            <CollapsibleConfigSection
+                storageKey="bibliogon-collapsible-ai-template-intro"
+                heading={t("ui.ai_template.intro.title", "Einführung")}
+                testidPrefix="ai-template-intro"
+                defaultOpen
+            >
+                <div
+                    className="flex flex-col gap-2 pt-2 text-sm leading-relaxed text-[color:var(--text-muted)]"
+                    data-testid="ai-template-intro-body"
+                >
+                    <p>
+                        {t(
+                            "ui.ai_template.intro.what",
+                            "Eine KI-Vorlage ist eine strukturierte Datei, mit der die KI Kapitel, Beschreibungen und Metadaten für dein Buch generiert, basierend auf Buchtyp, Genre und Zielgruppe.",
+                        )}
+                    </p>
+                    <p>
+                        {t(
+                            "ui.ai_template.intro.how",
+                            "Fülle die gewünschten Felder aus und lass sie von der KI ergänzen, oder exportiere die Vorlage, fülle sie extern aus und importiere sie wieder zurück.",
+                        )}
+                    </p>
+                    {!hasAiKey && (
+                        <p data-testid="ai-template-intro-no-key">
+                            {t(
+                                "ui.ai_template.intro.no_key",
+                                "Es ist noch kein KI-Anbieter konfiguriert.",
+                            )}{" "}
+                            <button
+                                type="button"
+                                className="inline cursor-pointer border-0 bg-transparent p-0 text-[color:var(--accent)] underline hover:no-underline"
+                                onClick={() => navigate("/settings?tab=ai")}
+                                data-testid="ai-template-intro-settings-link"
+                            >
+                                {t("ui.ai_template.intro.settings_link", "Einstellungen → KI öffnen")}
+                            </button>
+                        </p>
+                    )}
+                    <button
+                        type="button"
+                        className="inline self-start cursor-pointer border-0 bg-transparent p-0 text-[color:var(--accent)] underline hover:no-underline"
+                        onClick={() => openHelp("ai")}
+                        data-testid="ai-template-intro-learn-more"
+                    >
+                        {t("ui.ai_template.intro.learn_more", "Mehr erfahren")}
+                    </button>
+                </div>
+            </CollapsibleConfigSection>
             <div style={{ fontWeight: 600, fontSize: "0.875rem" }}>
                 {t("ui.ai_template.panel.title", "AI Template")}
             </div>

@@ -1,6 +1,21 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render as rtlRender, screen, fireEvent, waitFor } from "@testing-library/react";
+import type { ReactElement } from "react";
+import { MemoryRouter } from "react-router-dom";
 import AITemplatePanel from "./AITemplatePanel";
+import { HelpProvider } from "../contexts/HelpContext";
+
+// AITemplatePanel now reads useNavigate (Settings deep-link) + useHelp
+// (intro "Mehr erfahren"), so unit renders wrap it in a Router +
+// HelpProvider the way the real app (BookMetadataEditor / article
+// editor) always does.
+function render(ui: ReactElement) {
+    return rtlRender(
+        <MemoryRouter>
+            <HelpProvider>{ui}</HelpProvider>
+        </MemoryRouter>,
+    );
+}
 
 vi.mock("@astrapi69/feature-strategy-react", () => ({
     useFeature: () => ({
@@ -101,6 +116,13 @@ describe("AITemplatePanel (article)", () => {
         expect(screen.getByTestId("ai-template-fill")).toBeTruthy();
         expect(screen.getByTestId("ai-template-export")).toBeTruthy();
         expect(screen.getByTestId("ai-template-import")).toBeTruthy();
+    });
+
+    it("renders the intro section (default open) with explanation + learn-more link", () => {
+        render(<AITemplatePanel kind="article" id="abc" />);
+        expect(screen.getByTestId("ai-template-intro-section-trigger")).toBeTruthy();
+        expect(screen.getByTestId("ai-template-intro-body")).toBeTruthy();
+        expect(screen.getByTestId("ai-template-intro-learn-more")).toBeTruthy();
     });
 
     it("data-kind reflects the kind prop", () => {

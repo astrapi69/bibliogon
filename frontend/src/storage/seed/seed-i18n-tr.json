@@ -2347,6 +2347,14 @@
           "all_failed": "Toplu içe aktarma: {failed} kaydın tümü başarısız oldu",
           "error": "Toplu içe aktarma başarısız oldu"
         }
+      },
+      "intro": {
+        "title": "Giriş",
+        "what": "Yapay zeka şablonu, yapay zekanın kitabının türüne, türüne ve hedef kitlesine göre bölümler, açıklamalar ve meta veriler oluşturmak için kullandığı yapılandırılmış bir dosyadır.",
+        "how": "İstediğin alanları doldur ve yapay zekanın tamamlamasını sağla ya da şablonu dışa aktar, harici olarak doldur ve geri içe aktar.",
+        "no_key": "Henüz bir yapay zeka sağlayıcısı yapılandırılmadı.",
+        "settings_link": "Ayarlar → Yapay Zeka'yı aç",
+        "learn_more": "Daha fazla bilgi"
       }
     },
     "bulk_ai_fill": {

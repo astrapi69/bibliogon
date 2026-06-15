@@ -2347,6 +2347,14 @@
           "all_failed": "Importación en lote: fallaron las {failed} entradas",
           "error": "Falló la importación en lote"
         }
+      },
+      "intro": {
+        "title": "Introducción",
+        "what": "Una plantilla de IA es un archivo estructurado que la IA utiliza para generar capítulos, descripciones y metadatos de tu libro, según su tipo, género y público objetivo.",
+        "how": "Rellena los campos que quieras y deja que la IA los complete, o exporta la plantilla, rellénala externamente e impórtala de nuevo.",
+        "no_key": "Aún no hay ningún proveedor de IA configurado.",
+        "settings_link": "Abrir Configuración → IA",
+        "learn_more": "Más información"
       }
     },
     "bulk_ai_fill": {

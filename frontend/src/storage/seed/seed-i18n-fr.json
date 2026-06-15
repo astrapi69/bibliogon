@@ -2347,6 +2347,14 @@
           "all_failed": "Import groupé : les {failed} entrées ont toutes échoué",
           "error": "Échec de l'import groupé"
         }
+      },
+      "intro": {
+        "title": "Introduction",
+        "what": "Un modèle d'IA est un fichier structuré que l'IA utilise pour générer des chapitres, des descriptions et des métadonnées pour votre livre, en fonction de son type, de son genre et de son public cible.",
+        "how": "Remplissez les champs souhaités et laissez l'IA les compléter, ou exportez le modèle, remplissez-le en externe et réimportez-le.",
+        "no_key": "Aucun fournisseur d'IA n'est encore configuré.",
+        "settings_link": "Ouvrir Paramètres → IA",
+        "learn_more": "En savoir plus"
       }
     },
     "bulk_ai_fill": {

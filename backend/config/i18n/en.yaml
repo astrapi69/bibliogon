@@ -2147,6 +2147,13 @@ ui:
   ai_template:
     editor_section: "AI Template"
     offline_configure_key: "Configure your API key in Settings > AI to use AI fill offline."
+    intro:
+      title: "Introduction"
+      what: "An AI template is a structured file the AI uses to generate chapters, descriptions and metadata for your book, based on its book type, genre and target audience."
+      how: "Fill in the fields you want and let the AI complete them, or export the template, fill it in externally and import it back."
+      no_key: "No AI provider is configured yet."
+      settings_link: "Open Settings → AI"
+      learn_more: "Learn more"
     panel:
       title: "AI Template"
       fill: "Fill with AI"
