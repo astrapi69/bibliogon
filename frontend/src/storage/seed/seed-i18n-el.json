@@ -1460,7 +1460,11 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN χαρτόδετο",
       "asin_hardcover": "ASIN σκληρόδετο",
-      "backpage_author_bio": "Σχετικά με τον συγγραφέα"
+      "backpage_author_bio": "Σχετικά με τον συγγραφέα",
+      "group_content": "Περιεχόμενο",
+      "group_publishing": "Έκδοση",
+      "group_production": "Παραγωγή",
+      "group_advanced": "Σύνθετα"
     },
     "cover": {
       "choose_file": "Επιλογή αρχείου",

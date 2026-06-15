@@ -1460,7 +1460,11 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN brochura",
       "asin_hardcover": "ASIN capa dura",
-      "backpage_author_bio": "Sobre o autor"
+      "backpage_author_bio": "Sobre o autor",
+      "group_content": "Conteúdo",
+      "group_publishing": "Publicação",
+      "group_production": "Produção",
+      "group_advanced": "Avançado"
     },
     "cover": {
       "choose_file": "Escolher arquivo",
