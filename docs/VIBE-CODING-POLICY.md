@@ -56,7 +56,12 @@ must be verified against the layer architecture.
 - Zero-`/api` E2E-Gate (`page.route('**/api/**', route => route.abort())`).
 - Cohesion Watcher (`scripts/check-file-sizes.sh`) blocks merges for new
   files >1000 lines (WARN >500).
-- `.filesize-baseline` tracks 18 existing god-files as grandfathered debt.
+- Read-modify-write protection: all RMW methods on the storage seam route
+  through a single generic per-`(table, id)` `serializedUpdate` write-queue
+  (`storage/dexie-storage.ts`), closing the settings-clobber data-loss path.
+- `.filesize-baseline` tracks the remaining god-files as grandfathered debt
+  (5 after the burn-down: `Editor.tsx`, `dexie-storage.ts`, and three plugin
+  PDF files; down from 16).
 
 **Open gap:** `settingsSeamGuard` covers only `api.settings.*`. No equivalent
 guard exists for `api.books.*`, `api.chapters.*`, or other seam paths.
@@ -100,10 +105,16 @@ AI sometimes suggests outdated, insecure, or nonexistent libraries.
 
 **Enforcement:**
 
-- **Open gap.** No `pip-audit` or `npm audit` in CI. Planned as next
-  infrastructure step (warn-only Phase 1, same Defense-in-Depth approach
-  as the Cohesion Watcher).
-- #47 (weasyprint CVE) is tracked but deferred.
+- **Hard-blocking in CI** (`ci.yml`, every push/PR to `main`/`develop`):
+  `pip-audit --skip-editable`, `bandit` (medium severity + confidence),
+  and `npm audit --audit-level=high`. Matching local targets:
+  `make audit`, `make security-backend`, `make bandit-backend`.
+- **Weekly scheduled watcher** (`security-scan.yml`, #149): warn-only
+  Sunday run that surfaces new CVEs published against already-merged
+  dependencies (the push/PR gate never re-runs without a code change).
+  Local counterpart: `make check-security`.
+- #47 (weasyprint CVE) is tracked but deferred; the blocking gate
+  `--ignore-vuln`s it, the warn-only watcher keeps it visible.
 - Human review catches dependency additions in PR diffs.
 
 ## 5. Regular Refactoring
@@ -125,8 +136,13 @@ naming. Refactoring is not optional, it is scheduled.
 
 - Clean-Code Audit (`docs/audits/clean-code-audit.md`).
 - Cohesion Watcher (#113) prevents new god-files from forming.
-- `.filesize-baseline` tracks the 18 remaining god-files as visible debt.
-  Each entry is a split-TODO.
+- `.filesize-baseline` tracks the remaining god-files as visible debt — **5**
+  after the 2026-06 burn-down (PRs #166–#229), down from 16. Each entry is a
+  split-TODO: `frontend/src/components/Editor.tsx`,
+  `frontend/src/storage/dexie-storage.ts` (re-grandfathered via #210), and the
+  three plugin PDF files (`picture_book_pdf.py`, `routes.py`,
+  `comic_book_pdf.py`). The backend `app/` ERROR-blocker `main.py` (1046) and
+  `client.ts` (5212) were both resolved.
 - Complexity Watcher (#139) surfaces over-complex functions: radon
   cyclomatic complexity + ruff `C901` (Python) and ESLint `complexity`
   (TypeScript), threshold 20. Runs warn-only in
@@ -196,15 +212,20 @@ coordinates handoffs and resolves conflicts with reality.
 | Prompt precision | `.claude/rules/` | Sparring Partner writes/reviews prompts |
 | Layer architecture | `guardedFetch`, `settingsSeamGuard`, cohesion watcher | Code review for boundary violations |
 | Test coverage | Vitest, tsc strict, pre-commit hooks | Aster-E2E-Gate (smoke suite), Coverage Illusion review |
-| Security/deps | **Gap: no CI scan yet** | Manual dependency review |
+| Security/deps | pip-audit + bandit + npm audit (blocking in `ci.yml`), weekly `security-scan.yml` watcher | Manual dependency review |
 | Refactoring | Cohesion watcher, complexity watcher, `.filesize-baseline` | Refactoring intervals, scope decisions |
 | Git hygiene | Pre-commit hooks, linting | Diff review, issue discipline |
 
 ## See Also
 
+- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
+- `docs/EXPORT-IMPORT-FORMATS.md` - every export/import format, where each is triggered, offline/desktop/PWA support, and the JSON-vs-`.bgb` backup distinction
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
+- `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status
+- `docs/audits/frontend-god-files-audit-2026-06-14.md` - Principle 5, frontend split status
 - `.filesize-baseline` - Principle 5, god-file tracking
 - `.github/workflows/cohesion-check.yml` - Principle 5
 - `.github/workflows/complexity-check.yml` - Principle 5
+- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher
 - `scripts/check-file-sizes.sh` - Principle 2 and 5

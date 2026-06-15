@@ -19,7 +19,7 @@
  * clicked page selected — wired via ``onSelectPage`` callback that
  * the parent (BookEditor) routes through history state.
  */
-import React, {useCallback, useEffect, useMemo, useState} from "react"
+import React, {useEffect, useMemo, useState} from "react"
 import {
     AlertTriangle,
     ArrowLeft,
@@ -31,26 +31,15 @@ import {
     Network,
     X,
 } from "lucide-react"
+import {DndContext, closestCenter} from "@dnd-kit/core"
 import {
-    DndContext,
-    closestCenter,
-    KeyboardSensor,
-    PointerSensor,
-    useSensor,
-    useSensors,
-    type DragEndEvent,
-} from "@dnd-kit/core"
-import {
-    arrayMove,
     rectSortingStrategy,
     SortableContext,
-    sortableKeyboardCoordinates,
     useSortable,
 } from "@dnd-kit/sortable"
 import {CSS} from "@dnd-kit/utilities"
 
 import {
-    api,
     type ContinuityWarning,
     type Page,
     type PageUpdate,
@@ -60,6 +49,8 @@ import {
 import {getStorage} from "../storage";
 import {imageUrlFor} from "../utils/imageUrl"
 import {useI18n} from "../hooks/useI18n"
+import {useStoryboardData} from "../hooks/useStoryboardData"
+import {useStoryBibleIntegration} from "../hooks/useStoryBibleIntegration"
 import {notify} from "../utils/notify"
 import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import StoryboardArcView from "./StoryboardArcView"
@@ -112,149 +103,27 @@ export default function Storyboard({
     testidNamespace = "storyboard",
 }: Props) {
     const {t} = useI18n()
-    const [pages, setPages] = useState<Page[]>([])
-    const [loadError, setLoadError] = useState<string | null>(null)
-    const [loaded, setLoaded] = useState(false)
-
-    // Story Bible integration (C2 + C5). The sidebar is available only
-    // when plugin-story-bible is mounted (probed once); badge clicks +
-    // the header toggle open it with an entity optionally selected.
-    const [storyBibleAvailable, setStoryBibleAvailable] = useState(false)
-    const [storyBibleOpen, setStoryBibleOpen] = useState(false)
-    const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null)
-    // C9: grid (default) vs arc-view (entity swim-lanes) of the pages.
-    const [viewMode, setViewMode] = useState<"grid" | "arc">("grid")
-
-    useEffect(() => {
-        let cancelled = false
-        getStorage().storyBible
-            .getInfo()
-            .then(() => {
-                if (!cancelled) setStoryBibleAvailable(true)
-            })
-            .catch(() => {
-                if (!cancelled) setStoryBibleAvailable(false)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [])
-
-    const openEntity = useCallback((entityId: string) => {
-        setSelectedEntityId(entityId)
-        setStoryBibleOpen(true)
-    }, [])
-
-    // C8: entity filter. The author selects one or more entities and
-    // the grid shows only pages where ALL of them appear (set
-    // intersection). Entities for the chips load once when available;
-    // ``visiblePageIds`` is null (= show all) when no filter is set.
-    const [entities, setEntities] = useState<StoryEntityOut[]>([])
-    const [entityFilter, setEntityFilter] = useState<string[]>([])
-    const [visiblePageIds, setVisiblePageIds] = useState<Set<string> | null>(null)
-
-    useEffect(() => {
-        if (!storyBibleAvailable) return
-        let cancelled = false
-        getStorage().storyBible
-            .listEntities(bookId)
-            .then((rows) => {
-                if (!cancelled) setEntities(rows)
-            })
-            .catch(() => {})
-        return () => {
-            cancelled = true
-        }
-    }, [bookId, storyBibleAvailable])
-
-    useEffect(() => {
-        if (entityFilter.length === 0) {
-            setVisiblePageIds(null)
-            return
-        }
-        let cancelled = false
-        Promise.all(entityFilter.map((id) => getStorage().storyBible.appearances(id)))
-            .then((perEntity) => {
-                if (cancelled) return
-                // Intersection of page_ids across all selected entities.
-                const sets = perEntity.map(
-                    (links) =>
-                        new Set(
-                            links
-                                .map((l) => l.page_id)
-                                .filter((p): p is string => Boolean(p)),
-                        ),
-                )
-                const intersection = sets.reduce<Set<string>>((acc, s, idx) => {
-                    if (idx === 0) return new Set(s)
-                    return new Set([...acc].filter((id) => s.has(id)))
-                }, new Set())
-                setVisiblePageIds(intersection)
-            })
-            .catch(() => {
-                if (!cancelled) setVisiblePageIds(null)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [entityFilter])
-
-    const toggleEntityFilter = useCallback((entityId: string) => {
-        setEntityFilter((prev) =>
-            prev.includes(entityId)
-                ? prev.filter((id) => id !== entityId)
-                : [...prev, entityId],
-        )
-    }, [])
-
-    // C11: continuity warnings, grouped by the page they badge.
-    // Dismissed page_ids are local (advisory, per the spec). Re-fetched
-    // when a link changes (linkRefreshKey) so a drop clears/adds a warn.
-    const [warningsByPage, setWarningsByPage] = useState<
-        Record<string, ContinuityWarning[]>
-    >({})
-    const [dismissedWarnings, setDismissedWarnings] = useState<Set<string>>(
-        new Set(),
-    )
-    const [linkRefreshKey, setLinkRefreshKey] = useState(0)
-
-    useEffect(() => {
-        if (!storyBibleAvailable) return
-        let cancelled = false
-        getStorage().storyBible
-            .continuityCheck(bookId)
-            .then((rows) => {
-                if (cancelled) return
-                const grouped: Record<string, ContinuityWarning[]> = {}
-                for (const w of rows) {
-                    ;(grouped[w.page_id] ??= []).push(w)
-                }
-                setWarningsByPage(grouped)
-            })
-            .catch(() => {})
-        return () => {
-            cancelled = true
-        }
-    }, [bookId, storyBibleAvailable, linkRefreshKey])
-
-    useEffect(() => {
-        let cancelled = false
-        getStorage().pages
-            .list(bookId)
-            .then((rows) => {
-                if (cancelled) return
-                setPages(rows)
-                setLoaded(true)
-            })
-            .catch((err: unknown) => {
-                if (cancelled) return
-                setLoadError(err instanceof Error ? err.message : String(err))
-                setLoaded(true)
-            })
-        return () => {
-            cancelled = true
-        }
-    }, [bookId])
+    const {pages, loadError, loaded, sensors, handleDragEnd, handlePatchPage} =
+        useStoryboardData(bookId)
+    const {
+        storyBibleAvailable,
+        storyBibleOpen,
+        setStoryBibleOpen,
+        selectedEntityId,
+        setSelectedEntityId,
+        viewMode,
+        setViewMode,
+        entities,
+        entityFilter,
+        setEntityFilter,
+        visiblePageIds,
+        warningsByPage,
+        dismissedWarnings,
+        setDismissedWarnings,
+        setLinkRefreshKey,
+        openEntity,
+        toggleEntityFilter,
+    } = useStoryBibleIntegration(bookId)
 
     // C8: when an entity filter is active, only pages in the
     // intersection are shown. visiblePageIds === null means no filter.
@@ -268,69 +137,6 @@ export default function Storyboard({
     const grouped = useMemo(() => groupByActGroup(filteredPages), [filteredPages])
     const totalPages = pages.length
     const pageIds = useMemo(() => pages.map((p) => p.id), [pages])
-
-    // @dnd-kit reorder mirrors PageThumbnails (codebase convention is
-    // inline reorder logic per-component; no shared useSortable hook).
-    // Pointer activation constraint of 5px prevents drag-on-click;
-    // KeyboardSensor enables Tab+Space/Enter reorder for accessibility.
-    const sensors = useSensors(
-        useSensor(PointerSensor, {activationConstraint: {distance: 5}}),
-        useSensor(KeyboardSensor, {coordinateGetter: sortableKeyboardCoordinates}),
-    )
-
-    const handleDragEnd = useCallback(
-        (event: DragEndEvent) => {
-            const {active, over} = event
-            if (!over || active.id === over.id) return
-            const oldIndex = pageIds.indexOf(active.id as string)
-            const newIndex = pageIds.indexOf(over.id as string)
-            if (oldIndex === -1 || newIndex === -1) return
-            const next = arrayMove(pageIds, oldIndex, newIndex)
-            // Optimistic local reorder before the network round-trip
-            // so the cards don't visibly snap back to their old slots.
-            // The /reorder endpoint returns the canonical re-positioned
-            // rows; replace local state with that authoritative shape.
-            const nextPages = next
-                .map((id) => pages.find((p) => p.id === id))
-                .filter((p): p is Page => Boolean(p))
-            setPages(nextPages.map((p, idx) => ({...p, position: idx + 1})))
-            void getStorage().pages
-                .reorder(bookId, next)
-                .then((rows) => setPages(rows))
-                .catch((err: unknown) => {
-                    // On failure, refetch authoritative order so the
-                    // UI doesn't silently keep the optimistic state.
-                    setLoadError(err instanceof Error ? err.message : String(err))
-                    void getStorage().pages
-                        .list(bookId)
-                        .then((rows) => setPages(rows))
-                        .catch(() => {})
-                })
-        },
-        [bookId, pageIds, pages],
-    )
-
-    /** Annotation auto-save (Session 2 C1+). Patches a single field
-     *  on a single page; on success, replaces the page row in local
-     *  state with the authoritative response. On failure, fires a
-     *  toast (per the lessons-learned "annotation PATCH fails
-     *  silently" Stop-Condition) — local state stays optimistic so
-     *  the user doesn't lose their edit, but the toast surfaces the
-     *  error for retry. */
-    const handlePatchPage = useCallback(
-        async (pageId: string, patch: PageUpdate): Promise<void> => {
-            try {
-                const updated = await getStorage().pages.update(bookId, pageId, patch)
-                setPages((prev) =>
-                    prev.map((p) => (p.id === pageId ? updated : p)),
-                )
-            } catch (err: unknown) {
-                notify.error(t("ui.storyboard.save_failed", "Save failed"), err)
-                throw err
-            }
-        },
-        [bookId],
-    )
 
     return (
         <div className={styles.container} data-testid={testidNamespace}>

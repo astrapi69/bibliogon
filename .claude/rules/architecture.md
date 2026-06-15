@@ -5,7 +5,7 @@
 ```
 1. Frontend        React 18 + TypeScript + TipTap + Vite
 2. Backend         FastAPI + SQLAlchemy + SQLite + Pydantic v2
-3. PluginForge     External PyPI package (pluginforge ^0.5.0), based on pluggy
+3. PluginForge     External PyPI package (pluginforge ^0.10.0), based on pluggy
 4. Plugins         Standalone packages, registered via entry points
 ```
 
@@ -18,7 +18,7 @@ New features ALWAYS belong in a plugin, unless they touch the core (Book/Chapter
 | `pluginforge` | Application-agnostic plugin framework (PyPI) | MIT |
 | `bibliogon` | Book authoring platform, uses PluginForge | MIT (all plugins free during development) |
 
-PluginForge is EXTERNAL. Changes to PluginForge are a separate repo and a separate release cycle. Bibliogon pins `pluginforge ^0.5.0`.
+PluginForge is EXTERNAL. Changes to PluginForge are a separate repo and a separate release cycle. Bibliogon pins `pluginforge ^0.10.0`.
 
 ## Backend (Python/FastAPI)
 

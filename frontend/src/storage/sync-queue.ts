@@ -22,76 +22,64 @@ type QueueOp = SyncQueueEntry["operation"];
 
 /** Append a pending mutation to the queue. */
 export async function enqueue(
-  model: QueueModel,
-  operation: QueueOp,
-  entityId: string,
-  bookId: string | null,
-  payload: Record<string, unknown> | null,
+    model: QueueModel,
+    operation: QueueOp,
+    entityId: string,
+    bookId: string | null,
+    payload: Record<string, unknown> | null,
 ): Promise<void> {
-  await offlineDb.syncQueue.add({
-    id: newId(),
-    model,
-    operation,
-    entity_id: entityId,
-    book_id: bookId,
-    payload,
-    created_at: nowIso(),
-    status: "pending",
-    error: null,
-  });
+    await offlineDb.syncQueue.add({
+        id: newId(),
+        model,
+        operation,
+        entity_id: entityId,
+        book_id: bookId,
+        payload,
+        created_at: nowIso(),
+        status: "pending",
+        error: null,
+    });
 }
 
 /** Pending entries in creation (= replay) order: ascending `seq`. */
 export async function listPendingSyncEntries(): Promise<SyncQueueEntry[]> {
-  return offlineDb.syncQueue
-    .orderBy("seq")
-    .filter((e) => e.status === "pending")
-    .toArray();
+    return offlineDb.syncQueue
+        .orderBy("seq")
+        .filter((e) => e.status === "pending")
+        .toArray();
 }
 
 export async function pendingSyncCount(): Promise<number> {
-  return offlineDb.syncQueue.where("status").equals("pending").count();
+    return offlineDb.syncQueue.where("status").equals("pending").count();
 }
 
 export async function markSynced(entryId: string): Promise<void> {
-  await offlineDb.syncQueue.where("id").equals(entryId).delete();
+    await offlineDb.syncQueue.where("id").equals(entryId).delete();
 }
 
-export async function markFailed(
-  entryId: string,
-  error: string,
-): Promise<void> {
-  await offlineDb.syncQueue
-    .where("id")
-    .equals(entryId)
-    .modify({ status: "failed", error });
+export async function markFailed(entryId: string, error: string): Promise<void> {
+    await offlineDb.syncQueue.where("id").equals(entryId).modify({ status: "failed", error });
 }
 
 export async function markConflict(entryId: string): Promise<void> {
-  await offlineDb.syncQueue
-    .where("id")
-    .equals(entryId)
-    .modify({ status: "conflict" });
+    await offlineDb.syncQueue.where("id").equals(entryId).modify({ status: "conflict" });
 }
 
 /** Entries parked as conflicts, awaiting user resolution (C7). */
 export async function listConflictEntries(): Promise<SyncQueueEntry[]> {
-  return offlineDb.syncQueue.where("status").equals("conflict").toArray();
+    return offlineDb.syncQueue.where("status").equals("conflict").toArray();
 }
 
 /** A single queue entry by its uuid id (for conflict resolution). */
-export async function getSyncEntry(
-  entryId: string,
-): Promise<SyncQueueEntry | undefined> {
-  return offlineDb.syncQueue.where("id").equals(entryId).first();
+export async function getSyncEntry(entryId: string): Promise<SyncQueueEntry | undefined> {
+    return offlineDb.syncQueue.where("id").equals(entryId).first();
 }
 
 export async function clearSyncQueue(): Promise<void> {
-  await offlineDb.syncQueue.clear();
+    await offlineDb.syncQueue.clear();
 }
 
-const asPayload = (v: unknown): Record<string, unknown> =>
-  v as Record<string, unknown>;
+const asPayload = (v: unknown): Record<string, unknown> => v as Record<string, unknown>;
 
 /** Wrap a storage backend so every WRITE also records a queue entry.
  *  Reads delegate straight through. Used for the offline (Dexie)
@@ -101,104 +89,117 @@ const asPayload = (v: unknown): Record<string, unknown> =>
  *  writingSessions) delegate straight through without a queue entry: in
  *  offline mode their writes are local-only (no server to sync them to yet). */
 export function makeQueueingStorage(base: IStorageService): IStorageService {
-  return {
-    mode: base.mode,
-    books: {
-      list: base.books.list,
-      get: base.books.get,
-      create: async (data) => {
-        const row = await base.books.create(data);
-        await enqueue("book", "create", row.id, null, asPayload(row));
-        return row;
-      },
-      update: async (id, data) => {
-        const row = await base.books.update(id, data);
-        await enqueue("book", "update", id, null, asPayload(data));
-        return row;
-      },
-      delete: async (id) => {
-        await base.books.delete(id);
-        await enqueue("book", "delete", id, null, null);
-      },
-      // Trash lifecycle (Finding 7): local-only offline operations
-      // (replay deferred, like comments) — straight passthrough so the
-      // dashboard trash view works offline without a queue entry.
-      listTrash: base.books.listTrash,
-      restore: base.books.restore,
-      permanentDelete: base.books.permanentDelete,
-      emptyTrash: base.books.emptyTrash,
-      bulkRestore: base.books.bulkRestore,
-      bulkDelete: base.books.bulkDelete,
-    },
-    chapters: {
-      list: base.chapters.list,
-      get: base.chapters.get,
-      create: async (bookId, data) => {
-        const row = await base.chapters.create(bookId, data);
-        await enqueue("chapter", "create", row.id, bookId, asPayload(row));
-        return row;
-      },
-      update: async (bookId, chapterId, data) => {
-        const row = await base.chapters.update(bookId, chapterId, data);
-        await enqueue("chapter", "update", chapterId, bookId, asPayload(data));
-        return row;
-      },
-      delete: async (bookId, chapterId) => {
-        await base.chapters.delete(bookId, chapterId);
-        await enqueue("chapter", "delete", chapterId, bookId, null);
-      },
-      // reorder is a bulk position write; it re-positions rows in
-      // Dexie immediately. Replaying reorder is deferred (C6+ —
-      // positions also sync via the per-chapter update path), so it
-      // passes straight through without a queue entry for now.
-      reorder: base.chapters.reorder,
-    },
-    articles: {
-      list: base.articles.list,
-      get: base.articles.get,
-      create: async (data) => {
-        const row = await base.articles.create(data);
-        await enqueue("article", "create", row.id, null, asPayload(row));
-        return row;
-      },
-      update: async (id, data) => {
-        const row = await base.articles.update(id, data);
-        await enqueue("article", "update", id, null, asPayload(data));
-        return row;
-      },
-      delete: async (id) => {
-        await base.articles.delete(id);
-        await enqueue("article", "delete", id, null, null);
-      },
-    },
-    settings: base.settings,
-    i18n: base.i18n,
-    bookTypes: base.bookTypes,
-    contentTypes: base.contentTypes,
-    writingSessions: base.writingSessions,
-    // Writing-history stats: read-only aggregation, no queue entry.
-    writingStats: base.writingStats,
-    authors: base.authors,
-    // Read-only publishing surfaces: straight passthrough, no queue entry.
-    publications: base.publications,
-    articlePlatforms: base.articlePlatforms,
-    editorPluginStatus: base.editorPluginStatus,
-    // Chapter labels: local-only offline writes (replay deferred, like
-    // authors); straight passthrough so the seam stays complete.
-    chapterLabels: base.chapterLabels,
-    // Story Bible: local-only offline writes (replay deferred); passthrough.
-    storyBible: base.storyBible,
-    // Picture-book pages + comic panels/bubbles: local-only offline writes
-    // (replay deferred); passthrough.
-    pages: base.pages,
-    comics: base.comics,
-    // Assets + covers: blobs stored locally offline (replay deferred — a
-    // reconnect re-upload is a future sync concern, matching pages/comics);
-    // straight passthrough so the seam stays complete.
-    assets: base.assets,
-    covers: base.covers,
-    // Comments: local-only offline writes (soft-delete / trash / reclassify);
-    // replay deferred, passthrough.
-    comments: base.comments,
-  };
+    return {
+        mode: base.mode,
+        books: {
+            list: base.books.list,
+            get: base.books.get,
+            create: async (data) => {
+                const row = await base.books.create(data);
+                await enqueue("book", "create", row.id, null, asPayload(row));
+                return row;
+            },
+            update: async (id, data) => {
+                const row = await base.books.update(id, data);
+                await enqueue("book", "update", id, null, asPayload(data));
+                return row;
+            },
+            delete: async (id) => {
+                await base.books.delete(id);
+                await enqueue("book", "delete", id, null, null);
+            },
+            // Trash lifecycle (Finding 7): local-only offline operations
+            // (replay deferred, like comments) — straight passthrough so the
+            // dashboard trash view works offline without a queue entry.
+            listTrash: base.books.listTrash,
+            restore: base.books.restore,
+            permanentDelete: base.books.permanentDelete,
+            emptyTrash: base.books.emptyTrash,
+            bulkRestore: base.books.bulkRestore,
+            bulkDelete: base.books.bulkDelete,
+            // Article-to-book conversion writes a book + chapters straight
+            // into Dexie; replay is deferred (like pages/comics), so it
+            // passes through without a queue entry for now.
+            fromArticles: base.books.fromArticles,
+        },
+        chapters: {
+            list: base.chapters.list,
+            get: base.chapters.get,
+            create: async (bookId, data) => {
+                const row = await base.chapters.create(bookId, data);
+                await enqueue("chapter", "create", row.id, bookId, asPayload(row));
+                return row;
+            },
+            update: async (bookId, chapterId, data) => {
+                const row = await base.chapters.update(bookId, chapterId, data);
+                await enqueue("chapter", "update", chapterId, bookId, asPayload(data));
+                return row;
+            },
+            delete: async (bookId, chapterId) => {
+                await base.chapters.delete(bookId, chapterId);
+                await enqueue("chapter", "delete", chapterId, bookId, null);
+            },
+            // reorder is a bulk position write; it re-positions rows in
+            // Dexie immediately. Replaying reorder is deferred (C6+ —
+            // positions also sync via the per-chapter update path), so it
+            // passes straight through without a queue entry for now.
+            reorder: base.chapters.reorder,
+        },
+        articles: {
+            list: base.articles.list,
+            get: base.articles.get,
+            create: async (data) => {
+                const row = await base.articles.create(data);
+                await enqueue("article", "create", row.id, null, asPayload(row));
+                return row;
+            },
+            update: async (id, data) => {
+                const row = await base.articles.update(id, data);
+                await enqueue("article", "update", id, null, asPayload(data));
+                return row;
+            },
+            delete: async (id) => {
+                await base.articles.delete(id);
+                await enqueue("article", "delete", id, null, null);
+            },
+            listTrash: base.articles.listTrash,
+            restore: base.articles.restore,
+            permanentDelete: base.articles.permanentDelete,
+            emptyTrash: base.articles.emptyTrash,
+            bulkRestore: base.articles.bulkRestore,
+            bulkDelete: base.articles.bulkDelete,
+        },
+        settings: base.settings,
+        i18n: base.i18n,
+        bookTypes: base.bookTypes,
+        contentTypes: base.contentTypes,
+        writingSessions: base.writingSessions,
+        // Writing-history stats: read-only aggregation, no queue entry.
+        writingStats: base.writingStats,
+        authors: base.authors,
+        // Read-only publishing surfaces: straight passthrough, no queue entry.
+        publications: base.publications,
+        articlePlatforms: base.articlePlatforms,
+        editorPluginStatus: base.editorPluginStatus,
+        // Chapter labels: local-only offline writes (replay deferred, like
+        // authors); straight passthrough so the seam stays complete.
+        chapterLabels: base.chapterLabels,
+        // Story Bible: local-only offline writes (replay deferred); passthrough.
+        storyBible: base.storyBible,
+        // Picture-book pages + comic panels/bubbles: local-only offline writes
+        // (replay deferred); passthrough.
+        pages: base.pages,
+        comics: base.comics,
+        // Assets + covers: blobs stored locally offline (replay deferred — a
+        // reconnect re-upload is a future sync concern, matching pages/comics);
+        // straight passthrough so the seam stays complete.
+        assets: base.assets,
+        // #157: article featured-image blobs are local-only offline (replay
+        // deferred, matching assets/covers); straight passthrough.
+        articleAssets: base.articleAssets,
+        covers: base.covers,
+        // Comments: local-only offline writes (soft-delete / trash / reclassify);
+        // replay deferred, passthrough.
+        comments: base.comments,
+    };
 }

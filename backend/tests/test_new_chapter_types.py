@@ -189,7 +189,7 @@ def test_audiobook_generator_default_skip_includes_marketing():
 
 
 def test_audiobook_router_default_skip_includes_marketing():
-    from app.routers.audiobook import DEFAULT_AUDIOBOOK_SKIP_TYPES
+    from app.services.audiobook_skip_types import DEFAULT_AUDIOBOOK_SKIP_TYPES
     for marketing in MARKETING_TYPES:
         assert marketing in DEFAULT_AUDIOBOOK_SKIP_TYPES
 

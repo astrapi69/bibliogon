@@ -46,6 +46,7 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState("story-bible", DEXIE_NO_KEY)).toBe("active");
         expect(featureRegistry.getState(FEATURES.BACKUP_EXPORT, DEXIE_NO_KEY)).toBe("active");
         expect(featureRegistry.getState(FEATURES.BACKUP_IMPORT, DEXIE_NO_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.SELECTIVE_EXPORT, DEXIE_NO_KEY)).toBe("active");
         // .bgb import is client-side now (#99), so it is active offline too.
         expect(featureRegistry.getState(FEATURES.BGB_IMPORT, DEXIE_NO_KEY)).toBe("active");
     });

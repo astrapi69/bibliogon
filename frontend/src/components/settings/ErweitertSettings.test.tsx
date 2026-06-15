@@ -1,19 +1,16 @@
 /**
- * Vitest coverage for ErweitertSettings
- * (SETT-PHASE-2-ALLGEMEIN-TAB-SPLIT-01).
+ * Vitest coverage for ErweitertSettings.
  *
- * Pins the new "Erweitert" tab — SshKeySection + White-Label
- * customisation lifted out of the catch-all "Allgemein" tab.
- * The Phase 1 Collapsible wrapper around White-Label is removed
- * since the tab itself is now the affordance.
+ * Pins the "Erweitert" tab after the White-Label removal (#150):
+ * the tab now hosts only SshKeySection (Git host auth). The
+ * White-Label app-customisation card and its save contract are gone.
  *
- * SshKeySection is stubbed so this test stays focused on the
- * White-Label save contract; SshKeySection has its own
- * regression-pin (SshKeySection.test.tsx).
+ * SshKeySection is stubbed; it has its own regression-pin
+ * (SshKeySection.test.tsx).
  */
 
 import {describe, it, expect, vi} from "vitest";
-import {render, screen, fireEvent} from "@testing-library/react";
+import {render, screen} from "@testing-library/react";
 import {ErweitertSettings} from "./ErweitertSettings";
 
 vi.mock("../../hooks/useI18n", () => ({
@@ -28,44 +25,18 @@ vi.mock("../SshKeySection", () => ({
     default: () => <div data-testid="stub-ssh-key-section"/>,
 }));
 
-describe("ErweitertSettings — Advanced tab (Phase 2)", () => {
-    const baseConfig = {
-        ui: {title: "Bibliogon", subtitle: "Authoring"},
-        plugins: {enabled: ["export", "help", "getstarted", "audiobook"]},
-    };
-
-    it("renders the section heading + SshKeySection stub + White-Label card", () => {
-        render(<ErweitertSettings config={baseConfig} onSave={vi.fn()} saving={false}/>);
+describe("ErweitertSettings — Advanced tab (SSH only)", () => {
+    it("renders the section heading + SshKeySection stub", () => {
+        render(<ErweitertSettings/>);
         expect(screen.getByTestId("erweitert-settings")).toBeInTheDocument();
         expect(screen.getByText("Erweitert")).toBeInTheDocument();
         expect(screen.getByTestId("stub-ssh-key-section")).toBeInTheDocument();
-        expect(screen.getByTestId("white-label-card")).toBeInTheDocument();
-        expect(screen.getByTestId("white-label-app-name")).toHaveValue("Bibliogon");
-        expect(screen.getByTestId("white-label-description")).toHaveValue("Authoring");
-        expect(screen.getByTestId("white-label-core-export")).toBeChecked();
-        expect(screen.getByTestId("white-label-core-help")).toBeChecked();
-        expect(screen.getByTestId("white-label-core-getstarted")).toBeChecked();
     });
 
-    it("invokes onSave with ui + plugins envelope, preserving non-core plugins", () => {
-        const onSave = vi.fn();
-        render(<ErweitertSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("erweitert-settings-save"));
-        expect(onSave).toHaveBeenCalledTimes(1);
-        expect(onSave).toHaveBeenCalledWith({
-            ui: {title: "Bibliogon", subtitle: "Authoring"},
-            plugins: {enabled: expect.arrayContaining(["export", "help", "getstarted", "audiobook"])},
-        });
-    });
-
-    it("unchecking a core plugin removes it from the save payload", () => {
-        const onSave = vi.fn();
-        render(<ErweitertSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("white-label-core-help"));
-        fireEvent.click(screen.getByTestId("erweitert-settings-save"));
-        const call = onSave.mock.calls[0][0] as {plugins: {enabled: string[]}};
-        expect(call.plugins.enabled).not.toContain("help");
-        expect(call.plugins.enabled).toContain("export");
-        expect(call.plugins.enabled).toContain("audiobook");
+    it("no longer renders any White-Label customisation surface", () => {
+        render(<ErweitertSettings/>);
+        expect(screen.queryByTestId("white-label-card")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("white-label-app-name")).not.toBeInTheDocument();
+        expect(screen.queryByTestId("erweitert-settings-save")).not.toBeInTheDocument();
     });
 });

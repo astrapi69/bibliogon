@@ -37,6 +37,41 @@
     font-weight: 600;
 }
 
+/* MD-TABS-SETTINGS-NAV: two-column section layout (nav sidebar +
+   content), mirroring the Settings page. The NavigationSidebar
+   toggles its own desktop/mobile surfaces via Tailwind responsive
+   classes; this grid pins the 220px rail on desktop and collapses
+   to a single column at <=768px where the hamburger renders above
+   the content. */
+.layout {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: 32px;
+    max-width: 1040px;
+}
+
+.sidebarColumn {
+    min-width: 0;
+    align-self: start;
+    position: sticky;
+    top: 16px;
+}
+
+.contentColumn {
+    min-width: 0;
+    max-width: 800px;
+}
+
+@media (max-width: 768px) {
+    .layout {
+        grid-template-columns: 1fr;
+        gap: 0;
+    }
+    .sidebarColumn {
+        position: static;
+    }
+}
+
 /* Locks the tab area to a uniform height so switching between
    tabs with very different content (general vs marketing) does
    not make the page jump. */

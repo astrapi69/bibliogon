@@ -9,16 +9,27 @@
  */
 
 import {useEffect, useState} from "react"
+import {FileText, FileDown} from "lucide-react"
 import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
 import {LoadingIndicator} from "./LoadingIndicator"
+import {slugify} from "../shared/utils/slugify"
+import {downloadBlob} from "../shared/utils/downloadBlob"
+import {toPdfBlob} from "../export/formatPdf"
+import {
+    buildQualityReportMarkdown,
+    buildQualityReportDocument,
+    type QualityReportLabels,
+} from "./qualityReport"
+import {notify} from "../utils/notify"
 import styles from "./QualityTab.module.css"
 
 export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
 
 interface Props {
     bookId: string
+    bookTitle?: string
     onNavigateToIssue?: (chapterId: string, findingType: NavigableFindingType) => void
 }
 
@@ -29,11 +40,12 @@ function isOutlier(value: number, avg: number): boolean {
     return value > avg * OUTLIER_FACTOR
 }
 
-export default function QualityTab({bookId, onNavigateToIssue}: Props) {
+export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props) {
     const {t} = useI18n()
     const [data, setData] = useState<ChapterMetricsResponse | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
+    const [exporting, setExporting] = useState(false)
 
     const loadMetrics = async () => {
         setLoading(true)
@@ -50,6 +62,50 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
     useEffect(() => {
         loadMetrics()
     }, [bookId])
+
+    const reportLabels = (): QualityReportLabels => ({
+        title: t("ui.metadata.quality_report_title", "Qualitaetsbericht"),
+        chapters: t("ui.metadata.quality_chapters", "Kapitel"),
+        words: t("ui.editor.words", "Woerter"),
+        avgReadability: t("ui.metadata.quality_avg_readability", "Lesbarkeit (Ø)"),
+        avgFiller: t("ui.metadata.quality_avg_filler", "Fuellwoerter (Ø)"),
+        colChapter: t("ui.metadata.quality_col_chapter", "Kapitel"),
+        colSentences: t("ui.metadata.quality_col_sentences", "Saetze"),
+        colFiller: t("ui.metadata.quality_col_filler", "Fuell %"),
+        colPassive: t("ui.metadata.quality_col_passive", "Passiv %"),
+        colAdverb: t("ui.metadata.quality_col_adverb", "Adv %"),
+        colLong: t("ui.metadata.quality_col_long", "Lange Saetze"),
+        flesch: "Flesch",
+    })
+
+    const reportSlug = (): string =>
+        `${slugify(bookTitle || data?.book_title || "") || "buch"}-${slugify(
+            t("ui.metadata.quality_report_title", "Qualitaetsbericht"),
+        ) || "qualitaetsbericht"}`
+
+    const handleDownloadMarkdown = () => {
+        if (!data) return
+        const markdown = buildQualityReportMarkdown(data, reportLabels())
+        downloadBlob(
+            new Blob([markdown], {type: "text/markdown;charset=utf-8"}),
+            `${reportSlug()}.md`,
+        )
+    }
+
+    const handleDownloadPdf = async () => {
+        if (!data) return
+        setExporting(true)
+        try {
+            const blob = await toPdfBlob(buildQualityReportDocument(data, reportLabels()))
+            downloadBlob(blob, `${reportSlug()}.pdf`)
+        } catch (err) {
+            notify.error(
+                t("ui.metadata.quality_pdf_failed", "PDF-Export fehlgeschlagen"),
+                err,
+            )
+        }
+        setExporting(false)
+    }
 
     if (loading) {
         return <LoadingIndicator testId="quality-tab-loading" variant="block" label={t("ui.common.loading", "Laden...")} />
@@ -109,6 +165,31 @@ export default function QualityTab({bookId, onNavigateToIssue}: Props) {
                         ))}
                     </tbody>
                 </table>
+            </div>
+
+            {/* Report downloads */}
+            <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm min-h-[44px]"
+                    onClick={handleDownloadMarkdown}
+                    data-testid="quality-download-md"
+                >
+                    <FileText size={14} />{" "}
+                    {t("ui.metadata.quality_download_md", "Bericht (.md)")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm min-h-[44px]"
+                    onClick={handleDownloadPdf}
+                    disabled={exporting}
+                    data-testid="quality-download-pdf"
+                >
+                    <FileDown size={14} />{" "}
+                    {exporting
+                        ? t("ui.common.loading", "Laden...")
+                        : t("ui.metadata.quality_download_pdf", "Bericht (.pdf)")}
+                </button>
             </div>
         </div>
     )

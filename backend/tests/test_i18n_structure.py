@@ -105,11 +105,13 @@ def test_top_level_sections_match_reference(lang: str):
 # frontend call sites depend on them and the hardcoded fallback is
 # only ever an English string. Derived from the v0.12.0 bug: these are
 # exactly the keys that got silently moved into ``ui.translation``.
+# (plugin_export / plugin_help / plugin_getstarted were dropped here
+# when the White-Label surface was removed in #150 — they had no
+# remaining consumer.)
 _CRITICAL_SETTINGS_KEYS = {
     "free", "premium", "active", "inactive", "standard",
     "off", "on",
     "expand_settings", "collapse", "remove_plugin",
-    "plugin_export", "plugin_help", "plugin_getstarted",
     "license_required", "enter_license",
 }
 

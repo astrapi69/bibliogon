@@ -1,0 +1,76 @@
+name: Security Scan
+
+# Dependency-security watcher (#149). The PR/push enforcement already
+# lives in ci.yml (pip-audit + bandit + npm audit, all hard-blocking on
+# every push/PR to main/develop). This watcher closes the remaining gap:
+# new CVEs published against already-merged dependencies are invisible
+# without a code change, because ci.yml only triggers on push/PR.
+#
+# Defense-in-depth Phase 1, same shape as the Cohesion (#113) and
+# Complexity (#139) watchers: pure visibility, every step ends with
+# exit 0 so the scheduled run never produces a misleading red on a
+# branch nobody touched. The blocking gate stays in ci.yml. The
+# --ignore-vuln list is deliberately omitted here so deferred advisories
+# (e.g. CVE-2025-68616, tracked in #47) stay visible week to week.
+
+on:
+  schedule:
+    - cron: "0 7 * * 0"  # weekly, Sunday 07:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  python-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - name: pip-audit (warn-only, no ignore list)
+        working-directory: backend
+        run: |
+          echo "=== pip-audit (dependency CVEs; --skip-editable drops path-installed plugins) ==="
+          # No --ignore-vuln: the watcher surfaces every advisory,
+          # including ones deferred in the ci.yml blocking gate.
+          poetry run pip-audit --skip-editable || true
+
+      - name: bandit (warn-only)
+        working-directory: backend
+        run: |
+          echo "=== bandit SAST (medium severity + medium confidence) ==="
+          poetry run bandit -c pyproject.toml \
+            -r app ../plugins ../scripts \
+            --severity-level medium --confidence-level medium -q || true
+
+  frontend-security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: npm audit (warn-only, high + critical)
+        working-directory: frontend
+        run: |
+          echo "=== npm audit (high + critical advisories) ==="
+          npm audit --audit-level=high || true

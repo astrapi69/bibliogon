@@ -3,7 +3,6 @@ import logging
 from datetime import UTC, datetime, timedelta
 from typing import Any
 
-import yaml
 from fastapi import APIRouter, Body, Depends, HTTPException, Query, status
 from pydantic import ValidationError
 
@@ -30,6 +29,11 @@ from app.schemas import (
     BookUpdate,
 )
 from app.schemas import ChapterType as ChapterTypeEnum
+from app.services.app_settings import (
+    allow_books_without_author,
+    get_trash_auto_delete_config,
+    is_permanent_delete,
+)
 from app.services.backup.serializer import serialize_row
 
 logger = logging.getLogger(__name__)
@@ -37,40 +41,16 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/books", tags=["books"])
 
 
-def _is_permanent_delete() -> bool:
-    """Check app config for delete_permanently setting."""
-    from pathlib import Path
-
-    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
-    if not config_path.exists():
-        return False
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        return bool(config.get("app", {}).get("delete_permanently", False))
-    except Exception:
-        return False
-
-
 def _allow_books_without_author() -> bool:
-    """Check the advanced toggle that gates the NULL-author code path.
+    """Backward-compat indirection over
+    :func:`app.services.app_settings.allow_books_without_author`.
 
-    Default off — keeps the historical mandatory-author UX. When the
-    user enables it in Settings, the import wizard's defer option
-    appears and PATCH/POST against ``books`` accept null/empty as
-    'no author yet'.
+    Kept as a module-level callable so the lazy importers
+    (``book_ai_template``, ``import_orchestrator``) and the test patch
+    path ``app.routers.books._allow_books_without_author`` stay valid
+    after the config read moved to the service layer (God-file split #3).
     """
-    from pathlib import Path
-
-    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
-    if not config_path.exists():
-        return False
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        return bool(config.get("app", {}).get("allow_books_without_author", False))
-    except Exception:
-        return False
+    return allow_books_without_author()
 
 
 def _validate_author(value: str | None, allow_null: bool) -> str | None:
@@ -89,30 +69,12 @@ def _validate_author(value: str | None, allow_null: bool) -> str | None:
     return value.strip() if isinstance(value, str) else value
 
 
-def _get_trash_auto_delete_config() -> tuple[bool, int]:
-    """Get trash auto-delete settings: (enabled, days)."""
-    from pathlib import Path
-
-    config_path = Path(__file__).resolve().parent.parent.parent / "config" / "app.yaml"
-    if not config_path.exists():
-        return False, 30
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-        app = config.get("app", {})
-        enabled = bool(app.get("trash_auto_delete_enabled", False))
-        days = int(app.get("trash_auto_delete_days", 30))
-        return enabled, days
-    except Exception:
-        return False, 30
-
-
 def cleanup_expired_trash() -> int:
     """Permanently delete books that have been in the trash longer than the configured days.
 
     Returns the number of deleted books.
     """
-    enabled, days = _get_trash_auto_delete_config()
+    enabled, days = get_trash_auto_delete_config()
     if not enabled or days <= 0:
         return 0
 
@@ -710,7 +672,7 @@ def delete_book(book_id: str, repo: BookRepository = Depends(get_book_repository
     if not book:
         raise HTTPException(status_code=404, detail="Book not found")
 
-    if _is_permanent_delete():
+    if is_permanent_delete():
         repo.delete(book)
     else:
         repo.soft_delete(book)

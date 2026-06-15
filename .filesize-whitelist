@@ -23,3 +23,11 @@ backend/app/models/__init__.py
 # Reine Request/Response-Schema-Deklarationen + Field-Validatoren. Ein Concern
 # (API-Vertrag), kein IO, keine Business-Logik.
 backend/app/schemas/__init__.py
+
+# --- Frontend: typed API DTOs (Single-File API Contract) ---
+# Pure TypeScript interface/type declarations for every /api response + request
+# shape (plus the tiny formatVoiceLabel label helper). One Concern (the client
+# API contract), no transport/IO/business logic - those live in api/http.ts,
+# api/apiObject.ts + the entity modules. Splitting the DTOs would only hurt
+# discoverability (mirrors the backend schemas whitelist rationale).
+frontend/src/api/types.ts

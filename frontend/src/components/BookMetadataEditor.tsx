@@ -1,63 +1,36 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import DOMPurify from "dompurify";
-import {
-    api,
-    ApiError,
-    Author,
-    AudiobookChapterFile,
-    AudiobookVoice,
-    Book,
-    BookAudiobook,
-    BookDetail,
-    BookType,
-    Chapter,
-    formatVoiceLabel,
-    type GitSyncMappingStatus,
-} from "../api/client";
+import { useEffect, useMemo, useState } from "react";
+import { Book, BookDetail } from "../api/client";
 import { getStorage } from "../storage";
-import { useAssetUrl } from "../hooks/useAssetUrl";
 import { useStorageMode } from "../storage/useStorageMode";
-import { aiChat, getAiConfig, isAiConfigured } from "../ai/llmClient";
-import { buildMarketingMessages } from "../ai/marketingPrompts";
-import {
-    Save,
-    Copy,
-    ChevronLeft,
-    Download,
-    Trash2,
-    Package,
-    Sparkles,
-    CheckCircle,
-    Clock,
-    AlertCircle,
-    Play,
-    Pause,
-    Loader2,
-    Rocket,
-} from "lucide-react";
+import { ComboboxSelect } from "../lib/components/ComboboxSelect";
+import { buildBookLanguageOptions } from "../lib/bookLanguages";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../features/featureConfig";
+import { Save, Copy, ChevronLeft, Sparkles, Rocket } from "lucide-react";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
-import { RadixSelect } from "./RadixSelect";
 import { useBookTypes } from "../hooks/useBookTypes";
-import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
-import AuthorSelectInput from "./AuthorSelectInput";
-import { EnhancedTextarea } from "./textarea/EnhancedTextarea";
-import { LoadingIndicator } from "./LoadingIndicator";
-import { useWebSocket } from "../hooks/useWebSocket";
-import { useDialog } from "./AppDialog";
-import { useEditorPluginStatus, isPluginAvailable } from "../hooks/useEditorPluginStatus";
+import { useEditorPluginStatus } from "../hooks/useEditorPluginStatus";
+import { useBookMetadata } from "../hooks/useBookMetadata";
+import { useBookMetadataAi } from "../hooks/useBookMetadataAi";
 import KeywordInput from "./KeywordInput";
 import PdfExportControls from "./PdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "./CoverUpload";
-import AudiobookPlayer, { PlayerChapter } from "./AudiobookPlayer";
-import * as Tabs from "@radix-ui/react-tabs";
+import {
+    NavigationSidebar,
+    type NavigationSidebarGroup,
+} from "../lib/components/NavigationSidebar";
 import QualityTab, { NavigableFindingType } from "./QualityTab";
 import TranslationLinks from "./TranslationLinks";
 import AITemplatePanel from "./AITemplatePanel";
 import KdpPublishingWizard from "./kdp-wizard/KdpPublishingWizard";
+import { Row, Field, AuthorSelectField, RepositoryUrlField } from "./book-metadata/MetadataFields";
+import { HtmlFieldWithPreview } from "./book-metadata/HtmlField";
+import { AuthorAssetsPanel } from "./book-metadata/AuthorAssetsPanel";
+import AudiobookBookConfig from "./book-metadata/AudiobookConfig";
+import AudiobookDownloads from "./book-metadata/AudiobookDownloads";
 import styles from "./BookMetadataEditor.module.css";
 
 interface Props {
@@ -102,254 +75,85 @@ export default function BookMetadataEditor({
         // chapter-based (matches the legacy helper's
         // ``undefined → true`` branch).
         bookTypesSnapshot.types[book.book_type] === undefined;
-    const [form, setForm] = useState<Record<string, string | null>>({});
-    const [keywords, setKeywords] = useState<string[]>([]);
-    // Bug 9: Books-only subject categorisation. Pair of free-text +
-    // format-validated chip lists in the Marketing tab.
-    const [categories, setCategories] = useState<string[]>([]);
-    const [bisacCodes, setBisacCodes] = useState<string[]>([]);
-    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: bundled KDP category
-    // catalog (26 Amazon-canonical names), fetched once per
-    // BookMetadataEditor mount and fed to CategoryInput's
-    // `suggestions` prop. Empty until the fetch resolves; on
-    // failure stays empty (CategoryInput is free-text-capable, so
-    // a missing catalog degrades gracefully to plain typing).
-    const [kdpCategoriesCatalog, setKdpCategoriesCatalog] = useState<string[]>([]);
-    // BOOK-REPOSITORY-URL-FIELD-01 C3: snapshot of the
-    // plugin-git-sync mapping for this book. When ``mapped=true``,
-    // the General-tab Repository-URL field switches to read-only
-    // and surfaces ``status.repo_url`` (the canonical URL the
-    // round-trip uses). When ``mapped=false`` OR the call fails,
-    // the field falls back to free input editing ``Book.repository_url``.
-    const [gitSyncStatus, setGitSyncStatus] = useState<GitSyncMappingStatus | null>(null);
-    const [audiobookOverwrite, setAudiobookOverwrite] = useState<boolean>(false);
-    const [audiobookSkipTypes, setAudiobookSkipTypes] = useState<string[]>([]);
-    const [saving, setSaving] = useState(false);
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [showKdpWizard, setShowKdpWizard] = useState(false);
-    const [aiGenerating, setAiGenerating] = useState<string | null>(null);
-    const { status: pluginStatus } = useEditorPluginStatus();
-    const { mode } = useStorageMode();
-    const offline = mode === "dexie";
-    // Offline the AI plugin probe is empty (backend-only); the marketing
-    // generate instead runs browser-direct, so availability follows whether
-    // the user configured an AI key in Settings.
-    const [offlineAiReady, setOfflineAiReady] = useState(false);
-    useEffect(() => {
-        if (!offline) return;
-        let cancelled = false;
-        void getAiConfig().then((cfg) => {
-            if (!cancelled) setOfflineAiReady(isAiConfigured(cfg));
-        });
-        return () => {
-            cancelled = true;
-        };
-    }, [offline]);
-    const authorProfile = useAuthorProfile();
-
-    useEffect(() => {
-        setForm({
-            author: book.author || "",
-            language: book.language || "de",
-            subtitle: book.subtitle || "",
-            description: book.description || "",
-            book_idea: book.book_idea || "",
-            expose: book.expose || "",
-            // Writing goals (WRITING-GOALS-PROGRESS-TRACKING-01).
-            word_target: book.word_target != null ? String(book.word_target) : "",
-            word_target_deadline: book.word_target_deadline || "",
-            edition: book.edition || "",
-            publisher: book.publisher || "",
-            publisher_city: book.publisher_city || "",
-            publish_date: book.publish_date || "",
-            isbn_ebook: book.isbn_ebook || "",
-            isbn_paperback: book.isbn_paperback || "",
-            isbn_hardcover: book.isbn_hardcover || "",
-            asin_ebook: book.asin_ebook || "",
-            asin_paperback: book.asin_paperback || "",
-            asin_hardcover: book.asin_hardcover || "",
-            html_description: book.html_description || "",
-            backpage_description: book.backpage_description || "",
-            backpage_author_bio: book.backpage_author_bio || "",
-            cover_image: book.cover_image || "",
-            custom_css: book.custom_css || "",
-            tts_engine: book.tts_engine || "",
-            tts_voice: book.tts_voice || "",
-            tts_speed: book.tts_speed || "1.0",
-            audiobook_merge: book.audiobook_merge || "merged",
-            audiobook_filename: book.audiobook_filename || "",
-            repository_url: book.repository_url || "",
-        });
-        setKeywords(Array.isArray(book.keywords) ? book.keywords : []);
-        setCategories(Array.isArray(book.categories) ? book.categories : []);
-        setBisacCodes(Array.isArray(book.bisac_codes) ? book.bisac_codes : []);
-        setAudiobookOverwrite(Boolean(book.audiobook_overwrite_existing));
-        setAudiobookSkipTypes(
-            Array.isArray(book.audiobook_skip_chapter_types)
-                ? book.audiobook_skip_chapter_types
-                : [],
-        );
-    }, [book]);
-
-    // KDP-CATEGORIES-WIRE-TO-CATEGORYINPUT-01: one-shot fetch of the
-    // KDP-category catalog on mount. Cached for the editor's
-    // lifetime — Amazon-side catalog is stable across the surface,
-    // no need to re-fetch on every book change. Failure stays at
-    // empty list; CategoryInput remains free-text-capable.
-    useEffect(() => {
-        // KDP category catalog is a backend-only convenience; offline the field
-        // stays free-text. Skip the fetch so dexie mode fires no /api call.
-        if (offline) return;
-        let cancelled = false;
-        api.kdp
-            .listCategories()
-            .then((catalog) => {
-                if (!cancelled) setKdpCategoriesCatalog(catalog);
-            })
-            .catch(() => {
-                // Silent degrade — autocomplete is a convenience, not
-                // a correctness requirement. The Categories field
-                // still accepts free-text input via CategoryInput.
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [offline]);
-
-    // BOOK-REPOSITORY-URL-FIELD-01 C3: fetch the GitSyncMapping
-    // status for this book on mount + on book.id change. When
-    // ``mapped=true``, the Repository-URL field renders read-only
-    // and shows the mapping's canonical URL (the round-trip uses
-    // it; manual edits would diverge from the on-disk clone).
-    // Silent failure: gitSyncStatus stays null, the field falls
-    // back to free-input editing Book.repository_url.
-    useEffect(() => {
-        // Git-sync is a backend-only (category-3) feature; offline the
-        // Repository-URL field stays free-input. Skip the status probe so dexie
-        // mode fires no /api call.
-        if (offline) return;
-        let cancelled = false;
-        api.gitSync
-            .status(book.id)
-            .then((status) => {
-                if (!cancelled) setGitSyncStatus(status);
-            })
-            .catch(() => {
-                // Silent degrade — the field still works as a
-                // free input. Most-likely cause: the git-sync
-                // router is not registered (plugin disabled).
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [book.id, offline]);
-
-    // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A (Datalist) author
-    // selection. The dropdown lists ONLY the user's profile authors
-    // (real name + pen names); the Authors-Database is loaded purely to
-    // gate the "Add to database" checkbox, never to feed suggestions —
-    // a book's author is the user's identity, not a catalog entry.
-    const [globalAuthors, setGlobalAuthors] = useState<Author[]>([]);
-    const [addAuthorToDb, setAddAuthorToDb] = useState(true);
+    // Section navigation: replaces the Radix Tabs bar with the
+    // responsive sidebar+hamburger pattern (NavigationSidebar). Plain
+    // local state — the editor's chapter view already uses ?view=, so a
+    // second ?tab= param is deliberately avoided.
+    const [activeTab, setActiveTab] = useState("general");
+    // Guard: if a now-hidden conditional section (audiobook/quality for
+    // page-based books) is somehow active, fall back to "general". The
+    // nav can't surface a hidden item, but the deps could flip after a
+    // book_type/registry update.
+    const effectiveTab =
+        !isChapterBased && (activeTab === "audiobook" || activeTab === "quality")
+            ? "general"
+            : activeTab;
+    // User-defined book languages from ui.custom_languages, merged with
+    // the 8 fixed defaults for the language combobox. Silent fallback to
+    // [] when the config has no custom languages.
+    const [customLanguages, setCustomLanguages] = useState<string[]>([]);
     useEffect(() => {
         let cancelled = false;
         getStorage()
-            .authors.list({})
-            .then((rows) => {
-                if (!cancelled) setGlobalAuthors(rows);
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const custom = Array.isArray(uiConfig.custom_languages)
+                    ? (uiConfig.custom_languages as string[]).filter(Boolean)
+                    : [];
+                setCustomLanguages(custom);
             })
-            .catch(() => {
-                // Non-critical; the datalist degrades to user-profile
-                // suggestions only.
-            });
+            .catch(() => {});
         return () => {
             cancelled = true;
         };
     }, []);
-    const authorSuggestions = useMemo(() => {
-        const seen = new Set<string>();
-        const out: string[] = [];
-        for (const c of profileDisplayNames(authorProfile)) {
-            const trimmed = c.trim();
-            if (trimmed && !seen.has(trimmed)) {
-                seen.add(trimmed);
-                out.push(trimmed);
-            }
-        }
-        return out;
-    }, [authorProfile]);
-    const showAddToAuthorsCheckbox = useMemo(() => {
-        const trimmed = (form.author ?? "").trim().toLowerCase();
-        if (!trimmed) return false;
-        return !globalAuthors.some((a) => a.name.trim().toLowerCase() === trimmed);
-    }, [form.author, globalAuthors]);
+    const { status: pluginStatus } = useEditorPluginStatus();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
+    // Backend-only convenience probes resolve through the central feature
+    // registry instead of a raw mode check. Both are DESKTOP_ONLY, so
+    // isActive is false exactly when offline — behaviour-equivalent to the
+    // former mode==="dexie" guard, without the architecture violation.
+    const gitSyncActive = useFeature(FEATURES.GIT_SYNC).isActive;
+    const kdpCatalogActive = useFeature(FEATURES.KDP_CATEGORY_CATALOG).isActive;
 
-    const set = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }));
+    const {
+        form,
+        setForm,
+        set,
+        keywords,
+        setKeywords,
+        categories,
+        setCategories,
+        bisacCodes,
+        setBisacCodes,
+        kdpCategoriesCatalog,
+        gitSyncStatus,
+        audiobookOverwrite,
+        setAudiobookOverwrite,
+        audiobookSkipTypes,
+        setAudiobookSkipTypes,
+        saving,
+        addAuthorToDb,
+        setAddAuthorToDb,
+        authorSuggestions,
+        showAddToAuthorsCheckbox,
+        wordsPerDayHint,
+        handleSave,
+    } = useBookMetadata({ book, onSave, kdpCatalogActive, gitSyncActive });
 
-    // Writing-target deadline hint (WRITING-GOALS-PROGRESS-TRACKING-01):
-    // "N days left, ~X words/day for the full target". Derived from the
-    // target ÷ days remaining (an at-a-glance pace, not subtracting
-    // already-written words — the metadata editor doesn't hold the live
-    // total).
-    const wordsPerDayHint = useMemo(() => {
-        const target = parseInt(form.word_target ?? "", 10);
-        const deadline = form.word_target_deadline;
-        if (!Number.isFinite(target) || target <= 0 || !deadline) return null;
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const dl = new Date(deadline + "T00:00:00");
-        const days = Math.ceil((dl.getTime() - today.getTime()) / 86_400_000);
-        if (days <= 0) return t("ui.metadata.deadline_passed", "Deadline has passed");
-        const perDay = Math.ceil(target / days);
-        return t(
-            "ui.metadata.words_per_day",
-            "{days} days left, ~{n} words/day for the full target",
-        )
-            .replace("{days}", String(days))
-            .replace("{n}", String(perDay));
-    }, [form.word_target, form.word_target_deadline, t]);
-
-    const handleSave = async () => {
-        setSaving(true);
-        try {
-            // AUTHOR-DATALIST-EXTEND-EDITORS-01: create the typed
-            // author in the global Authors-DB BEFORE the book PATCH
-            // when the user opted in. Mirrors CreateBookModal's
-            // pattern. Non-blocking — a failed author POST surfaces
-            // an error toast but the book save still proceeds with
-            // the free-text author value.
-            const typedAuthor = (form.author ?? "").trim();
-            if (showAddToAuthorsCheckbox && addAuthorToDb && typedAuthor) {
-                try {
-                    const created = await getStorage().authors.create({ name: typedAuthor });
-                    setGlobalAuthors((prev) => [...prev, created]);
-                } catch (err) {
-                    notify.error(
-                        t(
-                            "ui.metadata.author_add_failed",
-                            "Autor konnte nicht zur Datenbank hinzugefügt werden",
-                        ),
-                        err,
-                    );
-                }
-            }
-
-            const data: Record<string, unknown> = {};
-            for (const [key, value] of Object.entries(form)) {
-                data[key] = value || null;
-            }
-            data.keywords = keywords;
-            data.categories = categories;
-            data.bisac_codes = bisacCodes;
-            data.audiobook_overwrite_existing = audiobookOverwrite;
-            data.audiobook_skip_chapter_types = audiobookSkipTypes;
-            await onSave(data);
-            notify.success(t("ui.common.save", "Metadaten gespeichert"));
-        } catch (err) {
-            notify.error(t("ui.common.error", "Fehler beim Speichern"), err);
-        }
-        setSaving(false);
-    };
+    const { aiGenerating, aiAvailable, handleAiGenerate } = useBookMetadataAi({
+        book,
+        form,
+        offline,
+        pluginStatus,
+        set,
+        setKeywords,
+    });
 
     // PDF-BLEED-MARKS-01 C2: the Design-tab Export-PDF button +
     // its state were the half-wired surface that PDF-KDP-FORMATS-01
@@ -371,64 +175,84 @@ export default function BookMetadataEditor({
         notify.success(t("ui.metadata.copy_success", "Verlag und Autoren-Info übernommen"));
     };
 
-    const aiAvailable = offline ? offlineAiReady : isPluginAvailable(pluginStatus, "ai");
-
-    const handleAiGenerate = async (field: string) => {
-        setAiGenerating(field);
-        try {
-            const req = {
-                field,
-                book_title: book.title,
-                author: book.author,
-                genre: book.genre || "",
-                language: book.language || "de",
-                description: book.description || "",
-                chapter_titles: book.chapters.map((ch) => ch.title),
-                existing_text: field === "keywords" ? "" : form[field] || "",
-                book_id: book.id,
-            };
-            // Offline: build the same prompts and call the provider directly
-            // from the browser; online: the backend AI route.
-            const content = offline
-                ? (
-                      await aiChat(await getAiConfig(), buildMarketingMessages(req), {
-                          maxTokens: 1024,
-                      })
-                  ).content
-                : (await api.ai.generateMarketing(req)).content;
-            if (field === "keywords") {
-                try {
-                    const parsed = JSON.parse(content);
-                    if (Array.isArray(parsed)) {
-                        setKeywords(parsed.map(String).filter(Boolean));
-                        notify.success(
-                            t("ui.metadata.ai_keywords_generated", "Keywords generiert"),
-                        );
-                    } else {
-                        notify.error(
-                            t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"),
-                        );
-                    }
-                } catch {
-                    notify.error(
-                        t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"),
-                    );
-                }
-            } else {
-                set(field, content || "");
-                notify.success(t("ui.metadata.ai_text_generated", "Text generiert"));
-            }
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(
-                detail || t("ui.metadata.ai_generate_error", "AI-Generierung fehlgeschlagen"),
-                err,
-            );
-        }
-        setAiGenerating(null);
-    };
-
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
+
+    // Section nav groups. Reuses the existing per-tab i18n labels +
+    // ``metadata-tab-*`` testids verbatim so current tests + E2E
+    // selectors still resolve. Audiobook + Quality are present only for
+    // chapter-based books (the conditional-presence pattern).
+    const navGroups: NavigationSidebarGroup[] = useMemo(
+        () => [
+            {
+                label: t("ui.metadata.group_content", "Inhalt"),
+                items: [
+                    {
+                        id: "general",
+                        label: t("ui.metadata.tab_general", "Allgemein"),
+                        testId: "metadata-tab-general",
+                    },
+                    {
+                        id: "story",
+                        label: t("ui.metadata.tab_story", "Story"),
+                        testId: "metadata-tab-story",
+                    },
+                    {
+                        id: "design",
+                        label: t("ui.metadata.tab_design", "Design"),
+                        testId: "metadata-tab-design",
+                    },
+                ],
+            },
+            {
+                label: t("ui.metadata.group_publishing", "Veröffentlichung"),
+                items: [
+                    {
+                        id: "publisher",
+                        label: t("ui.metadata.tab_publisher", "Verlag"),
+                        testId: "metadata-tab-publisher",
+                    },
+                    {
+                        id: "isbn",
+                        label: t("ui.metadata.tab_isbn", "ISBN"),
+                        testId: "metadata-tab-isbn",
+                    },
+                    {
+                        id: "marketing",
+                        label: t("ui.metadata.tab_marketing", "Marketing"),
+                        testId: "metadata-tab-marketing",
+                    },
+                ],
+            },
+            {
+                label: t("ui.metadata.group_production", "Produktion"),
+                items: isChapterBased
+                    ? [
+                          {
+                              id: "audiobook",
+                              label: t("ui.metadata.tab_audiobook", "Audiobook"),
+                              testId: "metadata-tab-audiobook",
+                          },
+                          {
+                              id: "quality",
+                              label: t("ui.metadata.tab_quality", "Qualitaet"),
+                              testId: "metadata-tab-quality",
+                          },
+                      ]
+                    : [],
+            },
+            {
+                label: t("ui.metadata.group_advanced", "Erweitert"),
+                items: [
+                    {
+                        id: "ai_template",
+                        label: t("ui.metadata.tab_ai_template", "KI-Vorlage"),
+                        testId: "metadata-tab-ai-template",
+                    },
+                ],
+            },
+        ],
+        [t, isChapterBased],
+    );
 
     return (
         <div className={styles.container}>
@@ -512,79 +336,22 @@ export default function BookMetadataEditor({
                 </div>
             )}
 
-            {/* Tabs */}
-            <Tabs.Root defaultValue="general" style={{ maxWidth: 800 }}>
-                <Tabs.List className="radix-tabs-list" style={{ marginBottom: 16 }}>
-                    <Tabs.Trigger
-                        value="general"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-general"
-                    >
-                        {t("ui.metadata.tab_general", "Allgemein")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="story"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-story"
-                    >
-                        {t("ui.metadata.tab_story", "Story")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="publisher"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-publisher"
-                    >
-                        {t("ui.metadata.tab_publisher", "Verlag")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="isbn"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-isbn"
-                    >
-                        {t("ui.metadata.tab_isbn", "ISBN")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="marketing"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-marketing"
-                    >
-                        {t("ui.metadata.tab_marketing", "Marketing")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="design"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-design"
-                    >
-                        {t("ui.metadata.tab_design", "Design")}
-                    </Tabs.Trigger>
-                    {isChapterBased && (
-                        <>
-                            <Tabs.Trigger
-                                value="audiobook"
-                                className="radix-tab-trigger"
-                                data-testid="metadata-tab-audiobook"
-                            >
-                                {t("ui.metadata.tab_audiobook", "Audiobook")}
-                            </Tabs.Trigger>
-                            <Tabs.Trigger
-                                value="quality"
-                                className="radix-tab-trigger"
-                                data-testid="metadata-tab-quality"
-                            >
-                                {t("ui.metadata.tab_quality", "Qualitaet")}
-                            </Tabs.Trigger>
-                        </>
-                    )}
-                    <Tabs.Trigger
-                        value="ai_template"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-ai-template"
-                    >
-                        {t("ui.metadata.tab_ai_template", "KI-Vorlage")}
-                    </Tabs.Trigger>
-                </Tabs.List>
+            {/* Section navigation (responsive sidebar + hamburger) */}
+            <div className={styles.layout}>
+                <div className={styles.sidebarColumn}>
+                    <NavigationSidebar
+                        groups={navGroups}
+                        activeId={effectiveTab}
+                        onSelect={setActiveTab}
+                        ariaLabel={t(
+                            "ui.sidebar.metadata",
+                            "Buch-Metadaten",
+                        )}
+                    />
+                </div>
 
-                <Tabs.Content value="general">
+                <div className={styles.contentColumn}>
+                    {effectiveTab === "general" && (
                     <div className={styles.tabContent}>
                         <TranslationLinks bookId={book.id} />
                         <Row>
@@ -597,12 +364,30 @@ export default function BookMetadataEditor({
                                 addToAuthorsDb={addAuthorToDb}
                                 onAddToAuthorsDbChange={setAddAuthorToDb}
                             />
-                            <Field
-                                label={t("ui.metadata.language", "Sprache")}
-                                value={form.language}
-                                onChange={(v) => set("language", v)}
-                                placeholder="de"
-                            />
+                            <div className="field" style={{ flex: 1 }}>
+                                <label className="label">
+                                    {t("ui.metadata.language", "Sprache")}
+                                </label>
+                                <ComboboxSelect
+                                    options={buildBookLanguageOptions(customLanguages)}
+                                    value={form.language || ""}
+                                    onChange={(v) => set("language", v)}
+                                    allowCustom
+                                    onCustomAdd={(v) =>
+                                        setCustomLanguages((prev) =>
+                                            prev.some(
+                                                (c) =>
+                                                    c.toLowerCase() ===
+                                                    v.toLowerCase(),
+                                            )
+                                                ? prev
+                                                : [...prev, v],
+                                        )
+                                    }
+                                    placeholder="de"
+                                    testId="book-metadata-language"
+                                />
+                            </div>
                         </Row>
                         <Field
                             label={t("ui.metadata.subtitle", "Untertitel")}
@@ -648,17 +433,17 @@ export default function BookMetadataEditor({
                             t={t}
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
-                 * the author-design metadata distinct from the
-                 * General tab's publication-side bibliographic
-                 * fields. ``book_idea`` is the short 1-2 sentence
-                 * premise (no fullscreen — small Field shape).
-                 * ``expose`` is the long-form Plot+Characters+
-                 * Setting document (Field multiline + markdown +
-                 * fullscreen — same shape as description). */}
-                <Tabs.Content value="story">
+                    {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
+                     * the author-design metadata distinct from the
+                     * General tab's publication-side bibliographic
+                     * fields. ``book_idea`` is the short 1-2 sentence
+                     * premise (no fullscreen — small Field shape).
+                     * ``expose`` is the long-form Plot+Characters+
+                     * Setting document (Field multiline + markdown +
+                     * fullscreen — same shape as description). */}
+                    {effectiveTab === "story" && (
                     <div className={styles.tabContent} data-testid="metadata-story-content">
                         <Field
                             label={t("ui.metadata.book_idea_label", "Buchidee")}
@@ -722,9 +507,9 @@ export default function BookMetadataEditor({
                             </p>
                         )}
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="publisher">
+                    {effectiveTab === "publisher" && (
                     <div className={styles.tabContent}>
                         <Row>
                             <Field
@@ -741,9 +526,9 @@ export default function BookMetadataEditor({
                             />
                         </Row>
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="isbn">
+                    {effectiveTab === "isbn" && (
                     <div className={styles.tabContent}>
                         <Row>
                             <Field
@@ -784,21 +569,14 @@ export default function BookMetadataEditor({
                             />
                         </Row>
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {/* HOTFIX (Categories+BISAC tab-leak bug): the previous
-                    ``forceMount`` was added in Bug 9 so happy-dom-based
-                    Vitests could query the Marketing-tab Categories +
-                    BISAC chip inputs without first clicking the tab.
-                    The comment claimed Radix still hides the content
-                    via the ``hidden`` attribute — wrong. Radix's
-                    Tabs.Content explicitly sets ``hidden: !present``,
-                    and with forceMount, ``present`` stays true ALWAYS
-                    (see node_modules/@radix-ui/react-tabs source).
-                    Result: Marketing content was visible on every tab.
-                    Vitests have been updated to click the Marketing
-                    tab BEFORE querying its content. */}
-                <Tabs.Content value="marketing">
+                    {/* Categories + BISAC (Bug 9) live in this Marketing
+                        section. With the NavigationSidebar refactor only
+                        the active section is rendered (conditional mount),
+                        so their testids are queryable only after the
+                        Marketing item is selected. */}
+                    {effectiveTab === "marketing" && (
                     <div className={styles.tabContent}>
                         {book.ai_tokens_used > 0 && (
                             <div
@@ -978,9 +756,9 @@ export default function BookMetadataEditor({
                             }
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="design">
+                    {effectiveTab === "design" && (
                     <div className={styles.tabContent}>
                         <CoverUpload
                             bookId={book.id}
@@ -1019,11 +797,11 @@ export default function BookMetadataEditor({
                             fullscreen
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {isChapterBased && (
-                    <>
-                        <Tabs.Content value="audiobook">
+                    {isChapterBased && (
+                        <>
+                            {effectiveTab === "audiobook" && (
                             <div className={styles.tabContent}>
                                 <AudiobookBookConfig
                                     bookLanguage={book.language}
@@ -1051,27 +829,31 @@ export default function BookMetadataEditor({
                                 />
                                 <AudiobookDownloads
                                     bookId={book.id}
+                                    bookTitle={book.title}
                                     bookChapters={book.chapters || []}
                                 />
                             </div>
-                        </Tabs.Content>
+                            )}
 
-                        <Tabs.Content value="quality">
+                            {effectiveTab === "quality" && (
                             <div className={styles.tabContent}>
                                 <QualityTab
                                     bookId={book.id}
+                                    bookTitle={book.title}
                                     onNavigateToIssue={onNavigateToIssue}
                                 />
                             </div>
-                        </Tabs.Content>
-                    </>
-                )}
-                <Tabs.Content value="ai_template">
+                            )}
+                        </>
+                    )}
+
+                    {effectiveTab === "ai_template" && (
                     <div className={styles.tabContent}>
                         <AITemplatePanel kind="book" id={book.id} onApplied={onRefresh} />
                     </div>
-                </Tabs.Content>
-            </Tabs.Root>
+                    )}
+                </div>
+            </div>
 
             <KdpPublishingWizard
                 open={showKdpWizard}
@@ -1082,1618 +864,9 @@ export default function BookMetadataEditor({
     );
 }
 
-// --- Sub-components ---
-
-function Row({ children }: { children: React.ReactNode }) {
-    return <div className={styles.row}>{children}</div>;
-}
-
-/**
- * Repository-URL field with git-sync read-precedence.
- *
- * BOOK-REPOSITORY-URL-FIELD-01 C3. Two render shapes:
- *
- * - When ``gitSyncStatus.mapped === true``: the field is read-only
- *   and surfaces ``gitSyncStatus.repo_url``. A small hint below the
- *   input tells the user the URL is owned by plugin-git-sync
- *   (manual edits would diverge from the round-trip). The
- *   ``Book.repository_url`` column is ignored in this case to
- *   avoid two competing sources of truth.
- * - When ``mapped === false`` OR ``gitSyncStatus === null`` (fetch
- *   failed / plugin disabled): the field is a normal free input
- *   editing ``Book.repository_url`` via the form's
- *   ``onChange`` → ``set("repository_url", v)`` chain.
- */
-function RepositoryUrlField({
-    value,
-    onChange,
-    gitSyncStatus,
-    t,
-}: {
-    value: string;
-    onChange: (v: string) => void;
-    gitSyncStatus: GitSyncMappingStatus | null;
-    t: (key: string, fallback: string) => string;
-}) {
-    const managedByGitSync = gitSyncStatus?.mapped === true;
-    const label = t("ui.metadata.repository_url", "Git-Repository (URL)");
-    if (managedByGitSync) {
-        return (
-            <div
-                className="field"
-                style={{ flex: 1 }}
-                data-testid="metadata-repository-url-managed"
-            >
-                <label className="label">{label}</label>
-                <input
-                    className="input"
-                    type="url"
-                    value={gitSyncStatus?.repo_url ?? ""}
-                    readOnly
-                    aria-readonly="true"
-                    data-testid="metadata-repository-url-input"
-                    style={{ background: "var(--surface-2)", cursor: "default" }}
-                />
-                <small
-                    style={{
-                        display: "block",
-                        marginTop: 4,
-                        fontSize: "0.8125rem",
-                        color: "var(--text-muted)",
-                    }}
-                    data-testid="metadata-repository-url-managed-hint"
-                >
-                    {t(
-                        "ui.metadata.repository_url_managed_hint",
-                        "Wird von plugin-git-sync verwaltet — manuelle Änderungen würden vom Round-Trip abweichen.",
-                    )}
-                </small>
-            </div>
-        );
-    }
-    return (
-        <div className="field" style={{ flex: 1 }} data-testid="metadata-repository-url-manual">
-            <label className="label">{label}</label>
-            <input
-                className="input"
-                type="url"
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={t("ui.metadata.repository_url_placeholder", "https://github.com/...")}
-                data-testid="metadata-repository-url-input"
-            />
-            <small
-                style={{
-                    display: "block",
-                    marginTop: 4,
-                    fontSize: "0.8125rem",
-                    color: "var(--text-muted)",
-                }}
-            >
-                {t(
-                    "ui.metadata.repository_url_hint",
-                    "Optional. Externer Git-Repo-Link für Bücher, die nicht über plugin-git-sync importiert wurden.",
-                )}
-            </small>
-        </div>
-    );
-}
-
-/**
- * Author field as a free-text input with Authors-DB autocomplete.
- *
- * Pattern A (free-text input + datalist via AuthorSelectInput) was
- * chosen over a closed-list <select> so names not yet in the
- * user-profile or Authors-DB (e.g. ghostwritten works, collaborators,
- * historical imports with unfamiliar names) don't force the user to
- * detour into Settings.
- *
- * Book-specific wrapping (field div + label + manage-link to
- * Settings) stays here so the user can still curate the Authors-DB
- * proactively when desired.
- */
-function AuthorSelectField({
-    label,
-    value,
-    onChange,
-    suggestions,
-    showAddToAuthorsCheckbox,
-    addToAuthorsDb,
-    onAddToAuthorsDbChange,
-}: {
-    label: string;
-    value: string;
-    onChange: (v: string) => void;
-    suggestions: string[];
-    showAddToAuthorsCheckbox: boolean;
-    addToAuthorsDb: boolean;
-    onAddToAuthorsDbChange: (next: boolean) => void;
-}) {
-    const { t } = useI18n();
-    const navigate = useNavigate();
-
-    return (
-        <div className="field" style={{ flex: 1 }}>
-            <label className="label" htmlFor="metadata-author">
-                {label}
-            </label>
-            <AuthorSelectInput
-                value={value}
-                onChange={onChange}
-                suggestions={suggestions}
-                profileChoices={suggestions}
-                customOptionLabel={t(
-                    "ui.author_select.custom_option",
-                    "Anderer Name …",
-                )}
-                showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
-                addToAuthorsDb={addToAuthorsDb}
-                onAddToAuthorsDbChange={onAddToAuthorsDbChange}
-                testidPrefix="metadata"
-                placeholder={t("ui.metadata.author_placeholder", "Autorenname oder Pen Name")}
-                addToAuthorsLabel={t(
-                    "ui.metadata.add_to_authors_db",
-                    '„{name}" zur Autoren-Datenbank hinzufügen',
-                )}
-            />
-            <a
-                href="/settings?tab=author"
-                data-testid="metadata-author-manage-link"
-                style={{
-                    display: "inline-block",
-                    marginTop: 4,
-                    fontSize: "0.75rem",
-                    color: "var(--text-muted)",
-                    textDecoration: "underline",
-                }}
-                onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/settings?tab=author");
-                }}
-            >
-                {t("ui.metadata.author_manage_link", "Autoren in Einstellungen verwalten")}
-            </a>
-        </div>
-    );
-}
-
-function Field({
-    label,
-    value,
-    onChange,
-    placeholder,
-    multiline,
-    mono,
-    maxChars,
-    datalist,
-    datalistId,
-    language,
-    fullscreen,
-}: {
-    label: string;
-    value: string | null | undefined;
-    onChange: (v: string) => void;
-    placeholder?: string;
-    multiline?: boolean;
-    mono?: boolean;
-    /** Soft limit for the character counter. No hard input cap - the
-     *  counter just turns red when exceeded so the user is warned but
-     *  can still over-type if a platform allows more. */
-    maxChars?: number;
-    /** Free-text input with dropdown suggestions. When non-empty, the
-     *  input gets a ``list=`` attribute pointing at a generated
-     *  ``<datalist>``. Ignored when ``multiline`` is true. */
-    datalist?: string[];
-    datalistId?: string;
-    /** Override the language tag on the EnhancedTextarea. Default
-     * is ``css`` when ``mono`` is true, ``plain`` otherwise. Pass
-     * ``markdown`` to enable a preview toggle on description-style
-     * fields. */
-    language?: "plain" | "markdown" | "html" | "css";
-    /** Show a fullscreen toggle (long-form Markdown / CSS). */
-    fullscreen?: boolean;
-}) {
-    const { t } = useI18n();
-    // styles.input was an empty literal in the prior styles object;
-    // dropped during the CSS-Module migration. mono path keeps the
-    // monospace overrides as a small inline literal.
-    const inputStyle: React.CSSProperties | undefined = mono
-        ? { fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }
-        : undefined;
-    const text = value || "";
-    const listId = !multiline && datalist && datalist.length > 0 ? datalistId : undefined;
-    return (
-        <div className="field" style={{ flex: 1 }}>
-            <label className="label">{label}</label>
-            {multiline ? (
-                <EnhancedTextarea
-                    value={text}
-                    onChange={onChange}
-                    placeholder={placeholder}
-                    language={language ?? (mono ? "css" : "plain")}
-                    mono={mono}
-                    maxChars={maxChars}
-                    fullscreen={fullscreen}
-                    rows={8}
-                    ariaLabel={label}
-                />
-            ) : (
-                <>
-                    <input
-                        className="input"
-                        style={inputStyle}
-                        value={text}
-                        onChange={(e) => onChange(e.target.value)}
-                        placeholder={placeholder}
-                        list={listId}
-                    />
-                    {listId && (
-                        <datalist id={listId}>
-                            {(datalist ?? []).map((name) => (
-                                <option key={name} value={name} />
-                            ))}
-                        </datalist>
-                    )}
-                </>
-            )}
-        </div>
-    );
-}
-
-/**
- * Author-assets panel: read-only thumbnail grid for files imported
- * under ``assets/author/``, ``assets/authors/``, or
- * ``assets/about-author/`` (purpose="author-asset" at detect time,
- * asset_type="author-asset" at execute time).
- *
- * Rendered in the Design tab so portraits, signatures, and bio images
- * are discoverable in the metadata editor. Delete per file; upload
- * support lives behind a separate backend validator bump and is not
- * wired here.
- */
-/** A single author-asset thumbnail. Resolves the image src across storage
- *  modes (served URL online, IndexedDB blob URL offline). */
-function AuthorAssetImage({ bookId, filename }: { bookId: string; filename: string }) {
-    const src = useAssetUrl(bookId, filename);
-    return (
-        <img
-            src={src ?? undefined}
-            alt={filename}
-            style={{
-                width: "100%",
-                aspectRatio: "3/4",
-                objectFit: "cover",
-                borderRadius: 4,
-                background: "var(--bg-hover)",
-            }}
-        />
-    );
-}
-
-export function AuthorAssetsPanel({ bookId }: { bookId: string }) {
-    const { t } = useI18n();
-    const [assets, setAssets] = useState<
-        { id: string; filename: string; asset_type: string; path: string }[]
-    >([]);
-    const [loading, setLoading] = useState(true);
-
-    useEffect(() => {
-        let cancelled = false;
-        setLoading(true);
-        getStorage()
-            .assets.list(bookId)
-            .then((rows) => {
-                if (cancelled) return;
-                setAssets(rows.filter((a) => a.asset_type === "author-asset"));
-            })
-            .catch(() => {
-                if (!cancelled) setAssets([]);
-            })
-            .finally(() => {
-                if (!cancelled) setLoading(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [bookId]);
-
-    const handleDelete = async (assetId: string) => {
-        try {
-            await getStorage().assets.delete(bookId, assetId);
-            setAssets((prev) => prev.filter((a) => a.id !== assetId));
-            notify.success(t("ui.metadata.author_asset_deleted", "Autor-Asset gelöscht"));
-        } catch (err) {
-            notify.error(
-                t("ui.metadata.author_asset_delete_failed", "Löschen fehlgeschlagen"),
-                err,
-            );
-        }
-    };
-
-    if (loading || assets.length === 0) {
-        return null;
-    }
-
-    return (
-        <div className="field" data-testid="author-assets-panel" style={{ flex: 1, marginTop: 16 }}>
-            <label className="label">
-                {t("ui.metadata.author_assets", "Autoren-Bilder")}{" "}
-                <span style={{ color: "var(--text-muted)", fontWeight: 400 }}>
-                    ({assets.length})
-                </span>
-            </label>
-            <p style={{ margin: "4px 0 8px 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
-                {t(
-                    "ui.metadata.author_assets_hint",
-                    "Portrait-, Signatur- oder Bio-Bilder aus dem Import (assets/author/).",
-                )}
-            </p>
-            <div
-                data-testid="author-assets-grid"
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fill, minmax(120px, 1fr))",
-                    gap: 10,
-                }}
-            >
-                {assets.map((asset) => (
-                    <div
-                        key={asset.id}
-                        data-testid={`author-asset-${asset.filename}`}
-                        style={{
-                            position: "relative",
-                            padding: 6,
-                            border: "1px solid var(--border)",
-                            borderRadius: 6,
-                            background: "var(--bg-primary)",
-                            display: "flex",
-                            flexDirection: "column",
-                            alignItems: "center",
-                            gap: 4,
-                        }}
-                    >
-                        <AuthorAssetImage bookId={bookId} filename={asset.filename} />
-                        <span
-                            style={{
-                                fontSize: "0.6875rem",
-                                color: "var(--text-secondary)",
-                                textAlign: "center",
-                                wordBreak: "break-all",
-                                maxWidth: "100%",
-                            }}
-                            title={asset.path}
-                        >
-                            {asset.filename}
-                        </span>
-                        <button
-                            type="button"
-                            data-testid={`author-asset-delete-${asset.filename}`}
-                            onClick={() => handleDelete(asset.id)}
-                            aria-label={t("ui.metadata.author_asset_delete", "Löschen")}
-                            style={{
-                                position: "absolute",
-                                top: 4,
-                                right: 4,
-                                padding: "2px 6px",
-                                border: "1px solid var(--border)",
-                                borderRadius: 4,
-                                background: "var(--bg-card)",
-                                color: "var(--danger)",
-                                fontSize: "0.75rem",
-                                cursor: "pointer",
-                            }}
-                        >
-                            <Trash2 size={12} />
-                        </button>
-                    </div>
-                ))}
-            </div>
-        </div>
-    );
-}
-
-function CharCounter({ count, max, label }: { count: number; max: number; label: string }) {
-    const over = count > max;
-    return (
-        <small
-            style={{
-                display: "block",
-                marginTop: 4,
-                fontSize: "0.75rem",
-                color: over ? "var(--danger)" : "var(--text-muted)",
-                fontWeight: over ? 600 : 400,
-                textAlign: "right",
-            }}
-        >
-            {count} / {max} {label}
-        </small>
-    );
-}
-
-/** Amazon KDP allows only a limited subset of HTML tags. */
-const AMAZON_ALLOWED_TAGS = [
-    "b",
-    "strong",
-    "i",
-    "em",
-    "u",
-    "ul",
-    "ol",
-    "li",
-    "h4",
-    "h5",
-    "h6",
-    "p",
-    "br",
-];
-
-/** Sanitize HTML to only Amazon-compatible tags. */
-export function sanitizeAmazonHtml(html: string): string {
-    return DOMPurify.sanitize(html, { ALLOWED_TAGS: AMAZON_ALLOWED_TAGS, ALLOWED_ATTR: [] });
-}
-
-/** Integrated HTML field: toggle between editable textarea and sanitized preview. */
-export function HtmlFieldWithPreview({
-    label,
-    value,
-    onChange,
-    maxChars,
-    rows = 8,
-    aiButton,
-}: {
-    label: string;
-    value: string | null | undefined;
-    onChange: (v: string) => void;
-    maxChars?: number;
-    rows?: number;
-    aiButton?: { loading: boolean; onClick: () => void; label: string };
-}) {
-    const { t } = useI18n();
-    const [showPreview, setShowPreview] = useState(false);
-    const text = value || "";
-
-    return (
-        <div className="field" style={{ flex: 1 }}>
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    marginBottom: 4,
-                }}
-            >
-                <label className="label" style={{ marginBottom: 0 }}>
-                    {label}
-                </label>
-                <div style={{ display: "flex", gap: 4 }}>
-                    {aiButton && (
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            disabled={aiButton.loading}
-                            onClick={aiButton.onClick}
-                            style={{
-                                fontSize: "0.75rem",
-                                padding: "2px 8px",
-                                display: "flex",
-                                alignItems: "center",
-                                gap: 4,
-                            }}
-                        >
-                            <Sparkles size={12} />
-                            {aiButton.label}
-                        </button>
-                    )}
-                    <button
-                        type="button"
-                        className="btn btn-ghost btn-sm"
-                        onClick={() => setShowPreview((s) => !s)}
-                        data-testid="html-preview-toggle"
-                        style={{ fontSize: "0.75rem", padding: "2px 8px" }}
-                    >
-                        {showPreview
-                            ? t("ui.metadata.html_field_show_source", "HTML anzeigen")
-                            : t("ui.metadata.html_field_show_preview", "Vorschau anzeigen")}
-                    </button>
-                </div>
-            </div>
-            {showPreview ? (
-                <div
-                    className={`input ${styles.multilineInput}`}
-                    style={{
-                        minHeight: rows * 24,
-                        padding: "12px 16px",
-                        fontSize: "0.875rem",
-                        lineHeight: 1.6,
-                        overflow: "auto",
-                    }}
-                    dangerouslySetInnerHTML={{ __html: sanitizeAmazonHtml(text) }}
-                />
-            ) : (
-                <textarea
-                    className={`input ${styles.multilineInput}`}
-                    style={{ maxWidth: "100%" }}
-                    rows={rows}
-                    value={text}
-                    onChange={(e) => onChange(e.target.value)}
-                />
-            )}
-            {maxChars !== undefined && !showPreview && (
-                <CharCounter
-                    count={text.length}
-                    max={maxChars}
-                    label={t("ui.metadata.characters", "Zeichen")}
-                />
-            )}
-        </div>
-    );
-}
-
-function slugifyForFilename(text: string): string {
-    // Mirrors backend scaffolder._slugify so the displayed default
-    // matches what the export pipeline would actually produce.
-    let s = text.toLowerCase().trim();
-    s = s
-        .replace(/[äÄ]/g, "ae")
-        .replace(/[öÖ]/g, "oe")
-        .replace(/[üÜ]/g, "ue")
-        .replace(/[ß]/g, "ss");
-    s = s.replace(/[^\w\s-]/g, "");
-    s = s.replace(/[\s_]+/g, "-").replace(/-+/g, "-");
-    return s.replace(/^-+|-+$/g, "");
-}
-
-function AudiobookBookConfig({
-    bookLanguage,
-    bookTitle,
-    bookChapters,
-    engine,
-    voice,
-    speed,
-    merge,
-    customFilename,
-    overwriteExisting,
-    skipChapterTypes,
-    onEngineChange,
-    onVoiceChange,
-    onSpeedChange,
-    onMergeChange,
-    onCustomFilenameChange,
-    onOverwriteExistingChange,
-    onSkipChapterTypesChange,
-}: {
-    bookLanguage: string;
-    bookTitle: string;
-    bookChapters: { chapter_type: string }[];
-    engine: string;
-    voice: string;
-    speed: string;
-    merge: string;
-    customFilename: string;
-    overwriteExisting: boolean;
-    skipChapterTypes: string[];
-    onEngineChange: (v: string) => void;
-    onVoiceChange: (v: string) => void;
-    onSpeedChange: (v: string) => void;
-    onMergeChange: (v: string) => void;
-    onCustomFilenameChange: (v: string) => void;
-    onOverwriteExistingChange: (v: boolean) => void;
-    onSkipChapterTypesChange: (v: string[]) => void;
-}) {
-    const { t } = useI18n();
-    const [voices, setVoices] = useState<AudiobookVoice[]>([]);
-    const [loadingVoices, setLoadingVoices] = useState(false);
-    const [highQualityOnly, setHighQualityOnly] = useState(true);
-    const currentEngine = engine || "edge-tts";
-    const hasQualityTiers = currentEngine === "google-cloud-tts";
-    const HIGH_QUALITY_TIERS = new Set(["neural2", "journey", "studio"]);
-    const filteredVoices =
-        hasQualityTiers && highQualityOnly
-            ? voices.filter((v) => HIGH_QUALITY_TIERS.has(v.quality || ""))
-            : voices;
-
-    useEffect(() => {
-        let cancelled = false;
-        setLoadingVoices(true);
-        api.audiobook
-            .listVoices(currentEngine, bookLanguage)
-            .then((data) => {
-                if (cancelled) return;
-                setVoices(data);
-                if (data.length > 0 && !data.some((v) => v.id === voice)) {
-                    onVoiceChange(data[0].id);
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setVoices([]);
-            })
-            .finally(() => {
-                if (!cancelled) setLoadingVoices(false);
-            });
-        return () => {
-            cancelled = true;
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [currentEngine, bookLanguage]);
-
-    return (
-        <>
-            <div className="field">
-                <label className="label">{t("ui.audiobook.language", "Sprache")}</label>
-                <input
-                    className="input"
-                    value={bookLanguage.toUpperCase()}
-                    disabled
-                    style={{ opacity: 0.6 }}
-                />
-                <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                    {t(
-                        "ui.audiobook.language_from_book",
-                        "Wird aus den Buch-Einstellungen übernommen.",
-                    )}
-                </small>
-            </div>
-            <div className="field">
-                <label className="label">{t("ui.audiobook.engine", "Engine")}</label>
-                <RadixSelect
-                    testId="audiobook-engine"
-                    className="is-block"
-                    value={currentEngine}
-                    onValueChange={onEngineChange}
-                    ariaLabel={t("ui.audiobook.engine", "Engine")}
-                    options={[
-                        { value: "edge-tts", label: "Microsoft Edge TTS" },
-                        { value: "google-tts", label: "Google TTS (gTTS)" },
-                        { value: "google-cloud-tts", label: "Google Cloud TTS" },
-                        { value: "pyttsx3", label: "pyttsx3 (Offline)" },
-                        { value: "elevenlabs", label: "ElevenLabs" },
-                    ]}
-                />
-            </div>
-            <div className="field">
-                <label className="label">{t("ui.audiobook.voice", "Stimme")}</label>
-                {hasQualityTiers && (
-                    <label
-                        style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                            fontSize: "0.75rem",
-                            color: "var(--text-muted)",
-                            marginBottom: 4,
-                            cursor: "pointer",
-                        }}
-                    >
-                        <input
-                            type="checkbox"
-                            checked={highQualityOnly}
-                            onChange={(e) => setHighQualityOnly(e.target.checked)}
-                        />
-                        {t(
-                            "ui.audiobook.high_quality_only",
-                            "Nur hochwertige Stimmen (Neural2, Journey, Studio)",
-                        )}
-                    </label>
-                )}
-                {loadingVoices ? (
-                    <div
-                        style={{
-                            padding: "6px 0",
-                            color: "var(--text-muted)",
-                            fontSize: "0.8125rem",
-                        }}
-                    >
-                        {t("ui.audiobook.voices_loading", "Stimmen werden geladen...")}
-                    </div>
-                ) : filteredVoices.length > 0 ? (
-                    <RadixSelect
-                        testId="audiobook-voice"
-                        className="is-block"
-                        value={voice}
-                        onValueChange={onVoiceChange}
-                        ariaLabel={t("ui.audiobook.voice", "Stimme")}
-                        options={filteredVoices.map((v) => ({
-                            value: v.id,
-                            label: formatVoiceLabel(v),
-                        }))}
-                    />
-                ) : (
-                    <div
-                        style={{
-                            padding: "6px 0",
-                            color: "var(--text-muted)",
-                            fontSize: "0.8125rem",
-                        }}
-                    >
-                        {t(
-                            "ui.audiobook.no_voices_for_combo",
-                            "Keine Stimmen für {engine} in {language} verfügbar",
-                        )
-                            .replace("{engine}", currentEngine)
-                            .replace("{language}", bookLanguage.toUpperCase())}
-                    </div>
-                )}
-            </div>
-            <div className="field">
-                <label className="label">{t("ui.audiobook.speed", "Geschwindigkeit")}</label>
-                <RadixSelect
-                    testId="audiobook-speed"
-                    className="is-block"
-                    value={speed}
-                    onValueChange={onSpeedChange}
-                    ariaLabel={t("ui.audiobook.speed", "Geschwindigkeit")}
-                    options={[
-                        { value: "0.5", label: "0.5x" },
-                        { value: "0.75", label: "0.75x" },
-                        { value: "1.0", label: "1.0x (Normal)" },
-                        { value: "1.25", label: "1.25x" },
-                        { value: "1.5", label: "1.5x" },
-                    ]}
-                />
-            </div>
-            <div className="field">
-                <label className="label">{t("ui.audiobook.merge", "Kapitel zusammenfügen")}</label>
-                <RadixSelect
-                    testId="audiobook-merge"
-                    className="is-block"
-                    value={merge}
-                    onValueChange={onMergeChange}
-                    ariaLabel={t("ui.audiobook.merge", "Kapitel zusammenfügen")}
-                    options={[
-                        {
-                            value: "separate",
-                            label: t("ui.audiobook.merge_separate", "Alle Kapitel einzeln"),
-                        },
-                        {
-                            value: "merged",
-                            label: t("ui.audiobook.merge_merged", "Alle Kapitel zusammenfügen"),
-                        },
-                        { value: "both", label: t("ui.audiobook.merge_both", "Beides") },
-                    ]}
-                />
-            </div>
-            <CustomFilenameField
-                bookTitle={bookTitle}
-                value={customFilename}
-                onChange={onCustomFilenameChange}
-            />
-            <div className="field">
-                <label className="label icon-row">
-                    <input
-                        type="checkbox"
-                        checked={overwriteExisting}
-                        onChange={(e) => onOverwriteExistingChange(e.target.checked)}
-                    />
-                    {t("ui.audiobook.overwrite_label", "Bestehende Dateien überschreiben")}
-                </label>
-                <small
-                    style={{
-                        color: "var(--text-muted)",
-                        fontSize: "0.75rem",
-                        display: "block",
-                        marginTop: 4,
-                    }}
-                >
-                    {t(
-                        "ui.audiobook.overwrite_description",
-                        "Wenn aktiviert, werden bei einem erneuten Export alle bereits generierten MP3-Dateien dieses Buchs überschrieben. Wenn deaktiviert, werden nur fehlende oder geänderte Kapitel neu generiert (Standard).",
-                    )}
-                </small>
-            </div>
-            <AudiobookSkipChapterTypes
-                bookChapters={bookChapters}
-                value={skipChapterTypes}
-                onChange={onSkipChapterTypesChange}
-            />
-        </>
-    );
-}
-
-// Sorted by typical book layout (front matter -> body -> back matter).
-// The order also drives the visual order in the skip-list checkboxes.
-const AUDIOBOOK_CHAPTER_TYPES: readonly string[] = [
-    "toc",
-    "dedication",
-    "epigraph",
-    "preface",
-    "foreword",
-    "prologue",
-    "introduction",
-    "part",
-    "part_intro",
-    "chapter",
-    "interlude",
-    "epilogue",
-    "afterword",
-    "final_thoughts",
-    "acknowledgments",
-    "about_author",
-    "appendix",
-    "bibliography",
-    "endnotes",
-    "glossary",
-    "index",
-    "imprint",
-    "also_by_author",
-    "next_in_series",
-    "excerpt",
-    "call_to_action",
-];
-
-function AudiobookSkipChapterTypes({
-    bookChapters,
-    value,
-    onChange,
-}: {
-    bookChapters: { chapter_type: string }[];
-    value: string[];
-    onChange: (v: string[]) => void;
-}) {
-    const { t } = useI18n();
-    const presentTypes = new Set(
-        (bookChapters || []).map((c) => (c.chapter_type || "").toLowerCase()).filter(Boolean),
-    );
-    const present = AUDIOBOOK_CHAPTER_TYPES.filter((k) => presentTypes.has(k));
-    const other = AUDIOBOOK_CHAPTER_TYPES.filter((k) => !presentTypes.has(k));
-
-    function toggle(key: string, checked: boolean) {
-        if (checked) {
-            if (value.includes(key)) return;
-            onChange([...value, key]);
-        } else {
-            onChange(value.filter((k) => k !== key));
-        }
-    }
-
-    const renderCheckbox = (key: string, muted: boolean) => {
-        const label = t(`ui.chapter_types.${key}`, key);
-        const checked = value.includes(key);
-        return (
-            <label
-                key={key}
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    padding: "4px 0",
-                    fontSize: "0.875rem",
-                    color: muted ? "var(--text-muted)" : undefined,
-                }}
-            >
-                <input
-                    type="checkbox"
-                    checked={checked}
-                    onChange={(e) => toggle(key, e.target.checked)}
-                />
-                <span style={{ fontWeight: muted ? 400 : 500 }}>{label}</span>
-                <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>({key})</span>
-            </label>
-        );
-    };
-
-    return (
-        <div className="field" style={{ marginTop: 16 }}>
-            <label className="label">
-                {t("ui.audiobook.skip_title", "Kapiteltypen überspringen")}
-            </label>
-            <small
-                style={{
-                    color: "var(--text-muted)",
-                    fontSize: "0.75rem",
-                    display: "block",
-                    marginBottom: 8,
-                }}
-            >
-                {t("ui.audiobook.skip_description", "Folgende Kapiteltypen werden NICHT vertont")}
-            </small>
-
-            {present.length > 0 && (
-                <>
-                    <div
-                        style={{
-                            fontSize: "0.75rem",
-                            fontWeight: 600,
-                            color: "var(--text-muted)",
-                            textTransform: "uppercase",
-                            marginTop: 4,
-                            marginBottom: 4,
-                        }}
-                    >
-                        {t("ui.audiobook.skip_in_book", "Im Buch vorhanden")}
-                    </div>
-                    <div style={{ display: "flex", flexDirection: "column", marginBottom: 8 }}>
-                        {present.map((k) => renderCheckbox(k, false))}
-                    </div>
-                </>
-            )}
-
-            <div
-                style={{
-                    fontSize: "0.75rem",
-                    fontWeight: 600,
-                    color: "var(--text-muted)",
-                    textTransform: "uppercase",
-                    marginTop: 4,
-                    marginBottom: 4,
-                }}
-            >
-                {t("ui.audiobook.skip_other", "Weitere Typen")}
-            </div>
-            <div style={{ display: "flex", flexDirection: "column" }}>
-                {other.map((k) => renderCheckbox(k, true))}
-            </div>
-
-            <small
-                style={{
-                    color: "var(--text-muted)",
-                    fontSize: "0.75rem",
-                    display: "block",
-                    marginTop: 8,
-                }}
-            >
-                {t(
-                    "ui.audiobook.skip_hint",
-                    "Aktivierte Typen werden beim Audiobook-Export übersprungen und nicht vertont.",
-                )}
-            </small>
-        </div>
-    );
-}
-
-function CustomFilenameField({
-    bookTitle,
-    value,
-    onChange,
-}: {
-    bookTitle: string;
-    value: string;
-    onChange: (v: string) => void;
-}) {
-    const { t } = useI18n();
-    const defaultName = `${slugifyForFilename(bookTitle) || "audiobook"}-ebook`;
-    const enabled = value.length > 0;
-
-    const toggle = (checked: boolean) => {
-        // Pre-populate with the default when enabling so the user has
-        // something concrete to edit. Clear back to "" when disabling so
-        // the backend stores null and falls back to its own default.
-        onChange(checked ? defaultName : "");
-    };
-
-    return (
-        <div className="field">
-            <label className="label icon-row">
-                <input
-                    type="checkbox"
-                    checked={enabled}
-                    onChange={(e) => toggle(e.target.checked)}
-                />
-                {t("ui.audiobook.custom_filename", "Eigener Dateiname")}
-            </label>
-            <input
-                className="input"
-                value={enabled ? value : defaultName}
-                disabled={!enabled}
-                onChange={(e) => onChange(e.target.value)}
-                placeholder={defaultName}
-                style={enabled ? undefined : { opacity: 0.6 }}
-            />
-            <small style={{ color: "var(--text-muted)", fontSize: "0.75rem" }}>
-                {t(
-                    "ui.audiobook.custom_filename_hint",
-                    "Ohne Dateiendung. Leer lassen, um den Standardnamen zu verwenden.",
-                )}
-            </small>
-        </div>
-    );
-}
-
-function formatDuration(seconds: number | null | undefined): string {
-    if (seconds == null || seconds <= 0) return "";
-    const m = Math.floor(seconds / 60);
-    const s = Math.round(seconds % 60);
-    return `${m}:${s.toString().padStart(2, "0")}`;
-}
-
-function AudiobookDownloads({ bookId, bookChapters }: { bookId: string; bookChapters: Chapter[] }) {
-    const { t } = useI18n();
-    const dialog = useDialog();
-    const [data, setData] = useState<BookAudiobook | null>(null);
-    const [previews, setPreviews] = useState<
-        { filename: string; size_bytes: number; url: string }[]
-    >([]);
-    const [busy, setBusy] = useState(false);
-    const [subTab, setSubTab] = useState<"downloads" | "previews">("downloads");
-    const [playingIndex, setPlayingIndex] = useState<number | null>(null);
-
-    const load = useCallback(async () => {
-        try {
-            const result = await api.bookAudiobook.get(bookId);
-            setData(result);
-        } catch (err) {
-            if (!(err instanceof ApiError) || err.status !== 404) {
-                console.error("Failed to load audiobook metadata:", err);
-            }
-            setData({ exists: false, book_id: bookId });
-        }
-        try {
-            const p = await api.bookAudiobook.listPreviews(bookId);
-            setPreviews(p);
-        } catch {
-            setPreviews([]);
-        }
-    }, [bookId]);
-
-    useEffect(() => {
-        load();
-    }, [load]);
-
-    // Live-update the audiobook metadata view as chapters are generated.
-    // The backend broadcasts events to audiobook:{bookId} via WebSocket
-    // after each flush_chapter, finalize, and mark_failed call.
-    useWebSocket<{ event: string }>(
-        `audiobook:${bookId}`,
-        useCallback(() => {
-            load();
-        }, [load]),
-    );
-
-    const handleDelete = async () => {
-        const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete", "Audiobook löschen"),
-            t(
-                "ui.audiobook.delete_confirm",
-                "Audiobook wirklich löschen? Die Dateien sind danach weg.",
-            ),
-            "danger",
-        );
-        if (!confirmed) return;
-        setBusy(true);
-        try {
-            await api.bookAudiobook.delete(bookId);
-            notify.success(t("ui.audiobook.deleted", "Audiobook gelöscht"));
-            await load();
-        } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
-        }
-        setBusy(false);
-    };
-
-    const handleDeleteChapter = async (filename: string) => {
-        const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete_file", "Datei löschen"),
-            t("ui.audiobook.delete_file_confirm", "Diese Datei wirklich löschen?"),
-            "danger",
-        );
-        if (!confirmed) return;
-        setBusy(true);
-        try {
-            await api.bookAudiobook.deleteChapter(bookId, filename);
-            await load();
-        } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
-        }
-        setBusy(false);
-    };
-
-    const handleDeletePreview = async (filename: string) => {
-        const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete_file", "Datei löschen"),
-            t("ui.audiobook.delete_file_confirm", "Diese Datei wirklich löschen?"),
-            "danger",
-        );
-        if (!confirmed) return;
-        setBusy(true);
-        try {
-            await api.bookAudiobook.deletePreview(bookId, filename);
-            setPreviews((prev) => prev.filter((p) => p.filename !== filename));
-        } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
-        }
-        setBusy(false);
-    };
-
-    const handleDeleteAllPreviews = async () => {
-        const confirmed = await dialog.confirm(
-            t("ui.audiobook.delete_previews", "Alle Previews löschen"),
-            t("ui.audiobook.delete_previews_confirm", "Alle Vorhoer-Dateien löschen?"),
-            "danger",
-        );
-        if (!confirmed) return;
-        setBusy(true);
-        try {
-            await api.bookAudiobook.deleteAllPreviews(bookId);
-            setPreviews([]);
-        } catch (err) {
-            notify.error(t("ui.audiobook.delete_failed", "Löschen fehlgeschlagen"), err);
-        }
-        setBusy(false);
-    };
-
-    const formatBytes = (bytes: number): string => {
-        if (bytes < 1024) return `${bytes} B`;
-        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-        return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
-    };
-
-    const hasDownloads = data?.exists;
-    const hasPreviews = previews.length > 0;
-
-    if (!data) {
-        return (
-            <div className={styles.audiobookSection}>
-                <LoadingIndicator
-                    testId="audiobook-loading"
-                    label={t("ui.common.loading", "Laden...")}
-                />
-            </div>
-        );
-    }
-
-    return (
-        <div className={styles.audiobookSection}>
-            {/* Sub-tab selector */}
-            <div
-                style={{
-                    display: "flex",
-                    gap: 0,
-                    marginBottom: 12,
-                    borderBottom: "1px solid var(--border)",
-                }}
-            >
-                <button
-                    onClick={() => setSubTab("downloads")}
-                    style={{
-                        padding: "6px 14px",
-                        border: "none",
-                        cursor: "pointer",
-                        background: "none",
-                        fontSize: "0.8125rem",
-                        fontWeight: 500,
-                        color: subTab === "downloads" ? "var(--accent)" : "var(--text-muted)",
-                        borderBottom:
-                            subTab === "downloads"
-                                ? "2px solid var(--accent)"
-                                : "2px solid transparent",
-                        fontFamily: "var(--font-body)",
-                    }}
-                >
-                    {t("ui.audiobook.downloads_title", "Verfügbare Downloads")}
-                    {hasDownloads && data.chapters && ` (${data.chapters.length})`}
-                </button>
-                <button
-                    onClick={() => setSubTab("previews")}
-                    style={{
-                        padding: "6px 14px",
-                        border: "none",
-                        cursor: "pointer",
-                        background: "none",
-                        fontSize: "0.8125rem",
-                        fontWeight: 500,
-                        color: subTab === "previews" ? "var(--accent)" : "var(--text-muted)",
-                        borderBottom:
-                            subTab === "previews"
-                                ? "2px solid var(--accent)"
-                                : "2px solid transparent",
-                        fontFamily: "var(--font-body)",
-                    }}
-                >
-                    Previews{hasPreviews && ` (${previews.length})`}
-                </button>
-            </div>
-
-            {/* Downloads sub-tab */}
-            {subTab === "downloads" && (
-                <>
-                    {(() => {
-                        // Build a lookup from book-chapter title to generated audio file
-                        const audioByTitle = new Map<string, AudiobookChapterFile>();
-                        for (const ch of data.chapters || []) {
-                            if (ch.title) audioByTitle.set(ch.title, ch);
-                        }
-                        const isPartial = data.status === "in_progress";
-                        const sortedChapters = [...bookChapters].sort(
-                            (a, b) => a.position - b.position,
-                        );
-
-                        return (
-                            <>
-                                {/* Engine / voice / speed summary line */}
-                                {hasDownloads && (
-                                    <>
-                                        <div className={styles.audiobookMetaLine}>
-                                            {data.created_at && (
-                                                <span>
-                                                    {t("ui.audiobook.created_at", "Erstellt am")}:{" "}
-                                                    {new Date(data.created_at).toLocaleString()}
-                                                </span>
-                                            )}
-                                            {data.engine && (
-                                                <span style={{ marginLeft: 12 }}>
-                                                    Engine: {data.engine}
-                                                </span>
-                                            )}
-                                            {data.voice && (
-                                                <span style={{ marginLeft: 12 }}>
-                                                    {t("ui.audiobook.voice", "Stimme")}:{" "}
-                                                    {data.voice}
-                                                </span>
-                                            )}
-                                            {data.speed && (
-                                                <span style={{ marginLeft: 12 }}>
-                                                    {data.speed}x
-                                                </span>
-                                            )}
-                                        </div>
-                                        {isPartial && (
-                                            <div
-                                                style={{
-                                                    marginTop: 8,
-                                                    fontSize: "0.75rem",
-                                                    color: "var(--warning, #e67e22)",
-                                                    display: "flex",
-                                                    alignItems: "center",
-                                                    gap: 6,
-                                                }}
-                                            >
-                                                <AlertCircle size={14} />
-                                                {t(
-                                                    "ui.audiobook.status_partial",
-                                                    "Export unvollständig. Einige Kapitel wurden noch nicht generiert.",
-                                                )}
-                                            </div>
-                                        )}
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                gap: 8,
-                                                marginTop: 12,
-                                                flexWrap: "wrap",
-                                            }}
-                                        >
-                                            {data.merged && (
-                                                <a
-                                                    className="btn btn-primary btn-sm"
-                                                    href={api.bookAudiobook.mergedUrl(bookId)}
-                                                    download
-                                                >
-                                                    <Download size={12} />{" "}
-                                                    {t(
-                                                        "ui.audiobook.download_merged",
-                                                        "Gemergtes Audiobook",
-                                                    )}
-                                                    {data.merged.duration_seconds
-                                                        ? ` (${formatDuration(data.merged.duration_seconds)})`
-                                                        : ` (${formatBytes(data.merged.size_bytes)})`}
-                                                </a>
-                                            )}
-                                            {data.chapters && data.chapters.length > 0 && (
-                                                <a
-                                                    className="btn btn-secondary btn-sm"
-                                                    href={api.bookAudiobook.zipUrl(bookId)}
-                                                    download
-                                                >
-                                                    <Package size={12} />{" "}
-                                                    {t("ui.audiobook.download_zip", "ZIP")}
-                                                </a>
-                                            )}
-                                            <button
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={handleDelete}
-                                                disabled={busy}
-                                                style={{ color: "var(--danger, #c0392b)" }}
-                                            >
-                                                <Trash2 size={12} />{" "}
-                                                {t("ui.audiobook.delete", "Audiobook löschen")}
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
-                                {!hasDownloads && sortedChapters.length === 0 && (
-                                    <div className={styles.audiobookMuted}>
-                                        {t(
-                                            "ui.audiobook.downloads_empty",
-                                            "Noch kein Audiobook generiert. Nutze den Export-Dialog um eines zu erstellen.",
-                                        )}
-                                    </div>
-                                )}
-
-                                {/* Per-chapter audio status list */}
-                                {(() => {
-                                    // Build the player chapter list: only chapters with audio, in order
-                                    const playerChapters: PlayerChapter[] = [];
-                                    const chapterToPlayerIndex = new Map<string, number>();
-                                    for (const bookCh of sortedChapters) {
-                                        const audio = audioByTitle.get(bookCh.title);
-                                        if (audio) {
-                                            chapterToPlayerIndex.set(
-                                                bookCh.id,
-                                                playerChapters.length,
-                                            );
-                                            playerChapters.push({
-                                                title: bookCh.title,
-                                                url: audio.url,
-                                                position: bookCh.position,
-                                            });
-                                        }
-                                    }
-                                    return (
-                                        sortedChapters.length > 0 && (
-                                            <>
-                                                <ul
-                                                    className={styles.audiobookChapterList}
-                                                    style={{ marginTop: 16 }}
-                                                >
-                                                    {sortedChapters.map((bookCh) => {
-                                                        const audio = audioByTitle.get(
-                                                            bookCh.title,
-                                                        );
-                                                        const dur = audio
-                                                            ? formatDuration(audio.duration_seconds)
-                                                            : "";
-                                                        const playerIdx = chapterToPlayerIndex.get(
-                                                            bookCh.id,
-                                                        );
-                                                        const isPlaying =
-                                                            playingIndex !== null &&
-                                                            playerIdx === playingIndex;
-                                                        return (
-                                                            <li
-                                                                key={bookCh.id}
-                                                                className={
-                                                                    styles.audiobookChapterItem
-                                                                }
-                                                                style={{
-                                                                    flexDirection: "column",
-                                                                    alignItems: "stretch",
-                                                                    gap: 4,
-                                                                    ...(isPlaying
-                                                                        ? {
-                                                                              borderLeft:
-                                                                                  "3px solid var(--accent)",
-                                                                              paddingLeft: 5,
-                                                                          }
-                                                                        : {}),
-                                                                }}
-                                                            >
-                                                                <div className="icon-row">
-                                                                    {audio ? (
-                                                                        <button
-                                                                            className="btn-icon"
-                                                                            onClick={() =>
-                                                                                setPlayingIndex(
-                                                                                    playerIdx ??
-                                                                                        null,
-                                                                                )
-                                                                            }
-                                                                            style={{
-                                                                                flexShrink: 0,
-                                                                                color: isPlaying
-                                                                                    ? "var(--accent)"
-                                                                                    : "var(--success, #16a34a)",
-                                                                            }}
-                                                                            title={
-                                                                                isPlaying
-                                                                                    ? t(
-                                                                                          "ui.audiobook.player.pause",
-                                                                                          "Pause",
-                                                                                      )
-                                                                                    : t(
-                                                                                          "ui.audiobook.player.play",
-                                                                                          "Abspielen",
-                                                                                      )
-                                                                            }
-                                                                        >
-                                                                            {isPlaying ? (
-                                                                                <Pause size={14} />
-                                                                            ) : (
-                                                                                <Play size={14} />
-                                                                            )}
-                                                                        </button>
-                                                                    ) : (
-                                                                        <Clock
-                                                                            size={14}
-                                                                            style={{
-                                                                                color: "var(--text-muted)",
-                                                                                flexShrink: 0,
-                                                                            }}
-                                                                        />
-                                                                    )}
-                                                                    <span
-                                                                        style={{
-                                                                            flex: 1,
-                                                                            fontSize: "0.8125rem",
-                                                                            fontWeight: isPlaying
-                                                                                ? 600
-                                                                                : 500,
-                                                                            color: isPlaying
-                                                                                ? "var(--accent)"
-                                                                                : undefined,
-                                                                        }}
-                                                                    >
-                                                                        {bookCh.title}
-                                                                    </span>
-                                                                    {audio ? (
-                                                                        <>
-                                                                            {dur && (
-                                                                                <span
-                                                                                    className={
-                                                                                        styles.audiobookMuted
-                                                                                    }
-                                                                                    style={{
-                                                                                        whiteSpace:
-                                                                                            "nowrap",
-                                                                                    }}
-                                                                                >
-                                                                                    {dur}
-                                                                                </span>
-                                                                            )}
-                                                                            <span
-                                                                                className={
-                                                                                    styles.audiobookMuted
-                                                                                }
-                                                                            >
-                                                                                {formatBytes(
-                                                                                    audio.size_bytes,
-                                                                                )}
-                                                                            </span>
-                                                                            <a
-                                                                                href={audio.url}
-                                                                                download
-                                                                                className="btn-icon"
-                                                                                title="Download"
-                                                                            >
-                                                                                <Download
-                                                                                    size={12}
-                                                                                />
-                                                                            </a>
-                                                                            <button
-                                                                                className="btn-icon"
-                                                                                onClick={() =>
-                                                                                    handleDeleteChapter(
-                                                                                        audio.filename,
-                                                                                    )
-                                                                                }
-                                                                                disabled={busy}
-                                                                                title={t(
-                                                                                    "ui.common.delete",
-                                                                                    "Löschen",
-                                                                                )}
-                                                                                style={{
-                                                                                    color: "var(--danger, #c0392b)",
-                                                                                }}
-                                                                            >
-                                                                                <Trash2 size={12} />
-                                                                            </button>
-                                                                        </>
-                                                                    ) : (
-                                                                        <span
-                                                                            style={{
-                                                                                fontSize:
-                                                                                    "0.6875rem",
-                                                                                color: "var(--text-muted)",
-                                                                            }}
-                                                                        >
-                                                                            {t(
-                                                                                "ui.audiobook.chapter_not_generated",
-                                                                                "Nicht generiert",
-                                                                            )}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </li>
-                                                        );
-                                                    })}
-                                                </ul>
-                                                {playingIndex !== null &&
-                                                    playerChapters.length > 0 && (
-                                                        <AudiobookPlayer
-                                                            chapters={playerChapters}
-                                                            currentIndex={playingIndex}
-                                                            bookTitle={
-                                                                data.engine
-                                                                    ? `${data.engine} / ${data.voice || ""}`
-                                                                    : ""
-                                                            }
-                                                            onChapterChange={setPlayingIndex}
-                                                            onClose={() => setPlayingIndex(null)}
-                                                        />
-                                                    )}
-                                            </>
-                                        )
-                                    );
-                                })()}
-                            </>
-                        );
-                    })()}
-                </>
-            )}
-
-            {/* Previews sub-tab */}
-            {subTab === "previews" && (
-                <>
-                    {!hasPreviews ? (
-                        <div className={styles.audiobookMuted}>
-                            {t(
-                                "ui.audiobook.previews_empty",
-                                "Keine Previews vorhanden. Nutze den Vorhören-Button im Editor um eine Vorschau zu erstellen.",
-                            )}
-                        </div>
-                    ) : (
-                        <>
-                            <div
-                                style={{
-                                    display: "flex",
-                                    justifyContent: "flex-end",
-                                    marginBottom: 8,
-                                }}
-                            >
-                                <button
-                                    className="btn btn-ghost btn-sm"
-                                    onClick={handleDeleteAllPreviews}
-                                    disabled={busy}
-                                    style={{ color: "var(--danger, #c0392b)", fontSize: "0.75rem" }}
-                                >
-                                    <Trash2 size={10} />{" "}
-                                    {t("ui.audiobook.delete_all_previews", "Alle löschen")}
-                                </button>
-                            </div>
-                            <ul className={styles.audiobookChapterList}>
-                                {previews.map((p) => (
-                                    <li
-                                        key={p.filename}
-                                        className={styles.audiobookChapterItem}
-                                        style={{
-                                            flexDirection: "column",
-                                            alignItems: "stretch",
-                                            gap: 4,
-                                        }}
-                                    >
-                                        <div className="icon-row">
-                                            <span
-                                                style={{
-                                                    flex: 1,
-                                                    fontSize: "0.75rem",
-                                                    wordBreak: "break-all",
-                                                }}
-                                            >
-                                                {p.filename}
-                                            </span>
-                                            <span className={styles.audiobookMuted}>
-                                                {formatBytes(p.size_bytes)}
-                                            </span>
-                                            <a
-                                                href={p.url}
-                                                download
-                                                className="btn-icon"
-                                                title="Download"
-                                            >
-                                                <Download size={12} />
-                                            </a>
-                                            <button
-                                                className="btn-icon"
-                                                onClick={() => handleDeletePreview(p.filename)}
-                                                disabled={busy}
-                                                title={t("ui.common.delete", "Löschen")}
-                                                style={{ color: "var(--danger, #c0392b)" }}
-                                            >
-                                                <Trash2 size={12} />
-                                            </button>
-                                        </div>
-                                        {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                                        <audio
-                                            controls
-                                            src={p.url}
-                                            style={{ width: "100%", height: 28 }}
-                                            preload="none"
-                                        />
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
-                </>
-            )}
-        </div>
-    );
-}
+// Re-exported for back-compat with existing import sites (tests import
+// these named exports from "./BookMetadataEditor"). The implementations
+// live in the co-located ./book-metadata/* modules.
+export { sanitizeAmazonHtml } from "./book-metadata/HtmlField";
+export { HtmlFieldWithPreview };
+export { AuthorAssetsPanel };

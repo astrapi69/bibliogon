@@ -113,6 +113,7 @@ function BookListRow({
 }: RowProps) {
     const { t, lang } = useI18n();
     const [menuOpen, setMenuOpen] = useState(false);
+    const [coverFailed, setCoverFailed] = useState(false);
     const updated = formatLocaleDate(book.updated_at, lang);
     // Resolves to the served URL online, or an IndexedDB blob URL offline.
     const coverUrl = useCoverUrl(book.id, book.cover_image);
@@ -148,14 +149,12 @@ function BookListRow({
             ) : null}
             <div role="cell" className={styles.colCover}>
                 <div className={styles.coverThumb}>
-                    {coverUrl ? (
+                    {coverUrl && !coverFailed ? (
                         <img
                             src={coverUrl}
                             alt={`${book.title} cover`}
                             className={styles.coverThumbImg}
-                            onError={(e) => {
-                                (e.target as HTMLImageElement).style.display = "none";
-                            }}
+                            onError={() => setCoverFailed(true)}
                         />
                     ) : (
                         <CoverPlaceholder title={book.title} compact />

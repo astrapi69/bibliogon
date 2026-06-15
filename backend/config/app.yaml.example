@@ -114,17 +114,6 @@ behavior:
   # ALWAYS render regardless of this flag — they carry data-loss
   # risk and the safety prompt is load-bearing.
   skip_non_destructive_confirmations: false
-features:
-  # Project-level feature flags. Edit via this YAML, not via the
-  # Settings UI.
-  #
-  # white_label:
-  #   When true, the Settings > Erweitert tab is visible (carries
-  #   SSH-key + white-label app customisation surfaces). When false
-  #   (the default), the tab is hidden — power-user features stay
-  #   accessible via direct YAML editing but don't clutter the
-  #   sidebar for the typical author user.
-  white_label: false
 donations:
   # Project-level config: edit via this YAML, not via the Settings UI.
   # Flip `enabled: false` to hide all three donation visibility levels

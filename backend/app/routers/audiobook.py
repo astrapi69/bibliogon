@@ -15,204 +15,44 @@ The actual TTS / generation code stays in the plugin and is gated by
 the license check on ``export_async`` and friends.
 """
 
-import json
 import logging
 import tempfile
 import zipfile
 from pathlib import Path
 from typing import Any
 
-import yaml
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
-from ruamel.yaml import YAMLError as RuamelYAMLError
 from sqlalchemy.orm import Session
 
 from app import credential_store
-from app.database import SessionLocal, get_db
+from app.database import get_db
 from app.models import AudioVoice, Book
 from app.paths import get_upload_dir
-from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
+from app.services import audiobook_credentials
+from app.services.audiobook_synthesis import generate_dry_run_sample
+from app.services.google_tts_setup import (
+    _seeding_status,
+    push_google_creds_to_engine,
+    seed_google_voices_sync,
+)
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["audiobook"])
 
 
-# Path of the audiobook plugin config YAML on disk. Endpoints that need
-# to write back into the YAML (currently: ElevenLabs key) use this so
-# the change persists across restarts.
-AUDIOBOOK_CONFIG_PATH = Path("config/plugins/audiobook.yaml")
-ELEVENLABS_USER_ENDPOINT = "https://api.elevenlabs.io/v1/user"
-
-
-# Mirror of the audiobook generator's built-in SKIP_TYPES default. Used
-# only as a fallback when ``Book.audiobook_skip_chapter_types`` is unset
-# or empty so the dry-run estimate stays sensible for legacy books that
-# never went through the per-book migration. Marketing back-matter
-# (also_by_author, excerpt, call_to_action) is skipped here as well so
-# the dry-run cost estimate matches the real export.
-DEFAULT_AUDIOBOOK_SKIP_TYPES: set[str] = {
-    "toc",
-    "imprint",
-    "index",
-    "bibliography",
-    "endnotes",
-    "also_by_author",
-    "excerpt",
-    "call_to_action",
-}
-
-
-def _resolve_book_skip_types(book: Book) -> set[str]:
-    """Return the lowercased skip set for one book.
-
-    Decodes the JSON-encoded ``Book.audiobook_skip_chapter_types`` Text
-    column and falls back to ``DEFAULT_AUDIOBOOK_SKIP_TYPES`` when the
-    column is null, empty, or malformed. Always returns a set so the
-    callers can use ``in`` checks.
-    """
-    raw = getattr(book, "audiobook_skip_chapter_types", None)
-    if not raw:
-        return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    if isinstance(raw, list):
-        decoded = [str(v).strip().lower() for v in raw if str(v).strip()]
-        return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    if isinstance(raw, str):
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-        if isinstance(parsed, list):
-            decoded = [str(v).strip().lower() for v in parsed if str(v).strip()]
-            return set(decoded) if decoded else set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-    return set(DEFAULT_AUDIOBOOK_SKIP_TYPES)
-
-
-def _load_yaml_config() -> dict[str, Any]:
-    """Read the audiobook plugin config from disk, returning {} if missing."""
-    if not AUDIOBOOK_CONFIG_PATH.exists():
-        return {}
-    try:
-        data = read_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH)
-        return data if isinstance(data, dict) else {}
-    except (OSError, yaml.YAMLError, RuamelYAMLError) as e:
-        logger.warning("Failed to read audiobook.yaml: %s", e)
-        return {}
-
-
-def _write_yaml_config(cfg: dict[str, Any]) -> None:
-    """Persist the audiobook plugin config to disk.
-
-    The audiobook YAML is the source of truth that the plugin loads on
-    activation. We never silently create a fresh file in an unexpected
-    location: if the file is missing, the install is broken and we
-    report a 500 instead of guessing.
-    """
-    if not AUDIOBOOK_CONFIG_PATH.exists():
-        raise HTTPException(
-            status_code=500,
-            detail=f"Audiobook plugin config not found at {AUDIOBOOK_CONFIG_PATH}",
-        )
-    try:
-        write_yaml_roundtrip(AUDIOBOOK_CONFIG_PATH, cfg)
-    except OSError as e:
-        raise HTTPException(status_code=500, detail=f"Failed to write audiobook config: {e}") from e
-
-
-def _push_key_to_engine(api_key: str) -> None:
-    """Best-effort: push the new key into the live TTS engine module.
-
-    The plugin may or may not be active in this process. Importing it
-    lazily lets us update the in-memory key when it is, and skip
-    silently when it is not (e.g. premium plugin not licensed).
-    """
-    try:
-        from bibliogon_audiobook.tts_engine import set_elevenlabs_api_key
-    except ImportError:
-        return
-    set_elevenlabs_api_key(api_key)
-
-
-ELEVENLABS_CRED_FILENAME = "elevenlabs-key.enc"
-
-
-def _get_engine_key() -> str:
-    """Read the live ElevenLabs key, trying sources in order:
-
-    1. In-memory engine override (fastest, set by set_elevenlabs_api_key)
-    2. Encrypted credential file (if BIBLIOGON_CREDENTIALS_SECRET is set)
-    3. Legacy plain-text YAML (backward compat for installs that have not
-       migrated yet)
-    """
-    try:
-        from bibliogon_audiobook.tts_engine import get_elevenlabs_api_key
-
-        key = get_elevenlabs_api_key()
-        if key:
-            return str(key)
-    except ImportError:
-        pass
-
-    # Encrypted store
-    if credential_store.is_configured(ELEVENLABS_CRED_FILENAME):
-        try:
-            import json as _json
-
-            raw = credential_store.load_decrypted(ELEVENLABS_CRED_FILENAME)
-            return str(_json.loads(raw).get("api_key", "") or "")
-        except Exception:
-            pass
-
-    # Legacy YAML fallback
-    return ((_load_yaml_config().get("elevenlabs") or {}).get("api_key") or "").strip()
-
-
 # --- ElevenLabs API key configuration ---
+#
+# The verify / store / read / delete plumbing lives in
+# ``app.services.audiobook_credentials``; the endpoints here stay thin.
 
 
 class ElevenLabsKeyRequest(BaseModel):
     """Request body for storing an ElevenLabs API key."""
 
     api_key: str = Field(..., min_length=1, description="ElevenLabs API key (sk_...)")
-
-
-def _verify_elevenlabs_key(api_key: str) -> dict[str, Any]:
-    """Hit GET /v1/user to verify the key. Returns the parsed user dict.
-
-    Raises HTTPException with the upstream message on any failure so the
-    Settings UI can show a precise error toast.
-    """
-    try:
-        import httpx
-    except ImportError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"httpx not installed in backend environment: {e}",
-        ) from e
-    try:
-        with httpx.Client(timeout=10.0) as client:
-            response = client.get(
-                ELEVENLABS_USER_ENDPOINT,
-                headers={"xi-api-key": api_key},
-            )
-    except httpx.HTTPError as e:
-        raise HTTPException(status_code=502, detail=f"ElevenLabs unreachable: {e}") from e
-    if response.status_code == 401:
-        raise HTTPException(
-            status_code=400, detail="ElevenLabs rejected the API key (401 Unauthorized)."
-        )
-    if response.status_code >= 400:
-        raise HTTPException(
-            status_code=502,
-            detail=f"ElevenLabs API error {response.status_code}: {response.text[:200]}",
-        )
-    try:
-        body = response.json()
-        return body if isinstance(body, dict) else {}
-    except ValueError:
-        return {}
 
 
 @router.get("/audiobook/config/elevenlabs")
@@ -222,121 +62,22 @@ def get_elevenlabs_config() -> dict[str, Any]:
     The key itself is never returned. The frontend uses ``configured``
     to decide whether to show "Schlüssel hinterlegt" or the empty input.
     """
-    return {"configured": bool(_get_engine_key())}
+    return {"configured": audiobook_credentials.is_elevenlabs_configured()}
 
 
 @router.post("/audiobook/config/elevenlabs")
 def set_elevenlabs_config(req: ElevenLabsKeyRequest) -> dict[str, Any]:
-    """Verify, store, and activate an ElevenLabs API key.
-
-    Storage strategy: encrypted via Fernet if BIBLIOGON_CREDENTIALS_SECRET
-    is set, plain-text YAML fallback otherwise. The encrypted path is
-    preferred for consistency with Google Cloud TTS credentials.
-    """
-    user_info = _verify_elevenlabs_key(req.api_key)
-
-    import json as _json
-    import os
-
-    if os.environ.get("BIBLIOGON_CREDENTIALS_SECRET"):
-        credential_store.save_encrypted(
-            _json.dumps({"api_key": req.api_key}).encode(),
-            filename=ELEVENLABS_CRED_FILENAME,
-        )
-        # Clear legacy YAML key so there is no stale plain-text copy.
-        cfg = _load_yaml_config()
-        if cfg.get("elevenlabs", {}).get("api_key"):
-            cfg["elevenlabs"]["api_key"] = ""
-            _write_yaml_config(cfg)
-    else:
-        # No encryption secret → legacy YAML storage
-        cfg = _load_yaml_config()
-        cfg.setdefault("elevenlabs", {})["api_key"] = req.api_key
-        _write_yaml_config(cfg)
-
-    _push_key_to_engine(req.api_key)
-
-    subscription = (user_info.get("subscription") or {}) if isinstance(user_info, dict) else {}
-    return {
-        "configured": True,
-        "tier": subscription.get("tier"),
-        "character_count": subscription.get("character_count"),
-        "character_limit": subscription.get("character_limit"),
-    }
+    """Verify, store, and activate an ElevenLabs API key."""
+    return audiobook_credentials.verify_and_store_elevenlabs_key(req.api_key)
 
 
 @router.delete("/audiobook/config/elevenlabs", status_code=204)
 def delete_elevenlabs_config() -> None:
     """Remove the configured ElevenLabs API key from all storage locations."""
-    # Encrypted store
-    credential_store.secure_delete(ELEVENLABS_CRED_FILENAME)
-    # Legacy YAML
-    cfg = _load_yaml_config()
-    if cfg.get("elevenlabs", {}).get("api_key"):
-        cfg["elevenlabs"]["api_key"] = ""
-        _write_yaml_config(cfg)
-    _push_key_to_engine("")
+    audiobook_credentials.delete_elevenlabs_key()
 
 
 # --- Google Cloud TTS credentials (encrypted, Service Account JSON) ---
-
-# In-memory seeding status so the frontend can poll until voices are loaded.
-_seeding_status: dict[str, Any] = {}
-
-
-def _push_google_creds_to_engine(path: str) -> None:
-    """Best-effort: push the credentials path into the live engine module."""
-    try:
-        from bibliogon_audiobook.tts_engine import set_google_cloud_credentials_path
-    except ImportError:
-        return
-    set_google_cloud_credentials_path(path)
-
-
-def _seed_google_voices_sync(credentials_path: Path) -> None:
-    """Background: load all Google Cloud TTS voices into the DB.
-
-    Runs in a thread via BackgroundTasks. Uses its own DB session so
-    the request that triggered it is not blocked.
-    """
-    _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
-    db = SessionLocal()
-    try:
-        from manuscripta.audiobook.tts import create_adapter
-
-        adapter = create_adapter(
-            "google-cloud-tts",
-            credentials_path=str(credentials_path),
-            voice_id="placeholder",
-            language="en-US",
-        )
-        voices = adapter.list_voices()
-
-        db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
-        for v in voices:
-            db.add(
-                AudioVoice(
-                    engine=v.engine,
-                    language=v.language,
-                    voice_id=v.voice_id,
-                    display_name=v.display_name,
-                    gender=v.gender,
-                    quality=getattr(v, "quality", "standard"),
-                )
-            )
-        db.commit()
-        _seeding_status["google-cloud-tts"] = {"done": True, "error": None, "count": len(voices)}
-        logger.info("Seeded %d Google Cloud TTS voices", len(voices))
-    except Exception as e:
-        db.rollback()
-        logger.error("Google Cloud TTS voice seeding failed: %s", e, exc_info=True)
-        _seeding_status["google-cloud-tts"] = {"done": True, "error": str(e), "count": 0}
-    finally:
-        db.close()
-        # Clean up the temp credentials file
-        if credentials_path.exists():
-            credentials_path.unlink(missing_ok=True)
-
 
 MAX_CREDENTIALS_SIZE = 16 * 1024  # 16 KB
 
@@ -370,11 +111,11 @@ async def upload_google_credentials(
 
     # Push decrypted credentials into the engine for immediate use
     tmp_path = credential_store.load_to_tempfile()
-    _push_google_creds_to_engine(str(tmp_path))
+    push_google_creds_to_engine(str(tmp_path))
 
     # Seed voices in the background (the temp file is cleaned up inside)
     _seeding_status["google-cloud-tts"] = {"done": False, "error": None, "count": 0}
-    background_tasks.add_task(_seed_google_voices_sync, tmp_path)
+    background_tasks.add_task(seed_google_voices_sync, tmp_path)
 
     return {
         "configured": True,
@@ -430,7 +171,7 @@ def test_google_credentials() -> dict[str, Any]:
 def delete_google_credentials(db: Session = Depends(get_db)) -> None:
     """Securely delete the stored credentials and all Google voices."""
     credential_store.secure_delete()
-    _push_google_creds_to_engine("")
+    push_google_creds_to_engine("")
     db.query(AudioVoice).filter(AudioVoice.engine == "google-cloud-tts").delete()
     db.commit()
     _seeding_status.pop("google-cloud-tts", None)
@@ -453,104 +194,16 @@ async def audiobook_dry_run(book_id: str, db: Session = Depends(get_db)) -> File
     - ``X-Sample-Engine``: engine ID used for this sample
     - ``X-Sample-Voice``: voice ID used for this sample
     """
-    from app.models import Chapter
-
-    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).order_by(Chapter.position).all()
-    if not chapters:
-        raise HTTPException(status_code=400, detail="Book has no chapters")
-
-    # Find the first non-skipped chapter with content. The skip set comes
-    # from Book.audiobook_skip_chapter_types (the per-book column that
-    # replaced the former plugin-global ``audiobook.settings.skip_types``).
-    # Falls back to the audiobook generator's built-in SKIP_TYPES so the
-    # dry-run still does something sensible for books that have not been
-    # touched since the migration.
-    skip_types = _resolve_book_skip_types(book)
-    sample_text = ""
-    for ch in chapters:
-        if (ch.chapter_type or "").lower() in skip_types:
-            continue
-        try:
-            from bibliogon_audiobook.generator import extract_plain_text
-
-            full_text = extract_plain_text(ch.content)
-        except ImportError:
-            full_text = ch.content if isinstance(ch.content, str) else ""
-        if full_text.strip():
-            # Take only the first paragraph (up to 500 chars)
-            first_para = full_text.strip().split("\n\n")[0][:500]
-            sample_text = first_para
-            break
-
-    if not sample_text:
-        raise HTTPException(status_code=400, detail="No chapter with text content found")
-
-    engine_id = getattr(book, "tts_engine", None) or "edge-tts"
-    voice = getattr(book, "tts_voice", None) or ""
-    language = getattr(book, "tts_language", None) or book.language or "de"
-
-    # Generate sample audio
-    try:
-        from bibliogon_audiobook.tts_engine import get_engine
-    except ImportError as e:
-        raise HTTPException(status_code=500, detail="Audiobook plugin not available") from e
-
-    import tempfile as _tmpmod
-
-    tmp_dir = Path(_tmpmod.mkdtemp(prefix="bibliogon_dryrun_"))
-    output_path = tmp_dir / "dry-run-sample.mp3"
-
-    try:
-        tts = get_engine(engine_id)
-        await tts.synthesize(
-            text=sample_text,
-            output_path=output_path,
-            voice=voice,
-            language=language,
-        )
-    except Exception as e:
-        raise HTTPException(status_code=502, detail=f"Dry-run TTS failed: {e}") from e
-
-    if not output_path.exists():
-        raise HTTPException(status_code=500, detail="Sample audio was not generated")
-
-    # Estimate full export cost
-    cost_header = "free"
-    chapter_count = 0
-    try:
-        from bibliogon_audiobook.generator import extract_plain_text
-        from manuscripta.audiobook.tts import create_adapter
-
-        adapter = create_adapter(engine_id, lang=language, voice=voice or "default")
-        total_cost = 0.0
-        for ch in chapters:
-            if (ch.chapter_type or "").lower() in skip_types:
-                continue
-            pt = extract_plain_text(ch.content)
-            if not pt.strip():
-                continue
-            chapter_count += 1
-            c = adapter.estimate_cost(pt)
-            if c is not None:
-                total_cost += c
-        if total_cost > 0:
-            cost_header = f"{total_cost:.4f}"
-    except Exception:
-        pass
-
+    sample = await generate_dry_run_sample(book_id, db)
     return FileResponse(
-        path=str(output_path),
+        path=str(sample.output_path),
         media_type="audio/mpeg",
         filename="dry-run-sample.mp3",
         headers={
-            "X-Estimated-Cost-USD": cost_header,
-            "X-Estimated-Chapters": str(chapter_count),
-            "X-Sample-Engine": engine_id,
-            "X-Sample-Voice": voice or "default",
+            "X-Estimated-Cost-USD": sample.cost_header,
+            "X-Estimated-Chapters": str(sample.chapter_count),
+            "X-Sample-Engine": sample.engine_id,
+            "X-Sample-Voice": sample.voice or "default",
         },
     )
 

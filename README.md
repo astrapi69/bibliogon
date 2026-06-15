@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.51.0**
+**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.52.0**
 
 ## Story Bible
 
@@ -69,6 +69,7 @@ Bibliogon runs as a fully offline Progressive Web App on GitHub Pages — no bac
 - **Client-side export engine:** Markdown, HTML, Text, PDF, EPUB, DOCX, and LaTeX — generated in the browser, no Pandoc required.
 - **AI offline:** bring your own provider key; calls go browser-direct to your provider and the key is stored locally, never sent anywhere else.
 - **Backup & restore:** a single JSON bundle exports/imports the entire workspace. The in-app Help and the Getting-Started guide work offline too, and unknown routes get a custom 404 page.
+- **Offline article images:** article featured images upload and render offline — bytes are stored in IndexedDB and served back through a service-worker `/api/...` intercept, and Medium CDN thumbnails are cached locally on import.
 - **Three-state feature visibility:** every gated surface resolves to *active*, *disabled with an explanation*, or *hidden* via a central feature registry ([@astrapi69/feature-strategy](https://www.npmjs.com/package/@astrapi69/feature-strategy)). Nothing you own is hidden — the genuinely browser-impossible features (Pandoc-based export, Git sync/backup, audiobook TTS, LAN mode) appear disabled with a "requires the desktop app" hint instead of silently vanishing.
 
 ## Picture Book Authoring
@@ -187,9 +188,11 @@ make test       # Run all tests (backend + plugins + frontend)
 
 Bibliogon follows **gitflow**: `develop` is the active development branch (the GitHub default), `main` carries releases only. Branch `feature/*` / `fix/*` from `develop` and open pull requests against `develop`.
 
-Quality gates: backend + plugin pytest and frontend Vitest with coverage tracking (current numbers in [docs/audits/current-coverage.md](docs/audits/current-coverage.md)), `ruff` + `mypy`, ESLint (flat config) + Prettier, `bandit` SAST and `madge` circular-dependency detection in CI, Playwright E2E with visual-regression baselines and axe-core accessibility checks, theme/contrast gates (`make verify-theme`), and a full backup acceptance gate (export → reset → import → verify).
+Quality gates: backend + plugin pytest and frontend Vitest with coverage tracking (current numbers in [docs/audits/current-coverage.md](docs/audits/current-coverage.md)), `ruff` + `mypy`, ESLint (flat config) + Prettier, `bandit` SAST + `pip-audit` + `npm audit` (blocking in CI) plus a weekly CVE watcher (`security-scan.yml`), `madge` circular-dependency detection, a **cohesion** file-size watcher (`scripts/check-file-sizes.sh`, blocks new files >1000 lines) and a **complexity** watcher (radon/ruff-C901/ESLint, warn-only), Playwright E2E with visual-regression baselines and axe-core accessibility checks, theme/contrast gates (`make verify-theme`), and a full backup acceptance gate (export → reset → import → verify).
 
-See [CLAUDE.md](CLAUDE.md) for full development documentation.
+The **E2E smoke suite** (Playwright, `e2e/`) runs **nightly** (03:00 UTC) and on demand via `workflow_dispatch` — **not** on every PR, because the serial suite takes ~90 minutes against a live backend and is not a required check (same model as the security + mutation-testing workflows). Run it locally with `make test-e2e-smoke` (or `make test-e2e-smoke-retries` for the CI-style retry budget). Before a release, Aster runs it manually as part of the release checklist.
+
+Architecture and AI-assisted-development conventions: [docs/MODULE-ARCHITECTURE.md](docs/MODULE-ARCHITECTURE.md) (folder structure + reusability) and [docs/VIBE-CODING-POLICY.md](docs/VIBE-CODING-POLICY.md) (the rules governing AI agent work). See [CLAUDE.md](CLAUDE.md) for full development documentation.
 
 ## Documentation
 

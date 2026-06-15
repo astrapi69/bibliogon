@@ -16,28 +16,5 @@
 # Refactoring-Backlog dazu: docs/COHESION-AUDIT.md.
 # Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
 
-# --- Backend / Plugins ---
-backend/app/main.py
-plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf.py
-plugins/bibliogon-plugin-export/bibliogon_export/routes.py
-plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
-
-# --- Frontend: API-Client ---
-frontend/src/api/client.ts
-
 # --- Frontend: Editoren / Komponenten ---
-frontend/src/components/BookMetadataEditor.tsx
 frontend/src/components/Editor.tsx
-frontend/src/storage/dexie-storage.ts
-frontend/src/components/import-wizard/steps/PreviewPanel.tsx
-frontend/src/components/articles/ConvertToBookWizard.tsx
-frontend/src/components/ComicBookEditor.tsx
-frontend/src/components/PageCanvas.tsx
-frontend/src/components/CommentsAdminSection.tsx
-frontend/src/components/ChapterSidebar.tsx
-
-# --- Frontend: Seiten ---
-frontend/src/pages/ArticleEditor.tsx
-frontend/src/pages/ArticleList.tsx
-frontend/src/pages/Dashboard.tsx
-frontend/src/pages/BookEditor.tsx

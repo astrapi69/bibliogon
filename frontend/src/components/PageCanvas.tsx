@@ -1,169 +1,36 @@
-import React, {useCallback, useEffect, useRef, useState} from "react"
+import React, {useCallback, useEffect, useState} from "react"
 import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
-import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {type Page, type PageLayout, type PageUpdate} from "../api/client"
-import {getStorage} from "../storage"
-import {imageUrlFor} from "../utils/imageUrl"
-import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota"
 import {
     readLayoutNamespace,
     readSecondaryImageAssetId,
-    writeSecondaryImageAssetId,
 } from "../utils/layoutConfig"
 import CollageCanvas from "./CollageCanvas"
-import {useI18n} from "../hooks/useI18n"
 import {useDebouncedCallback} from "../hooks/useDebouncedCallback"
-import RichTextEditor from "./RichTextEditor"
+import {usePageImageUpload} from "../hooks/usePageImageUpload"
+import {
+    extractPlainText,
+    isTipTapLayout,
+    parseTextContentToJson,
+    serializeJsonToText,
+} from "../lib/utils/pageTextContent"
+import {
+    isMultiImageLayout,
+    speechBubbleInlineStyle,
+} from "../lib/utils/pageLayoutStyles"
+import {computePageCanvasStyles} from "./page-canvas/pageCanvasStyles"
+import PrimaryImageRegion from "./page-canvas/PrimaryImageRegion"
+import TextRegion from "./page-canvas/TextRegion"
+import SecondaryImageRegion from "./page-canvas/SecondaryImageRegion"
 import styles from "./PageCanvas.module.css"
 
 /**
- * PB-PHASE4 Session 4c-B-1 Commit 2: per-layout discriminator.
- *
- * D2 storage decision: TipTap JSON for these three layouts (large
- * text regions where rich formatting actually matters); plain
- * string for speech_bubble + image_full_text_overlay (Tier-Property
- * surfaces handle text styling via the layout_config, NOT inline).
+ * Re-exported from ``lib/utils/pageTextContent`` so existing
+ * consumers (PageEditor + the PageCanvas test) keep importing these
+ * from ``./PageCanvas`` unchanged after the Batch 1 god-file split.
  */
-const TIPTAP_LAYOUTS: ReadonlySet<PageLayout> = new Set([
-    "image_top_text_bottom",
-    "image_left_text_right",
-    "text_only",
-    // Phase 1 C2 (2026-05-28). Mirror layouts inherit the
-    // TipTap text-content shape from their geometric parents
-    // (image_top_text_bottom → image_bottom_text_top;
-    // image_left_text_right → image_right_text_left) per the
-    // adjudicated Q4. image_full_no_text has NO text region —
-    // it doesn't belong in this set at all.
-    "image_bottom_text_top",
-    "image_right_text_left",
-])
-
-export function isTipTapLayout(layout: PageLayout): boolean {
-    return TIPTAP_LAYOUTS.has(layout)
-}
-
-/**
- * Parse ``page.text_content`` (stringified) into a TipTap JSON
- * doc per the D4 migration strategy: legacy plain-text rows get
- * wrapped into a minimal TipTap doc on first read. No Alembic
- * migration; backward-compat lives here.
- */
-function parseTextContentToJson(
-    textContent: string | null | undefined,
-): JSONContent | null {
-    if (!textContent) return null
-    // Heuristic: TipTap JSON always starts with ``{`` (it's an
-    // object literal). Anything else is legacy plain text.
-    const trimmed = textContent.trimStart()
-    if (trimmed.startsWith("{")) {
-        try {
-            const parsed = JSON.parse(textContent)
-            if (
-                parsed &&
-                typeof parsed === "object" &&
-                parsed.type === "doc"
-            ) {
-                return parsed as JSONContent
-            }
-            // Fall through to wrap: parsed but doesn't look like
-            // a TipTap doc — rare edge case (e.g. somebody hand-
-            // wrote ``{"foo": "bar"}`` into the field).
-        } catch {
-            // Fall through to wrap: invalid JSON.
-        }
-    }
-    // Wrap as a minimal TipTap doc.
-    return {
-        type: "doc",
-        content: [
-            {
-                type: "paragraph",
-                content: [{type: "text", text: textContent}],
-            },
-        ],
-    }
-}
-
-function serializeJsonToText(json: JSONContent | null): string | null {
-    if (!json) return null
-    return JSON.stringify(json)
-}
-
-/**
- * Defensive: extract plain text from a ``page.text_content`` value
- * regardless of whether it's a legacy plain string OR a JSON-shaped
- * TipTap doc.
- *
- * Closes the 4c-B-1 manual-smoke "Finding C" bug: switching a page
- * from a TipTap layout to a Tier-Property layout via the LayoutPicker
- * preserves ``text_content`` (per the Fix A purge-on-switch behavior
- * shipped in v0.34.0, which only purges ``layout_config``). The
- * Tier-Property layout's textarea then renders the raw JSON string
- * as visible text. This helper extracts the plain-text content from
- * any JSON-shaped value before the textarea sees it.
- *
- * Walking strategy: recursively descend ``content`` arrays, harvest
- * every ``text`` field on text-node entries, join paragraph
- * boundaries with newlines. Lossy by design — formatting marks
- * (bold/italic/heading-level/etc.) are dropped, which is the
- * correct shape for the Tier-Property textarea (a small plain
- * input). The TipTap render path on TipTap layouts continues to
- * use ``parseTextContentToJson`` and preserves the full doc.
- *
- * On non-JSON input OR malformed JSON: return the string as-is.
- * The fallback covers legacy plain-text rows + any future shape
- * we haven't anticipated.
- *
- * Filed as a P3 backlog follow-up:
- * PICTURE-BOOK-LAYOUT-SWITCH-TEXT-CONVERSION-01 covers the
- * complementary active-conversion-on-switch path. Defensive read
- * (this helper) handles existing dirty data + every future
- * switch read; active conversion would clean the data at switch
- * time so subsequent reads don't pay the parse cost.
- */
-export function extractPlainText(textContent: string | null | undefined): string {
-    if (!textContent) return ""
-    const trimmed = textContent.trimStart()
-    if (!trimmed.startsWith("{")) return textContent
-    let parsed: unknown
-    try {
-        parsed = JSON.parse(textContent)
-    } catch {
-        return textContent
-    }
-    if (
-        !parsed ||
-        typeof parsed !== "object" ||
-        (parsed as {type?: unknown}).type !== "doc"
-    ) {
-        return textContent
-    }
-    const pieces: string[] = []
-    const walk = (node: unknown): void => {
-        if (!node || typeof node !== "object") return
-        const n = node as {
-            type?: string
-            text?: string
-            content?: unknown[]
-        }
-        if (n.type === "text" && typeof n.text === "string") {
-            pieces.push(n.text)
-            return
-        }
-        if (Array.isArray(n.content)) {
-            const before = pieces.length
-            for (const child of n.content) walk(child)
-            // Insert a newline between paragraph-shaped children
-            // so the textarea preserves visual block boundaries.
-            if (n.type === "paragraph" || n.type?.startsWith("heading")) {
-                if (pieces.length > before) pieces.push("\n")
-            }
-        }
-    }
-    walk(parsed)
-    return pieces.join("").replace(/\n+$/, "")
-}
+export {extractPlainText, isTipTapLayout}
 
 interface Props {
     page: Page
@@ -180,349 +47,6 @@ interface Props {
      *  current page; on page-switch the parent clears its own
      *  reference + re-receives the new page's editor. */
     onEditorReady?: (editor: Editor | null) => void
-}
-
-const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif"
-
-// Phase 3 C1 (2026-05-28). imageUrlFor extracted to
-// ``../utils/imageUrl.ts`` for cross-surface reuse (RCU rule —
-// PageCanvas + Storyboard + CollageCanvas). Re-import here from
-// the new module location.
-
-/** 4c-B-2 C1: read-path shim. ``layout_config.bubbles[0]`` takes
- *  precedence over flat top-level keys (legacy fallback). Mirrors
- *  the Python ``_read_bubble_config`` in ``picture_book_pdf.py`` so
- *  in-editor + printed PDF resolve from the same shape. */
-function readBubbleConfig(
-    config: Record<string, unknown> | null | undefined,
-): Record<string, unknown> {
-    if (!config) return {}
-    const flat: Record<string, unknown> = {}
-    for (const [k, v] of Object.entries(config)) {
-        if (k !== "bubbles") flat[k] = v
-    }
-    const bubbles = (config as Record<string, unknown>).bubbles
-    const bubblesZero =
-        Array.isArray(bubbles) &&
-        bubbles.length > 0 &&
-        typeof bubbles[0] === "object" &&
-        bubbles[0] !== null
-            ? (bubbles[0] as Record<string, unknown>)
-            : {}
-    return {...flat, ...bubblesZero}
-}
-
-/** 4c-B-2 C2: parse ``#rrggbb`` / ``rrggbb`` to RGB. Returns
- *  ``null`` for any shape we don't recognise so the caller can
- *  fall back to a default. Mirrors ``_hex_to_rgb`` in
- *  ``picture_book_pdf.py``. */
-function hexToRgb(
-    hex: unknown,
-): {r: number; g: number; b: number} | null {
-    if (typeof hex !== "string") return null
-    const m = /^#?([a-fA-F0-9]{6})$/.exec(hex.trim())
-    if (!m) return null
-    const v = parseInt(m[1], 16)
-    return {r: (v >> 16) & 0xff, g: (v >> 8) & 0xff, b: v & 0xff}
-}
-
-/** PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1: shared
- *  Tier 1 (Visual Style) + Tier 2 (Typography) inline-style
- *  derivation. Returns ONLY the Tier subset — callers compose
- *  layout-specific background + positioning + sizing on top.
- *
- *  Used by image_full_text_overlay (Session 1 C5),
- *  image_top_text_bottom (Session 2 C1), and
- *  image_left_text_right (Session 2 C2). speech_bubble has its
- *  own derivation inside speechBubbleInlineStyle that
- *  intentionally diverges (positioning + width/height defaults +
- *  background composition with opacity).
- *
- *  Defaults — Tier 1 fields ABSENT means the corresponding CSS
- *  property is NOT set (CSS-module default takes effect). Tier
- *  border is gated on width > 0 AND style != "none". Tier shadow
- *  is gated on the shadow boolean. Padding emits only when the
- *  field is set. Tier 2 fields ABSENT also leave CSS-module
- *  defaults; only explicit values produce overrides. This shape
- *  matches the overlay/image_top/image_left contract where
- *  pre-C5 pages render identically. */
-function computeTierTextStyles(
-    namespace: Record<string, unknown> | null | undefined,
-): React.CSSProperties {
-    const style: React.CSSProperties = {}
-    if (!namespace) return style
-
-    // Tier 1 — border + radius + shadow + padding.
-    const borderColorRgb =
-        hexToRgb(namespace.border_color) ?? {r: 0, g: 0, b: 0}
-    const borderWidthRaw =
-        typeof namespace.border_width === "number"
-            ? namespace.border_width
-            : 0
-    const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
-    const borderStyleRaw = namespace.border_style
-    const borderStyle =
-        borderStyleRaw === "solid" ||
-        borderStyleRaw === "dashed" ||
-        borderStyleRaw === "dotted" ||
-        borderStyleRaw === "none"
-            ? borderStyleRaw
-            : "none"
-    if (borderWidth > 0 && borderStyle !== "none") {
-        style.border = `${borderWidth}px ${borderStyle} rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
-    }
-    const borderRadiusRaw =
-        typeof namespace.border_radius === "number"
-            ? namespace.border_radius
-            : 0
-    if (borderRadiusRaw > 0) {
-        style.borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
-    }
-    const shadowOn =
-        typeof namespace.shadow === "boolean" ? namespace.shadow : false
-    if (shadowOn) {
-        const shadowIntensityRaw =
-            typeof namespace.shadow_intensity === "number"
-                ? namespace.shadow_intensity
-                : 5
-        const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
-        style.boxShadow = `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
-    }
-    const paddingRaw =
-        typeof namespace.padding === "number" ? namespace.padding : undefined
-    if (typeof paddingRaw === "number") {
-        style.padding = `${Math.max(0, Math.min(32, paddingRaw))}px`
-    }
-
-    // Tier 2 — typography. Each control overrides the
-    // CSS-module default by inline specificity; absent values
-    // leave the CSS-module default in place.
-    if (typeof namespace.font_family === "string" && namespace.font_family.length > 0) {
-        style.fontFamily = namespace.font_family
-    }
-    if (typeof namespace.font_size === "number") {
-        style.fontSize = `${Math.max(10, Math.min(32, namespace.font_size))}pt`
-    }
-    if (namespace.font_weight === "bold" || namespace.font_weight === "normal") {
-        style.fontWeight = namespace.font_weight
-    }
-    if (typeof namespace.italic === "boolean") {
-        style.fontStyle = namespace.italic ? "italic" : "normal"
-    }
-    const textColorRgb = hexToRgb(namespace.text_color)
-    if (textColorRgb) {
-        style.color = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
-    }
-    if (
-        namespace.text_align === "left" ||
-        namespace.text_align === "center" ||
-        namespace.text_align === "right"
-    ) {
-        style.textAlign = namespace.text_align
-    }
-    return style
-}
-
-/** PB-PHASE4 Session 4c Commit 4: derive the speech-bubble's
- *  position + background-opacity inline style from
- *  page.layout_config. Default (NULL config) is bottom-right + full
- *  opacity, matching Session 4 D2a's behavior. */
-function speechBubbleInlineStyle(
-    config: Record<string, unknown> | null,
-): React.CSSProperties {
-    // 4c-B-2 C1: read through bubbles[0] wrapper with flat fallback.
-    const merged = readBubbleConfig(config)
-    // Session 4 D2a default: fallback is bottom-center when no user
-    // preset has been picked. The 5 user-pickable presets (TL/TR/BL/
-    // BR/CENTER) override this default once persisted.
-    const anchor =
-        typeof merged.anchor_position === "string"
-            ? merged.anchor_position
-            : "bottom-center"
-    const rawOpacity =
-        typeof merged.opacity === "number" ? merged.opacity : 1
-    const opacity = Math.max(0.3, Math.min(1, rawOpacity))
-    // 4c-B-2 C2: Tier 1 ``background_color`` composes with
-    // ``opacity`` into a single rgba() value. Default white keeps
-    // pre-C2 pages rendering identically.
-    const bgRgb = hexToRgb(merged.background_color) ?? {r: 255, g: 255, b: 255}
-    const bg = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${opacity})`
-    // PB-PHASE4 Session 4c-B-1 smoke Bug 1 (2026-05-18):
-    // bubble_width replaces ``size`` as the canonical width key,
-    // bubble_height is the new height knob. Per the user's
-    // 2026-05-17 Tier-Property Pre-Inspection adjustment + the
-    // 2026-05-18 smoke direct-action: a single ``size`` slider is
-    // insufficient — bubbles need independent width + height
-    // for picture-book + comic-style use. Backward-compat: read
-    // ``size`` as legacy fallback for ``bubble_width`` when the
-    // new key is absent; on next write the dispatcher writes
-    // ``bubble_width`` so legacy ``size`` fades out without a
-    // backfill. ``bubble_height`` has no legacy fallback (new key);
-    // defaults to 30%.
-    const rawWidth =
-        typeof merged.bubble_width === "number"
-            ? merged.bubble_width
-            : typeof merged.size === "number"
-              ? merged.size
-              : 40
-    const widthPct = Math.max(20, Math.min(80, rawWidth))
-    const width = `${widthPct}%`
-    const rawHeight =
-        typeof merged.bubble_height === "number"
-            ? merged.bubble_height
-            : 30
-    const heightPct = Math.max(15, Math.min(60, rawHeight))
-    const height = `${heightPct}%`
-
-    // 4c-B-2 C2: Tier 1 Visual Style. Read border + radius +
-    // shadow from the merged bubble config, fall back to the
-    // CSS-module defaults (.canvasLayoutSpeechBubble .regionText)
-    // when keys are absent. Inline-style wins over the CSS class
-    // by specificity, so emitting these properties from C2 onward
-    // gives the user full visual control.
-    const borderColorRgb = hexToRgb(merged.border_color) ?? {r: 0, g: 0, b: 0}
-    const borderColor = `rgb(${borderColorRgb.r}, ${borderColorRgb.g}, ${borderColorRgb.b})`
-    const borderWidthRaw =
-        typeof merged.border_width === "number" ? merged.border_width : 2
-    const borderWidth = Math.max(0, Math.min(8, borderWidthRaw))
-    const borderStyleRaw = merged.border_style
-    const borderStyle =
-        borderStyleRaw === "solid" ||
-        borderStyleRaw === "dashed" ||
-        borderStyleRaw === "dotted" ||
-        borderStyleRaw === "none"
-            ? borderStyleRaw
-            : "solid"
-    const borderRadiusRaw =
-        typeof merged.border_radius === "number" ? merged.border_radius : 50
-    const borderRadius = `${Math.max(0, Math.min(50, borderRadiusRaw))}%`
-    const border = `${borderWidth}px ${borderStyle} ${borderColor}`
-
-    const shadowOn =
-        typeof merged.shadow === "boolean" ? merged.shadow : true
-    const shadowIntensityRaw =
-        typeof merged.shadow_intensity === "number"
-            ? merged.shadow_intensity
-            : 5
-    const shadowIntensity = Math.max(0, Math.min(10, shadowIntensityRaw))
-    // Shadow intensity 0-10 maps to a soft drop-shadow:
-    // offset_y = intensity/2 px, blur = intensity*2 px, 30% black.
-    const boxShadow = shadowOn
-        ? `0 ${shadowIntensity / 2}px ${shadowIntensity * 2}px rgba(0, 0, 0, 0.3)`
-        : "none"
-
-    // 4c-B-2 C3: Tier 2 Typography. Emitted on the parent
-    // ``.region-text`` element; ``.textInput`` inside inherits via
-    // the CSS-module override (font-family: inherit etc.). Defaults
-    // mirror picture-book conventions (Atkinson Hyperlegible 14pt
-    // normal black centered) so pre-C3 pages render identically.
-    const fontFamilyRaw = merged.font_family
-    const fontFamily =
-        typeof fontFamilyRaw === "string" && fontFamilyRaw.length > 0
-            ? fontFamilyRaw
-            : "Atkinson Hyperlegible"
-    const fontSizeRaw =
-        typeof merged.font_size === "number" ? merged.font_size : 14
-    const fontSize = `${Math.max(10, Math.min(32, fontSizeRaw))}pt`
-    const fontWeightRaw = merged.font_weight
-    const fontWeight =
-        fontWeightRaw === "bold" || fontWeightRaw === "normal"
-            ? fontWeightRaw
-            : "normal"
-    // PADDING-FONT-STYLE-01 C2: italic boolean -> CSS font-style.
-    const italic =
-        typeof merged.italic === "boolean" ? merged.italic : false
-    const fontStyle: "italic" | "normal" = italic ? "italic" : "normal"
-    const textColorRgb = hexToRgb(merged.text_color) ?? {r: 0, g: 0, b: 0}
-    const textColor = `rgb(${textColorRgb.r}, ${textColorRgb.g}, ${textColorRgb.b})`
-    const textAlignRaw = merged.text_align
-    const textAlign: "left" | "center" | "right" =
-        textAlignRaw === "left" ||
-        textAlignRaw === "center" ||
-        textAlignRaw === "right"
-            ? textAlignRaw
-            : "center"
-
-    // PADDING-FONT-STYLE-01 C1: uniform padding emit. Overrides the
-    // CSS-module rule ``.canvasLayoutSpeechBubble .regionText {
-    // padding: 10px 14px }`` by inline-style specificity. Default
-    // 12 px keeps pre-C1 bubbles visually close to the asymmetric
-    // 10px / 14px rule (mean-midpoint).
-    const paddingRaw =
-        typeof merged.padding === "number" ? merged.padding : 12
-    const paddingPx = Math.max(0, Math.min(32, paddingRaw))
-    const padding = `${paddingPx}px`
-
-    const reset = {top: "auto", right: "auto", bottom: "auto", left: "auto"} as const
-    const tier1: React.CSSProperties = {
-        background: bg,
-        width,
-        height,
-        border,
-        borderRadius,
-        boxShadow,
-        padding,
-        fontFamily,
-        fontSize,
-        fontWeight,
-        fontStyle,
-        color: textColor,
-        textAlign,
-    }
-    switch (anchor) {
-        case "top-left":
-            return {...reset, top: 16, left: 16, transform: "none", ...tier1}
-        case "top-center":
-            // Session 4c-B-1 manual smoke Finding A: new preset.
-            return {
-                ...reset,
-                top: 16,
-                left: "50%",
-                transform: "translateX(-50%)",
-                ...tier1,
-            }
-        case "top-right":
-            return {...reset, top: 16, right: 16, transform: "none", ...tier1}
-        case "middle-left":
-            // Session 4c-B-1 manual smoke Finding A: new preset.
-            return {
-                ...reset,
-                top: "50%",
-                left: 16,
-                transform: "translateY(-50%)",
-                ...tier1,
-            }
-        case "middle-right":
-            // Session 4c-B-1 manual smoke Finding A: new preset.
-            return {
-                ...reset,
-                top: "50%",
-                right: 16,
-                transform: "translateY(-50%)",
-                ...tier1,
-            }
-        case "bottom-left":
-            return {...reset, bottom: 16, left: 16, transform: "none", ...tier1}
-        case "bottom-right":
-            return {...reset, bottom: 16, right: 16, transform: "none", ...tier1}
-        case "center":
-            return {
-                ...reset,
-                top: "50%",
-                left: "50%",
-                transform: "translate(-50%, -50%)",
-                ...tier1,
-            }
-        case "bottom-center":
-        default:
-            return {
-                ...reset,
-                bottom: 16,
-                left: "50%",
-                transform: "translateX(-50%)",
-                ...tier1,
-            }
-    }
 }
 
 // PB-PHASE4 Session 4 Commit 1: per-layout CSS-Module class. The
@@ -566,43 +90,18 @@ const LAYOUT_CLASS: Record<PageLayout, string> = {
     collage: styles.canvasLayoutImageTopTextBottom,
 }
 
-/** Picture-Book Layout Expansion Phase 2 (2026-05-28).
- *
- *  Multi-image layouts (M1 storage): the PRIMARY image stays on
- *  ``Page.image_asset_id`` (unchanged from single-image layouts);
- *  the SECONDARY image lives in
- *  ``layout_config[layout].secondary_image_asset_id``. This set
- *  drives the conditional rendering of the secondary image region
- *  + its upload affordance in the canvas.
- *
- *  C2 ships ``two_images_text_center``; C3..C5 add the other 3
- *  layouts to this set as each ships its CSS + walker branches. */
-const MULTI_IMAGE_LAYOUTS = new Set<PageLayout>([
-    "two_images_text_center",
-    "split_horizontal",
-    "split_vertical",
-])
-
-function isMultiImageLayout(layout: PageLayout): boolean {
-    return MULTI_IMAGE_LAYOUTS.has(layout)
-}
-
 export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Props) {
-    const {t} = useI18n()
-    const fileInputRef = useRef<HTMLInputElement>(null)
-    const [uploading, setUploading] = useState(false)
-    const [uploadError, setUploadError] = useState<string | null>(null)
-    // Phase 2 C2 (2026-05-28): multi-image layouts need a separate
-    // upload affordance for the SECONDARY image. State + ref are
-    // mounted in every render to keep the hook order stable; the
-    // JSX block that reads them is conditionally rendered only for
-    // multi-image layouts. Empty state on non-multi-image layouts
-    // is harmless.
-    const secondaryFileInputRef = useRef<HTMLInputElement>(null)
-    const [uploadingSecondary, setUploadingSecondary] = useState(false)
-    const [uploadSecondaryError, setUploadSecondaryError] = useState<
-        string | null
-    >(null)
+    const {
+        fileInputRef,
+        uploading,
+        uploadError,
+        setUploadError,
+        handleFileChange,
+        secondaryFileInputRef,
+        uploadingSecondary,
+        uploadSecondaryError,
+        handleSecondaryFileChange,
+    } = usePageImageUpload({page, bookId, onUpdate})
     // PB-PHASE4 Session 4c-B-1 fix C: defensive plain-text
     // extraction. Switching a page from a TipTap layout to a
     // Tier-Property layout preserves text_content (per v0.34.0
@@ -627,66 +126,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         setTextDraft(extractPlainText(page.text_content))
         setTextJson(parseTextContentToJson(page.text_content))
         setUploadError(null)
-    }, [page.id, page.text_content])
-
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        setUploading(true)
-        setUploadError(null)
-        try {
-            const asset = await getStorage().assets.upload(bookId, file, "figure")
-            await onUpdate({image_asset_id: asset.id})
-            void warnIfOfflineStorageNearlyFull(
-                t(
-                    "ui.offline.storage_almost_full",
-                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
-                ),
-            )
-        } catch (err: unknown) {
-            setUploadError(err instanceof Error ? err.message : String(err))
-        } finally {
-            setUploading(false)
-            if (fileInputRef.current) fileInputRef.current.value = ""
-        }
-    }
-
-    /** Phase 2 C2 (2026-05-28): upload + persist the SECONDARY image
-     *  for multi-image layouts. Mirrors handleFileChange but stores
-     *  the asset id at ``layout_config[layout].secondary_image_asset_id``
-     *  via writeSecondaryImageAssetId — preserving the namespaced
-     *  shape + sibling layouts' configs. */
-    const handleSecondaryFileChange = async (
-        e: React.ChangeEvent<HTMLInputElement>,
-    ) => {
-        const file = e.target.files?.[0]
-        if (!file) return
-        setUploadingSecondary(true)
-        setUploadSecondaryError(null)
-        try {
-            const asset = await getStorage().assets.upload(bookId, file, "figure")
-            const nextConfig = writeSecondaryImageAssetId(
-                page.layout_config,
-                page.layout as PageLayout,
-                asset.id,
-            )
-            await onUpdate({layout_config: nextConfig})
-            void warnIfOfflineStorageNearlyFull(
-                t(
-                    "ui.offline.storage_almost_full",
-                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
-                ),
-            )
-        } catch (err: unknown) {
-            setUploadSecondaryError(
-                err instanceof Error ? err.message : String(err),
-            )
-        } finally {
-            setUploadingSecondary(false)
-            if (secondaryFileInputRef.current)
-                secondaryFileInputRef.current.value = ""
-        }
-    }
+    }, [page.id, page.text_content, setUploadError])
 
     const handleTextBlur = async () => {
         const trimmed = textDraft
@@ -795,187 +235,18 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         ? speechBubbleInlineStyle(layoutNamespace)
         : undefined
 
-    // Session 4c Commit 5: image_top_text_bottom +
-    // image_left_text_right + image_full_text_overlay configs.
-    const layoutConfig = layoutNamespace ?? {}
-    const imagePosition =
-        typeof layoutConfig.image_position === "string" &&
-        ["left", "center", "right"].includes(layoutConfig.image_position as string)
-            ? (layoutConfig.image_position as "left" | "center" | "right")
-            : "center"
-    const imageFit =
-        typeof layoutConfig.image_fit === "string" &&
-        ["contain", "cover"].includes(layoutConfig.image_fit as string)
-            ? (layoutConfig.image_fit as "contain" | "cover")
-            : page.layout === "speech_bubble"
-              ? "cover"
-              : "contain"
-    const splitRatio =
-        typeof layoutConfig.split_ratio === "number"
-            ? Math.max(50, Math.min(70, layoutConfig.split_ratio as number))
-            : 60
-    const textPosition =
-        typeof layoutConfig.text_position === "string" &&
-        ["top", "middle", "bottom"].includes(layoutConfig.text_position as string)
-            ? (layoutConfig.text_position as "top" | "middle" | "bottom")
-            : "bottom"
-    const textBackdropOpacity =
-        typeof layoutConfig.text_backdrop_opacity === "number"
-            ? Math.max(0.3, Math.min(0.8, layoutConfig.text_backdrop_opacity as number))
-            : 0.45
-
-    // Compute the inline style for non-speech-bubble layouts.
-    const canvasInlineStyle: React.CSSProperties = {}
-    if (page.layout === "image_left_text_right") {
-        canvasInlineStyle.gridTemplateColumns = `${splitRatio}% ${100 - splitRatio}%`
-    } else if (page.layout === "image_right_text_left") {
-        // Mirror: text column on the LEFT, image column on the
-        // RIGHT. Split ratio is the IMAGE percentage (same field
-        // name as the parent layout for storage compatibility);
-        // emit ``text% image%`` so the columns sum to 100 with
-        // image on the right.
-        canvasInlineStyle.gridTemplateColumns = `${100 - splitRatio}% ${splitRatio}%`
-    }
-    const regionImageInlineStyle: React.CSSProperties = {}
-    if (
-        page.layout === "image_top_text_bottom" ||
-        page.layout === "image_bottom_text_top"
-    ) {
-        if (imagePosition === "left") regionImageInlineStyle.justifyContent = "flex-start"
-        else if (imagePosition === "right") regionImageInlineStyle.justifyContent = "flex-end"
-        else regionImageInlineStyle.justifyContent = "center"
-    }
-    const imageInlineStyle: React.CSSProperties = {}
-    if (
-        page.layout === "image_top_text_bottom" ||
-        page.layout === "image_left_text_right" ||
-        page.layout === "image_bottom_text_top" ||
-        page.layout === "image_right_text_left" ||
-        page.layout === "image_full_no_text" ||
-        // Phase 2 C5 (2026-05-28): image_border_text_center renders
-        // the primary image full-bleed; image_fit lets authors pick
-        // contain vs cover for the frame visual.
-        page.layout === "image_border_text_center"
-    ) {
-        imageInlineStyle.objectFit = imageFit
-    }
-    // PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 2 C1: shared
-    // Tier 1+2 style derivation across image_full_text_overlay,
-    // image_top_text_bottom, image_left_text_right. The same 14
-    // Tier fields produce equivalent inline-style overrides
-    // regardless of which text container they live in; the
-    // helper returns ONLY the Tier subset (no positioning, no
-    // background composition — those are layout-specific and
-    // composed by the caller). 3-surface RCU threshold satisfied
-    // (the 2-surface threshold was satisfied in Session 1 C5
-    // when overlay joined speech_bubble; image_top + image_left
-    // are sites 3 + 4 of the same conceptual style derivation).
-    const imageLayoutTierStyle: React.CSSProperties =
-        page.layout === "image_top_text_bottom" ||
-        page.layout === "image_left_text_right" ||
-        page.layout === "image_bottom_text_top" ||
-        page.layout === "image_right_text_left"
-            ? computeTierTextStyles(layoutNamespace)
-            : {}
-
-    // Phase 2 C5 (2026-05-28): image_border_text_center text panel
-    // style. CSS module class handles the absolute positioning +
-    // default backdrop; this block lets the user tune
-    // text_backdrop_opacity + composes the Tier 1+2 inline styles
-    // on top. Background composition mirrors image_full_text_overlay:
-    // hex background_color × text_backdrop_opacity slider (default
-    // black × 0.5 to match the CSS module fallback).
-    const borderTextStyle: React.CSSProperties = {}
-    if (page.layout === "image_border_text_center") {
-        const tierConfig = layoutConfig as Record<string, unknown>
-        const bgRgb =
-            hexToRgb(tierConfig.background_color) ?? {r: 0, g: 0, b: 0}
-        // Default 0.5 matches the CSS module rgba(0,0,0,0.5).
-        const opacity =
-            typeof tierConfig.text_backdrop_opacity === "number"
-                ? Math.max(
-                      0.3,
-                      Math.min(0.8, tierConfig.text_backdrop_opacity),
-                  )
-                : 0.5
-        borderTextStyle.background = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${opacity})`
-        // Tier 1+2 (color, font, weight, etc.) overlay on top.
-        Object.assign(borderTextStyle, computeTierTextStyles(tierConfig))
-    }
-
-    const overlayTextStyle: React.CSSProperties = {}
-    if (page.layout === "image_full_text_overlay") {
-        // PICTURE-BOOK-OVERLAY-TEXT-TIER-PROPERTIES-01 +
-        // PICTURE-BOOK-TEXT-CONFIGURATION-01 Session 1 C5: read
-        // Tier 1+2 Visual-Style + Typography from the overlay
-        // namespace and emit per-field overrides. Defaults match
-        // the pre-C5 hardcoded styling so legacy pages render
-        // identically (background dark #000 + 0.45 opacity, no
-        // border, no shadow, no custom font / weight / color /
-        // align, padding inherited from CSS module).
-        const tierConfig = layoutConfig as Record<string, unknown>
-
-        // Background composition: hex background_color × the
-        // existing text_backdrop_opacity slider. Default
-        // background_color is #000000 (black) so legacy pages
-        // behave identically; setting any color (e.g. #FFC857 sunny)
-        // tints the overlay backdrop without losing the opacity
-        // dimension.
-        const bgRgb = hexToRgb(tierConfig.background_color) ?? {r: 0, g: 0, b: 0}
-        overlayTextStyle.background = `rgba(${bgRgb.r}, ${bgRgb.g}, ${bgRgb.b}, ${textBackdropOpacity})`
-
-        // Session 2 C1: Tier 1+2 derivation extracted into
-        // computeTierTextStyles. Merge the Tier subset on top of
-        // the overlay-specific background; positioning + width/
-        // height follow below.
-        Object.assign(overlayTextStyle, computeTierTextStyles(tierConfig))
-
-        // C7 Bug D scope-add: text_container_width +
-        // text_container_height sliders override the
-        // position-derived dimensions. Width defaults to 100%
-        // (full); height defaults to position-derived
-        // (middle → max-height 70%; top/bottom → auto).
-        const textContainerWidthRaw = tierConfig.text_container_width
-        if (typeof textContainerWidthRaw === "number") {
-            const widthPct = Math.max(
-                30,
-                Math.min(100, textContainerWidthRaw),
-            )
-            // Override the full-width default by computing left
-            // offsets per the alignment (centered horizontally).
-            const sideOffset = (100 - widthPct) / 2
-            overlayTextStyle.left = `${sideOffset}%`
-            overlayTextStyle.right = `${sideOffset}%`
-        } else {
-            overlayTextStyle.left = 0
-            overlayTextStyle.right = 0
-        }
-        const textContainerHeightRaw = tierConfig.text_container_height
-        const hasHeightOverride =
-            typeof textContainerHeightRaw === "number"
-        const heightPct = hasHeightOverride
-            ? Math.max(15, Math.min(100, textContainerHeightRaw))
-            : null
-
-        // Positioning (unchanged from pre-C5). Use individual
-        // properties (not `inset` shorthand) so the serialized
-        // inline style is testable in jsdom.
-        if (textPosition === "top") {
-            overlayTextStyle.top = 0
-            overlayTextStyle.bottom = "auto"
-            if (heightPct !== null) overlayTextStyle.maxHeight = `${heightPct}%`
-        } else if (textPosition === "middle") {
-            overlayTextStyle.top = "50%"
-            overlayTextStyle.bottom = "auto"
-            overlayTextStyle.transform = "translateY(-50%)"
-            overlayTextStyle.maxHeight =
-                heightPct !== null ? `${heightPct}%` : "70%"
-        } else {
-            overlayTextStyle.top = "auto"
-            overlayTextStyle.bottom = 0
-            if (heightPct !== null) overlayTextStyle.maxHeight = `${heightPct}%`
-        }
-    }
+    const {
+        imagePosition,
+        imageFit,
+        splitRatio,
+        textPosition,
+        canvasInlineStyle,
+        regionImageInlineStyle,
+        imageInlineStyle,
+        imageLayoutTierStyle,
+        borderTextStyle,
+        overlayTextStyle,
+    } = computePageCanvasStyles(page, layoutNamespace)
 
     // Phase 3 C1 (2026-05-28). Collage layout dispatches to its
     // dedicated component. The dispatch lives in the JSX return
@@ -1023,239 +294,45 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                 style={canvasInlineStyle}
             >
                 {!isTextOnly && (
-                    <div
-                        data-testid="page-canvas-image-area"
-                        data-region="image"
-                        className={`${styles.region} ${styles.regionImage}`}
-                        style={regionImageInlineStyle}
-                    >
-                        {hasImage ? (
-                            <img
-                                key={page.image_asset_id ?? ""}
-                                src={imageUrlFor(bookId, page.image_asset_id!)}
-                                alt=""
-                                className={styles.image}
-                                style={imageInlineStyle}
-                                data-testid="page-canvas-image"
-                            />
-                        ) : (
-                            <div
-                                className={styles.imagePlaceholder}
-                                data-testid="page-canvas-image-placeholder"
-                            >
-                                <ImageIcon size={40} aria-hidden />
-                                <span>
-                                    {t("ui.page_editor.no_image", "No image yet")}
-                                </span>
-                            </div>
-                        )}
-                        {/* Session 4c D2: on-image hover overlay for the
-                         *  upload/replace action. Notion-style top-right
-                         *  toolbar. Visible on hover (mouseenter on
-                         *  .regionImage) + on focus-within so keyboard
-                         *  users can tab into the action. Replaces the
-                         *  bottom-bar .imageActions row entirely. */}
-                        <button
-                            type="button"
-                            className={styles.imageReplaceBtn}
-                            onClick={() => fileInputRef.current?.click()}
-                            disabled={uploading}
-                            data-testid="page-canvas-image-replace"
-                            title={
-                                hasImage
-                                    ? t(
-                                          "ui.page_editor.replace_image",
-                                          "Replace image",
-                                      )
-                                    : t(
-                                          "ui.page_editor.upload_image",
-                                          "Upload image",
-                                      )
-                            }
-                            aria-label={
-                                hasImage
-                                    ? t(
-                                          "ui.page_editor.replace_image",
-                                          "Replace image",
-                                      )
-                                    : t(
-                                          "ui.page_editor.upload_image",
-                                          "Upload image",
-                                      )
-                            }
-                        >
-                            {uploading ? (
-                                <span className={styles.imageReplaceLabel}>
-                                    {t("ui.page_editor.uploading", "Uploading...")}
-                                </span>
-                            ) : hasImage ? (
-                                <RefreshCw size={14} />
-                            ) : (
-                                <Upload size={14} />
-                            )}
-                        </button>
-                        <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept={ACCEPT}
-                            onChange={handleFileChange}
-                            className={styles.fileInput}
-                            data-testid="page-canvas-file-input"
-                        />
-                    </div>
+                    <PrimaryImageRegion
+                        page={page}
+                        bookId={bookId}
+                        hasImage={hasImage}
+                        regionImageInlineStyle={regionImageInlineStyle}
+                        imageInlineStyle={imageInlineStyle}
+                        fileInputRef={fileInputRef}
+                        uploading={uploading}
+                        handleFileChange={handleFileChange}
+                    />
                 )}
                 {!isImageFullNoText && (
-                    <div
-                        data-testid={
-                            isSpeechBubble
-                                ? "page-canvas-speech-bubble"
-                                : "page-canvas-region-text"
-                        }
-                        data-region="text"
-                        data-anchor={
-                            isSpeechBubble
-                                ? ((readBubbleConfig(
-                                      layoutNamespace,
-                                  ).anchor_position as string) ?? "bottom-center")
-                                : undefined
-                        }
-                        className={`${styles.region} ${styles.regionText}`}
-                        style={
-                            isSpeechBubble
-                                ? speechBubbleStyle
-                                : page.layout === "image_full_text_overlay"
-                                  ? overlayTextStyle
-                                  : page.layout === "image_border_text_center"
-                                    ? borderTextStyle
-                                    : page.layout === "image_top_text_bottom" ||
-                                        page.layout === "image_left_text_right" ||
-                                        page.layout === "image_bottom_text_top" ||
-                                        page.layout === "image_right_text_left"
-                                      ? imageLayoutTierStyle
-                                      : undefined
-                        }
-                    >
-                        {isTipTapLayout(page.layout as PageLayout) ? (
-                            <RichTextEditor
-                                content={textJson}
-                                onChange={handleRichTextChange}
-                                onEditorReady={onEditorReady}
-                                placeholder={t(
-                                    "ui.page_editor.text_placeholder",
-                                    "Write the page text here...",
-                                )}
-                                testidNamespace={`page-canvas-richtext-${page.id}`}
-                                className={styles.textInput}
-                                mentionBookId={bookId}
-                            />
-                        ) : (
-                            <textarea
-                                id={`page-canvas-text-${page.id}`}
-                                className={styles.textInput}
-                                value={textDraft}
-                                onChange={(e) => setTextDraft(e.target.value)}
-                                onBlur={handleTextBlur}
-                                placeholder={t(
-                                    "ui.page_editor.text_placeholder",
-                                    "Write the page text here...",
-                                )}
-                                data-testid="page-canvas-text-input"
-                            />
-                        )}
-                    </div>
+                    <TextRegion
+                        page={page}
+                        bookId={bookId}
+                        isSpeechBubble={isSpeechBubble}
+                        speechBubbleStyle={speechBubbleStyle}
+                        overlayTextStyle={overlayTextStyle}
+                        borderTextStyle={borderTextStyle}
+                        imageLayoutTierStyle={imageLayoutTierStyle}
+                        layoutNamespace={layoutNamespace}
+                        textJson={textJson}
+                        handleRichTextChange={handleRichTextChange}
+                        onEditorReady={onEditorReady}
+                        textDraft={textDraft}
+                        setTextDraft={setTextDraft}
+                        handleTextBlur={handleTextBlur}
+                    />
                 )}
-                {/* Phase 2 C2 (2026-05-28): SECONDARY image region for
-                 *  multi-image layouts. Mounted only when the active
-                 *  layout is in MULTI_IMAGE_LAYOUTS. Mirrors the
-                 *  primary image region above — same placeholder /
-                 *  upload-button / replace-button affordance, just
-                 *  bound to layout_config[layout].secondary_image_asset_id
-                 *  via writeSecondaryImageAssetId. */}
                 {isMultiImage && (
-                    <div
-                        data-testid="page-canvas-image-area-secondary"
-                        data-region="image-secondary"
-                        className={`${styles.region} ${styles.regionImageSecondary}`}
-                    >
-                        {hasSecondaryImage ? (
-                            <img
-                                key={secondaryImageAssetId ?? ""}
-                                src={imageUrlFor(
-                                    bookId,
-                                    secondaryImageAssetId!,
-                                )}
-                                alt=""
-                                className={styles.image}
-                                style={imageInlineStyle}
-                                data-testid="page-canvas-image-secondary"
-                            />
-                        ) : (
-                            <div
-                                className={styles.imagePlaceholder}
-                                data-testid="page-canvas-image-secondary-placeholder"
-                            >
-                                <ImageIcon size={40} aria-hidden />
-                                <span>
-                                    {t(
-                                        "ui.page_editor.no_secondary_image",
-                                        "No secondary image yet",
-                                    )}
-                                </span>
-                            </div>
-                        )}
-                        <button
-                            type="button"
-                            className={styles.imageReplaceBtn}
-                            onClick={() =>
-                                secondaryFileInputRef.current?.click()
-                            }
-                            disabled={uploadingSecondary}
-                            data-testid="page-canvas-image-secondary-replace"
-                            title={
-                                hasSecondaryImage
-                                    ? t(
-                                          "ui.page_editor.replace_secondary_image",
-                                          "Replace secondary image",
-                                      )
-                                    : t(
-                                          "ui.page_editor.upload_secondary_image",
-                                          "Upload secondary image",
-                                      )
-                            }
-                            aria-label={
-                                hasSecondaryImage
-                                    ? t(
-                                          "ui.page_editor.replace_secondary_image",
-                                          "Replace secondary image",
-                                      )
-                                    : t(
-                                          "ui.page_editor.upload_secondary_image",
-                                          "Upload secondary image",
-                                      )
-                            }
-                        >
-                            {uploadingSecondary ? (
-                                <span className={styles.imageReplaceLabel}>
-                                    {t(
-                                        "ui.page_editor.uploading",
-                                        "Uploading...",
-                                    )}
-                                </span>
-                            ) : hasSecondaryImage ? (
-                                <RefreshCw size={14} />
-                            ) : (
-                                <Upload size={14} />
-                            )}
-                        </button>
-                        <input
-                            ref={secondaryFileInputRef}
-                            type="file"
-                            accept={ACCEPT}
-                            onChange={handleSecondaryFileChange}
-                            className={styles.fileInput}
-                            data-testid="page-canvas-file-input-secondary"
-                        />
-                    </div>
+                    <SecondaryImageRegion
+                        bookId={bookId}
+                        hasSecondaryImage={hasSecondaryImage}
+                        secondaryImageAssetId={secondaryImageAssetId}
+                        imageInlineStyle={imageInlineStyle}
+                        secondaryFileInputRef={secondaryFileInputRef}
+                        uploadingSecondary={uploadingSecondary}
+                        handleSecondaryFileChange={handleSecondaryFileChange}
+                    />
                 )}
             </div>
             {uploadError && (

@@ -112,7 +112,7 @@ def test_delete_chapter_route_cascades_review_files(tmp_path, monkeypatch):
 
     from app.main import app
 
-    with patch("app.ai.routes._get_ai_config", return_value={"enabled": True}):
+    with patch("app.ai.config._get_ai_config", return_value={"enabled": True}):
         client = TestClient(app)
 
         book_resp = client.post(

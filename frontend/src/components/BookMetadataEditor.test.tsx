@@ -353,14 +353,20 @@ describe("BookMetadataEditor", () => {
 
     // --- Tabs ---
 
-    it("renders all 6 tab triggers", () => {
+    it("renders all the section nav items", () => {
         renderEditor();
-        expect(screen.getByText("Allgemein")).toBeTruthy();
-        expect(screen.getByText("Verlag")).toBeTruthy();
-        expect(screen.getByText("ISBN")).toBeTruthy();
-        expect(screen.getByText("Marketing")).toBeTruthy();
-        expect(screen.getByText("Design")).toBeTruthy();
-        expect(screen.getByText("Audiobook")).toBeTruthy();
+        // MD-TABS-SETTINGS-NAV: nav items render in both the desktop
+        // sidebar AND the always-mounted mobile hamburger, so query by
+        // testid (getByText would match twice). getAllByTestId tolerates
+        // the desktop/mobile duplication of the same testid base; the
+        // mobile item carries a "-mobile" suffix, so the base testid is
+        // unique to the desktop button.
+        expect(screen.getByTestId("metadata-tab-general")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-publisher")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-design")).toBeTruthy();
+        expect(screen.getByTestId("metadata-tab-audiobook")).toBeTruthy();
     });
 
     it("general tab is shown by default with subtitle field", () => {
@@ -374,16 +380,18 @@ describe("BookMetadataEditor", () => {
         expect(screen.getByDisplayValue("My description")).toBeTruthy();
     });
 
-    it("general tab is active by default", () => {
+    it("general tab is active by default (aria-current=page)", () => {
         renderEditor();
-        const generalTab = screen.getByText("Allgemein");
-        expect(generalTab.getAttribute("data-state")).toBe("active");
+        // MD-TABS-SETTINGS-NAV: the nav item is a button marked
+        // aria-current="page" when active (replaces Radix data-state).
+        const generalTab = screen.getByTestId("metadata-tab-general");
+        expect(generalTab.getAttribute("aria-current")).toBe("page");
     });
 
-    it("ISBN tab trigger exists with correct role", () => {
+    it("ISBN tab nav item exists", () => {
         renderEditor();
-        const isbnTab = screen.getByText("ISBN");
-        expect(isbnTab.getAttribute("role")).toBe("tab");
+        // MD-TABS-SETTINGS-NAV: tabs are now nav buttons, not role=tab.
+        expect(screen.getByTestId("metadata-tab-isbn")).toBeTruthy();
     });
 
     it("marketing tab has the testid", () => {
@@ -391,12 +399,16 @@ describe("BookMetadataEditor", () => {
         expect(screen.getByTestId("metadata-tab-marketing")).toBeTruthy();
     });
 
-    it("all tab panels are present in the DOM", () => {
+    it("only the active section is mounted; switching swaps it", () => {
         renderEditor();
-        const panels = document.querySelectorAll('[role="tabpanel"]');
-        // 7 original + AI Template (Session 2 commit 5) + Story
-        // (EXPOSE-BUCHIDEE-METADATA-01 C2) = 9 panels.
-        expect(panels.length).toBe(9);
+        // MD-TABS-SETTINGS-NAV: only the active section renders (no
+        // hidden tabpanels). General is active by default (subtitle
+        // field visible); ISBN content is absent until selected.
+        expect(screen.getByDisplayValue("A Subtitle")).toBeTruthy();
+        expect(screen.queryByText("ISBN E-Book")).toBeNull();
+        fireEvent.click(screen.getByTestId("metadata-tab-isbn"));
+        expect(screen.getByText("ISBN E-Book")).toBeTruthy();
+        expect(screen.queryByDisplayValue("A Subtitle")).toBeNull();
     });
 
     // --- Save ---
@@ -495,10 +507,10 @@ describe("BookMetadataEditor", () => {
 
     // --- Audiobook settings ---
 
-    it("audiobook tab trigger has correct role", () => {
+    it("audiobook tab nav item exists for chapter-based books", () => {
         renderEditor({ language: "en" });
-        const audioTab = screen.getByText("Audiobook");
-        expect(audioTab.getAttribute("role")).toBe("tab");
+        // MD-TABS-SETTINGS-NAV: tabs are nav buttons now, not role=tab.
+        expect(screen.getByTestId("metadata-tab-audiobook")).toBeTruthy();
     });
 });
 
@@ -781,7 +793,7 @@ describe("BookMetadataEditor — author + language fields", () => {
         expect(select.value).toBe("Pen One");
     });
 
-    it("renders language input with current code", () => {
+    it("renders the language combobox with the current language", () => {
         render(
             <BookMetadataEditor
                 book={
@@ -802,7 +814,11 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={onBack}
             />,
         );
-        expect(screen.getByDisplayValue("fr")).toBeInTheDocument();
+        // The combobox shows the endonym label for the stored code "fr".
+        const input = screen.getByTestId(
+            "book-metadata-language",
+        ) as HTMLInputElement;
+        expect(input.value).toBe("Français");
     });
 });
 
@@ -902,7 +918,7 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
         // category-input, bisac-input, etc.) are queryable.
         // Radix Tabs.Trigger uses onMouseDown (NOT onClick) for tab
         // activation. fireEvent.click is a no-op on the trigger.
-        fireEvent.mouseDown(screen.getByTestId("metadata-tab-marketing"));
+        fireEvent.click(screen.getByTestId("metadata-tab-marketing"));
         return result;
     }
 
@@ -936,7 +952,7 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
         // Switching to Marketing mounts them. Radix Tabs.Trigger
         // listens to onMouseDown (NOT onClick); fireEvent.click is
         // a no-op on the trigger.
-        fireEvent.mouseDown(screen.getByTestId("metadata-tab-marketing"));
+        fireEvent.click(screen.getByTestId("metadata-tab-marketing"));
         expect(screen.getByTestId("metadata-categories-field")).toBeTruthy();
         expect(screen.getByTestId("metadata-bisac-field")).toBeTruthy();
     });
@@ -1135,7 +1151,7 @@ describe("BookMetadataEditor Design-tab Export-PDF button (picture_book only)", 
      * is a no-op. Use `fireEvent.mouseDown` to activate the tab.
      */
     function activateDesignTab() {
-        fireEvent.mouseDown(screen.getByTestId("metadata-tab-design"));
+        fireEvent.click(screen.getByTestId("metadata-tab-design"));
     }
 
     it("picture_book: Export-PDF button is rendered in the Design tab", async () => {
@@ -1219,7 +1235,7 @@ describe("BookMetadataEditor Story tab (EXPOSE-BUCHIDEE-METADATA-01)", () => {
     // activates the trigger on mouseDown, NOT click. fireEvent.click
     // is a no-op for the activation.
     const activateStoryTab = () => {
-        fireEvent.mouseDown(screen.getByTestId("metadata-tab-story"));
+        fireEvent.click(screen.getByTestId("metadata-tab-story"));
     };
 
     it("Story tab content mounts both book_idea + expose fields when clicked", () => {

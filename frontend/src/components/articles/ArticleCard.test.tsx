@@ -7,7 +7,7 @@
  * backend computed-field tests in test_articles.py.
  */
 import { describe, expect, it, vi } from "vitest";
-import { render as rawRender, screen } from "@testing-library/react";
+import { fireEvent, render as rawRender, screen } from "@testing-library/react";
 import type { ReactElement } from "react";
 import ArticleCard from "./ArticleCard";
 import type { Article, ContentTypeDef } from "../../api/client";
@@ -128,5 +128,31 @@ describe("ArticleCard comments-count badge (MEDIUM-COMMENTS-UI-01)", () => {
         );
         // i18n fallback resolves "{count} imported comments" -> "3 imported comments"
         expect(badge.getAttribute("title")).toBe("3 imported comments");
+    });
+});
+
+
+describe("ArticleCard cover fallback (broken-image regression #156)", () => {
+    it("renders the featured image when the url is present", () => {
+        const article = makeArticle({
+            featured_image_url: "https://cdn.example.com/cover.jpg",
+        });
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        expect(screen.getByAltText("Sample article cover")).toBeInTheDocument();
+        expect(
+            screen.queryByTestId(`article-card-placeholder-${article.id}`),
+        ).toBeNull();
+    });
+
+    it("falls back to the placeholder when the image fails to load", () => {
+        const article = makeArticle({
+            featured_image_url: "https://cdn.example.com/broken.jpg",
+        });
+        render(<ArticleCard article={article} onClick={vi.fn()} />);
+        fireEvent.error(screen.getByAltText("Sample article cover"));
+        expect(
+            screen.getByTestId(`article-card-placeholder-${article.id}`),
+        ).toBeInTheDocument();
+        expect(screen.queryByAltText("Sample article cover")).toBeNull();
     });
 });

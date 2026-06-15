@@ -74,7 +74,7 @@ def client(temp_base, monkeypatch):
     # Patch _load_app_config so plugin-status reads from the temp dir,
     # and patch _get_ai_config so AI routes read from the temp dir too.
     with patch("app.main._load_app_config", side_effect=mock_load), \
-         patch("app.ai.routes._get_ai_config", side_effect=lambda: mock_load().get("ai", {})):
+         patch("app.ai.config._get_ai_config", side_effect=lambda: mock_load().get("ai", {})):
         invalidate_plugin_status_cache()
         yield TestClient(app)
 
