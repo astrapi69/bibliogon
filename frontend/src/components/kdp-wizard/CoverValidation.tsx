@@ -28,6 +28,7 @@ import {CheckCircle, AlertCircle, ImageOff} from "lucide-react"
 
 import {BookDetail} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import {useCoverUrl} from "../../hooks/useAssetUrl"
 
 interface Props {
     book: BookDetail
@@ -71,13 +72,6 @@ function extOf(filename: string | null): string {
     const idx = filename.lastIndexOf(".")
     if (idx < 0) return ""
     return filename.slice(idx + 1).toLowerCase()
-}
-
-function buildCoverUrl(book: BookDetail): string | null {
-    if (!book.cover_image) return null
-    const filename = book.cover_image.split("/").pop()
-    if (!filename) return null
-    return `/api/books/${book.id}/assets/file/${filename}`
 }
 
 function validateDimensions(
@@ -131,7 +125,11 @@ export default function CoverValidation({
     const [dim, setDim] = useState<ImageDimensions | null>(null)
     const [loadError, setLoadError] = useState(false)
 
-    const coverUrl = buildCoverUrl(book)
+    // Resolve through the storage seam: api mode yields the canonical
+    // `/api/.../assets/file/...` URL; dexie/offline mode yields a `blob:`
+    // URL from IndexedDB so the preview does not 404 against an absent
+    // backend (the same resolver the dashboard cover sites use).
+    const coverUrl = useCoverUrl(book.id, book.cover_image)
     const filename = book.cover_image
         ? book.cover_image.split("/").pop() || ""
         : ""
