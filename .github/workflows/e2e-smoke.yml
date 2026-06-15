@@ -1,7 +1,13 @@
 name: E2E Smoke Tests
 
-# Runs the Playwright smoke suite on PRs against develop. Complements (does
-# not replace) the local pre-release gate.
+# Runs the Playwright smoke suite NIGHTLY (not on PRs). The serial suite
+# takes ~90 minutes against a live backend, so gating every PR on it stalls
+# the dev cycle while the real code-quality gates (Vitest, tsc, ESLint, ruff,
+# mypy, cohesion, complexity) finish in 5-10 min. Same model as the
+# security-scan + mutation-testing workflows: a long-running suite runs once
+# a day, plus on-demand via workflow_dispatch. It is NOT a required check;
+# before a release Aster runs it manually (`make test-e2e-smoke`, part of the
+# release checklist). Complements (does not replace) the local pre-release gate.
 #
 # The suite is NOT pure Dexie/offline - it drives the real backend API
 # (creating books/articles, the backup cycle, etc.). playwright.config.ts's
@@ -13,12 +19,9 @@ name: E2E Smoke Tests
 # e2e/ (Playwright lives there). Retries (2) come from the existing config.
 
 on:
-  pull_request:
-    branches: [develop]
-    paths:
-      - "frontend/**"
-      - "e2e/**"
-      - "package*.json"
+  schedule:
+    - cron: "0 3 * * *" # nightly at 03:00 UTC
+  workflow_dispatch: {}
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
