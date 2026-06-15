@@ -19,6 +19,8 @@
  * - All text is truncated to 200 chars max
  */
 
+import {RingBuffer} from "../lib/utils/RingBuffer";
+
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
@@ -120,27 +122,61 @@ export function sanitizeEvent(event: RecordedEvent): RecordedEvent {
 
 const MAX_BUFFER_SIZE = 100;
 
+/** Notified after each `add`, with the sanitized event that landed in the
+ *  buffer. The persistence module (EVT-02) registers one to flush the
+ *  buffer to Dexie. Kept framework- and storage-agnostic: the recorder
+ *  itself never imports Dexie. */
+export type EventListener = (event: RecordedEvent) => void;
+
+/**
+ * App-specific wrapper around the generic {@link RingBuffer}.
+ *
+ * Sanitizes each event before storing it and exposes the stable
+ * `add` / `getAll` / `size` / `clear` API that the auto-capture
+ * listeners, the ErrorReportDialog, and the persistence module
+ * depend on. `getAll` returns events oldest-first.
+ */
 class EventRingBuffer {
-    private buffer: RecordedEvent[] = [];
+    private buffer = new RingBuffer<RecordedEvent>(MAX_BUFFER_SIZE);
+    private listener: EventListener | null = null;
 
     add(event: RecordedEvent): void {
         const sanitized = sanitizeEvent(event);
         this.buffer.push(sanitized);
-        if (this.buffer.length > MAX_BUFFER_SIZE) {
-            this.buffer.shift();
-        }
+        this.listener?.(sanitized);
     }
 
     getAll(): RecordedEvent[] {
-        return [...this.buffer];
+        return this.buffer.toArray();
     }
 
     size(): number {
-        return this.buffer.length;
+        return this.buffer.size();
     }
 
     clear(): void {
-        this.buffer = [];
+        this.buffer.clear();
+    }
+
+    /**
+     * Register the single post-add listener (EVT-02 persistence flush).
+     * The events are already sanitized; the listener must not throw.
+     */
+    setListener(listener: EventListener | null): void {
+        this.listener = listener;
+    }
+
+    /**
+     * Replace the buffer contents with a restored snapshot (EVT-02
+     * startup restore). Events are pushed in order (oldest-first) and are
+     * assumed already sanitized; the listener does NOT fire, so a restore
+     * never re-triggers a persist.
+     */
+    load(events: RecordedEvent[]): void {
+        this.buffer.clear();
+        for (const event of events) {
+            this.buffer.push(event);
+        }
     }
 }
 

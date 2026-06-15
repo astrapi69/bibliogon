@@ -141,6 +141,19 @@ export interface SyncBaseline {
     updated_at: string;
 }
 
+/** The persisted event-recorder buffer (EVT-02). Stored as a SINGLE
+ *  snapshot row (keyed by the constant {@link EVENT_LOG_KEY}) so a
+ *  restore is atomic: the whole capped list is written and read back as
+ *  one value. `events` holds the sanitized buffer (oldest-first, capped
+ *  at 100); `updatedAt` is the ISO timestamp of the last persist. The
+ *  diagnostic log survives a tab-refresh / crash so the user can still
+ *  export it after the event that caused the crash. */
+export interface EventLogSnapshot {
+    id: string;
+    events: unknown[];
+    updatedAt: string;
+}
+
 class BibliogonOfflineDB extends Dexie {
     books!: Table<OfflineBookRow, string>;
     chapters!: Table<Chapter, string>;
@@ -165,6 +178,7 @@ class BibliogonOfflineDB extends Dexie {
     assets!: Table<AssetRow, string>;
     articleAssets!: Table<ArticleAssetRow, string>;
     articleComments!: Table<CommentRow, string>;
+    eventLog!: Table<EventLogSnapshot, string>;
 
     constructor() {
         // Separate DB from the crash-recovery drafts store ("bibliogon").
@@ -238,6 +252,12 @@ class BibliogonOfflineDB extends Dexie {
         this.version(10).stores({
             articleAssets: "id, articleId",
         });
+        // v11 (EVT-02): the persisted event-recorder buffer. A single
+        // snapshot row keyed by `id` (the constant EVENT_LOG_KEY) so the
+        // diagnostic log survives a tab-refresh / crash.
+        this.version(11).stores({
+            eventLog: "id",
+        });
     }
 }
 
@@ -265,3 +285,5 @@ export async function getBaseline(model: string, entityId: string): Promise<stri
 export const REF_KEY = "all";
 /** Primary key for the single settings row. */
 export const SETTINGS_KEY = "app";
+/** Primary key for the single event-recorder snapshot row (EVT-02). */
+export const EVENT_LOG_KEY = "current";

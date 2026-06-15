@@ -1,6 +1,7 @@
 import {useEffect, useRef} from "react";
 import {useLocation} from "react-router-dom";
 import {eventRecorder} from "../utils/eventRecorder";
+import {initEventLogPersistence} from "../utils/eventRecorderPersist";
 
 /**
  * Invisible component that installs global event recorders.
@@ -12,10 +13,19 @@ import {eventRecorder} from "../utils/eventRecorder";
  *
  * API calls and toasts are recorded by their respective modules
  * (client.ts and notify.ts) directly.
+ *
+ * On mount it also restores the persisted event log from Dexie (EVT-02)
+ * so the diagnostic history survives a tab-refresh / crash, then wires
+ * the recorder's flush-to-Dexie listener.
  */
 export default function EventRecorderSetup() {
     const location = useLocation();
     const prevPath = useRef(location.pathname);
+
+    // --- Persistence restore + flush wiring (EVT-02) ---
+    useEffect(() => {
+        void initEventLogPersistence();
+    }, []);
 
     // --- Click listener ---
     useEffect(() => {
