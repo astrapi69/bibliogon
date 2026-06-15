@@ -19,6 +19,11 @@ const labels: QualityReportLabels = {
     colAdverb: "Adv %",
     colLong: "Lange Saetze",
     flesch: "Flesch",
+    nestedTitle: "Schachtelsatz-Kandidaten",
+    nestedWords: "{count} Woerter",
+    nestedClauses: "{count} Nebensaetze",
+    wordCountNote: "Gezaehlt werden alle Woerter im Fliesstext.",
+    disclaimer: "Dieser Bericht ersetzt kein inhaltliches Lektorat.",
 }
 
 function sample(): ChapterMetricsResponse {
@@ -52,6 +57,13 @@ function sample(): ChapterMetricsResponse {
                 adjective_ratio: 0.03,
                 long_sentence_count: 3,
                 finding_count: 20,
+                long_sentences: [
+                    {
+                        text: "Dies ist ein wirklich langer Satz, der sich, mit mehreren Kommata, ueber eine ganze Weile hinzieht und kaum enden will.",
+                        word_count: 20,
+                    },
+                    {text: "Ein kurzer Satz.", word_count: 3},
+                ],
             },
             {
                 chapter_id: "ch2",
@@ -95,6 +107,24 @@ describe("buildQualityReportMarkdown", () => {
     it("renders empty chapters as dashes", () => {
         const md = buildQualityReportMarkdown(sample(), labels)
         expect(md).toContain("| 2 | Leeres | - | - | - | - | - | - | - |")
+    })
+
+    it("includes the analysis-scope disclaimer at the end", () => {
+        const md = buildQualityReportMarkdown(sample(), labels)
+        expect(md).toContain("> Dieser Bericht ersetzt kein inhaltliches Lektorat.")
+    })
+
+    it("includes the word-count transparency note", () => {
+        const md = buildQualityReportMarkdown(sample(), labels)
+        expect(md).toContain("> Gezaehlt werden alle Woerter im Fliesstext.")
+    })
+
+    it("renders nested-sentence candidates for chapters that have them", () => {
+        const md = buildQualityReportMarkdown(sample(), labels)
+        expect(md).toContain("## Schachtelsatz-Kandidaten")
+        expect(md).toContain("### Erstes")
+        expect(md).toContain("20 Woerter")
+        expect(md).toContain("3 Nebensaetze")
     })
 })
 

@@ -445,6 +445,12 @@ export interface ChapterMetric {
     adjective_ratio: number;
     long_sentence_count: number;
     finding_count: number;
+    long_sentences?: LongSentence[];
+}
+
+export interface LongSentence {
+    text: string;
+    word_count: number;
 }
 
 export interface ChapterMetricsResponse {

@@ -6,6 +6,7 @@ from bibliogon_ms_tools.style_checker import (
     check_passive_voice,
     check_sentence_length,
     check_style,
+    longest_sentences,
 )
 
 
@@ -365,3 +366,33 @@ def test_check_style_includes_adjective_count():
     assert "adjective_ratio" in result
     assert result["adjective_count"] >= 2
     assert result["adjective_ratio"] > 0
+
+
+# --- Longest sentences (nested-sentence candidates, #283) ---
+
+
+def test_longest_sentences_orders_by_word_count_descending():
+    """The longest sentence by word count comes first, with full text."""
+    text = (
+        "Kurz. "
+        "Dies ist ein mittellanger Satz mit einigen Woertern darin. "
+        "Dieser Satz hier ist eindeutig der laengste von allen, denn er "
+        "enthaelt sehr viele Woerter und zieht sich, mit mehreren Kommata, "
+        "ueber eine ganze Weile hin."
+    )
+    result = longest_sentences(text)
+    assert result[0]["word_count"] >= result[1]["word_count"]
+    assert result[0]["text"].startswith("Dieser Satz hier ist")
+    assert "..." not in result[0]["text"]
+
+
+def test_longest_sentences_respects_limit():
+    """The limit caps the number of returned candidates."""
+    text = " ".join(f"Satz nummer {n} mit ein paar Woertern." for n in range(20))
+    result = longest_sentences(text, limit=3)
+    assert len(result) == 3
+
+
+def test_longest_sentences_empty_text():
+    """Empty text yields no candidates."""
+    assert longest_sentences("") == []

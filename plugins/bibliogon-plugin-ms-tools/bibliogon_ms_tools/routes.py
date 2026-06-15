@@ -11,7 +11,7 @@ from pydantic import BaseModel, Field
 
 from .readability import analyze_readability
 from .sanitizer import sanitize
-from .style_checker import check_style
+from .style_checker import check_style, longest_sentences
 
 router = APIRouter(prefix="/ms-tools", tags=["manuscript-tools"])
 
@@ -379,6 +379,7 @@ async def chapter_metrics(book_id: str) -> dict[str, Any]:
                 "adjective_ratio": style.get("adjective_ratio", 0),
                 "long_sentence_count": style.get("long_sentence_count", 0),
                 "finding_count": style.get("finding_count", 0),
+                "long_sentences": longest_sentences(plain),
             })
     finally:
         db.close()
