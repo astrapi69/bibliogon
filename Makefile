@@ -300,16 +300,21 @@ bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: d
 	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
 
-# --- Warn-only security watcher (mirrors .github/workflows/security-scan.yml) ---
-# Local counterpart of the weekly scheduled scan. Surfaces every advisory
-# (no --ignore-vuln) and never fails the shell, so it is for visibility,
-# not gating. The blocking gate is `make audit` / `make security-backend`.
+# --- Security watcher (mirrors .github/workflows/security-scan.yml) ---
+# Local counterpart of the weekly scheduled scan. Phase 2 (#278): blocks on
+# Critical/High like the watcher - pip-audit (accepted advisories from
+# .security-ignore.yml), bandit High, and npm audit high/critical fail the
+# shell; only bandit Low/Medium stays warn-only. `make audit` /
+# `make security-backend` remain the push/PR gate mirrored from ci.yml.
 
-check-security: ## Warn-only dependency + SAST scan (never fails; mirrors security-scan.yml)
-	-cd backend && poetry run pip-audit --skip-editable
+check-security: ## Dependency + SAST scan (blocks on Critical/High; mirrors security-scan.yml Phase 2)
+	cd backend && poetry run pip-audit --skip-editable \
+	  $$(poetry run python ../scripts/security_ignore_args.py)
+	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
+	  --severity-level high --confidence-level medium -q
 	-cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
-	-cd frontend && npm audit --audit-level=high
+	cd frontend && npm audit --audit-level=high
 
 # --- Circular dependency check (mirrors the madge step in ci.yml) ---
 # Run via npx (pinned major): madge@8's optional typescript peer is <6.1,
