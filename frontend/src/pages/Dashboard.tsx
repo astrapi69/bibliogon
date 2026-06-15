@@ -736,6 +736,7 @@ export default function Dashboard() {
                                     ? t("ui.dashboard.book_singular", "Buch")
                                     : t("ui.dashboard.book_plural", "Bücher")}
                             </span>
+                            <div style={{ flex: 1 }} />
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (

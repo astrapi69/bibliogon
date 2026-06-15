@@ -750,6 +750,7 @@ export default function ArticleList() {
                                 ? t("ui.articles.count_singular", "Artikel")
                                 : t("ui.articles.count_plural", "Artikel")}
                         </span>
+                        <div style={{ flex: 1 }} />
                         <ViewToggle mode={viewMode} onChange={setViewMode} />
                     </div>
                 )}
