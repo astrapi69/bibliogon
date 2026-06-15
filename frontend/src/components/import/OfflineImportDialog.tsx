@@ -15,7 +15,7 @@
  * dialog only when `useStorageMode()` reports `dexie`.
  */
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Feature } from "@astrapi69/feature-strategy-react";
@@ -40,6 +40,8 @@ export interface OfflineImportDialogProps {
     onClose: () => void;
     /** Called after a successful import so the caller can refresh its lists. */
     onImported?: (result: ImportFileResult) => void;
+    /** A file handed in by a drag-and-drop drop; auto-detected on open (#312). */
+    initialFile?: File | null;
 }
 
 const CHAPTER_FORMATS: readonly ImportFormat[] = ["markdown", "text", "html"];
@@ -52,6 +54,7 @@ export default function OfflineImportDialog({
     open,
     onClose,
     onImported,
+    initialFile,
 }: OfflineImportDialogProps) {
     const { t } = useI18n();
     const navigate = useNavigate();
@@ -106,6 +109,19 @@ export default function OfflineImportDialog({
             setBooks(existing);
         }
     };
+
+    // A drag-and-drop drop hands the file in via initialFile; auto-detect it
+    // once when the dialog opens (the ref guards against React re-runs).
+    const processedRef = useRef<File | null>(null);
+    useEffect(() => {
+        if (open && initialFile && processedRef.current !== initialFile) {
+            processedRef.current = initialFile;
+            void handleFile(initialFile);
+        }
+        if (!open) processedRef.current = null;
+        // handleFile is recreated each render; the ref makes this idempotent.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [open, initialFile]);
 
     const successMessage = (result: ImportFileResult): string => {
         if (result.kind === "chapter") {

@@ -61,6 +61,7 @@ import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
+import DropZone from "../lib/components/DropZone";
 import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
 import ArticleFilterSheet from "../components/articles/ArticleFilterSheet";
@@ -160,6 +161,15 @@ export default function ArticleList() {
     // reset the limit (effect below).
     const paged = usePagedList("articles");
     const [importWizardOpen, setImportWizardOpen] = useState(false);
+    // Drag-and-drop import (#312): a dropped file opens the import dialog
+    // pre-loaded (dexie auto-detects via initialFile; API mode opens the wizard).
+    const [droppedFile, setDroppedFile] = useState<File | null>(null);
+    const handleFileDrop = (files: File[]) => {
+        const file = files[0];
+        if (!file) return;
+        setDroppedFile(file);
+        setImportWizardOpen(true);
+    };
 
     /** Article-to-book conversion wizard. Snapshot the user's selected
      *  Article[] when opening so the wizard's working copy is stable
@@ -424,7 +434,12 @@ export default function ArticleList() {
     }, []);
 
     return (
-        <div data-testid="article-list-page" className={layout.page}>
+        <DropZone
+            className={layout.page}
+            onDrop={handleFileDrop}
+            accept={[".bgb", ".md", ".markdown", ".txt", ".html", ".htm", ".json", ".zip"]}
+            overlayLabel={t("ui.offline_import.drop_hint", "Datei hier ablegen zum Importieren")}
+        >
             <header className={layout.appHeader} data-testid="article-list-header">
                 <div className={layout.appHeaderInner}>
                     <div
@@ -910,7 +925,11 @@ export default function ArticleList() {
             {isDexie ? (
                 <OfflineImportDialog
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    initialFile={droppedFile}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => {
                         void refreshArticles();
                         void loadTrash();
@@ -919,7 +938,10 @@ export default function ArticleList() {
             ) : (
                 <ImportWizardModal
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => {
                         void refreshArticles();
                         void loadTrash();
@@ -994,6 +1016,6 @@ export default function ArticleList() {
                     inlineImageCount={bulkArticleAiFillConfirm.inlineImageCount}
                 />
             )}
-        </div>
+        </DropZone>
     );
 }

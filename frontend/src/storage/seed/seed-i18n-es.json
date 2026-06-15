@@ -1,6 +1,7 @@
 {
   "ui": {
     "offline_import": {
+      "drop_hint": "Suelta un archivo aquí para importar",
       "title": "Importar",
       "drop_zone": "Suelta un archivo aquí o haz clic para elegir",
       "accepted": "Markdown, texto, HTML, copia JSON, exportación de Medium (.zip), copia (.bgb).",
