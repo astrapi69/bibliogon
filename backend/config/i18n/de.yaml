@@ -1535,6 +1535,10 @@ ui:
     copy_success: "Kopiert!"
     copy_failed: "Kopieren fehlgeschlagen"
     submit: "Issue auf GitHub erstellen"
+    create_button: "Fehlerbericht erstellen"
+    intro_manual: "Erstelle einen Bericht mit deinen letzten Aktionen, um ein Problem zu melden."
+    manual_description: "Manueller Bericht (kein vorausgehender Fehler)."
+    download_json: "Als JSON herunterladen"
   toolbar:
     bold: "Fett"
     italic: "Kursiv"

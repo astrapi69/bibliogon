@@ -1800,7 +1800,11 @@
       "copy_preview": "プレビューをコピー",
       "copy_success": "コピーしました！",
       "copy_failed": "コピーに失敗しました",
-      "submit": "GitHubでissueを作成"
+      "submit": "GitHubでissueを作成",
+      "create_button": "エラーレポートを作成",
+      "intro_manual": "問題を報告するには、最近の操作を含むレポートを作成してください。",
+      "manual_description": "手動レポート（先行するエラーなし）。",
+      "download_json": "JSON としてダウンロード"
     },
     "help": {
       "title": "ヘルプ",

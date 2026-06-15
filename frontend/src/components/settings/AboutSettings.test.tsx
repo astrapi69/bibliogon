@@ -472,4 +472,28 @@ describe("AboutSettings", () => {
             expect(screen.queryByTestId("about-settings-error")).toBeNull();
         });
     });
+
+    describe("proactive error report (EVT-03)", () => {
+        it("renders the create-report button in the Resources section", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const btn = await screen.findByTestId("about-create-report");
+            expect(btn.textContent).toContain("Fehlerbericht erstellen");
+        });
+
+        it("opens the ErrorReportDialog in manual mode on click", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const btn = await screen.findByTestId("about-create-report");
+            // Dialog is closed initially -> its footer button is absent.
+            expect(screen.queryByTestId("error-report-download-json")).toBeNull();
+            fireEvent.click(btn);
+            // Manual-mode dialog mounts: the JSON-download action appears
+            // and the manual intro (no preceding-error wording) is shown.
+            expect(
+                await screen.findByTestId("error-report-download-json"),
+            ).toBeTruthy();
+            expect(
+                screen.getByText(/Erstelle einen Bericht mit deinen letzten Aktionen/),
+            ).toBeTruthy();
+        });
+    });
 });

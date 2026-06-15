@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Bug, Check, ChevronDown, ChevronUp, Copy, X } from "lucide-react";
+import { Bug, Check, ChevronDown, ChevronUp, Copy, Download } from "lucide-react";
 
 import { ApiError } from "../api/client";
 import { eventRecorder, formatEventLog } from "../utils/eventRecorder";
 import { copyToClipboard } from "../utils/clipboard";
+import { downloadBlob } from "../shared/utils/downloadBlob";
 import { useI18n } from "../hooks/useI18n";
 
 const ISSUES_URL = "https://github.com/astrapi69/bibliogon/issues/new";
@@ -15,14 +16,33 @@ const MAX_ENCODED_URL = 7800;
 interface Props {
   open: boolean;
   onClose: () => void;
-  errorMessage: string;
+  /** Error message that triggered the report. Absent in proactive
+   *  mode (opened from Settings without a preceding crash). */
+  errorMessage?: string;
   apiError?: ApiError;
 }
 
 /**
+ * Build the JSON-download filename for a manual report:
+ * `bibliogon-fehlerbericht-YYYY-MM-DD-HHmm.json` in local time,
+ * zero-padded.
+ */
+export function buildReportFilename(now: Date = new Date()): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const stamp =
+    `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}` +
+    `-${pad(now.getHours())}${pad(now.getMinutes())}`;
+  return `bibliogon-fehlerbericht-${stamp}.json`;
+}
+
+/**
  * Modal that lets the user review and submit a GitHub issue with
- * optional action history. The user sees exactly what will be sent
+ * optional action history, copy the report to the clipboard, or
+ * download it as JSON. The user sees exactly what will be sent
  * before clicking the submit button.
+ *
+ * Reachable both reactively (after a caught error / crash, with an
+ * `errorMessage`) and proactively (from Settings > Über, without one).
  */
 export default function ErrorReportDialog({
   open,
@@ -61,14 +81,48 @@ export default function ErrorReportDialog({
 
   const events = eventRecorder.getAll();
   const historyLog = formatEventLog(events);
+  const proactive = !errorMessage;
+  const effectiveMessage =
+    errorMessage ||
+    t(
+      "ui.error_report.manual_description",
+      "Manueller Bericht (kein vorausgehender Fehler).",
+    );
 
   const issueBody = buildIssueBody(
-    errorMessage,
+    effectiveMessage,
     apiError,
     includeEnv,
     includeHistory ? historyLog : null,
   );
-  const issueTitle = `Bug: ${errorMessage.substring(0, 80)}`;
+  const issueTitle = proactive
+    ? "Bericht: Bibliogon"
+    : `Bug: ${effectiveMessage.substring(0, 80)}`;
+
+  const handleDownloadJson = () => {
+    const report = {
+      app_version: __APP_VERSION__,
+      user_agent:
+        typeof navigator !== "undefined" ? navigator.userAgent : "",
+      timestamp: new Date().toISOString(),
+      route:
+        typeof window !== "undefined" ? window.location.pathname : "",
+      error: errorMessage
+        ? {
+            message: errorMessage,
+            status: apiError?.status,
+            method: apiError?.method,
+            endpoint: apiError?.endpoint,
+            stacktrace: apiError?.stacktrace,
+          }
+        : null,
+      events,
+    };
+    const blob = new Blob([JSON.stringify(report, null, 2)], {
+      type: "application/json",
+    });
+    downloadBlob(blob, buildReportFilename());
+  };
 
   const handleSubmit = () => {
     const encodedTitle = encodeURIComponent(issueTitle);
@@ -122,10 +176,15 @@ export default function ErrorReportDialog({
               margin: "0 0 16px",
             }}
           >
-            {t(
-              "ui.error_report.intro",
-              "Bibliogon hat einen Fehler erkannt und kann einen Bug-Report für den Entwickler vorbereiten.",
-            )}
+            {proactive
+              ? t(
+                  "ui.error_report.intro_manual",
+                  "Erstelle einen Bericht mit deinen letzten Aktionen, um ein Problem zu melden.",
+                )
+              : t(
+                  "ui.error_report.intro",
+                  "Bibliogon hat einen Fehler erkannt und kann einen Bug-Report für den Entwickler vorbereiten.",
+                )}
           </p>
 
           {/* Checkboxes */}
@@ -137,21 +196,23 @@ export default function ErrorReportDialog({
               marginBottom: 16,
             }}
           >
-            <label
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                fontSize: "0.875rem",
-                cursor: "pointer",
-              }}
-            >
-              <input type="checkbox" checked disabled />
-              {t(
-                "ui.error_report.include_error",
-                "Fehlermeldung und Stacktrace",
-              )}
-            </label>
+            {!proactive && (
+              <label
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: "0.875rem",
+                  cursor: "pointer",
+                }}
+              >
+                <input type="checkbox" checked disabled />
+                {t(
+                  "ui.error_report.include_error",
+                  "Fehlermeldung und Stacktrace",
+                )}
+              </label>
+            )}
             <label
               style={{
                 display: "flex",
@@ -295,6 +356,16 @@ export default function ErrorReportDialog({
                 : copyState === "fail"
                   ? t("ui.error_report.copy_failed", "Kopieren fehlgeschlagen")
                   : t("ui.error_report.copy_preview", "Vorschau kopieren")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              onClick={handleDownloadJson}
+              data-testid="error-report-download-json"
+              style={{ display: "inline-flex", alignItems: "center", gap: 4 }}
+            >
+              <Download size={14} />
+              {t("ui.error_report.download_json", "Als JSON herunterladen")}
             </button>
             <button type="button" className="btn btn-ghost" onClick={onClose}>
               {t("ui.common.cancel", "Abbrechen")}

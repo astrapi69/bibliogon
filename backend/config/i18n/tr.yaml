@@ -664,6 +664,10 @@ ui:
     copy_success: "Kopyalandi!"
     copy_failed: "Kopyalama basarisiz"
     submit: "GitHub'da issue olustur"
+    create_button: "Hata raporu oluştur"
+    intro_manual: "Bir sorunu bildirmek için son işlemlerinizi içeren bir rapor oluşturun."
+    manual_description: "Manuel rapor (önceki bir hata yok)."
+    download_json: "JSON olarak indir"
   formats:
     epub: "EPUB"
     epub_desc: "E-Kitap formati"

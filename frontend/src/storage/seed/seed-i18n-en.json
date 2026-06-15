@@ -1569,7 +1569,11 @@
       "copy_preview": "Copy preview",
       "copy_success": "Copied!",
       "copy_failed": "Copy failed",
-      "submit": "Create issue on GitHub"
+      "submit": "Create issue on GitHub",
+      "create_button": "Create error report",
+      "intro_manual": "Create a report with your recent actions to report a problem.",
+      "manual_description": "Manual report (no preceding error).",
+      "download_json": "Download as JSON"
     },
     "toolbar": {
       "bold": "Bold",
