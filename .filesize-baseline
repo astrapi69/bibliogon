@@ -15,6 +15,3 @@
 #
 # Refactoring-Backlog dazu: docs/COHESION-AUDIT.md.
 # Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
-
-# --- Frontend: Editoren / Komponenten ---
-frontend/src/components/Editor.tsx
