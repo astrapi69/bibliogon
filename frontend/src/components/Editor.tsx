@@ -1,21 +1,14 @@
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     useEditorPluginStatus,
     isPluginAvailable,
     pluginDisabledMessage,
 } from "../hooks/useEditorPluginStatus";
-import { useFlushOnUnload } from "../hooks/useFlushOnUnload";
 import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
 import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
 import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
-import {
-    saveDraft,
-    deleteDraft,
-    checkForRecovery,
-    cleanupOldDrafts,
-    hashContent,
-} from "../db/drafts";
+import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../db/drafts";
 import { reviewString, NON_PROSE_CHAPTER_TYPES } from "../data/ai-review-strings";
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
@@ -40,18 +33,17 @@ import EditorContextMenu from "./EditorContextMenu";
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
 import { useAiChapterReview } from "../hooks/useAiChapterReview";
 import { useEditorWordCount } from "../hooks/useEditorWordCount";
+import { useEditorAutosave } from "../hooks/useEditorAutosave";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
-import { api, ApiError, SaveAbortedError } from "../api/client";
+import { api, ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import { warnIfOfflineStorageNearlyFull } from "../utils/storageQuota";
 import { notify } from "../utils/notify";
 import { editorToMarkdown } from "../utils/tiptap-markdown";
 import { markdownToHtml } from "../lib/utils/markdownToHtml";
 import { parseContent, textOffsetToDocPos, buildAiPrompts } from "./editorHelpers";
-
-type SaveStatus = "idle" | "saving" | "saved" | "error";
 
 export interface BookContext {
     title: string;
@@ -148,10 +140,26 @@ export default function Editor({
     onOpenStoryEntity,
 }: Props) {
     const gates = pluginsForKind(contentKind);
-    const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const lastSaved = useRef(content);
-    const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
     const { t } = useI18n();
+    const autosave = useEditorAutosave({
+        onSave,
+        content,
+        chapterId,
+        bookId,
+        chapterVersion,
+        autosaveDebounceMs,
+        draftSaveDebounceMs,
+    });
+    const {
+        saveStatus,
+        performSave,
+        debouncedSave,
+        editorRef,
+        lastSaved,
+        serverContentHash,
+        saveTimer,
+        setSaveStatus,
+    } = autosave;
     const aiGen = useFeature(FEATURES.AI_GENERATE);
     const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
     const aiGenTitle = aiGen.isDisabled
@@ -216,14 +224,6 @@ export default function Editor({
     const [recoveryDraft, setRecoveryDraft] = useState<{ content: string; savedAt: number } | null>(
         null,
     );
-    const serverContentHash = useRef(hashContent(content));
-    const draftTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-    // Pending "saved" -> "idle" reset. Tracked so a NEW save cycle can
-    // cancel a prior reset: without this, the idle-timer from save N
-    // fires ~2s later and clobbers save N+1's "saved" status (set just
-    // before), flickering the indicator off early on rapid sequential
-    // autosaves. (Found via content-safety version-history smoke.)
-    const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [markdownText, setMarkdownText] = useState("");
 
     // Ctrl+H toggles search (documented in toolbar but was not wired as a shortcut)
@@ -278,98 +278,6 @@ export default function Editor({
     // localStorage is the source of truth; the popover surface is
     // local per-instance.
     const editorDisplay = useEditorDisplaySettings();
-
-    const lastAttemptedJson = useRef<string | null>(null);
-
-    const performSave = useCallback(
-        async (json: string) => {
-            if (json === lastSaved.current) {
-                setSaveStatus("idle");
-                return;
-            }
-            lastAttemptedJson.current = json;
-            setSaveStatus("saving");
-            try {
-                await onSave(json);
-            } catch (err) {
-                if (err instanceof SaveAbortedError) {
-                    // A newer save for the same chapter superseded us.
-                    // Leave the status to the newer call to resolve.
-                    return;
-                }
-                console.error("Autosave failed:", err);
-                setSaveStatus("error");
-                // Three suppress-toast cases:
-                // - 409 (version_conflict): the BookEditor opens the
-                //   conflict dialog; a retry toast would duplicate the
-                //   signal and the retry action is wrong (wrong version)
-                // - offline: OfflineBanner already tells the user;
-                //   reconnect will auto-flush the IndexedDB draft
-                // All other errors: show the retry toast.
-                const isConflict = err instanceof ApiError && err.status === 409;
-                const isOffline = typeof navigator !== "undefined" && !navigator.onLine;
-                if (!isConflict && !isOffline) {
-                    notify.saveError(
-                        t(
-                            "ui.editor.save_failed",
-                            "Speichern fehlgeschlagen. Deine Änderungen sind lokal gesichert.",
-                        ),
-                        () => {
-                            void performSave(json);
-                        },
-                        t("ui.editor.save_retry", "Erneut versuchen"),
-                    );
-                }
-                return;
-            }
-            lastSaved.current = json;
-            if (chapterId) deleteDraft(chapterId);
-            serverContentHash.current = hashContent(json);
-            setSaveStatus("saved");
-            // Reset to idle after 2s, cancelling any prior reset so a
-            // newer "saved" isn't clobbered by an older save's timer.
-            if (idleTimer.current) clearTimeout(idleTimer.current);
-            idleTimer.current = setTimeout(() => setSaveStatus("idle"), 2000);
-        },
-        [onSave, chapterId, t],
-    );
-
-    const debouncedSave = useCallback(
-        (json: string) => {
-            if (saveTimer.current) clearTimeout(saveTimer.current);
-            // A new edit starts a fresh save cycle; cancel any pending
-            // "saved" -> "idle" reset so it can't flip the indicator to
-            // idle mid-cycle.
-            if (idleTimer.current) {
-                clearTimeout(idleTimer.current);
-                idleTimer.current = null;
-            }
-            setSaveStatus("saving");
-            saveTimer.current = setTimeout(() => {
-                void performSave(json);
-            }, autosaveDebounceMs);
-
-            // Save draft to IndexedDB (parallel to server save, independent debounce).
-            // This is the safety net: even if the server save later fails, the
-            // local draft is already written.
-            if (chapterId && bookId) {
-                if (draftTimer.current) clearTimeout(draftTimer.current);
-                draftTimer.current = setTimeout(() => {
-                    saveDraft(chapterId, bookId, json, serverContentHash.current);
-                }, draftSaveDebounceMs);
-            }
-        },
-        [performSave, chapterId, bookId, autosaveDebounceMs, draftSaveDebounceMs],
-    );
-
-    // Flush pending saves on tab close / page unload / backgrounding. Uses
-    // IndexedDB (Dexie writes via a transaction queue that survives the
-    // tab dying) plus a best-effort keepalive fetch. Reuses the existing
-    // `editorRef` (wired by the useEffect further down).
-    const flushPendingSaveRef = useRef<() => void>(() => {});
-    useFlushOnUnload(() => flushPendingSaveRef.current());
-
-    const editorRef = useRef<TiptapEditor | null>(null);
 
     const uploadAndInsertImage = async (file: File) => {
         if (!bookId) return;
@@ -486,47 +394,12 @@ export default function Editor({
         syncCounts(editor);
     }, [editor, syncCounts]);
 
-    // Keep ref in sync for async callbacks (image upload)
+    // Keep ref in sync for async callbacks (image upload). editorRef is a
+    // stable ref from useEditorAutosave, so it is not a real dependency.
     useEffect(() => {
         editorRef.current = editor;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [editor]);
-
-    // Keep the flush callback fresh: on every render capture the current
-    // chapterId, bookId, and editor. Invoked from beforeunload/pagehide/
-    // visibilitychange handlers installed by `useFlushOnUnload` above.
-    useEffect(() => {
-        flushPendingSaveRef.current = () => {
-            if (saveTimer.current) {
-                clearTimeout(saveTimer.current);
-                saveTimer.current = null;
-            }
-            if (draftTimer.current) {
-                clearTimeout(draftTimer.current);
-                draftTimer.current = null;
-            }
-            const editorInstance = editorRef.current;
-            if (!editorInstance || !chapterId || !bookId) return;
-            let json: string;
-            try {
-                json = JSON.stringify(editorInstance.getJSON());
-            } catch {
-                return;
-            }
-            if (json === lastSaved.current) return;
-            // 1) IndexedDB write is the authoritative fallback.
-            void saveDraft(chapterId, bookId, json, serverContentHash.current);
-            // 2) Best-effort keepalive PATCH - may succeed or may be dropped;
-            //    the IndexedDB draft covers it either way. Skipped if we do
-            //    not have a current version (e.g. chapter still loading); the
-            //    draft path still saves locally.
-            if (typeof chapterVersion === "number") {
-                api.chapters.updateKeepalive(bookId, chapterId, {
-                    content: json,
-                    version: chapterVersion,
-                });
-            }
-        };
-    });
 
     // Update content when switching chapters
     useEffect(() => {
@@ -538,6 +411,7 @@ export default function Editor({
                 setMarkdownMode(false);
             }
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [content, editor]);
 
     // Navigate-to-first-issue: when the parent sets initialFocus (e.g.
@@ -634,11 +508,11 @@ export default function Editor({
         cleanupOldDrafts(draftMaxAgeDays);
     }, [draftMaxAgeDays]);
 
-    // Cleanup timer
+    // Close any open AI-review SSE stream on unmount. (The autosave
+    // timer cleanup lives in useEditorAutosave.)
     const reviewCleanup = chapterReview.cleanup;
     useEffect(() => {
         return () => {
-            if (saveTimer.current) clearTimeout(saveTimer.current);
             reviewCleanup();
         };
     }, [reviewCleanup]);
