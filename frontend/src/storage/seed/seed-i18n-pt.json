@@ -1207,6 +1207,7 @@
       "create_error": "Nao foi possivel criar o artigo.",
       "empty_heading": "Ainda sem artigos",
       "empty_subtitle": "Crie seu primeiro artigo para escrever publicacoes longas separadamente dos livros.",
+      "filters": "Filtros",
       "filter_all": "Todos",
       "filter_draft": "Rascunho",
       "filter_published": "Publicado",

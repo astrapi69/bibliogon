@@ -1207,6 +1207,7 @@
       "create_error": "Could not create article.",
       "empty_heading": "No articles yet",
       "empty_subtitle": "Create your first article to write long-form posts separately from books.",
+      "filters": "Filters",
       "filter_all": "All",
       "filter_draft": "Draft",
       "filter_published": "Published",

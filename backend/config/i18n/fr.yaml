@@ -1209,6 +1209,7 @@ ui:
     create_error: "Impossible de creer l'article."
     empty_heading: "Aucun article pour l'instant"
     empty_subtitle: "Creez votre premier article pour rediger des publications longues separement des livres."
+    filters: "Filtres"
     filter_all: "Tous"
     filter_draft: "Brouillon"
     filter_published: "Publie"

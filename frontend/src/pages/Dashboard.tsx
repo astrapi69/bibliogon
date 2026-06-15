@@ -22,6 +22,8 @@ import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
+import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
+import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/useBookFilters";
 import { useDashboardBookData } from "../hooks/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/useBookTypes";
@@ -39,7 +41,6 @@ import {
     Trash2,
     Menu,
     Search,
-    SlidersHorizontal,
     FileText,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -94,7 +95,6 @@ export default function Dashboard() {
     const isDexie = mode === "dexie";
     const { theme, toggle: toggleTheme } = useTheme();
     const [showTrash, setShowTrash] = useState(false);
-    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
     // book-type (ui.defaults.book_type). The split-button primary
@@ -740,25 +740,11 @@ export default function Dashboard() {
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (
-                            <>
-                                <div className="hide-mobile">
-                                    <DashboardFilterBar filters={filters} />
-                                </div>
-                                <button
-                                    className="btn btn-secondary btn-sm show-mobile-only"
-                                    data-testid="filter-sheet-trigger"
-                                    onClick={() => setFilterSheetOpen(true)}
-                                    style={{ marginBottom: 8 }}
-                                >
-                                    <SlidersHorizontal size={14} />{" "}
-                                    {t("ui.dashboard.filters", "Filter")}
-                                </button>
-                                <DashboardFilterSheet
-                                    filters={filters}
-                                    open={filterSheetOpen}
-                                    onOpenChange={setFilterSheetOpen}
-                                />
-                            </>
+                            <ResponsiveFilterControls
+                                triggerLabel={t("ui.dashboard.filters", "Filter")}
+                                bar={<DashboardFilterBar filters={filters} />}
+                                sheet={<DashboardFilterSheet filters={filters} />}
+                            />
                         )}
                         {filters.filteredBooks.length === 0 && books.length > 0 && !loading ? (
                             <EmptyState
@@ -850,18 +836,15 @@ export default function Dashboard() {
                                                             key={book.id}
                                                             className={`${styles.tileWrapper}${selection.isSelected(book.id) ? ` ${styles.tileSelected}` : ""}`}
                                                         >
-                                                            <input
-                                                                type="checkbox"
-                                                                className={styles.tileCheckbox}
-                                                                data-testid={`book-bulk-check-${book.id}`}
+                                                            <TileSelectCheckbox
                                                                 checked={selection.isSelected(
                                                                     book.id,
                                                                 )}
-                                                                onChange={() =>
+                                                                onToggle={() =>
                                                                     selection.toggle(book.id)
                                                                 }
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                aria-label="Select book"
+                                                                testId={`book-bulk-check-${book.id}`}
+                                                                ariaLabel="Select book"
                                                             />
                                                             <BookCard
                                                                 book={book}

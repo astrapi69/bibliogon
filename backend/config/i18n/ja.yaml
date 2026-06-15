@@ -1169,6 +1169,7 @@ ui:
     create_error: "記事を作成できませんでした。"
     empty_heading: "まだ記事がありません"
     empty_subtitle: "本とは別に長文を書くため、最初の記事を作成してください。"
+    filters: "フィルター"
     filter_all: "すべて"
     filter_draft: "下書き"
     filter_published: "公開済み"
