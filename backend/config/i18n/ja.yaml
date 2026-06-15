@@ -2155,6 +2155,13 @@ ui:
   ai_template:
     editor_section: "AI テンプレート"
     offline_configure_key: "オフラインでAI入力を使うには、設定 > AI でAPIキーを設定してください。"
+    intro:
+      title: "はじめに"
+      what: "AIテンプレートは、本のタイプ・ジャンル・対象読者をもとに、AIが章・説明・メタデータを生成するために使う構造化されたファイルです。"
+      how: "必要なフィールドを入力してAIに補完させるか、テンプレートをエクスポートして外部で入力し、再びインポートします。"
+      no_key: "AIプロバイダーがまだ設定されていません。"
+      settings_link: "設定 → AI を開く"
+      learn_more: "詳しく見る"
     panel:
       title: "AI テンプレート"
       fill: "AI で入力"
