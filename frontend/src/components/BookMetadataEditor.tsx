@@ -800,6 +800,7 @@ export default function BookMetadataEditor({
                                 />
                                 <AudiobookDownloads
                                     bookId={book.id}
+                                    bookTitle={book.title}
                                     bookChapters={book.chapters || []}
                                 />
                             </div>
@@ -809,6 +810,7 @@ export default function BookMetadataEditor({
                             <div className={styles.tabContent}>
                                 <QualityTab
                                     bookId={book.id}
+                                    bookTitle={book.title}
                                     onNavigateToIssue={onNavigateToIssue}
                                 />
                             </div>
