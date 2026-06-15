@@ -19,7 +19,7 @@ import {
 import { reviewString, NON_PROSE_CHAPTER_TYPES } from "../data/ai-review-strings";
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
-import { FIX_ISSUE_PROMPTS, findEnclosingSentence, FixIssueType } from "../data/fix-issue-prompts";
+import { findEnclosingSentence, FixIssueType } from "../data/fix-issue-prompts";
 
 type Translator = (key: string, fallback: string) => string;
 
@@ -47,6 +47,7 @@ import { warnIfOfflineStorageNearlyFull } from "../utils/storageQuota";
 import { notify } from "../utils/notify";
 import { editorToMarkdown } from "../utils/tiptap-markdown";
 import { markdownToHtml } from "../lib/utils/markdownToHtml";
+import { parseContent, textOffsetToDocPos, buildAiPrompts } from "./editorHelpers";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 
@@ -374,18 +375,6 @@ export default function Editor({
     const flushPendingSaveRef = useRef<() => void>(() => {});
     useFlushOnUnload(() => flushPendingSaveRef.current());
 
-    const parseContent = (raw: string): Record<string, unknown> | string => {
-        try {
-            const parsed = JSON.parse(raw);
-            if (parsed && typeof parsed === "object" && parsed.type === "doc") {
-                return parsed;
-            }
-        } catch {
-            // Not JSON, treat as HTML for backward compatibility
-        }
-        return raw;
-    };
-
     const editorRef = useRef<TiptapEditor | null>(null);
 
     const uploadAndInsertImage = async (file: File) => {
@@ -579,27 +568,11 @@ export default function Editor({
                 }
                 // Offsets are plain-text; convert via a temp doc walk
                 // that mirrors StyleCheckExtension's mapping.
-                const doc = editor.state.doc;
-                let charCount = 0;
-                let from: number | null = null;
-                let to: number | null = null;
-                doc.descendants((node, pos) => {
-                    if (from !== null && to !== null) return false;
-                    if (node.isText && node.text) {
-                        const nodeEnd = charCount + node.text.length;
-                        if (from === null && match.offset >= charCount && match.offset < nodeEnd) {
-                            from = pos + (match.offset - charCount);
-                        }
-                        const endOffset = match.offset + match.length;
-                        if (to === null && endOffset >= charCount && endOffset <= nodeEnd) {
-                            to = pos + (endOffset - charCount);
-                        }
-                        charCount = nodeEnd;
-                    } else if (node.isBlock && charCount > 0) {
-                        charCount += 1;
-                    }
-                    return undefined;
-                });
+                const { from, to } = textOffsetToDocPos(
+                    editor.state.doc,
+                    match.offset,
+                    match.offset + match.length,
+                );
                 if (from === null) return;
                 editor
                     .chain()
@@ -889,32 +862,11 @@ export default function Editor({
     ): { from: number; to: number } | null => {
         const plain = ed.getText();
         const { start, end } = findEnclosingSentence(plain, issueOffset, issueLength);
-        const doc = ed.state.doc;
-        let charCount = 0;
-        let from: number | null = null;
-        let to: number | null = null;
-        doc.descendants((node, pos) => {
-            if (from !== null && to !== null) return false;
-            if (node.isText && node.text) {
-                const nodeEnd = charCount + node.text.length;
-                if (from === null && start >= charCount && start < nodeEnd) {
-                    from = pos + (start - charCount);
-                }
-                // For `to`, a position that lands exactly at a text
-                // node boundary is still valid (inclusive end).
-                if (to === null && end >= charCount && end <= nodeEnd) {
-                    to = pos + (end - charCount);
-                }
-                charCount = nodeEnd;
-            } else if (node.isBlock && charCount > 0) {
-                charCount += 1;
-            }
-            return undefined;
-        });
+        const { from, to } = textOffsetToDocPos(ed.state.doc, start, end);
         if (from === null) return null;
-        if (to === null) to = from;
-        if (to < from) return null;
-        return { from, to };
+        const resolvedTo = to ?? from;
+        if (resolvedTo < from) return null;
+        return { from, to: resolvedTo };
     };
 
     const handleAiSuggest = async () => {
@@ -952,46 +904,13 @@ export default function Editor({
         // contexts diverge: article tone targets online-publication
         // (engaging, accessible, SEO-aware), book-chapter tone matches
         // genre + book identity. See parity analysis Open Question 3.
-        const ctx = bookContext;
-        const contextLines: string[] = [];
-        if (ctx?.language) contextLines.push(`Language: ${ctx.language}`);
-        if (contentKind === "book-chapter") {
-            if (ctx?.genre) contextLines.push(`Genre: ${ctx.genre}`);
-            if (ctx?.title) contextLines.push(`Book: ${ctx.title}`);
-            if (chapterTitle) contextLines.push(`Chapter: ${chapterTitle}`);
-        } else {
-            // Article: chapterTitle slot holds the article title.
-            if (chapterTitle) contextLines.push(`Article: ${chapterTitle}`);
-        }
-        const toneHint =
-            contentKind === "article"
-                ? "Match an engaging, accessible online-publication tone. The output should read well as a standalone article."
-                : "Match the tone and style appropriate for this genre and language.";
-        const contextBlock =
-            contextLines.length > 0
-                ? `\n\nContext:\n${contextLines.join("\n")}\n\n${toneHint}`
-                : "";
-
-        const fixIssuePrompt = activeIssue
-            ? FIX_ISSUE_PROMPTS[activeIssue.type] + contextBlock
-            : "";
-
-        const basePrompts: Record<string, string> =
-            contentKind === "article"
-                ? {
-                      improve: `You are a professional editor for online publications. Improve the following article excerpt: fix grammar, improve clarity, sharpen voice for online readers. Return only the improved text.${contextBlock}`,
-                      shorten: `You are a professional editor. Tighten the following article excerpt without losing meaning. Favor punchy phrasing suitable for online reading. Return only the shortened text.${contextBlock}`,
-                      expand: `You are a professional writer for online publications. Expand the following article excerpt with concrete detail and examples. Keep the tone engaging. Return only the expanded text.${contextBlock}`,
-                      custom: (aiCustomPrompt || "Improve this article excerpt.") + contextBlock,
-                      fix_issue: fixIssuePrompt,
-                  }
-                : {
-                      improve: `You are a professional editor. Improve the following text: fix grammar, improve clarity and flow. Return only the improved text.${contextBlock}`,
-                      shorten: `You are a professional editor. Make the following text more concise without losing meaning. Return only the shortened text.${contextBlock}`,
-                      expand: `You are a professional writer. Expand the following text with more detail and description. Return only the expanded text.${contextBlock}`,
-                      custom: (aiCustomPrompt || "Improve this text.") + contextBlock,
-                      fix_issue: fixIssuePrompt,
-                  };
+        const basePrompts = buildAiPrompts({
+            contentKind,
+            bookContext,
+            chapterTitle,
+            activeIssueType: activeIssue?.type ?? null,
+            aiCustomPrompt,
+        });
 
         try {
             const data = await api.ai.generate(
