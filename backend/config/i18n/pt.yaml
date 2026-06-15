@@ -129,6 +129,7 @@ ui:
     value_language: "Idioma"
     value_other: "Outro"
   dashboard:
+    recent: "Editado recentemente"
     title: "Meus livros"
     articles_nav: "Artigos"
     view_toggle_label: "Alternar visualizacao"

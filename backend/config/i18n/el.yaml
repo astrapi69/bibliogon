@@ -129,6 +129,7 @@ ui:
     value_language: "Γλώσσα"
     value_other: "Άλλο"
   dashboard:
+    recent: "Πρόσφατα επεξεργασμένα"
     title: "Τα βιβλία μου"
     articles_nav: "Άρθρα"
     view_toggle_label: "Αλλαγή προβολής"
