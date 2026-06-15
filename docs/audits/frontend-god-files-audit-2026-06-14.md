@@ -21,6 +21,44 @@ test).
 
 ---
 
+## 0. Status update (2026-06-15, post-burn-down)
+
+The prioritized split order below was worked through across the frontend
+god-file burn-down (PRs #204–#229). Line counts re-verified with `wc -l`.
+
+| # | File | before | after | Status |
+|---|------|------:|------:|--------|
+| 1 | `api/client.ts` | 5212 | 13 | DONE — split into `api/http.ts` + `api/errors.ts` + `api/apiObject.ts` + 5 domain modules + `api/types.ts` barrel; `client.ts` is now a 13-line re-export barrel (211 call sites unchanged) |
+| 2 | `components/BookMetadataEditor.tsx` | 2699 | 797 | DONE (< 1000; WARN) |
+| 3 | `components/Editor.tsx` | 2043 | 1837 | PARTIAL — `markdownToHtml` + extension-builder extracted; **still > 1000, stays in `.filesize-baseline`** |
+| 4 | `storage/dexie-storage.ts` | 1978 | 2214 | RE-GRANDFATHERED — #204 split it into `storage/dexie/*`, but the #210 merge (branched pre-#204) reverted it to a monolith and it grew. **> 1000, back in `.filesize-baseline`; re-split is a tracked follow-up.** |
+| 5 | `pages/ArticleEditor.tsx` | 1640 | 948 | DONE (< 1000) |
+| 6 | `pages/ArticleList.tsx` | 1633 | 995 | DONE (< 1000) |
+| 7 | `import-wizard/steps/PreviewPanel.tsx` | 1622 | 403 | DONE (< WARN) |
+| 8 | `components/articles/ConvertToBookWizard.tsx` | 1336 | 790 | DONE (< 1000) |
+| 9 | `components/ComicBookEditor.tsx` | 1323 | 568 | DONE (< 1000) |
+| 10 | `components/PageCanvas.tsx` | 1281 | 358 | DONE (< WARN) |
+| 11 | `pages/Dashboard.tsx` | 1276 | 982 | DONE (< 1000) |
+| 12 | `components/CommentsAdminSection.tsx` | 1141 | 685 | DONE (< 1000) |
+| 13 | `pages/BookEditor.tsx` | 1119 | 987 | DONE (< 1000) |
+| 14 | `components/ChapterSidebar.tsx` | 1033 | 428 | DONE (< WARN) |
+| 15 | `components/Storyboard.tsx` | 955 | 761 | reduced (was WARN, still WARN) |
+| 16 | `pages/GitBackupPage.tsx` | 922 | 282 | DONE (< WARN) |
+| 17 | `components/LayoutConfigImageRow.tsx` | 864 | 864 | unchanged (still WARN) |
+| 18 | `components/CollageCanvas.tsx` | 859 | 859 | unchanged (still WARN) |
+
+**Result:** of the 14 files that were > 1000 (in `.filesize-baseline`), **12
+are now under 1000**. Only **two frontend baseline entries remain**:
+`Editor.tsx` (1837) and `storage/dexie-storage.ts` (2214, re-grandfathered).
+Reusable extractions landed: `lib/components/SortableList.tsx`,
+`lib/utils/{chapterGroups,markdownToHtml,pageLayoutStyles,pageTextContent}.ts`,
+and `shared/utils/downloadBlob.ts` (X3 DRY fix). The Tier-0 `useFeature`
+migrations (X1) shipped via #63.
+
+> Sections 1–6 below are the original read-only 2026-06-14 analysis and
+> describe the state BEFORE the burn-down (the LOC column = before). The
+> table above is the authoritative after-state.
+
 ## 1. Summary table
 
 | # | File | LOC | Cohesion | Top concern-mix | Split proposal (headline) | Importers | Risk |
