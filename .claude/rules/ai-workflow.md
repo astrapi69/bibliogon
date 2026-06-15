@@ -85,12 +85,16 @@ Additionally for the AI:
 
 ## Current state
 
-See architecture.md for architectural details. Additionally note:
-- Version: 0.17.0 (one-click launcher install/uninstall across Windows/macOS/Linux, auto-update check with opt-out, cleanup retry, activity log, manuscripta 0.9.0 + Pillow 12).
-- Tests: see `docs/audits/current-coverage.md` for current counts. `make test` covers backend+plugins+Vitest, E2E is separate.
-- 26 ChapterTypes (3 marketing types in audiobook-export skip list by default).
-- 15 official TipTap extensions + 1 community (@pentestpad/tiptap-extension-figure).
-- 24 toolbar buttons in the editor.
+See architecture.md for architectural details. Per the "single source of truth
+for volatile statistics" rule below, version + counts are NOT duplicated here —
+read them from their canonical source:
+- Version + release summary + plugin catalog: the CLAUDE.md header (SSoT).
+- Tests: see `docs/audits/current-coverage.md` for current counts. `make test`
+  covers backend+plugins+Vitest, E2E is separate.
+- ChapterTypes: the `ChapterType` enum in `backend/app/models/__init__.py` (SSoT).
+- TipTap extensions + toolbar buttons: see CLAUDE.md "Tech stack" / architecture.md
+  "TipTap editor".
+- God-file debt + CI watchers: `docs/VIBE-CODING-POLICY.md` + `.filesize-baseline`.
 - Deployment: Docker Compose, port 7880, install.sh one-liner.
 - IMPORTANT: Before writing custom code, ALWAYS check whether a TipTap extension or library already exists.
 - IMPORTANT: See lessons-learned.md for known pitfalls (TipTap, import, export).
