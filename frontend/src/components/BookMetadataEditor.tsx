@@ -257,7 +257,7 @@ export default function BookMetadataEditor({
     return (
         <div className={styles.container}>
             {/* Header */}
-            <div className={styles.header}>
+            <div className={`${styles.header} flex-wrap gap-2`}>
                 <div className="icon-row">
                     <button
                         className="btn-icon"
@@ -269,17 +269,17 @@ export default function BookMetadataEditor({
                     </button>
                     <h2 className={styles.title}>{t("ui.sidebar.metadata", "Buch-Metadaten")}</h2>
                 </div>
-                <div style={{ display: "flex", gap: 8 }}>
+                <div className="flex flex-wrap justify-end gap-2">
                     {otherBooks.length > 0 && (
                         <button
-                            className="btn btn-secondary btn-sm"
+                            className="btn btn-secondary btn-sm min-h-[44px]"
                             onClick={() => setShowCopyDialog(!showCopyDialog)}
                         >
                             <Copy size={14} /> {t("ui.metadata.copy_from", "Von Buch übernehmen")}
                         </button>
                     )}
                     <button
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm min-h-[44px]"
                         onClick={() => setShowKdpWizard(true)}
                         data-testid="metadata-open-kdp-wizard"
                         title={t(
@@ -291,7 +291,7 @@ export default function BookMetadataEditor({
                         {t("ui.kdp_publishing_wizard.open_button", "Für KDP veröffentlichen")}
                     </button>
                     <button
-                        className="btn btn-primary btn-sm"
+                        className="btn btn-primary btn-sm min-h-[44px]"
                         onClick={handleSave}
                         disabled={saving}
                         data-testid="metadata-save"
