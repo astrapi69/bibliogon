@@ -68,6 +68,14 @@ export function TopicsSettings({config, onSave, saving}: {
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
                         {t("ui.settings.topics_hint", "Themen erscheinen als Auswahl im Artikel-Editor. Ein Thema ist die primaere Kategorie eines Artikels.")}
                     </p>
+                    {topics.length === 0 && (
+                        <p
+                            className="text-muted-foreground text-sm py-2"
+                            data-testid="topics-empty"
+                        >
+                            {t("ui.settings.topics_empty", "Noch keine Themen angelegt.")}
+                        </p>
+                    )}
                     {topics.length > 0 && (
                         <div style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}>
                             {topics.map((topic, i) => (
