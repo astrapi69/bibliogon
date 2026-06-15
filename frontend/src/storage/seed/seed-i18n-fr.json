@@ -218,6 +218,29 @@
         "export_failed": "Échec de l'export groupé de livres"
       }
     },
+    "selective_export": {
+      "title": "Export sélectif",
+      "description": "Choisissez les domaines de données à exporter. Le résultat est un fichier JSON réimportable via l'assistant d'importation.",
+      "select_all": "Tout sélectionner",
+      "deselect_all": "Tout désélectionner",
+      "group_content": "Contenus",
+      "group_master": "Données de référence",
+      "group_extra": "Données supplémentaires",
+      "group_config": "Configuration",
+      "item_books": "Livres (avec chapitres, métadonnées)",
+      "item_chapters_auto": "Chapitres (exportés automatiquement avec les livres)",
+      "chapters_auto_hint": "Les chapitres sont exportés automatiquement avec les livres.",
+      "item_articles": "Articles",
+      "item_authors": "Auteurs / pseudonymes",
+      "item_chapter_labels": "Étiquettes de chapitre",
+      "item_story_bible": "Story Bibles / Storyboards",
+      "item_writing_history": "Historique d'écriture",
+      "item_settings": "Paramètres",
+      "export_button": "Exporter les données sélectionnées",
+      "empty_selection": "Veuillez sélectionner au moins un domaine.",
+      "export_success": "Export créé",
+      "export_error": "Échec de l'export"
+    },
     "backups": {
       "full_backup_title": "Sauvegarde complète (JSON)",
       "full_backup_description": "Exporte ou importe toutes les données (livres, chapitres, articles, auteurs, paramètres, bible de l'histoire) dans un seul fichier JSON. Fonctionne aussi hors ligne.",
