@@ -4,15 +4,18 @@ Bibliogon importiert das gesamte Medium-Archiv, das du über "Download your info
 
 > **Läuft im Browser — funktioniert offline.** Das ZIP wird komplett
 > **clientseitig** geparst und die Artikel werden clientseitig angelegt, der
-> Import funktioniert also auch in der Offline-Web-App **ohne Backend**. Drei
-> Dinge verhalten sich offline anders: Bilder bleiben als **Medium-CDN-URLs**
-> erhalten (sie laden im Editor, wenn du online bist, statt lokal
-> heruntergeladen zu werden); erkannte **Kommentare werden übersprungen** (der
-> Offline-Build hat keinen Kommentar-Speicher); und die **Sprache** des
-> Artikels kommt aus deiner Standardsprache-Einstellung, mit automatischer
-> Erkennung für nicht-lateinische Schriften (Griechisch, Japanisch,
-> Kyrillisch). Die Duplikat-Erkennung über die kanonische URL funktioniert
-> online wie offline gleich.
+> Import funktioniert also auch in der Offline-Web-App **ohne Backend**. Ein
+> paar Dinge verhalten sich offline anders: Bilder im Beitragstext bleiben als
+> **Medium-CDN-URLs** erhalten (sie laden im Editor, wenn du online bist, statt
+> ins Datenverzeichnis heruntergeladen zu werden); erkannte **Kommentare werden
+> übersprungen** (der Offline-Build hat keinen Kommentar-Speicher); und die
+> **Sprache** des Artikels kommt aus deiner Standardsprache-Einstellung, mit
+> automatischer Erkennung für nicht-lateinische Schriften (Griechisch,
+> Japanisch, Kyrillisch). Eine Ausnahme, die offline DOCH erhalten bleibt: das
+> **erste Bild** jedes Artikels wird als Vorschaubild zwischengespeichert (siehe
+> unten), sodass die Dashboard-Kacheln ihr Titelbild auch offline zeigen. Die
+> Duplikat-Erkennung über die kanonische URL funktioniert online wie offline
+> gleich.
 
 ## Wann verwenden
 
@@ -50,6 +53,10 @@ Die Einstellungen gelten für jeden Import; Überschreibungen pro Archiv werden 
 - **Erstes Bild als Titelbild setzen** – standardmäßig an. Das erste Bild im Beitragstext wird als Titelbild des Artikels gespeichert (`Article.featured_image_url`). Beiträge ohne Bilder bleiben ohne Titelbild; kein Fehler, keine Warnung. Deaktivieren, wenn du Titelbilder manuell kuratierst.
 
 Diese Einstellung wirkt nur auf neue Importe. Um Titelbilder rückwirkend auf bereits importierte Artikel zu setzen, das Skript `scripts/fix_medium_import_featured_images.py` ausführen (Dry-run als Standard; mit `--apply` schreiben). Artikel mit bereits gesetztem Titelbild werden übersprungen – deine manuelle Kuratierung bleibt erhalten.
+
+### Offline-Vorschaubilder
+
+In der Offline-Web-App versucht der Import außerdem, die Bytes des ersten Bildes jedes Artikels während des Imports zu laden – solange du noch online bist – und speichert sie in der lokalen Datenbank deines Browsers. Dieses zwischengespeicherte Vorschaubild ist es, das die **Kacheln im Artikel-Dashboard** auch dann zeigen, wenn du offline gehst, sodass deine Beitragsliste weiterhin wie eine Beitragsliste aussieht und nicht wie eine Wand aus Platzhaltern. Das geschieht nach dem Best-Effort-Prinzip: lässt sich ein Bild nicht laden (eine CORS-Beschränkung des Medium-CDN oder eine wacklige Verbindung), behält der Artikel die CDN-URL und fällt offline einfach auf den Platzhalter zurück. Die Bilder in voller Auflösung im Beitragstext werden auf diese Weise nicht zwischengespeichert – nur das Dashboard-Vorschaubild.
 
 ## Erneuter Import desselben Archivs
 

@@ -87,6 +87,18 @@ KI füllen soll. Jede Gruppe ist ein LLM-Aufruf.
 - **Kapitel-Zusammenfassungen** – ein-Satz-Zusammenfassung pro
   bestehendem Kapitel, zugeordnet über die chapter_id.
 
+## Die Einführung im Editor
+
+Das KI-Vorlage-Panel beginnt mit einem kurzen Abschnitt
+**Einführung** (standardmäßig ausgeklappt), direkt im Editor —
+zum Beispiel unter **Buch-Metadaten → KI-Vorlage**. Er erklärt in
+zwei Sätzen, was eine `.biblio.yaml`-Vorlage ist und wie man sie
+nutzt, sodass du den Editor nicht verlassen musst, um dich zu
+orientieren. Ist noch kein KI-Anbieter konfiguriert, zeigt er
+einen direkten Link **Einstellungen → KI öffnen**, und ein
+**Mehr erfahren**-Link springt zu dieser Hilfeseite für die
+vollständige Anleitung.
+
 ## Pro-Datensatz-Arbeitsabläufe
 
 Die Artikel- und Buch-Editor-Seitenleisten tragen jeweils ein
