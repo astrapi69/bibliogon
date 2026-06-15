@@ -21,11 +21,17 @@ import {
 } from "./storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
 import EditorAiPanel from "./EditorAiPanel";
-import { EditorSearchBar, EditorSpellcheckPanel } from "./EditorPanels";
+import {
+    EditorSearchBar,
+    EditorSpellcheckPanel,
+    EditorRecoveryBanner,
+    EditorAudioPreview,
+} from "./EditorPanels";
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
 import { useAiChapterReview } from "../hooks/useAiChapterReview";
 import { useEditorWordCount } from "../hooks/useEditorWordCount";
 import { useEditorAutosave } from "../hooks/useEditorAutosave";
+import { useEditorTools } from "../hooks/useEditorTools";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
@@ -168,22 +174,6 @@ export default function Editor({
     // lives outside this component, paint the backdrop, and center
     // the paper column. Escape exits; Ctrl+Shift+D toggles.
     const [compositionMode, setCompositionMode] = useState(false);
-    const [showSpellcheck, setShowSpellcheck] = useState(false);
-    const [spellcheckResults, setSpellcheckResults] = useState<
-        {
-            message: string;
-            short_message: string;
-            offset: number;
-            length: number;
-            replacements: string[];
-            rule_id: string;
-        }[]
-    >([]);
-    const [spellcheckLoading, setSpellcheckLoading] = useState(false);
-    const [styleCheckActive, setStyleCheckActive] = useState(false);
-    const [styleCheckLoading, setStyleCheckLoading] = useState(false);
-    const [previewLoading, setPreviewLoading] = useState(false);
-    const [previewAudioUrl, setPreviewAudioUrl] = useState<string | null>(null);
     const { status: pluginStatus } = useEditorPluginStatus();
     const [showAiPanel, setShowAiPanel] = useState(false);
     const [aiSuggestion, setAiSuggestion] = useState("");
@@ -378,6 +368,23 @@ export default function Editor({
         reviewStatusMsg,
         reviewCostLabel,
     } = chapterReview;
+
+    // Grammar spellcheck + ms-tools style check + TTS audio preview.
+    const tools = useEditorTools({ editor, bookId, chapterTitle, aiContextChars });
+    const {
+        showSpellcheck,
+        spellcheckResults,
+        spellcheckLoading,
+        toggleSpellcheck: handleToggleSpellcheck,
+        styleCheckActive,
+        setStyleCheckActive,
+        styleCheckLoading,
+        toggleStyleCheck: handleToggleStyleCheck,
+        previewLoading,
+        previewAudio: handlePreviewAudio,
+        previewAudioUrl,
+        setPreviewAudioUrl,
+    } = tools;
 
     // Initial render: seed the counts off the just-mounted editor.
     // (The live updates come from the onUpdate config callback above.)
@@ -583,93 +590,6 @@ export default function Editor({
         }
     };
 
-    const handleToggleSpellcheck = async () => {
-        if (showSpellcheck) {
-            setShowSpellcheck(false);
-            setSpellcheckResults([]);
-            return;
-        }
-        if (!editor) return;
-        setShowSpellcheck(true);
-        setSpellcheckLoading(true);
-        try {
-            const text = editor.getText();
-            const data = await api.grammar.check(text);
-            setSpellcheckResults(data.matches || []);
-            if ((data.matches || []).length === 0) {
-                notify.success(t("ui.editor.spellcheck_ok", "Keine Fehler gefunden"));
-            }
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(
-                detail || t("ui.editor.spellcheck_error", "Rechtschreibprüfung fehlgeschlagen"),
-                err,
-            );
-            setSpellcheckResults([]);
-        }
-        setSpellcheckLoading(false);
-    };
-
-    const handleToggleStyleCheck = async () => {
-        if (!editor) return;
-        if (styleCheckActive) {
-            editor.commands.clearStyleFindings();
-            setStyleCheckActive(false);
-            return;
-        }
-        setStyleCheckLoading(true);
-        setStyleCheckActive(true);
-        try {
-            const text = editor.getText();
-            if (!text.trim()) {
-                setStyleCheckActive(false);
-                setStyleCheckLoading(false);
-                return;
-            }
-            const result = await api.msTools.check(text, "de", bookId);
-            editor.commands.setStyleFindings(result.findings);
-        } catch {
-            notify.error(t("ui.editor.spellcheck_error", "Stilprüfung fehlgeschlagen"));
-            setStyleCheckActive(false);
-        }
-        setStyleCheckLoading(false);
-    };
-
-    const handlePreviewAudio = async () => {
-        if (!editor) return;
-        setPreviewLoading(true);
-        try {
-            // Use selected text or first N chars of chapter
-            const { from, to } = editor.state.selection;
-            let text =
-                from !== to ? editor.state.doc.textBetween(from, to, "\n") : editor.getText();
-            if (text.length > aiContextChars) text = text.slice(0, aiContextChars);
-            if (!text.trim()) {
-                notify.info(t("ui.editor.preview_no_text", "Kein Text zum Vorlesen"));
-                setPreviewLoading(false);
-                return;
-            }
-
-            try {
-                const blob = await api.audiobook.preview(text, bookId || "", chapterTitle || "");
-                // Revoke any previous preview URL to avoid memory leaks
-                if (previewAudioUrl) URL.revokeObjectURL(previewAudioUrl);
-                setPreviewAudioUrl(URL.createObjectURL(blob));
-            } catch (err) {
-                const detail = err instanceof ApiError ? err.detail : null;
-                notify.error(
-                    detail || t("ui.editor.preview_error", "Vorschau fehlgeschlagen"),
-                    err,
-                );
-                setPreviewLoading(false);
-                return;
-            }
-        } catch {
-            notify.error(t("ui.editor.preview_error", "Vorschau fehlgeschlagen"));
-        }
-        setPreviewLoading(false);
-    };
-
     /** Expand the plain-text issue range to its enclosing sentence
      *  and return ProseMirror from/to positions. Mirrors the walk in
      *  StyleCheckExtension.textOffsetToDocPos so the mapping stays
@@ -800,36 +720,12 @@ export default function Editor({
         <div className={styles.wrapper}>
             {/* Recovery dialog */}
             {recoveryDraft && (
-                <div className={styles.recoveryBanner} data-testid="recovery-banner">
-                    <div style={{ flex: 1 }}>
-                        <strong>
-                            {t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}
-                        </strong>
-                        <p
-                            style={{
-                                margin: "4px 0 0",
-                                fontSize: "0.8125rem",
-                                color: "var(--text-secondary)",
-                            }}
-                        >
-                            {t(
-                                "ui.editor.recovery_desc",
-                                "Änderungen vom {timestamp} gefunden, die nicht gespeichert wurden.",
-                            ).replace(
-                                "{timestamp}",
-                                new Date(recoveryDraft.savedAt).toLocaleString(),
-                            )}
-                        </p>
-                    </div>
-                    <div style={{ display: "flex", gap: 8 }}>
-                        <button className="btn btn-primary btn-sm" onClick={handleRestore}>
-                            {t("ui.editor.recovery_restore", "Wiederherstellen")}
-                        </button>
-                        <button className="btn btn-ghost btn-sm" onClick={handleDiscardDraft}>
-                            {t("ui.editor.recovery_discard", "Verwerfen")}
-                        </button>
-                    </div>
-                </div>
+                <EditorRecoveryBanner
+                    t={t}
+                    savedAt={recoveryDraft.savedAt}
+                    onRestore={handleRestore}
+                    onDiscard={handleDiscardDraft}
+                />
             )}
 
             {/* Wrapped so composition mode can hide the whole toolbar
@@ -932,38 +828,14 @@ export default function Editor({
 
             {/* TTS Preview Player */}
             {previewAudioUrl && (
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 8,
-                        padding: "6px 12px",
-                        background: "var(--bg-secondary)",
-                        borderBottom: "1px solid var(--border)",
+                <EditorAudioPreview
+                    t={t}
+                    src={previewAudioUrl}
+                    onClose={() => {
+                        URL.revokeObjectURL(previewAudioUrl);
+                        setPreviewAudioUrl(null);
                     }}
-                >
-                    <audio
-                        controls
-                        autoPlay
-                        src={previewAudioUrl}
-                        onEnded={() => {
-                            URL.revokeObjectURL(previewAudioUrl);
-                            setPreviewAudioUrl(null);
-                        }}
-                        style={{ height: 32, flex: 1, maxWidth: 400 }}
-                    />
-                    <button
-                        className="btn-icon"
-                        onClick={() => {
-                            URL.revokeObjectURL(previewAudioUrl);
-                            setPreviewAudioUrl(null);
-                        }}
-                        title={t("ui.common.close", "Schließen")}
-                        style={{ padding: 4, fontSize: "1rem", lineHeight: 1 }}
-                    >
-                        &#x2715;
-                    </button>
-                </div>
+                />
             )}
 
             {/* AI Assistant Panel */}

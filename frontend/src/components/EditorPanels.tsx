@@ -97,6 +97,95 @@ export function EditorSearchBar({
     );
 }
 
+interface EditorRecoveryBannerProps {
+    t: Translator;
+    savedAt: number;
+    onRestore: () => void;
+    onDiscard: () => void;
+}
+
+/**
+ * Draft-recovery banner shown when a newer IndexedDB draft exists for
+ * the current chapter. The recovery decision (restore / discard) lives
+ * in the parent Editor; this component renders the prompt + actions.
+ */
+export function EditorRecoveryBanner({
+    t,
+    savedAt,
+    onRestore,
+    onDiscard,
+}: EditorRecoveryBannerProps) {
+    return (
+        <div className={styles.recoveryBanner} data-testid="recovery-banner">
+            <div style={{ flex: 1 }}>
+                <strong>{t("ui.editor.recovery_title", "Ungespeicherte Änderungen gefunden")}</strong>
+                <p
+                    style={{
+                        margin: "4px 0 0",
+                        fontSize: "0.8125rem",
+                        color: "var(--text-secondary)",
+                    }}
+                >
+                    {t(
+                        "ui.editor.recovery_desc",
+                        "Änderungen vom {timestamp} gefunden, die nicht gespeichert wurden.",
+                    ).replace("{timestamp}", new Date(savedAt).toLocaleString())}
+                </p>
+            </div>
+            <div style={{ display: "flex", gap: 8 }}>
+                <button className="btn btn-primary btn-sm" onClick={onRestore}>
+                    {t("ui.editor.recovery_restore", "Wiederherstellen")}
+                </button>
+                <button className="btn btn-ghost btn-sm" onClick={onDiscard}>
+                    {t("ui.editor.recovery_discard", "Verwerfen")}
+                </button>
+            </div>
+        </div>
+    );
+}
+
+interface EditorAudioPreviewProps {
+    t: Translator;
+    src: string;
+    onClose: () => void;
+}
+
+/**
+ * Inline TTS audio-preview player. The blob URL + its lifecycle live in
+ * the parent Editor (via useEditorTools); this component renders the
+ * <audio> element and a close button, both revoking the URL on dismiss.
+ */
+export function EditorAudioPreview({ t, src, onClose }: EditorAudioPreviewProps) {
+    return (
+        <div
+            style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                padding: "6px 12px",
+                background: "var(--bg-secondary)",
+                borderBottom: "1px solid var(--border)",
+            }}
+        >
+            <audio
+                controls
+                autoPlay
+                src={src}
+                onEnded={onClose}
+                style={{ height: 32, flex: 1, maxWidth: 400 }}
+            />
+            <button
+                className="btn-icon"
+                onClick={onClose}
+                title={t("ui.common.close", "Schließen")}
+                style={{ padding: 4, fontSize: "1rem", lineHeight: 1 }}
+            >
+                &#x2715;
+            </button>
+        </div>
+    );
+}
+
 interface EditorSpellcheckPanelProps {
     t: Translator;
     loading: boolean;
