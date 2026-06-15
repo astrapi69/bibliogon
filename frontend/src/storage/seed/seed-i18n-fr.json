@@ -682,7 +682,11 @@
       "copy_preview": "Copier l'apercu",
       "copy_success": "Copie!",
       "copy_failed": "Echec de la copie",
-      "submit": "Creer une issue sur GitHub"
+      "submit": "Creer une issue sur GitHub",
+      "create_button": "Créer un rapport d'erreur",
+      "intro_manual": "Créez un rapport avec vos dernières actions pour signaler un problème.",
+      "manual_description": "Rapport manuel (sans erreur préalable).",
+      "download_json": "Télécharger en JSON"
     },
     "formats": {
       "epub": "EPUB",

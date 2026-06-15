@@ -10,8 +10,9 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
-import ErrorReportDialog from "./ErrorReportDialog"
+import ErrorReportDialog, {buildReportFilename} from "./ErrorReportDialog"
 import {ApiError} from "../api/client"
+import {downloadBlob} from "../shared/utils/downloadBlob"
 
 vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({
@@ -24,10 +25,14 @@ vi.mock("../hooks/useI18n", () => ({
 vi.mock("../utils/eventRecorder", () => ({
   eventRecorder: {
     getAll: () => [
-      {type: "click" as const, target: "button.export", timestamp: Date.now()},
+      {type: "click" as const, text: "Export", testId: "export", timestamp: 1000},
     ],
   },
   formatEventLog: () => "[10:00:00] Click: button.export",
+}))
+
+vi.mock("../shared/utils/downloadBlob", () => ({
+  downloadBlob: vi.fn(),
 }))
 
 describe("ErrorReportDialog", () => {
@@ -35,19 +40,24 @@ describe("ErrorReportDialog", () => {
 
   beforeEach(() => {
     onClose.mockClear()
+    vi.mocked(downloadBlob).mockClear()
     vi.spyOn(window, "open").mockImplementation(() => null)
   })
 
   function renderDialog(overrides: Partial<{
     open: boolean
-    errorMessage: string
+    errorMessage: string | undefined
     apiError: ApiError
   }> = {}) {
     return render(
       <ErrorReportDialog
         open={overrides.open ?? true}
         onClose={onClose}
-        errorMessage={overrides.errorMessage ?? "Export failed: Pandoc error"}
+        errorMessage={
+          "errorMessage" in overrides
+            ? overrides.errorMessage
+            : "Export failed: Pandoc error"
+        }
         apiError={overrides.apiError}
       />,
     )
@@ -179,5 +189,67 @@ describe("ErrorReportDialog", () => {
         screen.getByTestId("error-report-copy-preview").textContent,
       ).toContain("fehlgeschlagen"),
     )
+  })
+
+  describe("proactive mode (EVT-03)", () => {
+    it("renders the manual intro when no errorMessage is given", () => {
+      renderDialog({errorMessage: undefined})
+      expect(
+        screen.getByText(/Erstelle einen Bericht mit deinen letzten Aktionen/),
+      ).toBeTruthy()
+    })
+
+    it("hides the error+stacktrace checkbox in manual mode", () => {
+      renderDialog({errorMessage: undefined})
+      // Only env + history checkboxes remain (the always-on error one is gone).
+      const checkboxes = screen.getAllByRole("checkbox")
+      expect(checkboxes).toHaveLength(2)
+      expect(
+        screen.queryByText("Fehlermeldung und Stacktrace"),
+      ).toBeNull()
+    })
+  })
+
+  describe("JSON download (EVT-04)", () => {
+    it("filename matches bibliogon-fehlerbericht-YYYY-MM-DD-HHmm.json", () => {
+      const name = buildReportFilename(new Date(2026, 0, 9, 8, 5))
+      expect(name).toBe("bibliogon-fehlerbericht-2026-01-09-0805.json")
+    })
+
+    it("download button builds a JSON blob with version, events and error", () => {
+      renderDialog({errorMessage: "Boom"})
+      fireEvent.click(screen.getByTestId("error-report-download-json"))
+      expect(downloadBlob).toHaveBeenCalledTimes(1)
+      const [blob, filename] = (
+        downloadBlob as ReturnType<typeof vi.fn>
+      ).mock.calls[0] as [Blob, string]
+      expect(blob.type).toBe("application/json")
+      expect(filename).toMatch(/^bibliogon-fehlerbericht-\d{4}-\d{2}-\d{2}-\d{4}\.json$/)
+    })
+
+    it("download payload carries app version, events, and the error message", async () => {
+      renderDialog({errorMessage: "Boom"})
+      fireEvent.click(screen.getByTestId("error-report-download-json"))
+      const [blob] = (
+        downloadBlob as ReturnType<typeof vi.fn>
+      ).mock.calls.at(-1) as [Blob, string]
+      const text = await blob.text()
+      const parsed = JSON.parse(text)
+      expect(parsed.app_version).toBeTruthy()
+      expect(Array.isArray(parsed.events)).toBe(true)
+      expect(parsed.events).toHaveLength(1)
+      expect(parsed.error.message).toBe("Boom")
+      expect(typeof parsed.timestamp).toBe("string")
+    })
+
+    it("download payload error is null in manual mode", async () => {
+      renderDialog({errorMessage: undefined})
+      fireEvent.click(screen.getByTestId("error-report-download-json"))
+      const [blob] = (
+        downloadBlob as ReturnType<typeof vi.fn>
+      ).mock.calls.at(-1) as [Blob, string]
+      const parsed = JSON.parse(await blob.text())
+      expect(parsed.error).toBeNull()
+    })
   })
 })

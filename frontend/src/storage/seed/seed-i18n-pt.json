@@ -1800,7 +1800,11 @@
       "copy_preview": "Copiar pre-visualizacao",
       "copy_success": "Copiado!",
       "copy_failed": "Falha ao copiar",
-      "submit": "Criar issue no GitHub"
+      "submit": "Criar issue no GitHub",
+      "create_button": "Criar relatório de erro",
+      "intro_manual": "Crie um relatório com as suas ações recentes para comunicar um problema.",
+      "manual_description": "Relatório manual (sem erro anterior).",
+      "download_json": "Transferir como JSON"
     },
     "help": {
       "title": "Ajuda",
