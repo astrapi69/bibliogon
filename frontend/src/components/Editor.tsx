@@ -38,6 +38,7 @@ import {
 } from "./storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
+import { useAiChapterReview } from "../hooks/useAiChapterReview";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
@@ -203,14 +204,6 @@ export default function Editor({
         offset: number;
         length: number;
     } | null>(null);
-    // New for v0.20.x AI review extension. See docs/explorations/ai-review-extension.md.
-    const [reviewFocus, setReviewFocus] = useState<"style" | "consistency" | "beta_reader">(
-        "style",
-    );
-    const [reviewDownloadUrl, setReviewDownloadUrl] = useState<string | null>(null);
-    const [reviewStatusMsg, setReviewStatusMsg] = useState<string | null>(null);
-    const [reviewCostLabel, setReviewCostLabel] = useState<string | null>(null);
-    const reviewEventSource = useRef<EventSource | null>(null);
     // Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01).
     // Promoted from per-device localStorage to the DB
     // Chapter.target_words, passed in by the parent. Read-only here
@@ -453,6 +446,36 @@ export default function Editor({
     // mode. No-op (and fail-open) outside composition.
     useTypewriterScroll(editor, compositionMode);
 
+    const bookLanguage =
+        bookContext?.language || document.documentElement.getAttribute("lang") || "de";
+
+    // v0.20.x AI review extension (docs/explorations/ai-review-extension.md).
+    // Owns the SSE EventSource ref + the review-specific state; the shared
+    // AI-panel state stays here and is threaded in via setters.
+    const chapterReview = useAiChapterReview({
+        editor,
+        showAiPanel,
+        aiPromptType,
+        chapterId,
+        chapterTitle,
+        chapterType,
+        bookId,
+        bookContext,
+        bookLanguage,
+        setShowAiPanel,
+        setAiLoading,
+        setAiReview,
+        setAiSuggestion,
+    });
+    const {
+        reviewFocus,
+        setReviewFocus,
+        reviewDownloadUrl,
+        setReviewDownloadUrl,
+        reviewStatusMsg,
+        reviewCostLabel,
+    } = chapterReview;
+
     // Live word/char count off editor.storage.characterCount.
     // Updated from inside the existing useEditor onUpdate callback
     // (the same callback that schedules debouncedSave) plus an
@@ -639,55 +662,13 @@ export default function Editor({
     }, [draftMaxAgeDays]);
 
     // Cleanup timer
+    const reviewCleanup = chapterReview.cleanup;
     useEffect(() => {
         return () => {
             if (saveTimer.current) clearTimeout(saveTimer.current);
-            if (reviewEventSource.current) {
-                reviewEventSource.current.close();
-                reviewEventSource.current = null;
-            }
+            reviewCleanup();
         };
-    }, []);
-
-    // Fetch a rough token + USD cost estimate when the review tab is
-    // visible and the chapter content changes. Best-effort - a failed
-    // estimate just hides the cost label.
-    useEffect(() => {
-        if (!showAiPanel || aiPromptType !== "review" || !editor) {
-            setReviewCostLabel(null);
-            return;
-        }
-        const fullText = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n");
-        if (!fullText.trim()) {
-            setReviewCostLabel(null);
-            return;
-        }
-        let cancelled = false;
-        api.ai
-            .estimateReview(fullText)
-            .then((payload) => {
-                if (cancelled) return;
-                const tokens = Number(payload.input_tokens || 0);
-                const cost = typeof payload.cost_usd === "number" ? payload.cost_usd : null;
-                const tokensLabel =
-                    tokens >= 1000 ? `${Math.round(tokens / 100) / 10}k` : `${tokens}`;
-                if (cost !== null) {
-                    setReviewCostLabel(
-                        `~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}, ~$${cost.toFixed(3)}`,
-                    );
-                } else {
-                    setReviewCostLabel(
-                        `~${tokensLabel} ${t("ui.editor.ai_review_tokens", "tokens")}`,
-                    );
-                }
-            })
-            .catch(() => {
-                if (!cancelled) setReviewCostLabel(null);
-            });
-        return () => {
-            cancelled = true;
-        };
-    }, [showAiPanel, aiPromptType, editor, chapterId, t]);
+    }, [reviewCleanup]);
 
     const handleToggleMarkdown = () => {
         if (!editor) return;
@@ -943,98 +924,7 @@ export default function Editor({
         setAiSuggestion("");
     };
 
-    const bookLanguage =
-        bookContext?.language || document.documentElement.getAttribute("lang") || "de";
-
-    const handleAiReview = async () => {
-        if (!editor) return;
-        const fullText = editor.state.doc.textBetween(0, editor.state.doc.content.size, "\n");
-        if (!fullText.trim()) {
-            notify.info(t("ui.editor.ai_review_empty", "Das Kapitel ist leer."));
-            return;
-        }
-        setShowAiPanel(true);
-        setAiLoading(true);
-        setAiReview("");
-        setAiSuggestion("");
-        setReviewDownloadUrl(null);
-        setReviewStatusMsg(reviewString(bookLanguage, "status_preparing"));
-
-        let jobId: string | null = null;
-        try {
-            const submitted = await api.ai.reviewAsync({
-                content: fullText,
-                chapter_id: chapterId || "",
-                chapter_title: chapterTitle || "",
-                chapter_type: chapterType,
-                book_title: bookContext?.title || "",
-                genre: bookContext?.genre || "",
-                language: bookLanguage,
-                focus: [reviewFocus],
-                book_id: bookId || "",
-            });
-            jobId = submitted.job_id;
-        } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"), err);
-            setAiLoading(false);
-            setReviewStatusMsg(null);
-            return;
-        }
-
-        // Close any previous stream before opening a new one.
-        if (reviewEventSource.current) {
-            reviewEventSource.current.close();
-        }
-        const es = new EventSource(`/api/ai/jobs/${jobId}/stream`);
-        reviewEventSource.current = es;
-        es.onmessage = (ev) => {
-            try {
-                const parsed = JSON.parse(ev.data) as {
-                    type: string;
-                    data: Record<string, unknown>;
-                };
-                if (parsed.type === "review_start") {
-                    setReviewStatusMsg(reviewString(bookLanguage, "status_analyzing"));
-                } else if (parsed.type === "review_llm_call") {
-                    setReviewStatusMsg(reviewString(bookLanguage, "status_generating"));
-                } else if (parsed.type === "review_done") {
-                    const url =
-                        typeof parsed.data.download_url === "string"
-                            ? parsed.data.download_url
-                            : null;
-                    setReviewDownloadUrl(url);
-                } else if (parsed.type === "stream_end") {
-                    es.close();
-                    reviewEventSource.current = null;
-                    setAiLoading(false);
-                    setReviewStatusMsg(null);
-                    // Pull the final result from the poll endpoint.
-                    if (jobId) {
-                        api.ai
-                            .getJob(jobId)
-                            .then((payload) => {
-                                if (payload?.result?.review) {
-                                    setAiReview(payload.result.review);
-                                }
-                            })
-                            .catch(() => {
-                                notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
-                            });
-                    }
-                }
-            } catch {
-                // Malformed event - ignore.
-            }
-        };
-        es.onerror = () => {
-            es.close();
-            reviewEventSource.current = null;
-            setAiLoading(false);
-            setReviewStatusMsg(null);
-            notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"));
-        };
-    };
+    const handleAiReview = chapterReview.runReview;
 
     const statusLabel =
         saveStatus === "saving"
