@@ -749,6 +749,7 @@ export default function BookEditor() {
                     onMetadata={() => {
                         setSelectedStoryEntityId(null);
                         _setShowMetadata(true);
+                        closeSidebarOnNarrow();
                     }}
                     onStoryBible={storyBibleAvailable ? openStoryBibleExclusive : undefined}
                     storyBibleActive={storyBibleOpen}
@@ -756,11 +757,13 @@ export default function BookEditor() {
                         setSelectedStoryEntityId(null);
                         _setShowMetadata(false);
                         _setShowStoryboard(true);
+                        closeSidebarOnNarrow();
                     }}
                     storyboardActive={showStoryboard}
                     onShowOutline={() => {
                         setSelectedStoryEntityId(null);
                         _setShowOutline(true);
+                        closeSidebarOnNarrow();
                     }}
                     outlineActive={showOutline}
                     onShowRelationships={
@@ -768,6 +771,7 @@ export default function BookEditor() {
                             ? () => {
                                   setSelectedStoryEntityId(null);
                                   _setShowRelationships(true);
+                                  closeSidebarOnNarrow();
                               }
                             : undefined
                     }
