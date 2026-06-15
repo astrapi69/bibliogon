@@ -17,7 +17,6 @@
 # Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
 
 # --- Backend / Plugins ---
-plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf.py
 plugins/bibliogon-plugin-export/bibliogon_export/routes.py
 plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 
