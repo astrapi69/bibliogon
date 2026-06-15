@@ -391,6 +391,10 @@ navigation:
           en: Manage backups
         slug: settings/backups
       - title:
+          de: Fehlerberichte
+          en: Error reports
+        slug: settings/error-report
+      - title:
           de: Gefahrenzone
           en: Danger Zone
         slug: settings/danger-zone
