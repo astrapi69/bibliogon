@@ -3296,6 +3296,9 @@
       "scan_hint": "Bir cihaz bağlamak için QR kodunu tara"
     },
     "export": {
+      "preview": "Önizleme",
+      "preview_title": "Dışa aktarma önizlemesi",
+      "preview_desc": "Dışa aktarmanızın biçimlendirilmiş önizlemesi.",
       "menu_label": "Dışa aktar",
       "success": "Dışa aktarma oluşturuldu.",
       "failed": "Dışa aktarma başarısız.",

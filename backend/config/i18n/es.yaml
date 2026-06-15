@@ -3125,6 +3125,9 @@ ui:
     pin_label: "PIN"
     scan_hint: "Escanea el código QR para conectar un dispositivo"
   export:
+    preview: "Vista previa"
+    preview_title: "Vista previa de exportación"
+    preview_desc: "Una vista previa con formato de tu exportación."
     menu_label: "Exportar"
     success: "Exportación creada."
     failed: "La exportación falló."

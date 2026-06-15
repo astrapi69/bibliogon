@@ -3296,6 +3296,9 @@
       "scan_hint": "Scan the QR code to connect a device"
     },
     "export": {
+      "preview": "Preview",
+      "preview_title": "Export preview",
+      "preview_desc": "A formatted preview of your export.",
       "menu_label": "Export",
       "success": "Export created.",
       "failed": "Export failed.",

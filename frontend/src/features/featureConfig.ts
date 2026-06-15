@@ -41,6 +41,7 @@ export const FEATURES = {
     BACKUP_EXPORT: "backup-export",
     BACKUP_IMPORT: "backup-import",
     SELECTIVE_EXPORT: "selective-export",
+    EXPORT_PREVIEW: "export-preview",
 
     AI_FILL: "ai-fill",
     AI_GENERATE: "ai-generate",
@@ -98,6 +99,9 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // bundle through the storage seam (no /api), so it works offline like
     // the full-backup export (#247).
     FEATURES.SELECTIVE_EXPORT,
+    // Export preview renders the client-side HTML export (TipTap -> HTML) in
+    // an iframe; no backend, works in both modes (#316).
+    FEATURES.EXPORT_PREVIEW,
     // `.bgb` full-data backup import runs client-side (`importBgbFile`):
     // unzip + JSON parse + storage-seam writes, no Pandoc/Git, so it works
     // in Dexie mode like every other offline importer (#99).
