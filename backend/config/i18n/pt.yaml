@@ -1,5 +1,6 @@
 ui:
   offline_import:
+    drop_hint: "Solte um ficheiro aqui para importar"
     title: "Importar"
     drop_zone: "Solte um arquivo aqui ou clique para escolher"
     accepted: "Markdown, texto, HTML, backup JSON, exportação do Medium (.zip), backup (.bgb)."

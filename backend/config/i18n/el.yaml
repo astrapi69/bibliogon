@@ -1,5 +1,6 @@
 ui:
   offline_import:
+    drop_hint: "Αφήστε ένα αρχείο εδώ για εισαγωγή"
     title: "Εισαγωγή"
     drop_zone: "Αφήστε ένα αρχείο εδώ ή κάντε κλικ για επιλογή"
     accepted: "Markdown, κείμενο, HTML, αντίγραφο JSON, εξαγωγή Medium (.zip), αντίγραφο (.bgb)."

@@ -1,5 +1,6 @@
 ui:
   offline_import:
+    drop_hint: "インポートするにはここにファイルをドロップ"
     title: "インポート"
     drop_zone: "ファイルをここにドロップ、またはクリックして選択"
     accepted: "Markdown、テキスト、HTML、JSONバックアップ、Mediumエクスポート（.zip）、バックアップ（.bgb）。"

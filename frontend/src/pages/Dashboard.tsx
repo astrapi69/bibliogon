@@ -46,6 +46,7 @@ import {
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
+import DropZone from "../lib/components/DropZone";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
 import DashboardTrashView from "../components/DashboardTrashView";
 import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
@@ -93,6 +94,16 @@ export default function Dashboard() {
     // inside that dialog (FEATURES.BGB_IMPORT via the Feature component).
     const { mode } = useStorageMode();
     const isDexie = mode === "dexie";
+    // Drag-and-drop import (#312): a file dropped on the dashboard opens the
+    // import dialog pre-loaded (dexie auto-detects via initialFile; API mode
+    // opens the wizard for the upload step).
+    const [droppedFile, setDroppedFile] = useState<File | null>(null);
+    const handleFileDrop = (files: File[]) => {
+        const file = files[0];
+        if (!file) return;
+        setDroppedFile(file);
+        setImportWizardOpen(true);
+    };
     const { theme, toggle: toggleTheme } = useTheme();
     const [showTrash, setShowTrash] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
@@ -391,7 +402,12 @@ export default function Dashboard() {
     };
 
     return (
-        <div className={styles.container}>
+        <DropZone
+            className={styles.container}
+            onDrop={handleFileDrop}
+            accept={[".bgb", ".md", ".markdown", ".txt", ".html", ".htm", ".json", ".zip"]}
+            overlayLabel={t("ui.offline_import.drop_hint", "Datei hier ablegen zum Importieren")}
+        >
             {/* Header */}
             <header className={styles.header} data-testid="dashboard-header">
                 <div className={styles.headerInner}>
@@ -888,13 +904,20 @@ export default function Dashboard() {
             {isDexie ? (
                 <OfflineImportDialog
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    initialFile={droppedFile}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => loadBooks()}
                 />
             ) : (
                 <ImportWizardModal
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => loadBooks()}
                 />
             )}
@@ -961,6 +984,6 @@ export default function Dashboard() {
                     inlineImageCount={bulkBookAiFillConfirm.inlineImageCount}
                 />
             )}
-        </div>
+        </DropZone>
     );
 }

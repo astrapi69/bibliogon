@@ -1,6 +1,7 @@
 {
   "ui": {
     "offline_import": {
+      "drop_hint": "İçe aktarmak için bir dosyayı buraya bırakın",
       "title": "İçe aktar",
       "drop_zone": "Dosyayı buraya bırakın veya tıklayın",
       "accepted": "Markdown, metin, HTML, JSON yedeği, Medium dışa aktarımı (.zip), yedek (.bgb).",
