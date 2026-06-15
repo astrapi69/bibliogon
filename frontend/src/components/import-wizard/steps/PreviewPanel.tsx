@@ -1,5 +1,8 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useI18n } from "../../../hooks/useI18n";
+import { getStorage } from "../../../storage";
+import { ComboboxSelect } from "../../../lib/components/ComboboxSelect";
+import { buildBookLanguageOptions } from "../../../lib/bookLanguages";
 import { useAllowBooksWithoutAuthor } from "../../../hooks/useAllowBooksWithoutAuthor";
 import {
     useAuthorProfile,
@@ -87,6 +90,27 @@ export function PreviewPanel({
     const [state, setStateRaw] = useState<
         Record<BookImportOverrideKey, FieldState>
     >(() => buildInitialFormState(detected));
+
+    // User-defined book languages (ui.custom_languages), merged with the
+    // 8 fixed defaults for the language combobox. Silent fallback to [].
+    const [customLanguages, setCustomLanguages] = useState<string[]>([]);
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const custom = Array.isArray(uiConfig.custom_languages)
+                    ? (uiConfig.custom_languages as string[]).filter(Boolean)
+                    : [];
+                setCustomLanguages(custom);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const assetGroups = groupAssetsByPurpose(detected.assets);
     const coverAssets = useMemo(
@@ -258,21 +282,36 @@ export function PreviewPanel({
                                     })
                                 }
                             />
-                            <input
-                                data-testid="preview-field-language"
-                                value={state.language.value}
-                                onChange={(e) =>
-                                    updateField("language", {
-                                        value: e.target.value,
-                                    })
-                                }
+                            <div
                                 style={{
-                                    ...inputStyle,
-                                    maxWidth: 80,
+                                    minWidth: 160,
                                     opacity: state.language.include ? 1 : 0.4,
                                 }}
-                                disabled={!state.language.include}
-                            />
+                            >
+                                <ComboboxSelect
+                                    options={buildBookLanguageOptions(
+                                        customLanguages,
+                                    )}
+                                    value={state.language.value}
+                                    onChange={(v) =>
+                                        updateField("language", { value: v })
+                                    }
+                                    allowCustom
+                                    onCustomAdd={(v) =>
+                                        setCustomLanguages((prev) =>
+                                            prev.some(
+                                                (c) =>
+                                                    c.toLowerCase() ===
+                                                    v.toLowerCase(),
+                                            )
+                                                ? prev
+                                                : [...prev, v],
+                                        )
+                                    }
+                                    disabled={!state.language.include}
+                                    testId="preview-field-language"
+                                />
+                            </div>
                             <span style={muteStyle}>
                                 {state.language.include
                                     ? ""

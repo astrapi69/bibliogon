@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Book, BookDetail } from "../api/client";
+import { getStorage } from "../storage";
 import { useStorageMode } from "../storage/useStorageMode";
+import { ComboboxSelect } from "../lib/components/ComboboxSelect";
+import { buildBookLanguageOptions } from "../lib/bookLanguages";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { Save, Copy, ChevronLeft, Sparkles, Rocket } from "lucide-react";
@@ -71,6 +74,27 @@ export default function BookMetadataEditor({
         bookTypesSnapshot.types[book.book_type] === undefined;
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [showKdpWizard, setShowKdpWizard] = useState(false);
+    // User-defined book languages from ui.custom_languages, merged with
+    // the 8 fixed defaults for the language combobox. Silent fallback to
+    // [] when the config has no custom languages.
+    const [customLanguages, setCustomLanguages] = useState<string[]>([]);
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .settings.getApp()
+            .then((config) => {
+                if (cancelled) return;
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const custom = Array.isArray(uiConfig.custom_languages)
+                    ? (uiConfig.custom_languages as string[]).filter(Boolean)
+                    : [];
+                setCustomLanguages(custom);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+    }, []);
     const { status: pluginStatus } = useEditorPluginStatus();
     const { mode } = useStorageMode();
     const offline = mode === "dexie";
@@ -304,12 +328,30 @@ export default function BookMetadataEditor({
                                 addToAuthorsDb={addAuthorToDb}
                                 onAddToAuthorsDbChange={setAddAuthorToDb}
                             />
-                            <Field
-                                label={t("ui.metadata.language", "Sprache")}
-                                value={form.language}
-                                onChange={(v) => set("language", v)}
-                                placeholder="de"
-                            />
+                            <div className="field" style={{ flex: 1 }}>
+                                <label className="label">
+                                    {t("ui.metadata.language", "Sprache")}
+                                </label>
+                                <ComboboxSelect
+                                    options={buildBookLanguageOptions(customLanguages)}
+                                    value={form.language || ""}
+                                    onChange={(v) => set("language", v)}
+                                    allowCustom
+                                    onCustomAdd={(v) =>
+                                        setCustomLanguages((prev) =>
+                                            prev.some(
+                                                (c) =>
+                                                    c.toLowerCase() ===
+                                                    v.toLowerCase(),
+                                            )
+                                                ? prev
+                                                : [...prev, v],
+                                        )
+                                    }
+                                    placeholder="de"
+                                    testId="book-metadata-language"
+                                />
+                            </div>
                         </Row>
                         <Field
                             label={t("ui.metadata.subtitle", "Untertitel")}

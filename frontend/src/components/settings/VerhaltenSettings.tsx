@@ -1,11 +1,16 @@
 import {useEffect, useRef, useState} from "react";
-import {Save} from "lucide-react";
+import {Save, X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {useBookTypes} from "../../hooks/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
+import {ComboboxSelect} from "../../lib/components/ComboboxSelect";
+import {
+    buildBookLanguageOptions,
+    isDefaultBookLanguage,
+} from "../../lib/bookLanguages";
 import {useFeature} from "@astrapi69/feature-strategy-react";
 import {FEATURES} from "../../features/featureConfig";
 import {HelpText} from "./HelpText";
@@ -41,6 +46,15 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const [defaultContentType, setDefaultContentType] = useState(
         (uiDefaults.content_type as string) || "blogpost",
     );
+    const [defaultBookLanguage, setDefaultBookLanguage] = useState(
+        (uiDefaults.book_language as string) || "de",
+    );
+    const [customLanguages, setCustomLanguages] = useState<string[]>(
+        Array.isArray(ui.custom_languages)
+            ? (ui.custom_languages as string[]).filter(Boolean)
+            : [],
+    );
+    const [newLanguage, setNewLanguage] = useState("");
     const [exportEngine, setExportEngine] = useState<ExportEngine>(
         asExportEngine(behavior.export_engine),
     );
@@ -73,12 +87,36 @@ export function VerhaltenSettings({config, onSave, saving}: {
         const b = (config.behavior || {}) as Record<string, unknown>;
         setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
         setExportEngine(asExportEngine(b.export_engine));
-        const d = (((config.ui || {}) as Record<string, unknown>).defaults ||
-            {}) as Record<string, unknown>;
+        const uiBranch = (config.ui || {}) as Record<string, unknown>;
+        const d = (uiBranch.defaults || {}) as Record<string, unknown>;
         setDefaultBookType((d.book_type as string) || "prose");
         setDefaultContentType((d.content_type as string) || "blogpost");
+        setDefaultBookLanguage((d.book_language as string) || "de");
+        setCustomLanguages(
+            Array.isArray(uiBranch.custom_languages)
+                ? (uiBranch.custom_languages as string[]).filter(Boolean)
+                : [],
+        );
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [config]);
+
+    const addCustomLanguage = (raw: string) => {
+        const trimmed = raw.trim();
+        if (trimmed.length < 2) return;
+        if (isDefaultBookLanguage(trimmed)) return;
+        userEdited.current = true;
+        setCustomLanguages((prev) =>
+            prev.some((c) => c.toLowerCase() === trimmed.toLowerCase())
+                ? prev
+                : [...prev, trimmed],
+        );
+        setNewLanguage("");
+    };
+
+    const removeCustomLanguage = (value: string) => {
+        userEdited.current = true;
+        setCustomLanguages((prev) => prev.filter((c) => c !== value));
+    };
 
     const buildSaveData = () => ({
         app: {
@@ -98,10 +136,12 @@ export function VerhaltenSettings({config, onSave, saving}: {
         // backend PATCH shallow-merges ui, so the full branch is sent.
         ui: {
             ...ui,
+            custom_languages: customLanguages,
             defaults: {
                 ...uiDefaults,
                 book_type: defaultBookType,
                 content_type: defaultContentType,
+                book_language: defaultBookLanguage,
             },
         },
     });
@@ -258,6 +298,90 @@ export function VerhaltenSettings({config, onSave, saving}: {
                                     label: t(ct.label_key, ct.id),
                                 }))}
                             />
+                        </div>
+                        <div className="field">
+                            <label className="label">
+                                {t(
+                                    "ui.settings.book_language",
+                                    "Standardsprache für neue Bücher",
+                                )}
+                            </label>
+                            <ComboboxSelect
+                                value={defaultBookLanguage}
+                                onChange={onEdit(setDefaultBookLanguage)}
+                                options={buildBookLanguageOptions(customLanguages)}
+                                allowCustom
+                                onCustomAdd={addCustomLanguage}
+                                testId="settings-book-language"
+                            />
+                        </div>
+                    </div>
+                    <div className="field" data-testid="settings-custom-languages">
+                        <label className="label">
+                            {t(
+                                "ui.settings.book_languages",
+                                "Eigene Sprachen für neue Bücher",
+                            )}
+                        </label>
+                        <HelpText>
+                            {t(
+                                "ui.settings.book_languages_hint",
+                                "Füge eigene Sprachen hinzu, die in der Sprachauswahl beim Erstellen und Bearbeiten von Büchern erscheinen. Die acht Standardsprachen sind fest.",
+                            )}
+                        </HelpText>
+                        {customLanguages.length > 0 && (
+                            <ul className="m-0 mb-2 flex list-none flex-wrap gap-2 p-0">
+                                {customLanguages.map((lng) => (
+                                    <li
+                                        key={lng}
+                                        className="inline-flex min-h-[44px] items-center gap-2 rounded-[var(--radius-sm)] border border-border bg-[var(--surface-2)] px-3 py-1 text-[color:var(--text-primary)]"
+                                    >
+                                        <span>{lng}</span>
+                                        <button
+                                            type="button"
+                                            className="btn btn-icon"
+                                            data-testid={`settings-custom-language-remove-${lng}`}
+                                            aria-label={t(
+                                                "ui.common.remove",
+                                                "Entfernen",
+                                            )}
+                                            onClick={() =>
+                                                removeCustomLanguage(lng)
+                                            }
+                                        >
+                                            <X size={14} />
+                                        </button>
+                                    </li>
+                                ))}
+                            </ul>
+                        )}
+                        <div className="flex items-center gap-2">
+                            <input
+                                className="input"
+                                type="text"
+                                value={newLanguage}
+                                placeholder={t(
+                                    "ui.settings.book_language_add_placeholder",
+                                    "z. B. Latein",
+                                )}
+                                data-testid="settings-custom-language-input"
+                                onChange={(e) => setNewLanguage(e.target.value)}
+                                onKeyDown={(e) => {
+                                    if (e.key === "Enter") {
+                                        e.preventDefault();
+                                        addCustomLanguage(newLanguage);
+                                    }
+                                }}
+                            />
+                            <button
+                                type="button"
+                                className="btn"
+                                disabled={newLanguage.trim().length < 2}
+                                data-testid="settings-custom-language-add"
+                                onClick={() => addCustomLanguage(newLanguage)}
+                            >
+                                {t("ui.common.add", "Hinzufügen")}
+                            </button>
                         </div>
                     </div>
                 </div>

@@ -781,7 +781,7 @@ describe("BookMetadataEditor — author + language fields", () => {
         expect(select.value).toBe("Pen One");
     });
 
-    it("renders language input with current code", () => {
+    it("renders the language combobox with the current language", () => {
         render(
             <BookMetadataEditor
                 book={
@@ -802,7 +802,11 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={onBack}
             />,
         );
-        expect(screen.getByDisplayValue("fr")).toBeInTheDocument();
+        // The combobox shows the endonym label for the stored code "fr".
+        const input = screen.getByTestId(
+            "book-metadata-language",
+        ) as HTMLInputElement;
+        expect(input.value).toBe("Français");
     });
 });
 
