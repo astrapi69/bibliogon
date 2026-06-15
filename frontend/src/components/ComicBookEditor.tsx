@@ -143,7 +143,7 @@ export default function ComicBookEditor({
         maxWidth: 1400,
       }}
     >
-      <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
+      <header className="flex flex-wrap items-center gap-3">
         <button
           className="btn btn-secondary btn-sm"
           data-testid="comic-book-editor-back"

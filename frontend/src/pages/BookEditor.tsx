@@ -95,6 +95,28 @@ export default function BookEditor() {
     // toggle only render when the plugin is mounted.
     const [storyBibleAvailable, setStoryBibleAvailable] = useState(false);
     const [storyBibleOpen, setStoryBibleOpen] = useState(false);
+    // Mobile mutual-exclusion (matches the picture-book / comic editors'
+    // useDualSidebarCollapse): below SIDEBAR_MOBILE_BREAKPOINT_PX (768px)
+    // opening one of the two overlay sidebars closes the other so the
+    // canvas keeps full width. No-op at/above the breakpoint where the
+    // panels sit side-by-side.
+    const openStoryBibleExclusive = useCallback(() => {
+        setStoryBibleOpen(true);
+        if (typeof window !== "undefined" && window.innerWidth < SIDEBAR_MOBILE_BREAKPOINT_PX) {
+            setSidebarOpen(false);
+        }
+    }, [setSidebarOpen]);
+    const toggleSidebarExclusive = useCallback(() => {
+        const willOpen = !sidebarOpen;
+        toggleSidebar();
+        if (
+            willOpen &&
+            typeof window !== "undefined" &&
+            window.innerWidth < SIDEBAR_MOBILE_BREAKPOINT_PX
+        ) {
+            setStoryBibleOpen(false);
+        }
+    }, [sidebarOpen, toggleSidebar]);
     // The Story Bible entry whose detail/edit view occupies the main
     // content area (C5). refreshKey re-fetches the sidebar list after
     // editor-driven changes.
@@ -700,7 +722,7 @@ export default function BookEditor() {
             {!sidebarOpen && (
                 <SidebarToggleButton
                     open={false}
-                    onToggle={toggleSidebar}
+                    onToggle={toggleSidebarExclusive}
                     testId="book-editor-sidebar-toggle"
                     className="fixed left-3 top-3 z-[100] bg-card shadow-[var(--shadow-md)]"
                 />
@@ -745,7 +767,7 @@ export default function BookEditor() {
                         setSelectedStoryEntityId(null);
                         _setShowMetadata(true);
                     }}
-                    onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
+                    onStoryBible={storyBibleAvailable ? openStoryBibleExclusive : undefined}
                     storyBibleActive={storyBibleOpen}
                     onShowStoryboard={() => {
                         setSelectedStoryEntityId(null);
@@ -896,7 +918,7 @@ export default function BookEditor() {
                             storyBibleAvailable
                                 ? (entityId) => {
                                       setSelectedStoryEntityId(entityId);
-                                      setStoryBibleOpen(true);
+                                      openStoryBibleExclusive();
                                   }
                                 : undefined
                         }
