@@ -53,7 +53,7 @@ Diese drei sind der offene Backend-Split-Backlog.
 
 > Der Rest dieses Dokuments ist die urspruengliche read-only-Analyse vom
 > 2026-06-14 und beschreibt den Zustand VOR dem Burn-down (Spalte "Zeilen"
-> = Vorher-Stand). Die obige Tabelle ist die maßgebliche Nachher-Sicht.
+> = Vorher-Stand). Die obige Tabelle ist die massgebliche Nachher-Sicht.
 
 ## Gate-status context
 

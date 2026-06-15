@@ -17,37 +17,37 @@ benannten "Gott-Komponenten" und ein Teil der Struktur-Duplikation wurden
 seither abgearbeitet (Frontend-PRs #204–#229, Backend-Service-Sweep
 #166–#200). Verifizierter Stand:
 
-- **God-Files:** `.filesize-baseline` von 16 auf **5** Eintraege reduziert.
+- **God-Files:** `.filesize-baseline` von 16 auf **5** Einträge reduziert.
   Frontend bleibt: `Editor.tsx` (1837) + `storage/dexie-storage.ts` (2214,
   re-grandfathered nach #210). Backend/Plugins bleibt: drei Plugin-PDF-Files
   (`picture_book_pdf.py` 1887, `routes.py` 1619, `comic_book_pdf.py` 1262).
-  Der Backend-`app/`-ERROR-Blocker `main.py` (1046 → 442) ist aufgeloest;
+  Der Backend-`app/`-ERROR-Blocker `main.py` (1046 → 442) ist aufgelöst;
   `client.ts` (5195 → 13, Barrel) ebenfalls. Details:
   [`backend-god-files-audit-2026-06-14.md`](backend-god-files-audit-2026-06-14.md),
   [`frontend-god-files-audit-2026-06-14.md`](frontend-god-files-audit-2026-06-14.md).
 - **Read-Modify-Write-Schutz:** alle RMW-Methoden der Storage-Seam laufen jetzt
   durch eine generische per-`(table, id)`-`serializedUpdate`-Write-Queue
   (schliesst den Settings-Clobber-Datenverlustpfad).
-- **CI-Watcher (3 live):** Cohesion (`cohesion-check.yml`, Dateigroesse),
+- **CI-Watcher (3 live):** Cohesion (`cohesion-check.yml`, Dateigrösse),
   Complexity (`complexity-check.yml`, radon/ruff-C901/ESLint, warn-only),
   Security (`ci.yml` blocking + `security-scan.yml` weekly warn-only).
 - **Policy + Architektur im Repo:** `docs/VIBE-CODING-POLICY.md` +
   `docs/MODULE-ARCHITECTURE.md`.
 - **Wiederverwendbare Extraktionen:** `lib/components/SortableList.tsx`,
   `lib/utils/{chapterGroups,markdownToHtml,pageLayoutStyles,pageTextContent}.ts`,
-  `shared/utils/downloadBlob.ts` (loest die P1-Bulk-Delete-Duplikation,
+  `shared/utils/downloadBlob.ts` (löst die P1-Bulk-Delete-Duplikation,
   Zeile 48 unten).
 
 **Qualitative Neubewertung:** die in der Zusammenfassung beschriebene Lage
 ("Grundlagen sehr sauber, Probleme in der Struktur grosser Einheiten") ist im
-Struktur-Teil deutlich entschaerft — die grossen Einheiten sind bis auf 5
-Rest-Eintraege gesplittet, und die strukturellen Schwaechen sind jetzt durch
-Watcher gegen Rueckfall abgesichert (Sichtbarkeit-vor-Haerten). Offen bleiben:
+Struktur-Teil deutlich entschärft — die grossen Einheiten sind bis auf 5
+Rest-Einträge gesplittet, und die strukturellen Schwächen sind jetzt durch
+Watcher gegen Rückfall abgesichert (Sichtbarkeit-vor-Härten). Offen bleiben:
 die 5 Baseline-God-Files, die WARN-Zone (501–1000) als Folge-Backlog, und die
-Backend-Funktions-Laenge/Parameter-Explosion (P1, Zeile 45 unten), die der
+Backend-Funktions-Länge/Parameter-Explosion (P1, Zeile 45 unten), die der
 Complexity-Watcher jetzt sichtbar macht.
 
-> Der Rest des Dokuments ist die unveraenderte 2026-06-10-Analyse (Vorher-Stand;
+> Der Rest des Dokuments ist die unveränderte 2026-06-10-Analyse (Vorher-Stand;
 > Zeilenzahlen in "Metriken" sind die Werte von damals).
 
 ## Zusammenfassung
