@@ -1209,6 +1209,7 @@ ui:
     create_error: "Makale olusturulamadi."
     empty_heading: "Henuz makale yok"
     empty_subtitle: "Kitaplardan ayri olarak uzun yazilar yazmak icin ilk makaleni olustur."
+    filters: "Filtreler"
     filter_all: "Tumu"
     filter_draft: "Taslak"
     filter_published: "Yayinlandi"

@@ -1249,6 +1249,7 @@
       "create_error": "No se pudo crear el articulo.",
       "empty_heading": "Aun no hay articulos",
       "empty_subtitle": "Crea tu primer articulo para escribir publicaciones extensas separadas de los libros.",
+      "filters": "Filtros",
       "filter_all": "Todos",
       "filter_draft": "Borrador",
       "filter_published": "Publicado",

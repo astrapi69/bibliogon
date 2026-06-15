@@ -383,16 +383,6 @@
     position: relative;
 }
 
-.tileCheckbox {
-    position: absolute;
-    top: 8px;
-    left: 8px;
-    z-index: 5;
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
 .tileSelected > :global(.card),
 .tileSelected > :global([class*="card"]) {
     outline: 2px solid var(--accent);

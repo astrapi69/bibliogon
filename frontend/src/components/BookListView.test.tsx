@@ -109,13 +109,7 @@ describe("Bug 2: BookListView selection checkboxes", () => {
     });
 
     it("renders no checkbox when selection props are omitted", () => {
-        render(
-            <BookListView
-                books={BOOKS}
-                onClick={vi.fn()}
-                onDelete={vi.fn()}
-            />,
-        );
+        render(<BookListView books={BOOKS} onClick={vi.fn()} onDelete={vi.fn()} />);
         expect(screen.queryByTestId("book-bulk-check-b1")).toBeNull();
         expect(screen.queryByTestId("book-bulk-check-b2")).toBeNull();
     });
@@ -135,5 +129,21 @@ describe("Bug 2: BookListView selection checkboxes", () => {
         fireEvent.click(screen.getByTestId("book-bulk-check-b1"));
         expect(onToggle).toHaveBeenCalledTimes(1);
         expect(onRowClick).not.toHaveBeenCalled();
+    });
+
+    it("wraps the checkbox in a label carrying the coarse 44px tap-area (issue #273)", () => {
+        render(
+            <BookListView
+                books={BOOKS}
+                onClick={vi.fn()}
+                onDelete={vi.fn()}
+                isSelected={() => false}
+                onToggleSelect={vi.fn()}
+            />,
+        );
+        const label = screen.getByTestId("book-bulk-check-b1").closest("label");
+        expect(label).not.toBeNull();
+        expect(label?.className).toContain("pointer-coarse:min-h-[44px]");
+        expect(label?.className).toContain("pointer-coarse:min-w-[44px]");
     });
 });

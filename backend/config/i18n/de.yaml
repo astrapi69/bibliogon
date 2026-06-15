@@ -1172,6 +1172,7 @@ ui:
     create_error: "Konnte Artikel nicht erstellen."
     empty_heading: "Noch keine Artikel"
     empty_subtitle: "Erstelle deinen ersten Artikel, um lange Beiträge separat von Büchern zu verfassen."
+    filters: "Filter"
     filter_all: "Alle"
     filter_draft: "Entwurf"
     filter_published: "Veröffentlicht"

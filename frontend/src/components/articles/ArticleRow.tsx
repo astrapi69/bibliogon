@@ -71,14 +71,19 @@ export default function ArticleRow({
         >
             {onToggleSelect ? (
                 <div className={layout.gridCellCheckbox}>
-                    <input
-                        type="checkbox"
-                        data-testid={`article-bulk-check-${article.id}`}
-                        checked={!!isSelected}
-                        onChange={onToggleSelect}
+                    <label
+                        className="flex items-center justify-center pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
                         onClick={(e) => e.stopPropagation()}
-                        aria-label="Select article"
-                    />
+                    >
+                        <input
+                            type="checkbox"
+                            data-testid={`article-bulk-check-${article.id}`}
+                            checked={!!isSelected}
+                            onChange={onToggleSelect}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Select article"
+                        />
+                    </label>
                 </div>
             ) : null}
             <div className={layout.gridCellCover}>

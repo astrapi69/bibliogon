@@ -63,6 +63,9 @@ import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
+import ArticleFilterSheet from "../components/articles/ArticleFilterSheet";
+import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
+import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import ArticleRow from "../components/articles/ArticleRow";
 import ArticleListEmptyState from "../components/articles/ArticleListEmptyState";
 import ArticleTrashPanel from "../components/articles/ArticleTrashPanel";
@@ -767,7 +770,13 @@ export default function ArticleList() {
                     />
                 ) : null}
 
-                {!showTrash ? <ArticleFilterBar filters={filters} /> : null}
+                {!showTrash ? (
+                    <ResponsiveFilterControls
+                        triggerLabel={t("ui.articles.filters", "Filter")}
+                        bar={<ArticleFilterBar filters={filters} />}
+                        sheet={<ArticleFilterSheet filters={filters} />}
+                    />
+                ) : null}
                 {!showTrash && selection.count > 0 ? (
                     <ArticleBulkActionBar
                         count={selection.count}
@@ -840,17 +849,11 @@ export default function ArticleList() {
                                                 key={a.id}
                                                 className={`${layout.tileWrapper}${selection.isSelected(a.id) ? ` ${layout.tileSelected}` : ""}`}
                                             >
-                                                <input
-                                                    type="checkbox"
-                                                    className={layout.tileCheckbox}
-                                                    data-testid={`article-bulk-check-${a.id}`}
+                                                <TileSelectCheckbox
                                                     checked={selection.isSelected(a.id)}
-                                                    onChange={() => selection.toggle(a.id)}
-                                                    onClick={(e) => e.stopPropagation()}
-                                                    aria-label={t(
-                                                        "ui.articles.bulk.select_all",
-                                                        "Select",
-                                                    )}
+                                                    onToggle={() => selection.toggle(a.id)}
+                                                    testId={`article-bulk-check-${a.id}`}
+                                                    ariaLabel="Select article"
                                                 />
                                                 <ArticleCard
                                                     article={a}
