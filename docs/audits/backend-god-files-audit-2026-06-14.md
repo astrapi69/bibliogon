@@ -8,6 +8,53 @@ WARN > 500 lines, ERROR (merge-block) > 1000 lines.
 The `backend/mutants/` tree (mutmut-generated) is excluded throughout — it
 is not real source.
 
+## Status update (2026-06-15, post-burn-down)
+
+The 16-item priorisierte Split-Reihenfolge below has been worked through (PRs
+#166–#200, backend service-extraction sweep). Every entry received an
+extraction commit; line counts verified with `wc -l`.
+
+| # | Datei | vorher | nachher | Stand |
+|---|-------|-------:|--------:|-------|
+| 1 | `services/backup/project_import.py` | 613 | 154 | ERLEDIGT (unter WARN) |
+| 2 | `routers/settings.py` | 611 | 534 | TEIL (Services raus; noch WARN) |
+| 3 | `routers/chapters.py` | 563 | 409 | ERLEDIGT (unter WARN) |
+| 4 | `routers/import_orchestrator.py` | 629 | 524 | TEIL (Staging raus; noch WARN) |
+| 5 | `routers/ai_template_bulk_fill.py` | 824 | 439 | ERLEDIGT (unter WARN) |
+| 6 | `routers/books.py` | 750 | 712 | TEIL (`book_config` raus; noch WARN) |
+| 7 | `routers/articles.py` | 579 | 539 | TEIL (noch WARN) |
+| 8 | `services/backup/backup_import.py` | 487 | 487 | unveraendert (war schon < 500) |
+| 9 | `services/git_sync_diff.py` | 714 | 642 | TEIL (Helper raus; noch WARN) |
+| 10 | `services/git_backup.py` | 909 | 724 | TEIL (`git_book_serializer` raus; noch WARN) |
+| 11 | `import_plugins/handlers/bgb.py` | 555 | 448 | ERLEDIGT (unter WARN) |
+| 12 | `ai/template_schema.py` | 801 | 77 | ERLEDIGT (Facade, grosser Split) |
+| 13 | `ai/routes.py` | 614 | 548 | TEIL (`ai/config` + `llm_factory` raus; noch WARN) |
+| 14 | `import_plugins/handlers/wbt.py` | 667 | 506 | TEIL (Preview/Cache raus; noch WARN) |
+| 15 | `routers/audiobook.py` | 862 | 515 | TEIL (Credentials/Synthese raus; noch WARN) |
+| 16 | `app/main.py` | 1046 | 442 | ERLEDIGT (ERROR-Blocker aufgeloest) |
+
+**Ergebnis:** der einzige ERROR-Zonen-Blocker (`main.py`, 1046) ist
+aufgeloest. Es bleiben **0 Dateien > 1000 Zeilen unter `backend/app/`**.
+6 Dateien sind unter die WARN-Schwelle (500) gefallen, 9 wurden reduziert
+bleiben aber WARN (501–724), 1 war bereits sauber.
+
+**Verbleibende WARN-Zone (501–724, Folge-Splits, kein Merge-Blocker):**
+`books.py` (712), `git_backup.py` (724), `git_sync_diff.py` (642),
+`ai/routes.py` (548), `articles.py` (539), `settings.py` (534),
+`import_orchestrator.py` (524), `audiobook.py` (515), `wbt.py` (506).
+
+**Einzige verbleibende Backend/Plugin-ERROR-Zone (> 1000, in
+`.filesize-baseline`):** drei Plugin-PDF-God-Files, NICHT Teil dieser
+`backend/app/`-Liste —
+`plugins/bibliogon-plugin-export/bibliogon_export/picture_book_pdf.py` (1887),
+`plugins/bibliogon-plugin-export/bibliogon_export/routes.py` (1619),
+`plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py` (1262).
+Diese drei sind der offene Backend-Split-Backlog.
+
+> Der Rest dieses Dokuments ist die urspruengliche read-only-Analyse vom
+> 2026-06-14 und beschreibt den Zustand VOR dem Burn-down (Spalte "Zeilen"
+> = Vorher-Stand). Die obige Tabelle ist die massgebliche Nachher-Sicht.
+
 ## Gate-status context
 
 - **Whitelisted (legitimate, single-concern, NOT God-files):**
