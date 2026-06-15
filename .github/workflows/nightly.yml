@@ -11,6 +11,7 @@ name: Nightly
 #   - ci.yml          -> plugin-tests (10-plugin matrix)
 #   - coverage.yml    -> backend / plugin / frontend coverage (deleted)
 #   - complexity-check.yml -> python / typescript complexity (deleted)
+#   - cohesion-check.yml -> file-size-check (deleted)
 #
 # Security scanning is NOT here: it runs weekly in security-scan.yml.
 
@@ -240,3 +241,14 @@ jobs:
           # carrying inline disables. Counts + rationale:
           # docs/audits/clean-code-audit.md.
           npx eslint --rule 'complexity: ["warn", 15]' src/ || true
+
+  file-size-check:
+    name: Cohesion file-size check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Check file sizes
+        run: |
+          chmod +x scripts/check-file-sizes.sh
+          scripts/check-file-sizes.sh
