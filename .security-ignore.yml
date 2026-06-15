@@ -1,0 +1,26 @@
+# Accepted / deferred security advisories - single source of truth.
+#
+# Consumed by:
+#   - .github/workflows/security-scan.yml (weekly blocking watcher, Phase 2)
+#   - `make check-security`
+# via scripts/security_ignore_args.py, which turns each entry below into a
+# `--ignore-vuln <id>` argument for pip-audit.
+#
+# Rules for every entry:
+#   - `id`        the advisory / CVE identifier passed to pip-audit.
+#   - `package`   the affected dependency (documentation only).
+#   - `reason`    why the advisory is accepted / deferred. Be specific.
+#   - `tracking`  the GitHub issue tracking the eventual fix.
+#   - `review_by` the date by which the deferral must be re-evaluated.
+#
+# Nothing is ignored silently: a removed entry makes the advisory block the
+# watcher again. Review the whole list at least quarterly.
+ignored:
+  - id: CVE-2025-68616
+    package: weasyprint
+    reason: >
+      weasyprint 66 -> 68 is a render-risky major bump (PDF layout
+      regressions across the export pipeline). The advisory is deferred
+      until the export output is re-validated against the new major.
+    tracking: "#47"
+    review_by: "2026-09-01"
