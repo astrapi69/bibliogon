@@ -1,8 +1,18 @@
-"""FastAPI routes for the export plugin."""
+"""FastAPI routes for the export plugin.
+
+Thin router layer: the route handlers validate input and delegate to the
+focused modules split out of the former 1619-line god-file -
+:mod:`.deps` (DI), :mod:`.loaders` (DB reads), :mod:`.serializers`,
+:mod:`.pdf_export` (WeasyPrint dispatch), :mod:`.export_helpers`
+(config/filename/scaffold/document render), and :mod:`.audiobook_job`
+(async TTS worker). ``configure`` is re-exported here because
+``ExportPlugin`` imports it from this module.
+"""
+
+from __future__ import annotations
 
 import json
 import logging
-import re
 import shutil
 import tempfile
 from pathlib import Path
@@ -12,786 +22,36 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
+from .audiobook_job import _run_audiobook_job
+from .deps import configure as configure
+from .export_helpers import (
+    EXT_MAP,
+    MEDIA_TYPES,
+    _build_filename,
+    _detect_manual_toc,
+    _export_document,
+    _export_project,
+    _find_cover,
+    _load_export_config,
+    _missing_images_http_exception,
+    _scaffold_and_prepare,
+)
+from .loaders import (
+    _load_book,
+    _load_book_overwrite_flag,
+    _load_comic_book_data,
+    _load_picture_book_pages,
+)
 from .pandoc_runner import MissingImagesError, PandocError, run_pandoc
+from .pdf_export import _export_comic_book_pdf, _export_picture_book_pdf
 from .scaffolder import scaffold_project
-
-
-def _missing_images_http_exception(error: MissingImagesError) -> HTTPException:
-    """Wrap MissingImagesError in a structured 422 the frontend can render.
-
-    The detail dict carries the i18n key plus the raw list of unresolved
-    paths so the toast can show specific filenames, not a generic message.
-    """
-    return HTTPException(
-        status_code=422,
-        detail={
-            "code": "missing_images",
-            "i18n_key": "export.errors.missing_images",
-            "unresolved": error.unresolved,
-            "message": str(error),
-        },
-    )
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/books/{book_id}/export", tags=["export"])
 
-_get_db = None
-_book_model = None
-
 SUPPORTED_FORMATS = {"epub", "pdf", "docx", "html", "markdown", "project", "audiobook"}
 BATCH_FORMATS = ["epub", "pdf", "docx"]
-
-MEDIA_TYPES = {
-    "epub": "application/epub+zip",
-    "pdf": "application/pdf",
-    "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    "html": "text/html",
-    "markdown": "text/markdown",
-}
-
-EXT_MAP = {"epub": ".epub", "pdf": ".pdf", "docx": ".docx", "html": ".html", "markdown": ".md"}
-
-
-def configure(get_db_dep: Any, book_model: Any) -> None:
-    """Configure route dependencies. Called by ExportPlugin.activate()."""
-    global _get_db, _book_model
-    _get_db = get_db_dep
-    _book_model = book_model
-
-
-# --- Shared helpers (each under 40 lines, individually testable) ---
-
-
-def _require_db() -> Any:
-    """Get a DB session via the configured dependency, or raise."""
-    if _get_db is None:
-        raise HTTPException(status_code=500, detail="Export plugin not configured")
-    db_gen = _get_db()
-    return db_gen, next(db_gen)
-
-
-def _close_db(db_gen: Any) -> None:
-    """Close a DB session generator."""
-    try:
-        next(db_gen)
-    except StopIteration:
-        pass
-
-
-def _load_book(book_id: str) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Load book, chapters, and assets from DB."""
-    db_gen, db = _require_db()
-    try:
-        return _query_book_data(book_id, db)
-    finally:
-        _close_db(db_gen)
-
-
-def _load_picture_book_pages(book_id: str) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Load picture-book data for the WeasyPrint generator.
-
-    Returns ``(book_data, pages, assets)`` mirroring ``_load_book``'s
-    shape but with pages (position-ordered) instead of chapters AND
-    asset entries that include ``id`` (so the generator can match
-    ``Page.image_asset_id`` to the asset list). The existing
-    ``_load_book`` does NOT include ``id`` in its asset serialization
-    because the chapter-based pipeline references assets by filename;
-    keeping the two loaders separate avoids touching the prose path.
-
-    Raises HTTPException 404 if the book does not exist, or 400 if
-    the book's content discriminator is not ``picture_book`` (i.e.
-    the dispatch above wrongly routed a prose book here).
-    """
-    from app.models import Asset, Page
-
-    db_gen, db = _require_db()
-    try:
-        if _book_model is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Export plugin not properly configured",
-            )
-        Book = _book_model
-        book = db.query(Book).filter(Book.id == book_id).first()
-        if not book:
-            raise HTTPException(status_code=404, detail="Book not found")
-        content_type = getattr(book, "book_type", "prose")
-        if content_type != "picture_book":
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Book {book_id} is not a picture book "
-                    f"(book_type={content_type!r})"
-                ),
-            )
-        book_data = _serialize_book(book)
-        pages = (
-            db.query(Page)
-            .filter(Page.book_id == book_id)
-            .order_by(Page.position.asc())
-            .all()
-        )
-        pages_data = [_serialize_page(p) for p in pages]
-        assets_data = [
-            {
-                "id": a.id,
-                "filename": a.filename,
-                "asset_type": a.asset_type,
-                "path": a.path,
-            }
-            for a in db.query(Asset).filter(Asset.book_id == book_id).all()
-        ]
-        return book_data, pages_data, assets_data
-    finally:
-        _close_db(db_gen)
-
-
-def _load_comic_book_data(
-    book_id: str,
-) -> tuple[
-    dict[str, Any],
-    list[dict[str, Any]],
-    list[dict[str, Any]],
-    list[dict[str, Any]],
-    list[dict[str, Any]],
-]:
-    """Load comic-book data for the comic-book PDF walker.
-
-    Comic-book Session 1 sharing decision: comic pages live in the
-    existing ``pages`` table (Book.book_type discriminator). Session
-    2 adds ``comic_panels`` (page_id FK) + ``comic_bubbles``
-    (panel_id FK) plugin-owned tables.
-
-    Returns ``(book_data, pages, panels, bubbles, assets)``. All four
-    list shapes match their respective ``XxxOut`` Pydantic schemas
-    so the comic_book_pdf walker can consume them directly without
-    additional ORM coupling.
-
-    Raises HTTPException 404 if the book does not exist, or 400 if
-    the book is not a comic_book.
-    """
-    from app.models import Asset, ComicBubble, ComicPanel, Page
-
-    db_gen, db = _require_db()
-    try:
-        if _book_model is None:
-            raise HTTPException(
-                status_code=500,
-                detail="Export plugin not properly configured",
-            )
-        Book = _book_model
-        book = db.query(Book).filter(Book.id == book_id).first()
-        if not book:
-            raise HTTPException(status_code=404, detail="Book not found")
-        content_type = getattr(book, "book_type", "prose")
-        if content_type != "comic_book":
-            raise HTTPException(
-                status_code=400,
-                detail=(
-                    f"Book {book_id} is not a comic book "
-                    f"(book_type={content_type!r})"
-                ),
-            )
-        book_data = _serialize_book(book)
-        pages = (
-            db.query(Page)
-            .filter(Page.book_id == book_id)
-            .order_by(Page.position.asc())
-            .all()
-        )
-        pages_data = [_serialize_page(p) for p in pages]
-        page_ids = [p.id for p in pages]
-        if page_ids:
-            panels = (
-                db.query(ComicPanel)
-                .filter(ComicPanel.page_id.in_(page_ids))
-                .order_by(ComicPanel.position.asc())
-                .all()
-            )
-        else:
-            panels = []
-        panel_ids = [p.id for p in panels]
-        if panel_ids:
-            bubbles = (
-                db.query(ComicBubble)
-                .filter(ComicBubble.panel_id.in_(panel_ids))
-                .order_by(ComicBubble.position.asc())
-                .all()
-            )
-        else:
-            bubbles = []
-        panels_data = [_serialize_comic_panel(p) for p in panels]
-        bubbles_data = [_serialize_comic_bubble(b) for b in bubbles]
-        assets_data = [
-            {
-                "id": a.id,
-                "filename": a.filename,
-                "asset_type": a.asset_type,
-                "path": a.path,
-            }
-            for a in db.query(Asset).filter(Asset.book_id == book_id).all()
-        ]
-        return book_data, pages_data, panels_data, bubbles_data, assets_data
-    finally:
-        _close_db(db_gen)
-
-
-def _serialize_comic_panel(panel: Any) -> dict[str, Any]:
-    """Serialize a ComicPanel ORM row to a dict matching the
-    ``ComicPanelOut`` schema. JSON-as-Text columns (``bounds`` +
-    ``panel_config``) decoded on read; malformed JSON degrades to
-    an empty dict (defensive against future hand-edited rows).
-    """
-    raw_bounds = getattr(panel, "bounds", None) or ""
-    try:
-        bounds = json.loads(raw_bounds) if raw_bounds else {}
-    except (json.JSONDecodeError, TypeError):
-        bounds = {}
-    raw_config = getattr(panel, "panel_config", None)
-    panel_config: dict[str, Any] | None
-    if raw_config:
-        try:
-            panel_config = json.loads(raw_config)
-        except (json.JSONDecodeError, TypeError):
-            panel_config = {}
-    else:
-        panel_config = None
-    return {
-        "id": panel.id,
-        "page_id": panel.page_id,
-        "position": panel.position,
-        "image_asset_id": panel.image_asset_id,
-        "bounds": bounds if isinstance(bounds, dict) else {},
-        "panel_config": panel_config,
-    }
-
-
-def _serialize_comic_bubble(bubble: Any) -> dict[str, Any]:
-    """Serialize a ComicBubble ORM row to a dict matching the
-    ``ComicBubbleOut`` schema. Tail fields are sibling columns
-    (NOT inside bubble_config); ``anchor`` + ``bubble_config`` are
-    JSON-as-Text, decoded on read.
-    """
-    raw_anchor = getattr(bubble, "anchor", None) or ""
-    try:
-        anchor = json.loads(raw_anchor) if raw_anchor else {}
-    except (json.JSONDecodeError, TypeError):
-        anchor = {}
-    raw_config = getattr(bubble, "bubble_config", None)
-    bubble_config: dict[str, Any] | None
-    if raw_config:
-        try:
-            bubble_config = json.loads(raw_config)
-        except (json.JSONDecodeError, TypeError):
-            bubble_config = {}
-    else:
-        bubble_config = None
-    return {
-        "id": bubble.id,
-        "panel_id": bubble.panel_id,
-        "position": bubble.position,
-        "bubble_type": bubble.bubble_type,
-        "anchor": anchor if isinstance(anchor, dict) else {},
-        "width_pct": bubble.width_pct,
-        "height_pct": bubble.height_pct,
-        "tail_direction": bubble.tail_direction,
-        "tail_position_pct": bubble.tail_position_pct,
-        "tail_length_px": bubble.tail_length_px,
-        "bubble_config": bubble_config,
-        "text_content": bubble.text_content,
-    }
-
-
-def _serialize_page(page: Any) -> dict[str, Any]:
-    """Serialize a Page ORM object to the PageOut-shaped dict the
-    WeasyPrint generator consumes.
-
-    Decodes ``layout_config`` from its JSON-encoded Text-column form
-    to a parsed dict before returning. The generator at
-    ``picture_book_pdf.generate_picture_book_pdf`` expects the
-    parsed shape (anchor_position / opacity / image_position / etc.
-    as keys, not as a JSON string). Malformed JSON degrades to an
-    empty dict — defensive against legacy rows from the
-    speech_bubble_config -> layout_config rename in Session 4c.
-    """
-    raw_config = getattr(page, "layout_config", None)
-    layout_config: dict[str, Any] | None
-    if raw_config:
-        try:
-            layout_config = json.loads(raw_config)
-        except (json.JSONDecodeError, TypeError):
-            layout_config = {}
-    else:
-        layout_config = None
-    return {
-        "id": page.id,
-        "book_id": page.book_id,
-        "position": page.position,
-        "layout": page.layout,
-        "text_content": page.text_content,
-        "image_asset_id": page.image_asset_id,
-        "layout_config": layout_config,
-    }
-
-
-def _export_comic_book_pdf(
-    book_data: dict[str, Any],
-    pages: list[dict[str, Any]],
-    panels: list[dict[str, Any]],
-    bubbles: list[dict[str, Any]],
-    assets: list[dict[str, Any]],
-    picture_book_format: str | None = None,
-    picture_book_bleed_marks: bool = False,
-) -> FileResponse:
-    """Render a comic book to PDF and return a ``FileResponse``.
-
-    Dispatches via the ``export_execute`` plugin hook
-    (HOOKSPEC-EXPORT-EXECUTE-WIRE-01 γ, 2026-05-23). plugin-comics
-    registers an ``@hookimpl`` for ``book_type == "comic_book"``
-    + ``fmt == "pdf"``; plugin-export only composes the filename,
-    resolves paths, and wraps the resulting Path in a FileResponse.
-    The hook dispatch replaces the prior lazy ``from
-    bibliogon_comics.comic_book_pdf import ...`` reverse-import.
-
-    Filename suffix policy: same as picture-book per Q4 a (reuse
-    picture-book formats + bleed flag). ``<slug>.pdf`` for default
-    format + no bleed; ``-<format>`` + ``-bleed`` suffixes
-    composed in the same order (format-first-then-bleed).
-
-    Caller MUST have verified ``book_data["book_type"] ==
-    "comic_book"`` and ``fmt == "pdf"`` before calling.
-    """
-    from app.main import manager
-    from app.paths import get_upload_dir
-
-    from bibliogon_export.picture_book_pdf import (
-        DEFAULT_PICTURE_BOOK_FORMAT,
-        _resolve_picture_book_format,
-    )
-
-    title = (book_data.get("title") or "comic-book").strip()
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "comic-book"
-
-    canonical_format, _w, _h = _resolve_picture_book_format(
-        picture_book_format,
-    )
-    parts = [slug]
-    if canonical_format != DEFAULT_PICTURE_BOOK_FORMAT:
-        parts.append(canonical_format)
-    if picture_book_bleed_marks:
-        parts.append("bleed")
-    filename = "-".join(parts) + ".pdf"
-
-    upload_dir = get_upload_dir() / book_data["id"]
-    tmp_dir = Path(tempfile.mkdtemp(prefix="comic_book_pdf_"))
-    output_path = tmp_dir / filename
-
-    try:
-        result_path = manager.call_hook(
-            "export_execute",
-            firstresult=True,
-            book=book_data,
-            fmt="pdf",
-            options={
-                "pages": pages,
-                "panels": panels,
-                "bubbles": bubbles,
-                "assets": assets,
-                "upload_dir": upload_dir,
-                "output_path": output_path,
-                "picture_book_format": canonical_format,
-                "picture_book_bleed_marks": picture_book_bleed_marks,
-            },
-        )
-    except ImportError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "WeasyPrint is not installed in the export plugin's "
-                f"environment: {e}"
-            ),
-        ) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Comic-book PDF generation failed: {e}",
-        ) from e
-
-    if result_path is None:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "No plugin handled comic-book PDF export. "
-                "Is plugin-comics installed and active?"
-            ),
-        )
-
-    return FileResponse(
-        path=str(result_path),
-        filename=filename,
-        media_type="application/pdf",
-    )
-
-
-def _export_picture_book_pdf(
-    book_data: dict[str, Any],
-    pages: list[dict[str, Any]],
-    assets: list[dict[str, Any]],
-    picture_book_format: str | None = None,
-    picture_book_bleed_marks: bool = False,
-) -> FileResponse:
-    """Render a picture-book to PDF via the WeasyPrint generator
-    and return a ``FileResponse``.
-
-    Resolves ``upload_dir`` from ``app.paths.get_upload_dir()`` per
-    the filesystem-isolation rule (NEVER use CWD-relative paths) +
-    appends the book id to scope assets to the right directory.
-    Creates a process-scoped temp dir for the output PDF; the
-    FileResponse caller owns deletion semantics.
-
-    Filename suffix policy:
-    - PDF-KDP-FORMATS-01 Q7: the default ``8.5x8.5`` keeps the
-      back-compat filename ``<slug>.pdf``; non-default formats
-      append the format id as a suffix (``<slug>-<format>.pdf``).
-    - PDF-BLEED-MARKS-01 Q4: when ``bleed=true``, append ``-bleed``
-      AFTER the format suffix. Combinations:
-        default + bleed=false    -> ``<slug>.pdf``
-        default + bleed=true     -> ``<slug>-bleed.pdf``
-        non-default + bleed=false -> ``<slug>-<format>.pdf``
-        non-default + bleed=true -> ``<slug>-<format>-bleed.pdf``
-      Format first, bleed flag second — nominal grouping in
-      directory listings.
-
-    Caller MUST have verified ``book_data["book_type"] ==
-    "picture_book"`` and ``fmt == "pdf"`` before calling.
-    """
-    from app.paths import get_upload_dir
-
-    from .picture_book_pdf import (
-        DEFAULT_PICTURE_BOOK_FORMAT,
-        _resolve_picture_book_format,
-        generate_picture_book_pdf,
-    )
-
-    title = (book_data.get("title") or "picture-book").strip()
-    # Lightweight slugifier — picture-book filenames don't need
-    # manuscripta's print-edition suffix (book_type query param)
-    # because the print-edition concept doesn't apply here. Same
-    # ASCII-fold + hyphen-collapse pattern manuscripta uses.
-    slug = re.sub(r"[^a-zA-Z0-9]+", "-", title.lower()).strip("-") or "picture-book"
-
-    canonical_format, _w, _h = _resolve_picture_book_format(
-        picture_book_format,
-    )
-    parts = [slug]
-    if canonical_format != DEFAULT_PICTURE_BOOK_FORMAT:
-        parts.append(canonical_format)
-    if picture_book_bleed_marks:
-        parts.append("bleed")
-    filename = "-".join(parts) + ".pdf"
-
-    upload_dir = get_upload_dir() / book_data["id"]
-    tmp_dir = Path(tempfile.mkdtemp(prefix="picture_book_pdf_"))
-    output_path = tmp_dir / filename
-
-    try:
-        generate_picture_book_pdf(
-            book_data=book_data,
-            pages=pages,
-            assets=assets,
-            upload_dir=upload_dir,
-            output_path=output_path,
-            picture_book_format=canonical_format,
-            picture_book_bleed_marks=picture_book_bleed_marks,
-        )
-    except ImportError as e:
-        raise HTTPException(
-            status_code=500,
-            detail=(
-                "WeasyPrint is not installed in the export plugin's "
-                f"environment: {e}"
-            ),
-        ) from e
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Picture-book PDF generation failed: {e}",
-        ) from e
-
-    return FileResponse(
-        path=str(output_path),
-        filename=filename,
-        media_type="application/pdf",
-    )
-
-
-def _load_book_overwrite_flag(book_id: str) -> bool:
-    """Read only the ``audiobook_overwrite_existing`` column for one book.
-
-    Used by the pre-flight 409 check so we do not pay the cost of loading
-    the full book + chapters just to decide whether to skip the warning.
-    Returns False when the column or the book is missing.
-    """
-    if _book_model is None:
-        return False
-    db_gen, db = _require_db()
-    try:
-        Book = _book_model
-        book = db.query(Book).filter(Book.id == book_id).first()
-        if book is None:
-            return False
-        return bool(getattr(book, "audiobook_overwrite_existing", False))
-    finally:
-        _close_db(db_gen)
-
-
-def _query_book_data(book_id: str, db: Any) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
-    """Query book data from DB and return as dicts."""
-    from sqlalchemy.orm import joinedload
-
-    from app.models import Asset
-
-    if _book_model is None:
-        raise HTTPException(status_code=500, detail="Export plugin not properly configured")
-
-    Book = _book_model
-    book = db.query(Book).options(joinedload(Book.chapters)).filter(Book.id == book_id).first()
-    if not book:
-        raise HTTPException(status_code=404, detail="Book not found")
-
-    book_data = _serialize_book(book)
-    chapters_data = _serialize_chapters(book.chapters)
-    assets_data = [
-        {"filename": a.filename, "asset_type": a.asset_type, "path": a.path}
-        for a in db.query(Asset).filter(Asset.book_id == book_id).all()
-    ]
-    return book_data, chapters_data, assets_data
-
-
-def _serialize_book(book: Any) -> dict[str, Any]:
-    """Serialize a Book ORM object to a dict."""
-    return {
-        "id": book.id, "title": book.title, "subtitle": book.subtitle,
-        "author": book.author, "language": book.language,
-        "series": book.series, "series_index": book.series_index,
-        "description": book.description, "cover_image": book.cover_image,
-        "custom_css": book.custom_css,
-        "ai_assisted": getattr(book, "ai_assisted", False),
-        "tts_engine": getattr(book, "tts_engine", None),
-        "tts_voice": getattr(book, "tts_voice", None),
-        "tts_language": getattr(book, "tts_language", None),
-        "tts_speed": getattr(book, "tts_speed", None),
-        "audiobook_overwrite_existing": bool(
-            getattr(book, "audiobook_overwrite_existing", False)
-        ),
-        "audiobook_skip_chapter_types": _decode_skip_chapter_types(
-            getattr(book, "audiobook_skip_chapter_types", None)
-        ),
-        # PB-PHASE4 Session 6: surface the content discriminator
-        # for export-route dispatch. NAMING COLLISION WARNING:
-        # this `book_type` is Bibliogon's CONTENT discriminator
-        # (prose | picture_book | future comic_book). The export
-        # route's same-named query parameter `book_type` is
-        # manuscripta's PRINT-EDITION concept (ebook | paperback
-        # | hardcover | audiobook). Different namespaces, same
-        # name. Disambiguate by source: model field = content;
-        # query param = print edition.
-        "book_type": getattr(book, "book_type", "prose"),
-    }
-
-
-def _decode_skip_chapter_types(raw: Any) -> list[str]:
-    """Decode the JSON-encoded ``audiobook_skip_chapter_types`` Text column.
-
-    Returns an empty list when the column is unset, empty, or malformed
-    so the export pipeline can simply ``len(...)`` to decide whether to
-    apply a per-book filter or fall back to the generator's built-in
-    SKIP_TYPES default.
-    """
-    if raw is None or raw == "":
-        return []
-    if isinstance(raw, list):
-        return [str(v) for v in raw]
-    if isinstance(raw, str):
-        try:
-            parsed = json.loads(raw)
-        except json.JSONDecodeError:
-            return []
-        if isinstance(parsed, list):
-            return [str(v) for v in parsed]
-    return []
-
-
-def _serialize_chapters(chapters: list) -> list[dict[str, Any]]:
-    """Serialize chapter ORM objects to dicts."""
-    result = []
-    for ch in sorted(chapters, key=lambda c: c.position):
-        content = ch.content
-        try:
-            content = json.loads(content)
-        except (json.JSONDecodeError, TypeError):
-            pass
-        result.append({
-            "title": ch.title, "content": content,
-            "position": ch.position, "chapter_type": ch.chapter_type,
-        })
-    return result
-
-
-def _load_export_config() -> tuple[dict[str, Any], dict[str, Any]]:
-    """Load export plugin config and settings from YAML."""
-    import yaml
-    config_path = Path("config/plugins/export.yaml")
-    config: dict[str, Any] = {}
-    if config_path.exists():
-        with open(config_path, encoding="utf-8") as f:
-            config = yaml.safe_load(f) or {}
-    return config, config.get("settings", {})
-
-
-def _build_filename(slug: str, book_type: str, export_settings: dict[str, Any]) -> str:
-    """Build the export filename base from slug and book type."""
-    type_suffix = export_settings.get("type_suffix_in_filename", True)
-    return f"{slug}-{book_type}" if type_suffix else slug
-
-
-def _audiobook_base_name(book_data: dict[str, Any], default_base_name: str) -> str:
-    """Return the user-provided audiobook filename if set, else the default.
-
-    The custom name comes from ``Book.audiobook_filename`` (set per book in
-    the metadata editor). It is sanitized to a safe filesystem stem so the
-    final ``.mp3`` / ``.zip`` filename is always usable.
-    """
-    custom = (book_data.get("audiobook_filename") or "").strip()
-    if not custom:
-        return default_base_name
-    # Sanitize path separators (no traversal) but keep dots for the
-    # extension-stripping pass below.
-    cleaned = custom.replace("/", "_").replace("\\", "_")
-    for ext in (".mp3", ".zip", ".m4a", ".m4b"):
-        if cleaned.lower().endswith(ext):
-            cleaned = cleaned[: -len(ext)]
-            break
-    cleaned = cleaned.strip(". ")
-    return cleaned or default_base_name
-
-
-def _detect_manual_toc(chapters: list[dict[str, Any]]) -> bool:
-    """Check if any chapter is a manual TOC."""
-    return any(ch.get("chapter_type") == "toc" for ch in chapters)
-
-
-def _find_cover(book_data: dict[str, Any], project_dir: Path) -> str | None:
-    """Find cover image path from book data or scaffolded assets."""
-    cover = book_data.get("cover_image")
-    if cover:
-        return cover
-    for ext in ("png", "jpg", "jpeg"):
-        candidate = project_dir / "assets" / "covers" / f"cover.{ext}"
-        if candidate.exists():
-            return str(candidate)
-    return None
-
-
-def _scaffold_and_prepare(
-    book_data: dict[str, Any],
-    chapters: list[dict[str, Any]],
-    assets: list[dict[str, Any]],
-    toc_depth: int = 0,
-) -> tuple[Path, Path, dict[str, Any], dict[str, Any]]:
-    """Scaffold project and return (tmp_dir, project_dir, config, settings)."""
-    config, export_settings = _load_export_config()
-    if toc_depth > 0:
-        export_settings["toc_depth"] = toc_depth
-    tmp_dir = Path(tempfile.mkdtemp(prefix="bibliogon_export_"))
-    project_dir = scaffold_project(book_data, chapters, tmp_dir, export_settings, assets)
-    return tmp_dir, project_dir, config, export_settings
-
-
-# --- Format-specific exporters ---
-
-
-def _export_project(base_name: str, tmp_dir: Path, project_dir: Path) -> FileResponse:
-    """Export as write-book-template project ZIP (.bgp)."""
-    zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
-    bgp_path = zip_path.replace(".zip", ".bgp")
-    Path(zip_path).rename(bgp_path)
-    return FileResponse(path=bgp_path, media_type="application/octet-stream", filename=f"{base_name}.bgp")
-
-
-def _read_audiobook_merge_setting() -> str:
-    """Read merge setting from audiobook plugin config. Default: 'merged'.
-
-    Accepts legacy boolean values (True -> 'merged', False -> 'separate').
-    """
-    import yaml
-    try:
-        from bibliogon_audiobook.generator import normalize_merge_mode
-    except ImportError:
-        normalize_merge_mode = lambda v: "merged" if v in (True, None) else ("separate" if v is False else v)  # noqa: E731
-
-    config_path = Path("config/plugins/audiobook.yaml")
-    if config_path.exists():
-        try:
-            with open(config_path, encoding="utf-8") as f:
-                cfg = yaml.safe_load(f) or {}
-            return normalize_merge_mode(cfg.get("settings", {}).get("merge"))
-        except Exception:
-            pass
-    return "merged"
-
-
-def _resolve_audiobook_merge_mode(book_data: dict[str, Any]) -> str:
-    """Per-book override beats plugin config; both feed normalize_merge_mode."""
-    try:
-        from bibliogon_audiobook.generator import normalize_merge_mode
-    except ImportError:
-        return _read_audiobook_merge_setting()
-    book_value = book_data.get("audiobook_merge")
-    if book_value:
-        return normalize_merge_mode(book_value)
-    return _read_audiobook_merge_setting()
-
-
-def _read_audiobook_settings() -> dict[str, Any]:
-    """Read the audiobook plugin's full settings dict from disk.
-
-    Used to forward user-defined ``skip_types`` and other generator
-    options into ``_run_audiobook_job``. Returns an empty dict if the
-    config file is missing or unreadable.
-    """
-    import yaml
-    config_path = Path("config/plugins/audiobook.yaml")
-    if not config_path.exists():
-        return {}
-    try:
-        with open(config_path, encoding="utf-8") as f:
-            cfg = yaml.safe_load(f) or {}
-    except Exception:
-        return {}
-    settings = cfg.get("settings") or {}
-    return settings if isinstance(settings, dict) else {}
-
-
-# NOTE: the previous synchronous _export_audiobook helper was removed
-# deliberately - audiobook generation can take minutes and must always
-# go through the async job + SSE stream. The sync GET /export/audiobook
-# route now responds with HTTP 410 to make accidental sync use loud.
-
-
-def _export_document(
-    fmt: str, base_name: str, project_dir: Path, config: dict[str, Any],
-    use_manual_toc: bool, cover_path: str | None,
-) -> FileResponse:
-    """Export via manuscripta/pandoc (epub, pdf, docx, html, markdown)."""
-    output_path = run_pandoc(project_dir, fmt, config, use_manual_toc=use_manual_toc, cover_path=cover_path)
-    media_type = MEDIA_TYPES.get(fmt, "application/octet-stream")
-    ext = EXT_MAP.get(fmt, output_path.suffix or f".{fmt}")
-    return FileResponse(path=str(output_path), media_type=media_type, filename=f"{base_name}{ext}")
-
-
-# --- Route handlers (thin dispatchers) ---
 
 
 @router.get("/validate-epub")
@@ -803,7 +63,13 @@ def validate_epub(book_id: str, db: Any = Depends(lambda: None)):
     try:
         project_dir = scaffold_project(book_data, chapters, tmp_dir, export_settings, assets)
         cover = book_data.get("cover_image")
-        output = run_pandoc(project_dir, "epub", config, use_manual_toc=_detect_manual_toc(chapters), cover_path=cover)
+        output = run_pandoc(
+            project_dir,
+            "epub",
+            config,
+            use_manual_toc=_detect_manual_toc(chapters),
+            cover_path=cover,
+        )
         results_path = output.with_suffix(".epubcheck.json")
         if results_path.exists():
             return json.loads(results_path.read_text(encoding="utf-8"))
@@ -811,11 +77,16 @@ def validate_epub(book_id: str, db: Any = Depends(lambda: None)):
     except MissingImagesError as e:
         raise _missing_images_http_exception(e) from e
     except PandocError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
 
 
 @router.get("/batch")
-def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: bool | None = None, db: Any = Depends(lambda: None)):
+def export_batch_route(
+    book_id: str,
+    book_type: str = "ebook",
+    use_manual_toc: bool | None = None,
+    db: Any = Depends(lambda: None),
+):
     """Export EPUB + PDF + DOCX as a single ZIP."""
     book_data, chapters, assets = _load_book(book_id)
     tmp_dir, project_dir, config, settings = _scaffold_and_prepare(book_data, chapters, assets)
@@ -837,7 +108,9 @@ def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: b
     errors: list[str] = []
     for fmt in BATCH_FORMATS:
         try:
-            produced = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
+            produced = run_pandoc(
+                project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover
+            )
             staged = batch_dir / produced.name
             shutil.copy2(produced, staged)
             staged_files.append(staged)
@@ -847,11 +120,14 @@ def export_batch_route(book_id: str, book_type: str = "ebook", use_manual_toc: b
         raise HTTPException(status_code=500, detail=f"All exports failed: {'; '.join(errors)}")
 
     import zipfile
+
     zip_path = tmp_dir / f"{slug}-batch.zip"
     with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in staged_files:
             zf.write(f, f.name)
-    return FileResponse(path=str(zip_path), media_type="application/zip", filename=f"{slug}-batch.zip")
+    return FileResponse(
+        path=str(zip_path), media_type="application/zip", filename=f"{slug}-batch.zip"
+    )
 
 
 @router.get("/{fmt}")
@@ -893,7 +169,10 @@ def export(
     param.
     """
     if fmt not in SUPPORTED_FORMATS:
-        raise HTTPException(status_code=400, detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}")
+        raise HTTPException(
+            status_code=400,
+            detail=f"Unsupported format '{fmt}'. Supported: {', '.join(sorted(SUPPORTED_FORMATS))}",
+        )
 
     book_data, chapters, assets = _load_book(book_id)
 
@@ -937,14 +216,9 @@ def export(
         if fmt != "pdf":
             raise HTTPException(
                 status_code=400,
-                detail=(
-                    f"Comic-books only support PDF export in this "
-                    f"release; got fmt={fmt!r}."
-                ),
+                detail=(f"Comic-books only support PDF export in this release; got fmt={fmt!r}."),
             )
-        cb_book_data, cb_pages, cb_panels, cb_bubbles, cb_assets = (
-            _load_comic_book_data(book_id)
-        )
+        cb_book_data, cb_pages, cb_panels, cb_bubbles, cb_assets = _load_comic_book_data(book_id)
         try:
             return _export_comic_book_pdf(
                 cb_book_data,
@@ -964,7 +238,9 @@ def export(
             ) from e
 
     # Prose path (unchanged from pre-Session-6 behavior).
-    tmp_dir, project_dir, config, settings = _scaffold_and_prepare(book_data, chapters, assets, toc_depth)
+    tmp_dir, project_dir, config, settings = _scaffold_and_prepare(
+        book_data, chapters, assets, toc_depth
+    )
     base_name = _build_filename(project_dir.name, book_type, settings)
     manual_toc = use_manual_toc if use_manual_toc is not None else _detect_manual_toc(chapters)
 
@@ -988,11 +264,11 @@ def export(
     except MissingImagesError as e:
         raise _missing_images_http_exception(e) from e
     except PandocError as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=str(e)) from e
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Export failed: {e}")
+        raise HTTPException(status_code=500, detail=f"Export failed: {e}") from e
 
 
 # --- Async Export ---
@@ -1035,7 +311,7 @@ async def export_async(
     try:
         from app.job_store import job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
 
     if fmt == "audiobook" and not confirm_overwrite:
         try:
@@ -1083,10 +359,16 @@ async def export_async(
             zip_path = shutil.make_archive(str(tmp_dir / "project"), "zip", str(project_dir))
             bgp_path = zip_path.replace(".zip", ".bgp")
             Path(zip_path).rename(bgp_path)
-            return {"path": bgp_path, "filename": f"{base_name}.bgp", "media_type": "application/octet-stream"}
+            return {
+                "path": bgp_path,
+                "filename": f"{base_name}.bgp",
+                "media_type": "application/octet-stream",
+            }
 
         if fmt == "audiobook":
-            return await _run_audiobook_job(job_id, book_data, chapters, base_name, generation_mode=generation_mode)
+            return await _run_audiobook_job(
+                job_id, book_data, chapters, base_name, generation_mode=generation_mode
+            )
 
         cover = _find_cover(book_data, project_dir)
         output = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
@@ -1097,254 +379,6 @@ async def export_async(
     job_id = job_store.submit(_run)
     logger.info("Export job %s started: book=%s fmt=%s", job_id, book_id, fmt)
     return {"job_id": job_id, "status": "pending"}
-
-
-async def _run_audiobook_job(
-    job_id: str,
-    book_data: dict[str, Any],
-    chapters: list[dict[str, Any]],
-    default_base_name: str,
-    *,
-    generation_mode: str = "missing_and_outdated",
-) -> dict[str, Any]:
-    """Audiobook job worker that streams progress events to the job store.
-
-    The progress callback closure publishes every event the generator
-    emits (start, chapter_start, chapter_done, ...) to the job, which
-    the SSE endpoint then fans out to subscribers.
-    """
-    try:
-        from bibliogon_audiobook import audiobook_storage
-        from bibliogon_audiobook.generator import bundle_audiobook_output, generate_audiobook
-
-        from app.job_store import job_store
-    except ImportError:
-        raise RuntimeError("Audiobook plugin not installed.")
-
-    base_name = _audiobook_base_name(book_data, default_base_name)
-    engine_id = book_data.get("tts_engine") or "edge-tts"
-    voice = book_data.get("tts_voice") or ""
-    language = book_data.get("tts_language") or book_data.get("language", "de")
-    rate = book_data.get("tts_speed") or ""
-    merge_mode = _resolve_audiobook_merge_mode(book_data)
-
-    # Persistent-path mode: when we have a book_id we write chapter
-    # MP3s directly into uploads/{book_id}/audiobook/chapters/ and
-    # flush metadata after every chapter, so cancellation, browser
-    # crash or backend restart never loses completed chapters.
-    # Without a book_id (shouldn't happen from the production route,
-    # but kept for defensive symmetry) we fall back to a temp dir.
-    book_id = book_data.get("id")
-    if book_id:
-        audio_dir = audiobook_storage.prepare_chapters_dir(book_id)
-    else:
-        audio_dir = Path(tempfile.mkdtemp(prefix="bibliogon_ab_async_"))
-
-    # Per-book skip list (replaces the former plugin-global
-    # ``audiobook.settings.skip_types``). An empty list means "use the
-    # generator's built-in SKIP_TYPES default" so existing books that
-    # haven't gone through the migration still behave the same.
-    book_skip_list = _decode_skip_chapter_types(
-        book_data.get("audiobook_skip_chapter_types")
-    )
-    skip_types: set[str] | None = (
-        {str(s) for s in book_skip_list} if book_skip_list else None
-    )
-
-    plugin_settings = _read_audiobook_settings()
-    read_chapter_number = bool(plugin_settings.get("read_chapter_number", False))
-
-    async def progress_cb(event_type: str, payload: dict[str, Any]) -> None:
-        job_store.publish_event(job_id, event_type, payload)
-
-    # Baseline metadata recorded in uploads/{book_id}/audiobook/metadata.json
-    # on every incremental flush + the finalize step. Kept small and
-    # serializable so the book-metadata UI can render engine/voice/speed
-    # badges next to the per-chapter list.
-    base_metadata: dict[str, Any] = {
-        "engine": engine_id,
-        "voice": voice or "default",
-        "language": language,
-        "speed": rate or "1.0",
-        "merge_mode": merge_mode,
-        "book_title": book_data.get("title"),
-    }
-
-    # Cache-dir flag: the content-hash cache lets the generator reuse
-    # previously generated chapters whose content + engine + voice + speed
-    # still match. The persistent path IS the cache, so when we write
-    # directly there the generator sees "already on disk" and short-circuits.
-    #
-    # The cache is disabled entirely when generation_mode is "all" or the
-    # per-book ``audiobook_overwrite_existing`` column is true. For the
-    # finer modes ("missing_only", "outdated_only") the cache stays on
-    # but the generator receives a positions_to_generate filter that
-    # restricts which chapters enter the loop at all.
-    overwrite_existing = bool(book_data.get("audiobook_overwrite_existing", False))
-    disable_cache = overwrite_existing or generation_mode == "all"
-    cache_dir: Path | None = None
-    if book_id and not disable_cache:
-        candidate = audiobook_storage.audiobook_dir(book_id) / "chapters"
-        if candidate.exists():
-            cache_dir = candidate
-
-    # Position filter for fine-grained generation modes. When set, only
-    # chapters whose position is in this set are processed; all others
-    # are emitted as "chapter_skipped" with reason "filtered".
-    #
-    # "missing_and_outdated" and "all" pass None (= process everything
-    # the cache/skip logic allows). "missing_only" and "outdated_only"
-    # use the classification logic to pre-compute which chapters qualify.
-    positions_to_generate: set[int] | None = None
-    if generation_mode in ("missing_only", "outdated_only") and book_id:
-        try:
-            from bibliogon_audiobook.generator import (
-                _slugify,
-                extract_plain_text,
-                should_regenerate,
-            )
-            chapters_dir = audiobook_storage.audiobook_dir(book_id) / "chapters"
-            sorted_chs = sorted(chapters, key=lambda c: c.get("position", 0))
-            positions_to_generate = set()
-            for idx, ch in enumerate(sorted_chs, start=1):
-                plain = extract_plain_text(ch.get("content", ""))
-                fname = f"{idx:03d}-{_slugify(ch.get('title', ''))}.mp3"
-                mp3 = chapters_dir / fname
-                is_missing = not mp3.exists()
-                is_outdated = mp3.exists() and should_regenerate(plain, mp3, engine_id, voice, rate or "1.0")
-                if generation_mode == "missing_only" and is_missing:
-                    positions_to_generate.add(ch.get("position", 0))
-                elif generation_mode == "outdated_only" and is_outdated:
-                    positions_to_generate.add(ch.get("position", 0))
-        except Exception as classify_err:  # noqa: BLE001
-            logger.warning("Position filter computation failed, falling back to all: %s", classify_err)
-            positions_to_generate = None
-
-    async def on_chapter_persisted(mp3_path: Path, chapter_info: dict[str, Any]) -> None:
-        """Record one completed chapter in metadata.json and broadcast via WS.
-
-        Fires after each chapter MP3 lands in the persistent chapters
-        dir. Without a book_id there is no persistent path, so this
-        becomes a no-op (the rare defensive fallback).
-        """
-        if not book_id:
-            return
-        try:
-            audiobook_storage.flush_chapter(
-                book_id=book_id,
-                source_mp3=mp3_path,
-                chapter_extras={
-                    "title": chapter_info.get("title"),
-                    "position": chapter_info.get("position"),
-                    "chapter_type": chapter_info.get("chapter_type"),
-                    "reused": bool(chapter_info.get("reused")),
-                    "index": chapter_info.get("index"),
-                },
-                base_metadata=base_metadata,
-            )
-        except Exception as flush_error:  # noqa: BLE001
-            # A flush failure must not drop completed work - the MP3
-            # is on disk, the next flush (or finalize) will try again.
-            logger.warning(
-                "Failed to flush chapter %s for book %s: %s",
-                mp3_path.name, book_id, flush_error,
-            )
-
-        # Broadcast to any open metadata tabs watching this book.
-        try:
-            from app.routers.websocket import manager as ws_manager
-            await ws_manager.broadcast(f"audiobook:{book_id}", {
-                "event": "chapter_persisted",
-                "title": chapter_info.get("title"),
-                "filename": mp3_path.name,
-                "position": chapter_info.get("position"),
-                "duration_seconds": audiobook_storage.get_mp3_duration(mp3_path),
-                "size_bytes": mp3_path.stat().st_size if mp3_path.exists() else 0,
-                "reused": bool(chapter_info.get("reused")),
-            })
-        except Exception:  # noqa: BLE001
-            pass  # WS broadcast is best-effort, never kills the export
-
-    try:
-        result = await generate_audiobook(
-            book_title=book_data.get("title", "audiobook"),
-            chapters=chapters, output_dir=audio_dir,
-            engine_id=engine_id, voice=voice, language=language, rate=rate,
-            merge=merge_mode, progress_callback=progress_cb,
-            skip_types=skip_types, read_chapter_number=read_chapter_number,
-            cache_dir=cache_dir,
-            on_chapter_persisted=on_chapter_persisted,
-            positions_to_generate=positions_to_generate,
-        )
-        output = bundle_audiobook_output(result, audio_dir, book_data.get("title", "audiobook"))
-        if output is None:
-            raise RuntimeError("Audiobook generation produced no files")
-    except BaseException as run_error:
-        # Partial persistence: chapters generated so far are already on
-        # disk and already in metadata.json (via on_chapter_persisted).
-        # We only need to annotate the metadata with the failure reason
-        # so the UI can distinguish a cancelled/failed partial export
-        # from a still-running one. Use BaseException so this also fires
-        # on asyncio.CancelledError, which is NOT an Exception subclass.
-        if book_id:
-            audiobook_storage.mark_failed(book_id, str(run_error) or type(run_error).__name__)
-            try:
-                from app.routers.websocket import manager as ws_manager
-                await ws_manager.broadcast(f"audiobook:{book_id}", {
-                    "event": "job_failed",
-                    "error": str(run_error) or type(run_error).__name__,
-                })
-            except Exception:  # noqa: BLE001
-                pass
-        raise
-
-    # Seal the metadata: copy the merged MP3 into the persistent dir,
-    # flip status to "complete" and stamp created_at. After this call
-    # ``has_audiobook`` returns True and future exports get the 409
-    # overwrite warning.
-    if book_id:
-        try:
-            audiobook_storage.finalize_audiobook(
-                book_id=book_id,
-                source_dir=audio_dir,
-                merged_file=result.get("merged_file"),
-                base_metadata=base_metadata,
-            )
-            try:
-                from app.routers.websocket import manager as ws_manager
-                await ws_manager.broadcast(f"audiobook:{book_id}", {
-                    "event": "job_complete",
-                    "status": "complete",
-                })
-            except Exception:  # noqa: BLE001
-                pass
-        except Exception as finalize_error:  # noqa: BLE001
-            # Finalize failure must not kill the download - chapter
-            # files are already persistent, user can still grab them.
-            logger.error(
-                "Failed to finalize audiobook for book %s: %s",
-                book_id, finalize_error, exc_info=True,
-            )
-
-    if output.suffix == ".mp3":
-        download = {"path": str(output), "filename": f"{base_name}.mp3", "media_type": "audio/mpeg"}
-    else:
-        download = {"path": str(output), "filename": f"{base_name}-audiobook.zip", "media_type": "application/zip"}
-
-    # Stash the per-chapter MP3 directory + filenames so the modal can
-    # render individual download links via /api/export/jobs/{id}/files/{name}.
-    download["audio_dir"] = str(audio_dir)
-    download["chapter_files"] = list(result.get("generated_files") or [])
-
-    # Final "ready" event so SSE clients can render the download button
-    # before the synthetic stream_end fires from JobStore.update().
-    job_store.publish_event(job_id, "ready", {
-        "filename": download["filename"],
-        "media_type": download["media_type"],
-        "download_url": f"/api/export/jobs/{job_id}/download",
-        "chapter_files": download["chapter_files"],
-    })
-    return download
 
 
 # --- Bulk-export router (AR-BULK-BOOKS-PARITY-01) ---
@@ -1379,9 +413,7 @@ class BookBulkExportRequest(BaseModel):
     format: Literal["epub", "pdf", "docx"]
 
 
-def _per_book_artifact(
-    book_id: str, fmt: str
-) -> tuple[str, bytes]:
+def _per_book_artifact(book_id: str, fmt: str) -> tuple[str, bytes]:
     """Render one book as ``fmt`` and return (slug, bytes).
 
     Reuses the existing per-book pipeline: ``_load_book`` ->
@@ -1393,25 +425,18 @@ def _per_book_artifact(
     from here unchanged.
     """
     book_data, chapters, assets = _load_book(book_id)
-    tmp_dir, project_dir, config, settings = _scaffold_and_prepare(
-        book_data, chapters, assets
-    )
+    tmp_dir, project_dir, config, settings = _scaffold_and_prepare(book_data, chapters, assets)
     slug = project_dir.name
     manual_toc = _detect_manual_toc(chapters)
     cover = _find_cover(book_data, project_dir)
     try:
-        produced = run_pandoc(
-            project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover
-        )
+        produced = run_pandoc(project_dir, fmt, config, use_manual_toc=manual_toc, cover_path=cover)
     except MissingImagesError as exc:
         raise _missing_images_http_exception(exc) from exc
     except PandocError as exc:
         raise HTTPException(
             status_code=502,
-            detail=(
-                f"Failed exporting book {book_data.get('title') or book_id!r}: "
-                f"{exc}"
-            ),
+            detail=(f"Failed exporting book {book_data.get('title') or book_id!r}: {exc}"),
         ) from exc
     return slug, produced.read_bytes()
 
@@ -1477,7 +502,7 @@ def get_job_status(job_id: str) -> dict[str, Any]:
     try:
         from app.job_store import job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
     job = job_store.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -1514,7 +539,7 @@ async def stream_job_events(job_id: str) -> StreamingResponse:
     try:
         from app.job_store import job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
     if job_store.get(job_id) is None:
         raise HTTPException(status_code=404, detail="Job not found")
 
@@ -1546,7 +571,7 @@ def cancel_job(job_id: str) -> None:
     try:
         from app.job_store import JobStatus, job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
     job = job_store.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -1568,7 +593,7 @@ def download_job_chapter_file(job_id: str, filename: str) -> FileResponse:
     try:
         from app.job_store import job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
     job = job_store.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -1592,7 +617,7 @@ def download_job_result(job_id: str) -> FileResponse:
     try:
         from app.job_store import job_store
     except ImportError:
-        raise HTTPException(status_code=500, detail="Job store not available")
+        raise HTTPException(status_code=500, detail="Job store not available") from None
     job = job_store.get(job_id)
     if not job:
         raise HTTPException(status_code=404, detail="Job not found")
@@ -1601,7 +626,11 @@ def download_job_result(job_id: str) -> FileResponse:
     path = job.result.get("path")
     if not path or not Path(path).exists():
         raise HTTPException(status_code=410, detail="Export file no longer available")
-    return FileResponse(path=path, media_type=job.result.get("media_type", "application/octet-stream"), filename=job.result.get("filename", "export"))
+    return FileResponse(
+        path=path,
+        media_type=job.result.get("media_type", "application/octet-stream"),
+        filename=job.result.get("filename", "export"),
+    )
 
 
 # PLUGIN-EXPORT-SINGLE-ROUTER-REFACTOR-01: pluginforge 0.8.0

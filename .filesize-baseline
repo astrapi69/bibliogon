@@ -16,8 +16,5 @@
 # Refactoring-Backlog dazu: docs/COHESION-AUDIT.md.
 # Format: relativer Pfad ab Repo-Root, ein Eintrag pro Zeile.
 
-# --- Backend / Plugins ---
-plugins/bibliogon-plugin-export/bibliogon_export/routes.py
-
 # --- Frontend: Editoren / Komponenten ---
 frontend/src/components/Editor.tsx
