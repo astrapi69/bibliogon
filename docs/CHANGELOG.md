@@ -4,6 +4,30 @@ Completed phases and their content. Current state in CLAUDE.md, open items in RO
 
 ## [Unreleased]
 
+### Added
+- Offline article featured-image assets (#157): article images upload and render
+  in the backendless PWA — bytes are stored in IndexedDB (as `ArrayBuffer`),
+  served back through a service-worker `/api/...` intercept, and resolved via a
+  `useArticleImageUrl` hook; Medium CDN featured images are cached locally on
+  import.
+
+### Changed
+- God-file burn-down (frontend PRs #200–#229, backend service-extraction sweep
+  #166–#200): `.filesize-baseline` reduced from 16 to 5 entries. `api/client.ts`
+  split into `api/http`/`errors`/`apiObject` + 5 domain modules + a `types`
+  barrel (5212 → 13-line re-export barrel, 211 call sites unchanged); backend
+  `app/main.py` split to a thin facade (1046 → 442, ERROR-blocker resolved);
+  12 of 14 frontend god-files brought under 1000. Remaining baseline debt:
+  `Editor.tsx`, `storage/dexie-storage.ts` (re-grandfathered via #210), and three
+  plugin PDF files. Reusable extractions landed under `lib/` (`SortableList`,
+  pure utils) and `shared/utils/downloadBlob`.
+- Documentation refreshed to the post-v0.52.0 / post-burn-down state
+  (audits, VIBE-CODING-POLICY, MODULE-ARCHITECTURE, CLAUDE.md, README) (#230).
+
+### Fixed
+- Offline article bulk delete + trash lifecycle routed through the storage seam
+  (#212); offline article-to-book conversion via the storage seam (#214).
+
 ## [0.52.0] - 2026-06-13
 
 The **offline-depth + stability-hardening** release. The offline import wizard
