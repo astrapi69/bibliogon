@@ -15,8 +15,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
 import { useCoverUrl } from "../hooks/useAssetUrl";
-import { Badge } from "./Badge";
-import { publicationStatusVariant } from "../utils/publicationStatusBadge";
+import StatusBadge from "../lib/components/StatusBadge";
+import { publicationStatusLabels } from "../utils/publicationStatusBadge";
 import styles from "./BookListView.module.css";
 
 interface Props {
@@ -186,14 +186,12 @@ function BookListRow({
                  *  pattern. Reuses ``ui.articles.status_*``
                  *  i18n keys (the labels are identical between
                  *  the two surfaces). */}
-                <Badge
+                <StatusBadge
                     testId={`book-list-row-status-${book.id}`}
-                    variant={publicationStatusVariant(book.status ?? "draft")}
-                    size="sm"
-                    style={{ marginRight: 6 }}
-                >
-                    {t(`ui.articles.status_${book.status ?? "draft"}`, book.status ?? "draft")}
-                </Badge>
+                    status={book.status ?? "draft"}
+                    labels={publicationStatusLabels(t)}
+                    className="mr-1.5"
+                />
                 {book.language.toUpperCase()}
             </div>
             <div role="cell" className={styles.colDate}>
