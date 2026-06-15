@@ -281,7 +281,7 @@ def detect_git_import(
 
 
 @router.post("/execute", response_model=ExecuteResponse)
-def execute_import(
+def execute_import(  # noqa: C901  # Legacy, tracked in clean-code-audit
     payload: ExecuteRequest,
     db: Session = Depends(get_db),
 ) -> ExecuteResponse:

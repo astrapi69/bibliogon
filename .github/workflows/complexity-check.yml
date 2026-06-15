@@ -43,10 +43,12 @@ jobs:
           echo "=== radon: functions with rank E or F (complexity warning) ==="
           /tmp/cxenv/bin/radon cc backend/app/ -ne
           echo ""
-          echo "=== ruff C901 (max-complexity=20, warn-only) ==="
+          echo "=== ruff C901 (max-complexity=15, warn-only) ==="
           # --exit-zero: warn-only. C901 is deliberately NOT in the blocking
-          # `select` of pyproject.toml; the threshold (max-complexity=20)
-          # comes from [tool.ruff.lint.mccabe].
+          # `select` of pyproject.toml; the threshold (max-complexity=15,
+          # Phase 2 #279) comes from [tool.ruff.lint.mccabe]. The five legacy
+          # functions above 15 carry `# noqa: C901`, so this surfaces only
+          # NEW >15 functions.
           (cd backend && /tmp/cxenv/bin/ruff check app/ --select C901 --exit-zero)
 
   typescript-complexity:
@@ -64,6 +66,12 @@ jobs:
         working-directory: frontend
         run: |
           npm ci
-          echo "=== ESLint complexity (threshold 20, warn-only) ==="
-          # `|| true`: the watcher never blocks (Phase 1, pure visibility).
-          npx eslint --rule 'complexity: ["warn", 20]' src/ || true
+          echo "=== ESLint complexity (threshold 15, warn-only) ==="
+          # `|| true`: the watcher never blocks (Phase 2 #279, still warn-only).
+          # The `complexity` rule is NOT in the base eslint.config.js, so the
+          # ~61 functions already above 15 surface here as warnings rather than
+          # carrying ~61 inline disables (which would be churn across ~50 files
+          # AND show as "unused directive" warnings in the base lint where the
+          # rule is off). New violations are visible the same way. Counts +
+          # rationale: docs/audits/clean-code-audit.md.
+          npx eslint --rule 'complexity: ["warn", 15]' src/ || true
