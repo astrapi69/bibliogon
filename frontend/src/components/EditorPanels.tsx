@@ -37,7 +37,7 @@ export function EditorSearchBar({
     onClose,
 }: EditorSearchBarProps) {
     return (
-        <div className={styles.searchBar}>
+        <div className={`${styles.searchBar} flex-wrap`}>
             <input
                 className={`input ${styles.searchInput}`}
                 value={searchTerm}
