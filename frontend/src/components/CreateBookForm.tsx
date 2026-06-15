@@ -18,10 +18,11 @@ import { notify } from "../utils/notify";
 import { EnhancedTextarea } from "./textarea/EnhancedTextarea";
 import AuthorSelectInput from "./AuthorSelectInput";
 import * as Collapsible from "@radix-ui/react-collapsible";
-import * as Select from "@radix-ui/react-select";
 import * as Tabs from "@radix-ui/react-tabs";
 import { ChevronDown, ChevronRight, Lock, Trash2 } from "lucide-react";
 import styles from "./CreateBookForm.module.css";
+import { ComboboxSelect } from "../lib/components/ComboboxSelect";
+import { buildBookLanguageOptions } from "../lib/bookLanguages";
 
 type Mode = "blank" | "template";
 
@@ -113,6 +114,11 @@ export default function CreateBookForm({
     const [genre, setGenre] = useState("");
     const [subtitle, setSubtitle] = useState("");
     const [language, setLanguage] = useState("de");
+    // True once the user has picked a language, OR a template set it.
+    // Gates the late-arriving ui.defaults.book_language from clobbering a
+    // value the user already chose.
+    const [languageTouched, setLanguageTouched] = useState(false);
+    const [customLanguages, setCustomLanguages] = useState<string[]>([]);
     const [description, setDescription] = useState("");
     const [isSeries, setIsSeries] = useState(false);
     const [series, setSeries] = useState("");
@@ -166,6 +172,16 @@ export default function CreateBookForm({
                 if (!author && realName) {
                     setAuthor(realName);
                 }
+                const uiConfig = (config.ui || {}) as Record<string, unknown>;
+                const uiDefaults = (uiConfig.defaults || {}) as Record<string, unknown>;
+                const defaultLang = (uiDefaults.book_language as string) || "";
+                if (defaultLang) {
+                    setLanguage((prev) => (languageTouched ? prev : defaultLang));
+                }
+                const custom = Array.isArray(uiConfig.custom_languages)
+                    ? (uiConfig.custom_languages as string[]).filter(Boolean)
+                    : [];
+                setCustomLanguages(custom);
             })
             .catch(() => {});
         // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -250,6 +266,7 @@ export default function CreateBookForm({
         const tpl = templates.find((t) => t.id === selectedTemplateId);
         if (!tpl) return;
         setLanguage(tpl.language);
+        setLanguageTouched(true);
         setDescription(tpl.description);
     }, [selectedTemplateId, templates]);
 
@@ -258,6 +275,7 @@ export default function CreateBookForm({
         setAuthor("");
         setGenre("");
         setLanguage("de");
+        setLanguageTouched(false);
         setDescription("");
         setSubtitle("");
         setIsSeries(false);
@@ -530,7 +548,10 @@ export default function CreateBookForm({
                 {/* === Stage 2: Optional fields (Radix Collapsible) === */}
                 <Collapsible.Root open={detailsOpen} onOpenChange={setDetailsOpen}>
                     <Collapsible.Trigger asChild>
-                        <button className={styles.detailsToggle}>
+                        <button
+                            className={styles.detailsToggle}
+                            data-testid="create-book-more-details"
+                        >
                             {detailsOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
                             {t("ui.create_book.more_details", "Weitere Details")}
                         </button>
@@ -611,56 +632,27 @@ export default function CreateBookForm({
                                 <label className="label">
                                     {t("ui.create_book.language", "Sprache")}
                                 </label>
-                                <Select.Root value={language} onValueChange={setLanguage}>
-                                    <Select.Trigger className="radix-select-trigger">
-                                        <Select.Value />
-                                        <Select.Icon>
-                                            <ChevronDown size={14} />
-                                        </Select.Icon>
-                                    </Select.Trigger>
-                                    <Select.Portal>
-                                        <Select.Content
-                                            className="radix-select-content"
-                                            position="popper"
-                                            sideOffset={4}
-                                        >
-                                            <Select.Viewport>
-                                                {[
-                                                    {
-                                                        value: "de",
-                                                        label: t("ui.languages.de", "Deutsch"),
-                                                    },
-                                                    {
-                                                        value: "en",
-                                                        label: t("ui.languages.en", "English"),
-                                                    },
-                                                    {
-                                                        value: "es",
-                                                        label: t("ui.languages.es", "Espanol"),
-                                                    },
-                                                    {
-                                                        value: "fr",
-                                                        label: t("ui.languages.fr", "Francais"),
-                                                    },
-                                                    {
-                                                        value: "el",
-                                                        label: t("ui.languages.el", "Ellinika"),
-                                                    },
-                                                ].map((opt) => (
-                                                    <Select.Item
-                                                        key={opt.value}
-                                                        value={opt.value}
-                                                        className="radix-select-item"
-                                                    >
-                                                        <Select.ItemText>
-                                                            {opt.label}
-                                                        </Select.ItemText>
-                                                    </Select.Item>
-                                                ))}
-                                            </Select.Viewport>
-                                        </Select.Content>
-                                    </Select.Portal>
-                                </Select.Root>
+                                <ComboboxSelect
+                                    options={buildBookLanguageOptions(customLanguages)}
+                                    value={language}
+                                    onChange={(v) => {
+                                        setLanguageTouched(true);
+                                        setLanguage(v);
+                                    }}
+                                    allowCustom
+                                    onCustomAdd={(v) =>
+                                        setCustomLanguages((prev) =>
+                                            prev.some(
+                                                (c) =>
+                                                    c.toLowerCase() ===
+                                                    v.toLowerCase(),
+                                            )
+                                                ? prev
+                                                : [...prev, v],
+                                        )
+                                    }
+                                    testId="create-book-language"
+                                />
                             </div>
 
                             <label className={styles.checkboxLabel}>

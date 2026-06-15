@@ -117,9 +117,11 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                 export_engine: "auto",
             },
             ui: {
+                custom_languages: [],
                 defaults: {
                     book_type: "prose",
                     content_type: "blogpost",
+                    book_language: "de",
                 },
             },
         });
@@ -189,7 +191,12 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
         expect(onSave).toHaveBeenCalledWith(
             expect.objectContaining({
                 ui: {
-                    defaults: {book_type: "comic_book", content_type: "tutorial"},
+                    custom_languages: [],
+                    defaults: {
+                        book_type: "comic_book",
+                        content_type: "tutorial",
+                        book_language: "de",
+                    },
                 },
             }),
         );
