@@ -14,6 +14,8 @@ import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
 import {LoadingIndicator} from "./LoadingIndicator"
+import {CollapsibleConfigSection} from "./CollapsibleConfigSection"
+import {rankSentences, sentenceAnchor} from "../lib/utils/sentenceComplexity"
 import {slugify} from "../shared/utils/slugify"
 import {downloadBlob} from "../shared/utils/downloadBlob"
 import {toPdfBlob} from "../export/formatPdf"
@@ -76,6 +78,9 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         colAdverb: t("ui.metadata.quality_col_adverb", "Adv %"),
         colLong: t("ui.metadata.quality_col_long", "Lange Saetze"),
         flesch: "Flesch",
+        nestedTitle: t("ui.metadata.quality_nested_title", "Schachtelsatz-Kandidaten"),
+        nestedWords: t("ui.metadata.quality_nested_words", "{count} Wörter"),
+        nestedClauses: t("ui.metadata.quality_nested_clauses", "{count} Nebensätze"),
     })
 
     const reportSlug = (): string =>
@@ -191,7 +196,69 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
                     </tbody>
                 </table>
             </div>
+
+            <NestedSentenceCandidates chapters={data.chapters} />
         </div>
+    )
+}
+
+/** Per-chapter list of the longest / most complex sentences (#283).
+ *  Each chapter folds into a collapsible (default collapsed) so the
+ *  report stays compact; the entries are ranked client-side by the
+ *  shared sentenceComplexity util from the full sentence texts the
+ *  backend supplies. */
+function NestedSentenceCandidates({chapters}: {chapters: ChapterMetric[]}) {
+    const {t} = useI18n()
+    const withSentences = chapters.filter(
+        (ch) => !ch.empty && (ch.long_sentences?.length ?? 0) > 0,
+    )
+    if (withSentences.length === 0) return null
+
+    return (
+        <section className="mt-6" data-testid="nested-sentence-candidates">
+            <h3 className="text-sm font-semibold mb-1">
+                {t("ui.metadata.quality_nested_title", "Schachtelsatz-Kandidaten")}
+            </h3>
+            <p className="text-xs mb-2" style={{color: "var(--text-muted)"}}>
+                {t(
+                    "ui.metadata.quality_nested_hint",
+                    "Diese Sätze könnten von einer Aufteilung profitieren.",
+                )}
+            </p>
+            <div className="flex flex-col gap-1">
+                {withSentences.map((ch) => {
+                    const ranked = rankSentences(
+                        (ch.long_sentences ?? []).map((s) => s.text),
+                        10,
+                    )
+                    return (
+                        <CollapsibleConfigSection
+                            key={ch.chapter_id}
+                            storageKey={`bibliogon-collapsible-quality-nested-${ch.chapter_id}`}
+                            heading={`${ch.chapter} (${ranked.length})`}
+                            testidPrefix={`nested-${ch.chapter_id}`}
+                            defaultOpen={false}
+                        >
+                            <ol className="m-0 mt-1 mb-2 list-decimal pl-5 flex flex-col gap-1">
+                                {ranked.map((s, i) => (
+                                    <li key={i} className="text-xs leading-snug">
+                                        <span>„{sentenceAnchor(s.text)}"</span>
+                                        <span style={{color: "var(--text-muted)"}}>
+                                            {" — "}
+                                            {t("ui.metadata.quality_nested_words", "{count} Wörter")
+                                                .replace("{count}", String(s.wordCount))}
+                                            {" · "}
+                                            {t("ui.metadata.quality_nested_clauses", "{count} Nebensätze")
+                                                .replace("{count}", String(s.clauseCount))}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ol>
+                        </CollapsibleConfigSection>
+                    )
+                })}
+            </div>
+        </section>
     )
 }
 

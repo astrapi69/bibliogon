@@ -1385,6 +1385,10 @@ ui:
     quality_tip_long: "Mehr lange Sätze als der Buchdurchschnitt ({avg}). Sätze kürzen oder aufteilen."
     quality_nav_label: "Zu erstem Treffer ({metric}) in {chapter} springen"
     quality_nav_no_issues: "Keine Treffer in diesem Kapitel"
+    quality_nested_title: "Schachtelsatz-Kandidaten"
+    quality_nested_hint: "Diese Sätze könnten von einer Aufteilung profitieren."
+    quality_nested_words: "{count} Wörter"
+    quality_nested_clauses: "{count} Nebensätze"
     subtitle: "Untertitel"
     description: "Beschreibung"
     # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.

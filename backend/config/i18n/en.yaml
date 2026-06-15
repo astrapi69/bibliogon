@@ -1384,6 +1384,10 @@ ui:
     quality_tip_long: "More long sentences than the book average ({avg}). Shorten or split sentences."
     quality_nav_label: "Jump to first {metric} issue in {chapter}"
     quality_nav_no_issues: "No findings in this chapter"
+    quality_nested_title: "Nested-sentence candidates"
+    quality_nested_hint: "These sentences could benefit from being split."
+    quality_nested_words: "{count} words"
+    quality_nested_clauses: "{count} clauses"
     subtitle: "Subtitle"
     description: "Description"
     # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.
