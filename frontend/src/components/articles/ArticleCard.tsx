@@ -15,8 +15,8 @@ import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
 import ContentTypeBadge from "./ContentTypeBadge";
-import { Badge } from "../Badge";
-import { publicationStatusVariant } from "../../utils/publicationStatusBadge";
+import StatusBadge from "../../lib/components/StatusBadge";
+import { publicationStatusLabels } from "../../utils/publicationStatusBadge";
 import styles from "./ArticleCard.module.css";
 
 interface Props {
@@ -100,16 +100,11 @@ export default function ArticleCard({ article, onClick, onDelete, onDeletePerman
                         testId={`article-card-type-${article.id}`}
                         className={styles.status}
                     />
-                    <Badge
+                    <StatusBadge
                         testId={`article-card-status-${article.id}`}
-                        variant={publicationStatusVariant(article.status ?? "draft")}
-                        size="sm"
-                    >
-                        {t(
-                            `ui.articles.status_${article.status ?? "draft"}`,
-                            article.status ?? "draft",
-                        )}
-                    </Badge>
+                        status={article.status ?? "draft"}
+                        labels={publicationStatusLabels(t)}
+                    />
                     <span className={styles.lang}>{(article.language || "??").toUpperCase()}</span>
                     <span className={styles.date}>
                         <Clock
