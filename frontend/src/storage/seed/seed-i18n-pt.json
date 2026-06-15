@@ -331,6 +331,7 @@
       "save_retry": "Tentar novamente",
       "words": "Palavras",
       "characters": "Caracteres",
+      "reading_time": "min de leitura",
       "search": "Buscar...",
       "replace": "Substituir...",
       "replace_one": "Substituir",
@@ -2229,6 +2230,14 @@
     "ai_template": {
       "editor_section": "Modelo de IA",
       "offline_configure_key": "Configure a sua chave de API em Definições > IA para usar o preenchimento com IA offline.",
+      "intro": {
+        "title": "Introdução",
+        "what": "Um modelo de IA é um ficheiro estruturado que a IA utiliza para gerar capítulos, descrições e metadados do teu livro, com base no tipo, género e público-alvo.",
+        "how": "Preenche os campos que quiseres e deixa a IA completá-los, ou exporta o modelo, preenche-o externamente e importa-o de volta.",
+        "no_key": "Ainda não há nenhum fornecedor de IA configurado.",
+        "settings_link": "Abrir Definições → IA",
+        "learn_more": "Saber mais"
+      },
       "panel": {
         "title": "Modelo de IA",
         "fill": "Preencher com IA",
@@ -2365,14 +2374,6 @@
           "all_failed": "Importação em massa: falharam todas as {failed} entradas",
           "error": "A importação em massa falhou"
         }
-      },
-      "intro": {
-        "title": "Introdução",
-        "what": "Um modelo de IA é um ficheiro estruturado que a IA utiliza para gerar capítulos, descrições e metadados do teu livro, com base no tipo, género e público-alvo.",
-        "how": "Preenche os campos que quiseres e deixa a IA completá-los, ou exporta o modelo, preenche-o externamente e importa-o de volta.",
-        "no_key": "Ainda não há nenhum fornecedor de IA configurado.",
-        "settings_link": "Abrir Definições → IA",
-        "learn_more": "Saber mais"
       }
     },
     "bulk_ai_fill": {

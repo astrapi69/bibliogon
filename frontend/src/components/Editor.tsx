@@ -30,6 +30,8 @@ import {
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
 import { useAiChapterReview } from "../hooks/useAiChapterReview";
 import { useEditorWordCount } from "../hooks/useEditorWordCount";
+import EditorStatusBar from "../lib/components/EditorStatusBar";
+import { WORDS_PER_MINUTE } from "../lib/utils/textStats";
 import { useEditorAutosave } from "../hooks/useEditorAutosave";
 import { useEditorTools } from "../hooks/useEditorTools";
 import { useI18n } from "../hooks/useI18n";
@@ -894,17 +896,23 @@ export default function Editor({
 
             {/* Status bar */}
             <div className={styles.statusBar}>
-                <span className={styles.wordCount}>
-                    {wordCount} {t("ui.editor.words", "Wörter")}
-                    {" / "}
-                    {charCount} {t("ui.editor.characters", "Zeichen")}
+                <EditorStatusBar
+                    wordCount={wordCount}
+                    readingTimeMin={wordCount > 0 ? Math.ceil(wordCount / WORDS_PER_MINUTE) : 0}
+                    charCount={charCount}
+                    labels={{
+                        words: t("ui.editor.words", "Wörter"),
+                        readingTime: t("ui.editor.reading_time", "Min Lesezeit"),
+                        characters: t("ui.editor.characters", "Zeichen"),
+                    }}
+                >
                     {/* Word target (read-only; set in the Storyboard). */}
                     {wordGoal && wordGoal > 0 && (
                         <span className={styles.goalBtn} data-testid="editor-word-goal">
-                            {t("ui.editor.goal", "Ziel")}: {wordGoal}
+                            · {t("ui.editor.goal", "Ziel")}: {wordGoal}
                         </span>
                     )}
-                </span>
+                </EditorStatusBar>
                 {/* Progress bar for the word target */}
                 {wordGoal && wordGoal > 0 && (
                     <div className={styles.goalProgress}>

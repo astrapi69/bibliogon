@@ -317,6 +317,7 @@ ui:
     save_retry: "Erneut versuchen"
     words: "Wörter"
     characters: "Zeichen"
+    reading_time: "Min Lesezeit"
     search: "Suchen..."
     replace: "Ersetzen..."
     replace_one: "Ersetzen"

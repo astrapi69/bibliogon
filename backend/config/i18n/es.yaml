@@ -317,6 +317,7 @@ ui:
     save_retry: "Reintentar"
     words: "Palabras"
     characters: "Caracteres"
+    reading_time: "min de lectura"
     markdown_mode: "Markdown"
     wysiwyg_mode: "WYSIWYG"
     rename_failed: "Error al renombrar"
