@@ -2,31 +2,89 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
-## [Unreleased]
+## [0.53.0] - 2026-06-15
+
+The **god-file burn-down + offline-depth** release. A coordinated cohesion
+sweep retires the project's largest files: a **backend service-extraction
+series** (16 splits, no new ERROR/WARN on the cohesion watcher) and a
+**frontend burn-down** that cuts `api/client.ts` from 5212 to a 13-line
+re-export barrel and reduces `.filesize-baseline` from 16 to 5 entries. The
+generic per-`(table,id)` **serialized write-queue** now covers every
+read-modify-write storage method, closing the settings-clobber data-loss class
+for good. **Offline article featured-image assets** (#157) round out the
+backendless PWA: image bytes live in IndexedDB and render through a
+service-worker `/api/...` intercept. Settings gains **selective data export**,
+the **book-metadata section nav** adopts the Settings sidebar pattern (now a
+documented cross-project-reusable architecture), and authoring picks up a
+**book-language combobox** with custom-language management. On the
+infrastructure side, an **E2E smoke CI workflow** and a **weekly
+dependency-security watcher** join the gate, the **complexity watcher**
+(radon + ruff `C901` + ESLint) and **Vibe-Coding policy / MODULE-ARCHITECTURE**
+references are formalized, the **White-Label** configuration is removed, and a
+**manual test plan + release checklist** is written down. No schema migrations;
+existing data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
 
 ### Added
-- Offline article featured-image assets (#157): article images upload and render
-  in the backendless PWA — bytes are stored in IndexedDB (as `ArrayBuffer`),
-  served back through a service-worker `/api/...` intercept, and resolved via a
-  `useArticleImageUrl` hook; Medium CDN featured images are cached locally on
+- **Offline article featured-image assets** (#157): article images upload and
+  render in the backendless PWA — bytes are stored in IndexedDB (as
+  `ArrayBuffer`), served back through a service-worker `/api/...` intercept, and
+  resolved via a `useArticleImageUrl` hook; card and row thumbnails resolve
+  through the same path; Medium CDN featured images are cached locally on
   import.
+- **Selective data export** in Settings > Backups: choose which entity sets to
+  include in a full-data export. (#248)
+- **Book-language combobox** with custom-language management for authoring.
+  (#237)
+- **Audiobook download filename** derived from the book title, plus a
+  **quality-report** export in Markdown and PDF. (#243)
+- **E2E smoke test workflow** (CI), later moved to a nightly schedule with a
+  capped job runtime and a CI-only single retry. (c0877b38, 3fab532f, 35e1698a)
+- **Weekly scheduled dependency-security watcher** (CI). (ce6a0967)
+- **Manual test plan, automation-coverage audit, and release checklist**
+  (`docs/MANUAL-TESTPLAN.md`). (#256)
 
 ### Changed
-- God-file burn-down (frontend PRs #200–#229, backend service-extraction sweep
-  #166–#200): `.filesize-baseline` reduced from 16 to 5 entries. `api/client.ts`
-  split into `api/http`/`errors`/`apiObject` + 5 domain modules + a `types`
-  barrel (5212 → 13-line re-export barrel, 211 call sites unchanged); backend
-  `app/main.py` split to a thin facade (1046 → 442, ERROR-blocker resolved);
-  12 of 14 frontend god-files brought under 1000. Remaining baseline debt:
-  `Editor.tsx`, `storage/dexie-storage.ts` (re-grandfathered via #210), and three
-  plugin PDF files. Reusable extractions landed under `lib/` (`SortableList`,
-  pure utils) and `shared/utils/downloadBlob`.
-- Documentation refreshed to the post-v0.52.0 / post-burn-down state
-  (audits, VIBE-CODING-POLICY, MODULE-ARCHITECTURE, CLAUDE.md, README) (#230).
+- **God-file burn-down — backend**: a service-extraction sweep (16 splits, no
+  new cohesion ERROR/WARN) moved business logic out of god-files into focused
+  service modules — `app/main.py` split into config-loader, router-registration
+  and exception-handler modules (under the ERROR threshold); settings, import,
+  audiobook, AI, git-sync, chapters and backup routers routed through dedicated
+  services; the export, `comic_book_pdf` and `picture_book_pdf` god-files split
+  into packages.
+- **God-file burn-down — frontend**: `api/client.ts` split into
+  `api/http` / `errors` / `apiObject` + 5 domain modules behind a `types` barrel
+  (5212 → 13-line re-export barrel, call sites unchanged); `BookEditor`,
+  `BookMetadataEditor`, `ChapterSidebar`, `PageCanvas`, `Editor.tsx` and the
+  wizard/comics/comments/preview/dashboard surfaces had hooks and pure helpers
+  extracted; `.filesize-baseline` reduced from 16 to 5 entries. Reusable
+  extractions landed under `lib/` (`SortableList<T>`, pure utils) and
+  `shared/utils/downloadBlob`.
+- **Serialized write-queue** generalized: every read-modify-write storage method
+  routes through a single per-`(table,id)` write-queue, closing the
+  read-modify-write clobber class.
+- **Book-metadata section nav** adopts the Settings sidebar pattern; the
+  Settings-menu architecture is documented as a cross-project-reusable
+  reference. (#249, ffeb051a)
+- **Vibe-Coding policy + MODULE-ARCHITECTURE** references added/expanded, with
+  an i18n key-removal checklist rule and a stale-dev-server rule for Playwright
+  runs. (940e0c14, 354d789f, b7570908)
+- Documentation refreshed to the post-burn-down state (audits, CLAUDE.md,
+  README, architecture rules); export/import format inventory + Danger-Zone
+  backup discoverability documented. (#230, 053b08a7)
+
+### Removed
+- **White-Label configuration** removed from Settings (and its i18n keys from
+  the settings guard). (8518cf86, 1293d505)
 
 ### Fixed
-- Offline article bulk delete + trash lifecycle routed through the storage seam
-  (#212); offline article-to-book conversion via the storage seam (#214).
+- **Pseudonym dropdown** shown consistently in the ArticleEditor and the
+  Convert-to-Book wizard. (d58ee854)
+- **Offline article bulk delete + trash lifecycle** routed through the storage
+  seam (#212); **offline article-to-book conversion** via the storage seam
+  (#214).
+- **Dashboard** shows a cover placeholder when a thumbnail fails to load.
+  (b56c780a)
+- **Offline article featured-image upload** in Dexie mode. (#157)
 
 ## [0.52.0] - 2026-06-13
 
