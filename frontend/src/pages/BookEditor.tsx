@@ -28,6 +28,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
+import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { BookOpen, Plus } from "lucide-react";
@@ -95,28 +96,10 @@ export default function BookEditor() {
     // toggle only render when the plugin is mounted.
     const [storyBibleAvailable, setStoryBibleAvailable] = useState(false);
     const [storyBibleOpen, setStoryBibleOpen] = useState(false);
-    // Mobile mutual-exclusion (matches the picture-book / comic editors'
-    // useDualSidebarCollapse): below SIDEBAR_MOBILE_BREAKPOINT_PX (768px)
-    // opening one of the two overlay sidebars closes the other so the
-    // canvas keeps full width. No-op at/above the breakpoint where the
-    // panels sit side-by-side.
-    const openStoryBibleExclusive = useCallback(() => {
-        setStoryBibleOpen(true);
-        if (typeof window !== "undefined" && window.innerWidth < SIDEBAR_MOBILE_BREAKPOINT_PX) {
-            setSidebarOpen(false);
-        }
-    }, [setSidebarOpen]);
-    const toggleSidebarExclusive = useCallback(() => {
-        const willOpen = !sidebarOpen;
-        toggleSidebar();
-        if (
-            willOpen &&
-            typeof window !== "undefined" &&
-            window.innerWidth < SIDEBAR_MOBILE_BREAKPOINT_PX
-        ) {
-            setStoryBibleOpen(false);
-        }
-    }, [sidebarOpen, toggleSidebar]);
+    // Mobile mutual-exclusion for the left ChapterSidebar + right
+    // StoryBibleSidebar overlays (see useExclusiveSidebars).
+    const {toggleLeft: toggleSidebarExclusive, openRight: openStoryBibleExclusive} =
+        useExclusiveSidebars(sidebarOpen, toggleSidebar, setSidebarOpen, setStoryBibleOpen);
     // The Story Bible entry whose detail/edit view occupies the main
     // content area (C5). refreshKey re-fetches the sidebar list after
     // editor-driven changes.
