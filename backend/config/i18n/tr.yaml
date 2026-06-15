@@ -831,6 +831,7 @@ ui:
       backup_first_title: "Önce yedek oluşturulsun mu?"
       backup_first_message: "Tüm kitaplar, makaleler, bölümler, yazarlar, ayarlar ve story bible verileri kalıcı olarak silinecek."
       create_backup: "Yedek oluştur"
+      backup_import_hint: "Bu JSON yedeğini daha sonra Ayarlar → Yedekler → Yedeği içe aktar bölümünden geri yükleyebilirsiniz (çevrimiçi veya çevrimdışı)."
       continue_without_backup: "Yedek olmadan devam et"
       backup_export_error: "Yedek dışa aktarma başarısız oldu"
       title: "Tehlikeli Bölge"

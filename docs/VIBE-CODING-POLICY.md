@@ -219,6 +219,7 @@ coordinates handoffs and resolves conflicts with reality.
 ## See Also
 
 - `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
+- `docs/EXPORT-IMPORT-FORMATS.md` - every export/import format, where each is triggered, offline/desktop/PWA support, and the JSON-vs-`.bgb` backup distinction
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
 - `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status

@@ -817,6 +817,7 @@ ui:
       backup_first_title: "Criar primeiro uma cópia de segurança?"
       backup_first_message: "Todos os livros, artigos, capítulos, autores, definições e dados da story bible serão eliminados permanentemente."
       create_backup: "Criar cópia de segurança"
+      backup_import_hint: "Você pode restaurar este backup JSON mais tarde em Configurações → Backups → Importar backup (online ou offline)."
       continue_without_backup: "Continuar sem cópia de segurança"
       backup_export_error: "Falha na exportação da cópia de segurança"
       title: "Zona de perigo"

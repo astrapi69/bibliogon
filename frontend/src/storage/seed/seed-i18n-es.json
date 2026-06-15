@@ -864,6 +864,7 @@
         "backup_first_title": "¿Crear primero una copia de seguridad?",
         "backup_first_message": "Todos los libros, artículos, capítulos, autores, ajustes y datos de la biblia de la historia se eliminarán de forma permanente.",
         "create_backup": "Crear copia de seguridad",
+        "backup_import_hint": "Puedes restaurar esta copia JSON más tarde en Ajustes → Copias de seguridad → Importar copia (en línea o sin conexión).",
         "continue_without_backup": "Continuar sin copia de seguridad",
         "backup_export_error": "Error al exportar la copia de seguridad",
         "title": "Zona de peligro",

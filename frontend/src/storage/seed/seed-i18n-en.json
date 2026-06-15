@@ -849,6 +849,7 @@
         "backup_first_title": "Create a backup first?",
         "backup_first_message": "All books, articles, chapters, authors, settings and story-bible data will be permanently deleted.",
         "create_backup": "Create backup",
+        "backup_import_hint": "You can restore this JSON backup later under Settings → Backups → Import backup (online or offline).",
         "continue_without_backup": "Continue without backup",
         "backup_export_error": "Backup export failed",
         "title": "Danger Zone",

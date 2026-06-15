@@ -864,6 +864,7 @@
         "backup_first_title": "Créer d'abord une sauvegarde ?",
         "backup_first_message": "Tous les livres, articles, chapitres, auteurs, paramètres et données de la bible de l'histoire seront définitivement supprimés.",
         "create_backup": "Créer une sauvegarde",
+        "backup_import_hint": "Vous pouvez restaurer cette sauvegarde JSON plus tard dans Paramètres → Sauvegardes → Importer une sauvegarde (en ligne ou hors ligne).",
         "continue_without_backup": "Continuer sans sauvegarde",
         "backup_export_error": "Échec de l'exportation de la sauvegarde",
         "title": "Zone sensible",

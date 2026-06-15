@@ -849,6 +849,7 @@
         "backup_first_title": "先にバックアップを作成しますか？",
         "backup_first_message": "すべての書籍、記事、章、著者、設定、ストーリーバイブルのデータが完全に削除されます。",
         "create_backup": "バックアップを作成",
+        "backup_import_hint": "このJSONバックアップは後で「設定 → バックアップ → バックアップをインポート」から復元できます（オンライン・オフライン両対応）。",
         "continue_without_backup": "バックアップせずに続行",
         "backup_export_error": "バックアップのエクスポートに失敗しました",
         "title": "危険ゾーン",
