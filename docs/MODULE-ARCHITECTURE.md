@@ -54,6 +54,46 @@ delegating to focused setup modules: `router_registration.py`,
 `routes_admin.py`. Keep `main.py` thin — new routers register in
 `router_registration.py`, not inline.
 
+## Where the post-burn-down splits live
+
+The 2026-06 god-file burn-down (PRs #166–#229) reshaped two hub files and
+extracted reusable helpers. Concrete current layout:
+
+### `api/` — the HTTP client (split from the former 5212-line `client.ts`)
+
+`client.ts` is now a **13-line re-export barrel** (211 call sites unchanged).
+Behind it:
+
+- `api/http.ts` — `guardedFetch`-backed transport core (request/upload/blob).
+- `api/errors.ts` — `ApiError` + `SaveAbortedError`.
+- `api/apiObject.ts` — assembles the single `api` surface by spreading the
+  five domain namespaces.
+- `api/{books,articles,chapters,media,platform}.ts` — domain-grouped API
+  namespaces; `api/import.ts` for the import wizard.
+- `api/types.ts` — all request/response DTOs in one declaration file
+  (whitelisted single-concern; mirrors the backend `schemas/__init__.py`
+  rationale).
+
+### `lib/` and `shared/` — reusable extractions
+
+- `lib/utils.ts` — `cn()` (shadcn class-merge).
+- `lib/components/SortableList.tsx` — generic `SortableList<T>` / sortable
+  group (extracted from ChapterSidebar / ConvertToBookWizard / Storyboard).
+- `lib/utils/{chapterGroups,markdownToHtml,pageLayoutStyles,pageTextContent}.ts`
+  — pure helpers lifted out of god-files (zero app imports).
+- `shared/utils/downloadBlob.ts` — the de-duplicated
+  `createObjectURL → anchor → revoke` helper (was triplicated across
+  Dashboard + ArticleList).
+
+### `storage/dexie-storage.ts` — still a monolith (debt)
+
+`storage/dexie-storage.ts` (2214 lines, in `.filesize-baseline`) is **not**
+currently split into a `storage/dexie/` directory. PR #204 introduced that
+directory, but the #210 merge (branched pre-#204) reverted it back to the
+monolith. The re-split into `storage/dexie/{schema,seed,blobs,graph,<entity>}.ts`
+behind a barrel is a tracked follow-up. It now also hosts the generic
+per-`(table, id)` `serializedUpdate` write-queue (read-modify-write seam).
+
 ## Reusability principles
 
 1. **Dependency injection over reach-back.** Pass collaborators in
@@ -90,6 +130,13 @@ delegating to focused setup modules: `router_registration.py`,
   + `AppFeatureProvider` + `useFeature(id)` — the central registry that
   resolves a gated surface to active / disabled-with-reason / hidden.
   New gated surfaces use `useFeature`, not ad-hoc connectivity checks.
+- **Barrel-directory split:** [`frontend/src/api/`](../frontend/src/api/)
+  — a family module that outgrew one file, split into transport + domain
+  namespaces behind a 13-line `client.ts` barrel so the 211 call sites stay
+  unchanged. The template for splitting any hub file (next: `dexie-storage.ts`).
+- **Props-driven `lib/`:** [`frontend/src/lib/components/SortableList.tsx`](../frontend/src/lib/components/SortableList.tsx)
+  — a generic, app-import-free component extracted once and reused across
+  surfaces (the Recurring-Component Unification Rule in practice).
 
 ## Global state is allowed (and necessary)
 
