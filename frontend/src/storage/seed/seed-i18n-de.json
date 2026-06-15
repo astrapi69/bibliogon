@@ -1436,6 +1436,7 @@
       "quality_genre_nonfiction": "Sachbuch",
       "quality_genre_scientific": "Wissenschaft",
       "quality_genre_children": "Kinderbuch",
+      "quality_wordcount_info": "Gezählt werden alle Wörter im Fließtext inklusive Überschriften. Textformatierung wird nicht mitgezählt; die Zahl kann leicht von anderen Editoren abweichen.",
       "subtitle": "Untertitel",
       "description": "Beschreibung",
       "word_target_label": "Wortziel (Buch)",

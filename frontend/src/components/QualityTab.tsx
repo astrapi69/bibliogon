@@ -9,7 +9,7 @@
  */
 
 import {useEffect, useState, type ReactNode} from "react"
-import {FileText, FileDown} from "lucide-react"
+import {FileText, FileDown, Info} from "lucide-react"
 import {api, ChapterMetric, ChapterMetricsResponse} from "../api/client"
 import {useI18n} from "../hooks/useI18n"
 import Tooltip from "./Tooltip"
@@ -44,6 +44,12 @@ interface Props {
 }
 
 const OUTLIER_FACTOR = 2.0
+
+/** Honest description of what the word count includes (#286). Matches the
+ *  backend extractor: every text node (headings included), formatting marks
+ *  excluded. */
+const WORD_COUNT_NOTE =
+    "Gezählt werden alle Wörter im Fließtext inklusive Überschriften. Textformatierung wird nicht mitgezählt; die Zahl kann leicht von anderen Editoren abweichen."
 
 function isOutlier(value: number, avg: number): boolean {
     if (avg <= 0) return false
@@ -89,6 +95,7 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         nestedTitle: t("ui.metadata.quality_nested_title", "Schachtelsatz-Kandidaten"),
         nestedWords: t("ui.metadata.quality_nested_words", "{count} Wörter"),
         nestedClauses: t("ui.metadata.quality_nested_clauses", "{count} Nebensätze"),
+        wordCountNote: t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE),
     })
 
     const reportSlug = (): string =>
@@ -325,7 +332,11 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
             {/* Summary */}
             <div className={styles.summary}>
                 <SummaryItem label={t("ui.metadata.quality_chapters", "Kapitel")} value={String(nonEmpty.length)} />
-                <SummaryItem label={t("ui.editor.words", "Woerter")} value={String(nonEmpty.reduce((s, c) => s + c.word_count, 0))} />
+                <SummaryItem
+                    label={t("ui.editor.words", "Woerter")}
+                    value={String(nonEmpty.reduce((s, c) => s + c.word_count, 0))}
+                    info={t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE)}
+                />
                 <SummaryItem
                     label={t("ui.metadata.quality_avg_readability", "Lesbarkeit (Ø)")}
                     value={avg.flesch_reading_ease ? avg.flesch_reading_ease.toFixed(1) : "-"}
@@ -374,6 +385,15 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
                 rowClassName={(ch) => (ch.empty ? styles.emptyRow : undefined)}
                 testId="quality-table"
             />
+
+            {/* Word-count transparency footnote (#286) */}
+            <p
+                className="mt-2 text-xs"
+                style={{color: "var(--text-muted)"}}
+                data-testid="quality-wordcount-note"
+            >
+                {t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE)}
+            </p>
 
             <NestedSentenceCandidates chapters={data.chapters} />
         </div>
@@ -440,10 +460,19 @@ function NestedSentenceCandidates({chapters}: {chapters: ChapterMetric[]}) {
     )
 }
 
-function SummaryItem({label, value}: {label: string; value: string}) {
+function SummaryItem({label, value, info}: {label: string; value: string; info?: string}) {
     return (
         <div className={styles.summaryItem}>
-            <div style={{fontSize: "0.75rem", color: "var(--text-muted)"}}>{label}</div>
+            <div style={{fontSize: "0.75rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: 4}}>
+                {label}
+                {info ? (
+                    <Tooltip content={info} side="top">
+                        <span tabIndex={0} aria-label={info} style={{display: "inline-flex", cursor: "help"}}>
+                            <Info size={12} />
+                        </span>
+                    </Tooltip>
+                ) : null}
+            </div>
             <div style={{fontSize: "1.125rem", fontWeight: 600}}>{value}</div>
         </div>
     )

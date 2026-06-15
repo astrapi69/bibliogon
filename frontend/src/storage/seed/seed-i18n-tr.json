@@ -1478,6 +1478,7 @@
       "quality_genre_nonfiction": "Kurgu dışı",
       "quality_genre_scientific": "Bilimsel",
       "quality_genre_children": "Çocuk kitabı",
+      "quality_wordcount_info": "Başlıklar dâhil metindeki tüm kelimeler sayılır. Biçimlendirme sayılmaz; sayı diğer editörlerden biraz farklı olabilir.",
       "subtitle": "Alt baslik",
       "description": "Aciklama",
       "word_target_label": "Kelime hedefi",

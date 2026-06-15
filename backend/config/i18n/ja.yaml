@@ -1395,6 +1395,7 @@ ui:
     quality_genre_nonfiction: "ノンフィクション"
     quality_genre_scientific: "学術"
     quality_genre_children: "児童書"
+    quality_wordcount_info: "見出しを含む本文中のすべての単語を数えます。書式は数えません。他のエディターと数値がわずかに異なる場合があります。"
     subtitle: "サブタイトル"
     description: "説明"
     word_target_label: "目標語数（書籍）"

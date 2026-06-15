@@ -1478,6 +1478,7 @@
       "quality_genre_nonfiction": "Non-fiction",
       "quality_genre_scientific": "Scientifique",
       "quality_genre_children": "Livre pour enfants",
+      "quality_wordcount_info": "Tous les mots du texte, titres compris, sont comptés. La mise en forme n'est pas comptée ; le nombre peut différer légèrement d'autres éditeurs.",
       "subtitle": "Sous-titre",
       "description": "Description",
       "word_target_label": "Objectif de mots",

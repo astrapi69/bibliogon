@@ -1435,6 +1435,7 @@ ui:
     quality_genre_nonfiction: "No ficción"
     quality_genre_scientific: "Científico"
     quality_genre_children: "Libro infantil"
+    quality_wordcount_info: "Se cuentan todas las palabras del texto, incluidos los títulos. El formato no se cuenta; el número puede diferir ligeramente de otros editores."
     subtitle: "Subtitulo"
     description: "Descripcion"
     word_target_label: "Objetivo de palabras"

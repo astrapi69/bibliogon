@@ -1395,6 +1395,7 @@ ui:
     quality_genre_nonfiction: "Μη μυθοπλασία"
     quality_genre_scientific: "Επιστημονικό"
     quality_genre_children: "Παιδικό βιβλίο"
+    quality_wordcount_info: "Μετρώνται όλες οι λέξεις του κειμένου, συμπεριλαμβανομένων των τίτλων. Η μορφοποίηση δεν μετράται· ο αριθμός μπορεί να διαφέρει ελαφρώς από άλλους επεξεργαστές."
     subtitle: "Υπότιτλος"
     description: "Περιγραφή"
     word_target_label: "Στόχος λέξεων"

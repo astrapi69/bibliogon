@@ -1436,6 +1436,7 @@
       "quality_genre_nonfiction": "Non-fiction",
       "quality_genre_scientific": "Scientific",
       "quality_genre_children": "Children's book",
+      "quality_wordcount_info": "All words in the body text, including headings, are counted. Text formatting is not counted; the number may differ slightly from other editors.",
       "subtitle": "Subtitle",
       "description": "Description",
       "word_target_label": "Word target",

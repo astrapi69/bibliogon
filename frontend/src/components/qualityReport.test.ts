@@ -22,6 +22,7 @@ const labels: QualityReportLabels = {
     nestedTitle: "Schachtelsatz-Kandidaten",
     nestedWords: "{count} Woerter",
     nestedClauses: "{count} Nebensaetze",
+    wordCountNote: "Gezaehlt werden alle Woerter im Fliesstext.",
 }
 
 function sample(): ChapterMetricsResponse {
@@ -105,6 +106,11 @@ describe("buildQualityReportMarkdown", () => {
     it("renders empty chapters as dashes", () => {
         const md = buildQualityReportMarkdown(sample(), labels)
         expect(md).toContain("| 2 | Leeres | - | - | - | - | - | - | - |")
+    })
+
+    it("includes the word-count transparency note", () => {
+        const md = buildQualityReportMarkdown(sample(), labels)
+        expect(md).toContain("> Gezaehlt werden alle Woerter im Fliesstext.")
     })
 
     it("renders nested-sentence candidates for chapters that have them", () => {

@@ -1436,6 +1436,7 @@
       "quality_genre_nonfiction": "Não ficção",
       "quality_genre_scientific": "Científico",
       "quality_genre_children": "Livro infantil",
+      "quality_wordcount_info": "São contadas todas as palavras do texto, incluindo os títulos. A formatação não é contada; o número pode diferir ligeiramente de outros editores.",
       "subtitle": "Subtitulo",
       "description": "Descricao",
       "word_target_label": "Meta de palavras",

@@ -35,6 +35,8 @@ export interface QualityReportLabels {
   nestedWords: string;
   /** Template "{count} clauses" for a candidate's comma-based clause count. */
   nestedClauses: string;
+  /** Footnote describing what the word count includes (#286). */
+  wordCountNote: string;
 }
 
 /** Lines (markdown) for the per-chapter nested-sentence candidates. */
@@ -103,6 +105,8 @@ export function buildQualityReportMarkdown(
     "",
     ...summaryLines(metrics, labels),
     "",
+    `> ${labels.wordCountNote}`,
+    "",
   ];
 
   const tableHead = [
@@ -148,6 +152,7 @@ export function buildQualityReportDocument(
   const summary = summaryLines(metrics, labels).map((line) =>
     paragraph(line.replace(/\*\*/g, "")),
   );
+  summary.push(paragraph(labels.wordCountNote));
 
   const chapterParagraphs = metrics.chapters.map((ch) => {
     if (ch.empty) {
