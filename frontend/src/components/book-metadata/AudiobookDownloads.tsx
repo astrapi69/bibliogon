@@ -21,6 +21,7 @@ import { LoadingIndicator } from "../LoadingIndicator";
 import { useWebSocket } from "../../hooks/useWebSocket";
 import { useDialog } from "../AppDialog";
 import AudiobookPlayer, { PlayerChapter } from "../AudiobookPlayer";
+import { slugify } from "../../shared/utils/slugify";
 import styles from "../BookMetadataEditor.module.css";
 
 function formatDuration(seconds: number | null | undefined): string {
@@ -32,12 +33,15 @@ function formatDuration(seconds: number | null | undefined): string {
 
 export default function AudiobookDownloads({
     bookId,
+    bookTitle,
     bookChapters,
 }: {
     bookId: string;
+    bookTitle: string;
     bookChapters: Chapter[];
 }) {
     const { t } = useI18n();
+    const bookSlug = slugify(bookTitle) || "audiobook";
     const dialog = useDialog();
     const [data, setData] = useState<BookAudiobook | null>(null);
     const [previews, setPreviews] = useState<
@@ -296,7 +300,8 @@ export default function AudiobookDownloads({
                                                 <a
                                                     className="btn btn-primary btn-sm"
                                                     href={api.bookAudiobook.mergedUrl(bookId)}
-                                                    download
+                                                    download={`${bookSlug}.mp3`}
+                                                    data-testid="audiobook-download-merged"
                                                 >
                                                     <Download size={12} />{" "}
                                                     {t(
@@ -312,7 +317,8 @@ export default function AudiobookDownloads({
                                                 <a
                                                     className="btn btn-secondary btn-sm"
                                                     href={api.bookAudiobook.zipUrl(bookId)}
-                                                    download
+                                                    download={`${bookSlug}.zip`}
+                                                    data-testid="audiobook-download-zip"
                                                 >
                                                     <Package size={12} />{" "}
                                                     {t("ui.audiobook.download_zip", "ZIP")}
@@ -480,7 +486,7 @@ export default function AudiobookDownloads({
                                                                             </span>
                                                                             <a
                                                                                 href={audio.url}
-                                                                                download
+                                                                                download={`${bookSlug}-${audio.filename}`}
                                                                                 className="btn-icon"
                                                                                 title="Download"
                                                                             >
