@@ -69,6 +69,17 @@ describe("AuthorSettings", () => {
         expect(screen.getByTestId("author-pen-name-1").textContent).toContain("Aster");
     });
 
+    it("shows an empty-state hint when there are no pen names", () => {
+        render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={() => {}} saving={false}/>);
+        expect(screen.getByTestId("author-pen-name-empty")).toBeTruthy();
+    });
+
+    it("hides the pen-name empty-state once one exists", () => {
+        const config = {author: {name: "X", pen_names: ["Aster"]}};
+        render(<AuthorSettings config={config} onSave={() => {}} saving={false}/>);
+        expect(screen.queryByTestId("author-pen-name-empty")).toBeNull();
+    });
+
     it("adds a pen-name via the add button", () => {
         render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={() => {}} saving={false}/>);
         const input = screen.getByTestId("author-pen-name-input") as HTMLInputElement;
