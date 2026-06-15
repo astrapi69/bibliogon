@@ -1498,7 +1498,11 @@
       "asin_ebook": "ASIN e-kitap",
       "asin_paperback": "ASIN karton kapak",
       "asin_hardcover": "ASIN sert kapak",
-      "backpage_author_bio": "Yazar hakkinda"
+      "backpage_author_bio": "Yazar hakkinda",
+      "group_content": "İçerik",
+      "group_publishing": "Yayımlama",
+      "group_production": "Üretim",
+      "group_advanced": "Gelişmiş"
     },
     "cover": {
       "choose_file": "Dosya sec",

@@ -1460,7 +1460,11 @@
       "asin_ebook": "ASIN 電子書籍",
       "asin_paperback": "ASIN ペーパーバック",
       "asin_hardcover": "ASIN ハードカバー",
-      "backpage_author_bio": "著者について"
+      "backpage_author_bio": "著者について",
+      "group_content": "コンテンツ",
+      "group_publishing": "出版",
+      "group_production": "制作",
+      "group_advanced": "詳細"
     },
     "cover": {
       "choose_file": "ファイルを選択",

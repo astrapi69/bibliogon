@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Book, BookDetail } from "../api/client";
 import { getStorage } from "../storage";
 import { useStorageMode } from "../storage/useStorageMode";
@@ -18,7 +18,10 @@ import PdfExportControls from "./PdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "./CoverUpload";
-import * as Tabs from "@radix-ui/react-tabs";
+import {
+    NavigationSidebar,
+    type NavigationSidebarGroup,
+} from "../lib/components/NavigationSidebar";
 import QualityTab, { NavigableFindingType } from "./QualityTab";
 import TranslationLinks from "./TranslationLinks";
 import AITemplatePanel from "./AITemplatePanel";
@@ -74,6 +77,19 @@ export default function BookMetadataEditor({
         bookTypesSnapshot.types[book.book_type] === undefined;
     const [showCopyDialog, setShowCopyDialog] = useState(false);
     const [showKdpWizard, setShowKdpWizard] = useState(false);
+    // Section navigation: replaces the Radix Tabs bar with the
+    // responsive sidebar+hamburger pattern (NavigationSidebar). Plain
+    // local state — the editor's chapter view already uses ?view=, so a
+    // second ?tab= param is deliberately avoided.
+    const [activeTab, setActiveTab] = useState("general");
+    // Guard: if a now-hidden conditional section (audiobook/quality for
+    // page-based books) is somehow active, fall back to "general". The
+    // nav can't surface a hidden item, but the deps could flip after a
+    // book_type/registry update.
+    const effectiveTab =
+        !isChapterBased && (activeTab === "audiobook" || activeTab === "quality")
+            ? "general"
+            : activeTab;
     // User-defined book languages from ui.custom_languages, merged with
     // the 8 fixed defaults for the language combobox. Silent fallback to
     // [] when the config has no custom languages.
@@ -161,6 +177,83 @@ export default function BookMetadataEditor({
 
     const otherBooks = (allBooks || []).filter((b) => b.id !== book.id);
 
+    // Section nav groups. Reuses the existing per-tab i18n labels +
+    // ``metadata-tab-*`` testids verbatim so current tests + E2E
+    // selectors still resolve. Audiobook + Quality are present only for
+    // chapter-based books (the conditional-presence pattern).
+    const navGroups: NavigationSidebarGroup[] = useMemo(
+        () => [
+            {
+                label: t("ui.metadata.group_content", "Inhalt"),
+                items: [
+                    {
+                        id: "general",
+                        label: t("ui.metadata.tab_general", "Allgemein"),
+                        testId: "metadata-tab-general",
+                    },
+                    {
+                        id: "story",
+                        label: t("ui.metadata.tab_story", "Story"),
+                        testId: "metadata-tab-story",
+                    },
+                    {
+                        id: "design",
+                        label: t("ui.metadata.tab_design", "Design"),
+                        testId: "metadata-tab-design",
+                    },
+                ],
+            },
+            {
+                label: t("ui.metadata.group_publishing", "Veröffentlichung"),
+                items: [
+                    {
+                        id: "publisher",
+                        label: t("ui.metadata.tab_publisher", "Verlag"),
+                        testId: "metadata-tab-publisher",
+                    },
+                    {
+                        id: "isbn",
+                        label: t("ui.metadata.tab_isbn", "ISBN"),
+                        testId: "metadata-tab-isbn",
+                    },
+                    {
+                        id: "marketing",
+                        label: t("ui.metadata.tab_marketing", "Marketing"),
+                        testId: "metadata-tab-marketing",
+                    },
+                ],
+            },
+            {
+                label: t("ui.metadata.group_production", "Produktion"),
+                items: isChapterBased
+                    ? [
+                          {
+                              id: "audiobook",
+                              label: t("ui.metadata.tab_audiobook", "Audiobook"),
+                              testId: "metadata-tab-audiobook",
+                          },
+                          {
+                              id: "quality",
+                              label: t("ui.metadata.tab_quality", "Qualitaet"),
+                              testId: "metadata-tab-quality",
+                          },
+                      ]
+                    : [],
+            },
+            {
+                label: t("ui.metadata.group_advanced", "Erweitert"),
+                items: [
+                    {
+                        id: "ai_template",
+                        label: t("ui.metadata.tab_ai_template", "KI-Vorlage"),
+                        testId: "metadata-tab-ai-template",
+                    },
+                ],
+            },
+        ],
+        [t, isChapterBased],
+    );
+
     return (
         <div className={styles.container}>
             {/* Header */}
@@ -243,79 +336,22 @@ export default function BookMetadataEditor({
                 </div>
             )}
 
-            {/* Tabs */}
-            <Tabs.Root defaultValue="general" style={{ maxWidth: 800 }}>
-                <Tabs.List className="radix-tabs-list" style={{ marginBottom: 16 }}>
-                    <Tabs.Trigger
-                        value="general"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-general"
-                    >
-                        {t("ui.metadata.tab_general", "Allgemein")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="story"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-story"
-                    >
-                        {t("ui.metadata.tab_story", "Story")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="publisher"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-publisher"
-                    >
-                        {t("ui.metadata.tab_publisher", "Verlag")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="isbn"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-isbn"
-                    >
-                        {t("ui.metadata.tab_isbn", "ISBN")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="marketing"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-marketing"
-                    >
-                        {t("ui.metadata.tab_marketing", "Marketing")}
-                    </Tabs.Trigger>
-                    <Tabs.Trigger
-                        value="design"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-design"
-                    >
-                        {t("ui.metadata.tab_design", "Design")}
-                    </Tabs.Trigger>
-                    {isChapterBased && (
-                        <>
-                            <Tabs.Trigger
-                                value="audiobook"
-                                className="radix-tab-trigger"
-                                data-testid="metadata-tab-audiobook"
-                            >
-                                {t("ui.metadata.tab_audiobook", "Audiobook")}
-                            </Tabs.Trigger>
-                            <Tabs.Trigger
-                                value="quality"
-                                className="radix-tab-trigger"
-                                data-testid="metadata-tab-quality"
-                            >
-                                {t("ui.metadata.tab_quality", "Qualitaet")}
-                            </Tabs.Trigger>
-                        </>
-                    )}
-                    <Tabs.Trigger
-                        value="ai_template"
-                        className="radix-tab-trigger"
-                        data-testid="metadata-tab-ai-template"
-                    >
-                        {t("ui.metadata.tab_ai_template", "KI-Vorlage")}
-                    </Tabs.Trigger>
-                </Tabs.List>
+            {/* Section navigation (responsive sidebar + hamburger) */}
+            <div className={styles.layout}>
+                <div className={styles.sidebarColumn}>
+                    <NavigationSidebar
+                        groups={navGroups}
+                        activeId={effectiveTab}
+                        onSelect={setActiveTab}
+                        ariaLabel={t(
+                            "ui.sidebar.metadata",
+                            "Buch-Metadaten",
+                        )}
+                    />
+                </div>
 
-                <Tabs.Content value="general">
+                <div className={styles.contentColumn}>
+                    {effectiveTab === "general" && (
                     <div className={styles.tabContent}>
                         <TranslationLinks bookId={book.id} />
                         <Row>
@@ -397,17 +433,17 @@ export default function BookMetadataEditor({
                             t={t}
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
-                 * the author-design metadata distinct from the
-                 * General tab's publication-side bibliographic
-                 * fields. ``book_idea`` is the short 1-2 sentence
-                 * premise (no fullscreen — small Field shape).
-                 * ``expose`` is the long-form Plot+Characters+
-                 * Setting document (Field multiline + markdown +
-                 * fullscreen — same shape as description). */}
-                <Tabs.Content value="story">
+                    {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
+                     * the author-design metadata distinct from the
+                     * General tab's publication-side bibliographic
+                     * fields. ``book_idea`` is the short 1-2 sentence
+                     * premise (no fullscreen — small Field shape).
+                     * ``expose`` is the long-form Plot+Characters+
+                     * Setting document (Field multiline + markdown +
+                     * fullscreen — same shape as description). */}
+                    {effectiveTab === "story" && (
                     <div className={styles.tabContent} data-testid="metadata-story-content">
                         <Field
                             label={t("ui.metadata.book_idea_label", "Buchidee")}
@@ -471,9 +507,9 @@ export default function BookMetadataEditor({
                             </p>
                         )}
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="publisher">
+                    {effectiveTab === "publisher" && (
                     <div className={styles.tabContent}>
                         <Row>
                             <Field
@@ -490,9 +526,9 @@ export default function BookMetadataEditor({
                             />
                         </Row>
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="isbn">
+                    {effectiveTab === "isbn" && (
                     <div className={styles.tabContent}>
                         <Row>
                             <Field
@@ -533,21 +569,14 @@ export default function BookMetadataEditor({
                             />
                         </Row>
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {/* HOTFIX (Categories+BISAC tab-leak bug): the previous
-                    ``forceMount`` was added in Bug 9 so happy-dom-based
-                    Vitests could query the Marketing-tab Categories +
-                    BISAC chip inputs without first clicking the tab.
-                    The comment claimed Radix still hides the content
-                    via the ``hidden`` attribute — wrong. Radix's
-                    Tabs.Content explicitly sets ``hidden: !present``,
-                    and with forceMount, ``present`` stays true ALWAYS
-                    (see node_modules/@radix-ui/react-tabs source).
-                    Result: Marketing content was visible on every tab.
-                    Vitests have been updated to click the Marketing
-                    tab BEFORE querying its content. */}
-                <Tabs.Content value="marketing">
+                    {/* Categories + BISAC (Bug 9) live in this Marketing
+                        section. With the NavigationSidebar refactor only
+                        the active section is rendered (conditional mount),
+                        so their testids are queryable only after the
+                        Marketing item is selected. */}
+                    {effectiveTab === "marketing" && (
                     <div className={styles.tabContent}>
                         {book.ai_tokens_used > 0 && (
                             <div
@@ -727,9 +756,9 @@ export default function BookMetadataEditor({
                             }
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                <Tabs.Content value="design">
+                    {effectiveTab === "design" && (
                     <div className={styles.tabContent}>
                         <CoverUpload
                             bookId={book.id}
@@ -768,11 +797,11 @@ export default function BookMetadataEditor({
                             fullscreen
                         />
                     </div>
-                </Tabs.Content>
+                    )}
 
-                {isChapterBased && (
-                    <>
-                        <Tabs.Content value="audiobook">
+                    {isChapterBased && (
+                        <>
+                            {effectiveTab === "audiobook" && (
                             <div className={styles.tabContent}>
                                 <AudiobookBookConfig
                                     bookLanguage={book.language}
@@ -804,9 +833,9 @@ export default function BookMetadataEditor({
                                     bookChapters={book.chapters || []}
                                 />
                             </div>
-                        </Tabs.Content>
+                            )}
 
-                        <Tabs.Content value="quality">
+                            {effectiveTab === "quality" && (
                             <div className={styles.tabContent}>
                                 <QualityTab
                                     bookId={book.id}
@@ -814,15 +843,17 @@ export default function BookMetadataEditor({
                                     onNavigateToIssue={onNavigateToIssue}
                                 />
                             </div>
-                        </Tabs.Content>
-                    </>
-                )}
-                <Tabs.Content value="ai_template">
+                            )}
+                        </>
+                    )}
+
+                    {effectiveTab === "ai_template" && (
                     <div className={styles.tabContent}>
                         <AITemplatePanel kind="book" id={book.id} onApplied={onRefresh} />
                     </div>
-                </Tabs.Content>
-            </Tabs.Root>
+                    )}
+                </div>
+            </div>
 
             <KdpPublishingWizard
                 open={showKdpWizard}

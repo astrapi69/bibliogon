@@ -1498,7 +1498,11 @@
       "asin_ebook": "ASIN del e-book",
       "asin_paperback": "ASIN tapa blanda",
       "asin_hardcover": "ASIN tapa dura",
-      "backpage_author_bio": "Sobre el autor"
+      "backpage_author_bio": "Sobre el autor",
+      "group_content": "Contenido",
+      "group_publishing": "Publicación",
+      "group_production": "Producción",
+      "group_advanced": "Avanzado"
     },
     "cover": {
       "choose_file": "Elegir archivo",
