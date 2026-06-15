@@ -39,6 +39,7 @@ import {
 import EditorContextMenu from "./EditorContextMenu";
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
 import { useAiChapterReview } from "../hooks/useAiChapterReview";
+import { useEditorWordCount } from "../hooks/useEditorWordCount";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
@@ -387,6 +388,8 @@ export default function Editor({
         }
     };
 
+    const { wordCount, charCount, syncCounts } = useEditorWordCount();
+
     const editor = useEditor({
         immediatelyRender: false,
         extensions: buildEditorExtensions(
@@ -397,7 +400,7 @@ export default function Editor({
         ),
         content: parseContent(content),
         onUpdate: ({ editor }) => {
-            syncCountsRef.current(editor);
+            syncCounts(editor);
             const json = JSON.stringify(editor.getJSON());
             debouncedSave(json);
         },
@@ -476,42 +479,12 @@ export default function Editor({
         reviewCostLabel,
     } = chapterReview;
 
-    // Live word/char count off editor.storage.characterCount.
-    // Updated from inside the existing useEditor onUpdate callback
-    // (the same callback that schedules debouncedSave) plus an
-    // initial sync on mount via useEffect. Issue #12 history:
-    //   1) inline `{editor.storage.characterCount.words()}` in JSX -
-    //      not React-reactive, never updated.
-    //   2) `useEditorState` selector - reactive, but wraps
-    //      useSyncExternalStore which produced stale renders under
-    //      React StrictMode + Playwright + Vite dev server.
-    //   3) `useEffect + editor.on('update')` listener - looked right
-    //      but the listener never fired in the smoke test, leaving
-    //      the count pinned to the on-mount value.
-    //   4) (current) write the count from the existing onUpdate
-    //      config callback. That path already runs for debouncedSave
-    //      so we know it fires; piggy-backing the count update there
-    //      removes the second-listener variable entirely.
-    const [wordCount, setWordCount] = useState(0);
-    const [charCount, setCharCount] = useState(0);
-    const syncCountsRef = useRef<(ed: TiptapEditor) => void>(() => {});
-    syncCountsRef.current = (ed: TiptapEditor) => {
-        // CharacterCount extension's `storage.words/characters()`
-        // returned stale values during smoke tests (issue #12 followup
-        // probe: 25 onUpdate calls all reported `words=2 chars=9` while
-        // ed.state.doc.textContent already showed the freshly typed
-        // string). Compute directly from textContent so the count
-        // tracks the doc state at the same moment React reads it.
-        const text = ed.state.doc.textContent;
-        const words = text.trim() ? text.trim().split(/\s+/).filter(Boolean).length : 0;
-        setWordCount(words);
-        setCharCount(text.length);
-    };
+    // Initial render: seed the counts off the just-mounted editor.
+    // (The live updates come from the onUpdate config callback above.)
     useEffect(() => {
         if (!editor) return;
-        // Initial render: seed the counts off the just-mounted editor.
-        syncCountsRef.current(editor);
-    }, [editor]);
+        syncCounts(editor);
+    }, [editor, syncCounts]);
 
     // Keep ref in sync for async callbacks (image upload)
     useEffect(() => {
