@@ -19,7 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { Bug, ExternalLink } from "lucide-react";
 import {
   api,
   ApiError,
@@ -32,6 +32,7 @@ import { getLocalized } from "./utils";
 import SupportSection, { getDonationsConfig } from "../SupportSection";
 import { SectionHeader } from "./SectionHeader";
 import { LanAccessSettings } from "./LanAccessSettings";
+import ErrorReportDialog from "../ErrorReportDialog";
 
 interface Props {
   appConfig: Record<string, unknown>;
@@ -91,6 +92,7 @@ export function AboutSettings({ appConfig }: Props) {
   const [plugins, setPlugins] = useState<DiscoveredPlugin[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [reportOpen, setReportOpen] = useState(false);
   const offline = getStorage().mode === "dexie";
   const donationsConfig = getDonationsConfig(appConfig);
 
@@ -187,9 +189,17 @@ export function AboutSettings({ appConfig }: Props) {
               <SupportSection config={donationsConfig} />
             </article>
           ) : null}
-          <ResourcesSection t={t} />
+          <ResourcesSection
+            t={t}
+            onCreateReport={() => setReportOpen(true)}
+          />
         </div>
       )}
+
+      <ErrorReportDialog
+        open={reportOpen}
+        onClose={() => setReportOpen(false)}
+      />
     </section>
   );
 }
@@ -458,8 +468,16 @@ function ContributorsSection({ t }: { t: T }) {
 }
 
 /** License + external resource links (repository, documentation,
- *  issue tracker). Static client-side data, so it renders offline. */
-function ResourcesSection({ t }: { t: T }) {
+ *  issue tracker) plus a proactive "create error report" entry that
+ *  opens the ErrorReportDialog without a preceding crash (EVT-03).
+ *  Static client-side data, so it renders offline. */
+function ResourcesSection({
+  t,
+  onCreateReport,
+}: {
+  t: T;
+  onCreateReport: () => void;
+}) {
   return (
     <article data-testid="about-resources-section" style={sectionStyle}>
       <h3 style={{ marginTop: 0, marginBottom: 12 }}>
@@ -527,6 +545,22 @@ function ResourcesSection({ t }: { t: T }) {
           </a>
         </dd>
       </dl>
+      <button
+        type="button"
+        className="btn btn-secondary"
+        data-testid="about-create-report"
+        onClick={onCreateReport}
+        style={{
+          marginTop: 16,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 6,
+          minHeight: 44,
+        }}
+      >
+        <Bug size={16} aria-hidden />
+        {t("ui.error_report.create_button", "Fehlerbericht erstellen")}
+      </button>
     </article>
   );
 }
