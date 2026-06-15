@@ -331,6 +331,7 @@
       "save_retry": "Tekrar dene",
       "words": "Kelimeler",
       "characters": "Karakterler",
+      "reading_time": "dk okuma",
       "search": "Ara...",
       "replace": "Degistir...",
       "replace_one": "Degistir",
@@ -2228,6 +2229,14 @@
     "ai_template": {
       "editor_section": "Yapay Zekâ Şablonu",
       "offline_configure_key": "Çevrimdışı yapay zekâ doldurmasını kullanmak için API anahtarınızı Ayarlar > Yapay Zekâ bölümünde yapılandırın.",
+      "intro": {
+        "title": "Giriş",
+        "what": "Yapay zeka şablonu, yapay zekanın kitabının türüne, türüne ve hedef kitlesine göre bölümler, açıklamalar ve meta veriler oluşturmak için kullandığı yapılandırılmış bir dosyadır.",
+        "how": "İstediğin alanları doldur ve yapay zekanın tamamlamasını sağla ya da şablonu dışa aktar, harici olarak doldur ve geri içe aktar.",
+        "no_key": "Henüz bir yapay zeka sağlayıcısı yapılandırılmadı.",
+        "settings_link": "Ayarlar → Yapay Zeka'yı aç",
+        "learn_more": "Daha fazla bilgi"
+      },
       "panel": {
         "title": "Yapay Zekâ Şablonu",
         "fill": "Yapay zekâyla doldur",
@@ -2364,14 +2373,6 @@
           "all_failed": "Toplu içe aktarma: {failed} kaydın tümü başarısız oldu",
           "error": "Toplu içe aktarma başarısız oldu"
         }
-      },
-      "intro": {
-        "title": "Giriş",
-        "what": "Yapay zeka şablonu, yapay zekanın kitabının türüne, türüne ve hedef kitlesine göre bölümler, açıklamalar ve meta veriler oluşturmak için kullandığı yapılandırılmış bir dosyadır.",
-        "how": "İstediğin alanları doldur ve yapay zekanın tamamlamasını sağla ya da şablonu dışa aktar, harici olarak doldur ve geri içe aktar.",
-        "no_key": "Henüz bir yapay zeka sağlayıcısı yapılandırılmadı.",
-        "settings_link": "Ayarlar → Yapay Zeka'yı aç",
-        "learn_more": "Daha fazla bilgi"
       }
     },
     "bulk_ai_fill": {

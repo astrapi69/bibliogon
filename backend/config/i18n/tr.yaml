@@ -317,6 +317,7 @@ ui:
     save_retry: "Tekrar dene"
     words: "Kelimeler"
     characters: "Karakterler"
+    reading_time: "dk okuma"
     search: "Ara..."
     replace: "Degistir..."
     replace_one: "Degistir"

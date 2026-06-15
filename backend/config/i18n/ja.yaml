@@ -317,6 +317,7 @@ ui:
     save_retry: "再試行"
     words: "単語数"
     characters: "文字数"
+    reading_time: "分で読了"
     search: "検索..."
     replace: "置換..."
     replace_one: "置換"

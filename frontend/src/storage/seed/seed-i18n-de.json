@@ -331,6 +331,7 @@
       "save_retry": "Erneut versuchen",
       "words": "Wörter",
       "characters": "Zeichen",
+      "reading_time": "Min Lesezeit",
       "search": "Suchen...",
       "replace": "Ersetzen...",
       "replace_one": "Ersetzen",
@@ -2228,6 +2229,14 @@
     "ai_template": {
       "editor_section": "KI-Vorlage",
       "offline_configure_key": "Konfiguriere deinen API-Schlüssel unter Einstellungen > KI, um die KI-Füllung offline zu nutzen.",
+      "intro": {
+        "title": "Einführung",
+        "what": "Eine KI-Vorlage ist eine strukturierte Datei, mit der die KI Kapitel, Beschreibungen und Metadaten für dein Buch generiert, basierend auf Buchtyp, Genre und Zielgruppe.",
+        "how": "Fülle die gewünschten Felder aus und lass sie von der KI ergänzen, oder exportiere die Vorlage, fülle sie extern aus und importiere sie wieder zurück.",
+        "no_key": "Es ist noch kein KI-Anbieter konfiguriert.",
+        "settings_link": "Einstellungen → KI öffnen",
+        "learn_more": "Mehr erfahren"
+      },
       "panel": {
         "title": "KI-Vorlage",
         "fill": "Mit KI füllen",
@@ -2364,14 +2373,6 @@
           "all_failed": "Massen-Import: alle {failed} Einträge fehlgeschlagen",
           "error": "Massen-Import fehlgeschlagen"
         }
-      },
-      "intro": {
-        "title": "Einführung",
-        "what": "Eine KI-Vorlage ist eine strukturierte Datei, mit der die KI Kapitel, Beschreibungen und Metadaten für dein Buch generiert, basierend auf Buchtyp, Genre und Zielgruppe.",
-        "how": "Fülle die gewünschten Felder aus und lass sie von der KI ergänzen, oder exportiere die Vorlage, fülle sie extern aus und importiere sie wieder zurück.",
-        "no_key": "Es ist noch kein KI-Anbieter konfiguriert.",
-        "settings_link": "Einstellungen → KI öffnen",
-        "learn_more": "Mehr erfahren"
       }
     },
     "bulk_ai_fill": {
