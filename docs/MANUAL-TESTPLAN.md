@@ -712,6 +712,12 @@ guenstiger.
       Dexie-Build.
 - [ ] Alle P0/P1 Issues geschlossen.
 - [ ] `make test` gruen (Backend + Plugins + Vitest).
+- [ ] **Nightly-Suite gruen** (`nightly.yml`: 10-Plugin-Matrix + Backend/
+      Plugin/Frontend-Coverage + Complexity-Watcher) - der letzte
+      naechtliche Lauf ODER ein frischer manueller `workflow_dispatch` ist
+      gruen. Diese Jobs laufen seit #289 nicht mehr auf jedem PR; vor einem
+      Tag muss daher der Nightly-Stand bestaetigt sein. Lokal simulierbar
+      mit `make test-nightly`.
 - [ ] CHANGELOG aktualisiert (siehe release-workflow.md Schritt 3).
 - [ ] Version-Pins aktualisiert (`make sync-versions` +
       `make sync-versions-check` + `scripts/verify_version_pins.sh`).

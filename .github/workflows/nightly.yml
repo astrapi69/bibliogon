@@ -1,0 +1,242 @@
+name: Nightly
+
+# Nightly slow-suite (#289). These jobs are time-intensive but rarely catch a
+# real failure on a PR (in the last 30 runs: ci.yml 0 red, coverage.yml 1 red,
+# complexity-check.yml 0 red). Moving them off the PR path keeps PR CI under
+# ~15 min; they run nightly instead, plus on-demand via workflow_dispatch (the
+# release gate triggers them manually). A nightly red surfaces in the morning
+# and blocks no PR.
+#
+# Moved here from:
+#   - ci.yml          -> plugin-tests (10-plugin matrix)
+#   - coverage.yml    -> backend / plugin / frontend coverage (deleted)
+#   - complexity-check.yml -> python / typescript complexity (deleted)
+#
+# Security scanning is NOT here: it runs weekly in security-scan.yml.
+
+on:
+  schedule:
+    - cron: "0 3 * * *"  # daily, 03:00 UTC
+  workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  plugin-tests:
+    name: Plugin Tests (${{ matrix.plugin }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        plugin:
+          - bibliogon-plugin-audiobook
+          - bibliogon-plugin-comics
+          - bibliogon-plugin-export
+          - bibliogon-plugin-getstarted
+          - bibliogon-plugin-grammar
+          - bibliogon-plugin-help
+          - bibliogon-plugin-kdp
+          - bibliogon-plugin-kinderbuch
+          - bibliogon-plugin-ms-tools
+          - bibliogon-plugin-translation
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry virtualenv (${{ matrix.plugin }})
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-${{ hashFiles(format('plugins/{0}/poetry.lock', matrix.plugin)) }}
+          restore-keys: |
+            poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install plugin dependencies
+        working-directory: plugins/${{ matrix.plugin }}
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run plugin tests
+        working-directory: plugins/${{ matrix.plugin }}
+        run: poetry run pytest tests/ -v
+
+  backend-coverage:
+    name: Backend Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run backend coverage
+        working-directory: backend
+        run: |
+          poetry run pytest tests/ \
+            --cov=app \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term
+
+      - name: Upload backend coverage artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: backend-coverage
+          path: |
+            backend/htmlcov/
+            backend/coverage.xml
+          retention-days: 14
+
+  plugin-coverage:
+    name: Plugin Coverage (${{ matrix.plugin }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - plugin: bibliogon-plugin-audiobook
+            package: bibliogon_audiobook
+          - plugin: bibliogon-plugin-comics
+            package: bibliogon_comics
+          - plugin: bibliogon-plugin-export
+            package: bibliogon_export
+          - plugin: bibliogon-plugin-getstarted
+            package: bibliogon_getstarted
+          - plugin: bibliogon-plugin-grammar
+            package: bibliogon_grammar
+          - plugin: bibliogon-plugin-help
+            package: bibliogon_help
+          - plugin: bibliogon-plugin-kdp
+            package: bibliogon_kdp
+          - plugin: bibliogon-plugin-kinderbuch
+            package: bibliogon_kinderbuch
+          - plugin: bibliogon-plugin-ms-tools
+            package: bibliogon_ms_tools
+          - plugin: bibliogon-plugin-translation
+            package: bibliogon_translation
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install plugin dependencies
+        working-directory: plugins/${{ matrix.plugin }}
+        run: poetry install --no-interaction --no-ansi
+
+      - name: Run plugin coverage
+        working-directory: plugins/${{ matrix.plugin }}
+        run: |
+          poetry run pytest tests/ \
+            --cov=${{ matrix.package }} \
+            --cov-report=xml \
+            --cov-report=html \
+            --cov-report=term
+
+      - name: Upload plugin coverage artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.plugin }}-coverage
+          path: |
+            plugins/${{ matrix.plugin }}/htmlcov/
+            plugins/${{ matrix.plugin }}/coverage.xml
+          retention-days: 14
+
+  frontend-coverage:
+    name: Frontend Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      - name: Run frontend coverage
+        working-directory: frontend
+        run: npm run test:coverage
+
+      - name: Upload frontend coverage artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          retention-days: 14
+
+  python-complexity:
+    name: Python complexity (warn-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: radon + ruff C901 (warn-only)
+        run: |
+          python -m venv /tmp/cxenv
+          /tmp/cxenv/bin/pip install --quiet --upgrade pip
+          /tmp/cxenv/bin/pip install --quiet radon ruff
+          echo "=== radon cyclomatic complexity (average; rank B and worse) ==="
+          /tmp/cxenv/bin/radon cc backend/app/ -a -nb
+          echo ""
+          echo "=== radon: functions with rank E or F (complexity warning) ==="
+          /tmp/cxenv/bin/radon cc backend/app/ -ne
+          echo ""
+          echo "=== ruff C901 (max-complexity=15, warn-only) ==="
+          # --exit-zero: warn-only. C901 is deliberately NOT in the blocking
+          # `select` of pyproject.toml; the threshold (max-complexity=15,
+          # Phase 2 #279) comes from [tool.ruff.lint.mccabe]. The five legacy
+          # functions above 15 carry `# noqa: C901`, so this surfaces only
+          # NEW >15 functions.
+          (cd backend && /tmp/cxenv/bin/ruff check app/ --select C901 --exit-zero)
+
+  typescript-complexity:
+    name: TypeScript complexity (warn-only)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: ESLint complexity (warn-only)
+        working-directory: frontend
+        run: |
+          npm ci
+          echo "=== ESLint complexity (threshold 15, warn-only) ==="
+          # `|| true`: the watcher never blocks (Phase 2 #279, still warn-only).
+          # The `complexity` rule is NOT in the base eslint.config.js, so the
+          # functions already above 15 surface here as warnings rather than
+          # carrying inline disables. Counts + rationale:
+          # docs/audits/clean-code-audit.md.
+          npx eslint --rule 'complexity: ["warn", 15]' src/ || true

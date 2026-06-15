@@ -89,7 +89,14 @@ test suite before merge.
 - Aster-E2E-Gate: CC cannot push release tags. Aster runs the smoke suite
   locally and confirms 0 failed, 0 flaky before any tag.
 - Pre-commit hooks: formatting and linting.
-- CI workflows for PRs.
+- CI tiers (#289): the **PR pipeline** (`ci.yml`, target < 15 min) runs
+  `tsc`, backend + frontend tests (no coverage), `ruff` + `mypy`, pre-commit,
+  `madge`, the frontend build, and the cohesion file-size gate. The **slow
+  suite** - the 10-plugin test matrix, backend/plugin/frontend coverage, and
+  the complexity watcher - runs **nightly** (`nightly.yml`, 03:00 UTC +
+  `workflow_dispatch`). Coverage is still measured every night, just not on
+  every PR; the release flow triggers the nightly suite on demand. Locally:
+  `make test-fast` (PR set) and `make test-nightly` (full suite).
 
 ## 4. Security and Dependency Hygiene
 
@@ -105,16 +112,18 @@ AI sometimes suggests outdated, insecure, or nonexistent libraries.
 
 **Enforcement:**
 
-- **Hard-blocking in CI** (`ci.yml`, every push/PR to `main`/`develop`):
-  `pip-audit --skip-editable`, `bandit` (medium severity + confidence),
-  and `npm audit --audit-level=high`. Matching local targets:
-  `make audit`, `make security-backend`, `make bandit-backend`.
-- **Weekly scheduled watcher** (`security-scan.yml`, #149): warn-only
-  Sunday run that surfaces new CVEs published against already-merged
-  dependencies (the push/PR gate never re-runs without a code change).
-  Local counterpart: `make check-security`.
-- #47 (weasyprint CVE) is tracked but deferred; the blocking gate
-  `--ignore-vuln`s it, the warn-only watcher keeps it visible.
+- **Weekly blocking watcher** (`security-scan.yml`, Sunday 07:00 UTC +
+  `workflow_dispatch`, #278): `pip-audit --skip-editable`, `bandit` (High
+  blocks, Low/Medium warn), and `npm audit --audit-level=high` - blocking
+  on Critical/High. This is the single security instance (#289 removed the
+  duplicate per-PR scan from `ci.yml`, since it almost never caught a PR
+  failure and slowed every PR). It surfaces new CVEs published against
+  already-merged dependencies, which a push/PR-only gate would never re-run.
+  Matching local target: `make check-security`.
+- Accepted/deferred advisories live in `.security-ignore.yml` (the SSoT,
+  parsed by `scripts/security_ignore_args.py`); each entry carries a reason,
+  a tracking issue, and a review date. Currently: #47 (weasyprint
+  CVE-2025-68616), a render-risky major bump, deferred but kept visible.
 - Human review catches dependency additions in PR diffs.
 
 ## 5. Regular Refactoring
@@ -143,12 +152,13 @@ naming. Refactoring is not optional, it is scheduled.
   three plugin PDF files (`picture_book_pdf.py`, `routes.py`,
   `comic_book_pdf.py`). The backend `app/` ERROR-blocker `main.py` (1046) and
   `client.ts` (5212) were both resolved.
-- Complexity Watcher (#139) surfaces over-complex functions: radon
-  cyclomatic complexity + ruff `C901` (Python) and ESLint `complexity`
-  (TypeScript), threshold 20. Runs warn-only in
-  `.github/workflows/complexity-check.yml` (and `make check-complexity`)
-  with the same defense-in-depth logic as the cohesion watcher -
-  visibility first, harden later. `ruff` `C901` is deliberately not in the
+- Complexity Watcher (#139, threshold lowered to 15 in #279) surfaces
+  over-complex functions: radon cyclomatic complexity + ruff `C901`
+  (Python) and ESLint `complexity` (TypeScript). Runs warn-only, **nightly**
+  in `.github/workflows/nightly.yml` (#289 moved it off the PR path; also
+  `make check-complexity`) with the same defense-in-depth logic as the
+  cohesion watcher - visibility first, harden later. `ruff` `C901` is
+  deliberately not in the
   blocking `select` yet (two functions already exceed the threshold);
   promoting it is a Phase-2 follow-up after those are split.
 
@@ -225,7 +235,7 @@ coordinates handoffs and resolves conflicts with reality.
 - `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status
 - `docs/audits/frontend-god-files-audit-2026-06-14.md` - Principle 5, frontend split status
 - `.filesize-baseline` - Principle 5, god-file tracking
-- `.github/workflows/cohesion-check.yml` - Principle 5
-- `.github/workflows/complexity-check.yml` - Principle 5
+- `.github/workflows/cohesion-check.yml` - Principle 5 (PR file-size gate)
+- `.github/workflows/nightly.yml` - Principle 3 + 5 (nightly slow-suite: plugin matrix, coverage, complexity watcher)
 - `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher
 - `scripts/check-file-sizes.sh` - Principle 2 and 5
