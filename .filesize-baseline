@@ -23,9 +23,3 @@ plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf.py
 
 # --- Frontend: Editoren / Komponenten ---
 frontend/src/components/Editor.tsx
-
-# --- Frontend: Storage seam ---
-# Re-grandfathered: Batch 3 (#204) split this into storage/dexie/* (7-line
-# barrel), but the #210 merge (offline-article-assets, branched pre-#204)
-# reverted it back to the monolith. Re-split is a tracked follow-up.
-frontend/src/storage/dexie-storage.ts
