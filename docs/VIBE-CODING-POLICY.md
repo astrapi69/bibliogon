@@ -56,7 +56,12 @@ must be verified against the layer architecture.
 - Zero-`/api` E2E-Gate (`page.route('**/api/**', route => route.abort())`).
 - Cohesion Watcher (`scripts/check-file-sizes.sh`) blocks merges for new
   files >1000 lines (WARN >500).
-- `.filesize-baseline` tracks 18 existing god-files as grandfathered debt.
+- Read-modify-write protection: all RMW methods on the storage seam route
+  through a single generic per-`(table, id)` `serializedUpdate` write-queue
+  (`storage/dexie-storage.ts`), closing the settings-clobber data-loss path.
+- `.filesize-baseline` tracks the remaining god-files as grandfathered debt
+  (5 after the burn-down: `Editor.tsx`, `dexie-storage.ts`, and three plugin
+  PDF files; down from 16).
 
 **Open gap:** `settingsSeamGuard` covers only `api.settings.*`. No equivalent
 guard exists for `api.books.*`, `api.chapters.*`, or other seam paths.
@@ -131,8 +136,13 @@ naming. Refactoring is not optional, it is scheduled.
 
 - Clean-Code Audit (`docs/audits/clean-code-audit.md`).
 - Cohesion Watcher (#113) prevents new god-files from forming.
-- `.filesize-baseline` tracks the 18 remaining god-files as visible debt.
-  Each entry is a split-TODO.
+- `.filesize-baseline` tracks the remaining god-files as visible debt — **5**
+  after the 2026-06 burn-down (PRs #166–#229), down from 16. Each entry is a
+  split-TODO: `frontend/src/components/Editor.tsx`,
+  `frontend/src/storage/dexie-storage.ts` (re-grandfathered via #210), and the
+  three plugin PDF files (`picture_book_pdf.py`, `routes.py`,
+  `comic_book_pdf.py`). The backend `app/` ERROR-blocker `main.py` (1046) and
+  `client.ts` (5212) were both resolved.
 - Complexity Watcher (#139) surfaces over-complex functions: radon
   cyclomatic complexity + ruff `C901` (Python) and ESLint `complexity`
   (TypeScript), threshold 20. Runs warn-only in
@@ -211,7 +221,10 @@ coordinates handoffs and resolves conflicts with reality.
 - `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
+- `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status
+- `docs/audits/frontend-god-files-audit-2026-06-14.md` - Principle 5, frontend split status
 - `.filesize-baseline` - Principle 5, god-file tracking
 - `.github/workflows/cohesion-check.yml` - Principle 5
 - `.github/workflows/complexity-check.yml` - Principle 5
+- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher
 - `scripts/check-file-sizes.sh` - Principle 2 and 5
