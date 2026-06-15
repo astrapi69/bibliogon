@@ -4,13 +4,16 @@ Bibliogon imports the entire Medium archive that you receive via "Download your 
 
 > **Runs in your browser — works offline.** The ZIP is parsed and the articles
 > are created entirely **client-side**, so the import also works in the
-> offline web app with **no backend**. Three things behave differently offline:
-> images are kept as **Medium CDN URLs** (they load in the editor when you are
-> online, rather than being downloaded locally); detected **comments are
-> skipped** (the offline build has no comment store); and the article
-> **language** is taken from your default-language setting, with automatic
-> detection for non-Latin scripts (Greek, Japanese, Cyrillic). Duplicate
-> detection by canonical URL works the same online and offline.
+> offline web app with **no backend**. A few things behave differently offline:
+> body images are kept as **Medium CDN URLs** (they load in the editor when you
+> are online, rather than being downloaded into your data directory); detected
+> **comments are skipped** (the offline build has no comment store); and the
+> article **language** is taken from your default-language setting, with
+> automatic detection for non-Latin scripts (Greek, Japanese, Cyrillic).
+> One exception that DOES survive offline: each article's **first image** is
+> cached as a thumbnail (see below), so the dashboard tiles still show their
+> cover picture when you are offline. Duplicate detection by canonical URL
+> works the same online and offline.
 
 ## When to use it
 
@@ -48,6 +51,10 @@ Settings apply to every import; per-archive overrides are not supported.
 - **Erstes Bild als Titelbild setzen** (Use first image as featured image) — default on. The first image in the article body is assigned to the article's featured image (`Article.featured_image_url`). Posts without body images stay without a featured image; no error, no warning. Disable for authors who curate featured images manually.
 
 This setting affects new imports only. To retroactively set featured images on articles you imported before this feature shipped, run `scripts/fix_medium_import_featured_images.py` (dry-run by default; pass `--apply` to write). Articles with a featured image already set are skipped — your manual curation is preserved.
+
+### Offline thumbnails
+
+In the offline web app, the importer also tries to fetch the bytes of each article's first image during the import — while you are still online — and stores them in your browser's local database. That cached thumbnail is what the **Articles dashboard tiles** show even after you go offline, so your list of posts still looks like a list of posts rather than a wall of placeholders. This is best-effort: if an image cannot be fetched (a CORS restriction on the Medium CDN, or a flaky connection), the article keeps the CDN URL and simply falls back to the placeholder when offline. The full-resolution body images are not cached this way — only the dashboard thumbnail.
 
 ## Re-importing the same archive
 
