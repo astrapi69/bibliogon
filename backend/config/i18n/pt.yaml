@@ -1396,6 +1396,7 @@ ui:
     quality_genre_scientific: "Científico"
     quality_genre_children: "Livro infantil"
     quality_wordcount_info: "São contadas todas as palavras do texto, incluindo os títulos. A formatação não é contada; o número pode diferir ligeiramente de outros editores."
+    quality_disclaimer: "Este relatório analisa as características estilísticas do seu texto. Não substitui uma revisão de conteúdo. A qualidade da argumentação, a exatidão dos factos, a consistência do tom e a estrutura dos capítulos não são verificadas."
     subtitle: "Subtitulo"
     description: "Descricao"
     word_target_label: "Meta de palavras"

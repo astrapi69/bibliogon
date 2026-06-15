@@ -1437,6 +1437,7 @@
       "quality_genre_scientific": "学術",
       "quality_genre_children": "児童書",
       "quality_wordcount_info": "見出しを含む本文中のすべての単語を数えます。書式は数えません。他のエディターと数値がわずかに異なる場合があります。",
+      "quality_disclaimer": "このレポートは文章の文体的特徴を分析します。内容の編集に代わるものではありません。論旨の質、事実の正確さ、トーンの一貫性、章構成は確認されません。",
       "subtitle": "サブタイトル",
       "description": "説明",
       "word_target_label": "目標語数（書籍）",

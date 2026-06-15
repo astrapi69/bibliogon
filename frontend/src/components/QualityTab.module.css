@@ -82,3 +82,17 @@
 .emptyRow {
     opacity: 0.5;
 }
+
+.disclaimer {
+    margin-top: 24px;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    padding: 12px;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    line-height: 1.4;
+}

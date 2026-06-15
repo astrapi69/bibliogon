@@ -1400,6 +1400,7 @@ ui:
     quality_genre_scientific: "Scientific"
     quality_genre_children: "Children's book"
     quality_wordcount_info: "All words in the body text, including headings, are counted. Text formatting is not counted; the number may differ slightly from other editors."
+    quality_disclaimer: "This report analyzes stylistic features of your text. It does not replace a content edit. Argument quality, factual accuracy, tone consistency and chapter structure are not checked."
     subtitle: "Subtitle"
     description: "Description"
     # EXPOSE-BUCHIDEE-METADATA-01 C3: author-design field labels.

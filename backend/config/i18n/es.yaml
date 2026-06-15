@@ -1436,6 +1436,7 @@ ui:
     quality_genre_scientific: "Científico"
     quality_genre_children: "Libro infantil"
     quality_wordcount_info: "Se cuentan todas las palabras del texto, incluidos los títulos. El formato no se cuenta; el número puede diferir ligeramente de otros editores."
+    quality_disclaimer: "Este informe analiza las características estilísticas de tu texto. No sustituye una revisión de contenido. La calidad argumentativa, la exactitud de los hechos, la coherencia de tono y la estructura de capítulos no se comprueban."
     subtitle: "Subtitulo"
     description: "Descripcion"
     word_target_label: "Objetivo de palabras"

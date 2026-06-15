@@ -37,6 +37,8 @@ export interface QualityReportLabels {
   nestedClauses: string;
   /** Footnote describing what the word count includes (#286). */
   wordCountNote: string;
+  /** Analysis-scope disclaimer: style, not content (#287). */
+  disclaimer: string;
 }
 
 /** Lines (markdown) for the per-chapter nested-sentence candidates. */
@@ -127,6 +129,10 @@ export function buildQualityReportMarkdown(
     ...rows,
     "",
     ...nestedSentenceLines(metrics, labels),
+    "---",
+    "",
+    `> ${labels.disclaimer}`,
+    "",
   ].join("\n");
 }
 
@@ -204,7 +210,12 @@ export function buildQualityReportDocument(
         heading: "",
         doc: {
           type: "doc",
-          content: [...summary, ...chapterParagraphs, ...nestedParagraphs],
+          content: [
+            ...summary,
+            ...chapterParagraphs,
+            ...nestedParagraphs,
+            paragraph(labels.disclaimer),
+          ],
         },
       },
     ],

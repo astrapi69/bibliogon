@@ -23,6 +23,7 @@ const labels: QualityReportLabels = {
     nestedWords: "{count} Woerter",
     nestedClauses: "{count} Nebensaetze",
     wordCountNote: "Gezaehlt werden alle Woerter im Fliesstext.",
+    disclaimer: "Dieser Bericht ersetzt kein inhaltliches Lektorat.",
 }
 
 function sample(): ChapterMetricsResponse {
@@ -106,6 +107,11 @@ describe("buildQualityReportMarkdown", () => {
     it("renders empty chapters as dashes", () => {
         const md = buildQualityReportMarkdown(sample(), labels)
         expect(md).toContain("| 2 | Leeres | - | - | - | - | - | - | - |")
+    })
+
+    it("includes the analysis-scope disclaimer at the end", () => {
+        const md = buildQualityReportMarkdown(sample(), labels)
+        expect(md).toContain("> Dieser Bericht ersetzt kein inhaltliches Lektorat.")
     })
 
     it("includes the word-count transparency note", () => {

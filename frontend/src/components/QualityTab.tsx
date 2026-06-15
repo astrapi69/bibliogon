@@ -51,6 +51,10 @@ const OUTLIER_FACTOR = 2.0
 const WORD_COUNT_NOTE =
     "Gezählt werden alle Wörter im Fließtext inklusive Überschriften. Textformatierung wird nicht mitgezählt; die Zahl kann leicht von anderen Editoren abweichen."
 
+/** Honest scope statement: the report checks style, not content (#287). */
+const DISCLAIMER_NOTE =
+    "Dieser Bericht analysiert stilistische Merkmale Ihres Textes. Er ersetzt kein inhaltliches Lektorat. Argumentationsgüte, Faktentreue, Tonkonsistenz und Kapitelstruktur werden nicht geprüft."
+
 function isOutlier(value: number, avg: number): boolean {
     if (avg <= 0) return false
     return value > avg * OUTLIER_FACTOR
@@ -96,6 +100,7 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         nestedWords: t("ui.metadata.quality_nested_words", "{count} Wörter"),
         nestedClauses: t("ui.metadata.quality_nested_clauses", "{count} Nebensätze"),
         wordCountNote: t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE),
+        disclaimer: t("ui.metadata.quality_disclaimer", DISCLAIMER_NOTE),
     })
 
     const reportSlug = (): string =>
@@ -396,6 +401,12 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
             </p>
 
             <NestedSentenceCandidates chapters={data.chapters} />
+
+            {/* Analysis-scope disclaimer (#287) */}
+            <aside className={styles.disclaimer} data-testid="quality-disclaimer">
+                <Info size={14} aria-hidden style={{flexShrink: 0, marginTop: 2}} />
+                <span>{t("ui.metadata.quality_disclaimer", DISCLAIMER_NOTE)}</span>
+            </aside>
         </div>
     )
 }

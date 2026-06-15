@@ -1479,6 +1479,7 @@
       "quality_genre_scientific": "Scientifique",
       "quality_genre_children": "Livre pour enfants",
       "quality_wordcount_info": "Tous les mots du texte, titres compris, sont comptés. La mise en forme n'est pas comptée ; le nombre peut différer légèrement d'autres éditeurs.",
+      "quality_disclaimer": "Ce rapport analyse les caractéristiques stylistiques de votre texte. Il ne remplace pas une révision de fond. La qualité de l'argumentation, l'exactitude des faits, la cohérence du ton et la structure des chapitres ne sont pas vérifiées.",
       "subtitle": "Sous-titre",
       "description": "Description",
       "word_target_label": "Objectif de mots",

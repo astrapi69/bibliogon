@@ -1479,6 +1479,7 @@
       "quality_genre_scientific": "Bilimsel",
       "quality_genre_children": "Çocuk kitabı",
       "quality_wordcount_info": "Başlıklar dâhil metindeki tüm kelimeler sayılır. Biçimlendirme sayılmaz; sayı diğer editörlerden biraz farklı olabilir.",
+      "quality_disclaimer": "Bu rapor metninizin biçimsel özelliklerini analiz eder. İçerik editörlüğünün yerini tutmaz. Argüman kalitesi, olgusal doğruluk, ton tutarlılığı ve bölüm yapısı denetlenmez.",
       "subtitle": "Alt baslik",
       "description": "Aciklama",
       "word_target_label": "Kelime hedefi",
