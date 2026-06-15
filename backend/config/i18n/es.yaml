@@ -1424,6 +1424,7 @@ ui:
     quality_nested_hint: "Estas frases podrían beneficiarse de dividirse."
     quality_nested_words: "{count} palabras"
     quality_nested_clauses: "{count} subordinadas"
+    quality_total: "Total"
     subtitle: "Subtitulo"
     description: "Descripcion"
     word_target_label: "Objetivo de palabras"

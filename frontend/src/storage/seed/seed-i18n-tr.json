@@ -1467,6 +1467,7 @@
       "quality_nested_hint": "Bu cümleler bölünmekten fayda görebilir.",
       "quality_nested_words": "{count} kelime",
       "quality_nested_clauses": "{count} yan cümle",
+      "quality_total": "Toplam",
       "subtitle": "Alt baslik",
       "description": "Aciklama",
       "word_target_label": "Kelime hedefi",

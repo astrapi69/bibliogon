@@ -1384,6 +1384,7 @@ ui:
     quality_nested_hint: "Αυτές οι προτάσεις ίσως ωφεληθούν από έναν διαχωρισμό."
     quality_nested_words: "{count} λέξεις"
     quality_nested_clauses: "{count} προτάσεις"
+    quality_total: "Σύνολο"
     subtitle: "Υπότιτλος"
     description: "Περιγραφή"
     word_target_label: "Στόχος λέξεων"

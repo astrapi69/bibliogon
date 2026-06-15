@@ -1467,6 +1467,7 @@
       "quality_nested_hint": "Ces phrases gagneraient à être scindées.",
       "quality_nested_words": "{count} mots",
       "quality_nested_clauses": "{count} propositions",
+      "quality_total": "Total",
       "subtitle": "Sous-titre",
       "description": "Description",
       "word_target_label": "Objectif de mots",

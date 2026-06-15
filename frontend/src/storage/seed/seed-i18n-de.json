@@ -1425,6 +1425,7 @@
       "quality_nested_hint": "Diese Sätze könnten von einer Aufteilung profitieren.",
       "quality_nested_words": "{count} Wörter",
       "quality_nested_clauses": "{count} Nebensätze",
+      "quality_total": "Gesamt",
       "subtitle": "Untertitel",
       "description": "Beschreibung",
       "word_target_label": "Wortziel (Buch)",

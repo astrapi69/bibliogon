@@ -1425,6 +1425,7 @@
       "quality_nested_hint": "これらの文は分割すると読みやすくなる場合があります。",
       "quality_nested_words": "{count}語",
       "quality_nested_clauses": "{count}個の節",
+      "quality_total": "合計",
       "subtitle": "サブタイトル",
       "description": "説明",
       "word_target_label": "目標語数（書籍）",

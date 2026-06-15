@@ -1425,6 +1425,7 @@
       "quality_nested_hint": "These sentences could benefit from being split.",
       "quality_nested_words": "{count} words",
       "quality_nested_clauses": "{count} clauses",
+      "quality_total": "Total",
       "subtitle": "Subtitle",
       "description": "Description",
       "word_target_label": "Word target",
