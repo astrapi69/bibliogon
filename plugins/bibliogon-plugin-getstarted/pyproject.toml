@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-getstarted"
-version = "0.53.0"
+version = "0.53.1"
 description = "Onboarding and getting started guide for Bibliogon"
 authors = ["astrapi69"]
 license = "MIT"

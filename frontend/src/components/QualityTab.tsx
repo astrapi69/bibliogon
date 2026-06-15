@@ -124,6 +124,31 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
 
     return (
         <div>
+            {/* Report downloads */}
+            <div className="mb-3 flex flex-wrap gap-2">
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm min-h-[44px]"
+                    onClick={handleDownloadMarkdown}
+                    data-testid="quality-download-md"
+                >
+                    <FileText size={14} />{" "}
+                    {t("ui.metadata.quality_download_md", "Bericht (.md)")}
+                </button>
+                <button
+                    type="button"
+                    className="btn btn-secondary btn-sm min-h-[44px]"
+                    onClick={handleDownloadPdf}
+                    disabled={exporting}
+                    data-testid="quality-download-pdf"
+                >
+                    <FileDown size={14} />{" "}
+                    {exporting
+                        ? t("ui.common.loading", "Laden...")
+                        : t("ui.metadata.quality_download_pdf", "Bericht (.pdf)")}
+                </button>
+            </div>
+
             {/* Summary */}
             <div className={styles.summary}>
                 <SummaryItem label={t("ui.metadata.quality_chapters", "Kapitel")} value={String(nonEmpty.length)} />
@@ -165,31 +190,6 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
                         ))}
                     </tbody>
                 </table>
-            </div>
-
-            {/* Report downloads */}
-            <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm min-h-[44px]"
-                    onClick={handleDownloadMarkdown}
-                    data-testid="quality-download-md"
-                >
-                    <FileText size={14} />{" "}
-                    {t("ui.metadata.quality_download_md", "Bericht (.md)")}
-                </button>
-                <button
-                    type="button"
-                    className="btn btn-secondary btn-sm min-h-[44px]"
-                    onClick={handleDownloadPdf}
-                    disabled={exporting}
-                    data-testid="quality-download-pdf"
-                >
-                    <FileDown size={14} />{" "}
-                    {exporting
-                        ? t("ui.common.loading", "Laden...")
-                        : t("ui.metadata.quality_download_pdf", "Bericht (.pdf)")}
-                </button>
             </div>
         </div>
     )

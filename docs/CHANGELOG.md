@@ -2,6 +2,16 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.53.1] - 2026-06-15
+
+A small UX patch over v0.53.0.
+
+### Fixed
+- **Quality tab**: the report download buttons (Markdown / PDF) move from the
+  bottom of the report to the top, directly under the tab heading — no more
+  scrolling past the whole per-chapter table to reach them. Pure position
+  change, no behavior change. (#257)
+
 ## [0.53.0] - 2026-06-15
 
 The **god-file burn-down + offline-depth** release. A coordinated cohesion
