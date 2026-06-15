@@ -294,10 +294,11 @@ export default function Settings() {
                 <div className={styles.headerInner}>
                     <div className={styles.headerLeft}>
                         <button
-                            className={styles.backBtn}
+                            className="btn-icon"
                             onClick={handleBack}
                             data-testid="settings-nav-back"
                             aria-label={t("ui.dashboard.back", "Zurück")}
+                            title={t("ui.dashboard.back", "Zurück")}
                         >
                             <ChevronLeft size={18} />
                         </button>

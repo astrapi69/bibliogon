@@ -33,17 +33,6 @@
     gap: 8px;
 }
 
-.backBtn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--text-secondary);
-    display: flex;
-    align-items: center;
-    padding: 4px;
-    border-radius: 4px;
-}
-
 .title {
     font-family: var(--font-display);
     font-size: 1.25rem;
