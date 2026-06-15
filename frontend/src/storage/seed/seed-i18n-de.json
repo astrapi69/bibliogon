@@ -849,6 +849,7 @@
         "backup_first_title": "Zuerst ein Backup erstellen?",
         "backup_first_message": "Alle Bücher, Artikel, Kapitel, Autoren, Einstellungen und Story-Bible-Daten werden unwiderruflich gelöscht.",
         "create_backup": "Backup erstellen",
+        "backup_import_hint": "Dieses JSON-Backup kannst du später unter Einstellungen → Backups → Backup importieren wiederherstellen (online wie offline).",
         "continue_without_backup": "Ohne Backup fortfahren",
         "backup_export_error": "Backup-Export fehlgeschlagen",
         "title": "Gefahrenzone",

@@ -125,7 +125,11 @@ per-`(table, id)` `serializedUpdate` write-queue (read-modify-write seam).
 - **Storage seam:** [`frontend/src/storage/`](../frontend/src/storage/)
   — `IStorageService` + `getStorage()` route reads/writes to
   `ApiStorage` (online) or `DexieStorage` (offline). New data CRUD goes
-  through the seam so it works in the backendless PWA.
+  through the seam so it works in the backendless PWA. The export/import
+  surfaces (client export engine, JSON full-data backup, import wizard) all
+  flow through this seam — every format is inventoried in
+  [`EXPORT-IMPORT-FORMATS.md`](EXPORT-IMPORT-FORMATS.md) (which also explains
+  the JSON-backup vs `.bgb`-archive distinction).
 - **Feature gating:** [`frontend/src/features/featureConfig.ts`](../frontend/src/features/featureConfig.ts)
   + `AppFeatureProvider` + `useFeature(id)` — the central registry that
   resolves a gated surface to active / disabled-with-reason / hidden.

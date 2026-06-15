@@ -254,6 +254,16 @@ export function DangerZoneSettings() {
                 >
                     {t("ui.settings.danger_zone.create_backup", "Backup erstellen")}
                 </button>
+                <p
+                    className="mt-2 text-xs"
+                    style={{ color: "var(--text-muted)" }}
+                    data-testid="danger-zone-backup-import-hint"
+                >
+                    {t(
+                        "ui.settings.danger_zone.backup_import_hint",
+                        "Dieses JSON-Backup kannst du später unter Einstellungen → Backups → Backup importieren wiederherstellen (online wie offline).",
+                    )}
+                </p>
             </div>
 
             <button
