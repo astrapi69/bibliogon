@@ -47,6 +47,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import DropZone from "../lib/components/DropZone";
+import RecentDocuments from "../components/RecentDocuments";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
 import DashboardTrashView from "../components/DashboardTrashView";
 import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
@@ -685,6 +686,7 @@ export default function Dashboard() {
                  *  banner now persists across navigation (every page
                  *  shows it) until the user actively dismisses. */}
                 {!showTrash && <WritingGoalWidget />}
+                {!showTrash && <RecentDocuments kind="books" reloadKey={books} />}
                 {showTrash ? (
                     <DashboardTrashView
                         trash={trash}

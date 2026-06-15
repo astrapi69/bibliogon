@@ -136,6 +136,7 @@
       "value_other": "Other"
     },
     "dashboard": {
+      "recent": "Recently edited",
       "title": "My Books",
       "articles_nav": "Articles",
       "view_toggle_label": "Toggle view",

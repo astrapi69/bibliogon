@@ -136,6 +136,7 @@
       "value_other": "Diğer"
     },
     "dashboard": {
+      "recent": "Son düzenlenenler",
       "title": "Kitaplarim",
       "articles_nav": "Makaleler",
       "view_toggle_label": "Gorunum degistir",

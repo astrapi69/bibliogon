@@ -62,6 +62,7 @@ import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import DropZone from "../lib/components/DropZone";
+import RecentDocuments from "../components/RecentDocuments";
 import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
 import ArticleFilterSheet from "../components/articles/ArticleFilterSheet";
@@ -751,6 +752,7 @@ export default function ArticleList() {
                 </div>
             </header>
             <main id="main-content" className={layout.main}>
+                {!showTrash && <RecentDocuments kind="articles" reloadKey={articles} />}
                 {/* Page title row mirrors the books-dashboard ``mainHeader``
                 shape: heading + count + ViewToggle inline. Hidden in
                 trash mode; TrashPanel renders its own header that

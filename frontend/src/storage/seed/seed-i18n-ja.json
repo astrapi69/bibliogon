@@ -136,6 +136,7 @@
       "value_other": "その他"
     },
     "dashboard": {
+      "recent": "最近編集した項目",
       "title": "マイブック",
       "articles_nav": "記事",
       "view_toggle_label": "表示切替",
