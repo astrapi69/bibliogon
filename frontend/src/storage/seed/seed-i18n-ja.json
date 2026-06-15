@@ -3296,6 +3296,9 @@
       "scan_hint": "QRコードをスキャンしてデバイスを接続"
     },
     "export": {
+      "preview": "プレビュー",
+      "preview_title": "エクスポートのプレビュー",
+      "preview_desc": "エクスポートの整形済みプレビュー。",
       "menu_label": "エクスポート",
       "success": "エクスポートを作成しました。",
       "failed": "エクスポートに失敗しました。",
