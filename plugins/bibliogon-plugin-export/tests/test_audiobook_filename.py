@@ -1,6 +1,6 @@
 """Unit tests for the audiobook filename override helper."""
 
-from bibliogon_export.routes import _audiobook_base_name
+from bibliogon_export.export_helpers import _audiobook_base_name
 
 
 def test_falls_back_to_default_when_unset():
