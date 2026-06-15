@@ -726,7 +726,7 @@ export default function Dashboard() {
                     />
                 ) : (
                     <>
-                        <div className={styles.mainHeader}>
+                        <div className={styles.mainHeader} data-testid="dashboard-main-header">
                             <h2 className={styles.mainTitle}>
                                 {t("ui.dashboard.title", "Meine Bücher")}
                             </h2>
@@ -736,6 +736,7 @@ export default function Dashboard() {
                                     ? t("ui.dashboard.book_singular", "Buch")
                                     : t("ui.dashboard.book_plural", "Bücher")}
                             </span>
+                            <div style={{ flex: 1 }} />
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (

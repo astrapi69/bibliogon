@@ -739,7 +739,7 @@ export default function ArticleList() {
                 matches the books-trash chrome (chevron + icon + title
                 + count + empty-trash + ViewToggle). */}
                 {!showTrash && (
-                    <div className={layout.mainHeader}>
+                    <div className={layout.mainHeader} data-testid="article-list-main-header">
                         <h2 className={layout.heading}>
                             <FileText size={18} style={{ verticalAlign: -3, marginRight: 8 }} />
                             {t("ui.articles.list_heading", "Artikel")}
@@ -750,6 +750,7 @@ export default function ArticleList() {
                                 ? t("ui.articles.count_singular", "Artikel")
                                 : t("ui.articles.count_plural", "Artikel")}
                         </span>
+                        <div style={{ flex: 1 }} />
                         <ViewToggle mode={viewMode} onChange={setViewMode} />
                     </div>
                 )}
