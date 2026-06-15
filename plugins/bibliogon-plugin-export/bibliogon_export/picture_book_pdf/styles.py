@@ -129,6 +129,10 @@ _BASE_CSS = """
  * @font-face for Atkinson Hyperlegible with ``src: local()``
  * — fragile in containers without the font installed. */
 
+*, *::before, *::after {
+    box-sizing: border-box;
+}
+
 html, body {
     margin: 0;
     padding: 0;
@@ -227,8 +231,14 @@ html, body {
     max-height: 35%;
 }
 
-.page--speech_bubble .region-text {
-    grid-area: unset;
+.page--speech_bubble .bubble-host {
+    grid-area: image;
+    position: relative;
+    width: 100%;
+    height: 100%;
+}
+
+.page--speech_bubble .bubble-host .region-text {
     position: absolute;
     width: 40%;
     background: white;

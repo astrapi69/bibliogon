@@ -3228,3 +3228,99 @@ def test_render_page_legacy_flat_config_still_renders_image_top() -> None:
     )
     assert "justify-content: flex-start" in html
     assert "object-fit: contain" in html
+
+
+def _bubble_painted_rect(
+    anchor: str, bubble_width_pct: int, bubble_height_pct: int
+) -> tuple[float, float, float, float]:
+    """Render a single speech-bubble page to PDF and return the painted
+    bubble rectangle as (width, height, translate_x, translate_y) in
+    WeasyPrint content-stream CSS pixels.
+
+    The bubble fill is the largest non-page-sized rectangle painted in
+    the content stream; its preceding ``cm`` matrix carries the CSS
+    ``transform: translate(...)`` offsets (matrix elements e, f).
+    """
+    import zlib
+
+    import weasyprint
+
+    page = _make_page(
+        layout="speech_bubble",
+        text_content="Hi",
+        layout_config={
+            "speech_bubble": {
+                "bubbles": [
+                    {
+                        "anchor_position": anchor,
+                        "bubble_width": bubble_width_pct,
+                        "bubble_height": bubble_height_pct,
+                    }
+                ]
+            }
+        },
+    )
+    html = _build_html({"title": "T", "language": "de"}, [page], {})
+    pdf_bytes = weasyprint.HTML(string=html).write_pdf()
+
+    best: tuple[float, float, float, float] | None = None
+    for match in re.finditer(rb"stream\r?\n(.*?)endstream", pdf_bytes, re.S):
+        raw = match.group(1)
+        try:
+            data = zlib.decompress(raw.strip(b"\r\n"))
+        except zlib.error:
+            data = raw
+        text = data.decode("latin1", errors="replace")
+        ctm: list[float] | None = None
+        for line in text.splitlines():
+            parts = line.split()
+            if line.endswith(" cm") and len(parts) == 7:
+                ctm = [float(value) for value in parts[:6]]
+            if line.endswith(" re") and len(parts) == 5:
+                width = float(parts[2])
+                if 100.0 < width < 700.0 and ctm is not None:
+                    best = (width, float(parts[3]), ctm[4], ctm[5])
+    assert best is not None, "no bubble rectangle painted in the PDF"
+    return best
+
+
+def test_speech_bubble_pdf_geometry_matches_editor_percentages() -> None:
+    """B27 regression: a 40% x 30% bottom-center bubble renders at
+    40% x 30% of the page (border-box) and is horizontally centered
+    via translateX(-50%).
+
+    Before the fix the PDF base CSS had no box-sizing reset (so the
+    bubble was content-box, wider+taller than the editor) AND the
+    absolutely-positioned bubble was a direct grid-container child, so
+    WeasyPrint failed to resolve its percentage width/height and the
+    bubble spanned the full page width as a thin strip. The fix adds
+    the box-sizing reset and wraps the bubble in a position: relative
+    .bubble-host containing block.
+
+    The default 8.5x8.5in format with 0.5in margins leaves a 7.5in
+    content area; WeasyPrint lays the content stream out in CSS pixels
+    (96dpi), so 7.5in = 720px is the percentage reference.
+    """
+    content_px = 720.0
+    width_px, height_px, translate_x, translate_y = _bubble_painted_rect(
+        "bottom-center", 40, 30
+    )
+    expected_width = content_px * 0.40
+    expected_height = content_px * 0.30
+    assert width_px == pytest.approx(expected_width, abs=2.0)
+    assert height_px == pytest.approx(expected_height, abs=2.0)
+    assert translate_x == pytest.approx(-expected_width / 2, abs=2.0)
+    assert translate_y == pytest.approx(0.0, abs=2.0)
+
+
+def test_speech_bubble_pdf_geometry_center_anchor_translates_both_axes() -> None:
+    """The center anchor uses translate(-50%, -50%); both offsets are
+    -50% of the rendered border-box dimensions."""
+    content_px = 720.0
+    width_px, height_px, translate_x, translate_y = _bubble_painted_rect("center", 50, 40)
+    expected_width = content_px * 0.50
+    expected_height = content_px * 0.40
+    assert width_px == pytest.approx(expected_width, abs=2.0)
+    assert height_px == pytest.approx(expected_height, abs=2.0)
+    assert translate_x == pytest.approx(-expected_width / 2, abs=2.0)
+    assert translate_y == pytest.approx(-expected_height / 2, abs=2.0)
