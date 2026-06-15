@@ -50,27 +50,9 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
-      # Dependency security scan. --skip-editable drops the path-installed
-      # plugins (not on PyPI); the --ignore-vuln list is the currently-known
-      # advisories tracked in #47 (remove each when its bump lands). New
-      # advisories break the build. aiohttp (CVE-2026-34993, CVE-2026-47265)
-      # + pip (PYSEC-2026-196) remediated 2026-06-10; only weasyprint's
-      # CVE-2025-68616 remains (66 -> 68 is a render-risky major, deferred).
-      - name: Security audit (pip)
-        working-directory: backend
-        run: >-
-          poetry run pip-audit --skip-editable
-          --ignore-vuln CVE-2025-68616
-
-      # Code-level SAST. Scans backend/app + plugins + scripts at MEDIUM
-      # severity + MEDIUM confidence (LOW is too noisy). Accepted findings
-      # are #nosec-annotated; baseline at docs/audits/bandit-baseline-2026-06-10.md.
-      - name: Security analysis (bandit)
-        working-directory: backend
-        run: >-
-          poetry run bandit -c pyproject.toml
-          -r app ../plugins ../scripts
-          --severity-level medium --confidence-level medium -q
+      # Dependency + SAST scanning is NOT duplicated on PRs: it runs weekly in
+      # security-scan.yml (pip-audit + bandit + npm audit, blocking on
+      # Critical/High, #278). One instance is enough (#289).
 
       - name: Run backend tests
         working-directory: backend
@@ -80,58 +62,9 @@ jobs:
         # ``-q`` only quietens the per-test pass logs.
         run: poetry run pytest tests/ -q
 
-  plugin-tests:
-    name: Plugin Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    strategy:
-      # Test-infrastructure audit finding 0.5.2: default
-      # fail-fast=true makes a flake in one plugin mask real
-      # failures in the others. coverage.yml already sets
-      # this to false; the asymmetry with ci.yml was a bug.
-      fail-fast: false
-      matrix:
-        plugin:
-          - bibliogon-plugin-audiobook
-          - bibliogon-plugin-comics
-          - bibliogon-plugin-export
-          - bibliogon-plugin-getstarted
-          - bibliogon-plugin-grammar
-          - bibliogon-plugin-help
-          - bibliogon-plugin-kdp
-          - bibliogon-plugin-kinderbuch
-          - bibliogon-plugin-ms-tools
-          - bibliogon-plugin-translation
-    steps:
-      - uses: actions/checkout@v5
-
-      - uses: actions/setup-python@v6
-        with:
-          python-version: "3.12"
-
-      # Per-plugin Poetry virtualenv cache, keyed on the
-      # plugin's own poetry.lock. With 9 matrix jobs running in
-      # parallel, this saves ~15-30s per matrix job on cache
-      # hits. The plugin name in the key prevents cross-plugin
-      # cache pollution (different deps per plugin).
-      - name: Cache Poetry virtualenv (${{ matrix.plugin }})
-        uses: actions/cache@v5
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-${{ hashFiles(format('plugins/{0}/poetry.lock', matrix.plugin)) }}
-          restore-keys: |
-            poetry-${{ matrix.plugin }}-${{ runner.os }}-py3.12-
-
-      - name: Install Poetry
-        run: pip install poetry
-
-      - name: Install plugin dependencies
-        working-directory: plugins/${{ matrix.plugin }}
-        run: poetry install --no-interaction --no-ansi
-
-      - name: Run plugin tests
-        working-directory: plugins/${{ matrix.plugin }}
-        run: poetry run pytest tests/ -v
+  # Plugin test matrix moved to nightly.yml (#289): plugins almost never break
+  # on a frontend/backend-core PR, and 10 parallel matrix jobs dominated PR
+  # wall-clock. They run nightly + on-demand (workflow_dispatch).
 
   frontend-tests:
     name: Frontend Tests
@@ -150,11 +83,8 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      # Only high/critical advisories break the build (moderate noise is
-      # filtered). Currently 0 vulnerabilities.
-      - name: Security audit (npm)
-        working-directory: frontend
-        run: npm audit --audit-level=high
+      # npm audit moved to the weekly security-scan.yml (#289); no duplicate
+      # dependency scan on every PR.
 
       - name: TypeScript type check
         working-directory: frontend
