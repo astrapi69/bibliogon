@@ -37,6 +37,7 @@ import { backupFilename, exportFullBackup } from "../../export/backupExport";
 import { BackupImportError, importFullBackup } from "../../export/backupImport";
 import BackupCompareDialog from "../BackupCompareDialog";
 import { SectionHeader } from "./SectionHeader";
+import { SelectiveExportSection } from "./SelectiveExportSection";
 
 interface BackupHistoryEntry {
     timestamp: string;
@@ -212,6 +213,8 @@ export function BackupsSettings() {
                 </div>
             </div>
 
+            <SelectiveExportSection />
+
             <div style={sectionStyle}>
                 <div
                     style={{
@@ -237,8 +240,7 @@ export function BackupsSettings() {
                                       "Zwei .bgb-Dateien aus dem Dateisystem vergleichen",
                                   )
                                 : t(
-                                      compare.reason ??
-                                          "ui.feature.requires_desktop_app",
+                                      compare.reason ?? "ui.feature.requires_desktop_app",
                                       "This feature requires the Bibliogon desktop app",
                                   )
                         }
@@ -255,10 +257,7 @@ export function BackupsSettings() {
                         )}
                     </p>
                 ) : (
-                    <FeatureNotice
-                        reason={compare.reason}
-                        testId="backups-compare-disabled"
-                    />
+                    <FeatureNotice reason={compare.reason} testId="backups-compare-disabled" />
                 )}
             </div>
 
@@ -381,10 +380,7 @@ export function BackupsSettings() {
                     <h3 style={{ margin: "0 0 12px 0", fontSize: "1rem" }}>
                         {t("ui.backups.version_history", "Versionsgeschichte")}
                     </h3>
-                    <FeatureNotice
-                        reason={history.reason}
-                        testId="backups-history-disabled"
-                    />
+                    <FeatureNotice reason={history.reason} testId="backups-history-disabled" />
                 </div>
             )}
 
