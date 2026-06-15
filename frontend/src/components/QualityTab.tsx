@@ -17,6 +17,7 @@ import {LoadingIndicator} from "./LoadingIndicator"
 import {CollapsibleConfigSection} from "./CollapsibleConfigSection"
 import {rankSentences, sentenceAnchor} from "../lib/utils/sentenceComplexity"
 import MetricsTable, {type MetricColumn} from "../lib/components/MetricsTable"
+import FleschScale from "../lib/components/FleschScale"
 import {
     FLESCH_THRESHOLD,
     FILLER_PCT_THRESHOLD,
@@ -334,6 +335,29 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
                     value={avg.filler_ratio ? `${(avg.filler_ratio * 100).toFixed(1)}%` : "-"}
                 />
             </div>
+
+            {/* Flesch benchmark scale (#285) */}
+            {avg.flesch_reading_ease ? (
+                <FleschScale
+                    score={avg.flesch_reading_ease}
+                    labels={{
+                        bands: {
+                            easy: t("ui.metadata.quality_flesch_band_easy", "Einfach"),
+                            readable: t("ui.metadata.quality_flesch_band_readable", "Verständlich"),
+                            demanding: t("ui.metadata.quality_flesch_band_demanding", "Anspruchsvoll"),
+                            academic: t("ui.metadata.quality_flesch_band_academic", "Akademisch"),
+                        },
+                        genres: {
+                            fiction: t("ui.metadata.quality_genre_fiction", "Belletristik"),
+                            nonfiction: t("ui.metadata.quality_genre_nonfiction", "Sachbuch"),
+                            scientific: t("ui.metadata.quality_genre_scientific", "Wissenschaft"),
+                            children: t("ui.metadata.quality_genre_children", "Kinderbuch"),
+                        },
+                        yourBook: t("ui.metadata.quality_flesch_your_book", "Ihr Buch"),
+                        comparison: t("ui.metadata.quality_flesch_comparison", "Vergleich"),
+                    }}
+                />
+            ) : null}
 
             {/* Refresh button */}
             <button className="btn btn-ghost btn-sm" onClick={loadMetrics} style={{marginBottom: 12, fontSize: "0.8125rem"}}>

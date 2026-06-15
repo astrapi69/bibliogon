@@ -1,0 +1,84 @@
+/**
+ * Styles for the Flesch benchmark scale (#285). Band tints use the semantic
+ * theme tokens via color-mix so they stay correct across all variants.
+ */
+
+.scale {
+    margin: 4px 0 12px;
+    font-size: 0.75rem;
+}
+
+.bands {
+    display: flex;
+    border-radius: var(--radius-sm, 4px);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+
+.band {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px 2px;
+    text-align: center;
+    line-height: 1.2;
+}
+
+.band:not(:last-child) {
+    border-right: 1px solid var(--border);
+}
+
+.bandLabel {
+    font-weight: 600;
+}
+
+.bandRange {
+    color: var(--text-muted);
+    font-size: 0.6875rem;
+}
+
+.easy {
+    background: color-mix(in srgb, var(--success) 28%, transparent);
+}
+
+.readable {
+    background: color-mix(in srgb, var(--success) 14%, transparent);
+}
+
+.demanding {
+    background: color-mix(in srgb, var(--warning) 24%, transparent);
+}
+
+.academic {
+    background: color-mix(in srgb, var(--danger) 22%, transparent);
+}
+
+.active {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+}
+
+.markerRow {
+    position: relative;
+    height: 1.25rem;
+    margin-top: 2px;
+}
+
+.marker {
+    position: absolute;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    font-weight: 600;
+    color: var(--text);
+}
+
+.comparison {
+    margin: 2px 0 0;
+    color: var(--text-muted);
+}
+
+.genreActive {
+    font-weight: 600;
+    color: var(--text);
+}
