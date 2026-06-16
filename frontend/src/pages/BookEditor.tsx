@@ -9,8 +9,6 @@ import { OfflineToggleButton } from "../components/OfflineToggleButton";
 import { getStorage } from "../storage";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
-import PageEditor from "../components/PageEditor";
-import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
 import ProseStoryboard from "../components/ProseStoryboard";
 import ChapterOutliner from "../components/ChapterOutliner";
@@ -31,64 +29,14 @@ import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSi
 import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
-import { EditorMenu, type EditorMenuGroup } from "../lib/components/EditorMenu";
-import {
-    BookOpen,
-    Plus,
-    Download,
-    Info,
-    LayoutDashboard,
-    Library,
-    Share2,
-    ListTree,
-    FilePlus2,
-    BookmarkPlus,
-    ListChecks,
-    GitBranch,
-    RefreshCw,
-    Keyboard,
-    CircleHelp,
-} from "lucide-react";
+import { EditorMenu } from "../lib/components/EditorMenu";
+import { buildBookEditorMenu } from "./buildBookEditorMenu";
+import { chapterTypeLabels } from "../lib/chapterTypeLabels";
+import { BookOpen, Plus } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
-
-// BOOK-TYPES-SSOT-YAML-01 C6: editor dispatch table. The
-// registry's ``editor_component`` field is a string name; this
-// map resolves it to the actual React component at render time.
-// Adding a new page-based book type with a different editor =
-// add the component import + one entry here. New chapter-based
-// types fall through to the prose path automatically.
-const EDITOR_COMPONENTS: Record<
-    string,
-    React.ComponentType<{
-        bookId: string;
-        bookTitle: string;
-        onBack: () => void;
-        onShowMetadata: () => void;
-        /** Optional storyboard entry-point. Wired for both
-         *  picture_book (PageEditor) and comic_book (ComicBookEditor)
-         *  per STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1;
-         *  gated by STORYBOARD_BOOK_TYPES. */
-        onShowStoryboard?: () => void;
-        onTitleSave?: (title: string) => void | Promise<void>;
-        isPublished?: boolean;
-    }>
-> = {
-    PageEditor,
-    ComicBookEditor,
-};
-
-/** Per-editor allow-list for the Storyboard view. Mirrors the
- *  ``content_model: pages`` gate. Originally picture_book-only per
- *  A4 of the PICTURE-BOOK-STORYBOARD-VIEW-01 Pre-Inspection;
- *  STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1 extends it to
- *  comic_book — the Storyboard annotation columns (notes,
- *  story_beat, mood_color, act_group) exist on ALL Page records,
- *  and StoryboardCard renders comic pages via the layout-tag path
- *  (no panel thumbnail yet; a richer panel-thumbnail render is a
- *  tracked follow-up). */
-const STORYBOARD_BOOK_TYPES = new Set<string>(["picture_book", "comic_book"]);
+import { EDITOR_COMPONENTS, STORYBOARD_BOOK_TYPES } from "./bookEditorDispatch";
 
 export default function BookEditor() {
     const { bookId } = useParams<{ bookId: string }>();
@@ -122,34 +70,7 @@ export default function BookEditor() {
     // editor-driven changes.
     const [selectedStoryEntityId, setSelectedStoryEntityId] = useState<string | null>(null);
     const [storyBibleRefreshKey, setStoryBibleRefreshKey] = useState(0);
-    const TYPE_LABELS: Record<ChapterType, string> = {
-        chapter: t("ui.chapter_types.chapter", "Kapitel"),
-        preface: t("ui.chapter_types.preface", "Vorwort"),
-        foreword: t("ui.chapter_types.foreword", "Geleitwort"),
-        acknowledgments: t("ui.chapter_types.acknowledgments", "Danksagung"),
-        about_author: t("ui.chapter_types.about_author", "Über den Autor"),
-        appendix: t("ui.chapter_types.appendix", "Anhang"),
-        bibliography: t("ui.chapter_types.bibliography", "Literatur"),
-        glossary: t("ui.chapter_types.glossary", "Glossar"),
-        epilogue: t("ui.chapter_types.epilogue", "Epilog"),
-        imprint: t("ui.chapter_types.imprint", "Impressum"),
-        next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
-        part: t("ui.chapter_types.part", "Teil"),
-        part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
-        interlude: t("ui.chapter_types.interlude", "Interludium"),
-        toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
-        dedication: t("ui.chapter_types.dedication", "Widmung"),
-        prologue: t("ui.chapter_types.prologue", "Prolog"),
-        introduction: t("ui.chapter_types.introduction", "Einleitung"),
-        afterword: t("ui.chapter_types.afterword", "Nachwort"),
-        final_thoughts: t("ui.chapter_types.final_thoughts", "Schlussgedanken"),
-        index: t("ui.chapter_types.index", "Stichwortverzeichnis"),
-        epigraph: t("ui.chapter_types.epigraph", "Motto"),
-        endnotes: t("ui.chapter_types.endnotes", "Endnoten"),
-        also_by_author: t("ui.chapter_types.also_by_author", "Weitere Bücher"),
-        excerpt: t("ui.chapter_types.excerpt", "Leseprobe"),
-        call_to_action: t("ui.chapter_types.call_to_action", "Aufruf zur Aktion"),
-    };
+    const TYPE_LABELS = chapterTypeLabels(t);
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
@@ -736,178 +657,29 @@ export default function BookEditor() {
         }
     }
 
-    // Structured editor menu (issue #322): one grouped hamburger that gathers
-    // the book-level actions otherwise scattered across the sidebar tools. The
-    // rich-text toolbar keeps its quick-access buttons; this menu is the full
-    // reference. Git actions stay visible-but-disabled offline (desktop-only).
-    const openView = (apply: () => void) => {
-        setSelectedStoryEntityId(null);
-        apply();
-        closeSidebarOnNarrow();
-    };
-    const menuDisabled: Record<string, string> = offlineGate
-        ? {
-              "git-backup": t(
-                  "ui.feature.requires_desktop_app",
-                  "Nur in der Desktop-App verfügbar.",
-              ),
-              "git-sync": t("ui.feature.requires_desktop_app", "Nur in der Desktop-App verfügbar."),
-          }
-        : {};
-    const menuGroups: EditorMenuGroup[] = [
-        {
-            label: t("ui.editor_menu.file", "Datei"),
-            items: [
-                {
-                    id: "export",
-                    label: t("ui.editor_menu.export", "Exportieren"),
-                    icon: <Download size={16} />,
-                },
-            ],
-        },
-        {
-            label: t("ui.editor_menu.view", "Ansicht"),
-            items: [
-                {
-                    id: "metadata",
-                    label: t("ui.editor_menu.metadata", "Metadaten"),
-                    icon: <Info size={16} />,
-                },
-                {
-                    id: "storyboard",
-                    label: t("ui.editor_menu.storyboard", "Storyboard"),
-                    icon: <LayoutDashboard size={16} />,
-                },
-                ...(storyBibleAvailable
-                    ? [
-                          {
-                              id: "story-bible",
-                              label: t("ui.editor_menu.story_bible", "Story-Bibel"),
-                              icon: <Library size={16} />,
-                          },
-                          {
-                              id: "relationships",
-                              label: t("ui.editor_menu.relationships", "Beziehungsgraph"),
-                              icon: <Share2 size={16} />,
-                          },
-                      ]
-                    : []),
-                {
-                    id: "outline",
-                    label: t("ui.editor_menu.outline", "Gliederung"),
-                    icon: <ListTree size={16} />,
-                },
-            ],
-        },
-        {
-            label: t("ui.editor_menu.chapter", "Kapitel"),
-            items: [
-                {
-                    id: "new-chapter",
-                    label: t("ui.editor_menu.new_chapter", "Neues Kapitel"),
-                    icon: <Plus size={16} />,
-                },
-                {
-                    id: "chapter-from-template",
-                    label: t("ui.editor_menu.chapter_from_template", "Kapitel aus Vorlage"),
-                    icon: <FilePlus2 size={16} />,
-                },
-                { separator: true },
-                {
-                    id: "save-as-template",
-                    label: t("ui.editor_menu.save_as_template", "Als Buchvorlage speichern"),
-                    icon: <BookmarkPlus size={16} />,
-                },
-            ],
-        },
-        {
-            label: t("ui.editor_menu.tools", "Werkzeuge"),
-            items: [
-                {
-                    id: "validate-toc",
-                    label: t("ui.editor_menu.validate_toc", "Inhaltsverzeichnis prüfen"),
-                    icon: <ListChecks size={16} />,
-                },
-                { separator: true },
-                {
-                    id: "git-backup",
-                    label: t("ui.editor_menu.git_backup", "Git-Sicherung"),
-                    icon: <GitBranch size={16} />,
-                },
-                {
-                    id: "git-sync",
-                    label: t("ui.editor_menu.git_sync", "Git-Synchronisierung"),
-                    icon: <RefreshCw size={16} />,
-                },
-            ],
-        },
-        {
-            label: t("ui.editor_menu.help", "Hilfe"),
-            items: [
-                {
-                    id: "shortcuts",
-                    label: t("ui.editor_menu.shortcuts", "Tastaturkürzel"),
-                    icon: <Keyboard size={16} />,
-                    shortcut: "Ctrl+?",
-                },
-                {
-                    id: "help",
-                    label: t("ui.editor_menu.help_page", "Hilfe"),
-                    icon: <CircleHelp size={16} />,
-                },
-            ],
-        },
-    ];
-    const handleMenuAction = (actionId: string) => {
-        switch (actionId) {
-            case "export":
-                handleExport();
-                break;
-            case "metadata":
-                openView(() => _setShowMetadata(true));
-                break;
-            case "storyboard":
-                openView(() => {
-                    _setShowMetadata(false);
-                    _setShowStoryboard(true);
-                });
-                break;
-            case "story-bible":
-                openStoryBibleExclusive();
-                closeSidebarOnNarrow();
-                break;
-            case "relationships":
-                openView(() => _setShowRelationships(true));
-                break;
-            case "outline":
-                openView(() => _setShowOutline(true));
-                break;
-            case "new-chapter":
-                handleAddChapter("chapter");
-                break;
-            case "chapter-from-template":
-                setShowChapterTemplatePicker(true);
-                break;
-            case "save-as-template":
-                setShowSaveTemplate(true);
-                break;
-            case "validate-toc":
-                void handleValidateToc();
-                break;
-            case "git-backup":
-                navigate(`/books/${bookId}/git-backup`);
-                break;
-            case "git-sync":
-                navigate(`/books/${bookId}/git-sync`);
-                break;
-            case "shortcuts":
-                navigate("/help/shortcuts");
-                break;
-            case "help":
-                navigate("/help");
-                break;
-        }
-    };
+    const {
+        groups: menuGroups,
+        disabled: menuDisabled,
+        onAction: handleMenuAction,
+    } = buildBookEditorMenu({
+        t,
+        navigate,
+        bookId,
+        offlineGate,
+        storyBibleAvailable,
+        setSelectedStoryEntityId,
+        closeSidebarOnNarrow,
+        setShowMetadata: _setShowMetadata,
+        setShowStoryboard: _setShowStoryboard,
+        setShowOutline: _setShowOutline,
+        setShowRelationships: _setShowRelationships,
+        openStoryBible: openStoryBibleExclusive,
+        onExport: handleExport,
+        onValidateToc: handleValidateToc,
+        onAddChapter: handleAddChapter,
+        onAddFromTemplate: () => setShowChapterTemplatePicker(true),
+        onSaveAsTemplate: () => setShowSaveTemplate(true),
+    });
 
     return (
         <div className={styles.layout} data-testid="book-editor">
