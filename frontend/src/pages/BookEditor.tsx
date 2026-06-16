@@ -31,7 +31,24 @@ import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSi
 import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
-import { BookOpen, Plus } from "lucide-react";
+import { EditorMenu, type EditorMenuGroup } from "../lib/components/EditorMenu";
+import {
+    BookOpen,
+    Plus,
+    Download,
+    Info,
+    LayoutDashboard,
+    Library,
+    Share2,
+    ListTree,
+    FilePlus2,
+    BookmarkPlus,
+    ListChecks,
+    GitBranch,
+    RefreshCw,
+    Keyboard,
+    CircleHelp,
+} from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
@@ -98,7 +115,7 @@ export default function BookEditor() {
     const [storyBibleOpen, setStoryBibleOpen] = useState(false);
     // Mobile mutual-exclusion for the left ChapterSidebar + right
     // StoryBibleSidebar overlays (see useExclusiveSidebars).
-    const {toggleLeft: toggleSidebarExclusive, openRight: openStoryBibleExclusive} =
+    const { toggleLeft: toggleSidebarExclusive, openRight: openStoryBibleExclusive } =
         useExclusiveSidebars(sidebarOpen, toggleSidebar, setSidebarOpen, setStoryBibleOpen);
     // The Story Bible entry whose detail/edit view occupies the main
     // content area (C5). refreshKey re-fetches the sidebar list after
@@ -401,7 +418,10 @@ export default function BookEditor() {
                 t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefügt"),
             );
         } catch (err) {
-            notify.error(t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"), err);
+            notify.error(
+                t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"),
+                err,
+            );
             throw err;
         }
     };
@@ -608,6 +628,23 @@ export default function BookEditor() {
         navigate(`/books/${bookId}/export`);
     };
 
+    const handleValidateToc = async () => {
+        if (!bookId) return;
+        try {
+            const result = await api.chapters.validateToc(bookId);
+            if (!result.toc_found) {
+                notify.info(t("ui.editor.toc_not_found", "Kein Inhaltsverzeichnis gefunden."));
+            } else if (result.valid) {
+                notify.success(t("ui.editor.toc_valid", "TOC gültig: alle Links korrekt."));
+            } else {
+                const broken = result.broken.map((b) => b.text).join(", ");
+                notify.error(t("ui.editor.toc_invalid", "Ungültige Links") + `: ${broken}`);
+            }
+        } catch {
+            notify.error(t("ui.editor.toc_error", "Fehler bei der TOC-Validierung."));
+        }
+    };
+
     if (loading) {
         return (
             <LoadingIndicator
@@ -699,6 +736,179 @@ export default function BookEditor() {
         }
     }
 
+    // Structured editor menu (issue #322): one grouped hamburger that gathers
+    // the book-level actions otherwise scattered across the sidebar tools. The
+    // rich-text toolbar keeps its quick-access buttons; this menu is the full
+    // reference. Git actions stay visible-but-disabled offline (desktop-only).
+    const openView = (apply: () => void) => {
+        setSelectedStoryEntityId(null);
+        apply();
+        closeSidebarOnNarrow();
+    };
+    const menuDisabled: Record<string, string> = offlineGate
+        ? {
+              "git-backup": t(
+                  "ui.feature.requires_desktop_app",
+                  "Nur in der Desktop-App verfügbar.",
+              ),
+              "git-sync": t("ui.feature.requires_desktop_app", "Nur in der Desktop-App verfügbar."),
+          }
+        : {};
+    const menuGroups: EditorMenuGroup[] = [
+        {
+            label: t("ui.editor_menu.file", "Datei"),
+            items: [
+                {
+                    id: "export",
+                    label: t("ui.editor_menu.export", "Exportieren"),
+                    icon: <Download size={16} />,
+                },
+            ],
+        },
+        {
+            label: t("ui.editor_menu.view", "Ansicht"),
+            items: [
+                {
+                    id: "metadata",
+                    label: t("ui.editor_menu.metadata", "Metadaten"),
+                    icon: <Info size={16} />,
+                },
+                {
+                    id: "storyboard",
+                    label: t("ui.editor_menu.storyboard", "Storyboard"),
+                    icon: <LayoutDashboard size={16} />,
+                },
+                ...(storyBibleAvailable
+                    ? [
+                          {
+                              id: "story-bible",
+                              label: t("ui.editor_menu.story_bible", "Story-Bibel"),
+                              icon: <Library size={16} />,
+                          },
+                          {
+                              id: "relationships",
+                              label: t("ui.editor_menu.relationships", "Beziehungsgraph"),
+                              icon: <Share2 size={16} />,
+                          },
+                      ]
+                    : []),
+                {
+                    id: "outline",
+                    label: t("ui.editor_menu.outline", "Gliederung"),
+                    icon: <ListTree size={16} />,
+                },
+            ],
+        },
+        {
+            label: t("ui.editor_menu.chapter", "Kapitel"),
+            items: [
+                {
+                    id: "new-chapter",
+                    label: t("ui.editor_menu.new_chapter", "Neues Kapitel"),
+                    icon: <Plus size={16} />,
+                },
+                {
+                    id: "chapter-from-template",
+                    label: t("ui.editor_menu.chapter_from_template", "Kapitel aus Vorlage"),
+                    icon: <FilePlus2 size={16} />,
+                },
+                { separator: true },
+                {
+                    id: "save-as-template",
+                    label: t("ui.editor_menu.save_as_template", "Als Buchvorlage speichern"),
+                    icon: <BookmarkPlus size={16} />,
+                },
+            ],
+        },
+        {
+            label: t("ui.editor_menu.tools", "Werkzeuge"),
+            items: [
+                {
+                    id: "validate-toc",
+                    label: t("ui.editor_menu.validate_toc", "Inhaltsverzeichnis prüfen"),
+                    icon: <ListChecks size={16} />,
+                },
+                { separator: true },
+                {
+                    id: "git-backup",
+                    label: t("ui.editor_menu.git_backup", "Git-Sicherung"),
+                    icon: <GitBranch size={16} />,
+                },
+                {
+                    id: "git-sync",
+                    label: t("ui.editor_menu.git_sync", "Git-Synchronisierung"),
+                    icon: <RefreshCw size={16} />,
+                },
+            ],
+        },
+        {
+            label: t("ui.editor_menu.help", "Hilfe"),
+            items: [
+                {
+                    id: "shortcuts",
+                    label: t("ui.editor_menu.shortcuts", "Tastaturkürzel"),
+                    icon: <Keyboard size={16} />,
+                    shortcut: "Ctrl+?",
+                },
+                {
+                    id: "help",
+                    label: t("ui.editor_menu.help_page", "Hilfe"),
+                    icon: <CircleHelp size={16} />,
+                },
+            ],
+        },
+    ];
+    const handleMenuAction = (actionId: string) => {
+        switch (actionId) {
+            case "export":
+                handleExport();
+                break;
+            case "metadata":
+                openView(() => _setShowMetadata(true));
+                break;
+            case "storyboard":
+                openView(() => {
+                    _setShowMetadata(false);
+                    _setShowStoryboard(true);
+                });
+                break;
+            case "story-bible":
+                openStoryBibleExclusive();
+                closeSidebarOnNarrow();
+                break;
+            case "relationships":
+                openView(() => _setShowRelationships(true));
+                break;
+            case "outline":
+                openView(() => _setShowOutline(true));
+                break;
+            case "new-chapter":
+                handleAddChapter("chapter");
+                break;
+            case "chapter-from-template":
+                setShowChapterTemplatePicker(true);
+                break;
+            case "save-as-template":
+                setShowSaveTemplate(true);
+                break;
+            case "validate-toc":
+                void handleValidateToc();
+                break;
+            case "git-backup":
+                navigate(`/books/${bookId}/git-backup`);
+                break;
+            case "git-sync":
+                navigate(`/books/${bookId}/git-sync`);
+                break;
+            case "shortcuts":
+                navigate("/help/shortcuts");
+                break;
+            case "help":
+                navigate("/help");
+                break;
+        }
+    };
+
     return (
         <div className={styles.layout} data-testid="book-editor">
             <h1 className="sr-only">{book.title || "Bibliogon"}</h1>
@@ -779,39 +989,20 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={(id) =>
-                        navigate(`/books/${bookId}/chapters/${id}/snapshots`)
-                    }
+                    onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
                     showMetadata={showMetadata}
                     onReorder={handleReorder}
                     hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
-                    onValidateToc={async () => {
-                        if (!bookId) return;
-                        try {
-                            const result = await api.chapters.validateToc(bookId);
-                            if (!result.toc_found) {
-                                notify.info(
-                                    t(
-                                        "ui.editor.toc_not_found",
-                                        "Kein Inhaltsverzeichnis gefunden.",
-                                    ),
-                                );
-                            } else if (result.valid) {
-                                notify.success(
-                                    t("ui.editor.toc_valid", "TOC gültig: alle Links korrekt."),
-                                );
-                            } else {
-                                const broken = result.broken.map((b) => b.text).join(", ");
-                                notify.error(
-                                    t("ui.editor.toc_invalid", "Ungültige Links") + `: ${broken}`,
-                                );
-                            }
-                        } catch {
-                            notify.error(
-                                t("ui.editor.toc_error", "Fehler bei der TOC-Validierung."),
-                            );
-                        }
-                    }}
+                    onValidateToc={handleValidateToc}
+                    headerMenu={
+                        <EditorMenu
+                            groups={menuGroups}
+                            onAction={handleMenuAction}
+                            disabled={menuDisabled}
+                            triggerLabel={t("ui.editor_menu.open", "Menü")}
+                            testIdPrefix="book-editor-menu"
+                        />
+                    }
                 />
             </div>
 

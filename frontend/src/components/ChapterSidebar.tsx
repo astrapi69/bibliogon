@@ -20,6 +20,11 @@ import styles from "./ChapterSidebar.module.css";
 
 interface Props {
   bookTitle: string;
+  /** Optional structured editor menu (issue #322), rendered in the header's
+   *  right-aligned control cluster (left of the theme toggle). The book editor
+   *  passes an `<EditorMenu>` here so all book-level actions are reachable from
+   *  one grouped hamburger; omitted, the slot simply renders nothing. */
+  headerMenu?: React.ReactNode;
   chapters: Chapter[];
   activeChapterId: string | null;
   onSelect: (id: string) => void;
@@ -92,6 +97,7 @@ interface Props {
 
 export default function ChapterSidebar({
   bookTitle,
+  headerMenu,
   chapters,
   activeChapterId,
   onSelect,
@@ -196,6 +202,7 @@ export default function ChapterSidebar({
           </h2>
         )}
         <div style={{ marginLeft: "auto" }} className="flex items-center gap-1">
+          {headerMenu}
           <ThemeToggle variant="dark" />
           {onCollapse && (
             <Tooltip
