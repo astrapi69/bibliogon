@@ -49,6 +49,24 @@ test.describe("Settings > Backups tab (BOOKDASHBOARD-CLEANUP-01 C5)", () => {
         });
     });
 
+    test("full backup export downloads a .bgb (export-progress wiring, #346)", async ({page}) => {
+        await page.goto("/settings?tab=backups");
+        await expect(page.getByTestId("backups-export-full")).toBeVisible();
+
+        // The onProgress-wired export must still produce a real .bgb
+        // download. The transient progress spinner itself is not asserted
+        // here - on a fast/empty workspace it can flash by within a frame,
+        // which would make the assertion flaky (see lessons-learned
+        // "Playwright-visible != user-visible"); its phases are pinned by
+        // the BgbExportProgress + bgbExport Vitest suites. The download
+        // outcome is the load-bearing end-to-end check.
+        const [download] = await Promise.all([
+            page.waitForEvent("download"),
+            page.getByTestId("backups-export-full").click(),
+        ]);
+        expect(download.suggestedFilename()).toMatch(/\.bgb$/);
+    });
+
     test("Dashboard no longer renders the moved affordances + EmptyState centre +Create-Book stays", async ({
         page,
     }) => {

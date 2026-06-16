@@ -2,6 +2,7 @@ import { describe, it, expect, vi } from "vitest";
 import { strFromU8, unzipSync } from "fflate";
 
 import {
+    type BgbProgress,
     bgbBackupFilename,
     buildBgbFiles,
     exportBgbBackup,
@@ -111,6 +112,30 @@ describe("buildBgbFiles", () => {
         // Globals: authors + the client-only settings extension.
         expect(JSON.parse(strFromU8(files["globals/authors.json"]))[0].name).toBe("King");
         expect(JSON.parse(strFromU8(files["globals/settings.json"])).theme).toBe("nord");
+    });
+
+    it("reports asset-load progress with a known total (2 book + 1 article image)", async () => {
+        const events: BgbProgress[] = [];
+        const bundle = await buildBackupBundle("2026-06-16T12:00:00Z");
+        await buildBgbFiles(bundle, (p) => events.push({ ...p }));
+
+        const assetEvents = events.filter((e) => e.step === "assets");
+        // Every asset event carries the same total; the counter advances
+        // 0 -> 3 as each image blob is loaded.
+        expect(assetEvents.every((e) => e.total === 3)).toBe(true);
+        expect(assetEvents.map((e) => e.current)).toContain(0);
+        expect(Math.max(...assetEvents.map((e) => e.current ?? -1))).toBe(3);
+    });
+
+    it("exportBgbBackup emits the four phases in order", async () => {
+        const steps: BgbProgress["step"][] = [];
+        await exportBgbBackup("2026-06-16T12:00:00Z", (p) => steps.push(p.step));
+
+        expect(steps[0]).toBe("collecting");
+        expect(steps).toContain("assets");
+        // archiving precedes finalizing, and finalizing is the last phase.
+        expect(steps.indexOf("archiving")).toBeLessThan(steps.indexOf("finalizing"));
+        expect(steps[steps.length - 1]).toBe("finalizing");
     });
 
     it("exportBgbBackup returns a real ZIP blob that unzips", async () => {

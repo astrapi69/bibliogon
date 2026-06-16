@@ -56,7 +56,8 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { resetOfflineDatabase } from "../../storage/dexie-storage";
 import { notify } from "../../utils/notify";
 import { downloadBlob } from "../../export/download";
-import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
+import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
+import { BgbExportProgress } from "./BgbExportProgress";
 import { db } from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
 
@@ -108,6 +109,7 @@ export function DangerZoneSettings() {
     const [token, setToken] = useState<string | null>(null);
     const [resetText, setResetText] = useState("");
     const [backupBusy, setBackupBusy] = useState(false);
+    const [backupProgress, setBackupProgress] = useState<BgbProgress | null>(null);
 
     const proceedToConfirm = useCallback(async () => {
         setState("typing");
@@ -150,7 +152,7 @@ export function DangerZoneSettings() {
         setBackupBusy(true);
         try {
             const now = new Date().toISOString();
-            const blob = await exportBgbBackup(now);
+            const blob = await exportBgbBackup(now, setBackupProgress);
             downloadBlob(blob, bgbBackupFilename(now));
         } catch (err) {
             notify.error(
@@ -159,6 +161,7 @@ export function DangerZoneSettings() {
             );
         } finally {
             setBackupBusy(false);
+            setBackupProgress(null);
         }
     }, [t]);
 
@@ -254,6 +257,7 @@ export function DangerZoneSettings() {
                 >
                     {t("ui.settings.danger_zone.create_backup", "Backup erstellen")}
                 </button>
+                <BgbExportProgress progress={backupProgress} testId="danger-zone-backup-progress" />
                 <p
                     className="mt-2 text-xs"
                     style={{ color: "var(--text-muted)" }}

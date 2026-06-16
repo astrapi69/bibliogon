@@ -34,13 +34,14 @@ import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
 import { downloadBlob } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
-import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
+import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
 import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
 import BackupCompareDialog from "../BackupCompareDialog";
 import { SectionHeader } from "./SectionHeader";
 import { SelectiveExportSection } from "./SelectiveExportSection";
+import { BgbExportProgress } from "./BgbExportProgress";
 
 interface BackupHistoryEntry {
     timestamp: string;
@@ -65,18 +66,20 @@ export function BackupsSettings() {
     const [backupHistory, setBackupHistory] = useState<BackupHistoryEntry[]>([]);
     const [showCompareDialog, setShowCompareDialog] = useState(false);
     const [fullBackupBusy, setFullBackupBusy] = useState(false);
+    const [exportProgress, setExportProgress] = useState<BgbProgress | null>(null);
     const importInputRef = useRef<HTMLInputElement | null>(null);
 
     const handleFullExport = async () => {
         setFullBackupBusy(true);
         try {
             const now = new Date().toISOString();
-            const blob = await exportBgbBackup(now);
+            const blob = await exportBgbBackup(now, setExportProgress);
             downloadBlob(blob, bgbBackupFilename(now));
         } catch (err) {
             notify.error(t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"), err);
         } finally {
             setFullBackupBusy(false);
+            setExportProgress(null);
         }
     };
 
@@ -240,6 +243,7 @@ export function BackupsSettings() {
                         data-testid="backups-import-input"
                     />
                 </div>
+                <BgbExportProgress progress={exportProgress} testId="backups-export-progress" />
             </div>
 
             <SelectiveExportSection />
