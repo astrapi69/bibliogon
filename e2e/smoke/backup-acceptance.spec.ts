@@ -2,9 +2,20 @@
  * BACKUP-AKZEPTANZTEST (#61) — the hardest test in the repo.
  *
  * Full cycle against the live backend: fill with data → export the full
- * JSON backup (Settings > Backups) → Danger-Zone reset (wipe) → import the
+ * `.bgb` backup (Settings > Backups) → Danger-Zone reset (wipe) → import the
  * backup → verify EVERY entity is back. Because the backup reads + writes
  * the whole storage seam, a green run proves the seam works end-to-end.
+ *
+ * Backup format (#340): the full backup is now a `.bgb` ZIP archive (it
+ * carries image bytes — covers, article thumbnails — that JSON could not).
+ * This spec asserts the downloaded archive is a real ZIP carrying the entity
+ * graph + the settings extension, then that import restores the graph + the
+ * settings through the seam. The IMAGE-byte round-trip (cover + thumbnail
+ * bytes survive export → wipe → import) is covered end-to-end by the Dexie
+ * Vitest acceptance test `frontend/src/export/bgbRoundtrip.test.ts`: in API
+ * mode the client `.bgb` import does not push bytes back to the server (the
+ * seam's `cacheBlob` is a server no-op), so the byte round-trip is asserted
+ * in the offline mode where it is load-bearing.
  *
  * Also pins the two no-overwrite rules: the author PROFILE set after the
  * reset is NOT clobbered by the bundle's profile, and existing-id entities
@@ -77,13 +88,21 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
             page.getByTestId("backups-export-full").click(),
         ]);
         const exportPath = await download.path();
-        const bundle = JSON.parse(readFileSync(exportPath, "utf-8"));
-        expect(bundle.version).toBe(1);
-        expect(bundle.data.books).toHaveLength(1);
-        expect(bundle.data.books[0].chapters).toHaveLength(3);
-        expect(bundle.data.articles.length).toBeGreaterThanOrEqual(1);
-        expect(bundle.data.story_bible.entities).toHaveLength(1);
-        expect(bundle.data.authors.length).toBeGreaterThanOrEqual(3);
+        // The backup is now a .bgb ZIP (carries image bytes), not JSON. Assert
+        // the ZIP magic + that the archive carries the entity graph and the
+        // client settings extension. ZIP local-file-header filenames are stored
+        // uncompressed, so a substring scan on the raw bytes is a sound,
+        // dependency-free structure check.
+        const archive = readFileSync(exportPath);
+        expect(archive.subarray(0, 2).toString("latin1")).toBe("PK");
+        const entries = archive.toString("latin1");
+        expect(entries).toContain("manifest.json");
+        expect(entries).toContain("bibliogon-backup");
+        expect(entries).toContain("book.json");
+        expect(entries).toContain("chapters/");
+        expect(entries).toContain("story_entities.json");
+        expect(entries).toContain("globals/authors.json");
+        expect(entries).toContain("globals/settings.json");
 
         // 3. Danger-Zone reset → everything wiped. The reset button opens
         // the RESET-confirmation dialog directly (the backup choice is a

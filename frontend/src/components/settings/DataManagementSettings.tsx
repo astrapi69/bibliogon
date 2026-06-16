@@ -43,7 +43,10 @@ import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
 import { downloadBlob, downloadText } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
-import { BackupImportError, importFullBackup } from "../../export/backupImport";
+import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
+import { BackupImportError } from "../../export/backupImport";
+import { BgbImportError } from "../../import/bgbImport";
+import { restoreBackupFile } from "../../export/restoreBackup";
 import {
     AuthorsImportError,
     authorsExportFilename,
@@ -112,6 +115,19 @@ export function DataManagementSettings() {
         setBusy(true);
         try {
             const now = new Date().toISOString();
+            const blob = await exportBgbBackup(now);
+            downloadBlob(blob, bgbBackupFilename(now));
+        } catch (err) {
+            notify.error(t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"), err);
+        } finally {
+            setBusy(false);
+        }
+    }, [t]);
+
+    const handleLegacyJsonExport = useCallback(async () => {
+        setBusy(true);
+        try {
+            const now = new Date().toISOString();
             const blob = await exportFullBackup(now);
             downloadBlob(blob, backupFilename(now));
         } catch (err) {
@@ -144,8 +160,7 @@ export function DataManagementSettings() {
         async (file: File) => {
             setBusy(true);
             try {
-                const result = await importFullBackup(file);
-                const counts = result.imported;
+                const counts = await restoreBackupFile(file);
                 notify.success(
                     t(
                         "ui.backups.import_result",
@@ -154,11 +169,11 @@ export function DataManagementSettings() {
                         .replace("{books}", String(counts.books))
                         .replace("{chapters}", String(counts.chapters))
                         .replace("{articles}", String(counts.articles))
-                        .replace("{skipped_books}", String(result.skipped.books)),
+                        .replace("{skipped_books}", String(counts.skippedBooks)),
                 );
                 await refreshStats();
             } catch (err) {
-                if (err instanceof BackupImportError) {
+                if (err instanceof BackupImportError || err instanceof BgbImportError) {
                     notify.error(t("ui.backups.import_invalid", "Ungültiges Backup-Format"), err);
                 } else {
                     notify.error(
@@ -398,7 +413,7 @@ export function DataManagementSettings() {
                 <p className={cardDescClass}>
                     {t(
                         "ui.data.export_description",
-                        "Sichere deine Daten als JSON-Datei. Das vollständige Backup funktioniert online wie offline.",
+                        "Sichere deine Daten als .bgb-Datei (inkl. aller Bilder). Das vollständige Backup funktioniert online wie offline.",
                     )}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -411,6 +426,20 @@ export function DataManagementSettings() {
                     >
                         <Download size={14} />
                         {t("ui.data.export_full", "Vollständiges Backup exportieren")}
+                    </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        style={{ gap: 6 }}
+                        onClick={handleLegacyJsonExport}
+                        disabled={busy}
+                        data-testid="data-export-json"
+                        title={t(
+                            "ui.backups.export_json_hint",
+                            "Reines JSON ohne Bilder - nur für Daten ohne Bilder oder zum Inspizieren.",
+                        )}
+                    >
+                        <Download size={14} />
+                        {t("ui.backups.export_json", "Als JSON exportieren (ohne Bilder)")}
                     </button>
                     <button
                         className="btn btn-secondary btn-sm"

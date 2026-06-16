@@ -56,7 +56,7 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { resetOfflineDatabase } from "../../storage/dexie-storage";
 import { notify } from "../../utils/notify";
 import { downloadBlob } from "../../export/download";
-import { backupFilename, exportFullBackup } from "../../export/backupExport";
+import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
 import { db } from "../../db/drafts";
 import styles from "../../pages/Settings.module.css";
 
@@ -141,17 +141,17 @@ export function DangerZoneSettings() {
     }, [proceedToConfirm]);
 
     /**
-     * Download a full JSON backup of every entity. Page-level action: no
-     * dialog and no reset hand-off - the user stays on the page and may
-     * trigger the reset afterwards, or not. Works in both API and Dexie
-     * mode (the bundle is gathered through the storage seam).
+     * Download a full ``.bgb`` backup of every entity (incl. all image
+     * bytes). Page-level action: no dialog and no reset hand-off - the user
+     * stays on the page and may trigger the reset afterwards, or not. Works in
+     * both API and Dexie mode (the bundle is gathered through the storage seam).
      */
     const handleCreateBackup = useCallback(async () => {
         setBackupBusy(true);
         try {
             const now = new Date().toISOString();
-            const blob = await exportFullBackup(now);
-            downloadBlob(blob, backupFilename(now));
+            const blob = await exportBgbBackup(now);
+            downloadBlob(blob, bgbBackupFilename(now));
         } catch (err) {
             notify.error(
                 t("ui.settings.danger_zone.backup_export_error", "Backup-Export fehlgeschlagen"),
@@ -261,7 +261,7 @@ export function DangerZoneSettings() {
                 >
                     {t(
                         "ui.settings.danger_zone.backup_import_hint",
-                        "Dieses JSON-Backup kannst du später unter Einstellungen → Backups → Backup importieren wiederherstellen (online wie offline).",
+                        "Dieses .bgb-Backup (inkl. aller Bilder) kannst du später unter Einstellungen → Backups → Backup importieren wiederherstellen (online wie offline).",
                     )}
                 </p>
             </div>
