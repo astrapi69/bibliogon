@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
@@ -11,15 +11,21 @@ import GetStarted from "./pages/GetStarted";
 import NotFoundPage from "./pages/NotFoundPage";
 // Dialog->Pages migration: new full-page surfaces are lazy-loaded so
 // they create their own chunks (the rest of the routes stay eager).
-const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
-const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
-const ExportPage = lazy(() => import("./pages/ExportPage"));
-const WritingHistoryPage = lazy(() => import("./pages/WritingHistoryPage"));
-const ChapterVersionsPage = lazy(() => import("./pages/ChapterVersionsPage"));
-const GitBackupPage = lazy(() => import("./pages/GitBackupPage"));
-const GitSyncPage = lazy(() => import("./pages/GitSyncPage"));
-const ShortcutsPage = lazy(() => import("./pages/ShortcutsPage"));
+// lazyWithReload (not bare React.lazy) recovers from stale-shell
+// chunk-load failures after a PWA deploy: the autoUpdate SW swaps the
+// precache out from under an open tab, so the first navigation to a
+// not-yet-loaded route chunk would otherwise 404 and crash the route's
+// error boundary. See lib/lazyWithReload.ts + issue #320.
+const CreateBookPage = lazyWithReload(() => import("./pages/CreateBookPage"));
+const CreateArticlePage = lazyWithReload(() => import("./pages/CreateArticlePage"));
+const ExportPage = lazyWithReload(() => import("./pages/ExportPage"));
+const WritingHistoryPage = lazyWithReload(() => import("./pages/WritingHistoryPage"));
+const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersionsPage"));
+const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
+const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
+const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
+import { lazyWithReload } from "./lib/lazyWithReload";
 import { useTheme } from "./hooks/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
