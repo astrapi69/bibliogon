@@ -1869,6 +1869,12 @@
       "sync_partial": "Algunos capitulos no se pudieron sincronizar.",
       "conflicts_found": "Conflicto encontrado. Resuélvelo en Ajustes."
     },
+    "update_banner": {
+      "message": "Hay una nueva versión de Bibliogon disponible.",
+      "button": "Actualizar ahora",
+      "updating": "Guardando tu trabajo y actualizando …",
+      "dismiss": "Cerrar"
+    },
     "versions": {
       "menu_item": "Historial de versiones",
       "title": "Historial de versiones",

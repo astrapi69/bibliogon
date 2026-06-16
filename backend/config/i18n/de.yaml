@@ -1821,6 +1821,11 @@ ui:
     synced_toast: "Kapitel synchronisiert: {count}"
     sync_partial: "Einige Kapitel konnten nicht synchronisiert werden."
     conflicts_found: "Konflikt gefunden. Bitte in den Einstellungen lösen."
+  update_banner:
+    message: "Eine neue Version von Bibliogon ist verfügbar."
+    button: "Jetzt aktualisieren"
+    updating: "Deine Änderungen werden gesichert und die App wird aktualisiert …"
+    dismiss: "Schließen"
   versions:
     menu_item: "Versionsverlauf"
     title: "Versionsverlauf"

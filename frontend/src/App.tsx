@@ -35,6 +35,7 @@ import { DialogProvider } from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
 import OfflineBanner from "./components/OfflineBanner";
+import AppUpdateBanner from "./components/AppUpdateBanner";
 import SyncStatusWatcher from "./components/SyncStatusWatcher";
 import SkipToContentLink from "./components/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
@@ -155,6 +156,11 @@ export default function App() {
                                         <HelpProvider>
                                             <SkipToContentLink />
                                             <OfflineBanner />
+                                            {/* PWA: "new version available" banner (issue #323).
+                                             *  Subscribes to swUpdateManager; fixed-bottom, dismissible,
+                                             *  applies the update via SKIP_WAITING + controllerchange
+                                             *  reload (autosave-safe). */}
+                                            <AppUpdateBanner />
                                             {/* Headless: drains the offline write queue on reconnect (P3-C9). */}
                                             <SyncStatusWatcher />
                                             {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.

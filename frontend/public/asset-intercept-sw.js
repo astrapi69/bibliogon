@@ -21,6 +21,19 @@
  * no Workbox imports, so it composes with the generated SW without a race.
  */
 
+/*
+ * Controlled update support: the app uses `registerType: "prompt"`, so a new
+ * worker installs and WAITS. When the user clicks "update now", the page posts
+ * `{type:"SKIP_WAITING"}`; this listener calls `self.skipWaiting()` so the new
+ * worker activates, fires `controllerchange`, and the app reloads onto the new
+ * bundle. See src/shared/utils/swUpdateManager.ts.
+ */
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 const DB_NAME = "bibliogon-offline";
 const STORE = "assets";
 const FILE_BY_NAME = /\/api\/books\/([^/]+)\/assets\/file\/([^?#]+)/;

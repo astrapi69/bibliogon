@@ -1812,6 +1812,11 @@ ui:
     synced_toast: "Capitulos sincronizados: {count}"
     sync_partial: "Alguns capitulos nao puderam ser sincronizados."
     conflicts_found: "Conflito encontrado. Resolve-o nas Definições."
+  update_banner:
+    message: "Uma nova versão do Bibliogon está disponível."
+    button: "Atualizar agora"
+    updating: "A guardar o seu trabalho e a atualizar …"
+    dismiss: "Fechar"
   versions:
     menu_item: "Historico de versoes"
     title: "Historico de versoes"
