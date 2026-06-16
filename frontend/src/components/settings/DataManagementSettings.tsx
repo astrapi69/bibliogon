@@ -43,7 +43,7 @@ import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
 import { downloadBlob, downloadText } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
-import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
+import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
 import { BackupImportError } from "../../export/backupImport";
 import { BgbImportError } from "../../import/bgbImport";
 import { restoreBackupFile } from "../../export/restoreBackup";
@@ -63,6 +63,7 @@ import {
 } from "../../storage/storageStats";
 import { SectionHeader } from "./SectionHeader";
 import { SelectiveExportSection } from "./SelectiveExportSection";
+import { BgbExportProgress } from "./BgbExportProgress";
 
 const cardClass =
     "rounded-[var(--radius-md)] border border-[var(--border)] bg-[var(--surface-2)] p-4";
@@ -89,6 +90,7 @@ export function DataManagementSettings() {
     const [statsLoading, setStatsLoading] = useState(true);
     const [showTables, setShowTables] = useState(false);
     const [busy, setBusy] = useState(false);
+    const [exportProgress, setExportProgress] = useState<BgbProgress | null>(null);
 
     const backupInputRef = useRef<HTMLInputElement | null>(null);
     const authorsInputRef = useRef<HTMLInputElement | null>(null);
@@ -115,12 +117,13 @@ export function DataManagementSettings() {
         setBusy(true);
         try {
             const now = new Date().toISOString();
-            const blob = await exportBgbBackup(now);
+            const blob = await exportBgbBackup(now, setExportProgress);
             downloadBlob(blob, bgbBackupFilename(now));
         } catch (err) {
             notify.error(t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"), err);
         } finally {
             setBusy(false);
+            setExportProgress(null);
         }
     }, [t]);
 
@@ -452,6 +455,7 @@ export function DataManagementSettings() {
                         {t("ui.data.export_authors", "Autoren exportieren")}
                     </button>
                 </div>
+                <BgbExportProgress progress={exportProgress} testId="data-export-progress" />
             </div>
 
             <SelectiveExportSection />

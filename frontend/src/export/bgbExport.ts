@@ -43,6 +43,29 @@ import { buildSelectiveBundle, type ExportSelection } from "./selectiveExport";
 /** Manifest format tag every Bibliogon backup carries (matches the backend). */
 export const BGB_FORMAT = "bibliogon-backup";
 
+/**
+ * The four phases a `.bgb` export passes through, in order. Surfaced to the
+ * user so an image-heavy export (which can take several seconds) shows live
+ * progress instead of a frozen button:
+ *
+ * - `collecting`  — reading the entity graph from the storage seam
+ * - `assets`      — loading image blobs (carries `current` / `total` counts)
+ * - `archiving`   — `fflate.zipSync`
+ * - `finalizing`  — wrapping the zipped bytes into the downloadable Blob
+ */
+export type BgbProgressStep = "collecting" | "assets" | "archiving" | "finalizing";
+
+/** A single progress update emitted during a `.bgb` export. `current` /
+ *  `total` are only set for the `assets` step (the image-load counter). */
+export interface BgbProgress {
+    step: BgbProgressStep;
+    current?: number;
+    total?: number;
+}
+
+/** Receives {@link BgbProgress} updates while a `.bgb` export runs. */
+export type BgbProgressCallback = (progress: BgbProgress) => void;
+
 const MIME_EXT: Record<string, string> = {
     "image/png": "png",
     "image/jpeg": "jpg",
@@ -99,10 +122,31 @@ function featuredFilename(blob: Blob): string {
  * the binary image bytes gathered through the seam. Shared by the full and
  * selective exporters — the bundle decides which books/articles are present.
  */
-export async function buildBgbFiles(bundle: BackupBundleV1): Promise<Record<string, Uint8Array>> {
+export async function buildBgbFiles(
+    bundle: BackupBundleV1,
+    onProgress?: BgbProgressCallback,
+): Promise<Record<string, Uint8Array>> {
     const storage = getStorage();
     const files: Record<string, Uint8Array> = {};
     let assetCount = 0;
+
+    // First pass: gather book asset metadata (no blob bodies) so the asset
+    // total is known before any blob is loaded — that lets the progress
+    // counter read "3 / 12" instead of an open-ended spinner.
+    const bookAssetMetas = new Map<string, Asset[]>();
+    for (const entry of bundle.data.books) {
+        bookAssetMetas.set(entry.book.id, await storage.assets.list(entry.book.id));
+    }
+    const articleImageCandidates = bundle.data.articles.filter(
+        (article) => article.featured_image_asset_id || article.featured_image_url,
+    );
+    let totalAssets = articleImageCandidates.length;
+    for (const metas of bookAssetMetas.values()) totalAssets += metas.length;
+
+    let loadedAssets = 0;
+    const reportAsset = () =>
+        onProgress?.({ step: "assets", current: loadedAssets, total: totalAssets });
+    if (totalAssets > 0) reportAsset();
 
     for (const entry of bundle.data.books) {
         const oldId = entry.book.id;
@@ -112,10 +156,12 @@ export async function buildBgbFiles(bundle: BackupBundleV1): Promise<Record<stri
             files[`${dir}chapters/${chapter.id}.json`] = strToU8(JSON.stringify(chapter));
         }
 
-        const metas = await storage.assets.list(oldId);
+        const metas = bookAssetMetas.get(oldId) ?? [];
         const carried: Asset[] = [];
         for (const meta of metas) {
             const blob = await storage.assets.getBlob(oldId, meta.filename);
+            loadedAssets++;
+            reportAsset();
             if (!blob) continue;
             files[`${dir}assets/${meta.filename}`] = await blobToU8(blob);
             carried.push(meta);
@@ -136,7 +182,14 @@ export async function buildBgbFiles(bundle: BackupBundleV1): Promise<Record<stri
     for (const article of bundle.data.articles) {
         const dir = `articles/${article.id}/`;
         files[`${dir}article.json`] = strToU8(JSON.stringify(article));
+        const isImageCandidate = Boolean(
+            article.featured_image_asset_id || article.featured_image_url,
+        );
         const blob = await articleImageBlob(article);
+        if (isImageCandidate) {
+            loadedAssets++;
+            reportAsset();
+        }
         if (blob) {
             const filename = featuredFilename(blob);
             files[`${dir}assets/${filename}`] = await blobToU8(blob);
@@ -192,9 +245,17 @@ export function selectiveBgbFilename(isoTimestamp: string): string {
  * Build the full backup as a downloadable `.bgb` Blob (with image bytes).
  * Works offline (Dexie) and online (API) — same code, same archive.
  */
-export async function exportBgbBackup(exportedAt: string): Promise<Blob> {
+export async function exportBgbBackup(
+    exportedAt: string,
+    onProgress?: BgbProgressCallback,
+): Promise<Blob> {
+    onProgress?.({ step: "collecting" });
     const bundle = await buildBackupBundle(exportedAt);
-    return zipToBgbBlob(await buildBgbFiles(bundle));
+    const files = await buildBgbFiles(bundle, onProgress);
+    onProgress?.({ step: "archiving" });
+    const blob = zipToBgbBlob(files);
+    onProgress?.({ step: "finalizing" });
+    return blob;
 }
 
 /**
@@ -204,7 +265,13 @@ export async function exportBgbBackup(exportedAt: string): Promise<Blob> {
 export async function exportSelectiveBgb(
     selection: ExportSelection,
     exportedAt: string,
+    onProgress?: BgbProgressCallback,
 ): Promise<Blob> {
+    onProgress?.({ step: "collecting" });
     const bundle = await buildSelectiveBundle(selection, exportedAt);
-    return zipToBgbBlob(await buildBgbFiles(bundle));
+    const files = await buildBgbFiles(bundle, onProgress);
+    onProgress?.({ step: "archiving" });
+    const blob = zipToBgbBlob(files);
+    onProgress?.({ step: "finalizing" });
+    return blob;
 }
