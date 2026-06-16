@@ -627,3 +627,10 @@ code is required — everything needed is in §2 and §6.
 `components/settings/SettingsSidebar.module.css`,
 `components/settings/SettingsMobileMenu.tsx`, and the
 `.settings-tabs-mobile` / `.hamburger-menu-*` blocks in `styles/global.css`.*
+
+## See also
+
+- [`MODULE-ARCHITECTURE.md`](MODULE-ARCHITECTURE.md) — folder structure + the feature-strategy gating that drives which settings controls render active / disabled-with-reason / hidden
+- [`VIBE-CODING-POLICY.md`](VIBE-CODING-POLICY.md) — architectural discipline + the CI / security tiers
+- [`EXPORT-IMPORT-FORMATS.md`](EXPORT-IMPORT-FORMATS.md) — the export / import surfaces reached from Settings > Backups
+- [`manual-tests/MANUAL-TESTPLAN.md`](manual-tests/MANUAL-TESTPLAN.md) — the manual / E2E acceptance test plan

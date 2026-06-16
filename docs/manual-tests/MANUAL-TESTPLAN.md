@@ -727,3 +727,10 @@ guenstiger.
 Die drei Release-Blocker (TC-040, Smoke-Suite, TC-064) sind nicht
 verhandelbar. Ein roter Akzeptanztest oder ein altes Live-Bundle blockt
 den Tag, egal wie spaet im Zyklus.
+
+## Siehe auch
+
+- [`MODULE-ARCHITECTURE.md`](../MODULE-ARCHITECTURE.md) — Ordnerstruktur + Architektur-Muster (Storage-Seam, lazyWithReload, Service-Extraktion, feature-strategy, CI-Stufen)
+- [`VIBE-CODING-POLICY.md`](../VIBE-CODING-POLICY.md) — die 6 Prinzipien; der Aster-E2E-Gate gehört zu Prinzip 3 (PR selektiv, Nightly volle Suite, Release-Gate)
+- [`EXPORT-IMPORT-FORMATS.md`](../EXPORT-IMPORT-FORMATS.md) — alle Export-/Import-Formate (inkl. Backup-Akzeptanztest)
+- [`SETTINGS-MENU-ARCHITECTURE.md`](../SETTINGS-MENU-ARCHITECTURE.md) — die Settings-Oberfläche (Abschnitte, Plugin-Settings, feature-gegatete Bedienelemente)

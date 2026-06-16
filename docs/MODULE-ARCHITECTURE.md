@@ -85,14 +85,204 @@ Behind it:
   `createObjectURL → anchor → revoke` helper (was triplicated across
   Dashboard + ArticleList).
 
-### `storage/dexie-storage.ts` — still a monolith (debt)
+### `storage/dexie/` — the split offline backend (barrel + modules)
 
-`storage/dexie-storage.ts` (2214 lines, in `.filesize-baseline`) is **not**
-currently split into a `storage/dexie/` directory. PR #204 introduced that
-directory, but the #210 merge (branched pre-#204) reverted it back to the
-monolith. The re-split into `storage/dexie/{schema,seed,blobs,graph,<entity>}.ts`
-behind a barrel is a tracked follow-up. It now also hosts the generic
-per-`(table, id)` `serializedUpdate` write-queue (read-modify-write seam).
+`storage/dexie-storage.ts` is now a **13-line re-export barrel**; the former
+2214-line monolith was split into `storage/dexie/` and dropped from
+`.filesize-baseline`. Behind the barrel:
+
+- `dexie/schema.ts` — the Dexie database declaration. Schema **version 11**
+  today; each `.version(N).stores({...})` is an append-only migration step
+  (v1 base tables → v2 `syncQueue` → v3 `syncBaselines` → v4 offline
+  reference data → v5 `authors` → v7 binary `assets` → v8 `articleComments`
+  → v10 `articleAssets` → v11 `eventLog`). Never rewrite a past version;
+  add the next.
+- `dexie/serialized-update.ts` — the generic per-`(table, id)`
+  `serializedUpdate` write-queue (see "Storage patterns" below).
+- `dexie/{books,chapters,articles,pages,comics,authors,story-bible,
+  chapter-labels,comments,covers,writing,reference,graph}.ts` — per-entity
+  CRUD modules that the `DexieStorage` seam composes.
+- `dexie/{helpers,blobs,article-assets,assets,seed,backend-only}.ts` —
+  shared helpers, binary-asset storage, the seed pipeline, and the
+  offline-gated stubs.
+- `dexie/index.ts` — the barrel that assembles the `IStorageService`-shaped
+  `DexieStorage` object.
+
+This is now a second instance of the barrel-directory split goldstandard
+(after `api/`); the per-entity modules are the template for any further
+storage growth.
+
+## Storage patterns
+
+Beyond the seam itself (`getStorage()` → `ApiStorage` / `DexieStorage`),
+three patterns recur across the offline backend:
+
+- **Serialized write-queue (`dexie/serialized-update.ts`).** Every
+  read-modify-write on a record routes through `serializedUpdate(table, id,
+  fn)`, which chains operations on a promise queue keyed by `"${table}:${id}"`.
+  Same-key writes run strictly in call order (no two read the same pre-write
+  state and clobber each other); different keys run concurrently. This closed a
+  real settings-clobber data-loss class — any new RMW path on a Dexie record
+  must go through it, never a bare `get` + `put`.
+- **Offline article assets (`#157`).** Article featured-image *bytes* are
+  stored in IndexedDB as an **`ArrayBuffer`** (not a `Blob` — see
+  lessons-learned: Blobs lose their prototype through the test stack's
+  structured-clone), in the `articleAssets` table (`dexie/article-assets.ts`,
+  written via `storeArticleAssetBlob` in `dexie/helpers.ts`). The
+  `useArticleImageUrl` hook (`hooks/useArticleImageUrl.ts`) resolves an image to
+  a `blob:` URL offline (reconstructing the Blob on read, revoked on unmount)
+  and falls back to the CDN URL online; Medium-import caches the CDN thumbnail
+  bytes on import.
+- **Selective export (`#247`).** `export/selectiveExport.ts` +
+  `components/settings/SelectiveExportSection.tsx` let the user tick which
+  sections (books+chapters, articles, authors, chapter-labels, story-bible,
+  writing-sessions, settings) go into a JSON backup. The output shape is
+  identical to the full backup, so it re-imports through the same
+  `importFullBackup` path (unselected sections emit empty and the importer
+  skips them). Gated by `FEATURES.SELECTIVE_EXPORT`; works online and offline
+  through the seam. All formats are inventoried in
+  [`EXPORT-IMPORT-FORMATS.md`](EXPORT-IMPORT-FORMATS.md).
+
+## Frontend resilience + diagnostics
+
+- **`lib/lazyWithReload.ts` — chunk-load recovery.** A `React.lazy` drop-in
+  used by all eight lazy routes in `App.tsx`. It retries the dynamic
+  `import()` a few times with a short backoff (transient cold-load hiccups),
+  then, as a last resort, does a **sessionStorage-guarded one-time full
+  reload** to pull the fresh shell — the recovery for the PWA's
+  `autoUpdate` + `skipWaiting` + `cleanupOutdatedCaches` worker deleting the
+  old precache out from under an open tab. The guard rethrows on a second
+  consecutive failure so a genuinely broken deploy surfaces instead of
+  looping. (See the lessons-learned "stale-shell" entry; issue #320.)
+- **Service-worker update banner.** `shared/utils/swUpdateManager.ts`
+  listens for `registration.updatefound` / `statechange`; when a fresh worker
+  reaches `waiting` it surfaces `components/AppUpdateBanner.tsx` (built on the
+  generic `lib/components/UpdateBanner.tsx`). "Update now" posts
+  `{type:"SKIP_WAITING"}` → `skipWaiting()` → `controllerchange` → reload.
+  In-flight editor content is flushed to IndexedDB on the `beforeunload` /
+  `pagehide` path before the reload, so the controlled update never loses an
+  edit.
+- **Event recording → error reports.** `lib/utils/RingBuffer.ts` is a
+  framework-free fixed-capacity FIFO (100 events). `utils/eventRecorder.ts`
+  wraps it, **sanitizing** every event first (redacts password/token/key/
+  secret/license/credential values, strips URL query params, truncates text
+  to 200 chars) — no keystrokes, no textarea content, nothing leaves the
+  browser. `utils/eventRecorderPersist.ts` mirrors the buffer into the Dexie
+  `eventLog` table (error-class events immediately, others on a ~10s debounce)
+  so it survives a reload/crash. `components/ErrorReportDialog.tsx` reads the
+  log to pre-fill a GitHub issue (copy or JSON download).
+
+## Backend service-extraction + facades
+
+The 2026 router→service sweep moved business logic out of routers so each
+router is the thin "validate input, call a service, shape the response" layer
+(`architecture.md` "Error handling"). Two shapes recur:
+
+- **One service module per router** for focused concerns:
+  `routers/git_backup.py` → `services/git_backup.py`,
+  `routers/covers.py` → `services/covers.py`,
+  `routers/ssh_keys.py` → `services/ssh_keys.py`. The router only maps service
+  exceptions to HTTP and shapes the response.
+- **A service sub-package behind a facade barrel** when the concern is large:
+  `services/backup/__init__.py` re-exports `export_backup_archive`,
+  `import_backup_archive`, `restore_book_from_data`, `compare_backups`, … from
+  focused sub-modules (`serializer`, `markdown_utils`, `asset_utils`,
+  `archive_utils`, `backup_export`, `backup_import`, `project_*`). Consumers
+  import from the package, not the internals.
+- **Dependency-injection-as-parameter.** A router composes several small
+  services by passing collaborators in (e.g. `chapters.py` calls
+  `validate_book_toc`, `snapshot_plain_text`, `count_words`,
+  `record_progress`) rather than a DI container — same intent as the frontend
+  props rule.
+- **Canonical config reads (`services/app_settings.py`).** A single place for
+  the handful of `app.yaml` flags routers used to read inline
+  (`is_permanent_delete()`, `allow_books_without_author()`,
+  `get_trash_auto_delete_config()`), removing a Router→Config layering
+  violation. New config-driven behaviour reads through here, not via inline
+  `config_overlay` calls in a router.
+- **Plugin PDF god-file splits.** `plugins/bibliogon-plugin-export/
+  bibliogon_export/picture_book_pdf/` and
+  `plugins/bibliogon-plugin-comics/bibliogon_comics/comic_book_pdf/` are each a
+  barrel `__init__.py` (re-exporting the `generate_*_pdf` orchestrator) over
+  focused sub-modules (`styles`, `layout`, `page_renderer` / `panel_renderer`,
+  `bubble_renderer`, `assets`). The public import surface is unchanged.
+
+## The `lib/` catalogue
+
+`lib/` is the home for **app-import-free, reusable** building blocks (the
+"props-driven, zero reach-back" rule). Reach for one of these before writing a
+new component/util; extend the catalogue rather than re-implementing.
+
+**Components (`lib/components/`)** — generic, theme-token-styled, Vitest-friendly:
+
+| Component | Purpose |
+|-----------|---------|
+| `SortableList` | dnd-kit drag-reorder list with full render-prop control (chapters, pages, …). |
+| `ComboboxSelect` | Dependency-free combobox (input + filtered list, optional "+ Add" custom value). |
+| `EditorMenu` | Generic portal-based grouped menu: group headings, one accordion submenu level, separators, icons, right-aligned shortcuts, disabled-with-reason, 44px rows. |
+| `EditorStatusBar` | Editor footer: word count + reading time (250 wpm) + char count, responsive. |
+| `UpdateBanner` | App-agnostic "new version available" banner (icon + message + update/dismiss). |
+| `DropZone` | HTML5 drag-drop wrapper with drag-depth tracking + optional extension filter. |
+| `MetricsTable` | Sortable table with traffic-light thresholds + optional totals row. |
+| `FleschScale` | Four-band readability scale with marker + genre-comparison line. |
+| `StatusBadge` | Publication-status pill (draft/ready/published/archived → themed variant). |
+| `NavigationSidebar` | Grouped nav (desktop sidebar / mobile hamburger) with active tracking + badges. |
+
+**Utilities (`lib/` + `lib/utils/`)** — pure, zero-side-effect:
+
+| Util | Purpose |
+|------|---------|
+| `utils.ts` (`cn`) | shadcn class-merge (`clsx` + `tailwind-merge`). |
+| `lazyWithReload.ts` | `React.lazy` drop-in with retry + guarded reload (above). |
+| `chapterTypeLabels.ts` | `ChapterType → translated label` map shared by BookEditor + ChapterSidebar. |
+| `bookLanguages.ts` | The 8 endonym book-language defaults + option shape for `ComboboxSelect`. |
+| `utils/RingBuffer.ts` | Fixed-capacity FIFO ring buffer (event recorder). |
+| `utils/textStats.ts` | `getTextStats(text)` → word/char counts + reading-time. |
+| `utils/relativeTime.ts` | Locale-aware relative time via `Intl.RelativeTimeFormat`. |
+| `utils/markdownToHtml.ts` | Pure line-based Markdown → HTML (client export). |
+| `utils/sentenceComplexity.ts` | Sentence split-candidate scoring (words + commas). |
+| `utils/chapterGroups.ts` | Front/back-matter `groupChapters()` splitter. |
+| `utils/pageLayoutStyles.ts`, `utils/pageTextContent.ts` | Picture-book layout style math + TipTap↔text (de)serialization. |
+
+## Feature gating (feature-strategy)
+
+Offline/desktop gating runs through `@astrapi69/feature-strategy` + the
+`features/featureConfig.ts` registry, consumed via `useFeature(id)` under
+`AppFeatureProvider`. Every gated surface resolves to **active**,
+**disabled-with-reason**, or **hidden** (policy #78: nothing the user owns is
+hidden — it is active or disabled with an explanation). Features fall into
+three buckets in `featureConfig.ts`:
+
+- **`ALWAYS_ACTIVE`** — works in both modes (export, story-bible, storyboard,
+  backup import/export, selective export, export preview, `.bgb` import, …);
+  no strategy rule, the `active` default wins.
+- **`NEEDS_KEY`** — AI features (`ai-fill`, `ai-generate`) that work
+  browser-direct **with** a configured key; in Dexie mode without a key they
+  resolve to `disabled` with `ui.feature.requires_ai_key`.
+- **`DESKTOP_ONLY`** — genuinely browser-impossible (git sync/backup, TTS,
+  Pandoc/LaTeX export, LAN mode, version history, …); `disabled` with
+  `ui.feature.requires_desktop_app` in Dexie mode, abstains (active) online.
+
+Gate new surfaces through `useFeature`, not ad-hoc `mode === "dexie"` checks.
+Online-vs-offline *implementation* routing (which export engine, which import
+path) stays a `useStorageMode()` branch, not a registry gate. See
+`.claude/rules/architecture.md` "Three-state feature visibility".
+
+## CI tiers (3-tier + Test Impact Analysis)
+
+CI runs in three tiers — see `docs/VIBE-CODING-POLICY.md` Principle 3 for the
+authoritative description:
+
+- **PR (`ci.yml`, fast)** — `tsc`, `ruff` + `mypy`, pre-commit, `madge`, the
+  frontend build, and **selective** tests via Test Impact Analysis (#332):
+  `vitest run --changed origin/<base>` and `pytest --testmon`, each with a
+  full-suite fallback so a failure can never pass falsely.
+- **Nightly (`nightly.yml`)** — the full-suite safety net: 10-plugin matrix,
+  backend/plugin/frontend coverage, the complexity + cohesion file-size
+  watchers, and an unconditional full re-run of every test.
+- **Weekly (`security-scan.yml`)** — pip-audit + bandit + npm audit, blocking
+  on Critical/High, with `.security-ignore.yml` as the single source of truth
+  for accepted/deferred advisories.
 
 ## Reusability principles
 

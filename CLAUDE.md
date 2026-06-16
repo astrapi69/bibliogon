@@ -36,6 +36,7 @@ Previous release — **v0.39.0** (Picture-Book authoring depth release; 49 commi
 - **Concept:** docs/CONCEPT.md
 - **API reference:** FastAPI OpenAPI under `/docs` and `/openapi.json` (source of truth). docs/API.md is a high-level overview.
 - **History:** docs/CHANGELOG.md (completed phases), docs/ROADMAP.md (open items)
+- **Architecture & policy:** docs/MODULE-ARCHITECTURE.md (folder structure, the storage/lazy/event/service-extraction patterns, the `lib/` catalogue, feature-strategy, CI tiers), docs/VIBE-CODING-POLICY.md (the 6 principles + CI/security), docs/EXPORT-IMPORT-FORMATS.md, docs/SETTINGS-MENU-ARCHITECTURE.md, docs/manual-tests/MANUAL-TESTPLAN.md
 
 ## Development guidelines
 
