@@ -195,6 +195,12 @@ test-fast: ## PR-relevante schnelle Checks (kein Coverage, keine Plugins; spiege
 	cd frontend && npx tsc --noEmit && npx vitest run
 	cd backend && poetry run ruff check app/ && poetry run ruff format --check app/ && poetry run mypy app/ && poetry run pytest tests/ -q
 
+test-changed: ## TIA: nur die von aktuellen Aenderungen betroffenen Tests (vitest --changed + pytest --testmon). Voller Fallback: `make test`.
+	@echo ""
+	@echo "=== Test Impact Analysis (changed-only; full suite = make test / nightly) ==="
+	cd frontend && npx vitest run --changed origin/develop --passWithNoTests
+	cd backend && poetry run pip install -q pytest-testmon && poetry run pytest tests/ --testmon -q
+
 test-full: test-coverage ## Volle Suite inkl. Coverage + alle Plugins (= was die Nightly-CI rechnet)
 
 test-nightly: test-full check-security check-complexity ## Nightly-Suite lokal simulieren (Coverage + Plugins + Security + Complexity)

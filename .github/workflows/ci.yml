@@ -50,17 +50,54 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
+      # TIA (#332): pytest-testmon is a CI-only selector, installed ad-hoc into
+      # the cached Poetry venv (kept out of the lockfile so it never reaches a
+      # release). It builds a per-test impact map (.testmondata) and on later
+      # runs runs only the tests affected by the changed files.
+      - name: Install pytest-testmon
+        working-directory: backend
+        run: poetry run pip install pytest-testmon
+
+      # Persist the testmon impact map across runs. Rolling key (github.run_id)
+      # so the map is re-saved every run with the latest state; the restore-keys
+      # prefix pulls the most recent prior map. A cache miss (new deps / first
+      # ever run) leaves no .testmondata, so testmon runs + maps EVERYTHING =
+      # full suite -> it can never under-test on a cold cache.
+      - name: Restore testmon impact map
+        uses: actions/cache@v5
+        with:
+          path: backend/.testmondata
+          key: testmondata-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}-${{ github.run_id }}
+          restore-keys: |
+            testmondata-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}-
+
       # Dependency + SAST scanning is NOT duplicated on PRs: it runs weekly in
       # security-scan.yml (pip-audit + bandit + npm audit, blocking on
       # Critical/High, #278). One instance is enough (#289).
 
-      - name: Run backend tests
+      # Test Impact Analysis: --testmon runs only the tests affected by the diff
+      # (per the restored impact map); on a cold cache it runs + maps the whole
+      # suite. Correctness (no false green): exit 0 = pass (affected tests
+      # passed, or testmon deselected everything as unaffected); exit 1 = a real
+      # failure -> propagate; exit >1 (collection/internal/usage error, exit 5 =
+      # nothing collected) -> fall back to the FULL suite, which is
+      # authoritative. The Nightly always runs the full suite regardless.
+      - name: Run backend tests (testmon, full-suite fallback)
         working-directory: backend
-        # ``-q`` instead of ``-v``: 1601 tests printed verbose is
-        # noise on a green run. Test-infrastructure audit
-        # finding 0.5.4. Failures still print full traceback;
-        # ``-q`` only quietens the per-test pass logs.
-        run: poetry run pytest tests/ -q
+        run: |
+          set +e
+          poetry run pytest tests/ --testmon -q
+          code=$?
+          set -e
+          if [ "$code" -eq 5 ]; then
+            echo "testmon: nothing collected; treating as pass."
+            exit 0
+          fi
+          if [ "$code" -le 1 ]; then
+            exit "$code"
+          fi
+          echo "testmon errored (exit $code); running FULL suite (authoritative)."
+          poetry run pytest tests/ -q
 
   # Plugin test matrix moved to nightly.yml (#289): plugins almost never break
   # on a frontend/backend-core PR, and 10 parallel matrix jobs dominated PR
@@ -71,7 +108,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      # fetch-depth: 0 so the TIA step (vitest --changed) can diff against the
+      # PR base branch (origin/<base_ref>) / the prior commit (HEAD~1 on push).
       - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v5
         with:
@@ -98,9 +139,39 @@ jobs:
         working-directory: frontend
         run: npx --yes madge@8 --circular --extensions ts,tsx src/
 
-      - name: Run Vitest
+      # Test Impact Analysis (#332): on a PR run only the Vitest files affected
+      # by the diff against the base branch; on push diff against HEAD~1. This
+      # is the fast PR path — the Nightly full suite is the safety net.
+      #
+      # Correctness (no false green): --passWithNoTests makes a backend-only PR
+      # skip cleanly; if the base ref can't be resolved, OR the changed run
+      # exits non-zero (a real test failure OR a vitest/git error), we fall
+      # back to the FULL suite, which is authoritative. A failing changed test
+      # therefore still fails the job (the full suite re-runs and re-fails it);
+      # an infra hiccup can never silently pass.
+      - name: Run Vitest (changed-only, full-suite fallback)
         working-directory: frontend
-        run: npx vitest run
+        run: |
+          if [ -n "${BASE_REF:-}" ]; then
+            git fetch --no-tags --quiet origin "$BASE_REF" || true
+            SINCE="origin/$BASE_REF"
+          else
+            SINCE="HEAD~1"
+          fi
+          if git rev-parse --verify --quiet "$SINCE" >/dev/null; then
+            echo "TIA: Vitest --changed $SINCE (fallback: full suite)"
+            if npx vitest run --changed "$SINCE" --passWithNoTests; then
+              echo "TIA: changed-only Vitest passed."
+            else
+              echo "TIA: changed-only run non-zero; running FULL suite (authoritative)."
+              npx vitest run
+            fi
+          else
+            echo "TIA: base ref '$SINCE' not found; running FULL Vitest suite."
+            npx vitest run
+          fi
+        env:
+          BASE_REF: ${{ github.base_ref }}
 
       - name: Build
         working-directory: frontend
