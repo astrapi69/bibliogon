@@ -50,7 +50,7 @@ export function UpdateBanner({
       role="status"
       aria-live="polite"
       data-testid="update-banner"
-      className="fixed inset-x-0 bottom-0 z-[1000] flex items-center justify-center gap-3 border-t border-[var(--accent)] bg-[var(--surface)] px-4 py-3 text-[var(--text)] shadow-[var(--shadow-lg)]"
+      className="fixed inset-x-0 bottom-0 z-[1000] flex items-center justify-center gap-3 border-t border-[var(--accent)] bg-[var(--bg-card)] px-4 py-3 text-[var(--text)] shadow-[var(--shadow-lg)]"
     >
       <RefreshCw size={18} aria-hidden className="shrink-0 text-[var(--accent)]" />
       <span className="text-center text-[0.95rem]">{message}</span>
