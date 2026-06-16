@@ -93,6 +93,10 @@ export default function WritingGoalWidget() {
 
   // Don't render until loaded, to avoid a flash of "0 words".
   if (!loaded) return null;
+  // The widget belongs to the writing context: hide it for users who
+  // have never written (no writing sessions). A "0 / 500" goal on a
+  // fresh account is noise (#342).
+  if (sessions.length === 0) return null;
 
   const today = todayIso();
   const todayWords = sessions.find((s) => s.day === today)?.words_written ?? 0;
