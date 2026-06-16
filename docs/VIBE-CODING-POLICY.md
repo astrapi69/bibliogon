@@ -237,14 +237,16 @@ coordinates handoffs and resolves conflicts with reality.
 
 ## See Also
 
-- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
+- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`), the Session-9 patterns (storage write-queue + offline assets, lazyWithReload + SW update + event recording, backend service-extraction/facades, the `lib/` catalogue, feature-strategy buckets, CI tiers), and goldstandards (git_sync.py, IStorageService, feature-strategy)
 - `docs/EXPORT-IMPORT-FORMATS.md` - every export/import format, where each is triggered, offline/desktop/PWA support, and the JSON-vs-`.bgb` backup distinction
+- `docs/SETTINGS-MENU-ARCHITECTURE.md` - the Settings surface map (sections, plugin settings, feature-gated controls)
+- `docs/manual-tests/MANUAL-TESTPLAN.md` - the manual / E2E acceptance test plan (the Aster-E2E-Gate's checklist)
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
 - `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status
 - `docs/audits/frontend-god-files-audit-2026-06-14.md` - Principle 5, frontend split status
 - `.filesize-baseline` - Principle 5, god-file tracking
-- `.github/workflows/cohesion-check.yml` - Principle 5 (PR file-size gate)
-- `.github/workflows/nightly.yml` - Principle 3 + 5 (nightly slow-suite: plugin matrix, coverage, complexity watcher)
-- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher
-- `scripts/check-file-sizes.sh` - Principle 2 and 5
+- `.github/workflows/ci.yml` - Principle 3 (fast PR pipeline + Test Impact Analysis: vitest --changed + pytest --testmon)
+- `.github/workflows/nightly.yml` - Principle 3 + 5 (full-suite safety net: plugin matrix, coverage, complexity + cohesion file-size watchers)
+- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher (`.security-ignore.yml` SSoT)
+- `scripts/check-file-sizes.sh` - Principle 2 and 5 (cohesion file-size gate, runs nightly)
