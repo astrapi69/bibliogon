@@ -42,6 +42,7 @@ export const FEATURES = {
     BACKUP_IMPORT: "backup-import",
     SELECTIVE_EXPORT: "selective-export",
     EXPORT_PREVIEW: "export-preview",
+    DATA_MANAGEMENT: "data-management",
 
     AI_FILL: "ai-fill",
     AI_GENERATE: "ai-generate",
@@ -106,6 +107,11 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // unzip + JSON parse + storage-seam writes, no Pandoc/Git, so it works
     // in Dexie mode like every other offline importer (#99).
     FEATURES.BGB_IMPORT,
+    // The Settings > Daten tab (storage overview + export/import + cache
+    // maintenance) is purely client-side: it reads IndexedDB counts +
+    // navigator.storage.estimate() and writes only through the storage
+    // seam. No backend round-trip, so it is active in both modes (#338).
+    FEATURES.DATA_MANAGEMENT,
 ];
 
 /**
