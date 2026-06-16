@@ -89,3 +89,7 @@ tmp/
 # lock file, turning CI red on every push.
 /.claude/scheduled_tasks.lock
 /.claude/settings.json
+
+# pytest-testmon impact map (TIA, CI-only — never committed)
+.testmondata
+.testmondata.*

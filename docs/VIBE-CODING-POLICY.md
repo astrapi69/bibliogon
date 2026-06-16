@@ -89,14 +89,23 @@ test suite before merge.
 - Aster-E2E-Gate: CC cannot push release tags. Aster runs the smoke suite
   locally and confirms 0 failed, 0 flaky before any tag.
 - Pre-commit hooks: formatting and linting.
-- CI tiers (#289): the **PR pipeline** (`ci.yml`, target < 15 min) runs
-  `tsc`, backend + frontend tests (no coverage), `ruff` + `mypy`, pre-commit,
-  `madge`, the frontend build, and the cohesion file-size gate. The **slow
-  suite** - the 10-plugin test matrix, backend/plugin/frontend coverage, and
-  the complexity watcher - runs **nightly** (`nightly.yml`, 03:00 UTC +
-  `workflow_dispatch`). Coverage is still measured every night, just not on
-  every PR; the release flow triggers the nightly suite on demand. Locally:
-  `make test-fast` (PR set) and `make test-nightly` (full suite).
+- CI tiers (#289, #332) - three tiers, fast to thorough:
+  - **PR pipeline** (`ci.yml`, target ~2-3 min via TIA): `tsc`, **selective**
+    backend + frontend tests, `ruff` + `mypy`, pre-commit, `madge`, the
+    frontend build. Test Impact Analysis (#332) runs only the tests affected
+    by the diff - `vitest run --changed origin/<base>` (frontend) and
+    `pytest --testmon` (backend) - each with a **full-suite fallback**: an
+    unscopable diff (no base ref) or any selector error re-runs the whole
+    suite, so a failure can never pass falsely. A backend-only PR skips the
+    frontend tests cleanly (`--passWithNoTests`) and vice-versa.
+  - **Nightly** (`nightly.yml`, 03:00 UTC + `workflow_dispatch`) - the
+    **full-suite safety net**: the 10-plugin test matrix, backend / plugin /
+    frontend coverage, the complexity + cohesion file-size watchers, and an
+    unconditional full re-run of every test (no TIA selection).
+  - **Release gate**: the full suite, via the on-demand Nightly (or
+    `make test-nightly`) plus the Aster-E2E smoke gate, before any tag.
+  Locally: `make test-changed` (selective, mirrors the PR path), `make test`
+  (full, no coverage), `make test-nightly` (full + coverage + plugins).
 
 ## 4. Security and Dependency Hygiene
 

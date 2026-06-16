@@ -14,6 +14,15 @@ name: Nightly
 #   - cohesion-check.yml -> file-size-check (deleted)
 #
 # Security scanning is NOT here: it runs weekly in security-scan.yml.
+#
+# Test Impact Analysis (TIA, #332): PR CI runs SELECTIVE tests (vitest
+# --changed + pytest --testmon) for speed; this Nightly is the full-suite
+# safety net that re-runs everything unconditionally.
+#
+# TODO: Playwright TIA — a custom component->spec mapping (git-diff -> spec
+# filter) would let PRs run only the affected E2E specs. Not worth it yet:
+# the smoke suite is small and this Nightly full run covers it. Revisit when
+# the E2E suite exceeds ~200 specs.
 
 on:
   schedule:
