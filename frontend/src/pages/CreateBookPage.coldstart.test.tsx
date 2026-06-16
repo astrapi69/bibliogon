@@ -1,42 +1,42 @@
 /**
- * Cold-start robustness pin for CreateBookPage (issue #320).
+ * Cold-start RENDER-safety pin for `/books/new` (issue #325).
  *
- * The "/books/new crashes on first load" report turned out to be a
- * stale-shell lazy-chunk-load failure (recovered by lib/lazyWithReload),
- * NOT a data race in the page. This test locks in the other half of that
- * finding: even on a true cold start -- empty BookType registry (unseeded)
- * and storage that resolves with no config -- the page renders the form
- * without throwing into its error boundary. If a future change adds an
- * unguarded read of cold-start data, the boundary fallback appears here.
+ * The first-cold-load `/books/new` crash was reported as a possible render
+ * race in the offline build, but the create-book tree is render-safe: the
+ * actual cause is a transient chunk-load failure, fixed in
+ * `lib/lazyWithReload`. This pin LOCKS IN the render-safety half of that
+ * finding so a future unguarded cold-start read would surface here.
+ *
+ * Cold-start data state modelled here: `getStorage()` is the ApiStorage
+ * fallback (DexieStorage chunk not yet loaded) whose every read rejects
+ * under the offline guard. The real I18n / Feature / BookTypes / Dialog
+ * providers wrap the page, and the optional-fields Collapsible is opened so
+ * the full form subtree (ComboboxSelect, language options, AuthorSelectInput)
+ * renders. The page must render the form, NOT crash into
+ * `error-boundary-create-book`.
  */
 
-import { describe, it, expect, vi } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
-import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import { FeatureProvider } from "@astrapi69/feature-strategy-react";
 
-const getApp = vi.fn().mockResolvedValue({});
-const bookTypesList = vi.fn().mockResolvedValue({});
-const authorsList = vi.fn().mockResolvedValue([]);
+function rejectRead(): Promise<never> {
+    return Promise.reject(new Error("offline: /api blocked"));
+}
 
-vi.mock("../storage", () => ({
-    getStorage: () => ({
-        settings: { getApp },
-        bookTypes: { list: bookTypesList },
-        authors: { list: authorsList, create: vi.fn() },
-        books: { create: vi.fn() },
-        i18n: { get: vi.fn().mockResolvedValue({}) },
-    }),
-}));
-
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<Record<string, unknown>>("../api/client");
+vi.mock("../storage", async () => {
+    const actual = await vi.importActual<Record<string, unknown>>("../storage");
     return {
         ...actual,
-        api: {
-            templates: { list: vi.fn().mockResolvedValue([]), delete: vi.fn() },
-            books: { create: vi.fn(), createFromTemplate: vi.fn() },
-        },
+        getStorage: () => ({
+            settings: { getApp: rejectRead, updateApp: rejectRead },
+            bookTypes: { list: rejectRead },
+            contentTypes: { list: rejectRead },
+            authors: { list: rejectRead, create: rejectRead },
+            books: { create: rejectRead },
+            i18n: { get: rejectRead },
+        }),
     };
 });
 
@@ -47,7 +47,7 @@ import { DialogProvider } from "../components/AppDialog";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { featureRegistry } from "../features/featureConfig";
 
-function renderCold(url: string) {
+function renderColdStart(url: string) {
     return render(
         <MemoryRouter initialEntries={[url]}>
             <I18nProvider>
@@ -55,7 +55,6 @@ function renderCold(url: string) {
                     registry={featureRegistry}
                     context={{ mode: "dexie", hasAiKey: false }}
                 >
-                    {/* No initialTypes -> empty registry, status "loading" (cold). */}
                     <BookTypesProvider>
                         <DialogProvider>
                             <Routes>
@@ -76,16 +75,43 @@ function renderCold(url: string) {
     );
 }
 
-describe("CreateBookPage cold start (empty registry, unseeded storage)", () => {
-    it("renders the prose form without hitting the error boundary (?type=prose)", async () => {
-        renderCold("/books/new?type=prose");
-        await waitFor(() => expect(screen.getByTestId("create-book-title-prose")).toBeTruthy());
+describe("CreateBookPage cold start (ApiStorage fallback, all reads reject)", () => {
+    beforeEach(() => {
+        localStorage.setItem("bibliogon.storage_mode", "dexie");
+    });
+
+    afterEach(() => {
+        localStorage.clear();
+    });
+
+    it("renders the create form (?type=prose) without the route error boundary", async () => {
+        renderColdStart("/books/new?type=prose");
+        await waitFor(() =>
+            expect(screen.getByTestId("create-book-page")).toBeTruthy(),
+        );
+        expect(screen.queryByTestId("error-boundary-create-book")).toBeNull();
+        expect(
+            screen.getByPlaceholderText("Der Titel deines Buches"),
+        ).toBeTruthy();
+    });
+
+    it("renders the full form subtree (optional fields expanded) without crashing", async () => {
+        renderColdStart("/books/new?type=prose");
+        await waitFor(() =>
+            expect(screen.getByTestId("create-book-more-details")).toBeTruthy(),
+        );
+        fireEvent.click(screen.getByTestId("create-book-more-details"));
+        await waitFor(() =>
+            expect(screen.getByTestId("create-book-language")).toBeTruthy(),
+        );
         expect(screen.queryByTestId("error-boundary-create-book")).toBeNull();
     });
 
     it("renders without crashing when no ?type= is given (default-fetch path)", async () => {
-        renderCold("/books/new");
-        await waitFor(() => expect(screen.getByTestId("create-book-page")).toBeTruthy());
+        renderColdStart("/books/new");
+        await waitFor(() =>
+            expect(screen.getByTestId("create-book-page")).toBeTruthy(),
+        );
         expect(screen.queryByTestId("error-boundary-create-book")).toBeNull();
     });
 });
