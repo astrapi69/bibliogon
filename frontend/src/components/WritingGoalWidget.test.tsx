@@ -97,6 +97,19 @@ describe("WritingGoalWidget", () => {
         expect(screen.getByTestId("writing-goal-streak")).toBeTruthy()
     })
 
+    // #342: the widget belongs to the writing context. A user with no
+    // writing sessions yet (fresh account / never wrote) sees nothing,
+    // not a meaningless "0 / 500" goal.
+    it("renders nothing when there are no writing sessions", async () => {
+        ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockResolvedValue([])
+        const {container} = render(<WritingGoalWidget />)
+        // Give the resolved promise a tick to flush before asserting.
+        await waitFor(() =>
+            expect(api.writingSessions.list as ReturnType<typeof vi.fn>).toHaveBeenCalled(),
+        )
+        expect(container.querySelector('[data-testid="writing-goal-widget"]')).toBeNull()
+    })
+
     it("renders nothing until the session fetch resolves", () => {
         ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockReturnValue(
             new Promise(() => {}),
@@ -109,7 +122,9 @@ describe("WritingGoalWidget", () => {
     // history button must navigate to the /writing-history page (the
     // view's content + empty-state are pinned in WritingHistoryView.test).
     it("navigates to /writing-history when the Verlauf button is clicked", async () => {
-        ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockResolvedValue([])
+        ;(api.writingSessions.list as ReturnType<typeof vi.fn>).mockResolvedValue([
+            s(daysAgo(0), 120),
+        ])
         render(<WritingGoalWidget />)
         await waitFor(() => expect(screen.getByTestId("writing-goal-widget")).toBeTruthy())
         fireEvent.click(screen.getByTestId("writing-goal-history-open"))

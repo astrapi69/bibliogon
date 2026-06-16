@@ -685,7 +685,11 @@ export default function Dashboard() {
                  *  to App.tsx — App-level mount above <Routes>. The
                  *  banner now persists across navigation (every page
                  *  shows it) until the user actively dismisses. */}
-                {!showTrash && <WritingGoalWidget />}
+                {/* Writing-Goals belongs to the writing context, not an
+                 *  empty Dashboard: only mount it once the user has books
+                 *  (the widget itself hides further when no writing
+                 *  sessions exist yet, #342). */}
+                {!showTrash && !loading && books.length > 0 && <WritingGoalWidget />}
                 {!showTrash && <RecentDocuments kind="books" reloadKey={books} />}
                 {showTrash ? (
                     <DashboardTrashView
