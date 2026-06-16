@@ -177,5 +177,7 @@ unit-tested. When a new restorable entity is added, extend the matching gate
 
 - [`MODULE-ARCHITECTURE.md`](MODULE-ARCHITECTURE.md) — folder structure + the storage-seam goldstandard
 - [`VIBE-CODING-POLICY.md`](VIBE-CODING-POLICY.md) — architectural discipline
+- [`SETTINGS-MENU-ARCHITECTURE.md`](SETTINGS-MENU-ARCHITECTURE.md) — the Settings > Backups surface these flows are reached from
+- [`manual-tests/MANUAL-TESTPLAN.md`](manual-tests/MANUAL-TESTPLAN.md) — the backup-acceptance + manual test plan
 - `.claude/rules/coding-standards.md` — BACKUP-PARITY-PIN + BACKUP-AKZEPTANZTEST rules
 - `.claude/rules/architecture.md` — offline/Dexie-mode rule + three-state feature visibility
