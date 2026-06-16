@@ -122,5 +122,5 @@ deckt nur die Erkennung ab, nicht den echten Browser-Pfad.
 | 5 | Echte SW-Caches | DevTools-Interaktion, Deploy-Verifikation | Jeder Deploy (Blocker) |
 
 Alle anderen Testfaelle (TC-001 bis TC-063) sind voll oder
-teilweise automatisiert via Playwright (tests/manual-automation/
-und e2e/smoke/).
+teilweise automatisiert via Playwright (`e2e/manual-automation/`
+und `e2e/smoke/`).
