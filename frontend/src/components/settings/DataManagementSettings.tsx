@@ -200,7 +200,10 @@ export function DataManagementSettings() {
                 );
             } catch (err) {
                 if (err instanceof AuthorsImportError) {
-                    notify.error(t("ui.authors_database.invalid_file", "Ungültiges Dateiformat"));
+                    notify.error(
+                        t("ui.authors_database.invalid_file", "Ungültiges Dateiformat"),
+                        err,
+                    );
                 } else {
                     notify.error(
                         t("ui.authors_database.import_error", "Import fehlgeschlagen"),
@@ -319,7 +322,7 @@ export function DataManagementSettings() {
                                 </span>
                             </div>
                             <div
-                                className="h-2 w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--surface)]"
+                                className="h-2 w-full overflow-hidden rounded-[var(--radius-sm)] bg-[var(--bg-secondary)]"
                                 role="progressbar"
                                 aria-valuenow={usagePercent ?? 0}
                                 aria-valuemin={0}
