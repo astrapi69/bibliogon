@@ -1812,6 +1812,11 @@ ui:
     synced_toast: "Senkronize edilen bolumler: {count}"
     sync_partial: "Bazi bolumler senkronize edilemedi."
     conflicts_found: "Çakışma bulundu. Lütfen Ayarlar'da çöz."
+  update_banner:
+    message: "Bibliogon'un yeni bir sürümü mevcut."
+    button: "Şimdi güncelle"
+    updating: "Çalışmanız kaydediliyor ve güncelleniyor …"
+    dismiss: "Kapat"
   versions:
     menu_item: "Surum gecmisi"
     title: "Surum gecmisi"

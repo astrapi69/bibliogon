@@ -1869,6 +1869,12 @@
       "sync_partial": "Some chapters could not be synced.",
       "conflicts_found": "Conflict found. Please resolve it in Settings."
     },
+    "update_banner": {
+      "message": "A new version of Bibliogon is available.",
+      "button": "Update now",
+      "updating": "Saving your work and updating …",
+      "dismiss": "Dismiss"
+    },
     "versions": {
       "menu_item": "Version history",
       "title": "Version history",

@@ -1812,6 +1812,11 @@ ui:
     synced_toast: "Chapitres synchronises: {count}"
     sync_partial: "Certains chapitres n'ont pas pu etre synchronises."
     conflicts_found: "Conflit détecté. Résous-le dans les Réglages."
+  update_banner:
+    message: "Une nouvelle version de Bibliogon est disponible."
+    button: "Mettre à jour maintenant"
+    updating: "Enregistrement de votre travail et mise à jour …"
+    dismiss: "Fermer"
   versions:
     menu_item: "Historique des versions"
     title: "Historique des versions"
