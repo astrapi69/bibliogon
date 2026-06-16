@@ -34,7 +34,10 @@ import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
 import { downloadBlob } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
-import { BackupImportError, importFullBackup } from "../../export/backupImport";
+import { bgbBackupFilename, exportBgbBackup } from "../../export/bgbExport";
+import { BackupImportError } from "../../export/backupImport";
+import { BgbImportError } from "../../import/bgbImport";
+import { restoreBackupFile } from "../../export/restoreBackup";
 import BackupCompareDialog from "../BackupCompareDialog";
 import { SectionHeader } from "./SectionHeader";
 import { SelectiveExportSection } from "./SelectiveExportSection";
@@ -68,6 +71,19 @@ export function BackupsSettings() {
         setFullBackupBusy(true);
         try {
             const now = new Date().toISOString();
+            const blob = await exportBgbBackup(now);
+            downloadBlob(blob, bgbBackupFilename(now));
+        } catch (err) {
+            notify.error(t("ui.backups.export_full_error", "Backup-Export fehlgeschlagen"), err);
+        } finally {
+            setFullBackupBusy(false);
+        }
+    };
+
+    const handleLegacyJsonExport = async () => {
+        setFullBackupBusy(true);
+        try {
+            const now = new Date().toISOString();
             const blob = await exportFullBackup(now);
             downloadBlob(blob, backupFilename(now));
         } catch (err) {
@@ -80,8 +96,7 @@ export function BackupsSettings() {
     const handleFullImportFile = async (file: File) => {
         setFullBackupBusy(true);
         try {
-            const result = await importFullBackup(file);
-            const counts = result.imported;
+            const counts = await restoreBackupFile(file);
             notify.success(
                 t(
                     "ui.backups.import_result",
@@ -90,10 +105,10 @@ export function BackupsSettings() {
                     .replace("{books}", String(counts.books))
                     .replace("{chapters}", String(counts.chapters))
                     .replace("{articles}", String(counts.articles))
-                    .replace("{skipped_books}", String(result.skipped.books)),
+                    .replace("{skipped_books}", String(counts.skippedBooks)),
             );
         } catch (err) {
-            if (err instanceof BackupImportError) {
+            if (err instanceof BackupImportError || err instanceof BgbImportError) {
                 notify.error(t("ui.backups.import_invalid", "Ungültiges Backup-Format"), err);
             } else {
                 notify.error(
@@ -167,7 +182,7 @@ export function BackupsSettings() {
 
             <div style={sectionStyle} data-testid="backups-fulldata-section">
                 <h3 style={{ margin: "0 0 8px 0", fontSize: "1rem" }}>
-                    {t("ui.backups.full_backup_title", "Vollständiges Backup (JSON)")}
+                    {t("ui.backups.full_backup_title", "Vollständiges Backup (.bgb)")}
                 </h3>
                 <p
                     style={{
@@ -178,7 +193,7 @@ export function BackupsSettings() {
                 >
                     {t(
                         "ui.backups.full_backup_description",
-                        "Exportiert oder importiert alle Daten (Bücher, Kapitel, Artikel, Autoren, Einstellungen, Story Bible) als eine JSON-Datei. Funktioniert auch offline.",
+                        "Exportiert oder importiert alle Daten (Bücher, Kapitel, Artikel, Autoren, Einstellungen, Story Bible) inklusive aller Bilder als eine .bgb-Datei. Funktioniert auch offline.",
                     )}
                 </p>
                 <div className="flex flex-wrap gap-2">
@@ -202,10 +217,24 @@ export function BackupsSettings() {
                         <Upload size={14} />
                         {t("ui.backups.import_full", "Backup importieren")}
                     </button>
+                    <button
+                        className="btn btn-ghost btn-sm"
+                        onClick={handleLegacyJsonExport}
+                        disabled={fullBackupBusy}
+                        data-testid="backups-export-json"
+                        style={{ gap: 6 }}
+                        title={t(
+                            "ui.backups.export_json_hint",
+                            "Reines JSON ohne Bilder - nur für Daten ohne Bilder oder zum Inspizieren.",
+                        )}
+                    >
+                        <Download size={14} />
+                        {t("ui.backups.export_json", "Als JSON exportieren (ohne Bilder)")}
+                    </button>
                     <input
                         ref={importInputRef}
                         type="file"
-                        accept=".json,application/json"
+                        accept=".bgb,.json,application/json"
                         className="hidden"
                         onChange={handleImportInputChange}
                         data-testid="backups-import-input"

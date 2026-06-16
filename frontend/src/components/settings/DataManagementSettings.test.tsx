@@ -75,10 +75,23 @@ vi.mock("../../export/backupExport", () => ({
     backupFilename: () => "bibliogon-backup.json",
 }));
 
-const mockImportFullBackup = vi.fn();
+const mockExportBgbBackup = vi.fn().mockResolvedValue(new Blob(["PK"]));
+vi.mock("../../export/bgbExport", () => ({
+    exportBgbBackup: (...args: unknown[]) => mockExportBgbBackup(...args),
+    bgbBackupFilename: () => "bibliogon-backup.bgb",
+}));
+
 vi.mock("../../export/backupImport", () => ({
-    importFullBackup: (...args: unknown[]) => mockImportFullBackup(...args),
     BackupImportError: class BackupImportError extends Error {},
+}));
+
+vi.mock("../../import/bgbImport", () => ({
+    BgbImportError: class BgbImportError extends Error {},
+}));
+
+const mockRestoreBackupFile = vi.fn();
+vi.mock("../../export/restoreBackup", () => ({
+    restoreBackupFile: (...args: unknown[]) => mockRestoreBackupFile(...args),
 }));
 
 const mockDownloadBlob = vi.fn();
@@ -143,12 +156,19 @@ describe("DataManagementSettings", () => {
         expect(screen.getByTestId("data-table-row-eventLog")).toBeTruthy();
     });
 
-    it("full export calls exportFullBackup + downloadBlob", async () => {
+    it("full export calls exportBgbBackup (.bgb, with images) + downloadBlob", async () => {
         render(<DataManagementSettings />);
         await waitFor(() => expect(screen.getByTestId("data-export-full")).toBeTruthy());
         fireEvent.click(screen.getByTestId("data-export-full"));
-        await waitFor(() => expect(mockExportFullBackup).toHaveBeenCalled());
+        await waitFor(() => expect(mockExportBgbBackup).toHaveBeenCalled());
         await waitFor(() => expect(mockDownloadBlob).toHaveBeenCalled());
+    });
+
+    it("legacy JSON export calls exportFullBackup", async () => {
+        render(<DataManagementSettings />);
+        await waitFor(() => expect(screen.getByTestId("data-export-json")).toBeTruthy());
+        fireEvent.click(screen.getByTestId("data-export-json"));
+        await waitFor(() => expect(mockExportFullBackup).toHaveBeenCalled());
     });
 
     it("authors export gathers authors + downloads JSON", async () => {
@@ -160,17 +180,19 @@ describe("DataManagementSettings", () => {
         expect(mockAuthorsList).toHaveBeenCalledWith({ limit: 1000 });
     });
 
-    it("backup import file drives importFullBackup + refreshes stats", async () => {
-        mockImportFullBackup.mockResolvedValue({
-            imported: { books: 1, chapters: 2, articles: 0 },
-            skipped: { books: 0 },
+    it("backup import file drives restoreBackupFile + refreshes stats", async () => {
+        mockRestoreBackupFile.mockResolvedValue({
+            books: 1,
+            chapters: 2,
+            articles: 0,
+            skippedBooks: 0,
         });
         render(<DataManagementSettings />);
         await waitFor(() => expect(screen.getByTestId("data-import-input")).toBeTruthy());
         const input = screen.getByTestId("data-import-input") as HTMLInputElement;
         const file = new File(["{}"], "backup.json", { type: "application/json" });
         fireEvent.change(input, { target: { files: [file] } });
-        await waitFor(() => expect(mockImportFullBackup).toHaveBeenCalledWith(file));
+        await waitFor(() => expect(mockRestoreBackupFile).toHaveBeenCalledWith(file));
         await waitFor(() => expect(mockNotify.success).toHaveBeenCalled());
         // refreshStats fires once on mount + once after import.
         await waitFor(() =>

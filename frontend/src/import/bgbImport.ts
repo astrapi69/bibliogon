@@ -7,14 +7,15 @@
  * `getStorage()` seam, so the import fires zero `/api` requests in Dexie mode.
  *
  * Restored entity set (the same as the JSON backup importer, plus the binary
- * book assets the `.bgb` uniquely carries): books, chapters, book assets,
- * articles, authors, story entities, chapter labels. Because the Dexie seam
- * mints fresh ids on create, book ids are regenerated and the chapter asset
- * URLs (`/api/books/<id>/...`) are rewritten to the new book id; the asset
- * bytes are cached under the new id so the editor resolves them. (The cover
- * image bytes travel with the other assets, but the book's `cover_image`
- * reference is not re-set - the seam's `BookUpdate` exposes no cover field;
- * see the deferred list.)
+ * assets the `.bgb` uniquely carries): app settings, books, chapters, book
+ * assets, book COVER (the `cover_image` reference is re-pointed at the
+ * restored bytes), articles, article FEATURED IMAGES, authors, story
+ * entities, chapter labels. Because the Dexie seam mints fresh ids on create,
+ * book ids are regenerated and the chapter asset URLs (`/api/books/<id>/...`)
+ * are rewritten to the new book id; the asset bytes are cached under the new
+ * id so the editor resolves them. The cover filename is preserved on cache,
+ * so the original `assets/covers/cover-x.png` path still resolves under the
+ * new id (the resolver reads only the trailing filename).
  *
  * Deliberately NOT restored yet (counted as `skipped` is not applicable since
  * they have no `imported` counterpart - they are simply ignored): the
@@ -38,9 +39,11 @@ import type {
 import { articleCreateFrom, bookCreateFrom } from "../export/backupImport";
 import { planAuthorsImport } from "../components/settings/authorsImportExport";
 import { getStorage } from "../storage";
+import { coverFilenameFromPath } from "../storage/asset-url";
 
 /** Per-entity counts for a `.bgb` import outcome. */
 export interface BgbImportCounts {
+    settings: number;
     books: number;
     chapters: number;
     assets: number;
@@ -74,6 +77,7 @@ const MIME_BY_EXT: Record<string, string> = {
 
 function zeroCounts(): BgbImportCounts {
     return {
+        settings: 0,
         books: 0,
         chapters: 0,
         assets: 0,
@@ -171,7 +175,14 @@ export async function importBgbFile(file: File): Promise<BgbImportResult> {
     const bookIds = childDirIds(entries, booksPrefix);
     const articleIds = childDirIds(entries, articlesPrefix);
     const hasAuthors = !!entries[`${prefix}globals/authors.json`];
-    if (!manifest && bookIds.length === 0 && articleIds.length === 0 && !hasAuthors) {
+    const hasSettings = !!entries[`${prefix}globals/settings.json`];
+    if (
+        !manifest &&
+        bookIds.length === 0 &&
+        articleIds.length === 0 &&
+        !hasAuthors &&
+        !hasSettings
+    ) {
         throw new BgbImportError("Keine gültige Bibliogon-Backup-Datei");
     }
 
@@ -179,6 +190,7 @@ export async function importBgbFile(file: File): Promise<BgbImportResult> {
     const imported = zeroCounts();
     const skipped = zeroCounts();
 
+    await importSettings(entries, prefix, storage, imported);
     await importBooks(entries, booksPrefix, bookIds, storage, imported, skipped);
     await importArticles(entries, articlesPrefix, articleIds, storage, imported, skipped);
     await importAuthors(entries, prefix, storage, imported, skipped);
@@ -187,6 +199,27 @@ export async function importBgbFile(file: File): Promise<BgbImportResult> {
 }
 
 type Storage = ReturnType<typeof getStorage>;
+
+/**
+ * Restore app settings from the client `.bgb` extension
+ * (`globals/settings.json`). The author PROFILE is never overwritten (own
+ * identity), mirroring the JSON-backup importer. Backend-produced archives
+ * carry no settings file, so this is a no-op for them.
+ */
+async function importSettings(
+    entries: ZipEntries,
+    prefix: string,
+    storage: Storage,
+    imported: BgbImportCounts,
+): Promise<void> {
+    const settings = readJson<Record<string, unknown>>(entries, `${prefix}globals/settings.json`);
+    if (!settings || typeof settings !== "object") return;
+    const next = { ...settings };
+    delete next.author;
+    if (Object.keys(next).length === 0) return;
+    await storage.settings.updateApp(next);
+    imported.settings = 1;
+}
 
 async function importBooks(
     entries: ZipEntries,
@@ -210,7 +243,7 @@ async function importBooks(
         const newId = created.id;
         imported.books++;
 
-        await importBookAssets(entries, bookDir, newId, storage, imported);
+        await importBookAssets(entries, bookDir, book, newId, storage, imported);
         await importChapters(entries, bookDir, oldId, newId, storage, imported);
         await importStoryEntities(entries, bookDir, newId, storage, imported);
         await importChapterLabels(entries, bookDir, newId, storage, imported);
@@ -220,17 +253,29 @@ async function importBooks(
 async function importBookAssets(
     entries: ZipEntries,
     bookDir: string,
+    book: Book,
     newBookId: string,
     storage: Storage,
     imported: BgbImportCounts,
 ): Promise<void> {
     const metas = readJson<Asset[]>(entries, `${bookDir}assets.json`) ?? [];
+    const cachedFilenames = new Set<string>();
     for (const meta of metas) {
         const bytes = entries[`${bookDir}assets/${meta.filename}`];
         if (!bytes) continue;
         const blob = bytesToBlob(bytes, mimeFor(meta.filename));
         await storage.assets.cacheBlob(newBookId, meta.filename, blob, meta.asset_type);
+        cachedFilenames.add(meta.filename);
         imported.assets++;
+    }
+
+    // Re-point the cover at the restored bytes. The cover filename is
+    // preserved on cache, so the original `assets/covers/cover-x.png` path
+    // still resolves under the regenerated book id (the resolver reads only
+    // the trailing filename). Only set it when the bytes actually landed.
+    const coverFilename = coverFilenameFromPath(book.cover_image);
+    if (coverFilename && cachedFilenames.has(coverFilename)) {
+        await storage.books.update(newBookId, { cover_image: book.cover_image });
     }
 }
 
@@ -328,6 +373,12 @@ async function importArticles(
             continue;
         }
         const created = await storage.articles.create(articleCreateFrom(article));
+        const featuredImageAssetId = await importArticleAsset(
+            entries,
+            `${articlesPrefix}${id}/`,
+            created.id,
+            storage,
+        );
         await storage.articles.update(created.id, {
             content_json: article.content_json,
             status: article.status,
@@ -335,8 +386,40 @@ async function importArticles(
             topic: article.topic,
             seo_title: article.seo_title,
             seo_description: article.seo_description,
+            ...(featuredImageAssetId ? { featured_image_asset_id: featuredImageAssetId } : {}),
         });
         imported.articles++;
+    }
+}
+
+/**
+ * Restore an article's featured image: store the archived bytes through the
+ * seam and return the freshly minted asset id to set on
+ * `featured_image_asset_id`. Returns null when the archive carries no image
+ * for this article (e.g. backend archives, or articles without one).
+ */
+async function importArticleAsset(
+    entries: ZipEntries,
+    articleDir: string,
+    newArticleId: string,
+    storage: Storage,
+): Promise<string | null> {
+    const metas =
+        readJson<Array<{ filename: string; asset_type?: string }>>(
+            entries,
+            `${articleDir}assets.json`,
+        ) ?? [];
+    const meta = metas[0];
+    if (!meta) return null;
+    const bytes = entries[`${articleDir}assets/${meta.filename}`];
+    if (!bytes) return null;
+    const blob = bytesToBlob(bytes, mimeFor(meta.filename));
+    try {
+        return await storage.articleAssets.store(newArticleId, blob, meta.filename, blob.type);
+    } catch {
+        // api mode: articleAssets.store throws (server holds the bytes). The
+        // featured_image_url in article.json keeps the online reference.
+        return null;
     }
 }
 

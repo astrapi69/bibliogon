@@ -13,11 +13,15 @@ const recorded = vi.hoisted(() => ({
     assets: [] as { bookId: string; filename: string; assetType?: string }[],
     bookUpdates: [] as { id: string; data: Record<string, unknown> }[],
     articles: [] as Record<string, unknown>[],
+    articleUpdates: [] as { id: string; data: Record<string, unknown> }[],
+    articleAssets: [] as { articleId: string; filename: string }[],
+    settingsUpdates: [] as Record<string, unknown>[],
     authors: [] as { name: string }[],
     entities: [] as { bookId: string; data: Record<string, unknown> }[],
     labels: [] as { bookId: string; data: Record<string, unknown> }[],
     bookSeq: 0,
     articleSeq: 0,
+    articleAssetSeq: 0,
 }));
 
 vi.mock("../storage", () => ({
@@ -48,6 +52,12 @@ vi.mock("../storage", () => ({
                 },
             ),
         },
+        settings: {
+            updateApp: vi.fn(async (data: Record<string, unknown>) => {
+                recorded.settingsUpdates.push(data);
+                return data;
+            }),
+        },
         articles: {
             list: vi.fn(async () => recorded.existingArticles),
             create: vi.fn(async (data: Record<string, unknown>) => {
@@ -55,7 +65,15 @@ vi.mock("../storage", () => ({
                 recorded.articles.push(row);
                 return row;
             }),
-            update: vi.fn(async () => {}),
+            update: vi.fn(async (id: string, data: Record<string, unknown>) => {
+                recorded.articleUpdates.push({ id, data });
+            }),
+        },
+        articleAssets: {
+            store: vi.fn(async (articleId: string, _blob: Blob, filename: string) => {
+                recorded.articleAssets.push({ articleId, filename });
+                return `new-aa-${++recorded.articleAssetSeq}`;
+            }),
         },
         authors: {
             list: vi.fn(async () => recorded.existingAuthors),
@@ -125,11 +143,15 @@ beforeEach(() => {
     recorded.assets = [];
     recorded.bookUpdates = [];
     recorded.articles = [];
+    recorded.articleUpdates = [];
+    recorded.articleAssets = [];
+    recorded.settingsUpdates = [];
     recorded.authors = [];
     recorded.entities = [];
     recorded.labels = [];
     recorded.bookSeq = 0;
     recorded.articleSeq = 0;
+    recorded.articleAssetSeq = 0;
 });
 
 describe("importBgbFile", () => {
@@ -247,6 +269,84 @@ describe("importBgbFile", () => {
         expect(result.imported.articles).toBe(1);
         expect(result.imported.authors).toBe(1);
         expect(recorded.authors[0].name).toBe("Aster");
+    });
+
+    it("restores app settings (globals/settings.json), never the author profile", async () => {
+        const file = bgbFile({
+            "manifest.json": MANIFEST,
+            "globals/settings.json": JSON.stringify({
+                ui: { theme: "nord" },
+                author: { name: "Original Identity" },
+            }),
+        });
+        const result = await importBgbFile(file);
+        expect(result.imported.settings).toBe(1);
+        expect(recorded.settingsUpdates).toHaveLength(1);
+        expect(recorded.settingsUpdates[0]).toMatchObject({ ui: { theme: "nord" } });
+        // Author profile (own identity) is stripped before the seam write.
+        expect(recorded.settingsUpdates[0].author).toBeUndefined();
+    });
+
+    it("re-points the book cover at the restored bytes", async () => {
+        const cover = "cover-old.png";
+        const file = bgbFile({
+            "manifest.json": MANIFEST,
+            [`books/${OLD_ID}/book.json`]: bookJson(OLD_ID, {
+                cover_image: `assets/covers/${cover}`,
+            }),
+            [`books/${OLD_ID}/assets.json`]: JSON.stringify([
+                { id: "a1", book_id: OLD_ID, filename: cover, asset_type: "cover", path: "x" },
+            ]),
+            [`books/${OLD_ID}/assets/${cover}`]: new Uint8Array([5, 6, 7]),
+        });
+        await importBgbFile(file);
+
+        const newBookId = recorded.books[0].id as string;
+        expect(recorded.assets[0]).toMatchObject({ bookId: newBookId, filename: cover });
+        // cover_image is set on the new book to the original (filename-stable) path.
+        expect(recorded.bookUpdates).toContainEqual({
+            id: newBookId,
+            data: { cover_image: `assets/covers/${cover}` },
+        });
+    });
+
+    it("does not set cover_image when the cover bytes are absent", async () => {
+        const file = bgbFile({
+            "manifest.json": MANIFEST,
+            [`books/${OLD_ID}/book.json`]: bookJson(OLD_ID, {
+                cover_image: "assets/covers/cover-missing.png",
+            }),
+        });
+        await importBgbFile(file);
+        expect(recorded.bookUpdates).toHaveLength(0);
+    });
+
+    it("restores an article featured image and sets featured_image_asset_id", async () => {
+        const file = bgbFile({
+            "manifest.json": MANIFEST,
+            "books/.keep": "",
+            "articles/aaa/article.json": JSON.stringify({
+                id: "aaa",
+                title: "Post",
+                author: "Aster",
+                language: "en",
+                content_type: "blogpost",
+                content_json: "{}",
+                status: "draft",
+            }),
+            "articles/aaa/assets.json": JSON.stringify([
+                { filename: "featured.png", asset_type: "featured_image" },
+            ]),
+            "articles/aaa/assets/featured.png": new Uint8Array([2, 4, 6]),
+        });
+        const result = await importBgbFile(file);
+
+        expect(result.imported.articles).toBe(1);
+        expect(recorded.articleAssets).toHaveLength(1);
+        const newArticleId = recorded.articles[0].id as string;
+        expect(recorded.articleAssets[0].articleId).toBe(newArticleId);
+        const update = recorded.articleUpdates.find((u) => u.id === newArticleId);
+        expect(update?.data.featured_image_asset_id).toBe("new-aa-1");
     });
 
     it("throws BgbImportError on a non-ZIP file", async () => {
