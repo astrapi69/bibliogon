@@ -64,6 +64,16 @@ PAIRS: list[tuple[str, str, str, float, str | None]] = [
     # verify-theme in 7 of 12 variants and only get caught by axe-core on
     # the default theme (#55).
     ("--accent", "--bg-hover", "active tab text / hover", 4.5, None),
+    # `.btn-secondary` label vs its fill. The button renders
+    # ``--text-primary`` over ``--bg-secondary`` in light mode and over
+    # ``--bg-hover`` in dark mode (the ``[data-theme="dark"]
+    # .btn-secondary`` override). Both pairs are gated across all 12
+    # variants; each is legible in either mode, so checking both in both
+    # modes is safe and pins this high-traffic button class
+    # (new-book-from-template / articles-nav / import-wizard, #347) that
+    # axe-core flagged but the gate did not previously cover.
+    ("--text-primary", "--bg-secondary", "secondary button label / secondary fill", 4.5, None),
+    ("--text-primary", "--bg-hover", "secondary button label / hover fill", 4.5, None),
 ]
 
 # Keys are captured WITH the leading "--" so they match the PAIRS
