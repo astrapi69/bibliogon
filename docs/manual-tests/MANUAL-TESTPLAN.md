@@ -597,16 +597,20 @@ Trigger ausloesen).
 
 ## Automatisierungs-Abdeckung
 
-E2E-Specs liegen unter `e2e/smoke/`. Unit-Tests sind Vitest
+E2E-Specs liegen unter `e2e/smoke/`. Die **Manual-Testplan-Automation**
+(`e2e/manual-automation/`, Playwright-Projekt `manual-automation`) schliesst
+die automatisierbaren Luecken, die die Smoke-Suite "Teilweise"/"Nein" laesst
+(naechtlich + auf `release/**` + `workflow_dispatch`, siehe
+`.github/workflows/manual-automation.yml`). Unit-Tests sind Vitest
 (`frontend/src/**/*.test.ts(x)`) bzw. pytest (`backend/tests/`,
 `plugins/*/tests/`). "Teilweise" in der Unit-Spalte heisst: Logik-
 Bausteine sind gedeckt, der End-zu-End-Pfad nicht.
 
 | TC | Beschreibung | E2E | Unit | Automatisierbar | Aufwand |
 |----|--------------|-----|------|-----------------|---------|
-| TC-001 | Buch erstellen (Prosa) | create-book-page.spec.ts | Teilweise | Ja | - |
-| TC-002 | Buch erstellen - alle Typen | create-book-page.spec.ts, getstarted-multi-book-types.spec.ts | Teilweise | Ja | Niedrig |
-| TC-003 | Artikel - alle Content-Typen | create-article-page.spec.ts, content-types.spec.ts, article-type-dropdown.spec.ts | Teilweise | Ja | Niedrig |
+| TC-001 | Buch erstellen (Prosa) | create-book-page.spec.ts, manual-automation/section1 | Teilweise | Ja | - |
+| TC-002 | Buch erstellen - alle Typen | create-book-page.spec.ts, getstarted-multi-book-types.spec.ts, manual-automation/section1 | Teilweise | Ja | - |
+| TC-003 | Artikel - alle Content-Typen | create-article-page.spec.ts, content-types.spec.ts, article-type-dropdown.spec.ts, manual-automation/section1 | Teilweise | Ja | - |
 | TC-004 | Kachel/Liste BD | books-list-view-selection.spec.ts, view-mode-testid-parity.spec.ts | - | Ja | - |
 | TC-005 | Kachel/Liste AD | view-mode-testid-parity.spec.ts | - | Ja | - |
 | TC-006 | Suche/Filter/Sort BD | dashboard-filters.spec.ts | Teilweise | Ja | - |
@@ -617,35 +621,35 @@ Bausteine sind gedeckt, der End-zu-End-Pfad nicht.
 | TC-011 | Auswahl-Bereinigung | selection-cleanup-row-delete.spec.ts | Ja | Ja | - |
 | TC-012 | Papierkorb wiederherstellen | trash.spec.ts, articles-trash.spec.ts, trash-restore-optimistic.spec.ts | Ja | Ja | - |
 | TC-013 | Papierkorb leeren | trash.spec.ts, comments-trash-lifecycle.spec.ts | Teilweise | Ja | Niedrig |
-| TC-014 | Default-Content-Type -> Label | default-content-book-type.spec.ts | Teilweise | Ja | - |
-| TC-015 | Thumbnail-Anzeige | - | - | Ja | Mittel |
-| TC-016 | Kommentar-Zaehler-Badge | comments-admin-bulk-delete.spec.ts | Teilweise | Ja | Mittel |
-| TC-020 | Autosave + Reload | book-editor-chapter-switch.spec.ts | Teilweise | Ja | Mittel |
+| TC-014 | Default-Content-Type -> Label | default-content-book-type.spec.ts, manual-automation/section1 | Teilweise | Ja | - |
+| TC-015 | Thumbnail-Anzeige | manual-automation/section1 | - | Ja | - |
+| TC-016 | Kommentar-Zaehler-Badge | comments-admin-bulk-delete.spec.ts, manual-automation/section1 | Teilweise | Ja | - |
+| TC-020 | Autosave + Reload | book-editor-chapter-switch.spec.ts, manual-automation/section2 | Teilweise | Ja | - |
 | TC-021 | Kapitel CRUD/Umordnen | chapter-reorder.spec.ts, chapter-sidebar-buttons.spec.ts | Teilweise | Ja | - |
-| TC-022 | Kapitel-Wechsel -> Inhalt | book-editor-chapter-switch.spec.ts | Ja | Ja | - |
+| TC-022 | Kapitel-Wechsel -> Inhalt | book-editor-chapter-switch.spec.ts, manual-automation/section2 | Ja | Ja | - |
 | TC-023 | Formatierung | editor-formatting.spec.ts, editor-context-menu.spec.ts | Ja | Ja | - |
 | TC-024 | Mathematik (KaTeX) | editor-math.spec.ts | Teilweise | Ja | - |
 | TC-025 | Titel inline | editable-title.spec.ts | Teilweise | Ja | - |
 | TC-026 | Metadaten alle Tabs | book-metadata-roundtrip.spec.ts, book-metadata-story-tab.spec.ts, book-categories-bisac.spec.ts, author-pen-names.spec.ts | Teilweise | Ja | Niedrig |
 | TC-027 | Composition/Fullscreen | composition-mode.spec.ts, editor-fullscreen.spec.ts | - | Ja | - |
-| TC-028 | Comic Panels/Blasen | comic-book-editor.spec.ts, comic-panel-bubble-crud.spec.ts, comic-bubble-drag-position.spec.ts, comic-book-panel-cross-page-move.spec.ts | Teilweise | Ja | - |
-| TC-029 | Bilderbuch Layouts | picture-book-editor.spec.ts, picture-book-phase1-layouts.spec.ts, picture-book-phase3-collage.spec.ts, picture-book-tier-sections.spec.ts | Teilweise | Ja | - |
+| TC-028 | Comic Panels/Blasen | comic-book-editor.spec.ts, comic-panel-bubble-crud.spec.ts, comic-bubble-drag-position.spec.ts, comic-book-panel-cross-page-move.spec.ts, manual-automation/section2 | Teilweise | Ja | - |
+| TC-029 | Bilderbuch Layouts | picture-book-editor.spec.ts, picture-book-phase1-layouts.spec.ts, picture-book-phase3-collage.spec.ts, picture-book-tier-sections.spec.ts, manual-automation/section2 | Teilweise | Ja | - |
 | TC-030 | Export alle Formate | export-download.spec.ts, article-export.spec.ts, picture-book-pdf-export.spec.ts | Ja | Ja | - |
-| TC-031 | Export Client-Engine offline | offline-pwa.spec.ts | Ja (engine.test.ts u.a.) | Ja | - |
+| TC-031 | Export Client-Engine offline | offline-pwa.spec.ts, manual-automation/section3 | Ja (engine.test.ts u.a.) | Ja | - |
 | TC-032 | Audiobook + Report | - | Teilweise | Teilweise | Hoch |
 | TC-033 | Responsive Editoren | article-editor-responsive.spec.ts, page-editor-header-responsive.spec.ts, mobile-viewport.spec.ts, responsive-mobile.spec.ts | - | Ja | - |
 | TC-035 | .bgb Import Desktop | import-wizard-bgb.spec.ts, import-flows.spec.ts | Ja | Ja | - |
 | TC-036 | .bgb Import offline | import-wizard-bgb.spec.ts, offline-pwa.spec.ts | Ja (backupImport.test.ts) | Ja | - |
-| TC-037 | MD/Text/HTML Import | import-wizard.spec.ts, import-flows.spec.ts | Teilweise | Ja | - |
+| TC-037 | MD/Text/HTML Import | import-wizard.spec.ts, import-flows.spec.ts, manual-automation/section3 | Teilweise | Ja | - |
 | TC-038 | Medium-ZIP + Thumbnails | medium-import-preview.spec.ts | Teilweise | Ja | Mittel |
 | TC-039 | Git-URL Import | import-wizard-git-url.spec.ts | - | Ja | - |
-| TC-040 | BACKUP-AKZEPTANZTEST | backup-acceptance.spec.ts, backup-roundtrip.spec.ts | Ja (backend test_backup_full_roundtrip.py) | Ja | - |
-| TC-041 | Backup vor Reset | danger-zone.spec.ts, settings-backups.spec.ts | Teilweise | Ja | - |
+| TC-040 | BACKUP-AKZEPTANZTEST | backup-acceptance.spec.ts, backup-roundtrip.spec.ts, manual-automation/section4 | Ja (backend test_backup_full_roundtrip.py) | Ja | - |
+| TC-041 | Backup vor Reset | danger-zone.spec.ts, settings-backups.spec.ts, manual-automation/section4 | Teilweise | Ja | - |
 | TC-042 | Artikel-Roundtrip | articles-backup-roundtrip.spec.ts | Ja | Ja | - |
 | TC-043 | Autoren-DB JSON | authors-db-export-import.spec.ts | Teilweise | Ja | - |
-| TC-050 | Settings-Tabs Desktop+Mobile | settings-sidebar.spec.ts | - | Ja | Niedrig |
+| TC-050 | Settings-Tabs Desktop+Mobile | settings-sidebar.spec.ts, manual-automation/section5 | - | Ja | - |
 | TC-051 | Themen (6 Paletten) | themes.spec.ts | Ja (verify-theme Gate) | Ja | - |
-| TC-052 | Sprache (8) | - | Teilweise (i18n parity) | Ja | Niedrig |
+| TC-052 | Sprache (8) | manual-automation/section5 | Teilweise (i18n parity) | Ja | - |
 | TC-053 | Artikel-Themen Autosave | topics-autosave.spec.ts | Teilweise | Ja | - |
 | TC-054 | Autoren-DB CRUD | settings-author.spec.ts, author-pen-names.spec.ts | Teilweise | Ja | - |
 | TC-055 | KI Key + Gates | offline-ai-fill.spec.ts | Teilweise | Ja | Mittel |
@@ -654,7 +658,7 @@ Bausteine sind gedeckt, der End-zu-End-Pfad nicht.
 | TC-061 | LAN/Git/TTS/Pandoc gated | offline-pwa.spec.ts | Teilweise | Ja | - |
 | TC-062 | Versionsgeschichte gated | offline-pwa.spec.ts | Teilweise | Ja | Niedrig |
 | TC-063 | KI ohne Key gated | offline-ai-fill.spec.ts, offline-pwa.spec.ts | Teilweise | Ja | - |
-| TC-064 | Stale-SW-Clear + Live | - | - | Teilweise | Hoch |
+| TC-064 | Stale-SW-Clear + Live | manual-automation/section7 (+ scripts/check_live_chunk.sh) | - | Teilweise | - |
 | TC-065 | SW-Update-Erkennung | - | - | Teilweise | Hoch |
 
 ### Lesehilfe
@@ -666,6 +670,17 @@ Bausteine sind gedeckt, der End-zu-End-Pfad nicht.
   Bezahl-API).
 
 ---
+
+## Erledigt: Manual-Testplan-Automation (`e2e/manual-automation/`)
+
+Die Prioritaetenliste unten wurde mit der `manual-automation`-Suite
+abgearbeitet (Issue #336): TC-052 (Sprachwechsel 8), TC-050 (Settings-Tabs
+Mobile), TC-015 (Thumbnail mit/ohne Bild), TC-016 (Kommentar-Badge-Paritaet),
+TC-064 (Live-Chunk-Freshness, teilweise) plus TC-001/002/003/014/020/022/037/
+040/041. Bewusst manuell geblieben: TC-032 (Audiobook), TC-065 (SW-Update-
+Timing) und die echten Browser-SW-Cache-Schritte von TC-064. Die Offline-
+Feature-Gates (TC-060..063) bleiben in `e2e/smoke/offline-pwa.spec.ts`
+(backendloser Dexie-Build); `manual-automation/section6` skippt im API-Modus.
 
 ## Empfehlung: als naechstes automatisieren
 
