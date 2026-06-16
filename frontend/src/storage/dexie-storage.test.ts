@@ -582,6 +582,32 @@ describe("DexieStorage — covers", () => {
         await dexieStorage.covers.delete("bk");
         expect(await dexieStorage.assets.getBlob("bk", "cover-bk.png")).toBeNull();
     });
+
+    it("upload auto-saves book.cover_image so it survives without an explicit save (#344)", async () => {
+        const book = await dexieStorage.books.create({ title: "Mit Cover" });
+        expect(book.cover_image).toBeFalsy();
+
+        const resp = await dexieStorage.covers.upload(
+            book.id,
+            new File(["JPGDATA"], "art.jpg", { type: "image/jpeg" }),
+        );
+
+        const persisted = await dexieStorage.books.get(book.id);
+        expect(persisted.cover_image).toBe(resp.cover_image);
+        expect(persisted.cover_image).toBe(`assets/covers/cover-${book.id}.jpg`);
+    });
+
+    it("delete auto-clears book.cover_image (#344)", async () => {
+        const book = await dexieStorage.books.create({ title: "Cover entfernen" });
+        await dexieStorage.covers.upload(
+            book.id,
+            new File(["x"], "c.png", { type: "image/png" }),
+        );
+        expect((await dexieStorage.books.get(book.id)).cover_image).toBeTruthy();
+
+        await dexieStorage.covers.delete(book.id);
+        expect((await dexieStorage.books.get(book.id)).cover_image).toBeNull();
+    });
 });
 
 describe("DexieStorage — comments (admin + trash lifecycle)", () => {
