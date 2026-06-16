@@ -1,0 +1,102 @@
+name: Manual-Testplan Automation
+
+# Runs the manual-automation Playwright project (e2e/manual-automation/),
+# which closes the automatable TC-* gaps of docs/manual-tests/
+# MANUAL-TESTPLAN.md. Same model as e2e-smoke.yml: NIGHTLY + on-demand +
+# on release branches — NOT a per-PR gate (the serial suite drives a live
+# backend and is slow; PR CI stays under ~15 min). The release flow runs it
+# via `make release-test` / the release checklist.
+#
+# playwright.config.ts's `webServer` launches BOTH servers automatically
+# (uvicorn :8000 with an isolated /tmp data dir + BIBLIOGON_DEBUG, and the
+# Vite dev server :5173). This job only installs the deps those commands
+# need.
+
+on:
+  schedule:
+    - cron: "30 3 * * *" # nightly at 03:30 UTC (after e2e-smoke at 03:00)
+  workflow_dispatch: {}
+  push:
+    branches:
+      - "release/**"
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  manual-automation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend (uvicorn server for the E2E webServer)
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install frontend deps (Vite dev server)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install E2E deps (Playwright)
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Run manual-automation suite
+        working-directory: e2e
+        # --retries=1 (CI override of the config's retries:2): halves the
+        # worst-case flaky tail without hiding a deterministic failure.
+        run: npx playwright test --project=manual-automation --retries=1
+
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: manual-automation-results
+          path: e2e/test-results/
+          retention-days: 7
+
+  live-bundle-freshness:
+    # TC-064 (partial): post-deploy stale-bundle check. Skips silently unless
+    # LIVE_URL + EXPECTED_MARKER are provided (e.g. a release run that sets
+    # them to the deployed GitHub-Pages URL + the new version string).
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check live bundle freshness
+        env:
+          LIVE_URL: ${{ vars.PAGES_LIVE_URL }}
+          EXPECTED_MARKER: ${{ vars.PAGES_EXPECTED_MARKER }}
+        run: |
+          if [ -z "${LIVE_URL}" ] || [ -z "${EXPECTED_MARKER}" ]; then
+            echo "LIVE_URL / EXPECTED_MARKER not set — skipping (see TC-064)."
+            exit 0
+          fi
+          bash scripts/check_live_chunk.sh "${LIVE_URL}" "${EXPECTED_MARKER}"
