@@ -20,6 +20,31 @@ export interface SentenceComplexity {
   score: number;
 }
 
+/**
+ * Strip HTML tags and decode the handful of named entities that survive a
+ * TipTap-to-HTML round trip, then collapse whitespace.
+ *
+ * The backend supplies the long-sentence candidate texts with their original
+ * inline/block HTML still attached (e.g. ``"…stellt sie.</p> <h2>Was…"``),
+ * which leaks raw tags into the on-screen list and the PDF report. Cleaning
+ * here keeps both surfaces (and the word/clause counts) tag-free.
+ *
+ * @param text - Possibly HTML-bearing sentence text.
+ * @returns The plain-text content with collapsed whitespace.
+ */
+export function stripHtml(text: string): string {
+  return text
+    .replace(/<[^>]*>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function countWords(text: string): number {
   const trimmed = text.trim();
   if (!trimmed) return 0;
@@ -44,7 +69,7 @@ function countCommas(text: string): number {
  * ```
  */
 export function analyzeSentence(text: string): SentenceComplexity {
-  const clean = text.trim();
+  const clean = stripHtml(text);
   const wordCount = countWords(clean);
   const clauseCount = countCommas(clean);
   return {
@@ -87,7 +112,7 @@ export function rankSentences(
  * @returns The leading words, with an ellipsis appended when truncated.
  */
 export function sentenceAnchor(text: string, wordCount = 5): string {
-  const words = text.trim().split(/\s+/).filter(Boolean);
+  const words = stripHtml(text).split(/\s+/).filter(Boolean);
   if (words.length <= wordCount) return words.join(" ");
   return `${words.slice(0, wordCount).join(" ")} …`;
 }

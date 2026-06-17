@@ -1,7 +1,7 @@
 import {describe, it, expect} from "vitest"
 import {
     buildQualityReportMarkdown,
-    buildQualityReportDocument,
+    buildQualityReportPdfDefinition,
     type QualityReportLabels,
 } from "./qualityReport"
 import type {ChapterMetricsResponse} from "../api/client"
@@ -24,6 +24,62 @@ const labels: QualityReportLabels = {
     nestedClauses: "{count} Nebensaetze",
     wordCountNote: "Gezaehlt werden alle Woerter im Fliesstext.",
     disclaimer: "Dieser Bericht ersetzt kein inhaltliches Lektorat.",
+    total: "Gesamt",
+    fleschBands: {
+        easy: "Einfach",
+        readable: "Verstaendlich",
+        demanding: "Anspruchsvoll",
+        academic: "Akademisch",
+    },
+    genres: {
+        fiction: "Belletristik",
+        nonfiction: "Sachbuch",
+        scientific: "Wissenschaft",
+        children: "Kinderbuch",
+    },
+    yourBook: "Ihr Buch",
+    comparison: "Vergleich",
+    nestedColStart: "Satz-Anfang",
+    nestedColClauses: "Nebensaetze",
+    page: "Seite",
+}
+
+/** Recursively flatten every `text` string in a pdfmake node tree. */
+function collectText(node: unknown, out: string[] = []): string[] {
+    if (node == null) return out
+    if (Array.isArray(node)) {
+        node.forEach((n) => collectText(n, out))
+        return out
+    }
+    if (typeof node === "object") {
+        const rec = node as Record<string, unknown>
+        if (typeof rec.text === "string") out.push(rec.text)
+        for (const key of ["columns", "stack", "content"]) {
+            if (rec[key]) collectText(rec[key], out)
+        }
+        const table = rec.table as {body?: unknown} | undefined
+        if (table?.body) collectText(table.body, out)
+    }
+    return out
+}
+
+/** Find the first table node anywhere in the content tree. */
+function findTables(node: unknown, out: Record<string, unknown>[] = []): Record<string, unknown>[] {
+    if (node == null) return out
+    if (Array.isArray(node)) {
+        node.forEach((n) => findTables(n, out))
+        return out
+    }
+    if (typeof node === "object") {
+        const rec = node as Record<string, unknown>
+        if (rec.table) out.push(rec)
+        for (const key of ["columns", "stack", "content"]) {
+            if (rec[key]) findTables(rec[key], out)
+        }
+        const table = rec.table as {body?: unknown} | undefined
+        if (table?.body) findTables(table.body, out)
+    }
+    return out
 }
 
 function sample(): ChapterMetricsResponse {
@@ -128,23 +184,84 @@ describe("buildQualityReportMarkdown", () => {
     })
 })
 
-describe("buildQualityReportDocument", () => {
-    it("maps onto an ExportDocument with one section of paragraphs", () => {
-        const doc = buildQualityReportDocument(sample(), labels)
-        expect(doc.title).toBe("Qualitaetsbericht")
-        expect(doc.subtitle).toBe("Mein Buch")
-        expect(doc.sections).toHaveLength(1)
-        const nodes = doc.sections[0].doc.content as Array<Record<string, unknown>>
-        expect(nodes.length).toBeGreaterThan(0)
-        expect(nodes.every((n) => n.type === "paragraph")).toBe(true)
+describe("buildQualityReportPdfDefinition", () => {
+    it("produces an A4 definition with header/footer and the report title", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels, {date: "01.01.2026"})
+        expect(def.pageSize).toBe("A4")
+        expect(typeof def.header).toBe("function")
+        expect(typeof def.footer).toBe("function")
+        const texts = collectText(def.content)
+        expect(texts).toContain("Qualitaetsbericht")
+        expect(texts).toContain("„Mein Buch“")
     })
 
-    it("includes the non-empty chapter metrics in a paragraph", () => {
-        const doc = buildQualityReportDocument(sample(), labels)
-        const nodes = doc.sections[0].doc.content as Array<{
-            content?: Array<{text?: string}>
-        }>
-        const texts = nodes.map((n) => n.content?.[0]?.text ?? "")
-        expect(texts.some((s) => s.includes("Erstes") && s.includes("Woerter: 480"))).toBe(true)
+    it("renders a colored Flesch scale with bands and the marker", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const texts = collectText(def.content)
+        expect(texts).toContain("Einfach")
+        expect(texts).toContain("Akademisch")
+        expect(texts.some((s) => s.includes("Ihr Buch") && s.includes("60.0"))).toBe(true)
+        expect(texts.some((s) => s.startsWith("Vergleich:"))).toBe(true)
+    })
+
+    it("builds a chapter table with the non-empty data row and average row", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const tables = findTables(def.content)
+        const chapterTable = tables.find((t) => {
+            const body = (t.table as {body: unknown[][]}).body
+            return body[0].some(
+                (c) => (c as {text?: string}).text === "Lange Saetze",
+            )
+        })
+        expect(chapterTable).toBeDefined()
+        const texts = collectText(chapterTable)
+        expect(texts).toContain("Erstes")
+        expect(texts).toContain("480")
+        expect(texts).toContain("Gesamt")
+    })
+
+    it("color-codes threshold cells (passive 12% -> bad red fill)", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const tables = findTables(def.content)
+        const chapterTable = tables.find((t) => {
+            const body = (t.table as {body: unknown[][]}).body
+            return body[0].some((c) => (c as {text?: string}).text === "Flesch")
+        })!
+        const body = (chapterTable.table as {body: Record<string, unknown>[][]}).body
+        const dataRow = body[1]
+        const passiveCell = dataRow[6]
+        expect(passiveCell.text).toBe("12.0")
+        expect(passiveCell.fillColor).toBe("#f7dcdc")
+    })
+
+    it("renders empty chapters as dashes without threshold fills", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const tables = findTables(def.content)
+        const chapterTable = tables.find((t) => {
+            const body = (t.table as {body: unknown[][]}).body
+            return body[0].some((c) => (c as {text?: string}).text === "Flesch")
+        })!
+        const body = (chapterTable.table as {body: Record<string, unknown>[][]}).body
+        const emptyRow = body[2]
+        expect(emptyRow[1].text).toBe("Leeres")
+        expect(emptyRow[4].text).toBe("-")
+        expect(emptyRow[4].fillColor).toBeUndefined()
+    })
+
+    it("includes a per-chapter nested-sentence table with a page break", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const content = def.content as Record<string, unknown>[]
+        const nestedHeading = content.find((n) => n.pageBreak === "before")
+        expect(nestedHeading).toBeDefined()
+        expect((nestedHeading as {text?: string}).text).toBe("Schachtelsatz-Kandidaten")
+        const texts = collectText(def.content)
+        expect(texts).toContain("Satz-Anfang")
+    })
+
+    it("includes the word-count note and the disclaimer", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const texts = collectText(def.content)
+        expect(texts).toContain("Gezaehlt werden alle Woerter im Fliesstext.")
+        expect(texts).toContain("Dieser Bericht ersetzt kein inhaltliches Lektorat.")
     })
 })

@@ -26,10 +26,10 @@ import {
 } from "./qualityThresholds"
 import {slugify} from "../shared/utils/slugify"
 import {downloadBlob} from "../shared/utils/downloadBlob"
-import {toPdfBlob} from "../export/formatPdf"
+import {renderPdfDefinition} from "../export/formatPdf"
 import {
     buildQualityReportMarkdown,
-    buildQualityReportDocument,
+    buildQualityReportPdfDefinition,
     type QualityReportLabels,
 } from "./qualityReport"
 import {notify} from "../utils/notify"
@@ -61,7 +61,7 @@ function isOutlier(value: number, avg: number): boolean {
 }
 
 export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props) {
-    const {t} = useI18n()
+    const {t, lang} = useI18n()
     const [data, setData] = useState<ChapterMetricsResponse | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
@@ -101,6 +101,24 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         nestedClauses: t("ui.metadata.quality_nested_clauses", "{count} Nebensätze"),
         wordCountNote: t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE),
         disclaimer: t("ui.metadata.quality_disclaimer", DISCLAIMER_NOTE),
+        total: t("ui.metadata.quality_total", "Gesamt"),
+        fleschBands: {
+            easy: t("ui.metadata.quality_flesch_band_easy", "Einfach"),
+            readable: t("ui.metadata.quality_flesch_band_readable", "Verständlich"),
+            demanding: t("ui.metadata.quality_flesch_band_demanding", "Anspruchsvoll"),
+            academic: t("ui.metadata.quality_flesch_band_academic", "Akademisch"),
+        },
+        genres: {
+            fiction: t("ui.metadata.quality_genre_fiction", "Belletristik"),
+            nonfiction: t("ui.metadata.quality_genre_nonfiction", "Sachbuch"),
+            scientific: t("ui.metadata.quality_genre_scientific", "Wissenschaft"),
+            children: t("ui.metadata.quality_genre_children", "Kinderbuch"),
+        },
+        yourBook: t("ui.metadata.quality_flesch_your_book", "Ihr Buch"),
+        comparison: t("ui.metadata.quality_flesch_comparison", "Vergleich"),
+        nestedColStart: t("ui.metadata.quality_nested_col_start", "Satz-Anfang"),
+        nestedColClauses: t("ui.metadata.quality_nested_col_clauses", "Nebensätze"),
+        page: t("ui.metadata.quality_report_page", "Seite"),
     })
 
     const reportSlug = (): string =>
@@ -121,7 +139,9 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         if (!data) return
         setExporting(true)
         try {
-            const blob = await toPdfBlob(buildQualityReportDocument(data, reportLabels()))
+            const date = new Date().toLocaleDateString(lang || undefined)
+            const definition = buildQualityReportPdfDefinition(data, reportLabels(), {date})
+            const blob = await renderPdfDefinition(definition)
             downloadBlob(blob, `${reportSlug()}.pdf`)
         } catch (err) {
             notify.error(

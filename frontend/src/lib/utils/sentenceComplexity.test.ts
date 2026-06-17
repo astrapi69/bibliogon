@@ -3,6 +3,7 @@ import {
   analyzeSentence,
   rankSentences,
   sentenceAnchor,
+  stripHtml,
 } from "./sentenceComplexity";
 
 describe("analyzeSentence", () => {
@@ -68,5 +69,31 @@ describe("sentenceAnchor", () => {
 
   it("honors a custom word count", () => {
     expect(sentenceAnchor("alpha beta gamma delta", 2)).toBe("alpha beta …");
+  });
+
+  it("strips leaked HTML tags before building the anchor", () => {
+    expect(
+      sentenceAnchor("Dieses Buch stellt sie.</p> <h2>Was kommt jetzt", 5),
+    ).toBe("Dieses Buch stellt sie. Was …");
+  });
+});
+
+describe("stripHtml", () => {
+  it("removes tags and collapses whitespace", () => {
+    expect(stripHtml("<h1>Kapitel 9: Das Muster</h1>  Text")).toBe(
+      "Kapitel 9: Das Muster Text",
+    );
+  });
+
+  it("decodes the common named entities", () => {
+    expect(stripHtml("Tom &amp; Jerry &lt;tag&gt;")).toBe("Tom & Jerry <tag>");
+  });
+});
+
+describe("analyzeSentence with HTML", () => {
+  it("counts words on the stripped text, not the markup", () => {
+    const result = analyzeSentence("<p>Er ging</p> nach <em>Hause</em>");
+    expect(result.text).toBe("Er ging nach Hause");
+    expect(result.wordCount).toBe(4);
   });
 });

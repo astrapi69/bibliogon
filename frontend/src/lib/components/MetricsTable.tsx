@@ -77,7 +77,12 @@ const TINT_CLASS: Record<CellSeverity, string> = {
   bad: styles.bad,
 };
 
-function classify(value: number, t: MetricThreshold): CellSeverity {
+/**
+ * Classify a numeric value against a {@link MetricThreshold} into a
+ * traffic-light severity. Exported so non-table consumers (e.g. the PDF
+ * quality report) can reuse the exact same good/warn/bad boundaries.
+ */
+export function classify(value: number, t: MetricThreshold): CellSeverity {
   if (t.betterWhenHigher) {
     if (value > t.good) return "good";
     if (value >= t.warn) return "warn";

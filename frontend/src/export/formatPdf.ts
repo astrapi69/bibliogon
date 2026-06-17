@@ -129,8 +129,21 @@ function resolveVfs(mod: any): Record<string, string> | undefined {
   return mod?.default?.pdfMake?.vfs ?? mod?.pdfMake?.vfs ?? mod?.default?.vfs ?? mod?.vfs ?? mod?.default;
 }
 
-/** Generate a PDF Blob for the export model. */
-export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
+/** A pdfmake document definition (kept loose: callers build it as plain data
+ *  so the builders stay framework-free and unit-testable). */
+export type PdfDocDefinition = Record<string, unknown>;
+
+/**
+ * Render an arbitrary pdfmake document definition to a PDF Blob.
+ *
+ * Centralises the version-sensitive pdfmake/vfs bootstrap (lazy import,
+ * 0.3.x `addVirtualFileSystem`, Promise-form `getBlob()`) so every PDF
+ * producer — the generic export engine AND bespoke layouts like the quality
+ * report — shares one correct render path.
+ */
+export async function renderPdfDefinition(
+  definition: PdfDocDefinition,
+): Promise<Blob> {
   const pdfMakeMod = await import("pdfmake/build/pdfmake.js");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any -- CJS/ESM interop
   const pdfMake: any = (pdfMakeMod as any).default ?? pdfMakeMod;
@@ -148,15 +161,18 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
     }
   }
 
-  const definition = {
-    content: docToPdfContent(doc),
-    styles: PDF_STYLES,
-    defaultStyle: { fontSize: 11, lineHeight: 1.3 },
-    info: { title: doc.title, author: doc.author || undefined },
-  };
-
   // pdfmake 0.3.x: `getBlob()` returns a Promise; the 0.2.x callback form
   // (`getBlob(cb)`) no longer invokes the callback, which left this promise
   // unresolved (a hung export). Await the Promise form directly.
   return pdfMake.createPdf(definition).getBlob();
+}
+
+/** Generate a PDF Blob for the export model. */
+export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
+  return renderPdfDefinition({
+    content: docToPdfContent(doc),
+    styles: PDF_STYLES,
+    defaultStyle: { fontSize: 11, lineHeight: 1.3 },
+    info: { title: doc.title, author: doc.author || undefined },
+  });
 }
