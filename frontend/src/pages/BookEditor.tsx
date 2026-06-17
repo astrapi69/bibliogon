@@ -29,6 +29,7 @@ import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSi
 import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildBookEditorMenu } from "./buildBookEditorMenu";
 import { chapterTypeLabels } from "../lib/chapterTypeLabels";
@@ -692,6 +693,11 @@ export default function BookEditor() {
                     className="fixed left-3 top-3 z-[100] bg-card shadow-[var(--shadow-md)]"
                 />
             )}
+            <SidebarOverlay
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                testId="book-editor-sidebar-overlay"
+            />
             <div
                 data-testid="book-editor-sidebar"
                 data-sidebar-open={sidebarOpen}

@@ -47,6 +47,7 @@ import { MovePanelToPageMenu } from "./comics/MovePanelToPageMenu";
 import { useComicBookEditor } from "./comics/useComicBookEditor";
 import PageThumbnails from "./PageThumbnails";
 import { SidebarToggleButton } from "./SidebarToggleButton";
+import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import PdfExportControls from "./PdfExportControls";
 import EditableTitle from "./EditableTitle";
 import ThemeToggle from "./ThemeToggle";
@@ -346,6 +347,14 @@ export default function ComicBookEditor({
             className="absolute right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
           />
         )}
+        <SidebarOverlay
+          open={sidebars.left.open || sidebars.right.open}
+          onClose={() => {
+            sidebars.left.setOpen(false);
+            sidebars.right.setOpen(false);
+          }}
+          testId="comic-book-editor-sidebar-overlay"
+        />
         <div
           data-testid="comic-book-editor-thumbnails-wrapper"
           data-sidebar-open={sidebars.left.open}
