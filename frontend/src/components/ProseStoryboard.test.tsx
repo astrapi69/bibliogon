@@ -14,6 +14,16 @@ import {render, screen, waitFor, fireEvent} from "@testing-library/react"
 import ProseStoryboard, {chapterWordCount} from "./ProseStoryboard"
 import {api, type Chapter} from "../api/client"
 
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}))
+
 class ResizeObserverStub {
     observe() {}
     unobserve() {}

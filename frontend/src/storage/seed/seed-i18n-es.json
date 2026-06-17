@@ -1,5 +1,38 @@
 {
   "ui": {
+    "ai_extraction": {
+      "story_bible_button": "Generar desde el texto del libro",
+      "storyboard_button": "Generar desde el texto del libro",
+      "title": {
+        "story_bible": "Biblia de la historia desde el texto",
+        "storyboard": "Storyboard desde el texto"
+      },
+      "description": "La IA analiza el texto del libro. Revisa las sugerencias antes de aplicarlas.",
+      "progress": "Analizando capítulo {current}/{total}…",
+      "analyzing": "Analizando el texto del libro…",
+      "empty": "No se encontraron sugerencias.",
+      "existing_hint": "Ya existe",
+      "notes_title": "Notas",
+      "apply_selected": "Aplicar seleccionados",
+      "apply_all": "Aplicar todo",
+      "cancel": "Cancelar",
+      "applied": "{count} entradas aplicadas.",
+      "applied_none": "No se aplicó nada.",
+      "error": {
+        "no_chapters": "Este libro no tiene capítulos.",
+        "no_content": "Los capítulos no contienen texto.",
+        "not_configured": "La IA no está configurada (Ajustes > Asistente de IA).",
+        "generic": "La generación falló."
+      },
+      "badge": {
+        "character": "Personaje",
+        "setting": "Lugar",
+        "plot_point": "Trama",
+        "lore": "Tema",
+        "relationship": "Relación",
+        "chapter": "Capítulo"
+      }
+    },
     "offline_import": {
       "tab_file": "Archivo",
       "tab_github": "Desde GitHub",
@@ -3295,8 +3328,6 @@
       "search_story_bible": "Buscar en la Biblia de la historia",
       "take_snapshot": "Crear instantanea",
       "word_count": "Palabras",
-      "no_story_bible_match": "No se encontro ninguna entrada en la Biblia de la historia.",
-      "search_failed": "La busqueda fallo.",
       "undo": "Deshacer",
       "redo": "Rehacer",
       "formatting": "Formato",
@@ -3318,7 +3349,9 @@
       "align_right": "Derecha",
       "align_justify": "Justificado",
       "list_group": "Lista",
-      "task_list": "Lista de tareas"
+      "task_list": "Lista de tareas",
+      "no_story_bible_match": "No se encontro ninguna entrada en la Biblia de la historia.",
+      "search_failed": "La busqueda fallo."
     },
     "outliner": {
       "title": "Esquema",

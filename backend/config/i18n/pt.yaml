@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "Gerar a partir do texto do livro"
+    storyboard_button: "Gerar a partir do texto do livro"
+    title:
+      story_bible: "Bíblia da história a partir do texto"
+      storyboard: "Storyboard a partir do texto"
+    description: "A IA analisa o texto do livro. Reveja as sugestões antes de aplicá-las."
+    progress: "Analisando capítulo {current}/{total}…"
+    analyzing: "Analisando o texto do livro…"
+    empty: "Nenhuma sugestão encontrada."
+    existing_hint: "Já existe"
+    notes_title: "Notas"
+    apply_selected: "Aplicar selecionados"
+    apply_all: "Aplicar tudo"
+    cancel: "Cancelar"
+    applied: "{count} entradas aplicadas."
+    applied_none: "Nada aplicado."
+    error:
+      no_chapters: "Este livro não tem capítulos."
+      no_content: "Os capítulos não contêm texto."
+      not_configured: "A IA não está configurada (Definições > Assistente de IA)."
+      generic: "A geração falhou."
+    badge:
+      character: "Personagem"
+      setting: "Lugar"
+      plot_point: "Enredo"
+      lore: "Tema"
+      relationship: "Relação"
+      chapter: "Capítulo"
   offline_import:
     tab_file: "Ficheiro"
     tab_github: "Do GitHub"
