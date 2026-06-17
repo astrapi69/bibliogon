@@ -54,6 +54,25 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, DEXIE_NO_KEY)).toBe("active");
     });
 
+    it("gates network-dependent import features on connectivity, not storage mode", () => {
+        const apiOnline: FeatureContext = { mode: "api", hasAiKey: false, online: true };
+        const dexieOnline: FeatureContext = { mode: "dexie", hasAiKey: false, online: true };
+        const dexieOffline: FeatureContext = { mode: "dexie", hasAiKey: false, online: false };
+        const apiOffline: FeatureContext = { mode: "api", hasAiKey: false, online: false };
+        for (const id of [FEATURES.GITHUB_IMPORT, FEATURES.URL_IMPORT]) {
+            expect(featureRegistry.getState(id, apiOnline)).toBe("active");
+            expect(featureRegistry.getState(id, dexieOnline)).toBe("active");
+            expect(featureRegistry.getState(id, dexieOffline)).toBe("disabled");
+            expect(featureRegistry.getState(id, apiOffline)).toBe("disabled");
+            expect(featureRegistry.getReason(id, dexieOffline)).toBe(
+                FEATURE_REASON.REQUIRES_NETWORK,
+            );
+        }
+        // Legacy fixtures without an `online` flag are treated as online.
+        expect(featureRegistry.getState(FEATURES.GITHUB_IMPORT, DEXIE_NO_KEY)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.URL_IMPORT, API)).toBe("active");
+    });
+
     it("never hides a registered product feature in any mode (policy #78)", () => {
         for (const id of Object.values(FEATURES)) {
             for (const ctx of [API, DEXIE_NO_KEY, DEXIE_WITH_KEY]) {
@@ -68,5 +87,17 @@ describe("featureRegistry", () => {
     it("fails closed to hidden for unknown ids (library safety net, not UI policy)", () => {
         expect(featureRegistry.getState("does-not-exist", DEXIE_NO_KEY)).toBe("hidden");
         expect(featureRegistry.getState("does-not-exist", API)).toBe("hidden");
+    });
+
+    it("keeps network-import features disabled (never hidden) when offline in both modes", () => {
+        const offline: FeatureContext[] = [
+            { mode: "api", hasAiKey: false, online: false },
+            { mode: "dexie", hasAiKey: false, online: false },
+        ];
+        for (const ctx of offline) {
+            for (const id of [FEATURES.GITHUB_IMPORT, FEATURES.URL_IMPORT]) {
+                expect(featureRegistry.getState(id, ctx)).toBe("disabled");
+            }
+        }
     });
 });

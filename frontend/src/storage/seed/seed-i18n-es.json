@@ -1,6 +1,9 @@
 {
   "ui": {
     "offline_import": {
+      "tab_file": "Archivo",
+      "tab_github": "Desde GitHub",
+      "tab_url": "Desde URL",
       "drop_hint": "Suelta un archivo aquí para importar",
       "title": "Importar",
       "drop_zone": "Suelta un archivo aquí o haz clic para elegir",
@@ -30,7 +33,38 @@
       "format_bgb": "Copia de Bibliogon (.bgb)",
       "format_unknown": "Desconocido"
     },
+    "github_import": {
+      "url_label": "URL del repositorio de GitHub",
+      "load_btn": "Cargar",
+      "loading": "Cargando …",
+      "token_toggle": "¿Repositorio privado? Añade un token",
+      "token_placeholder": "Token de acceso personal de GitHub (opcional)",
+      "token_hint": "Se guarda solo localmente y se envía solo a GitHub. Aumenta el límite de peticiones y permite repositorios privados.",
+      "error_invalid_url": "URL de GitHub no válida. Ejemplo: https://github.com/user/repo",
+      "error_rate_limit": "Límite de peticiones de GitHub alcanzado. Añade un token para aumentar el límite.",
+      "error_not_found": "Repositorio o ruta no encontrados.",
+      "up": "Subir un nivel",
+      "select_all": "Seleccionar todos los archivos",
+      "empty": "Esta carpeta está vacía.",
+      "progress": "Importando {done}/{total} …",
+      "summary": "{imported} importados, {skipped} omitidos, {errors} errores.",
+      "success": "{count} archivo(s) importado(s).",
+      "nothing_imported": "No se importó ningún archivo.",
+      "import_failed": "Error de importación: {error}",
+      "importing": "Importando …",
+      "import_btn": "Importar {count}",
+      "done_btn": "Listo"
+    },
+    "url_import": {
+      "url_label": "URL del archivo",
+      "hint": "Markdown, HTML o texto desde una URL pública. La página debe permitir CORS.",
+      "success": "Importado desde URL.",
+      "failed": "Error al importar desde URL: {error}",
+      "importing": "Importando …",
+      "import_btn": "Importar"
+    },
     "feature": {
+      "requires_network": "Esta función requiere una conexión a internet.",
       "requires_desktop_app": "Esta función requiere la aplicación de escritorio de Bibliogon",
       "requires_ai_key": "Esta función requiere una clave de IA configurada (Ajustes > Asistente de IA)",
       "not_yet_available": "Esta función aún no está disponible."
@@ -3401,6 +3435,15 @@
       "build_label": "Build",
       "branch_label": "Rama",
       "build_date_label": "Fecha de compilación",
+      "check_update_button": "Buscar una versión nueva",
+      "check_update_checking": "Comprobando …",
+      "update_up_to_date": "Estás usando la versión más reciente.",
+      "update_available": "Hay una versión nueva disponible. ¿Actualizar ahora?",
+      "update_apply_button": "Actualizar",
+      "update_check_failed": "La comprobación falló. ¿Estás en línea?",
+      "update_dev_mode": "No disponible en modo de desarrollo.",
+      "update_last_check": "Última comprobación: {time}",
+      "update_last_check_never": "Nunca se comprobó.",
       "license_label": "Licencia",
       "credits_heading": "Créditos",
       "authors_label": "Autores",

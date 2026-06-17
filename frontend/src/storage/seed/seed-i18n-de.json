@@ -1,6 +1,9 @@
 {
   "ui": {
     "offline_import": {
+      "tab_file": "Datei",
+      "tab_github": "Von GitHub",
+      "tab_url": "Von URL",
       "drop_hint": "Datei hier ablegen zum Importieren",
       "title": "Importieren",
       "drop_zone": "Datei hier ablegen oder klicken",
@@ -30,7 +33,38 @@
       "format_bgb": "Bibliogon-Backup (.bgb)",
       "format_unknown": "Unbekannt"
     },
+    "github_import": {
+      "url_label": "GitHub-Repository-URL",
+      "load_btn": "Laden",
+      "loading": "Lade …",
+      "token_toggle": "Privates Repo? Token hinzufügen",
+      "token_placeholder": "GitHub Personal Access Token (optional)",
+      "token_hint": "Wird nur lokal gespeichert und nur an GitHub gesendet. Erhöht das Anfragelimit und erlaubt private Repos.",
+      "error_invalid_url": "Ungültige GitHub-URL. Beispiel: https://github.com/user/repo",
+      "error_rate_limit": "GitHub-Anfragelimit erreicht. Mit einem Token erhöhst du das Limit.",
+      "error_not_found": "Repository oder Pfad nicht gefunden.",
+      "up": "Eine Ebene hoch",
+      "select_all": "Alle Dateien wählen",
+      "empty": "Dieser Ordner ist leer.",
+      "progress": "Importiere {done}/{total} …",
+      "summary": "{imported} importiert, {skipped} übersprungen, {errors} Fehler.",
+      "success": "{count} Datei(en) importiert.",
+      "nothing_imported": "Keine Datei wurde importiert.",
+      "import_failed": "Import fehlgeschlagen: {error}",
+      "importing": "Importiere …",
+      "import_btn": "{count} importieren",
+      "done_btn": "Fertig"
+    },
+    "url_import": {
+      "url_label": "Datei-URL",
+      "hint": "Markdown, HTML oder Text von einer öffentlichen URL. Die Seite muss CORS erlauben.",
+      "success": "Von URL importiert.",
+      "failed": "URL-Import fehlgeschlagen: {error}",
+      "importing": "Importiere …",
+      "import_btn": "Importieren"
+    },
     "feature": {
+      "requires_network": "Diese Funktion benötigt eine Internetverbindung.",
       "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App",
       "requires_ai_key": "Diese Funktion benötigt einen konfigurierten KI-Schlüssel (Einstellungen > KI-Assistent)",
       "not_yet_available": "Diese Funktion ist noch nicht verfügbar."
@@ -3401,6 +3435,15 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Build-Datum",
+      "check_update_button": "Auf neue Version prüfen",
+      "check_update_checking": "Prüfe …",
+      "update_up_to_date": "Sie verwenden die aktuellste Version.",
+      "update_available": "Eine neue Version ist verfügbar. Jetzt aktualisieren?",
+      "update_apply_button": "Aktualisieren",
+      "update_check_failed": "Prüfung fehlgeschlagen. Sind Sie online?",
+      "update_dev_mode": "Im Entwicklungsmodus nicht verfügbar.",
+      "update_last_check": "Letzte Prüfung: {time}",
+      "update_last_check_never": "Noch nie geprüft.",
       "license_label": "Lizenz",
       "credits_heading": "Mitwirkende",
       "authors_label": "Autor:innen",

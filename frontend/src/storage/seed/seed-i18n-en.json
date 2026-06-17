@@ -1,6 +1,9 @@
 {
   "ui": {
     "offline_import": {
+      "tab_file": "File",
+      "tab_github": "From GitHub",
+      "tab_url": "From URL",
       "drop_hint": "Drop a file here to import",
       "title": "Import",
       "drop_zone": "Drop a file here or click to browse",
@@ -30,7 +33,38 @@
       "format_bgb": "Bibliogon backup (.bgb)",
       "format_unknown": "Unknown"
     },
+    "github_import": {
+      "url_label": "GitHub repository URL",
+      "load_btn": "Load",
+      "loading": "Loading …",
+      "token_toggle": "Private repo? Add a token",
+      "token_placeholder": "GitHub personal access token (optional)",
+      "token_hint": "Stored locally only and sent only to GitHub. Raises the rate limit and unlocks private repos.",
+      "error_invalid_url": "Invalid GitHub URL. Example: https://github.com/user/repo",
+      "error_rate_limit": "GitHub rate limit reached. Add a token to raise the limit.",
+      "error_not_found": "Repository or path not found.",
+      "up": "Up one level",
+      "select_all": "Select all files",
+      "empty": "This folder is empty.",
+      "progress": "Importing {done}/{total} …",
+      "summary": "{imported} imported, {skipped} skipped, {errors} errors.",
+      "success": "{count} file(s) imported.",
+      "nothing_imported": "No file was imported.",
+      "import_failed": "Import failed: {error}",
+      "importing": "Importing …",
+      "import_btn": "Import {count}",
+      "done_btn": "Done"
+    },
+    "url_import": {
+      "url_label": "File URL",
+      "hint": "Markdown, HTML or text from a public URL. The page must allow CORS.",
+      "success": "Imported from URL.",
+      "failed": "URL import failed: {error}",
+      "importing": "Importing …",
+      "import_btn": "Import"
+    },
     "feature": {
+      "requires_network": "This feature requires an internet connection.",
       "requires_desktop_app": "This feature requires the Bibliogon desktop app",
       "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)",
       "not_yet_available": "This feature is not yet available."
@@ -3401,6 +3435,15 @@
       "build_label": "Build",
       "branch_label": "Branch",
       "build_date_label": "Build date",
+      "check_update_button": "Check for new version",
+      "check_update_checking": "Checking …",
+      "update_up_to_date": "You are using the latest version.",
+      "update_available": "A new version is available. Update now?",
+      "update_apply_button": "Update",
+      "update_check_failed": "Check failed. Are you online?",
+      "update_dev_mode": "Not available in development mode.",
+      "update_last_check": "Last check: {time}",
+      "update_last_check_never": "Never checked.",
       "license_label": "License",
       "credits_heading": "Credits",
       "authors_label": "Authors",
