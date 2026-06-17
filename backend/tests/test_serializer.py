@@ -8,6 +8,7 @@ These tests therefore flush through an in-memory session whenever they
 assert a defaulted value.
 """
 
+import json
 from datetime import UTC, datetime
 
 import pytest
@@ -312,6 +313,76 @@ def test_restore_missing_required_field_fails_on_flush():
         with pytest.raises(IntegrityError):
             session.flush()
         session.rollback()
+
+
+def test_restore_keywords_as_empty_list_coerced_to_json_string():
+    """Regression (#349): a frontend-exported .bgb carries ``keywords``
+    as a JSON array (``[]``); the Book column is a Text column storing a
+    JSON string. The restore must json.dumps the list, otherwise SQLite
+    crashes with 'type list is not supported' on flush."""
+    data = {"id": "kwlist1", "title": "T", "author": "A", "keywords": []}
+
+    book = restore_book_from_data(data)
+    assert book.keywords == "[]"
+    assert isinstance(book.keywords, str)
+
+    with SessionLocal() as session:
+        session.add(book)
+        session.flush()  # would raise ProgrammingError pre-fix
+        session.refresh(book)
+        assert book.keywords == "[]"
+        session.rollback()
+
+
+def test_restore_json_array_fields_coerced_to_json_strings():
+    """Regression (#349): every JSON-array-stored-as-Text Book column
+    (keywords, categories, bisac_codes, chapter_summaries,
+    audiobook_skip_chapter_types) restores from a real JSON array
+    without binding a Python list to a text column."""
+    data = {
+        "id": "jsonarr1",
+        "title": "T",
+        "author": "A",
+        "keywords": ["tag1", "tag2"],
+        "categories": ["Fiction", "Fantasy"],
+        "bisac_codes": ["FIC009000"],
+        "chapter_summaries": [{"chapter_id": "c1", "title": "One", "summary": "s"}],
+        "audiobook_skip_chapter_types": ["toc", "imprint"],
+    }
+
+    book = restore_book_from_data(data)
+    for field in (
+        "keywords",
+        "categories",
+        "bisac_codes",
+        "chapter_summaries",
+        "audiobook_skip_chapter_types",
+    ):
+        assert isinstance(getattr(book, field), str), field
+
+    with SessionLocal() as session:
+        session.add(book)
+        session.flush()  # would raise ProgrammingError pre-fix
+        session.refresh(book)
+        assert json.loads(book.keywords) == ["tag1", "tag2"]
+        assert json.loads(book.categories) == ["Fiction", "Fantasy"]
+        assert json.loads(book.bisac_codes) == ["FIC009000"]
+        assert json.loads(book.audiobook_skip_chapter_types) == ["toc", "imprint"]
+        session.rollback()
+
+
+def test_restore_json_string_fields_pass_through_unchanged():
+    """A backend-exported .bgb already carries these fields as JSON
+    strings; the list-coercion must not double-encode them."""
+    data = {
+        "id": "jsonstr1",
+        "title": "T",
+        "author": "A",
+        "keywords": '["tag1", "tag2"]',
+    }
+
+    book = restore_book_from_data(data)
+    assert book.keywords == '["tag1", "tag2"]'
 
 
 def test_restore_legacy_backup_without_audiobook_fields():
