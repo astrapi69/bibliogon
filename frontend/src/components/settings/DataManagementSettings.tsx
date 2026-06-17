@@ -32,12 +32,11 @@ import {
     Download,
     Upload,
     Database,
-    Trash2,
-    Image as ImageIcon,
     ListTree,
     FileText,
 } from "lucide-react";
 import { getStorage } from "../../storage";
+import DataMaintenanceCard from "./DataMaintenanceCard";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../AppDialog";
 import { notify } from "../../utils/notify";
@@ -518,38 +517,16 @@ export function DataManagementSettings() {
                 </div>
             </div>
 
-            {/* --- Maintenance --- */}
-            <div className={cardClass} data-testid="data-maintenance-section">
-                <h3 className={cardTitleClass}>{t("ui.data.maintenance_title", "Wartung")}</h3>
-                <p className={cardDescClass}>
-                    {t(
-                        "ui.data.maintenance_description",
-                        "Lokale Hilfsdaten aufräumen. Bücher, Artikel und Kapitel bleiben unberührt.",
-                    )}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ gap: 6 }}
-                        onClick={handleClearEventLog}
-                        disabled={busy}
-                        data-testid="data-clear-event-log"
-                    >
-                        <Trash2 size={14} />
-                        {t("ui.data.clear_event_log", "Event-Log leeren")}
-                    </button>
-                    <button
-                        className="btn btn-secondary btn-sm"
-                        style={{ gap: 6 }}
-                        onClick={handleClearImageCache}
-                        disabled={busy}
-                        data-testid="data-clear-image-cache"
-                    >
-                        <ImageIcon size={14} />
-                        {t("ui.data.clear_image_cache", "Bild-Cache leeren")}
-                    </button>
-                </div>
-            </div>
+            {/* --- Maintenance (show-before-clear previews) --- */}
+            <DataMaintenanceCard
+                t={t}
+                busy={busy}
+                onClearEventLog={handleClearEventLog}
+                onClearImageCache={handleClearImageCache}
+                cardClass={cardClass}
+                cardTitleClass={cardTitleClass}
+                cardDescClass={cardDescClass}
+            />
         </div>
     );
 }

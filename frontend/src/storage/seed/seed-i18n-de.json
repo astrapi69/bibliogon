@@ -971,7 +971,18 @@
       "clear_image_cache_confirm_title": "Bild-Cache leeren?",
       "clear_image_cache_confirm_body": "Zwischengespeicherte Bilder (Cover, Artikel-Vorschaubilder) werden entfernt. Sie können bei Bedarf neu geladen werden.",
       "clear_image_cache_done": "{n} Bilder aus dem Cache entfernt",
-      "clear_image_cache_error": "Bild-Cache konnte nicht geleert werden"
+      "clear_image_cache_error": "Bild-Cache konnte nicht geleert werden",
+      "show_event_log": "Event-Log anzeigen",
+      "show_image_cache": "Bilder anzeigen",
+      "event_log_warning": "Dieser Log kann groß sein.",
+      "event_log_count": "Einträge",
+      "event_log_empty": "Keine Einträge.",
+      "copy_clipboard": "In die Zwischenablage kopieren",
+      "download_json": "Als JSON herunterladen",
+      "event_log_copied": "Event-Log kopiert",
+      "event_log_copy_error": "Kopieren fehlgeschlagen",
+      "image_cache_count": "Bilder",
+      "image_cache_empty": "Keine Bilder im Cache."
     },
     "settings": {
       "title": "Einstellungen",

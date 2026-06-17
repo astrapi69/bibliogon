@@ -23,7 +23,7 @@
  * mode, where they hold the full workspace).
  */
 
-import { eventRecorder } from "../utils/eventRecorder";
+import { eventRecorder, type RecordedEvent } from "../utils/eventRecorder";
 import { EVENT_LOG_KEY, offlineDb, type EventLogSnapshot } from "./dexie/schema";
 
 /** One headline category in the storage overview. `key` is both the
@@ -107,6 +107,64 @@ export async function getStorageStats(): Promise<StorageStats> {
     }
 
     return { categories, tables, usageBytes, quotaBytes };
+}
+
+/**
+ * Read the recorded diagnostic events for the "show before clearing"
+ * preview. Prefers the live in-memory ring buffer (most up-to-date);
+ * falls back to the persisted Dexie snapshot when the buffer is empty
+ * (e.g. right after a page load). Returns the most recent `limit` events,
+ * oldest-first.
+ */
+export async function readEventLog(limit = 100): Promise<RecordedEvent[]> {
+    const live = eventRecorder.getAll();
+    let events: RecordedEvent[] = live;
+    if (live.length === 0) {
+        const snapshot = (await offlineDb.eventLog.get(EVENT_LOG_KEY)) as
+            | EventLogSnapshot
+            | undefined;
+        events = (snapshot?.events as RecordedEvent[] | undefined) ?? [];
+    }
+    return events.slice(-limit);
+}
+
+/** One cached image entry for the "show before clearing" preview: its
+ *  filename + byte size + which table it came from. */
+export interface ImageCacheEntry {
+    name: string;
+    sizeBytes: number;
+    scope: "book" | "article";
+}
+
+/** A listing of the cached image bytes: per-entry names/sizes plus the
+ *  total count + estimated byte total. */
+export interface ImageCacheListing {
+    entries: ImageCacheEntry[];
+    count: number;
+    totalBytes: number;
+}
+
+/**
+ * List the cached image assets (book assets + article featured-images)
+ * for the "show before clearing" preview. Reads filename + byte length
+ * only — the bytes are summed for the size estimate and then dropped, so
+ * nothing is rendered. Sorted largest-first.
+ */
+export async function listImageCache(): Promise<ImageCacheListing> {
+    const entries: ImageCacheEntry[] = [];
+    let totalBytes = 0;
+    await offlineDb.assets.each((row) => {
+        const size = row.data?.byteLength ?? 0;
+        totalBytes += size;
+        entries.push({ name: row.filename, sizeBytes: size, scope: "book" });
+    });
+    await offlineDb.articleAssets.each((row) => {
+        const size = row.data?.byteLength ?? 0;
+        totalBytes += size;
+        entries.push({ name: row.filename, sizeBytes: size, scope: "article" });
+    });
+    entries.sort((a, b) => b.sizeBytes - a.sizeBytes);
+    return { entries, count: entries.length, totalBytes };
 }
 
 /**
