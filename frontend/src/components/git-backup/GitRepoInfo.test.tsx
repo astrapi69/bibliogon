@@ -15,6 +15,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import { GitRepoInfo } from "./GitRepoInfo";
+import { ApiError } from "../../api/client";
 
 let featureActive = true;
 vi.mock("@astrapi69/feature-strategy-react", () => ({
@@ -57,15 +58,31 @@ vi.mock("../../hooks/useRemoteDefaultBranch", () => ({
 const mockPull = vi.fn();
 vi.mock("../../api/client", () => ({
     api: { git: { pull: (...args: unknown[]) => mockPull(...args) } },
-    ApiError: class ApiError extends Error {},
+    ApiError: class ApiError extends Error {
+        detailBody?: Record<string, unknown>;
+        constructor(
+            _status?: number,
+            detail?: string,
+            _endpoint?: string,
+            _method?: string,
+            _stacktrace?: string,
+            detailBody?: Record<string, unknown>,
+        ) {
+            super(detail);
+            this.name = "ApiError";
+            this.detailBody = detailBody;
+        }
+    },
 }));
 
 const mockSuccess = vi.fn();
+const mockWarning = vi.fn();
+const mockError = vi.fn();
 vi.mock("../../utils/notify", () => ({
     notify: {
         success: (...args: unknown[]) => mockSuccess(...args),
-        error: vi.fn(),
-        warning: vi.fn(),
+        error: (...args: unknown[]) => mockError(...args),
+        warning: (...args: unknown[]) => mockWarning(...args),
         info: vi.fn(),
     },
 }));
@@ -88,6 +105,8 @@ describe("GitRepoInfo", () => {
         remoteBranch = { status: "idle" };
         mockPull.mockReset();
         mockSuccess.mockReset();
+        mockWarning.mockReset();
+        mockError.mockReset();
     });
 
     it("renders nothing when no URL is set", () => {
@@ -165,5 +184,40 @@ describe("GitRepoInfo", () => {
         expect(pull).toBeDisabled();
         expect(pull).toHaveAttribute("title", "Benötigt Desktop-App");
         expect(mockPull).not.toHaveBeenCalled();
+    });
+
+    it("disables Pull when the repo URL is set but no local clone exists (regression #375)", () => {
+        // API mode (gitOps available) but the repo was never cloned
+        // locally — Pull would 409 `repo_not_initialized`, so the button
+        // must be disabled with the actionable "not cloned" hint.
+        gitStatus.initialized = false;
+        gitStatus.branch = null;
+        remoteBranch = { status: "ok", branch: "main" };
+        render(<GitRepoInfo bookId="b1" url={URL} showPull />);
+        const pull = screen.getByTestId("git-repo-info-pull");
+        expect(pull).toBeDisabled();
+        expect(pull.getAttribute("title")).toContain("lokal noch nicht eingerichtet");
+        fireEvent.click(pull);
+        expect(mockPull).not.toHaveBeenCalled();
+    });
+
+    it("maps a repo_not_initialized 409 to a warning, not a raw error toast (#375)", async () => {
+        // Defensive: even if status was stale and the click slipped
+        // through, the backend's `repo_not_initialized` code must yield
+        // the actionable warning, never the raw error message.
+        const err = new ApiError(
+            409,
+            "Book b1 has no git repo. Initialize first.",
+            "/api/books/b1/git/pull",
+            "POST",
+            "",
+            { code: "repo_not_initialized" },
+        );
+        mockPull.mockRejectedValue(err);
+        render(<GitRepoInfo bookId="b1" url={URL} showPull />);
+        fireEvent.click(screen.getByTestId("git-repo-info-pull"));
+        await waitFor(() => expect(mockWarning).toHaveBeenCalled());
+        expect(mockWarning.mock.calls[0][0]).toContain("lokal noch nicht eingerichtet");
+        expect(mockError).not.toHaveBeenCalled();
     });
 });
