@@ -93,13 +93,29 @@ export function ComboboxSelect({
             (o) => o.value.toLowerCase() === trimmedQuery.toLowerCase(),
         );
 
+    // Commit a pending custom value when the dropdown closes by losing
+    // focus (outside click / blur), instead of silently discarding it.
+    // Without this, typing a custom value (e.g. a custom book language)
+    // and then clicking a Submit/Save button outside the combobox drops
+    // the typed text and reverts to the previous value. Held in a ref so
+    // the (open-scoped) outside-click effect always sees the latest query
+    // without re-subscribing on every keystroke.
+    const closeRef = useRef<() => void>(() => {});
+    closeRef.current = () => {
+        if (isCommittableCustom) {
+            onChange(trimmedQuery);
+            onCustomAdd?.(trimmedQuery);
+        }
+        setQuery(null);
+        setOpen(false);
+    };
+
     useEffect(() => {
         if (!open) return;
         const handleMouseDown = (event: MouseEvent) => {
             if (!rootRef.current) return;
             if (!rootRef.current.contains(event.target as Node)) {
-                setOpen(false);
-                setQuery(null);
+                closeRef.current();
             }
         };
         document.addEventListener("mousedown", handleMouseDown);
