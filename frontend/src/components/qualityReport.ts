@@ -12,9 +12,13 @@
  * in isolation; the pdfmake render itself happens in {@link renderPdfDefinition}.
  */
 
-import type { ChapterMetric, ChapterMetricsResponse } from "../api/client";
+import type { ChapterMetric, ChapterMetricsResponse, ChapterType } from "../api/client";
 import type { PdfDocDefinition } from "../export/formatPdf";
 import { rankSentences, sentenceAnchor } from "../lib/utils/sentenceComplexity";
+import {
+  FRONT_MATTER_TYPES,
+  BACK_MATTER_TYPES,
+} from "../lib/utils/chapterGroups";
 import { classify, type CellSeverity } from "../lib/components/MetricsTable";
 import {
   fleschBand,
@@ -38,18 +42,40 @@ export interface NumberedChapterMetric extends ChapterMetric {
 }
 
 /**
+ * Logical book-order rank for a chapter type, matching the ChapterSidebar's
+ * front-matter -> main -> back-matter grouping (see {@link groupChapters}):
+ * 0 = front matter, 1 = main body (chapters + structural types + anything
+ * not explicitly front/back), 2 = back matter. Used to order the quality
+ * report the same way the author sees the book in the sidebar, rather than
+ * by raw `position` (which interleaves low-position back-matter placeholders
+ * before later main chapters).
+ */
+function bookOrderRank(chapterType: string): number {
+  if (FRONT_MATTER_TYPES.includes(chapterType as ChapterType)) return 0;
+  if (BACK_MATTER_TYPES.includes(chapterType as ChapterType)) return 2;
+  return 1;
+}
+
+/**
  * Number a book's chapters sequentially (1..N) in logical book order.
  *
- * Sorts a copy by `position` (a stable sort, so chapters that share a position
- * keep their incoming order) and assigns `number = index + 1`. This is the
- * single source of the displayed chapter number for the UI table, the PDF and
- * the Markdown export, so all three stay consistent and never show a gap or a
- * duplicate — the previous `position + 1` produced both when positions were
- * sparse (chapters inserted/removed) or shared (equal sort order).
+ * Orders a copy by matter group (front -> main -> back, the same grouping
+ * the ChapterSidebar shows) and, within each group, by `position` (a stable
+ * sort, so chapters that share a position keep their incoming order), then
+ * assigns `number = index + 1`. This is the single source of the displayed
+ * chapter number AND order for the UI table, the PDF and the Markdown
+ * export, so all three stay consistent with the sidebar and never show a gap,
+ * a duplicate, or back-matter interleaved among the main chapters (raw
+ * `position` did the last when low-position back-matter placeholders existed).
  */
 export function numberChapters(chapters: ChapterMetric[]): NumberedChapterMetric[] {
   return [...chapters]
-    .sort((a, b) => a.position - b.position)
+    .sort((a, b) => {
+      const rankA = bookOrderRank(a.chapter_type);
+      const rankB = bookOrderRank(b.chapter_type);
+      if (rankA !== rankB) return rankA - rankB;
+      return a.position - b.position;
+    })
     .map((chapter, index) => ({ ...chapter, number: index + 1 }));
 }
 
