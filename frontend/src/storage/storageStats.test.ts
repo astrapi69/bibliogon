@@ -9,11 +9,20 @@
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import "fake-indexeddb/auto";
-import { clearEventLog, clearImageCache, formatBytes, getStorageStats } from "./storageStats";
+import {
+    clearEventLog,
+    clearImageCache,
+    formatBytes,
+    getStorageStats,
+    listImageCache,
+    readEventLog,
+} from "./storageStats";
 import { EVENT_LOG_KEY, offlineDb } from "./dexie/schema";
+import { eventRecorder } from "../utils/eventRecorder";
 
 beforeEach(async () => {
     await Promise.all(offlineDb.tables.map((t) => t.clear()));
+    eventRecorder.clear();
 });
 
 /** Minimal AssetRow body — fake-indexeddb structured-clones it. */
@@ -141,6 +150,78 @@ describe("clearEventLog", () => {
         });
         await clearEventLog();
         expect(await offlineDb.eventLog.count()).toBe(0);
+    });
+});
+
+describe("readEventLog (preview before clear)", () => {
+    it("returns the persisted snapshot events when the live buffer is empty", async () => {
+        await offlineDb.eventLog.put({
+            id: EVENT_LOG_KEY,
+            events: [
+                { type: "click", timestamp: 1, text: "A" },
+                { type: "navigation", timestamp: 2, from: "/", to: "/x" },
+            ],
+            updatedAt: "2026-06-16T00:00:00Z",
+        });
+        const events = await readEventLog();
+        expect(events).toHaveLength(2);
+        expect(events[0].type).toBe("click");
+    });
+
+    it("returns [] when there is no log at all", async () => {
+        expect(await readEventLog()).toEqual([]);
+    });
+
+    it("caps the result at the requested limit (most recent)", async () => {
+        const many = Array.from({ length: 120 }, (_, i) => ({
+            type: "click" as const,
+            timestamp: i,
+            text: `b${i}`,
+        }));
+        await offlineDb.eventLog.put({
+            id: EVENT_LOG_KEY,
+            events: many,
+            updatedAt: "2026-06-16T00:00:00Z",
+        });
+        const events = await readEventLog(100);
+        expect(events).toHaveLength(100);
+        // Most-recent slice: last event preserved.
+        expect(events[events.length - 1].text).toBe("b119");
+    });
+});
+
+describe("listImageCache (preview before clear)", () => {
+    it("lists book + article image filenames with sizes, largest-first", async () => {
+        await offlineDb.assets.put({
+            id: "as1",
+            bookId: "b1",
+            filename: "cover.png",
+            mimeType: "image/png",
+            assetType: "cover",
+            data: buf(10),
+            createdAt: "2026-06-16T00:00:00Z",
+        });
+        await offlineDb.articleAssets.put({
+            id: "aa1",
+            articleId: "a1",
+            filename: "hero.png",
+            mimeType: "image/png",
+            data: buf(30),
+            createdAt: "2026-06-16T00:00:00Z",
+        });
+
+        const listing = await listImageCache();
+        expect(listing.count).toBe(2);
+        expect(listing.totalBytes).toBe(40);
+        // Largest-first.
+        expect(listing.entries[0].name).toBe("hero.png");
+        expect(listing.entries[0].scope).toBe("article");
+        expect(listing.entries[1].name).toBe("cover.png");
+    });
+
+    it("returns an empty listing when nothing is cached", async () => {
+        const listing = await listImageCache();
+        expect(listing).toEqual({ entries: [], count: 0, totalBytes: 0 });
     });
 });
 

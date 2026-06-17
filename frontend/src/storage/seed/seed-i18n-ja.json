@@ -971,7 +971,18 @@
       "clear_image_cache_confirm_title": "画像キャッシュを消去しますか？",
       "clear_image_cache_confirm_body": "キャッシュされた画像（表紙、記事のサムネイル）が削除されます。必要に応じて再読み込みできます。",
       "clear_image_cache_done": "キャッシュから {n} 件の画像を削除しました",
-      "clear_image_cache_error": "画像キャッシュを消去できませんでした"
+      "clear_image_cache_error": "画像キャッシュを消去できませんでした",
+      "show_event_log": "イベントログを表示",
+      "show_image_cache": "画像を表示",
+      "event_log_warning": "このログは大きくなる場合があります。",
+      "event_log_count": "件",
+      "event_log_empty": "エントリがありません。",
+      "copy_clipboard": "クリップボードにコピー",
+      "download_json": "JSONとしてダウンロード",
+      "event_log_copied": "イベントログをコピーしました",
+      "event_log_copy_error": "コピーに失敗しました",
+      "image_cache_count": "画像",
+      "image_cache_empty": "キャッシュに画像がありません。"
     },
     "settings": {
       "title": "設定",

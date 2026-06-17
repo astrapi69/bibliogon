@@ -990,7 +990,18 @@
       "clear_image_cache_confirm_title": "Görsel önbelleği temizlensin mi?",
       "clear_image_cache_confirm_body": "Önbelleğe alınmış görseller (kapaklar, makale küçük resimleri) kaldırılır. Gerektiğinde yeniden yüklenebilir.",
       "clear_image_cache_done": "Önbellekten {n} görsel kaldırıldı",
-      "clear_image_cache_error": "Görsel önbelleği temizlenemedi"
+      "clear_image_cache_error": "Görsel önbelleği temizlenemedi",
+      "show_event_log": "Olay günlüğünü göster",
+      "show_image_cache": "Görselleri göster",
+      "event_log_warning": "Bu günlük büyük olabilir.",
+      "event_log_count": "kayıt",
+      "event_log_empty": "Kayıt yok.",
+      "copy_clipboard": "Panoya kopyala",
+      "download_json": "JSON olarak indir",
+      "event_log_copied": "Olay günlüğü kopyalandı",
+      "event_log_copy_error": "Kopyalama başarısız",
+      "image_cache_count": "görsel",
+      "image_cache_empty": "Önbellekte görsel yok."
     },
     "settings": {
       "title": "Ayarlar",
