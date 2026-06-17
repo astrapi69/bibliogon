@@ -244,6 +244,14 @@ navigation:
     icon: upload
     children:
       - title:
+          de: Von GitHub
+          en: From GitHub
+        slug: import/github
+      - title:
+          de: Von URL
+          en: From URL
+        slug: import/url
+      - title:
           de: Git-URL
           en: Git URL
         slug: import/git-url
