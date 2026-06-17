@@ -96,6 +96,7 @@ class RepoStatus(BaseModel):
     uncommitted_files: int
     head_hash: str | None
     head_short_hash: str | None
+    branch: str | None = None
 
 
 def _assert_book(book_id: str, db: Session) -> None:

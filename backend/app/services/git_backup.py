@@ -193,6 +193,7 @@ def status(book_id: str, db: Session) -> dict[str, Any]:
             "uncommitted_files": 0,
             "head_hash": None,
             "head_short_hash": None,
+            "branch": None,
         }
 
     repo = git.Repo(repo_path(book_id))
@@ -205,6 +206,7 @@ def status(book_id: str, db: Session) -> dict[str, Any]:
         "uncommitted_files": uncommitted,
         "head_hash": head.hexsha if head else None,
         "head_short_hash": head.hexsha[:7] if head else None,
+        "branch": _active_branch_name(repo),
     }
 
 
@@ -722,3 +724,15 @@ def _count_uncommitted(repo: git.Repo) -> int:
     unstaged = len(repo.index.diff(None))
     untracked = len(repo.untracked_files)
     return staged + unstaged + untracked
+
+
+def _active_branch_name(repo: git.Repo) -> str | None:
+    """Return the checked-out branch name, or ``None`` on detached HEAD.
+
+    ``repo.active_branch`` raises ``TypeError`` when HEAD is detached
+    (e.g. mid-rebase or checked out to a commit), so fall back to None.
+    """
+    try:
+        return repo.active_branch.name
+    except (TypeError, ValueError):
+        return None
