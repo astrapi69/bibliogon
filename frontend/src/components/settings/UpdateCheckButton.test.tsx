@@ -52,7 +52,7 @@ describe("UpdateCheckButton", () => {
         resolveCheck("up-to-date");
         await waitFor(() =>
             expect(screen.getByTestId("about-update-status").textContent).toContain(
-                "aktuelle Version",
+                "aktuellste Version",
             ),
         );
         // Last-check line switches from "never" to a relative timestamp.

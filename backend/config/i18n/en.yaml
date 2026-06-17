@@ -3251,7 +3251,7 @@ ui:
     build_date_label: "Build date"
     check_update_button: "Check for new version"
     check_update_checking: "Checking …"
-    update_up_to_date: "You are using the current version."
+    update_up_to_date: "You are using the latest version."
     update_available: "A new version is available. Update now?"
     update_apply_button: "Update"
     update_check_failed: "Check failed. Are you online?"

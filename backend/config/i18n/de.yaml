@@ -3250,7 +3250,7 @@ ui:
     build_date_label: "Build-Datum"
     check_update_button: "Auf neue Version prüfen"
     check_update_checking: "Prüfe …"
-    update_up_to_date: "Sie verwenden die aktuelle Version."
+    update_up_to_date: "Sie verwenden die aktuellste Version."
     update_available: "Eine neue Version ist verfügbar. Jetzt aktualisieren?"
     update_apply_button: "Aktualisieren"
     update_check_failed: "Prüfung fehlgeschlagen. Sind Sie online?"

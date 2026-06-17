@@ -3240,7 +3240,7 @@ ui:
     build_date_label: "Ημερομηνία build"
     check_update_button: "Έλεγχος για νέα έκδοση"
     check_update_checking: "Έλεγχος …"
-    update_up_to_date: "Χρησιμοποιείτε την τρέχουσα έκδοση."
+    update_up_to_date: "Χρησιμοποιείτε την πιο πρόσφατη έκδοση."
     update_available: "Διατίθεται νέα έκδοση. Ενημέρωση τώρα;"
     update_apply_button: "Ενημέρωση"
     update_check_failed: "Ο έλεγχος απέτυχε. Είστε συνδεδεμένοι;"

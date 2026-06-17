@@ -3240,7 +3240,7 @@ ui:
     build_date_label: "Fecha de compilación"
     check_update_button: "Buscar una versión nueva"
     check_update_checking: "Comprobando …"
-    update_up_to_date: "Estás usando la versión actual."
+    update_up_to_date: "Estás usando la versión más reciente."
     update_available: "Hay una versión nueva disponible. ¿Actualizar ahora?"
     update_apply_button: "Actualizar"
     update_check_failed: "La comprobación falló. ¿Estás en línea?"
