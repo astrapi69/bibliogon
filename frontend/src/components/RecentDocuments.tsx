@@ -4,8 +4,9 @@
  * Renders the most recently updated books (BD) or articles (AD) as compact
  * chips — type icon + title + relative time — that deep-link to the editor.
  * Reads via {@link useRecentDocuments} (storage seam; online + offline) and
- * localizes the timestamp with {@link formatRelativeTime}. Horizontally
- * scrollable on narrow viewports. Renders nothing when there are no entries.
+ * localizes the timestamp with {@link formatRelativeTime}. Chips wrap onto
+ * the next line on narrow viewports (no horizontal scrollbar, even with a
+ * single item). Renders nothing when there are no entries.
  */
 
 import { useNavigate } from "react-router-dom";
@@ -41,7 +42,7 @@ export default function RecentDocuments({
       >
         {t("ui.dashboard.recent", "Zuletzt bearbeitet")}
       </h2>
-      <div className="flex gap-2 overflow-x-auto pb-1">
+      <div className="flex flex-wrap gap-2 pb-1">
         {items.map((doc) => {
           const Icon = doc.kind === "book" ? BookOpen : FileText;
           const href =

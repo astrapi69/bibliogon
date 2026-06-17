@@ -419,7 +419,9 @@ export default function Dashboard() {
                         title="Dashboard"
                     >
                         <BookOpen size={28} strokeWidth={1.5} />
-                        <h1 className={styles.logoText}>Bibliogon</h1>
+                        <h1 className={`${styles.logoText} hidden sm:inline`}>
+                            Bibliogon
+                        </h1>
                     </div>
                     <div className={styles.headerActions}>
                         {/* Always visible. Split-button: the primary
