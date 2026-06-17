@@ -100,3 +100,70 @@ describe("runUrlImport", () => {
         );
     });
 });
+
+describe("filenameFromUrl edge cases and boundaries", () => {
+    it("decodes percent-encoded segments", () => {
+        expect(filenameFromUrl("https://x.com/a/my%20doc.md")).toBe("my doc.md");
+    });
+
+    it("uses the last segment even with a trailing slash (edge)", () => {
+        expect(filenameFromUrl("https://x.com/a/b/")).toBe("b");
+    });
+
+    it("returns 'imported' for a bare host with no path (edge)", () => {
+        expect(filenameFromUrl("https://x.com")).toBe("imported");
+    });
+
+    it("returns 'imported' for an unparseable URL (edge)", () => {
+        expect(filenameFromUrl("::::")).toBe("imported");
+    });
+
+    it("keeps a long encoded filename (boundary)", () => {
+        const name = "a".repeat(80) + ".md";
+        expect(filenameFromUrl(`https://x.com/${encodeURIComponent(name)}`)).toBe(name);
+    });
+});
+
+describe("fetchUrlAsFile edge cases and boundaries", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("throws on a non-ok response (edge)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ status: 404 })),
+        );
+        await expect(fetchUrlAsFile("https://x.com/a.md")).rejects.toBeInstanceOf(UrlImportError);
+    });
+
+    it("rejects an empty / whitespace URL (edge)", async () => {
+        await expect(fetchUrlAsFile("   ")).rejects.toBeInstanceOf(UrlImportError);
+    });
+
+    it("infers .txt for text/plain without an extension", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                fakeRes({ headers: { "content-type": "text/plain" }, blob: new Blob(["x"]) }),
+            ),
+        );
+        expect((await fetchUrlAsFile("https://x.com/notes")).name).toBe("notes.txt");
+    });
+
+    it("defaults to .md when neither URL nor content-type hint a type", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ blob: new Blob(["x"]) })),
+        );
+        expect((await fetchUrlAsFile("https://x.com/raw")).name).toBe("raw.md");
+    });
+
+    it("preserves an existing extension on a long encoded path (boundary)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ blob: new Blob(["x"]) })),
+        );
+        const name = "laeng & co " + "x".repeat(120) + ".md";
+        const file = await fetchUrlAsFile("https://x.com/deep/path/" + encodeURIComponent(name));
+        expect(file.name).toBe(name);
+    });
+});

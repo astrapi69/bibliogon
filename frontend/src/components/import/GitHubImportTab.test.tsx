@@ -97,3 +97,28 @@ describe("GitHubImportTab", () => {
         expect(listGitHubContents).not.toHaveBeenCalled();
     });
 });
+
+describe("GitHubImportTab edge cases", () => {
+    it("disables import until a file is selected", () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        render(<GitHubImportTab onClose={() => {}} />);
+        const confirm = screen.getByTestId("github-import-confirm") as HTMLButtonElement;
+        expect(confirm.disabled).toBe(true);
+    });
+
+    it("shows an empty folder with select-all disabled and no file rows", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        parseGitHubUrl.mockReturnValue({ owner: "o", repo: "r", path: "" });
+        listGitHubContents.mockResolvedValue([]);
+        render(<GitHubImportTab onClose={() => {}} />);
+
+        fireEvent.change(screen.getByTestId("github-import-url"), { target: { value: "o/r" } });
+        fireEvent.click(screen.getByTestId("github-import-load"));
+
+        await screen.findByTestId("github-import-list");
+        expect(screen.queryByTestId(/github-import-file-/)).toBeNull();
+        expect((screen.getByTestId("github-import-select-all") as HTMLButtonElement).disabled).toBe(
+            true,
+        );
+    });
+});

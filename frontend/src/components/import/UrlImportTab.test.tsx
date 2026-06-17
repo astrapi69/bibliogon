@@ -71,3 +71,26 @@ describe("UrlImportTab", () => {
         expect(await screen.findByTestId("url-import-error")).toBeTruthy();
     });
 });
+
+describe("UrlImportTab edge cases", () => {
+    it("disables import when the URL is empty", () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        render(<UrlImportTab onClose={() => {}} />);
+        expect((screen.getByTestId("url-import-confirm") as HTMLButtonElement).disabled).toBe(true);
+    });
+
+    it("passes a long URL with special characters through to the importer (boundary)", async () => {
+        useFeatureMock.mockReturnValue({ isActive: true });
+        runUrlImport.mockResolvedValue({
+            format: "markdown",
+            result: { kind: "backup", result: { imported: {} } },
+        });
+        const url = "https://example.com/" + "a".repeat(200) + "/d%20oc.md?x=1#y";
+        render(<UrlImportTab onClose={() => {}} />);
+
+        fireEvent.change(screen.getByTestId("url-import-url"), { target: { value: url } });
+        fireEvent.click(screen.getByTestId("url-import-confirm"));
+
+        await waitFor(() => expect(runUrlImport).toHaveBeenCalledWith(url));
+    });
+});
