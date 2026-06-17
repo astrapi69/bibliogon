@@ -5,6 +5,7 @@ import { api, ApiError } from "../../api/client";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES, FEATURE_REASON } from "../../features/featureConfig";
 import { useGitStatus } from "../../hooks/useGitStatus";
+import { useRemoteDefaultBranch } from "../../hooks/useRemoteDefaultBranch";
 import { useI18n } from "../../hooks/useI18n";
 import { notify } from "../../utils/notify";
 
@@ -19,10 +20,12 @@ import { notify } from "../../utils/notify";
  *
  * The URL is supplied by the caller (it lives in the book metadata and
  * is editable there); branch + sync state come from {@link useGitStatus},
- * which is `/api`-silent in Dexie mode. Git operations (the Pull button)
- * are `DESKTOP_ONLY`: in Dexie mode the button is disabled with the
- * desktop-app reason and the branch reads "nicht verfügbar", while the
- * URL link stays active in both modes (policy #78).
+ * which is `/api`-silent in Dexie mode. When no local clone exists (Dexie
+ * mode, or API mode before cloning) the branch line falls back to the
+ * GitHub default branch resolved from the public API (#363). Git
+ * operations (the Pull button) are `DESKTOP_ONLY`: in Dexie mode the
+ * button is disabled with the desktop-app reason, while the URL link
+ * stays active in both modes (policy #78).
  */
 export function GitRepoInfo({
     bookId,
@@ -42,9 +45,14 @@ export function GitRepoInfo({
     const git = useGitStatus(bookId);
     const [pulling, setPulling] = useState(false);
 
-    if (!url) return null;
-
     const gitOpsAvailable = gitBackup.isActive;
+    const hasLocalBranch = gitOpsAvailable && git.initialized;
+    const localLoading = gitOpsAvailable && git.loading;
+    // Only resolve the remote default branch when no local branch is
+    // available — a present local clone never triggers a network call.
+    const remoteBranch = useRemoteDefaultBranch(url, !hasLocalBranch && !localLoading);
+
+    if (!url) return null;
 
     function statusLabel(): string {
         switch (git.syncState) {
@@ -71,17 +79,31 @@ export function GitRepoInfo({
     }
 
     function branchText(): string {
-        if (!gitOpsAvailable) {
-            return t("ui.git.branch_unavailable", "Branch: nicht verfügbar (Desktop-App benötigt)");
-        }
-        if (git.loading) {
+        if (localLoading) {
             return t("ui.git.branch_loading", "Branch: wird geladen …");
         }
-        if (!git.initialized) {
-            return t("ui.git.branch_no_clone", "Branch: kein lokaler Klon");
+        if (hasLocalBranch) {
+            const name = git.branch ?? "—";
+            return `${t("ui.git.branch_prefix", "Branch")}: ${name} · ${statusLabel()}`;
         }
-        const name = git.branch ?? "—";
-        return `${t("ui.git.branch_prefix", "Branch")}: ${name} · ${statusLabel()}`;
+        switch (remoteBranch.status) {
+            case "unsupported":
+                return t(
+                    "ui.git.branch_non_github",
+                    "Branch: nicht verfügbar (nur GitHub unterstützt)",
+                );
+            case "loading":
+                return t("ui.git.branch_loading", "Branch: wird geladen …");
+            case "ok":
+                return t("ui.git.branch_remote_line", "Branch: {branch} (Remote)").replace(
+                    "{branch}",
+                    remoteBranch.branch,
+                );
+            case "error":
+            case "idle":
+            default:
+                return t("ui.git.branch_unavailable_remote", "Branch: nicht verfügbar");
+        }
     }
 
     async function handlePull() {
