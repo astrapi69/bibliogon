@@ -1,6 +1,9 @@
 {
   "ui": {
     "offline_import": {
+      "tab_file": "Dosya",
+      "tab_github": "GitHub'dan",
+      "tab_url": "URL'den",
       "drop_hint": "İçe aktarmak için bir dosyayı buraya bırakın",
       "title": "İçe aktar",
       "drop_zone": "Dosyayı buraya bırakın veya tıklayın",
@@ -30,7 +33,38 @@
       "format_bgb": "Bibliogon yedeği (.bgb)",
       "format_unknown": "Bilinmiyor"
     },
+    "github_import": {
+      "url_label": "GitHub deposu URL'si",
+      "load_btn": "Yükle",
+      "loading": "Yükleniyor …",
+      "token_toggle": "Özel depo mu? Bir token ekleyin",
+      "token_placeholder": "GitHub kişisel erişim belirteci (isteğe bağlı)",
+      "token_hint": "Yalnızca yerel olarak saklanır ve yalnızca GitHub'a gönderilir. İstek sınırını artırır ve özel depolara izin verir.",
+      "error_invalid_url": "Geçersiz GitHub URL'si. Örnek: https://github.com/user/repo",
+      "error_rate_limit": "GitHub istek sınırına ulaşıldı. Sınırı artırmak için bir token ekleyin.",
+      "error_not_found": "Depo veya yol bulunamadı.",
+      "up": "Bir seviye yukarı",
+      "select_all": "Tüm dosyaları seç",
+      "empty": "Bu klasör boş.",
+      "progress": "İçe aktarılıyor {done}/{total} …",
+      "summary": "{imported} içe aktarıldı, {skipped} atlandı, {errors} hata.",
+      "success": "{count} dosya içe aktarıldı.",
+      "nothing_imported": "Hiçbir dosya içe aktarılmadı.",
+      "import_failed": "İçe aktarma başarısız: {error}",
+      "importing": "İçe aktarılıyor …",
+      "import_btn": "{count} içe aktar",
+      "done_btn": "Bitti"
+    },
+    "url_import": {
+      "url_label": "Dosya URL'si",
+      "hint": "Genel bir URL'den Markdown, HTML veya metin. Sayfa CORS'a izin vermelidir.",
+      "success": "URL'den içe aktarıldı.",
+      "failed": "URL'den içe aktarma başarısız: {error}",
+      "importing": "İçe aktarılıyor …",
+      "import_btn": "İçe aktar"
+    },
     "feature": {
+      "requires_network": "Bu özellik bir internet bağlantısı gerektirir.",
       "requires_desktop_app": "Bu özellik Bibliogon masaüstü uygulamasını gerektirir",
       "requires_ai_key": "Bu özellik yapılandırılmış bir yapay zeka anahtarı gerektirir (Ayarlar > Yapay Zeka Asistanı)",
       "not_yet_available": "Bu özellik henüz kullanılamıyor."

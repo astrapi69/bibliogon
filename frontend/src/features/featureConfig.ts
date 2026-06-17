@@ -19,6 +19,14 @@ import type { StorageMode } from "../storage/types";
 export interface FeatureContext {
     readonly mode: StorageMode;
     readonly hasAiKey: boolean;
+    /**
+     * Whether the browser currently has general network connectivity
+     * (`navigator.onLine`). Drives the network-dependent features (GitHub /
+     * URL import) which reach external hosts directly, independent of whether
+     * the Bibliogon backend is reachable. Optional for backward-compatible
+     * test fixtures; `undefined` is treated as online.
+     */
+    readonly online?: boolean;
 }
 
 /**
@@ -34,6 +42,8 @@ export const FEATURES = {
     PICTURE_BOOK: "picture-book",
     COMICS: "comics",
     MEDIUM_IMPORT: "medium-import",
+    GITHUB_IMPORT: "github-import",
+    URL_IMPORT: "url-import",
     WRITING_HISTORY: "writing-history",
     DANGER_ZONE_RESET: "danger-zone-reset",
     BOOK_IMPORT_JSON: "book-import-json",
@@ -74,6 +84,7 @@ export const FEATURES = {
 export const FEATURE_REASON = {
     REQUIRES_DESKTOP_APP: "ui.feature.requires_desktop_app",
     REQUIRES_AI_KEY: "ui.feature.requires_ai_key",
+    REQUIRES_NETWORK: "ui.feature.requires_network",
     NOT_YET_AVAILABLE: "ui.feature.not_yet_available",
 } as const;
 
@@ -122,6 +133,15 @@ const ALWAYS_ACTIVE: readonly string[] = [
 const NEEDS_KEY: readonly string[] = [FEATURES.AI_FILL, FEATURES.AI_GENERATE];
 
 /**
+ * Features that are purely client-side but reach external hosts directly
+ * (GitHub REST API, arbitrary URL fetch). They are active in BOTH storage
+ * modes as long as the browser has network connectivity; only a genuine
+ * offline state (`navigator.onLine === false`) disables them, with the
+ * "requires internet connection" reason. No backend, so no `/api`.
+ */
+const NEEDS_NETWORK: readonly string[] = [FEATURES.GITHUB_IMPORT, FEATURES.URL_IMPORT];
+
+/**
  * Features that genuinely cannot work in a browser (no git binary, no TTS
  * engine, no Pandoc, no LAN host, no backend round-trip). In Dexie mode they
  * resolve to `disabled` with the desktop-app reason (per the policy: nothing
@@ -156,6 +176,7 @@ function descriptor(id: string): FeatureDescriptor {
 const DESCRIPTORS: readonly FeatureDescriptor[] = [
     ...ALWAYS_ACTIVE,
     ...NEEDS_KEY,
+    ...NEEDS_NETWORK,
     ...DESKTOP_ONLY,
 ].map(descriptor);
 
@@ -173,9 +194,17 @@ function desktopOnlyCondition(): FeatureCondition<FeatureContext> {
     };
 }
 
+function networkDependentCondition(): FeatureCondition<FeatureContext> {
+    return {
+        evaluate: (ctx) => (ctx?.online === false ? "disabled" : undefined),
+        reason: FEATURE_REASON.REQUIRES_NETWORK,
+    };
+}
+
 function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     const rules: Record<string, FeatureCondition<FeatureContext>> = {};
     for (const id of NEEDS_KEY) rules[id] = keyDependentCondition();
+    for (const id of NEEDS_NETWORK) rules[id] = networkDependentCondition();
     for (const id of DESKTOP_ONLY) rules[id] = desktopOnlyCondition();
     return rules;
 }
