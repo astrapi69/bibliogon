@@ -54,7 +54,7 @@ interface DialogContextValue {
     choose: (title: string, message: string, choices: ChoiceOption[], cancelLabel?: string) => Promise<string | null>;
 }
 
-const DialogContext = createContext<DialogContextValue | null>(null);
+export const DialogContext = createContext<DialogContextValue | null>(null);
 
 export function useDialog(): DialogContextValue {
     const ctx = useContext(DialogContext);
