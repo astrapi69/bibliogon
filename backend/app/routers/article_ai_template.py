@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import logging
 import re
-import unicodedata
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
@@ -51,6 +50,7 @@ from app.ai.template_schema import (
 from app.database import get_db
 from app.models import Article
 from app.schemas import ArticleOut
+from app.services.filename_slug import ascii_filename_slug
 
 logger = logging.getLogger(__name__)
 
@@ -82,16 +82,6 @@ ARTICLE_TEMPLATE_FIELD_MAP: list[tuple[str, str, bool]] = [
     ("featured_image_prompt", "featured_image_prompt", False),
     ("inline_image_prompts", "inline_image_prompts", True),
 ]
-
-
-def _slugify(title: str) -> str:
-    """Folds umlauts to ASCII and keeps the slug RFC 6266-safe.
-    Mirrors ``app.routers.article_export._slugify``."""
-    folded = unicodedata.normalize("NFKD", title)
-    ascii_only = folded.encode("ascii", "ignore").decode("ascii")
-    cleaned = re.sub(r"[^\w\s-]", "", ascii_only).strip()
-    cleaned = re.sub(r"[\s_-]+", "-", cleaned)
-    return cleaned.lower() or "article"
 
 
 def _load_article(article_id: str, db: Session) -> Article:
@@ -161,7 +151,7 @@ def export_article_template(
     article = _load_article(article_id, db)
     template = build_article_template_from_record(article)
     yaml_text = serialize_template_to_yaml(template, include_header=True)
-    return _build_yaml_response(yaml_text, _slugify(article.title))
+    return _build_yaml_response(yaml_text, ascii_filename_slug(article.title, fallback="article"))
 
 
 @articles_router.post("/{article_id}/ai-template")
