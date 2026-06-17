@@ -198,6 +198,16 @@ def test_status_initialized_flag_flips():
     assert after["head_hash"] is not None
 
 
+def test_status_reports_branch():
+    book_id = _create_book()
+    _add_chapter(book_id, "Ch A")
+    before = client.get(f"/api/books/{book_id}/git/status").json()
+    assert before["branch"] is None
+    client.post(f"/api/books/{book_id}/git/init")
+    after = client.get(f"/api/books/{book_id}/git/status").json()
+    assert after["branch"] == "main"
+
+
 # --- file layout ---
 
 

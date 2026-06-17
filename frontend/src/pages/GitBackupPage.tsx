@@ -1,14 +1,17 @@
-import { useParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import { GitCommit, GitBranch, RefreshCw } from "lucide-react";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
+import { getStorage } from "../storage";
 import { useGoBack } from "../hooks/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { useGitBackup } from "../hooks/useGitBackup";
 import { SyncBadge } from "../components/git-backup/SyncBadge";
 import { GitRemoteConfig } from "../components/git-backup/GitRemoteConfig";
+import { GitRepoInfo } from "../components/git-backup/GitRepoInfo";
 import { ConflictResolution } from "../components/git-backup/ConflictResolution";
 
 /**
@@ -18,10 +21,29 @@ import { ConflictResolution } from "../components/git-backup/ConflictResolution"
  */
 export default function GitBackupPage() {
     const { t } = useI18n();
+    const navigate = useNavigate();
     const gitBackup = useFeature(FEATURES.GIT_BACKUP);
     const offline = !gitBackup.isActive;
     const { bookId = "" } = useParams<{ bookId: string }>();
     const goBack = useGoBack(bookId ? `/book/${bookId}` : "/");
+
+    const [repoUrl, setRepoUrl] = useState<string | null>(null);
+    useEffect(() => {
+        let cancelled = false;
+        getStorage()
+            .books.get(bookId)
+            .then((book) => {
+                if (!cancelled) setRepoUrl(book?.repository_url?.trim() || null);
+            })
+            .catch(() => {
+                if (!cancelled) setRepoUrl(null);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [bookId]);
+
+    const goToMetadata = () => navigate(`/book/${bookId}?view=metadata`);
     const {
         status,
         commits,
@@ -63,7 +85,17 @@ export default function GitBackupPage() {
                 onBack={goBack}
                 backLabel={t("ui.common.back", "Zurück")}
             >
-                <FeatureNotice reason={gitBackup.reason} testId="git-backup-disabled" />
+                <div className="flex flex-col gap-3 p-4">
+                    {repoUrl && (
+                        <GitRepoInfo
+                            bookId={bookId}
+                            url={repoUrl}
+                            onChangeUrl={goToMetadata}
+                            testIdPrefix="git-repo-info"
+                        />
+                    )}
+                    <FeatureNotice reason={gitBackup.reason} testId="git-backup-disabled" />
+                </div>
             </PageLayout>
         );
     }
@@ -78,20 +110,44 @@ export default function GitBackupPage() {
         >
             <>
                 {status && !status.initialized && (
-                    <div style={{ padding: 16 }}>
-                        <p style={{ color: "var(--text-muted)", marginBottom: 12 }}>
-                            {t(
-                                "ui.git.not_initialized",
-                                "Für dieses Buch ist noch kein Repository vorhanden. Initialisiere es, um Commits zu erstellen.",
-                            )}
+                    <div
+                        style={{
+                            padding: 16,
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 12,
+                        }}
+                    >
+                        {repoUrl && (
+                            <GitRepoInfo
+                                bookId={bookId}
+                                url={repoUrl}
+                                onChangeUrl={goToMetadata}
+                                testIdPrefix="git-repo-info"
+                            />
+                        )}
+                        <p style={{ color: "var(--text-muted)" }}>
+                            {repoUrl
+                                ? t(
+                                      "ui.git.not_cloned",
+                                      "Das Repository ist konfiguriert, aber lokal noch nicht eingerichtet. Initialisiere einen lokalen Klon, um Commits zu erstellen.",
+                                  )
+                                : t(
+                                      "ui.git.not_initialized",
+                                      "Für dieses Buch ist noch kein Repository vorhanden. Initialisiere es, um Commits zu erstellen.",
+                                  )}
                         </p>
                         <button
                             className="btn btn-primary"
                             onClick={handleInit}
                             disabled={busy}
                             data-testid="git-init-btn"
+                            style={{ alignSelf: "flex-start" }}
                         >
-                            <GitBranch size={14} /> {t("ui.git.init", "Repository initialisieren")}
+                            <GitBranch size={14} />{" "}
+                            {repoUrl
+                                ? t("ui.git.init_local", "Lokalen Klon initialisieren")
+                                : t("ui.git.init", "Repository initialisieren")}
                         </button>
                     </div>
                 )}
@@ -105,6 +161,14 @@ export default function GitBackupPage() {
                             gap: 16,
                         }}
                     >
+                        {repoUrl && (
+                            <GitRepoInfo
+                                bookId={bookId}
+                                url={repoUrl}
+                                onChangeUrl={goToMetadata}
+                                testIdPrefix="git-repo-info"
+                            />
+                        )}
                         {/* Header: HEAD + sync status + refresh */}
                         <div
                             style={{
