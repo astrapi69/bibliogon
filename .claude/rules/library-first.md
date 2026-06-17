@@ -65,6 +65,21 @@ Every module in `frontend/src/lib/` (and `shared/`) MUST:
   platform `Intl.RelativeTimeFormat`, zero bundle cost).
 - **Stage 3 (library)**: `lib/utils.ts` `cn` (wraps the installed `clsx` +
   `tailwind-merge`).
-- **Anti-pattern (stage 4 where stage 3 fits)**: `lib/utils/markdownToHtml.ts`
-  reimplementing the already-installed `marked` (caught by the first audit,
-  tracked in #387).
+- **Deliberate divergence — KEEP, not an anti-pattern**:
+  `lib/utils/markdownToHtml.ts` *looks* like it reimplements the installed
+  `marked`, but its output is deliberately tuned for the TipTap round-trip:
+  `<s>` for strikethrough (not `marked`'s `<del>`), a bare top-level `<img>`
+  and the standalone-image→`<figure>`/`<figcaption>` promotion that the
+  editor's `imageFigure` node needs (see lessons-learned "TipTap image node
+  ... is imageFigure"), and tight whitespace. `marked` changes every one of
+  those, so adopting it would either **regress editor content** (images
+  dropped / wrong strike node on Markdown→WYSIWYG) or require a heavier
+  post-processing wrapper than the original — exactly the stage-3 caveat
+  *"do NOT adopt a library that would change behaviour we deliberately
+  want."* Re-evaluated and **closed by-design (#387, 2026-06-17)**; the
+  first audit's "reimplements `marked`" framing missed the TipTap coupling.
+- **Anti-pattern (stage 4 where stage 3 fits)**: a util that re-implements an
+  already-installed library *with no behavioural reason to diverge* — e.g. a
+  hand-rolled date formatter when `Intl` (stage 1) or an installed library
+  (stage 3) already does the job. The test is whether the divergence is
+  load-bearing (keep, like `markdownToHtml`) or incidental (replace).
