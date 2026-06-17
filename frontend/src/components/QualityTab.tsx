@@ -444,7 +444,7 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
                 {t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE)}
             </p>
 
-            <NestedSentenceCandidates chapters={data.chapters} />
+            <NestedSentenceCandidates chapters={numberedChapters} />
 
             {/* Analysis-scope disclaimer (#287) */}
             <aside className={styles.disclaimer} data-testid="quality-disclaimer">

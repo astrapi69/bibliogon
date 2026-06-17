@@ -384,3 +384,110 @@ describe("chapter numbering follows logical book order (#384)", () => {
         expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3"])
     })
 })
+
+/** A chapter metric with an explicit chapter_type (for matter-group order). */
+function typedChapter(
+    id: string,
+    name: string,
+    position: number,
+    chapterType: string,
+    empty = false,
+): ChapterMetric {
+    return {...chapter(id, name, position, empty), chapter_type: chapterType}
+}
+
+/** Chapter names, in row order, from a Markdown report (`| n | name | ...`). */
+function mdChapterNames(md: string): string[] {
+    return md
+        .split("\n")
+        .map((line) => line.match(/^\| \d+ \| ([^|]+?) \|/))
+        .filter((m): m is RegExpMatchArray => m != null)
+        .map((m) => m[1].trim())
+}
+
+describe("chapter order follows the sidebar's matter grouping (#412)", () => {
+    it("reproduction: low-position back-matter is NOT interleaved before later main chapters", () => {
+        // Back-matter placeholders were created early (low positions 1-2),
+        // the real main chapters later (positions 10-12). Raw-position order
+        // put Epilog/Glossar BEFORE Kapitel 16-18; the sidebar shows all
+        // back-matter last. numberChapters must match the sidebar.
+        const chapters = [
+            typedChapter("k15", "Kapitel 15", 0, "chapter"),
+            typedChapter("epi", "Epilog", 1, "epilogue"),
+            typedChapter("glo", "Glossar", 2, "glossary"),
+            typedChapter("k16", "Kapitel 16", 10, "chapter"),
+            typedChapter("k17", "Kapitel 17", 11, "chapter"),
+            typedChapter("k18", "Kapitel 18", 12, "chapter"),
+        ]
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Kapitel 15",
+            "Kapitel 16",
+            "Kapitel 17",
+            "Kapitel 18",
+            "Epilog",
+            "Glossar",
+        ])
+    })
+
+    it("happy path: 5 plain chapters keep position order 1..5", () => {
+        const chapters = Array.from({length: 5}, (_, i) =>
+            typedChapter(`c${i}`, `Kapitel ${i + 1}`, i, "chapter"),
+        )
+        expect(numberChapters(chapters).map((c) => c.number)).toEqual([1, 2, 3, 4, 5])
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Kapitel 1",
+            "Kapitel 2",
+            "Kapitel 3",
+            "Kapitel 4",
+            "Kapitel 5",
+        ])
+    })
+
+    it("front matter sorts first, back matter last, regardless of position", () => {
+        const chapters = [
+            typedChapter("epi", "Epilog", 0, "epilogue"),
+            typedChapter("k1", "Kapitel 1", 1, "chapter"),
+            typedChapter("toc", "Inhalt", 2, "toc"),
+            typedChapter("k2", "Kapitel 2", 3, "chapter"),
+            typedChapter("imp", "Impressum", 4, "imprint"),
+        ]
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Inhalt", // front matter (toc)
+            "Kapitel 1",
+            "Kapitel 2", // main
+            "Epilog",
+            "Impressum", // back matter
+        ])
+    })
+
+    it("edge: empty back-matter placeholders keep correct (last) position with - metrics", () => {
+        const chapters = [
+            typedChapter("k1", "Kapitel 1", 0, "chapter"),
+            typedChapter("epi", "Epilog", 1, "epilogue", true),
+            typedChapter("k2", "Kapitel 2", 2, "chapter"),
+        ]
+        const ordered = numberChapters(chapters)
+        expect(ordered.map((c) => c.chapter)).toEqual(["Kapitel 1", "Kapitel 2", "Epilog"])
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        // Epilog is row 3 (last) and renders dashes for all metrics.
+        expect(md).toContain("| 3 | Epilog | - | - | - | - | - | - | - |")
+    })
+
+    it("consistency: UI order == MD order == PDF order", () => {
+        const chapters = [
+            typedChapter("epi", "Epilog", 0, "epilogue"),
+            typedChapter("k1", "Kapitel 1", 5, "chapter"),
+            typedChapter("toc", "Inhalt", 1, "toc"),
+            typedChapter("k2", "Kapitel 2", 6, "chapter"),
+        ]
+        const uiOrder = numberChapters(chapters).map((c) => c.chapter)
+        expect(uiOrder).toEqual(["Inhalt", "Kapitel 1", "Kapitel 2", "Epilog"])
+
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        expect(mdChapterNames(md)).toEqual(uiOrder)
+
+        // PDF numbers are sequential in the same order (1..4).
+        const def = buildQualityReportPdfDefinition(response(chapters), labels)
+        expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3", "4"])
+    })
+})
