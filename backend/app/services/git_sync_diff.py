@@ -108,7 +108,7 @@ class ChapterDiff:
 # --- public surface ---
 
 
-def apply_resolutions(
+def apply_resolutions(  # noqa: C901  # Legacy, tracked in clean-code-audit
     db: Session,
     *,
     book_id: str,

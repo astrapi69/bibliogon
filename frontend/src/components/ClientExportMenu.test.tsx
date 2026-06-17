@@ -17,6 +17,10 @@ vi.mock("../hooks/useI18n", () => ({
   useI18n: () => ({ t: (_k: string, fb: string) => fb, lang: "de", setLang: vi.fn() }),
 }));
 
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+  useFeature: () => ({ isActive: true }),
+}));
+
 const DOC: ExportDocument = { title: "T", sections: [] };
 
 describe("ClientExportMenu", () => {

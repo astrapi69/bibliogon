@@ -31,6 +31,15 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }))
 
+// Storage seam: the cover preview resolves through useCoverUrl, which reads
+// getStorage().mode. Default to api mode so the existing assertions (real
+// `/api/...` URL composition) hold; the dexie case is overridden per-test.
+const getStorageMock = vi.fn()
+vi.mock("../../storage", () => ({
+    getStorage: () => getStorageMock(),
+    isOfflineEnabled: () => false,
+}))
+
 function makeBook(overrides: Partial<BookDetail> = {}): BookDetail {
     return {
         id: "book-1",
@@ -100,6 +109,10 @@ function fireImageLoad(width: number, height: number) {
 describe("CoverValidation", () => {
     beforeEach(() => {
         vi.clearAllMocks()
+        getStorageMock.mockReturnValue({
+            mode: "api",
+            assets: {getBlob: vi.fn()},
+        })
     })
 
     it("no cover_image → fail-immediately + onCanAdvanceChange(false)", () => {
@@ -254,5 +267,30 @@ describe("CoverValidation", () => {
             "kdp-publishing-wizard-step-1-preview",
         ) as HTMLImageElement
         expect(img.src).toContain("/api/books/book-42/assets/file/my-cover.png")
+    })
+
+    it("dexie/offline mode renders the cover from a blob URL, not /api (#300)", async () => {
+        getStorageMock.mockReturnValue({
+            mode: "dexie",
+            assets: {
+                getBlob: vi
+                    .fn()
+                    .mockResolvedValue(new Blob(["x"], {type: "image/png"})),
+            },
+        })
+        render(
+            <CoverValidation
+                book={makeBook({id: "book-77", cover_image: "cover.png"})}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        // The preview only mounts once the dexie blob resolves (useCoverUrl is
+        // null while loading), so wait for it, then assert it is a blob: URL
+        // and never the backendless-404-prone /api path.
+        const img = (await screen.findByTestId(
+            "kdp-publishing-wizard-step-1-preview",
+        )) as HTMLImageElement
+        await waitFor(() => expect(img.src).toMatch(/^blob:/))
+        expect(img.src).not.toContain("/api/")
     })
 })

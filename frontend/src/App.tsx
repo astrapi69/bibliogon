@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { Routes, Route, useNavigate } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
@@ -11,15 +11,21 @@ import GetStarted from "./pages/GetStarted";
 import NotFoundPage from "./pages/NotFoundPage";
 // Dialog->Pages migration: new full-page surfaces are lazy-loaded so
 // they create their own chunks (the rest of the routes stay eager).
-const CreateBookPage = lazy(() => import("./pages/CreateBookPage"));
-const CreateArticlePage = lazy(() => import("./pages/CreateArticlePage"));
-const ExportPage = lazy(() => import("./pages/ExportPage"));
-const WritingHistoryPage = lazy(() => import("./pages/WritingHistoryPage"));
-const ChapterVersionsPage = lazy(() => import("./pages/ChapterVersionsPage"));
-const GitBackupPage = lazy(() => import("./pages/GitBackupPage"));
-const GitSyncPage = lazy(() => import("./pages/GitSyncPage"));
-const ShortcutsPage = lazy(() => import("./pages/ShortcutsPage"));
+// lazyWithReload (not bare React.lazy) recovers from stale-shell
+// chunk-load failures after a PWA deploy: the autoUpdate SW swaps the
+// precache out from under an open tab, so the first navigation to a
+// not-yet-loaded route chunk would otherwise 404 and crash the route's
+// error boundary. See lib/lazyWithReload.ts + issue #320.
+const CreateBookPage = lazyWithReload(() => import("./pages/CreateBookPage"));
+const CreateArticlePage = lazyWithReload(() => import("./pages/CreateArticlePage"));
+const ExportPage = lazyWithReload(() => import("./pages/ExportPage"));
+const WritingHistoryPage = lazyWithReload(() => import("./pages/WritingHistoryPage"));
+const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersionsPage"));
+const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
+const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
+const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
+import { lazyWithReload } from "./lib/lazyWithReload";
 import { useTheme } from "./hooks/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
@@ -29,6 +35,7 @@ import { DialogProvider } from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
 import OfflineBanner from "./components/OfflineBanner";
+import AppUpdateBanner from "./components/AppUpdateBanner";
 import SyncStatusWatcher from "./components/SyncStatusWatcher";
 import SkipToContentLink from "./components/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
@@ -149,6 +156,11 @@ export default function App() {
                                         <HelpProvider>
                                             <SkipToContentLink />
                                             <OfflineBanner />
+                                            {/* PWA: "new version available" banner (issue #323).
+                                             *  Subscribes to swUpdateManager; fixed-bottom, dismissible,
+                                             *  applies the update via SKIP_WAITING + controllerchange
+                                             *  reload (autosave-safe). */}
+                                            <AppUpdateBanner />
                                             {/* Headless: drains the offline write queue on reconnect (P3-C9). */}
                                             <SyncStatusWatcher />
                                             {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.

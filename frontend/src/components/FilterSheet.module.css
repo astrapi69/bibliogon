@@ -1,9 +1,8 @@
 /**
- * T-01 Phase B: DashboardFilterSheet CSS-Module.
- *
- * Migrated from a 35-line ``const styles`` block + 1 inline-object
- * site. 5 keys, ~5 inline applications. Radix-Dialog side sheet for
- * mobile filters.
+ * Shared FilterSheet chrome (Radix-Dialog side panel). Extracted from
+ * DashboardFilterSheet.module.css so the Books + Articles filter
+ * sheets share one shell. Tokens via var(--*) so 6-theme switching
+ * keeps working via the existing global.css cascade.
  */
 
 .overlay {

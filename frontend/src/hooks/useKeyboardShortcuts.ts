@@ -87,6 +87,9 @@ export const APP_SHORTCUTS: Array<{keys: string; labelKey: string; labelFallback
   // App navigation
   {keys: "Ctrl+/", labelKey: "ui.shortcuts.show_shortcuts", labelFallback: "Shortcuts anzeigen", section: "app"},
   {keys: "Alt+Z", labelKey: "ui.shortcuts.toggle_word_wrap", labelFallback: "Zeilenumbruch umschalten", section: "app"},
+  {keys: "Ctrl+Shift+F", labelKey: "ui.shortcuts.fullscreen", labelFallback: "Vollbild umschalten", section: "app"},
+  {keys: "Ctrl+Shift+D", labelKey: "ui.shortcuts.composition_mode", labelFallback: "Kompositionsmodus", section: "app"},
+  {keys: "Esc", labelKey: "ui.shortcuts.exit", labelFallback: "Schließen / Verlassen", section: "app"},
   {keys: "Ctrl+H", labelKey: "ui.shortcuts.search_replace", labelFallback: "Suchen & Ersetzen", section: "editor"},
   // Editor formatting (from TipTap, listed for reference)
   {keys: "Ctrl+B", labelKey: "ui.shortcuts.bold", labelFallback: "Fett", section: "editor"},

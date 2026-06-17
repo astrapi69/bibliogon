@@ -1,6 +1,6 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries \
+       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
@@ -185,9 +185,27 @@ install-plugins:
 
 # --- Test ---
 
-test: test-plugins test-backend test-frontend ## Run ALL tests, no coverage (everyday use; coverage runs in CI - see test-coverage)
+test: test-plugins test-backend test-frontend ## Run ALL tests, no coverage (everyday use; coverage runs nightly - see test-nightly)
 	@echo ""
 	@echo "=== All tests complete ==="
+
+test-fast: ## PR-relevante schnelle Checks (kein Coverage, keine Plugins; spiegelt die PR-CI). Ziel < 15 Min.
+	@echo ""
+	@echo "=== Fast PR checks: tsc + Vitest + ruff + ruff-format + mypy + Backend-Tests ==="
+	cd frontend && npx tsc --noEmit && npx vitest run
+	cd backend && poetry run ruff check app/ && poetry run ruff format --check app/ && poetry run mypy app/ && poetry run pytest tests/ -q
+
+test-changed: ## TIA: nur die von aktuellen Aenderungen betroffenen Tests (vitest --changed + pytest --testmon). Voller Fallback: `make test`.
+	@echo ""
+	@echo "=== Test Impact Analysis (changed-only; full suite = make test / nightly) ==="
+	cd frontend && npx vitest run --changed origin/develop --passWithNoTests
+	cd backend && poetry run pip install -q pytest-testmon && poetry run pytest tests/ --testmon -q
+
+test-full: test-coverage ## Volle Suite inkl. Coverage + alle Plugins (= was die Nightly-CI rechnet)
+
+test-nightly: test-full check-security check-complexity ## Nightly-Suite lokal simulieren (Coverage + Plugins + Security + Complexity)
+	@echo ""
+	@echo "=== Nightly suite complete ==="
 
 test-frontend: ## Run frontend unit tests (Vitest)
 	@echo ""
@@ -261,7 +279,7 @@ test-plugin-medium-import: ## Run medium-import plugin tests
 	@echo "=== Medium-Import Plugin Tests ==="
 	cd plugins/bibliogon-plugin-medium-import && poetry env use python3.12 -q 2>/dev/null; poetry run pytest tests/ -v
 
-# --- Coverage (heavy, opt-in; CI runs this on every push - see .github/workflows/coverage.yml) ---
+# --- Coverage (heavy, opt-in; runs nightly in CI - see .github/workflows/nightly.yml) ---
 
 test-coverage: test-coverage-plugins test-coverage-backend test-coverage-frontend ## Run ALL tests with coverage (slow; prefer CI)
 	@echo ""
@@ -300,16 +318,21 @@ bandit-backend: ## bandit Python SAST (medium severity + confidence; baseline: d
 	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
 
-# --- Warn-only security watcher (mirrors .github/workflows/security-scan.yml) ---
-# Local counterpart of the weekly scheduled scan. Surfaces every advisory
-# (no --ignore-vuln) and never fails the shell, so it is for visibility,
-# not gating. The blocking gate is `make audit` / `make security-backend`.
+# --- Security watcher (mirrors .github/workflows/security-scan.yml) ---
+# Local counterpart of the weekly scheduled scan. Phase 2 (#278): blocks on
+# Critical/High like the watcher - pip-audit (accepted advisories from
+# .security-ignore.yml), bandit High, and npm audit high/critical fail the
+# shell; only bandit Low/Medium stays warn-only. `make audit` /
+# `make security-backend` remain the push/PR gate mirrored from ci.yml.
 
-check-security: ## Warn-only dependency + SAST scan (never fails; mirrors security-scan.yml)
-	-cd backend && poetry run pip-audit --skip-editable
+check-security: ## Dependency + SAST scan (blocks on Critical/High; mirrors security-scan.yml Phase 2)
+	cd backend && poetry run pip-audit --skip-editable \
+	  $$(poetry run python ../scripts/security_ignore_args.py)
+	cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
+	  --severity-level high --confidence-level medium -q
 	-cd backend && poetry run bandit -c pyproject.toml -r app ../plugins ../scripts \
 	  --severity-level medium --confidence-level medium -q
-	-cd frontend && npm audit --audit-level=high
+	cd frontend && npm audit --audit-level=high
 
 # --- Circular dependency check (mirrors the madge step in ci.yml) ---
 # Run via npx (pinned major): madge@8's optional typescript peer is <6.1,

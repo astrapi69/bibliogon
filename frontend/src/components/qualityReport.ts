@@ -13,6 +13,7 @@
 
 import type { ChapterMetricsResponse } from "../api/client";
 import type { ExportDocument, TipTapNode } from "../export/documentModel";
+import { rankSentences, sentenceAnchor } from "../lib/utils/sentenceComplexity";
 
 /** Localized labels the report builders need (caller supplies via i18n `t`). */
 export interface QualityReportLabels {
@@ -28,6 +29,46 @@ export interface QualityReportLabels {
   colAdverb: string;
   colLong: string;
   flesch: string;
+  /** Section heading for the nested-sentence candidates (#283). */
+  nestedTitle: string;
+  /** Template "{count} words" for a candidate's word count. */
+  nestedWords: string;
+  /** Template "{count} clauses" for a candidate's comma-based clause count. */
+  nestedClauses: string;
+  /** Footnote describing what the word count includes (#286). */
+  wordCountNote: string;
+  /** Analysis-scope disclaimer: style, not content (#287). */
+  disclaimer: string;
+}
+
+/** Lines (markdown) for the per-chapter nested-sentence candidates. */
+function nestedSentenceLines(
+  metrics: ChapterMetricsResponse,
+  labels: QualityReportLabels,
+): string[] {
+  const lines: string[] = [];
+  for (const ch of metrics.chapters) {
+    const ranked = rankSentences(
+      (ch.long_sentences ?? []).map((s) => s.text),
+      10,
+    );
+    if (ranked.length === 0) continue;
+    lines.push(`### ${ch.chapter}`, "");
+    for (const sentence of ranked) {
+      const words = labels.nestedWords.replace(
+        "{count}",
+        String(sentence.wordCount),
+      );
+      const clauses = labels.nestedClauses.replace(
+        "{count}",
+        String(sentence.clauseCount),
+      );
+      lines.push(`- "${sentenceAnchor(sentence.text)}" — ${words} · ${clauses}`);
+    }
+    lines.push("");
+  }
+  if (lines.length === 0) return [];
+  return [`## ${labels.nestedTitle}`, "", ...lines];
 }
 
 function pct(ratio: number): string {
@@ -66,6 +107,8 @@ export function buildQualityReportMarkdown(
     "",
     ...summaryLines(metrics, labels),
     "",
+    `> ${labels.wordCountNote}`,
+    "",
   ];
 
   const tableHead = [
@@ -80,7 +123,17 @@ export function buildQualityReportMarkdown(
     return `| ${ch.position + 1} | ${ch.chapter} | ${ch.word_count} | ${ch.sentence_count} | ${ch.flesch_reading_ease.toFixed(0)} | ${pct(ch.filler_ratio)} | ${pct(ch.passive_ratio)} | ${pct(ch.adverb_ratio)} | ${ch.long_sentence_count} |`;
   });
 
-  return [...header, ...tableHead, ...rows, ""].join("\n");
+  return [
+    ...header,
+    ...tableHead,
+    ...rows,
+    "",
+    ...nestedSentenceLines(metrics, labels),
+    "---",
+    "",
+    `> ${labels.disclaimer}`,
+    "",
+  ].join("\n");
 }
 
 function paragraph(text: string): TipTapNode {
@@ -105,6 +158,7 @@ export function buildQualityReportDocument(
   const summary = summaryLines(metrics, labels).map((line) =>
     paragraph(line.replace(/\*\*/g, "")),
   );
+  summary.push(paragraph(labels.wordCountNote));
 
   const chapterParagraphs = metrics.chapters.map((ch) => {
     if (ch.empty) {
@@ -122,13 +176,47 @@ export function buildQualityReportDocument(
     return paragraph(`${ch.position + 1}. ${ch.chapter} — ${parts.join(" · ")}`);
   });
 
+  const nestedParagraphs: TipTapNode[] = [];
+  for (const ch of metrics.chapters) {
+    const ranked = rankSentences(
+      (ch.long_sentences ?? []).map((s) => s.text),
+      10,
+    );
+    if (ranked.length === 0) continue;
+    if (nestedParagraphs.length === 0) {
+      nestedParagraphs.push(paragraph(labels.nestedTitle));
+    }
+    nestedParagraphs.push(paragraph(ch.chapter));
+    for (const sentence of ranked) {
+      const words = labels.nestedWords.replace(
+        "{count}",
+        String(sentence.wordCount),
+      );
+      const clauses = labels.nestedClauses.replace(
+        "{count}",
+        String(sentence.clauseCount),
+      );
+      nestedParagraphs.push(
+        paragraph(`"${sentenceAnchor(sentence.text)}" — ${words} · ${clauses}`),
+      );
+    }
+  }
+
   return {
     title: labels.title,
     subtitle: metrics.book_title || undefined,
     sections: [
       {
         heading: "",
-        doc: { type: "doc", content: [...summary, ...chapterParagraphs] },
+        doc: {
+          type: "doc",
+          content: [
+            ...summary,
+            ...chapterParagraphs,
+            ...nestedParagraphs,
+            paragraph(labels.disclaimer),
+          ],
+        },
       },
     ],
   };

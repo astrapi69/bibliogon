@@ -137,6 +137,14 @@ export function AuthorSettings({config, onSave, saving}: {
                     <p style={{fontSize: "0.8125rem", color: "var(--text-muted)", marginBottom: 8}}>
                         {t("ui.settings.pen_names_hint", "Beim Erstellen eines neuen Buches kannst du zwischen deinem echten Namen und Pseudonymen wählen.")}
                     </p>
+                    {penNames.length === 0 && (
+                        <p
+                            className="text-muted-foreground text-sm py-2"
+                            data-testid="author-pen-name-empty"
+                        >
+                            {t("ui.settings.pen_names_empty", "Noch keine Pseudonyme angelegt.")}
+                        </p>
+                    )}
                     {penNames.length > 0 && (
                         <div
                             style={{display: "flex", flexDirection: "column", gap: 6, marginBottom: 8}}

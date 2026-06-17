@@ -136,7 +136,17 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
   const pdfMake: any = (pdfMakeMod as any).default ?? pdfMakeMod;
   const vfsMod = await import("pdfmake/build/vfs_fonts.js");
   const vfs = resolveVfs(vfsMod);
-  if (vfs) pdfMake.vfs = vfs;
+  if (vfs) {
+    // pdfmake 0.3.x reads its fonts from `pdfMake.virtualfs`, populated via
+    // `addVirtualFileSystem(vfs)`. The legacy `pdfMake.vfs = vfs` assignment
+    // (0.2.x) is ignored by the 0.3.x renderer and produces a
+    // "font not found" / "virtualfs.existsSync is not a function" error.
+    if (typeof pdfMake.addVirtualFileSystem === "function") {
+      pdfMake.addVirtualFileSystem(vfs);
+    } else {
+      pdfMake.vfs = vfs;
+    }
+  }
 
   const definition = {
     content: docToPdfContent(doc),
@@ -145,11 +155,8 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
     info: { title: doc.title, author: doc.author || undefined },
   };
 
-  return new Promise<Blob>((resolve, reject) => {
-    try {
-      pdfMake.createPdf(definition).getBlob((blob: Blob) => resolve(blob));
-    } catch (error) {
-      reject(error instanceof Error ? error : new Error(String(error)));
-    }
-  });
+  // pdfmake 0.3.x: `getBlob()` returns a Promise; the 0.2.x callback form
+  // (`getBlob(cb)`) no longer invokes the callback, which left this promise
+  // unresolved (a hung export). Await the Promise form directly.
+  return pdfMake.createPdf(definition).getBlob();
 }

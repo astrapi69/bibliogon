@@ -22,6 +22,8 @@ import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
+import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
+import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/useBookFilters";
 import { useDashboardBookData } from "../hooks/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/useBookTypes";
@@ -39,12 +41,13 @@ import {
     Trash2,
     Menu,
     Search,
-    SlidersHorizontal,
     FileText,
 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
+import DropZone from "../lib/components/DropZone";
+import RecentDocuments from "../components/RecentDocuments";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
 import DashboardTrashView from "../components/DashboardTrashView";
 import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
@@ -92,9 +95,18 @@ export default function Dashboard() {
     // inside that dialog (FEATURES.BGB_IMPORT via the Feature component).
     const { mode } = useStorageMode();
     const isDexie = mode === "dexie";
+    // Drag-and-drop import (#312): a file dropped on the dashboard opens the
+    // import dialog pre-loaded (dexie auto-detects via initialFile; API mode
+    // opens the wizard for the upload step).
+    const [droppedFile, setDroppedFile] = useState<File | null>(null);
+    const handleFileDrop = (files: File[]) => {
+        const file = files[0];
+        if (!file) return;
+        setDroppedFile(file);
+        setImportWizardOpen(true);
+    };
     const { theme, toggle: toggleTheme } = useTheme();
     const [showTrash, setShowTrash] = useState(false);
-    const [filterSheetOpen, setFilterSheetOpen] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
     // book-type (ui.defaults.book_type). The split-button primary
@@ -391,7 +403,12 @@ export default function Dashboard() {
     };
 
     return (
-        <div className={styles.container}>
+        <DropZone
+            className={styles.container}
+            onDrop={handleFileDrop}
+            accept={[".bgb", ".md", ".markdown", ".txt", ".html", ".htm", ".json", ".zip"]}
+            overlayLabel={t("ui.offline_import.drop_hint", "Datei hier ablegen zum Importieren")}
+        >
             {/* Header */}
             <header className={styles.header} data-testid="dashboard-header">
                 <div className={styles.headerInner}>
@@ -668,7 +685,12 @@ export default function Dashboard() {
                  *  to App.tsx — App-level mount above <Routes>. The
                  *  banner now persists across navigation (every page
                  *  shows it) until the user actively dismisses. */}
-                {!showTrash && <WritingGoalWidget />}
+                {/* Writing-Goals belongs to the writing context, not an
+                 *  empty Dashboard: only mount it once the user has books
+                 *  (the widget itself hides further when no writing
+                 *  sessions exist yet, #342). */}
+                {!showTrash && !loading && books.length > 0 && <WritingGoalWidget />}
+                {!showTrash && <RecentDocuments kind="books" reloadKey={books} />}
                 {showTrash ? (
                     <DashboardTrashView
                         trash={trash}
@@ -726,7 +748,7 @@ export default function Dashboard() {
                     />
                 ) : (
                     <>
-                        <div className={styles.mainHeader}>
+                        <div className={styles.mainHeader} data-testid="dashboard-main-header">
                             <h2 className={styles.mainTitle}>
                                 {t("ui.dashboard.title", "Meine Bücher")}
                             </h2>
@@ -736,28 +758,15 @@ export default function Dashboard() {
                                     ? t("ui.dashboard.book_singular", "Buch")
                                     : t("ui.dashboard.book_plural", "Bücher")}
                             </span>
+                            <div style={{ flex: 1 }} />
                             <ViewToggle mode={viewMode} onChange={setViewMode} />
                         </div>
                         {books.length > 1 && (
-                            <>
-                                <div className="hide-mobile">
-                                    <DashboardFilterBar filters={filters} />
-                                </div>
-                                <button
-                                    className="btn btn-secondary btn-sm show-mobile-only"
-                                    data-testid="filter-sheet-trigger"
-                                    onClick={() => setFilterSheetOpen(true)}
-                                    style={{ marginBottom: 8 }}
-                                >
-                                    <SlidersHorizontal size={14} />{" "}
-                                    {t("ui.dashboard.filters", "Filter")}
-                                </button>
-                                <DashboardFilterSheet
-                                    filters={filters}
-                                    open={filterSheetOpen}
-                                    onOpenChange={setFilterSheetOpen}
-                                />
-                            </>
+                            <ResponsiveFilterControls
+                                triggerLabel={t("ui.dashboard.filters", "Filter")}
+                                bar={<DashboardFilterBar filters={filters} />}
+                                sheet={<DashboardFilterSheet filters={filters} />}
+                            />
                         )}
                         {filters.filteredBooks.length === 0 && books.length > 0 && !loading ? (
                             <EmptyState
@@ -849,18 +858,15 @@ export default function Dashboard() {
                                                             key={book.id}
                                                             className={`${styles.tileWrapper}${selection.isSelected(book.id) ? ` ${styles.tileSelected}` : ""}`}
                                                         >
-                                                            <input
-                                                                type="checkbox"
-                                                                className={styles.tileCheckbox}
-                                                                data-testid={`book-bulk-check-${book.id}`}
+                                                            <TileSelectCheckbox
                                                                 checked={selection.isSelected(
                                                                     book.id,
                                                                 )}
-                                                                onChange={() =>
+                                                                onToggle={() =>
                                                                     selection.toggle(book.id)
                                                                 }
-                                                                onClick={(e) => e.stopPropagation()}
-                                                                aria-label="Select book"
+                                                                testId={`book-bulk-check-${book.id}`}
+                                                                ariaLabel="Select book"
                                                             />
                                                             <BookCard
                                                                 book={book}
@@ -904,13 +910,20 @@ export default function Dashboard() {
             {isDexie ? (
                 <OfflineImportDialog
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    initialFile={droppedFile}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => loadBooks()}
                 />
             ) : (
                 <ImportWizardModal
                     open={importWizardOpen}
-                    onClose={() => setImportWizardOpen(false)}
+                    onClose={() => {
+                        setImportWizardOpen(false);
+                        setDroppedFile(null);
+                    }}
                     onImported={() => loadBooks()}
                 />
             )}
@@ -977,6 +990,6 @@ export default function Dashboard() {
                     inlineImageCount={bulkBookAiFillConfirm.inlineImageCount}
                 />
             )}
-        </div>
+        </DropZone>
     );
 }

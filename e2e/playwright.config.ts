@@ -92,6 +92,21 @@ export default defineConfig({
             use: {browserName: "chromium"},
         },
         {
+            // Manual-Testplan automation suite (docs/manual-tests/
+            // MANUAL-TESTPLAN.md). Closes the automatable TC-* gaps the
+            // smoke suite leaves "Teilweise"/"Nein". Run with:
+            //   npx playwright test --project=manual-automation
+            //
+            // Kept out of the default + smoke runs: it is the nightly /
+            // release-gate companion (see .github/workflows/
+            // manual-automation.yml), not a per-PR gate. Page objects +
+            // helpers live in pages/ and helpers/ (non-spec files, so they
+            // are not collected as tests).
+            name: "manual-automation",
+            testDir: "./manual-automation",
+            use: {browserName: "chromium"},
+        },
+        {
             // HELP-DOCS-V0.37.0-GAPS-01 screenshot generator. Run with:
             //   npx playwright test --project=screenshots
             // Output goes under docs/help/assets/screenshots/.

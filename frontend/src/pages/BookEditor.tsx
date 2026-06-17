@@ -9,8 +9,6 @@ import { OfflineToggleButton } from "../components/OfflineToggleButton";
 import { getStorage } from "../storage";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
-import PageEditor from "../components/PageEditor";
-import ComicBookEditor from "../components/ComicBookEditor";
 import Storyboard from "../components/Storyboard";
 import ProseStoryboard from "../components/ProseStoryboard";
 import ChapterOutliner from "../components/ChapterOutliner";
@@ -28,49 +26,17 @@ import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSidebarCollapse";
+import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { EditorMenu } from "../lib/components/EditorMenu";
+import { buildBookEditorMenu } from "./buildBookEditorMenu";
+import { chapterTypeLabels } from "../lib/chapterTypeLabels";
 import { BookOpen, Plus } from "lucide-react";
 import { EmptyState } from "../components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
-
-// BOOK-TYPES-SSOT-YAML-01 C6: editor dispatch table. The
-// registry's ``editor_component`` field is a string name; this
-// map resolves it to the actual React component at render time.
-// Adding a new page-based book type with a different editor =
-// add the component import + one entry here. New chapter-based
-// types fall through to the prose path automatically.
-const EDITOR_COMPONENTS: Record<
-    string,
-    React.ComponentType<{
-        bookId: string;
-        bookTitle: string;
-        onBack: () => void;
-        onShowMetadata: () => void;
-        /** Optional storyboard entry-point. Wired for both
-         *  picture_book (PageEditor) and comic_book (ComicBookEditor)
-         *  per STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1;
-         *  gated by STORYBOARD_BOOK_TYPES. */
-        onShowStoryboard?: () => void;
-        onTitleSave?: (title: string) => void | Promise<void>;
-        isPublished?: boolean;
-    }>
-> = {
-    PageEditor,
-    ComicBookEditor,
-};
-
-/** Per-editor allow-list for the Storyboard view. Mirrors the
- *  ``content_model: pages`` gate. Originally picture_book-only per
- *  A4 of the PICTURE-BOOK-STORYBOARD-VIEW-01 Pre-Inspection;
- *  STORY-BIBLE-STORYBOARD-INTEGRATION-01 Phase 1 C1 extends it to
- *  comic_book — the Storyboard annotation columns (notes,
- *  story_beat, mood_color, act_group) exist on ALL Page records,
- *  and StoryboardCard renders comic pages via the layout-tag path
- *  (no panel thumbnail yet; a richer panel-thumbnail render is a
- *  tracked follow-up). */
-const STORYBOARD_BOOK_TYPES = new Set<string>(["picture_book", "comic_book"]);
+import { EDITOR_COMPONENTS, STORYBOARD_BOOK_TYPES } from "./bookEditorDispatch";
 
 export default function BookEditor() {
     const { bookId } = useParams<{ bookId: string }>();
@@ -95,39 +61,16 @@ export default function BookEditor() {
     // toggle only render when the plugin is mounted.
     const [storyBibleAvailable, setStoryBibleAvailable] = useState(false);
     const [storyBibleOpen, setStoryBibleOpen] = useState(false);
+    // Mobile mutual-exclusion for the left ChapterSidebar + right
+    // StoryBibleSidebar overlays (see useExclusiveSidebars).
+    const { toggleLeft: toggleSidebarExclusive, openRight: openStoryBibleExclusive } =
+        useExclusiveSidebars(sidebarOpen, toggleSidebar, setSidebarOpen, setStoryBibleOpen);
     // The Story Bible entry whose detail/edit view occupies the main
     // content area (C5). refreshKey re-fetches the sidebar list after
     // editor-driven changes.
     const [selectedStoryEntityId, setSelectedStoryEntityId] = useState<string | null>(null);
     const [storyBibleRefreshKey, setStoryBibleRefreshKey] = useState(0);
-    const TYPE_LABELS: Record<ChapterType, string> = {
-        chapter: t("ui.chapter_types.chapter", "Kapitel"),
-        preface: t("ui.chapter_types.preface", "Vorwort"),
-        foreword: t("ui.chapter_types.foreword", "Geleitwort"),
-        acknowledgments: t("ui.chapter_types.acknowledgments", "Danksagung"),
-        about_author: t("ui.chapter_types.about_author", "Über den Autor"),
-        appendix: t("ui.chapter_types.appendix", "Anhang"),
-        bibliography: t("ui.chapter_types.bibliography", "Literatur"),
-        glossary: t("ui.chapter_types.glossary", "Glossar"),
-        epilogue: t("ui.chapter_types.epilogue", "Epilog"),
-        imprint: t("ui.chapter_types.imprint", "Impressum"),
-        next_in_series: t("ui.chapter_types.next_in_series", "Nächster Band"),
-        part: t("ui.chapter_types.part", "Teil"),
-        part_intro: t("ui.chapter_types.part_intro", "Teil-Einleitung"),
-        interlude: t("ui.chapter_types.interlude", "Interludium"),
-        toc: t("ui.chapter_types.toc", "Inhaltsverzeichnis"),
-        dedication: t("ui.chapter_types.dedication", "Widmung"),
-        prologue: t("ui.chapter_types.prologue", "Prolog"),
-        introduction: t("ui.chapter_types.introduction", "Einleitung"),
-        afterword: t("ui.chapter_types.afterword", "Nachwort"),
-        final_thoughts: t("ui.chapter_types.final_thoughts", "Schlussgedanken"),
-        index: t("ui.chapter_types.index", "Stichwortverzeichnis"),
-        epigraph: t("ui.chapter_types.epigraph", "Motto"),
-        endnotes: t("ui.chapter_types.endnotes", "Endnoten"),
-        also_by_author: t("ui.chapter_types.also_by_author", "Weitere Bücher"),
-        excerpt: t("ui.chapter_types.excerpt", "Leseprobe"),
-        call_to_action: t("ui.chapter_types.call_to_action", "Aufruf zur Aktion"),
-    };
+    const TYPE_LABELS = chapterTypeLabels(t);
     const [book, setBook] = useState<BookDetail | null>(null);
     const [allBooks, setAllBooks] = useState<import("../api/client").Book[]>([]);
     const [gitSyncState, setGitSyncState] = useState<string | null>(null);
@@ -396,7 +339,10 @@ export default function BookEditor() {
                 t("ui.chapter_template_picker.inserted", "Kapitel aus Vorlage eingefügt"),
             );
         } catch (err) {
-            notify.error(t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"), err);
+            notify.error(
+                t("ui.chapter_template_picker.insert_failed", "Einfügen fehlgeschlagen"),
+                err,
+            );
             throw err;
         }
     };
@@ -603,6 +549,23 @@ export default function BookEditor() {
         navigate(`/books/${bookId}/export`);
     };
 
+    const handleValidateToc = async () => {
+        if (!bookId) return;
+        try {
+            const result = await api.chapters.validateToc(bookId);
+            if (!result.toc_found) {
+                notify.info(t("ui.editor.toc_not_found", "Kein Inhaltsverzeichnis gefunden."));
+            } else if (result.valid) {
+                notify.success(t("ui.editor.toc_valid", "TOC gültig: alle Links korrekt."));
+            } else {
+                const broken = result.broken.map((b) => b.text).join(", ");
+                notify.error(t("ui.editor.toc_invalid", "Ungültige Links") + `: ${broken}`);
+            }
+        } catch {
+            notify.error(t("ui.editor.toc_error", "Fehler bei der TOC-Validierung."));
+        }
+    };
+
     if (loading) {
         return (
             <LoadingIndicator
@@ -694,13 +657,37 @@ export default function BookEditor() {
         }
     }
 
+    const {
+        groups: menuGroups,
+        disabled: menuDisabled,
+        onAction: handleMenuAction,
+    } = buildBookEditorMenu({
+        t,
+        navigate,
+        bookId,
+        offlineGate,
+        storyBibleAvailable,
+        setSelectedStoryEntityId,
+        closeSidebarOnNarrow,
+        setShowMetadata: _setShowMetadata,
+        setShowStoryboard: _setShowStoryboard,
+        setShowOutline: _setShowOutline,
+        setShowRelationships: _setShowRelationships,
+        openStoryBible: openStoryBibleExclusive,
+        onExport: handleExport,
+        onValidateToc: handleValidateToc,
+        onAddChapter: handleAddChapter,
+        onAddFromTemplate: () => setShowChapterTemplatePicker(true),
+        onSaveAsTemplate: () => setShowSaveTemplate(true),
+    });
+
     return (
         <div className={styles.layout} data-testid="book-editor">
             <h1 className="sr-only">{book.title || "Bibliogon"}</h1>
             {!sidebarOpen && (
                 <SidebarToggleButton
                     open={false}
-                    onToggle={toggleSidebar}
+                    onToggle={toggleSidebarExclusive}
                     testId="book-editor-sidebar-toggle"
                     className="fixed left-3 top-3 z-[100] bg-card shadow-[var(--shadow-md)]"
                 />
@@ -744,18 +731,21 @@ export default function BookEditor() {
                     onMetadata={() => {
                         setSelectedStoryEntityId(null);
                         _setShowMetadata(true);
+                        closeSidebarOnNarrow();
                     }}
-                    onStoryBible={storyBibleAvailable ? () => setStoryBibleOpen(true) : undefined}
+                    onStoryBible={storyBibleAvailable ? openStoryBibleExclusive : undefined}
                     storyBibleActive={storyBibleOpen}
                     onShowStoryboard={() => {
                         setSelectedStoryEntityId(null);
                         _setShowMetadata(false);
                         _setShowStoryboard(true);
+                        closeSidebarOnNarrow();
                     }}
                     storyboardActive={showStoryboard}
                     onShowOutline={() => {
                         setSelectedStoryEntityId(null);
                         _setShowOutline(true);
+                        closeSidebarOnNarrow();
                     }}
                     outlineActive={showOutline}
                     onShowRelationships={
@@ -763,6 +753,7 @@ export default function BookEditor() {
                             ? () => {
                                   setSelectedStoryEntityId(null);
                                   _setShowRelationships(true);
+                                  closeSidebarOnNarrow();
                               }
                             : undefined
                     }
@@ -770,39 +761,20 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={(id) =>
-                        navigate(`/books/${bookId}/chapters/${id}/snapshots`)
-                    }
+                    onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
                     showMetadata={showMetadata}
                     onReorder={handleReorder}
                     hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
-                    onValidateToc={async () => {
-                        if (!bookId) return;
-                        try {
-                            const result = await api.chapters.validateToc(bookId);
-                            if (!result.toc_found) {
-                                notify.info(
-                                    t(
-                                        "ui.editor.toc_not_found",
-                                        "Kein Inhaltsverzeichnis gefunden.",
-                                    ),
-                                );
-                            } else if (result.valid) {
-                                notify.success(
-                                    t("ui.editor.toc_valid", "TOC gültig: alle Links korrekt."),
-                                );
-                            } else {
-                                const broken = result.broken.map((b) => b.text).join(", ");
-                                notify.error(
-                                    t("ui.editor.toc_invalid", "Ungültige Links") + `: ${broken}`,
-                                );
-                            }
-                        } catch {
-                            notify.error(
-                                t("ui.editor.toc_error", "Fehler bei der TOC-Validierung."),
-                            );
-                        }
-                    }}
+                    onValidateToc={handleValidateToc}
+                    headerMenu={
+                        <EditorMenu
+                            groups={menuGroups}
+                            onAction={handleMenuAction}
+                            disabled={menuDisabled}
+                            triggerLabel={t("ui.editor_menu.open", "Menü")}
+                            testIdPrefix="book-editor-menu"
+                        />
+                    }
                 />
             </div>
 
@@ -896,7 +868,7 @@ export default function BookEditor() {
                             storyBibleAvailable
                                 ? (entityId) => {
                                       setSelectedStoryEntityId(entityId);
-                                      setStoryBibleOpen(true);
+                                      openStoryBibleExclusive();
                                   }
                                 : undefined
                         }

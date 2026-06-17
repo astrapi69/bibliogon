@@ -317,6 +317,28 @@ def check_sentence_length(
     return findings
 
 
+def longest_sentences(text: str, limit: int = 15) -> list[dict]:
+    """Return the longest sentences by word count, descending.
+
+    Surfaces concrete split candidates for the quality report. The full
+    sentence text is returned (not truncated) so the client can compute its
+    own complexity score (word count + comma count) and render an anchor.
+
+    Args:
+        text: Plain chapter text.
+        limit: Maximum number of candidates to return.
+
+    Returns:
+        A list of ``{"text": str, "word_count": int}`` dicts, longest first.
+    """
+    scored = [
+        {"text": sentence, "word_count": _word_count(sentence)}
+        for sentence in _split_sentences(text)
+    ]
+    scored.sort(key=lambda entry: entry["word_count"], reverse=True)
+    return scored[:limit]
+
+
 def check_word_repetitions(
     text: str, language: str = "de", window: int = DEFAULT_REPETITION_WINDOW,
 ) -> list[dict]:

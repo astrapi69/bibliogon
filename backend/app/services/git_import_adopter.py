@@ -39,7 +39,7 @@ class CorruptedSourceRepo(GitAdoptionError):
     """Source .git/ failed fsck; refuse to adopt."""
 
 
-def sanitize_git_dir(git_dir: Path) -> list[str]:
+def sanitize_git_dir(git_dir: Path) -> list[str]:  # noqa: C901  # Legacy, tracked in clean-code-audit
     """Strip embedded credentials and suspicious content in-place.
 
     Security guarantees (Area 5 #5 from the audit):

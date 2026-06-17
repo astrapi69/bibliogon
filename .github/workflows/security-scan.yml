@@ -6,12 +6,17 @@ name: Security Scan
 # new CVEs published against already-merged dependencies are invisible
 # without a code change, because ci.yml only triggers on push/PR.
 #
-# Defense-in-depth Phase 1, same shape as the Cohesion (#113) and
-# Complexity (#139) watchers: pure visibility, every step ends with
-# exit 0 so the scheduled run never produces a misleading red on a
-# branch nobody touched. The blocking gate stays in ci.yml. The
-# --ignore-vuln list is deliberately omitted here so deferred advisories
-# (e.g. CVE-2025-68616, tracked in #47) stay visible week to week.
+# Defense-in-depth Phase 2 (#278): the watcher now BLOCKS on Critical/High
+# findings instead of warning. Concretely:
+#   - pip-audit  real exit code; accepted advisories live in
+#                .security-ignore.yml (parsed by scripts/security_ignore_args.py)
+#                so nothing is ignored silently.
+#   - bandit     High severity blocks; Low/Medium stay warn-only.
+#   - npm audit  --audit-level=high with a real exit code.
+# The trigger stays Weekly + manual dispatch (no PR trigger - that gate is
+# ci.yml). A red here means a new advisory landed against a merged
+# dependency; triage it, then either fix or add a justified entry to
+# .security-ignore.yml.
 
 on:
   schedule:
@@ -38,18 +43,22 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
-      - name: pip-audit (warn-only, no ignore list)
+      - name: pip-audit (Phase 2 - blocks on non-ignored advisories)
         working-directory: backend
         run: |
           echo "=== pip-audit (dependency CVEs; --skip-editable drops path-installed plugins) ==="
-          # No --ignore-vuln: the watcher surfaces every advisory,
-          # including ones deferred in the ci.yml blocking gate.
-          poetry run pip-audit --skip-editable || true
+          IGNORE=$(poetry run python ../scripts/security_ignore_args.py)
+          echo "accepted advisories (see .security-ignore.yml): ${IGNORE:-none}"
+          poetry run pip-audit --skip-editable $IGNORE
 
-      - name: bandit (warn-only)
+      - name: bandit (Phase 2 - High blocks, Low/Medium warn)
         working-directory: backend
         run: |
-          echo "=== bandit SAST (medium severity + medium confidence) ==="
+          echo "=== bandit High severity (blocking) ==="
+          poetry run bandit -c pyproject.toml \
+            -r app ../plugins ../scripts \
+            --severity-level high --confidence-level medium -q
+          echo "=== bandit Low/Medium severity (warn-only) ==="
           poetry run bandit -c pyproject.toml \
             -r app ../plugins ../scripts \
             --severity-level medium --confidence-level medium -q || true
@@ -69,8 +78,8 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: npm audit (warn-only, high + critical)
+      - name: npm audit (Phase 2 - blocks on high + critical)
         working-directory: frontend
         run: |
           echo "=== npm audit (high + critical advisories) ==="
-          npm audit --audit-level=high || true
+          npm audit --audit-level=high

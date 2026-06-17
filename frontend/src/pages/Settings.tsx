@@ -20,6 +20,7 @@ import { TopicsSettings } from "../components/settings/TopicsSettings";
 import { PluginSettings } from "../components/settings/PluginSettings";
 import { AboutSettings } from "../components/settings/AboutSettings";
 import { BackupsSettings } from "../components/settings/BackupsSettings";
+import { DataManagementSettings } from "../components/settings/DataManagementSettings";
 import { DangerZoneSettings } from "../components/settings/DangerZoneSettings";
 import { SettingsSidebar, type SidebarGroup } from "../components/settings/SettingsSidebar";
 import { SettingsMobileMenu } from "../components/settings/SettingsMobileMenu";
@@ -34,6 +35,7 @@ const VALID_SETTINGS_TABS = [
     "topics",
     "plugins",
     "comments",
+    "daten",
     "backups",
     "support",
     "about",
@@ -237,6 +239,11 @@ export default function Settings() {
                         testId: "settings-tab-comments",
                     },
                     {
+                        value: "daten",
+                        label: t("ui.settings.tab_daten", "Daten"),
+                        testId: "settings-tab-daten",
+                    },
+                    {
                         value: "backups",
                         label: t("ui.settings.tab_backups", "Backups"),
                         testId: "settings-tab-backups",
@@ -294,10 +301,11 @@ export default function Settings() {
                 <div className={styles.headerInner}>
                     <div className={styles.headerLeft}>
                         <button
-                            className={styles.backBtn}
+                            className="btn-icon"
                             onClick={handleBack}
                             data-testid="settings-nav-back"
                             aria-label={t("ui.dashboard.back", "Zurück")}
+                            title={t("ui.dashboard.back", "Zurück")}
                         >
                             <ChevronLeft size={18} />
                         </button>
@@ -580,6 +588,7 @@ export default function Settings() {
                                 />
                             )}
                             {activeTab === "comments" && <CommentsAdminSection />}
+                            {activeTab === "daten" && <DataManagementSettings />}
                             {activeTab === "backups" && <BackupsSettings />}
                             {activeTab === "support" && hasDonations && (
                                 <SupportSection config={getDonationsConfig(appConfig)!} />

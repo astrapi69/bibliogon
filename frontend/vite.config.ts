@@ -73,7 +73,14 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: "autoUpdate",
+      // "prompt" (not "autoUpdate"): a freshly-installed worker WAITS instead
+      // of auto-skipWaiting-ing, so the app can surface a user-facing "new
+      // version available" banner and apply the update under user control
+      // (autosave-safe — the reload flushes pending editor drafts). The
+      // controlled skipWaiting + reload + proactive checks live in
+      // src/shared/utils/swUpdateManager.ts; the SKIP_WAITING message handler
+      // lives in public/asset-intercept-sw.js (importScripts'd into the SW).
+      registerType: "prompt",
       // Service Worker DISABLED in dev. With it enabled, the dev SW
       // precached the bundle and kept serving a STALE copy across
       // reloads (an active SW is not replaced by a mere hard-reload),
@@ -140,11 +147,13 @@ export default defineConfig({
         // SPA navigation fallback lives under the deploy base so deep
         // routes resolve to the right index.html on a sub-path host.
         navigateFallback: `${base}index.html`,
-        // Take control + drop the previous precache as soon as a
-        // new SW installs, so a new production bundle is served on
-        // the next load instead of lingering behind the old SW.
+        // clientsClaim so the activated worker takes control immediately
+        // once the user applies the update (via the SKIP_WAITING message).
+        // skipWaiting is deliberately OMITTED: with registerType "prompt" the
+        // new worker must WAIT so the banner can offer a controlled update;
+        // auto-skipWaiting would defeat that. self.skipWaiting() is called
+        // on demand by the SKIP_WAITING message handler instead.
         clientsClaim: true,
-        skipWaiting: true,
         cleanupOutdatedCaches: true,
         runtimeCaching: [
           {

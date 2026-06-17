@@ -79,4 +79,14 @@ describe("TopicsSettings", () => {
         render(<TopicsSettings config={{}} onSave={() => {}} saving={false} />);
         expect((screen.getByTestId("topic-add-btn") as HTMLButtonElement).disabled).toBe(true);
     });
+
+    it("shows an empty-state hint when there are no topics", () => {
+        render(<TopicsSettings config={{topics: []}} onSave={() => {}} saving={false} />);
+        expect(screen.getByTestId("topics-empty")).toBeTruthy();
+    });
+
+    it("hides the empty-state once a topic exists", () => {
+        render(<TopicsSettings config={{topics: ["Tech"]}} onSave={() => {}} saving={false} />);
+        expect(screen.queryByTestId("topics-empty")).toBeNull();
+    });
 });

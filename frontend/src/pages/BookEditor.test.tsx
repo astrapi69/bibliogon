@@ -208,6 +208,7 @@ vi.mock("../components/ChapterSidebar", () => ({
     default: (props: {
         chapters?: Array<{ id: string; title: string }>;
         onSelect: (id: string) => void;
+        onMetadata?: () => void;
     }) => (
         <div data-testid="chapter-sidebar-stub">
             {(props.chapters ?? []).map((ch) => (
@@ -219,6 +220,12 @@ vi.mock("../components/ChapterSidebar", () => ({
                     {ch.title}
                 </button>
             ))}
+            <button
+                data-testid="sidebar-metadata-btn"
+                onClick={() => props.onMetadata?.()}
+            >
+                metadata
+            </button>
         </div>
     ),
 }));
@@ -646,5 +653,68 @@ describe("BookEditor - chapter switch updates ?chapter= (regression)", () => {
         const search = screen.getByTestId("location-search").textContent ?? "";
         expect(search).not.toContain("view=metadata");
         expect(search).not.toContain("chapter=a");
+    });
+});
+
+describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", () => {
+    function setWidth(px: number) {
+        Object.defineProperty(window, "innerWidth", {
+            value: px,
+            configurable: true,
+            writable: true,
+        });
+    }
+
+    it("closes the sidebar when metadata is opened on a narrow viewport", async () => {
+        const original = window.innerWidth;
+        setWidth(375);
+        localStorage.setItem("bibliogon-book-editor-sidebar", "1");
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        try {
+            renderEditor("b1");
+            await waitFor(() =>
+                expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy(),
+            );
+            expect(
+                screen.getByTestId("book-editor-sidebar").getAttribute("data-sidebar-open"),
+            ).toBe("true");
+
+            fireEvent.click(screen.getByTestId("sidebar-metadata-btn"));
+
+            await waitFor(() =>
+                expect(
+                    screen
+                        .getByTestId("book-editor-sidebar")
+                        .getAttribute("data-sidebar-open"),
+                ).toBe("false"),
+            );
+        } finally {
+            setWidth(original);
+            localStorage.clear();
+        }
+    });
+
+    it("keeps the sidebar open when metadata is opened on a wide viewport", async () => {
+        const original = window.innerWidth;
+        setWidth(1400);
+        localStorage.setItem("bibliogon-book-editor-sidebar", "1");
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        try {
+            renderEditor("b1");
+            await waitFor(() =>
+                expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy(),
+            );
+            fireEvent.click(screen.getByTestId("sidebar-metadata-btn"));
+            expect(
+                screen.getByTestId("book-editor-sidebar").getAttribute("data-sidebar-open"),
+            ).toBe("true");
+        } finally {
+            setWidth(original);
+            localStorage.clear();
+        }
     });
 });

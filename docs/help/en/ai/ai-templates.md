@@ -87,6 +87,17 @@ AI should fill. Each class is one LLM call.
 - **Chapter summaries** — one-sentence summary per existing
   chapter, matched by chapter id.
 
+## The in-editor introduction
+
+The AI Template panel opens with a short **Introduction** section
+(expanded by default) right inside the editor — for example under
+**Book metadata → AI template**. It explains in two sentences what
+a `.biblio.yaml` template is and how to use it, so you do not have
+to leave the editor to get oriented. If no AI provider is
+configured yet, it shows a direct **Open Settings → AI** link, and
+a **Learn more** link jumps to this help page for the full
+walkthrough.
+
 ## Per-record workflows
 
 The article and book editor sidebars each carry an **AI Template**

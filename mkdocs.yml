@@ -106,6 +106,7 @@ plugins:
         Fehlerbehebung: Troubleshooting
         Einstellungen: Settings
         Backups verwalten: Manage backups
+        Fehlerberichte: Error reports
         Gefahrenzone: Danger Zone
         Standardwerte: Defaults
         Entwickler: Developers
@@ -218,6 +219,7 @@ nav:
 - Einstellungen:
   - Navigation: de/settings/sidebar.md
   - Backups verwalten: de/settings/backups.md
+  - Fehlerberichte: de/settings/error-report.md
   - Gefahrenzone: de/settings/danger-zone.md
   - Standardwerte: de/settings/defaults.md
 - Entwickler:

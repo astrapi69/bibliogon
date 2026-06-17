@@ -5,10 +5,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useArticleImageUrl } from "../../hooks/useArticleImageUrl";
-import { publicationStatusVariant } from "../../utils/publicationStatusBadge";
+import { publicationStatusLabels } from "../../utils/publicationStatusBadge";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CoverPlaceholder from "../CoverPlaceholder";
-import { Badge } from "../Badge";
+import StatusBadge from "../../lib/components/StatusBadge";
 import ContentTypeBadge from "./ContentTypeBadge";
 import CommentsCountBadge from "./CommentsCountBadge";
 import layout from "../../pages/ArticleList.module.css";
@@ -71,14 +71,19 @@ export default function ArticleRow({
         >
             {onToggleSelect ? (
                 <div className={layout.gridCellCheckbox}>
-                    <input
-                        type="checkbox"
-                        data-testid={`article-bulk-check-${article.id}`}
-                        checked={!!isSelected}
-                        onChange={onToggleSelect}
+                    <label
+                        className="flex items-center justify-center pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
                         onClick={(e) => e.stopPropagation()}
-                        aria-label="Select article"
-                    />
+                    >
+                        <input
+                            type="checkbox"
+                            data-testid={`article-bulk-check-${article.id}`}
+                            checked={!!isSelected}
+                            onChange={onToggleSelect}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Select article"
+                        />
+                    </label>
                 </div>
             ) : null}
             <div className={layout.gridCellCover}>
@@ -135,16 +140,11 @@ export default function ArticleRow({
                     className={layout.statusBadge}
                     style={{ marginRight: 6 }}
                 />
-                <Badge
+                <StatusBadge
                     testId={`article-list-row-status-${article.id}`}
-                    variant={publicationStatusVariant(article.status ?? "draft")}
-                    size="sm"
-                >
-                    {t(
-                        `ui.articles.status_${article.status ?? "draft"}`,
-                        article.status ?? "draft",
-                    )}
-                </Badge>
+                    status={article.status ?? "draft"}
+                    labels={publicationStatusLabels(t)}
+                />
             </div>
             <div className={layout.gridCellLang}>{(article.language || "??").toUpperCase()}</div>
             <div className={layout.gridCellDate}>{updated}</div>

@@ -220,7 +220,7 @@ def _run_fsck(git_dir: Path) -> bool:
 _SUSPICIOUS_HELPERS_RE = re.compile(r"^(store|cache|!.*|manager.*)")
 
 
-def _scan_security(git_dir: Path) -> list[str]:
+def _scan_security(git_dir: Path) -> list[str]:  # noqa: C901  # Legacy, tracked in clean-code-audit
     """Report what sanitization will strip on adoption + any caveats.
 
     Every entry is a user-facing warning. The wizard displays the

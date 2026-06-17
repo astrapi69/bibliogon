@@ -157,6 +157,32 @@ Anteil der Passiv-Sätze am Text. Für Belletristik sind 5-10% typisch, für Sac
 
 ---
 
+## Der Qualitäts-Tab
+
+Öffne ein Buch und gehe auf **Buch-Metadaten → Qualität**, um den vollständigen Bericht zu sehen. Über die reinen Zahlen hinaus bietet er vier Hilfen, die beim Deuten der Werte helfen — nicht nur beim Sammeln.
+
+### Kapitelvergleichstabelle
+
+Jedes Kapitel ist eine Zeile, jede Metrik eine Spalte (Wörter, Sätze, Flesch, Füll %, Passiv %, Adverb %, lange Sätze). Die Zellen sind ampelfarbig eingefärbt, sodass Ausreißer auf einen Blick auffallen, und unten gibt es eine Summenzeile. Die navigierbaren Metriken (Füllwörter, Passiv, Adverb, lange Sätze) sind anklickbar: ein Klick springt im Editor zum ersten passenden Treffer in diesem Kapitel. Ein Wert über dem Doppelten des Buchdurchschnitts wird mit einem Tooltip markiert, der den Vergleich erläutert.
+
+### Genre- / Flesch-Vergleich
+
+Unter der Zusammenfassung stellt eine Vergleichsskala den durchschnittlichen Flesch-Lesbarkeitswert deines Buches vier Referenzbändern (Einfach / Verständlich / Anspruchsvoll / Akademisch) und vier Genre-Markierungen (Belletristik / Sachbuch / Wissenschaft / Kinderbuch) gegenüber. Sie beantwortet die Frage, die die nackte Zahl nicht klärt: "Ist diese Lesbarkeit für die Art von Buch, die ich schreibe, passend?" Ein Kinderbuch und eine wissenschaftliche Monografie liegen an entgegengesetzten Enden der Skala, und beide können richtig sein.
+
+### Schachtelsatz-Kandidaten
+
+Eine kapitelweise, einklappbare Liste der längsten und am tiefsten verschachtelten Sätze deines Manuskripts. Jeder Eintrag zeigt die Anfangswörter des Satzes sowie seine Wortzahl und die Anzahl der Nebensätze. Das sind Sätze, die von einer Aufteilung profitieren könnten — ein Hinweis, keine Vorschrift. Die Liste wird clientseitig sortiert und funktioniert offline genauso.
+
+### Analyse-Hinweis (Reichweite)
+
+Ein kurzer Hinweis am Ende des Berichts sagt klar, was er leistet und was nicht: er analysiert **stilistische** Merkmale, keine Inhalte. Argumentationsgüte, Faktentreue, Tonkonsistenz und Kapitelstruktur werden NICHT geprüft. Der Bericht ergänzt ein inhaltliches Lektorat, er ersetzt es nicht. Ein zweiter Hinweis neben der Wortzahl erklärt genau, was gezählt wird (alle Wörter im Fließtext inklusive Überschriften; Formatierung wird nicht mitgezählt), damit die Zahl ehrlich bleibt und leicht von anderen Editoren abweichen kann.
+
+### Bericht herunterladen
+
+Zwei Knöpfe oben im Tab exportieren den vollständigen Bericht als **Markdown** (`.md`) oder **PDF** — die Kapiteltabelle, die Durchschnittswerte, der Flesch-Vergleich und die Schachtelsatz-Liste werden mitgenommen.
+
+---
+
 ## Konfiguration
 
 Die Schwellwerte existieren auf zwei Ebenen:
@@ -190,4 +216,4 @@ Nein. Das komplette Plugin läuft lokal. Keine Cloud-Komponente, keine Telemetri
 Ja. Die Listen und Regeln sind pro Sprache definiert. Das Plugin erkennt die Sprache automatisch aus den Buch-Metadaten.
 
 **Kann ich die Metriken exportieren?**
-Ja. Im Qualitäts-Tab der Buch-Metadaten gibt es einen "Exportieren" Button der alle Metriken als CSV oder JSON herunterlädt.
+Ja. Im Qualitäts-Tab der Buch-Metadaten gibt es zwei Knöpfe, die den vollständigen Bericht als Markdown (`.md`) oder PDF herunterladen.

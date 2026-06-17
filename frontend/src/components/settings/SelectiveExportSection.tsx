@@ -29,11 +29,11 @@ import { downloadBlob } from "../../export/download";
 import {
     EMPTY_SELECTION,
     FULL_SELECTION,
-    exportSelectiveBackup,
     hasAnySelection,
-    selectiveExportFilename,
     type ExportSelection,
 } from "../../export/selectiveExport";
+import { exportSelectiveBgb, selectiveBgbFilename, type BgbProgress } from "../../export/bgbExport";
+import { BgbExportProgress } from "./BgbExportProgress";
 
 interface ExportItemDef {
     key: keyof ExportSelection;
@@ -124,6 +124,7 @@ export function SelectiveExportSection() {
         authors: true,
     }));
     const [busy, setBusy] = useState(false);
+    const [exportProgress, setExportProgress] = useState<BgbProgress | null>(null);
 
     const allSelected = useMemo(() => Object.values(selection).every(Boolean), [selection]);
     const anySelected = hasAnySelection(selection);
@@ -139,13 +140,14 @@ export function SelectiveExportSection() {
         setBusy(true);
         try {
             const now = new Date().toISOString();
-            const blob = await exportSelectiveBackup(selection, now);
-            downloadBlob(blob, selectiveExportFilename(now));
+            const blob = await exportSelectiveBgb(selection, now, setExportProgress);
+            downloadBlob(blob, selectiveBgbFilename(now));
             notify.success(t("ui.selective_export.export_success", "Export erstellt"));
         } catch (err) {
             notify.error(t("ui.selective_export.export_error", "Export fehlgeschlagen"), err);
         } finally {
             setBusy(false);
+            setExportProgress(null);
         }
     };
 
@@ -159,7 +161,7 @@ export function SelectiveExportSection() {
             <p className="mb-3 text-sm text-[var(--text-muted)]">
                 {t(
                     "ui.selective_export.description",
-                    "Wähle aus, welche Datenbereiche exportiert werden sollen. Das Ergebnis ist eine JSON-Datei, die über den Import-Assistenten wieder eingelesen werden kann.",
+                    "Wähle aus, welche Datenbereiche exportiert werden sollen. Das Ergebnis ist eine .bgb-Datei (inkl. Bilder der gewählten Inhalte), die über den Import-Assistenten wieder eingelesen werden kann.",
                 )}
             </p>
 
@@ -235,6 +237,7 @@ export function SelectiveExportSection() {
                     <Download size={14} />
                     {t("ui.selective_export.export_button", "Ausgewählte Daten exportieren")}
                 </button>
+                <BgbExportProgress progress={exportProgress} testId="selective-export-progress" />
                 {!anySelected && (
                     <p
                         className="mt-2 text-sm text-[var(--text-muted)]"

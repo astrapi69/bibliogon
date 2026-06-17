@@ -89,7 +89,23 @@ test suite before merge.
 - Aster-E2E-Gate: CC cannot push release tags. Aster runs the smoke suite
   locally and confirms 0 failed, 0 flaky before any tag.
 - Pre-commit hooks: formatting and linting.
-- CI workflows for PRs.
+- CI tiers (#289, #332) - three tiers, fast to thorough:
+  - **PR pipeline** (`ci.yml`, target ~2-3 min via TIA): `tsc`, **selective**
+    backend + frontend tests, `ruff` + `mypy`, pre-commit, `madge`, the
+    frontend build. Test Impact Analysis (#332) runs only the tests affected
+    by the diff - `vitest run --changed origin/<base>` (frontend) and
+    `pytest --testmon` (backend) - each with a **full-suite fallback**: an
+    unscopable diff (no base ref) or any selector error re-runs the whole
+    suite, so a failure can never pass falsely. A backend-only PR skips the
+    frontend tests cleanly (`--passWithNoTests`) and vice-versa.
+  - **Nightly** (`nightly.yml`, 03:00 UTC + `workflow_dispatch`) - the
+    **full-suite safety net**: the 10-plugin test matrix, backend / plugin /
+    frontend coverage, the complexity + cohesion file-size watchers, and an
+    unconditional full re-run of every test (no TIA selection).
+  - **Release gate**: the full suite, via the on-demand Nightly (or
+    `make test-nightly`) plus the Aster-E2E smoke gate, before any tag.
+  Locally: `make test-changed` (selective, mirrors the PR path), `make test`
+  (full, no coverage), `make test-nightly` (full + coverage + plugins).
 
 ## 4. Security and Dependency Hygiene
 
@@ -105,16 +121,18 @@ AI sometimes suggests outdated, insecure, or nonexistent libraries.
 
 **Enforcement:**
 
-- **Hard-blocking in CI** (`ci.yml`, every push/PR to `main`/`develop`):
-  `pip-audit --skip-editable`, `bandit` (medium severity + confidence),
-  and `npm audit --audit-level=high`. Matching local targets:
-  `make audit`, `make security-backend`, `make bandit-backend`.
-- **Weekly scheduled watcher** (`security-scan.yml`, #149): warn-only
-  Sunday run that surfaces new CVEs published against already-merged
-  dependencies (the push/PR gate never re-runs without a code change).
-  Local counterpart: `make check-security`.
-- #47 (weasyprint CVE) is tracked but deferred; the blocking gate
-  `--ignore-vuln`s it, the warn-only watcher keeps it visible.
+- **Weekly blocking watcher** (`security-scan.yml`, Sunday 07:00 UTC +
+  `workflow_dispatch`, #278): `pip-audit --skip-editable`, `bandit` (High
+  blocks, Low/Medium warn), and `npm audit --audit-level=high` - blocking
+  on Critical/High. This is the single security instance (#289 removed the
+  duplicate per-PR scan from `ci.yml`, since it almost never caught a PR
+  failure and slowed every PR). It surfaces new CVEs published against
+  already-merged dependencies, which a push/PR-only gate would never re-run.
+  Matching local target: `make check-security`.
+- Accepted/deferred advisories live in `.security-ignore.yml` (the SSoT,
+  parsed by `scripts/security_ignore_args.py`); each entry carries a reason,
+  a tracking issue, and a review date. Currently: #47 (weasyprint
+  CVE-2025-68616), a render-risky major bump, deferred but kept visible.
 - Human review catches dependency additions in PR diffs.
 
 ## 5. Regular Refactoring
@@ -143,12 +161,13 @@ naming. Refactoring is not optional, it is scheduled.
   three plugin PDF files (`picture_book_pdf.py`, `routes.py`,
   `comic_book_pdf.py`). The backend `app/` ERROR-blocker `main.py` (1046) and
   `client.ts` (5212) were both resolved.
-- Complexity Watcher (#139) surfaces over-complex functions: radon
-  cyclomatic complexity + ruff `C901` (Python) and ESLint `complexity`
-  (TypeScript), threshold 20. Runs warn-only in
-  `.github/workflows/complexity-check.yml` (and `make check-complexity`)
-  with the same defense-in-depth logic as the cohesion watcher -
-  visibility first, harden later. `ruff` `C901` is deliberately not in the
+- Complexity Watcher (#139, threshold lowered to 15 in #279) surfaces
+  over-complex functions: radon cyclomatic complexity + ruff `C901`
+  (Python) and ESLint `complexity` (TypeScript). Runs warn-only, **nightly**
+  in `.github/workflows/nightly.yml` (#289 moved it off the PR path; also
+  `make check-complexity`) with the same defense-in-depth logic as the
+  cohesion watcher - visibility first, harden later. `ruff` `C901` is
+  deliberately not in the
   blocking `select` yet (two functions already exceed the threshold);
   promoting it is a Phase-2 follow-up after those are split.
 
@@ -218,14 +237,16 @@ coordinates handoffs and resolves conflicts with reality.
 
 ## See Also
 
-- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`) + goldstandards (git_sync.py, IStorageService, feature-strategy)
+- `docs/MODULE-ARCHITECTURE.md` - folder structure + reusability principles (DI, barrel exports, no side effects, props-driven `lib/`), the Session-9 patterns (storage write-queue + offline assets, lazyWithReload + SW update + event recording, backend service-extraction/facades, the `lib/` catalogue, feature-strategy buckets, CI tiers), and goldstandards (git_sync.py, IStorageService, feature-strategy)
 - `docs/EXPORT-IMPORT-FORMATS.md` - every export/import format, where each is triggered, offline/desktop/PWA support, and the JSON-vs-`.bgb` backup distinction
+- `docs/SETTINGS-MENU-ARCHITECTURE.md` - the Settings surface map (sections, plugin settings, feature-gated controls)
+- `docs/manual-tests/MANUAL-TESTPLAN.md` - the manual / E2E acceptance test plan (the Aster-E2E-Gate's checklist)
 - `.claude/rules/` - agent-readable architectural constraints
 - `docs/audits/clean-code-audit.md` - Principle 5
 - `docs/audits/backend-god-files-audit-2026-06-14.md` - Principle 5, backend split status
 - `docs/audits/frontend-god-files-audit-2026-06-14.md` - Principle 5, frontend split status
 - `.filesize-baseline` - Principle 5, god-file tracking
-- `.github/workflows/cohesion-check.yml` - Principle 5
-- `.github/workflows/complexity-check.yml` - Principle 5
-- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher
-- `scripts/check-file-sizes.sh` - Principle 2 and 5
+- `.github/workflows/ci.yml` - Principle 3 (fast PR pipeline + Test Impact Analysis: vitest --changed + pytest --testmon)
+- `.github/workflows/nightly.yml` - Principle 3 + 5 (full-suite safety net: plugin matrix, coverage, complexity + cohesion file-size watchers)
+- `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher (`.security-ignore.yml` SSoT)
+- `scripts/check-file-sizes.sh` - Principle 2 and 5 (cohesion file-size gate, runs nightly)

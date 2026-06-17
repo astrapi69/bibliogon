@@ -11,9 +11,10 @@
  * Radix's default close-on-select is the wanted behaviour.
  */
 
-import { useState } from "react";
-import { Download } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, Eye } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { useFeature } from "@astrapi69/feature-strategy-react";
 
 import {
   EXPORT_FORMATS,
@@ -23,6 +24,8 @@ import {
 } from "../export";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
+import { FEATURES } from "../features/featureConfig";
+import ExportPreviewModal from "./ExportPreviewModal";
 
 /** Format display names stay in English (Markdown / HTML / … are universal). */
 const FORMAT_LABELS: Record<ExportFormat, string> = {
@@ -45,6 +48,9 @@ interface Props {
 export default function ClientExportMenu({ getDocument, disabled, testId }: Props) {
   const { t } = useI18n();
   const [busy, setBusy] = useState(false);
+  const previewActive = useFeature(FEATURES.EXPORT_PREVIEW).isActive;
+  const [previewDoc, setPreviewDoc] = useState<ExportDocument | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   async function run(format: ExportFormat): Promise<void> {
     if (busy) return;
@@ -59,6 +65,33 @@ export default function ClientExportMenu({ getDocument, disabled, testId }: Prop
       setBusy(false);
     }
   }
+
+  async function openPreview(): Promise<void> {
+    try {
+      const doc = await getDocument();
+      setPreviewDoc(doc);
+      setPreviewOpen(true);
+    } catch {
+      notify.error(t("ui.export.failed", "Export fehlgeschlagen."));
+    }
+  }
+
+  // Ctrl+Shift+P opens the preview while the editor (which mounts this menu)
+  // is on screen.
+  useEffect(() => {
+    if (!previewActive || disabled) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.shiftKey && (e.key === "P" || e.key === "p")) {
+        e.preventDefault();
+        void openPreview();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // openPreview is recreated each render but only reads stable refs; the
+    // listener body always calls the latest via closure on mount/unmount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [previewActive, disabled]);
 
   const label = t("ui.export.menu_label", "Exportieren");
 
@@ -82,6 +115,15 @@ export default function ClientExportMenu({ getDocument, disabled, testId }: Prop
           align="end"
           sideOffset={4}
         >
+          {previewActive && (
+            <DropdownMenu.Item
+              className="hamburger-menu-item"
+              data-testid="client-export-preview"
+              onSelect={() => openPreview()}
+            >
+              <Eye size={14} /> {t("ui.export.preview", "Vorschau")}
+            </DropdownMenu.Item>
+          )}
           {EXPORT_FORMATS.map((format) => (
             <DropdownMenu.Item
               key={format}
@@ -94,6 +136,11 @@ export default function ClientExportMenu({ getDocument, disabled, testId }: Prop
           ))}
         </DropdownMenu.Content>
       </DropdownMenu.Portal>
+      <ExportPreviewModal
+        open={previewOpen}
+        doc={previewDoc}
+        onClose={() => setPreviewOpen(false)}
+      />
     </DropdownMenu.Root>
   );
 }

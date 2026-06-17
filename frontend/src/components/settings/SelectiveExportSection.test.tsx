@@ -31,15 +31,10 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 const mockExport = vi.fn();
-vi.mock("../../export/selectiveExport", async () => {
-    const actual = await vi.importActual<typeof import("../../export/selectiveExport")>(
-        "../../export/selectiveExport",
-    );
-    return {
-        ...actual,
-        exportSelectiveBackup: (...args: unknown[]) => mockExport(...args),
-    };
-});
+vi.mock("../../export/bgbExport", () => ({
+    exportSelectiveBgb: (...args: unknown[]) => mockExport(...args),
+    selectiveBgbFilename: (iso: string) => `bibliogon-export-${iso.slice(0, 10)}.bgb`,
+}));
 
 const mockDownload = vi.fn();
 vi.mock("../../export/download", () => ({
@@ -125,7 +120,7 @@ describe("SelectiveExportSection", () => {
         expect(passedSelection.articles).toBe(true);
         expect(passedSelection.settings).toBe(false);
         await waitFor(() => expect(mockDownload).toHaveBeenCalled());
-        expect(mockDownload.mock.calls[0][1]).toMatch(/^bibliogon-export-\d{4}-\d{2}-\d{2}\.json$/);
+        expect(mockDownload.mock.calls[0][1]).toMatch(/^bibliogon-export-\d{4}-\d{2}-\d{2}\.bgb$/);
         expect(mockNotifySuccess).toHaveBeenCalled();
     });
 

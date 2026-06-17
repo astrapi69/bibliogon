@@ -45,9 +45,9 @@ vi.mock("../../storage/dexie-storage", () => ({
     resetOfflineDatabase: () => resetOfflineDbMock(),
 }));
 
-vi.mock("../../export/backupExport", () => ({
-    exportFullBackup: (...args: unknown[]) => exportFullBackupMock(...(args as [])),
-    backupFilename: () => "bibliogon-backup-2026-06-10.json",
+vi.mock("../../export/bgbExport", () => ({
+    exportBgbBackup: (...args: unknown[]) => exportFullBackupMock(...(args as [])),
+    bgbBackupFilename: () => "bibliogon-backup-2026-06-10.bgb",
 }));
 
 vi.mock("../../export/download", () => ({

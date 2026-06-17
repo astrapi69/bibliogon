@@ -500,6 +500,8 @@ def _render_page(page: dict[str, Any], assets_map: dict[str, str]) -> str:
     text_region_html = ""
     if layout != "image_full_no_text":
         text_region_html = f'<div class="region region-text"{text_attr}>{text_html}</div>'
+    if layout == "speech_bubble":
+        text_region_html = f'<div class="bubble-host">{text_region_html}</div>'
 
     # Phase 2 C2 (2026-05-28): multi-image layouts emit a SECONDARY
     # image region after the text region. The secondary asset id

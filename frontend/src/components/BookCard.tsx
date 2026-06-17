@@ -12,8 +12,8 @@ import { isOfflineEnabled } from "../storage/connectivity";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
-import { Badge } from "./Badge";
-import { publicationStatusVariant } from "../utils/publicationStatusBadge";
+import StatusBadge from "../lib/components/StatusBadge";
+import { publicationStatusLabels } from "../utils/publicationStatusBadge";
 import { useCoverUrl } from "../hooks/useAssetUrl";
 import styles from "./BookCard.module.css";
 
@@ -124,16 +124,11 @@ export default function BookCard({
            *  + reuses the existing ``ui.articles.status_*``
            *  i18n keys — the labels are identical between
            *  the two surfaces. */}
-          <Badge
+          <StatusBadge
             testId={`book-card-status-${book.id}`}
-            variant={publicationStatusVariant(book.status ?? "draft")}
-            size="sm"
-          >
-            {t(
-              `ui.articles.status_${book.status ?? "draft"}`,
-              book.status ?? "draft",
-            )}
-          </Badge>
+            status={book.status ?? "draft"}
+            labels={publicationStatusLabels(t)}
+          />
           <span className={styles.date}>
             <Clock size={12} />
             {updated}

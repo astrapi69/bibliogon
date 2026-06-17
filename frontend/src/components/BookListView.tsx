@@ -15,8 +15,8 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../utils/formatDate";
 import { useCoverUrl } from "../hooks/useAssetUrl";
-import {Badge} from "./Badge";
-import {publicationStatusVariant} from "../utils/publicationStatusBadge";
+import StatusBadge from "../lib/components/StatusBadge";
+import { publicationStatusLabels } from "../utils/publicationStatusBadge";
 import styles from "./BookListView.module.css";
 
 interface Props {
@@ -44,49 +44,51 @@ export default function BookListView({
     const showSelection = isSelected != null && onToggleSelect != null;
     return (
         <div className="overflow-x-auto">
-        <div
-            data-testid="book-list-view"
-            role="table"
-            aria-label={t("ui.dashboard.list_aria_label", "Bücherliste")}
-            className={`${styles.table} min-w-[680px] menu:min-w-0${showSelection ? ` ${styles.tableSelectable}` : ""}`}
-        >
-            <div role="row" className={styles.headerRow}>
-                {showSelection ? (
-                    <div
-                        role="columnheader"
-                        className={styles.colCheckbox}
-                        aria-label={t("ui.dashboard.col_select", "Auswählen")}
+            <div
+                data-testid="book-list-view"
+                role="table"
+                aria-label={t("ui.dashboard.list_aria_label", "Bücherliste")}
+                className={`${styles.table} min-w-[680px] menu:min-w-0${showSelection ? ` ${styles.tableSelectable}` : ""}`}
+            >
+                <div role="row" className={styles.headerRow}>
+                    {showSelection ? (
+                        <div
+                            role="columnheader"
+                            className={styles.colCheckbox}
+                            aria-label={t("ui.dashboard.col_select", "Auswählen")}
+                        />
+                    ) : null}
+                    <div role="columnheader" className={styles.colCover}>
+                        {t("ui.dashboard.col_cover", "Cover")}
+                    </div>
+                    <div role="columnheader" className={styles.colMain}>
+                        {t("ui.dashboard.col_title", "Titel")}
+                    </div>
+                    <div role="columnheader" className={styles.colAuthor}>
+                        {t("ui.dashboard.col_author", "Autor")}
+                    </div>
+                    <div role="columnheader" className={styles.colLang}>
+                        {t("ui.dashboard.col_language", "Sprache")}
+                    </div>
+                    <div role="columnheader" className={styles.colDate}>
+                        {t("ui.dashboard.col_last_edit", "Zuletzt bearbeitet")}
+                    </div>
+                    <div role="columnheader" className={styles.colActions} aria-hidden="true" />
+                </div>
+                {books.map((book) => (
+                    <BookListRow
+                        key={book.id}
+                        book={book}
+                        onClick={() => onClick(book)}
+                        onDelete={() => onDelete(book)}
+                        onDeletePermanent={
+                            onDeletePermanent ? () => onDeletePermanent(book) : undefined
+                        }
+                        isSelected={isSelected ? isSelected(book) : undefined}
+                        onToggleSelect={onToggleSelect ? () => onToggleSelect(book) : undefined}
                     />
-                ) : null}
-                <div role="columnheader" className={styles.colCover}>
-                    {t("ui.dashboard.col_cover", "Cover")}
-                </div>
-                <div role="columnheader" className={styles.colMain}>
-                    {t("ui.dashboard.col_title", "Titel")}
-                </div>
-                <div role="columnheader" className={styles.colAuthor}>
-                    {t("ui.dashboard.col_author", "Autor")}
-                </div>
-                <div role="columnheader" className={styles.colLang}>
-                    {t("ui.dashboard.col_language", "Sprache")}
-                </div>
-                <div role="columnheader" className={styles.colDate}>
-                    {t("ui.dashboard.col_last_edit", "Zuletzt bearbeitet")}
-                </div>
-                <div role="columnheader" className={styles.colActions} aria-hidden="true" />
+                ))}
             </div>
-            {books.map((book) => (
-                <BookListRow
-                    key={book.id}
-                    book={book}
-                    onClick={() => onClick(book)}
-                    onDelete={() => onDelete(book)}
-                    onDeletePermanent={onDeletePermanent ? () => onDeletePermanent(book) : undefined}
-                    isSelected={isSelected ? isSelected(book) : undefined}
-                    onToggleSelect={onToggleSelect ? () => onToggleSelect(book) : undefined}
-                />
-            ))}
-        </div>
         </div>
     );
 }
@@ -136,15 +138,20 @@ function BookListRow({
         >
             {showSelection ? (
                 <div role="cell" className={styles.colCheckbox}>
-                    <input
-                        type="checkbox"
-                        className={styles.checkbox}
-                        data-testid={`book-bulk-check-${book.id}`}
-                        checked={!!isSelected}
-                        onChange={onToggleSelect}
+                    <label
+                        className="flex items-center justify-center pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
                         onClick={(e) => e.stopPropagation()}
-                        aria-label={t("ui.dashboard.bulk.select_row", "Buch auswählen")}
-                    />
+                    >
+                        <input
+                            type="checkbox"
+                            className={styles.checkbox}
+                            data-testid={`book-bulk-check-${book.id}`}
+                            checked={!!isSelected}
+                            onChange={onToggleSelect}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label={t("ui.dashboard.bulk.select_row", "Buch auswählen")}
+                        />
+                    </label>
                 </div>
             ) : null}
             <div role="cell" className={styles.colCover}>
@@ -164,13 +171,13 @@ function BookListRow({
             <div role="cell" className={styles.colMain}>
                 <div className={styles.titleCell}>
                     <span className={styles.title}>{book.title}</span>
-                    {book.subtitle ? <span className={styles.subtitle}>{book.subtitle}</span> : null}
+                    {book.subtitle ? (
+                        <span className={styles.subtitle}>{book.subtitle}</span>
+                    ) : null}
                 </div>
             </div>
             <div role="cell" className={styles.colAuthor}>
-                {book.author?.trim()
-                    ? book.author
-                    : t("ui.dashboard.book_no_author", "—")}
+                {book.author?.trim() ? book.author : t("ui.dashboard.book_no_author", "—")}
             </div>
             <div role="cell" className={styles.colLang}>
                 {/* PUBLICATION-STATUS-BOOK-PARITY-01 (T0 C2):
@@ -179,17 +186,12 @@ function BookListRow({
                  *  pattern. Reuses ``ui.articles.status_*``
                  *  i18n keys (the labels are identical between
                  *  the two surfaces). */}
-                <Badge
+                <StatusBadge
                     testId={`book-list-row-status-${book.id}`}
-                    variant={publicationStatusVariant(book.status ?? "draft")}
-                    size="sm"
-                    style={{ marginRight: 6 }}
-                >
-                    {t(
-                        `ui.articles.status_${book.status ?? "draft"}`,
-                        book.status ?? "draft",
-                    )}
-                </Badge>
+                    status={book.status ?? "draft"}
+                    labels={publicationStatusLabels(t)}
+                    className="mr-1.5"
+                />
                 {book.language.toUpperCase()}
             </div>
             <div role="cell" className={styles.colDate}>
@@ -221,7 +223,8 @@ function BookListRow({
                                 data-testid={`book-list-row-menu-delete-${book.id}`}
                                 onSelect={() => onDelete()}
                             >
-                                <Trash2 size={14} /> {t("ui.dashboard.move_to_trash", "In den Papierkorb")}
+                                <Trash2 size={14} />{" "}
+                                {t("ui.dashboard.move_to_trash", "In den Papierkorb")}
                             </DropdownMenu.Item>
                             {onDeletePermanent ? (
                                 <>

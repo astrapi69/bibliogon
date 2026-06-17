@@ -104,6 +104,9 @@ export const booksApi = {
         word_target_deadline?: string | null;
         /** Relationship-graph node positions (STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5). */
         graph_layout?: Record<string, { x: number; y: number }> | null;
+        /** Cover reference (``assets/covers/cover-x.png``). PATCH-only -
+         *  the .bgb importer re-points it onto the restored cover asset. */
+        cover_image?: string | null;
       },
     ) =>
       request<Book>(`/books/${id}`, {

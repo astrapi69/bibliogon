@@ -1,0 +1,72 @@
+/**
+ * Styles for the generic MetricsTable (#284). Theme-token based so the
+ * table renders correctly across all variants; cell background tints are
+ * applied inline by the component via color-mix on the semantic tokens.
+ * Mirrors the sibling QualityTab.module.css table look for visual parity.
+ */
+
+.container {
+    overflow-x: auto;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8125rem;
+}
+
+.th {
+    padding: 8px 10px;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    border-bottom: 2px solid var(--border);
+    white-space: nowrap;
+}
+
+.sortButton {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sortButton:hover {
+    color: var(--text);
+}
+
+.sortIcon {
+    font-size: 0.625rem;
+}
+
+.td {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+}
+
+.good {
+    background: color-mix(in srgb, var(--success) 15%, transparent);
+}
+
+.warn {
+    background: color-mix(in srgb, var(--warning) 20%, transparent);
+}
+
+.bad {
+    background: color-mix(in srgb, var(--danger) 15%, transparent);
+}
+
+.totalsRow {
+    font-weight: 600;
+    border-top: 2px solid var(--border);
+}
+
+.totalsRow .td {
+    border-bottom: none;
+}
