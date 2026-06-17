@@ -19,7 +19,6 @@ from __future__ import annotations
 
 import json
 import logging
-import re
 import shutil
 import subprocess
 import tempfile
@@ -36,6 +35,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Article
+from app.services.filename_slug import ascii_filename_slug
 
 logger = logging.getLogger(__name__)
 
@@ -58,24 +58,6 @@ _MEDIA_TYPES: Final = {
     "pdf": "application/pdf",
     "docx": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 }
-
-
-def _slugify(title: str) -> str:
-    """Produce an ASCII-safe filename slug from the article title.
-
-    Content-Disposition headers must be ASCII per RFC 6266 (the
-    extended ``filename*`` form supports UTF-8 but starlette's
-    test client decodes the value as plain UTF-8 and chokes on
-    Latin-1-byte fallbacks). Folds umlauts to their ASCII
-    equivalent and drops anything else non-ASCII.
-    """
-    import unicodedata
-
-    folded = unicodedata.normalize("NFKD", title)
-    ascii_only = folded.encode("ascii", "ignore").decode("ascii")
-    cleaned = re.sub(r"[^\w\s-]", "", ascii_only).strip()
-    cleaned = re.sub(r"[\s_-]+", "-", cleaned)
-    return cleaned.lower() or "article"
 
 
 def _load_article(article_id: str, db: Session) -> Article:
@@ -177,7 +159,7 @@ def export_article(article_id: str, fmt: str, db: Session = Depends(get_db)) -> 
     article = _load_article(article_id, db)
 
     markdown = _build_markdown(article)
-    slug = _slugify(article.title)
+    slug = ascii_filename_slug(article.title, fallback="article")
     filename = f"{slug}.{_OUTPUT_EXTENSIONS[target]}"
     media_type = _MEDIA_TYPES[target]
     headers = {"Content-Disposition": f'attachment; filename="{filename}"'}

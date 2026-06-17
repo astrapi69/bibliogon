@@ -22,7 +22,6 @@ from __future__ import annotations
 
 import logging
 import re
-import unicodedata
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
@@ -44,6 +43,7 @@ from app.ai.template_schema import (
 from app.database import get_db
 from app.models import Book
 from app.schemas import BookOut
+from app.services.filename_slug import ascii_filename_slug
 
 logger = logging.getLogger(__name__)
 
@@ -74,16 +74,6 @@ BOOK_TEMPLATE_FIELD_MAP: list[tuple[str, str, bool]] = [
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
-
-
-def _slugify(title: str) -> str:
-    """ASCII-safe filename slug. Mirrors the article-side helper
-    so per-book exports land with predictable filenames."""
-    folded = unicodedata.normalize("NFKD", title)
-    ascii_only = folded.encode("ascii", "ignore").decode("ascii")
-    cleaned = re.sub(r"[^\w\s-]", "", ascii_only).strip()
-    cleaned = re.sub(r"[\s_-]+", "-", cleaned)
-    return cleaned.lower() or "book"
 
 
 def _load_book(book_id: str, db: Session) -> Book:
@@ -228,7 +218,7 @@ def export_book_template(book_id: str, db: Session = Depends(get_db)) -> Respons
     book = _load_book(book_id, db)
     template = build_book_template_from_record(book)
     yaml_text = serialize_template_to_yaml(template, include_header=True)
-    return _build_yaml_response(yaml_text, _slugify(book.title))
+    return _build_yaml_response(yaml_text, ascii_filename_slug(book.title, fallback="book"))
 
 
 @books_router.post("/{book_id}/ai-template")
