@@ -2,9 +2,17 @@
  * Browser download helpers for the client-side export engine
  * (Maximal-Offline P2).
  *
- * Triggers a file download from an in-memory Blob via an object URL + a
- * programmatic anchor click — the standard backend-free download path.
+ * The Blob download itself is the single Library-Grade {@link downloadBlob}
+ * helper under `shared/utils` (re-exported here so the export-engine call
+ * sites keep importing from one place); this module adds the
+ * export-specific `slugifyFilename` + `downloadText` conveniences on top.
+ * The previous duplicate `downloadBlob` body was removed in favour of the
+ * shared helper (#388).
  */
+
+import { downloadBlob } from "../shared/utils/downloadBlob";
+
+export { downloadBlob };
 
 /** Build a filesystem-safe slug from a document title (fallback "export"). */
 export function slugifyFilename(title: string): string {
@@ -15,18 +23,6 @@ export function slugifyFilename(title: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
   return slug || "export";
-}
-
-/** Download an in-memory Blob as `filename` (no backend round-trip). */
-export function downloadBlob(blob: Blob, filename: string): void {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  URL.revokeObjectURL(url);
 }
 
 /** Download a string payload as a text-ish file with the given MIME type. */

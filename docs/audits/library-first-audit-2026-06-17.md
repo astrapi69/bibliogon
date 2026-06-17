@@ -50,7 +50,7 @@ does the job.
 |---|---|---|---|---|
 | `lib/utils/markdownToHtml.ts` | Markdown → HTML (editor Markdown mode) | `marked` (**already a dependency**, used in `import/chapterImporters.ts`) | **REPLACE** | A self-maintained line-based parser reimplements what an already-installed, battle-tested library does. The bespoke `<figure>`/`<figcaption>` promotion is the only delta and is reproducible with a `marked` extension or a post-pass. Zero new bundle cost (already shipped). Follow-up #387. |
 | `shared/utils/slugify.ts` | Title → URL/filename slug, **keeps** German umlauts | `slugify` (npm, 3M+/wk) | **KEEP** | The whole point is to keep `ä/ö/ü/ß` verbatim ("Über uns" → `über-uns`); `slugify` and `@sindresorhus/slugify` transliterate them away by default. 7 LOC, no platform gap. The library would change behaviour, not improve it. |
-| `shared/utils/downloadBlob.ts` | `createObjectURL → <a download> → revoke` | `file-saver` (npm, 2M+/wk) | **CHECK** | `file-saver` carries Safari/legacy-IE FileReader fallbacks the 9-LOC helper omits. Marginal for an evergreen-browser PWA; revisit only if a Safari save-dialog bug is reported. Follow-up #388. |
+| `shared/utils/downloadBlob.ts` | `createObjectURL → <a download> → revoke` | `file-saver` (npm, 2M+/wk) | **KEEP** (resolved #388) | Evaluated #388: `file-saver`'s modern build IS the same `createObjectURL` + `<a download>` path; its only extra value is legacy fallbacks — IE `msSaveBlob`, old-Safari `FileReader` — for browsers this app already drops (stack requires Chrome 111+/Safari 16.2+ for `color-mix`/`dvh`). Files >2GB need StreamSaver, NOT `file-saver`. So the dep adds zero applicable edge-case coverage against a ~10-LOC helper. Hardened the helper (empty-filename → `"download"`) and removed the duplicate copy in `export/download.ts` (now re-exports the shared helper) instead. |
 | `lib/utils/relativeTime.ts` | Locale-aware relative time | `date-fns/formatDistanceToNow`, `dayjs/relativeTime` | **KEEP** | Already built on the platform `Intl.RelativeTimeFormat` — native localisation for all 8 shipped locales with **zero** bundle cost and no per-locale import. A library here would be strictly heavier. This is the model the Library-First rule wants. |
 | `lib/utils/textStats.ts` | Word/char count + reading time | `reading-time`, `word-count` | **KEEP** | ~10 LOC, locale-neutral, returns the exact `TextStats` shape the status bar needs. `reading-time` assumes English word boundaries and a fixed WPM; our 250-WPM constant is explicit and tunable. Library adds a dep for no parity gain. |
 | `lib/utils/sentenceComplexity.ts` | Sentence split-candidate scoring + `stripHtml` | NLP libs (`compromise`, `sbd`); `striptags`/`sanitize-html` | **KEEP** | The score is a deliberately simple, author-explainable proxy (words + commas); a real NLP dep (100s of kB) is disproportionate. The local `stripHtml` is a small known regex on already-trusted server HTML, not a sanitiser — `dompurify` (already a dep) is the right tool only where untrusted HTML is rendered, which this is not. |
@@ -77,8 +77,11 @@ The prompt's three named backend candidates were checked against the code:
 ## Summary
 
 - **1 REPLACE** (high value, zero bundle cost): `markdownToHtml.ts` → `marked` (#387).
-- **3 CHECK** (deliberate, low priority): `downloadBlob` → `file-saver` (#388);
-  backend atomic-write helper (#389); backend filename-slug consolidation (#390).
+- **2 CHECK** (deliberate, low priority): backend atomic-write helper (#389);
+  backend filename-slug consolidation (#390).
+- **1 CHECK resolved → KEEP**: `downloadBlob` vs `file-saver` (#388) — evaluated;
+  kept the native helper (file-saver adds only legacy-browser fallbacks this
+  evergreen PWA doesn't need), hardened it + removed the duplicate copy.
 - **Everything else KEEP** — and notably, the two strongest examples
   (`relativeTime.ts` on `Intl`, `cn` on `clsx`+`tailwind-merge`) are already
   exactly what Library-First prescribes: thin wrappers over the platform or an
