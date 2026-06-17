@@ -217,57 +217,61 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
     Stripping prevents the project ``app.yaml`` from clobbering an
     externally-managed value.
     """
-    current = config_overlay.load_app_config_for_edit()
+    # Hold the overlay lock across the whole read-modify-write so two
+    # overlapping PATCHes cannot read the same baseline and clobber each
+    # other's keys (settings-clobber data-loss class).
+    with config_overlay.app_config_lock():
+        current = config_overlay.load_app_config_for_edit()
 
-    if secrets_managed_externally():
-        for parent_key, child_key in _SECRET_FIELDS:
-            section = getattr(body, parent_key, None)
-            if isinstance(section, dict) and child_key in section:
-                del section[child_key]
-                logger.warning(
-                    "Stripped %r.%r from Settings PATCH because secrets are "
-                    "managed externally (override file or env-var active). "
-                    "Frontend should hide this field; check Settings.tsx and "
-                    "AiSetupWizard.tsx.",
-                    parent_key,
-                    child_key,
-                )
+        if secrets_managed_externally():
+            for parent_key, child_key in _SECRET_FIELDS:
+                section = getattr(body, parent_key, None)
+                if isinstance(section, dict) and child_key in section:
+                    del section[child_key]
+                    logger.warning(
+                        "Stripped %r.%r from Settings PATCH because secrets are "
+                        "managed externally (override file or env-var active). "
+                        "Frontend should hide this field; check Settings.tsx and "
+                        "AiSetupWizard.tsx.",
+                        parent_key,
+                        child_key,
+                    )
 
-    if body.ui is not None:
-        # Validate enum-constrained dashboard keys (C2) BEFORE merging
-        # so an invalid request never reaches disk.
-        _validate_dashboard_page_sizes(body.ui)
-        # Validate ui.defaults.{book_type,content_type} against the
-        # type registries (SSoT) before write.
-        _validate_ui_defaults(body.ui)
+        if body.ui is not None:
+            # Validate enum-constrained dashboard keys (C2) BEFORE merging
+            # so an invalid request never reaches disk.
+            _validate_dashboard_page_sizes(body.ui)
+            # Validate ui.defaults.{book_type,content_type} against the
+            # type registries (SSoT) before write.
+            _validate_ui_defaults(body.ui)
 
-    if body.app is not None:
-        current.setdefault("app", {}).update(body.app)
-    if body.behavior is not None:
-        current.setdefault("behavior", {}).update(body.behavior)
-    if body.ui is not None:
-        current.setdefault("ui", {}).update(body.ui)
-    if body.author is not None:
-        current.setdefault("author", {}).update(body.author)
-    if body.plugins is not None:
-        current.setdefault("plugins", {}).update(body.plugins)
-    if body.ai is not None:
-        current.setdefault("ai", {}).update(body.ai)
-    if body.editor is not None:
-        current.setdefault("editor", {}).update(body.editor)
-    if body.topics is not None:
-        # Topics is a list - write whole, dedupe, drop empties.
-        seen: set[str] = set()
-        cleaned: list[str] = []
-        for raw in body.topics:
-            t = (raw or "").strip()
-            if not t or t in seen:
-                continue
-            seen.add(t)
-            cleaned.append(t)
-        current["topics"] = cleaned
+        if body.app is not None:
+            current.setdefault("app", {}).update(body.app)
+        if body.behavior is not None:
+            current.setdefault("behavior", {}).update(body.behavior)
+        if body.ui is not None:
+            current.setdefault("ui", {}).update(body.ui)
+        if body.author is not None:
+            current.setdefault("author", {}).update(body.author)
+        if body.plugins is not None:
+            current.setdefault("plugins", {}).update(body.plugins)
+        if body.ai is not None:
+            current.setdefault("ai", {}).update(body.ai)
+        if body.editor is not None:
+            current.setdefault("editor", {}).update(body.editor)
+        if body.topics is not None:
+            # Topics is a list - write whole, dedupe, drop empties.
+            seen: set[str] = set()
+            cleaned: list[str] = []
+            for raw in body.topics:
+                t = (raw or "").strip()
+                if not t or t in seen:
+                    continue
+                seen.add(t)
+                cleaned.append(t)
+            current["topics"] = cleaned
 
-    config_overlay.write_user_app_config(current)
+        config_overlay.write_user_app_config(current)
 
     # Reload config in the manager so changes take effect
     _refresh_manager_app_config()

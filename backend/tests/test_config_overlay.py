@@ -100,12 +100,11 @@ def test_plugins_enabled_list_replace_regression_pin():
     user_enabled_set = set(extended_user["plugins"]["enabled"])
     user_disabled = set(extended_user["plugins"].get("disabled") or [])
     to_append = [
-        n for n in project["plugins"]["enabled"]
+        n
+        for n in project["plugins"]["enabled"]
         if n not in user_enabled_set and n not in user_disabled
     ]
-    extended_user["plugins"]["enabled"] = (
-        list(extended_user["plugins"]["enabled"]) + to_append
-    )
+    extended_user["plugins"]["enabled"] = list(extended_user["plugins"]["enabled"]) + to_append
     merged_after = config_overlay.deep_merge(project, extended_user)
     assert "comics" in merged_after["plugins"]["enabled"], (
         "Migration helper should append project-tree plugins "
@@ -135,9 +134,7 @@ def test_deep_merge_does_not_mutate_inputs():
 
 def test_read_app_config_user_wins_over_project(two_layer_dirs):
     project_cfg, _ = two_layer_dirs
-    (project_cfg / "app.yaml").write_text(
-        "app:\n  language: en\n  theme: warm\n", encoding="utf-8"
-    )
+    (project_cfg / "app.yaml").write_text("app:\n  language: en\n  theme: warm\n", encoding="utf-8")
     config_overlay.write_user_app_config({"app": {"language": "de"}})
 
     merged = config_overlay.read_app_config_merged()
@@ -190,6 +187,79 @@ def test_write_user_app_config_creates_user_dir_if_missing(two_layer_dirs):
     assert user_config_dir.is_dir()
 
 
+def test_write_user_app_config_is_atomic_under_concurrent_read(two_layer_dirs, monkeypatch):
+    """Regression: a write in progress must never expose a truncated file to
+    a concurrent reader.
+
+    Pre-fix ``write_yaml_roundtrip`` opened the target in ``"w"`` mode (which
+    truncates immediately) and dumped in place, so a reader that hit the file
+    mid-dump saw a partial document. Two overlapping ``PATCH /settings/app``
+    requests (the manual-automation TC-052 language sweep fires several in
+    quick succession) corrupted ``app.yaml`` this way, 500-ing every later
+    settings read. The atomic temp-file + ``os.replace`` write keeps the
+    target pointing at the complete previous version until the rename, so a
+    concurrent read always sees a full, valid document.
+
+    Deterministic by construction: the dump is slowed so the read lands
+    squarely inside the write window.
+    """
+    import threading
+    import time
+
+    from ruamel.yaml import YAML
+
+    from app import yaml_io
+    from app.yaml_io import read_yaml_roundtrip
+
+    original = {
+        "app": {"default_language": "de"},
+        "ai": {"provider": "anthropic", "api_key": "", "model": "x"},
+        "ui": {"theme": "warm"},
+    }
+    config_overlay.write_user_app_config(original)
+    path = config_overlay._user_app_path()
+
+    class _SlowDumper:
+        """Stand-in for the ruamel YAML object whose ``dump`` writes the new
+        document in two chunks with a gap, widening the partial-write window
+        a non-atomic writer would expose. ``load`` delegates to a real YAML
+        so concurrent reads still parse normally (the monkeypatch below
+        replaces ``_yaml`` for both the read and the write path)."""
+
+        _real = YAML(typ="rt")
+
+        def load(self, stream: object) -> object:
+            return self._real.load(stream)
+
+        def dump(self, data: object, stream: object) -> None:
+            stream.write("app:\n")  # type: ignore[attr-defined]
+            stream.flush()  # type: ignore[attr-defined]
+            time.sleep(0.3)
+            stream.write("  default_language: en\n")  # type: ignore[attr-defined]
+            stream.flush()  # type: ignore[attr-defined]
+
+    monkeypatch.setattr(yaml_io, "_yaml", lambda: _SlowDumper())
+
+    seen_during_write: list[dict] = []
+
+    def slow_write() -> None:
+        config_overlay.write_user_app_config({"app": {"default_language": "en"}})
+
+    writer = threading.Thread(target=slow_write)
+    writer.start()
+    time.sleep(0.1)  # land inside the 0.3s dump window
+    seen_during_write.append(read_yaml_roundtrip(path))
+    writer.join()
+
+    # Mid-write, the reader must have seen the COMPLETE previous document,
+    # not a truncated ``app:\n`` (which parses to {"app": None}).
+    mid = seen_during_write[0]
+    assert mid.get("ai", {}).get("provider") == "anthropic", (
+        f"reader saw a partial file mid-write: {mid!r}"
+    )
+    assert mid["app"]["default_language"] == "de"
+
+
 # --- read_plugin_config_merged ---
 
 
@@ -231,9 +301,7 @@ def test_load_app_config_for_edit_preserves_comments(two_layer_dirs):
 def test_load_plugin_config_for_edit_preserves_comments(two_layer_dirs):
     project_cfg, user_data = two_layer_dirs
     (project_cfg / "plugins" / "y.yaml").write_text(
-        "plugin:\n  name: y\nsettings:\n"
-        "  # INTERNAL: power-user knob\n"
-        "  tweak: 10\n",
+        "plugin:\n  name: y\nsettings:\n  # INTERNAL: power-user knob\n  tweak: 10\n",
         encoding="utf-8",
     )
     loaded = config_overlay.load_plugin_config_for_edit("y")
@@ -334,14 +402,12 @@ def test_set_project_config_dir_round_trip(tmp_path):
 def _write_project_app(project_cfg: Path, enabled: list[str]) -> None:
     """Helper: seed the project-tree app.yaml with a plugins.enabled list."""
     (project_cfg / "app.yaml").write_text(
-        "plugins:\n  enabled:\n"
-        + "".join(f"    - {name}\n" for name in enabled),
+        "plugins:\n  enabled:\n" + "".join(f"    - {name}\n" for name in enabled),
         encoding="utf-8",
     )
 
 
-def _write_user_app(enabled: list[str] | None = None,
-                    disabled: list[str] | None = None) -> None:
+def _write_user_app(enabled: list[str] | None = None, disabled: list[str] | None = None) -> None:
     """Helper: seed the user-overlay app.yaml with plugins.enabled + disabled."""
     cfg: dict[str, object] = {"plugins": {}}
     plugins = cfg["plugins"]
