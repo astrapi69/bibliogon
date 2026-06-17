@@ -14,10 +14,11 @@ drop out of the backup the way the hand-maintained field lists did
 before v3.0.
 """
 
+import json
 from datetime import date, datetime
 from typing import Any
 
-from sqlalchemy import Date, DateTime
+from sqlalchemy import JSON, Date, DateTime
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.orm import class_mapper
 
@@ -45,9 +46,23 @@ def serialize_row(obj: Any, *, exclude: frozenset[str] = frozenset()) -> dict[st
 def _coerce(raw: Any, column_type: Any) -> Any:
     """Coerce a JSON value back to the Python type the column expects.
 
-    Only date/datetime need work (they were serialized to ISO strings);
-    everything else round-trips through JSON unchanged.
+    Two cases need work; everything else round-trips through JSON
+    unchanged:
+
+    - ``date`` / ``datetime`` columns were serialized to ISO strings
+      and must be parsed back.
+    - ``list`` / ``dict`` values bound for a string-typed (``Text`` /
+      ``String``) column must be re-serialized to a JSON string. The
+      Book model stores several JSON arrays (``keywords``,
+      ``categories``, ``bisac_codes``, ``chapter_summaries``,
+      ``audiobook_skip_chapter_types``) as JSON-encoded text, and a
+      frontend-exported ``.bgb`` carries them as real JSON arrays;
+      SQLite cannot bind a Python ``list`` to a text column. Genuine
+      ``JSON`` columns (e.g. ``Book.graph_layout``) accept ``list`` /
+      ``dict`` natively and are left untouched.
     """
+    if isinstance(raw, (list, dict)) and not isinstance(column_type, JSON):
+        return json.dumps(raw, ensure_ascii=False)
     if raw is None or not isinstance(raw, str):
         return raw
     if isinstance(column_type, DateTime):
