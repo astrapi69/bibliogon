@@ -487,6 +487,7 @@
       "push_unavailable": "Push para o remoto ainda não disponível. O commit foi criado localmente.",
       "diff_title": "Mesclar mudanças do repo",
       "diff_error": "Não foi possível carregar o diff.",
+      "diff_remote_unreachable": "Repositório inacessível. Verifique a conexão ou a URL do repositório.",
       "diff_summary": "{count} capítulos com mudanças, {unchanged} inalterados.",
       "diff_empty": "Sem mudanças entre Bibliogon e o repo. {count} capítulos inalterados.",
       "diff_apply": "Aplicar resoluções",
@@ -3295,8 +3296,6 @@
       "search_story_bible": "Buscar na Biblia da historia",
       "take_snapshot": "Criar instantaneo",
       "word_count": "Palavras",
-      "no_story_bible_match": "Nenhuma entrada encontrada na Biblia da historia.",
-      "search_failed": "A busca falhou.",
       "undo": "Desfazer",
       "redo": "Refazer",
       "formatting": "Formatação",
@@ -3318,7 +3317,9 @@
       "align_right": "Direita",
       "align_justify": "Justificado",
       "list_group": "Lista",
-      "task_list": "Lista de tarefas"
+      "task_list": "Lista de tarefas",
+      "no_story_bible_match": "Nenhuma entrada encontrada na Biblia da historia.",
+      "search_failed": "A busca falhou."
     },
     "outliner": {
       "title": "Estrutura",

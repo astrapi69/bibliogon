@@ -29,7 +29,12 @@ from app.services.git_sync_commit import (
     PushFailedError,
     commit_to_repo,
 )
-from app.services.git_sync_diff import apply_resolutions, diff_book
+from app.services.git_sync_diff import (
+    RemoteUnreachableError,
+    apply_resolutions,
+    diff_book,
+    fetch_remote_updates,
+)
 from app.services.git_sync_unified import book_subsystems, unified_commit
 
 logger = logging.getLogger(__name__)
@@ -234,6 +239,35 @@ def commit(
     return CommitResponse(**result)  # type: ignore[arg-type]
 
 
+def _fetch_or_raise(db: Session, book_id: str) -> None:
+    """Fetch remote updates before a diff/resolve, mapping failures to HTTP.
+
+    Fast-forwards the local clone so the three-way diff sees chapters
+    pushed to the remote since import. A genuine network/auth failure
+    becomes a 502 with a ``remote_unreachable`` code; a missing clone a
+    410. "No new commits" is not an error and returns normally.
+
+    Args:
+        db: Active database session.
+        book_id: Book whose ``GitSyncMapping`` points at the clone.
+    """
+    try:
+        fetch_remote_updates(db, book_id=book_id)
+    except MappingNotFoundError as exc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(exc)) from exc
+    except CloneMissingError as exc:
+        raise HTTPException(status_code=status.HTTP_410_GONE, detail=str(exc)) from exc
+    except RemoteUnreachableError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail={
+                "code": "remote_unreachable",
+                "reason": exc.reason,
+                "message": str(exc),
+            },
+        ) from exc
+
+
 @router.post("/{book_id}/diff", response_model=DiffResponse)
 def diff(
     book_id: str,
@@ -241,12 +275,12 @@ def diff(
 ) -> DiffResponse:
     """Return the three-way diff (base vs local vs remote) per chapter.
 
-    Read-only: this endpoint runs ``git ls-tree`` + ``git show``
-    against the persisted clone and reads the local DB. It does NOT
-    fetch from the remote - callers must ``git fetch`` first if
-    they want the remote side to reflect upstream changes since
-    the last clone update. PGS-03 Session 2 will add a fetch step
-    inside the re-import flow before invoking diff.
+    Fetches the remote and fast-forwards the local clone first (#379) so
+    chapters pushed upstream since import are seen, then runs
+    ``git ls-tree`` + ``git show`` against the clone and reads the local
+    DB. Historically this endpoint did NOT fetch, so new remote chapters
+    were invisible (the clone stayed frozen at import time); the fetch
+    step closes that gap. A genuine remote failure surfaces as a 502.
     """
     mapping = db.get(GitSyncMapping, book_id)
     if mapping is None:
@@ -254,6 +288,7 @@ def diff(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Book is not mapped to a git repository.",
         )
+    _fetch_or_raise(db, book_id)
     try:
         diffs = diff_book(db, book_id=book_id)
     except MappingNotFoundError as exc:
@@ -303,10 +338,14 @@ def resolve(
 ) -> ResolveResponse:
     """Apply per-chapter resolutions and advance the mapping cursor.
 
-    Mutates the local DB only - the remote repository is not
-    touched. Subsequent ``commit_to_repo`` is the user's explicit
-    next step if they also want to publish the resolved state.
+    Fetches + fast-forwards the clone first (#379) so the cursor
+    advances to the actual upstream tip and ``remote_added`` chapters
+    resolve against the fetched state. Mutates the local DB only - the
+    remote repository is not touched. Subsequent ``commit_to_repo`` is
+    the user's explicit next step if they also want to publish the
+    resolved state.
     """
+    _fetch_or_raise(db, book_id)
     try:
         counts = apply_resolutions(
             db,

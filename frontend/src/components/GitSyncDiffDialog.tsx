@@ -91,10 +91,20 @@ export default function GitSyncDiffDialog({
       setActions(seed);
     } catch (err) {
       if (err instanceof ApiError) {
-        notify.error(
-          t("ui.git_sync.diff_error", "Konnte Diff nicht laden."),
-          err,
-        );
+        if (err.detailBody?.code === "remote_unreachable") {
+          notify.error(
+            t(
+              "ui.git_sync.diff_remote_unreachable",
+              "Repository nicht erreichbar. Verbindung oder Repository-URL prüfen.",
+            ),
+            err,
+          );
+        } else {
+          notify.error(
+            t("ui.git_sync.diff_error", "Konnte Diff nicht laden."),
+            err,
+          );
+        }
       }
     } finally {
       setLoading(false);

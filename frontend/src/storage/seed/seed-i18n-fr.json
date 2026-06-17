@@ -487,6 +487,7 @@
       "push_unavailable": "Push vers le remote pas encore disponible. Le commit a été créé localement.",
       "diff_title": "Fusionner les changements du repo",
       "diff_error": "Impossible de charger le diff.",
+      "diff_remote_unreachable": "Dépôt inaccessible. Vérifiez la connexion ou l'URL du dépôt.",
       "diff_summary": "{count} chapitres avec changements, {unchanged} inchangés.",
       "diff_empty": "Aucun changement entre Bibliogon et le repo. {count} chapitres inchangés.",
       "diff_apply": "Appliquer les résolutions",
@@ -3295,8 +3296,6 @@
       "search_story_bible": "Rechercher dans la Bible de l'histoire",
       "take_snapshot": "Créer un instantané",
       "word_count": "Mots",
-      "no_story_bible_match": "Aucune entrée trouvée dans la Bible de l'histoire.",
-      "search_failed": "La recherche a échoué.",
       "undo": "Annuler",
       "redo": "Rétablir",
       "formatting": "Mise en forme",
@@ -3318,7 +3317,9 @@
       "align_right": "Droite",
       "align_justify": "Justifié",
       "list_group": "Liste",
-      "task_list": "Liste de tâches"
+      "task_list": "Liste de tâches",
+      "no_story_bible_match": "Aucune entrée trouvée dans la Bible de l'histoire.",
+      "search_failed": "La recherche a échoué."
     },
     "outliner": {
       "title": "Plan",
