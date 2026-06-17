@@ -36,6 +36,16 @@ vi.mock("../api/client", () => ({
   },
 }))
 
+const storageMock = {
+  mode: "api" as "api" | "dexie",
+  books: {get: vi.fn()},
+  chapters: {list: vi.fn()},
+}
+
+vi.mock("../storage", () => ({
+  getStorage: () => storageMock,
+}))
+
 function sampleResponse(): ChapterMetricsResponse {
   return {
     book_title: "Test",
@@ -97,6 +107,9 @@ describe("QualityTab", () => {
   beforeEach(() => {
     chapterMetricsMock.mockReset()
     chapterMetricsMock.mockResolvedValue(sampleResponse())
+    storageMock.mode = "api"
+    storageMock.books.get.mockReset()
+    storageMock.chapters.list.mockReset()
   })
 
   it("calls onNavigateToIssue with filler_word when user clicks filler cell", async () => {
@@ -195,5 +208,59 @@ describe("QualityTab", () => {
 
     const row = screen.getByText("Second").closest("tr")!
     expect(within(row).queryByRole("button")).toBeNull()
+  })
+
+  it("shows a concrete reason when the analysis throws", async () => {
+    chapterMetricsMock.mockRejectedValue(new Error("boom"))
+    render(<QualityTab bookId="book-1"/>)
+    await waitFor(() =>
+      expect(
+        screen.getByText(/Qualitaetsanalyse fehlgeschlagen: boom/),
+      ).toBeTruthy(),
+    )
+  })
+
+  describe("offline (dexie) mode", () => {
+    function tiptap(text: string): string {
+      return JSON.stringify({
+        type: "doc",
+        content: [{type: "paragraph", content: [{type: "text", text}]}],
+      })
+    }
+
+    it("computes metrics client-side without calling the backend", async () => {
+      storageMock.mode = "dexie"
+      storageMock.books.get.mockResolvedValue({title: "Offline Buch", language: "de"})
+      storageMock.chapters.list.mockResolvedValue([
+        {
+          id: "ch1",
+          book_id: "book-1",
+          title: "Erstes Kapitel",
+          content: tiptap("Das ist ein einfacher Satz. Hier folgt ein zweiter Satz."),
+          position: 0,
+          chapter_type: "chapter",
+          version: 1,
+        },
+      ])
+
+      render(<QualityTab bookId="book-1"/>)
+      await waitFor(() => expect(screen.getByText("Erstes Kapitel")).toBeTruthy())
+
+      // No /api round-trip in dexie mode.
+      expect(chapterMetricsMock).not.toHaveBeenCalled()
+      expect(storageMock.chapters.list).toHaveBeenCalledWith("book-1")
+    })
+
+    it("shows the empty message when an offline book has no chapters", async () => {
+      storageMock.mode = "dexie"
+      storageMock.books.get.mockResolvedValue({title: "Leeres Buch", language: "de"})
+      storageMock.chapters.list.mockResolvedValue([])
+
+      render(<QualityTab bookId="book-1"/>)
+      await waitFor(() =>
+        expect(screen.getByText("Keine Kapitel mit Textinhalt.")).toBeTruthy(),
+      )
+      expect(chapterMetricsMock).not.toHaveBeenCalled()
+    })
   })
 })

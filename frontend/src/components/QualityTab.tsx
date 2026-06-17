@@ -35,6 +35,8 @@ import {
     type QualityReportLabels,
 } from "./qualityReport"
 import {notify} from "../utils/notify"
+import {getStorage} from "../storage"
+import {computeChapterMetrics} from "../lib/utils/chapterMetrics"
 import styles from "./QualityTab.module.css"
 
 export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
@@ -73,10 +75,24 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         setLoading(true)
         setError("")
         try {
-            const result = await api.msTools.chapterMetrics(bookId)
+            const storage = getStorage()
+            let result: ChapterMetricsResponse
+            if (storage.mode === "dexie") {
+                // Offline / backendless build: ms-tools has no backend here, so
+                // guardedFetch would reject the /api call. Compute the same
+                // metrics client-side from the chapters in the storage seam.
+                const book = await storage.books.get(bookId)
+                const chapters = await storage.chapters.list(bookId)
+                result = computeChapterMetrics(book.title, book.language, chapters)
+            } else {
+                result = await api.msTools.chapterMetrics(bookId)
+            }
             setData(result)
-        } catch {
-            setError(t("ui.metadata.quality_error", "Qualitaetsanalyse fehlgeschlagen"))
+        } catch (err) {
+            const detail = err instanceof Error && err.message ? `: ${err.message}` : ""
+            setError(
+                t("ui.metadata.quality_error", "Qualitaetsanalyse fehlgeschlagen") + detail,
+            )
         }
         setLoading(false)
     }
