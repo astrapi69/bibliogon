@@ -498,6 +498,7 @@ ui:
     push_unavailable: "Push to remote is not yet available. The commit was created locally."
     diff_title: "Merge changes from repo"
     diff_error: "Could not load diff."
+    diff_remote_unreachable: "Repository unreachable. Check the connection or repository URL."
     diff_summary: "{count} chapters with changes, {unchanged} unchanged."
     diff_empty: "No changes between Bibliogon and repo. {count} chapters unchanged."
     diff_apply: "Apply resolutions"

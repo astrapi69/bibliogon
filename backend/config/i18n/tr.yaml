@@ -498,6 +498,7 @@ ui:
     push_unavailable: "Uzak depoya push henuz mevcut degil. Commit yerel olarak olusturuldu."
     diff_title: "Repo'dan degisiklikleri birlestir"
     diff_error: "Diff yuklenemedi."
+    diff_remote_unreachable: "Depoya ulaşılamıyor. Bağlantıyı veya depo URL'sini kontrol edin."
     diff_summary: "{count} bolum degisiklikle, {unchanged} degismedi."
     diff_empty: "Bibliogon ve repo arasinda degisiklik yok. {count} bolum degismedi."
     diff_apply: "Cozumleri uygula"

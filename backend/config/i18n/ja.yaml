@@ -498,6 +498,7 @@ ui:
     push_unavailable: "リモートへの Push は未対応です。コミットはローカルに作成されました。"
     diff_title: "リポジトリからの変更をマージ"
     diff_error: "Diff を読み込めませんでした。"
+    diff_remote_unreachable: "リポジトリに接続できません。接続またはリポジトリ URL を確認してください。"
     diff_summary: "変更あり {count} 章、変更なし {unchanged} 章。"
     diff_empty: "Bibliogon とリポジトリに変更はありません。{count} 章変更なし。"
     diff_apply: "解決を適用"

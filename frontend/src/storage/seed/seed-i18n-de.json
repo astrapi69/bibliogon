@@ -520,6 +520,7 @@
       "push_unavailable": "Push ins Remote ist noch nicht verfügbar. Der Commit ist lokal gelandet.",
       "diff_title": "Änderungen vom Repo zusammenführen",
       "diff_error": "Konnte Diff nicht laden.",
+      "diff_remote_unreachable": "Repository nicht erreichbar. Verbindung oder Repository-URL prüfen.",
       "diff_summary": "{count} Kapitel mit Änderungen, {unchanged} unverändert.",
       "diff_empty": "Keine Änderungen zwischen Bibliogon und Repo. {count} Kapitel unverändert.",
       "diff_apply": "Auflösungen anwenden",

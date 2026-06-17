@@ -498,6 +498,7 @@ ui:
     push_unavailable: "Push στο remote δεν είναι ακόμα διαθέσιμο. Το commit δημιουργήθηκε τοπικά."
     diff_title: "Συγχώνευση αλλαγών από το repo"
     diff_error: "Δεν ήταν δυνατή η φόρτωση του diff."
+    diff_remote_unreachable: "Το αποθετήριο δεν είναι προσβάσιμο. Ελέγξτε τη σύνδεση ή το URL του αποθετηρίου."
     diff_summary: "{count} κεφάλαια με αλλαγές, {unchanged} αμετάβλητα."
     diff_empty: "Καμία αλλαγή μεταξύ Bibliogon και repo. {count} κεφάλαια αμετάβλητα."
     diff_apply: "Εφαρμογή επιλύσεων"

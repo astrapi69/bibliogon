@@ -402,6 +402,130 @@ def _resolve_branch_head(clone_path: Path, branch: str) -> str | None:
         return None
 
 
+class RemoteUnreachableError(Exception):
+    """The git remote could not be fetched (network or auth failure).
+
+    Carries a stable ``reason`` slug (``auth`` / ``network`` /
+    ``unknown``) so the router can map it to an HTTP status and a
+    useful message without re-parsing git stderr in the UI. Distinct
+    from "the remote simply has no new commits", which is not an error.
+    """
+
+    def __init__(self, reason: str, message: str) -> None:
+        self.reason = reason
+        super().__init__(message)
+
+
+def _classify_fetch_stderr(stderr: str) -> str:
+    """Map a ``git fetch`` stderr blob to a stable reason slug."""
+    s = stderr.lower()
+    if (
+        "authentication" in s
+        or "could not read username" in s
+        or "permission denied" in s
+        or "invalid username or password" in s
+    ):
+        return "auth"
+    if (
+        "could not resolve host" in s
+        or "could not read from remote" in s
+        or "unable to access" in s
+        or "failed to connect" in s
+        or "connection refused" in s
+        or "timed out" in s
+        or "network" in s
+        or "repository not found" in s
+        or "does not appear to be a git repository" in s
+        or "not a git repository" in s
+    ):
+        return "network"
+    return "unknown"
+
+
+def fetch_remote_updates(db: Session, *, book_id: str) -> bool:
+    """Fetch ``origin`` and fast-forward the local clone's branch.
+
+    The three-way diff compares the DB against the local clone's branch
+    ref, which only reflects upstream after a fetch. Without this step a
+    clone stays frozen at import time, so chapters newly pushed to the
+    remote are invisible (the diff sees ``base == remote`` and reports no
+    changes). This fetches the mapped branch and fast-forwards the local
+    branch to the freshly fetched tip when it is a true fast-forward,
+    leaving a diverged or locally-ahead clone untouched so the diff can
+    surface the divergence.
+
+    Public repositories fetch without credentials; a per-book PAT is
+    injected via :mod:`app.services.git_credentials` only when one is
+    configured, so the missing-HTTPS-token case still works for public
+    repos.
+
+    Args:
+        db: Active database session.
+        book_id: Book whose ``GitSyncMapping`` points at the clone.
+
+    Returns:
+        ``True`` when the local branch advanced to a newer tip, ``False``
+        when nothing changed (already current, diverged/locally-ahead, no
+        ``origin`` remote, or the branch does not exist upstream yet).
+
+    Raises:
+        MappingNotFoundError: The book has no ``GitSyncMapping``.
+        CloneMissingError: The persisted clone is missing or invalid.
+        RemoteUnreachableError: The remote could not be fetched
+            (network/auth), as opposed to merely having no new commits.
+    """
+    import git
+
+    from app.services import git_credentials
+    from app.services.git_sync_commit import CloneMissingError, MappingNotFoundError
+
+    mapping = db.get(GitSyncMapping, book_id)
+    if mapping is None:
+        raise MappingNotFoundError(f"Book {book_id} was not imported via plugin-git-sync.")
+    clone_path = Path(mapping.local_clone_path)
+    if not clone_path.is_dir() or not (clone_path / ".git").is_dir():
+        raise CloneMissingError(
+            f"Local clone {clone_path} for book {book_id} is missing or invalid."
+        )
+
+    repo = git.Repo(str(clone_path))
+    if "origin" not in [r.name for r in repo.remotes]:
+        return False
+
+    branch = mapping.branch
+    origin = repo.remotes.origin
+    original_url = next(iter(origin.urls), "")
+    auth_url = git_credentials.inject_pat_into_url(original_url, book_id)
+    ssh = git_credentials.ssh_env(original_url)
+    try:
+        if auth_url != original_url:
+            origin.set_url(auth_url)
+        if ssh:
+            repo.git.update_environment(**ssh)
+        try:
+            origin.fetch(branch)
+        except git.GitCommandError as exc:
+            stderr = (exc.stderr or "").strip() or str(exc)
+            if "couldn't find remote ref" in stderr.lower():
+                # The branch does not exist upstream yet (e.g. an empty
+                # remote). Nothing to pull, but not a fetch failure.
+                return False
+            raise RemoteUnreachableError(_classify_fetch_stderr(stderr), stderr) from exc
+    finally:
+        if auth_url != original_url:
+            origin.set_url(original_url)
+
+    before = str(repo.git.rev_parse(branch))
+    try:
+        repo.git.merge(f"origin/{branch}", "--ff-only")
+    except git.GitCommandError:
+        # Local ref is already current, ahead, or diverged - keep it as
+        # is; the three-way diff classifies the divergence.
+        return False
+    after = str(repo.git.rev_parse(branch))
+    return before != after
+
+
 def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
     """Run the three-way diff for the book's GitSyncMapping.
 
