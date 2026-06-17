@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "Kitap metninden oluştur"
+    storyboard_button: "Kitap metninden oluştur"
+    title:
+      story_bible: "Metinden Story Bible"
+      storyboard: "Metinden Storyboard"
+    description: "Yapay zeka kitap metnini analiz eder. Uygulamadan önce önerileri gözden geçirin."
+    progress: "Bölüm {current}/{total} analiz ediliyor…"
+    analyzing: "Kitap metni analiz ediliyor…"
+    empty: "Öneri bulunamadı."
+    existing_hint: "Zaten var"
+    notes_title: "Notlar"
+    apply_selected: "Seçilenleri uygula"
+    apply_all: "Tümünü uygula"
+    cancel: "İptal"
+    applied: "{count} kayıt uygulandı."
+    applied_none: "Hiçbir şey uygulanmadı."
+    error:
+      no_chapters: "Bu kitapta bölüm yok."
+      no_content: "Bölümlerde metin yok."
+      not_configured: "Yapay zeka yapılandırılmadı (Ayarlar > Yapay Zeka Asistanı)."
+      generic: "Oluşturma başarısız oldu."
+    badge:
+      character: "Karakter"
+      setting: "Mekan"
+      plot_point: "Olay örgüsü"
+      lore: "Tema"
+      relationship: "İlişki"
+      chapter: "Bölüm"
   offline_import:
     tab_file: "Dosya"
     tab_github: "GitHub'dan"

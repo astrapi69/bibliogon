@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "本文から生成"
+    storyboard_button: "本文から生成"
+    title:
+      story_bible: "本文からストーリーバイブル"
+      storyboard: "本文からストーリーボード"
+    description: "AI が本文を分析します。適用する前に提案を確認してください。"
+    progress: "第{current}/{total}章を分析中…"
+    analyzing: "本文を分析中…"
+    empty: "提案が見つかりませんでした。"
+    existing_hint: "既に存在します"
+    notes_title: "メモ"
+    apply_selected: "選択した項目を適用"
+    apply_all: "すべて適用"
+    cancel: "キャンセル"
+    applied: "{count} 件の項目を適用しました。"
+    applied_none: "何も適用されませんでした。"
+    error:
+      no_chapters: "この本には章がありません。"
+      no_content: "章にテキストがありません。"
+      not_configured: "AI が設定されていません（設定 > AI アシスタント）。"
+      generic: "生成に失敗しました。"
+    badge:
+      character: "キャラクター"
+      setting: "場所"
+      plot_point: "プロット"
+      lore: "テーマ"
+      relationship: "関係"
+      chapter: "章"
   offline_import:
     tab_file: "ファイル"
     tab_github: "GitHub から"

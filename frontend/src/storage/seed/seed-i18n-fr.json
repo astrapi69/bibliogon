@@ -1,5 +1,38 @@
 {
   "ui": {
+    "ai_extraction": {
+      "story_bible_button": "Générer à partir du texte du livre",
+      "storyboard_button": "Générer à partir du texte du livre",
+      "title": {
+        "story_bible": "Bible narrative depuis le texte",
+        "storyboard": "Storyboard depuis le texte"
+      },
+      "description": "L'IA analyse le texte du livre. Vérifiez les suggestions avant de les appliquer.",
+      "progress": "Analyse du chapitre {current}/{total}…",
+      "analyzing": "Analyse du texte du livre…",
+      "empty": "Aucune suggestion trouvée.",
+      "existing_hint": "Déjà présent",
+      "notes_title": "Remarques",
+      "apply_selected": "Appliquer la sélection",
+      "apply_all": "Tout appliquer",
+      "cancel": "Annuler",
+      "applied": "{count} entrées appliquées.",
+      "applied_none": "Rien appliqué.",
+      "error": {
+        "no_chapters": "Ce livre n'a aucun chapitre.",
+        "no_content": "Les chapitres ne contiennent aucun texte.",
+        "not_configured": "L'IA n'est pas configurée (Paramètres > Assistant IA).",
+        "generic": "La génération a échoué."
+      },
+      "badge": {
+        "character": "Personnage",
+        "setting": "Lieu",
+        "plot_point": "Intrigue",
+        "lore": "Thème",
+        "relationship": "Relation",
+        "chapter": "Chapitre"
+      }
+    },
     "offline_import": {
       "tab_file": "Fichier",
       "tab_github": "Depuis GitHub",
@@ -3295,8 +3328,6 @@
       "search_story_bible": "Rechercher dans la Bible de l'histoire",
       "take_snapshot": "Créer un instantané",
       "word_count": "Mots",
-      "no_story_bible_match": "Aucune entrée trouvée dans la Bible de l'histoire.",
-      "search_failed": "La recherche a échoué.",
       "undo": "Annuler",
       "redo": "Rétablir",
       "formatting": "Mise en forme",
@@ -3318,7 +3349,9 @@
       "align_right": "Droite",
       "align_justify": "Justifié",
       "list_group": "Liste",
-      "task_list": "Liste de tâches"
+      "task_list": "Liste de tâches",
+      "no_story_bible_match": "Aucune entrée trouvée dans la Bible de l'histoire.",
+      "search_failed": "La recherche a échoué."
     },
     "outliner": {
       "title": "Plan",

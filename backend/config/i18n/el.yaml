@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "Δημιουργία από το κείμενο του βιβλίου"
+    storyboard_button: "Δημιουργία από το κείμενο του βιβλίου"
+    title:
+      story_bible: "Story Bible από το κείμενο"
+      storyboard: "Storyboard από το κείμενο"
+    description: "Η τεχνητή νοημοσύνη αναλύει το κείμενο του βιβλίου. Ελέγξτε τις προτάσεις πριν τις εφαρμόσετε."
+    progress: "Ανάλυση κεφαλαίου {current}/{total}…"
+    analyzing: "Ανάλυση του κειμένου του βιβλίου…"
+    empty: "Δεν βρέθηκαν προτάσεις."
+    existing_hint: "Υπάρχει ήδη"
+    notes_title: "Σημειώσεις"
+    apply_selected: "Εφαρμογή επιλεγμένων"
+    apply_all: "Εφαρμογή όλων"
+    cancel: "Άκυρο"
+    applied: "Εφαρμόστηκαν {count} καταχωρήσεις."
+    applied_none: "Δεν εφαρμόστηκε τίποτα."
+    error:
+      no_chapters: "Αυτό το βιβλίο δεν έχει κεφάλαια."
+      no_content: "Τα κεφάλαια δεν περιέχουν κείμενο."
+      not_configured: "Η τεχνητή νοημοσύνη δεν έχει ρυθμιστεί (Ρυθμίσεις > Βοηθός AI)."
+      generic: "Η δημιουργία απέτυχε."
+    badge:
+      character: "Χαρακτήρας"
+      setting: "Τοποθεσία"
+      plot_point: "Πλοκή"
+      lore: "Θέμα"
+      relationship: "Σχέση"
+      chapter: "Κεφάλαιο"
   offline_import:
     tab_file: "Αρχείο"
     tab_github: "Από το GitHub"

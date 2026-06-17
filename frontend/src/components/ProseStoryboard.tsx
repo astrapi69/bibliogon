@@ -58,6 +58,7 @@ import {
 } from "./StoryboardAnnotations"
 import {LabelChip, LabelSelect, StatusChip, StatusSelect} from "./ChapterStatusLabel"
 import ChapterLabelManager from "./ChapterLabelManager"
+import AiStoryExtraction from "./AiStoryExtraction"
 import type {ChapterStatus} from "../api/client"
 import styles from "./Storyboard.module.css"
 
@@ -161,6 +162,13 @@ export default function ProseStoryboard({
         return () => {
             cancelled = true
         }
+    }, [bookId])
+
+    const reloadChapters = useCallback(() => {
+        getStorage()
+            .chapters.list(bookId)
+            .then(setChapters)
+            .catch(() => undefined)
     }, [bookId])
 
     // Per-book chapter labels (CHAPTER-STATUS-LABELS-01). Loaded
@@ -280,6 +288,16 @@ export default function ProseStoryboard({
                         <Tags size={14} />
                         {t("ui.chapter_label.manage", "Manage labels")}
                     </button>
+                    <AiStoryExtraction
+                        bookId={bookId}
+                        target="storyboard"
+                        onApplied={reloadChapters}
+                        triggerClassName={styles.actionButton}
+                        triggerLabel={t(
+                            "ui.ai_extraction.storyboard_button",
+                            "Aus Buchtext generieren",
+                        )}
+                    />
                 </div>
             </div>
             {showLabelManager && (

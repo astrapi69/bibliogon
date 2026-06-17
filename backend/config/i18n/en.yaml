@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "Generate from book text"
+    storyboard_button: "Generate from book text"
+    title:
+      story_bible: "Story Bible from book text"
+      storyboard: "Storyboard from book text"
+    description: "The AI analyses your book text. Review the suggestions before applying them."
+    progress: "Analysing chapter {current}/{total}…"
+    analyzing: "Analysing book text…"
+    empty: "No suggestions found."
+    existing_hint: "Already exists"
+    notes_title: "Notes"
+    apply_selected: "Apply selected"
+    apply_all: "Apply all"
+    cancel: "Cancel"
+    applied: "{count} entries applied."
+    applied_none: "Nothing applied."
+    error:
+      no_chapters: "This book has no chapters."
+      no_content: "The chapters contain no text."
+      not_configured: "AI is not configured (Settings > AI Assistant)."
+      generic: "Generation failed."
+    badge:
+      character: "Character"
+      setting: "Location"
+      plot_point: "Plot"
+      lore: "Theme"
+      relationship: "Relationship"
+      chapter: "Chapter"
   offline_import:
     tab_file: "File"
     tab_github: "From GitHub"

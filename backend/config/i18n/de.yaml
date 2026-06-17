@@ -1,4 +1,33 @@
 ui:
+  ai_extraction:
+    story_bible_button: "Aus Buchtext generieren"
+    storyboard_button: "Aus Buchtext generieren"
+    title:
+      story_bible: "Story-Bibel aus Buchtext"
+      storyboard: "Storyboard aus Buchtext"
+    description: "Die KI analysiert den Buchtext. Prüfe die Vorschläge, bevor du sie übernimmst."
+    progress: "Analysiere Kapitel {current}/{total}…"
+    analyzing: "Buchtext wird analysiert…"
+    empty: "Keine Vorschläge gefunden."
+    existing_hint: "Bereits vorhanden"
+    notes_title: "Hinweise"
+    apply_selected: "Ausgewählte übernehmen"
+    apply_all: "Alle übernehmen"
+    cancel: "Abbrechen"
+    applied: "{count} Einträge übernommen."
+    applied_none: "Nichts übernommen."
+    error:
+      no_chapters: "Dieses Buch hat keine Kapitel."
+      no_content: "Die Kapitel enthalten keinen Text."
+      not_configured: "KI ist nicht konfiguriert (Einstellungen > KI-Assistent)."
+      generic: "Generierung fehlgeschlagen."
+    badge:
+      character: "Figur"
+      setting: "Ort"
+      plot_point: "Handlung"
+      lore: "Thema"
+      relationship: "Beziehung"
+      chapter: "Kapitel"
   offline_import:
     tab_file: "Datei"
     tab_github: "Von GitHub"
