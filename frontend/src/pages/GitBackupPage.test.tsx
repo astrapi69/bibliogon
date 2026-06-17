@@ -10,6 +10,10 @@
  *   "Initialize local clone" label, NOT the "no repository" message.
  * - API mode + not-initialized + NO URL → the original "no repository"
  *   message + "Initialize repository" label.
+ * - API mode + initialized + URL set → the normal commit workflow, not
+ *   the init button (#380, completing the four-state matrix; the
+ *   clickable external-tab URL link itself is pinned in
+ *   GitRepoInfo.test.tsx).
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -137,5 +141,16 @@ describe("GitBackupPage", () => {
             expect(screen.getByText(/noch kein Repository vorhanden/i)).toBeInTheDocument(),
         );
         expect(screen.queryByTestId("git-repo-info")).not.toBeInTheDocument();
+    });
+
+    it("API mode + initialized + URL set → normal commit workflow, not the init button", async () => {
+        repoUrl = "https://github.com/me/book.git";
+        gitBackupState = { status: { initialized: true } };
+        render(<GitBackupPage />);
+        await waitFor(() => expect(screen.getByTestId("git-commit-message")).toBeInTheDocument());
+        expect(screen.getByTestId("git-commit-btn")).toBeInTheDocument();
+        expect(screen.getByTestId("git-repo-info")).toBeInTheDocument();
+        expect(screen.queryByTestId("git-init-btn")).not.toBeInTheDocument();
+        expect(screen.queryByText(/noch kein Repository vorhanden/i)).not.toBeInTheDocument();
     });
 });
