@@ -30,8 +30,11 @@
  */
 
 import { FileText, LayoutGrid, Maximize2, Minimize2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import { useI18n } from "../hooks/useI18n";
+import { EditorMenu } from "../lib/components/EditorMenu";
+import { buildComicEditorMenu } from "./buildComicEditorMenu";
 
 import {
   ComicPanelGrid,
@@ -90,6 +93,7 @@ export default function ComicBookEditor({
   isPublished,
 }: Props) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const {
     sidebars,
     pluginInfo,
@@ -130,6 +134,22 @@ export default function ComicBookEditor({
     panelBubblesMap,
   } = useComicBookEditor(bookId);
 
+  const comicMenu = buildComicEditorMenu({
+    t,
+    navigate,
+    onShowMetadata,
+    onShowStoryboard,
+    onAddPage: handleAddPage,
+    onDeletePage: () => {
+      if (activePageId != null) void handleDeletePage(activePageId);
+    },
+    onAddPanel: handleAddPanel,
+    onDeletePanel: handleDeletePanel,
+    hasActivePage: activePageId != null,
+    canAddPanel: activePageId != null && !atPanelCapacity,
+    hasSelectedPanel: selectedPanelId != null,
+  });
+
   return (
     <div
       data-testid="comic-book-editor-root"
@@ -151,6 +171,13 @@ export default function ComicBookEditor({
         >
           {t("ui.comic_book_editor.back", "Zurück")}
         </button>
+        <EditorMenu
+          groups={comicMenu.groups}
+          onAction={comicMenu.onAction}
+          disabled={comicMenu.disabled}
+          triggerLabel={t("ui.editor_menu.open", "Menü")}
+          testIdPrefix="comic-book-editor-menu"
+        />
         {onTitleSave ? (
           <EditableTitle
             value={bookTitle}

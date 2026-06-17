@@ -54,6 +54,8 @@ import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useSidebarCollapse } from "../hooks/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { EditorMenu } from "../lib/components/EditorMenu";
+import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
 import { RadixSelect } from "../components/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/useTopics";
@@ -348,6 +350,14 @@ export default function ArticleEditor() {
     const coreFields = articleTypesSnapshot.types[article.content_type]?.core_fields;
     const showCore = (field: string): boolean => coreFields == null || coreFields.includes(field);
 
+    const articleMenu = buildArticleEditorMenu({
+        t,
+        navigate,
+        onExport: (fmt) => void handleExport(fmt),
+        onDelete: () => void handleDelete(),
+        onAiGenerate: (field) => void handleAiGenerate(field),
+    });
+
     return (
         <div data-testid="article-editor" className={layout.page}>
             <h1 className="sr-only">{article.title || "Bibliogon"}</h1>
@@ -356,6 +366,13 @@ export default function ArticleEditor() {
                     open={sidebarOpen}
                     onToggle={toggleSidebar}
                     testId="article-editor-sidebar-toggle"
+                />
+                <EditorMenu
+                    groups={articleMenu.groups}
+                    onAction={articleMenu.onAction}
+                    disabled={articleMenu.disabled}
+                    triggerLabel={t("ui.editor_menu.open", "Menü")}
+                    testIdPrefix="article-editor-menu"
                 />
                 <button
                     type="button"

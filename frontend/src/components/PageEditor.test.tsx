@@ -17,20 +17,28 @@ import {
   waitFor,
 } from "@testing-library/react";
 
+import { MemoryRouter } from "react-router-dom";
+
 import PageEditor from "./PageEditor";
 import type { Page } from "../api/client";
 import { expectNoA11yViolations } from "../test-utils/a11y";
 import { FeatureTestProvider } from "../features/FeatureTestProvider";
 
-// PdfExportControls (mounted inside the editor header) uses useFeature,
-// which requires a FeatureProvider. Wrap every render so the real
-// registry is present; api mode keeps pandoc-export active, matching
-// these tests' working-export assumptions.
+// PdfExportControls (mounted inside the editor header) uses useFeature, which
+// requires a FeatureProvider; the header EditorMenu's help actions use
+// useNavigate, which requires a Router. Wrap every render so both are present;
+// api mode keeps pandoc-export active, matching these tests' working-export
+// assumptions.
 function render(
   ui: React.ReactElement,
   options?: Parameters<typeof rtlRender>[1],
 ) {
-  return rtlRender(<FeatureTestProvider>{ui}</FeatureTestProvider>, options);
+  return rtlRender(
+    <MemoryRouter>
+      <FeatureTestProvider>{ui}</FeatureTestProvider>
+    </MemoryRouter>,
+    options,
+  );
 }
 
 class ResizeObserverStub {
