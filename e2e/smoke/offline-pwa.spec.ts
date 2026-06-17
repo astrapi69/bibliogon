@@ -235,6 +235,52 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByText("Offline Book").first()).toBeVisible();
     });
 
+    test("quality tab computes metrics offline (no /api, no failure message)", async ({
+        page,
+    }) => {
+        // Regression for the P1 "Qualitaetsanalyse fehlgeschlagen" bug: the
+        // tab called /api/ms-tools/metrics, which guardedFetch rejects in
+        // dexie mode. It now computes the metrics client-side from the
+        // chapters in the storage seam. Import a book with a text chapter,
+        // then open Metadata > Qualitaet.
+        await page.goto("/");
+        await page.getByTestId("dashboard-empty-import").click();
+        await expect(page.getByTestId("offline-import-dialog")).toBeVisible();
+        await page.getByTestId("offline-import-input").setInputFiles({
+            name: "quality-offline-book.md",
+            mimeType: "text/markdown",
+            buffer: Buffer.from(
+                "# Quality Offline Book\n\nDas ist ein einfacher Satz. " +
+                    "Hier folgt eigentlich ein wirklich langer zweiter Satz mit " +
+                    "vielen Woertern damit die Analyse etwas zu rechnen hat.",
+            ),
+        });
+        await expect(
+            page.getByTestId("offline-import-format-markdown"),
+        ).toBeVisible();
+        await page.getByTestId("offline-import-confirm").click();
+        await expect(page.getByTestId("offline-import-dialog")).toHaveCount(0);
+
+        // Open the freshly-imported book's editor, then the metadata view.
+        await page
+            .locator('[data-testid^="book-card-"]')
+            .filter({hasText: "Quality Offline Book"})
+            .first()
+            .click();
+        await page.waitForURL(/\/book\//);
+        await page.goto(`${page.url().split("?")[0]}?view=metadata`);
+
+        await page.getByTestId("metadata-tab-quality").click();
+
+        // The table renders (metrics computed) and the failure message is gone.
+        await expect(page.getByTestId("quality-table")).toBeVisible({
+            timeout: 10000,
+        });
+        await expect(
+            page.getByText(/fehlgeschlagen|failed/i),
+        ).toHaveCount(0);
+    });
+
     test("view switcher works offline: BD + AD grid -> list -> grid, persists (#106)", async ({
         page,
     }) => {
