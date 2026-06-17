@@ -31,12 +31,16 @@ export class DashboardPage {
         await this.waitForLoaded();
     }
 
-    /** Either the filter bar (books) or the article-list root has mounted. */
+    /** The dashboard page header has mounted. Uses the always-present main
+     *  header of each surface, NOT a count-gated element: the books filter
+     *  bar only renders with >1 book and the `article-list` grid/list root
+     *  only renders with >=1 article (`Dashboard.tsx` / `ArticleList.tsx`),
+     *  so an empty or single-item dashboard would never satisfy those. */
     async waitForLoaded(): Promise<void> {
         const probe =
             this.kind === "books"
-                ? this.page.getByTestId("filter-bar")
-                : this.page.getByTestId("article-list");
+                ? this.page.getByTestId("dashboard-main-header")
+                : this.page.getByTestId("article-list-main-header");
         await expect(probe).toBeVisible({timeout: 10_000});
     }
 

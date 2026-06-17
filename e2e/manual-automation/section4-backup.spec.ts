@@ -55,9 +55,11 @@ test.describe("Section 4 — TC-040 full backup cycle (release blocker)", () => 
 
         const backup = new BackupHelper(page);
 
-        // 2. Export + sanity-check the bundle shape.
+        // 2. Export + sanity-check the .bgb archive shape (a ZIP with the
+        //    JSON entity graph + image bytes; see bgbExport.ts).
         const {path, bundle} = await backup.exportFull();
-        expect(bundle.version).toBe(1);
+        expect(bundle.manifest.format).toBe("bibliogon-backup");
+        expect(bundle.manifest.version).toBe("3.0");
         expect(bundle.data.books).toHaveLength(1);
         expect(bundle.data.books[0].chapters).toHaveLength(3);
         expect(bundle.data.articles.length).toBeGreaterThanOrEqual(1);

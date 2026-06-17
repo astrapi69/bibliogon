@@ -8,7 +8,8 @@
   },
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
-    "@playwright/test": "^1.49.0"
+    "@playwright/test": "^1.49.0",
+    "fflate": "0.8.3"
   },
   "engines": {
     "node": ">=24.0.0"

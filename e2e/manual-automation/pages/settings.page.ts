@@ -69,11 +69,24 @@ export class SettingsPage {
 
     // --- language switcher (TC-052) --------------------------------------
 
-    /** Pick a UI language via the Verhalten language RadixSelect + save. */
+    /** Pick a UI language via the Verhalten language RadixSelect + save.
+     *
+     * Awaits the settings PATCH so the new ``default_language`` is persisted
+     * before the caller navigates — otherwise a follow-up ``goto`` reloads
+     * the app while the write is still in flight and reads the stale
+     * language (the TC-052 spot-check race). */
     async selectLanguage(lang: UiLanguage): Promise<void> {
         await this.goto("verhalten");
         await this.page.getByTestId("settings-language-trigger").click();
         await this.page.getByTestId(`settings-language-item-${lang}`).click();
-        await this.page.getByTestId("verhalten-settings-save").click();
+        await Promise.all([
+            this.page.waitForResponse(
+                (res) =>
+                    res.url().includes("/api/settings/app") &&
+                    res.request().method() === "PATCH" &&
+                    res.ok(),
+            ),
+            this.page.getByTestId("verhalten-settings-save").click(),
+        ]);
     }
 }
