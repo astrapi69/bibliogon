@@ -1,8 +1,9 @@
 # Bibliogon Backlog
 
-Latest release: v0.51.0 (2026-06-12) — see [ROADMAP.md](ROADMAP.md) and [changelog/releases/v0.51.0.md](../changelog/releases/v0.51.0.md).
+Latest release: v0.54.0 (2026-06-17) — see [ROADMAP.md](ROADMAP.md) and [docs/CHANGELOG.md](CHANGELOG.md).
 
-Last updated: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. The full Scrivener P3 cluster SHIPPED 2026-06-01 (CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01 closed-by-discovery, WRITING-HISTORY-STATS-01) + a P0 ALEMBIC-UPGRADE-CHAIN-FIX (the `alembic upgrade head` chain was broken at a6e7f8a9b0c1; fixed + regression-gated), all archived to 2026-06.md. STORY-BIBLE-RELATIONSHIP-GRAPH-01 (P2) SHIPPED 2026-06-01 (interactive @xyflow/react graph: nodes/edges, create/delete, detail panel + nav, position persistence + PNG export; archived to 2026-06.md). The P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
+Last updated: 2026-06-17 (Session-9 + explorations-cleanup reconciliation (#372). The v0.52.0 → v0.54.0 arc shipped (recorded in ROADMAP "Recently shipped — Session 9"): god-file burn-down to 0, serialized RMW, CI 3-tier + Test Impact Analysis, security-CI Phase 2, complexity baseline 15, quality-report extensions, selective + full `.bgb` client backup, PWA SW-update banner, 52-TC manual-testplan automation, import parity (GitHub/URL/HTML #352/#353), Settings Daten tab #338, structured EditorMenu #322, recent-docs strip #314, export preview #316, StatusBadge #318, Event Recording base EVT-01..04. Closed issues #340/#342/#346/#347/#349/#351/#352/#353/#355/#356/#358/#359/#360/#363/#366/#368. New filings this pass: EVT-05/06 (P2), QUALITY-REPORT-PDF-HARDCODED-HEX-01 (P3), EDITOR-CONTEXT-MENU-EXPAND-01 (P3, #370), SETTINGS-APP-REQUEST-CASCADE-01 (P3), MEDIUM-IMPORT-OFFLINE-PATH-VERIFY-01 (P3), EXPLORATION-FEATURES-TRIAGE-REFRESH-01 (P4), COMIC-FOUNDATION-RESIDUAL-POLISH-01 (P5). children-book-plugin "deferred"-framing removed (shipped as plugin-kinderbuch). Prettier 2-space/4-space mix tracked by the existing FRONTEND-LINT-FORMAT-SETUP-01 (P5).)
+Previous: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. The full Scrivener P3 cluster SHIPPED 2026-06-01 (CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01 closed-by-discovery, WRITING-HISTORY-STATS-01) + a P0 ALEMBIC-UPGRADE-CHAIN-FIX (the `alembic upgrade head` chain was broken at a6e7f8a9b0c1; fixed + regression-gated), all archived to 2026-06.md. STORY-BIBLE-RELATIONSHIP-GRAPH-01 (P2) SHIPPED 2026-06-01 (interactive @xyflow/react graph: nodes/edges, create/delete, detail panel + nav, position persistence + PNG export; archived to 2026-06.md). The P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
 Previous: 2026-05-27 (Settings-Completeness audit close — all 4 nice-to-haves shipped on user-directive instead of filed. PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3) shipped at ``0a28934``; KDP-DEFAULT-MARKETPLACE-01 (P5) at ``186f1af``; CONFIRMATION-SKIP-MODE-01 (P5) at ``90e89fc``. Date-locale bug already shipped at ``56a23ef``. The 3 newly-filed backlog items archived to docs/archive/roadmap/2026-05.md the same day. P3=17, P5=12, Total active 57.)
 Previous: 2026-05-27 (Settings-Completeness audit closure — 3 new backlog filings from the audit: PICTURE-BOOK-PDF-DEFAULTS-SETTINGS-01 (P3, RCU 2-key pattern for picture-book PDF format + bleed defaults), KDP-DEFAULT-MARKETPLACE-01 (P5, trigger-gated), CONFIRMATION-SKIP-MODE-01 (P5, trigger-gated). Date-locale bug (8 surfaces, hardcoded ``"de-DE"`` + binary-locale ternary) shipped as fix(i18n) commit ``56a23ef`` with the new ``formatLocaleDate`` shared helper. Page-size adjudication: left as-is (inline dropdown persists globally is correct). P3=18, P5=14, Total active 60.)
 Previous: 2026-05-27 (3 P5-bodied items moved from P3 to P5 section — PICTURE-BOOK-STORYBOARD-OPERATIONS-01, STORYBOARD-MOOD-FREE-PICKER-01, STORYBOARD-DRAG-CROSS-GROUP-ACT-UPDATE-01. Mis-location flagged by the prior handover audit; all 3 carry P5 body tags and should sit in the P5 section per the tier convention. P3=17, P5=12, Total active 57.)
@@ -17,8 +18,8 @@ Previous: 2026-05-26 (SETT-PHASE-1-QUICK-WINS-01 CLOSED — 9-commit ship of the
 Previous: 2026-05-25 (v0.37.0 RELEASED — 53 commits since v0.36.0 across two batches: (1) accessibility WCAG 2.1 AA audit + Danger Zone reset + bulk-restore parity + Medium-import progress polish; (2) Dashboard pagination + Book.repository_url + editor display settings + docs/archive/ restructure + ROADMAP refresh + stale-doc hygiene. Backend pytest 2214 → 2269 (+55); Vitest 1986 → 2037 (+51); i18n 75/75.)
 Previous: 2026-05-25 DASHBOARD-PAGINATION-LOAD-MORE-01 / BOOK-REPOSITORY-URL-FIELD-01 / EDITOR-DISPLAY-SETTINGS-01 / COMMENTS-ADMIN-PAGINATION-01 CLOSED via the v0.37.0 release cycle.
 Previous: 2026-05-23 ACCESSIBILITY-AUDIT-WCAG-AA-01 + DANGER-ZONE-RESET-EVERYTHING-01 + BULK-RESTORE-PARITY-01 CLOSED via 7+5+2-commit ships across v0.37.0.
-Current version: v0.37.0
-Open tasks: 57 active (P3=17 + P4=28 + P5=12; P0=P1=P2=0) + 2 BLOCKED-on-upstream entries
+Current version: v0.54.0
+Open tasks: P1=1 (release readiness) + P2=2 (EVT-05/06, multi-agent decisions) + P3 + P4 + P5 themed items below + 2 BLOCKED-on-upstream entries (DEP-05, click-v8.3/gTTS). Per-tier counts are not pinned here (they drift fast); the section bodies are the source of truth.
 Archive: [docs/archive/roadmap/backlog-recently-closed-2026-05-02.md](archive/roadmap/backlog-recently-closed-2026-05-02.md)
 
 Living backlog. Daily-planning view of ROADMAP work. ROADMAP stays
@@ -44,7 +45,8 @@ store.
 ## ROADMAP cross-reference (curated planning view)
 
 - **AR-01 validation log** — see ROADMAP > P3.
-- **DEP-02** (TipTap 3) — see ROADMAP > Blocked / Upstream Wait.
+- ~~**DEP-02** (TipTap 3)~~ — RESOLVED, shipped v0.49.0 (see
+  `docs/explorations/dependency-strategy.md` migration history).
 - **DEP-05** (elevenlabs 2.x) — see ROADMAP > Blocked / Upstream Wait.
 
 ---
@@ -57,17 +59,67 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-(none)
+- [ ] **RELEASE-READINESS-NEXT-CUT-01** (filed 2026-06-17) — the
+  `develop` branch carries the full v0.52.0 → v0.54.0+ post-release
+  arc; before the next tag, run the BACKUP-AKZEPTANZTEST cycle
+  (`e2e/smoke/backup-acceptance.spec.ts`, export → reset → import →
+  verify) AND the Aster real-browser Playwright smoke gate, then cut
+  per `release-workflow.md`. Not a feature — the release-gate
+  discipline standing between `develop` and the next release.
 
 ---
 
 ## P2 - High-Value User Features
 
-(none)
+- [ ] **EVT-05** (filed 2026-06-17) — Event Recording: optional
+  category/appState axis. Add an optional `category`
+  (storage/import/export/editor/network/error) + `action` string +
+  per-entry `appState` subset (mode/language/online/theme/version) to
+  each recorded event, additive to the current `EventType` enum;
+  surface it in the JSON/Markdown export. Effort M. Base EVT-01..04
+  shipped. See [EXP-002](explorations/EXP-002-user-event-recording.md).
+- [ ] **EVT-06** (filed 2026-06-17) — register `EVENT_RECORDING` in the
+  feature-strategy `ALWAYS_ACTIVE` set (`src/features/featureConfig.ts`)
+  so the recorder is a declared, always-active feature rather than
+  running ungated. Effort S. See
+  [EXP-002](explorations/EXP-002-user-event-recording.md).
+- [ ] **MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01** (was P3,
+  raised to P2 2026-06-17) — adjudicate the 6 open coordination
+  decisions in
+  [exploration-multi-agent-gitflow-coordination.md](explorations/exploration-multi-agent-gitflow-coordination.md)
+  (Strategic-Advisor divergent-state response, branch-state visibility,
+  cross-agent discovery, + the 3 rule-formalization picks) and either
+  fold the accepted ones into `.claude/rules/ai-workflow.md` or close as
+  accepted-as-is. Full body retained in the P3 theme below for history.
 
 ---
 
 ## P3 - Infrastructure / Quality
+
+- [ ] **QUALITY-REPORT-PDF-HARDCODED-HEX-01** (filed 2026-06-17,
+  follow-up to #360) — the quality-report PDF generator carries ~10
+  hardcoded hex color literals (colored tables / Flesch scale /
+  threshold bands) that bypass the theme-token system and the
+  `make verify-theme` hardcoded-hex gate. Replace with semantic tokens
+  or add to the allowlist with justification; the on-screen layout the
+  PDF mirrors already uses tokens. Effort S.
+- [ ] **EDITOR-CONTEXT-MENU-EXPAND-01** (filed 2026-06-17, #370) —
+  expose all toolbar functions in the editor right-click context menu,
+  grouped (clipboard / formatting / insert / structure), so the menu
+  reaches parity with the toolbar. Extends the existing
+  `editorContextMenuActions` module. Effort M.
+- [ ] **SETTINGS-APP-REQUEST-CASCADE-01** (filed 2026-06-17) —
+  investigate the `~15×` `GET /api/settings/app` request cascade on
+  load (multiple consumers each fetch the app-config independently
+  instead of sharing one cached read). Dedupe via a single provider /
+  query-cache so the page fires it once. Effort M; verify against the
+  Network tab + a Vitest that pins call-count.
+- [ ] **MEDIUM-IMPORT-OFFLINE-PATH-VERIFY-01** (filed 2026-06-17) —
+  verify the Medium import works end-to-end on the backendless
+  (`VITE_STORAGE_MODE=dexie`) build: the client importer (DOMParser +
+  fflate) routes through the storage seam with zero `/api` calls, and
+  CDN thumbnails cache to Dexie. Add/confirm the offline-PWA E2E
+  assertion; file a fix only if a gap surfaces. Effort S-M.
 
 - [ ] **VISUAL-REGRESSION-SCREENSHOTS-01** — Playwright screenshot-based
   visual regression to catch CSS regressions across the 12 theme variants
@@ -782,6 +834,15 @@ in the same session.)
 ---
 
 ## P4 - Roadmap / Future Phases
+
+- **EXPLORATION-FEATURES-TRIAGE-REFRESH-01** (P4, filed 2026-06-17) —
+  refresh the 2026-05-19 triage block in
+  [exploration-features-2026-05-15.md](explorations/exploration-features-2026-05-15.md)
+  against the v0.54.0 reality: features #1 (Writing Goals), #3
+  (Reading-time), #4 (Story Bible), #8 (DOCX export), #9 (Article→Book)
+  shipped; #6 (KDP wizard) partial; #2/#5/#10 partial; only #7
+  (multi-language book) genuinely open. Doc-only; close the shipped
+  rows and re-state the residual scope. Effort S.
 
 - **MOBILE-LAN-SYNC-01** (P4, FEATURE-REQUEST, filed 2026-06-05 from
   the GitHub-Pages-deploy / mobile-PWA work): let the GitHub-Pages PWA
@@ -1561,6 +1622,17 @@ Scrivener analysis items 8-10 (filed 2026-06-01 from
 ---
 
 ## P5 - Speculative / Nice-to-have
+
+- **COMIC-FOUNDATION-RESIDUAL-POLISH-01** (P5, trigger-gated, filed
+  2026-06-17 from the explorations audit): `plugin-comics` shipped its
+  foundation (Sessions 0-2: panels + multi-bubble + drag-to-position).
+  The residual polish from
+  [comic-foundation.md](explorations/comic-foundation.md) is nice-to-have
+  and unrequested: motion lines / speed effects, sound-effect typography,
+  RTL/manga panel reading-order, an explicit x/y position dialog, and
+  mobile (tap-to-select / pinch-resize / 44px target) UX. File concrete
+  sub-items only when a user asks; until then the exploration's
+  remaining scope lives here as the pointer.
 
 - **FRONTEND-LINT-FORMAT-SETUP-01** (P5, filed 2026-05-30):
   the frontend Prettier/ESLint path is not operative in the
