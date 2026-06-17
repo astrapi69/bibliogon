@@ -1,5 +1,6 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import type {Editor} from "@tiptap/react"
+import {useNavigate} from "react-router-dom"
 import {ChevronLeft, FileText, LayoutGrid, Maximize2, Minimize2} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {getStorage} from "../storage";
@@ -18,6 +19,8 @@ import EditableTitle from "./EditableTitle"
 import PdfExportControls from "./PdfExportControls"
 import RichTextToolbar from "./RichTextToolbar"
 import ThemeToggle from "./ThemeToggle"
+import {EditorMenu} from "../lib/components/EditorMenu"
+import {buildPictureBookEditorMenu} from "./buildPictureBookEditorMenu"
 import styles from "./PageEditor.module.css"
 
 interface Props {
@@ -70,6 +73,7 @@ export default function PageEditor({
     isPublished,
 }: Props) {
     const {t} = useI18n()
+    const navigate = useNavigate()
     const dialog = useDialog()
     const sidebars = useDualSidebarCollapse(
         "bibliogon-page-editor-thumbnails",
@@ -311,6 +315,18 @@ export default function PageEditor({
     // PDF-BLEED-MARKS-01 C2: state + handlers extracted into the
     // shared ``PdfExportControls`` component.
 
+    const pictureBookMenu = buildPictureBookEditorMenu({
+        t,
+        navigate,
+        onShowMetadata,
+        onShowStoryboard,
+        onAddPage: () => void handleAddPage(),
+        onDeletePage: () => {
+            if (activePageId) void handleDeletePage(activePageId)
+        },
+        hasActivePage: activePageId != null,
+    })
+
     return (
         <div
             data-testid="page-editor-root"
@@ -331,6 +347,13 @@ export default function PageEditor({
                 >
                     <ChevronLeft size={18} />
                 </button>
+                <EditorMenu
+                    groups={pictureBookMenu.groups}
+                    onAction={pictureBookMenu.onAction}
+                    disabled={pictureBookMenu.disabled}
+                    triggerLabel={t("ui.editor_menu.open", "Menü")}
+                    testIdPrefix="page-editor-menu"
+                />
                 {onTitleSave ? (
                     <EditableTitle
                         value={bookTitle}
