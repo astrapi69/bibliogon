@@ -427,6 +427,7 @@ export default function BookMetadataEditor({
                          * failed, the field is a normal free input
                          * backed by Book.repository_url. */}
                         <RepositoryUrlField
+                            bookId={book.id}
                             value={form.repository_url ?? ""}
                             onChange={(v) => set("repository_url", v)}
                             gitSyncStatus={gitSyncStatus}
