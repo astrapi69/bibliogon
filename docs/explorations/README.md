@@ -25,45 +25,46 @@ Exploration documents can transition to:
 
 ## Tracking table
 
-Last reviewed: 2026-05-23
+Last reviewed: 2026-06-17 (task-status audit against `develop`, v0.54.0)
 
-Value column reflects a subjective ROI judgement (user impact × adoption gain ÷ effort). Not a commitment.
+The **Done / Open** column reflects how many of a doc's concrete tasks/phases are implemented on `develop`, verified by code grep + closed GitHub issues. Value column reflects a subjective ROI judgement (user impact × adoption gain ÷ effort). Not a commitment.
 
-| Doc | Status | Effort | Value | Trigger to act |
-|---|---|---|---|---|
-| [plugin-git-sync.md](plugin-git-sync.md) | Exploration complete, phases planned | 5 phases, ~50-75h total | B | Real import need for a write-book-template repo (Phase 1). |
-| [desktop-packaging.md](desktop-packaging.md) | Launcher shipped (D-01..04); Tauri path undecided | 3-5 sessions (Tauri path) | B | 100+ active users AND 10%+ feedback cites install friction. |
-| [article-authoring.md](article-authoring.md) | Exploration, no architecture committed | TBD | B | Cross-posting friction increases; validation data collected. |
-| [tiptap-3-migration.md](tiptap-3-migration.md) | Pre-audit complete, blocked on upstream | 4-8h code + 1-2h regression | B | search-and-replace extension v0.2.0 published to npm (or fallback path activated). |
-| [children-book-plugin.md](children-book-plugin.md) | Architecture decided, deferred | 7 sessions | C | 3+ user requests OR Aster starts a new picture book OR paid commission. |
-| [monetization.md](monetization.md) | Deferred (donations-only today) | N/A (strategic) | C | User base grows past where donations cover costs. |
-| [dependency-strategy.md](dependency-strategy.md) | Active maintenance doc | Quarterly review | C (meta) | Quarterly cadence or major-bump session. |
-| [multi-user-saas.md](multi-user-saas.md) | Long-term, not committed | 30+ sessions | D (lowest) | 5000+ active users AND funding model independent of SaaS subscription. |
-| [i18n-strategy.md](i18n-strategy.md) | Vision, not committed (P4) | 11 tasks (S/M/L) | C | Hindi demand signal OR a community translation PR; prep RTL infra before Arabic. |
-| [EXP-002-user-event-recording.md](EXP-002-user-event-recording.md) | Base shipped; maturation scoped (P3) | 6 tasks (S/M) | B | A user bug report lost to in-memory buffer (EVT-02 Dexie persist) OR demand for a proactive Settings entry. |
+| Doc | Done / Open | Status | Trigger to act |
+|---|---|---|---|
+| [children-book-plugin.md](children-book-plugin.md) | ~6.5 / 0.5 | **Erledigt** — shipped as `plugin-kinderbuch` (Sessions 2-6: page editor, layouts, PDF/EPUB3, page-count warn). Residual: onboarding/help polish (Session 7). | Onboarding/help polish only. |
+| [exploration-features-2026-05-15.md](exploration-features-2026-05-15.md) | ~7 / 3 | **Teilweise** — #1/#3/#4/#8/#9 shipped, #6 KDP-wizard partial, #2/#5/#10 partial, #7 multi-lang open. | Per-feature triggers (see doc). |
+| [comic-foundation.md](comic-foundation.md) | ~2.5 / 0.5 | **Teilweise** — `plugin-comics` shipped (Sessions 0-2: panels + multi-bubble + drag). Open: motion-lines, sound-FX, RTL panel order, mobile UX. | File remaining polish as backlog. |
+| [exploration-bibliogon-mobile-selective-sync.md](exploration-bibliogon-mobile-selective-sync.md) | 4 / 2 | **Teilweise** — Phase 1 (LAN), Phase A (PWA), Phase 3 (offline + sync engine) shipped. Open: Phase C (selection/"Phone Library" UI), Phase D (dedicated sync backend + conflict surface). | Phase C/D scope decision. |
+| [EXP-002-user-event-recording.md](EXP-002-user-event-recording.md) | 4 / 2 | **Teilweise** — EVT-01..04 shipped (RingBuffer, Dexie persist, proactive Settings entry, JSON export). Open: EVT-05 (category/appState axis, M), EVT-06 (feature-strategy registration, S). | Demand for category taxonomy or feature-gate. |
+| [article-authoring.md](article-authoring.md) | ~1 / 2 | **Teilweise** — Article entity + editor + Medium import + Article→Book shipped. Open: publication-dispatch automation, per-platform status, promo posts. | Cross-posting friction; validation data. |
+| [mobile-strategy.md](mobile-strategy.md) | 1 / 3 | **Teilweise** — Phase 1 (responsive PWA) shipped. Phase 2-4 open. Recommendation doc; overlaps mobile-selective-sync. | User triage of mobile ROI. |
+| [desktop-packaging.md](desktop-packaging.md) | Launcher done | **Teilweise** — Simple Launcher (D-01/02/03) shipped Win/macOS/Linux. Tauri/Electron deferred by design. | 100+ users AND 10%+ feedback cites install friction. |
+| [dependency-strategy.md](dependency-strategy.md) | 7 / 1 | **Living doc** — refreshed 2026-06-17 (DEP-02 + DEP-09 marked done; community pins unpinned). Only DEP-05 (elevenlabs SDK) genuinely deferred. | Quarterly cadence or major-bump session. |
+| [exploration-multi-agent-gitflow-coordination.md](exploration-multi-agent-gitflow-coordination.md) | 1 / 5 | **Offen** — gitflow pattern is practiced; 6 formalization decisions pending user adjudication. No code. | Aster triages the 6 decisions. |
+| [i18n-strategy.md](i18n-strategy.md) | 0 / 11 | **Offen** — still 8 catalogs; no new languages, zero RTL infra. I18N-10 (QA pipeline) partial. | Hindi demand signal OR community PR; prep RTL before Arabic. |
+| [monetization.md](monetization.md) | deferred | **Offen** — donations-only; licensing infra dormant (`LICENSING_ENABLED = False`). | User base outgrows donations. |
+| [multi-user-saas.md](multi-user-saas.md) | deferred | **Offen** — single-user/offline-first held; no auth/tenant work. Contradicts current positioning. | 5000+ users AND funding independent of SaaS. |
 
-Archived explorations (shipped or historical) have moved to [archive/](archive/). Recent additions to the archive (2026-05-23 cleanup sweep): `article-editor-parity.md`, `articles-dashboard-parity-audit.md`, `backup-articles-audit.md`, `backup-articles-debug.md`, `donation-visibility-diagnosis.md`, `inline-styles-audit.md` (T-01), `installer-discovery-report.md` + `prompt-installer-discovery.md` (D-05 closed won't-fix), `optimization-report-2026-04-28.md`, `prompt-ux-convention-document.md` (yielded `docs/ux-conventions.md`), `secrets-refactor-audit.md`, `trash-card-parity-audit.md`, `trash-card-permanent-delete-recheck.md`, `trash-parity-audit.md`. Earlier additions: `ai-review-extension.md` (shipped v0.20.0), `git-based-backup.md` (shipped v0.21.0).
+Archived explorations (shipped or historical) live in [archive/](archive/). Newly archived (2026-06-17): `core-import-orchestrator.md` (CIO-01..05 all shipped), `plugin-git-sync.md` (PGS-01..05 all shipped), `tiptap-3-migration.md` (DEP-02 obsolete — TipTap 3.26.0 shipped v0.49.0). Prior cleanup sweep (2026-05-23): `article-editor-parity.md`, `articles-dashboard-parity-audit.md`, `backup-articles-audit.md`, `backup-articles-debug.md`, `donation-visibility-diagnosis.md`, `inline-styles-audit.md` (T-01), `installer-discovery-report.md` + `prompt-installer-discovery.md` (D-05 closed won't-fix), `optimization-report-2026-04-28.md`, `prompt-ux-convention-document.md` (yielded `docs/ux-conventions.md`), `secrets-refactor-audit.md`, `trash-card-parity-audit.md`, `trash-card-permanent-delete-recheck.md`, `trash-parity-audit.md`. Earlier: `ai-review-extension.md` (shipped v0.20.0), `git-based-backup.md` (shipped v0.21.0).
 
 ---
 
 ## Professional opinion: what to act on next
 
-The two A/B-tier recommendations from the previous review (AI Review Extension, Git-based backup) have both shipped (v0.20.0, v0.21.0) and moved to [archive/](archive/). The tracking table has been rebalanced.
+The 2026-06-17 audit found that **most of the previously "act-on-trigger" explorations have already shipped** — plugin-git-sync (all 5 phases), the core import orchestrator (CIO-01..05), TipTap 3, the children's-book plugin (as plugin-kinderbuch), the comics foundation (plugin-comics), and the majority of the 2026-05-15 feature batch. The live exploration set is now dominated by maturation tails and strategic deferrals, not greenfield work.
 
-**Highest tier today: plugin-git-sync Phase 1.** Exploration complete, first plugin-to-plugin dependency in the catalog. Acts on a concrete need (imported write-book-template repos) and stress-tests PluginForge for future plugin work. Estimated 12-18h for the import-only MVP.
+**Housekeeping (done in this pass):** the three fully-shipped docs (core-import-orchestrator, plugin-git-sync, tiptap-3-migration) moved to [archive/](archive/); `dependency-strategy.md` refreshed (DEP-02 + DEP-09 marked done, community-extension pins unpinned); `children-book-plugin.md`'s stale "deferred" framing removed.
 
-**Second tier: Desktop Packaging (Tauri path)**, conditional on a demand signal. The launcher binary from v0.17.0 already covers Windows / macOS / Linux. A Tauri-based redistribution would be a significant adoption move, but only once Docker friction is quantified through user feedback. Do not preemptively build it.
+**Highest-value open work with a clear path:**
+- **EXP-002 EVT-05 + EVT-06** — the error-report base shipped (RingBuffer, Dexie persist, Settings entry, JSON export). The two open tasks are small/medium and self-contained: a category/appState axis (M) and a feature-strategy registration (S).
+- **Mobile selective-sync Phase C/D** — the hard part (LAN + offline + sync engine) is live. What's missing is the user-facing selection surface ("Phone Library" view) and a Settings-level sync/conflict status. Most leverage if mobile is a priority, but it needs an explicit scope decision (and the sync-as-plugin-vs-core question, D1, is still open).
 
-**Third tier: TipTap 3 migration**, blocked on upstream `@sereneinserenade/tiptap-search-and-replace` v0.2.0 publishing to npm. Pre-audit done; fallback path identified (`prosemirror-search` adapter, ~50-80 LOC). Estimated 4-8h code once unblocked.
-
-**Fourth tier (speculative): Article Authoring.** Personal pain point (cross-posting workflow) combined with a clean narrative ("the tool I use to write about the tool"). Validation data needed before architecture work.
-
-**Deferrals that should stay deferred:**
-- Children's Book Plugin: 7 sessions for a niche where Aster already has a JS/TS toolchain. The architecture document is the shipped value for now. Revival criteria are clear and the pre-work is frozen, which is exactly the right state.
-- Multi-User SaaS: actively contradicts the local-first positioning the product is built on. Only revisit at 5000+ users, and even then a federated or device-sync model is a better fit than centralized SaaS.
-- Monetization: donations cover the current phase. Revisit when the funding gap is real, not speculative.
-
-**Cleanup status:** shipped explorations archived (AI Review Extension, Git-based backup). Live set contains only undecided or pending-trigger items.
+**Lower tiers (trigger-gated, stay deferred):**
+- **Article Authoring** publication/promo scope — the entity + editor shipped; publication-dispatch automation waits on cross-posting validation data.
+- **i18n expansion (EXP-001)** — zero of 11 tasks done; Hindi (LTR, no RTL blocker) is the cleanest first move, with RTL infra as the prerequisite for Arabic.
+- **Multi-Agent gitflow coordination** — process doc, 6 decisions awaiting Aster's adjudication; no code blocker.
+- **Desktop Packaging (Tauri)** — launcher already covers all three OSes; only act if install-friction feedback materializes.
+- **Monetization / Multi-User SaaS** — donations cover the current phase; SaaS contradicts the local-first positioning. Revisit only on the documented user-base triggers.
 
 ---
 

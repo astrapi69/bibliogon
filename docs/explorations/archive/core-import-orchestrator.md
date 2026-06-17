@@ -1,11 +1,17 @@
 # Core Import Orchestrator with Plugin-Based Format Handlers
 
-Status: Architecture decided, phased implementation planned.
-Last updated: 2026-04-23
+> **ARCHIVED 2026-06-17 — SHIPPED.** All five phases (CIO-01..05) are
+> implemented on `develop`: core detect/execute endpoints +
+> `backend/app/import_plugins/` protocol + handlers, plugin-git-sync
+> adoption, folder drag-drop, office (.docx/.epub) via Pandoc, and the
+> legacy-route cleanup. Kept for historical context; actual behaviour
+> lives in code + CHANGELOG.
+
+Status: Shipped (CIO-01..05). Archived 2026-06-17.
+Last updated: 2026-04-23 (original); archived 2026-06-17.
 Related explorations:
 - [plugin-git-sync.md](plugin-git-sync.md) — first plugin to implement the protocol defined here
-- [archive/git-based-backup.md](archive/git-based-backup.md) — core git integration (shipped v0.21.0), separate concern
-Revived when: starting Phase 1 (core wizard + detect endpoint).
+- [git-based-backup.md](git-based-backup.md) — core git integration (shipped v0.21.0), separate concern
 
 ---
 
