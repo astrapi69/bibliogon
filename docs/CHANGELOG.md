@@ -2,6 +2,102 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.54.0] - 2026-06-17
+
+The **baseline-zero + CI-tiering + authoring-depth** release. The god-file
+burn-down reaches its goal: `.filesize-baseline` is down to **0 entries**
+(`Editor.tsx` 981, `dexie-storage.ts` 13), so no source file is over its
+cohesion budget anymore. CI is restructured into **three tiers** — a fast PR
+gate (~6 min via selective `vitest --changed` / `pytest --testmon`), a full
+**nightly** suite (plugins, coverage, complexity, cohesion, E2E manual-
+automation), and a **weekly security** watcher — and **Security-CI Phase 2**
+now blocks on Critical/High advisories. The **complexity baseline** tightens
+from 20 to 15 (warn-only) and a **backend test-coverage audit** records 90.1%.
+The **Quality report** gains depth: nested-sentence ("Schachtelsatz")
+candidates per chapter, a color-coded sortable chapter comparison table, a
+genre benchmark scale for the Flesch score, a word-count transparency note, and
+an analysis-scope disclaimer. Authoring picks up **selective data export**, a
+**book-language combobox**, an **HTML export preview**, drag-and-drop file
+import, a recently-edited quick-access strip, a reusable editor status bar, and
+a **KI-Vorlage** (AI-template) introduction block. **User event recording**
+lands end-to-end (generic ring buffer + Dexie persistence + a proactive
+error-report Settings entry with JSON download). The docs grow a **manual test
+plan** (52 test cases), an **export-format inventory**, the **Settings-menu
+architecture** as a documented cross-project-reusable pattern, and two
+exploration notes (**EXP-001** i18n / language-expansion strategy, **EXP-002**
+user event-recording). Fixes span a **client-side PDF export** repair (pdfmake
+0.3 migration), **book-cover auto-save in Dexie mode**, a `.bgb` import crash on
+JSON-array fields, and a broad **responsive audit**. No schema migrations;
+existing data, backups (`.bgb`) and projects (`.bgp`) are unaffected.
+
+### Added
+- **Selective data export**: pick which entities to include when exporting a
+  full-data backup.
+- **KI-Vorlage (AI-template) introduction**: an introduction block + help link
+  on the AI-template panel. (#297)
+- **Book-language combobox**: a searchable language selector with custom-
+  language management, replacing the bare select.
+- **User event recording** (EVT-01..EVT-04): a generic `RingBuffer` with Dexie
+  persistence, a Settings entry point, and a proactive error-report download as
+  JSON. (#275, #274)
+- **HTML export preview** before exporting.
+- **Recently-edited quick-access strip** on the dashboard.
+- **Drag-and-drop file import** on the dashboards.
+- **Reusable editor status bar** with word count, reading time, and character
+  count.
+- **PWA "new version available" update banner** with a controlled
+  `skipWaiting` reload. (#324)
+- **Quality report depth**: nested-sentence ("Schachtelsatz") candidates per
+  chapter, a color-coded sortable chapter comparison table, a genre benchmark
+  scale for the Flesch score, a word-count transparency note, and an
+  analysis-scope disclaimer.
+- **Manual test plan** (52 test cases) plus an **export-format inventory** and
+  expanded help docs (selective export, quality-report depth, error reports,
+  KI-Vorlage, offline thumbnails). (#305, #336)
+- **Explorations**: EXP-001 (i18n / language-expansion strategy) and EXP-002
+  (user event-recording, as-built + gaps).
+
+### Changed
+- **Cohesion baseline reaches zero**: `.filesize-baseline` drops to 0 entries —
+  `Editor.tsx` split below 1000 lines (#268), `BookEditor` split 1187 -> 959
+  (#329) via a reusable grouped `EditorMenu`, and `ArticleList` brought under
+  the gate via an extracted `ArticleListHeader`.
+- **Three-tier CI**: a fast PR gate (selective `vitest --changed` /
+  `pytest --testmon`), a full nightly suite (plugins, coverage, complexity,
+  cohesion, E2E manual-automation + live-chunk check), and a weekly dependency-
+  security watcher. (#303, #336)
+- **Security-CI Phase 2**: the weekly watcher blocks on Critical/High
+  advisories.
+- **Complexity watcher Phase 2**: threshold lowered 20 -> 15 (warn-only).
+- **Backend test-coverage audit** (2026-06): recorded at 90.1%.
+- **Settings-menu architecture** documented as a cross-project-reusable pattern;
+  the book-metadata section nav adopts it.
+- **Architecture docs**: MODULE-ARCHITECTURE Session-9 patterns, mutually linked
+  architecture-doc set, refreshed VIBE-CODING-POLICY references.
+- Distinct `StatusBadge` color per publication status.
+
+### Fixed
+- **Client-side PDF export** broken on the pdfmake 0.3 migration (vfs + getBlob
+  API).
+- **Book cover** now auto-saves to `Book.cover_image` in Dexie mode. (#344)
+- **.bgb import** crashed binding JSON-array Book fields (`keywords`,
+  `categories`, `bisac_codes`, `chapter_summaries`,
+  `audiobook_skip_chapter_types`) — list/dict values are now re-serialized to
+  JSON strings on restore. (#349)
+- **.bgb backup** exports a ZIP with images (not imageless JSON) and shows
+  export progress. (#341, #346)
+- **Responsive audit + fixes**: 44px checkbox touch targets, AD<->BD filter-
+  sheet parity, editor sidebar pins and mobile exclusion, responsive metadata-
+  header buttons, sidebar closes on view switch. (#273, #277, #306)
+- **Lazy-route recovery** (P0): retry chunk import before reload to fix the
+  `/books/new` cold-start crash and stale-shell chunk-load failures. (#326)
+- KDP cover preview resolves via `useCoverUrl` instead of a raw `/api` call
+  (404 offline).
+- Picture-book speech-bubble PDF position matches the editor. (#267)
+- Writing-Goals dashboard widget hidden without books or sessions. (#343)
+- `btn-secondary` buttons covered by the theme contrast gate. (#347)
+- View-switcher right-aligned on the Article and Book dashboards. (#264)
+
 ## [0.53.1] - 2026-06-15
 
 A small UX patch over v0.53.0.
