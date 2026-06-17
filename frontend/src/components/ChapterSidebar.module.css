@@ -12,7 +12,11 @@
 .sidebar {
     width: 260px;
     min-width: 260px;
+    /* 100vh fallback first, then 100dvh so iOS/Android browser chrome
+     * (URL bar, home indicator) does not push the bottom of the sidebar
+     * below the visible area. */
     height: 100vh;
+    height: 100dvh;
     background: var(--bg-sidebar);
     color: var(--text-sidebar);
     display: flex;
@@ -172,4 +176,27 @@
     padding: 12px 16px 16px;
     border-top: 1px solid color-mix(in srgb, var(--text-sidebar) 6%, transparent);
     flex-shrink: 0;
+}
+
+/* Below the `menu` breakpoint (75rem / 1200px) the sidebar is a fixed
+ * overlay (see BookEditor). On short viewports the pinned footer
+ * (Metadaten + Werkzeuge + Exportieren) plus the header could exceed the
+ * viewport height, leaving the bottom menu items unreachable because only
+ * the chapter list scrolled. Make the WHOLE sidebar scroll instead: the
+ * list grows to its natural height and every menu item is reachable by
+ * scrolling. The safe-area padding keeps the last item clear of the iOS
+ * home indicator. */
+@media (max-width: 74.99rem) {
+    .sidebar {
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        overscroll-behavior: contain;
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .list {
+        flex: 0 0 auto;
+        overflow-y: visible;
+        min-height: 0;
+    }
 }

@@ -365,6 +365,7 @@ export default function ChapterSidebar({
           className={`btn-sidebar-block ${showMetadata ? "is-active" : ""}`}
           style={{ marginBottom: 6 }}
           onClick={onMetadata}
+          data-testid="chapter-sidebar-metadata"
         >
           <FileText size={14} /> {t("ui.sidebar.metadata", "Metadaten")}
         </button>
@@ -399,6 +400,7 @@ export default function ChapterSidebar({
             className="btn-sidebar-block"
             onClick={onExport}
             disabled={chapters.length === 0}
+            data-testid="chapter-sidebar-export"
           >
             <Download size={14} /> {t("ui.sidebar.export", "Exportieren...")}
           </button>
