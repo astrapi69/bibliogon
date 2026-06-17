@@ -159,7 +159,7 @@ export function UpdateCheckButton() {
                     data-testid="about-update-status"
                     role="status"
                 >
-                    {t("ui.about.update_up_to_date", "Sie verwenden die aktuelle Version.")}
+                    {t("ui.about.update_up_to_date", "Sie verwenden die aktuellste Version.")}
                 </span>
             ) : status === "error" ? (
                 <span
