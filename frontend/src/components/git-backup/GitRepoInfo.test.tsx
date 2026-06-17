@@ -4,9 +4,9 @@
  * Pins the shared Git-repository info card contract:
  * - The repository URL renders as an external link in both modes
  *   (policy #78: the URL display stays active even in Dexie mode).
- * - Desktop/API mode shows the branch + sync status from useGitStatus.
- * - Dexie mode (git ops unavailable) shows the "nicht verfügbar
- *   (Desktop-App benötigt)" branch line and disables the Pull button.
+ * - Desktop/API mode with a local clone shows the branch + sync status.
+ * - No local clone (Dexie or pre-clone) + GitHub URL shows the remote
+ *   default branch (#363); non-GitHub → "nur GitHub unterstützt".
  * - The Pull button (showPull) fires api.git.pull + a success toast in
  *   API mode, and is disabled with the desktop-app reason in Dexie mode.
  */
@@ -49,6 +49,11 @@ vi.mock("../../hooks/useGitStatus", () => ({
     useGitStatus: () => gitStatus,
 }));
 
+let remoteBranch: { status: string; branch?: string } = { status: "idle" };
+vi.mock("../../hooks/useRemoteDefaultBranch", () => ({
+    useRemoteDefaultBranch: () => remoteBranch,
+}));
+
 const mockPull = vi.fn();
 vi.mock("../../api/client", () => ({
     api: { git: { pull: (...args: unknown[]) => mockPull(...args) } },
@@ -80,6 +85,7 @@ describe("GitRepoInfo", () => {
             loading: false,
             refresh: vi.fn(async () => {}),
         };
+        remoteBranch = { status: "idle" };
         mockPull.mockReset();
         mockSuccess.mockReset();
     });
@@ -103,13 +109,42 @@ describe("GitRepoInfo", () => {
         expect(branch.textContent).toContain("Aktuell");
     });
 
-    it("shows the desktop-app branch hint in Dexie mode", () => {
+    it("no local clone + GitHub URL → shows remote branch, NOT 'kein lokaler Klon' (regression #363)", () => {
+        gitStatus.initialized = false;
+        gitStatus.branch = null;
+        remoteBranch = { status: "ok", branch: "main" };
+        render(<GitRepoInfo bookId="b1" url={URL} />);
+        const branch = screen.getByTestId("git-repo-info-branch").textContent ?? "";
+        expect(branch).toContain("main");
+        expect(branch).toContain("Remote");
+        expect(branch).not.toContain("kein lokaler Klon");
+    });
+
+    it("Dexie mode + GitHub URL → shows the remote default branch", () => {
         featureActive = false;
         gitStatus.available = false;
+        gitStatus.initialized = false;
+        remoteBranch = { status: "ok", branch: "develop" };
         render(<GitRepoInfo bookId="b1" url={URL} />);
+        expect(screen.getByTestId("git-repo-info-branch").textContent).toContain("develop");
+    });
+
+    it("non-GitHub URL → shows the GitHub-only hint", () => {
+        gitStatus.initialized = false;
+        remoteBranch = { status: "unsupported" };
+        render(<GitRepoInfo bookId="b1" url="https://gitlab.com/me/book.git" />);
         expect(screen.getByTestId("git-repo-info-branch").textContent).toContain(
-            "Desktop-App benötigt",
+            "nur GitHub unterstützt",
         );
+    });
+
+    it("remote lookup error → shows the unavailable fallback", () => {
+        gitStatus.initialized = false;
+        remoteBranch = { status: "error" };
+        render(<GitRepoInfo bookId="b1" url={URL} />);
+        const branch = screen.getByTestId("git-repo-info-branch").textContent ?? "";
+        expect(branch).toContain("nicht verfügbar");
+        expect(branch).not.toContain("nur GitHub");
     });
 
     it("fires api.git.pull + success toast on Pull in API mode", async () => {
