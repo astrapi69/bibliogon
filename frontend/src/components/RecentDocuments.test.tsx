@@ -35,6 +35,20 @@ function renderIt() {
   );
 }
 
+function makeDocs(count: number): RecentDocument[] {
+  return Array.from({ length: count }, (_, i) => ({
+    id: `b${i}`,
+    title: `Book ${i}`,
+    kind: "book" as const,
+    updatedAt: "",
+  }));
+}
+
+/** The chip strip is the immediate sibling div under the section. */
+function chipStrip() {
+  return screen.getByTestId("recent-documents").querySelector("div")!;
+}
+
 describe("RecentDocuments", () => {
   beforeEach(() => {
     navigateMock.mockReset();
@@ -60,6 +74,32 @@ describe("RecentDocuments", () => {
     const chip = screen.getByTestId("recent-doc-b1");
     expect(chip.textContent).toContain("My Book");
     expect(chip.textContent).toContain("hours ago");
+  });
+
+  it("wraps chips (no horizontal scroll container) with a single item (#393)", () => {
+    recentMock.mockReturnValue(makeDocs(1));
+    renderIt();
+    const strip = chipStrip();
+    expect(strip.className).toContain("flex-wrap");
+    expect(strip.className).not.toContain("overflow-x-auto");
+  });
+
+  it("wraps chips (no horizontal scroll) with a few items", () => {
+    recentMock.mockReturnValue(makeDocs(3));
+    renderIt();
+    const strip = chipStrip();
+    expect(strip.className).toContain("flex-wrap");
+    expect(strip.className).not.toContain("overflow-x-auto");
+    expect(screen.getAllByTestId(/^recent-doc-/)).toHaveLength(3);
+  });
+
+  it("still wraps chips with many items (never an x-scrollbar)", () => {
+    recentMock.mockReturnValue(makeDocs(5));
+    renderIt();
+    const strip = chipStrip();
+    expect(strip.className).toContain("flex-wrap");
+    expect(strip.className).not.toContain("overflow-x-auto");
+    expect(screen.getAllByTestId(/^recent-doc-/)).toHaveLength(5);
   });
 
   it("navigates to the editor on click", () => {

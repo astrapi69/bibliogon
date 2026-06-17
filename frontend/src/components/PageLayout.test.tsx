@@ -34,6 +34,21 @@ describe("PageLayout (Dialog->Pages shared layout)", () => {
         expect(screen.getByTestId("theme-toggle")).toBeInTheDocument();
     });
 
+    it("hides the brand text on narrow viewports (icon-only on mobile)", () => {
+        // #392: the "Bibliogon" wordmark is `hidden sm:inline` so only the
+        // BookOpen icon shows below the `sm` (640px) breakpoint.
+        renderLayout(
+            <PageLayout title="P" testId="p">
+                x
+            </PageLayout>,
+        );
+        const brand = screen.getByText("Bibliogon");
+        expect(brand).toHaveClass("hidden");
+        expect(brand).toHaveClass("sm:inline");
+        // The home button (with the icon) stays visible at every viewport.
+        expect(screen.getByTestId("p-home")).toBeInTheDocument();
+    });
+
     it("renders a back button that calls onBack and carries the i18n aria-label", () => {
         const onBack = vi.fn();
         renderLayout(
