@@ -234,3 +234,187 @@ describe("runGitHubImport", () => {
         expect(summary.items.map((i) => i.status)).toEqual(["skipped", "error"]);
     });
 });
+
+describe("parseGitHubUrl edge cases and boundaries", () => {
+    it("trims whitespace and a trailing slash", () => {
+        expect(parseGitHubUrl("  https://github.com/octo/cat/  ")).toEqual({
+            owner: "octo",
+            repo: "cat",
+            ref: undefined,
+            path: "",
+        });
+    });
+
+    it("accepts an uppercase host and ignores query + hash", () => {
+        expect(parseGitHubUrl("https://GitHub.com/octo/cat?tab=readme#top")).toMatchObject({
+            owner: "octo",
+            repo: "cat",
+        });
+    });
+
+    it("parses a deep tree sub-path", () => {
+        expect(parseGitHubUrl("https://github.com/o/r/tree/dev/a/b/c/d")).toEqual({
+            owner: "o",
+            repo: "r",
+            ref: "dev",
+            path: "a/b/c/d",
+        });
+    });
+
+    it("handles long names and unicode in the repo (boundary)", () => {
+        const owner = "o".repeat(120);
+        const repo = "raepoe-buch-📚";
+        expect(parseGitHubUrl(`${owner}/${repo}`)).toMatchObject({ owner, repo });
+    });
+
+    it("returns null for whitespace-only input (edge)", () => {
+        expect(parseGitHubUrl("   ")).toBeNull();
+        expect(parseGitHubUrl("\t\n")).toBeNull();
+    });
+});
+
+describe("listGitHubContents edge cases and boundaries", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("returns an empty array for an empty directory (edge)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ json: [] })),
+        );
+        await expect(listGitHubContents({ owner: "o", repo: "r", path: "" }, "")).resolves.toEqual(
+            [],
+        );
+    });
+
+    it("wraps a single-file object response into one entry (edge)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () =>
+                fakeRes({
+                    json: {
+                        name: "only.md",
+                        path: "only.md",
+                        type: "file",
+                        size: 3,
+                        download_url: "u",
+                        sha: "s",
+                    },
+                }),
+            ),
+        );
+        const entries = await listGitHubContents(
+            { owner: "o", repo: "r", path: "only.md" },
+            "only.md",
+        );
+        expect(entries).toHaveLength(1);
+        expect(entries[0].name).toBe("only.md");
+    });
+
+    it("sorts many entries dirs-first then alphabetical (boundary)", async () => {
+        const many: unknown[] = Array.from({ length: 60 }, (_, i) => ({
+            name: `f${String(i).padStart(2, "0")}.md`,
+            path: `f${i}.md`,
+            type: "file",
+            size: 1,
+            download_url: "u",
+            sha: String(i),
+        }));
+        many.push({
+            name: "zdir",
+            path: "zdir",
+            type: "dir",
+            size: 0,
+            download_url: null,
+            sha: "d",
+        });
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ json: many })),
+        );
+        const entries = await listGitHubContents({ owner: "o", repo: "r", path: "" }, "");
+        expect(entries).toHaveLength(61);
+        expect(entries[0].type).toBe("dir");
+        expect(entries[1].name).toBe("f00.md");
+    });
+});
+
+describe("downloadGitHubFile edge cases", () => {
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("throws when the entry has no download_url (edge)", async () => {
+        const noUrl: GitHubEntry = {
+            name: "sub",
+            path: "sub",
+            type: "file",
+            size: 0,
+            download_url: null,
+            sha: "x",
+        };
+        await expect(downloadGitHubFile(noUrl)).rejects.toThrow(/No download URL/);
+    });
+
+    it("preserves special characters in the file name (boundary)", async () => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ blob: new Blob(["x"]) })),
+        );
+        const file = await downloadGitHubFile(fileEntry("kuenstler & co (1).md", "d/x.md"));
+        expect(file.name).toBe("kuenstler & co (1).md");
+    });
+});
+
+describe("runGitHubImport edge cases and boundaries", () => {
+    beforeEach(() => {
+        vi.stubGlobal(
+            "fetch",
+            vi.fn(async () => fakeRes({ blob: new Blob(["body"]) })),
+        );
+        detect.mockReset();
+        doImport.mockReset();
+    });
+    afterEach(() => vi.unstubAllGlobals());
+
+    it("returns all-zero counts for an empty selection (edge)", async () => {
+        const summary = await runGitHubImport([]);
+        expect(summary).toMatchObject({ importedCount: 0, skippedCount: 0, errorCount: 0 });
+        expect(summary.items).toEqual([]);
+        expect(summary.createdBookId).toBeUndefined();
+    });
+
+    it("ignores directory entries; only files import (edge)", async () => {
+        detect.mockResolvedValue("markdown");
+        const dir: GitHubEntry = {
+            name: "docs",
+            path: "docs",
+            type: "dir",
+            size: 0,
+            download_url: null,
+            sha: "d",
+        };
+        const summary = await runGitHubImport([dir]);
+        expect(summary.importedCount).toBe(0);
+        expect(doImport).not.toHaveBeenCalled();
+    });
+
+    it("imports many files and reports progress to completion (boundary)", async () => {
+        detect.mockResolvedValue("markdown");
+        doImport.mockResolvedValue({
+            kind: "chapter",
+            format: "markdown",
+            result: {
+                bookId: "b1",
+                bookTitle: "B",
+                chapterId: "c",
+                chapterTitle: "C",
+                createdBook: true,
+            },
+        });
+        const files = Array.from({ length: 40 }, (_, i) => fileEntry(`f${i}.md`, `f${i}.md`));
+        const progress: Array<[number, number]> = [];
+        const summary = await runGitHubImport(files, {
+            onProgress: (done, total) => progress.push([done, total]),
+        });
+        expect(summary.importedCount).toBe(40);
+        expect(progress[progress.length - 1]).toEqual([40, 40]);
+    });
+});

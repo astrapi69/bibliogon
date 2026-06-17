@@ -88,4 +88,16 @@ describe("featureRegistry", () => {
         expect(featureRegistry.getState("does-not-exist", DEXIE_NO_KEY)).toBe("hidden");
         expect(featureRegistry.getState("does-not-exist", API)).toBe("hidden");
     });
+
+    it("keeps network-import features disabled (never hidden) when offline in both modes", () => {
+        const offline: FeatureContext[] = [
+            { mode: "api", hasAiKey: false, online: false },
+            { mode: "dexie", hasAiKey: false, online: false },
+        ];
+        for (const ctx of offline) {
+            for (const id of [FEATURES.GITHUB_IMPORT, FEATURES.URL_IMPORT]) {
+                expect(featureRegistry.getState(id, ctx)).toBe("disabled");
+            }
+        }
+    });
 });
