@@ -2,6 +2,8 @@
 
 Status: Active maintenance document
 Last full review: 2026-04-20
+Last refresh: 2026-06-17 (DEP-02 + DEP-09 marked shipped; community-
+extension pins unpinned; DEP-05 re-confirmed deferred)
 Next review: 2026-07-20 (quarterly) or next major release
 
 ## Purpose
@@ -50,52 +52,17 @@ Pins without all three are technical debt.
 
 ## Deferred major migrations
 
-### DEP-02: TipTap 2 -> 3
-
-- Current: `@tiptap/core` 2.27.2 (plus 15 official + 1 community
-  extensions on matching 2.x versions)
-- Latest stable: TipTap 3.x
-- Status: **DEFERRED**
-- Last reviewed: 2026-04-20
-
-**Benefits of upgrade:**
-
-- Upstream maintenance focus has shifted to 3.x; 2.x gets security
-  backports only
-- New 3.x features (re-architected collaboration hooks, smaller
-  core bundle) would benefit the editor
-
-**Cost of upgrade:**
-
-- TipTap 3 is an API rework, not an incremental bump. Extension
-  registration, schema definition, and command API all changed.
-- 16 extensions to port (15 official + 1 community), each with
-  its own v3-compatible version to pick up.
-- Editor-heavy test surface: TipTap logic is exercised by
-  Vitest component tests + Playwright smoke suite. Full
-  re-validation needed.
-
-**Why deferred:**
-
-- Community extensions are the hard blocker. `@pentestpad/tiptap-
-  extension-figure` 1.1.0 requires `@tiptap/core ^3.19`, and
-  `tiptap-footnotes` 3.x requires `@tiptap/core ^3.0`. Both work
-  currently (pinned at 1.0.12 and 2.0.4 respectively). Migrating
-  to them is tied to the TipTap 3 migration itself.
-- No user-facing feature currently blocked by TipTap 2.
-
-**Re-evaluation triggers:**
-
-- TipTap 2 receives deprecation notice or EOL announcement
-- A user-facing feature requires a 3.x-only extension
-- Security advisory against 2.x
+> **DEP-02 (TipTap 3) and DEP-09 (Vite 8) are RESOLVED — both shipped.**
+> See the [Migration history](#migration-history) for the records. Only
+> DEP-05 (elevenlabs SDK) remains genuinely deferred.
 
 ### DEP-05: elevenlabs SDK 0.2 -> 2.x
 
-- Current: `elevenlabs` ^0.2.27
+- Current: `elevenlabs` ^0.2.27 (re-confirmed in `backend/pyproject.toml`,
+  2026-06-17)
 - Latest stable: `elevenlabs` 2.x
 - Status: **DEFERRED**
-- Last reviewed: 2026-04-20
+- Last reviewed: 2026-06-17
 
 **Benefits of upgrade:**
 
@@ -127,54 +94,56 @@ Pins without all three are technical debt.
   ElevenLabs API
 - Need for a feature only in 2.x (e.g. streaming synthesis)
 
-### DEP-09: Vite 7 -> 8
-
-- Current: `vite` ^7.3.2
-- Latest stable: `vite` 8.0.8 (observed 2026-04-18)
-- Status: **BLOCKED UPSTREAM**
-- Tracker: GitHub issue #6
-- Last upstream re-check: 2026-04-18 (no change)
-
-**Blocker:**
-
-- `vite-plugin-pwa@1.2.0` peer deps list
-  `vite: ^3.1.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0` - no
-  Vite 8 entry
-- No Vite 8 PR visible on github.com/vite-pwa/vite-plugin-pwa
-
-**Do not** force with `--legacy-peer-deps`: Vite 8 changed plugin
-APIs, and PWA is only exercised at `vite build` + SW regen, so a
-runtime break there is hard to detect in dev mode.
-
-**Re-evaluation cadence:**
-
-- Run `npm view vite-plugin-pwa peerDependencies` every ~2 weeks
-- Immediate re-check when vite-plugin-pwa publishes a new version
-- When the plugin accepts `^8`, proceed with the Vite 8 bump
-
 ## Active pins with expiration
 
-### TipTap community extensions
+### TipTap community extensions — UNPINNED (2026-06-17)
 
-| Package | Pin | Reason | Unpin when | Review |
-|---------|-----|--------|-----------|--------|
-| `@pentestpad/tiptap-extension-figure` | 1.0.12 | 1.1.0 requires `@tiptap/core ^3.19` | DEP-02 completes | tied to DEP-02 |
-| `tiptap-footnotes` | 2.0.4 | 3.x requires `@tiptap/core ^3.0` | DEP-02 completes | tied to DEP-02 |
+With DEP-02 (TipTap 3) shipped, both community extensions moved to
+their v3-compatible releases. No active pin remains:
 
-Both pinned via `--save-exact` per the `npm ci` peer-dep rule in
-`lessons-learned.md`.
+| Package | Version | Note |
+|---------|---------|------|
+| `@pentestpad/tiptap-extension-figure` | 1.1.0 | requires `@tiptap/core ^3.19`, now satisfied (3.26.0) |
+| `tiptap-footnotes` | 3.0.1 | requires `@tiptap/core ^3.0`, now satisfied |
 
-### vite-plugin-pwa (implicit upper cap)
+### vite-plugin-pwa — cap lifted (2026-06-17)
 
-- Current: ^1.2.0
-- Implicit: Vite 7 ceiling (see DEP-09 above)
-- Unpin when: `vite-plugin-pwa` supports Vite 8
-- Review: tied to DEP-09 tracker
+- Current: ^1.3.0 (the release that added Vite 8 to its peer-dep range)
+- The former implicit Vite 7 ceiling is gone; DEP-09 (Vite 8) is shipped.
 
 ## Migration history
 
 Chronological record of completed DEP items and other notable
 version work.
+
+### v0.49.0 (2026-04): DEP-02 TipTap 2 -> 3
+
+- `@tiptap/core` / `@tiptap/pm` 2.27.2 -> 3.26.0; all official +
+  community extensions on matching 3.x.
+- Shipped via the fallback path, NOT the original blocker: instead
+  of waiting on `@sereneinserenade/tiptap-search-and-replace` v0.2.0
+  to publish, the editor's search uses a `prosemirror-search`
+  adapter (`prosemirror-search` 1.1.1 in `frontend/package.json`).
+- Unlocked the two community-extension pins:
+  `@pentestpad/tiptap-extension-figure` 1.0.12 -> 1.1.0,
+  `tiptap-footnotes` 2.0.4 -> 3.0.1.
+- Also landed node-based KaTeX math (inline `$...$` + block `$$...$$`).
+- Full re-validation: Vitest component tests + Playwright smoke green
+  at the v0.49.0 cut.
+
+### 2026-04: DEP-09 Vite 7 -> 8
+
+- `vite` ^7.3.2 -> ^8.0.12, unblocked once `vite-plugin-pwa` 1.3.0
+  added Vite 8 to its peer-dep range.
+- Vite 8 ships Rolldown by default; `manualChunks` had to become a
+  function (object form is Rollup-only) — see lessons-learned
+  "Vite 8 migration (DEP-09 + SEC-01)".
+- Cleared the `workbox-build` -> `serialize-javascript` high-severity
+  advisory chain as a side effect.
+- Frontend toolchain has since advanced past the doc's earlier
+  deferrals: `@vitejs/plugin-react` ^6.0.2, `@types/node` ^25.9.2,
+  `typescript` ^6.0.3 (validate `tsc --noEmit` + `npm run build` on
+  any further bump per lessons-learned).
 
 ### 2026-04: DEP-01 React 18 -> 19
 
@@ -240,12 +209,13 @@ version work.
 
 Some DEP items depend on each other and must be sequenced:
 
-- **DEP-09 (Vite 8)** - blocked by `vite-plugin-pwa` upstream
-- **DEP-02 (TipTap 3)** - unlocks the two community-extension
-  pins (`@pentestpad/tiptap-extension-figure`, `tiptap-footnotes`)
-- **DEP-01 (React 19)** - no longer blocks anything; was a peer-
-  dep concern for TipTap at one point but TipTap 2.27.2 accepts
-  React ^19 already
+- **DEP-09 (Vite 8)** - RESOLVED; was blocked by `vite-plugin-pwa`
+  until 1.3.0 added Vite 8 to its peer-dep range.
+- **DEP-02 (TipTap 3)** - RESOLVED; unlocked the two community-
+  extension pins (`@pentestpad/tiptap-extension-figure` 1.1.0,
+  `tiptap-footnotes` 3.0.1).
+- **DEP-01 (React 19)** - no longer blocks anything; TipTap accepts
+  React ^19.
 
 ## Review schedule
 
@@ -259,9 +229,10 @@ Some DEP items depend on each other and must be sequenced:
 
 | Item | Next action | Target date |
 |------|-------------|-------------|
-| DEP-09 (Vite 8) | `npm view vite-plugin-pwa peerDependencies` | ~2026-05-02 (every 2 weeks) |
-| DEP-02 (TipTap 3) | Check TipTap 2.x deprecation status + community extension v3 compat | 2026-07-20 (quarterly) |
-| DEP-05 (elevenlabs 2.x) | Check for 0.2.x deprecation notice | 2026-07-20 (quarterly) |
+| DEP-05 (elevenlabs 2.x) | Check for 0.2.x deprecation notice; plan a focused session if a trigger fires | 2026-07-20 (quarterly) |
+
+DEP-02 (TipTap 3) and DEP-09 (Vite 8) are shipped — no further checks
+needed; see the Migration history above.
 
 ## Relationship to other docs
 
