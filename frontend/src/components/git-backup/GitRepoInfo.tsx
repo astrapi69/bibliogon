@@ -48,6 +48,21 @@ export function GitRepoInfo({
     const gitOpsAvailable = gitBackup.isActive;
     const hasLocalBranch = gitOpsAvailable && git.initialized;
     const localLoading = gitOpsAvailable && git.loading;
+    // The repo URL can be set in the metadata while no local clone has
+    // been initialized yet (the branch line then falls back to the
+    // remote default branch, #363). Pull requires an initialized local
+    // clone, so the button stays disabled until one exists — otherwise
+    // it 409s with `repo_not_initialized` (#375).
+    const needsLocalClone = gitOpsAvailable && !git.loading && !git.initialized;
+    const pullDisabled = !gitOpsAvailable || pulling || localLoading || needsLocalClone;
+    const pullDisabledTitle = !gitOpsAvailable
+        ? t(FEATURE_REASON.REQUIRES_DESKTOP_APP, "Benötigt Desktop-App")
+        : needsLocalClone
+          ? t(
+                "ui.git.not_cloned",
+                "Das Repository ist konfiguriert, aber lokal noch nicht eingerichtet. Initialisiere einen lokalen Klon, um Commits zu erstellen.",
+            )
+          : undefined;
     // Only resolve the remote default branch when no local branch is
     // available — a present local clone never triggers a network call.
     const remoteBranch = useRemoteDefaultBranch(url, !hasLocalBranch && !localLoading);
@@ -126,6 +141,19 @@ export function GitRepoInfo({
                 );
                 return;
             }
+            if (
+                err instanceof ApiError &&
+                (err.detailBody?.code === "repo_not_initialized" ||
+                    err.detailBody?.code === "remote_not_configured")
+            ) {
+                notify.warning(
+                    t(
+                        "ui.git.not_cloned",
+                        "Das Repository ist konfiguriert, aber lokal noch nicht eingerichtet. Initialisiere einen lokalen Klon, um Commits zu erstellen.",
+                    ),
+                );
+                return;
+            }
             if (err instanceof ApiError && err.detailBody?.code === "remote_auth") {
                 notify.error(
                     t("ui.git.auth_failed", "Authentifizierung fehlgeschlagen. PAT prüfen."),
@@ -192,12 +220,8 @@ export function GitRepoInfo({
                             type="button"
                             className="btn btn-secondary btn-sm"
                             onClick={handlePull}
-                            disabled={!gitOpsAvailable || pulling}
-                            title={
-                                gitOpsAvailable
-                                    ? undefined
-                                    : t(FEATURE_REASON.REQUIRES_DESKTOP_APP, "Benötigt Desktop-App")
-                            }
+                            disabled={pullDisabled}
+                            title={pullDisabledTitle}
                             data-testid={`${testIdPrefix}-pull`}
                         >
                             <RefreshCw size={14} /> {t("ui.git.pull_button", "Aktualisieren")}
