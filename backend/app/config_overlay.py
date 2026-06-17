@@ -35,6 +35,7 @@ for the broader rule. The unit + integration tests in
 from __future__ import annotations
 
 import logging
+import threading
 from pathlib import Path
 from typing import Any
 
@@ -42,6 +43,19 @@ from app.paths import get_data_dir
 from app.yaml_io import read_yaml_roundtrip, write_yaml_roundtrip
 
 logger = logging.getLogger(__name__)
+
+# Serializes the load -> mutate -> write cycle for the user app-config
+# overlay. uvicorn dispatches sync endpoints on a threadpool, so two
+# overlapping ``PATCH /settings/app`` requests would otherwise read the same
+# baseline and clobber each other on write (the settings-clobber data-loss
+# class). Reentrant so a locked caller can nest helper calls.
+_app_config_lock = threading.RLock()
+
+
+def app_config_lock() -> threading.RLock:
+    """Return the lock guarding the user app-config read-modify-write cycle."""
+    return _app_config_lock
+
 
 # Resolved at import time; tests that need a different project
 # layer reassign this attribute via ``monkeypatch.setattr``.

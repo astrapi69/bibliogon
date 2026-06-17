@@ -1938,7 +1938,7 @@ ui:
     multi_book_articles_note: '{count} makale de geri yuklenecek.'
     preview_articles_note: '{count} makale de geri yuklenecek.'
     step_1_drop_zone: Dosyayi buraya surukle veya goz atmak icin tikla
-    step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub'
+    step_1_accepted_formats: 'Kabul eder: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub'
     error_unsupported_format: 'Desteklenmeyen dosya bicimi. Kabul eder: {formats}'
     error_file_too_large: Dosya cok buyuk (>{max} MB).
     warn_large_file: Buyuk dosya ({size}); algilama biraz surebilir.

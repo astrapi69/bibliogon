@@ -2002,7 +2002,7 @@
       "multi_book_articles_note": "{count}件の記事も復元されます。",
       "preview_articles_note": "{count}件の記事も復元されます。",
       "step_1_drop_zone": "ファイルをここにドロップ、またはクリックして選択",
-      "step_1_accepted_formats": "対応形式: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub",
+      "step_1_accepted_formats": "対応形式: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
       "error_unsupported_format": "サポートされていない形式です。対応: {formats}",
       "error_file_too_large": "ファイルが大きすぎます (>{max} MB)。",
       "warn_large_file": "大きなファイル ({size})。検出に時間がかかる場合があります。",
