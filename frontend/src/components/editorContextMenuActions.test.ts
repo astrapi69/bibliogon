@@ -62,12 +62,72 @@ describe("editorContextMenuActions", () => {
     expect(a.calls).toContain("toggleUnderline");
   });
 
+  it("strike/code/subscript/superscript dispatch their commands", () => {
+    const a = makeEditor();
+    actions.toggleStrike(a.editor);
+    actions.toggleCode(a.editor);
+    actions.toggleSubscript(a.editor);
+    actions.toggleSuperscript(a.editor);
+    expect(a.calls).toContain("toggleStrike");
+    expect(a.calls).toContain("toggleCode");
+    expect(a.calls).toContain("toggleSubscript");
+    expect(a.calls).toContain("toggleSuperscript");
+  });
+
   it("setHeading passes the level", () => {
     const a = makeEditor();
     actions.setHeading(a.editor, 2);
     expect(
       a.calls.some((c) => c.startsWith("toggleHeading") && c.includes("2")),
     ).toBe(true);
+  });
+
+  it("setParagraph + table + codeBlock + taskList dispatch", () => {
+    const a = makeEditor();
+    actions.setParagraph(a.editor);
+    actions.insertTable(a.editor);
+    actions.toggleCodeBlock(a.editor);
+    actions.toggleTaskList(a.editor);
+    expect(a.calls).toContain("setParagraph");
+    expect(a.calls.some((c) => c.startsWith("insertTable"))).toBe(true);
+    expect(a.calls).toContain("toggleCodeBlock");
+    expect(a.calls).toContain("toggleTaskList");
+  });
+
+  it("setTextAlign passes the alignment", () => {
+    const a = makeEditor();
+    actions.setTextAlign(a.editor, "center");
+    expect(
+      a.calls.some(
+        (c) => c.startsWith("setTextAlign") && c.includes("center"),
+      ),
+    ).toBe(true);
+  });
+
+  it("undo + redo dispatch their commands", () => {
+    const a = makeEditor();
+    actions.undo(a.editor);
+    actions.redo(a.editor);
+    expect(a.calls).toContain("undo");
+    expect(a.calls).toContain("redo");
+  });
+
+  it("setLink with a URL extends the mark range and sets the link", () => {
+    const a = makeEditor();
+    actions.setLink(a.editor, "https://example.com");
+    expect(a.calls.some((c) => c.startsWith("extendMarkRange"))).toBe(true);
+    expect(
+      a.calls.some(
+        (c) => c.startsWith("setLink") && c.includes("example.com"),
+      ),
+    ).toBe(true);
+  });
+
+  it("setLink with an empty URL unsets the link", () => {
+    const a = makeEditor();
+    actions.setLink(a.editor, "   ");
+    expect(a.calls).toContain("unsetLink");
+    expect(a.calls.some((c) => c.startsWith("setLink"))).toBe(false);
   });
 
   it("list + blockquote + horizontal rule + mention commands dispatch", () => {
@@ -101,6 +161,39 @@ describe("editorContextMenuActions", () => {
   it("wordCounts reports selection + total", () => {
     const a = makeEditor({ selText: "one two three", total: 42 });
     expect(actions.wordCounts(a.editor)).toEqual({ selection: 3, total: 42 });
+  });
+
+  it("activeFormats reflects editor.isActive (marks, heading, alignment)", () => {
+    const editor = {
+      isActive: (name: string | Record<string, unknown>, attrs?: unknown) => {
+        if (typeof name === "object")
+          return JSON.stringify(name) === JSON.stringify({ textAlign: "center" });
+        if (name === "bold") return true;
+        if (name === "heading")
+          return JSON.stringify(attrs) === JSON.stringify({ level: 2 });
+        return false;
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    const fmt = actions.activeFormats(editor);
+    expect(fmt.bold).toBe(true);
+    expect(fmt.italic).toBe(false);
+    expect(fmt.heading2).toBe(true);
+    expect(fmt.heading1).toBe(false);
+    expect(fmt.alignCenter).toBe(true);
+    expect(fmt.alignLeft).toBe(false);
+  });
+
+  it("activeFormats stays false when isActive throws", () => {
+    const editor = {
+      isActive: () => {
+        throw new Error("unknown node");
+      },
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } as any;
+    const fmt = actions.activeFormats(editor);
+    expect(fmt.bold).toBe(false);
+    expect(fmt.alignCenter).toBe(false);
   });
 
   describe("clipboard", () => {

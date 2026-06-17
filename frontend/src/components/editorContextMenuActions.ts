@@ -45,8 +45,36 @@ export function toggleUnderline(editor: Editor): void {
   editor.chain().focus().toggleUnderline().run();
 }
 
+export function toggleStrike(editor: Editor): void {
+  editor.chain().focus().toggleStrike().run();
+}
+
+export function toggleCode(editor: Editor): void {
+  editor.chain().focus().toggleCode().run();
+}
+
+export function toggleSubscript(editor: Editor): void {
+  editor.chain().focus().toggleSubscript().run();
+}
+
+export function toggleSuperscript(editor: Editor): void {
+  editor.chain().focus().toggleSuperscript().run();
+}
+
 export function setHeading(editor: Editor, level: 1 | 2 | 3): void {
   editor.chain().focus().toggleHeading({ level }).run();
+}
+
+/** Clear block formatting back to a normal paragraph. */
+export function setParagraph(editor: Editor): void {
+  editor.chain().focus().setParagraph().run();
+}
+
+export function setTextAlign(
+  editor: Editor,
+  align: "left" | "center" | "right" | "justify",
+): void {
+  editor.chain().focus().setTextAlign(align).run();
 }
 
 export function toggleBulletList(editor: Editor): void {
@@ -57,17 +85,117 @@ export function toggleOrderedList(editor: Editor): void {
   editor.chain().focus().toggleOrderedList().run();
 }
 
+export function toggleTaskList(editor: Editor): void {
+  editor.chain().focus().toggleTaskList().run();
+}
+
 export function toggleBlockquote(editor: Editor): void {
   editor.chain().focus().toggleBlockquote().run();
+}
+
+export function toggleCodeBlock(editor: Editor): void {
+  editor.chain().focus().toggleCodeBlock().run();
+}
+
+export function insertTable(editor: Editor): void {
+  editor
+    .chain()
+    .focus()
+    .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+    .run();
 }
 
 export function insertHorizontalRule(editor: Editor): void {
   editor.chain().focus().setHorizontalRule().run();
 }
 
+export function undo(editor: Editor): void {
+  editor.chain().focus().undo().run();
+}
+
+export function redo(editor: Editor): void {
+  editor.chain().focus().redo().run();
+}
+
+/** Set (or, on an empty URL, clear) a link on the current selection. */
+export function setLink(editor: Editor, url: string): void {
+  const trimmed = url.trim();
+  const chain = editor.chain().focus().extendMarkRange("link");
+  if (trimmed) chain.setLink({ href: trimmed }).run();
+  else chain.unsetLink().run();
+}
+
 /** Insert an ``@`` to open the Story Bible mention autocomplete. */
 export function insertMentionTrigger(editor: Editor): void {
   editor.chain().focus().insertContent("@").run();
+}
+
+/** Which formatting marks/nodes are active at the current selection.
+ * Used by the context menu to highlight active items. ``isActive`` can
+ * throw for nodes an extension didn't register, so each lookup is
+ * guarded to keep the menu open even on a minimal surface. */
+export interface ActiveFormats {
+  bold: boolean;
+  italic: boolean;
+  underline: boolean;
+  strike: boolean;
+  code: boolean;
+  subscript: boolean;
+  superscript: boolean;
+  link: boolean;
+  heading1: boolean;
+  heading2: boolean;
+  heading3: boolean;
+  paragraph: boolean;
+  alignLeft: boolean;
+  alignCenter: boolean;
+  alignRight: boolean;
+  alignJustify: boolean;
+  bulletList: boolean;
+  orderedList: boolean;
+  taskList: boolean;
+  blockquote: boolean;
+  codeBlock: boolean;
+}
+
+export function activeFormats(editor: Editor): ActiveFormats {
+  const is = (name: string, attrs?: Record<string, unknown>): boolean => {
+    try {
+      return attrs ? editor.isActive(name, attrs) : editor.isActive(name);
+    } catch {
+      return false;
+    }
+  };
+  const alignActive = (value: string): boolean => {
+    try {
+      return editor.isActive({ textAlign: value });
+    } catch {
+      return false;
+    }
+  };
+  return {
+    bold: is("bold"),
+    italic: is("italic"),
+    underline: is("underline"),
+    strike: is("strike"),
+    code: is("code"),
+    subscript: is("subscript"),
+    superscript: is("superscript"),
+    link: is("link"),
+    heading1: is("heading", { level: 1 }),
+    heading2: is("heading", { level: 2 }),
+    heading3: is("heading", { level: 3 }),
+    paragraph: is("paragraph"),
+    alignLeft: alignActive("left"),
+    alignCenter: alignActive("center"),
+    alignRight: alignActive("right"),
+    alignJustify: alignActive("justify"),
+    bulletList: is("bulletList"),
+    orderedList: is("orderedList"),
+    taskList: is("taskList"),
+    blockquote: is("blockquote"),
+    codeBlock: is("codeBlock"),
+  };
 }
 
 /** The currently selected text (empty string when nothing selected). */
