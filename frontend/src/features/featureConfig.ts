@@ -56,6 +56,7 @@ export const FEATURES = {
 
     AI_FILL: "ai-fill",
     AI_GENERATE: "ai-generate",
+    AI_STORY_EXTRACTION: "ai-story-extraction",
     AI_TEMPLATE_FILE_IO: "ai-template-file-io",
 
     GIT_SYNC: "git-sync",
@@ -142,6 +143,16 @@ const NEEDS_KEY: readonly string[] = [FEATURES.AI_FILL, FEATURES.AI_GENERATE];
 const NEEDS_NETWORK: readonly string[] = [FEATURES.GITHUB_IMPORT, FEATURES.URL_IMPORT];
 
 /**
+ * AI features that ALSO reach an external provider directly, so they need BOTH
+ * a usable key (browser-direct in Dexie mode) AND live network connectivity.
+ * Disabled when the browser is offline (with the network reason) or, in Dexie
+ * mode, when no key is configured (with the AI-key reason); active otherwise.
+ * The AI Story Bible / Storyboard extraction (#374) lives here: it streams the
+ * whole manuscript to the provider, so a genuine offline state must gate it.
+ */
+const NEEDS_KEY_AND_NETWORK: readonly string[] = [FEATURES.AI_STORY_EXTRACTION];
+
+/**
  * Features that genuinely cannot work in a browser (no git binary, no TTS
  * engine, no Pandoc, no LAN host, no backend round-trip). In Dexie mode they
  * resolve to `disabled` with the desktop-app reason (per the policy: nothing
@@ -177,6 +188,7 @@ const DESCRIPTORS: readonly FeatureDescriptor[] = [
     ...ALWAYS_ACTIVE,
     ...NEEDS_KEY,
     ...NEEDS_NETWORK,
+    ...NEEDS_KEY_AND_NETWORK,
     ...DESKTOP_ONLY,
 ].map(descriptor);
 
@@ -201,10 +213,25 @@ function networkDependentCondition(): FeatureCondition<FeatureContext> {
     };
 }
 
+function keyAndNetworkCondition(): FeatureCondition<FeatureContext> {
+    return {
+        evaluate: (ctx) => {
+            if (ctx?.online === false) return "disabled";
+            if (ctx?.mode === "dexie" && !ctx.hasAiKey) return "disabled";
+            return undefined;
+        },
+        reason: (ctx) =>
+            ctx?.online === false
+                ? FEATURE_REASON.REQUIRES_NETWORK
+                : FEATURE_REASON.REQUIRES_AI_KEY,
+    };
+}
+
 function buildRules(): Record<string, FeatureCondition<FeatureContext>> {
     const rules: Record<string, FeatureCondition<FeatureContext>> = {};
     for (const id of NEEDS_KEY) rules[id] = keyDependentCondition();
     for (const id of NEEDS_NETWORK) rules[id] = networkDependentCondition();
+    for (const id of NEEDS_KEY_AND_NETWORK) rules[id] = keyAndNetworkCondition();
     for (const id of DESKTOP_ONLY) rules[id] = desktopOnlyCondition();
     return rules;
 }

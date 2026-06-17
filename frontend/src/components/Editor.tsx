@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
     useEditorPluginStatus,
     isPluginAvailable,
@@ -263,6 +263,8 @@ export default function Editor({
     // local per-instance.
     const editorDisplay = useEditorDisplaySettings();
 
+    const imageInputRef = useRef<HTMLInputElement>(null);
+
     const uploadAndInsertImage = async (file: File) => {
         if (!bookId) return;
         try {
@@ -278,6 +280,17 @@ export default function Editor({
         } catch (err) {
             notify.error(t("ui.editor.upload_failed", "Upload fehlgeschlagen"), err);
         }
+    };
+
+    // Context-menu "Insert image": open a file picker, then run the
+    // same upload+insert path as drag/paste. Only wired when the
+    // surface has a bookId to upload assets against.
+    const handleImageFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && file.type.startsWith("image/")) {
+            void uploadAndInsertImage(file);
+        }
+        event.target.value = "";
     };
 
     const { wordCount, charCount, syncCounts } = useEditorWordCount();
@@ -960,6 +973,7 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
+                            onInsertImage={bookId ? () => imageInputRef.current?.click() : undefined}
                             onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
                             <div
@@ -975,6 +989,7 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
+                            onInsertImage={bookId ? () => imageInputRef.current?.click() : undefined}
                             onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
                         >
                             <div>
@@ -982,6 +997,14 @@ export default function Editor({
                             </div>
                         </EditorContextMenu>
                     )}
+                    <input
+                        ref={imageInputRef}
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageFileSelected}
+                        style={{ display: "none" }}
+                        data-testid="editor-image-input"
+                    />
                 </div>
             </div>
         </div>

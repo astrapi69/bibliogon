@@ -37,38 +37,28 @@ def _write_md(
     return path
 
 
-def test_can_handle_md_extension(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_can_handle_md_extension(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     assert handler.can_handle(str(_write_md(tmp_path))) is True
     assert handler.can_handle(str(_write_md(tmp_path, name="book.markdown"))) is True
 
 
-def test_can_handle_txt_with_h1(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_can_handle_txt_with_h1(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = _write_md(tmp_path, content="# Title\n\nText", name="doc.txt")
     assert handler.can_handle(str(path)) is True
 
 
-def test_can_handle_rejects_txt_without_h1(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_can_handle_rejects_txt_without_h1(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = _write_md(tmp_path, content="Just plain text, no heading.", name="doc.txt")
     assert handler.can_handle(str(path)) is False
 
 
-def test_can_handle_rejects_binary(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_can_handle_rejects_binary(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = tmp_path / "file.pdf"
     path.write_bytes(b"%PDF-1.4")
     assert handler.can_handle(str(path)) is False
 
 
-def test_detect_returns_title_and_preview(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_detect_returns_title_and_preview(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = _write_md(
         tmp_path,
         content="# Big Book\n\nIntro paragraph.\n\n## Part One\n\nContent.",
@@ -84,17 +74,13 @@ def test_detect_returns_title_and_preview(
     assert detected.warnings == []
 
 
-def test_detect_warns_when_h1_missing(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_detect_warns_when_h1_missing(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = _write_md(tmp_path, content="Paragraph only, no heading.")
     detected = handler.detect(str(path))
     assert any("h1" in w.lower() or "title" in w.lower() for w in detected.warnings)
 
 
-def test_source_identifier_is_deterministic(
-    handler: MarkdownImportHandler, tmp_path: Path
-) -> None:
+def test_source_identifier_is_deterministic(handler: MarkdownImportHandler, tmp_path: Path) -> None:
     path = _write_md(tmp_path, content="# Same Book\n\nHello.")
     first = handler.detect(str(path)).source_identifier
     second = handler.detect(str(path)).source_identifier
@@ -159,3 +145,58 @@ def test_execute_overwrite_replaces_existing(
     assert returned != first_id  # fresh book_id on overwrite (hard-delete + re-insert)
     assert db.query(Book).filter(Book.id == first_id).count() == 0
     assert db.query(Book).filter(Book.id == returned).one().title == "V2"
+
+
+# --- HTML import (TC-037: API-mode parity with the offline client) ---
+
+
+def _write_html(tmp_path: Path, content: str, name: str = "page.html") -> Path:
+    path = tmp_path / name
+    path.write_text(content, encoding="utf-8")
+    return path
+
+
+def test_can_handle_html_and_htm(handler: MarkdownImportHandler, tmp_path: Path) -> None:
+    assert handler.can_handle(str(_write_html(tmp_path, "<h1>X</h1><p>y</p>"))) is True
+    assert handler.can_handle(str(_write_html(tmp_path, "<h1>X</h1>", name="page.htm"))) is True
+
+
+def test_detect_html_extracts_title_from_h1(handler: MarkdownImportHandler, tmp_path: Path) -> None:
+    path = _write_html(tmp_path, "<h1>HTML Wizard Buch</h1><p>Erster Absatz aus HTML.</p>")
+    detected = handler.detect(str(path))
+    assert detected.title == "HTML Wizard Buch"
+    assert detected.warnings == []
+
+
+def test_detect_html_falls_back_to_title_tag_then_filename(
+    handler: MarkdownImportHandler, tmp_path: Path
+) -> None:
+    with_title = _write_html(tmp_path, "<title>From Title</title><p>x</p>", name="a.html")
+    assert handler.detect(str(with_title)).title == "From Title"
+
+    no_heading = _write_html(tmp_path, "<p>just a paragraph</p>", name="my-doc.html")
+    detected = handler.detect(str(no_heading))
+    assert detected.title == "My Doc"
+    assert any("<h1>" in w for w in detected.warnings)
+
+
+def test_execute_html_stores_body_as_html_chapter(
+    handler: MarkdownImportHandler, tmp_path: Path, db: Session
+) -> None:
+    """Regression (TC-037): an .html file imports into a book whose chapter
+    carries the converted body. Pre-fix the wizard rejected .html outright
+    (the backend had no HTML handler)."""
+    path = _write_html(
+        tmp_path,
+        "<h1>HTML Wizard Buch</h1><p>Erster Absatz aus HTML.</p>"
+        "<h2>Abschnitt</h2><p>Zweiter Absatz.</p>",
+    )
+    detected = handler.detect(str(path))
+    book_id = handler.execute(str(path), detected, overrides={})
+
+    book = db.query(Book).filter(Book.id == book_id).one()
+    assert book.title == "HTML Wizard Buch"
+    chapters = db.query(Chapter).filter(Chapter.book_id == book_id).all()
+    assert len(chapters) == 1
+    assert "Erster Absatz aus HTML" in chapters[0].content
+    assert "Zweiter Absatz" in chapters[0].content

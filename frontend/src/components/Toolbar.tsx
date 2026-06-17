@@ -4,6 +4,7 @@ import {useI18n} from "../hooks/useI18n";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import {copyToClipboard} from "../utils/clipboard";
+import {promptAndInsertMath} from "./editorMathPrompt";
 import {
     editorToMarkdown,
     editorToPlainText,
@@ -108,37 +109,8 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
     const dialog = useDialog();
     if (!editor) return null;
 
-    // Math nodes are atoms (no inline typing): inserting one needs the LaTeX
-    // up front, and the v3 insert*Math commands are a no-op on empty latex.
-    // Prompt for the LaTeX, then insert - or update the node in place when a
-    // math node is already selected (so the same button edits an existing
-    // formula). KaTeX re-renders live from the node's latex attribute.
-    const promptForMath = async (kind: "inline" | "block") => {
-        const nodeName = kind === "inline" ? "inlineMath" : "blockMath";
-        const isActive = editor.isActive(nodeName);
-        const current = isActive
-            ? ((editor.getAttributes(nodeName).latex as string | undefined) ?? "")
-            : "";
-        const latex = await dialog.prompt(
-            kind === "inline"
-                ? t("ui.toolbar.formula", "Formel")
-                : t("ui.toolbar.formula_block", "Block-Formel"),
-            t("ui.toolbar.formula_prompt", "LaTeX-Formel eingeben:"),
-            "E=mc^2",
-            current,
-        );
-        if (latex === null) return;
-        const trimmed = latex.trim();
-        if (!trimmed) return;
-        const chain = editor.chain().focus();
-        if (kind === "inline") {
-            if (isActive) chain.updateInlineMath({latex: trimmed}).run();
-            else chain.insertInlineMath({latex: trimmed}).run();
-        } else {
-            if (isActive) chain.updateBlockMath({latex: trimmed}).run();
-            else chain.insertBlockMath({latex: trimmed}).run();
-        }
-    };
+    const promptForMath = (kind: "inline" | "block") =>
+        promptAndInsertMath(editor, dialog, t, kind);
 
     const handleCopy = async (mode: "markdown" | "plain") => {
         const metadata: DocumentMetadata = {

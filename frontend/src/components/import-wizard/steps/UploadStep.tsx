@@ -7,19 +7,22 @@ import { useI18n } from "../../../hooks/useI18n";
 // attempting a clone and surfaces errors through the wizard's
 // error step. The client-side check is only to reject obvious
 // non-URLs early (empty strings, "hello world", etc.).
-const GIT_URL_RE =
-    /^(?:https?:\/\/|git@[^\s:]+:|ssh:\/\/git@)[^\s]+(?:\.git)?\/?$/i;
+const GIT_URL_RE = /^(?:https?:\/\/|git@[^\s:]+:|ssh:\/\/git@)[^\s]+(?:\.git)?\/?$/i;
 
 // Aligned with the backend handler registry
 // (app/import_plugins/handlers/__init__.py). Evolution:
 // - CIO-01 shipped .bgb + .md/.markdown/.txt
 // - CIO-02 added .zip (WbtImportHandler, write-book-template)
 // - CIO-04 added .docx + .epub via Pandoc-based office handlers
+// - .html/.htm route through the markdown handler (stored as HTML),
+//   matching the offline client importer (detectFormat -> htmlToTipTap)
 const ACCEPTED_EXTENSIONS = [
     ".bgb",
     ".md",
     ".markdown",
     ".txt",
+    ".html",
+    ".htm",
     ".zip",
     ".docx",
     ".epub",
@@ -119,15 +122,10 @@ export function UploadStep({
     const handleFolder = (rawFiles: FileList) => {
         setError(null);
         setWarning(null);
-        const picked = Array.from(rawFiles).filter((f) =>
-            isFolderRelevant(f.name),
-        );
+        const picked = Array.from(rawFiles).filter((f) => isFolderRelevant(f.name));
         if (picked.length === 0) {
             setError(
-                t(
-                    "ui.import_wizard.error_folder_empty",
-                    "Folder has no .md/.markdown files.",
-                ),
+                t("ui.import_wizard.error_folder_empty", "Folder has no .md/.markdown files."),
             );
             return;
         }
@@ -145,10 +143,10 @@ export function UploadStep({
         const total = picked.reduce((sum, f) => sum + f.size, 0);
         if (total > MAX_SIZE_MB * 1024 * 1024) {
             setError(
-                t(
-                    "ui.import_wizard.error_file_too_large",
-                    "File too large (>{max} MB).",
-                ).replace("{max}", String(MAX_SIZE_MB)),
+                t("ui.import_wizard.error_file_too_large", "File too large (>{max} MB).").replace(
+                    "{max}",
+                    String(MAX_SIZE_MB),
+                ),
             );
             return;
         }
@@ -170,12 +168,7 @@ export function UploadStep({
         setWarning(null);
         const trimmed = gitUrl.trim();
         if (!trimmed) {
-            setGitError(
-                t(
-                    "ui.import_wizard.error_git_url_empty",
-                    "Please paste a git URL.",
-                ),
-            );
+            setGitError(t("ui.import_wizard.error_git_url_empty", "Please paste a git URL."));
             return;
         }
         if (!GIT_URL_RE.test(trimmed)) {
@@ -229,10 +222,7 @@ export function UploadStep({
                     }}
                 >
                     <GitBranch size={14} />
-                    {t(
-                        "ui.import_wizard.step_1_git_url_label",
-                        "Import from a git URL",
-                    )}
+                    {t("ui.import_wizard.step_1_git_url_label", "Import from a git URL")}
                 </div>
                 <div style={{ display: "flex", gap: 6 }}>
                     <input
@@ -268,10 +258,7 @@ export function UploadStep({
                         onClick={handleGitSubmit}
                         disabled={!gitUrl.trim()}
                     >
-                        {t(
-                            "ui.import_wizard.step_1_git_url_submit",
-                            "Clone + Import",
-                        )}
+                        {t("ui.import_wizard.step_1_git_url_submit", "Clone + Import")}
                     </button>
                 </div>
                 <p
@@ -334,10 +321,7 @@ export function UploadStep({
                     style={{ color: "var(--text-muted)", marginBottom: 12 }}
                 />
                 <p style={{ margin: 0, fontSize: "1rem", fontWeight: 500 }}>
-                    {t(
-                        "ui.import_wizard.step_1_drop_zone",
-                        "Drop file here or click to browse",
-                    )}
+                    {t("ui.import_wizard.step_1_drop_zone", "Drop file here or click to browse")}
                 </p>
                 <p
                     style={{
@@ -348,7 +332,7 @@ export function UploadStep({
                 >
                     {t(
                         "ui.import_wizard.step_1_accepted_formats",
-                        "Accepts: .bgb, .md, .markdown, .txt, .zip (write-book-template), .docx, .epub",
+                        "Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
                     )}
                 </p>
             </div>
@@ -370,10 +354,7 @@ export function UploadStep({
                     }}
                 >
                     <Folder size={14} style={{ marginRight: 6 }} />
-                    {t(
-                        "ui.import_wizard.step_1_pick_folder",
-                        "Or pick a folder of Markdown files",
-                    )}
+                    {t("ui.import_wizard.step_1_pick_folder", "Or pick a folder of Markdown files")}
                 </button>
             </div>
 

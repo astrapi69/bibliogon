@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { type GitSyncMappingStatus } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import AuthorSelectInput from "../AuthorSelectInput";
+import { GitRepoInfo } from "../git-backup/GitRepoInfo";
 import { EnhancedTextarea } from "../textarea/EnhancedTextarea";
 import styles from "../BookMetadataEditor.module.css";
 
@@ -26,11 +27,13 @@ export function Row({ children }: { children: React.ReactNode }) {
  *   ``onChange`` → ``set("repository_url", v)`` chain.
  */
 export function RepositoryUrlField({
+    bookId,
     value,
     onChange,
     gitSyncStatus,
     t,
 }: {
+    bookId: string;
     value: string;
     onChange: (v: string) => void;
     gitSyncStatus: GitSyncMappingStatus | null;
@@ -39,6 +42,7 @@ export function RepositoryUrlField({
     const managedByGitSync = gitSyncStatus?.mapped === true;
     const label = t("ui.metadata.repository_url", "Git-Repository (URL)");
     if (managedByGitSync) {
+        const managedUrl = gitSyncStatus?.repo_url ?? "";
         return (
             <div
                 className="field"
@@ -49,7 +53,7 @@ export function RepositoryUrlField({
                 <input
                     className="input"
                     type="url"
-                    value={gitSyncStatus?.repo_url ?? ""}
+                    value={managedUrl}
                     readOnly
                     aria-readonly="true"
                     data-testid="metadata-repository-url-input"
@@ -69,6 +73,16 @@ export function RepositoryUrlField({
                         "Wird von plugin-git-sync verwaltet — manuelle Änderungen würden vom Round-Trip abweichen.",
                     )}
                 </small>
+                {managedUrl && (
+                    <div style={{ marginTop: 8 }}>
+                        <GitRepoInfo
+                            bookId={bookId}
+                            url={managedUrl}
+                            showPull
+                            testIdPrefix="metadata-git-repo-info"
+                        />
+                    </div>
+                )}
             </div>
         );
     }
@@ -96,6 +110,16 @@ export function RepositoryUrlField({
                     "Optional. Externer Git-Repo-Link für Bücher, die nicht über plugin-git-sync importiert wurden.",
                 )}
             </small>
+            {value.trim() && (
+                <div style={{ marginTop: 8 }}>
+                    <GitRepoInfo
+                        bookId={bookId}
+                        url={value.trim()}
+                        showPull
+                        testIdPrefix="metadata-git-repo-info"
+                    />
+                </div>
+            )}
         </div>
     );
 }
@@ -143,10 +167,7 @@ export function AuthorSelectField({
                 onChange={onChange}
                 suggestions={suggestions}
                 profileChoices={suggestions}
-                customOptionLabel={t(
-                    "ui.author_select.custom_option",
-                    "Anderer Name …",
-                )}
+                customOptionLabel={t("ui.author_select.custom_option", "Anderer Name …")}
                 showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
                 addToAuthorsDb={addToAuthorsDb}
                 onAddToAuthorsDbChange={onAddToAuthorsDbChange}

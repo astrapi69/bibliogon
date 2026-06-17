@@ -183,6 +183,37 @@ describe("ChapterSidebar - flexbox scroll container", () => {
     });
 });
 
+describe("ChapterSidebar - mobile overlay reachability", () => {
+    it("renders the footer Metadaten + Exportieren controls with testids", () => {
+        renderSidebar();
+        expect(screen.getByTestId("chapter-sidebar-metadata")).toBeTruthy();
+        expect(screen.getByTestId("chapter-sidebar-export")).toBeTruthy();
+    });
+
+    // The mobile overlay fix lives in a media query that jsdom cannot
+    // evaluate (no layout pass), so pin it at the CSS-Module source:
+    // below the menu breakpoint the WHOLE sidebar scrolls (100dvh +
+    // overflow-y: auto + safe-area) and the list grows naturally, so the
+    // pinned footer can no longer fall below the fold.
+    it("ChapterSidebar.module.css uses dvh and a mobile full-scroll fallback", () => {
+        const cssPath = path.resolve(__dirname, "./ChapterSidebar.module.css");
+        const css = fs.readFileSync(cssPath, "utf8");
+
+        const sidebarBlock = css.match(/\.sidebar\s*\{[^}]*\}/);
+        expect(sidebarBlock).not.toBeNull();
+        expect(sidebarBlock![0]).toContain("100dvh");
+
+        // The overlay media query (below 75rem / 1200px) must make the
+        // whole sidebar scrollable and clear the iOS safe area.
+        const mediaMatch = css.match(/@media\s*\(max-width:\s*74\.99rem\)\s*\{[\s\S]*?\n\}/);
+        expect(mediaMatch).not.toBeNull();
+        const media = mediaMatch![0];
+        expect(media).toContain("overflow-y: auto");
+        expect(media).toContain("env(safe-area-inset-bottom)");
+        expect(media).toContain("flex: 0 0 auto");
+    });
+});
+
 describe("ChapterSidebar - dropdown CSS contract", () => {
     it("global.css caps the chapter dropdown to the Radix available height", () => {
         // Structural check: the CSS rule must exist and reference the

@@ -86,7 +86,7 @@ export function PageLayout({
                         data-testid={testId ? `${testId}-home` : "page-home"}
                     >
                         <BookOpen size={28} strokeWidth={1.5} />
-                        <span className="font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-primary">
+                        <span className="hidden font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-primary sm:inline">
                             Bibliogon
                         </span>
                     </button>

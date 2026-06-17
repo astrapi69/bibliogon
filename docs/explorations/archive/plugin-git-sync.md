@@ -1,10 +1,16 @@
 # plugin-git-sync: Bi-directional Git Sync for Bibliogon Books
 
-Status: Exploration complete. Plugin pending implementation.
-Last updated: 2026-04-23
+> **ARCHIVED 2026-06-17 — SHIPPED.** The plugin exists at
+> `plugins/bibliogon-plugin-git-sync/` and all five phases (PGS-01..05)
+> are implemented on `develop`: import MVP (git URL clone + detect),
+> export-to-repo, three-way smart-merge, multi-language linking, and the
+> unified-commit bridge. Kept for historical context; actual behaviour
+> lives in code + CHANGELOG.
+
+Status: Shipped (PGS-01..05). Archived 2026-06-17.
+Last updated: 2026-04-23 (original); archived 2026-06-17.
 License: MIT (part of the open-source plugin set, alongside plugin-export).
-Repository: github.com/astrapi69/bibliogon-plugin-git-sync (to be created).
-Revived when: Core git integration ([archive/git-based-backup.md](archive/git-based-backup.md)) Phase 1 has shipped AND PluginForge is confirmed to support the required hooks (see Section 5).
+Repository: in-tree at `plugins/bibliogon-plugin-git-sync/`.
 
 **Architectural update (2026-04-23):** since this exploration was written, [core-import-orchestrator.md](core-import-orchestrator.md) landed and shipped as CIO-01. Plugin-git-sync Phase 1 (PGS-01) now targets implementing the `ImportPlugin` protocol defined in that exploration (Section 5) rather than inventing its own import surface. The "Import from Git" UI described below will slot into the core wizard's Step 1 source picker once CIO-02 wires it; the plugin no longer ships its own detect/execute flow. Sections 3-4 of this doc (repo structure spec, use cases) are unaffected; Section 5 (PluginForge stress-test) is partially answered by CIO-01's in-process handler registry, which proved the protocol works end-to-end for `.bgb` and markdown before PGS-01 tries it against a git URL.
 

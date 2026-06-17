@@ -28,6 +28,7 @@ import type {
 import {useI18n} from "../hooks/useI18n";
 import {notify} from "../utils/notify";
 import {useDialog} from "./AppDialog";
+import AiStoryExtraction from "./AiStoryExtraction";
 import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryBibleSidebar.module.css";
 
@@ -267,6 +268,12 @@ export default function StoryBibleSidebar({
                 <h2 className={styles.title}>
                     {t("ui.story_bible.title", "Story-Bibel")}
                 </h2>
+                <AiStoryExtraction
+                    bookId={bookId}
+                    target="story-bible"
+                    onApplied={() => void refreshEntities()}
+                    triggerClassName="btn-sidebar-icon"
+                />
                 <button
                     type="button"
                     className="btn-sidebar-icon"

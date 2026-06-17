@@ -244,6 +244,72 @@ new component/util; extend the catalogue rather than re-implementing.
 | `utils/chapterGroups.ts` | Front/back-matter `groupChapters()` splitter. |
 | `utils/pageLayoutStyles.ts`, `utils/pageTextContent.ts` | Picture-book layout style math + TipTap↔text (de)serialization. |
 
+## Dependency hierarchy + Library-Grade
+
+Two things govern everything that lands under `lib/` and `shared/` (and, by
+analogy, the backend service helpers): a **4-stage dependency hierarchy**
+(Language → Framework → Library → Build-it-yourself) that decides *whether* to
+write code at all, and the **Library-Grade** rule that governs *how* the code
+you do write is shaped. See `.claude/rules/library-first.md` for the working
+rule and `docs/audits/library-first-audit-2026-06-17.md` for the first audit.
+
+### Library-Grade — write `lib/` code as a standalone library
+
+Every module in `lib/` (and `shared/`) MUST be shippable as if it were its own
+npm package:
+
+- **No app-specific imports** — no `getStorage()`, no `useI18n()`/`t()`, no
+  `api.*`, no reach-back into pages/components. (App-bound *types* — the
+  `PageLayout`/`ChapterType` unions — are allowed and mark a util as
+  `lib/utils/` rather than the cross-app `shared/`.)
+- **Own, exported TypeScript types.**
+- **TSDoc with a usage `@example`.**
+- **Its own colocated test file** (`*.test.ts(x)`), not folded into a page's
+  tests.
+- **Usable in isolation** — a consumer could import just this file and nothing
+  else of Bibliogon would come with it.
+
+### The 4-stage dependency hierarchy — search before you build
+
+"Library-First" is the third rung of a stricter ladder. Walk it **top to
+bottom**; only drop to the next stage when the current one genuinely cannot do
+the job. Most utilities should never reach stage 4.
+
+1. **LANGUAGE FIRST — native platform APIs.** Reach for what the runtime
+   already ships before anything else.
+   - JS: `Intl`, `crypto.subtle` / Web Crypto, `URL`, `fetch`,
+     `structuredClone`, `Array`/`Set`/`Map` methods, `IntersectionObserver`.
+   - Python: `pathlib`, `dataclasses`, `json`, `hashlib`, `functools`.
+2. **FRAMEWORK — what is already wired in.** If the platform doesn't cover it,
+   use the framework already in the stack.
+   - React: `useState`, `useEffect`, `useRef`, `useMemo`, Context.
+   - Vite: `define`, `import.meta.env`, plugins.
+   - FastAPI: `Depends`, `BackgroundTasks`, `HTTPException`.
+3. **LIBRARY — npm / PyPI, only when 1 + 2 fall short.** Prefer a library
+   **already in the project** (`react-markdown`, `marked`, `dexie`, `recharts`,
+   `lucide-react`, `tailwind`, `PyYAML`, …). A *new* dependency must clear:
+   **>1000 weekly downloads**, **last update <6 months**, and **bundle size
+   <100 kB** for anything we could write in <50 LOC ourselves. Compare the top
+   2–3 candidates on size, maintenance, parity, and transitive deps. Do **not**
+   adopt a library that would *change* behaviour we deliberately want (e.g. a
+   slug helper that transliterates umlauts we keep on purpose).
+4. **BUILD IT YOURSELF — only when 1–3 don't fit.** Then, under these
+   restrictions:
+   - **Library-Grade** (below): no app imports, own types, TSDoc, single-use
+     viable.
+   - **Cohesion:** <500 lines, one concern.
+   - **Complexity:** cyclomatic complexity <20.
+   - **Tests:** its own colocated test file.
+   - **The PR documents WHY** it was built in-house rather than using stages
+     1–3.
+
+The model cases already in the tree sit at the right rung: `relativeTime.ts`
+is **stage 1** (platform `Intl.RelativeTimeFormat`, zero bundle cost) and
+`utils.ts` `cn` is **stage 3** (wraps the installed `clsx` + `tailwind-merge`).
+The anti-pattern the first audit caught: `markdownToHtml.ts` sitting at
+**stage 4** while the already-installed `marked` (stage 3) does the job
+(tracked in #387).
+
 ## Feature gating (feature-strategy)
 
 Offline/desktop gating runs through `@astrapi69/feature-strategy` + the

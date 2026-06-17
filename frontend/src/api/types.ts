@@ -1926,6 +1926,8 @@ export interface GitRepoStatus {
     uncommitted_files: number;
     head_hash: string | null;
     head_short_hash: string | null;
+    /** Active branch name, or null on a detached HEAD / uninitialised repo. */
+    branch: string | null;
 }
 
 export interface GitRemoteConfig {

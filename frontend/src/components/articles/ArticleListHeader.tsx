@@ -93,7 +93,7 @@ export default function ArticleListHeader({
                     data-testid="article-list-dashboard"
                 >
                     <BookOpen size={28} strokeWidth={1.5} />
-                    <h1 className={layout.logoText}>Bibliogon</h1>
+                    <h1 className={`${layout.logoText} hidden sm:inline`}>Bibliogon</h1>
                 </div>
                 <div className={layout.headerActions}>
                     {/* ARTICLE-TYPES-SSOT-01 C5 (2026-05-29):

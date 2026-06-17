@@ -118,6 +118,24 @@ AI sometimes suggests outdated, insecure, or nonexistent libraries.
 - No secrets, API keys, or hardcoded credentials in generated code.
   User-provided API keys are stored in Dexie, never committed.
 - Prefer existing project dependencies over new ones.
+- **Dependency hierarchy (search before you build).** Walk top to bottom; drop
+  a stage only when it genuinely cannot do the job:
+  1. **Language** — native platform APIs (`Intl`, `crypto.subtle`, `URL`,
+     `fetch`, `structuredClone`, `Array`/`Set`/`Map`; Python `pathlib`,
+     `dataclasses`, `json`, `hashlib`, `functools`).
+  2. **Framework** — what is already wired in (React hooks/Context, Vite
+     `define`/`import.meta.env`, FastAPI `Depends`/`BackgroundTasks`).
+  3. **Library** — npm/PyPI, only when 1+2 fall short; prefer a library
+     already in the project. A *new* dep must clear **>1000 weekly downloads**,
+     **last update <6 months**, **bundle <100 kB** for anything writable in
+     <50 LOC, and must not change behaviour we deliberately want.
+  4. **Build it yourself** — only when 1–3 don't fit, under **Library-Grade**
+     (no app imports, own types, TSDoc, single-use viable), cohesion (<500
+     lines, one concern), complexity (cc <20), its own test file, and a PR that
+     documents WHY in-house.
+  The paired **Library-Grade** rule and the full hierarchy live in
+  `docs/MODULE-ARCHITECTURE.md` and `.claude/rules/library-first.md`. First
+  audit: `docs/audits/library-first-audit-2026-06-17.md`.
 
 **Enforcement:**
 
@@ -249,4 +267,6 @@ coordinates handoffs and resolves conflicts with reality.
 - `.github/workflows/ci.yml` - Principle 3 (fast PR pipeline + Test Impact Analysis: vitest --changed + pytest --testmon)
 - `.github/workflows/nightly.yml` - Principle 3 + 5 (full-suite safety net: plugin matrix, coverage, complexity + cohesion file-size watchers)
 - `.github/workflows/security-scan.yml` - Principle 4, weekly CVE watcher (`.security-ignore.yml` SSoT)
+- `.claude/rules/library-first.md` - Principle 4, Library-First + Library-Grade rule
+- `docs/audits/library-first-audit-2026-06-17.md` - Principle 4, first Library-First audit
 - `scripts/check-file-sizes.sh` - Principle 2 and 5 (cohesion file-size gate, runs nightly)

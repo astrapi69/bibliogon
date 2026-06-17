@@ -26,13 +26,17 @@ import {
 } from "./qualityThresholds"
 import {slugify} from "../shared/utils/slugify"
 import {downloadBlob} from "../shared/utils/downloadBlob"
-import {toPdfBlob} from "../export/formatPdf"
+import {renderPdfDefinition} from "../export/formatPdf"
 import {
     buildQualityReportMarkdown,
-    buildQualityReportDocument,
+    buildQualityReportPdfDefinition,
+    numberChapters,
+    type NumberedChapterMetric,
     type QualityReportLabels,
 } from "./qualityReport"
 import {notify} from "../utils/notify"
+import {getStorage} from "../storage"
+import {computeChapterMetrics} from "../lib/utils/chapterMetrics"
 import styles from "./QualityTab.module.css"
 
 export type NavigableFindingType = "filler_word" | "passive_voice" | "adverb" | "long_sentence"
@@ -61,7 +65,7 @@ function isOutlier(value: number, avg: number): boolean {
 }
 
 export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props) {
-    const {t} = useI18n()
+    const {t, lang} = useI18n()
     const [data, setData] = useState<ChapterMetricsResponse | null>(null)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState("")
@@ -71,10 +75,24 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         setLoading(true)
         setError("")
         try {
-            const result = await api.msTools.chapterMetrics(bookId)
+            const storage = getStorage()
+            let result: ChapterMetricsResponse
+            if (storage.mode === "dexie") {
+                // Offline / backendless build: ms-tools has no backend here, so
+                // guardedFetch would reject the /api call. Compute the same
+                // metrics client-side from the chapters in the storage seam.
+                const book = await storage.books.get(bookId)
+                const chapters = await storage.chapters.list(bookId)
+                result = computeChapterMetrics(book.title, book.language, chapters)
+            } else {
+                result = await api.msTools.chapterMetrics(bookId)
+            }
             setData(result)
-        } catch {
-            setError(t("ui.metadata.quality_error", "Qualitaetsanalyse fehlgeschlagen"))
+        } catch (err) {
+            const detail = err instanceof Error && err.message ? `: ${err.message}` : ""
+            setError(
+                t("ui.metadata.quality_error", "Qualitaetsanalyse fehlgeschlagen") + detail,
+            )
         }
         setLoading(false)
     }
@@ -101,6 +119,24 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         nestedClauses: t("ui.metadata.quality_nested_clauses", "{count} Nebensätze"),
         wordCountNote: t("ui.metadata.quality_wordcount_info", WORD_COUNT_NOTE),
         disclaimer: t("ui.metadata.quality_disclaimer", DISCLAIMER_NOTE),
+        total: t("ui.metadata.quality_total", "Gesamt"),
+        fleschBands: {
+            easy: t("ui.metadata.quality_flesch_band_easy", "Einfach"),
+            readable: t("ui.metadata.quality_flesch_band_readable", "Verständlich"),
+            demanding: t("ui.metadata.quality_flesch_band_demanding", "Anspruchsvoll"),
+            academic: t("ui.metadata.quality_flesch_band_academic", "Akademisch"),
+        },
+        genres: {
+            fiction: t("ui.metadata.quality_genre_fiction", "Belletristik"),
+            nonfiction: t("ui.metadata.quality_genre_nonfiction", "Sachbuch"),
+            scientific: t("ui.metadata.quality_genre_scientific", "Wissenschaft"),
+            children: t("ui.metadata.quality_genre_children", "Kinderbuch"),
+        },
+        yourBook: t("ui.metadata.quality_flesch_your_book", "Ihr Buch"),
+        comparison: t("ui.metadata.quality_flesch_comparison", "Vergleich"),
+        nestedColStart: t("ui.metadata.quality_nested_col_start", "Satz-Anfang"),
+        nestedColClauses: t("ui.metadata.quality_nested_col_clauses", "Nebensätze"),
+        page: t("ui.metadata.quality_report_page", "Seite"),
     })
 
     const reportSlug = (): string =>
@@ -121,7 +157,9 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
         if (!data) return
         setExporting(true)
         try {
-            const blob = await toPdfBlob(buildQualityReportDocument(data, reportLabels()))
+            const date = new Date().toLocaleDateString(lang || undefined)
+            const definition = buildQualityReportPdfDefinition(data, reportLabels(), {date})
+            const blob = await renderPdfDefinition(definition)
             downloadBlob(blob, `${reportSlug()}.pdf`)
         } catch (err) {
             notify.error(
@@ -146,6 +184,12 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
 
     const avg = data.averages
     const nonEmpty = data.chapters.filter((ch) => !ch.empty)
+    // Sequential 1..N numbering in logical book order (by position), the same
+    // source the PDF + Markdown exports use, so the "#" column never shows a
+    // gap or a duplicate (the old `position + 1` did for sparse/shared
+    // positions). The number is stable per chapter and does not change when the
+    // table is re-sorted by another column.
+    const numberedChapters = numberChapters(data.chapters)
 
     const navLabelTemplate = t(
         "ui.metadata.quality_nav_label",
@@ -164,12 +208,12 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
     const colAdverb = t("ui.metadata.quality_col_adverb", "Adv %")
     const colLong = t("ui.metadata.quality_col_long", "Lange Saetze")
 
-    const chapterColumns: MetricColumn<ChapterMetric>[] = [
+    const chapterColumns: MetricColumn<NumberedChapterMetric>[] = [
         {
             key: "pos",
             label: "#",
-            value: (ch) => ch.position + 1,
-            format: (ch) => String(ch.position + 1),
+            value: (ch) => ch.number,
+            format: (ch) => String(ch.number),
         },
         {
             key: "chapter",
@@ -382,7 +426,7 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
 
             {/* Chapter comparison table: color-coded, sortable, totals (#284) */}
             <MetricsTable
-                rows={data.chapters}
+                rows={numberedChapters}
                 columns={chapterColumns}
                 getRowKey={(ch) => ch.chapter_id}
                 totalsLabel={t("ui.metadata.quality_total", "Gesamt")}

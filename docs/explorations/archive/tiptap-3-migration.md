@@ -1,9 +1,14 @@
 # TipTap 3 Migration Exploration
 
-Status: Pre-audit complete. Blocked on upstream release.
-Last updated: 2026-04-21
-Revived when: search-and-replace extension v0.2.0 published to
-npm (or fallback path activated).
+> **ARCHIVED 2026-06-17 — SHIPPED / OBSOLETE.** TipTap 2→3 (DEP-02)
+> shipped in v0.49.0 via the fallback path (the `prosemirror-search`
+> adapter), without waiting on the upstream `tiptap-search-and-replace`
+> v0.2.0 publish. `@tiptap/core` is 3.26.0 on `develop`; the community
+> extensions are unpinned (`@pentestpad/tiptap-extension-figure` 1.1.0,
+> `tiptap-footnotes` 3.0.1). Kept for historical context only.
+
+Status: Shipped v0.49.0 (DEP-02). Archived 2026-06-17.
+Last updated: 2026-04-21 (original); archived 2026-06-17.
 
 ---
 

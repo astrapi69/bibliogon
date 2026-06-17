@@ -266,9 +266,12 @@ export function AuthorsDatabase() {
             </p>
 
             <div className={styles.card}>
-                {/* Top bar: search + add toggle */}
-                <div style={{display: "flex", gap: 8, marginBottom: 16}}>
-                    <div style={{flex: 1, position: "relative"}}>
+                {/* Top bar: search + actions. flex-wrap so the action
+                 *  buttons never overflow the container on narrow viewports
+                 *  (the search takes a full row of its own below `sm`, the
+                 *  buttons wrap underneath). */}
+                <div className="mb-4 flex flex-wrap items-center gap-2">
+                    <div className="relative flex-1 basis-full sm:basis-auto">
                         <Search
                             size={14}
                             style={{
@@ -309,7 +312,7 @@ export function AuthorsDatabase() {
                     </div>
                     {!showAddForm && (
                         <button
-                            className="btn btn-primary btn-sm"
+                            className="btn btn-primary btn-sm min-h-[44px]"
                             onClick={() => setShowAddForm(true)}
                             data-testid="authors-database-add-toggle"
                         >
@@ -317,7 +320,7 @@ export function AuthorsDatabase() {
                         </button>
                     )}
                     <button
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm min-h-[44px]"
                         onClick={handleExport}
                         disabled={busy}
                         data-testid="authors-database-export"
@@ -325,7 +328,7 @@ export function AuthorsDatabase() {
                         <Download size={14}/> {t("ui.authors_database.export", "Autoren exportieren")}
                     </button>
                     <button
-                        className="btn btn-secondary btn-sm"
+                        className="btn btn-secondary btn-sm min-h-[44px]"
                         onClick={() => fileInputRef.current?.click()}
                         disabled={busy}
                         data-testid="authors-database-import"

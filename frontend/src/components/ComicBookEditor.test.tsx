@@ -21,18 +21,26 @@ import {
     waitFor,
 } from "@testing-library/react";
 
+import {MemoryRouter} from "react-router-dom";
+
 import ComicBookEditor from "./ComicBookEditor";
 import {expectNoA11yViolations} from "../test-utils/a11y";
 import {FeatureTestProvider} from "../features/FeatureTestProvider";
 
 // PdfExportControls (mounted in the comic editor header) uses useFeature,
-// which requires a FeatureProvider. Wrap every render so the real registry
-// is present; api mode keeps pandoc-export active.
+// which requires a FeatureProvider; the header EditorMenu's help actions use
+// useNavigate, which requires a Router. Wrap every render so both are present;
+// api mode keeps pandoc-export active.
 function render(
     ui: ReactElement,
     options?: Parameters<typeof rtlRender>[1],
 ) {
-    return rtlRender(<FeatureTestProvider>{ui}</FeatureTestProvider>, options);
+    return rtlRender(
+        <MemoryRouter>
+            <FeatureTestProvider>{ui}</FeatureTestProvider>
+        </MemoryRouter>,
+        options,
+    );
 }
 
 vi.mock("../hooks/useI18n", () => ({

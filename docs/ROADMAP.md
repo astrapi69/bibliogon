@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-12 (v0.51.0+ reconciliation — Recently-shipped arc extended through v0.51.0 (feature registry #78, gitflow #79, offline import wizard #76/#82, client-side .bgb import #99, About expansion #84/#87/#97, LaTeX in the export UI #89, offline Help + Getting Started, custom 404); "Comments offline" moved from "Planned" to shipped; DEP-02 (TipTap 3) marked resolved.)
-Latest release: v0.51.0 (2026-06-12) — see [changelog/releases/v0.51.0.md](../changelog/releases/v0.51.0.md) for the full per-release notes.
+Last updated: 2026-06-17 (Session 9 reconciliation — the v0.52.0 → v0.54.0 shipped arc is recorded below; explorations cleanup (#372): 3 shipped explorations archived, dependency-strategy refreshed, children-book-plugin marked shipped; priorities re-tiered for v0.54.0+.)
+Latest release: v0.54.0 (2026-06-17) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
@@ -95,6 +95,43 @@ sync/backup, audiobook TTS, LAN mode) resolve to **disabled** with a
 translated "requires the desktop app" reason via the feature registry —
 per policy #78, nothing the user owns is hidden.
 
+## Recently shipped — Session 9 (v0.52.0 → v0.54.0)
+
+Stability-hardening + import-parity + quality-infra arc. Completed:
+
+- **God-file burn-down** — `.filesize-baseline` driven to **0**; the
+  frontend `client.ts` split + backend service-extraction sweep landed.
+- **Read-modify-write hardening** — all settings/app-config RMW routes
+  through a single serialized write-queue (`serializedUpdate` /
+  serialized app-config write), closing the settings-clobber data-loss
+  path (atomic overlay write, #351).
+- **CI 3-tier** — fast PR gate (~6 min), Nightly, Weekly; **Test Impact
+  Analysis** in CI (`vitest --changed` + `pytest-testmon`, #332).
+- **Security-CI Phase 2** — blocking; **complexity baseline 15**
+  (radon / ruff-C901 / ESLint, warn-only).
+- **Quality-report** — 5 extensions incl. the PDF mirroring the
+  on-screen layout (#356/#360).
+- **Selective export** + **full `.bgb` (ZIP) client backup** with
+  progress for image-heavy workspaces (#340/#346).
+- **PWA SW-update banner** — controlled `skipWaiting` reload (#323);
+  About "Check for new version" active SW update check (#366/#368).
+- **Manual test plan** — 52 TCs fully automated with Playwright (#336).
+- **Import parity PWA↔Desktop** — GitHub import + URL import + unified
+  import dialog (#353); HTML (.html/.htm) accepted in the wizard
+  (#352); drag-and-drop import.
+- **Settings "Daten" tab** — data-management hub (#338).
+- **EditorMenu** — structured grouped menu
+  (Datei/Bearbeiten/Ansicht/Kapitel/Werkzeuge/Hilfe, #322).
+- **Recently-edited** quick-access strip (#314); **Export preview**
+  (HTML) before exporting (#316); reusable **StatusBadge** with
+  consistent per-status colors (#318).
+- **Event Recording** — base shipped (EVT-01..04: RingBuffer, Dexie
+  persist, proactive Settings entry, JSON export). EVT-05/06 open
+  (see P2 below).
+- **Explorations cleanup (#372)** — 3 shipped explorations archived,
+  `dependency-strategy.md` refreshed (DEP-02 + DEP-09 done),
+  `children-book-plugin.md` marked shipped.
+
 ## Planned
 
 - **AI offline — remaining surfaces** (follow-up to 1b). Three
@@ -138,27 +175,53 @@ per policy #78, nothing the user owns is hidden.
 ## Current focus
 
 All Phase 2 themes and the Maximal-Offline arc (above) are complete
-or deliberately deferred. Active work is the "Planned" items above;
-everything else is the trigger-gated polish + upstream-blocked backlog
-in the tiers below.
+or deliberately deferred. The v0.52.0 → v0.54.0 Session-9 arc shipped
+(recorded above). The prioritized snapshot for v0.54.0+:
+
+- **Release readiness (P1):** run the BACKUP-AKZEPTANZTEST cycle +
+  the Aster real-browser E2E gate, then cut the next release.
+- **Event Recording tail (P2):** EVT-05 (category/appState axis) +
+  EVT-06 (feature-strategy registration).
+- **Process (P2):** the 6 multi-agent-gitflow decisions
+  (`MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`).
+- **Trigger-gated (P3+):** mobile-sync Phase C/D
+  (`MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01`), Article
+  publication/promo (`AR-01` validation first), i18n expansion
+  (Hindi first), Tauri (on install-friction signal), and the
+  strategic deferrals (monetization, SaaS).
+
+Detailed per-theme work lives in the tiers below.
 
 ---
 
 ## P0 - Deadline / Blocker / Security
 
-(none)
+(none) — gitflow is clean: `main` holds v0.54.0 and `develop` carries
+the post-release work; nothing on `main` is missing from `develop`, so
+no main→develop sync is pending.
 
 ---
 
 ## P1 - Architecture / Hygiene Debt
 
-(none)
+- **Release readiness** — run the BACKUP-AKZEPTANZTEST cycle
+  (`e2e/smoke/backup-acceptance.spec.ts`) + the Aster real-browser
+  Playwright smoke gate, then cut the next release per
+  `release-workflow.md`. This is the only thing between `develop` and
+  the next tag.
 
 ---
 
 ## P2 - High-Value User Features
 
-(none)
+- **EVT-05 / EVT-06** — Event Recording maturation tail (base
+  EVT-01..04 shipped). EVT-05: optional category/appState axis per
+  entry (M). EVT-06: register `EVENT_RECORDING` in the feature-strategy
+  `ALWAYS_ACTIVE` set (S). See
+  [EXP-002](explorations/EXP-002-user-event-recording.md).
+- **MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01** — adjudicate the
+  6 open multi-agent-gitflow coordination decisions (see P3 theme
+  "Infrastructure / Quality" for the filed backlog entry).
 
 ---
 
@@ -412,8 +475,8 @@ unblock signal.
 - ~~**DEP-02**: TipTap 2 → 3 migration~~ — **RESOLVED, shipped in
   v0.49.0**: the editor moved to TipTap v3 via the listed alternative
   unblock path (the `prosemirror-search` adapter), without waiting on
-  the upstream `tiptap-search-and-replace` publish. Pre-audit at
-  [docs/explorations/tiptap-3-migration.md](explorations/tiptap-3-migration.md).
+  the upstream `tiptap-search-and-replace` publish. Pre-audit archived
+  at [docs/explorations/archive/tiptap-3-migration.md](explorations/archive/tiptap-3-migration.md).
 - **DEP-05**: elevenlabs SDK 0.2.27 → 2.45.0 migration (complete
   SDK rewrite). Blocks on paid-API access for migration testing.
   Plan a focused session, not a side bump — the 0.2 → 2.x

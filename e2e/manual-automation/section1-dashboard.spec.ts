@@ -94,6 +94,12 @@ test.describe("Section 1 — TC-014 default content type -> button label", () =>
         await ad.goto();
         const primary = page.getByTestId("article-list-new");
         await expect(primary).toBeVisible();
+        // The configured default content-type loads async after mount; the
+        // primary only deep-links ``?type=`` once it differs from the
+        // registry default. Wait for the label to reflect "Tutorial"
+        // (loanword, stable across the active catalog) so the click fires
+        // against the updated href, not the initial /articles/new.
+        await expect(primary).toContainText("Tutorial");
         await primary.click();
         await expect(page).toHaveURL(/\/articles\/new\?type=tutorial/, {timeout: 10_000});
     });

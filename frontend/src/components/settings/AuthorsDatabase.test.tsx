@@ -376,6 +376,37 @@ describe("AuthorsDatabase", () => {
         await waitFor(() => expect(notifyError).toHaveBeenCalled());
     });
 
+    it("wraps the action toolbar so buttons never overflow on narrow viewports", async () => {
+        render(<AuthorsDatabase/>);
+        await waitFor(() =>
+            expect(screen.getByTestId("authors-database-add-toggle")).toBeTruthy(),
+        );
+        // The toolbar (the add-toggle's parent) wraps; the search wrapper
+        // takes a full row of its own below the sm breakpoint.
+        const toolbar = screen.getByTestId("authors-database-add-toggle")
+            .parentElement!;
+        expect(toolbar.className).toContain("flex-wrap");
+        const searchWrapper = screen.getByTestId("authors-database-search")
+            .parentElement!;
+        expect(searchWrapper.className).toContain("basis-full");
+    });
+
+    it("gives the action buttons a 44px minimum touch target", async () => {
+        render(<AuthorsDatabase/>);
+        await waitFor(() =>
+            expect(screen.getByTestId("authors-database-export")).toBeTruthy(),
+        );
+        expect(
+            screen.getByTestId("authors-database-add-toggle").className,
+        ).toContain("min-h-[44px]");
+        expect(
+            screen.getByTestId("authors-database-export").className,
+        ).toContain("min-h-[44px]");
+        expect(
+            screen.getByTestId("authors-database-import").className,
+        ).toContain("min-h-[44px]");
+    });
+
     it("shows the with-search empty state when filter has no matches", async () => {
         listMock.mockImplementation(async (params) => {
             if (params?.search) return [];

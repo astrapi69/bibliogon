@@ -16,18 +16,23 @@ export const test = base.extend<{
     resetDatabase: [async ({page}, use) => {
         await resetDb();
         await resetSettings();
-        // Suppress the one-time donation onboarding dialog (S-02).
-        // It opens after the FIRST UI-created book and its
-        // radix-dialog-overlay then intercepts every subsequent
-        // click on the Dashboard. It is not what these specs test;
-        // the dedicated donation specs seed their own localStorage.
-        // Same baseline-normalisation intent as resetSettings.
+        // Suppress the one-time onboarding dialogs that auto-open on the
+        // Dashboard and whose overlays intercept every subsequent click.
+        // Neither is what these specs test; the dedicated onboarding specs
+        // seed their own localStorage. Same baseline-normalisation intent
+        // as resetSettings.
+        //   - donation onboarding (S-02): opens after the first UI-created
+        //     book.
+        //   - AI-setup wizard: opens on the Dashboard whenever the app
+        //     config reports AI is not enabled (or omits the ai block),
+        //     the state an isolated/fresh E2E backend data dir can land in.
         await page.addInitScript(() => {
             try {
                 localStorage.setItem(
                     "bibliogon-donation-onboarding-seen",
                     "true",
                 );
+                localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
             } catch {
                 // localStorage unavailable (privacy mode); ignore.
             }

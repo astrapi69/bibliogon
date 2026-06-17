@@ -132,6 +132,13 @@ vi.mock("../hooks/useAuthorChoices", () => ({
     useAuthorChoices: () => [],
 }));
 
+// GitRepoInfo (rendered by RepositoryUrlField) resolves the remote
+// default branch via this hook; stub it so the metadata-editor tests
+// never make a real GitHub API request.
+vi.mock("../hooks/useRemoteDefaultBranch", () => ({
+    useRemoteDefaultBranch: () => ({ status: "idle" }),
+}));
+
 vi.mock("../hooks/useAuthorProfile", () => ({
     useAuthorProfile: () => ({
         name: "Test Author",
@@ -674,9 +681,7 @@ describe("BookMetadataEditor — author + language fields", () => {
         // The profile authors (real name + pen names) render as a real
         // <select> so every pen name is a visible option regardless of the
         // pre-filled value (a native <datalist> filtered them out — #pen-names).
-        const select = screen.getByTestId(
-            "metadata-author-select",
-        ) as HTMLSelectElement;
+        const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement;
         expect(select.tagName).toBe("SELECT");
         expect(select.value).toBe("Test Author");
     });
@@ -786,9 +791,7 @@ describe("BookMetadataEditor — author + language fields", () => {
                 onBack={vi.fn()}
             />,
         );
-        const select = screen.getByTestId(
-            "metadata-author-select",
-        ) as HTMLSelectElement;
+        const select = screen.getByTestId("metadata-author-select") as HTMLSelectElement;
         fireEvent.change(select, { target: { value: "Pen One" } });
         expect(select.value).toBe("Pen One");
     });
@@ -815,9 +818,7 @@ describe("BookMetadataEditor — author + language fields", () => {
             />,
         );
         // The combobox shows the endonym label for the stored code "fr".
-        const input = screen.getByTestId(
-            "book-metadata-language",
-        ) as HTMLInputElement;
+        const input = screen.getByTestId("book-metadata-language") as HTMLInputElement;
         expect(input.value).toBe("Français");
     });
 });

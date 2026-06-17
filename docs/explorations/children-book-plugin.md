@@ -1,7 +1,20 @@
 # Children's Book Plugin Exploration
 
-Status: Architecture decided. Session 2 in progress (2026-05-16).
-Last updated: 2026-05-16 (re-scope header annotation; body unchanged).
+> **SHIPPED — implemented as `plugin-kinderbuch`.** Sessions 2-6 of the
+> roadmap below are live on `develop`: the Page entity + `book_type`
+> discriminator + Pages CRUD, the page-based editor (thumbnails / canvas
+> / properties), the speech-bubble + image-top-text-bottom layouts (plus
+> the extra split / two-image / collage layouts), Playwright-rendered PDF
+> export, and Fixed-Layout EPUB3, with KDP page-count validation as a
+> warning. The only residual is Session 7 onboarding/help polish (a
+> richer help page + starter template). The doc is kept as the
+> architecture record; the earlier "Deferral" framing is superseded
+> (see the closing status note).
+
+Status: **Erledigt** — shipped as `plugin-kinderbuch` (Sessions 2-6).
+Residual: Session 7 onboarding/help polish (~0.5 task).
+Last updated: 2026-06-17 (status corrected from "deferred" to shipped;
+body unchanged). Earlier: 2026-05-16 (re-scope header annotation).
 Source prompt: [prompt-children-book-plugin-exploration.md](archive/prompt-children-book-plugin-exploration.md)
 
 ### Schema correction (2026-05-16, supersedes earlier annotation)
@@ -519,60 +532,44 @@ Each session ends green (`make test`) and produces a single conventional-commit 
 
 ---
 
-## Deferral
+## Status: shipped as `plugin-kinderbuch` (2026-06-17 correction)
 
-Implementation of Sessions 2 through 7 is deferred. The plugin
-plugin-kinderbuch stays at its current v1.0.0 (4 layouts, HTML
-preview only) until user demand justifies the investment.
+The deferral recorded below is **superseded**. The picture-book
+feature was built out and is live on `develop`:
 
-### Reasoning
+- **Session 2** — Page entity + `Book.book_type` discriminator +
+  Pages CRUD inside `plugin-kinderbuch`. ✅
+- **Session 3** — page-based editor (PageEditor: thumbnails /
+  canvas / properties), drag-reorder, inline image upload. ✅
+- **Session 4** — speech-bubble layout (anchor grid + SVG tail) +
+  Playwright-rendered PDF export. ✅
+- **Session 5** — image-top-text-bottom layout (+ split / two-image /
+  collage), KDP page-count validation as a warning. ✅
+- **Session 6** — Fixed-Layout EPUB3 export. ✅
+- **Session 7** — onboarding + help polish. **Residual (~0.5 task)**:
+  a richer in-app help page + a picture-book starter template are the
+  only pieces not fully fleshed out.
 
-- Bibliogon's core prose + audiobook + KDP + translation workflows
-  are complete and stable at v0.19.0. The core user journey works.
-- Current user base is small and no feedback has explicitly
-  requested picture-book support. Building a 7-session feature
-  without demand signal is speculative.
-- Picture-book authoring is a distinct product surface (different
-  editor, different export pipeline, different KDP segment) with
-  limited synergies to the prose editor. Effectively a second
-  product inside the product.
-- Opportunity cost: 7 sessions on kinderbuch is 7 sessions not
-  spent on polish, outreach, AI assistance (A-01..A-03), or
-  KDP workflow improvements that all existing users benefit from.
-- The exploration document itself is the value delivered from
-  this line of work for now. When demand arrives, the architecture
-  decisions are frozen and Session 2 can start immediately.
+The original deferral reasoning (below, struck through in intent) is
+kept for historical context — it explains why the work waited, and
+the architecture it froze is exactly what shipped.
 
-### Revival criteria
+### Historical deferral reasoning (no longer in force)
 
-Revive when any of these are true:
+The work was originally deferred at v0.19.0 because the core prose /
+audiobook / KDP / translation journey was stable, the user base was
+small with no explicit picture-book request, and picture-book
+authoring is effectively a second product surface with limited prose
+synergy. The architecture document was treated as the delivered value
+until a demand signal arrived. Those conditions changed (Aster's own
+picture-book work), the architecture decisions held, and Sessions 2-6
+were implemented as designed.
 
-- Three or more users request picture-book support in feedback
-  channels (GitHub issues, direct messages, Discord if created).
-- Aster personally starts authoring a new picture book and the
-  current JS/TS toolchain friction becomes a blocker for that
-  project.
-- A pre-committed commercial interest (licensing, commission) makes
-  the plugin worth building on a deadline.
-- Bibliogon reaches 100+ active users, at which point the picture-
-  book segment becomes a plausible premium-tier expansion with
-  real economic justification.
+### Residual revival note
 
-Absence of these signals means the deferral stands.
-
-### Go/No-Go checkpoint after Session 3
-
-If implementation is revived, the go/no-go checkpoint is explicit
-and mandatory: after Session 3 (page-based editor frontend), before
-committing to Sessions 4-7 (export pipelines), Aster must author
-a functional 4-page test book in the editor. If that authoring
-experience feels awkward, incomplete, or does not meaningfully
-improve on the existing JS/TS toolchain, implementation stops and
-the remaining sessions are re-evaluated.
-
-This checkpoint exists to protect against sunk-cost momentum.
-Session 4-7 is 60% of total effort and all of the KDP-specific
-complexity. A weak Session 3 outcome is a strong signal to stop.
+The only open thread is the Session 7 polish (help page + starter
+template). Treat it as ordinary backlog, not a revival decision —
+the plugin itself is shipped and in use.
 
 ---
 

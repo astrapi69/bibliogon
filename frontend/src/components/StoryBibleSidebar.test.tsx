@@ -4,6 +4,16 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import StoryBibleSidebar from "./StoryBibleSidebar";
 import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
 
+vi.mock("@astrapi69/feature-strategy-react", () => ({
+    useFeature: () => ({
+        state: "active",
+        isActive: true,
+        isDisabled: false,
+        isHidden: false,
+        reason: undefined,
+    }),
+}));
+
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
