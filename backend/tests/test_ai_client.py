@@ -1,16 +1,16 @@
 """Tests for the multi-provider LLM client."""
 
-import pytest
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
+import pytest
 
-from app.ai.llm_client import LLMClient, LLMError
-
+from app.ai.llm_client import LLMClient, LLMError, _looks_like_api_key_error
 
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def client():
@@ -47,6 +47,7 @@ def _mock_http(post_return=None, get_return=None, post_side_effect=None, get_sid
 # OpenAI-compatible path
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_chat_success(client):
     mock_response = MagicMock()
@@ -66,7 +67,9 @@ async def test_chat_success(client):
 
 @pytest.mark.asyncio
 async def test_chat_connection_error(client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))
+    ):
         with pytest.raises(LLMError, match="nicht erreichbar"):
             await client.chat([{"role": "user", "content": "Hi"}])
 
@@ -131,6 +134,7 @@ async def test_generate_with_system_prompt(client):
 # Anthropic adapter
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_anthropic_chat_success(anthropic_client):
     mock_response = MagicMock()
@@ -170,10 +174,12 @@ async def test_anthropic_system_message_extracted(anthropic_client):
 
     mock_http = _mock_http(post_return=mock_response)
     with patch("httpx.AsyncClient", return_value=mock_http):
-        await anthropic_client.chat([
-            {"role": "system", "content": "You are helpful"},
-            {"role": "user", "content": "Hi"},
-        ])
+        await anthropic_client.chat(
+            [
+                {"role": "system", "content": "You are helpful"},
+                {"role": "user", "content": "Hi"},
+            ]
+        )
 
         call_kwargs = mock_http.post.call_args
         payload = call_kwargs.kwargs.get("json") or call_kwargs[1].get("json")
@@ -228,7 +234,9 @@ async def test_anthropic_rate_limit(anthropic_client):
 
 @pytest.mark.asyncio
 async def test_anthropic_connection_error(anthropic_client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))
+    ):
         with pytest.raises(LLMError, match="nicht erreichbar"):
             await anthropic_client.chat([{"role": "user", "content": "Hi"}])
 
@@ -236,6 +244,7 @@ async def test_anthropic_connection_error(anthropic_client):
 # ---------------------------------------------------------------------------
 # Provider detection
 # ---------------------------------------------------------------------------
+
 
 def test_provider_auto_detected_from_base_url():
     client = LLMClient(base_url="https://api.anthropic.com/v1")
@@ -256,13 +265,12 @@ def test_provider_lmstudio_default():
 # list_models
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_list_models_success(client):
     mock_response = MagicMock()
     mock_response.is_success = True
-    mock_response.json.return_value = {
-        "data": [{"id": "llama3"}, {"id": "mistral"}]
-    }
+    mock_response.json.return_value = {"data": [{"id": "llama3"}, {"id": "mistral"}]}
 
     with patch("httpx.AsyncClient", return_value=_mock_http(get_return=mock_response)):
         models = await client.list_models()
@@ -272,7 +280,9 @@ async def test_list_models_success(client):
 
 @pytest.mark.asyncio
 async def test_list_models_offline(client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))
+    ):
         models = await client.list_models()
         assert models == []
 
@@ -290,6 +300,7 @@ async def test_list_models_anthropic_returns_presets(anthropic_client):
 # Health check
 # ---------------------------------------------------------------------------
 
+
 @pytest.mark.asyncio
 async def test_health_ok(client):
     mock_response = MagicMock()
@@ -305,7 +316,9 @@ async def test_health_ok(client):
 
 @pytest.mark.asyncio
 async def test_health_offline(client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))
+    ):
         result = await client.health()
         assert result["status"] == "offline"
 
@@ -350,7 +363,9 @@ async def test_anthropic_health_no_key():
 
 @pytest.mark.asyncio
 async def test_anthropic_health_offline(anthropic_client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(post_side_effect=httpx.ConnectError("refused"))
+    ):
         result = await anthropic_client.health()
         assert result["status"] == "offline"
 
@@ -358,6 +373,7 @@ async def test_anthropic_health_offline(anthropic_client):
 # ---------------------------------------------------------------------------
 # test_connection
 # ---------------------------------------------------------------------------
+
 
 @pytest.mark.asyncio
 async def test_test_connection_success(client):
@@ -375,7 +391,9 @@ async def test_test_connection_success(client):
 
 @pytest.mark.asyncio
 async def test_test_connection_offline(client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ConnectError("refused"))
+    ):
         success, error_key, detail = await client.test_connection()
         assert success is False
         assert error_key == "offline"
@@ -383,7 +401,9 @@ async def test_test_connection_offline(client):
 
 @pytest.mark.asyncio
 async def test_test_connection_timeout(client):
-    with patch("httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ReadTimeout("timed out"))):
+    with patch(
+        "httpx.AsyncClient", return_value=_mock_http(get_side_effect=httpx.ReadTimeout("timed out"))
+    ):
         success, error_key, detail = await client.test_connection()
         assert success is False
         assert error_key == "timeout"
@@ -445,8 +465,100 @@ async def test_test_connection_detail_passthrough(anthropic_client):
 
 
 # ---------------------------------------------------------------------------
+# Gemini-style auth failures (HTTP 400 instead of 401/403) - issue #355
+# ---------------------------------------------------------------------------
+
+
+def test_looks_like_api_key_error_detects_gemini_message():
+    assert _looks_like_api_key_error("API key not valid. Please pass a valid API key.")
+    assert _looks_like_api_key_error("Please pass a valid API key")
+    assert _looks_like_api_key_error("Reason: API_KEY_INVALID")
+    assert _looks_like_api_key_error('{"error":{"message":"Please pass a valid API key"}}')
+
+
+def test_looks_like_api_key_error_ignores_unrelated_message():
+    assert not _looks_like_api_key_error("max_tokens: must be at least 1")
+    assert not _looks_like_api_key_error("model 'foo' not found")
+    assert not _looks_like_api_key_error("")
+
+
+@pytest.mark.asyncio
+async def test_test_connection_gemini_invalid_key_400_is_auth_error():
+    """Gemini answers 400 INVALID_ARGUMENT for a bad key; classify as auth_error."""
+    gemini_client = LLMClient(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        model="gemini-2.0-flash",
+        api_key="AIzaWRONG",
+        provider="google",
+    )
+    mock_response = MagicMock()
+    mock_response.is_success = False
+    mock_response.status_code = 400
+    mock_response.json.return_value = {
+        "error": {
+            "code": 400,
+            "message": "Please pass a valid API key",
+            "status": "INVALID_ARGUMENT",
+        }
+    }
+
+    with patch("httpx.AsyncClient", return_value=_mock_http(get_return=mock_response)):
+        success, error_key, detail = await gemini_client.test_connection()
+        assert success is False
+        assert error_key == "auth_error"
+        assert "API key" in detail
+
+
+@pytest.mark.asyncio
+async def test_test_connection_openai_compat_generic_400_stays_invalid_request(client):
+    """A non-key 400 on the OpenAI-compatible path stays invalid_request."""
+    mock_response = MagicMock()
+    mock_response.is_success = False
+    mock_response.status_code = 400
+    mock_response.json.return_value = {"error": {"message": "temperature must be <= 2"}}
+
+    with patch("httpx.AsyncClient", return_value=_mock_http(get_return=mock_response)):
+        success, error_key, detail = await client.test_connection()
+        assert success is False
+        assert error_key == "invalid_request"
+
+
+@pytest.mark.asyncio
+async def test_chat_gemini_invalid_key_400_raises_key_error():
+    """Generation via Gemini with a bad key raises a clear API-key error, not a generic 400."""
+    gemini_client = LLMClient(
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai",
+        model="gemini-2.0-flash",
+        api_key="AIzaWRONG",
+        provider="google",
+    )
+    mock_response = MagicMock()
+    mock_response.is_success = False
+    mock_response.status_code = 400
+    mock_response.text = '[{"error":{"code":400,"message":"Please pass a valid API key","status":"INVALID_ARGUMENT"}}]'
+
+    with patch("httpx.AsyncClient", return_value=_mock_http(post_return=mock_response)):
+        with pytest.raises(LLMError, match="API-Schlüssel"):
+            await gemini_client.chat([{"role": "user", "content": "hi"}])
+
+
+@pytest.mark.asyncio
+async def test_chat_openai_compat_generic_400_stays_generic(client):
+    """A non-key 400 on the chat path keeps the generic LLM API error message."""
+    mock_response = MagicMock()
+    mock_response.is_success = False
+    mock_response.status_code = 400
+    mock_response.text = '{"error":{"message":"temperature must be <= 2"}}'
+
+    with patch("httpx.AsyncClient", return_value=_mock_http(post_return=mock_response)):
+        with pytest.raises(LLMError, match="LLM API error: 400"):
+            await client.chat([{"role": "user", "content": "hi"}])
+
+
+# ---------------------------------------------------------------------------
 # Defaults
 # ---------------------------------------------------------------------------
+
 
 def test_client_defaults():
     c = LLMClient()

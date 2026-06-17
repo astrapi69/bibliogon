@@ -19,6 +19,26 @@ from .providers import detect_provider
 logger = logging.getLogger(__name__)
 
 
+def _looks_like_api_key_error(detail: str) -> bool:
+    """Heuristic: does this error message indicate a missing/invalid API key?
+
+    Some OpenAI-compatible providers do not return the conventional 401/403
+    for authentication failures. Google Gemini's ``/v1beta/openai`` endpoint
+    answers with HTTP 400 ``INVALID_ARGUMENT`` and a message like
+    "API key not valid. Please pass a valid API key." Without this check such
+    failures are misclassified as ``invalid_request`` and the user never learns
+    that the key itself is the problem.
+
+    Args:
+        detail: The provider's error message (or response body) text.
+
+    Returns:
+        True when the message looks like an authentication/key failure.
+    """
+    lowered = detail.lower()
+    return "api key" in lowered or "api_key_invalid" in lowered
+
+
 class LLMError(Exception):
     """Error from LLM API."""
 
@@ -113,6 +133,8 @@ class LLMClient:
             if response.status_code == 429:
                 raise LLMError("Rate Limit erreicht. Bitte warten.")
             if not response.is_success:
+                if response.status_code in (400, 403) and _looks_like_api_key_error(response.text):
+                    raise LLMError("API-Schlüssel ungültig oder fehlend.")
                 raise LLMError(f"LLM API error: {response.status_code} {response.text[:200]}")
 
             result = response.json()
@@ -362,6 +384,8 @@ class LLMClient:
         if status_code == 404:
             return {"status": "model_not_found", "error": detail or "Model not found"}
         if status_code == 400:
+            if _looks_like_api_key_error(detail):
+                return {"status": "auth_error", "error": detail or "API key invalid"}
             return {"status": "invalid_request", "error": detail or "Bad request"}
         if status_code == 408:
             return {"status": "timeout", "error": detail or "Request timed out"}
