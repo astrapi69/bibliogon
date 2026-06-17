@@ -30,6 +30,8 @@ import {renderPdfDefinition} from "../export/formatPdf"
 import {
     buildQualityReportMarkdown,
     buildQualityReportPdfDefinition,
+    numberChapters,
+    type NumberedChapterMetric,
     type QualityReportLabels,
 } from "./qualityReport"
 import {notify} from "../utils/notify"
@@ -166,6 +168,12 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
 
     const avg = data.averages
     const nonEmpty = data.chapters.filter((ch) => !ch.empty)
+    // Sequential 1..N numbering in logical book order (by position), the same
+    // source the PDF + Markdown exports use, so the "#" column never shows a
+    // gap or a duplicate (the old `position + 1` did for sparse/shared
+    // positions). The number is stable per chapter and does not change when the
+    // table is re-sorted by another column.
+    const numberedChapters = numberChapters(data.chapters)
 
     const navLabelTemplate = t(
         "ui.metadata.quality_nav_label",
@@ -184,12 +192,12 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
     const colAdverb = t("ui.metadata.quality_col_adverb", "Adv %")
     const colLong = t("ui.metadata.quality_col_long", "Lange Saetze")
 
-    const chapterColumns: MetricColumn<ChapterMetric>[] = [
+    const chapterColumns: MetricColumn<NumberedChapterMetric>[] = [
         {
             key: "pos",
             label: "#",
-            value: (ch) => ch.position + 1,
-            format: (ch) => String(ch.position + 1),
+            value: (ch) => ch.number,
+            format: (ch) => String(ch.number),
         },
         {
             key: "chapter",
@@ -402,7 +410,7 @@ export default function QualityTab({bookId, bookTitle, onNavigateToIssue}: Props
 
             {/* Chapter comparison table: color-coded, sortable, totals (#284) */}
             <MetricsTable
-                rows={data.chapters}
+                rows={numberedChapters}
                 columns={chapterColumns}
                 getRowKey={(ch) => ch.chapter_id}
                 totalsLabel={t("ui.metadata.quality_total", "Gesamt")}
