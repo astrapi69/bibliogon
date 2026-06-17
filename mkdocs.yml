@@ -82,6 +82,8 @@ plugins:
         Im Browser: In the browser
         Manuskript-Tools: Manuscript Tools
         Vorlagen: Templates
+        Von GitHub: From GitHub
+        Von URL: From URL
         Git-URL: Git URL
         Feldauswahl: Field selection
         Git-Historie übernehmen: Adopt git history
@@ -188,6 +190,8 @@ nav:
   - Manuskript-Tools: de/plugins/ms-tools.md
 - Vorlagen: de/templates.md
 - Import:
+  - Von GitHub: de/import/github.md
+  - Von URL: de/import/url.md
   - Git-URL: de/import/git-url.md
   - Feldauswahl: de/import/field-selection.md
   - Git-Historie übernehmen: de/import/git-adoption.md
