@@ -12,7 +12,7 @@
  * in isolation; the pdfmake render itself happens in {@link renderPdfDefinition}.
  */
 
-import type { ChapterMetricsResponse } from "../api/client";
+import type { ChapterMetric, ChapterMetricsResponse } from "../api/client";
 import type { PdfDocDefinition } from "../export/formatPdf";
 import { rankSentences, sentenceAnchor } from "../lib/utils/sentenceComplexity";
 import { classify, type CellSeverity } from "../lib/components/MetricsTable";
@@ -28,6 +28,30 @@ import {
   PASSIVE_PCT_THRESHOLD,
   LONG_SENTENCE_THRESHOLD,
 } from "./qualityThresholds";
+
+/** A chapter metric tagged with its sequential book number (1..N). */
+export interface NumberedChapterMetric extends ChapterMetric {
+  /** 1-based sequential number in logical book order, independent of the raw
+   *  `position` value (which may be sparse or shared and must NOT drive the
+   *  displayed number). */
+  number: number;
+}
+
+/**
+ * Number a book's chapters sequentially (1..N) in logical book order.
+ *
+ * Sorts a copy by `position` (a stable sort, so chapters that share a position
+ * keep their incoming order) and assigns `number = index + 1`. This is the
+ * single source of the displayed chapter number for the UI table, the PDF and
+ * the Markdown export, so all three stay consistent and never show a gap or a
+ * duplicate — the previous `position + 1` produced both when positions were
+ * sparse (chapters inserted/removed) or shared (equal sort order).
+ */
+export function numberChapters(chapters: ChapterMetric[]): NumberedChapterMetric[] {
+  return [...chapters]
+    .sort((a, b) => a.position - b.position)
+    .map((chapter, index) => ({ ...chapter, number: index + 1 }));
+}
 
 /** Localized labels the report builders need (caller supplies via i18n `t`). */
 export interface QualityReportLabels {
@@ -146,11 +170,11 @@ export function buildQualityReportMarkdown(
     "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
   ];
 
-  const rows = metrics.chapters.map((ch) => {
+  const rows = numberChapters(metrics.chapters).map((ch) => {
     if (ch.empty) {
-      return `| ${ch.position + 1} | ${ch.chapter} | - | - | - | - | - | - | - |`;
+      return `| ${ch.number} | ${ch.chapter} | - | - | - | - | - | - | - |`;
     }
-    return `| ${ch.position + 1} | ${ch.chapter} | ${ch.word_count} | ${ch.sentence_count} | ${ch.flesch_reading_ease.toFixed(0)} | ${pct(ch.filler_ratio)} | ${pct(ch.passive_ratio)} | ${pct(ch.adverb_ratio)} | ${ch.long_sentence_count} |`;
+    return `| ${ch.number} | ${ch.chapter} | ${ch.word_count} | ${ch.sentence_count} | ${ch.flesch_reading_ease.toFixed(0)} | ${pct(ch.filler_ratio)} | ${pct(ch.passive_ratio)} | ${pct(ch.adverb_ratio)} | ${ch.long_sentence_count} |`;
   });
 
   return [
@@ -345,10 +369,10 @@ function chapterTable(
     cell(labels.colLong, { bold: true, fill: HEADER_FILL }),
   ];
 
-  const dataRows = metrics.chapters.map((ch) => {
+  const dataRows = numberChapters(metrics.chapters).map((ch) => {
     if (ch.empty) {
       return [
-        cell(String(ch.position + 1), { color: MUTED_COLOR }),
+        cell(String(ch.number), { color: MUTED_COLOR }),
         cell(ch.chapter, { align: "left", color: MUTED_COLOR }),
         ...Array.from({ length: 7 }, () => cell("-", { color: MUTED_COLOR })),
       ];
@@ -356,7 +380,7 @@ function chapterTable(
     const fillerPct = ch.filler_ratio * 100;
     const passivePct = ch.passive_ratio * 100;
     return [
-      cell(String(ch.position + 1)),
+      cell(String(ch.number)),
       cell(ch.chapter, { align: "left" }),
       cell(String(ch.word_count)),
       cell(String(ch.sentence_count)),

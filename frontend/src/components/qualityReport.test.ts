@@ -2,9 +2,10 @@ import {describe, it, expect} from "vitest"
 import {
     buildQualityReportMarkdown,
     buildQualityReportPdfDefinition,
+    numberChapters,
     type QualityReportLabels,
 } from "./qualityReport"
-import type {ChapterMetricsResponse} from "../api/client"
+import type {ChapterMetric, ChapterMetricsResponse} from "../api/client"
 
 const labels: QualityReportLabels = {
     title: "Qualitaetsbericht",
@@ -263,5 +264,123 @@ describe("buildQualityReportPdfDefinition", () => {
         const texts = collectText(def.content)
         expect(texts).toContain("Gezaehlt werden alle Woerter im Fliesstext.")
         expect(texts).toContain("Dieser Bericht ersetzt kein inhaltliches Lektorat.")
+    })
+})
+
+/**
+ * Regression coverage for the duplicate-numbering bug (#384): the "#" column
+ * must follow logical book order (sorted by `position`) and be sequential
+ * 1..N, with no gaps or duplicates, consistently across the UI source helper,
+ * the Markdown export and the PDF export. The pre-fix code rendered
+ * `position + 1`, which duplicated when chapters shared a position (e.g. ones
+ * inserted after Impressum/Epilog) and left gaps when positions were sparse.
+ */
+function chapter(id: string, name: string, position: number, empty = false): ChapterMetric {
+    return {
+        chapter_id: id,
+        chapter: name,
+        position,
+        chapter_type: "chapter",
+        empty,
+        word_count: empty ? 0 : 100,
+        sentence_count: empty ? 0 : 10,
+        avg_sentence_length: empty ? 0 : 10,
+        flesch_reading_ease: empty ? 0 : 60,
+        difficulty: empty ? "" : "medium",
+        reading_time_minutes: empty ? 0 : 1,
+        filler_ratio: 0,
+        passive_ratio: 0,
+        adverb_ratio: 0,
+        adjective_ratio: 0,
+        long_sentence_count: 0,
+        finding_count: 0,
+    }
+}
+
+function response(chapters: ChapterMetric[]): ChapterMetricsResponse {
+    return {
+        book_title: "Buch",
+        chapter_count: chapters.length,
+        averages: sample().averages,
+        chapters,
+    }
+}
+
+/** The "#" (first) column of each data row of the PDF chapter table. */
+function pdfChapterNumbers(def: ReturnType<typeof buildQualityReportPdfDefinition>): string[] {
+    for (const node of findTables(def.content)) {
+        const body = (node.table as {body?: unknown[][]}).body
+        if (!body) continue
+        const headerCell = body[0]?.[0] as {text?: string} | undefined
+        if (headerCell?.text !== "#") continue
+        return body
+            .slice(1)
+            .map((row) => String((row[0] as {text?: string})?.text ?? ""))
+            .filter((text) => text !== "")
+    }
+    return []
+}
+
+/** The "#" (first) column of each Markdown data row. */
+function mdChapterNumbers(md: string): string[] {
+    return md
+        .split("\n")
+        .map((line) => line.match(/^\| (\d+) \|/))
+        .filter((m): m is RegExpMatchArray => m != null)
+        .map((m) => m[1])
+}
+
+describe("chapter numbering follows logical book order (#384)", () => {
+    it("reproduction: chapters sharing a position get distinct sequential numbers", () => {
+        // Two chapters inserted after the Impressum end up at the same DB position.
+        const chapters = [
+            chapter("a", "Kap A", 0),
+            chapter("b", "Kap B", 5),
+            chapter("c", "Kap C", 5),
+            chapter("d", "Kap D", 12),
+        ]
+        // Pre-fix (position+1) would render 1, 6, 6, 13 -> duplicate 6 + gaps.
+        expect(numberChapters(chapters).map((c) => c.number)).toEqual([1, 2, 3, 4])
+
+        const nums = mdChapterNumbers(buildQualityReportMarkdown(response(chapters), labels))
+        expect(nums).toEqual(["1", "2", "3", "4"])
+        expect(new Set(nums).size).toBe(nums.length)
+    })
+
+    it("happy path: 15 chapters are numbered 1..15", () => {
+        const chapters = Array.from({length: 15}, (_, i) => chapter(`c${i}`, `Kap ${i}`, i))
+        expect(numberChapters(chapters).map((c) => c.number)).toEqual(
+            Array.from({length: 15}, (_, i) => i + 1),
+        )
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        expect(md).toContain("| 1 | Kap 0 |")
+        expect(md).toContain("| 15 | Kap 14 |")
+    })
+
+    it("edge: chapters with equal position keep incoming order, numbered stably", () => {
+        const chapters = [chapter("x", "X", 3), chapter("y", "Y", 3), chapter("z", "Z", 3)]
+        expect(numberChapters(chapters).map((c) => [c.chapter, c.number])).toEqual([
+            ["X", 1],
+            ["Y", 2],
+            ["Z", 3],
+        ])
+    })
+
+    it("edge: empty chapters (Toc/Epilog/Glossar) still get a sequential number, metrics as -", () => {
+        const chapters = [
+            chapter("a", "Kapitel 1", 0),
+            chapter("toc", "Inhalt", 1, true),
+            chapter("b", "Kapitel 2", 2),
+        ]
+        expect(numberChapters(chapters).map((c) => c.number)).toEqual([1, 2, 3])
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        expect(md).toContain("| 2 | Inhalt | - | - | - | - | - | - | - |")
+        expect(md).toContain("| 3 | Kapitel 2 |")
+    })
+
+    it("PDF export mirrors the same sequential numbering", () => {
+        const chapters = [chapter("a", "A", 0), chapter("b", "B", 5), chapter("c", "C", 5)]
+        const def = buildQualityReportPdfDefinition(response(chapters), labels)
+        expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3"])
     })
 })
