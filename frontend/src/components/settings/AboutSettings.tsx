@@ -32,6 +32,7 @@ import { getLocalized } from "./utils";
 import SupportSection, { getDonationsConfig } from "../SupportSection";
 import { SectionHeader } from "./SectionHeader";
 import { LanAccessSettings } from "./LanAccessSettings";
+import { UpdateCheckButton } from "./UpdateCheckButton";
 import ErrorReportDialog from "../ErrorReportDialog";
 
 interface Props {
@@ -298,6 +299,7 @@ function VersionSection({ t, lang }: { t: T; lang: string }) {
           {formatBuildDate(__BUILD_DATE__, lang)}
         </dd>
       </dl>
+      <UpdateCheckButton />
     </article>
   );
 }

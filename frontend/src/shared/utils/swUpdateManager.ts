@@ -137,6 +137,48 @@ export function checkForUpdate(): void {
   });
 }
 
+/** Outcome of an on-demand {@link checkForUpdateNow} check. */
+export type UpdateCheckResult = "update-available" | "up-to-date" | "unsupported" | "error";
+
+/**
+ * Run an on-demand update check and resolve with a classified result, for the
+ * Settings > About "Check for new version" button. Unlike the fire-and-forget
+ * {@link checkForUpdate}, this resolves a {@link UpdateCheckResult} the UI can
+ * render:
+ *
+ *  - `unsupported` when no service worker is available (dev mode / no SW yet);
+ *  - `update-available` when a new worker is waiting or installing;
+ *  - `up-to-date` when the server has no newer worker;
+ *  - `error` when `getRegistration()` / `update()` throws (e.g. offline).
+ *
+ * A discovered waiting worker is recorded via {@link setWaiting}, so the
+ * "Update now" action ({@link applyUpdate}) works straight after a positive
+ * check.
+ */
+export async function checkForUpdateNow(): Promise<UpdateCheckResult> {
+  if (!swSupported()) return "unsupported";
+  try {
+    let reg = registration;
+    if (!reg) {
+      reg = (await navigator.serviceWorker.getRegistration()) ?? null;
+      if (reg) wireRegistration(reg);
+    }
+    if (!reg) return "unsupported";
+    await reg.update();
+    const hasController = navigator.serviceWorker.controller != null;
+    if (reg.waiting && hasController) {
+      setWaiting(reg.waiting);
+      return "update-available";
+    }
+    if ((reg.installing && hasController) || waitingWorker) {
+      return "update-available";
+    }
+    return "up-to-date";
+  } catch {
+    return "error";
+  }
+}
+
 /**
  * Initialise the manager: resolve the registration, wire its update events,
  * register the `controllerchange` reload handler, and schedule proactive
