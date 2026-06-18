@@ -200,4 +200,68 @@ test.describe("Bulk delete - data-destructive UI guards", () => {
         expect(remainingIds).not.toContain(b.id)
         expect(remainingIds).not.toContain(c.id)
     })
+
+    // Regression pin for #417: the frontend delete handlers reused the
+    // export cost-profile cap (BOOK_BULK_LIMIT_HARD / BULK_LIMIT_HARD =
+    // 200) as a guard, so selecting more than 200 made the handler
+    // silently early-return -- no toast, no trash, nothing. The backend
+    // is uncapped; delete is a DB UPDATE per row. This seeds 201 books
+    // (one past the old cap), selects all, and moves them to trash. On
+    // the pre-fix code the trash stays EMPTY and this fails.
+    test("soft-delete above the old 200 cap trashes every selected book (#417)", async ({
+        page,
+    }) => {
+        const OVER_CAP = 201
+        const seeded: string[] = []
+        for (let start = 0; start < OVER_CAP; start += 20) {
+            const batch = await Promise.all(
+                Array.from(
+                    {length: Math.min(20, OVER_CAP - start)},
+                    (_unused, offset) =>
+                        page.request.post(`${API}/books`, {
+                            data: {
+                                title: `Cap Regression Book ${start + offset}`,
+                                author: "Author Cap",
+                            },
+                        }),
+                ),
+            )
+            for (const resp of batch) {
+                expect(resp.ok()).toBe(true)
+                seeded.push(((await resp.json()) as {id: string}).id)
+            }
+        }
+        expect(seeded).toHaveLength(OVER_CAP)
+
+        await page.goto("/")
+        await expect(page.getByTestId("book-bulk-select-all")).toBeVisible()
+
+        // Select-all replaces the selection with the full filtered set
+        // (all 201), not just the visible page.
+        await page.getByTestId("book-bulk-select-all").check()
+        await expect(page.getByTestId("book-bulk-count")).toContainText(
+            String(OVER_CAP),
+        )
+
+        // The delete-menu trigger must be enabled at 201 (count >= 2);
+        // the 200 cap must NOT leak onto the delete path.
+        const deleteMenu = page.getByTestId("book-bulk-delete-menu")
+        await expect(deleteMenu).toBeEnabled()
+        await deleteMenu.click()
+        await expect(
+            page.getByTestId("book-bulk-delete-menu-content"),
+        ).toBeVisible()
+        await page.getByTestId("book-bulk-delete-trash").click()
+
+        // Undo toast confirms the soft-delete actually ran.
+        await expect(page.getByTestId("bulk-action-undo")).toBeVisible({
+            timeout: 10000,
+        })
+
+        // Backend is the arbiter: all 201 rows are in trash.
+        const trash = await page.request.get(`${API}/books/trash/list`)
+        expect(trash.ok()).toBe(true)
+        const trashed = (await trash.json()) as Array<{id: string}>
+        expect(trashed).toHaveLength(OVER_CAP)
+    })
 })
