@@ -9,11 +9,20 @@ reusability principles that keep it that way. This is a companion to
 those for the *why*; read this for *where things live* and *how to keep
 new code reusable*.
 
-> **No `src/modules/` rewrite.** This document describes the structure
-> that already exists. It is NOT a proposal to reshuffle the tree into a
-> feature-module layout. The current concern-first folders (below) are
-> the target; do not introduce a parallel `src/modules/<feature>/`
-> hierarchy.
+> **`src/modules/` is a barrel seam, NOT a tree rewrite.** The
+> concern-first folders below stay the target for *implementations*; a new
+> feature still adds files *across* `pages/` / `components/` / `lib/` /
+> `storage/`, never into a feature folder. What `src/modules/module-{name}/`
+> adds (Maximal Offline, #34) is a thin **plugin-parity barrel layer**: one
+> directory per backend plugin (`bibliogon-plugin-{name}`) whose `index.ts`
+> *re-exports* that plugin's browser-side offline counterpart from its
+> canonical concern-first location, with TSDoc + a `README.md` recording the
+> module's offline status. No code is relocated; the concern-first file
+> remains the single source of truth. Do NOT move implementation code into
+> `modules/` and do NOT create a `modules/` entry that re-implements (rather
+> than re-exports) existing logic. See
+> [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
+> [`MAXIMAL-OFFLINE-PARITY.md`](MAXIMAL-OFFLINE-PARITY.md).
 
 ## Folder structure
 
@@ -33,6 +42,7 @@ folders rather than a single new folder.
 | `features/` | The feature-strategy registry (`featureConfig.ts`, `AppFeatureProvider`, `useFeature(id)`) for offline/desktop gating. | Gate surfaces through `useFeature`, not ad-hoc `mode === "dexie"` checks. |
 | `contexts/`, `themes/`, `styles/` | Cross-cutting providers + the CSS-variable theme system. | See "Global state is allowed" below. |
 | `extensions/` | TipTap editor extensions. | Prefer an official extension before writing one (see lessons-learned). |
+| `modules/` | Plugin-parity barrels (`module-{name}/`): one per backend plugin, re-exporting its offline counterpart from the concern-first folders. | Barrel + `README.md` only. Re-export, never relocate or re-implement. Gate browser-impossible plugins via `useFeature`. |
 
 ### Backend (`backend/app/`)
 
