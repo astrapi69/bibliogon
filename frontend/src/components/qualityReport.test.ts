@@ -6,6 +6,13 @@ import {
     type QualityReportLabels,
 } from "./qualityReport"
 import type {ChapterMetric, ChapterMetricsResponse} from "../api/client"
+import {
+    HEADER_FILL,
+    RULE_COLOR,
+    MUTED_COLOR,
+    SEVERITY_FILL,
+    FLESCH_BAND_FILL,
+} from "./qualityThresholds"
 
 const labels: QualityReportLabels = {
     title: "Qualitaetsbericht",
@@ -489,5 +496,52 @@ describe("chapter order follows the sidebar's matter grouping (#412)", () => {
         // PDF numbers are sequential in the same order (1..4).
         const def = buildQualityReportPdfDefinition(response(chapters), labels)
         expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3", "4"])
+    })
+})
+
+// --- PDF palette extracted to qualityThresholds.ts (#427) ---
+//
+// The fixed theme-independent PDF tints moved out of qualityReport.ts into the
+// shared constants module so the renderer stays free of inline hex and
+// `make verify-theme` passes. These pins lock the palette values (a stray edit
+// is a visible PDF-color regression) and prove the renderer consumes the shared
+// constants rather than a divergent inline copy.
+describe("quality-report PDF palette (#427)", () => {
+    it("exports the severity fills (good/warn/bad) with their fixed tints", () => {
+        expect(SEVERITY_FILL).toEqual({
+            good: "#d6efdc",
+            warn: "#fdeccb",
+            bad: "#f7dcdc",
+        })
+    })
+
+    it("exports all four Flesch band fills (easiest -> hardest)", () => {
+        expect(FLESCH_BAND_FILL).toEqual({
+            easy: "#bfe6cb",
+            readable: "#dff1e5",
+            demanding: "#fce3bf",
+            academic: "#f4cfcf",
+        })
+        expect(Object.keys(FLESCH_BAND_FILL)).toHaveLength(4)
+    })
+
+    it("exports the header/rule/muted greys", () => {
+        expect(HEADER_FILL).toBe("#e5e5e5")
+        expect(RULE_COLOR).toBe("#cccccc")
+        expect(MUTED_COLOR).toBe("#666666")
+    })
+
+    it("the rendered PDF consumes the shared constants (no inline divergence)", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const tables = findTables(def.content)
+        const chapterTable = tables.find((t) => {
+            const body = (t.table as {body: unknown[][]}).body
+            return body[0].some((c) => (c as {text?: string}).text === "Flesch")
+        })!
+        const body = (chapterTable.table as {body: Record<string, unknown>[][]}).body
+        // Header cells are filled with the shared HEADER_FILL constant.
+        expect(body[0][0].fillColor).toBe(HEADER_FILL)
+        // The passive 12% cell is a "bad" severity -> shared SEVERITY_FILL.bad.
+        expect(body[1][6].fillColor).toBe(SEVERITY_FILL.bad)
     })
 })

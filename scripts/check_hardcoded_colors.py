@@ -85,6 +85,16 @@ ALLOWLIST = {
     # baked into the exported file, not theme-referenced.
     "frontend/src/export/formatHtml.ts",
     "frontend/src/export/formatPdf.ts",
+    # Quality-report PDF palette (#427). pdfmake renders a standalone
+    # document and cannot resolve ``var(--*)`` theme tokens, so the
+    # report carries a fixed theme-independent hex palette (severity
+    # tints + grey rules). Color DATA, baked into the exported PDF.
+    "frontend/src/components/qualityThresholds.ts",
+    # AI story-extraction prompt text (#427). The single hex is an
+    # EXAMPLE value inside a prompt instruction string ("mood_color: a
+    # hex colour like \"#4ECDC4\" ..."), i.e. documentation/data shown
+    # to the model, not app styling.
+    "frontend/src/ai/storyExtractionPrompts.ts",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")

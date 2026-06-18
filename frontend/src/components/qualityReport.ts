@@ -31,6 +31,11 @@ import {
   FILLER_PCT_THRESHOLD,
   PASSIVE_PCT_THRESHOLD,
   LONG_SENTENCE_THRESHOLD,
+  HEADER_FILL,
+  RULE_COLOR,
+  MUTED_COLOR,
+  SEVERITY_FILL,
+  FLESCH_BAND_FILL,
 } from "./qualityThresholds";
 
 /** A chapter metric tagged with its sequential book number (1..N). */
@@ -223,30 +228,12 @@ export function buildQualityReportMarkdown(
 /** A pdfmake content node (loose: built as plain data, rendered downstream). */
 type PdfNode = Record<string, unknown>;
 
-/**
- * Theme-independent PDF palette. The on-screen tables use the semantic theme
- * tokens via `color-mix`; the PDF carries its own fixed tints (light fills of
- * green / amber / red) so it renders identically regardless of the active app
- * theme.
+/*
+ * The theme-independent PDF palette (HEADER_FILL / RULE_COLOR / MUTED_COLOR /
+ * SEVERITY_FILL / FLESCH_BAND_FILL) lives in `qualityThresholds.ts` (#427):
+ * pdfmake cannot resolve CSS variables, so the PDF carries fixed tints that
+ * render identically regardless of the active app theme.
  */
-const HEADER_FILL = "#e5e5e5";
-const RULE_COLOR = "#cccccc";
-const MUTED_COLOR = "#666666";
-
-/** Traffic-light cell fills, keyed by the same severities `MetricsTable` uses. */
-const SEVERITY_FILL: Record<CellSeverity, string> = {
-  good: "#d6efdc",
-  warn: "#fdeccb",
-  bad: "#f7dcdc",
-};
-
-/** Flesch band fills (easiest first), mirroring the on-screen scale order. */
-const FLESCH_BAND_FILL: Record<FleschBand, string> = {
-  easy: "#bfe6cb",
-  readable: "#dff1e5",
-  demanding: "#fce3bf",
-  academic: "#f4cfcf",
-};
 
 const FLESCH_BAND_ORDER: FleschBand[] = [
   "easy",
