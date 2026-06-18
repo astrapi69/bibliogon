@@ -59,13 +59,7 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-- [ ] **RELEASE-READINESS-NEXT-CUT-01** (filed 2026-06-17) — the
-  `develop` branch carries the full v0.52.0 → v0.54.0+ post-release
-  arc; before the next tag, run the BACKUP-AKZEPTANZTEST cycle
-  (`e2e/smoke/backup-acceptance.spec.ts`, export → reset → import →
-  verify) AND the Aster real-browser Playwright smoke gate, then cut
-  per `release-workflow.md`. Not a feature — the release-gate
-  discipline standing between `develop` and the next release.
+(none)
 
 ---
 
