@@ -45,6 +45,7 @@ export default function BookEditor() {
     const dialog = useDialog();
     const { t } = useI18n();
     const gitSync = useFeature(FEATURES.GIT_SYNC);
+    const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
     const offlineGate = !gitSync.isActive;
     const bookTypesSnapshot = useBookTypes();
     const {
@@ -767,7 +768,11 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
+                    onShowVersions={
+                        versionHistory.isActive
+                            ? (id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)
+                            : undefined
+                    }
                     showMetadata={showMetadata}
                     onReorder={handleReorder}
                     hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}
