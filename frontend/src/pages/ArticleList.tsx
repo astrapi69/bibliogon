@@ -264,7 +264,7 @@ export default function ArticleList() {
         const ordered = filters.filteredArticles
             .map((a) => a.id)
             .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2 || ordered.length > BULK_LIMIT_HARD) return;
+        if (ordered.length < 2) return;
         try {
             const result = await getStorage().articles.bulkDelete(ordered, permanent);
             // Optimistic refresh: drop the deleted IDs from the
@@ -337,7 +337,7 @@ export default function ArticleList() {
         const ordered = filters.filteredArticles
             .map((a) => a.id)
             .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2 || ordered.length > BULK_LIMIT_HARD) return;
+        if (ordered.length < 2) return;
         setBulkDeleteDialog({ ids: ordered, count: ordered.length });
     };
 
