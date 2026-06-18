@@ -1748,6 +1748,8 @@ ui:
     ai_assistant: "AI Asistan"
     wysiwyg_mode: "WYSIWYG modu"
     markdown_mode: "Markdown modu"
+    expand_toolbar: "Araç çubuğunu genişlet"
+    collapse_toolbar: "Araç çubuğunu daralt"
   audiobook:
     engine: "Sentez motoru"
     language: "Dil"

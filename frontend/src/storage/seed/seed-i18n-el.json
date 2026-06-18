@@ -1758,7 +1758,9 @@
       "tts_preview": "Ακρόαση (TTS)",
       "ai_assistant": "Βοηθός AI",
       "wysiwyg_mode": "Λειτουργία WYSIWYG",
-      "markdown_mode": "Λειτουργία Markdown"
+      "markdown_mode": "Λειτουργία Markdown",
+      "expand_toolbar": "Ανάπτυξη γραμμής εργαλείων",
+      "collapse_toolbar": "Σύμπτυξη γραμμής εργαλείων"
     },
     "audiobook": {
       "engine": "Μηχανή σύνθεσης",

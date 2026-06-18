@@ -1758,7 +1758,9 @@
       "tts_preview": "Ouvir (TTS)",
       "ai_assistant": "Assistente AI",
       "wysiwyg_mode": "Modo WYSIWYG",
-      "markdown_mode": "Modo Markdown"
+      "markdown_mode": "Modo Markdown",
+      "expand_toolbar": "Expandir barra de ferramentas",
+      "collapse_toolbar": "Recolher barra de ferramentas"
     },
     "audiobook": {
       "engine": "Motor de sintese",

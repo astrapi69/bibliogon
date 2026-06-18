@@ -1748,6 +1748,8 @@ ui:
     ai_assistant: "Assistant AI"
     wysiwyg_mode: "Mode WYSIWYG"
     markdown_mode: "Mode Markdown"
+    expand_toolbar: "Développer la barre d'outils"
+    collapse_toolbar: "Réduire la barre d'outils"
   audiobook:
     engine: "Moteur de synthese"
     language: "Langue"

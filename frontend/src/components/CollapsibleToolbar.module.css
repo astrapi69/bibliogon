@@ -1,0 +1,48 @@
+.shell {
+    display: flex;
+    flex-direction: column;
+}
+
+/* The toolbar content. On mobile it is clipped to a single row when collapsed
+   and animates open via max-height; on desktop it is never clipped. */
+.clip {
+    transition: max-height 200ms ease;
+}
+
+.clip[data-expanded="false"] {
+    max-height: 3.5rem;
+    overflow: hidden;
+}
+
+.clip[data-expanded="true"] {
+    max-height: 60rem;
+    overflow: visible;
+}
+
+/* Full-width toggle bar beneath the clipped toolbar (mobile only). Sits below
+   the content so it never overlaps a button. 44px tall for the touch target. */
+.toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 44px;
+    border: none;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-card);
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: background 150ms;
+}
+
+.toggle:hover {
+    background: color-mix(in srgb, var(--text) 6%, transparent);
+}
+
+/* Desktop: always fully expanded, no clipping regardless of state. */
+@media (min-width: 768px) {
+    .clip[data-expanded] {
+        max-height: none;
+        overflow: visible;
+    }
+}

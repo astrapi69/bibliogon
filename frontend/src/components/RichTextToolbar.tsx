@@ -48,6 +48,7 @@ import {useEffect, useState} from "react"
 import {useI18n} from "../hooks/useI18n"
 import {PICTURE_BOOK_FONTS} from "../data/picture-book-fonts"
 import {RadixSelect} from "./RadixSelect"
+import {CollapsibleToolbar} from "./CollapsibleToolbar"
 import styles from "./RichTextToolbar.module.css"
 
 /** Sentinel value for the "Default font" <option>. Distinct from
@@ -101,6 +102,10 @@ export default function RichTextToolbar({
     }
 
     return (
+        <CollapsibleToolbar
+            expandLabel={t("ui.toolbar.expand_toolbar", "Werkzeugleiste ausklappen")}
+            collapseLabel={t("ui.toolbar.collapse_toolbar", "Werkzeugleiste einklappen")}
+        >
         <div
             data-testid={`${testidNamespace}-root`}
             className={styles.toolbar}
@@ -302,5 +307,6 @@ export default function RichTextToolbar({
                 ]}
             />
         </div>
+        </CollapsibleToolbar>
     )
 }

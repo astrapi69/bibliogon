@@ -1708,6 +1708,8 @@ ui:
     ai_assistant: "AIアシスタント"
     wysiwyg_mode: "WYSIWYGモード"
     markdown_mode: "Markdownモード"
+    expand_toolbar: "ツールバーを展開"
+    collapse_toolbar: "ツールバーを折りたたむ"
   audiobook:
     engine: "音声合成エンジン"
     language: "言語"

@@ -1735,6 +1735,8 @@ ui:
     ai_assistant: "AI Assistant"
     wysiwyg_mode: "WYSIWYG mode"
     markdown_mode: "Markdown mode"
+    expand_toolbar: "Expand toolbar"
+    collapse_toolbar: "Collapse toolbar"
   help:
     title: "Help"
     open: "Open help"
