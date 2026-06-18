@@ -3,6 +3,7 @@ import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
 import {type Page} from "../../api/client"
 import {imageUrlFor} from "../../utils/imageUrl"
 import {useI18n} from "../../hooks/useI18n"
+import ImageDropZone from "../../lib/components/ImageDropZone"
 import styles from "../PageCanvas.module.css"
 
 const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif"
@@ -16,6 +17,10 @@ interface Props {
     fileInputRef: React.RefObject<HTMLInputElement | null>
     uploading: boolean
     handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+    /** #437: drag-and-drop entry-point. Receives the first dropped image
+     *  file; the caller owns the upload + persist (same path as
+     *  handleFileChange). */
+    onDropImage?: (file: File) => void
 }
 
 /**
@@ -32,14 +37,17 @@ export default function PrimaryImageRegion({
     fileInputRef,
     uploading,
     handleFileChange,
+    onDropImage,
 }: Props) {
     const {t} = useI18n()
     return (
-        <div
-            data-testid="page-canvas-image-area"
-            data-region="image"
+        <ImageDropZone
+            disabled={!onDropImage}
+            onDropImage={onDropImage ?? (() => {})}
+            overlayLabel={t("ui.page_editor.drop_image", "Bild hier ablegen")}
             className={`${styles.region} ${styles.regionImage}`}
             style={regionImageInlineStyle}
+            testId="page-canvas-image-area"
         >
             {hasImage ? (
                 <img
@@ -114,6 +122,6 @@ export default function PrimaryImageRegion({
                 className={styles.fileInput}
                 data-testid="page-canvas-file-input"
             />
-        </div>
+        </ImageDropZone>
     )
 }

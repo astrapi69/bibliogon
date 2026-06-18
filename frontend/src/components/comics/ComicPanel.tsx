@@ -23,6 +23,7 @@ import {useRef, type CSSProperties} from "react";
 import {ImageUp} from "lucide-react";
 
 import {useI18n} from "../../hooks/useI18n";
+import ImageDropZone from "../../lib/components/ImageDropZone";
 import {ComicBubble, type ComicBubbleData} from "./ComicBubble";
 
 export interface ComicPanelData {
@@ -113,6 +114,10 @@ export function ComicPanel({
         "ui.comic_book_editor.panel_replace_image",
         "Replace image",
     );
+    const dropLabel = t(
+        "ui.comic_book_editor.panel_drop_image",
+        "Bild hier ablegen",
+    );
 
     return (
         <div
@@ -123,6 +128,13 @@ export function ComicPanel({
             role={onClick ? "button" : undefined}
             aria-label={onClick ? `Comic panel ${panel.position + 1}` : undefined}
         >
+            <ImageDropZone
+                disabled={!onUploadImage}
+                onDropImage={onUploadImage ?? (() => {})}
+                overlayLabel={dropLabel}
+                className="h-full w-full"
+                testId={`comic-drop-zone-${panel.id}`}
+            >
             {imageUrl ? (
                 <img
                     src={imageUrl}
@@ -201,6 +213,7 @@ export function ComicPanel({
                     }
                 />
             ))}
+            </ImageDropZone>
         </div>
     );
 }

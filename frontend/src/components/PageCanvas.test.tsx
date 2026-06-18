@@ -176,6 +176,57 @@ describe("PageCanvas - upload flow", () => {
     })
 })
 
+describe("PageCanvas - drag-and-drop image (#437)", () => {
+    function fileDrag(types: string[], files: File[]) {
+        return {dataTransfer: {types, files}}
+    }
+
+    it("uploads + persists the dropped image onto the page image region", async () => {
+        mockUpload.mockResolvedValue(makeAsset({id: "asset-dropped"}))
+        const onUpdate = vi.fn().mockResolvedValue(undefined)
+        render(<PageCanvas page={makePage()} bookId="b1" onUpdate={onUpdate} />)
+        const file = new File(["x"], "dropped.png", {type: "image/png"})
+        fireEvent.drop(
+            screen.getByTestId("page-canvas-image-area"),
+            fileDrag(["Files"], [file]),
+        )
+        await waitFor(() => expect(mockUpload).toHaveBeenCalledTimes(1))
+        const [bookIdArg, fileArg, typeArg] = mockUpload.mock.calls[0]
+        expect(bookIdArg).toBe("b1")
+        expect(fileArg).toBe(file)
+        expect(typeArg).toBe("figure")
+        await waitFor(() =>
+            expect(onUpdate).toHaveBeenCalledWith({
+                image_asset_id: "asset-dropped",
+            }),
+        )
+    })
+
+    it("ignores a dropped non-image file", () => {
+        const onUpdate = vi.fn()
+        render(<PageCanvas page={makePage()} bookId="b1" onUpdate={onUpdate} />)
+        fireEvent.drop(
+            screen.getByTestId("page-canvas-image-area"),
+            fileDrag(["Files"], [
+                new File(["x"], "notes.txt", {type: "text/plain"}),
+            ]),
+        )
+        expect(mockUpload).not.toHaveBeenCalled()
+    })
+
+    it("shows the drag-over overlay while a file is dragged onto the region", () => {
+        render(<PageCanvas page={makePage()} bookId="b1" onUpdate={vi.fn()} />)
+        const area = screen.getByTestId("page-canvas-image-area")
+        expect(
+            screen.queryByTestId("page-canvas-image-area-overlay"),
+        ).toBeNull()
+        fireEvent.dragEnter(area, fileDrag(["Files"], []))
+        expect(
+            screen.getByTestId("page-canvas-image-area-overlay"),
+        ).toBeInTheDocument()
+    })
+})
+
 describe("PageCanvas - text area (Tier-Property layouts: speech_bubble + image_full_text_overlay)", () => {
     // PB-PHASE4 Session 4c-B-1 Commit 2: existing textarea tests
     // pivoted to a Tier-Property layout. After Commit 2, the

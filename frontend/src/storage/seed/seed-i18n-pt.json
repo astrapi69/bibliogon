@@ -3236,7 +3236,8 @@
             "italic": "Itálico"
           }
         }
-      }
+      },
+      "drop_image": "Solte a imagem aqui"
     },
     "chapter_status": {
       "label": "Estado",
@@ -3490,7 +3491,8 @@
         "grid_2x2": "Grelha padrão (4 quadros)",
         "grid_2x3": "Duas filas (6 quadros)",
         "grid_3x2": "Três filas (6 quadros)"
-      }
+      },
+      "panel_drop_image": "Solte a imagem aqui"
     },
     "lan_access": {
       "heading": "Acesso LAN",

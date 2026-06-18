@@ -2632,6 +2632,7 @@ ui:
     no_image: "Aún no hay imagen"
     upload_image: "Subir imagen"
     replace_image: "Reemplazar imagen"
+    drop_image: "Suelta la imagen aquí"
     no_secondary_image: "Aún no hay imagen secundaria"
     upload_secondary_image: "Subir imagen secundaria"
     replace_secondary_image: "Reemplazar imagen secundaria"
@@ -3277,6 +3278,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "Subir imagen"
     panel_replace_image: "Reemplazar imagen"
+    panel_drop_image: "Suelta la imagen aquí"
     back: "Atrás"
     overflow_title: "Demasiadas viñetas para esta plantilla"
     overflow_message: "La plantilla seleccionada solo permite {target} viñeta(s), pero esta página tiene {current}. Se deben mover o eliminar {excess} viñeta(s) sobrantes."

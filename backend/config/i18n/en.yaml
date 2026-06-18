@@ -2642,6 +2642,7 @@ ui:
     no_image: "No image yet"
     upload_image: "Upload image"
     replace_image: "Replace image"
+    drop_image: "Drop image here"
     no_secondary_image: "No secondary image yet"
     upload_secondary_image: "Upload secondary image"
     replace_secondary_image: "Replace secondary image"
@@ -3287,6 +3288,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "Upload image"
     panel_replace_image: "Replace image"
+    panel_drop_image: "Drop image here"
     back: "Back"
     # COMIC-BOOK-EDITOR-METADATA-BUTTON-01 C3: header metadata button.
     show_metadata: "Open book metadata"

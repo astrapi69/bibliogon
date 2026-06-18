@@ -2642,6 +2642,7 @@ ui:
     no_image: "Noch kein Bild"
     upload_image: "Bild hochladen"
     replace_image: "Bild ersetzen"
+    drop_image: "Bild hier ablegen"
     no_secondary_image: "Noch kein zweites Bild"
     upload_secondary_image: "Zweites Bild hochladen"
     replace_secondary_image: "Zweites Bild ersetzen"
@@ -3287,6 +3288,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "Bild hochladen"
     panel_replace_image: "Bild ersetzen"
+    panel_drop_image: "Bild hier ablegen"
     back: "Zurück"
     overflow_title: "Zu viele Panels für diese Vorlage"
     overflow_message: "Die ausgewählte Vorlage erlaubt nur {target} Panel(s), aber die Seite hat {current}. {excess} überzählige Panel(s) müssen verschoben oder gelöscht werden."
