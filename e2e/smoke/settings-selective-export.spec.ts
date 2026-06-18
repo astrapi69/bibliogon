@@ -7,7 +7,7 @@
  * 2. The chapters-auto hint is gated on the books checkbox.
  * 3. "Alle auswählen" toggles every section, then the export button
  *    disables when the selection is cleared.
- * 4. Clicking the export button downloads a bibliogon-export-*.json file.
+ * 4. Clicking the export button downloads a bibliogon-export-*.bgb file (#341).
  *
  * Testid namespace: selective-export-*.
  */
@@ -66,7 +66,9 @@ test.describe("Settings > Backups — selective export (#247)", () => {
     await expect(page.getByTestId("selective-export-empty-hint")).toBeVisible();
   });
 
-  test("exports the selected sections as a JSON file", async ({ page }) => {
+  test("exports the selected sections as a .bgb file", async ({ page }) => {
+    // Selective export produces a .bgb ZIP (carries the images of the
+    // selected content), not imageless JSON (#341).
     await page.goto("/settings?tab=backups");
 
     await expect(page.getByTestId("selective-export-button")).toBeEnabled();
@@ -74,7 +76,7 @@ test.describe("Settings > Backups — selective export (#247)", () => {
     await page.getByTestId("selective-export-button").click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toMatch(
-      /^bibliogon-export-\d{4}-\d{2}-\d{2}\.json$/,
+      /^bibliogon-export-\d{4}-\d{2}-\d{2}\.bgb$/,
     );
   });
 });

@@ -44,7 +44,12 @@ test.describe("Editor sidebar overlay close", () => {
 
         const overlay = page.getByTestId("book-editor-sidebar-overlay");
         await expect(overlay).toBeVisible();
-        await overlay.click();
+        // Click toward the editor (right of the 260px sidebar). The overlay is
+        // inset-0 full-screen at z-80 but the sidebar sits above it at z-90, so
+        // the overlay's geometric centre (x~187 at 375px) lands ON the sidebar
+        // and is intercepted. The user dismisses by clicking the visible dim
+        // backdrop beside the drawer, which this position mirrors.
+        await overlay.click({position: {x: MOBILE.width - 40, y: 300}});
         await expect.poll(() => sidebarWidth(page)).toBeLessThanOrEqual(1);
     });
 

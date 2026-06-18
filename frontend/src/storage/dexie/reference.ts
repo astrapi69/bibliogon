@@ -5,6 +5,7 @@
  */
 
 import type { IStorageService } from "../types";
+import { singleFlight } from "../../lib/utils/singleFlight";
 import { isPlainObject } from "./helpers";
 import { offlineDb, REF_KEY, SETTINGS_KEY } from "./schema";
 import { ensureSeeded } from "./seed";
@@ -16,12 +17,19 @@ import {
 } from "../seed";
 import { serializedUpdate } from "./serialized-update";
 
+/**
+ * Single-flighted offline settings read. Mirrors the api-mode dedup: many
+ * components read app settings on mount, so without this the seeded blob would
+ * be read from IndexedDB ~15 times per page load instead of once.
+ */
+const _getAppSettings = singleFlight<Record<string, unknown>>(async () => {
+    await ensureSeeded();
+    const row = await offlineDb.appSettings.get(SETTINGS_KEY);
+    return (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
+});
+
 export const settings: IStorageService["settings"] = {
-    getApp: async () => {
-        await ensureSeeded();
-        const row = await offlineDb.appSettings.get(SETTINGS_KEY);
-        return (row?.data ?? SEED_SETTINGS) as Record<string, unknown>;
-    },
+    getApp: () => _getAppSettings(),
 
     /**
      * Apply a settings patch with a shallow per-section merge, mirroring the

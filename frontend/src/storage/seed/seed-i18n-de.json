@@ -1777,7 +1777,9 @@
       "tts_preview": "Vorhören (TTS)",
       "ai_assistant": "KI-Assistent",
       "wysiwyg_mode": "WYSIWYG-Modus",
-      "markdown_mode": "Markdown-Modus"
+      "markdown_mode": "Markdown-Modus",
+      "expand_toolbar": "Werkzeugleiste ausklappen",
+      "collapse_toolbar": "Werkzeugleiste einklappen"
     },
     "help": {
       "title": "Hilfe",

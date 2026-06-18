@@ -1735,6 +1735,8 @@ ui:
     ai_assistant: "KI-Assistent"
     wysiwyg_mode: "WYSIWYG-Modus"
     markdown_mode: "Markdown-Modus"
+    expand_toolbar: "Werkzeugleiste ausklappen"
+    collapse_toolbar: "Werkzeugleiste einklappen"
   help:
     title: "Hilfe"
     open: "Hilfe öffnen"

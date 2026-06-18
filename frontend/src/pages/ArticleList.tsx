@@ -419,6 +419,7 @@ export default function ArticleList() {
 
     return (
         <DropZone
+            testId="article-list-page"
             className={layout.page}
             onDrop={handleFileDrop}
             accept={[".bgb", ".md", ".markdown", ".txt", ".html", ".htm", ".json", ".zip"]}

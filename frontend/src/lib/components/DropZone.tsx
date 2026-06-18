@@ -22,6 +22,9 @@ interface DropZoneProps {
   /** When true, drag/drop is ignored and no overlay shows. */
   disabled?: boolean;
   className?: string;
+  /** Root `data-testid`; defaults to `"dropzone"`. Consumers that use the
+   *  DropZone as a page root override this to expose a page-load testid. */
+  testId?: string;
   children: ReactNode;
 }
 
@@ -44,6 +47,7 @@ export default function DropZone({
   overlayLabel = "Drop a file here to import",
   disabled = false,
   className,
+  testId = "dropzone",
   children,
 }: DropZoneProps) {
   const [dragging, setDragging] = useState(false);
@@ -85,7 +89,7 @@ export default function DropZone({
       onDragOver={onDragOver}
       onDragLeave={onDragLeave}
       onDrop={handleDrop}
-      data-testid="dropzone"
+      data-testid={testId}
       data-dragging={dragging}
     >
       {children}

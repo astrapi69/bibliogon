@@ -100,6 +100,12 @@ const updateChapterMock = vi.fn();
 const editorOnSaveHolder: {
     current: ((content: string) => void | Promise<void>) | null;
 } = { current: null };
+// Captures the latest ``onShowVersions`` the (stubbed) ChapterSidebar
+// receives, so the VERSION_HISTORY feature-gate test can assert the prop
+// is undefined offline (menu item hidden) and defined online.
+const chapterSidebarPropsHolder: {
+    onShowVersions: ((id: string) => void) | undefined;
+} = { onShowVersions: undefined };
 
 vi.mock("react-router-dom", async () => {
     const actual = await vi.importActual<typeof import("react-router-dom")>("react-router-dom");
@@ -209,25 +215,26 @@ vi.mock("../components/ChapterSidebar", () => ({
         chapters?: Array<{ id: string; title: string }>;
         onSelect: (id: string) => void;
         onMetadata?: () => void;
-    }) => (
-        <div data-testid="chapter-sidebar-stub">
-            {(props.chapters ?? []).map((ch) => (
-                <button
-                    key={ch.id}
-                    data-testid={`chapter-select-${ch.id}`}
-                    onClick={() => props.onSelect(ch.id)}
-                >
-                    {ch.title}
+        onShowVersions?: (id: string) => void;
+    }) => {
+        chapterSidebarPropsHolder.onShowVersions = props.onShowVersions;
+        return (
+            <div data-testid="chapter-sidebar-stub">
+                {(props.chapters ?? []).map((ch) => (
+                    <button
+                        key={ch.id}
+                        data-testid={`chapter-select-${ch.id}`}
+                        onClick={() => props.onSelect(ch.id)}
+                    >
+                        {ch.title}
+                    </button>
+                ))}
+                <button data-testid="sidebar-metadata-btn" onClick={() => props.onMetadata?.()}>
+                    metadata
                 </button>
-            ))}
-            <button
-                data-testid="sidebar-metadata-btn"
-                onClick={() => props.onMetadata?.()}
-            >
-                metadata
-            </button>
-        </div>
-    ),
+            </div>
+        );
+    },
 }));
 vi.mock("../components/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
@@ -316,6 +323,7 @@ beforeEach(() => {
     getChapterMock.mockReset();
     updateChapterMock.mockReset();
     editorOnSaveHolder.current = null;
+    chapterSidebarPropsHolder.onShowVersions = undefined;
     // Default: resolve the requested chapter so the content-load effect
     // never hits the real network (the routing + chapter-switch tests
     // don't configure it themselves).
@@ -656,6 +664,74 @@ describe("BookEditor - chapter switch updates ?chapter= (regression)", () => {
     });
 });
 
+// --- VERSION_HISTORY feature gate (#67 item 1) ---
+//
+// The chapter snapshot/versions menu item is version-history-gated.
+// BookEditor passes onShowVersions to ChapterSidebar only when the
+// VERSION_HISTORY feature is active; ChapterSortable renders the menu
+// item only when the prop is defined. In dexie/offline mode
+// VERSION_HISTORY is desktop-only (no backend snapshot store), so the
+// handler must be undefined and the menu item absent — mirroring how
+// Editor.tsx already gates onTakeSnapshot.
+
+function renderEditorWithMode(bookId: string, mode: "api" | "dexie") {
+    return render(
+        <FeatureTestProvider mode={mode}>
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <MemoryRouter initialEntries={[`/book/${bookId}`]}>
+                    <Routes>
+                        <Route path="/book/:bookId" element={<BookEditor />} />
+                    </Routes>
+                </MemoryRouter>
+            </BookTypesProvider>
+        </FeatureTestProvider>,
+    );
+}
+
+describe("BookEditor - version-history gate on onShowVersions (#67)", () => {
+    it("online (api mode): passes an onShowVersions handler to the sidebar", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        renderEditorWithMode("b1", "api");
+        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
+        expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function");
+    });
+
+    it("offline (dexie mode): onShowVersions is undefined (menu item hidden)", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        renderEditorWithMode("b1", "dexie");
+        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
+        expect(chapterSidebarPropsHolder.onShowVersions).toBeUndefined();
+    });
+
+    it("online handler navigates to the chapter snapshots route", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        renderEditorWithMode("b1", "api");
+        await waitFor(() =>
+            expect(chapterSidebarPropsHolder.onShowVersions).toBeTypeOf("function"),
+        );
+        chapterSidebarPropsHolder.onShowVersions!("c1");
+        expect(navigateMock).toHaveBeenCalledWith("/books/b1/chapters/c1/snapshots");
+    });
+
+    it("offline build never wires a snapshot navigation (no leak)", async () => {
+        getBookMock.mockResolvedValue(
+            makeBook({ id: "b1", chapters: [makeChapterRow({ id: "c1" })] }),
+        );
+        renderEditorWithMode("b1", "dexie");
+        await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
+        expect(chapterSidebarPropsHolder.onShowVersions).toBeUndefined();
+        expect(navigateMock.mock.calls.some((c) => String(c[0]).includes("/snapshots"))).toBe(
+            false,
+        );
+    });
+});
+
 describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", () => {
     function setWidth(px: number) {
         Object.defineProperty(window, "innerWidth", {
@@ -674,9 +750,7 @@ describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", (
         );
         try {
             renderEditor("b1");
-            await waitFor(() =>
-                expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy(),
-            );
+            await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
             expect(
                 screen.getByTestId("book-editor-sidebar").getAttribute("data-sidebar-open"),
             ).toBe("true");
@@ -685,9 +759,7 @@ describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", (
 
             await waitFor(() =>
                 expect(
-                    screen
-                        .getByTestId("book-editor-sidebar")
-                        .getAttribute("data-sidebar-open"),
+                    screen.getByTestId("book-editor-sidebar").getAttribute("data-sidebar-open"),
                 ).toBe("false"),
             );
         } finally {
@@ -705,9 +777,7 @@ describe("BookEditor - sidebar closes on view switch (narrow viewport, #293)", (
         );
         try {
             renderEditor("b1");
-            await waitFor(() =>
-                expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy(),
-            );
+            await waitFor(() => expect(screen.getByTestId("chapter-sidebar-stub")).toBeTruthy());
             fireEvent.click(screen.getByTestId("sidebar-metadata-btn"));
             expect(
                 screen.getByTestId("book-editor-sidebar").getAttribute("data-sidebar-open"),

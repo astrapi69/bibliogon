@@ -5,6 +5,7 @@
  * sub-object spread into the single `api` object in api/apiObject.ts.
  */
 import { ApiError } from "./errors";
+import { singleFlight } from "../lib/utils/singleFlight";
 import {
   BASE,
   guardedFetch,
@@ -55,6 +56,16 @@ import type {
   TranslationMultiBranchImportResult,
   TranslationSiblingsResponse,
 } from "./client";
+
+/**
+ * Single-flighted app-settings read. Many components fetch `/settings/app`
+ * independently on mount; without dedup that fired ~15 parallel requests per
+ * page load. The single-flight collapses the concurrent burst into one request
+ * and clears once it settles (no stale value retained across navigations).
+ */
+const _getAppSettings = singleFlight(() =>
+  request<Record<string, unknown>>("/settings/app"),
+);
 
 export const platformApi = {
   ai: {
@@ -228,7 +239,7 @@ export const platformApi = {
   },
 
   settings: {
-    getApp: () => request<Record<string, unknown>>("/settings/app"),
+    getApp: () => _getAppSettings(),
 
     updateApp: (data: Record<string, unknown>) =>
       request<Record<string, unknown>>("/settings/app", {
