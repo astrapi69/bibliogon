@@ -200,6 +200,28 @@ describe("api.settings", () => {
         }));
     });
 
+    it("getApp single-flights a concurrent burst into one request (#cascade)", async () => {
+        // The reported bug: ~15 components each fetch /settings/app on mount,
+        // firing 15 parallel requests. The single-flight collapses the burst.
+        mockFetch.mockReturnValue(jsonResponse({app: {default_language: "de"}}));
+        const [a, b, c] = await Promise.all([
+            api.settings.getApp(),
+            api.settings.getApp(),
+            api.settings.getApp(),
+        ]);
+        expect(mockFetch).toHaveBeenCalledTimes(1);
+        expect((a.app as Record<string, unknown>).default_language).toBe("de");
+        expect(b).toBe(a);
+        expect(c).toBe(a);
+    });
+
+    it("getApp fetches again after the previous read settled (no stale retention)", async () => {
+        mockFetch.mockReturnValue(jsonResponse({app: {}}));
+        await api.settings.getApp();
+        await api.settings.getApp();
+        expect(mockFetch).toHaveBeenCalledTimes(2);
+    });
+
     it("enablePlugin sends POST", async () => {
         mockFetch.mockReturnValue(jsonResponse({plugin: "export", status: "enabled"}));
         const result = await api.settings.enablePlugin("export");
