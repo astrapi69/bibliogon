@@ -13,7 +13,7 @@ import {resetDb, resetSettings, createBook, createChapter, deleteBook} from "../
 export const test = base.extend<{
     resetDatabase: void;
 }>({
-    resetDatabase: [async ({page}, use) => {
+    resetDatabase: [async ({context}, use) => {
         await resetDb();
         await resetSettings();
         // Suppress the one-time onboarding dialogs that auto-open on the
@@ -26,7 +26,12 @@ export const test = base.extend<{
         //   - AI-setup wizard: opens on the Dashboard whenever the app
         //     config reports AI is not enabled (or omits the ai block),
         //     the state an isolated/fresh E2E backend data dir can land in.
-        await page.addInitScript(() => {
+        // Applied to the CONTEXT (not a single page) so every page created
+        // in the test inherits it - including `context.newPage()` tabs in
+        // multi-tab specs (e.g. content-safety's 409-conflict two-tab race),
+        // whose fresh tabs would otherwise show the AI-setup wizard and have
+        // its Radix overlay intercept the sidebar click (#441).
+        await context.addInitScript(() => {
             try {
                 localStorage.setItem(
                     "bibliogon-donation-onboarding-seen",
