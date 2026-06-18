@@ -5170,3 +5170,82 @@ shows ALL the expected params. Such a test fails on the pre-fix
 double-write (`expected '?chapter=a' to contain 'chapter=b'`) and passes
 after — a genuine pin. See `BookEditor.test.tsx` "chapter switch updates
 ?chapter= (regression)".
+
+## A format/behavior change must reach its E2E specs in the same change, or the gate silently rots
+
+Filed 2026-06-18 during the v0.56.0 release. Cutting v0.56.0 revealed the
+E2E smoke gate had been effectively red since ~v0.53.0 - and nobody noticed
+because the v0.52.0-v0.55.0 tags were cut but never *published*, so the red
+nightly gate never blocked a release that someone was actually watching.
+
+Root cause of the bulk of the red: a shipped behavior change whose E2E specs
+were never updated. The Settings full-backup + selective-export switched from
+imageless JSON to a `.bgb` ZIP carrying images (#341, ~v0.53.0), but three
+smoke specs (including the release-blocker BACKUP-AKZEPTANZTEST) still asserted
+`.json`. They had been failing every nightly for multiple release cycles.
+Same class as the #342 change (hide the Writing-Goal widget without sessions)
+breaking the writing-history back-button spec that navigated via that widget.
+
+This is the E2E-shaped sibling of the existing "End-to-end behavior tests are
+not 'kwarg passes through' tests" and "Half-wired feature lifecycle" rules:
+
+- When you change a user-observable output (download filename/format, a
+  conditional render gate, a testid, a route), grep `e2e/` for specs that
+  assert the OLD shape and update them in the SAME change. A `.json -> .bgb`
+  switch must update every spec that checks the download suffix; a
+  "hide widget unless sessions exist" gate must update every spec that
+  navigates via that widget.
+- A red nightly gate that "blocks nothing" is not harmless - it is technical
+  debt that compounds until a release actually needs the gate (here, v0.56.0),
+  at which point you pay all of it at once. Treat a red scheduled gate as a
+  real signal even when no release is imminent.
+
+### Diagnostic heuristic: rotating failure-set = flake; consistent = real
+
+When an E2E suite is red across several runs, compare the FAILING SET run to
+run, do not just count failures:
+
+- **Failures that recur in every run** (same specs each time) are
+  deterministic = real bugs / stale specs. Fix these. In v0.56.0 these were:
+  article-list-page testid (a DropZone refactor dropped the root testid,
+  cascading ~22 specs), export-500 (CI runner lacked Pandoc), the three
+  `.bgb` stale specs, authors-db below-fold, editor-overlay click-point,
+  writing-history widget-gate.
+- **Failures that rotate** (a different subset each run, each passing on
+  retry) are non-deterministic = flakes. Do NOT chase them per-run; file a
+  stabilization epic (here #436) and triage by flake-rate, not by whichever
+  run you happened to look at.
+
+Corollary: a count like "30 failing specs" is misleading. One root cause
+(a dropped root testid) cascaded into ~22; one env gap (no Pandoc) into 6.
+Always find the shared upstream cause before treating failures as N
+independent bugs - and read the page snapshot: in v0.56.0 the app rendered
+fine, only the testid was gone, which immediately ruled out an
+"app-won't-load" cascade.
+
+## Never `rm -rf` a path you did not create - especially shared `.claude/worktrees`
+
+Filed 2026-06-18. While diagnosing a (false-positive) cohesion failure I ran
+`rm -rf .claude/worktrees 2>/dev/null && echo "..."` "to test" - the `&&`
+construct executed the `rm`, deleting the working checkout of a PARALLEL
+session's git worktree (`docs/configuration-local-paths-419`).
+
+Recovered with no real loss: the worktree's branch + its one commit were on
+`origin` (and already merged to develop via its PR), and `.git/worktrees/`
+metadata survived (only the checkout dir was removed), so
+`git worktree prune` + `git worktree add <path> <branch>` rebuilt it. Only
+uncommitted changes in that worktree would have been unrecoverable.
+
+Rules this reinforces:
+
+- A destructive `rm`/`git clean`/`git reset --hard` must never be hidden
+  inside a diagnostic `&&`/`||` chain "just to test". If you would not run
+  the `rm` on its own line with intent, do not chain it.
+- `.claude/worktrees/` is SHARED multi-session state (the user runs parallel
+  sessions in isolated worktrees). Never delete, prune, or `rm` anything
+  under it without confirming which session owns it. The cohesion check
+  scanning into `.claude/worktrees/` was a tooling false-positive, not a
+  reason to delete the directory.
+- Pairs with the existing memory `[[feedback_parallel_session_shared_head]]`
+  and the "Plain git status before every commit" rule: parallel-session work
+  is live and must be treated as untouchable unless you created it.
