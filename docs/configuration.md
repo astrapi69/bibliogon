@@ -1,28 +1,39 @@
 # Configuration
 
-Bibliogon uses a three-layer config chain so secrets stay out of
+Bibliogon uses a four-layer config chain so secrets stay out of
 the project tree.
 
 ```
-┌─────────────────────────────────────────┐
-│ env-vars (CI/Docker, highest priority)  │
-│ BIBLIOGON_AI_API_KEY                    │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ env-vars (CI/Docker, highest priority)              │
+│ BIBLIOGON_AI_API_KEY                                │
+└─────────────────────────────────────────────────────┘
                   ↑ overrides
-┌─────────────────────────────────────────┐
-│ user override file (gitignored)         │
-│ ~/.config/bibliogon/secrets.yaml        │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ user override file (gitignored, outside data dir)   │
+│ ~/.config/bibliogon/secrets.yaml                    │
+└─────────────────────────────────────────────────────┘
                   ↑ overrides
-┌─────────────────────────────────────────┐
-│ project app.yaml (committed template)   │
-│ backend/config/app.yaml                 │
-└─────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────┐
+│ user-overlay app.yaml (written by the Settings UI)  │
+│ ~/.local/share/bibliogon/config/app.yaml            │
+└─────────────────────────────────────────────────────┘
+                  ↑ overrides
+┌─────────────────────────────────────────────────────┐
+│ project app.yaml (committed template)               │
+│ backend/config/app.yaml                             │
+└─────────────────────────────────────────────────────┘
 ```
 
-Override-wins semantics: a value in the override file replaces the
-same key in `app.yaml`; an env-var replaces both. Lists are
-**replaced**, not merged.
+Resolution lives in `backend/app/config_loader.py` (`_load_app_config`):
+project `app.yaml` < user-overlay `app.yaml` < `secrets.yaml` <
+env-vars. Override-wins semantics: a value in a higher layer replaces
+the same key in every lower layer. Lists are **replaced**, not merged.
+
+> The user-overlay `app.yaml` is the file an **AI key set through the
+> Settings UI** lands in. It sits below `secrets.yaml`, so a key in
+> `secrets.yaml` (or `BIBLIOGON_AI_API_KEY`) still wins over whatever
+> the UI wrote.
 
 ---
 
@@ -31,6 +42,7 @@ same key in `app.yaml`; an env-var replaces both. Lists are
 | Layer | Examples | Lives in |
 |---|---|---|
 | Project `app.yaml` | non-secret defaults: `app.name`, `app.default_language`, `editor.autosave_debounce_ms`, `plugins.enabled`, etc. | committed to git |
+| User-overlay `app.yaml` | whatever the **Settings UI** persists on this machine (incl. `ai.api_key` if entered there) | `~/.local/share/bibliogon/config/app.yaml` (Linux); under `get_data_dir()/config/` |
 | User override | secrets the user controls: `ai.api_key`. Anything else they want to override on this machine. | `~/.config/bibliogon/secrets.yaml` (Linux/macOS), `%APPDATA%/bibliogon/secrets.yaml` (Windows) |
 | Env-var | CI/Docker secrets injected by the orchestrator | environment |
 
@@ -60,6 +72,48 @@ Default: `%APPDATA%/bibliogon/secrets.yaml`.
 
 Falls back to `~/AppData/Roaming/bibliogon/secrets.yaml` when
 `%APPDATA%` is unset.
+
+---
+
+## Where files live when you run locally (`make dev`)
+
+`make dev` / `make dev-bg` set **no** `BIBLIOGON_*` path env-vars, so
+everything resolves to the platformdirs defaults in
+`backend/app/paths.py`. Two distinct base directories are in play -
+this catches people out:
+
+- **Data dir** - `get_data_dir()` → `~/.local/share/bibliogon`
+  (the SQLite DB, uploads, and the Settings-UI config overlays).
+- **Config dir** - `get_config_dir()` → `~/.config/bibliogon`
+  (the `secrets.yaml` override and the encrypted plugin credentials).
+
+Concrete Linux paths (home = `~`):
+
+| What | Path |
+|---|---|
+| SQLite database | `~/.local/share/bibliogon/bibliogon.db` |
+| Uploads / assets | `~/.local/share/bibliogon/uploads/` |
+| AI key via Settings UI | `~/.local/share/bibliogon/config/app.yaml` (`ai.api_key`) |
+| AI key via override file | `~/.config/bibliogon/secrets.yaml` (`ai.api_key`) |
+| AI key via env-var | `BIBLIOGON_AI_API_KEY` (nothing written to disk) |
+| ElevenLabs key (encrypted) | `~/.config/bibliogon/plugins/audiobook/elevenlabs-key.enc` |
+| Google Cloud TTS creds (encrypted) | `~/.config/bibliogon/plugins/audiobook/google-credentials.enc` |
+| Credential-store secret (auto-gen) | `~/.config/bibliogon/credentials.secret` |
+| DeepL key | `~/.local/share/bibliogon/config/plugins/translation.yaml` |
+| LanguageTool key | `~/.local/share/bibliogon/config/plugins/grammar.yaml` |
+
+macOS uses the same `~/.local/share` and `~/.config` layout (set
+`XDG_*` to relocate); Windows resolves to `%LOCALAPPDATA%\bibliogon\`
+(data) and `%APPDATA%\bibliogon\` (config). Docker pins everything
+under `/app/data/` via `BIBLIOGON_DATA_DIR` (see Docker section).
+
+**Quickest no-disk option:** `export BIBLIOGON_AI_API_KEY=sk-...`
+before `make dev`. The key never touches the filesystem and wins over
+every file layer.
+
+None of these paths are inside the project tree, so deleting or
+re-cloning the repo leaves your keys and data untouched (and `git
+clean` never reaches them).
 
 ---
 
@@ -105,11 +159,25 @@ explaining where the key lives.
 | `BIBLIOGON_CORS_ORIGINS` | CORS allowed origins | comma-separated |
 | `BIBLIOGON_SECRET_KEY` | licensing HMAC | leave default in dev |
 
-Plugin-yaml secrets (audiobook, grammar, translation) are NOT yet
-covered by this mechanism — they load via PluginManager and need a
-parallel refactor (T-XX Plugin-Config Secrets Layering, deferred).
-For now, those keys live in their respective `backend/config/plugins/*.yaml`
-files; the Settings UI for each plugin still writes back there.
+Plugin secrets are handled per plugin, separately from the
+`ai.api_key` chain above:
+
+- **Audiobook - ElevenLabs / Google Cloud TTS.** Stored **encrypted**
+  (Fernet) under the config dir, NOT in plugin YAML:
+  `~/.config/bibliogon/plugins/audiobook/elevenlabs-key.enc` and
+  `google-credentials.enc`. The encryption secret resolves from
+  `BIBLIOGON_CREDENTIALS_SECRET` → `BIBLIOGON_SECRET_KEY` → an
+  auto-generated `~/.config/bibliogon/credentials.secret`. Managed via
+  the `/api/audiobook/config/*` endpoints (Settings UI). See
+  `backend/app/credential_store.py` and
+  `backend/app/services/audiobook_credentials.py`. A legacy plain-text
+  `elevenlabs.api_key` in `audiobook.yaml` is still read as a fallback.
+- **Translation (DeepL) / Grammar (LanguageTool).** Plain-text in the
+  per-plugin **user overlay** under the data dir, written by each
+  plugin's Settings panel: `~/.local/share/bibliogon/config/plugins/translation.yaml`
+  (`deepl_api_key`) and `.../grammar.yaml` (`languagetool_api_key`,
+  `languagetool_username`). The committed `backend/config/plugins/*.yaml`
+  ship these empty.
 
 ---
 
