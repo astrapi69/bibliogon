@@ -29,6 +29,7 @@ import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/useSi
 import { useExclusiveSidebars } from "../hooks/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/useBookEditorViews";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildBookEditorMenu } from "./buildBookEditorMenu";
 import { chapterTypeLabels } from "../lib/chapterTypeLabels";
@@ -44,6 +45,7 @@ export default function BookEditor() {
     const dialog = useDialog();
     const { t } = useI18n();
     const gitSync = useFeature(FEATURES.GIT_SYNC);
+    const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
     const offlineGate = !gitSync.isActive;
     const bookTypesSnapshot = useBookTypes();
     const {
@@ -692,6 +694,11 @@ export default function BookEditor() {
                     className="fixed left-3 top-3 z-[100] bg-card shadow-[var(--shadow-md)]"
                 />
             )}
+            <SidebarOverlay
+                open={sidebarOpen}
+                onClose={() => setSidebarOpen(false)}
+                testId="book-editor-sidebar-overlay"
+            />
             <div
                 data-testid="book-editor-sidebar"
                 data-sidebar-open={sidebarOpen}
@@ -761,7 +768,11 @@ export default function BookEditor() {
                     onSaveAsTemplate={() => setShowSaveTemplate(true)}
                     onAddFromTemplate={() => setShowChapterTemplatePicker(true)}
                     onSaveAsChapterTemplate={(id) => setSaveChapterTemplateId(id)}
-                    onShowVersions={(id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)}
+                    onShowVersions={
+                        versionHistory.isActive
+                            ? (id) => navigate(`/books/${bookId}/chapters/${id}/snapshots`)
+                            : undefined
+                    }
                     showMetadata={showMetadata}
                     onReorder={handleReorder}
                     hasToc={book.chapters.some((ch) => ch.chapter_type === "toc")}

@@ -990,7 +990,18 @@
       "clear_image_cache_confirm_title": "¿Vaciar la caché de imágenes?",
       "clear_image_cache_confirm_body": "Se eliminan las imágenes en caché (portadas, miniaturas de artículos). Se pueden volver a cargar cuando sea necesario.",
       "clear_image_cache_done": "Se eliminaron {n} imágenes de la caché",
-      "clear_image_cache_error": "No se pudo vaciar la caché de imágenes"
+      "clear_image_cache_error": "No se pudo vaciar la caché de imágenes",
+      "show_event_log": "Mostrar registro de eventos",
+      "show_image_cache": "Mostrar imágenes",
+      "event_log_warning": "Este registro puede ser grande.",
+      "event_log_count": "entradas",
+      "event_log_empty": "Sin entradas.",
+      "copy_clipboard": "Copiar al portapapeles",
+      "download_json": "Descargar como JSON",
+      "event_log_copied": "Registro de eventos copiado",
+      "event_log_copy_error": "Error al copiar",
+      "image_cache_count": "imágenes",
+      "image_cache_empty": "No hay imágenes en caché."
     },
     "settings": {
       "title": "Configuracion",
@@ -1789,7 +1800,9 @@
       "tts_preview": "Escuchar (TTS)",
       "ai_assistant": "Asistente AI",
       "wysiwyg_mode": "Modo WYSIWYG",
-      "markdown_mode": "Modo Markdown"
+      "markdown_mode": "Modo Markdown",
+      "expand_toolbar": "Expandir barra de herramientas",
+      "collapse_toolbar": "Contraer barra de herramientas"
     },
     "audiobook": {
       "engine": "Motor de sintesis",

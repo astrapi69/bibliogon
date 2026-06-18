@@ -1,0 +1,105 @@
+name: Visual Regression
+
+# Pixel-diff visual regression (Playwright toHaveScreenshot) NIGHTLY, never
+# on PRs: committed screenshots change on every intentional UI PR, so gating
+# PRs on them would block legitimate layout changes. Same model as the
+# e2e-smoke + security-scan workflows: a long-running suite once a day, plus
+# on-demand via workflow_dispatch. NOT a required check.
+#
+# Scheduled at 04:00 UTC, after the Nightly slow-suite (03:00) so the two
+# heavy Playwright runs don't contend for the runner at the same minute.
+#
+# The `visual` project drives the real backend API (seeding books/articles),
+# so playwright.config.ts's `webServer` launches BOTH servers (uvicorn :8000
+# + Vite :5173). On a failing diff, Playwright writes the actual/expected/diff
+# PNGs under e2e/test-results/, uploaded as an artifact for review.
+#
+# Baseline updates (when a UI change is intentional): run
+# `make test-visual-update` locally / via a dispatch with the input below,
+# then commit e2e/visual/*-snapshots/. See e2e/visual/README.md.
+
+on:
+  schedule:
+    - cron: "0 4 * * *" # nightly at 04:00 UTC (after the 03:00 slow-suite)
+  workflow_dispatch:
+    inputs:
+      update_snapshots:
+        description: "Regenerate baseline screenshots (--update-snapshots)"
+        type: boolean
+        default: false
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache Poetry virtualenv
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: poetry-backend-${{ runner.os }}-py3.12-${{ hashFiles('backend/poetry.lock') }}
+          restore-keys: |
+            poetry-backend-${{ runner.os }}-py3.12-
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Install backend (uvicorn server for the E2E webServer)
+        working-directory: backend
+        run: poetry install --no-interaction --no-ansi
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install frontend deps (Vite dev server)
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install E2E deps (Playwright)
+        working-directory: e2e
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        working-directory: e2e
+        run: npx playwright install chromium --with-deps
+
+      - name: Run visual regression
+        working-directory: e2e
+        run: |
+          if [ "${{ inputs.update_snapshots }}" = "true" ]; then
+            npx playwright test --project=visual --update-snapshots
+          else
+            npx playwright test --project=visual --retries=1
+          fi
+
+      # On a failing diff Playwright writes actual/expected/diff PNGs here.
+      - uses: actions/upload-artifact@v6
+        if: failure()
+        with:
+          name: visual-regression-diff
+          path: e2e/test-results/
+          retention-days: 7
+
+      # When dispatched with update_snapshots, surface the regenerated
+      # baselines as an artifact to download + commit (the workflow does not
+      # push to the repo itself).
+      - uses: actions/upload-artifact@v6
+        if: ${{ inputs.update_snapshots == true }}
+        with:
+          name: visual-regression-baselines
+          path: e2e/visual/**/*-snapshots/**
+          retention-days: 7

@@ -24,16 +24,18 @@ test("deep-link to /writing-history renders the history view", async ({page}) =>
 });
 
 test("back button returns to the dashboard", async ({page}) => {
+    // The /writing-history back button (useGoBack with a "/" fallback) must
+    // return to the dashboard. Build the back-stack with a direct navigation
+    // rather than the dashboard Writing-Goal widget: that widget only mounts
+    // once the user has writing sessions (#342, "hide for users who never
+    // wrote"), and writing sessions are not seedable via the API.
     await page.goto("/");
-    // The Writing-Goal widget mounts on the dashboard; its Verlauf button
-    // routes to the history page.
-    const open = page.getByTestId("writing-goal-history-open");
-    await open.waitFor({state: "visible"});
-    await open.click();
+    await expect(page.getByTestId("dashboard-header")).toBeVisible();
+    await page.goto("/writing-history");
     await expect(page).toHaveURL(/\/writing-history/);
     await page.getByTestId("writing-history-page-back").click();
     await expect(page).not.toHaveURL(/\/writing-history/);
-    await expect(page.getByTestId("writing-goal-history-open")).toBeVisible();
+    await expect(page.getByTestId("dashboard-header")).toBeVisible();
 });
 
 test("renders on a mobile viewport without overflow", async ({page}) => {

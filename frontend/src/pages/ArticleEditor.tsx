@@ -54,6 +54,7 @@ import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useSidebarCollapse } from "../hooks/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
 import { RadixSelect } from "../components/RadixSelect";
@@ -83,9 +84,11 @@ export default function ArticleEditor() {
     const { t } = useI18n();
     const { confirm } = useDialog();
     const articleTypesSnapshot = useContentTypes();
-    const { open: sidebarOpen, toggle: toggleSidebar } = useSidebarCollapse(
-        "bibliogon-article-editor-sidebar",
-    );
+    const {
+        open: sidebarOpen,
+        toggle: toggleSidebar,
+        setOpen: setSidebarOpen,
+    } = useSidebarCollapse("bibliogon-article-editor-sidebar");
 
     const { article, setArticle, loading, saveStatus, persistContent, persistMeta } =
         useArticlePersistence(id, t);
@@ -441,6 +444,11 @@ export default function ArticleEditor() {
             </header>
 
             <main id="main-content" className="flex flex-1 min-h-0">
+                <SidebarOverlay
+                    open={sidebarOpen}
+                    onClose={() => setSidebarOpen(false)}
+                    testId="article-editor-sidebar-overlay"
+                />
                 <div
                     data-testid="article-editor-sidebar-wrapper"
                     data-sidebar-open={sidebarOpen}

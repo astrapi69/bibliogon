@@ -96,8 +96,13 @@ test.describe("BACKUP-AKZEPTANZTEST (#61)", () => {
         const archive = readFileSync(exportPath);
         expect(archive.subarray(0, 2).toString("latin1")).toBe("PK");
         const entries = archive.toString("latin1");
+        // Only ZIP entry *filenames* are stored uncompressed and thus
+        // scannable on the raw bytes. File *contents* (e.g. the
+        // "bibliogon-backup" format field inside manifest.json) are
+        // deflate-compressed, so the format is proven load-bearingly by the
+        // import round-trip below instead: a wrong manifest format would
+        // fail importFullBackup and the graph would not restore.
         expect(entries).toContain("manifest.json");
-        expect(entries).toContain("bibliogon-backup");
         expect(entries).toContain("book.json");
         expect(entries).toContain("chapters/");
         expect(entries).toContain("story_entities.json");

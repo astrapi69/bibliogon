@@ -62,8 +62,9 @@ from app.ai.template_schema import (
 )
 from app.database import get_db
 from app.models import Article, Book
-from app.routers.article_ai_template import _apply_template_to_article, _slugify
+from app.routers.article_ai_template import _apply_template_to_article
 from app.routers.book_ai_template import _apply_template_to_book
+from app.services.filename_slug import ascii_filename_slug
 
 logger = logging.getLogger(__name__)
 
@@ -227,7 +228,9 @@ def bulk_export_articles(request: _BulkExportRequest, db: Session = Depends(get_
     for aid in request.ids:
         article = articles_by_id[aid]
         template = build_article_template_from_record(article)
-        raw_filenames.append(f"{_slugify(article.title)}.biblio.yaml")
+        raw_filenames.append(
+            f"{ascii_filename_slug(article.title, fallback='article')}.biblio.yaml"
+        )
         yaml_text = serialize_template_to_yaml(template, include_header=True)
         named.append(("", yaml_text))
 
@@ -347,7 +350,7 @@ def bulk_export_books(request: _BulkExportRequest, db: Session = Depends(get_db)
     for bid in request.ids:
         book = books_by_id[bid]
         template = build_book_template_from_record(book)
-        raw_filenames.append(f"{_slugify(book.title)}.biblio.yaml")
+        raw_filenames.append(f"{ascii_filename_slug(book.title, fallback='book')}.biblio.yaml")
         yaml_text = serialize_template_to_yaml(template, include_header=True)
         named.append(("", yaml_text))
 

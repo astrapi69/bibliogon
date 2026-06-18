@@ -6,6 +6,13 @@ import {
     type QualityReportLabels,
 } from "./qualityReport"
 import type {ChapterMetric, ChapterMetricsResponse} from "../api/client"
+import {
+    HEADER_FILL,
+    RULE_COLOR,
+    MUTED_COLOR,
+    SEVERITY_FILL,
+    FLESCH_BAND_FILL,
+} from "./qualityThresholds"
 
 const labels: QualityReportLabels = {
     title: "Qualitaetsbericht",
@@ -382,5 +389,159 @@ describe("chapter numbering follows logical book order (#384)", () => {
         const chapters = [chapter("a", "A", 0), chapter("b", "B", 5), chapter("c", "C", 5)]
         const def = buildQualityReportPdfDefinition(response(chapters), labels)
         expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3"])
+    })
+})
+
+/** A chapter metric with an explicit chapter_type (for matter-group order). */
+function typedChapter(
+    id: string,
+    name: string,
+    position: number,
+    chapterType: string,
+    empty = false,
+): ChapterMetric {
+    return {...chapter(id, name, position, empty), chapter_type: chapterType}
+}
+
+/** Chapter names, in row order, from a Markdown report (`| n | name | ...`). */
+function mdChapterNames(md: string): string[] {
+    return md
+        .split("\n")
+        .map((line) => line.match(/^\| \d+ \| ([^|]+?) \|/))
+        .filter((m): m is RegExpMatchArray => m != null)
+        .map((m) => m[1].trim())
+}
+
+describe("chapter order follows the sidebar's matter grouping (#412)", () => {
+    it("reproduction: low-position back-matter is NOT interleaved before later main chapters", () => {
+        // Back-matter placeholders were created early (low positions 1-2),
+        // the real main chapters later (positions 10-12). Raw-position order
+        // put Epilog/Glossar BEFORE Kapitel 16-18; the sidebar shows all
+        // back-matter last. numberChapters must match the sidebar.
+        const chapters = [
+            typedChapter("k15", "Kapitel 15", 0, "chapter"),
+            typedChapter("epi", "Epilog", 1, "epilogue"),
+            typedChapter("glo", "Glossar", 2, "glossary"),
+            typedChapter("k16", "Kapitel 16", 10, "chapter"),
+            typedChapter("k17", "Kapitel 17", 11, "chapter"),
+            typedChapter("k18", "Kapitel 18", 12, "chapter"),
+        ]
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Kapitel 15",
+            "Kapitel 16",
+            "Kapitel 17",
+            "Kapitel 18",
+            "Epilog",
+            "Glossar",
+        ])
+    })
+
+    it("happy path: 5 plain chapters keep position order 1..5", () => {
+        const chapters = Array.from({length: 5}, (_, i) =>
+            typedChapter(`c${i}`, `Kapitel ${i + 1}`, i, "chapter"),
+        )
+        expect(numberChapters(chapters).map((c) => c.number)).toEqual([1, 2, 3, 4, 5])
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Kapitel 1",
+            "Kapitel 2",
+            "Kapitel 3",
+            "Kapitel 4",
+            "Kapitel 5",
+        ])
+    })
+
+    it("front matter sorts first, back matter last, regardless of position", () => {
+        const chapters = [
+            typedChapter("epi", "Epilog", 0, "epilogue"),
+            typedChapter("k1", "Kapitel 1", 1, "chapter"),
+            typedChapter("toc", "Inhalt", 2, "toc"),
+            typedChapter("k2", "Kapitel 2", 3, "chapter"),
+            typedChapter("imp", "Impressum", 4, "imprint"),
+        ]
+        expect(numberChapters(chapters).map((c) => c.chapter)).toEqual([
+            "Inhalt", // front matter (toc)
+            "Kapitel 1",
+            "Kapitel 2", // main
+            "Epilog",
+            "Impressum", // back matter
+        ])
+    })
+
+    it("edge: empty back-matter placeholders keep correct (last) position with - metrics", () => {
+        const chapters = [
+            typedChapter("k1", "Kapitel 1", 0, "chapter"),
+            typedChapter("epi", "Epilog", 1, "epilogue", true),
+            typedChapter("k2", "Kapitel 2", 2, "chapter"),
+        ]
+        const ordered = numberChapters(chapters)
+        expect(ordered.map((c) => c.chapter)).toEqual(["Kapitel 1", "Kapitel 2", "Epilog"])
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        // Epilog is row 3 (last) and renders dashes for all metrics.
+        expect(md).toContain("| 3 | Epilog | - | - | - | - | - | - | - |")
+    })
+
+    it("consistency: UI order == MD order == PDF order", () => {
+        const chapters = [
+            typedChapter("epi", "Epilog", 0, "epilogue"),
+            typedChapter("k1", "Kapitel 1", 5, "chapter"),
+            typedChapter("toc", "Inhalt", 1, "toc"),
+            typedChapter("k2", "Kapitel 2", 6, "chapter"),
+        ]
+        const uiOrder = numberChapters(chapters).map((c) => c.chapter)
+        expect(uiOrder).toEqual(["Inhalt", "Kapitel 1", "Kapitel 2", "Epilog"])
+
+        const md = buildQualityReportMarkdown(response(chapters), labels)
+        expect(mdChapterNames(md)).toEqual(uiOrder)
+
+        // PDF numbers are sequential in the same order (1..4).
+        const def = buildQualityReportPdfDefinition(response(chapters), labels)
+        expect(pdfChapterNumbers(def)).toEqual(["1", "2", "3", "4"])
+    })
+})
+
+// --- PDF palette extracted to qualityThresholds.ts (#427) ---
+//
+// The fixed theme-independent PDF tints moved out of qualityReport.ts into the
+// shared constants module so the renderer stays free of inline hex and
+// `make verify-theme` passes. These pins lock the palette values (a stray edit
+// is a visible PDF-color regression) and prove the renderer consumes the shared
+// constants rather than a divergent inline copy.
+describe("quality-report PDF palette (#427)", () => {
+    it("exports the severity fills (good/warn/bad) with their fixed tints", () => {
+        expect(SEVERITY_FILL).toEqual({
+            good: "#d6efdc",
+            warn: "#fdeccb",
+            bad: "#f7dcdc",
+        })
+    })
+
+    it("exports all four Flesch band fills (easiest -> hardest)", () => {
+        expect(FLESCH_BAND_FILL).toEqual({
+            easy: "#bfe6cb",
+            readable: "#dff1e5",
+            demanding: "#fce3bf",
+            academic: "#f4cfcf",
+        })
+        expect(Object.keys(FLESCH_BAND_FILL)).toHaveLength(4)
+    })
+
+    it("exports the header/rule/muted greys", () => {
+        expect(HEADER_FILL).toBe("#e5e5e5")
+        expect(RULE_COLOR).toBe("#cccccc")
+        expect(MUTED_COLOR).toBe("#666666")
+    })
+
+    it("the rendered PDF consumes the shared constants (no inline divergence)", () => {
+        const def = buildQualityReportPdfDefinition(sample(), labels)
+        const tables = findTables(def.content)
+        const chapterTable = tables.find((t) => {
+            const body = (t.table as {body: unknown[][]}).body
+            return body[0].some((c) => (c as {text?: string}).text === "Flesch")
+        })!
+        const body = (chapterTable.table as {body: Record<string, unknown>[][]}).body
+        // Header cells are filled with the shared HEADER_FILL constant.
+        expect(body[0][0].fillColor).toBe(HEADER_FILL)
+        // The passive 12% cell is a "bad" severity -> shared SEVERITY_FILL.bad.
+        expect(body[1][6].fillColor).toBe(SEVERITY_FILL.bad)
     })
 })

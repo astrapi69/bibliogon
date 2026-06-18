@@ -11,6 +11,7 @@ import {useKeyboardShortcuts} from "../hooks/useKeyboardShortcuts"
 import {useDialog} from "./AppDialog"
 import PageThumbnails from "./PageThumbnails"
 import {SidebarToggleButton} from "./SidebarToggleButton"
+import {SidebarOverlay} from "../lib/components/SidebarOverlay"
 import {useDualSidebarCollapse} from "../hooks/useDualSidebarCollapse"
 import LayoutPicker from "./LayoutPicker"
 import LayoutConfig from "./LayoutConfig"
@@ -478,6 +479,14 @@ export default function PageEditor({
                         className="absolute right-2 top-2 z-[100] bg-card shadow-[var(--shadow-md)]"
                     />
                 )}
+                <SidebarOverlay
+                    open={sidebars.left.open || sidebars.right.open}
+                    onClose={() => {
+                        sidebars.left.setOpen(false);
+                        sidebars.right.setOpen(false);
+                    }}
+                    testId="page-editor-sidebar-overlay"
+                />
                 <div
                     data-testid="page-editor-thumbnails-wrapper"
                     data-sidebar-open={sidebars.left.open}

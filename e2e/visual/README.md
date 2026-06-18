@@ -1,11 +1,26 @@
-# Visual regression suite (VISUAL-REGRESSION-SCREENSHOTS-01)
+# Visual regression suite
 
-Pixel-diff screenshots of 3 critical views across all 6 palettes x
-light/dark = 36 committed baseline PNGs. Catches theme/layout
-regressions that unit tests cannot see (CSS positioning, contrast,
-real-browser layout).
+Pixel-diff screenshots that catch theme/layout regressions unit tests
+cannot see (CSS positioning, contrast, responsive layout). Two specs,
+both in the `visual` project:
+
+- **`theme-regression.spec.ts`** (VISUAL-REGRESSION-SCREENSHOTS-01) — 3
+  critical views (Dashboard / BookEditor / Settings-Appearance) across
+  all 6 palettes x light/dark = 36 baselines, desktop viewport.
+- **`viewport-regression.spec.ts`** (VISUAL-REGRESSION-VIEWPORTS-01) —
+  Phase 1 responsive baselines: 8 surfaces (BD empty/populated, AD
+  empty, BookEditor, Metadaten Allgemein/Qualitaet, Settings
+  Daten/Autoren) x 3 viewports (desktop 1920, tablet 768, mobile 375),
+  default theme.
 
 ## Run
+
+```bash
+make test-visual          # alias for: cd e2e && playwright test --project=visual
+make test-visual-update   # regenerate baselines (--update-snapshots)
+```
+
+Or directly:
 
 ```bash
 cd e2e
@@ -43,7 +58,27 @@ visual-test equivalent of deleting a failing unit test.
 `playwright.config.ts`. The 1% budget absorbs sub-pixel font/antialias
 drift; a real regression moves far more than 1% of pixels.
 
-## Follow-up
+## Bootstrapping new baselines
 
-Mobile viewport (375x812) is a deliberate follow-up to keep the initial
-baseline set manageable.
+`viewport-regression.spec.ts` ships without committed baselines: the
+linux PNGs must be generated once on a linux runner (the snapshots are
+platform-suffixed). Either run `make test-visual-update` on a linux box
+and commit `e2e/visual/viewport-regression.spec.ts-snapshots/`, or
+trigger the **Visual Regression** GitHub workflow with the
+`update_snapshots` input and download the `visual-regression-baselines`
+artifact. Until the baselines exist the spec's first run "fails" while
+writing them — that is the intended bootstrap, not a regression.
+
+## CI
+
+`.github/workflows/visual-regression.yml` runs the `visual` project
+**nightly** (04:00 UTC) and on `workflow_dispatch` — never on PRs,
+because committed screenshots legitimately change on every UI PR and
+would otherwise block them. A failing nightly diff uploads the
+actual/expected/diff PNGs as the `visual-regression-diff` artifact.
+
+## Release audit trail
+
+To archive a release's rendered surfaces, download the nightly run's
+artifacts (or run `make test-visual` locally) and keep the PNGs under
+`test-results/v{version}/` outside git, or as a CI artifact.

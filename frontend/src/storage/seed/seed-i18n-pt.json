@@ -971,7 +971,18 @@
       "clear_image_cache_confirm_title": "Limpar o cache de imagens?",
       "clear_image_cache_confirm_body": "As imagens em cache (capas, miniaturas de artigos) são removidas. Elas podem ser recarregadas quando necessário.",
       "clear_image_cache_done": "{n} imagens removidas do cache",
-      "clear_image_cache_error": "Não foi possível limpar o cache de imagens"
+      "clear_image_cache_error": "Não foi possível limpar o cache de imagens",
+      "show_event_log": "Mostrar registo de eventos",
+      "show_image_cache": "Mostrar imagens",
+      "event_log_warning": "Este registo pode ser grande.",
+      "event_log_count": "entradas",
+      "event_log_empty": "Sem entradas.",
+      "copy_clipboard": "Copiar para a área de transferência",
+      "download_json": "Transferir como JSON",
+      "event_log_copied": "Registo de eventos copiado",
+      "event_log_copy_error": "Falha ao copiar",
+      "image_cache_count": "imagens",
+      "image_cache_empty": "Sem imagens em cache."
     },
     "settings": {
       "title": "Configuracoes",
@@ -1747,7 +1758,9 @@
       "tts_preview": "Ouvir (TTS)",
       "ai_assistant": "Assistente AI",
       "wysiwyg_mode": "Modo WYSIWYG",
-      "markdown_mode": "Modo Markdown"
+      "markdown_mode": "Modo Markdown",
+      "expand_toolbar": "Expandir barra de ferramentas",
+      "collapse_toolbar": "Recolher barra de ferramentas"
     },
     "audiobook": {
       "engine": "Motor de sintese",

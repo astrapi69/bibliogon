@@ -245,7 +245,7 @@ export default function Dashboard() {
         const ordered = filters.filteredBooks
             .map((b) => b.id)
             .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2 || ordered.length > BOOK_BULK_LIMIT_HARD) return;
+        if (ordered.length < 2) return;
         try {
             const result = await getStorage().books.bulkDelete(ordered, permanent);
             setBooks((prev) =>
@@ -313,7 +313,7 @@ export default function Dashboard() {
         const ordered = filters.filteredBooks
             .map((b) => b.id)
             .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2 || ordered.length > BOOK_BULK_LIMIT_HARD) return;
+        if (ordered.length < 2) return;
         setBulkDeleteDialog({ ids: ordered, count: ordered.length });
     };
 

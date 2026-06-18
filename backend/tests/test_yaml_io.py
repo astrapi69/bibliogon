@@ -82,3 +82,71 @@ def test_write_creates_parent_directories(tmp_path: Path) -> None:
     write_yaml_roundtrip(path, {"hello": "world"})
     assert path.exists()
     assert "hello: world" in path.read_text(encoding="utf-8")
+
+
+class _Unserializable:
+    """A type ruamel.yaml cannot represent, used to force a dump failure."""
+
+
+def test_failed_write_leaves_original_file_intact(tmp_path: Path) -> None:
+    """A serialization failure mid-write must not truncate the existing file.
+
+    The atomic write serializes to a temp file and only ``os.replace``-s it
+    into place on success, so a crash during ``dump`` leaves the original
+    document untouched rather than corrupting it.
+    """
+    import pytest
+
+    path = tmp_path / "plugin.yaml"
+    original = 'settings:\n  provider: deepl\n  api_key: "keep-me"\n'
+    path.write_text(original, encoding="utf-8")
+
+    with pytest.raises(Exception):
+        write_yaml_roundtrip(path, {"settings": {"bad": _Unserializable()}})
+
+    assert path.read_text(encoding="utf-8") == original
+
+
+def test_failed_write_leaves_no_temp_file(tmp_path: Path) -> None:
+    """A failed write cleans up its temporary file (no ``.tmp`` leftovers)."""
+    import pytest
+
+    path = tmp_path / "plugin.yaml"
+    path.write_text("settings:\n  provider: deepl\n", encoding="utf-8")
+
+    with pytest.raises(Exception):
+        write_yaml_roundtrip(path, {"settings": {"bad": _Unserializable()}})
+
+    leftovers = sorted(p.name for p in tmp_path.iterdir() if p.name != "plugin.yaml")
+    assert leftovers == []
+
+
+def test_failed_write_to_new_path_creates_nothing(tmp_path: Path) -> None:
+    """A failed write to a not-yet-existing path leaves no partial file behind."""
+    import pytest
+
+    path = tmp_path / "plugin.yaml"
+
+    with pytest.raises(Exception):
+        write_yaml_roundtrip(path, {"settings": {"bad": _Unserializable()}})
+
+    assert not path.exists()
+    assert sorted(p.name for p in tmp_path.iterdir()) == []
+
+
+def test_successful_write_replaces_longer_content_completely(tmp_path: Path) -> None:
+    """A successful atomic write fully replaces a longer prior document.
+
+    Guards against the in-place-truncate failure mode where shorter new
+    content would leave trailing bytes of the old document.
+    """
+    path = tmp_path / "plugin.yaml"
+    path.write_text(
+        "settings:\n  a: 1\n  b: 2\n  c: 3\n  d: 4\n  e: 5\n", encoding="utf-8"
+    )
+
+    write_yaml_roundtrip(path, {"settings": {"a": 1}})
+
+    written = path.read_text(encoding="utf-8")
+    assert "b: 2" not in written
+    assert "a: 1" in written

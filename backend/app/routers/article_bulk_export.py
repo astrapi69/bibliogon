@@ -50,8 +50,8 @@ from app.routers.article_export import (
     _OUTPUT_EXTENSIONS,
     _PANDOC_TARGETS,
     _build_markdown,
-    _slugify,
 )
+from app.services.filename_slug import ascii_filename_slug
 
 logger = logging.getLogger(__name__)
 
@@ -300,7 +300,7 @@ def _build_zip(articles: list[Article], fmt: str) -> Response:
         zip_path = Path(tmpdir) / zip_filename
         with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as zf:
             for article in articles:
-                base = _slugify(article.title)
+                base = ascii_filename_slug(article.title, fallback="article")
                 count = seen_slugs.get(base, 0)
                 seen_slugs[base] = count + 1
                 if count == 0:
