@@ -71,8 +71,7 @@ test.describe("Dashboard filters - text search", () => {
     test("typing in the search input narrows the book list", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("Mörder");
-        // Wait for debounce (200ms)
-        await page.waitForTimeout(300);
+        // toHaveCount auto-waits through the 200ms search debounce.
         const cards = visibleBookCards(page);
         await expect(cards).toHaveCount(1);
     });
@@ -80,14 +79,12 @@ test.describe("Dashboard filters - text search", () => {
     test("search matches on author name", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("Raptis");
-        await page.waitForTimeout(300);
         await expect(visibleBookCards(page)).toHaveCount(1);
     });
 
     test("search matches on genre", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("Krimi");
-        await page.waitForTimeout(300);
         await expect(visibleBookCards(page)).toHaveCount(2);
     });
 });
@@ -150,7 +147,6 @@ test.describe("Dashboard filters - reset and empty state", () => {
     test("reset clears search and genre filter", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("nonexistent");
-        await page.waitForTimeout(300);
         await expect(page.getByTestId("filter-empty-state")).toBeVisible();
 
         await page.getByTestId("filter-reset-empty").click();
@@ -161,7 +157,6 @@ test.describe("Dashboard filters - reset and empty state", () => {
     test("empty state renders when filters match zero books", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("zzz_no_match");
-        await page.waitForTimeout(300);
         await expect(page.getByTestId("filter-empty-state")).toBeVisible();
     });
 
@@ -183,9 +178,9 @@ test.describe("Dashboard filters - URL param persistence", () => {
         await openDashboard(page);
         await page.getByTestId("filter-genre-trigger").click();
         await page.getByTestId("filter-genre-item-Krimi").click();
-        // Wait for the debounced URL sync
-        await page.waitForTimeout(300);
-        expect(page.url()).toContain("genre=Krimi");
+        // toHaveURL polls until the debounced URL sync lands (vs reading
+        // page.url() once after a fixed wait, which flakes under load).
+        await expect(page).toHaveURL(/genre=Krimi/);
     });
 
     test("navigating to a URL with genre param pre-selects the filter", async ({page}) => {
@@ -197,15 +192,15 @@ test.describe("Dashboard filters - URL param persistence", () => {
     test("search query is preserved in URL after debounce", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-search-input").fill("Raptis");
-        await page.waitForTimeout(300);
-        expect(page.url()).toContain("q=Raptis");
+        await expect(page).toHaveURL(/q=Raptis/);
     });
 
     test("reloading the page restores filters from URL params", async ({page}) => {
         await openDashboard(page);
         await page.getByTestId("filter-genre-trigger").click();
         await page.getByTestId("filter-genre-item-Krimi").click();
-        await page.waitForTimeout(300);
+        // Ensure the URL sync committed before reloading (deterministic).
+        await expect(page).toHaveURL(/genre=Krimi/);
 
         await page.reload();
         await expect(page.getByTestId("filter-bar")).toBeVisible();
