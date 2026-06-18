@@ -238,6 +238,15 @@ describe("ArticleList", () => {
         expect(screen.getByTestId("article-list-empty-cta")).toBeTruthy();
     });
 
+    it("exposes the 'article-list-page' root testid (regression #421)", async () => {
+        // The DropZone wrapper (drag-and-drop import, #77) replaced the
+        // old root <div data-testid="article-list-page">. ~22 smoke specs
+        // gate page-load on this testid; DropZone must forward it via its
+        // testId prop, not swallow it under the default "dropzone".
+        await renderList([]);
+        await waitFor(() => expect(screen.getByTestId("article-list-page")).toBeInTheDocument());
+    });
+
     it("renders one row per article with title + status badge", async () => {
         await renderList([
             makeArticle({ id: "a-1", title: "First" }),
