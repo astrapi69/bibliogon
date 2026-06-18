@@ -85,6 +85,18 @@ ALLOWLIST = {
     # baked into the exported file, not theme-referenced.
     "frontend/src/export/formatHtml.ts",
     "frontend/src/export/formatPdf.ts",
+    # Quality-report PDF palette (v0.55.0 quality-report PDF, #356/#360).
+    # The on-screen tables use the semantic theme tokens via color-mix;
+    # the generated PDF (pdfmake) carries its own fixed tints (header
+    # fill, rule/muted greys, traffic-light + Flesch-band fills) so it
+    # renders identically regardless of the active app theme. pdfmake
+    # cannot resolve ``var(--*)`` tokens - the colours must be concrete.
+    "frontend/src/components/qualityReport.ts",
+    # Story-Bible AI extraction prompt (v0.55.0 "Story Bible from book
+    # text"). The single hex is an EXAMPLE inside the prompt instruction
+    # text ("a hex colour like #4ECDC4"), documentation shown to the LLM,
+    # not theme styling.
+    "frontend/src/ai/storyExtractionPrompts.ts",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")

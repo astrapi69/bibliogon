@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-06-17 (Session 9 reconciliation — the v0.52.0 → v0.54.0 shipped arc is recorded below; explorations cleanup (#372): 3 shipped explorations archived, dependency-strategy refreshed, children-book-plugin marked shipped; priorities re-tiered for v0.54.0+.)
-Latest release: v0.54.0 (2026-06-17) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
+Latest release: v0.56.0 (2026-06-18) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
