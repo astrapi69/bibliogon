@@ -1777,7 +1777,9 @@
       "tts_preview": "Listen (TTS)",
       "ai_assistant": "AI Assistant",
       "wysiwyg_mode": "WYSIWYG mode",
-      "markdown_mode": "Markdown mode"
+      "markdown_mode": "Markdown mode",
+      "expand_toolbar": "Expand toolbar",
+      "collapse_toolbar": "Collapse toolbar"
     },
     "help": {
       "title": "Help",

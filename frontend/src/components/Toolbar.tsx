@@ -1,6 +1,7 @@
 import {Editor} from "@tiptap/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../hooks/useI18n";
+import {CollapsibleToolbar} from "./CollapsibleToolbar";
 import {useDialog} from "./AppDialog";
 import {notify} from "../utils/notify";
 import {copyToClipboard} from "../utils/clipboard";
@@ -378,6 +379,10 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
         names.filter(Boolean).join(" ");
 
     return (
+        <CollapsibleToolbar
+            expandLabel={t("ui.toolbar.expand_toolbar", "Werkzeugleiste ausklappen")}
+            collapseLabel={t("ui.toolbar.collapse_toolbar", "Werkzeugleiste einklappen")}
+        >
         <div className={styles.toolbar}>
             {items.map((item, i) => {
                 if ("hidden" in item && item.hidden) return null;
@@ -639,5 +644,6 @@ export default function Toolbar({editor, markdownMode, onToggleMarkdown, onToggl
                 {markdownMode ? "WYSIWYG" : "Markdown"}
             </button>
         </div>
+        </CollapsibleToolbar>
     );
 }

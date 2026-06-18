@@ -1758,7 +1758,9 @@
       "tts_preview": "試聴 (TTS)",
       "ai_assistant": "AIアシスタント",
       "wysiwyg_mode": "WYSIWYGモード",
-      "markdown_mode": "Markdownモード"
+      "markdown_mode": "Markdownモード",
+      "expand_toolbar": "ツールバーを展開",
+      "collapse_toolbar": "ツールバーを折りたたむ"
     },
     "audiobook": {
       "engine": "音声合成エンジン",
