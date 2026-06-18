@@ -2632,6 +2632,7 @@ ui:
     no_image: "Ainda sem imagem"
     upload_image: "Carregar imagem"
     replace_image: "Substituir imagem"
+    drop_image: "Solte a imagem aqui"
     no_secondary_image: "Ainda sem imagem secundária"
     upload_secondary_image: "Carregar imagem secundária"
     replace_secondary_image: "Substituir imagem secundária"
@@ -3277,6 +3278,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "Carregar imagem"
     panel_replace_image: "Substituir imagem"
+    panel_drop_image: "Solte a imagem aqui"
     back: "Voltar"
     overflow_title: "Demasiados quadros para este modelo"
     overflow_message: "O modelo selecionado permite apenas {target} quadro(s), mas esta página tem {current}. {excess} quadro(s) em excesso têm de ser movidos ou eliminados."

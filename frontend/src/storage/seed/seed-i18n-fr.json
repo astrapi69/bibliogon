@@ -3236,7 +3236,8 @@
             "italic": "Italique"
           }
         }
-      }
+      },
+      "drop_image": "Déposez l'image ici"
     },
     "chapter_status": {
       "label": "Statut",
@@ -3490,7 +3491,8 @@
         "grid_2x2": "Grille standard (4 cases)",
         "grid_2x3": "Deux rangées (6 cases)",
         "grid_3x2": "Trois rangées (6 cases)"
-      }
+      },
+      "panel_drop_image": "Déposez l'image ici"
     },
     "lan_access": {
       "heading": "Accès LAN",

@@ -2632,6 +2632,7 @@ ui:
     no_image: "Δεν υπάρχει ακόμη εικόνα"
     upload_image: "Μεταφόρτωση εικόνας"
     replace_image: "Αντικατάσταση εικόνας"
+    drop_image: "Αφήστε την εικόνα εδώ"
     no_secondary_image: "Δεν υπάρχει ακόμη δεύτερη εικόνα"
     upload_secondary_image: "Μεταφόρτωση δεύτερης εικόνας"
     replace_secondary_image: "Αντικατάσταση δεύτερης εικόνας"
@@ -3277,6 +3278,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "Μεταφόρτωση εικόνας"
     panel_replace_image: "Αντικατάσταση εικόνας"
+    panel_drop_image: "Αφήστε την εικόνα εδώ"
     back: "Πίσω"
     overflow_title: "Πάρα πολλά καρέ για αυτό το πρότυπο"
     overflow_message: "Το επιλεγμένο πρότυπο επιτρέπει μόνο {target} καρέ, αλλά αυτή η σελίδα έχει {current}. {excess} επιπλέον καρέ πρέπει να μετακινηθούν ή να διαγραφούν."

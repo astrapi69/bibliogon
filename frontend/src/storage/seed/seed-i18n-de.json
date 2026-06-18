@@ -3236,7 +3236,8 @@
             "italic": "Kursiv"
           }
         }
-      }
+      },
+      "drop_image": "Bild hier ablegen"
     },
     "chapter_status": {
       "label": "Status",
@@ -3490,7 +3491,8 @@
         "grid_2x2": "Standardraster (4 Panels)",
         "grid_2x3": "Zweistufig (6 Panels)",
         "grid_3x2": "Dreistufig (6 Panels)"
-      }
+      },
+      "panel_drop_image": "Bild hier ablegen"
     },
     "lan_access": {
       "heading": "LAN-Zugriff",

@@ -97,6 +97,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
         uploadError,
         setUploadError,
         handleFileChange,
+        uploadPrimaryFile,
         secondaryFileInputRef,
         uploadingSecondary,
         uploadSecondaryError,
@@ -303,6 +304,7 @@ export default function PageCanvas({page, bookId, onUpdate, onEditorReady}: Prop
                         fileInputRef={fileInputRef}
                         uploading={uploading}
                         handleFileChange={handleFileChange}
+                        onDropImage={uploadPrimaryFile}
                     />
                 )}
                 {!isImageFullNoText && (

@@ -3236,7 +3236,8 @@
             "italic": "İtalik"
           }
         }
-      }
+      },
+      "drop_image": "Görseli buraya bırakın"
     },
     "chapter_status": {
       "label": "Durum",
@@ -3490,7 +3491,8 @@
         "grid_2x2": "Standart ızgara (4 panel)",
         "grid_2x3": "İki katmanlı (6 panel)",
         "grid_3x2": "Üç katmanlı (6 panel)"
-      }
+      },
+      "panel_drop_image": "Görseli buraya bırakın"
     },
     "lan_access": {
       "heading": "LAN erişimi",

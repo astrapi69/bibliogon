@@ -3236,7 +3236,8 @@
             "italic": "Italic"
           }
         }
-      }
+      },
+      "drop_image": "Drop image here"
     },
     "chapter_status": {
       "label": "Status",
@@ -3490,7 +3491,8 @@
         "grid_2x2": "Standard grid (4 panels)",
         "grid_2x3": "Two-tier (6 panels)",
         "grid_3x2": "Three-tier (6 panels)"
-      }
+      },
+      "panel_drop_image": "Drop image here"
     },
     "lan_access": {
       "heading": "LAN access",

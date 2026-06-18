@@ -2632,6 +2632,7 @@ ui:
     no_image: "画像がまだありません"
     upload_image: "画像をアップロード"
     replace_image: "画像を差し替え"
+    drop_image: "画像をここにドロップ"
     no_secondary_image: "2 枚目の画像がまだありません"
     upload_secondary_image: "2 枚目の画像をアップロード"
     replace_secondary_image: "2 枚目の画像を差し替え"
@@ -3277,6 +3278,7 @@ ui:
   comic_book_editor:
     panel_upload_image: "画像をアップロード"
     panel_replace_image: "画像を置き換える"
+    panel_drop_image: "画像をここにドロップ"
     back: "戻る"
     overflow_title: "このテンプレートにはコマが多すぎます"
     overflow_message: "選択したテンプレートでは {target} コマしか配置できませんが、このページには {current} コマあります。超過した {excess} コマを移動するか削除する必要があります。"
