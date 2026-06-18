@@ -10,7 +10,7 @@
  *    strip — see "Playwright-visible != User-visible").
  * 3. "Alle Daten anzeigen" reveals the raw table list.
  * 4. Export / Import / Maintenance controls render.
- * 5. Full-backup export downloads a JSON file.
+ * 5. Full-backup export downloads a .bgb file (ZIP with image bytes, #341).
  *
  * Testid namespace: data-*.
  */
@@ -68,11 +68,13 @@ test.describe("Settings > Daten (#338)", () => {
     }
   });
 
-  test("exports a full backup as a JSON download", async ({ page }) => {
+  test("exports a full backup as a .bgb download", async ({ page }) => {
+    // Full backup switched from imageless JSON to a .bgb ZIP that carries
+    // image bytes (#341); the download filename follows.
     await page.goto("/settings?tab=daten");
     const downloadPromise = page.waitForEvent("download");
     await page.getByTestId("data-export-full").click();
     const download = await downloadPromise;
-    expect(download.suggestedFilename()).toContain(".json");
+    expect(download.suggestedFilename()).toContain(".bgb");
   });
 });

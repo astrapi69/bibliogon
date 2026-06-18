@@ -38,6 +38,13 @@ test.describe("Authors-Database toolbar (mobile)", () => {
         for (const testId of ACTION_TESTIDS) {
             const btn = page.getByTestId(testId);
             await expect(btn).toBeVisible();
+            // The Authors-Database section sits below the Author-Profile
+            // section, so on a 375x800 phone its toolbar is legitimately
+            // below the fold — a user scrolls to it. Scroll it into view
+            // first (vertical), THEN assert it is inside the viewport: a
+            // horizontally-clipped button (the original overflow bug) still
+            // fails because the scroll is vertical-only.
+            await btn.scrollIntoViewIfNeeded();
             await expect(btn, `${testId} should be inside the viewport`).toBeInViewport();
         }
     });
