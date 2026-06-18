@@ -2,6 +2,42 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.56.0] - 2026-06-18
+
+The **first published release since v0.51.0** — it brings the GitHub releases
+stream back in sync with the v0.52.0 → v0.55.0 tags (which were cut but never
+published) and adds this cycle's polish on top. The headline fix: bulk-delete
+no longer silently fails above 200 selected items. No schema migrations;
+existing data + ``.bgb``/``.bgp`` unaffected.
+
+### Added
+- **Clear-data preview** — Settings now previews the event-log and image-cache
+  contents before you clear them, so a destructive clear is an informed choice
+  (#408).
+
+### Changed
+- **Downloads** keep the native ``downloadBlob`` path (file-saver dropped); the
+  helper is hardened and de-duplicated across the export surfaces (#416).
+- **Backend** — the ASCII filename-slug logic is consolidated into a single
+  shared helper (#390).
+- **Visual-regression infra** — Phase-1 multi-viewport screenshot baselines and
+  a nightly CI job (#411).
+
+### Fixed
+- **Bulk-delete above 200 selected items** — selecting more than 200 articles
+  or books and choosing Löschen did nothing (no toast, no trash). The frontend
+  delete handlers had reused the export cost-profile cap (200) as a guard;
+  delete is uncapped (a DB UPDATE/DELETE per row), so the cap is removed for
+  both Articles and Books. Reproduced with 1387 selected articles (#417).
+- **Quality-report chapter order** — report chapters are ordered by the sidebar
+  matter groups (front / main / back) rather than raw position (#415).
+- **Custom combobox** — a pending typed value is committed when the dropdown is
+  closed by clicking outside, instead of being discarded (#404).
+- **Mobile editor sidebar** — closes via a click-to-close overlay across all
+  four overlay-sidebar editors (#405, #406).
+
+No schema migrations; existing data + ``.bgb``/``.bgp`` unaffected.
+
 ## [0.55.0] - 2026-06-17
 
 The **Git/Import-depth + quality-report + mobile-polish** release. Round-trips
