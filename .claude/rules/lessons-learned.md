@@ -5249,3 +5249,35 @@ Rules this reinforces:
 - Pairs with the existing memory `[[feedback_parallel_session_shared_head]]`
   and the "Plain git status before every commit" rule: parallel-session work
   is live and must be treated as untouchable unless you created it.
+
+## E2E baseline-normalisation must be on the context, not the page (multi-tab)
+
+Filed 2026-06-18 (#441, the standout takeaway of the E2E flake-stabilisation
+session). The base fixture suppressed the auto-opening onboarding dialogs
+(donation, AI-setup wizard) via `page.addInitScript(...)` on the default
+`page`. A multi-tab spec (content-safety's 409-conflict two-tab race) opens
+its tabs with `const tab = await context.newPage()` — those pages do NOT
+inherit a script registered on the default `page`. In CI (fresh data dir →
+AI reported not-configured) the AI-setup wizard then auto-opened in the tabs
+and its Radix dialog overlay (`<div data-state="open" aria-hidden="true">`)
+intercepted every click in that tab, hard-failing all retries. It passed
+locally only because the local backend doesn't trigger the wizard — the
+classic "passes locally, fails in CI" trap.
+
+Rule: any E2E baseline-normalisation that must hold for EVERY page in a test
+(onboarding/notification suppression, feature flags, locale, seeded
+localStorage, route mocks) belongs on `context.addInitScript` /
+`context.route`, never on a single `page`. `context.addInitScript` is
+evaluated in every page the context creates, including `context.newPage()`
+tabs and popups; `page.addInitScript` covers only that one page. Put it in
+the shared fixture so multi-tab specs are covered by construction.
+
+Detection: grep specs for `context.newPage()` / `newContext()`; if any exist,
+the fixture's init scripts and `route` mocks must be context-scoped or those
+tabs run un-normalised.
+
+Diagnosis method that found it: the CI **trace screenshot** showed the open
+"KI-Assistent einrichten" modal covering the editor — per the existing
+"Playwright-visible != user-visible" rule, looking at the rendered frame beat
+guessing from the error text (which only named an anonymous
+`data-state=open aria-hidden` div).
