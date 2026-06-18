@@ -124,7 +124,12 @@ test.describe("Configurable default book-type + content-type", () => {
 
         await page.goto("/articles");
         await page.getByTestId("article-list-new").click();
-        await expect(page).toHaveURL(/\/articles\/new$/);
+        // A non-registry-default content-type deep-links the type so the
+        // create page pre-selects it (ArticleList `newArticleHref`; see the
+        // "primary deep-links the configured non-default content type"
+        // unit test). Only the registry default (blogpost) gets bare
+        // /articles/new.
+        await expect(page).toHaveURL(/\/articles\/new\?type=tutorial$/);
         await expect(
             page.getByTestId("create-article-title-tutorial"),
         ).toBeVisible();

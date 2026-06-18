@@ -161,6 +161,11 @@ test.describe('Content safety', () => {
     await tabB.goto(`/book/${book.id}`)
     await expect(tabA.locator('.ProseMirror')).toBeVisible()
     await expect(tabB.locator('.ProseMirror')).toBeVisible()
+    // .ProseMirror can be visible while the content-loading overlay is still
+    // up; that overlay intercepts the sidebar click. Wait it out (slow under
+    // CI load) in both tabs before selecting the chapter.
+    await expect(tabA.getByTestId('book-editor-content-loading')).toBeHidden({timeout: 30_000})
+    await expect(tabB.getByTestId('book-editor-content-loading')).toBeHidden({timeout: 30_000})
     await tabA.getByText('Chapter C').click()
     await tabB.getByText('Chapter C').click()
 

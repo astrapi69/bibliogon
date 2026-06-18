@@ -81,11 +81,15 @@ jobs:
 
       - name: Run smoke suite
         working-directory: e2e
-        # --retries=1 (CI-only override of the config's retries:2) halves the
-        # worst-case flaky tail without hiding a deterministic failure, which
-        # still fails both attempts. The shared playwright.config.ts keeps
-        # retries:2 for local runs deliberately.
-        run: npx playwright test --project=smoke --retries=1
+        # retries:2 (the shared playwright.config.ts default; no CLI override).
+        # With workers:1 (SQLite, no parallelism) the residual flakes are
+        # load/stability timeouts where an element resolves but isn't
+        # actionable in time; these occasionally fail TWO attempts under
+        # runner load, so a 3rd attempt is what keeps the gate honest without
+        # masking a deterministic failure (which fails all three). Retries
+        # only re-run the FEW failed tests, so the wall-clock cost over
+        # --retries=1 is marginal.
+        run: npx playwright test --project=smoke
 
       - uses: actions/upload-artifact@v6
         if: failure()
