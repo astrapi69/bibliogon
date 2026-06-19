@@ -91,8 +91,11 @@ test.describe("Offline AI fill (Dexie mode)", () => {
             timeout: 15_000,
         });
         await page.getByTestId("ai-base-url").fill(MOCK_LLM_BASE);
-        await page.getByTestId("ai-model").fill("mock-model");
+        // The model field is disabled until a key is present (#451: models
+        // load per-provider once a key exists), so fill the key BEFORE the
+        // model -- otherwise ai-model stays disabled and .fill() times out.
         await page.getByTestId("ai-api-key-input").fill("sk-mock-offline-key");
+        await page.getByTestId("ai-model").fill("mock-model");
         await page.getByTestId("ai-save").click();
         await expect(page.getByText(/Gespeichert|Saved/).first()).toBeVisible({
             timeout: 10_000,
