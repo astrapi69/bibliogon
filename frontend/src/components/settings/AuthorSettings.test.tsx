@@ -57,7 +57,8 @@ describe("AuthorSettings", () => {
         render(<AuthorSettings config={{}} onSave={() => {}} saving={false}/>);
         expect(screen.getByTestId("author-settings")).toBeTruthy();
         expect(screen.getByTestId("author-real-name")).toBeTruthy();
-        expect(screen.getByTestId("author-save")).toBeTruthy();
+        // Auto-save (#472): no manual Speichern button.
+        expect(screen.queryByTestId("author-save")).toBeNull();
     });
 
     it("seeds real-name + pen-names from config.author", () => {
@@ -113,12 +114,12 @@ describe("AuthorSettings", () => {
         expect(screen.getByTestId("author-pen-name-0").textContent).toContain("Keep");
     });
 
-    it("save passes {author: {name, pen_names}}", () => {
+    it("auto-saves {author: {name, pen_names}} on real-name blur", () => {
         const onSave = vi.fn();
         render(<AuthorSettings config={{author: {name: "X", pen_names: ["P1"]}}} onSave={onSave} saving={false}/>);
         const real = screen.getByTestId("author-real-name") as HTMLInputElement;
         fireEvent.change(real, {target: {value: "Y"}});
-        fireEvent.click(screen.getByTestId("author-save"));
+        fireEvent.blur(real);
         expect(onSave).toHaveBeenCalledWith({author: {name: "Y", pen_names: ["P1"]}});
     });
 
@@ -155,9 +156,9 @@ describe("AuthorSettings", () => {
         expect(onSave).not.toHaveBeenCalled();
     });
 
-    it("disables save while saving=true", () => {
-        render(<AuthorSettings config={{}} onSave={() => {}} saving={true}/>);
-        const btn = screen.getByTestId("author-save") as HTMLButtonElement;
+    it("disables the sync-to-DB button while saving=true", () => {
+        render(<AuthorSettings config={{author: {name: "X", pen_names: []}}} onSave={() => {}} saving={true}/>);
+        const btn = screen.getByTestId("author-sync-to-db") as HTMLButtonElement;
         expect(btn.disabled).toBe(true);
     });
 

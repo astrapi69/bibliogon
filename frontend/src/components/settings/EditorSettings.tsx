@@ -1,5 +1,4 @@
 import {useEffect, useState} from "react";
-import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {HelpText} from "./HelpText";
@@ -13,6 +12,7 @@ import {KDP_REGIONS, REGION_LABELS} from "../kdp-wizard/pricing";
 import type {RegionCode} from "../kdp-wizard/machines/types";
 import {RadixSelect} from "../RadixSelect";
 import {Toggle} from "./Toggle";
+import {useSettingsAutoSave} from "./useSettingsAutoSave";
 
 function isPictureBookFormat(value: unknown): value is PictureBookFormat {
     return (
@@ -28,7 +28,7 @@ function isRegionCode(value: unknown): value is RegionCode {
     );
 }
 
-export function EditorSettings({config, onSave, saving}: {
+export function EditorSettings({config, onSave}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
@@ -103,6 +103,8 @@ export function EditorSettings({config, onSave, saving}: {
         },
     });
 
+    const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
+
     return (
         <div className={styles.section} data-testid="editor-settings">
             <SectionHeader
@@ -115,14 +117,14 @@ export function EditorSettings({config, onSave, saving}: {
                         <label className="label">{t("ui.settings.editor_autosave", "Autosave (ms)")}</label>
                         <input className="input" type="number" min="200" max="5000" step="100"
                             data-testid="editor-autosave"
-                            value={edAutosave} onChange={(e) => setEdAutosave(e.target.value)}/>
+                            value={edAutosave} onChange={(e) => { setEdAutosave(e.target.value); triggerSave(); }}/>
                         <HelpText>{t("ui.settings.editor_autosave_hint", "Verzoegerung bis zum automatischen Speichern")}</HelpText>
                     </div>
                     <div className="field" style={{flex: 1, minWidth: 140}}>
                         <label className="label">{t("ui.settings.editor_draft_save", "Entwurf (ms)")}</label>
                         <input className="input" type="number" min="500" max="10000" step="500"
                             data-testid="editor-draft-save"
-                            value={edDraftSave} onChange={(e) => setEdDraftSave(e.target.value)}/>
+                            value={edDraftSave} onChange={(e) => { setEdDraftSave(e.target.value); triggerSave(); }}/>
                         <HelpText>{t("ui.settings.editor_draft_hint", "Verzoegerung bis zur lokalen Sicherung")}</HelpText>
                     </div>
                 </div>
@@ -131,14 +133,14 @@ export function EditorSettings({config, onSave, saving}: {
                         <label className="label">{t("ui.settings.editor_draft_age", "Entwurf-Alter (Tage)")}</label>
                         <input className="input" type="number" min="1" max="365" step="1"
                             data-testid="editor-draft-age"
-                            value={edDraftAge} onChange={(e) => setEdDraftAge(e.target.value)}/>
+                            value={edDraftAge} onChange={(e) => { setEdDraftAge(e.target.value); triggerSave(); }}/>
                         <HelpText>{t("ui.settings.editor_draft_age_hint", "Lokale Entwuerfe älter als dieser Wert werden gelöscht")}</HelpText>
                     </div>
                     <div className="field" style={{flex: 1, minWidth: 140}}>
                         <label className="label">{t("ui.settings.editor_ai_chars", "KI-Kontext (Zeichen)")}</label>
                         <input className="input" type="number" min="500" max="32000" step="500"
                             data-testid="editor-ai-chars"
-                            value={edAiChars} onChange={(e) => setEdAiChars(e.target.value)}/>
+                            value={edAiChars} onChange={(e) => { setEdAiChars(e.target.value); triggerSave(); }}/>
                         <HelpText>{t("ui.settings.editor_ai_chars_hint", "Maximale Zeichenanzahl für KI-Vorschläge")}</HelpText>
                     </div>
                 </div>
@@ -155,7 +157,7 @@ export function EditorSettings({config, onSave, saving}: {
                             <label className="label">{t("ui.settings.pdf_default_format", "Standard-Format")}</label>
                             <RadixSelect
                                 value={pdfFormat}
-                                onValueChange={(v) => setPdfFormat(v as PictureBookFormat)}
+                                onValueChange={(v) => { setPdfFormat(v as PictureBookFormat); triggerSave(); }}
                                 testId="settings-pdf-default-format"
                                 options={PICTURE_BOOK_FORMATS.map((fmt) => ({
                                     value: fmt,
@@ -168,7 +170,7 @@ export function EditorSettings({config, onSave, saving}: {
                                 label={t("ui.settings.pdf_default_bleed", "Beschnittmarken standardmäßig aktiv")}
                                 description={t("ui.page_editor.pdf_bleed_hint", "Fügt 3 mm Beschnitt + Schnittmarken für den Druckereinsatz hinzu")}
                                 checked={pdfBleed}
-                                onChange={setPdfBleed}
+                                onChange={(v) => { setPdfBleed(v); triggerSave(); }}
                                 testId="settings-pdf-default-bleed"
                                 indentedDescription
                             />
@@ -186,7 +188,7 @@ export function EditorSettings({config, onSave, saving}: {
                     <div className="field">
                         <RadixSelect
                             value={kdpMarketplace}
-                            onValueChange={(v) => setKdpMarketplace(v as RegionCode)}
+                            onValueChange={(v) => { setKdpMarketplace(v as RegionCode); triggerSave(); }}
                             testId="settings-kdp-default-marketplace-select"
                             options={KDP_REGIONS.map((region) => ({
                                 value: region,
@@ -195,16 +197,6 @@ export function EditorSettings({config, onSave, saving}: {
                         />
                     </div>
                 </div>
-
-                <button
-                    className="btn btn-primary"
-                    disabled={saving}
-                    onClick={() => onSave(buildSaveData())}
-                    data-testid="editor-settings-save"
-                    style={{marginTop: 12}}
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
             </div>
         </div>
     );

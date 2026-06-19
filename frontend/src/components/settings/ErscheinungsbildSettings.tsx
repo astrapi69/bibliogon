@@ -1,12 +1,12 @@
 import {useEffect, useRef, useState} from "react";
-import {Save} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {PALETTES} from "../../themes/palettes";
 import styles from "../../pages/Settings.module.css";
 import {RadixSelect} from "../RadixSelect";
 import {SectionHeader} from "./SectionHeader";
+import {useSettingsAutoSave} from "./useSettingsAutoSave";
 
-export function ErscheinungsbildSettings({config, onSave, saving}: {
+export function ErscheinungsbildSettings({config, onSave}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
@@ -35,12 +35,6 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
     // would CLOBBER their edit back to the stored value and save the wrong
     // thing. ``userEdited`` gates the re-hydrate so in-progress edits win.
     const userEdited = useRef(false);
-    const onEdit =
-        (setter: (value: string) => void) =>
-        (value: string): void => {
-            userEdited.current = true;
-            setter(value);
-        };
 
     useEffect(() => {
         if (userEdited.current) return; // never clobber an in-progress edit
@@ -67,6 +61,18 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
         },
     });
 
+    const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
+
+    // Mark the form dirty (so the late config-arrival effect won't clobber
+    // the edit) and auto-save the change.
+    const onEdit =
+        (setter: (value: string) => void) =>
+        (value: string): void => {
+            userEdited.current = true;
+            setter(value);
+            triggerSave();
+        };
+
     return (
         <div className={styles.section} data-testid="erscheinungsbild-settings">
             <SectionHeader
@@ -83,6 +89,7 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                             setTheme(val);
                             document.documentElement.setAttribute("data-app-theme", val);
                             localStorage.setItem("bibliogon-app-theme", val);
+                            triggerSave();
                         }}
                         testId="palette-select"
                         ariaLabel={t("ui.settings.theme", "Theme")}
@@ -177,15 +184,6 @@ export function ErscheinungsbildSettings({config, onSave, saving}: {
                         </div>
                     </div>
                 </div>
-                <button
-                    className="btn btn-primary"
-                    disabled={saving}
-                    onClick={() => onSave(buildSaveData())}
-                    data-testid="erscheinungsbild-settings-save"
-                    style={{marginTop: 12}}
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
             </div>
         </div>
     );

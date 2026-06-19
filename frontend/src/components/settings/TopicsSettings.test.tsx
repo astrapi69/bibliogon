@@ -1,8 +1,8 @@
 /**
  * TopicsSettings tests pin the article-topics list surface and the
  * auto-save-on-mutation contract (#57): adding or removing a topic must
- * persist immediately via ``onSave`` so a navigation away before the
- * explicit Save click cannot lose the change.
+ * persist immediately via ``onSave`` so a navigation away cannot lose the
+ * change. Auto-save (#472) removed the manual Save button entirely.
  */
 
 import {describe, it, expect, vi} from "vitest";
@@ -14,11 +14,11 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 describe("TopicsSettings", () => {
-    it("renders the root, add input, and save button", () => {
+    it("renders the root + add input and no manual save button", () => {
         render(<TopicsSettings config={{}} onSave={() => {}} saving={false} />);
         expect(screen.getByTestId("topics-settings")).toBeTruthy();
         expect(screen.getByTestId("topic-add-input")).toBeTruthy();
-        expect(screen.getByTestId("topics-save-btn")).toBeTruthy();
+        expect(screen.queryByTestId("topics-save-btn")).toBeNull();
     });
 
     it("seeds topics from config.topics", () => {
@@ -66,13 +66,6 @@ describe("TopicsSettings", () => {
         fireEvent.click(screen.getByTestId("topic-add-btn"));
         expect(onSave).not.toHaveBeenCalled();
         expect(screen.queryByTestId("topic-row-1")).toBeNull();
-    });
-
-    it("the Save button still persists the current list (manual fallback)", () => {
-        const onSave = vi.fn();
-        render(<TopicsSettings config={{topics: ["A"]}} onSave={onSave} saving={false} />);
-        fireEvent.click(screen.getByTestId("topics-save-btn"));
-        expect(onSave).toHaveBeenCalledWith({topics: ["A"]});
     });
 
     it("disables the add button on empty input", () => {

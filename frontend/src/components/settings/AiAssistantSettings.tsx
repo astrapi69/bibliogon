@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Save, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { TokenInput } from "../../lib/components/TokenInput";
 import { ComboboxSelect } from "../../lib/components/ComboboxSelect";
 import { useAiModels } from "../../hooks/ai/useAiModels";
@@ -38,6 +38,7 @@ import {
 import { HelpText } from "./HelpText";
 import { SectionHeader } from "./SectionHeader";
 import { Toggle } from "./Toggle";
+import { useSettingsAutoSave } from "./useSettingsAutoSave";
 
 export function AiAssistantSettings({
     config,
@@ -224,6 +225,11 @@ export function AiAssistantSettings({
 
     const buildSaveData = () => buildAiPatch(buildEditedSettings());
 
+    // Auto-save (#472): editing any field persists the current provider's
+    // form (debounced). Switching the provider dropdown (loadProvider) and
+    // the table radio (handleActivate) keep their own explicit paths.
+    const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
+
     /** Move the active_provider pointer; keys stay (the keystone). */
     const handleActivate = async (id: string) => {
         if (id === settings.active_provider) return;
@@ -274,7 +280,7 @@ export function AiAssistantSettings({
                                 "Wenn deaktiviert, sind alle KI-Funktionen ausgeblendet.",
                             )}
                             checked={aiEnabled}
-                            onChange={setAiEnabled}
+                            onChange={(v) => { setAiEnabled(v); triggerSave(); }}
                             testId="ai-enabled"
                             indentedDescription
                         />
@@ -347,7 +353,7 @@ export function AiAssistantSettings({
                             <input
                                 className="input"
                                 value={aiBaseUrl}
-                                onChange={(e) => setAiBaseUrl(e.target.value)}
+                                onChange={(e) => { setAiBaseUrl(e.target.value); triggerSave(); }}
                                 data-testid="ai-base-url"
                                 placeholder="https://api.openai.com/v1"
                                 style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}
@@ -359,7 +365,7 @@ export function AiAssistantSettings({
                                 <ComboboxSelect
                                     options={aiModels.map((m) => ({ value: m, label: m }))}
                                     value={aiModel}
-                                    onChange={setAiModel}
+                                    onChange={(v) => { setAiModel(v); triggerSave(); }}
                                     allowCustom
                                     disabled={missingKey}
                                     testId="ai-model"
@@ -407,7 +413,7 @@ export function AiAssistantSettings({
                                     step="0.1"
                                     data-testid="ai-temperature"
                                     value={aiTemp}
-                                    onChange={(e) => setAiTemp(e.target.value)}
+                                    onChange={(e) => { setAiTemp(e.target.value); triggerSave(); }}
                                 />
                             </div>
                             <div className="field" style={{ flex: 1 }}>
@@ -422,7 +428,7 @@ export function AiAssistantSettings({
                                     step="256"
                                     data-testid="ai-max-tokens"
                                     value={aiMaxTokens}
-                                    onChange={(e) => setAiMaxTokens(e.target.value)}
+                                    onChange={(e) => { setAiMaxTokens(e.target.value); triggerSave(); }}
                                 />
                             </div>
                         </div>
@@ -454,7 +460,7 @@ export function AiAssistantSettings({
                                 </label>
                                 <TokenInput
                                     value={aiApiKey}
-                                    onChange={setAiApiKey}
+                                    onChange={(v) => { setAiApiKey(v); triggerSave(); }}
                                     testId="ai-api-key-input"
                                     placeholder={
                                         aiProvider === "lmstudio"
@@ -486,14 +492,6 @@ export function AiAssistantSettings({
                         <div
                             style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 8 }}
                         >
-                            <button
-                                className="btn btn-primary"
-                                disabled={saving}
-                                onClick={() => onSave(buildSaveData())}
-                                data-testid="ai-save"
-                            >
-                                <Save size={14} /> {t("ui.common.save", "Speichern")}
-                            </button>
                             <button
                                 className="btn btn-ghost btn-sm"
                                 disabled={testDisabled}

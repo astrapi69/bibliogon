@@ -96,7 +96,8 @@ test.describe("Offline AI fill (Dexie mode)", () => {
         // model -- otherwise ai-model stays disabled and .fill() times out.
         await page.getByTestId("ai-api-key-input").fill("sk-mock-offline-key");
         await page.getByTestId("ai-model").fill("mock-model");
-        await page.getByTestId("ai-save").click();
+        // Auto-save (#472): editing the fields arms the debounced save; no
+        // Speichern button. Wait for the saved toast before navigating.
         await expect(page.getByText(/Gespeichert|Saved/).first()).toBeVisible({
             timeout: 10_000,
         });
