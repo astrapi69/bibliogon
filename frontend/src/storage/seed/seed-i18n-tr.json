@@ -1207,6 +1207,7 @@
       "ai_err_invalid": "Gecersiz istek",
       "ai_err_server": "Saglayici sunucu hatasi",
       "ai_err_disabled": "AI islevleri devre disi. Ayarlar > Genel > AI Asistani altindan etkinlestirin.",
+      "ai_test_browser_unsupported": "Bu sağlayıcı için tarayıcı modunda bağlantı testi mümkün olmayabilir. API anahtarı ilk yapay zekâ çağrısında doğrulanır.",
       "editor_title": "Duzenleyici",
       "editor_description": "Otomatik kayit araliklari, taslak saklama ve AI baglam siniri.",
       "editor_autosave": "Otomatik kaydetme (ms)",

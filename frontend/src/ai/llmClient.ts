@@ -46,6 +46,76 @@ const PROVIDER_BASE_URL: Record<string, string> = {
 
 const ANTHROPIC_VERSION = "2023-06-01";
 
+/**
+ * Providers whose API serves CORS headers for direct browser calls, so the
+ * offline (PWA / Dexie) connection test can actually run. Google's
+ * OpenAI-compat endpoint and a local LM Studio allow it; Anthropic opts in via
+ * the `anthropic-dangerous-direct-browser-access` header; `custom` is assumed
+ * to be a user-controlled OpenAI-compatible endpoint (Ollama / vLLM / gateway)
+ * that the user can configure for CORS.
+ *
+ * OpenAI and Mistral may NOT send `access-control-allow-origin` for browser
+ * calls, so a browser test for them can fail on the network layer regardless
+ * of the key. This drives an ADVISORY note in the UI ("test may not work in
+ * the browser; the key is checked on the first AI call") — it does NOT disable
+ * the test, because the actual runtime result is authoritative: a real HTTP
+ * error (401 bad key, 404 bad model) is classified honestly via
+ * {@link classifyAiClientError}, and only a genuine transport/CORS failure
+ * (no HTTP status) is reported as a browser limitation.
+ */
+const BROWSER_TESTABLE_PROVIDERS = new Set(["anthropic", "google", "lmstudio", "custom"]);
+
+/** Whether `provider` can be connection-tested directly from the browser. */
+export function providerSupportsBrowserTest(provider: string): boolean {
+  return BROWSER_TESTABLE_PROVIDERS.has(provider);
+}
+
+/** Structured error category for an offline AI call, mirroring the backend's
+ *  `LLMClient._classify_response` so the offline path shows the same honest
+ *  messages as the desktop path. */
+export type AiErrorKind =
+  | "cors"
+  | "auth_error"
+  | "rate_limited"
+  | "model_not_found"
+  | "invalid_request"
+  | "server_error"
+  | "unknown";
+
+/** Heuristic mirroring the backend (`_looks_like_api_key_error`): some providers
+ *  (Gemini) report a bad/typo'd key as HTTP 400 `INVALID_ARGUMENT` rather than
+ *  401/403 (see #355). Detect the key wording so it classifies as `auth_error`,
+ *  not `invalid_request`. */
+function looksLikeApiKeyError(text: string): boolean {
+  const lowered = text.toLowerCase();
+  return lowered.includes("api key") || lowered.includes("api_key_invalid");
+}
+
+/**
+ * Map a thrown {@link AiClientError} to an {@link AiErrorKind}. A network/CORS
+ * failure (a browser-blocked provider, an unreachable host) yields `"cors"`;
+ * HTTP failures map by status, with a 400/422 carrying API-key wording promoted
+ * to `auth_error` to match the backend classifier.
+ *
+ * @example
+ * try { await aiChat(cfg, msgs); } catch (e) {
+ *   if (classifyAiClientError(e) === "auth_error") notifyBadKey();
+ * }
+ */
+export function classifyAiClientError(err: unknown): AiErrorKind {
+  if (!(err instanceof AiClientError)) return "unknown";
+  if (err.isNetwork) return "cors";
+  const status = err.status;
+  if (status === 401 || status === 403) return "auth_error";
+  if (status === 429) return "rate_limited";
+  if (status === 404) return "model_not_found";
+  if (status === 400 || status === 422) {
+    return looksLikeApiKeyError(err.detail) ? "auth_error" : "invalid_request";
+  }
+  if (status !== undefined && status >= 500) return "server_error";
+  return "unknown";
+}
+
 /** Read the AI config from the settings seam (offline: IndexedDB, where the
  *  api_key is present; online the backend strips it, but online uses the
  *  backend AI path, not this client). */
@@ -68,7 +138,28 @@ export function isAiConfigured(config: AiConfig): boolean {
   return !!config.api_key;
 }
 
-export class AiClientError extends Error {}
+export class AiClientError extends Error {
+  /** HTTP status when the provider responded with a non-2xx (undefined for a
+   *  transport/CORS failure). */
+  readonly status?: number;
+  /** True when the request never got an HTTP response (network down, or CORS
+   *  blocked the browser-direct call). */
+  readonly isNetwork: boolean;
+  /** Raw provider response body (or transport message), used to detect
+   *  API-key wording for classification. */
+  readonly detail: string;
+
+  constructor(
+    message: string,
+    opts: { status?: number; isNetwork?: boolean; detail?: string } = {},
+  ) {
+    super(message);
+    this.name = "AiClientError";
+    this.status = opts.status;
+    this.isNetwork = opts.isNetwork ?? false;
+    this.detail = opts.detail ?? message;
+  }
+}
 
 /** Call the configured provider with a chat completion. Throws AiClientError
  *  on a transport / provider error. */
@@ -170,12 +261,14 @@ async function safeFetch(url: string, init: RequestInit): Promise<Response> {
   } catch (err) {
     throw new AiClientError(
       err instanceof Error ? err.message : "Network request failed",
+      { isNetwork: true },
     );
   }
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     throw new AiClientError(
       `Provider responded ${res.status}${detail ? `: ${detail.slice(0, 300)}` : ""}`,
+      { status: res.status, detail },
     );
   }
   return res;

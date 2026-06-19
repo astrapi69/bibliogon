@@ -1189,6 +1189,7 @@
       "ai_err_invalid": "Solicitud no valida",
       "ai_err_server": "Error del servidor del proveedor",
       "ai_err_disabled": "Las funciones AI estan desactivadas. Activalas en Ajustes > General > Asistente AI.",
+      "ai_test_browser_unsupported": "Es posible que la prueba de conexión no funcione en modo navegador para este proveedor. La clave de API se verifica en la primera llamada de IA.",
       "editor_title": "Editor",
       "editor_description": "Intervalos de autoguardado, retencion de borradores y limite de contexto IA.",
       "editor_autosave": "Autoguardado (ms)",

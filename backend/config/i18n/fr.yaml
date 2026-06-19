@@ -1147,6 +1147,7 @@ ui:
     ai_err_invalid: "Requete non valide"
     ai_err_server: "Erreur du serveur du fournisseur"
     ai_err_disabled: "Les fonctions AI sont desactivees. Activez-les dans Parametres > General > Assistant AI."
+    ai_test_browser_unsupported: "Un test de connexion peut ne pas être possible en mode navigateur pour ce fournisseur. La clé API est vérifiée lors du premier appel d'IA."
     editor_title: "Editeur"
     editor_description: "Intervalles d'enregistrement automatique, conservation des brouillons et limite de contexte IA."
     editor_autosave: "Sauvegarde auto (ms)"

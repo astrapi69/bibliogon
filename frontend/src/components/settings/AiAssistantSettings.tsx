@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { Save, Eye, EyeOff } from "lucide-react";
 import { api } from "../../api/client";
-import { aiChat } from "../../ai/llmClient";
+import {
+    aiChat,
+    classifyAiClientError,
+    providerSupportsBrowserTest,
+    type AiErrorKind,
+} from "../../ai/llmClient";
 import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
@@ -54,6 +59,42 @@ export function AiAssistantSettings({
     const secretsExternal = Boolean(
         (config as Record<string, unknown>)._secrets_managed_externally,
     );
+
+    const preset = getProviderPreset(aiProvider);
+    const requiresKey = preset?.requires_api_key ?? false;
+    const missingKey = requiresKey && !aiApiKey.trim();
+    // Soft advisory only: some providers (OpenAI / Mistral) may not serve CORS
+    // headers, so a browser-direct test can fail on the transport layer. We do
+    // NOT disable the test (the runtime result is authoritative); we just warn.
+    const browserTestUnreliable = offline && !providerSupportsBrowserTest(aiProvider);
+    const testDisabled =
+        saving || aiTestStatus === "testing" || !aiBaseUrl || missingKey;
+
+    const browserUnsupportedMessage = t(
+        "ui.settings.ai_test_browser_unsupported",
+        "Ein Verbindungstest ist im Browser-Modus für diesen Anbieter evtl. nicht möglich. Der API-Schlüssel wird beim ersten KI-Aufruf geprüft.",
+    );
+
+    /** Localized honest message for a classified offline AI error. */
+    const aiErrorText = (kind: AiErrorKind): string => {
+        switch (kind) {
+            case "auth_error":
+                return t("ui.settings.ai_err_auth", "API-Schlüssel ungültig");
+            case "rate_limited":
+                return t(
+                    "ui.settings.ai_err_rate",
+                    "Rate Limit erreicht. Bitte später erneut versuchen.",
+                );
+            case "model_not_found":
+                return t("ui.settings.ai_err_model", "Modell nicht verfügbar");
+            case "invalid_request":
+                return t("ui.settings.ai_err_invalid", "Ungültige Anfrage");
+            case "server_error":
+                return t("ui.settings.ai_err_server", "Server-Fehler beim Anbieter");
+            default:
+                return t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen");
+        }
+    };
 
     const buildSaveData = () => {
         const aiPayload: Record<string, unknown> = {
@@ -293,7 +334,8 @@ export function AiAssistantSettings({
                             </button>
                             <button
                                 className="btn btn-ghost btn-sm"
-                                disabled={!aiBaseUrl || aiTestStatus === "testing"}
+                                disabled={testDisabled}
+                                title={browserTestUnreliable ? browserUnsupportedMessage : undefined}
                                 data-testid="ai-test"
                                 onClick={async () => {
                                     setAiTestStatus("testing");
@@ -329,14 +371,19 @@ export function AiAssistantSettings({
                                                     ),
                                                 );
                                             } catch (err) {
-                                                setAiTestStatus("fail");
-                                                notify.error(
-                                                    t(
-                                                        "ui.settings.ai_test_fail",
-                                                        "Verbindung fehlgeschlagen",
-                                                    ),
-                                                    err,
-                                                );
+                                                // Classify honestly: a transport/CORS
+                                                // failure is a browser limitation (not a
+                                                // wrong key); a real HTTP error (401 bad
+                                                // key, 404 bad model) gets its specific
+                                                // message instead of "connection failed".
+                                                const kind = classifyAiClientError(err);
+                                                if (kind === "cors") {
+                                                    setAiTestStatus("idle");
+                                                    notify.info(browserUnsupportedMessage);
+                                                } else {
+                                                    setAiTestStatus("fail");
+                                                    notify.error(aiErrorText(kind), err);
+                                                }
                                             }
                                             setTimeout(() => setAiTestStatus("idle"), 3000);
                                             return;
@@ -418,6 +465,11 @@ export function AiAssistantSettings({
                                     : t("ui.settings.ai_test", "Verbindung testen")}
                             </button>
                         </div>
+                        {browserTestUnreliable && (
+                            <HelpText testId="ai-test-browser-note">
+                                {browserUnsupportedMessage}
+                            </HelpText>
+                        )}
                     </div>
                 </div>
             </div>

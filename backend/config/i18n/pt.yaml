@@ -1147,6 +1147,7 @@ ui:
     ai_err_invalid: "Pedido invalido"
     ai_err_server: "Erro do servidor do fornecedor"
     ai_err_disabled: "As funcoes AI estao desativadas. Ative-as em Definicoes > Geral > Assistente AI."
+    ai_test_browser_unsupported: "Um teste de conexão pode não ser possível no modo navegador para este provedor. A chave de API é verificada na primeira chamada de IA."
     editor_title: "Editor"
     editor_description: "Intervalos de salvamento automatico, retencao de rascunhos e limite de contexto IA."
     editor_autosave: "Guardar auto (ms)"

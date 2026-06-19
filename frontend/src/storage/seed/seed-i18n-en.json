@@ -1188,6 +1188,7 @@
       "ai_err_invalid": "Invalid request",
       "ai_err_server": "Provider server error",
       "ai_err_disabled": "AI features are disabled. Enable them at Settings > General > AI Assistant.",
+      "ai_test_browser_unsupported": "A connection test may not be possible in browser mode for this provider. The API key is verified on the first AI call.",
       "editor_title": "Editor",
       "editor_description": "Autosave intervals, draft retention and AI context limit.",
       "editor_autosave": "Autosave (ms)",
