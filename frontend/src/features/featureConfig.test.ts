@@ -27,6 +27,78 @@ describe("featureRegistry", () => {
         );
     });
 
+    it("gates key-dependent AI features on provider browser-capability offline (#450)", () => {
+        const dexieGemini: FeatureContext = {
+            mode: "dexie",
+            hasAiKey: true,
+            aiProviderBrowserCapable: true,
+        };
+        const dexieOpenAi: FeatureContext = {
+            mode: "dexie",
+            hasAiKey: true,
+            aiProviderBrowserCapable: false,
+        };
+        for (const id of [FEATURES.AI_GENERATE, FEATURES.AI_FILL]) {
+            // Browser-capable provider (Gemini/Anthropic/LM Studio): active.
+            expect(featureRegistry.getState(id, dexieGemini)).toBe("active");
+            // CORS-blocked provider (OpenAI/Mistral): disabled with the honest
+            // provider-CORS reason, not a runtime failure on first call.
+            expect(featureRegistry.getState(id, dexieOpenAi)).toBe("disabled");
+            expect(featureRegistry.getReason(id, dexieOpenAi)).toBe(
+                FEATURE_REASON.PROVIDER_CORS_BLOCKED,
+            );
+        }
+        // Online the provider capability is irrelevant (the backend makes the
+        // call), so a CORS-blocked provider stays active.
+        expect(
+            featureRegistry.getState(FEATURES.AI_GENERATE, {
+                mode: "api",
+                hasAiKey: true,
+                aiProviderBrowserCapable: false,
+            }),
+        ).toBe("active");
+        // Missing key still wins over provider capability (configure first).
+        expect(
+            featureRegistry.getReason(FEATURES.AI_GENERATE, {
+                mode: "dexie",
+                hasAiKey: false,
+                aiProviderBrowserCapable: false,
+            }),
+        ).toBe(FEATURE_REASON.REQUIRES_AI_KEY);
+    });
+
+    it("gates AI story extraction on provider capability AND network offline (#450)", () => {
+        const base = { mode: "dexie" as const, hasAiKey: true, online: true };
+        // Online + key + CORS-blocked provider -> disabled, provider reason.
+        expect(
+            featureRegistry.getState(FEATURES.AI_STORY_EXTRACTION, {
+                ...base,
+                aiProviderBrowserCapable: false,
+            }),
+        ).toBe("disabled");
+        expect(
+            featureRegistry.getReason(FEATURES.AI_STORY_EXTRACTION, {
+                ...base,
+                aiProviderBrowserCapable: false,
+            }),
+        ).toBe(FEATURE_REASON.PROVIDER_CORS_BLOCKED);
+        // A genuine offline state takes priority over the provider reason.
+        expect(
+            featureRegistry.getReason(FEATURES.AI_STORY_EXTRACTION, {
+                ...base,
+                online: false,
+                aiProviderBrowserCapable: false,
+            }),
+        ).toBe(FEATURE_REASON.REQUIRES_NETWORK);
+        // Browser-capable provider + online + key -> active.
+        expect(
+            featureRegistry.getState(FEATURES.AI_STORY_EXTRACTION, {
+                ...base,
+                aiProviderBrowserCapable: true,
+            }),
+        ).toBe("active");
+    });
+
     it("disables ai-template-file-io offline (backend-only, key-independent)", () => {
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.AI_TEMPLATE_FILE_IO, DEXIE_NO_KEY)).toBe(

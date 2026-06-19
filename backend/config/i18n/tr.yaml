@@ -93,6 +93,7 @@ ui:
     requires_desktop_app: "Bu özellik Bibliogon masaüstü uygulamasını gerektirir"
     requires_ai_key: "Bu özellik yapılandırılmış bir yapay zeka anahtarı gerektirir (Ayarlar > Yapay Zeka Asistanı)"
     not_yet_available: "Bu özellik henüz kullanılamıyor."
+    provider_cors_blocked: "Bu yapay zeka sağlayıcısına tarayıcıdan doğrudan erişilemez (CORS). Bibliogon masaüstü uygulamasını kullanın veya Gemini'ye geçin."
   not_found:
     title: "Sayfa bulunamadı"
     description: "İstenen sayfa mevcut değil veya taşınmış."

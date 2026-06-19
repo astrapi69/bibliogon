@@ -38,6 +38,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { api, ApiError } from "../api/client";
+import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
 import { getStorage } from "../storage";
 import { warnIfOfflineStorageNearlyFull } from "../utils/storageQuota";
 import { notify } from "../utils/notify";
@@ -299,9 +300,7 @@ export default function Editor({
         immediatelyRender: false,
         extensions: buildEditorExtensions(
             placeholder,
-            mentionBookId
-                ? [createStoryBibleMention(mentionBookId, buildMentionLabels(t))]
-                : [],
+            mentionBookId ? [createStoryBibleMention(mentionBookId, buildMentionLabels(t))] : [],
         ),
         content: parseContent(content),
         onUpdate: ({ editor }) => {
@@ -668,16 +667,29 @@ export default function Editor({
         });
 
         try {
-            const data = await api.ai.generate(
-                selectedText,
-                basePrompts[aiPromptType],
-                bookId || "",
+            // Storage-mode-aware: offline (Dexie) goes browser-direct to the
+            // user's provider; online uses the backend AI route. Same call site.
+            const { content } = await aiComplete(
+                [
+                    { role: "system", content: basePrompts[aiPromptType] },
+                    { role: "user", content: selectedText },
+                ],
+                { bookId: bookId || "" },
             );
-            setAiSuggestion(data.content || "");
+            setAiSuggestion(content || "");
         } catch (err) {
-            const detail = err instanceof ApiError ? err.detail : null;
-            notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"), err);
             setAiSuggestion("");
+            if (err instanceof AiNotConfiguredError) {
+                notify.info(
+                    t(
+                        "ui.feature.requires_ai_key",
+                        "This feature requires a configured AI key (Settings > AI Assistant)",
+                    ),
+                );
+            } else {
+                const detail = err instanceof ApiError ? err.detail : null;
+                notify.error(detail || t("ui.editor.ai_error", "AI nicht erreichbar"), err);
+            }
         }
         setAiLoading(false);
     };
@@ -973,8 +985,14 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
-                            onInsertImage={bookId ? () => imageInputRef.current?.click() : undefined}
-                            onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
+                            onInsertImage={
+                                bookId ? () => imageInputRef.current?.click() : undefined
+                            }
+                            onTakeSnapshot={
+                                versionHistory.isActive && bookId && chapterId
+                                    ? handleTakeSnapshot
+                                    : undefined
+                            }
                         >
                             <div
                                 onClick={(e) => {
@@ -989,8 +1007,14 @@ export default function Editor({
                             editor={editor}
                             mentionActive={!!mentionBookId}
                             onSearchStoryBible={mentionBookId ? handleSearchStoryBible : undefined}
-                            onInsertImage={bookId ? () => imageInputRef.current?.click() : undefined}
-                            onTakeSnapshot={versionHistory.isActive && bookId && chapterId ? handleTakeSnapshot : undefined}
+                            onInsertImage={
+                                bookId ? () => imageInputRef.current?.click() : undefined
+                            }
+                            onTakeSnapshot={
+                                versionHistory.isActive && bookId && chapterId
+                                    ? handleTakeSnapshot
+                                    : undefined
+                            }
                         >
                             <div>
                                 <EditorContent editor={editor} />

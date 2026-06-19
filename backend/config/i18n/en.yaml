@@ -93,6 +93,7 @@ ui:
     requires_desktop_app: "This feature requires the Bibliogon desktop app"
     requires_ai_key: "This feature requires a configured AI key (Settings > AI Assistant)"
     not_yet_available: "This feature is not yet available."
+    provider_cors_blocked: "This AI provider can't be reached directly from the browser (CORS). Use the Bibliogon desktop app, or switch to Gemini."
   not_found:
     title: "Page not found"
     description: "The requested page does not exist or has been moved."

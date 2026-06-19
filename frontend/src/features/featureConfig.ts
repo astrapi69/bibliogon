@@ -27,6 +27,16 @@ export interface FeatureContext {
      * test fixtures; `undefined` is treated as online.
      */
     readonly online?: boolean;
+    /**
+     * Whether the configured AI provider can be reached browser-direct (its API
+     * serves CORS headers for browser calls). Only matters in Dexie mode, where
+     * AI runs from the browser: Gemini / Anthropic / LM Studio / custom qualify,
+     * OpenAI / Mistral do not. Optional for backward-compatible test fixtures;
+     * `undefined` is treated as capable (no extra gate). Drives the honest
+     * "provider can't be reached from the browser" reason instead of a runtime
+     * CORS failure on the first AI call.
+     */
+    readonly aiProviderBrowserCapable?: boolean;
 }
 
 /**
@@ -87,6 +97,9 @@ export const FEATURE_REASON = {
     REQUIRES_AI_KEY: "ui.feature.requires_ai_key",
     REQUIRES_NETWORK: "ui.feature.requires_network",
     NOT_YET_AVAILABLE: "ui.feature.not_yet_available",
+    /** The configured AI provider serves no CORS headers for browser-direct
+     *  calls (OpenAI / Mistral), so it cannot run in the backendless PWA. */
+    PROVIDER_CORS_BLOCKED: "ui.feature.provider_cors_blocked",
 } as const;
 
 /**
@@ -194,8 +207,16 @@ const DESCRIPTORS: readonly FeatureDescriptor[] = [
 
 function keyDependentCondition(): FeatureCondition<FeatureContext> {
     return {
-        evaluate: (ctx) => (ctx?.mode === "dexie" && !ctx.hasAiKey ? "disabled" : undefined),
-        reason: FEATURE_REASON.REQUIRES_AI_KEY,
+        evaluate: (ctx) => {
+            if (ctx?.mode !== "dexie") return undefined;
+            if (!ctx.hasAiKey) return "disabled";
+            if (ctx.aiProviderBrowserCapable === false) return "disabled";
+            return undefined;
+        },
+        reason: (ctx) =>
+            ctx?.hasAiKey && ctx.aiProviderBrowserCapable === false
+                ? FEATURE_REASON.PROVIDER_CORS_BLOCKED
+                : FEATURE_REASON.REQUIRES_AI_KEY,
     };
 }
 
@@ -218,12 +239,16 @@ function keyAndNetworkCondition(): FeatureCondition<FeatureContext> {
         evaluate: (ctx) => {
             if (ctx?.online === false) return "disabled";
             if (ctx?.mode === "dexie" && !ctx.hasAiKey) return "disabled";
+            if (ctx?.mode === "dexie" && ctx.aiProviderBrowserCapable === false) return "disabled";
             return undefined;
         },
-        reason: (ctx) =>
-            ctx?.online === false
-                ? FEATURE_REASON.REQUIRES_NETWORK
-                : FEATURE_REASON.REQUIRES_AI_KEY,
+        reason: (ctx) => {
+            if (ctx?.online === false) return FEATURE_REASON.REQUIRES_NETWORK;
+            if (ctx?.mode === "dexie" && ctx.hasAiKey && ctx.aiProviderBrowserCapable === false) {
+                return FEATURE_REASON.PROVIDER_CORS_BLOCKED;
+            }
+            return FEATURE_REASON.REQUIRES_AI_KEY;
+        },
     };
 }
 

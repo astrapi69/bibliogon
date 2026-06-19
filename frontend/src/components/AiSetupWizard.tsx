@@ -20,6 +20,7 @@ import { useStorageMode } from "../storage/useStorageMode";
 import { notify } from "../utils/notify";
 import { api } from "../api/client";
 import { getStorage } from "../storage";
+import { aiChat, classifyAiClientError, providerSupportsBrowserTest } from "../ai/llmClient";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../utils/aiProviders";
 
 const DISMISSED_KEY = "bibliogon-ai-setup-dismissed";
@@ -38,11 +39,7 @@ interface Props {
 export default function AiSetupWizard({ open, onClose, secretsManagedExternally = false }: Props) {
     const { t } = useI18n();
     const { mode } = useStorageMode();
-    const offlineGate = mode === "dexie";
-    const offlineMsg = t(
-        "ui.feature.requires_desktop_app",
-        "This feature requires the Bibliogon desktop app",
-    );
+    const offline = mode === "dexie";
     const [step, setStep] = useState(0);
     const [provider, setProvider] = useState("anthropic");
     const [baseUrl, setBaseUrl] = useState(AI_PROVIDER_PRESETS.anthropic.base_url);
@@ -56,6 +53,15 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
     // Externally-managed key already exists; no input needed even for
     // providers that nominally require one.
     const needsKey = preset?.requires_api_key !== false && !secretsManagedExternally;
+    // Offline (PWA): some providers (OpenAI / Mistral) serve no CORS headers
+    // for browser-direct calls, so a browser test cannot reliably run. Soft
+    // advisory only - the test is not blocked, and Finish is allowed without a
+    // green test for these providers (the key is saved for desktop / later use).
+    const browserTestUnreliable = offline && !providerSupportsBrowserTest(provider);
+    const browserUnsupportedMessage = t(
+        "ui.settings.ai_test_browser_unsupported",
+        "Ein Verbindungstest ist im Browser-Modus für diesen Anbieter evtl. nicht möglich. Der API-Schlüssel wird beim ersten KI-Aufruf geprüft.",
+    );
 
     const handleProviderChange = (pid: string) => {
         setProvider(pid);
@@ -90,8 +96,45 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
         setTesting(true);
         setTestResult("idle");
         try {
-            // Save first so the backend sees the config
+            // Save first so the active config matches what is being tested.
             await getStorage().settings.updateApp({ ai: buildAiPayload() });
+
+            if (offline) {
+                // Offline (PWA): no backend - ping the provider directly from
+                // the browser with the just-entered config.
+                try {
+                    await aiChat(
+                        {
+                            provider,
+                            base_url: baseUrl,
+                            model,
+                            api_key: apiKey,
+                        },
+                        [{ role: "user", content: "Reply with the single word: OK" }],
+                        { maxTokens: 16 },
+                    );
+                    setTestResult("ok");
+                    notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+                } catch (err) {
+                    // Honest classification: a transport/CORS failure is a
+                    // browser limitation (not a wrong key); a real HTTP error
+                    // gets its own message.
+                    const kind = classifyAiClientError(err);
+                    if (kind === "cors") {
+                        setTestResult("idle");
+                        notify.info(browserUnsupportedMessage);
+                    } else {
+                        setTestResult("fail");
+                        notify.error(
+                            t("ui.settings.ai_test_fail", "Verbindung fehlgeschlagen"),
+                            err,
+                        );
+                    }
+                }
+                setTesting(false);
+                return;
+            }
+
             const data = await api.ai.testConnection();
             if (data.success) {
                 setTestResult("ok");
@@ -174,12 +217,22 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
                             <div style={styles.providerGrid}>
                                 {AI_PROVIDER_IDS.map((pid) => {
                                     const p = AI_PROVIDER_PRESETS[pid];
+                                    const corsBlocked =
+                                        offline && !providerSupportsBrowserTest(pid);
                                     return (
                                         <button
                                             key={pid}
                                             className={`btn ${provider === pid ? "btn-primary" : "btn-secondary"}`}
                                             onClick={() => handleProviderChange(pid)}
                                             style={styles.providerBtn}
+                                            title={
+                                                corsBlocked
+                                                    ? t(
+                                                          "ui.feature.provider_cors_blocked",
+                                                          "This provider cannot be reached from the browser (CORS). Use the Bibliogon desktop app, or choose Gemini.",
+                                                      )
+                                                    : undefined
+                                            }
                                         >
                                             {p.label}
                                         </button>
@@ -308,8 +361,12 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
                                 <button
                                     className="btn btn-primary"
                                     onClick={handleTest}
-                                    disabled={testing || offlineGate}
-                                    title={offlineGate ? offlineMsg : undefined}
+                                    disabled={testing}
+                                    title={
+                                        browserTestUnreliable
+                                            ? browserUnsupportedMessage
+                                            : undefined
+                                    }
                                 >
                                     {testing
                                         ? t("ui.common.loading", "Laden...")
@@ -363,8 +420,14 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
                                 <button
                                     className="btn btn-primary btn-sm"
                                     onClick={handleFinish}
-                                    disabled={saving || testResult !== "ok" || offlineGate}
-                                    title={offlineGate ? offlineMsg : undefined}
+                                    disabled={
+                                        saving || (testResult !== "ok" && !browserTestUnreliable)
+                                    }
+                                    title={
+                                        browserTestUnreliable
+                                            ? browserUnsupportedMessage
+                                            : undefined
+                                    }
                                 >
                                     {saving
                                         ? t("ui.common.loading", "Laden...")

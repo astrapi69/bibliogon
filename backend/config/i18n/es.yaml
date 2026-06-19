@@ -93,6 +93,7 @@ ui:
     requires_desktop_app: "Esta función requiere la aplicación de escritorio de Bibliogon"
     requires_ai_key: "Esta función requiere una clave de IA configurada (Ajustes > Asistente de IA)"
     not_yet_available: "Esta función aún no está disponible."
+    provider_cors_blocked: "No se puede acceder a este proveedor de IA directamente desde el navegador (CORS). Usa la aplicación de escritorio de Bibliogon o cambia a Gemini."
   not_found:
     title: "Página no encontrada"
     description: "La página solicitada no existe o ha sido movida."

@@ -29,6 +29,9 @@ import { Loader2, ArrowLeft, Trash2, Home, MessageSquare, MoreVertical } from "l
 
 import { api, ApiError, ArticleStatus, ContentType, Author } from "../api/client";
 import { getStorage } from "../storage";
+import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
+import { buildMetaMessages, parseMetaResponse } from "../ai/metaPrompts";
+import { extractBodyText } from "../ai/templateApply";
 import { useContentTypes } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/contentTypeIcon";
 import ContentTypeFieldsSection from "../components/articles/ContentTypeFieldsSection";
@@ -209,7 +212,25 @@ export default function ArticleEditor() {
         if (!article || aiGenerating) return;
         setAiGenerating(field);
         try {
-            const result = await api.articles.generateMeta(article.id, field);
+            // Offline (Dexie / PWA): build the prompt and call the user's
+            // provider browser-direct; online: the backend generate-meta route.
+            const result =
+                getStorage().mode === "dexie"
+                    ? parseMetaResponse(
+                          field,
+                          (
+                              await aiComplete(
+                                  buildMetaMessages(field, {
+                                      title: article.title,
+                                      language: article.language || "de",
+                                      bodyText: extractBodyText(article.content_json),
+                                      topic: article.topic,
+                                  }),
+                                  { maxTokens: 512 },
+                              )
+                          ).content,
+                      )
+                    : await api.articles.generateMeta(article.id, field);
             if (field === "tags") {
                 const next = result.generated_tags ?? [];
                 setArticle({ ...article, tags: next });
@@ -235,10 +256,17 @@ export default function ArticleEditor() {
                 }
             }
         } catch (err) {
-            if (err instanceof ApiError) {
+            if (err instanceof AiNotConfiguredError) {
+                notify.info(
+                    t(
+                        "ui.feature.requires_ai_key",
+                        "This feature requires a configured AI key (Settings > AI Assistant)",
+                    ),
+                );
+            } else {
                 notify.error(
                     t("ui.articles.ai_generation_failed", "KI-Generierung fehlgeschlagen."),
-                    err,
+                    err instanceof ApiError ? err : undefined,
                 );
             }
         } finally {

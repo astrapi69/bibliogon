@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { api, ApiError } from "../api/client";
+import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
+import { AiClientError, classifyAiClientError } from "../ai/llmClient";
+import { buildReviewMessages } from "../ai/reviewPrompts";
 import { reviewString } from "../data/ai-review-strings";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
+import { useStorageMode } from "../storage/useStorageMode";
 
 type ReviewFocus = "style" | "consistency" | "beta_reader";
 
@@ -52,6 +56,8 @@ export function useAiChapterReview(args: {
         setAiSuggestion,
     } = args;
     const { t } = useI18n();
+    const { mode } = useStorageMode();
+    const offline = mode === "dexie";
     const [reviewFocus, setReviewFocus] = useState<ReviewFocus>("style");
     const [reviewDownloadUrl, setReviewDownloadUrl] = useState<string | null>(null);
     const [reviewStatusMsg, setReviewStatusMsg] = useState<string | null>(null);
@@ -69,7 +75,10 @@ export function useAiChapterReview(args: {
     // visible and the chapter content changes. Best-effort - a failed
     // estimate just hides the cost label.
     useEffect(() => {
-        if (!showAiPanel || aiPromptType !== "review" || !editor) {
+        // The cost estimate is a backend-only convenience (token pricing table
+        // lives server-side). Offline there is no estimate endpoint, so the
+        // label is simply omitted rather than firing a guarded /api call.
+        if (!showAiPanel || aiPromptType !== "review" || !editor || offline) {
             setReviewCostLabel(null);
             return;
         }
@@ -103,7 +112,7 @@ export function useAiChapterReview(args: {
         return () => {
             cancelled = true;
         };
-    }, [showAiPanel, aiPromptType, editor, chapterId, t]);
+    }, [showAiPanel, aiPromptType, editor, chapterId, offline, t]);
 
     const runReview = useCallback(async () => {
         if (!editor) return;
@@ -118,6 +127,53 @@ export function useAiChapterReview(args: {
         setAiSuggestion("");
         setReviewDownloadUrl(null);
         setReviewStatusMsg(reviewString(bookLanguage, "status_preparing"));
+
+        // Offline (Dexie / PWA): no backend SSE pipeline. Run the review as a
+        // single browser-direct completion and set the result text directly.
+        // There is no downloadable artifact offline (the panel shows the text).
+        if (offline) {
+            setReviewStatusMsg(reviewString(bookLanguage, "status_generating"));
+            try {
+                const { content } = await aiComplete(
+                    buildReviewMessages({
+                        focus: reviewFocus,
+                        chapterText: fullText,
+                        chapterTitle,
+                        bookTitle: bookContext?.title,
+                        genre: bookContext?.genre,
+                        language: bookLanguage,
+                    }),
+                    { maxTokens: 4096, temperature: 0.4 },
+                );
+                setAiReview(content);
+            } catch (err) {
+                if (err instanceof AiNotConfiguredError) {
+                    notify.info(
+                        t(
+                            "ui.feature.requires_ai_key",
+                            "This feature requires a configured AI key (Settings > AI Assistant)",
+                        ),
+                    );
+                } else if (err instanceof AiClientError) {
+                    const kind = classifyAiClientError(err);
+                    notify.error(
+                        kind === "cors"
+                            ? t(
+                                  "ui.settings.ai_test_browser_unsupported",
+                                  "Ein Verbindungstest ist im Browser-Modus für diesen Anbieter evtl. nicht möglich. Der API-Schlüssel wird beim ersten KI-Aufruf geprüft.",
+                              )
+                            : t("ui.editor.ai_error", "AI nicht erreichbar"),
+                        err,
+                    );
+                } else {
+                    notify.error(t("ui.editor.ai_error", "AI nicht erreichbar"), err);
+                }
+            } finally {
+                setAiLoading(false);
+                setReviewStatusMsg(null);
+            }
+            return;
+        }
 
         let jobId: string | null = null;
         try {
@@ -195,6 +251,7 @@ export function useAiChapterReview(args: {
         };
     }, [
         editor,
+        offline,
         chapterId,
         chapterTitle,
         chapterType,
