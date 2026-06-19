@@ -57,7 +57,7 @@ let aiModelsValue: {
     source: "live" | "fallback";
     reload: ReturnType<typeof vi.fn>;
 };
-vi.mock("../../hooks/useAiModels", () => ({
+vi.mock("../../hooks/ai/useAiModels", () => ({
     useAiModels: () => aiModelsValue,
 }));
 

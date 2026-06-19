@@ -28,7 +28,7 @@ import {
     EditorAudioPreview,
 } from "./EditorPanels";
 import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
-import { useAiChapterReview } from "../hooks/useAiChapterReview";
+import { useAiChapterReview } from "../hooks/ai/useAiChapterReview";
 import { useEditorWordCount } from "../hooks/useEditorWordCount";
 import EditorStatusBar from "../lib/components/EditorStatusBar";
 import { WORDS_PER_MINUTE } from "../lib/utils/textStats";

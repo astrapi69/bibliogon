@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Save, RefreshCw } from "lucide-react";
 import { TokenInput } from "../../lib/components/TokenInput";
 import { ComboboxSelect } from "../../lib/components/ComboboxSelect";
-import { useAiModels } from "../../hooks/useAiModels";
+import { useAiModels } from "../../hooks/ai/useAiModels";
 import { api } from "../../api/client";
 import {
     aiChat,

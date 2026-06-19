@@ -6,13 +6,13 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 
 // Keep providerSupportsBrowserTest real; stub only the network call.
-vi.mock("../ai/llmClient", async (importOriginal) => {
-    const actual = await importOriginal<typeof import("../ai/llmClient")>();
+vi.mock("../../ai/llmClient", async (importOriginal) => {
+    const actual = await importOriginal<typeof import("../../ai/llmClient")>();
     return { ...actual, listModels: vi.fn() };
 });
 
-import { listModels } from "../ai/llmClient";
-import { getProviderPreset } from "../utils/aiProviders";
+import { listModels } from "../../ai/llmClient";
+import { getProviderPreset } from "../../utils/aiProviders";
 import { useAiModels } from "./useAiModels";
 
 const listModelsMock = vi.mocked(listModels);
