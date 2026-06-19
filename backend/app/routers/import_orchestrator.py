@@ -438,7 +438,7 @@ def execute_import(  # noqa: C901  # Legacy, tracked in clean-code-audit
     # book itself is already committed and the user must not
     # lose it because mapping persistence had a hiccup.
     if not is_multi_book_path and book_id:
-        from app.services.git_sync_mapping import persist_clone_after_import
+        from app.services.git.sync_mapping import persist_clone_after_import
 
         persist_clone_after_import(db, staging_path=staging_path, book_id=book_id)
 

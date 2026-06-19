@@ -43,7 +43,7 @@ from typing import Literal
 from sqlalchemy.orm import Session
 
 from app.models import Chapter, GitSyncMapping
-from app.services.git_sync_markdown_utils import (
+from app.services.git.sync_markdown_utils import (
     _chapter_title,
     _normalize,
     _slugify,
@@ -139,12 +139,12 @@ def apply_resolutions(  # noqa: C901  # Legacy, tracked in clean-code-audit
     "skipped"}``.
     Raises :class:`MappingNotFoundError` /
     :class:`CloneMissingError` (re-exported by
-    ``app.services.git_sync_commit``) on the usual preconditions.
+    ``app.services.git.sync_commit``) on the usual preconditions.
     """
     from app.models import Book
     from app.models import Chapter as ChapterModel
     from app.services.backup.markdown_utils import md_to_html, sanitize_import_markdown
-    from app.services.git_sync_commit import (
+    from app.services.git.sync_commit import (
         CloneMissingError,
         MappingNotFoundError,
     )
@@ -455,7 +455,7 @@ def fetch_remote_updates(db: Session, *, book_id: str) -> bool:
     surface the divergence.
 
     Public repositories fetch without credentials; a per-book PAT is
-    injected via :mod:`app.services.git_credentials` only when one is
+    injected via :mod:`app.services.git.credentials` only when one is
     configured, so the missing-HTTPS-token case still works for public
     repos.
 
@@ -476,8 +476,8 @@ def fetch_remote_updates(db: Session, *, book_id: str) -> bool:
     """
     import git
 
-    from app.services import git_credentials
-    from app.services.git_sync_commit import CloneMissingError, MappingNotFoundError
+    from app.services.git import credentials as git_credentials
+    from app.services.git.sync_commit import CloneMissingError, MappingNotFoundError
 
     mapping = db.get(GitSyncMapping, book_id)
     if mapping is None:
@@ -531,11 +531,11 @@ def diff_book(db: Session, *, book_id: str) -> list[ChapterDiff]:
 
     Raises :class:`MappingNotFoundError` /
     :class:`CloneMissingError` from
-    :mod:`app.services.git_sync_commit` when the precondition
+    :mod:`app.services.git.sync_commit` when the precondition
     fails - those are the same conditions the commit-to-repo
     endpoint already checks.
     """
-    from app.services.git_sync_commit import (  # local import to keep cycles tidy
+    from app.services.git.sync_commit import (  # local import to keep cycles tidy
         CloneMissingError,
         MappingNotFoundError,
     )

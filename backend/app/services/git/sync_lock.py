@@ -1,9 +1,9 @@
 """Per-book commit lock shared by core git and plugin-git-sync.
 
 A book may have **both** core git (``uploads/{book_id}/.git``,
-managed by ``app.services.git_backup``) and plugin-git-sync
+managed by ``app.services.git.backup``) and plugin-git-sync
 (``uploads/git-sync/{book_id}/repo``, managed by
-``app.services.git_sync_commit``) enabled at the same time.
+``app.services.git.sync_commit``) enabled at the same time.
 PGS-05 wires a single user-facing "Commit everywhere" action
 that fans out to both. Without a lock the two endpoints could
 race - the user clicks core-git's commit button at the same

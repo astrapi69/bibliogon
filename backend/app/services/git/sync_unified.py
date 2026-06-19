@@ -34,8 +34,9 @@ from typing import Literal
 from sqlalchemy.orm import Session
 
 from app.models import GitSyncMapping
-from app.services import git_backup, git_sync_commit
-from app.services.git_sync_lock import book_commit_lock
+from app.services.git import backup as git_backup
+from app.services.git import sync_commit as git_sync_commit
+from app.services.git.sync_lock import book_commit_lock
 
 logger = logging.getLogger(__name__)
 

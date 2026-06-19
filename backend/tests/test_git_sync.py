@@ -28,8 +28,9 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.main import app
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_credentials, git_sync_mapping
-from app.services.git_sync_commit import commit_to_repo
+from app.services.git import credentials as git_credentials
+from app.services.git import sync_mapping as git_sync_mapping
+from app.services.git.sync_commit import commit_to_repo
 
 client = TestClient(app)
 
