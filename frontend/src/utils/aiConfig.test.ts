@@ -130,13 +130,17 @@ describe("providerKeyStatus", () => {
         const s = normalizeAiConfig({ active_provider: "google", keys: { google: "k" } });
         expect(providerKeyStatus("google", s, base)).toBe("active");
     });
-    it("desktop_only offline for a CORS-blocked provider with a key", () => {
+    it("active offline for OpenAI now that it is browser-capable (#467)", () => {
+        // #467: OpenAI/Mistral are browser-capable, so providerSupportsBrowserTest
+        // returns true and a stored key reads as `active` even offline.
         const s = normalizeAiConfig({ active_provider: "google", keys: { openai: "k" } });
-        expect(providerKeyStatus("openai", s, base)).toBe("desktop_only");
+        expect(providerKeyStatus("openai", s, base)).toBe("active");
     });
-    it("active online for a CORS-blocked provider with a key", () => {
+    it("desktop_only offline only when a provider is flagged not-browser-testable (dormant)", () => {
+        // No shipped provider hits this now; the branch stays defensive infra.
         const s = normalizeAiConfig({ active_provider: "google", keys: { openai: "k" } });
-        expect(providerKeyStatus("openai", s, { ...base, offline: false })).toBe("active");
+        const neverTestable = { ...base, supportsBrowserTest: () => false };
+        expect(providerKeyStatus("openai", s, neverTestable)).toBe("desktop_only");
     });
     it("external for the active provider when secrets are managed externally", () => {
         const s = normalizeAiConfig({ active_provider: "google", keys: {} });

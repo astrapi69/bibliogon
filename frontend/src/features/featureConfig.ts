@@ -30,11 +30,14 @@ export interface FeatureContext {
     /**
      * Whether the configured AI provider can be reached browser-direct (its API
      * serves CORS headers for browser calls). Only matters in Dexie mode, where
-     * AI runs from the browser: Gemini / Anthropic / LM Studio / custom qualify,
-     * OpenAI / Mistral do not. Optional for backward-compatible test fixtures;
-     * `undefined` is treated as capable (no extra gate). Drives the honest
-     * "provider can't be reached from the browser" reason instead of a runtime
-     * CORS failure on the first AI call.
+     * AI runs from the browser. As of 2026-06-19 EVERY shipped provider qualifies
+     * (Gemini / Anthropic / OpenAI / Mistral / LM Studio / custom — verified
+     * against live CORS headers + the adaptive-learner PWA), so this resolves to
+     * `true` for all real providers and the gate below is dormant defensive infra
+     * (it fires only if a future provider is added to `CORS_BLOCKED_PROVIDERS`).
+     * Optional for backward-compatible test fixtures; `undefined` is treated as
+     * capable (no extra gate). See
+     * docs/explorations/openai-cors-browser-direct-analysis.md.
      */
     readonly aiProviderBrowserCapable?: boolean;
 }
@@ -98,7 +101,8 @@ export const FEATURE_REASON = {
     REQUIRES_NETWORK: "ui.feature.requires_network",
     NOT_YET_AVAILABLE: "ui.feature.not_yet_available",
     /** The configured AI provider serves no CORS headers for browser-direct
-     *  calls (OpenAI / Mistral), so it cannot run in the backendless PWA. */
+     *  calls, so it cannot run in the backendless PWA. Dormant: no shipped
+     *  provider is currently CORS-blocked (kept for a hypothetical future one). */
     PROVIDER_CORS_BLOCKED: "ui.feature.provider_cors_blocked",
 } as const;
 

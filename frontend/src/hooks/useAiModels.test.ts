@@ -23,7 +23,6 @@ beforeEach(() => {
 });
 
 const googleFallback = getProviderPreset("google")?.model_suggestions ?? [];
-const openaiFallback = getProviderPreset("openai")?.model_suggestions ?? [];
 
 describe("useAiModels", () => {
     it("loads live models for a CORS-capable provider with a key", async () => {
@@ -45,13 +44,33 @@ describe("useAiModels", () => {
         expect(result.current.models).toEqual(googleFallback);
     });
 
-    it("does not call the provider for a CORS-blocked provider (OpenAI) -> fallback", async () => {
+    it("loads live models for OpenAI now that it is browser-capable (#467)", async () => {
+        // #467: OpenAI is no longer CORS-blocked, so it loads live like Gemini.
+        listModelsMock.mockResolvedValue(["gpt-4o", "gpt-4o-mini"]);
         const { result } = renderHook(() =>
-            useAiModels({ provider: "openai", baseUrl: "https://o/v1", apiKey: "sk-x" }),
+            useAiModels({
+                provider: "openai",
+                baseUrl: "https://api.openai.com/v1",
+                apiKey: "sk-x",
+            }),
         );
-        await waitFor(() => expect(result.current.models).toEqual(openaiFallback));
-        expect(listModelsMock).not.toHaveBeenCalled();
-        expect(result.current.source).toBe("fallback");
+        await waitFor(() => expect(result.current.source).toBe("live"));
+        expect(result.current.models).toEqual(["gpt-4o", "gpt-4o-mini"]);
+        expect(listModelsMock).toHaveBeenCalled();
+    });
+
+    it("loads live models for Mistral now that it is browser-capable (#467)", async () => {
+        listModelsMock.mockResolvedValue(["mistral-large-latest", "mistral-small-latest"]);
+        const { result } = renderHook(() =>
+            useAiModels({
+                provider: "mistral",
+                baseUrl: "https://api.mistral.ai/v1",
+                apiKey: "m-key",
+            }),
+        );
+        await waitFor(() => expect(result.current.source).toBe("live"));
+        expect(result.current.models).toEqual(["mistral-large-latest", "mistral-small-latest"]);
+        expect(listModelsMock).toHaveBeenCalled();
     });
 
     it("does not call the provider when a key-requiring provider has no key", async () => {

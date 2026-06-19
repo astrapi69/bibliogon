@@ -27,29 +27,37 @@ describe("featureRegistry", () => {
         );
     });
 
-    it("gates key-dependent AI features on provider browser-capability offline (#450)", () => {
-        const dexieGemini: FeatureContext = {
+    it("keeps key-dependent AI features active offline for every browser-capable provider (#467)", () => {
+        // #467: every shipped provider (incl. OpenAI/Mistral) is browser-capable,
+        // so aiProviderBrowserCapable is true for all of them and AI features stay
+        // active in Dexie mode given a key — no PROVIDER_CORS_BLOCKED gate fires.
+        const dexieCapable: FeatureContext = {
             mode: "dexie",
             hasAiKey: true,
             aiProviderBrowserCapable: true,
         };
-        const dexieOpenAi: FeatureContext = {
+        for (const id of [FEATURES.AI_GENERATE, FEATURES.AI_FILL]) {
+            expect(featureRegistry.getState(id, dexieCapable)).toBe("active");
+        }
+    });
+
+    it("keeps the provider-capability gate as dormant defensive infra (#450/#467)", () => {
+        // The mechanism still works if a future provider were marked
+        // not-browser-capable, but with the empty CORS-blocked set no real
+        // provider produces aiProviderBrowserCapable=false.
+        const dexieNotCapable: FeatureContext = {
             mode: "dexie",
             hasAiKey: true,
             aiProviderBrowserCapable: false,
         };
         for (const id of [FEATURES.AI_GENERATE, FEATURES.AI_FILL]) {
-            // Browser-capable provider (Gemini/Anthropic/LM Studio): active.
-            expect(featureRegistry.getState(id, dexieGemini)).toBe("active");
-            // CORS-blocked provider (OpenAI/Mistral): disabled with the honest
-            // provider-CORS reason, not a runtime failure on first call.
-            expect(featureRegistry.getState(id, dexieOpenAi)).toBe("disabled");
-            expect(featureRegistry.getReason(id, dexieOpenAi)).toBe(
+            expect(featureRegistry.getState(id, dexieNotCapable)).toBe("disabled");
+            expect(featureRegistry.getReason(id, dexieNotCapable)).toBe(
                 FEATURE_REASON.PROVIDER_CORS_BLOCKED,
             );
         }
         // Online the provider capability is irrelevant (the backend makes the
-        // call), so a CORS-blocked provider stays active.
+        // call), so even a not-capable provider stays active.
         expect(
             featureRegistry.getState(FEATURES.AI_GENERATE, {
                 mode: "api",

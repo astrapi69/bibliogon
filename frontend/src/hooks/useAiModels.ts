@@ -57,13 +57,14 @@ function writeCache(key: string, models: string[]): void {
  * Load the available models for the configured AI provider, with a preset
  * fallback and a 1h sessionStorage cache.
  *
- * The list is loaded browser-direct (same path online + offline) only for
- * providers whose `/models` endpoint serves CORS headers
- * ({@link providerSupportsBrowserTest}: Gemini / Anthropic / LM Studio /
- * custom). OpenAI / Mistral (CORS-blocked from a browser) and any failure fall
- * back to the provider's preset `model_suggestions` — never the only option,
- * since the model field stays free-text. Changing the provider, base URL, or
- * key resets to the fallback and reloads (busting the cache).
+ * The list is loaded browser-direct (same path online + offline) for every
+ * provider whose `/models` endpoint serves CORS headers
+ * ({@link providerSupportsBrowserTest}) — as of 2026-06-19 that is all shipped
+ * providers (Gemini / Anthropic / OpenAI / Mistral / LM Studio / custom).
+ * Any failure falls back to the provider's preset `model_suggestions` — never
+ * the only option, since the model field stays free-text. Changing the
+ * provider, base URL, or key resets to the fallback and reloads (busting the
+ * cache).
  *
  * @example
  * const { models, loading, source, reload } = useAiModels({
@@ -99,8 +100,9 @@ export function useAiModels(params: {
                 }
             }
 
-            // Providers whose /models is CORS-blocked from a browser stay on the
-            // preset list; only attempt a live call where it can succeed.
+            // A provider that cannot be reached browser-direct (none currently)
+            // or one still missing its key stays on the preset list; only attempt
+            // a live call where it can succeed.
             if (!providerSupportsBrowserTest(provider) || (requiresKey && !apiKey.trim())) {
                 setModels(presetSuggestions);
                 setSource("fallback");

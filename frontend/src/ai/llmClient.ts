@@ -7,11 +7,15 @@
  * chat API (openai / google-gemini / mistral / lmstudio) and Anthropic's
  * native messages API.
  *
- * CORS: OpenAI, Google and a local LM Studio accept browser calls; Anthropic
- * requires the explicit `anthropic-dangerous-direct-browser-access` header
- * (the user is knowingly exposing their own key in their own browser). The key
- * is the user's and stays on their device — this is local-first, not a hosted
- * proxy.
+ * CORS: every shipped provider is reachable browser-direct (verified 2026-06-19
+ * against live CORS headers and the adaptive-learner GH-Pages PWA, which
+ * generates browser-direct with OpenAI). OpenAI / Google / Mistral serve
+ * `access-control-allow-origin` and allow POST in the preflight; a local LM
+ * Studio and a user-controlled `custom` endpoint are browser-callable too;
+ * Anthropic opts in via the explicit `anthropic-dangerous-direct-browser-access`
+ * header (the user is knowingly exposing their own key in their own browser).
+ * The key is the user's and stays on their device — this is local-first, not a
+ * hosted proxy. See docs/explorations/openai-cors-browser-direct-analysis.md.
  */
 
 import { getStorage } from "../storage";
@@ -48,27 +52,31 @@ const PROVIDER_BASE_URL: Record<string, string> = {
 const ANTHROPIC_VERSION = "2023-06-01";
 
 /**
- * Providers whose API serves CORS headers for direct browser calls, so the
- * offline (PWA / Dexie) connection test can actually run. Google's
- * OpenAI-compat endpoint and a local LM Studio allow it; Anthropic opts in via
- * the `anthropic-dangerous-direct-browser-access` header; `custom` is assumed
- * to be a user-controlled OpenAI-compatible endpoint (Ollama / vLLM / gateway)
- * that the user can configure for CORS.
+ * Providers whose API does NOT serve CORS headers for direct browser calls, so
+ * the offline (PWA / Dexie) path cannot reach them. EMPTY: every shipped
+ * provider is browser-capable — verified 2026-06-19 against live CORS headers
+ * (OpenAI / Gemini / Mistral serve `access-control-allow-origin` on
+ * `GET /v1/models` and allow POST in the `/chat/completions` preflight; Anthropic
+ * opts in via its browser-access header; LM Studio / custom are user-controlled)
+ * and against the adaptive-learner GH-Pages PWA, which generates browser-direct
+ * with OpenAI shipping an identical empty blocked set. The earlier
+ * "OpenAI / Mistral are CORS-blocked" reading (#450) was a key/account-specific
+ * 403 misread as a browser wall, now corrected. See
+ * docs/explorations/openai-cors-browser-direct-analysis.md.
  *
- * OpenAI and Mistral may NOT send `access-control-allow-origin` for browser
- * calls, so a browser test for them can fail on the network layer regardless
- * of the key. This drives an ADVISORY note in the UI ("test may not work in
- * the browser; the key is checked on the first AI call") — it does NOT disable
- * the test, because the actual runtime result is authoritative: a real HTTP
- * error (401 bad key, 404 bad model) is classified honestly via
+ * Kept as the single data-driven source (mirroring adaptive-learner) so a future
+ * genuinely CORS-locked provider needs a set entry, not a logic change. The
+ * actual runtime result stays authoritative regardless: a real HTTP error
+ * (401 bad key, 404 bad model) is classified honestly via
  * {@link classifyAiClientError}, and only a genuine transport/CORS failure
  * (no HTTP status) is reported as a browser limitation.
  */
-const BROWSER_TESTABLE_PROVIDERS = new Set(["anthropic", "google", "lmstudio", "custom"]);
+const CORS_BLOCKED_PROVIDERS = new Set<string>();
 
-/** Whether `provider` can be connection-tested directly from the browser. */
+/** Whether `provider` can be connection-tested / reached directly from the
+ *  browser. True for every current provider (see {@link CORS_BLOCKED_PROVIDERS}). */
 export function providerSupportsBrowserTest(provider: string): boolean {
-    return BROWSER_TESTABLE_PROVIDERS.has(provider);
+    return !CORS_BLOCKED_PROVIDERS.has(provider);
 }
 
 /** Structured error category for an offline AI call, mirroring the backend's
@@ -123,13 +131,13 @@ export function classifyAiClientError(err: unknown): AiErrorKind {
  * use the desktop app or choose Gemini" hint) rather than a specific hard
  * error.
  *
- * True when the provider can't be reached browser-direct at all in this context
- * (`browserTestUnreliable`: OpenAI / Mistral, whose APIs serve no browser CORS
- * and answer 403/blocked) - for them a 401/403/404 is NOT an actionable
- * key/model error, it is "this provider does not work in a browser". Also true
- * for a genuine transport/CORS failure on any provider. For browser-capable
- * providers (Gemini / Anthropic / LM Studio / custom) a real HTTP error keeps
- * its specific, actionable message.
+ * True when the caller marks the provider as not reachable browser-direct in
+ * this context (`browserTestUnreliable`) — for such a provider a 401/403/404 is
+ * NOT an actionable key/model error, it is "this provider does not work in a
+ * browser". With the current empty {@link CORS_BLOCKED_PROVIDERS} set no shipped
+ * provider is flagged, so in practice this fires only on a genuine
+ * transport/CORS failure on any provider; for every provider a real HTTP error
+ * keeps its specific, actionable message.
  *
  * @example
  * if (isBrowserUnsupportedTestResult(err, browserTestUnreliable)) showAdvisory();
