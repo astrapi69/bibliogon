@@ -23,7 +23,7 @@ vi.mock("../storage", () => ({ getStorage: () => storageMock }));
 
 // Preview resolves to a stable value so the preview + remove button render.
 let previewValue: string | null = null;
-vi.mock("../hooks/useArticleImageUrl", () => ({
+vi.mock("../hooks/article/useArticleImageUrl", () => ({
     useArticleImageUrl: () => previewValue,
 }));
 

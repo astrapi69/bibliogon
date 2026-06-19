@@ -12,7 +12,7 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { useArticleImageUrl } from "./useArticleImageUrl";
 
 const getStorageMock = vi.fn();
-vi.mock("../storage", () => ({
+vi.mock("../../storage", () => ({
     getStorage: () => getStorageMock(),
 }));
 

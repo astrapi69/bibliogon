@@ -4,7 +4,7 @@ import { Image as ImageIcon, Upload, X } from "lucide-react";
 import { ApiError, api } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
-import { useArticleImageUrl } from "../hooks/useArticleImageUrl";
+import { useArticleImageUrl } from "../hooks/article/useArticleImageUrl";
 import { notify } from "../utils/notify";
 
 /** UX-FU-02: featured-image upload for the ArticleEditor sidebar.

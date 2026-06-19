@@ -1,13 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
-import { api, ApiError } from "../api/client";
-import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
-import { AiClientError, classifyAiClientError } from "../ai/llmClient";
-import { buildReviewMessages } from "../ai/reviewPrompts";
-import { reviewString } from "../data/ai-review-strings";
-import { notify } from "../utils/notify";
-import { useI18n } from "../hooks/useI18n";
-import { useStorageMode } from "../storage/useStorageMode";
+import { api, ApiError } from "../../api/client";
+import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
+import { AiClientError, classifyAiClientError } from "../../ai/llmClient";
+import { buildReviewMessages } from "../../ai/reviewPrompts";
+import { reviewString } from "../../data/ai-review-strings";
+import { notify } from "../../utils/notify";
+import { useI18n } from "../useI18n";
+import { useStorageMode } from "../../storage/useStorageMode";
 
 type ReviewFocus = "style" | "consistency" | "beta_reader";
 

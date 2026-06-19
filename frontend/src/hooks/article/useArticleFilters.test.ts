@@ -15,7 +15,7 @@ import React from "react"
 import {MemoryRouter} from "react-router-dom"
 
 import {useArticleFilters} from "./useArticleFilters"
-import type {Article} from "../api/client"
+import type {Article} from "../../api/client"
 
 const t = (_k: string, fallback?: string) => fallback || _k
 

@@ -17,7 +17,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import type { Article, ArticleStatus } from "../api/client";
+import type { Article, ArticleStatus } from "../../api/client";
 
 export type ArticleSortField = "date" | "title" | "author";
 export type ArticleSortOrder = "asc" | "desc";

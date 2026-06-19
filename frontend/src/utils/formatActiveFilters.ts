@@ -16,7 +16,7 @@
  * dashboard (genre / language / search). Sort fields are intentionally
  * NOT surfaced: they don't change the set of items being deleted.
  */
-import type { ArticleFilters } from "../hooks/useArticleFilters";
+import type { ArticleFilters } from "../hooks/article/useArticleFilters";
 import type { BookFilters } from "../hooks/useBookFilters";
 
 type Translator = (key: string, fallback?: string) => string;

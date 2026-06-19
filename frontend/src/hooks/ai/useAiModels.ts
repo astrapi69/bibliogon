@@ -3,8 +3,8 @@ import {
     listModels as listModelsDirect,
     providerSupportsBrowserTest,
     type AiConfig,
-} from "../ai/llmClient";
-import { getProviderPreset } from "../utils/aiProviders";
+} from "../../ai/llmClient";
+import { getProviderPreset } from "../../utils/aiProviders";
 
 /** Where the current model list came from: a live provider call (`"live"`) or
  *  the offline preset suggestions (`"fallback"`). */

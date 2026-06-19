@@ -51,7 +51,7 @@ import EditableTitle from "../components/EditableTitle";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import ArticleTranslatePanel from "../components/articles/ArticleTranslatePanel";
-import { useArticlePersistence } from "../hooks/useArticlePersistence";
+import { useArticlePersistence } from "../hooks/article/useArticlePersistence";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";

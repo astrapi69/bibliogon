@@ -1,8 +1,8 @@
 import { useEffect, useState, type Dispatch, type SetStateAction } from "react";
 
-import { ApiError, Article } from "../api/client";
-import { getStorage } from "../storage";
-import { notify } from "../utils/notify";
+import { ApiError, Article } from "../../api/client";
+import { getStorage } from "../../storage";
+import { notify } from "../../utils/notify";
 
 type ConfirmFn = (
     title: string,
