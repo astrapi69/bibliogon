@@ -21,6 +21,7 @@ const ABOVE = 1280; // > 1200 breakpoint -> full bar
 const BELOW = 1100; // < 1200 breakpoint -> hamburger
 const REFERENCE_WIDTH = 1440; // single-line guaranteed
 const WRAP_TOLERANCE = 8; // px control-height jitter before "wrap"
+const API = "http://localhost:8000/api";
 
 async function ready(page: import("@playwright/test").Page, width: number) {
     await page.setViewportSize({width, height: 800});
@@ -36,6 +37,25 @@ async function headerHeight(
 }
 
 test.describe("MENU-SINGLE-LINE Article Dashboard", () => {
+    // The "default content type changes" test sets ui.defaults.content_type to
+    // tutorial against the SHARED backend dev DB. Without a reset it leaks into
+    // every later smoke test (workers:1, serial): content-types.spec then sees
+    // the wrong default ("tutorial" instead of "blogpost") AND it persists to
+    // the E2E data-dir settings file across runs (/api/test/reset wipes the DB,
+    // not the settings). Restore the default after each test via the API,
+    // preserving the rest of ui.defaults (the PATCH replaces ui.defaults
+    // wholesale). Mirrors dashboard-header-single-line.spec.ts's afterEach.
+    test.afterEach(async ({page}) => {
+        const cfg = await (await page.request.get(`${API}/settings/app`)).json();
+        const uiDefaults =
+            (cfg.ui?.defaults as Record<string, unknown> | undefined) ?? {};
+        await page.request.patch(`${API}/settings/app`, {
+            data: {
+                ui: {defaults: {...uiDefaults, content_type: "blogpost"}},
+            },
+        });
+    });
+
     test("full inline bar above the breakpoint, hamburger hidden", async ({
         page,
     }) => {

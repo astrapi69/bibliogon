@@ -46,7 +46,13 @@ export default defineConfig({
             // enables the /api/test/reset endpoint. reuseExistingServer is
             // false so a stray real-data backend on :8000 is never silently
             // reused — run E2E with no other backend on :8000.
-            command: "cd ../backend && poetry run uvicorn app.main:app --port 8000",
+            // Wipe the disposable E2E data dir before each run so app-settings
+            // (e.g. ui.defaults.content_type) written by a prior or aborted run
+            // can never leak across runs -- /api/test/reset clears the DB, not
+            // the settings file. Within-run leaks are handled by each setter
+            // spec's afterEach restore.
+            command:
+                "rm -rf /tmp/bibliogon-e2e-data && mkdir -p /tmp/bibliogon-e2e-data && cd ../backend && poetry run uvicorn app.main:app --port 8000",
             url: "http://localhost:8000/api/health",
             env: {
                 // Isolated data dir + a persistent file DB under it.
