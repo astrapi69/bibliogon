@@ -20,7 +20,11 @@ import { useStorageMode } from "../storage/useStorageMode";
 import { notify } from "../utils/notify";
 import { api } from "../api/client";
 import { getStorage } from "../storage";
-import { aiChat, classifyAiClientError, providerSupportsBrowserTest } from "../ai/llmClient";
+import {
+    aiChat,
+    isBrowserUnsupportedTestResult,
+    providerSupportsBrowserTest,
+} from "../ai/llmClient";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../utils/aiProviders";
 
 const DISMISSED_KEY = "bibliogon-ai-setup-dismissed";
@@ -116,11 +120,11 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
                     setTestResult("ok");
                     notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
                 } catch (err) {
-                    // Honest classification: a transport/CORS failure is a
-                    // browser limitation (not a wrong key); a real HTTP error
-                    // gets its own message.
-                    const kind = classifyAiClientError(err);
-                    if (kind === "cors") {
+                    // Honest classification: a provider that cannot be reached
+                    // browser-direct (OpenAI / Mistral: CORS/403) or a genuine
+                    // transport/CORS failure is a browser limitation, not a
+                    // wrong key; anything else gets the generic failure message.
+                    if (isBrowserUnsupportedTestResult(err, browserTestUnreliable)) {
                         setTestResult("idle");
                         notify.info(browserUnsupportedMessage);
                     } else {
