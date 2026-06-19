@@ -7,6 +7,7 @@ import { api } from "../../api/client";
 import {
     aiChat,
     classifyAiClientError,
+    isBrowserUnsupportedTestResult,
     providerSupportsBrowserTest,
     type AiErrorKind,
 } from "../../ai/llmClient";
@@ -234,8 +235,14 @@ export function AiAssistantSettings({
                                     className="btn btn-ghost btn-sm"
                                     onClick={reloadModels}
                                     disabled={modelsLoading || missingKey}
-                                    title={t("ui.settings.ai_model_refresh", "Modelle aktualisieren")}
-                                    aria-label={t("ui.settings.ai_model_refresh", "Modelle aktualisieren")}
+                                    title={t(
+                                        "ui.settings.ai_model_refresh",
+                                        "Modelle aktualisieren",
+                                    )}
+                                    aria-label={t(
+                                        "ui.settings.ai_model_refresh",
+                                        "Modelle aktualisieren",
+                                    )}
                                     data-testid="ai-model-refresh"
                                 >
                                     <RefreshCw
@@ -355,12 +362,14 @@ export function AiAssistantSettings({
                                 onClick={async () => {
                                     setAiTestStatus("testing");
                                     try {
-                                        // Save current settings first so the backend sees the latest config
-                                        await onSave(buildSaveData());
-
                                         if (offline) {
                                             // Offline: ping the provider directly from the browser
-                                            // with the just-entered config (no backend round-trip).
+                                            // with the in-memory form values. Do NOT save first -
+                                            // the offline test reads these values directly, and a
+                                            // save-before-test would persist a half-edited config
+                                            // (e.g. an empty key right after switching providers
+                                            // clears the field) over a working saved one. The user
+                                            // persists explicitly via Speichern.
                                             try {
                                                 await aiChat(
                                                     {
@@ -386,24 +395,38 @@ export function AiAssistantSettings({
                                                     ),
                                                 );
                                             } catch (err) {
-                                                // Classify honestly: a transport/CORS
-                                                // failure is a browser limitation (not a
-                                                // wrong key); a real HTTP error (401 bad
-                                                // key, 404 bad model) gets its specific
-                                                // message instead of "connection failed".
-                                                const kind = classifyAiClientError(err);
-                                                if (kind === "cors") {
+                                                // Classify honestly. A provider that cannot be
+                                                // reached browser-direct at all (OpenAI / Mistral:
+                                                // CORS/403 by design) gets the honest "use the
+                                                // desktop app or choose Gemini" hint, never a
+                                                // wrong-key message. A genuine transport/CORS
+                                                // failure is also a browser limitation; a real
+                                                // HTTP error on a browser-capable provider (401
+                                                // bad key, 404 bad model) keeps its specific
+                                                // message.
+                                                if (
+                                                    isBrowserUnsupportedTestResult(
+                                                        err,
+                                                        browserTestUnreliable,
+                                                    )
+                                                ) {
                                                     setAiTestStatus("idle");
                                                     notify.info(browserUnsupportedMessage);
                                                 } else {
                                                     setAiTestStatus("fail");
-                                                    notify.error(aiErrorText(kind), err);
+                                                    notify.error(
+                                                        aiErrorText(classifyAiClientError(err)),
+                                                        err,
+                                                    );
                                                 }
                                             }
                                             setTimeout(() => setAiTestStatus("idle"), 3000);
                                             return;
                                         }
 
+                                        // Online: the backend tests against its saved config, so
+                                        // persist the form first.
+                                        await onSave(buildSaveData());
                                         const data = await api.ai.testConnection();
                                         if (data.success) {
                                             setAiTestStatus("ok");
