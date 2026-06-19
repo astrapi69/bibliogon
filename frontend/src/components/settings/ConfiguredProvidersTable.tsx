@@ -1,42 +1,49 @@
 import { KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import type { AiProviderStatus } from "../../utils/aiProviderKeys";
+import type { ProviderKeyStatus } from "../../utils/aiConfig";
 
-export interface AiProviderKeyRow {
+export interface ProviderRow {
     id: string;
     label: string;
     model: string;
-    status: AiProviderStatus;
+    status: ProviderKeyStatus;
     keyPreview: string;
     isActive: boolean;
+    canActivate: boolean;
 }
 
 /**
- * Read-only overview of the configured AI providers. Renders one row per
- * key-requiring provider so the user can see at a glance WHICH providers
- * already hold a (masked) key, which is empty, and which only works in the
- * desktop app. Editing happens in the form below the table.
+ * Overview of the configured AI providers. One row per key-requiring provider
+ * with its model, a masked key preview, a status, and edit / delete / add
+ * actions. The radio in the first column is the `active_provider` pointer —
+ * selecting it switches which provider AI calls use (keys are untouched).
  */
-export function AiProviderKeysTable({
+export function ConfiguredProvidersTable({
     rows,
+    onActivate,
     onEdit,
     onDelete,
+    readOnly = false,
 }: {
-    rows: AiProviderKeyRow[];
+    rows: ProviderRow[];
+    onActivate: (providerId: string) => void;
     onEdit: (providerId: string) => void;
     onDelete: (providerId: string) => void;
+    readOnly?: boolean;
 }) {
     const { t } = useI18n();
 
-    const statusLabel: Record<AiProviderStatus, string> = {
+    const statusLabel: Record<ProviderKeyStatus, string> = {
         active: t("ui.settings.ai_status_active", "Aktiv"),
         empty: t("ui.settings.ai_status_empty", "Leer"),
         desktop_only: t("ui.settings.ai_status_desktop", "Nur Desktop"),
+        external: t("ui.settings.ai_status_external", "Extern verwaltet"),
     };
-    const statusClass: Record<AiProviderStatus, string> = {
+    const statusClass: Record<ProviderKeyStatus, string> = {
         active: "text-success",
         empty: "text-muted-foreground",
         desktop_only: "text-warning",
+        external: "text-muted-foreground",
     };
 
     return (
@@ -44,6 +51,9 @@ export function AiProviderKeysTable({
             <table className="w-full border-collapse text-[0.8125rem]">
                 <thead>
                     <tr className="border-b border-border text-left text-muted-foreground">
+                        <th className="py-2 pr-3 font-medium">
+                            {t("ui.settings.ai_col_active", "Aktiv")}
+                        </th>
                         <th className="py-2 pr-3 font-medium">
                             {t("ui.settings.ai_col_provider", "Anbieter")}
                         </th>
@@ -76,6 +86,18 @@ export function AiProviderKeysTable({
                                 }
                             >
                                 <td className="py-2 pr-3">
+                                    <input
+                                        type="radio"
+                                        name="ai-active-provider"
+                                        className="size-4 cursor-pointer accent-[var(--accent)]"
+                                        checked={row.isActive}
+                                        disabled={readOnly || !row.canActivate}
+                                        onChange={() => onActivate(row.id)}
+                                        aria-label={`${t("ui.settings.ai_set_active", "Als aktiven Anbieter festlegen")}: ${row.label}`}
+                                        data-testid={`ai-provider-activate-${row.id}`}
+                                    />
+                                </td>
+                                <td className="py-2 pr-3">
                                     <span className="flex items-center gap-2">
                                         <KeyRound
                                             size={14}
@@ -85,14 +107,6 @@ export function AiProviderKeysTable({
                                         <span className="font-medium text-foreground">
                                             {row.label}
                                         </span>
-                                        {row.isActive && (
-                                            <span
-                                                data-testid={`ai-provider-active-badge-${row.id}`}
-                                                className="rounded-[var(--radius-sm)] bg-primary px-1.5 py-0.5 text-[0.6875rem] text-primary-foreground"
-                                            >
-                                                {t("ui.settings.ai_status_active", "Aktiv")}
-                                            </span>
-                                        )}
                                     </span>
                                 </td>
                                 <td className="py-2 pr-3 text-muted-foreground">
@@ -119,6 +133,7 @@ export function AiProviderKeysTable({
                                                 <button
                                                     type="button"
                                                     className="btn btn-ghost btn-sm"
+                                                    disabled={readOnly}
                                                     onClick={() => onEdit(row.id)}
                                                     title={t("ui.common.edit", "Bearbeiten")}
                                                     aria-label={`${t("ui.common.edit", "Bearbeiten")}: ${row.label}`}
@@ -129,6 +144,7 @@ export function AiProviderKeysTable({
                                                 <button
                                                     type="button"
                                                     className="btn btn-ghost btn-sm"
+                                                    disabled={readOnly}
                                                     onClick={() => onDelete(row.id)}
                                                     title={t("ui.common.delete", "Löschen")}
                                                     aria-label={`${t("ui.common.delete", "Löschen")}: ${row.label}`}
@@ -141,6 +157,7 @@ export function AiProviderKeysTable({
                                             <button
                                                 type="button"
                                                 className="btn btn-ghost btn-sm"
+                                                disabled={readOnly}
                                                 onClick={() => onEdit(row.id)}
                                                 title={t("ui.settings.ai_add_key", "Hinzufügen")}
                                                 aria-label={`${t("ui.settings.ai_add_key", "Hinzufügen")}: ${row.label}`}
