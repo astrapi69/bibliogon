@@ -7,8 +7,10 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import {
   aiChat,
   AiClientError,
+  classifyAiClientError,
   getAiConfig,
   isAiConfigured,
+  providerSupportsBrowserTest,
   type AiConfig,
 } from "./llmClient";
 
@@ -140,5 +142,79 @@ describe("aiChat — errors", () => {
         [{ role: "user", content: "x" }],
       ),
     ).rejects.toBeInstanceOf(AiClientError);
+  });
+
+  it("carries the HTTP status + body detail on a non-ok response", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 404,
+      text: async () => '{"error":{"message":"models/x is not found"}}',
+    } as Response);
+    const err = (await aiChat(
+      { provider: "google", base_url: "https://x/v1", model: "x", api_key: "k" },
+      [{ role: "user", content: "x" }],
+    ).catch((e) => e)) as AiClientError;
+    expect(err).toBeInstanceOf(AiClientError);
+    expect(err.status).toBe(404);
+    expect(err.isNetwork).toBe(false);
+    expect(err.detail).toContain("not found");
+  });
+
+  it("marks a transport/CORS failure as a network error (no status)", async () => {
+    global.fetch = vi.fn().mockRejectedValue(new TypeError("Failed to fetch"));
+    const err = (await aiChat(
+      { provider: "openai", base_url: "https://api.openai.com/v1", model: "m", api_key: "k" },
+      [{ role: "user", content: "x" }],
+    ).catch((e) => e)) as AiClientError;
+    expect(err.isNetwork).toBe(true);
+    expect(err.status).toBeUndefined();
+  });
+});
+
+describe("classifyAiClientError", () => {
+  it("returns 'cors' for a transport/CORS failure (no HTTP status)", () => {
+    expect(classifyAiClientError(new AiClientError("Failed to fetch", { isNetwork: true }))).toBe(
+      "cors",
+    );
+  });
+
+  it.each([
+    [401, "", "auth_error"],
+    [403, "", "auth_error"],
+    [429, "", "rate_limited"],
+    [404, "models/x is not found", "model_not_found"],
+    [400, "max_tokens too small", "invalid_request"],
+    [500, "", "server_error"],
+    [503, "", "server_error"],
+    [418, "", "unknown"],
+  ] as const)("maps HTTP %i -> %s", (status, detail, kind) => {
+    expect(classifyAiClientError(new AiClientError("x", { status, detail }))).toBe(kind);
+  });
+
+  it("promotes a Gemini-style 400 API-key error to auth_error (#355 parity)", () => {
+    const err = new AiClientError("x", {
+      status: 400,
+      detail: '{"error":{"message":"API key not valid. Please pass a valid API key.","status":"INVALID_ARGUMENT"}}',
+    });
+    expect(classifyAiClientError(err)).toBe("auth_error");
+  });
+
+  it("returns 'unknown' for a non-AiClientError", () => {
+    expect(classifyAiClientError(new Error("boom"))).toBe("unknown");
+    expect(classifyAiClientError("nope")).toBe("unknown");
+  });
+});
+
+describe("providerSupportsBrowserTest", () => {
+  it.each([
+    ["google", true],
+    ["anthropic", true],
+    ["lmstudio", true],
+    ["custom", true],
+    ["openai", false],
+    ["mistral", false],
+    ["unknown-provider", false],
+  ] as const)("%s -> %s", (provider, supported) => {
+    expect(providerSupportsBrowserTest(provider)).toBe(supported);
   });
 });

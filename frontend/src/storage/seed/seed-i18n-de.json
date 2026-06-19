@@ -1188,6 +1188,7 @@
       "ai_err_invalid": "Ungültige Anfrage",
       "ai_err_server": "Server-Fehler beim Anbieter",
       "ai_err_disabled": "KI-Funktionen sind deaktiviert. Aktiviere sie unter Einstellungen > Allgemein > KI-Assistent.",
+      "ai_test_browser_unsupported": "Ein Verbindungstest ist im Browser-Modus für diesen Anbieter evtl. nicht möglich. Der API-Schlüssel wird beim ersten KI-Aufruf geprüft.",
       "editor_title": "Editor",
       "editor_description": "Autosave-Intervalle, Entwurfs-Aufbewahrung und KI-Kontextlimit.",
       "editor_autosave": "Autosave (ms)",
