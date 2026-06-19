@@ -80,8 +80,7 @@ export function AiAssistantSettings({
     // headers, so a browser-direct test can fail on the transport layer. We do
     // NOT disable the test (the runtime result is authoritative); we just warn.
     const browserTestUnreliable = offline && !providerSupportsBrowserTest(aiProvider);
-    const testDisabled =
-        saving || aiTestStatus === "testing" || !aiBaseUrl || missingKey;
+    const testDisabled = saving || aiTestStatus === "testing" || !aiBaseUrl || missingKey;
 
     const browserUnsupportedMessage = t(
         "ui.settings.ai_test_browser_unsupported",
@@ -186,6 +185,17 @@ export function AiAssistantSettings({
                                     ),
                                 }))}
                             />
+                            {browserTestUnreliable && (
+                                <small
+                                    className="mt-1 block text-[0.75rem] text-[var(--text-muted)]"
+                                    data-testid="ai-provider-cors-note"
+                                >
+                                    {t(
+                                        "ui.feature.provider_cors_blocked",
+                                        "This AI provider can't be reached directly from the browser (CORS). Use the Bibliogon desktop app, or switch to Gemini.",
+                                    )}
+                                </small>
+                            )}
                         </div>
                         <div className="field">
                             <label className="label">
@@ -299,7 +309,10 @@ export function AiAssistantSettings({
                                     testId="ai-api-key-input"
                                     placeholder={
                                         aiProvider === "lmstudio"
-                                            ? t("ui.settings.ai_key_not_required", "Nicht erforderlich")
+                                            ? t(
+                                                  "ui.settings.ai_key_not_required",
+                                                  "Nicht erforderlich",
+                                              )
                                             : "sk-..."
                                     }
                                     showLabel={t("ui.common.show", "Anzeigen")}
@@ -335,7 +348,9 @@ export function AiAssistantSettings({
                             <button
                                 className="btn btn-ghost btn-sm"
                                 disabled={testDisabled}
-                                title={browserTestUnreliable ? browserUnsupportedMessage : undefined}
+                                title={
+                                    browserTestUnreliable ? browserUnsupportedMessage : undefined
+                                }
                                 data-testid="ai-test"
                                 onClick={async () => {
                                     setAiTestStatus("testing");

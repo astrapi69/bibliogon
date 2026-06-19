@@ -100,7 +100,8 @@
       "requires_network": "Esta funcionalidade requer uma ligação à internet.",
       "requires_desktop_app": "Esta funcionalidade requer a aplicação de ambiente de trabalho do Bibliogon",
       "requires_ai_key": "Esta funcionalidade requer uma chave de IA configurada (Definições > Assistente de IA)",
-      "not_yet_available": "Este recurso ainda não está disponível."
+      "not_yet_available": "Este recurso ainda não está disponível.",
+      "provider_cors_blocked": "Este fornecedor de IA não pode ser acedido diretamente a partir do navegador (CORS). Utilize a aplicação de ambiente de trabalho do Bibliogon ou mude para o Gemini."
     },
     "not_found": {
       "title": "Página não encontrada",
