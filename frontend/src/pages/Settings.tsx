@@ -152,7 +152,7 @@ export default function Settings() {
         if (isError) {
             notify.error(msg);
         } else {
-            notify.success(msg);
+            notify.saved(msg);
         }
     };
 

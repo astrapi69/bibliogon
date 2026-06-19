@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {Save, X} from "lucide-react";
+import {X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {useBookTypes} from "../../hooks/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
@@ -16,8 +16,9 @@ import {FEATURES} from "../../features/featureConfig";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";
+import {useSettingsAutoSave} from "./useSettingsAutoSave";
 
-export function VerhaltenSettings({config, onSave, saving}: {
+export function VerhaltenSettings({config, onSave}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
@@ -74,6 +75,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
         return (value) => {
             userEdited.current = true;
             setter(value);
+            triggerSave();
         };
     }
 
@@ -111,11 +113,13 @@ export function VerhaltenSettings({config, onSave, saving}: {
                 : [...prev, trimmed],
         );
         setNewLanguage("");
+        triggerSave();
     };
 
     const removeCustomLanguage = (value: string) => {
         userEdited.current = true;
         setCustomLanguages((prev) => prev.filter((c) => c !== value));
+        triggerSave();
     };
 
     const buildSaveData = () => ({
@@ -145,6 +149,8 @@ export function VerhaltenSettings({config, onSave, saving}: {
             },
         },
     });
+
+    const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
 
     return (
         <div className={styles.section} data-testid="verhalten-settings">
@@ -385,16 +391,6 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         </div>
                     </div>
                 </div>
-
-                <button
-                    className="btn btn-primary"
-                    disabled={saving}
-                    onClick={() => onSave(buildSaveData())}
-                    data-testid="verhalten-settings-save"
-                    style={{marginTop: 12}}
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
             </div>
         </div>
     );

@@ -99,57 +99,75 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
         ).toBeInTheDocument();
     });
 
-    it("invokes onSave with the {app + behavior + ui} envelope on save click", () => {
-        const onSave = vi.fn();
-        render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledTimes(1);
-        expect(onSave).toHaveBeenCalledWith({
-            app: {
-                default_language: "en",
-                trash_auto_delete_enabled: true,
-                trash_auto_delete_days: 30,
-                delete_permanently: false,
-                allow_books_without_author: true,
-            },
-            behavior: {
-                skip_non_destructive_confirmations: false,
-                export_engine: "auto",
-            },
-            ui: {
-                custom_languages: [],
-                defaults: {
-                    book_type: "prose",
-                    content_type: "blogpost",
-                    book_language: "de",
+    it("auto-saves the {app + behavior + ui} envelope after a change (no save button)", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            expect(screen.queryByTestId("verhalten-settings-save")).toBeNull();
+            fireEvent.change(screen.getByTestId("settings-language-trigger"), {
+                target: {value: "de"},
+            });
+            expect(onSave).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+            expect(onSave).toHaveBeenCalledWith({
+                app: {
+                    default_language: "de",
+                    trash_auto_delete_enabled: true,
+                    trash_auto_delete_days: 30,
+                    delete_permanently: false,
+                    allow_books_without_author: true,
                 },
-            },
-        });
+                behavior: {
+                    skip_non_destructive_confirmations: false,
+                    export_engine: "auto",
+                },
+                ui: {
+                    custom_languages: [],
+                    defaults: {
+                        book_type: "prose",
+                        content_type: "blogpost",
+                        book_language: "de",
+                    },
+                },
+            });
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("rehydrates + threads the export-engine preference through the save payload", () => {
-        const onSave = vi.fn();
-        render(
-            <VerhaltenSettings
-                config={{
-                    ...baseConfig,
-                    behavior: {export_engine: "client"},
-                }}
-                onSave={onSave}
-                saving={false}
-            />,
-        );
-        // The select shows the rehydrated value...
-        expect(
-            screen.getByTestId("settings-export-engine-trigger"),
-        ).toHaveTextContent(/Browser/);
-        // ...and the value lands in the saved behavior block.
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                behavior: expect.objectContaining({export_engine: "client"}),
-            }),
-        );
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(
+                <VerhaltenSettings
+                    config={{
+                        ...baseConfig,
+                        behavior: {export_engine: "client"},
+                    }}
+                    onSave={onSave}
+                    saving={false}
+                />,
+            );
+            // The select shows the rehydrated value...
+            expect(
+                screen.getByTestId("settings-export-engine-trigger"),
+            ).toHaveTextContent(/Browser/);
+            // ...and the value lands in the saved behavior block after an edit.
+            fireEvent.change(screen.getByTestId("settings-language-trigger"), {
+                target: {value: "de"},
+            });
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    behavior: expect.objectContaining({export_engine: "client"}),
+                }),
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("offers the Backend (Pandoc) engine option online", () => {
@@ -176,80 +194,107 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
     });
 
     it("threads the default book-type + content-type through the save payload", () => {
-        const onSave = vi.fn();
-        render(
-            <VerhaltenSettings
-                config={{
-                    ...baseConfig,
-                    ui: {defaults: {book_type: "comic_book", content_type: "tutorial"}},
-                }}
-                onSave={onSave}
-                saving={false}
-            />,
-        );
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                ui: {
-                    custom_languages: [],
-                    defaults: {
-                        book_type: "comic_book",
-                        content_type: "tutorial",
-                        book_language: "de",
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(
+                <VerhaltenSettings
+                    config={{
+                        ...baseConfig,
+                        ui: {defaults: {book_type: "comic_book", content_type: "tutorial"}},
+                    }}
+                    onSave={onSave}
+                    saving={false}
+                />,
+            );
+            fireEvent.change(screen.getByTestId("settings-language-trigger"), {
+                target: {value: "de"},
+            });
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    ui: {
+                        custom_languages: [],
+                        defaults: {
+                            book_type: "comic_book",
+                            content_type: "tutorial",
+                            book_language: "de",
+                        },
                     },
-                },
-            }),
-        );
+                }),
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("preserves unrelated ui.* branches in the save payload", () => {
-        const onSave = vi.fn();
-        render(
-            <VerhaltenSettings
-                config={{
-                    ...baseConfig,
-                    ui: {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(
+                <VerhaltenSettings
+                    config={{
+                        ...baseConfig,
+                        ui: {
+                            picture_book: {pdf_default_format: "8x10"},
+                            defaults: {book_type: "prose", content_type: "blogpost"},
+                        },
+                    }}
+                    onSave={onSave}
+                    saving={false}
+                />,
+            );
+            fireEvent.change(screen.getByTestId("settings-language-trigger"), {
+                target: {value: "de"},
+            });
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    ui: expect.objectContaining({
                         picture_book: {pdf_default_format: "8x10"},
-                        defaults: {book_type: "prose", content_type: "blogpost"},
-                    },
-                }}
-                onSave={onSave}
-                saving={false}
-            />,
-        );
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                ui: expect.objectContaining({
-                    picture_book: {pdf_default_format: "8x10"},
+                    }),
                 }),
-            }),
-        );
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
-    it("skip-non-destructive toggle threads through the save payload", () => {
-        const onSave = vi.fn();
-        render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("settings-skip-non-destructive-confirmations"));
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                behavior: expect.objectContaining({
-                    skip_non_destructive_confirmations: true,
+    it("skip-non-destructive toggle auto-saves through the payload", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            fireEvent.click(screen.getByTestId("settings-skip-non-destructive-confirmations"));
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    behavior: expect.objectContaining({
+                        skip_non_destructive_confirmations: true,
+                    }),
                 }),
-            }),
-        );
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
-    it("reflects checkbox toggles in the save payload", () => {
-        const onSave = vi.fn();
-        render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("settings-delete-permanently"));
-        fireEvent.click(screen.getByTestId("verhalten-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                app: expect.objectContaining({delete_permanently: true}),
-            }),
-        );
+    it("a checkbox toggle auto-saves immediately (debounced)", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<VerhaltenSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            fireEvent.click(screen.getByTestId("settings-delete-permanently"));
+            expect(onSave).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    app: expect.objectContaining({delete_permanently: true}),
+                }),
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

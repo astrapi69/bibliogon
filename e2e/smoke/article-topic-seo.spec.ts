@@ -37,7 +37,7 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         await page.getByTestId("topic-add-btn").click();
         await page.getByTestId("topic-add-input").fill("Writing");
         await page.getByTestId("topic-add-btn").click();
-        await page.getByTestId("topics-save-btn").click();
+        // Auto-save (#472): each add persists immediately; no Speichern button.
 
         // The save is an async PATCH; the editor reads the topics list
         // fresh on load, so navigating before the PATCH lands races it

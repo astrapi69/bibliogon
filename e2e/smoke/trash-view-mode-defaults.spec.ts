@@ -55,15 +55,15 @@ async function pickViewMode(
 async function saveAppearance(
     page: import("@playwright/test").Page,
 ): Promise<void> {
-    const saved = page.waitForResponse(
+    // Auto-save (#472): the appearance change already armed the debounced
+    // PATCH; there is no Speichern button. Just await that PATCH landing.
+    await page.waitForResponse(
         (r) =>
             r.url().includes("/settings/app") &&
             r.request().method() === "PATCH" &&
             r.ok(),
         {timeout: 8000},
     );
-    await page.getByTestId("erscheinungsbild-settings-save").click();
-    await saved;
 }
 
 /** Navigate to the dashboard and WAIT for its settings fetch to land,

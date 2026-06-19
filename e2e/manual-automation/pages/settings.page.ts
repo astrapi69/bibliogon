@@ -77,16 +77,16 @@ export class SettingsPage {
      * language (the TC-052 spot-check race). */
     async selectLanguage(lang: UiLanguage): Promise<void> {
         await this.goto("verhalten");
+        const saved = this.page.waitForResponse(
+            (res) =>
+                res.url().includes("/api/settings/app") &&
+                res.request().method() === "PATCH" &&
+                res.ok(),
+        );
         await this.page.getByTestId("settings-language-trigger").click();
+        // Auto-save (#472): selecting the language arms the debounced PATCH;
+        // there is no Speichern button. Await the write before returning.
         await this.page.getByTestId(`settings-language-item-${lang}`).click();
-        await Promise.all([
-            this.page.waitForResponse(
-                (res) =>
-                    res.url().includes("/api/settings/app") &&
-                    res.request().method() === "PATCH" &&
-                    res.ok(),
-            ),
-            this.page.getByTestId("verhalten-settings-save").click(),
-        ]);
+        await saved;
     }
 }

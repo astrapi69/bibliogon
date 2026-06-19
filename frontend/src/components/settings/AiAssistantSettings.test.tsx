@@ -240,9 +240,11 @@ describe("AiAssistantSettings — configured providers table", () => {
         expect(screen.getByTestId("ai-provider-status-google").textContent).toBe("Aktiv");
     });
 
-    it("saving persists the canonical keys + a derived top-level mirror", async () => {
+    it("auto-saves the canonical keys + a derived top-level mirror after a field edit", async () => {
         const { onSave } = renderSettings();
-        fireEvent.click(screen.getByTestId("ai-save"));
+        // No manual Speichern button (#472); editing a field auto-saves.
+        expect(screen.queryByTestId("ai-save")).toBeNull();
+        fireEvent.change(screen.getByTestId("ai-temperature"), { target: { value: "0.8" } });
         await waitFor(() => expect(onSave).toHaveBeenCalled());
         const payload = onSave.mock.calls[0][0] as {
             ai: {

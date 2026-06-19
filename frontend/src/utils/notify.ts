@@ -239,6 +239,10 @@ export const notify = {
   warning: (message: string) => { recordToast('warning', message); return toast.warning(message, {autoClose: 12000}) },
   info: (message: string) => { recordToast('info', message); return toast.info(message, {autoClose: 10000}) },
   success: (message: string) => { recordToast('success', message); return toast.success(message, {autoClose: 5000}) },
+  /** Short, non-intrusive confirmation for auto-saved settings (#472).
+   *  A stable toastId means rapid successive saves reuse one toast slot
+   *  instead of stacking, and the 2s autoClose keeps it out of the way. */
+  saved: (message: string) => { recordToast('success', message); return toast.success(message, {autoClose: 2000, toastId: 'settings-saved'}) },
   /** Success toast with an Undo action button. Used by bulk-delete
    *  (soft path) so the user can recover from "oops, I selected the
    *  wrong filter". Hard-delete does NOT call this — the data is

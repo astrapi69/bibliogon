@@ -107,7 +107,15 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await expect(page.getByTestId("verhalten-settings")).toBeVisible();
         await page.getByTestId("settings-language-trigger").click();
         await page.getByTestId("settings-language-item-es").click();
-        await page.getByTestId("verhalten-settings-save").click();
+        // Auto-save (#472): the change arms the debounced PATCH; no Speichern
+        // button. Await the write so the new default is persisted before nav.
+        await page.waitForResponse(
+            (r) =>
+                r.url().includes("/settings/app") &&
+                r.request().method() === "PATCH" &&
+                r.ok(),
+            {timeout: 8000},
+        );
 
         await page.goto("/");
         await ready(page, ABOVE);
@@ -133,7 +141,15 @@ test.describe("MENU-SINGLE-LINE Book Dashboard", () => {
         await page
             .getByTestId("settings-default-book-type-item-picture_book")
             .click();
-        await page.getByTestId("verhalten-settings-save").click();
+        // Auto-save (#472): the change arms the debounced PATCH; no Speichern
+        // button. Await the write so the new default is persisted before nav.
+        await page.waitForResponse(
+            (r) =>
+                r.url().includes("/settings/app") &&
+                r.request().method() === "PATCH" &&
+                r.ok(),
+            {timeout: 8000},
+        );
 
         await page.goto("/");
         await ready(page, ABOVE);

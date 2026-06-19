@@ -1,5 +1,5 @@
 import {useEffect, useRef, useState} from "react";
-import {Save, Plus, X} from "lucide-react";
+import {Plus, X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
@@ -7,13 +7,12 @@ import {SectionHeader} from "./SectionHeader";
 /**
  * Article-topics list (Settings > Themen).
  *
- * Add and remove persist immediately through ``onSave`` so an item is
- * never lost by navigating away before clicking "Speichern" (the #37
- * unsaved-list bug class). The explicit Save button stays as a manual
- * fallback. Online (API) and offline (Dexie) share the ``onSave`` ->
+ * Add and remove persist immediately through ``onSave`` (auto-save, #472)
+ * so an item is never lost by navigating away — there is no manual Save
+ * button. Online (API) and offline (Dexie) share the ``onSave`` ->
  * ``settings.updateApp`` persistence path.
  */
-export function TopicsSettings({config, onSave, saving}: {
+export function TopicsSettings({config, onSave}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
@@ -122,16 +121,6 @@ export function TopicsSettings({config, onSave, saving}: {
                         </button>
                     </div>
                 </div>
-
-                <button
-                    className="btn btn-primary"
-                    style={{marginTop: 16}}
-                    disabled={saving}
-                    onClick={() => onSave({topics})}
-                    data-testid="topics-save-btn"
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
             </div>
         </div>
     );
