@@ -46,6 +46,16 @@ vi.mock("../../ai/llmClient", async (importOriginal) => {
     return { ...actual, aiChat: vi.fn() };
 });
 
+let aiModelsValue: {
+    models: string[];
+    loading: boolean;
+    source: "live" | "fallback";
+    reload: ReturnType<typeof vi.fn>;
+};
+vi.mock("../../hooks/useAiModels", () => ({
+    useAiModels: () => aiModelsValue,
+}));
+
 import { aiChat } from "../../ai/llmClient";
 import { api } from "../../api/client";
 import { notify } from "../../utils/notify";
@@ -71,6 +81,12 @@ function renderSettings(aiOverrides: Record<string, unknown> = {}) {
 
 beforeEach(() => {
     storageMode = "dexie";
+    aiModelsValue = {
+        models: ["gemini-2.0-flash", "gemini-2.5-pro"],
+        loading: false,
+        source: "live",
+        reload: vi.fn(),
+    };
     aiChatMock.mockReset();
     testConnectionMock.mockReset();
     vi.mocked(notify.success).mockReset();
@@ -129,6 +145,39 @@ describe("AiAssistantSettings — connection test (offline)", () => {
     it("disables the test button when a key-requiring provider has no key", () => {
         renderSettings({ provider: "openai", base_url: "https://api.openai.com/v1", model: "gpt-4o", api_key: "" });
         expect(screen.getByTestId("ai-test")).toBeDisabled();
+    });
+});
+
+describe("AiAssistantSettings — model selection", () => {
+    it("shows the dynamically loaded models in the combobox", () => {
+        renderSettings({ provider: "google" });
+        const input = screen.getByTestId("ai-model") as HTMLInputElement;
+        expect(input.value).toBe("gemini-2.0-flash");
+        fireEvent.focus(input);
+        expect(screen.getByTestId("ai-model-option-gemini-2.5-pro")).toBeInTheDocument();
+    });
+
+    it("the refresh button triggers a reload", () => {
+        renderSettings({ provider: "google" });
+        fireEvent.click(screen.getByTestId("ai-model-refresh"));
+        expect(aiModelsValue.reload).toHaveBeenCalledTimes(1);
+    });
+
+    it("disables the model combobox + refresh when a key-requiring provider has no key", () => {
+        renderSettings({ provider: "openai", base_url: "https://api.openai.com/v1", model: "gpt-4o", api_key: "" });
+        expect(screen.getByTestId("ai-model")).toBeDisabled();
+        expect(screen.getByTestId("ai-model-refresh")).toBeDisabled();
+    });
+
+    it("accepts a manually typed model name (free-text combobox)", () => {
+        renderSettings({ provider: "google" });
+        const input = screen.getByTestId("ai-model") as HTMLInputElement;
+        fireEvent.focus(input);
+        fireEvent.change(input, { target: { value: "gemini-custom-x" } });
+        fireEvent.keyDown(input, { key: "Enter" });
+        // allowCustom commits the typed value via onChange(setAiModel); the
+        // input reflects the committed custom model.
+        expect((screen.getByTestId("ai-model") as HTMLInputElement).value).toBe("gemini-custom-x");
     });
 });
 

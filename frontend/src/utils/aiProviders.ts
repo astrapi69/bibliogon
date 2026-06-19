@@ -20,10 +20,9 @@ export const AI_PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     id: 'anthropic',
     label: 'Anthropic (Claude)',
     base_url: 'https://api.anthropic.com/v1',
-    default_model: 'claude-sonnet-4-20250514',
+    default_model: 'claude-sonnet-4-6',
     model_suggestions: [
-      'claude-opus-4-20250514',
-      'claude-sonnet-4-20250514',
+      'claude-sonnet-4-6',
       'claude-haiku-4-5-20251001',
     ],
     requires_api_key: true,
@@ -33,7 +32,7 @@ export const AI_PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     label: 'OpenAI (GPT)',
     base_url: 'https://api.openai.com/v1',
     default_model: 'gpt-4o',
-    model_suggestions: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo'],
+    model_suggestions: ['gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-3.5-turbo'],
     requires_api_key: true,
   },
   google: {

@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
-import { Save } from "lucide-react";
+import { Save, RefreshCw } from "lucide-react";
 import { TokenInput } from "../../lib/components/TokenInput";
+import { ComboboxSelect } from "../../lib/components/ComboboxSelect";
+import { useAiModels } from "../../hooks/useAiModels";
 import { api } from "../../api/client";
 import {
     aiChat,
@@ -63,6 +65,17 @@ export function AiAssistantSettings({
     const preset = getProviderPreset(aiProvider);
     const requiresKey = preset?.requires_api_key ?? false;
     const missingKey = requiresKey && !aiApiKey.trim();
+
+    const {
+        models: aiModels,
+        loading: modelsLoading,
+        reload: reloadModels,
+    } = useAiModels({
+        provider: aiProvider,
+        baseUrl: aiBaseUrl,
+        apiKey: aiApiKey,
+        enabled: aiEnabled,
+    });
     // Soft advisory only: some providers (OpenAI / Mistral) may not serve CORS
     // headers, so a browser-direct test can fail on the transport layer. We do
     // NOT disable the test (the runtime result is authoritative); we just warn.
@@ -189,29 +202,38 @@ export function AiAssistantSettings({
                         </div>
                         <div className="field">
                             <label className="label">{t("ui.settings.ai_model", "Modell")}</label>
-                            <input
-                                className="input"
-                                value={aiModel}
-                                onChange={(e) => setAiModel(e.target.value)}
-                                list="ai-model-suggestions"
-                                data-testid="ai-model"
-                                placeholder={
-                                    aiProvider === "lmstudio"
-                                        ? t(
-                                              "ui.settings.ai_model_lmstudio",
-                                              "Vom Server bereitgestellt",
-                                          )
-                                        : ""
-                                }
-                                style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem" }}
-                            />
-                            <datalist id="ai-model-suggestions">
-                                {(getProviderPreset(aiProvider)?.model_suggestions || []).map(
-                                    (m) => (
-                                        <option key={m} value={m} />
-                                    ),
-                                )}
-                            </datalist>
+                            <div className="flex items-center gap-2">
+                                <ComboboxSelect
+                                    options={aiModels.map((m) => ({ value: m, label: m }))}
+                                    value={aiModel}
+                                    onChange={setAiModel}
+                                    allowCustom
+                                    disabled={missingKey}
+                                    testId="ai-model"
+                                    placeholder={
+                                        aiProvider === "lmstudio"
+                                            ? t(
+                                                  "ui.settings.ai_model_lmstudio",
+                                                  "Vom Server bereitgestellt",
+                                              )
+                                            : ""
+                                    }
+                                />
+                                <button
+                                    type="button"
+                                    className="btn btn-ghost btn-sm"
+                                    onClick={reloadModels}
+                                    disabled={modelsLoading || missingKey}
+                                    title={t("ui.settings.ai_model_refresh", "Modelle aktualisieren")}
+                                    aria-label={t("ui.settings.ai_model_refresh", "Modelle aktualisieren")}
+                                    data-testid="ai-model-refresh"
+                                >
+                                    <RefreshCw
+                                        size={14}
+                                        className={modelsLoading ? "animate-spin" : undefined}
+                                    />
+                                </button>
+                            </div>
                         </div>
                         <div style={{ display: "flex", gap: 12 }}>
                             <div className="field" style={{ flex: 1 }}>

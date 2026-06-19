@@ -1163,6 +1163,7 @@
       "ai_provider": "KI-Anbieter",
       "ai_base_url": "Base URL",
       "ai_model": "Modell",
+      "ai_model_refresh": "Modelle aktualisieren",
       "ai_model_lmstudio": "Vom Server bereitgestellt",
       "ai_temperature": "Temperature",
       "ai_max_tokens": "Max Tokens",

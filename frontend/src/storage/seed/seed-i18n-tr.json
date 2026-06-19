@@ -1182,6 +1182,7 @@
       "ai_provider": "AI Saglayicisi",
       "ai_base_url": "Base URL",
       "ai_model": "Model",
+      "ai_model_refresh": "Modelleri yenile",
       "ai_model_lmstudio": "Sunucu tarafindan saglaniyor",
       "ai_temperature": "Sıcaklık",
       "ai_max_tokens": "Maks. Token",

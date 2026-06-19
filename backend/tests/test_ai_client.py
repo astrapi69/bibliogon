@@ -293,7 +293,7 @@ async def test_list_models_anthropic_returns_presets(anthropic_client):
     models = await anthropic_client.list_models()
     assert len(models) > 0
     model_ids = [m["id"] for m in models]
-    assert "claude-sonnet-4-20250514" in model_ids
+    assert "claude-sonnet-4-6" in model_ids
 
 
 # ---------------------------------------------------------------------------
