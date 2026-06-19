@@ -73,6 +73,12 @@ test.describe("Settings - AI keys overview (#460)", () => {
       "-",
     );
     await expect(page.getByTestId("ai-provider-add-openai")).toBeVisible();
+
+    // The configured provider exposes a per-row Test button; the empty one
+    // has none. (The test itself fires an external provider call, so the
+    // network outcome is not asserted here.)
+    await expect(page.getByTestId("ai-provider-test-google")).toBeVisible();
+    await expect(page.getByTestId("ai-provider-test-openai")).toHaveCount(0);
   });
 
   test("deleting a key flips the row to empty", async ({ page }) => {

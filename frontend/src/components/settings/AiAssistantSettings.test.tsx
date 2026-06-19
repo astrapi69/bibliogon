@@ -48,7 +48,7 @@ vi.mock("../AppDialog", () => ({
 
 vi.mock("../../ai/llmClient", async (importOriginal) => {
     const actual = await importOriginal<typeof import("../../ai/llmClient")>();
-    return { ...actual, aiChat: vi.fn() };
+    return { ...actual, aiChat: vi.fn(), listModels: vi.fn() };
 });
 
 let aiModelsValue: {
@@ -61,11 +61,12 @@ vi.mock("../../hooks/useAiModels", () => ({
     useAiModels: () => aiModelsValue,
 }));
 
-import { aiChat } from "../../ai/llmClient";
+import { aiChat, listModels } from "../../ai/llmClient";
 import { api } from "../../api/client";
 import { notify } from "../../utils/notify";
 
 const aiChatMock = vi.mocked(aiChat);
+const listModelsMock = vi.mocked(listModels);
 const testConnectionMock = vi.mocked(api.ai.testConnection);
 
 function renderSettings(
@@ -96,6 +97,7 @@ beforeEach(() => {
         reload: vi.fn(),
     };
     aiChatMock.mockReset();
+    listModelsMock.mockReset();
     testConnectionMock.mockReset();
     confirmMock.mockReset();
     confirmMock.mockResolvedValue(true);
@@ -320,6 +322,59 @@ describe("AiAssistantSettings — configured providers table", () => {
         );
         expect(screen.getByTestId("ai-provider-activate-google")).toBeDisabled();
         expect(screen.getByTestId("ai-api-key-external-note")).toBeInTheDocument();
+    });
+});
+
+describe("AiAssistantSettings — per-row provider test (#462)", () => {
+    it("Gemini key: a successful GET /v1/models reports 'Verbindung ok' inline", async () => {
+        listModelsMock.mockResolvedValue(["gemini-2.0-flash"]);
+        renderSettings();
+        fireEvent.click(screen.getByTestId("ai-provider-test-google"));
+        await waitFor(() =>
+            expect(screen.getByTestId("ai-provider-test-result-google").textContent).toBe(
+                "Verbindung ok",
+            ),
+        );
+        expect(notify.success).toHaveBeenCalledWith("Verbindung erfolgreich");
+    });
+
+    it("invalid key: reports 'API-Schlüssel ungültig' inline", async () => {
+        listModelsMock.mockRejectedValue(
+            new AiClientError("401", { status: 401, detail: "unauthorized" }),
+        );
+        renderSettings();
+        fireEvent.click(screen.getByTestId("ai-provider-test-google"));
+        await waitFor(() =>
+            expect(screen.getByTestId("ai-provider-test-result-google").textContent).toBe(
+                "API-Schlüssel ungültig",
+            ),
+        );
+        expect(notify.error).toHaveBeenCalled();
+    });
+
+    it("a provider with no key has no Test button (only add)", () => {
+        renderSettings({ active_provider: "google", keys: { google: "k" } });
+        expect(screen.queryByTestId("ai-provider-test-openai")).toBeNull();
+        expect(screen.getByTestId("ai-provider-add-openai")).toBeInTheDocument();
+    });
+
+    it("OpenAI in PWA mode: Test button disabled with a desktop-only tooltip", () => {
+        renderSettings({ active_provider: "google", keys: { google: "k", openai: "o-key" } });
+        const btn = screen.getByTestId("ai-provider-test-openai");
+        expect(btn).toBeDisabled();
+        expect(btn.getAttribute("title")).toMatch(/Desktop/);
+    });
+
+    it("shows a spinner ('Teste...') while the test is in flight", async () => {
+        let resolve!: (v: string[]) => void;
+        listModelsMock.mockReturnValue(new Promise<string[]>((r) => (resolve = r)));
+        renderSettings();
+        fireEvent.click(screen.getByTestId("ai-provider-test-google"));
+        await waitFor(() =>
+            expect(screen.getByTestId("ai-provider-test-google").textContent).toContain("Teste..."),
+        );
+        expect(screen.getByTestId("ai-provider-test-google")).toBeDisabled();
+        resolve(["gemini-2.0-flash"]);
     });
 });
 
