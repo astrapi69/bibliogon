@@ -22,8 +22,9 @@ export const AI_PROVIDER_PRESETS: Record<string, ProviderPreset> = {
     base_url: 'https://api.anthropic.com/v1',
     default_model: 'claude-sonnet-4-6',
     model_suggestions: [
+      'claude-opus-4-8',
       'claude-sonnet-4-6',
-      'claude-haiku-4-5-20251001',
+      'claude-haiku-4-5',
     ],
     requires_api_key: true,
   },
