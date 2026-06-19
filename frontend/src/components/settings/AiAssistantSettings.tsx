@@ -14,9 +14,18 @@ import {
 import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
+import {
+    effectiveProviderKeys,
+    keyRequiringProviderIds,
+    maskKeyPreview,
+    providerStatus,
+    type AiProviderKeysMap,
+} from "../../utils/aiProviderKeys";
 import { notify } from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";
+import { useDialog } from "../AppDialog";
+import { AiProviderKeysTable, type AiProviderKeyRow } from "./AiProviderKeysTable";
 import { HelpText } from "./HelpText";
 import { SectionHeader } from "./SectionHeader";
 import { Toggle } from "./Toggle";
@@ -63,9 +72,49 @@ export function AiAssistantSettings({
         (config as Record<string, unknown>)._secrets_managed_externally,
     );
 
+    const { confirm } = useDialog();
+
     const preset = getProviderPreset(aiProvider);
     const requiresKey = preset?.requires_api_key ?? false;
     const missingKey = requiresKey && !aiApiKey.trim();
+
+    // Side-store of saved per-provider credentials, powering the overview
+    // table. The top-level ai.* fields stay the single active config; the
+    // active provider's legacy key is folded in for backward-compat.
+    const providerKeys = effectiveProviderKeys(aiConfig);
+
+    const providerRows: AiProviderKeyRow[] = keyRequiringProviderIds(AI_PROVIDER_IDS).map((id) => {
+        const entry = providerKeys[id];
+        return {
+            id,
+            label: t(`ui.settings.ai_provider_${id}`, AI_PROVIDER_PRESETS[id].label),
+            model: entry?.model || "",
+            status: providerStatus(id, providerKeys, {
+                offline,
+                supportsBrowserTest: providerSupportsBrowserTest,
+            }),
+            keyPreview: maskKeyPreview(entry?.api_key),
+            isActive: id === aiProvider,
+        };
+    });
+
+    /** Load a provider into the form, preferring its saved credentials. */
+    const loadProvider = (id: string) => {
+        setAiProvider(id);
+        const targetPreset = getProviderPreset(id);
+        const saved = providerKeys[id];
+        if (saved && (saved.api_key || saved.model || saved.base_url)) {
+            setAiBaseUrl(saved.base_url || targetPreset?.base_url || "");
+            setAiModel(saved.model || targetPreset?.default_model || "");
+            setAiApiKey(saved.api_key || "");
+        } else if (targetPreset && id !== "custom") {
+            setAiBaseUrl(targetPreset.base_url);
+            setAiModel(targetPreset.default_model);
+            setAiApiKey("");
+        } else {
+            setAiApiKey("");
+        }
+    };
 
     const {
         models: aiModels,
@@ -109,7 +158,7 @@ export function AiAssistantSettings({
         }
     };
 
-    const buildSaveData = () => {
+    const buildAiPayload = (keys: AiProviderKeysMap): Record<string, unknown> => {
         const aiPayload: Record<string, unknown> = {
             enabled: aiEnabled,
             provider: aiProvider,
@@ -120,8 +169,48 @@ export function AiAssistantSettings({
         };
         if (!secretsExternal) {
             aiPayload.api_key = aiApiKey;
+            aiPayload.provider_keys = keys;
         }
-        return { ai: aiPayload };
+        return aiPayload;
+    };
+
+    const buildSaveData = () => {
+        const keys = { ...providerKeys };
+        if (requiresKey) {
+            if (aiApiKey.trim()) {
+                keys[aiProvider] = {
+                    api_key: aiApiKey,
+                    model: aiModel,
+                    base_url: aiBaseUrl,
+                };
+            } else {
+                delete keys[aiProvider];
+            }
+        }
+        return { ai: buildAiPayload(keys) };
+    };
+
+    const handleDeleteProvider = async (id: string) => {
+        const label = t(`ui.settings.ai_provider_${id}`, AI_PROVIDER_PRESETS[id]?.label ?? id);
+        const ok = await confirm(
+            t("ui.settings.ai_delete_key_title", "Schlüssel löschen"),
+            t(
+                "ui.settings.ai_delete_key_confirm",
+                "Den gespeicherten API-Schlüssel für {provider} entfernen?",
+            ).replace("{provider}", label),
+            "danger",
+        );
+        if (!ok) return;
+        const keys = { ...providerKeys };
+        delete keys[id];
+        const payload = buildAiPayload(keys);
+        const clearActive = id === aiProvider;
+        if (!secretsExternal && clearActive) {
+            payload.api_key = "";
+        }
+        await onSave({ ai: payload });
+        if (clearActive) setAiApiKey("");
+        notify.success(t("ui.settings.ai_delete_key_done", "Schlüssel entfernt"));
     };
 
     return (
@@ -149,6 +238,28 @@ export function AiAssistantSettings({
                         />
                     </div>
 
+                    {!secretsExternal && (
+                        <div className="field" data-testid="ai-provider-keys-section">
+                            <label className="label">
+                                {t(
+                                    "ui.settings.ai_configured_providers",
+                                    "Konfigurierte KI-Anbieter",
+                                )}
+                            </label>
+                            <AiProviderKeysTable
+                                rows={providerRows}
+                                onEdit={loadProvider}
+                                onDelete={handleDeleteProvider}
+                            />
+                            <HelpText>
+                                {t(
+                                    "ui.settings.ai_configured_providers_hint",
+                                    "Übersicht der gespeicherten Schlüssel. Zum Ändern oder Hinzufügen einen Anbieter auswählen und unten den Schlüssel eingeben.",
+                                )}
+                            </HelpText>
+                        </div>
+                    )}
+
                     <div
                         style={{
                             opacity: aiEnabled ? 1 : 0.4,
@@ -162,21 +273,7 @@ export function AiAssistantSettings({
                             </label>
                             <RadixSelect
                                 value={aiProvider}
-                                onValueChange={(val) => {
-                                    setAiProvider(val);
-                                    const preset = getProviderPreset(val);
-                                    // The "custom" preset has empty
-                                    // base_url + default_model on purpose -
-                                    // do not wipe the user's input. For all
-                                    // other presets, auto-fill from the
-                                    // preset so users land in a working
-                                    // state with one click.
-                                    if (preset && val !== "custom") {
-                                        setAiBaseUrl(preset.base_url);
-                                        setAiModel(preset.default_model);
-                                        setAiApiKey("");
-                                    }
-                                }}
+                                onValueChange={loadProvider}
                                 testId="ai-provider"
                                 options={AI_PROVIDER_IDS.map((pid) => ({
                                     value: pid,
