@@ -1122,6 +1122,7 @@ ui:
     ai_provider: "Fournisseur AI"
     ai_base_url: "URL de base"
     ai_model: "Modele"
+    ai_model_refresh: "Actualiser les modèles"
     ai_model_lmstudio: "Fourni par le serveur"
     ai_temperature: "Température"
     ai_max_tokens: "Tokens max."

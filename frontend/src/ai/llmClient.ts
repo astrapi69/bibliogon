@@ -177,6 +177,39 @@ export async function aiChat(
   return openAiCompatChat(config, base, messages, maxTokens, temperature);
 }
 
+/**
+ * List the model ids the provider exposes via `GET {base}/models`, browser-direct
+ * with the user's key. OpenAI-compatible providers (OpenAI / Gemini / Mistral /
+ * LM Studio / custom) return `{ data: [{ id }] }`; Anthropic exposes the same
+ * shape at `/v1/models` and accepts the browser-access header.
+ *
+ * Throws {@link AiClientError} on a transport/CORS failure or a non-2xx response,
+ * so callers can fall back to the preset suggestions.
+ *
+ * @example
+ * const ids = await listModels(config); // ["gpt-4o", "gpt-4o-mini", ...]
+ */
+export async function listModels(config: AiConfig): Promise<string[]> {
+  const base = config.base_url.replace(/\/+$/, "");
+  const headers: Record<string, string> =
+    config.provider === "anthropic"
+      ? {
+          "x-api-key": config.api_key,
+          "anthropic-version": ANTHROPIC_VERSION,
+          "anthropic-dangerous-direct-browser-access": "true",
+        }
+      : config.api_key
+        ? { Authorization: `Bearer ${config.api_key}` }
+        : {};
+  const res = await safeFetch(`${base}/models`, { method: "GET", headers });
+  const data = await parseJson(res);
+  const rows: unknown = data?.data;
+  if (!Array.isArray(rows)) return [];
+  return rows
+    .map((row) => (row && typeof row === "object" ? (row as { id?: unknown }).id : undefined))
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+}
+
 async function openAiCompatChat(
   config: AiConfig,
   base: string,

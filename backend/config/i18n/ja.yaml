@@ -1122,6 +1122,7 @@ ui:
     ai_provider: "AIプロバイダー"
     ai_base_url: "ベース URL"
     ai_model: "モデル"
+    ai_model_refresh: "モデルを更新"
     ai_model_lmstudio: "サーバーから提供"
     ai_temperature: "Temperature"
     ai_max_tokens: "最大トークン数"

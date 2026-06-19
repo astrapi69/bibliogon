@@ -1104,6 +1104,7 @@ ui:
     ai_provider: "Πάροχος AI"
     ai_base_url: "Base URL"
     ai_model: "Μοντέλο"
+    ai_model_refresh: "Ανανέωση μοντέλων"
     ai_model_lmstudio: "Παρέχεται από τον διακομιστή"
     ai_temperature: "Temperature"
     ai_max_tokens: "Max Tokens"

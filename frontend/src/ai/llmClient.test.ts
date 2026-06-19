@@ -10,6 +10,7 @@ import {
   classifyAiClientError,
   getAiConfig,
   isAiConfigured,
+  listModels,
   providerSupportsBrowserTest,
   type AiConfig,
 } from "./llmClient";
@@ -202,6 +203,65 @@ describe("classifyAiClientError", () => {
   it("returns 'unknown' for a non-AiClientError", () => {
     expect(classifyAiClientError(new Error("boom"))).toBe("unknown");
     expect(classifyAiClientError("nope")).toBe("unknown");
+  });
+});
+
+describe("listModels", () => {
+  it("GETs {base}/models and returns the id list (OpenAI-compatible)", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(
+      okJson({ data: [{ id: "gpt-4o" }, { id: "gpt-4o-mini" }] }),
+    );
+    global.fetch = fetchMock;
+    const ids = await listModels({
+      provider: "openai",
+      base_url: "https://api.openai.com/v1",
+      model: "",
+      api_key: "sk-x",
+    });
+    expect(ids).toEqual(["gpt-4o", "gpt-4o-mini"]);
+    const [url, init] = fetchMock.mock.calls[0];
+    expect(url).toBe("https://api.openai.com/v1/models");
+    expect(init.method).toBe("GET");
+    expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-x");
+  });
+
+  it("uses the Anthropic auth + browser-access headers", async () => {
+    const fetchMock = vi.fn().mockResolvedValue(okJson({ data: [{ id: "claude-sonnet-4-6" }] }));
+    global.fetch = fetchMock;
+    const ids = await listModels({
+      provider: "anthropic",
+      base_url: "https://api.anthropic.com/v1",
+      model: "",
+      api_key: "key",
+    });
+    expect(ids).toEqual(["claude-sonnet-4-6"]);
+    const headers = fetchMock.mock.calls[0][1].headers as Record<string, string>;
+    expect(headers["x-api-key"]).toBe("key");
+    expect(headers["anthropic-dangerous-direct-browser-access"]).toBe("true");
+  });
+
+  it("filters out non-string / empty ids", async () => {
+    global.fetch = vi.fn().mockResolvedValue(
+      okJson({ data: [{ id: "gpt-4o" }, { id: "" }, { id: 42 }, {}, null] }),
+    );
+    const ids = await listModels({
+      provider: "openai",
+      base_url: "https://x/v1",
+      model: "",
+      api_key: "k",
+    });
+    expect(ids).toEqual(["gpt-4o"]);
+  });
+
+  it("throws AiClientError on a non-ok response (so callers can fall back)", async () => {
+    global.fetch = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 401,
+      text: async () => "unauthorized",
+    } as Response);
+    await expect(
+      listModels({ provider: "openai", base_url: "https://x/v1", model: "", api_key: "bad" }),
+    ).rejects.toBeInstanceOf(AiClientError);
   });
 });
 

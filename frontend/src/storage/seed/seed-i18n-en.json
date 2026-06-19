@@ -1163,6 +1163,7 @@
       "ai_provider": "AI Provider",
       "ai_base_url": "Base URL",
       "ai_model": "Model",
+      "ai_model_refresh": "Refresh models",
       "ai_model_lmstudio": "Provided by server",
       "ai_temperature": "Temperature",
       "ai_max_tokens": "Max Tokens",
