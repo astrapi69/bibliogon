@@ -22,7 +22,7 @@
  */
 import { useEffect, useState } from "react";
 
-import { getStorage } from "../storage";
+import { getStorage } from "../../storage";
 
 export function useArticleImageUrl(
     articleId: string | null | undefined,

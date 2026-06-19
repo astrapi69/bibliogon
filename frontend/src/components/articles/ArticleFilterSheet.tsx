@@ -12,7 +12,7 @@
 import { useI18n } from "../../hooks/useI18n";
 import FilterSheet from "../FilterSheet";
 import { ArticleFilterBar } from "./ArticleFilterBar";
-import type { useArticleFilters } from "../../hooks/useArticleFilters";
+import type { useArticleFilters } from "../../hooks/article/useArticleFilters";
 
 interface Props {
     filters: ReturnType<typeof useArticleFilters>;

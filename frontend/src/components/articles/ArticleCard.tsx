@@ -10,7 +10,7 @@ import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { useArticleImageUrl } from "../../hooks/useArticleImageUrl";
+import { useArticleImageUrl } from "../../hooks/article/useArticleImageUrl";
 import CoverPlaceholder from "../CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/formatDate";
 import CommentsCountBadge from "./CommentsCountBadge";
