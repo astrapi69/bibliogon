@@ -13,8 +13,9 @@
 
 import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Sparkles, X, ChevronRight, ChevronLeft, Check, Eye, EyeOff } from "lucide-react";
+import { Sparkles, X, ChevronRight, ChevronLeft, Check } from "lucide-react";
 import { useI18n } from "../hooks/useI18n";
+import { TokenInput } from "../lib/components/TokenInput";
 import { useStorageMode } from "../storage/useStorageMode";
 import { notify } from "../utils/notify";
 import { api } from "../api/client";
@@ -47,7 +48,6 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
     const [baseUrl, setBaseUrl] = useState(AI_PROVIDER_PRESETS.anthropic.base_url);
     const [model, setModel] = useState(AI_PROVIDER_PRESETS.anthropic.default_model);
     const [apiKey, setApiKey] = useState("");
-    const [showKey, setShowKey] = useState(false);
     const [testing, setTesting] = useState(false);
     const [testResult, setTestResult] = useState<"idle" | "ok" | "fail">("idle");
     const [saving, setSaving] = useState(false);
@@ -219,31 +219,18 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
                                         <label className="label">
                                             {t("ui.settings.ai_api_key", "API Key")}
                                         </label>
-                                        <div style={{ display: "flex", gap: 8 }}>
-                                            <input
-                                                className="input"
-                                                data-testid="wizard-api-key-input"
-                                                type={showKey ? "text" : "password"}
-                                                value={apiKey}
-                                                onChange={(e) => {
-                                                    setApiKey(e.target.value);
-                                                    setTestResult("idle");
-                                                }}
-                                                placeholder="sk-..."
-                                                style={{
-                                                    flex: 1,
-                                                    fontFamily: "var(--font-mono)",
-                                                    fontSize: "0.8125rem",
-                                                }}
-                                                autoFocus
-                                            />
-                                            <button
-                                                className="btn btn-ghost btn-sm"
-                                                onClick={() => setShowKey(!showKey)}
-                                            >
-                                                {showKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                                            </button>
-                                        </div>
+                                        <TokenInput
+                                            value={apiKey}
+                                            onChange={(value) => {
+                                                setApiKey(value);
+                                                setTestResult("idle");
+                                            }}
+                                            testId="wizard-api-key-input"
+                                            placeholder="sk-..."
+                                            autoFocus
+                                            showLabel={t("ui.common.show", "Anzeigen")}
+                                            hideLabel={t("ui.common.hide", "Ausblenden")}
+                                        />
                                         <small
                                             style={{
                                                 color: "var(--text-muted)",
