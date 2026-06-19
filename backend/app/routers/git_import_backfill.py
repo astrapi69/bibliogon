@@ -23,9 +23,9 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Book
-from app.services import git_backup
 from app.services.backup.archive_utils import safe_extractall
-from app.services.git_import_adopter import (
+from app.services.git import backup as git_backup
+from app.services.git.import_adopter import (
     CorruptedSourceRepo,
     RepoAlreadyPresent,
     adopt_git_dir,

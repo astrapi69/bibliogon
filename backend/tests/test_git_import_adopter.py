@@ -1,4 +1,4 @@
-"""Tests for ``app.services.git_import_adopter``.
+"""Tests for ``app.services.git.import_adopter``.
 
 Sanitization contract + adoption of an extracted .git/ into
 ``uploads/{book_id}/.git/``. Hits the real filesystem via
@@ -13,8 +13,8 @@ from pathlib import Path
 import git
 import pytest
 
-from app.services import git_backup
-from app.services.git_import_adopter import (
+from app.services.git import backup as git_backup
+from app.services.git.import_adopter import (
     CorruptedSourceRepo,
     RepoAlreadyPresent,
     adopt_git_dir,
@@ -52,10 +52,7 @@ def test_sanitize_strips_http_extraheader(tmp_path: Path) -> None:
     root = _init_repo(tmp_path / "src")
     cfg = root / ".git" / "config"
     with cfg.open("a", encoding="utf-8") as f:
-        f.write(
-            '\n[http "https://github.com/"]\n'
-            "\textraheader = AUTHORIZATION: Basic dGVzdA==\n"
-        )
+        f.write('\n[http "https://github.com/"]\n\textraheader = AUTHORIZATION: Basic dGVzdA==\n')
     actions = sanitize_git_dir(root / ".git")
     parser = configparser.ConfigParser(strict=False, interpolation=None)
     parser.read(cfg, encoding="utf-8")
@@ -105,8 +102,10 @@ def test_sanitize_prunes_non_standard_packed_refs(tmp_path: Path) -> None:
     packed = root / ".git" / "packed-refs"
     packed.write_text(
         "# pack-refs with: peeled fully-peeled sorted\n"
-        + ("0" * 40) + " refs/heads/main\n"
-        + ("1" * 40) + " refs/evil/backdoor\n",
+        + ("0" * 40)
+        + " refs/heads/main\n"
+        + ("1" * 40)
+        + " refs/evil/backdoor\n",
         encoding="utf-8",
     )
     sanitize_git_dir(root / ".git")
@@ -229,9 +228,7 @@ def test_adopt_sanitizes_before_copy(tmp_path: Path) -> None:
         target_book_id="sanitized-adopt",
         preserve_remote=False,
     )
-    adopted_cfg = (
-        git_backup.repo_path("sanitized-adopt") / ".git" / "config"
-    )
+    adopted_cfg = git_backup.repo_path("sanitized-adopt") / ".git" / "config"
     text = adopted_cfg.read_text(encoding="utf-8")
     assert "SECRET" not in text
     assert "[credential]" not in text

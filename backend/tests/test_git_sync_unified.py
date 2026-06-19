@@ -27,9 +27,11 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.main import app
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_backup, git_credentials, git_sync_mapping
-from app.services.git_sync_lock import book_commit_lock
-from app.services.git_sync_unified import book_subsystems, unified_commit
+from app.services.git import backup as git_backup
+from app.services.git import credentials as git_credentials
+from app.services.git import sync_mapping as git_sync_mapping
+from app.services.git.sync_lock import book_commit_lock
+from app.services.git.sync_unified import book_subsystems, unified_commit
 
 client = TestClient(app)
 
@@ -319,13 +321,13 @@ def test_unified_commit_endpoint_503_when_lock_held(
     held.wait(timeout=2.0)
 
     # Patch the timeout to a tight window so the test isn't slow.
-    from app.services import git_sync_unified
+    from app.services.git import sync_unified as git_sync_unified
 
     original = git_sync_unified.unified_commit
 
     def fast_unified(*args, **kwargs):
         # Bypass: directly call book_commit_lock with a 0.05s timeout.
-        from app.services.git_sync_lock import book_commit_lock as _lock
+        from app.services.git.sync_lock import book_commit_lock as _lock
 
         with _lock(kwargs["book_id"], timeout=0.05):
             return original(*args, **kwargs)

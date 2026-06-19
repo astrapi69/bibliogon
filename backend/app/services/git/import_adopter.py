@@ -6,7 +6,7 @@ never optional; security guarantees documented in
 :func:`sanitize_git_dir`.
 
 Layout target: ``uploads/{book_id}/.git`` (matches
-``app.services.git_backup.repo_path``). After adoption the native
+``app.services.git.backup.repo_path``). After adoption the native
 git_backup endpoints operate on the adopted repo as if ``init_repo``
 had been called - status, log, commit, push, pull all work.
 """
@@ -21,7 +21,7 @@ from typing import Any
 
 import git
 
-from app.services.git_backup import configure_remote, repo_path
+from app.services.git.backup import configure_remote, repo_path
 
 logger = logging.getLogger(__name__)
 

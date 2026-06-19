@@ -6,7 +6,7 @@ Endpoints:
 - ``POST /api/git-sync/{book_id}/commit`` - re-scaffold + commit on local clone
 
 Routing is thin: every endpoint delegates to
-:mod:`app.services.git_sync_commit`. Errors raised by the service
+:mod:`app.services.git.sync_commit`. Errors raised by the service
 map to HTTP status codes here.
 """
 
@@ -21,21 +21,21 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import GitSyncMapping
-from app.services import git_credentials
-from app.services.git_sync_commit import (
+from app.services.git import credentials as git_credentials
+from app.services.git.sync_commit import (
     CloneMissingError,
     MappingNotFoundError,
     NothingToCommitError,
     PushFailedError,
     commit_to_repo,
 )
-from app.services.git_sync_diff import (
+from app.services.git.sync_diff import (
     RemoteUnreachableError,
     apply_resolutions,
     diff_book,
     fetch_remote_updates,
 )
-from app.services.git_sync_unified import book_subsystems, unified_commit
+from app.services.git.sync_unified import book_subsystems, unified_commit
 
 logger = logging.getLogger(__name__)
 
@@ -431,7 +431,7 @@ def get_credential_status(book_id: str) -> CredentialStatus:
 def put_credential(book_id: str, payload: CredentialPayload) -> CredentialStatus:
     """Store (or clear) the per-book PAT.
 
-    The same per-book PAT slot is shared with :mod:`app.services.git_backup`,
+    The same per-book PAT slot is shared with :mod:`app.services.git.backup`,
     so a token set here also unblocks the core git push/pull, and vice
     versa. Empty ``pat`` deletes the stored credential.
     """

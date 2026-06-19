@@ -1,6 +1,6 @@
 """FastAPI router for Phase 1 git-based backup.
 
-Thin layer on top of :mod:`app.services.git_backup`. All business logic
+Thin layer on top of :mod:`app.services.git.backup`. All business logic
 lives in the service; this module only validates input, maps service
 exceptions to HTTP status codes, and shapes responses.
 """
@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.models import Book
-from app.services import git_backup
+from app.services.git import backup as git_backup
 
 router = APIRouter(
     prefix="/books/{book_id}/git",

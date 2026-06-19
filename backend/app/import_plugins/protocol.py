@@ -218,7 +218,7 @@ class ImportPlugin(Protocol):
         - ``git_adoption``: ``None`` | ``"start_fresh"`` |
           ``"adopt_with_remote"`` | ``"adopt_without_remote"``. When
           ``detected.git_repo`` is present, the handler calls
-          :mod:`app.services.git_import_adopter` accordingly.
+          :mod:`app.services.git.import_adopter` accordingly.
           Handlers without git-adoption support can ignore this.
         """
         ...

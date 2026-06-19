@@ -3,7 +3,7 @@
 Generates an Ed25519 keypair in OpenSSH format and stores it under
 ``config/ssh/``. The public key is meant to be copy-pasted into
 GitHub/GitLab/Gitea by the user; the private key stays on disk with
-permissions 0600 and is consumed by :mod:`app.services.git_backup`
+permissions 0600 and is consumed by :mod:`app.services.git.backup`
 push/pull through the ``GIT_SSH_COMMAND`` env var.
 
 One keypair per install. Phase 3 out of scope: per-book keys, multiple

@@ -15,8 +15,8 @@ Design choices:
   Section 6.2.
 - **Push uses the per-book PAT or SSH key when available.** Both
   PAT (HTTPS) and SSH key (``ssh://`` / ``git@host:path``) are
-  shared per-book with :mod:`app.services.git_backup` via
-  :mod:`app.services.git_credentials` (PGS-02-FU-01). When neither
+  shared per-book with :mod:`app.services.git.backup` via
+  :mod:`app.services.git.credentials` (PGS-02-FU-01). When neither
   is configured the push falls back to ambient git credentials
   (system credential helper / ssh-agent). Failures raise
   :class:`PushFailedError` with a stable ``.reason`` slug
@@ -38,7 +38,7 @@ from pathlib import Path
 from sqlalchemy.orm import Session
 
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_credentials
+from app.services.git import credentials as git_credentials
 
 logger = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ def commit_to_repo(
     credential helper for HTTPS). PAT injection through the
     Bibliogon credential store is **not** wired in PGS-02
     Session 2 - that is the same shared-credential follow-up
-    work that ``app.services.git_backup`` does for core git.
+    work that ``app.services.git.backup`` does for core git.
 
     Returns ``{"commit_sha", "branch", "pushed"}``.
     Raises subclasses of :class:`GitSyncCommitError` on failure.
@@ -259,7 +259,7 @@ def _push(clone_path: Path, *, branch: str, book_id: str) -> None:
     """Push ``branch`` to ``origin``.
 
     Uses the per-book PAT (HTTPS) or SSH key when configured via
-    :mod:`app.services.git_credentials`, else falls back to the user's
+    :mod:`app.services.git.credentials`, else falls back to the user's
     ambient git credentials. Raises :class:`PushFailedError` with a
     stable ``.reason`` slug so the router can map it to a useful HTTP
     status without parsing git stderr in the UI.

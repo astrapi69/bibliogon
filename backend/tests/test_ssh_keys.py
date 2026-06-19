@@ -17,7 +17,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import git_credentials, ssh_keys
+from app.services import ssh_keys
+from app.services.git import credentials as git_credentials
 
 client = TestClient(app)
 

@@ -20,8 +20,8 @@ from sqlalchemy.orm import Session
 
 from app.models import Book
 from app.paths import get_upload_dir
-from app.services import git_credentials
-from app.services.git_book_serializer import (
+from app.services.git import credentials as git_credentials
+from app.services.git.book_serializer import (
     _slugify,
     _write_book_state,
     _write_gitignore,
