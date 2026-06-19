@@ -142,7 +142,7 @@ describe("AiAssistantSettings — connection test (offline)", () => {
         expect(vi.mocked(notify.error).mock.calls[0][0]).toBe("API-Schlüssel ungültig");
     });
 
-    it("OpenAI CORS failure: honest info message, NOT a 'failed' error toast", async () => {
+    it("genuine transport/CORS failure: honest info message, NOT a 'failed' error toast", async () => {
         aiChatMock.mockRejectedValue(new AiClientError("Failed to fetch", { isNetwork: true }));
         renderSettings({ active_provider: "openai", keys: { openai: "o-key" } });
         fireEvent.click(screen.getByTestId("ai-test"));
@@ -151,9 +151,9 @@ describe("AiAssistantSettings — connection test (offline)", () => {
         expect(notify.error).not.toHaveBeenCalled();
     });
 
-    it("shows the browser-test advisory note for OpenAI but not for Gemini", () => {
+    it("no longer shows the browser-test advisory note for OpenAI (browser-capable, #467)", () => {
         renderSettings({ active_provider: "openai", keys: { openai: "o-key" } });
-        expect(screen.getByTestId("ai-test-browser-note")).toBeInTheDocument();
+        expect(screen.queryByTestId("ai-test-browser-note")).toBeNull();
     });
 
     it("hides the advisory note for a CORS-capable provider (Gemini)", () => {
@@ -216,12 +216,12 @@ describe("AiAssistantSettings — configured providers table", () => {
         expect(screen.getByTestId("ai-provider-add-openai")).toBeInTheDocument();
     });
 
-    it("PWA mode: a CORS-blocked provider with a key shows 'Nur Desktop'", () => {
+    it("PWA mode: OpenAI with a key shows 'Aktiv' (browser-capable, #467)", () => {
         renderSettings({
             active_provider: "google",
             keys: { google: "k", openai: "sk-openai-12345678" },
         });
-        expect(screen.getByTestId("ai-provider-status-openai").textContent).toBe("Nur Desktop");
+        expect(screen.getByTestId("ai-provider-status-openai").textContent).toBe("Aktiv");
     });
 
     it("migrates + shows a legacy single-key config in the table", () => {
@@ -358,11 +358,10 @@ describe("AiAssistantSettings — per-row provider test (#462)", () => {
         expect(screen.getByTestId("ai-provider-add-openai")).toBeInTheDocument();
     });
 
-    it("OpenAI in PWA mode: Test button disabled with a desktop-only tooltip", () => {
+    it("OpenAI in PWA mode: Test button enabled (browser-capable, #467)", () => {
         renderSettings({ active_provider: "google", keys: { google: "k", openai: "o-key" } });
         const btn = screen.getByTestId("ai-provider-test-openai");
-        expect(btn).toBeDisabled();
-        expect(btn.getAttribute("title")).toMatch(/Desktop/);
+        expect(btn).not.toBeDisabled();
     });
 
     it("shows a spinner ('Teste...') while the test is in flight", async () => {

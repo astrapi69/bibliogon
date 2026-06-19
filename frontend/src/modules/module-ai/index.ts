@@ -9,13 +9,14 @@
  * (`api.ai.generate`) route through {@link aiComplete} so a single dispatcher
  * governs the offline/online split.
  *
- * CORS reality: only providers whose API serves browser CORS headers can run
- * offline — Google (Gemini, OpenAI-compat endpoint), Anthropic (via its
- * `anthropic-dangerous-direct-browser-access` opt-in header), a local LM Studio,
- * and a user-controlled `custom` endpoint. OpenAI and Mistral do not, so AI
- * features resolve to *disabled with an honest reason* for them in Dexie mode
- * (feature-strategy, policy #78). {@link providerSupportsBrowserTest} is the
- * single source of truth for that capability.
+ * CORS reality: every shipped provider serves browser CORS headers and runs
+ * offline — Google (Gemini, OpenAI-compat endpoint), OpenAI, Mistral, Anthropic
+ * (via its `anthropic-dangerous-direct-browser-access` opt-in header), a local
+ * LM Studio, and a user-controlled `custom` endpoint (verified 2026-06-19; the
+ * earlier OpenAI / Mistral gate from #450 was a misread 403, now removed). So AI
+ * features are active for every provider in Dexie mode given a key
+ * (feature-strategy, policy #78). {@link providerSupportsBrowserTest} stays the
+ * single source of truth for that capability (currently true for all).
  *
  * Implementations live in `src/ai/*` (app-coupled via the storage seam); this
  * barrel is the stable plugin-parity seam under `modules/`.

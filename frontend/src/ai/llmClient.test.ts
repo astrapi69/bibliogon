@@ -108,6 +108,32 @@ describe("aiChat — OpenAI-compatible", () => {
     });
 });
 
+describe("aiChat — Mistral (OpenAI-compatible, browser-direct, #467)", () => {
+    it("POSTs /chat/completions browser-direct + returns the message content", async () => {
+        const fetchMock = vi.fn().mockResolvedValue(
+            okJson({
+                model: "mistral-large-latest",
+                choices: [{ message: { content: "Bonjour!" } }],
+                usage: { total_tokens: 9 },
+            }),
+        );
+        global.fetch = fetchMock;
+        const result = await aiChat(
+            {
+                provider: "mistral",
+                base_url: "https://api.mistral.ai/v1",
+                model: "mistral-large-latest",
+                api_key: "m-key",
+            },
+            [{ role: "user", content: "hi" }],
+        );
+        expect(result.content).toBe("Bonjour!");
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://api.mistral.ai/v1/chat/completions");
+        expect((init.headers as Record<string, string>).Authorization).toBe("Bearer m-key");
+    });
+});
+
 describe("aiChat — Anthropic", () => {
     it("POSTs /messages with x-api-key + browser-access header, splits out system", async () => {
         const fetchMock = vi.fn().mockResolvedValue(
@@ -258,6 +284,24 @@ describe("listModels", () => {
         expect((init.headers as Record<string, string>).Authorization).toBe("Bearer sk-x");
     });
 
+    it("GETs Mistral /models browser-direct as the connection test (#467)", async () => {
+        const fetchMock = vi
+            .fn()
+            .mockResolvedValue(okJson({ data: [{ id: "mistral-large-latest" }] }));
+        global.fetch = fetchMock;
+        const ids = await listModels({
+            provider: "mistral",
+            base_url: "https://api.mistral.ai/v1",
+            model: "",
+            api_key: "m-key",
+        });
+        expect(ids).toEqual(["mistral-large-latest"]);
+        const [url, init] = fetchMock.mock.calls[0];
+        expect(url).toBe("https://api.mistral.ai/v1/models");
+        expect(init.method).toBe("GET");
+        expect((init.headers as Record<string, string>).Authorization).toBe("Bearer m-key");
+    });
+
     it("uses the Anthropic auth + browser-access headers", async () => {
         const fetchMock = vi
             .fn()
@@ -303,23 +347,32 @@ describe("listModels", () => {
 });
 
 describe("providerSupportsBrowserTest", () => {
+    // #467: the CORS-blocked set is empty (mirrors adaptive-learner) — every
+    // provider is browser-capable. OpenAI/Mistral are no longer gated; the
+    // earlier #450 exclusion was a misread account-specific 403.
     it.each([
         ["google", true],
         ["anthropic", true],
         ["lmstudio", true],
         ["custom", true],
-        ["openai", false],
-        ["mistral", false],
-        ["unknown-provider", false],
+        ["openai", true],
+        ["mistral", true],
+        ["unknown-provider", true],
     ] as const)("%s -> %s", (provider, supported) => {
         expect(providerSupportsBrowserTest(provider)).toBe(supported);
+    });
+
+    it("treats OpenAI and Mistral as browser-capable (verified browser-direct)", () => {
+        expect(providerSupportsBrowserTest("openai")).toBe(true);
+        expect(providerSupportsBrowserTest("mistral")).toBe(true);
     });
 });
 
 describe("isBrowserUnsupportedTestResult (#456)", () => {
-    it("treats ANY failure as browser-unsupported when the provider isn't browser-capable", () => {
-        // OpenAI/Mistral offline: browserTestUnreliable=true. A 403 (OpenAI's
-        // browser block) must NOT read as a bad key — it's a browser limitation.
+    it("treats ANY failure as browser-unsupported when the caller marks the provider unreliable", () => {
+        // When browserTestUnreliable=true (a hypothetical future CORS-locked
+        // provider; no shipped provider hits this now), a 403/401 must NOT read
+        // as a bad key — it's a browser limitation.
         const forbidden = new AiClientError("x", { status: 403, detail: "forbidden" });
         expect(isBrowserUnsupportedTestResult(forbidden, true)).toBe(true);
         const authErr = new AiClientError("x", { status: 401, detail: "bad key" });
