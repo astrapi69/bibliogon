@@ -26,6 +26,7 @@ import {
     providerSupportsBrowserTest,
 } from "../ai/llmClient";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../utils/aiProviders";
+import { buildAiPatch, type AiSettings } from "../utils/aiConfig";
 
 const DISMISSED_KEY = "bibliogon-ai-setup-dismissed";
 
@@ -79,21 +80,22 @@ export default function AiSetupWizard({ open, onClose, secretsManagedExternally 
     };
 
     const buildAiPayload = (): Record<string, unknown> => {
-        const ai: Record<string, unknown> = {
+        // First-run setup writes the canonical shape (active_provider + keys +
+        // model_overrides) plus the derived top-level mirror via buildAiPatch.
+        // Skip the key when managed externally (the backend would strip it).
+        const settings: AiSettings = {
+            active_provider: provider,
+            keys: !secretsManagedExternally && apiKey.trim() ? { [provider]: apiKey } : {},
+            model_overrides: model ? { [provider]: model } : {},
+            base_url_overrides:
+                baseUrl && baseUrl !== getProviderPreset(provider)?.base_url
+                    ? { [provider]: baseUrl }
+                    : {},
             enabled: true,
-            provider,
-            base_url: baseUrl,
-            model,
             temperature: 0.7,
             max_tokens: 2048,
         };
-        // Skip api_key when managed externally; backend would strip it
-        // anyway with a defensive WARNING log, but stripping client-side
-        // keeps logs quiet and avoids the round-trip.
-        if (!secretsManagedExternally) {
-            ai.api_key = apiKey;
-        }
-        return ai;
+        return buildAiPatch(settings).ai;
     };
 
     const handleTest = async () => {

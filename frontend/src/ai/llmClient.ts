@@ -15,6 +15,7 @@
  */
 
 import { getStorage } from "../storage";
+import { normalizeAiConfig, resolveActiveConfig } from "../utils/aiConfig";
 
 export interface AiConfig {
     provider: string;
@@ -143,16 +144,18 @@ export function isBrowserUnsupportedTestResult(
 
 /** Read the AI config from the settings seam (offline: IndexedDB, where the
  *  api_key is present; online the backend strips it, but online uses the
- *  backend AI path, not this client). */
+ *  backend AI path, not this client). Resolves the active provider from the
+ *  canonical `active_provider` + `keys` shape (any legacy/intermediate shape is
+ *  normalized first). */
 export async function getAiConfig(): Promise<AiConfig> {
     const app = await getStorage().settings.getApp();
-    const ai = (app.ai ?? {}) as Record<string, unknown>;
-    const provider = (ai.provider as string) || "lmstudio";
+    const settings = normalizeAiConfig(app.ai as Record<string, unknown> | undefined);
+    const active = resolveActiveConfig(settings);
     return {
-        provider,
-        base_url: (ai.base_url as string) || PROVIDER_BASE_URL[provider] || "",
-        model: (ai.model as string) || "",
-        api_key: (ai.api_key as string) || "",
+        provider: active.provider,
+        base_url: active.base_url || PROVIDER_BASE_URL[active.provider] || "",
+        model: active.model,
+        api_key: active.api_key,
     };
 }
 

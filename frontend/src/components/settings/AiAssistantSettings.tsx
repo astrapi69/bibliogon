@@ -15,17 +15,20 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
 import {
-    effectiveProviderKeys,
+    buildAiPatch,
     keyRequiringProviderIds,
-    maskKeyPreview,
-    providerStatus,
-    type AiProviderKeysMap,
-} from "../../utils/aiProviderKeys";
+    maskSecret,
+    modelForProvider,
+    normalizeAiConfig,
+    providerHasKey,
+    providerKeyStatus,
+    type AiSettings,
+} from "../../utils/aiConfig";
 import { notify } from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";
 import { useDialog } from "../AppDialog";
-import { AiProviderKeysTable, type AiProviderKeyRow } from "./AiProviderKeysTable";
+import { ConfiguredProvidersTable, type ProviderRow } from "./ConfiguredProvidersTable";
 import { HelpText } from "./HelpText";
 import { SectionHeader } from "./SectionHeader";
 import { Toggle } from "./Toggle";
@@ -44,77 +47,76 @@ export function AiAssistantSettings({
     const offline = mode === "dexie";
     const aiConfig = (config.ai || {}) as Record<string, unknown>;
 
-    const [aiEnabled, setAiEnabled] = useState(Boolean(aiConfig.enabled));
-    const [aiProvider, setAiProvider] = useState((aiConfig.provider as string) || "lmstudio");
-    const [aiBaseUrl, setAiBaseUrl] = useState((aiConfig.base_url as string) || "");
-    const [aiModel, setAiModel] = useState((aiConfig.model as string) || "");
-    const [aiTemp, setAiTemp] = useState(String(aiConfig.temperature ?? "0.7"));
-    const [aiMaxTokens, setAiMaxTokens] = useState(String(aiConfig.max_tokens ?? "4096"));
-    const [aiApiKey, setAiApiKey] = useState((aiConfig.api_key as string) || "");
-    const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+    // Canonical model derived from whatever shape the stored config has
+    // (legacy single-key, #459 provider_keys, or active_provider+keys). Drives
+    // the overview table + the active-provider pointer.
+    const settings = normalizeAiConfig(aiConfig);
 
-    useEffect(() => {
-        setAiEnabled(Boolean(aiConfig.enabled));
-        setAiProvider((aiConfig.provider as string) || "lmstudio");
-        setAiBaseUrl((aiConfig.base_url as string) || "");
-        setAiModel((aiConfig.model as string) || "");
-        setAiTemp(String(aiConfig.temperature ?? "0.7"));
-        setAiMaxTokens(String(aiConfig.max_tokens ?? "4096"));
-        setAiApiKey((aiConfig.api_key as string) || "");
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [config]);
-
-    // True when secrets are managed via ~/.config/bibliogon/secrets.yaml
-    // or BIBLIOGON_AI_API_KEY env-var. Backend strips api_key from
-    // PATCH bodies in this case as defense-in-depth; we drop it here
-    // so the frontend never sends it in the first place.
+    // True when secrets are managed via ~/.config/bibliogon/secrets.yaml or
+    // BIBLIOGON_AI_API_KEY. The backend strips api_key from PATCH bodies then;
+    // we keep the table read-only and never send keys.
     const secretsExternal = Boolean(
         (config as Record<string, unknown>)._secrets_managed_externally,
     );
 
+    // Form state edits ONE provider at a time. `aiProvider` is the provider
+    // currently loaded into the form (defaults to the active provider); the
+    // table's radio is the separate active_provider pointer.
+    const [aiEnabled, setAiEnabled] = useState(settings.enabled);
+    const [aiProvider, setAiProvider] = useState(settings.active_provider);
+    const [aiBaseUrl, setAiBaseUrl] = useState("");
+    const [aiModel, setAiModel] = useState("");
+    const [aiApiKey, setAiApiKey] = useState("");
+    const [aiTemp, setAiTemp] = useState(String(settings.temperature));
+    const [aiMaxTokens, setAiMaxTokens] = useState(String(settings.max_tokens));
+    const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
+
     const { confirm } = useDialog();
+
+    /** Load a provider's stored credentials (or preset defaults) into the form. */
+    const fillForm = (s: AiSettings, id: string) => {
+        const targetPreset = getProviderPreset(id);
+        setAiBaseUrl(s.base_url_overrides[id] || targetPreset?.base_url || "");
+        setAiModel(s.model_overrides[id] || targetPreset?.default_model || "");
+        setAiApiKey(s.keys[id] || "");
+    };
+
+    useEffect(() => {
+        const s = normalizeAiConfig((config.ai || {}) as Record<string, unknown>);
+        setAiEnabled(s.enabled);
+        setAiProvider(s.active_provider);
+        setAiTemp(String(s.temperature));
+        setAiMaxTokens(String(s.max_tokens));
+        fillForm(s, s.active_provider);
+    }, [config]);
 
     const preset = getProviderPreset(aiProvider);
     const requiresKey = preset?.requires_api_key ?? false;
     const missingKey = requiresKey && !aiApiKey.trim();
 
-    // Side-store of saved per-provider credentials, powering the overview
-    // table. The top-level ai.* fields stay the single active config; the
-    // active provider's legacy key is folded in for backward-compat.
-    const providerKeys = effectiveProviderKeys(aiConfig);
+    /** Switch which provider the form edits (table edit/add + provider dropdown). */
+    const loadProvider = (id: string) => {
+        setAiProvider(id);
+        fillForm(settings, id);
+    };
 
-    const providerRows: AiProviderKeyRow[] = keyRequiringProviderIds(AI_PROVIDER_IDS).map((id) => {
-        const entry = providerKeys[id];
+    const providerRows: ProviderRow[] = keyRequiringProviderIds(AI_PROVIDER_IDS).map((id) => {
+        const status = providerKeyStatus(id, settings, {
+            offline,
+            supportsBrowserTest: providerSupportsBrowserTest,
+            secretsExternal,
+        });
+        const hasKey = providerHasKey(settings, id);
         return {
             id,
             label: t(`ui.settings.ai_provider_${id}`, AI_PROVIDER_PRESETS[id].label),
-            model: entry?.model || "",
-            status: providerStatus(id, providerKeys, {
-                offline,
-                supportsBrowserTest: providerSupportsBrowserTest,
-            }),
-            keyPreview: maskKeyPreview(entry?.api_key),
-            isActive: id === aiProvider,
+            model: hasKey ? modelForProvider(settings, id) : "",
+            status,
+            keyPreview: maskSecret(settings.keys[id]),
+            isActive: id === settings.active_provider,
+            canActivate: hasKey,
         };
     });
-
-    /** Load a provider into the form, preferring its saved credentials. */
-    const loadProvider = (id: string) => {
-        setAiProvider(id);
-        const targetPreset = getProviderPreset(id);
-        const saved = providerKeys[id];
-        if (saved && (saved.api_key || saved.model || saved.base_url)) {
-            setAiBaseUrl(saved.base_url || targetPreset?.base_url || "");
-            setAiModel(saved.model || targetPreset?.default_model || "");
-            setAiApiKey(saved.api_key || "");
-        } else if (targetPreset && id !== "custom") {
-            setAiBaseUrl(targetPreset.base_url);
-            setAiModel(targetPreset.default_model);
-            setAiApiKey("");
-        } else {
-            setAiApiKey("");
-        }
-    };
 
     const {
         models: aiModels,
@@ -126,9 +128,6 @@ export function AiAssistantSettings({
         apiKey: aiApiKey,
         enabled: aiEnabled,
     });
-    // Soft advisory only: some providers (OpenAI / Mistral) may not serve CORS
-    // headers, so a browser-direct test can fail on the transport layer. We do
-    // NOT disable the test (the runtime result is authoritative); we just warn.
     const browserTestUnreliable = offline && !providerSupportsBrowserTest(aiProvider);
     const testDisabled = saving || aiTestStatus === "testing" || !aiBaseUrl || missingKey;
 
@@ -158,36 +157,39 @@ export function AiAssistantSettings({
         }
     };
 
-    const buildAiPayload = (keys: AiProviderKeysMap): Record<string, unknown> => {
-        const aiPayload: Record<string, unknown> = {
+    /** Settings reflecting the current form edit for `aiProvider`, which also
+     *  becomes the active provider on save. */
+    const buildEditedSettings = (): AiSettings => {
+        const next: AiSettings = {
+            ...settings,
+            keys: { ...settings.keys },
+            model_overrides: { ...settings.model_overrides },
+            base_url_overrides: { ...settings.base_url_overrides },
             enabled: aiEnabled,
-            provider: aiProvider,
-            base_url: aiBaseUrl,
-            model: aiModel,
             temperature: parseFloat(aiTemp) || 0.7,
             max_tokens: parseInt(aiMaxTokens) || 4096,
+            active_provider: aiProvider,
         };
-        if (!secretsExternal) {
-            aiPayload.api_key = aiApiKey;
-            aiPayload.provider_keys = keys;
+        if (requiresKey) {
+            if (aiApiKey.trim()) next.keys[aiProvider] = aiApiKey;
+            else delete next.keys[aiProvider];
         }
-        return aiPayload;
+        if (aiModel) next.model_overrides[aiProvider] = aiModel;
+        else delete next.model_overrides[aiProvider];
+        if (aiBaseUrl && aiBaseUrl !== getProviderPreset(aiProvider)?.base_url) {
+            next.base_url_overrides[aiProvider] = aiBaseUrl;
+        } else {
+            delete next.base_url_overrides[aiProvider];
+        }
+        return next;
     };
 
-    const buildSaveData = () => {
-        const keys = { ...providerKeys };
-        if (requiresKey) {
-            if (aiApiKey.trim()) {
-                keys[aiProvider] = {
-                    api_key: aiApiKey,
-                    model: aiModel,
-                    base_url: aiBaseUrl,
-                };
-            } else {
-                delete keys[aiProvider];
-            }
-        }
-        return { ai: buildAiPayload(keys) };
+    const buildSaveData = () => buildAiPatch(buildEditedSettings());
+
+    /** Move the active_provider pointer; keys stay (the keystone). */
+    const handleActivate = async (id: string) => {
+        if (id === settings.active_provider) return;
+        await onSave(buildAiPatch({ ...settings, active_provider: id }));
     };
 
     const handleDeleteProvider = async (id: string) => {
@@ -201,15 +203,17 @@ export function AiAssistantSettings({
             "danger",
         );
         if (!ok) return;
-        const keys = { ...providerKeys };
-        delete keys[id];
-        const payload = buildAiPayload(keys);
-        const clearActive = id === aiProvider;
-        if (!secretsExternal && clearActive) {
-            payload.api_key = "";
-        }
-        await onSave({ ai: payload });
-        if (clearActive) setAiApiKey("");
+        const next: AiSettings = {
+            ...settings,
+            keys: { ...settings.keys },
+            model_overrides: { ...settings.model_overrides },
+            base_url_overrides: { ...settings.base_url_overrides },
+        };
+        delete next.keys[id];
+        delete next.model_overrides[id];
+        delete next.base_url_overrides[id];
+        await onSave(buildAiPatch(next));
+        if (id === aiProvider) setAiApiKey("");
         notify.success(t("ui.settings.ai_delete_key_done", "Schlüssel entfernt"));
     };
 
@@ -238,27 +242,29 @@ export function AiAssistantSettings({
                         />
                     </div>
 
-                    {!secretsExternal && (
-                        <div className="field" data-testid="ai-provider-keys-section">
-                            <label className="label">
-                                {t(
-                                    "ui.settings.ai_configured_providers",
-                                    "Konfigurierte KI-Anbieter",
-                                )}
-                            </label>
-                            <AiProviderKeysTable
-                                rows={providerRows}
-                                onEdit={loadProvider}
-                                onDelete={handleDeleteProvider}
-                            />
-                            <HelpText>
-                                {t(
-                                    "ui.settings.ai_configured_providers_hint",
-                                    "Übersicht der gespeicherten Schlüssel. Zum Ändern oder Hinzufügen einen Anbieter auswählen und unten den Schlüssel eingeben.",
-                                )}
-                            </HelpText>
-                        </div>
-                    )}
+                    <div className="field" data-testid="ai-provider-keys-section">
+                        <label className="label">
+                            {t("ui.settings.ai_configured_providers", "Konfigurierte KI-Anbieter")}
+                        </label>
+                        <ConfiguredProvidersTable
+                            rows={providerRows}
+                            onActivate={handleActivate}
+                            onEdit={loadProvider}
+                            onDelete={handleDeleteProvider}
+                            readOnly={secretsExternal}
+                        />
+                        <HelpText>
+                            {secretsExternal
+                                ? t(
+                                      "ui.settings.ai_api_key_external_note",
+                                      "API-Schlüssel wird aus externer Konfiguration gelesen (~/.config/bibliogon/secrets.yaml oder Umgebungsvariable BIBLIOGON_AI_API_KEY). Editiere die Datei direkt oder setze die Umgebungsvariable, um den Schlüssel zu ändern.",
+                                  )
+                                : t(
+                                      "ui.settings.ai_configured_providers_hint",
+                                      "Übersicht der gespeicherten Schlüssel. Der Radiobutton wählt den aktiven Anbieter; zum Ändern oder Hinzufügen einen Anbieter unten konfigurieren.",
+                                  )}
+                        </HelpText>
+                    </div>
 
                     <div
                         style={{
@@ -462,11 +468,8 @@ export function AiAssistantSettings({
                                         if (offline) {
                                             // Offline: ping the provider directly from the browser
                                             // with the in-memory form values. Do NOT save first -
-                                            // the offline test reads these values directly, and a
-                                            // save-before-test would persist a half-edited config
-                                            // (e.g. an empty key right after switching providers
-                                            // clears the field) over a working saved one. The user
-                                            // persists explicitly via Speichern.
+                                            // a save-before-test would persist a half-edited config
+                                            // over a working saved one. The user persists via Save.
                                             try {
                                                 await aiChat(
                                                     {
@@ -492,15 +495,6 @@ export function AiAssistantSettings({
                                                     ),
                                                 );
                                             } catch (err) {
-                                                // Classify honestly. A provider that cannot be
-                                                // reached browser-direct at all (OpenAI / Mistral:
-                                                // CORS/403 by design) gets the honest "use the
-                                                // desktop app or choose Gemini" hint, never a
-                                                // wrong-key message. A genuine transport/CORS
-                                                // failure is also a browser limitation; a real
-                                                // HTTP error on a browser-capable provider (401
-                                                // bad key, 404 bad model) keeps its specific
-                                                // message.
                                                 if (
                                                     isBrowserUnsupportedTestResult(
                                                         err,
