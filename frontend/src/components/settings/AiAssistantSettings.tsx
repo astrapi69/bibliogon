@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Save, Eye, EyeOff } from "lucide-react";
+import { Save } from "lucide-react";
+import { TokenInput } from "../../lib/components/TokenInput";
 import { api } from "../../api/client";
 import {
     aiChat,
@@ -38,7 +39,6 @@ export function AiAssistantSettings({
     const [aiTemp, setAiTemp] = useState(String(aiConfig.temperature ?? "0.7"));
     const [aiMaxTokens, setAiMaxTokens] = useState(String(aiConfig.max_tokens ?? "4096"));
     const [aiApiKey, setAiApiKey] = useState((aiConfig.api_key as string) || "");
-    const [showAiKey, setShowAiKey] = useState(false);
     const [aiTestStatus, setAiTestStatus] = useState<"idle" | "testing" | "ok" | "fail">("idle");
 
     useEffect(() => {
@@ -271,40 +271,18 @@ export function AiAssistantSettings({
                                 <label className="label">
                                     {t("ui.settings.ai_api_key", "API Key")}
                                 </label>
-                                <div style={{ display: "flex", gap: 8 }}>
-                                    <input
-                                        className="input"
-                                        type={showAiKey ? "text" : "password"}
-                                        data-testid="ai-api-key-input"
-                                        value={aiApiKey}
-                                        onChange={(e) => setAiApiKey(e.target.value)}
-                                        placeholder={
-                                            aiProvider === "lmstudio"
-                                                ? t(
-                                                      "ui.settings.ai_key_not_required",
-                                                      "Nicht erforderlich",
-                                                  )
-                                                : "sk-..."
-                                        }
-                                        style={{
-                                            flex: 1,
-                                            fontFamily: "var(--font-mono)",
-                                            fontSize: "0.8125rem",
-                                        }}
-                                    />
-                                    <button
-                                        className="btn btn-ghost btn-sm"
-                                        onClick={() => setShowAiKey(!showAiKey)}
-                                        data-testid="ai-api-key-toggle"
-                                        title={
-                                            showAiKey
-                                                ? t("ui.common.hide", "Ausblenden")
-                                                : t("ui.common.show", "Anzeigen")
-                                        }
-                                    >
-                                        {showAiKey ? <EyeOff size={14} /> : <Eye size={14} />}
-                                    </button>
-                                </div>
+                                <TokenInput
+                                    value={aiApiKey}
+                                    onChange={setAiApiKey}
+                                    testId="ai-api-key-input"
+                                    placeholder={
+                                        aiProvider === "lmstudio"
+                                            ? t("ui.settings.ai_key_not_required", "Nicht erforderlich")
+                                            : "sk-..."
+                                    }
+                                    showLabel={t("ui.common.show", "Anzeigen")}
+                                    hideLabel={t("ui.common.hide", "Ausblenden")}
+                                />
                                 <HelpText>
                                     {t(
                                         "ui.settings.ai_key_hint",

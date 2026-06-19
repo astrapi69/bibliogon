@@ -1,6 +1,7 @@
 import { Upload, Download, Unplug, Check } from "lucide-react";
 import { GitRemoteConfig as GitRemoteConfigType } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
+import { TokenInput } from "../../lib/components/TokenInput";
 
 export function GitRemoteConfig({
     remote,
@@ -150,14 +151,13 @@ export function GitRemoteConfig({
                                 </small>
                             )}
                         </label>
-                        <input
-                            className="input"
-                            type="password"
+                        <TokenInput
                             value={remotePatDraft}
-                            onChange={(e) => onPatChange(e.target.value)}
+                            onChange={onPatChange}
                             placeholder="ghp_..."
-                            style={{ fontFamily: "var(--font-mono)" }}
-                            data-testid="git-remote-pat-input"
+                            testId="git-remote-pat-input"
+                            showLabel={t("ui.common.show", "Anzeigen")}
+                            hideLabel={t("ui.common.hide", "Ausblenden")}
                         />
                         <small
                             style={{

@@ -16,6 +16,7 @@ import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
+import { TokenInput } from "../lib/components/TokenInput";
 import { useGoBack } from "../hooks/useGoBack";
 
 /**
@@ -459,19 +460,16 @@ function CredentialsSection({
             </div>
             {open && (
                 <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                    <input
-                        className="input"
-                        data-testid="git-sync-credential-input"
-                        type="password"
+                    <TokenInput
+                        testId="git-sync-credential-input"
                         value={pat}
-                        onChange={(e) => setPat(e.target.value)}
+                        onChange={setPat}
                         placeholder={t(
                             "ui.git_sync.credential_input_placeholder",
                             "Personal Access Token",
                         )}
-                        autoComplete="off"
-                        spellCheck={false}
-                        style={{ flex: 1, minWidth: 0 }}
+                        showLabel={t("ui.common.show", "Anzeigen")}
+                        hideLabel={t("ui.common.hide", "Ausblenden")}
                     />
                     <button
                         type="button"
