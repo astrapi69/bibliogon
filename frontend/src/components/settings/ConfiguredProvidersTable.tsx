@@ -1,4 +1,5 @@
-import { KeyRound, Pencil, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { KeyRound, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
 import type { ProviderKeyStatus } from "../../utils/aiConfig";
 
@@ -10,28 +11,62 @@ export interface ProviderRow {
     keyPreview: string;
     isActive: boolean;
     canActivate: boolean;
+    /** Whether the per-row connection test can run (has a key + reachable). */
+    canTest: boolean;
+    /** Tooltip shown when the test is blocked despite a key (CORS / desktop-only). */
+    testBlockedReason?: string;
 }
+
+/** Outcome of a per-row connection test, returned by the parent's onTest. */
+export interface ProviderTestOutcome {
+    ok: boolean;
+    message: string;
+}
+
+type RowTestState = { status: "idle" | "testing" | "ok" | "fail"; message?: string };
 
 /**
  * Overview of the configured AI providers. One row per key-requiring provider
- * with its model, a masked key preview, a status, and edit / delete / add
- * actions. The radio in the first column is the `active_provider` pointer —
- * selecting it switches which provider AI calls use (keys are untouched).
+ * with its model, a masked key preview, a status, a per-row connection test,
+ * and edit / delete / add actions. The radio in the first column is the
+ * `active_provider` pointer — selecting it switches which provider AI calls use
+ * (keys are untouched).
  */
 export function ConfiguredProvidersTable({
     rows,
     onActivate,
     onEdit,
     onDelete,
+    onTest,
     readOnly = false,
 }: {
     rows: ProviderRow[];
     onActivate: (providerId: string) => void;
     onEdit: (providerId: string) => void;
     onDelete: (providerId: string) => void;
+    onTest: (providerId: string) => Promise<ProviderTestOutcome>;
     readOnly?: boolean;
 }) {
     const { t } = useI18n();
+    const [testState, setTestState] = useState<Record<string, RowTestState>>({});
+
+    const runTest = async (id: string) => {
+        setTestState((s) => ({ ...s, [id]: { status: "testing" } }));
+        let outcome: ProviderTestOutcome;
+        try {
+            outcome = await onTest(id);
+        } catch {
+            outcome = { ok: false, message: t("ui.settings.ai_test_network", "Netzwerkfehler") };
+        }
+        setTestState((s) => ({
+            ...s,
+            [id]: { status: outcome.ok ? "ok" : "fail", message: outcome.message },
+        }));
+        // Revert to the normal status after 10s.
+        setTimeout(() => {
+            setTestState((s) => ({ ...s, [id]: { status: "idle" } }));
+        }, 10000);
+    };
 
     const statusLabel: Record<ProviderKeyStatus, string> = {
         active: t("ui.settings.ai_status_active", "Aktiv"),
@@ -74,6 +109,7 @@ export function ConfiguredProvidersTable({
                 <tbody>
                     {rows.map((row) => {
                         const configured = row.status !== "empty";
+                        const test = testState[row.id] ?? { status: "idle" };
                         return (
                             <tr
                                 key={row.id}
@@ -119,17 +155,57 @@ export function ConfiguredProvidersTable({
                                     {row.keyPreview || "-"}
                                 </td>
                                 <td className="py-2 pr-3">
-                                    <span
-                                        className={statusClass[row.status]}
-                                        data-testid={`ai-provider-status-${row.id}`}
-                                    >
-                                        {statusLabel[row.status]}
-                                    </span>
+                                    {test.status === "ok" || test.status === "fail" ? (
+                                        <span
+                                            className={
+                                                test.status === "ok"
+                                                    ? "text-success"
+                                                    : "text-destructive"
+                                            }
+                                            data-testid={`ai-provider-test-result-${row.id}`}
+                                        >
+                                            {test.message}
+                                        </span>
+                                    ) : (
+                                        <span
+                                            className={statusClass[row.status]}
+                                            data-testid={`ai-provider-status-${row.id}`}
+                                        >
+                                            {statusLabel[row.status]}
+                                        </span>
+                                    )}
                                 </td>
                                 <td className="py-2 pr-3">
                                     <span className="flex items-center justify-end gap-1">
                                         {configured ? (
                                             <>
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    disabled={
+                                                        readOnly ||
+                                                        !row.canTest ||
+                                                        test.status === "testing"
+                                                    }
+                                                    onClick={() => runTest(row.id)}
+                                                    title={row.testBlockedReason}
+                                                    data-testid={`ai-provider-test-${row.id}`}
+                                                >
+                                                    {test.status === "testing" ? (
+                                                        <>
+                                                            <Loader2
+                                                                size={14}
+                                                                className="animate-spin"
+                                                            />
+                                                            {t(
+                                                                "ui.settings.ai_testing",
+                                                                "Teste...",
+                                                            )}
+                                                        </>
+                                                    ) : (
+                                                        t("ui.settings.ai_test_short", "Testen")
+                                                    )}
+                                                </button>
                                                 <button
                                                     type="button"
                                                     className="btn btn-ghost btn-sm"

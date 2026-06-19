@@ -8,6 +8,7 @@ import {
     aiChat,
     classifyAiClientError,
     isBrowserUnsupportedTestResult,
+    listModels,
     providerSupportsBrowserTest,
     type AiErrorKind,
 } from "../../ai/llmClient";
@@ -15,6 +16,7 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
 import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
 import {
+    baseUrlForProvider,
     buildAiPatch,
     keyRequiringProviderIds,
     maskSecret,
@@ -28,7 +30,11 @@ import { notify } from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";
 import { useDialog } from "../AppDialog";
-import { ConfiguredProvidersTable, type ProviderRow } from "./ConfiguredProvidersTable";
+import {
+    ConfiguredProvidersTable,
+    type ProviderRow,
+    type ProviderTestOutcome,
+} from "./ConfiguredProvidersTable";
 import { HelpText } from "./HelpText";
 import { SectionHeader } from "./SectionHeader";
 import { Toggle } from "./Toggle";
@@ -107,6 +113,7 @@ export function AiAssistantSettings({
             secretsExternal,
         });
         const hasKey = providerHasKey(settings, id);
+        const corsBlockedOffline = offline && !providerSupportsBrowserTest(id);
         return {
             id,
             label: t(`ui.settings.ai_provider_${id}`, AI_PROVIDER_PRESETS[id].label),
@@ -115,8 +122,39 @@ export function AiAssistantSettings({
             keyPreview: maskSecret(settings.keys[id]),
             isActive: id === settings.active_provider,
             canActivate: hasKey,
+            canTest: hasKey && !corsBlockedOffline && !secretsExternal,
+            testBlockedReason:
+                hasKey && corsBlockedOffline
+                    ? t("ui.settings.ai_test_desktop_only", "Nur in Desktop-App testbar")
+                    : undefined,
         };
     });
+
+    /** Lightweight per-row connection test: browser-direct GET /v1/models for
+     *  the given provider's stored key. */
+    const handleTestProvider = async (id: string): Promise<ProviderTestOutcome> => {
+        const cfg = {
+            provider: id,
+            base_url: baseUrlForProvider(settings, id),
+            model: modelForProvider(settings, id),
+            api_key: settings.keys[id] || "",
+        };
+        try {
+            await listModels(cfg);
+            notify.success(t("ui.settings.ai_test_ok", "Verbindung erfolgreich"));
+            return { ok: true, message: t("ui.settings.ai_test_ok_short", "Verbindung ok") };
+        } catch (err) {
+            const kind = classifyAiClientError(err);
+            const message =
+                kind === "cors"
+                    ? offline && !providerSupportsBrowserTest(id)
+                        ? t("ui.settings.ai_test_desktop_only", "Nur in Desktop-App testbar")
+                        : t("ui.settings.ai_test_network", "Netzwerkfehler")
+                    : aiErrorText(kind);
+            notify.error(message, err);
+            return { ok: false, message };
+        }
+    };
 
     const {
         models: aiModels,
@@ -251,6 +289,7 @@ export function AiAssistantSettings({
                             onActivate={handleActivate}
                             onEdit={loadProvider}
                             onDelete={handleDeleteProvider}
+                            onTest={handleTestProvider}
                             readOnly={secretsExternal}
                         />
                         <HelpText>
