@@ -32,7 +32,7 @@ const copyToClipboardMock = vi.fn<(text: string) => Promise<boolean>>(
 const notifySuccess = vi.fn();
 const notifyError = vi.fn();
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -40,11 +40,11 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../utils/clipboard", () => ({
+vi.mock("../../utils/clipboard", () => ({
     copyToClipboard: (text: string) => copyToClipboardMock(text),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         success: (...args: unknown[]) => notifySuccess(...args),
         error: (...args: unknown[]) => notifyError(...args),
@@ -63,7 +63,7 @@ const promptMock = vi.fn<
     ) => Promise<string | null>
 >(async () => "E=mc^2");
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({
         prompt: (...args: [string, string, string?, string?]) =>
             promptMock(...args),
