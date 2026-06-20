@@ -27,7 +27,7 @@ import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/book/useBookFilters";
 import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
-import { BookTypeIcon } from "../utils/bookTypeIcon";
+import { BookTypeIcon } from "../utils/icons/bookTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import {
     Plus,

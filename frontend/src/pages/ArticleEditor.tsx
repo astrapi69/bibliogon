@@ -33,7 +33,7 @@ import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
 import { buildMetaMessages, parseMetaResponse } from "../ai/metaPrompts";
 import { extractBodyText } from "../ai/templateApply";
 import { useContentTypes } from "../hooks/useContentTypes";
-import { ContentTypeIcon } from "../utils/contentTypeIcon";
+import { ContentTypeIcon } from "../utils/icons/contentTypeIcon";
 import ContentTypeFieldsSection from "../components/articles/ContentTypeFieldsSection";
 import {
     Field,
