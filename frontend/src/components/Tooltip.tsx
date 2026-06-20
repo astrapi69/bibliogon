@@ -1,26 +1,7 @@
-import * as RadixTooltip from "@radix-ui/react-tooltip";
-
-interface Props {
-    content: string;
-    children: React.ReactNode;
-    side?: "top" | "right" | "bottom" | "left";
-    delayDuration?: number;
-}
-
-export default function Tooltip({content, children, side = "top", delayDuration = 300}: Props) {
-    return (
-        <RadixTooltip.Provider delayDuration={delayDuration}>
-            <RadixTooltip.Root>
-                <RadixTooltip.Trigger asChild>
-                    {children}
-                </RadixTooltip.Trigger>
-                <RadixTooltip.Portal>
-                    <RadixTooltip.Content className="radix-tooltip-content" side={side} sideOffset={4}>
-                        {content}
-                        <RadixTooltip.Arrow className="radix-tooltip-arrow"/>
-                    </RadixTooltip.Content>
-                </RadixTooltip.Portal>
-            </RadixTooltip.Root>
-        </RadixTooltip.Provider>
-    );
-}
+/**
+ * Re-export shim: Tooltip moved to lib/components/Tooltip (#466 Phase 2,
+ * God-folder burn-down). New code should import from
+ * "../lib/components/Tooltip" (or the lib/components barrel); this shim
+ * keeps existing import paths working.
+ */
+export {default} from "../lib/components/Tooltip";
