@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { type GitSyncMappingStatus } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import AuthorSelectInput from "../AuthorSelectInput";
+import AuthorSelectInput from "../shared/AuthorSelectInput";
 import { GitRepoInfo } from "../git-backup/GitRepoInfo";
 import { EnhancedTextarea } from "../textarea/EnhancedTextarea";
 import styles from "../BookMetadataEditor.module.css";

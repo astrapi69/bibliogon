@@ -16,7 +16,7 @@ import { useBookMetadataAi } from "../../hooks/book/useBookMetadataAi";
 import KeywordInput from "../KeywordInput";
 import PdfExportControls from "../PdfExportControls";
 import CategoryInput from "../CategoryInput";
-import BisacCodeInput from "../BisacCodeInput";
+import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "../CoverUpload";
 import {
     NavigationSidebar,
@@ -24,7 +24,7 @@ import {
 } from "../../lib/components/NavigationSidebar";
 import QualityTab, { NavigableFindingType } from "../QualityTab";
 import TranslationLinks from "../TranslationLinks";
-import AITemplatePanel from "../AITemplatePanel";
+import AITemplatePanel from "../shared/AITemplatePanel";
 import KdpPublishingWizard from "../kdp-wizard/KdpPublishingWizard";
 import { Row, Field, AuthorSelectField, RepositoryUrlField } from "../book-metadata/MetadataFields";
 import { HtmlFieldWithPreview } from "../book-metadata/HtmlField";

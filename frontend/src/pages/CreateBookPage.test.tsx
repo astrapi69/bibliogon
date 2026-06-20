@@ -130,7 +130,7 @@ vi.mock("../utils/platform/notify", () => ({
 
 // CreateBookForm pulls in useDialog (template-delete confirm); not
 // exercised by these page tests, so a no-op stub is enough.
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({ confirm: vi.fn(), alert: vi.fn(), prompt: vi.fn() }),
 }));
 

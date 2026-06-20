@@ -139,7 +139,7 @@ vi.mock("../hooks/content/useTopics", () => ({
     useTopics: () => ["tech", "writing"],
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn(async () => true),
         prompt: vi.fn(),
@@ -223,16 +223,16 @@ vi.mock("../components/articles/PublicationsPanel", () => ({
 vi.mock("../components/articles/ArticleCommentsPanel", () => ({
     default: () => <div data-testid="comments-panel-stub" />,
 }));
-vi.mock("../components/AITemplatePanel", () => ({
+vi.mock("../components/shared/AITemplatePanel", () => ({
     default: () => <div data-testid="ai-template-stub" />,
 }));
-vi.mock("../components/ArticleImageUpload", () => ({
+vi.mock("../components/articles/ArticleImageUpload", () => ({
     default: () => <div data-testid="image-upload-stub" />,
 }));
 vi.mock("../components/KeywordInput", () => ({
     default: () => <div data-testid="keyword-input-stub" />,
 }));
-vi.mock("../components/AiGenerateButton", () => ({
+vi.mock("../components/shared/AiGenerateButton", () => ({
     default: () => <div data-testid="ai-generate-stub" />,
 }));
 vi.mock("../components/ThemeToggle", () => ({

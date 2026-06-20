@@ -101,7 +101,7 @@ vi.mock("../../api/client", () => ({
     },
 }));
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         alert: vi.fn(),

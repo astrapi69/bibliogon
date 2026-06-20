@@ -73,7 +73,7 @@ vi.mock("../../utils/platform/notify", () => ({
 }));
 
 const confirmMock = vi.fn();
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: confirmMock,
         prompt: vi.fn(),

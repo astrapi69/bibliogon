@@ -2,7 +2,7 @@ import {Editor} from "@tiptap/react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../../hooks/useI18n";
 import {CollapsibleToolbar} from "../CollapsibleToolbar";
-import {useDialog} from "../AppDialog";
+import {useDialog} from "../shared/AppDialog";
 import {notify} from "../../utils/platform/notify";
 import {copyToClipboard} from "../../utils/platform/clipboard";
 import {promptAndInsertMath} from "../editorMathPrompt";

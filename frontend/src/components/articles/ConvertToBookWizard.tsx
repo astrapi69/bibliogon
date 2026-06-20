@@ -47,7 +47,7 @@ import {
     BookFromArticlesSortStrategy,
 } from "../../api/client"
 import {RadixSelect} from "../RadixSelect"
-import AuthorSelectInput from "../AuthorSelectInput"
+import AuthorSelectInput from "../shared/AuthorSelectInput"
 import WizardShell, {WizardNav} from "../wizards/WizardShell"
 import {profileDisplayNames} from "../../hooks/useAuthorProfile"
 import {SortableArticleRow} from "./convert/SortableArticleRow"

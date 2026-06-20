@@ -8,12 +8,12 @@ import NewFromTemplateButton from "../components/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
-import BookCard from "../components/BookCard";
-import BookListView from "../components/BookListView";
+import BookCard from "../components/book/BookCard";
+import BookListView from "../components/book/BookListView";
 import BookBulkActionBar, {
     type BookBulkExportFormat,
     BOOK_BULK_LIMIT_HARD,
-} from "../components/BookBulkActionBar";
+} from "../components/book/BookBulkActionBar";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/useBookSelection";
@@ -57,7 +57,7 @@ import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
-import { useDialog } from "../components/AppDialog";
+import { useDialog } from "../components/shared/AppDialog";
 import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";

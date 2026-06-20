@@ -31,11 +31,11 @@ import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
 import { ContentTypesProvider } from "./hooks/useContentTypes";
 import { BookTypesProvider } from "./hooks/book/useBookTypes";
-import { DialogProvider } from "./components/AppDialog";
-import AudioExportGate from "./components/AudioExportGate";
+import { DialogProvider } from "./components/shared/AppDialog";
+import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
 import OfflineBanner from "./components/OfflineBanner";
-import AppUpdateBanner from "./components/AppUpdateBanner";
+import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import SyncStatusWatcher from "./components/SyncStatusWatcher";
 import SkipToContentLink from "./components/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
@@ -46,7 +46,7 @@ import { HelpProvider } from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";
 import ErrorReportDialog from "./components/ErrorReportDialog";
-import AiSetupWizard, { shouldShowAiWizard } from "./components/AiSetupWizard";
+import AiSetupWizard, { shouldShowAiWizard } from "./components/settings/AiSetupWizard";
 import DonationReminderBanner, {
     ensureFirstUseDate,
     shouldShowReminder,

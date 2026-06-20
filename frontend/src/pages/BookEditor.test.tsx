@@ -123,7 +123,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn(async () => true),
         prompt: vi.fn(),
@@ -236,7 +236,7 @@ vi.mock("../components/ChapterSidebar", () => ({
         );
     },
 }));
-vi.mock("../components/BookMetadataEditor", () => ({
+vi.mock("../components/book/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
 }));
 vi.mock("../components/ConflictResolutionDialog", () => ({ default: () => null }));

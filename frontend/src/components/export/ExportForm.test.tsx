@@ -75,7 +75,7 @@ vi.mock("../help/HelpLink", () => ({
   default: () => null,
 }))
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
   useDialog: () => ({
     confirm: vi.fn().mockResolvedValue(false),
     prompt: vi.fn().mockResolvedValue(null),

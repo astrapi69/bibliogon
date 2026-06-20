@@ -29,7 +29,7 @@ import {
 import { notify } from "../../utils/platform/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import {
     ConfiguredProvidersTable,
     type ProviderRow,

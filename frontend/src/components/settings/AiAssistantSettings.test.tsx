@@ -37,7 +37,7 @@ vi.mock("../../api/client", () => ({
 }));
 
 const confirmMock = vi.fn().mockResolvedValue(true);
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: confirmMock,
         prompt: vi.fn(),

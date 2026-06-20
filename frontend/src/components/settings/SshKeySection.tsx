@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react"
 import {Key, Copy, Trash2, RefreshCw} from "lucide-react"
 import {api, ApiError, SshKeyInfo} from "../../api/client"
-import {useDialog} from "../AppDialog"
+import {useDialog} from "../shared/AppDialog"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
 import styles from "../../pages/Settings.module.css"

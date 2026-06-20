@@ -38,7 +38,7 @@ import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";
-import { useDialog } from "../components/AppDialog";
+import { useDialog } from "../components/shared/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";

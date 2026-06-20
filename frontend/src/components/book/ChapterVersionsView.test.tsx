@@ -21,7 +21,7 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
   useDialog: () => ({ confirm: mockConfirm }),
 }));
 

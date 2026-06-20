@@ -27,7 +27,7 @@ import type {
 } from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/platform/notify";
-import {useDialog} from "../AppDialog";
+import {useDialog} from "../shared/AppDialog";
 import AiStoryExtraction from "./AiStoryExtraction";
 import {entityTypeColor, entityTypeIcon} from "../storyBibleIcons";
 import styles from "./StoryBibleSidebar.module.css";

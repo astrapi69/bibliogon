@@ -63,7 +63,7 @@ const promptMock = vi.fn<
     ) => Promise<string | null>
 >(async () => "E=mc^2");
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         prompt: (...args: [string, string, string?, string?]) =>
             promptMock(...args),

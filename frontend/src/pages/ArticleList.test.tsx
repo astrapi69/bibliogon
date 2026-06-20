@@ -153,7 +153,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn().mockResolvedValue(false),
         alert: vi.fn().mockResolvedValue(undefined),

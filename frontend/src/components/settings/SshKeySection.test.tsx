@@ -19,7 +19,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({confirm: vi.fn(), prompt: vi.fn()}),
 }));
 

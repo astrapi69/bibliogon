@@ -39,7 +39,7 @@ vi.mock("../../hooks/ui/useTheme", () => ({
 vi.mock("../../utils/platform/notify", () => ({ notify: { error: vi.fn() } }));
 
 const mockConfirm = vi.fn();
-vi.mock("../AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));
+vi.mock("../shared/AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));
 
 vi.mock("@xyflow/react", async () => {
   const React = await import("react");

@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as rtlRender, screen, fireEvent, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
-import AITemplatePanel from "../AITemplatePanel";
+import AITemplatePanel from "./AITemplatePanel";
 import { HelpProvider } from "../../contexts/HelpContext";
 
 // AITemplatePanel now reads useNavigate (Settings deep-link) + useHelp
