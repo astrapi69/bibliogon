@@ -4,9 +4,9 @@ import { api, ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import { downloadBlob } from "../shared/utils/downloadBlob";
 import WritingGoalWidget from "../components/WritingGoalWidget";
-import NewFromTemplateButton from "../components/NewFromTemplateButton";
+import NewFromTemplateButton from "../components/book/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/book/BulkTemplateImportDialog";
-import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
+import FieldClassDialog, { type FieldClassDialogResult } from "../components/shared/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
 import BookCard from "../components/book/BookCard";
 import BookListView from "../components/book/BookListView";
@@ -51,9 +51,9 @@ import RecentDocuments from "../components/RecentDocuments";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
 import DashboardTrashView from "../components/dashboard/DashboardTrashView";
 import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
-import ListPaginationControls from "../components/ListPaginationControls";
+import ListPaginationControls from "../components/dashboard/ListPaginationControls";
 import styles from "./Dashboard.module.css";
-import FullscreenButton from "../components/FullscreenButton";
+import FullscreenButton from "../components/shared/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
@@ -71,7 +71,7 @@ import DonationOnboardingDialog, {
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
 import { EmptyState } from "../lib/components/EmptyState";
-import { LoadingIndicator } from "../components/LoadingIndicator";
+import { LoadingIndicator } from "../components/shared/LoadingIndicator";
 import { useStorageMode } from "../storage/useStorageMode";
 
 export default function Dashboard() {

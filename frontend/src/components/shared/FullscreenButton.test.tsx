@@ -14,7 +14,7 @@
 
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import FullscreenButton from "../FullscreenButton";
+import FullscreenButton from "./FullscreenButton";
 
 const mockToggle = vi.fn();
 const mockState = {

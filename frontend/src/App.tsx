@@ -33,8 +33,8 @@ import { ContentTypesProvider } from "./hooks/useContentTypes";
 import { BookTypesProvider } from "./hooks/book/useBookTypes";
 import { DialogProvider } from "./components/shared/AppDialog";
 import AudioExportGate from "./components/export/AudioExportGate";
-import MediumImportGate from "./components/MediumImportGate";
-import OfflineBanner from "./components/OfflineBanner";
+import MediumImportGate from "./components/import/MediumImportGate";
+import OfflineBanner from "./components/shared/OfflineBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import SyncStatusWatcher from "./components/SyncStatusWatcher";
 import SkipToContentLink from "./components/SkipToContentLink";
@@ -44,8 +44,8 @@ import { MediumImportJobProvider } from "./contexts/MediumImportJobContext";
 import BulkAiFillDock from "./components/articles/BulkAiFillDock";
 import { HelpProvider } from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
-import EventRecorderSetup from "./components/EventRecorderSetup";
-import ErrorReportDialog from "./components/ErrorReportDialog";
+import EventRecorderSetup from "./components/shared/EventRecorderSetup";
+import ErrorReportDialog from "./components/shared/ErrorReportDialog";
 import AiSetupWizard, { shouldShowAiWizard } from "./components/settings/AiSetupWizard";
 import DonationReminderBanner, {
     ensureFirstUseDate,

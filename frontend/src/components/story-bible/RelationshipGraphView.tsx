@@ -29,7 +29,7 @@ import { notify } from "../../utils/platform/notify";
 import { RELATIONSHIP_TYPES, relationshipColor } from "./relationshipColors";
 import EntityNode from "./EntityNode";
 import RelationshipGraph from "./RelationshipGraph";
-import { LoadingIndicator } from "../LoadingIndicator";
+import { LoadingIndicator } from "../shared/LoadingIndicator";
 import styles from "../RelationshipGraphView.module.css";
 
 const nodeTypes = { entity: EntityNode };

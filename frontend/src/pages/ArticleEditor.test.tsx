@@ -229,7 +229,7 @@ vi.mock("../components/shared/AITemplatePanel", () => ({
 vi.mock("../components/articles/ArticleImageUpload", () => ({
     default: () => <div data-testid="image-upload-stub" />,
 }));
-vi.mock("../components/KeywordInput", () => ({
+vi.mock("../components/book/KeywordInput", () => ({
     default: () => <div data-testid="keyword-input-stub" />,
 }));
 vi.mock("../components/shared/AiGenerateButton", () => ({

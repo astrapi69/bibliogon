@@ -10,7 +10,7 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 import {MemoryRouter} from "react-router-dom"
 
-import MediumImportGate from "../MediumImportGate"
+import MediumImportGate from "./MediumImportGate"
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({

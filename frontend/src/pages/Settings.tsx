@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { getStorage } from "../storage";
-import FullscreenButton from "../components/FullscreenButton";
+import FullscreenButton from "../components/shared/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import { ChevronLeft, Home } from "lucide-react";
 import { notify } from "../utils/platform/notify";

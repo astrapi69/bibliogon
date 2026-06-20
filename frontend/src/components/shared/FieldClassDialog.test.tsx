@@ -1,6 +1,6 @@
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
-import FieldClassDialog from "../FieldClassDialog"
+import FieldClassDialog from "./FieldClassDialog"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 2/10. Pins the
 // FieldClassDialog contract: checkbox-driven submit, force

@@ -6,7 +6,7 @@
  */
 
 import { useI18n } from "../../hooks/useI18n";
-import FilterSheet from "../FilterSheet";
+import FilterSheet from "./FilterSheet";
 import DashboardFilterBar from "./DashboardFilterBar";
 import type { BookFilters } from "../../hooks/book/useBookFilters";
 

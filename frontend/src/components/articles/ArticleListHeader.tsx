@@ -35,9 +35,9 @@ import type { useI18n } from "../../hooks/useI18n";
 import type { useContentTypes } from "../../hooks/useContentTypes";
 import { ContentTypeIcon } from "../../utils/icons/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../SplitButton";
-import FullscreenButton from "../FullscreenButton";
+import FullscreenButton from "../shared/FullscreenButton";
 import ThemeToggle from "../ThemeToggle";
-import NewFromTemplateButton from "../NewFromTemplateButton";
+import NewFromTemplateButton from "../book/NewFromTemplateButton";
 
 type Translate = ReturnType<typeof useI18n>["t"];
 type ContentTypesSnapshot = ReturnType<typeof useContentTypes>;

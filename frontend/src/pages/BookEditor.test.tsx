@@ -244,7 +244,7 @@ vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
 vi.mock("../components/book/ChapterTemplatePickerModal", () => ({ default: () => null }));
 vi.mock("../components/SaveAsChapterTemplateModal", () => ({ default: () => null }));
 vi.mock("../lib/components/EmptyState", () => ({ EmptyState: () => null }));
-vi.mock("../components/LoadingIndicator", () => ({
+vi.mock("../components/shared/LoadingIndicator", () => ({
     LoadingIndicator: ({ testId }: { testId?: string }) => (
         <div data-testid={testId ?? "loading"}>loading</div>
     ),

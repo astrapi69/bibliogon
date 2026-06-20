@@ -35,7 +35,7 @@ import { buildBookEditorMenu } from "./buildBookEditorMenu";
 import { chapterTypeLabels } from "../lib/chapterTypeLabels";
 import { BookOpen, Plus } from "lucide-react";
 import { EmptyState } from "../lib/components/EmptyState";
-import { LoadingIndicator } from "../components/LoadingIndicator";
+import { LoadingIndicator } from "../components/shared/LoadingIndicator";
 import styles from "./BookEditor.module.css";
 import { EDITOR_COMPONENTS, STORYBOARD_BOOK_TYPES } from "./bookEditorDispatch";
 

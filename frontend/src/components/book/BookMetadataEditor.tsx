@@ -13,7 +13,7 @@ import { useBookTypes } from "../../hooks/book/useBookTypes";
 import { useEditorPluginStatus } from "../../hooks/editor/useEditorPluginStatus";
 import { useBookMetadata } from "../../hooks/book/useBookMetadata";
 import { useBookMetadataAi } from "../../hooks/book/useBookMetadataAi";
-import KeywordInput from "../KeywordInput";
+import KeywordInput from "./KeywordInput";
 import PdfExportControls from "../PdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";

@@ -43,7 +43,7 @@ import {
 } from "../components/articles/ArticleEditorFields";
 import Editor from "../components/editor/Editor";
 import ArticleImageUpload from "../components/articles/ArticleImageUpload";
-import KeywordInput from "../components/KeywordInput";
+import KeywordInput from "../components/book/KeywordInput";
 import AiGenerateButton from "../components/shared/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import AuthorSelectInput from "../components/shared/AuthorSelectInput";

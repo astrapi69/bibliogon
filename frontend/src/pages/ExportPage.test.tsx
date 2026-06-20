@@ -47,7 +47,7 @@ vi.mock("../utils/platform/notify", () => ({
 
 // Stub the form so the page test focuses on the shell (fetch + title +
 // loading); ExportForm has its own test.
-vi.mock("../components/ExportForm", () => ({
+vi.mock("../components/export/ExportForm", () => ({
   default: (props: {bookId: string; hasManualToc: boolean}) => (
     <div
       data-testid="export-form-stub"

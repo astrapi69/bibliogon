@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Upload, GitBranch, AlertTriangle, Check, Loader2, GitMerge } from "lucide-react";
-import GitSyncDiffDialog from "../components/GitSyncDiffDialog";
+import GitSyncDiffDialog from "../components/import/GitSyncDiffDialog";
 import {
     api,
     ApiError,
