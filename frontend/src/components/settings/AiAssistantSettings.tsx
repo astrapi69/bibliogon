@@ -14,7 +14,7 @@ import {
 } from "../../ai/llmClient";
 import { useStorageMode } from "../../storage/useStorageMode";
 import { useI18n } from "../../hooks/useI18n";
-import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/aiProviders";
+import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../../utils/ai/aiProviders";
 import {
     baseUrlForProvider,
     buildAiPatch,
@@ -25,7 +25,7 @@ import {
     providerHasKey,
     providerKeyStatus,
     type AiSettings,
-} from "../../utils/aiConfig";
+} from "../../utils/ai/aiConfig";
 import { notify } from "../../utils/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";

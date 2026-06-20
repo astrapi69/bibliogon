@@ -25,8 +25,8 @@ import {
     isBrowserUnsupportedTestResult,
     providerSupportsBrowserTest,
 } from "../ai/llmClient";
-import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../utils/aiProviders";
-import { buildAiPatch, type AiSettings } from "../utils/aiConfig";
+import { AI_PROVIDER_PRESETS, AI_PROVIDER_IDS, getProviderPreset } from "../utils/ai/aiProviders";
+import { buildAiPatch, type AiSettings } from "../utils/ai/aiConfig";
 
 const DISMISSED_KEY = "bibliogon-ai-setup-dismissed";
 

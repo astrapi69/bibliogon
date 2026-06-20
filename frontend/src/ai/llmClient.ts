@@ -19,7 +19,7 @@
  */
 
 import { getStorage } from "../storage";
-import { normalizeAiConfig, resolveActiveConfig } from "../utils/aiConfig";
+import { normalizeAiConfig, resolveActiveConfig } from "../utils/ai/aiConfig";
 
 export interface AiConfig {
     provider: string;
