@@ -10,7 +10,7 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {renderHook, act} from "@testing-library/react"
 
 import {useTheme} from "./useTheme"
-import {DEFAULT_PALETTE} from "../themes/palettes"
+import {DEFAULT_PALETTE} from "../../themes/palettes"
 
 beforeEach(() => {
   localStorage.clear()

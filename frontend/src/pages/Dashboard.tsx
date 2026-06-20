@@ -55,7 +55,7 @@ import ListPaginationControls from "../components/ListPaginationControls";
 import styles from "./Dashboard.module.css";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
 import { useDialog } from "../components/AppDialog";
 import { notify } from "../utils/notify";

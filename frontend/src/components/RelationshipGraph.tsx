@@ -21,7 +21,7 @@ import type {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 
-import { useTheme } from "../hooks/useTheme";
+import { useTheme } from "../hooks/ui/useTheme";
 import styles from "./RelationshipGraph.module.css";
 
 interface Props {

@@ -23,7 +23,7 @@
 import type {ReactNode} from "react";
 import * as Collapsible from "@radix-ui/react-collapsible";
 
-import {useCollapsibleState} from "../hooks/useCollapsibleState";
+import {useCollapsibleState} from "../hooks/ui/useCollapsibleState";
 
 import styles from "./comics/tier-section.module.css";
 

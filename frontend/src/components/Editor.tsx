@@ -4,9 +4,9 @@ import {
     isPluginAvailable,
     pluginDisabledMessage,
 } from "../hooks/useEditorPluginStatus";
-import { useFullscreenToggle } from "../hooks/useFullscreenToggle";
+import { useFullscreenToggle } from "../hooks/ui/useFullscreenToggle";
 import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
-import { useKeyboardShortcuts } from "../hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts } from "../hooks/ui/useKeyboardShortcuts";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../db/drafts";
 import "katex/dist/katex.min.css";

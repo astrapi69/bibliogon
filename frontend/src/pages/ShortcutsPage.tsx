@@ -6,7 +6,7 @@
 import { PageLayout } from "../components/PageLayout";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
-import { APP_SHORTCUTS } from "../hooks/useKeyboardShortcuts";
+import { APP_SHORTCUTS } from "../hooks/ui/useKeyboardShortcuts";
 import styles from "./ShortcutsPage.module.css";
 
 export default function ShortcutsPage() {

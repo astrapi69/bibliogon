@@ -26,7 +26,7 @@ const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
 const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
 import ErrorBoundary from "./components/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazyWithReload";
-import { useTheme } from "./hooks/useTheme";
+import { useTheme } from "./hooks/ui/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
 import { ContentTypesProvider } from "./hooks/useContentTypes";
@@ -52,7 +52,7 @@ import DonationReminderBanner, {
     shouldShowReminder,
 } from "./components/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/SupportSection";
-import { useKeyboardShortcuts, Shortcut } from "./hooks/useKeyboardShortcuts";
+import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
 import { useWordWrap } from "./hooks/useWordWrap";
 import { api, ApiError } from "./api/client";
 import { getStorage } from "./storage";

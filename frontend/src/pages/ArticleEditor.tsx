@@ -55,7 +55,7 @@ import { useArticlePersistence } from "../hooks/article/useArticlePersistence";
 import AITemplatePanel from "../components/AITemplatePanel";
 import { useDialog } from "../components/AppDialog";
 import { useI18n } from "../hooks/useI18n";
-import { useSidebarCollapse } from "../hooks/useSidebarCollapse";
+import { useSidebarCollapse } from "../hooks/ui/useSidebarCollapse";
 import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";

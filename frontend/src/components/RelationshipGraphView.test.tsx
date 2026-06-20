@@ -28,7 +28,7 @@ vi.mock("../hooks/useI18n", () => ({
     setLang: vi.fn(),
   }),
 }));
-vi.mock("../hooks/useTheme", () => ({
+vi.mock("../hooks/ui/useTheme", () => ({
   useTheme: () => ({
     theme: "light",
     toggle: vi.fn(),

@@ -4,7 +4,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { CollapsibleToolbar } from "./CollapsibleToolbar";
 
 const isMobileMock = vi.fn<() => boolean>(() => false);
-vi.mock("../hooks/useIsMobile", () => ({
+vi.mock("../hooks/ui/useIsMobile", () => ({
     useIsMobile: () => isMobileMock(),
 }));
 
