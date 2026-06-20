@@ -62,7 +62,7 @@ import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
 import { RadixSelect } from "../components/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
-import { useTopics } from "../hooks/useTopics";
+import { useTopics } from "../hooks/content/useTopics";
 import { notify } from "../utils/notify";
 import layout from "./ArticleEditor.module.css";
 

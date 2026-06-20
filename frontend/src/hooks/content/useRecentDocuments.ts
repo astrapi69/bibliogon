@@ -10,7 +10,7 @@
 
 import { useEffect, useState } from "react";
 
-import { getStorage } from "../storage";
+import { getStorage } from "../../storage";
 
 export interface RecentDocument {
   id: string;

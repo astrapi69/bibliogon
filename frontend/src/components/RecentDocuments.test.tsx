@@ -4,7 +4,7 @@ import { MemoryRouter } from "react-router-dom";
 import React from "react";
 
 import RecentDocuments from "./RecentDocuments";
-import type { RecentDocument } from "../hooks/useRecentDocuments";
+import type { RecentDocument } from "../hooks/content/useRecentDocuments";
 
 const navigateMock = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -23,7 +23,7 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 const recentMock = vi.fn<() => RecentDocument[]>();
-vi.mock("../hooks/useRecentDocuments", () => ({
+vi.mock("../hooks/content/useRecentDocuments", () => ({
   useRecentDocuments: () => recentMock(),
 }));
 

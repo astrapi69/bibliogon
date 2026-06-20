@@ -18,7 +18,7 @@ import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveBookFilters } from "../utils/formatActiveFilters";
 import { useBookSelection } from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
-import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
+import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";

@@ -34,7 +34,7 @@ import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
-import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
+import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";

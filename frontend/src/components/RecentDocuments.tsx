@@ -13,7 +13,7 @@ import { useNavigate } from "react-router-dom";
 import { BookOpen, FileText } from "lucide-react";
 
 import { useI18n } from "../hooks/useI18n";
-import { useRecentDocuments } from "../hooks/useRecentDocuments";
+import { useRecentDocuments } from "../hooks/content/useRecentDocuments";
 import { formatRelativeTime } from "../lib/utils/relativeTime";
 
 interface RecentDocumentsProps {
