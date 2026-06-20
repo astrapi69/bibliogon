@@ -15,7 +15,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
-import {DEFAULT_EDITOR_DISPLAY_SETTINGS} from "../hooks/useEditorDisplaySettings";
+import {DEFAULT_EDITOR_DISPLAY_SETTINGS} from "../hooks/editor/useEditorDisplaySettings";
 
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({

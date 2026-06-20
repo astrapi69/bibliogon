@@ -3,7 +3,7 @@ import {
     useEditorPluginStatus,
     isPluginAvailable,
     pluginDisabledMessage,
-} from "../hooks/useEditorPluginStatus";
+} from "../hooks/editor/useEditorPluginStatus";
 import { useFullscreenToggle } from "../hooks/ui/useFullscreenToggle";
 import { useTypewriterScroll } from "../hooks/useTypewriterScroll";
 import { useKeyboardShortcuts } from "../hooks/ui/useKeyboardShortcuts";
@@ -27,13 +27,13 @@ import {
     EditorRecoveryBanner,
     EditorAudioPreview,
 } from "./EditorPanels";
-import { useEditorDisplaySettings } from "../hooks/useEditorDisplaySettings";
+import { useEditorDisplaySettings } from "../hooks/editor/useEditorDisplaySettings";
 import { useAiChapterReview } from "../hooks/ai/useAiChapterReview";
-import { useEditorWordCount } from "../hooks/useEditorWordCount";
+import { useEditorWordCount } from "../hooks/editor/useEditorWordCount";
 import EditorStatusBar from "../lib/components/EditorStatusBar";
 import { WORDS_PER_MINUTE } from "../lib/utils/textStats";
-import { useEditorAutosave } from "../hooks/useEditorAutosave";
-import { useEditorTools } from "../hooks/useEditorTools";
+import { useEditorAutosave } from "../hooks/editor/useEditorAutosave";
+import { useEditorTools } from "../hooks/editor/useEditorTools";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";

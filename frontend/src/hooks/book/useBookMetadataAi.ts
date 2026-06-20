@@ -4,7 +4,7 @@ import { aiChat, getAiConfig, isAiConfigured } from "../../ai/llmClient";
 import { buildMarketingMessages } from "../../ai/marketingPrompts";
 import { notify } from "../../utils/notify";
 import { useI18n } from "../useI18n";
-import { type EditorPluginStatusMap, isPluginAvailable } from "../useEditorPluginStatus";
+import { type EditorPluginStatusMap, isPluginAvailable } from "../editor/useEditorPluginStatus";
 
 export interface UseBookMetadataAiParams {
     book: BookDetail;

@@ -10,7 +10,7 @@ import { Save, Copy, ChevronLeft, Sparkles, Rocket } from "lucide-react";
 import { notify } from "../utils/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useBookTypes } from "../hooks/book/useBookTypes";
-import { useEditorPluginStatus } from "../hooks/useEditorPluginStatus";
+import { useEditorPluginStatus } from "../hooks/editor/useEditorPluginStatus";
 import { useBookMetadata } from "../hooks/book/useBookMetadata";
 import { useBookMetadataAi } from "../hooks/book/useBookMetadataAi";
 import KeywordInput from "./KeywordInput";

@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useRef, useState, type MutableRefObject } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
-import { api, ApiError, SaveAbortedError } from "../api/client";
-import { saveDraft, deleteDraft, hashContent } from "../db/drafts";
-import { notify } from "../utils/notify";
+import { api, ApiError, SaveAbortedError } from "../../api/client";
+import { saveDraft, deleteDraft, hashContent } from "../../db/drafts";
+import { notify } from "../../utils/notify";
 import { useFlushOnUnload } from "./useFlushOnUnload";
-import { useI18n } from "./useI18n";
+import { useI18n } from "../useI18n";
 
 type SaveStatus = "idle" | "saving" | "saved" | "error";
 

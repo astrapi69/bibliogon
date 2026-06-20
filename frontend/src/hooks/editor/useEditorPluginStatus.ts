@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useRef, useState} from "react";
-import {getStorage} from "../storage";
+import {getStorage} from "../../storage";
 
 export interface PluginStatus {
     available: boolean;
