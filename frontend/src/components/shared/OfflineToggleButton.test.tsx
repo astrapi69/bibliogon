@@ -27,7 +27,7 @@ vi.mock("../../storage/offline-download", () => ({
 }));
 
 import { toast } from "react-toastify";
-import { OfflineToggleButton } from "../OfflineToggleButton";
+import { OfflineToggleButton } from "./OfflineToggleButton";
 
 beforeEach(() => {
   vi.clearAllMocks();

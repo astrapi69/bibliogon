@@ -10,12 +10,12 @@ import {
 } from "@/components/ui/dialog"
 import {Sparkles, Download, X} from "lucide-react"
 import {useI18n} from "../../hooks/useI18n"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 import {notify} from "../../utils/platform/notify"
 import {api, ApiError, type Article, type Book} from "../../api/client"
 import TemplateImportDropZone, {
     TemplateImportFilePreview,
-} from "../TemplateImportDropZone"
+} from "../import/TemplateImportDropZone"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 4/10 (article variant).
 //

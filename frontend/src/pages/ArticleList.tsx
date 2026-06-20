@@ -19,7 +19,7 @@ import { FEATURES } from "../features/featureConfig";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
 import { notify } from "../utils/platform/notify";
 import { downloadBlob } from "../shared/utils/downloadBlob";
-import ViewToggle from "../components/ViewToggle";
+import ViewToggle from "../components/dashboard/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
 import ArticleBulkActionBar, {
     type BulkExportFormat,
@@ -30,33 +30,33 @@ import { useArticleSelection } from "../components/articles/useArticleSelection"
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/format/formatActiveFilters";
-import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
-import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
-import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
+import BulkTemplateImportDialog from "../components/book/BulkTemplateImportDialog";
+import FieldClassDialog, { type FieldClassDialogResult } from "../components/shared/FieldClassDialog";
+import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
 import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";
-import { useDialog } from "../components/AppDialog";
+import { useDialog } from "../components/shared/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import DropZone from "../lib/components/DropZone";
-import RecentDocuments from "../components/RecentDocuments";
+import RecentDocuments from "../components/dashboard/RecentDocuments";
 import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
 import ArticleFilterSheet from "../components/articles/ArticleFilterSheet";
-import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
-import TileSelectCheckbox from "../components/TileSelectCheckbox";
+import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterControls";
+import TileSelectCheckbox from "../components/picture-book/TileSelectCheckbox";
 import ArticleRow from "../components/articles/ArticleRow";
 import ArticleListEmptyState from "../components/articles/ArticleListEmptyState";
 import ArticleListHeader from "../components/articles/ArticleListHeader";
 import ArticleTrashPanel from "../components/articles/ArticleTrashPanel";
-import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
-import ListPaginationControls from "../components/ListPaginationControls";
-import { EmptyState } from "../components/EmptyState";
+import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
+import ListPaginationControls from "../components/dashboard/ListPaginationControls";
+import { EmptyState } from "../lib/components/EmptyState";
 
 export default function ArticleList() {
     const navigate = useNavigate();

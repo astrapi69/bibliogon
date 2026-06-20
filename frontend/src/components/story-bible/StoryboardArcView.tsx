@@ -28,8 +28,8 @@ import {
 } from "../../api/client"
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n"
-import {relationshipColor} from "../relationshipColors"
-import {entityTypeColor} from "../storyBibleIcons"
+import {relationshipColor} from "./relationshipColors"
+import {entityTypeColor} from "./storyBibleIcons"
 import styles from "./StoryboardArcView.module.css"
 
 interface Props {

@@ -1,6 +1,6 @@
 import type { Node as PmNode } from "@tiptap/pm/model";
 import { FIX_ISSUE_PROMPTS, type FixIssueType } from "../../data/fix-issue-prompts";
-import type { ContentKind } from "../editor-gates";
+import type { ContentKind } from "./editor-gates";
 
 interface AiPromptContext {
     language?: string;

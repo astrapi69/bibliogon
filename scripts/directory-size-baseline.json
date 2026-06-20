@@ -8,7 +8,6 @@
   "backend/app/services/git": 12,
   "frontend/src/ai": 21,
   "frontend/src/api": 16,
-  "frontend/src/components": 126,
   "frontend/src/components/articles": 38,
   "frontend/src/components/book": 49,
   "frontend/src/components/comics": 31,

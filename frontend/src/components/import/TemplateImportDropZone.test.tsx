@@ -3,7 +3,7 @@ import {render, screen, fireEvent} from "@testing-library/react"
 import TemplateImportDropZone, {
     _isValidName,
     TemplateImportFilePreview,
-} from "../TemplateImportDropZone"
+} from "./TemplateImportDropZone"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 2/10. Pins the
 // drop-zone contract: drag-drop wires through, file-picker

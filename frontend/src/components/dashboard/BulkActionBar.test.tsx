@@ -16,7 +16,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
-import BulkActionBar from "../BulkActionBar";
+import BulkActionBar from "./BulkActionBar";
 
 describe("BulkActionBar", () => {
     it("renders countLabel under countTestId", () => {

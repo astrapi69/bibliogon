@@ -12,7 +12,7 @@ import React from "react"
 
 import type {ChapterLabel, ChapterStatus} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 import styles from "../ChapterStatusLabel.module.css"
 
 /** Canonical status order (matches the backend ChapterStatus Literal):

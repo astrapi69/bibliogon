@@ -56,7 +56,7 @@ class ResizeObserverStub {
 // the Toolbar wiring, not the menu, so stub the wrapper to a passthrough.
 // The menu's own behaviour is covered by editorContextMenuActions.test +
 // the E2E smoke.
-vi.mock("../EditorContextMenu", () => ({
+vi.mock("../editor/EditorContextMenu", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
@@ -78,7 +78,7 @@ const mockDocumentExportDownload = vi.fn();
 const mockNotifyError = vi.fn();
 const mockConfirm = vi.fn();
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
   useDialog: () => ({
     confirm: (...args: unknown[]) => mockConfirm(...args),
     prompt: vi.fn(),

@@ -3,7 +3,7 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import React from "react";
 
-import RecentDocuments from "../RecentDocuments";
+import RecentDocuments from "./RecentDocuments";
 import type { RecentDocument } from "../../hooks/content/useRecentDocuments";
 
 const navigateMock = vi.fn();

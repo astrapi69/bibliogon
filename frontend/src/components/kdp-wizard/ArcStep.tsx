@@ -33,7 +33,7 @@ import {
     api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 
 interface Props {
     book: BookDetail

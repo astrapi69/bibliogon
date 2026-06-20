@@ -44,12 +44,12 @@ import { useI18n } from "../../hooks/useI18n";
 import { api } from "../../api/client";
 import {getStorage} from "../../storage";
 import { notify } from "../../utils/platform/notify";
-import EditorContextMenu from "../EditorContextMenu";
+import EditorContextMenu from "./EditorContextMenu";
 import {
   buildMentionLabels,
   createStoryBibleMention,
   handleMentionClick,
-} from "../storyBibleMention";
+} from "../story-bible/storyBibleMention";
 
 interface Props {
   /** The current TipTap document. ``null`` renders an empty

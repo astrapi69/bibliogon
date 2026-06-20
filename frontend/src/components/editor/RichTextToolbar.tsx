@@ -47,8 +47,8 @@ import {
 import {useEffect, useState} from "react"
 import {useI18n} from "../../hooks/useI18n"
 import {PICTURE_BOOK_FONTS} from "../../data/picture-book-fonts"
-import {RadixSelect} from "../RadixSelect"
-import {CollapsibleToolbar} from "../CollapsibleToolbar"
+import {RadixSelect} from "../shared/RadixSelect"
+import {CollapsibleToolbar} from "./CollapsibleToolbar"
 import styles from "../RichTextToolbar.module.css"
 
 /** Sentinel value for the "Default font" <option>. Distinct from

@@ -5,7 +5,7 @@ import {useBookTypes} from "../../hooks/book/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {ComboboxSelect} from "../../lib/components/ComboboxSelect";
 import {
     buildBookLanguageOptions,

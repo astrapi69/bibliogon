@@ -21,7 +21,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
-import AuthorSelectInput from "../AuthorSelectInput";
+import AuthorSelectInput from "./AuthorSelectInput";
 
 describe("AuthorSelectInput", () => {
     function baseProps(overrides: Record<string, unknown> = {}) {

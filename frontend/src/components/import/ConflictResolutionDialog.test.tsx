@@ -8,7 +8,7 @@
 import React from "react";
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import ConflictResolutionDialog, {type ConflictInfo} from "../ConflictResolutionDialog";
+import ConflictResolutionDialog, {type ConflictInfo} from "./ConflictResolutionDialog";
 
 vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({t: (_: string, f: string) => f}),

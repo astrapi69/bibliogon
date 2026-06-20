@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ApiError } from "../../api/client";
 import { getStorage } from "../../storage";
-import type { ViewMode } from "../../components/ViewToggle";
+import type { ViewMode } from "../../components/dashboard/ViewToggle";
 
 type DashboardScope = "books" | "articles";
 type TrashScope = "books" | "articles";

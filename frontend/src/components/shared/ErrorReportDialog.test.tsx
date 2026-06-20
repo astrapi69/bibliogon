@@ -10,7 +10,7 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
-import ErrorReportDialog, {buildReportFilename} from "../ErrorReportDialog"
+import ErrorReportDialog, {buildReportFilename} from "./ErrorReportDialog"
 import {ApiError} from "../../api/client"
 import {downloadBlob} from "../../shared/utils/downloadBlob"
 

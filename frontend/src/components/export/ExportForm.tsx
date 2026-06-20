@@ -5,14 +5,14 @@ import {getStorage} from "../../storage";
 import {buildBookDocument, downloadExport} from "../../export";
 import HelpLink from "../help/HelpLink";
 import {useAudiobookJob} from "../../contexts/AudiobookJobContext";
-import {useDialog} from "../AppDialog";
+import {useDialog} from "../shared/AppDialog";
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {useFeature} from "@astrapi69/feature-strategy-react";
 import {FEATURES} from "../../features/featureConfig";
 import {Toggle} from "../settings/Toggle";
 import {notify} from "../../utils/platform/notify";
-import OrderedListEditor from "../OrderedListEditor";
+import OrderedListEditor from "../shared/OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles from "./ExportForm.module.css";
 

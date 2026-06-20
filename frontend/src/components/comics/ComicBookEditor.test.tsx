@@ -88,7 +88,7 @@ vi.mock("../../api/client", async () => {
 
 const mockConfirm = vi.fn();
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         prompt: vi.fn(),

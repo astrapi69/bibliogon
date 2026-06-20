@@ -12,7 +12,7 @@
 import type { PageSize } from "../../hooks/usePagedList";
 import { ALLOWED_PAGE_SIZES } from "../../hooks/usePagedList";
 import { useI18n } from "../../hooks/useI18n";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 
 interface Props {
     value: PageSize;

@@ -56,9 +56,9 @@ import {
 } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
-import { DialogContext } from "../AppDialog";
-import * as actions from "../editorContextMenuActions";
-import { promptAndInsertMath } from "../editorMathPrompt";
+import { DialogContext } from "../shared/AppDialog";
+import * as actions from "./editorContextMenuActions";
+import { promptAndInsertMath } from "./editorMathPrompt";
 import styles from "../EditorContextMenu.module.css";
 
 interface Props {

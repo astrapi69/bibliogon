@@ -12,9 +12,9 @@ import {useEffect, useState, type ReactNode} from "react"
 import {FileText, FileDown, Info} from "lucide-react"
 import {api, ChapterMetric, ChapterMetricsResponse} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import Tooltip from "../Tooltip"
-import {LoadingIndicator} from "../LoadingIndicator"
-import {CollapsibleConfigSection} from "../CollapsibleConfigSection"
+import Tooltip from "../../lib/components/Tooltip"
+import {LoadingIndicator} from "../shared/LoadingIndicator"
+import {CollapsibleConfigSection} from "../shared/CollapsibleConfigSection"
 import {rankSentences, sentenceAnchor} from "../../lib/utils/sentenceComplexity"
 import MetricsTable, {type MetricColumn} from "../../lib/components/MetricsTable"
 import FleschScale from "../../lib/components/FleschScale"
@@ -23,7 +23,7 @@ import {
     FILLER_PCT_THRESHOLD,
     PASSIVE_PCT_THRESHOLD,
     LONG_SENTENCE_THRESHOLD,
-} from "../qualityThresholds"
+} from "./qualityThresholds"
 import {slugify} from "../../shared/utils/slugify"
 import {downloadBlob} from "../../shared/utils/downloadBlob"
 import {renderPdfDefinition} from "../../export/formatPdf"
@@ -33,7 +33,7 @@ import {
     numberChapters,
     type NumberedChapterMetric,
     type QualityReportLabels,
-} from "../qualityReport"
+} from "./qualityReport"
 import {notify} from "../../utils/platform/notify"
 import {getStorage} from "../../storage"
 import {computeChapterMetrics} from "../../lib/utils/chapterMetrics"

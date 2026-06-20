@@ -2,7 +2,7 @@ import {useState} from "react";
 import {Save} from "lucide-react";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
-import {RadixSelect} from "../../RadixSelect";
+import {RadixSelect} from "../../shared/RadixSelect";
 import {TokenInput} from "../../../lib/components/TokenInput";
 
 /** Custom panel for the translation plugin. Mostly exists to render

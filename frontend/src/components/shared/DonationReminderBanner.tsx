@@ -16,8 +16,8 @@
 import {useEffect, useMemo} from "react";
 import {Heart, X, ExternalLink} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
-import type {DonationsConfig} from "../SupportSection";
-import {DONATION_ONBOARDING_SEEN_KEY} from "../DonationOnboardingDialog";
+import type {DonationsConfig} from "../settings/SupportSection";
+import {DONATION_ONBOARDING_SEEN_KEY} from "./DonationOnboardingDialog";
 import styles from "../DonationReminderBanner.module.css";
 
 export const FIRST_USE_DATE_KEY = "bibliogon-first-use-date";

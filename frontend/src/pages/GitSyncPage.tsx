@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Upload, GitBranch, AlertTriangle, Check, Loader2, GitMerge } from "lucide-react";
-import GitSyncDiffDialog from "../components/GitSyncDiffDialog";
+import GitSyncDiffDialog from "../components/import/GitSyncDiffDialog";
 import {
     api,
     ApiError,
@@ -12,7 +12,7 @@ import {
 import { useI18n } from "../hooks/useI18n";
 import { Toggle } from "../components/settings/Toggle";
 import { notify } from "../utils/platform/notify";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";

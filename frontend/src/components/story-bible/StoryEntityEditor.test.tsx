@@ -13,7 +13,7 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({confirm: mockConfirm}),
 }));
 
@@ -22,7 +22,7 @@ vi.mock("../../utils/platform/notify", () => ({
 }));
 
 // Stub the heavy TipTap-based editors with simple controllable shims.
-vi.mock("../RichTextEditor", () => ({
+vi.mock("../editor/RichTextEditor", () => ({
     default: ({
         onChange,
         testidNamespace,
@@ -39,7 +39,7 @@ vi.mock("../RichTextEditor", () => ({
     ),
 }));
 
-vi.mock("../EditableTitle", () => ({
+vi.mock("../shared/EditableTitle", () => ({
     default: ({
         value,
         onSave,

@@ -7,10 +7,10 @@ import {
     PICTURE_BOOK_FORMATS,
     DEFAULT_PICTURE_BOOK_FORMAT,
     type PictureBookFormat,
-} from "../PdfExportControls";
+} from "../export/PdfExportControls";
 import {KDP_REGIONS, REGION_LABELS} from "../kdp-wizard/pricing";
 import type {RegionCode} from "../kdp-wizard/machines/types";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {Toggle} from "./Toggle";
 import {useSettingsAutoSave} from "./useSettingsAutoSave";
 

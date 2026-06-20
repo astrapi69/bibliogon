@@ -29,11 +29,11 @@ import {
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { getLocalized } from "./utils";
-import SupportSection, { getDonationsConfig } from "../SupportSection";
+import SupportSection, { getDonationsConfig } from "./SupportSection";
 import { SectionHeader } from "./SectionHeader";
 import { LanAccessSettings } from "./LanAccessSettings";
 import { UpdateCheckButton } from "./UpdateCheckButton";
-import ErrorReportDialog from "../ErrorReportDialog";
+import ErrorReportDialog from "../shared/ErrorReportDialog";
 
 interface Props {
   appConfig: Record<string, unknown>;

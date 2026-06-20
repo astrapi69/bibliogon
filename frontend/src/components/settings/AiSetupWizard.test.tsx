@@ -14,7 +14,7 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
-import AiSetupWizard from "../AiSetupWizard";
+import AiSetupWizard from "./AiSetupWizard";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({

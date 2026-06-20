@@ -123,7 +123,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn(async () => true),
         prompt: vi.fn(),
@@ -194,7 +194,7 @@ vi.mock("../api/client", async () => {
 // Stub the heavy chapter-side components so the prose-flow test
 // doesn't load TipTap / plugin status / metadata editor. The
 // picture-book branch returns before any of these mount.
-vi.mock("../components/Editor", () => ({
+vi.mock("../components/editor/Editor", () => ({
     default: (props: { onSave?: (content: string) => void | Promise<void> }) => {
         editorOnSaveHolder.current = props.onSave ?? null;
         return <div data-testid="editor-stub" />;
@@ -208,7 +208,7 @@ vi.mock("../components/Editor", () => ({
         autosave: false,
     }),
 }));
-vi.mock("../components/ChapterSidebar", () => ({
+vi.mock("../components/book/ChapterSidebar", () => ({
     // Render a select-button per chapter so tests can drive the real
     // BookEditor ``onSelect`` handler (chapter-switch regression pins).
     default: (props: {
@@ -236,15 +236,15 @@ vi.mock("../components/ChapterSidebar", () => ({
         );
     },
 }));
-vi.mock("../components/BookMetadataEditor", () => ({
+vi.mock("../components/book/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
 }));
-vi.mock("../components/ConflictResolutionDialog", () => ({ default: () => null }));
-vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
-vi.mock("../components/ChapterTemplatePickerModal", () => ({ default: () => null }));
-vi.mock("../components/SaveAsChapterTemplateModal", () => ({ default: () => null }));
-vi.mock("../components/EmptyState", () => ({ EmptyState: () => null }));
-vi.mock("../components/LoadingIndicator", () => ({
+vi.mock("../components/import/ConflictResolutionDialog", () => ({ default: () => null }));
+vi.mock("../components/book/SaveAsTemplateModal", () => ({ default: () => null }));
+vi.mock("../components/book/ChapterTemplatePickerModal", () => ({ default: () => null }));
+vi.mock("../components/book/SaveAsChapterTemplateModal", () => ({ default: () => null }));
+vi.mock("../lib/components/EmptyState", () => ({ EmptyState: () => null }));
+vi.mock("../components/shared/LoadingIndicator", () => ({
     LoadingIndicator: ({ testId }: { testId?: string }) => (
         <div data-testid={testId ?? "loading"}>loading</div>
     ),

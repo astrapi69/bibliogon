@@ -10,7 +10,7 @@
  */
 
 import { useI18n } from "../../hooks/useI18n";
-import FilterSheet from "../FilterSheet";
+import FilterSheet from "../dashboard/FilterSheet";
 import { ArticleFilterBar } from "./ArticleFilterBar";
 import type { useArticleFilters } from "../../hooks/article/useArticleFilters";
 

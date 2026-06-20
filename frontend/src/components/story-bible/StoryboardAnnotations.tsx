@@ -21,7 +21,7 @@ import {X} from "lucide-react"
 
 import type {StoryBeat} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 import styles from "./Storyboard.module.css"
 
 /** 6 story-beat values per PICTURE-BOOK-STORYBOARD-VIEW-01 A2 (Setup /

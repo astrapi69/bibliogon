@@ -1,8 +1,8 @@
 import {useEffect, useState} from "react";
 import {useNavigate} from "react-router-dom";
 import {Save, Check, X, Trash2, Upload} from "lucide-react";
-import OrderedListEditor from "../OrderedListEditor";
-import {Badge} from "../Badge";
+import OrderedListEditor from "../shared/OrderedListEditor";
+import {Badge} from "../../lib/components/Badge";
 import {useI18n} from "../../hooks/useI18n";
 import styles from "../../pages/Settings.module.css";
 import {AudiobookSettingsPanel} from "./panels/AudiobookSettingsPanel";

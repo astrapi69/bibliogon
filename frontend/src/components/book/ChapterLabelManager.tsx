@@ -13,7 +13,7 @@ import {type ChapterLabel} from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
-import {MOOD_PALETTE} from "../StoryboardAnnotations"
+import {MOOD_PALETTE} from "../story-bible/StoryboardAnnotations"
 import styles from "../ChapterStatusLabel.module.css"
 
 const DEFAULT_COLOR = MOOD_PALETTE[0].value

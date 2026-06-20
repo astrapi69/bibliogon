@@ -4,7 +4,7 @@ import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 import { api, ApiError, ContentType } from "../api/client";
 import { getStorage } from "../storage";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import {
   useContentTypes,
   contentTypeDefaultTitleKey,
@@ -13,7 +13,7 @@ import {
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/platform/notify";
-import AuthorSelectInput from "../components/AuthorSelectInput";
+import AuthorSelectInput from "../components/shared/AuthorSelectInput";
 
 /**
  * Full-page article-creation surface (Dialog->Pages migration C2).

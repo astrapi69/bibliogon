@@ -44,7 +44,7 @@ import {FEATURES} from "../../features/featureConfig"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
 import {Toggle} from "../settings/Toggle"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 
 // PDF-KDP-FORMATS-01: 5 KDP picture-book trim sizes. Kept in sync
 // with the Python PICTURE_BOOK_FORMATS constant in

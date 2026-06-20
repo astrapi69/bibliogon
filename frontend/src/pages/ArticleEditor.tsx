@@ -41,26 +41,26 @@ import {
     SaveIndicator,
     TopicSelect,
 } from "../components/articles/ArticleEditorFields";
-import Editor from "../components/Editor";
-import ArticleImageUpload from "../components/ArticleImageUpload";
-import KeywordInput from "../components/KeywordInput";
-import AiGenerateButton from "../components/AiGenerateButton";
-import ThemeToggle from "../components/ThemeToggle";
-import AuthorSelectInput from "../components/AuthorSelectInput";
-import EditableTitle from "../components/EditableTitle";
+import Editor from "../components/editor/Editor";
+import ArticleImageUpload from "../components/articles/ArticleImageUpload";
+import KeywordInput from "../components/book/KeywordInput";
+import AiGenerateButton from "../components/shared/AiGenerateButton";
+import ThemeToggle from "../components/shared/ThemeToggle";
+import AuthorSelectInput from "../components/shared/AuthorSelectInput";
+import EditableTitle from "../components/shared/EditableTitle";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import ArticleTranslatePanel from "../components/articles/ArticleTranslatePanel";
 import { useArticlePersistence } from "../hooks/article/useArticlePersistence";
-import AITemplatePanel from "../components/AITemplatePanel";
-import { useDialog } from "../components/AppDialog";
+import AITemplatePanel from "../components/shared/AITemplatePanel";
+import { useDialog } from "../components/shared/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useSidebarCollapse } from "../hooks/ui/useSidebarCollapse";
-import { SidebarToggleButton } from "../components/SidebarToggleButton";
+import { SidebarToggleButton } from "../components/shared/SidebarToggleButton";
 import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
-import { RadixSelect } from "../components/RadixSelect";
+import { RadixSelect } from "../components/shared/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/content/useTopics";
 import { notify } from "../utils/platform/notify";

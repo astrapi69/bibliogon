@@ -8,7 +8,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import { useHasAiKey } from "../../features/useHasAiKey";
 import { useHelp } from "../../contexts/HelpContext";
-import { CollapsibleConfigSection } from "../CollapsibleConfigSection";
+import { CollapsibleConfigSection } from "./CollapsibleConfigSection";
 import { Toggle } from "../settings/Toggle";
 import { notify } from "../../utils/platform/notify";
 import { api, ApiError } from "../../api/client";
@@ -16,8 +16,8 @@ import type { AiFillResponse, AiTemplateImportResult } from "../../api/client";
 import { aiFillArticle, aiFillBook } from "../../ai/aiFill";
 import { ARTICLE_OFFLINE_FILL_CLASSES } from "../../ai/articleFillPrompts";
 import { BOOK_OFFLINE_FILL_CLASSES } from "../../ai/bookFillPrompts";
-import FieldClassDialog, { type FieldClassDialogResult } from "../FieldClassDialog";
-import TemplateImportDropZone, { TemplateImportFilePreview } from "../TemplateImportDropZone";
+import FieldClassDialog, { type FieldClassDialogResult } from "./FieldClassDialog";
+import TemplateImportDropZone, { TemplateImportFilePreview } from "../import/TemplateImportDropZone";
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 3/10. Three first-
 // class buttons that orchestrate the per-record AI-template

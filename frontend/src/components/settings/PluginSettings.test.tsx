@@ -47,7 +47,7 @@ vi.mock("../../api/client", () => ({
 // useDialog needs a DialogProvider; mock it as a deterministic stub
 // instead of pulling the full provider into the test render tree.
 const confirmMock = vi.fn(async () => true);
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: confirmMock,
         prompt: vi.fn(),

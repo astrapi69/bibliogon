@@ -10,8 +10,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 
 import { EditorMenu, type EditorMenuGroup } from "../../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "../../pages/buildArticleEditorMenu";
-import { buildComicEditorMenu } from "../buildComicEditorMenu";
-import { buildPictureBookEditorMenu } from "../buildPictureBookEditorMenu";
+import { buildComicEditorMenu } from "../comics/buildComicEditorMenu";
+import { buildPictureBookEditorMenu } from "../picture-book/buildPictureBookEditorMenu";
 
 const t = (_key: string, fallback?: string) => fallback ?? _key;
 

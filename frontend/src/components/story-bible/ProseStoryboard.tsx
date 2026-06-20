@@ -56,8 +56,8 @@ import {
     MoodColorPicker,
     NotesEditor,
 } from "./StoryboardAnnotations"
-import {LabelChip, LabelSelect, StatusChip, StatusSelect} from "../ChapterStatusLabel"
-import ChapterLabelManager from "../ChapterLabelManager"
+import {LabelChip, LabelSelect, StatusChip, StatusSelect} from "../book/ChapterStatusLabel"
+import ChapterLabelManager from "../book/ChapterLabelManager"
 import AiStoryExtraction from "./AiStoryExtraction"
 import type {ChapterStatus} from "../../api/client"
 import styles from "./Storyboard.module.css"

@@ -35,7 +35,7 @@ import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {warnIfOfflineStorageNearlyFull} from "../../utils/platform/storageQuota";
 
-import {CollapsibleConfigSection} from "../CollapsibleConfigSection";
+import {CollapsibleConfigSection} from "../shared/CollapsibleConfigSection";
 import {Tier1Section} from "./Tier1Section";
 import type {ComicPanelData} from "./ComicPanel";
 

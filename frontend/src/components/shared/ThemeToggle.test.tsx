@@ -9,7 +9,7 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
-import ThemeToggle from "../ThemeToggle"
+import ThemeToggle from "./ThemeToggle"
 
 const mockToggle = vi.fn()
 let mockTheme = "light"

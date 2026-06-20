@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import AITemplatePanel from "../AITemplatePanel";
+import AITemplatePanel from "./AITemplatePanel";
 import { FeatureTestProvider } from "../../features/FeatureTestProvider";
 import { HelpProvider } from "../../contexts/HelpContext";
 

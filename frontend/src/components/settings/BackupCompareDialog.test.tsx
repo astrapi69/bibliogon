@@ -10,7 +10,7 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
-import BackupCompareDialog from "../BackupCompareDialog"
+import BackupCompareDialog from "./BackupCompareDialog"
 
 vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({

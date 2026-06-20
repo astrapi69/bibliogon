@@ -1,5 +1,5 @@
 import {useI18n} from "../../hooks/useI18n";
-import SshKeySection from "../SshKeySection";
+import SshKeySection from "./SshKeySection";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 

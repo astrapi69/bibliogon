@@ -35,7 +35,7 @@ import {
 import { type MovePageEntry } from "./MovePanelToPageMenu";
 import type { ComicBubbleData } from "./ComicBubble";
 import type { ComicPanelData } from "./ComicPanel";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import { useDualSidebarCollapse } from "../../hooks/ui/useDualSidebarCollapse";
 
 export function useComicBookEditor(bookId: string) {

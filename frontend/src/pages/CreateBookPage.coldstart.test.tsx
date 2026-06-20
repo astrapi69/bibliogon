@@ -43,8 +43,8 @@ vi.mock("../storage", async () => {
 import CreateBookPage from "./CreateBookPage";
 import { I18nProvider } from "../hooks/useI18n";
 import { BookTypesProvider } from "../hooks/book/useBookTypes";
-import { DialogProvider } from "../components/AppDialog";
-import ErrorBoundary from "../components/ErrorBoundary";
+import { DialogProvider } from "../components/shared/AppDialog";
+import ErrorBoundary from "../components/shared/ErrorBoundary";
 import { featureRegistry } from "../features/featureConfig";
 
 function renderColdStart(url: string) {

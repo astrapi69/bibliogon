@@ -12,7 +12,7 @@ import { Book } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import CoverPlaceholder from "../CoverPlaceholder";
+import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/format/formatDate";
 import { useCoverUrl } from "../../hooks/useAssetUrl";
 import StatusBadge from "../../lib/components/StatusBadge";

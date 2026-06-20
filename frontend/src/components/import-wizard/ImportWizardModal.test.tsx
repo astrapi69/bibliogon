@@ -46,7 +46,7 @@ vi.mock("../../hooks/useAllowBooksWithoutAuthor", () => ({
     useAllowBooksWithoutAuthor: () => false,
 }));
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn().mockResolvedValue(true),
         alert: vi.fn().mockResolvedValue(undefined),

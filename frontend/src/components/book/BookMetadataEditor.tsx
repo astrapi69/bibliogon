@@ -13,18 +13,18 @@ import { useBookTypes } from "../../hooks/book/useBookTypes";
 import { useEditorPluginStatus } from "../../hooks/editor/useEditorPluginStatus";
 import { useBookMetadata } from "../../hooks/book/useBookMetadata";
 import { useBookMetadataAi } from "../../hooks/book/useBookMetadataAi";
-import KeywordInput from "../KeywordInput";
-import PdfExportControls from "../PdfExportControls";
-import CategoryInput from "../CategoryInput";
-import BisacCodeInput from "../BisacCodeInput";
-import CoverUpload from "../CoverUpload";
+import KeywordInput from "./KeywordInput";
+import PdfExportControls from "../export/PdfExportControls";
+import CategoryInput from "./CategoryInput";
+import BisacCodeInput from "./BisacCodeInput";
+import CoverUpload from "./CoverUpload";
 import {
     NavigationSidebar,
     type NavigationSidebarGroup,
 } from "../../lib/components/NavigationSidebar";
-import QualityTab, { NavigableFindingType } from "../QualityTab";
-import TranslationLinks from "../TranslationLinks";
-import AITemplatePanel from "../AITemplatePanel";
+import QualityTab, { NavigableFindingType } from "../quality/QualityTab";
+import TranslationLinks from "../articles/TranslationLinks";
+import AITemplatePanel from "../shared/AITemplatePanel";
 import KdpPublishingWizard from "../kdp-wizard/KdpPublishingWizard";
 import { Row, Field, AuthorSelectField, RepositoryUrlField } from "../book-metadata/MetadataFields";
 import { HtmlFieldWithPreview } from "../book-metadata/HtmlField";

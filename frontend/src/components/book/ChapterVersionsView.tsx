@@ -28,9 +28,9 @@ import {
   type ChapterVersionDiff,
 } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
-import { LoadingIndicator } from "../LoadingIndicator";
+import { LoadingIndicator } from "../shared/LoadingIndicator";
 import styles from "../ChapterVersionsView.module.css";
 
 interface Props {

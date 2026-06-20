@@ -10,7 +10,7 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 
-import {DialogProvider, useDialog} from "../AppDialog"
+import {DialogProvider, useDialog} from "./AppDialog"
 
 // Mock useI18n to avoid needing the full provider chain
 vi.mock("../../hooks/useI18n", () => ({

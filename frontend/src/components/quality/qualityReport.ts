@@ -36,7 +36,7 @@ import {
   MUTED_COLOR,
   SEVERITY_FILL,
   FLESCH_BAND_FILL,
-} from "../qualityThresholds";
+} from "./qualityThresholds";
 
 /** A chapter metric tagged with its sequential book number (1..N). */
 export interface NumberedChapterMetric extends ChapterMetric {

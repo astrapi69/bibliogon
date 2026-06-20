@@ -9,8 +9,8 @@ import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import {api, HelpNavItem} from "../../api/client";
 import {useHelp} from "../../contexts/HelpContext";
 import {useI18n} from "../../hooks/useI18n";
-import {LoadingIndicator} from "../LoadingIndicator";
-import SearchClearButton from "../SearchClearButton";
+import {LoadingIndicator} from "../shared/LoadingIndicator";
+import SearchClearButton from "../dashboard/SearchClearButton";
 
 /**
  * Full-screen slide-over help panel mounted at the App root.

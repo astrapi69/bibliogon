@@ -24,34 +24,34 @@ const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersions
 const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
 const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
 const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
-import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazyWithReload";
 import { useTheme } from "./hooks/ui/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
 import { ContentTypesProvider } from "./hooks/useContentTypes";
 import { BookTypesProvider } from "./hooks/book/useBookTypes";
-import { DialogProvider } from "./components/AppDialog";
-import AudioExportGate from "./components/AudioExportGate";
-import MediumImportGate from "./components/MediumImportGate";
-import OfflineBanner from "./components/OfflineBanner";
-import AppUpdateBanner from "./components/AppUpdateBanner";
-import SyncStatusWatcher from "./components/SyncStatusWatcher";
-import SkipToContentLink from "./components/SkipToContentLink";
+import { DialogProvider } from "./components/shared/AppDialog";
+import AudioExportGate from "./components/export/AudioExportGate";
+import MediumImportGate from "./components/import/MediumImportGate";
+import OfflineBanner from "./components/shared/OfflineBanner";
+import AppUpdateBanner from "./components/shared/AppUpdateBanner";
+import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
+import SkipToContentLink from "./components/shared/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
 import { BulkAiFillJobProvider } from "./contexts/BulkAiFillJobContext";
 import { MediumImportJobProvider } from "./contexts/MediumImportJobContext";
-import BulkAiFillDock from "./components/BulkAiFillDock";
+import BulkAiFillDock from "./components/articles/BulkAiFillDock";
 import { HelpProvider } from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
-import EventRecorderSetup from "./components/EventRecorderSetup";
-import ErrorReportDialog from "./components/ErrorReportDialog";
-import AiSetupWizard, { shouldShowAiWizard } from "./components/AiSetupWizard";
+import EventRecorderSetup from "./components/shared/EventRecorderSetup";
+import ErrorReportDialog from "./components/shared/ErrorReportDialog";
+import AiSetupWizard, { shouldShowAiWizard } from "./components/settings/AiSetupWizard";
 import DonationReminderBanner, {
     ensureFirstUseDate,
     shouldShowReminder,
-} from "./components/DonationReminderBanner";
-import { getDonationsConfig, type DonationsConfig } from "./components/SupportSection";
+} from "./components/shared/DonationReminderBanner";
+import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
 import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
 import { useWordWrap } from "./hooks/useWordWrap";
 import { api, ApiError } from "./api/client";

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { api, ApiError, ChapterTemplate } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
 import {
   Dialog,
@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Download, Lock, Pencil, Trash2, Upload } from "lucide-react";
 import styles from "../ChapterTemplatePickerModal.module.css";
-import SaveAsChapterTemplateModal from "../SaveAsChapterTemplateModal";
+import SaveAsChapterTemplateModal from "./SaveAsChapterTemplateModal";
 
 interface Props {
   open: boolean;

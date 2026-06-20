@@ -26,7 +26,7 @@ import {
     type EditorWidth,
 } from "../../hooks/editor/useEditorDisplaySettings";
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 
 interface Props {
     settings: EditorDisplaySettings;

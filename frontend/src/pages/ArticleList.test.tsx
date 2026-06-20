@@ -153,7 +153,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn().mockResolvedValue(false),
         alert: vi.fn().mockResolvedValue(undefined),
@@ -167,13 +167,13 @@ vi.mock("../contexts/HelpContext", () => ({
     }),
 }));
 
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => null,
 }));
 
 // Stubbed: RecentDocuments lists articles via the storage seam, which would
 // otherwise add calls to the articles.list spy these tests assert on.
-vi.mock("../components/RecentDocuments", () => ({
+vi.mock("../components/dashboard/RecentDocuments", () => ({
     default: () => null,
 }));
 

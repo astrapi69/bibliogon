@@ -17,10 +17,10 @@ import {
 } from "lucide-react";
 import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
-import { LoadingIndicator } from "../LoadingIndicator";
+import { LoadingIndicator } from "../shared/LoadingIndicator";
 import { useWebSocket } from "../../hooks/useWebSocket";
-import { useDialog } from "../AppDialog";
-import AudiobookPlayer, { PlayerChapter } from "../AudiobookPlayer";
+import { useDialog } from "../shared/AppDialog";
+import AudiobookPlayer, { PlayerChapter } from "../book/AudiobookPlayer";
 import { slugify } from "../../shared/utils/slugify";
 import styles from "../BookMetadataEditor.module.css";
 

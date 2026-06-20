@@ -15,7 +15,7 @@ vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback, lang: "de" }),
 }));
 
-import ResponsiveFilterControls from "../ResponsiveFilterControls";
+import ResponsiveFilterControls from "./ResponsiveFilterControls";
 
 function FakeSheet({ open }: { open?: boolean; onOpenChange?: (open: boolean) => void }) {
     return <div data-testid="fake-sheet">{open ? "open" : "closed"}</div>;
