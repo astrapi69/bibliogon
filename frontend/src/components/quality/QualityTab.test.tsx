@@ -15,10 +15,10 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor, within} from "@testing-library/react"
 import React from "react"
 
-import QualityTab from "./QualityTab"
-import type {ChapterMetricsResponse} from "../api/client"
+import QualityTab from "../QualityTab"
+import type {ChapterMetricsResponse} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
     lang: "en",
@@ -28,7 +28,7 @@ vi.mock("../hooks/useI18n", () => ({
 
 const chapterMetricsMock = vi.fn()
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     msTools: {
       chapterMetrics: (bookId: string) => chapterMetricsMock(bookId),
@@ -42,7 +42,7 @@ const storageMock = {
   chapters: {list: vi.fn()},
 }
 
-vi.mock("../storage", () => ({
+vi.mock("../../storage", () => ({
   getStorage: () => storageMock,
 }))
 
