@@ -3,9 +3,9 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import React from "react";
 
 import ExportPreviewModal from "./ExportPreviewModal";
-import type { ExportDocument } from "../export";
+import type { ExportDocument } from "../../export";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({ t: (_k: string, fb: string) => fb, lang: "de", setLang: vi.fn() }),
 }));
 

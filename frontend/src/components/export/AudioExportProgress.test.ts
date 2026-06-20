@@ -1,7 +1,7 @@
 import {describe, it, expect} from "vitest";
 
 import {eventLabel} from "./AudioExportProgress";
-import type {AudiobookEvent} from "../contexts/AudiobookJobContext";
+import type {AudiobookEvent} from "../../contexts/AudiobookJobContext";
 
 const t = (_key: string, fallback: string) => fallback;
 
