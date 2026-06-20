@@ -2,15 +2,15 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import StoryboardArcView from "./StoryboardArcView"
-import {api, type Page, type StoryEntityOut} from "../api/client"
+import {api, type Page, type StoryEntityOut} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fb: string) => fb, lang: "en", setLang: vi.fn()}),
 }))
 
-vi.mock("../api/client", async () => {
+vi.mock("../../api/client", async () => {
     const actual =
-        await vi.importActual<typeof import("../api/client")>("../api/client")
+        await vi.importActual<typeof import("../../api/client")>("../../api/client")
     return {
         ...actual,
         api: {...actual.api, storyBible: {...actual.api.storyBible, appearances: vi.fn()}},

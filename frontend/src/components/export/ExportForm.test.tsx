@@ -14,9 +14,9 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import ExportForm from "./ExportForm"
-import {FeatureTestProvider} from "../features/FeatureTestProvider"
+import {FeatureTestProvider} from "../../features/FeatureTestProvider"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",
@@ -24,7 +24,7 @@ vi.mock("../hooks/useI18n", () => ({
   }),
 }))
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     settings: {
       getPlugin: vi.fn().mockResolvedValue({settings: {}}),
@@ -58,7 +58,7 @@ vi.mock("../api/client", () => ({
   DryRunResult: class {},
 }))
 
-vi.mock("../contexts/AudiobookJobContext", () => ({
+vi.mock("../../contexts/AudiobookJobContext", () => ({
   useAudiobookJob: () => ({
     start: vi.fn(),
     jobId: null,
@@ -66,16 +66,16 @@ vi.mock("../contexts/AudiobookJobContext", () => ({
   }),
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: {error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 
 // HelpLink is a simple component that would need HelpContext - mock it
-vi.mock("./help/HelpLink", () => ({
+vi.mock("../help/HelpLink", () => ({
   default: () => null,
 }))
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
   useDialog: () => ({
     confirm: vi.fn().mockResolvedValue(false),
     prompt: vi.fn().mockResolvedValue(null),
@@ -93,11 +93,11 @@ const clientExportMocks = vi.hoisted(() => ({
   booksGet: vi.fn().mockResolvedValue({id: "book-123", title: "Test Book", chapters: []}),
 }))
 
-vi.mock("../storage", () => ({
+vi.mock("../../storage", () => ({
   getStorage: () => ({books: {get: clientExportMocks.booksGet}}),
 }))
 
-vi.mock("../export", () => ({
+vi.mock("../../export", () => ({
   buildBookDocument: clientExportMocks.buildBookDocument,
   downloadExport: clientExportMocks.downloadExport,
 }))
@@ -238,7 +238,7 @@ describe("ExportForm", () => {
   // --- Export actions ---
 
   it("export button calls documentExport.download for document formats", async () => {
-    const {api} = await import("../api/client")
+    const {api} = await import("../../api/client")
     renderDialog()
     fireEvent.click(screen.getByText(/Als EPUB exportieren/))
     expect(api.documentExport.download).toHaveBeenCalledWith(
@@ -249,7 +249,7 @@ describe("ExportForm", () => {
   })
 
   it("LaTeX (.tex) exports via the client engine, not the backend", async () => {
-    const {api} = await import("../api/client")
+    const {api} = await import("../../api/client")
     vi.mocked(api.documentExport.download).mockClear()
     clientExportMocks.downloadExport.mockClear()
     clientExportMocks.booksGet.mockClear()

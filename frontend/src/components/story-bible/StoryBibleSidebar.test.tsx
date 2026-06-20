@@ -2,7 +2,7 @@ import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import StoryBibleSidebar from "./StoryBibleSidebar";
-import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
+import type {StoryEntityOut, StoryEntityTypeDef} from "../../api/client";
 
 vi.mock("@astrapi69/feature-strategy-react", () => ({
     useFeature: () => ({
@@ -14,7 +14,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
     }),
 }));
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -23,14 +23,14 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({confirm: mockConfirm}),
 }));
 
 const mockNotifyError = vi.fn();
 const mockNotifyInfo = vi.fn();
 const mockNotifySuccess = vi.fn();
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         error: (...a: unknown[]) => mockNotifyError(...a),
         info: (...a: unknown[]) => mockNotifyInfo(...a),
@@ -46,9 +46,9 @@ const mockExportBible = vi.fn();
 const mockAutoDetect = vi.fn();
 const mockCreateLink = vi.fn();
 
-vi.mock("../api/client", async () => {
+vi.mock("../../api/client", async () => {
     const actual =
-        await vi.importActual<typeof import("../api/client")>("../api/client");
+        await vi.importActual<typeof import("../../api/client")>("../../api/client");
     return {
         ...actual,
         api: {

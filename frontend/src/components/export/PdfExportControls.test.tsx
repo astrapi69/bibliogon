@@ -25,8 +25,8 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import PdfExportControls from "./PdfExportControls"
-import {ApiError} from "./../api/client"
-import {FeatureTestProvider} from "../features/FeatureTestProvider"
+import {ApiError} from "../../api/client"
+import {FeatureTestProvider} from "../../features/FeatureTestProvider"
 
 /**
  * Render the controls inside the real feature registry. Defaults to
@@ -42,7 +42,7 @@ function renderControls(
     return render(<FeatureTestProvider mode={mode}>{ui}</FeatureTestProvider>)
 }
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -54,9 +54,9 @@ const mockDocumentExportDownload = vi.fn()
 const mockGetApp = vi.fn()
 const mockUpdateApp = vi.fn()
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>(
-        "../api/client",
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>(
+        "../../api/client",
     )
     return {
         ...actual,
@@ -74,7 +74,7 @@ vi.mock("../api/client", async () => {
 })
 
 const mockNotifyError = vi.fn()
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {error: (...args: unknown[]) => mockNotifyError(...args)},
 }))
 
