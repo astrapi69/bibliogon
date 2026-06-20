@@ -13,7 +13,7 @@ import {
   ListChecks,
 } from "lucide-react";
 import type { Chapter } from "../../api/client";
-import { SIDEBAR_MENU_BREAKPOINT_PX } from "../../hooks/useSidebarCollapse";
+import { SIDEBAR_MENU_BREAKPOINT_PX } from "../../hooks/ui/useSidebarCollapse";
 import Tooltip from "../Tooltip";
 
 /**

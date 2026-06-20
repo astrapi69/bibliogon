@@ -34,7 +34,7 @@ vi.mock("../../hooks/useI18n", () => ({
 
 // The Standardwerte section consumes the type registries via hooks.
 // Mock them so the component renders without the App-root providers.
-vi.mock("../../hooks/useBookTypes", () => ({
+vi.mock("../../hooks/book/useBookTypes", () => ({
     useBookTypes: () => ({
         types: {},
         ordered: [

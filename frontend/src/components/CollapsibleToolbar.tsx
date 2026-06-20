@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 
-import { useIsMobile } from "../hooks/useIsMobile";
+import { useIsMobile } from "../hooks/ui/useIsMobile";
 import styles from "./CollapsibleToolbar.module.css";
 
 interface CollapsibleToolbarProps {

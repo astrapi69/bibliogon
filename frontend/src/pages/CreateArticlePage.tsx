@@ -10,7 +10,7 @@ import {
   contentTypeDefaultTitleKey,
   contentTypeLabelKey,
 } from "../hooks/useContentTypes";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 import AuthorSelectInput from "../components/AuthorSelectInput";

@@ -6,7 +6,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
 import { getStorage } from "../storage";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { useGitBackup } from "../hooks/useGitBackup";
 import { SyncBadge } from "../components/git-backup/SyncBadge";

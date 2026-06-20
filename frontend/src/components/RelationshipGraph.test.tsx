@@ -12,7 +12,7 @@ import { render, screen } from "@testing-library/react";
 
 import RelationshipGraph from "./RelationshipGraph";
 
-vi.mock("../hooks/useTheme", () => ({
+vi.mock("../hooks/ui/useTheme", () => ({
   useTheme: () => ({
     theme: "light",
     toggle: vi.fn(),

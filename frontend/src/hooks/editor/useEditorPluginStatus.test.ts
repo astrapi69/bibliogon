@@ -66,7 +66,7 @@ describe("pluginDisabledMessage", () => {
 // --- Hook (uses real timers, mocked API) ---
 
 // Dynamic import to allow vi.mock to take effect before the module loads
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     editorPluginStatus: vi.fn(),
   },
@@ -76,7 +76,7 @@ describe("useEditorPluginStatus hook", () => {
   let mockEditorPluginStatus: ReturnType<typeof vi.fn>
 
   beforeEach(async () => {
-    const {api} = await import("../api/client")
+    const {api} = await import("../../api/client")
     mockEditorPluginStatus = vi.mocked(api.editorPluginStatus)
     mockEditorPluginStatus.mockReset()
   })

@@ -42,7 +42,7 @@ vi.mock("../storage", async () => {
 
 import CreateBookPage from "./CreateBookPage";
 import { I18nProvider } from "../hooks/useI18n";
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import { DialogProvider } from "../components/AppDialog";
 import ErrorBoundary from "../components/ErrorBoundary";
 import { featureRegistry } from "../features/featureConfig";

@@ -21,7 +21,7 @@ const apiGetAppMock = vi.fn();
 const storageGetAppMock = vi.fn();
 const storageUpdateAppMock = vi.fn();
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         settings: {
             getApp: () => apiGetAppMock(),
@@ -31,7 +31,7 @@ vi.mock("../api/client", () => ({
     ApiError: class ApiError extends Error {},
 }));
 
-vi.mock("../storage", () => ({
+vi.mock("../../storage", () => ({
     getStorage: () => ({
         settings: {
             getApp: () => storageGetAppMock(),
@@ -40,7 +40,7 @@ vi.mock("../storage", () => ({
     }),
 }));
 
-import { ApiError } from "../api/client";
+import { ApiError } from "../../api/client";
 import { useViewMode } from "./useViewMode";
 
 beforeEach(() => {

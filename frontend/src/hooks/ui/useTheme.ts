@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 
-import {DEFAULT_PALETTE, isKnownPalette} from "../themes/palettes";
+import {DEFAULT_PALETTE, isKnownPalette} from "../../themes/palettes";
 
 type Theme = "light" | "dark";
 

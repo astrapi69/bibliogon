@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { getStorage } from "../storage";
+import { getStorage } from "../../storage";
 
 /**
  * Article topics from app settings (AR-02 Phase 2.1).

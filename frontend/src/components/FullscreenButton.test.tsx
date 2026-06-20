@@ -23,7 +23,7 @@ const mockState = {
     toggle: mockToggle,
 };
 
-vi.mock("../hooks/useFullscreenToggle", () => ({
+vi.mock("../hooks/ui/useFullscreenToggle", () => ({
     useFullscreenToggle: () => mockState,
 }));
 

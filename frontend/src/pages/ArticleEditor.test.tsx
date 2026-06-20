@@ -135,7 +135,7 @@ vi.mock("../hooks/useAuthorProfile", () => ({
         profile ? [profile.name, ...profile.pen_names].filter(Boolean) : [],
 }));
 
-vi.mock("../hooks/useTopics", () => ({
+vi.mock("../hooks/content/useTopics", () => ({
     useTopics: () => ["tech", "writing"],
 }));
 

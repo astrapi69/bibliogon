@@ -1,7 +1,7 @@
 import {useEffect, useRef, useState} from "react";
 import {X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
-import {useBookTypes} from "../../hooks/useBookTypes";
+import {useBookTypes} from "../../hooks/book/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";

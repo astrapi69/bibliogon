@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import { api, ApiError, BookDetail } from "../api/client";
-import { aiChat, getAiConfig, isAiConfigured } from "../ai/llmClient";
-import { buildMarketingMessages } from "../ai/marketingPrompts";
-import { notify } from "../utils/notify";
-import { useI18n } from "./useI18n";
-import { type EditorPluginStatusMap, isPluginAvailable } from "./useEditorPluginStatus";
+import { api, ApiError, BookDetail } from "../../api/client";
+import { aiChat, getAiConfig, isAiConfigured } from "../../ai/llmClient";
+import { buildMarketingMessages } from "../../ai/marketingPrompts";
+import { notify } from "../../utils/notify";
+import { useI18n } from "../useI18n";
+import { type EditorPluginStatusMap, isPluginAvailable } from "../editor/useEditorPluginStatus";
 
 export interface UseBookMetadataAiParams {
     book: BookDetail;

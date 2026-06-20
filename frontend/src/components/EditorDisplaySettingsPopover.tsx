@@ -24,7 +24,7 @@ import {
     type EditorFontSize,
     type EditorLineHeight,
     type EditorWidth,
-} from "../hooks/useEditorDisplaySettings";
+} from "../hooks/editor/useEditorDisplaySettings";
 import {useI18n} from "../hooks/useI18n";
 import {RadixSelect} from "./RadixSelect";
 

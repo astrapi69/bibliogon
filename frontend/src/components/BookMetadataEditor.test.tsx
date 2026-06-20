@@ -35,7 +35,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
 }));
 import { ApiError, type BookDetail, type Book, type BookTypeDef } from "../api/client";
 import { notify } from "../utils/notify";
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 
 // BOOK-TYPES-SSOT-YAML-01 C7: BookMetadataEditor now reads
 // content_model from the registry to gate the Audiobook +

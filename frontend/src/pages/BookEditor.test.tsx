@@ -20,7 +20,7 @@ import { MemoryRouter, Route, Routes, useLocation } from "react-router-dom";
 
 import BookEditor from "./BookEditor";
 import type { BookDetail, BookTypeDef, Chapter } from "../api/client";
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import { FeatureTestProvider } from "../features/FeatureTestProvider";
 import { expectNoA11yViolations } from "../test-utils/a11y";
 

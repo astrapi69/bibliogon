@@ -45,7 +45,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../hooks/useGoBack", () => ({ useGoBack: () => vi.fn() }));
+vi.mock("../hooks/navigation/useGoBack", () => ({ useGoBack: () => vi.fn() }));
 
 let repoUrl: string | null = null;
 vi.mock("../storage", () => ({

@@ -28,7 +28,7 @@ import {
     api,
 } from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {useBookTypes} from "../../hooks/useBookTypes"
+import {useBookTypes} from "../../hooks/book/useBookTypes"
 
 interface Props {
     book: BookDetail

@@ -17,7 +17,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
 import { TokenInput } from "../lib/components/TokenInput";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 
 /**
  * PGS-02 commit-to-repo page (Dialog->Pages migration C8), per-book at

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook, waitFor } from "@testing-library/react";
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         settings: {
             getApp: vi.fn(),
@@ -13,7 +13,7 @@ describe("useTopics", () => {
     let mockGetApp: ReturnType<typeof vi.fn>;
 
     beforeEach(async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         mockGetApp = vi.mocked(api.settings.getApp);
         mockGetApp.mockReset();
     });

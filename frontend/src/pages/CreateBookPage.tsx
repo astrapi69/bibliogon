@@ -10,8 +10,8 @@ import {
 import { getStorage } from "../storage";
 import CreateBookForm from "../components/CreateBookForm";
 import { PageLayout } from "../components/PageLayout";
-import { pageableBookTypeIds, useBookTypes } from "../hooks/useBookTypes";
-import { useGoBack } from "../hooks/useGoBack";
+import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { notify } from "../utils/notify";
 

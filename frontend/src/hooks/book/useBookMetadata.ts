@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, Author, BookDetail, type GitSyncMappingStatus } from "../api/client";
-import { getStorage } from "../storage";
-import { notify } from "../utils/notify";
-import { useAuthorProfile, profileDisplayNames } from "./useAuthorProfile";
-import { useI18n } from "./useI18n";
+import { api, Author, BookDetail, type GitSyncMappingStatus } from "../../api/client";
+import { getStorage } from "../../storage";
+import { notify } from "../../utils/notify";
+import { useAuthorProfile, profileDisplayNames } from "../useAuthorProfile";
+import { useI18n } from "../useI18n";
 
 export interface UseBookMetadataParams {
     book: BookDetail;

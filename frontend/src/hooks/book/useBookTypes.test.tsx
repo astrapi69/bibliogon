@@ -20,9 +20,9 @@ import {
     pageableBookTypeIds,
     useBookTypes,
 } from "./useBookTypes";
-import type {BookTypeDef} from "../api/client";
+import type {BookTypeDef} from "../../api/client";
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         bookTypes: {
             list: vi.fn(),
@@ -31,7 +31,7 @@ vi.mock("../api/client", () => ({
     BookType: undefined,
 }));
 
-import {api} from "../api/client";
+import {api} from "../../api/client";
 
 function makeBookType(overrides: Partial<BookTypeDef> = {}): BookTypeDef {
     return {

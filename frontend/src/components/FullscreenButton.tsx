@@ -21,7 +21,7 @@
  * cross-editor parity fix.
  */
 import {Maximize2, Minimize2} from "lucide-react";
-import {useFullscreenToggle} from "../hooks/useFullscreenToggle";
+import {useFullscreenToggle} from "../hooks/ui/useFullscreenToggle";
 import {useI18n} from "../hooks/useI18n";
 
 interface Props {
