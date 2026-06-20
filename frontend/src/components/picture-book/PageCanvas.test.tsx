@@ -20,9 +20,9 @@ import fs from "node:fs"
 import path from "node:path"
 
 import PageCanvas, {extractPlainText} from "./PageCanvas"
-import type {Page, Asset} from "../api/client"
+import type {Page, Asset} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -31,7 +31,7 @@ vi.mock("../hooks/useI18n", () => ({
 }))
 
 const mockUpload = vi.fn()
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         assets: {
             upload: (...args: unknown[]) => mockUpload(...args),
@@ -586,7 +586,7 @@ describe("PageCanvas - layout-aware rendering (Session 4 Commit 1)", () => {
 // ("Visual abgrenzung Text vs Image is unclear").
 
 describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)", () => {
-    const cssPath = path.resolve(__dirname, "./PageCanvas.module.css")
+    const cssPath = path.resolve(__dirname, "../PageCanvas.module.css")
     const css = fs.readFileSync(cssPath, "utf8")
 
     function blockFor(selector: string): string {
@@ -796,7 +796,7 @@ describe("PageCanvas.module.css - visual-container contract (Session 4 Commit 2)
 // --- Session 4c Commit 2: on-image replace-button overlay ---
 
 describe("PageCanvas - on-image replace button overlay (Session 4c Commit 2)", () => {
-    const cssPath = path.resolve(__dirname, "./PageCanvas.module.css")
+    const cssPath = path.resolve(__dirname, "../PageCanvas.module.css")
     const css = fs.readFileSync(cssPath, "utf8")
 
     it("replace button is rendered INSIDE the image region (not in a bottom bar)", () => {

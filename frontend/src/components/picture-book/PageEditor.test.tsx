@@ -20,9 +20,9 @@ import {
 import { MemoryRouter } from "react-router-dom";
 
 import PageEditor from "./PageEditor";
-import type { Page } from "../api/client";
-import { expectNoA11yViolations } from "../test-utils/a11y";
-import { FeatureTestProvider } from "../features/FeatureTestProvider";
+import type { Page } from "../../api/client";
+import { expectNoA11yViolations } from "../../test-utils/a11y";
+import { FeatureTestProvider } from "../../features/FeatureTestProvider";
 
 // PdfExportControls (mounted inside the editor header) uses useFeature, which
 // requires a FeatureProvider; the header EditorMenu's help actions use
@@ -56,11 +56,11 @@ class ResizeObserverStub {
 // the Toolbar wiring, not the menu, so stub the wrapper to a passthrough.
 // The menu's own behaviour is covered by editorContextMenuActions.test +
 // the E2E smoke.
-vi.mock("./EditorContextMenu", () => ({
+vi.mock("../EditorContextMenu", () => ({
   default: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
     lang: "en",
@@ -78,7 +78,7 @@ const mockDocumentExportDownload = vi.fn();
 const mockNotifyError = vi.fn();
 const mockConfirm = vi.fn();
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
   useDialog: () => ({
     confirm: (...args: unknown[]) => mockConfirm(...args),
     prompt: vi.fn(),
@@ -87,7 +87,7 @@ vi.mock("./AppDialog", () => ({
   }),
 }));
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     pages: {
       list: (...args: unknown[]) => mockList(...args),
@@ -134,7 +134,7 @@ vi.mock("../api/client", () => ({
   },
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: {
     error: (...args: unknown[]) => mockNotifyError(...args),
     success: vi.fn(),
@@ -1170,7 +1170,7 @@ describe("PageEditor RichTextToolbar wiring (Session 4c-B-1 Commit 3)", () => {
 
 // --- PB-PHASE4 Session 6 Commit 4: Export-PDF button ---
 
-import { ApiError } from "../api/client";
+import { ApiError } from "../../api/client";
 
 describe("PageEditor Export-PDF button (Session 6 Commit 4)", () => {
   it("renders the Export PDF button in the header (always visible)", () => {
