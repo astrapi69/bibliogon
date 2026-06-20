@@ -24,7 +24,7 @@ import fs from "node:fs";
 import path from "node:path";
 
 import ChapterSidebar from "./ChapterSidebar";
-import type {Chapter} from "../api/client";
+import type {Chapter} from "../../api/client";
 
 // Radix DropdownMenu + Tooltip lean on ResizeObserver which jsdom
 // does not ship. Provide a no-op stub so the component mounts.
@@ -169,7 +169,7 @@ describe("ChapterSidebar - flexbox scroll container", () => {
     it("ChapterSidebar.module.css .list rule has the flex-scroll trio", () => {
         const cssPath = path.resolve(
             __dirname,
-            "./ChapterSidebar.module.css",
+            "../ChapterSidebar.module.css",
         );
         const css = fs.readFileSync(cssPath, "utf8");
         // Match the .list block and assert all three declarations
@@ -196,7 +196,7 @@ describe("ChapterSidebar - mobile overlay reachability", () => {
     // overflow-y: auto + safe-area) and the list grows naturally, so the
     // pinned footer can no longer fall below the fold.
     it("ChapterSidebar.module.css uses dvh and a mobile full-scroll fallback", () => {
-        const cssPath = path.resolve(__dirname, "./ChapterSidebar.module.css");
+        const cssPath = path.resolve(__dirname, "../ChapterSidebar.module.css");
         const css = fs.readFileSync(cssPath, "utf8");
 
         const sidebarBlock = css.match(/\.sidebar\s*\{[^}]*\}/);
@@ -222,7 +222,7 @@ describe("ChapterSidebar - dropdown CSS contract", () => {
         // the source contract instead. This is the regression pin
         // that prevents the rule from being accidentally deleted or
         // reverted in a theme refactor.
-        const cssPath = path.resolve(__dirname, "../styles/global.css");
+        const cssPath = path.resolve(__dirname, "../../styles/global.css");
         const css = fs.readFileSync(cssPath, "utf8");
 
         // Find the .chapter-dropdown-content block and check every

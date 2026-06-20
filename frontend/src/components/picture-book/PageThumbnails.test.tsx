@@ -13,7 +13,7 @@ import {describe, it, expect, vi} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
 import PageThumbnails from "./PageThumbnails"
-import type {Page} from "../api/client"
+import type {Page} from "../../api/client"
 
 class ResizeObserverStub {
     observe() {}
@@ -23,7 +23,7 @@ class ResizeObserverStub {
 ;(globalThis as unknown as {ResizeObserver: typeof ResizeObserverStub}).ResizeObserver =
     ResizeObserverStub
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",

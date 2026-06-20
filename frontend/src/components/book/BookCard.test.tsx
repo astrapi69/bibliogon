@@ -10,9 +10,9 @@ import {describe, it, expect, vi} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
 import BookCard from "./BookCard"
-import type {Book} from "../api/client"
+import type {Book} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",

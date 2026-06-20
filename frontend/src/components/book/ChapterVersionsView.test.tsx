@@ -10,9 +10,9 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import ChapterVersionsView from "./ChapterVersionsView";
-import type { ChapterVersionSummary } from "../api/client";
+import type { ChapterVersionSummary } from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, f: string) => f,
     lang: "en",
@@ -21,11 +21,11 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
   useDialog: () => ({ confirm: mockConfirm }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: { success: vi.fn(), error: vi.fn() },
 }));
 
@@ -34,7 +34,7 @@ const createSnapshot = vi.fn();
 const restoreVersion = vi.fn();
 const deleteVersion = vi.fn();
 const diffVersion = vi.fn();
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     chapters: {
       listVersions: (...a: unknown[]) => listVersions(...a),

@@ -33,9 +33,9 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
         reason: undefined,
     }),
 }));
-import { ApiError, type BookDetail, type Book, type BookTypeDef } from "../api/client";
-import { notify } from "../utils/notify";
-import { BookTypesProvider } from "../hooks/book/useBookTypes";
+import { ApiError, type BookDetail, type Book, type BookTypeDef } from "../../api/client";
+import { notify } from "../../utils/notify";
+import { BookTypesProvider } from "../../hooks/book/useBookTypes";
 
 // BOOK-TYPES-SSOT-YAML-01 C7: BookMetadataEditor now reads
 // content_model from the registry to gate the Audiobook +
@@ -112,7 +112,7 @@ function render(ui: React.ReactElement, options?: RenderOptions) {
     });
 }
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (key: string, fallback: string) => fallback,
         lang: "en",
@@ -120,7 +120,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn().mockResolvedValue(true),
         prompt: vi.fn().mockResolvedValue(null),
@@ -128,18 +128,18 @@ vi.mock("./AppDialog", () => ({
     }),
 }));
 
-vi.mock("../hooks/useAuthorChoices", () => ({
+vi.mock("../../hooks/useAuthorChoices", () => ({
     useAuthorChoices: () => [],
 }));
 
 // GitRepoInfo (rendered by RepositoryUrlField) resolves the remote
 // default branch via this hook; stub it so the metadata-editor tests
 // never make a real GitHub API request.
-vi.mock("../hooks/useRemoteDefaultBranch", () => ({
+vi.mock("../../hooks/useRemoteDefaultBranch", () => ({
     useRemoteDefaultBranch: () => ({ status: "idle" }),
 }));
 
-vi.mock("../hooks/useAuthorProfile", () => ({
+vi.mock("../../hooks/useAuthorProfile", () => ({
     useAuthorProfile: () => ({
         name: "Test Author",
         pen_names: ["Pen One", "Pen Two"],
@@ -158,7 +158,7 @@ const assetsDeleteMock = vi.fn().mockResolvedValue(undefined);
 
 const documentExportDownloadMock = vi.fn();
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         audiobook: {
             listVoices: vi.fn().mockResolvedValue([]),
@@ -248,7 +248,7 @@ vi.mock("../api/client", () => ({
     formatVoiceLabel: (v: { id: string }) => v.id,
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
@@ -439,7 +439,7 @@ describe("BookMetadataEditor", () => {
     });
 
     it("save shows success notification", async () => {
-        const { notify } = await import("../utils/notify");
+        const { notify } = await import("../../utils/notify");
         renderEditor();
 
         fireEvent.click(screen.getByTestId("metadata-save"));
@@ -450,7 +450,7 @@ describe("BookMetadataEditor", () => {
     });
 
     it("save shows error notification on failure", async () => {
-        const { notify } = await import("../utils/notify");
+        const { notify } = await import("../../utils/notify");
         onSave.mockRejectedValueOnce(new Error("Save failed"));
         renderEditor();
 
@@ -1012,7 +1012,7 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
     // wiring from regressing to the empty default and verifies the
     // datalist is populated for the autocomplete to fire.
     it("on mount, calls api.kdp.listCategories and the datalist exposes its options", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const listCategoriesMock = vi.mocked(api.kdp.listCategories);
         listCategoriesMock.mockClear();
         listCategoriesMock.mockResolvedValueOnce(["Fiction", "Mystery", "Science Fiction"]);
@@ -1033,7 +1033,7 @@ describe("BookMetadataEditor — Bug 9 Categories + BISAC", () => {
     });
 
     it("when api.kdp.listCategories fails, CategoryInput degrades to no suggestions (no crash)", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const listCategoriesMock = vi.mocked(api.kdp.listCategories);
         listCategoriesMock.mockClear();
         listCategoriesMock.mockRejectedValueOnce(new Error("network down"));
@@ -1327,7 +1327,7 @@ describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD
     });
 
     it("renders the free-input branch when no git-sync mapping exists", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const statusMock = vi.mocked(api.gitSync.status);
         statusMock.mockClear();
         statusMock.mockResolvedValueOnce({
@@ -1358,7 +1358,7 @@ describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD
     });
 
     it("renders the read-only branch when git-sync mapping exists", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const statusMock = vi.mocked(api.gitSync.status);
         statusMock.mockClear();
         statusMock.mockResolvedValueOnce({
@@ -1396,7 +1396,7 @@ describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD
     });
 
     it("falls back to the free-input branch when the git-sync status call fails", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const statusMock = vi.mocked(api.gitSync.status);
         statusMock.mockClear();
         statusMock.mockRejectedValueOnce(new Error("plugin-git-sync disabled"));
@@ -1419,7 +1419,7 @@ describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD
     });
 
     it("typing into the free-input branch flows the value into the save payload as repository_url", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const statusMock = vi.mocked(api.gitSync.status);
         statusMock.mockClear();
         statusMock.mockResolvedValueOnce({
@@ -1457,7 +1457,7 @@ describe("BookMetadataEditor — Repository-URL field (BOOK-REPOSITORY-URL-FIELD
     });
 
     it("clearing the input sends repository_url=null on save (empty string → null)", async () => {
-        const { api } = await import("../api/client");
+        const { api } = await import("../../api/client");
         const statusMock = vi.mocked(api.gitSync.status);
         statusMock.mockClear();
         statusMock.mockResolvedValueOnce({
