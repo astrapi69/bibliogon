@@ -14,9 +14,9 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
-import AiSetupWizard from "./AiSetupWizard";
+import AiSetupWizard from "../AiSetupWizard";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_: string, fallback: string) => fallback,
         lang: "en",
@@ -24,7 +24,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         success: vi.fn(),
         warning: vi.fn(),
@@ -42,7 +42,7 @@ const {mockTestConnection} = vi.hoisted(() => ({
     }),
 }));
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         settings: {
             updateApp: vi.fn().mockResolvedValue({}),

@@ -10,9 +10,9 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
-import BackupCompareDialog from "./BackupCompareDialog"
+import BackupCompareDialog from "../BackupCompareDialog"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",
@@ -21,7 +21,7 @@ vi.mock("../hooks/useI18n", () => ({
 }))
 
 const mockCompare = vi.fn()
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     backup: {
       compare: (...args: unknown[]) => mockCompare(...args),
@@ -36,7 +36,7 @@ vi.mock("../api/client", () => ({
   },
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: {
     error: vi.fn(),
     success: vi.fn(),
@@ -145,7 +145,7 @@ describe("BackupCompareDialog", () => {
   })
 
   it("shows error notification on API failure", async () => {
-    const {notify} = await import("../utils/notify")
+    const {notify} = await import("../../utils/notify")
     mockCompare.mockRejectedValue(new Error("Network failure"))
 
     renderDialog()

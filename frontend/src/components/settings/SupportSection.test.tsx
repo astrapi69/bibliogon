@@ -8,9 +8,9 @@
 import React from "react";
 import {describe, it, expect, vi} from "vitest";
 import {render, screen} from "@testing-library/react";
-import SupportSection, {getDonationsConfig} from "./SupportSection";
+import SupportSection, {getDonationsConfig} from "../SupportSection";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({t: (_: string, f: string) => f}),
 }));
 

@@ -9,9 +9,9 @@
 
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, waitFor} from "@testing-library/react";
-import SshKeySection from "./SshKeySection";
+import SshKeySection from "../SshKeySection";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "de",
@@ -19,16 +19,16 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({confirm: vi.fn(), prompt: vi.fn()}),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {success: vi.fn(), error: vi.fn(), info: vi.fn()},
 }));
 
 const mockInfo = vi.fn();
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         ssh: {
             info: (...args: unknown[]) => mockInfo(...args),
