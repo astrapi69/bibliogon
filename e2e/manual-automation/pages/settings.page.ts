@@ -71,22 +71,53 @@ export class SettingsPage {
 
     /** Pick a UI language via the Verhalten language RadixSelect + save.
      *
-     * Awaits the settings PATCH so the new ``default_language`` is persisted
-     * before the caller navigates — otherwise a follow-up ``goto`` reloads
-     * the app while the write is still in flight and reads the stale
-     * language (the TC-052 spot-check race). */
+     * Awaits the LANGUAGE settings PATCH so the new ``default_language`` is
+     * persisted before the caller navigates — otherwise a follow-up ``goto``
+     * reloads the app while the write is still in flight and reads the stale
+     * language (the TC-052 spot-check race).
+     *
+     * Two #485 robustness fixes over the naive "click + await any PATCH":
+     *  - Re-selecting the already-active language fires NO auto-save (#472),
+     *    so detect it via the open dropdown's checked item and return early
+     *    instead of waiting forever for a PATCH that never comes.
+     *  - Match the PATCH by body (``default_language === lang``), not just any
+     *    ``/api/settings/app`` PATCH — a concurrent debounced save of another
+     *    Verhalten field would otherwise resolve the wait early and let the
+     *    caller navigate before the language write lands. */
     async selectLanguage(lang: UiLanguage): Promise<void> {
         await this.goto("verhalten");
-        const saved = this.page.waitForResponse(
-            (res) =>
-                res.url().includes("/api/settings/app") &&
-                res.request().method() === "PATCH" &&
-                res.ok(),
-        );
         await this.page.getByTestId("settings-language-trigger").click();
-        // Auto-save (#472): selecting the language arms the debounced PATCH;
-        // there is no Speichern button. Await the write before returning.
-        await this.page.getByTestId(`settings-language-item-${lang}`).click();
+        const item = this.page.getByTestId(`settings-language-item-${lang}`);
+        await item.waitFor({state: "visible"});
+        if ((await item.getAttribute("data-state")) === "checked") {
+            // Already the active language: the click commits no change and
+            // fires no PATCH. Close the dropdown and return — the app is
+            // already rendering in `lang`.
+            await this.page.keyboard.press("Escape");
+            return;
+        }
+        const saved = this.page.waitForResponse((res) => {
+            if (
+                !res.url().includes("/api/settings/app") ||
+                res.request().method() !== "PATCH" ||
+                !res.ok()
+            ) {
+                return false;
+            }
+            try {
+                // The Verhalten auto-save PATCHes a nested body:
+                // { app: { default_language, ... }, behavior, ui }.
+                return res.request().postDataJSON()?.app?.default_language === lang;
+            } catch {
+                return false;
+            }
+        });
+        await item.click();
         await saved;
+        // Let any trailing debounced auto-save flush before the caller
+        // navigates. Rapid consecutive switches (the spot-check) can leave a
+        // second PATCH in flight that races the follow-up goto and reverts the
+        // persisted language; waiting for the network to settle pins it.
+        await this.page.waitForLoadState("networkidle");
     }
 }
