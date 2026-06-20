@@ -24,8 +24,8 @@ import {
 import {MemoryRouter} from "react-router-dom";
 
 import ComicBookEditor from "./ComicBookEditor";
-import {expectNoA11yViolations} from "../test-utils/a11y";
-import {FeatureTestProvider} from "../features/FeatureTestProvider";
+import {expectNoA11yViolations} from "../../test-utils/a11y";
+import {FeatureTestProvider} from "../../features/FeatureTestProvider";
 
 // PdfExportControls (mounted in the comic editor header) uses useFeature,
 // which requires a FeatureProvider; the header EditorMenu's help actions use
@@ -43,7 +43,7 @@ function render(
     );
 }
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -51,9 +51,9 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>(
-        "../api/client",
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>(
+        "../../api/client",
     );
     return {
         ...actual,
@@ -88,7 +88,7 @@ vi.mock("../api/client", async () => {
 
 const mockConfirm = vi.fn();
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         prompt: vi.fn(),
@@ -97,7 +97,7 @@ vi.mock("./AppDialog", () => ({
     }),
 }));
 
-import {api} from "../api/client";
+import {api} from "../../api/client";
 
 const fakePluginInfo = {
     name: "comics",
@@ -385,7 +385,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
     });
 
     it("surfaces an error in the editor body when api.pages.create fails", async () => {
-        const {ApiError} = await import("../api/client");
+        const {ApiError} = await import("../../api/client");
         vi.mocked(api.pages.list).mockImplementation(async () => []);
         vi.mocked(api.pages.create).mockImplementation(async () => {
             throw new ApiError(500, "creation failed", "/books/book-1/pages", "POST");
@@ -701,7 +701,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
     });
 
     it("renders the plugin-error slot on getInfo failure", async () => {
-        const {ApiError} = await import("../api/client");
+        const {ApiError} = await import("../../api/client");
         vi.mocked(api.comics.getInfo).mockImplementation(async () => {
             throw new ApiError(500, "boom", "/comics/info", "GET");
         });
@@ -856,7 +856,7 @@ describe("ComicBookEditor (Session 2 C6 full editor)", () => {
         });
 
         it("surfaces an error in the editor body when api.pages.reorder fails", async () => {
-            const {ApiError} = await import("../api/client");
+            const {ApiError} = await import("../../api/client");
             vi.mocked(api.pages.list).mockImplementation(async () => [
                 fakePage,
                 fakePage2,
