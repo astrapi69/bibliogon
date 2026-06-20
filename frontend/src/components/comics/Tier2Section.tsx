@@ -25,7 +25,7 @@ import {COLLAPSIBLE_CONTENT_ANIMATION} from "../shared/CollapsibleConfigSection"
 import {useCollapsibleState} from "../../hooks/ui/useCollapsibleState";
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {
     PICTURE_BOOK_FONTS,
 } from "../../data/picture-book-fonts";

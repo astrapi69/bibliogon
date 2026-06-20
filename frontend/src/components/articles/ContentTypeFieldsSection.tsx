@@ -21,7 +21,7 @@ import {useCallback, type ChangeEvent} from "react";
 import type {ContentType, ContentTypeExtraField} from "../../api/client";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 
 interface ContentTypeFieldsSectionProps {
     contentType: string;

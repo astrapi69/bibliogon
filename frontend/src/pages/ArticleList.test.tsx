@@ -173,7 +173,7 @@ vi.mock("../components/ThemeToggle", () => ({
 
 // Stubbed: RecentDocuments lists articles via the storage seam, which would
 // otherwise add calls to the articles.list spy these tests assert on.
-vi.mock("../components/RecentDocuments", () => ({
+vi.mock("../components/dashboard/RecentDocuments", () => ({
     default: () => null,
 }));
 

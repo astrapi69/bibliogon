@@ -1,6 +1,6 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "./RadixSelect";
 
 /**
  * Under Vitest/happy-dom RadixSelect renders a native <select> (the

@@ -1,5 +1,5 @@
 import WritingHistoryView from "../components/WritingHistoryView";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 

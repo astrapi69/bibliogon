@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from "react";
 import {useI18n} from "../../hooks/useI18n";
 import {PALETTES} from "../../themes/palettes";
 import styles from "../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {SectionHeader} from "./SectionHeader";
 import {useSettingsAutoSave} from "./useSettingsAutoSave";
 

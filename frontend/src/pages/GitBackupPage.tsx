@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { GitCommit, GitBranch, RefreshCw } from "lucide-react";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";

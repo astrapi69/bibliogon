@@ -4,7 +4,7 @@ import * as Select from "@radix-ui/react-select";
 import { ChevronDown } from "lucide-react";
 import { api, ApiError, ContentType } from "../api/client";
 import { getStorage } from "../storage";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import {
   useContentTypes,
   contentTypeDefaultTitleKey,

@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { api, AudiobookVoice, formatVoiceLabel } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 
 function slugifyForFilename(text: string): string {
     // Mirrors backend scaffolder._slugify so the displayed default

@@ -15,7 +15,7 @@
 import { useEffect, useState } from "react";
 import { api, ApiError } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 import styles from "./MediumImportSettings.module.css";
 
 const PLUGIN_NAME = "medium-import";

@@ -3,7 +3,7 @@ import { useParams } from "react-router-dom";
 import { ApiError, BookDetail, api } from "../api/client";
 import ClientExportMenu from "../components/export/ClientExportMenu";
 import ExportForm from "../components/export/ExportForm";
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import { LoadingIndicator } from "../components/shared/LoadingIndicator";
 import { buildBookDocument } from "../export";
 import { asExportEngine, type ExportEngine, shouldUseClientEngine } from "../export/engine";

@@ -22,7 +22,7 @@ vi.mock("../../utils/platform/notify", () => ({
 }));
 
 // Stub the heavy TipTap-based editors with simple controllable shims.
-vi.mock("../RichTextEditor", () => ({
+vi.mock("../editor/RichTextEditor", () => ({
     default: ({
         onChange,
         testidNamespace,

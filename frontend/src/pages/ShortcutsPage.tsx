@@ -3,7 +3,7 @@
  * `/help/shortcuts`. Was ShortcutCheatsheet (a Ctrl+/ overlay); now a
  * deep-linkable reference page. Pure-static (reads APP_SHORTCUTS).
  */
-import { PageLayout } from "../components/PageLayout";
+import { PageLayout } from "../components/shared/PageLayout";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { APP_SHORTCUTS } from "../hooks/ui/useKeyboardShortcuts";

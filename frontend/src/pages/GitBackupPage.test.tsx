@@ -89,7 +89,7 @@ vi.mock("../hooks/useGitBackup", () => ({
     }),
 }));
 
-vi.mock("../components/PageLayout", () => ({
+vi.mock("../components/shared/PageLayout", () => ({
     PageLayout: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));
 vi.mock("../features/FeatureNotice", () => ({

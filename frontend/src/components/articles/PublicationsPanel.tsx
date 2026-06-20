@@ -26,7 +26,7 @@ import {
 import { getStorage } from "../../storage";
 import { useDialog } from "../shared/AppDialog";
 import { useI18n } from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {Toggle} from "../settings/Toggle";
 import {Badge, type BadgeVariant} from "../../lib/components/Badge";
 import { notify } from "../../utils/platform/notify";

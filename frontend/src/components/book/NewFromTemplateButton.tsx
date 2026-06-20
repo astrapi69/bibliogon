@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog"
 import {Sparkles, Download, X} from "lucide-react"
 import {useI18n} from "../../hooks/useI18n"
-import {RadixSelect} from "../RadixSelect"
+import {RadixSelect} from "../shared/RadixSelect"
 import {notify} from "../../utils/platform/notify"
 import {api, ApiError, type Article, type Book} from "../../api/client"
 import TemplateImportDropZone, {

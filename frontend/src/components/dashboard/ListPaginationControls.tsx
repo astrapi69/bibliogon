@@ -1,4 +1,4 @@
-import PageSizeSelector from "../PageSizeSelector";
+import PageSizeSelector from "../picture-book/PageSizeSelector";
 import type { PageSize } from "../../hooks/usePagedList";
 
 type Translate = (key: string, fallback: string) => string;

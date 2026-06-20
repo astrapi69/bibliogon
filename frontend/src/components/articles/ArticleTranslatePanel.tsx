@@ -4,7 +4,7 @@ import { Languages, Loader2 } from "lucide-react";
 
 import { api, ApiError, Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 import { notify } from "../../utils/platform/notify";
 import layout from "../../pages/ArticleEditor.module.css";
 

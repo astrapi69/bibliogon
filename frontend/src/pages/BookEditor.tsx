@@ -5,21 +5,21 @@ import ConflictResolutionDialog, {
     type ConflictInfo,
 } from "../components/import/ConflictResolutionDialog";
 import ChapterSidebar from "../components/book/ChapterSidebar";
-import { OfflineToggleButton } from "../components/OfflineToggleButton";
+import { OfflineToggleButton } from "../components/shared/OfflineToggleButton";
 import { getStorage } from "../storage";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
 import Storyboard from "../components/Storyboard";
-import ProseStoryboard from "../components/ProseStoryboard";
+import ProseStoryboard from "../components/story-bible/ProseStoryboard";
 import ChapterOutliner from "../components/book/ChapterOutliner";
-import RelationshipGraphView from "../components/RelationshipGraphView";
+import RelationshipGraphView from "../components/story-bible/RelationshipGraphView";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
 import Editor from "../components/editor/Editor";
 import BookMetadataEditor from "../components/book/BookMetadataEditor";
-import type { NavigableFindingType } from "../components/QualityTab";
+import type { NavigableFindingType } from "../components/quality/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
 import ChapterTemplatePickerModal from "../components/book/ChapterTemplatePickerModal";
-import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal";
+import SaveAsChapterTemplateModal from "../components/book/SaveAsChapterTemplateModal";
 import { useDialog } from "../components/shared/AppDialog";
 import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";

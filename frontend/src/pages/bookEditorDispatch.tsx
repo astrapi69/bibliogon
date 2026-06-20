@@ -1,6 +1,6 @@
 import { type ComponentType } from "react";
 
-import PageEditor from "../components/PageEditor";
+import PageEditor from "../components/picture-book/PageEditor";
 import ComicBookEditor from "../components/comics/ComicBookEditor";
 
 /**

@@ -60,7 +60,7 @@ import { SidebarToggleButton } from "../components/SidebarToggleButton";
 import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
-import { RadixSelect } from "../components/RadixSelect";
+import { RadixSelect } from "../components/shared/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/content/useTopics";
 import { notify } from "../utils/platform/notify";

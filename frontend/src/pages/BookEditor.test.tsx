@@ -242,7 +242,7 @@ vi.mock("../components/book/BookMetadataEditor", () => ({
 vi.mock("../components/import/ConflictResolutionDialog", () => ({ default: () => null }));
 vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
 vi.mock("../components/book/ChapterTemplatePickerModal", () => ({ default: () => null }));
-vi.mock("../components/SaveAsChapterTemplateModal", () => ({ default: () => null }));
+vi.mock("../components/book/SaveAsChapterTemplateModal", () => ({ default: () => null }));
 vi.mock("../lib/components/EmptyState", () => ({ EmptyState: () => null }));
 vi.mock("../components/shared/LoadingIndicator", () => ({
     LoadingIndicator: ({ testId }: { testId?: string }) => (

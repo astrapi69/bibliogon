@@ -19,7 +19,7 @@ vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),
 }));
 vi.mock("../hooks/navigation/useGoBack", () => ({ useGoBack: () => vi.fn() }));
-vi.mock("../components/PageLayout", () => ({
+vi.mock("../components/shared/PageLayout", () => ({
     PageLayout: ({
         children,
         testId,

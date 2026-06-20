@@ -28,7 +28,7 @@ import {
 } from "../../utils/ai/aiConfig";
 import { notify } from "../../utils/platform/notify";
 import styles from "../../pages/Settings.module.css";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 import { useDialog } from "../shared/AppDialog";
 import {
     ConfiguredProvidersTable,

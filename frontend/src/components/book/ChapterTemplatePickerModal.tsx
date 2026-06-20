@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Download, Lock, Pencil, Trash2, Upload } from "lucide-react";
 import styles from "../ChapterTemplatePickerModal.module.css";
-import SaveAsChapterTemplateModal from "../SaveAsChapterTemplateModal";
+import SaveAsChapterTemplateModal from "./SaveAsChapterTemplateModal";
 
 interface Props {
   open: boolean;

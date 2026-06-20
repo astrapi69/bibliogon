@@ -21,7 +21,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { BookOpen, ChevronDown, Sparkles, Trash2 } from "lucide-react";
 
 import BulkActionBar from "../dashboard/BulkActionBar";
-import { RadixSelect } from "../RadixSelect";
+import { RadixSelect } from "../shared/RadixSelect";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import styles from "./ArticleBulkActionBar.module.css";
