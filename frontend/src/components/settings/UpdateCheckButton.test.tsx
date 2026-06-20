@@ -21,10 +21,24 @@ vi.mock("../../shared/utils/swUpdateManager", () => ({
     },
 }));
 
+// Storage mode drives the SW (dexie) vs GitHub-Releases (api/desktop) path.
+let storageMode: "api" | "dexie" = "dexie";
+vi.mock("../../storage/useStorageMode", () => ({
+    useStorageMode: () => ({ mode: storageMode }),
+}));
+
+const checkForUpdate = vi.fn();
+vi.mock("../../lib/utils/updateChecker", async (importOriginal) => {
+    const actual =
+        await importOriginal<typeof import("../../lib/utils/updateChecker")>();
+    return { ...actual, checkForUpdate: (...a: unknown[]) => checkForUpdate(...a) };
+});
+
 import { UpdateCheckButton, formatRelativeTime } from "./UpdateCheckButton";
 
 beforeEach(() => {
     nextAvailable = false;
+    storageMode = "dexie";
     localStorage.clear();
 });
 afterEach(() => vi.clearAllMocks());
@@ -108,6 +122,59 @@ describe("UpdateCheckButton", () => {
     it("shows 'never checked' before the first check", () => {
         render(<UpdateCheckButton />);
         expect(screen.getByTestId("about-update-lastcheck").textContent).toContain("Noch nie");
+    });
+});
+
+describe("UpdateCheckButton — desktop (API) mode via GitHub Releases", () => {
+    beforeEach(() => {
+        storageMode = "api";
+    });
+
+    it("uses the GitHub API (not the Service Worker) and offers release + install actions", async () => {
+        checkForUpdate.mockResolvedValue({
+            status: "update-available",
+            currentVersion: "0.56.0",
+            latestVersion: "v0.57.0",
+            releaseUrl: "https://github.com/astrapi69/bibliogon/releases/tag/v0.57.0",
+            releaseNotes: "## What's new\n- stuff",
+        });
+        render(<UpdateCheckButton />);
+        fireEvent.click(screen.getByTestId("about-check-update"));
+
+        const link = await screen.findByTestId("about-update-release-link");
+        expect(link.getAttribute("href")).toContain("/releases/tag/v0.57.0");
+        expect(screen.getByTestId("about-update-copy-install")).toBeTruthy();
+        expect(screen.getByTestId("about-update-status").textContent).toContain("v0.57.0");
+        // Desktop path does NOT touch the Service Worker.
+        expect(checkForUpdateNow).not.toHaveBeenCalled();
+        expect(checkForUpdate).toHaveBeenCalledOnce();
+    });
+
+    it("shows the up-to-date result with the current version", async () => {
+        checkForUpdate.mockResolvedValue({
+            status: "up-to-date",
+            currentVersion: "0.56.0",
+            latestVersion: "v0.56.0",
+        });
+        render(<UpdateCheckButton />);
+        fireEvent.click(screen.getByTestId("about-check-update"));
+        await waitFor(() =>
+            expect(screen.getByTestId("about-update-status").textContent).toContain(
+                "neueste Version",
+            ),
+        );
+        expect(screen.queryByTestId("about-update-apply")).toBeNull();
+    });
+
+    it("shows the failure hint when the GitHub check errors", async () => {
+        checkForUpdate.mockResolvedValue({ status: "error", currentVersion: "0.56.0" });
+        render(<UpdateCheckButton />);
+        fireEvent.click(screen.getByTestId("about-check-update"));
+        await waitFor(() =>
+            expect(screen.getByTestId("about-update-status").textContent).toContain(
+                "fehlgeschlagen",
+            ),
+        );
     });
 });
 

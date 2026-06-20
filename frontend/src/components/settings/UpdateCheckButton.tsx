@@ -12,17 +12,32 @@
  */
 
 import { useEffect, useState } from "react";
-import { Loader2, RefreshCw } from "lucide-react";
+import { Copy, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 import { useI18n } from "../../hooks/useI18n";
+import { useStorageMode } from "../../storage/useStorageMode";
+import { notify } from "../../utils/notify";
 import {
     applyUpdate,
     checkForUpdateNow,
     subscribeToUpdates,
     type UpdateCheckResult,
 } from "../../shared/utils/swUpdateManager";
+import {
+    checkForUpdate,
+    INSTALL_COMMAND,
+    type UpdateCheckResult as GithubUpdateResult,
+} from "../../lib/utils/updateChecker";
 
 const LAST_CHECK_KEY = "bibliogon.sw_last_check";
+
+/** Build-time app version (vite `define`, from package.json). */
+const APP_VERSION = __APP_VERSION__;
+
+/** Max characters of release notes shown inline before the "read more" link. */
+const NOTES_PREVIEW_LIMIT = 500;
 
 type Status = "idle" | "checking" | "up-to-date" | "available" | "error" | "unsupported";
 
@@ -78,10 +93,15 @@ function statusFromResult(result: UpdateCheckResult): Status {
 
 export function UpdateCheckButton() {
     const { t, lang } = useI18n();
+    const { mode } = useStorageMode();
+    // Desktop builds (PyInstaller / Docker) run in API mode and have no
+    // Service Worker, so they check GitHub Releases instead of the SW.
+    const isDesktop = mode === "api";
     const [status, setStatus] = useState<Status>("idle");
     const [updateAvailable, setUpdateAvailable] = useState(false);
     const [lastCheck, setLastCheck] = useState<number | null>(() => readLastCheck());
     const [updating, setUpdating] = useState(false);
+    const [ghResult, setGhResult] = useState<GithubUpdateResult | null>(null);
 
     useEffect(
         () =>
@@ -94,8 +114,22 @@ export function UpdateCheckButton() {
 
     const handleCheck = async () => {
         setStatus("checking");
-        const result = await checkForUpdateNow();
         const now = Date.now();
+        if (isDesktop) {
+            const result = await checkForUpdate(APP_VERSION);
+            setGhResult(result);
+            writeLastCheck(now);
+            setLastCheck(now);
+            setStatus(
+                result.status === "update-available"
+                    ? "available"
+                    : result.status === "up-to-date"
+                      ? "up-to-date"
+                      : "error",
+            );
+            return;
+        }
+        const result = await checkForUpdateNow();
         writeLastCheck(now);
         setLastCheck(now);
         setStatus(statusFromResult(result));
@@ -106,7 +140,21 @@ export function UpdateCheckButton() {
         applyUpdate();
     };
 
-    const showApply = status === "available" || updateAvailable;
+    const handleCopyInstall = async () => {
+        try {
+            await navigator.clipboard.writeText(INSTALL_COMMAND);
+            notify.success(t("ui.about.update_install_copied", "Installationsbefehl kopiert"));
+        } catch {
+            notify.error(t("ui.about.update_install_copy_failed", "Kopieren fehlgeschlagen"));
+        }
+    };
+
+    const notesPreview = ghResult?.releaseNotes
+        ? ghResult.releaseNotes.slice(0, NOTES_PREVIEW_LIMIT)
+        : "";
+    const notesTruncated = (ghResult?.releaseNotes?.length ?? 0) > NOTES_PREVIEW_LIMIT;
+
+    const showApply = !isDesktop && (status === "available" || updateAvailable);
     const checking = status === "checking";
 
     return (
@@ -131,7 +179,88 @@ export function UpdateCheckButton() {
                 )}
             </button>
 
-            {showApply ? (
+            {isDesktop ? (
+                status === "available" && ghResult ? (
+                    <div
+                        className="flex flex-col gap-2"
+                        data-testid="about-update-status"
+                        role="status"
+                    >
+                        <span className="text-sm font-medium text-[var(--text)]">
+                            {t(
+                                "ui.about.update_available_desktop",
+                                "Neue Version verfügbar: {version}",
+                            ).replace("{version}", ghResult.latestVersion ?? "")}
+                        </span>
+                        {notesPreview ? (
+                            <div
+                                className="max-w-none text-sm text-[var(--text-muted)]"
+                                data-testid="about-update-notes"
+                            >
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                    {notesPreview}
+                                </ReactMarkdown>
+                                {notesTruncated ? (
+                                    <a
+                                        className="text-[var(--accent)] underline"
+                                        href={ghResult.releaseUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                    >
+                                        {t("ui.about.update_read_more", "Mehr lesen")}
+                                    </a>
+                                ) : null}
+                            </div>
+                        ) : null}
+                        <div className="flex flex-wrap gap-2">
+                            <a
+                                className="btn btn-primary btn-sm min-h-[44px]"
+                                data-testid="about-update-release-link"
+                                href={ghResult.releaseUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <ExternalLink size={14} className="mr-1 inline" />
+                                {t("ui.about.update_open_release", "Release-Seite öffnen")}
+                            </a>
+                            <button
+                                type="button"
+                                className="btn btn-secondary btn-sm min-h-[44px]"
+                                data-testid="about-update-copy-install"
+                                onClick={() => void handleCopyInstall()}
+                            >
+                                <Copy size={14} className="mr-1 inline" />
+                                {t(
+                                    "ui.about.update_copy_install",
+                                    "Installationsbefehl kopieren",
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                ) : status === "up-to-date" ? (
+                    <span
+                        className="text-sm text-[var(--success)]"
+                        data-testid="about-update-status"
+                        role="status"
+                    >
+                        {t(
+                            "ui.about.update_up_to_date_desktop",
+                            "Du hast die neueste Version. ({version})",
+                        ).replace("{version}", `v${APP_VERSION}`)}
+                    </span>
+                ) : status === "error" ? (
+                    <span
+                        className="text-sm text-[var(--danger)]"
+                        data-testid="about-update-status"
+                        role="alert"
+                    >
+                        {t(
+                            "ui.about.update_check_failed",
+                            "Prüfung fehlgeschlagen. Sind Sie online?",
+                        )}
+                    </span>
+                ) : null
+            ) : showApply ? (
                 <div
                     className="flex flex-col gap-2 sm:flex-row sm:items-center"
                     data-testid="about-update-status"
