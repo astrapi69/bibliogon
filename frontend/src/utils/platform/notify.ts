@@ -13,7 +13,7 @@
 
 import React from 'react'
 import {toast} from 'react-toastify'
-import {ApiError} from '../api/client'
+import {ApiError} from '../../api/client'
 
 // Truncate the visible error message so the toast stays readable.
 // The full detail is still embedded in the ErrorReportDialog body.
@@ -207,7 +207,7 @@ function SuccessActionContent(
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
-    import('./eventRecorder/eventRecorder').then(({eventRecorder}) => {
+    import('../eventRecorder/eventRecorder').then(({eventRecorder}) => {
       eventRecorder.add({type: 'toast', timestamp: performance.now(), level, message})
     }).catch(() => {})
   } catch { /* ignore */ }

@@ -2,7 +2,7 @@ import {useEffect, useRef, useState} from "react";
 import {Plus, X, Database} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {getStorage} from "../../storage";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 

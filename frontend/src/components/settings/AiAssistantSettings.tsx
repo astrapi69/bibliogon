@@ -26,7 +26,7 @@ import {
     providerKeyStatus,
     type AiSettings,
 } from "../../utils/ai/aiConfig";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import styles from "../../pages/Settings.module.css";
 import { RadixSelect } from "../RadixSelect";
 import { useDialog } from "../AppDialog";

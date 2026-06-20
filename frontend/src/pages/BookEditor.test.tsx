@@ -132,7 +132,7 @@ vi.mock("../components/AppDialog", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         error: vi.fn(),

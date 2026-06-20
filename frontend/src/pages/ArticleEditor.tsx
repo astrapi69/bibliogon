@@ -63,7 +63,7 @@ import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
 import { RadixSelect } from "../components/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
 import { useTopics } from "../hooks/content/useTopics";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import layout from "./ArticleEditor.module.css";
 
 /** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */

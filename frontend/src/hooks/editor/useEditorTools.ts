@@ -1,7 +1,7 @@
 import { useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { api, ApiError } from "../../api/client";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../useI18n";
 import type { SpellcheckMatch } from "../../components/EditorPanels";
 

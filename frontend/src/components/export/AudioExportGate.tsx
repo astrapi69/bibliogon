@@ -5,7 +5,7 @@ import {AlertCircle, CheckCircle, Headphones, Loader, X} from "lucide-react";
 import {api, ApiError} from "../../api/client";
 import {useAudiobookJob, formatChapterPrefix} from "../../contexts/AudiobookJobContext";
 import {useI18n} from "../../hooks/useI18n";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import AudioExportProgress from "./AudioExportProgress";
 
 /**

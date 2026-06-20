@@ -30,7 +30,7 @@ vi.mock("../AppDialog", () => ({
 const mockNotifyError = vi.fn();
 const mockNotifyInfo = vi.fn();
 const mockNotifySuccess = vi.fn();
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         error: (...a: unknown[]) => mockNotifyError(...a),
         info: (...a: unknown[]) => mockNotifyInfo(...a),

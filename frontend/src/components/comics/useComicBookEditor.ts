@@ -24,7 +24,7 @@ import { bookAssetFileUrl } from "../../storage/asset-url";
 import { useFullscreenToggle } from "../../hooks/ui/useFullscreenToggle";
 import { useI18n } from "../../hooks/useI18n";
 import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 import {
   COMIC_GRID_MAX_PANELS,

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type Dispatch, type SetStateA
 
 import { ApiError, Article, ArticleStatus, ContentType } from "../../api/client";
 import { getStorage } from "../../storage";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import type { SaveStatus } from "../../components/articles/ArticleEditorFields";
 
 type Translate = (key: string, fallback: string) => string;

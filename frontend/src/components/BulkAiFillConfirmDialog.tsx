@@ -2,7 +2,7 @@ import {useEffect, useState} from "react"
 import * as Dialog from "@radix-ui/react-dialog"
 import {X, AlertCircle, Loader2, ChevronDown, ChevronRight} from "lucide-react"
 import {useI18n} from "../hooks/useI18n"
-import {notify} from "../utils/notify"
+import {notify} from "../utils/platform/notify"
 import {
     api,
     ApiError,

@@ -28,7 +28,7 @@ vi.mock("../../storage/useStorageMode", () => ({
     useStorageMode: () => ({ mode: storageMode }),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: { success: vi.fn(), error: vi.fn(), warning: vi.fn(), info: vi.fn() },
 }));
 
@@ -63,7 +63,7 @@ vi.mock("../../hooks/ai/useAiModels", () => ({
 
 import { aiChat, listModels } from "../../ai/llmClient";
 import { api } from "../../api/client";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 const aiChatMock = vi.mocked(aiChat);
 const listModelsMock = vi.mocked(listModels);

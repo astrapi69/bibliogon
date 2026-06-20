@@ -34,7 +34,7 @@ import {
     type NumberedChapterMetric,
     type QualityReportLabels,
 } from "./qualityReport"
-import {notify} from "../utils/notify"
+import {notify} from "../utils/platform/notify"
 import {getStorage} from "../storage"
 import {computeChapterMetrics} from "../lib/utils/chapterMetrics"
 import styles from "./QualityTab.module.css"

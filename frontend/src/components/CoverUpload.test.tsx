@@ -39,7 +39,7 @@ vi.mock("../api/client", () => ({
   },
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
   notify: {
     error: vi.fn(),
     success: vi.fn(),
@@ -104,7 +104,7 @@ describe("CoverUpload", () => {
   })
 
   it("rejects invalid file types with error notification", async () => {
-    const {notify} = await import("../utils/notify")
+    const {notify} = await import("../utils/platform/notify")
     renderUpload()
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -118,7 +118,7 @@ describe("CoverUpload", () => {
   })
 
   it("shows error notification on upload failure", async () => {
-    const {notify} = await import("../utils/notify")
+    const {notify} = await import("../utils/platform/notify")
     mockUpload.mockRejectedValue(new Error("Server error"))
 
     renderUpload()

@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState, type MutableRefObject } from 
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { api, ApiError, SaveAbortedError } from "../../api/client";
 import { saveDraft, deleteDraft, hashContent } from "../../db/drafts";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useFlushOnUnload } from "./useFlushOnUnload";
 import { useI18n } from "../useI18n";
 

@@ -23,7 +23,7 @@ vi.mock("./AppDialog", () => ({
     useDialog: () => ({confirm: vi.fn(), prompt: vi.fn()}),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {success: vi.fn(), error: vi.fn(), info: vi.fn()},
 }));
 

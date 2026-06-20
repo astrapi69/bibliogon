@@ -4,7 +4,7 @@ import { Bug, Check, ChevronDown, ChevronUp, Copy, Download } from "lucide-react
 
 import { ApiError } from "../api/client";
 import { eventRecorder, formatEventLog } from "../utils/eventRecorder/eventRecorder";
-import { copyToClipboard } from "../utils/clipboard";
+import { copyToClipboard } from "../utils/platform/clipboard";
 import { downloadBlob } from "../shared/utils/downloadBlob";
 import { useI18n } from "../hooks/useI18n";
 

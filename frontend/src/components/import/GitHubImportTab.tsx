@@ -16,7 +16,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { ArrowUp, FileText, Folder, FolderGit2, Loader2 } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
 import { getGitHubToken, setGitHubToken } from "../../import/githubToken";

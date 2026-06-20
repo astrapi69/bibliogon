@@ -21,7 +21,7 @@ import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
 import ChapterTemplatePickerModal from "../components/ChapterTemplatePickerModal";
 import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal";
 import { useDialog } from "../components/AppDialog";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";

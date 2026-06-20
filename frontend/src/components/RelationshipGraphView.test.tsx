@@ -36,7 +36,7 @@ vi.mock("../hooks/ui/useTheme", () => ({
     setAppTheme: vi.fn(),
   }),
 }));
-vi.mock("../utils/notify", () => ({ notify: { error: vi.fn() } }));
+vi.mock("../utils/platform/notify", () => ({ notify: { error: vi.fn() } }));
 
 const mockConfirm = vi.fn();
 vi.mock("./AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));

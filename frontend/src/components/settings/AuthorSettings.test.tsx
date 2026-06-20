@@ -36,7 +36,7 @@ vi.mock("../../storage", () => ({
 
 const notifySuccess = vi.fn();
 const notifyError = vi.fn();
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: (...a: unknown[]) => notifySuccess(...a),
         error: (...a: unknown[]) => notifyError(...a),

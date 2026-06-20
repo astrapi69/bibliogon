@@ -22,7 +22,7 @@ vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fb: string) => fb, lang: "en", setLang: vi.fn()}),
 }))
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn(), bulkAction: vi.fn()},
 }))
 

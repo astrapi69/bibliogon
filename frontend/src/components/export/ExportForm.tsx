@@ -11,7 +11,7 @@ import {RadixSelect} from "../RadixSelect";
 import {useFeature} from "@astrapi69/feature-strategy-react";
 import {FEATURES} from "../../features/featureConfig";
 import {Toggle} from "../settings/Toggle";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import OrderedListEditor from "../OrderedListEditor";
 import * as Dialog from "@radix-ui/react-dialog";
 import styles from "./ExportForm.module.css";

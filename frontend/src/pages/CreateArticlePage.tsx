@@ -12,7 +12,7 @@ import {
 } from "../hooks/useContentTypes";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import AuthorSelectInput from "../components/AuthorSelectInput";
 
 /**

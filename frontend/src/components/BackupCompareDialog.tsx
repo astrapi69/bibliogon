@@ -10,7 +10,7 @@ import {
     api,
 } from "../api/client";
 import {useI18n} from "../hooks/useI18n";
-import {notify} from "../utils/notify";
+import {notify} from "../utils/platform/notify";
 
 interface Props {
     open: boolean;

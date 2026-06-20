@@ -7,7 +7,7 @@ import { buildBookLanguageOptions } from "../../lib/bookLanguages";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import { Save, Copy, ChevronLeft, Sparkles, Rocket } from "lucide-react";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
 import { useBookTypes } from "../../hooks/book/useBookTypes";
 import { useEditorPluginStatus } from "../../hooks/editor/useEditorPluginStatus";

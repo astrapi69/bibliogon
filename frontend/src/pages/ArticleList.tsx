@@ -17,7 +17,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { downloadBlob } from "../shared/utils/downloadBlob";
 import ViewToggle from "../components/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";

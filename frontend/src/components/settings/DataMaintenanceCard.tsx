@@ -26,7 +26,7 @@ import {
 } from "../../storage/storageStats";
 import { formatEventLog, type RecordedEvent } from "../../utils/eventRecorder/eventRecorder";
 import { downloadText } from "../../export/download";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 type Translate = (key: string, fallback: string) => string;
 

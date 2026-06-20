@@ -134,7 +134,7 @@ vi.mock("../../api/client", () => ({
   },
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
   notify: {
     error: (...args: unknown[]) => mockNotifyError(...args),
     success: vi.fn(),

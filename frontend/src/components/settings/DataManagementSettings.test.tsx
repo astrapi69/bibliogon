@@ -46,7 +46,7 @@ const mockNotify = vi.hoisted(() => ({
     info: vi.fn(),
     warning: vi.fn(),
 }));
-vi.mock("../../utils/notify", () => ({ notify: mockNotify }));
+vi.mock("../../utils/platform/notify", () => ({ notify: mockNotify }));
 
 const mockAuthorsList = vi.fn().mockResolvedValue([]);
 const mockAuthorsCreate = vi.fn().mockResolvedValue({ id: "a1" });

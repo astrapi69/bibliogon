@@ -39,7 +39,7 @@ import { getStorage } from "../../storage";
 import DataMaintenanceCard from "./DataMaintenanceCard";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../AppDialog";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { downloadBlob, downloadText } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
 import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";

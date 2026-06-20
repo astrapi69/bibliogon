@@ -21,7 +21,7 @@ import {
 } from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import {BeatSelect} from "../StoryboardAnnotations"
 import {LabelSelect, StatusSelect} from "./ChapterStatusLabel"
 import {chapterWordCount} from "../ProseStoryboard"

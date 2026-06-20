@@ -18,7 +18,7 @@ import remarkGfm from "remark-gfm";
 
 import { useI18n } from "../../hooks/useI18n";
 import { useStorageMode } from "../../storage/useStorageMode";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import {
     applyUpdate,
     checkForUpdateNow,

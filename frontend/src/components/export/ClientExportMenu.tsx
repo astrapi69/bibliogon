@@ -23,7 +23,7 @@ import {
   type ExportFormat,
 } from "../../export";
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import ExportPreviewModal from "./ExportPreviewModal";
 

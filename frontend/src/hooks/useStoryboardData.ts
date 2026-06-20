@@ -11,7 +11,7 @@ import {arrayMove, sortableKeyboardCoordinates} from "@dnd-kit/sortable"
 import {getStorage} from "../storage"
 import {type Page, type PageUpdate} from "../api/client"
 import {useI18n} from "./useI18n"
-import {notify} from "../utils/notify"
+import {notify} from "../utils/platform/notify"
 
 /** Owns the storyboard's page list, load state, dnd sensors, reorder
  *  and annotation-patch handlers. Self-loads the pages on mount. */

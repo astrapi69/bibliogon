@@ -16,7 +16,7 @@ import {useOnlineStatus} from "../hooks/useOnlineStatus";
 import {useI18n} from "../hooks/useI18n";
 import {db, deleteDraft, type ChapterDraft} from "../db/drafts";
 import {api, ApiError} from "../api/client";
-import {notify} from "../utils/notify";
+import {notify} from "../utils/platform/notify";
 import styles from "./OfflineBanner.module.css";
 
 /**
