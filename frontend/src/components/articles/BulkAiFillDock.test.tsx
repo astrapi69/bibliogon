@@ -4,7 +4,7 @@ import BulkAiFillDock from "./BulkAiFillDock"
 import {
     BulkAiFillJobProvider,
     useBulkAiFillJob,
-} from "../contexts/BulkAiFillJobContext"
+} from "../../contexts/BulkAiFillJobContext"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 7/10. Smoke
 // tests for the dock + expanded-modal consumer. Heavy
@@ -13,7 +13,7 @@ import {
 // dock badge visible when minimized, modal visible when
 // expanded, percent + item rows render from context state.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -21,7 +21,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }))
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         articles: {bulkAiFill: {streamUrl: (j: string) => `/a/${j}`}},
         books: {bulkAiFill: {streamUrl: (j: string) => `/b/${j}`}},

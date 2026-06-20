@@ -19,9 +19,9 @@ import { TranslationImportResultPanel } from "./TranslationImportResultPanel";
 import type {
     TranslationImportedBook,
     TranslationSkippedBranch,
-} from "../api/client";
+} from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_: string, fallback: string) => fallback,
         lang: "en",

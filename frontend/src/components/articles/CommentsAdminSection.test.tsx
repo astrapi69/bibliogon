@@ -18,9 +18,9 @@ import {describe, it, expect, vi, beforeEach, afterEach} from "vitest";
 import {render, screen, waitFor, fireEvent} from "@testing-library/react";
 
 import CommentsAdminSection from "./CommentsAdminSection";
-import type {ArticleComment} from "../api/client";
+import type {ArticleComment} from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -116,9 +116,9 @@ vi.mock("react-router-dom", async () => {
     };
 });
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>(
-        "../api/client",
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>(
+        "../../api/client",
     );
     return {
         ...actual,
@@ -145,7 +145,7 @@ vi.mock("../api/client", async () => {
     };
 });
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => confirmMock(...args),
         prompt: vi.fn(),
@@ -154,7 +154,7 @@ vi.mock("./AppDialog", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         success: (...args: unknown[]) => notifySuccess(...args),
         error: (...args: unknown[]) => notifyError(...args),

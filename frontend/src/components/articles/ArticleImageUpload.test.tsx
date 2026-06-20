@@ -19,11 +19,11 @@ const storageMock: {
     articleAssets: { store: vi.fn(), deleteByArticle: vi.fn() },
 };
 
-vi.mock("../storage", () => ({ getStorage: () => storageMock }));
+vi.mock("../../storage", () => ({ getStorage: () => storageMock }));
 
 // Preview resolves to a stable value so the preview + remove button render.
 let previewValue: string | null = null;
-vi.mock("../hooks/article/useArticleImageUrl", () => ({
+vi.mock("../../hooks/article/useArticleImageUrl", () => ({
     useArticleImageUrl: () => previewValue,
 }));
 
@@ -31,7 +31,7 @@ const uploadMock = vi.fn();
 const urlForMock = vi.fn(
     (articleId: string, filename: string) => `/api/articles/${articleId}/assets/file/${filename}`,
 );
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     ApiError: class ApiError extends Error {
         detail = "";
     },
@@ -45,11 +45,11 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: { success: vi.fn(), error: vi.fn() },
 }));
 

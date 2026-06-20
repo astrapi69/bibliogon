@@ -3,7 +3,7 @@ import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 import BulkAiFillConfirmDialog, {
     INLINE_BREAKDOWN_THRESHOLD,
 } from "./BulkAiFillConfirmDialog"
-import {BulkAiFillJobProvider} from "../contexts/BulkAiFillJobContext"
+import {BulkAiFillJobProvider} from "../../contexts/BulkAiFillJobContext"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 8/10. Pins the
 // confirm-dialog contract:
@@ -18,7 +18,7 @@ import {BulkAiFillJobProvider} from "../contexts/BulkAiFillJobContext"
 //   - Estimate / start failures surface notify.error and
 //     keep the dialog open
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -58,9 +58,9 @@ const {notifyMock, apiMock} = vi.hoisted(() => {
     }
 })
 
-vi.mock("../utils/notify", () => ({notify: notifyMock}))
+vi.mock("../../utils/notify", () => ({notify: notifyMock}))
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {
         constructor(
@@ -214,7 +214,7 @@ describe("BulkAiFillConfirmDialog", () => {
     })
 
     it("estimate error surfaces inline and keeps Start disabled", async () => {
-        const {ApiError} = await import("../api/client")
+        const {ApiError} = await import("../../api/client")
         apiMock.articles.bulkAiFill.estimate.mockRejectedValue(
             new ApiError(404, "Articles not found: a1", "/api/x", "POST"),
         )
@@ -251,7 +251,7 @@ describe("BulkAiFillConfirmDialog", () => {
     })
 
     it("Confirm /start error surfaces via notify.error and dialog stays open", async () => {
-        const {ApiError} = await import("../api/client")
+        const {ApiError} = await import("../../api/client")
         apiMock.articles.bulkAiFill.estimate.mockResolvedValue(makeEstimate(2))
         apiMock.articles.bulkAiFill.start.mockRejectedValue(
             new ApiError(403, "AI features are disabled", "/api/x", "POST"),

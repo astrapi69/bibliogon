@@ -14,14 +14,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FeatureTestProvider } from "../features/FeatureTestProvider";
+import { FeatureTestProvider } from "../../features/FeatureTestProvider";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
 import TranslationLinks from "./TranslationLinks";
-import type { TranslationSiblingsResponse, Book } from "../api/client";
+import type { TranslationSiblingsResponse, Book } from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_: string, fallback: string) => fallback,
         lang: "en",
@@ -42,7 +42,7 @@ const mockList = vi.fn();
 const mockUnlink = vi.fn();
 const mockLink = vi.fn();
 const mockBooksList = vi.fn();
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         translations: {
             list: (...args: unknown[]) => mockList(...args),
@@ -64,7 +64,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         error: vi.fn(),
         success: vi.fn(),
@@ -73,7 +73,7 @@ vi.mock("../utils/notify", () => ({
     },
 }));
 
-import { notify as mockedNotify } from "../utils/notify";
+import { notify as mockedNotify } from "../../utils/notify";
 const mockNotify = mockedNotify as unknown as {
     error: ReturnType<typeof vi.fn>;
     success: ReturnType<typeof vi.fn>;
