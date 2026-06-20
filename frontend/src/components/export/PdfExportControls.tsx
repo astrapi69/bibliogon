@@ -133,6 +133,11 @@ interface Props {
      *  BookMetadataEditor keep their current labeled-button style
      *  (no parallel-surface regression). */
     compact?: boolean
+    /** Book type of the owning book. When ``"picture_book"`` the
+     *  control offers a CLIENT-side PDF path offline (#497) so the
+     *  backendless PWA can still download a picture-book PDF; other
+     *  book types (incl. comics) keep the backend-only behaviour. */
+    bookType?: string
 }
 
 export default function PdfExportControls({
@@ -142,16 +147,20 @@ export default function PdfExportControls({
     exportButtonClassName,
     spinnerClassName,
     compact = false,
+    bookType,
 }: Props) {
     const {t} = useI18n()
-    // Picture-book + comic PDF rendering runs through the backend
-    // (WeasyPrint/Pandoc image-layout walker); there is no browser
-    // engine for it, so it is genuinely desktop-only. Gating here
-    // keeps the Export-PDF button from firing `/api` on the
-    // backendless PWA (where it would hard-fail / hit the offline
-    // guard). The controls stay visible + disabled-with-reason per
-    // policy #78.
+    // The high-fidelity picture-book + comic PDF runs through the
+    // backend WeasyPrint image-layout walker, gated behind
+    // ``PANDOC_EXPORT`` (desktop-only). For PICTURE-BOOKS there is
+    // now a browser-side pdfmake fallback (#497) so the backendless
+    // PWA can still download a (lower-fidelity) PDF offline; comics
+    // stay backend-only (panels/bubbles are not yet client-rendered).
+    // The controls stay visible + disabled-with-reason per policy #78
+    // when neither path is available.
     const pandoc = useFeature(FEATURES.PANDOC_EXPORT)
+    const clientPicturebook = bookType === "picture_book" && !pandoc.isActive
+    const canExport = pandoc.isActive || clientPicturebook
     const [format, setFormat] = useState<PictureBookFormat>(
         DEFAULT_PICTURE_BOOK_FORMAT,
     )
@@ -244,20 +253,31 @@ export default function PdfExportControls({
     }, [])
 
     const handleExport = useCallback(async () => {
-        if (exporting || !pandoc.isActive) return
+        if (exporting || !canExport) return
         setExporting(true)
         try {
-            // PDF-KDP-FORMATS-01 + PDF-BLEED-MARKS-01: thread non-
-            // default selections as query params. Defaults emit
-            // empty params + back-compat filename (<slug>.pdf).
-            const params = new URLSearchParams()
-            if (format !== DEFAULT_PICTURE_BOOK_FORMAT) {
-                params.set("picture_book_format", format)
+            if (clientPicturebook) {
+                // #497: offline picture-book PDF via the browser
+                // pdfmake engine (bleed marks are a print-shop
+                // backend-only feature, so the client path applies
+                // the trim size only).
+                const {downloadPicturebookPdf} = await import(
+                    "../../export/picturebook/gatherPicturebookPdf"
+                )
+                await downloadPicturebookPdf(bookId, bookId, format)
+            } else {
+                // PDF-KDP-FORMATS-01 + PDF-BLEED-MARKS-01: thread non-
+                // default selections as query params. Defaults emit
+                // empty params + back-compat filename (<slug>.pdf).
+                const params = new URLSearchParams()
+                if (format !== DEFAULT_PICTURE_BOOK_FORMAT) {
+                    params.set("picture_book_format", format)
+                }
+                if (bleed) {
+                    params.set("picture_book_bleed_marks", "true")
+                }
+                await api.documentExport.download(bookId, "pdf", params)
             }
-            if (bleed) {
-                params.set("picture_book_bleed_marks", "true")
-            }
-            await api.documentExport.download(bookId, "pdf", params)
         } catch (err) {
             const detail =
                 err instanceof ApiError
@@ -270,7 +290,7 @@ export default function PdfExportControls({
         } finally {
             setExporting(false)
         }
-    }, [bookId, exporting, format, bleed, pandoc.isActive, t])
+    }, [bookId, exporting, format, bleed, canExport, clientPicturebook, t])
 
     const formatLabel = t("ui.page_editor.pdf_format_label", "PDF format")
     const formatSelect = (
@@ -340,7 +360,7 @@ export default function PdfExportControls({
             <button
                 type="button"
                 onClick={handleExport}
-                disabled={exporting || !pandoc.isActive}
+                disabled={exporting || !canExport}
                 data-testid={`${testidPrefix}-export-pdf`}
                 // Comic header: match the other utility header buttons
                 // (Back/Metadata/Fullscreen) which all use the global
@@ -353,7 +373,7 @@ export default function PdfExportControls({
                         : (exportButtonClassName ?? controlClassName)
                 }
                 title={
-                    pandoc.isActive
+                    canExport
                         ? t("ui.page_editor.export_pdf", "Export as PDF")
                         : t(
                               pandoc.reason ??

@@ -780,6 +780,7 @@ export default function BookMetadataEditor({
                                 <PdfExportControls
                                     bookId={book.id}
                                     testidPrefix="metadata"
+                                    bookType="picture_book"
                                     exportButtonClassName="button button-primary"
                                     spinnerClassName="bookMetaSpin"
                                 />

@@ -447,6 +447,7 @@ export default function PageEditor({
                 <PdfExportControls
                     bookId={bookId}
                     testidPrefix="page-editor"
+                    bookType="picture_book"
                     controlClassName="btn btn-secondary btn-sm"
                     spinnerClassName={styles.spinner}
                 />
