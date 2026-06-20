@@ -15,7 +15,7 @@ import BookBulkActionBar, {
     BOOK_BULK_LIMIT_HARD,
 } from "../components/BookBulkActionBar";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
-import { formatActiveBookFilters } from "../utils/formatActiveFilters";
+import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";

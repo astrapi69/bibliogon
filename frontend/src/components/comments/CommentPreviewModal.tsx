@@ -27,7 +27,7 @@ import {
 import { FileText, Trash2, X } from "lucide-react";
 
 import type { ArticleComment } from "../../api/client";
-import { formatLocaleDateTime } from "../../utils/formatDate";
+import { formatLocaleDateTime } from "../../utils/format/formatDate";
 
 interface Props {
   comment: ArticleComment | null;

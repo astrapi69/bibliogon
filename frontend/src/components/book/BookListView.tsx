@@ -13,10 +13,10 @@ import { useI18n } from "../../hooks/useI18n";
 import { AlertTriangle, Clock, MoreVertical, Trash2 } from "lucide-react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "../CoverPlaceholder";
-import { formatLocaleDate } from "../../utils/formatDate";
+import { formatLocaleDate } from "../../utils/format/formatDate";
 import { useCoverUrl } from "../../hooks/useAssetUrl";
 import StatusBadge from "../../lib/components/StatusBadge";
-import { publicationStatusLabels } from "../../utils/publicationStatusBadge";
+import { publicationStatusLabels } from "../../utils/format/publicationStatusBadge";
 import styles from "../BookListView.module.css";
 
 interface Props {

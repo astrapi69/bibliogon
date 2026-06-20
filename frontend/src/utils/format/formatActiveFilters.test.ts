@@ -3,8 +3,8 @@ import {
     formatActiveArticleFilters,
     formatActiveBookFilters,
 } from "./formatActiveFilters";
-import type { ArticleFilters } from "../hooks/article/useArticleFilters";
-import type { BookFilters } from "../hooks/book/useBookFilters";
+import type { ArticleFilters } from "../../hooks/article/useArticleFilters";
+import type { BookFilters } from "../../hooks/book/useBookFilters";
 
 const t = (_: string, fallback?: string) => fallback ?? _;
 

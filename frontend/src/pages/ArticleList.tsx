@@ -29,7 +29,7 @@ import ArticleBulkActionBar, {
 import { useArticleSelection } from "../components/articles/useArticleSelection";
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
-import { formatActiveArticleFilters } from "../utils/formatActiveFilters";
+import { formatActiveArticleFilters } from "../utils/format/formatActiveFilters";
 import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
 import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";

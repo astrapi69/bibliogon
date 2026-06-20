@@ -16,7 +16,7 @@
 import {RotateCcw, Trash, Trash2} from "lucide-react";
 
 import {RadixSelect} from "./RadixSelect";
-import {formatLocaleDate} from "../utils/formatDate";
+import {formatLocaleDate} from "../utils/format/formatDate";
 import {LoadingIndicator} from "./LoadingIndicator";
 import CommentBulkActionBar from "./comments/CommentBulkActionBar";
 import CommentPreviewModal from "./comments/CommentPreviewModal";

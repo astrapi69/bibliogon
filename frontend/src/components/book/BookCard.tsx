@@ -11,9 +11,9 @@ import {
 import { isOfflineEnabled } from "../../storage/connectivity";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import CoverPlaceholder from "../CoverPlaceholder";
-import { formatLocaleDate } from "../../utils/formatDate";
+import { formatLocaleDate } from "../../utils/format/formatDate";
 import StatusBadge from "../../lib/components/StatusBadge";
-import { publicationStatusLabels } from "../../utils/publicationStatusBadge";
+import { publicationStatusLabels } from "../../utils/format/publicationStatusBadge";
 import { useCoverUrl } from "../../hooks/useAssetUrl";
 import styles from "../BookCard.module.css";
 

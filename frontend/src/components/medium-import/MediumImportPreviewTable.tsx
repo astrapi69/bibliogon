@@ -33,7 +33,7 @@ import type {
     MediumImportPreviewErroredItem,
     MediumImportPreviewItem,
 } from "../../api/client";
-import { formatLocaleDate } from "../../utils/formatDate";
+import { formatLocaleDate } from "../../utils/format/formatDate";
 import styles from "./MediumImportPreviewTable.module.css";
 
 interface MediumImportPreviewTableProps {
