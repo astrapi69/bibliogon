@@ -10,13 +10,13 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import ChapterTemplatePickerModal from "./ChapterTemplatePickerModal"
-import type {ChapterTemplate} from "../api/client"
+import type {ChapterTemplate} from "../../api/client"
 
 const mockList = vi.fn()
 const mockDelete = vi.fn()
 const mockConfirm = vi.fn()
 
-vi.mock("../api/client", () => {
+vi.mock("../../api/client", () => {
   class ApiError extends Error {
     status: number
     detail: string
@@ -37,7 +37,7 @@ vi.mock("../api/client", () => {
   }
 })
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_key: string, fallback: string) => fallback,
     lang: "en",
@@ -45,7 +45,7 @@ vi.mock("../hooks/useI18n", () => ({
   }),
 }))
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
   useDialog: () => ({
     confirm: (...args: unknown[]) => mockConfirm(...args),
     alert: vi.fn(),
@@ -53,7 +53,7 @@ vi.mock("./AppDialog", () => ({
   }),
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: {success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 

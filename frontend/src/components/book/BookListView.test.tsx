@@ -24,7 +24,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fallback: string) => fallback,
         lang: "en",
@@ -33,7 +33,7 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 import BookListView from "./BookListView";
-import type { Book } from "../api/client";
+import type { Book } from "../../api/client";
 
 function makeBook(id: string, title: string): Book {
     return {

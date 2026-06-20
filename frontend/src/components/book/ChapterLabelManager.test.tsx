@@ -9,19 +9,19 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import ChapterLabelManager from "./ChapterLabelManager"
-import {api, type ChapterLabel} from "../api/client"
+import {api, type ChapterLabel} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fb: string) => fb, lang: "en", setLang: vi.fn()}),
 }))
 
 const notifyError = vi.fn()
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {error: (...a: unknown[]) => notifyError(...a), success: vi.fn(), info: vi.fn(), warning: vi.fn(), bulkAction: vi.fn()},
 }))
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>("../api/client")
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client")
     return {
         ...actual,
         api: {

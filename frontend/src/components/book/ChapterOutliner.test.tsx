@@ -8,7 +8,7 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import ChapterOutliner from "./ChapterOutliner"
-import {api, type Chapter} from "../api/client"
+import {api, type Chapter} from "../../api/client"
 
 class ResizeObserverStub {
     observe() {}
@@ -18,16 +18,16 @@ class ResizeObserverStub {
 ;(globalThis as unknown as {ResizeObserver: typeof ResizeObserverStub}).ResizeObserver =
     ResizeObserverStub
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fb: string) => fb, lang: "en", setLang: vi.fn()}),
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn(), bulkAction: vi.fn()},
 }))
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>("../api/client")
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client")
     return {
         ...actual,
         api: {

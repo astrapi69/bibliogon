@@ -10,9 +10,9 @@ import {describe, it, expect, vi} from "vitest"
 import {render, screen} from "@testing-library/react"
 
 import {StatusChip, LabelChip, readableTextColor, CHAPTER_STATUSES} from "./ChapterStatusLabel"
-import type {ChapterLabel} from "../api/client"
+import type {ChapterLabel} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fb: string) => fb, lang: "en", setLang: vi.fn()}),
 }))
 
