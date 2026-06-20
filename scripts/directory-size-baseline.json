@@ -3,7 +3,7 @@
   "backend/app/ai": 19,
   "backend/app/repositories": 13,
   "backend/app/routers": 39,
-  "backend/app/services": 27,
+  "backend/app/services": 20,
   "backend/app/services/backup": 13,
   "backend/app/services/git": 12,
   "frontend/src/ai": 21,
@@ -25,6 +25,5 @@
   "frontend/src/lib/utils": 22,
   "frontend/src/pages": 35,
   "frontend/src/storage": 22,
-  "frontend/src/storage/dexie": 21,
-  "frontend/src/utils": 31
+  "frontend/src/storage/dexie": 21
 }
