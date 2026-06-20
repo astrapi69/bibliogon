@@ -24,7 +24,7 @@ import {
     EVENT_LOG_KEY,
     offlineDb,
     type EventLogSnapshot,
-} from "../storage/dexie/schema";
+} from "../../storage/dexie/schema";
 import {
     eventRecorder,
     type EventType,

@@ -22,7 +22,7 @@ vi.mock("../hooks/useI18n", () => ({
   }),
 }))
 
-vi.mock("../utils/eventRecorder", () => ({
+vi.mock("../utils/eventRecorder/eventRecorder", () => ({
   eventRecorder: {
     getAll: () => [
       {type: "click" as const, text: "Export", testId: "export", timestamp: 1000},

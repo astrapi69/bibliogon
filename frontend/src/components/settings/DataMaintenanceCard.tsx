@@ -24,7 +24,7 @@ import {
     formatBytes,
     type ImageCacheListing,
 } from "../../storage/storageStats";
-import { formatEventLog, type RecordedEvent } from "../../utils/eventRecorder";
+import { formatEventLog, type RecordedEvent } from "../../utils/eventRecorder/eventRecorder";
 import { downloadText } from "../../export/download";
 import { notify } from "../../utils/notify";
 

@@ -1,7 +1,7 @@
 import {useEffect, useRef} from "react";
 import {useLocation} from "react-router-dom";
-import {eventRecorder} from "../utils/eventRecorder";
-import {initEventLogPersistence} from "../utils/eventRecorderPersist";
+import {eventRecorder} from "../utils/eventRecorder/eventRecorder";
+import {initEventLogPersistence} from "../utils/eventRecorder/eventRecorderPersist";
 
 /**
  * Invisible component that installs global event recorders.

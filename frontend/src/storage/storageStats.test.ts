@@ -18,7 +18,7 @@ import {
     readEventLog,
 } from "./storageStats";
 import { EVENT_LOG_KEY, offlineDb } from "./dexie/schema";
-import { eventRecorder } from "../utils/eventRecorder";
+import { eventRecorder } from "../utils/eventRecorder/eventRecorder";
 
 beforeEach(async () => {
     await Promise.all(offlineDb.tables.map((t) => t.clear()));

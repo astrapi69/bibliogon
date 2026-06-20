@@ -207,7 +207,7 @@ function SuccessActionContent(
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
-    import('./eventRecorder').then(({eventRecorder}) => {
+    import('./eventRecorder/eventRecorder').then(({eventRecorder}) => {
       eventRecorder.add({type: 'toast', timestamp: performance.now(), level, message})
     }).catch(() => {})
   } catch { /* ignore */ }
