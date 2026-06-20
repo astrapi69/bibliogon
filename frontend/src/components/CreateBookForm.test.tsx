@@ -15,7 +15,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import CreateBookForm from "./CreateBookForm";
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import type { BookTypeDef } from "../api/client";
 
 // BOOK-TYPES-SSOT-YAML-01 C6: CreateBookForm reads the BookType registry

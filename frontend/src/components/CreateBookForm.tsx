@@ -9,7 +9,7 @@ import {
     BookType,
 } from "../api/client";
 import { getStorage } from "../storage";
-import { useBookTypes } from "../hooks/useBookTypes";
+import { useBookTypes } from "../hooks/book/useBookTypes";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";

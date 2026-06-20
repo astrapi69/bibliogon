@@ -28,8 +28,8 @@ import {
     type ReactNode,
 } from "react";
 
-import {type BookTypeDef} from "../api/client";
-import {getStorage} from "../storage";
+import {type BookTypeDef} from "../../api/client";
+import {getStorage} from "../../storage";
 
 type Status = "loading" | "ready" | "error";
 

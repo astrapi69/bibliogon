@@ -27,7 +27,7 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 import {MemoryRouter} from "react-router-dom";
 
 import GetStarted from "./GetStarted";
-import {BookTypesProvider} from "../hooks/useBookTypes";
+import {BookTypesProvider} from "../hooks/book/useBookTypes";
 import type {BookTypeDef} from "../api/client";
 
 // --- Mocks -----------------------------------------------------------------

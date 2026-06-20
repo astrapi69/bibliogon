@@ -15,7 +15,7 @@
 
 import {useState, useMemo, useEffect, useCallback} from "react";
 import {useSearchParams} from "react-router-dom";
-import type {Book} from "../api/client";
+import type {Book} from "../../api/client";
 
 export type SortField = "date" | "title" | "author";
 export type SortOrder = "asc" | "desc";

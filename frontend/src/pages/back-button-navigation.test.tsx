@@ -146,7 +146,7 @@ vi.mock("../api/client", () => ({
 import Settings from "./Settings";
 import Help from "./Help";
 import GetStarted from "./GetStarted";
-import {BookTypesProvider} from "../hooks/useBookTypes";
+import {BookTypesProvider} from "../hooks/book/useBookTypes";
 import type {BookTypeDef} from "../api/client";
 
 // BOOK-TYPES-SSOT-YAML-01 C5: GetStarted now reads the BookType

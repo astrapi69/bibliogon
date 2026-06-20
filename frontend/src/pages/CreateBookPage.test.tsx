@@ -26,7 +26,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
         reason: undefined,
     }),
 }));
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import type { BookTypeDef } from "../api/client";
 
 const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {

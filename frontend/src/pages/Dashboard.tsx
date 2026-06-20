@@ -24,9 +24,9 @@ import DashboardFilterBar from "../components/DashboardFilterBar";
 import DashboardFilterSheet from "../components/DashboardFilterSheet";
 import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
 import TileSelectCheckbox from "../components/TileSelectCheckbox";
-import { useBookFilters } from "../hooks/useBookFilters";
-import { useDashboardBookData } from "../hooks/useDashboardBookData";
-import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/useBookTypes";
+import { useBookFilters } from "../hooks/book/useBookFilters";
+import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
+import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
 import { BookTypeIcon } from "../utils/bookTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import {

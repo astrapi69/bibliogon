@@ -13,7 +13,7 @@ import React from "react";
 import {MemoryRouter} from "react-router-dom";
 
 import {useBookFilters} from "./useBookFilters";
-import type {Book} from "../api/client";
+import type {Book} from "../../api/client";
 
 function makeBook(overrides: Partial<Book> = {}): Book {
     return {

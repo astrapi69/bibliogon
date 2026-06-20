@@ -30,7 +30,7 @@ import { useTheme } from "./hooks/ui/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
 import { AppFeatureProvider } from "./features/AppFeatureProvider";
 import { ContentTypesProvider } from "./hooks/useContentTypes";
-import { BookTypesProvider } from "./hooks/useBookTypes";
+import { BookTypesProvider } from "./hooks/book/useBookTypes";
 import { DialogProvider } from "./components/AppDialog";
 import AudioExportGate from "./components/AudioExportGate";
 import MediumImportGate from "./components/MediumImportGate";
