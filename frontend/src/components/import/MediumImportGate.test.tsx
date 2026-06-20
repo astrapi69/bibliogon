@@ -10,9 +10,9 @@ import {beforeEach, describe, expect, it, vi} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 import {MemoryRouter} from "react-router-dom"
 
-import MediumImportGate from "./MediumImportGate"
+import MediumImportGate from "../MediumImportGate"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_: string, fallback: string) => fallback,
         lang: "en",
@@ -66,7 +66,7 @@ function makeIdleJob() {
     }
 }
 
-vi.mock("../contexts/MediumImportJobContext", () => ({
+vi.mock("../../contexts/MediumImportJobContext", () => ({
     useMediumImportJob: () => jobState,
 }))
 

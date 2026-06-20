@@ -3,7 +3,7 @@ import {render, screen, fireEvent} from "@testing-library/react"
 import TemplateImportDropZone, {
     _isValidName,
     TemplateImportFilePreview,
-} from "./TemplateImportDropZone"
+} from "../TemplateImportDropZone"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 2/10. Pins the
 // drop-zone contract: drag-drop wires through, file-picker
@@ -11,7 +11,7 @@ import TemplateImportDropZone, {
 // without calling onFile, and the bulk vs single modes target
 // the right extensions.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",

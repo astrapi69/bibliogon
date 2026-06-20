@@ -14,13 +14,13 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 
-import GitSyncDiffDialog from "./GitSyncDiffDialog";
+import GitSyncDiffDialog from "../GitSyncDiffDialog";
 import type {
     GitSyncDiffEntry,
     GitSyncDiffResponse,
-} from "../api/client";
+} from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_: string, fallback: string) => fallback,
         lang: "en",
@@ -31,7 +31,7 @@ vi.mock("../hooks/useI18n", () => ({
 const mockDiff = vi.fn();
 const mockResolve = vi.fn();
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         gitSync: {
             diff: (...args: unknown[]) => mockDiff(...args),
@@ -55,7 +55,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         error: vi.fn(),
         success: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock("../utils/notify", () => ({
     },
 }));
 
-import { notify as mockedNotify } from "../utils/notify";
+import { notify as mockedNotify } from "../../utils/notify";
 const mockNotify = mockedNotify as unknown as {
     error: ReturnType<typeof vi.fn>;
     success: ReturnType<typeof vi.fn>;
@@ -228,7 +228,7 @@ describe("GitSyncDiffDialog", () => {
                 makeEntry({ slug: "r", classification: "remote_changed" }),
             ]),
         );
-        const { ApiError } = await import("../api/client");
+        const { ApiError } = await import("../../api/client");
         mockResolve.mockRejectedValueOnce(
             new ApiError(500, "boom", "/git-sync/x/resolve", "POST", ""),
         );

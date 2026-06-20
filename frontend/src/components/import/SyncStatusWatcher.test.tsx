@@ -10,14 +10,14 @@
 import { describe, it, expect, vi } from "vitest";
 import { render } from "@testing-library/react";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, fb: string) => fb,
     lang: "en",
     setLang: vi.fn(),
   }),
 }));
-vi.mock("../storage/useStorageMode", () => ({
+vi.mock("../../storage/useStorageMode", () => ({
   useStorageMode: vi.fn(() => ({
     mode: "api",
     online: true,
@@ -25,8 +25,8 @@ vi.mock("../storage/useStorageMode", () => ({
   })),
 }));
 
-import { useStorageMode } from "../storage/useStorageMode";
-import SyncStatusWatcher from "./SyncStatusWatcher";
+import { useStorageMode } from "../../storage/useStorageMode";
+import SyncStatusWatcher from "../SyncStatusWatcher";
 
 describe("SyncStatusWatcher", () => {
   it("is headless and wires an onReconnect handler", () => {
