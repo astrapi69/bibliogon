@@ -13,10 +13,10 @@ import {render, screen, fireEvent} from "@testing-library/react";
 import DonationOnboardingDialog, {
   shouldShowDonationOnboarding,
   DONATION_ONBOARDING_SEEN_KEY,
-} from "./DonationOnboardingDialog";
-import type {DonationsConfig} from "./SupportSection";
+} from "../DonationOnboardingDialog";
+import type {DonationsConfig} from "../SupportSection";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({t: (_: string, f: string) => f}),
 }));
 

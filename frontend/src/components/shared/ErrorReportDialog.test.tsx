@@ -10,11 +10,11 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
 
-import ErrorReportDialog, {buildReportFilename} from "./ErrorReportDialog"
-import {ApiError} from "../api/client"
-import {downloadBlob} from "../shared/utils/downloadBlob"
+import ErrorReportDialog, {buildReportFilename} from "../ErrorReportDialog"
+import {ApiError} from "../../api/client"
+import {downloadBlob} from "../../shared/utils/downloadBlob"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",
@@ -22,7 +22,7 @@ vi.mock("../hooks/useI18n", () => ({
   }),
 }))
 
-vi.mock("../utils/eventRecorder", () => ({
+vi.mock("../../utils/eventRecorder", () => ({
   eventRecorder: {
     getAll: () => [
       {type: "click" as const, text: "Export", testId: "export", timestamp: 1000},
@@ -31,7 +31,7 @@ vi.mock("../utils/eventRecorder", () => ({
   formatEventLog: () => "[10:00:00] Click: button.export",
 }))
 
-vi.mock("../shared/utils/downloadBlob", () => ({
+vi.mock("../../shared/utils/downloadBlob", () => ({
   downloadBlob: vi.fn(),
 }))
 

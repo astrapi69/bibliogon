@@ -18,7 +18,7 @@
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 
-import {SplitButton, type SplitButtonDropdownItem} from "./SplitButton";
+import {SplitButton, type SplitButtonDropdownItem} from "../SplitButton";
 
 function makeItem(
     id: string,

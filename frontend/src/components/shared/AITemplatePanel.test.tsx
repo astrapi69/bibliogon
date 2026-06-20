@@ -2,8 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render as rtlRender, screen, fireEvent, waitFor } from "@testing-library/react";
 import type { ReactElement } from "react";
 import { MemoryRouter } from "react-router-dom";
-import AITemplatePanel from "./AITemplatePanel";
-import { HelpProvider } from "../contexts/HelpContext";
+import AITemplatePanel from "../AITemplatePanel";
+import { HelpProvider } from "../../contexts/HelpContext";
 
 // AITemplatePanel now reads useNavigate (Settings deep-link) + useHelp
 // (intro "Mehr erfahren"), so unit renders wrap it in a Router +
@@ -34,7 +34,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
 // text before calling the import API, force toggle flows
 // through.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -66,9 +66,9 @@ const { notifyMock, apiMock } = vi.hoisted(() => {
     };
 });
 
-vi.mock("../utils/notify", () => ({ notify: notifyMock }));
+vi.mock("../../utils/notify", () => ({ notify: notifyMock }));
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {
         constructor(
@@ -147,7 +147,7 @@ describe("AITemplatePanel (article)", () => {
     });
 
     it("Export error surfaces ApiError detail via notify.error", async () => {
-        const { ApiError } = await import("../api/client");
+        const { ApiError } = await import("../../api/client");
         apiMock.articles.aiTemplate.export.mockRejectedValue(
             new ApiError(404, "Article not found", "/api/x", "GET"),
         );
@@ -207,7 +207,7 @@ describe("AITemplatePanel (article)", () => {
     });
 
     it("Fill failure surfaces ApiError detail via notify.error", async () => {
-        const { ApiError } = await import("../api/client");
+        const { ApiError } = await import("../../api/client");
         apiMock.articles.aiFill.mockRejectedValue(
             new ApiError(403, "AI features are disabled", "/api/x", "POST"),
         );

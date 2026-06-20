@@ -1,8 +1,8 @@
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import EditableTitle from "./EditableTitle";
+import EditableTitle from "../EditableTitle";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback?: string) => fallback ?? _key,
     }),

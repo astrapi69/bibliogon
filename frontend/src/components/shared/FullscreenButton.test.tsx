@@ -14,7 +14,7 @@
 
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import FullscreenButton from "./FullscreenButton";
+import FullscreenButton from "../FullscreenButton";
 
 const mockToggle = vi.fn();
 const mockState = {
@@ -23,11 +23,11 @@ const mockState = {
     toggle: mockToggle,
 };
 
-vi.mock("../hooks/ui/useFullscreenToggle", () => ({
+vi.mock("../../hooks/ui/useFullscreenToggle", () => ({
     useFullscreenToggle: () => mockState,
 }));
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
     }),

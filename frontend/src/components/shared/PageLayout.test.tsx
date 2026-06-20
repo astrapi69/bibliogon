@@ -2,7 +2,7 @@ import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
 import {MemoryRouter} from "react-router-dom";
 
-import {PageLayout} from "./PageLayout";
+import {PageLayout} from "../PageLayout";
 
 function renderLayout(ui: React.ReactNode) {
     // PageLayout uses useNavigate (brand -> dashboard), so it needs a router.

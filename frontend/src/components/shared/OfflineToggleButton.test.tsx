@@ -5,7 +5,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, waitFor, fireEvent } from "@testing-library/react";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, fb: string) => fb,
     lang: "en",
@@ -15,19 +15,19 @@ vi.mock("../hooks/useI18n", () => ({
 vi.mock("react-toastify", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
-vi.mock("../storage/connectivity", () => ({ isOfflineEnabled: () => false }));
+vi.mock("../../storage/connectivity", () => ({ isOfflineEnabled: () => false }));
 
 const downloadBookOffline = vi.fn().mockResolvedValue(undefined);
 const removeBookOffline = vi.fn().mockResolvedValue(undefined);
 const isBookOffline = vi.fn().mockResolvedValue(false);
-vi.mock("../storage/offline-download", () => ({
+vi.mock("../../storage/offline-download", () => ({
   downloadBookOffline,
   removeBookOffline,
   isBookOffline,
 }));
 
 import { toast } from "react-toastify";
-import { OfflineToggleButton } from "./OfflineToggleButton";
+import { OfflineToggleButton } from "../OfflineToggleButton";
 
 beforeEach(() => {
   vi.clearAllMocks();

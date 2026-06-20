@@ -10,10 +10,10 @@ import React from "react"
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 
-import {DialogProvider, useDialog} from "./AppDialog"
+import {DialogProvider, useDialog} from "../AppDialog"
 
 // Mock useI18n to avoid needing the full provider chain
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",
@@ -22,7 +22,7 @@ vi.mock("../hooks/useI18n", () => ({
 }))
 
 const mockGetApp = vi.fn()
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     settings: {
       getApp: (...args: unknown[]) => mockGetApp(...args),

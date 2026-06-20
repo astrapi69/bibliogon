@@ -15,11 +15,11 @@ import DonationReminderBanner, {
   shouldShowReminder,
   FIRST_USE_DATE_KEY,
   REMINDER_NEXT_ALLOWED_KEY,
-} from "./DonationReminderBanner";
-import {DONATION_ONBOARDING_SEEN_KEY} from "./DonationOnboardingDialog";
-import type {DonationsConfig} from "./SupportSection";
+} from "../DonationReminderBanner";
+import {DONATION_ONBOARDING_SEEN_KEY} from "../DonationOnboardingDialog";
+import type {DonationsConfig} from "../SupportSection";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({t: (_: string, f: string) => f}),
 }));
 

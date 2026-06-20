@@ -1,6 +1,6 @@
 import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, fireEvent} from "@testing-library/react"
-import FieldClassDialog from "./FieldClassDialog"
+import FieldClassDialog from "../FieldClassDialog"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 2/10. Pins the
 // FieldClassDialog contract: checkbox-driven submit, force
@@ -8,7 +8,7 @@ import FieldClassDialog from "./FieldClassDialog"
 // article + image_prompts combination, submit produces the
 // AiFillRequest the parent can hand straight to the API client.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",

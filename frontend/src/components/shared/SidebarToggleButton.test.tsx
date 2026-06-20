@@ -10,9 +10,9 @@
 
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import {SidebarToggleButton} from "./SidebarToggleButton";
+import {SidebarToggleButton} from "../SidebarToggleButton";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fb: string) => fb,
         lang: "en",

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import AITemplatePanel from "./AITemplatePanel";
-import { FeatureTestProvider } from "../features/FeatureTestProvider";
-import { HelpProvider } from "../contexts/HelpContext";
+import AITemplatePanel from "../AITemplatePanel";
+import { FeatureTestProvider } from "../../features/FeatureTestProvider";
+import { HelpProvider } from "../../contexts/HelpContext";
 
 // AI 1b C4 (feature-strategy migration). Pins the offline branch of the panel:
 // Fill runs browser-direct via the ai/aiFill orchestrator (never api.*.aiFill);
@@ -13,7 +13,7 @@ import { HelpProvider } from "../contexts/HelpContext";
 // (ai-template-file-io) call backend /api with no offline path, so they are
 // visible but disabled offline regardless of the key (#67, policy #78).
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -21,7 +21,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../storage/useStorageMode", () => ({
+vi.mock("../../storage/useStorageMode", () => ({
     useStorageMode: () => ({ mode: "dexie", online: false, offlineEnabled: true }),
 }));
 
@@ -42,12 +42,12 @@ const { notifyMock, apiMock, aiMock } = vi.hoisted(() => {
     };
 });
 
-vi.mock("../utils/notify", () => ({ notify: notifyMock }));
-vi.mock("../api/client", () => ({
+vi.mock("../../utils/notify", () => ({ notify: notifyMock }));
+vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {},
 }));
-vi.mock("../ai/aiFill", () => aiMock);
+vi.mock("../../ai/aiFill", () => aiMock);
 
 function renderPanel(kind: "article" | "book", id: string, hasAiKey: boolean) {
     return render(
