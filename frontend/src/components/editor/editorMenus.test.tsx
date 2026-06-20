@@ -8,10 +8,10 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { EditorMenu, type EditorMenuGroup } from "../lib/components/EditorMenu";
-import { buildArticleEditorMenu } from "../pages/buildArticleEditorMenu";
-import { buildComicEditorMenu } from "./buildComicEditorMenu";
-import { buildPictureBookEditorMenu } from "./buildPictureBookEditorMenu";
+import { EditorMenu, type EditorMenuGroup } from "../../lib/components/EditorMenu";
+import { buildArticleEditorMenu } from "../../pages/buildArticleEditorMenu";
+import { buildComicEditorMenu } from "../buildComicEditorMenu";
+import { buildPictureBookEditorMenu } from "../buildPictureBookEditorMenu";
 
 const t = (_key: string, fallback?: string) => fallback ?? _key;
 
