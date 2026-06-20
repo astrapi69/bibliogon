@@ -19,16 +19,16 @@ import RelationshipGraphView, {
   addRelationship,
   removeRelationship,
 } from "./RelationshipGraphView";
-import type { StoryEntityOut } from "../api/client";
+import type { StoryEntityOut } from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, f: string) => f,
     lang: "en",
     setLang: vi.fn(),
   }),
 }));
-vi.mock("../hooks/ui/useTheme", () => ({
+vi.mock("../../hooks/ui/useTheme", () => ({
   useTheme: () => ({
     theme: "light",
     toggle: vi.fn(),
@@ -36,10 +36,10 @@ vi.mock("../hooks/ui/useTheme", () => ({
     setAppTheme: vi.fn(),
   }),
 }));
-vi.mock("../utils/notify", () => ({ notify: { error: vi.fn() } }));
+vi.mock("../../utils/notify", () => ({ notify: { error: vi.fn() } }));
 
 const mockConfirm = vi.fn();
-vi.mock("./AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));
+vi.mock("../AppDialog", () => ({ useDialog: () => ({ confirm: mockConfirm }) }));
 
 vi.mock("@xyflow/react", async () => {
   const React = await import("react");
@@ -114,7 +114,7 @@ vi.mock("@xyflow/react", async () => {
 const listEntities = vi.fn();
 const updateEntity = vi.fn();
 const updateBook = vi.fn();
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     storyBible: {
       listEntities: (...a: unknown[]) => listEntities(...a),
