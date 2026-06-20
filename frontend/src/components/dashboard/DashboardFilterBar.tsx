@@ -14,7 +14,7 @@ import {Search, X, ChevronUp, ChevronDown} from "lucide-react";
 import {RadixSelect} from "../shared/RadixSelect";
 import {useI18n} from "../../hooks/useI18n";
 import type {BookFilters, SortField} from "../../hooks/book/useBookFilters";
-import SearchClearButton from "../SearchClearButton";
+import SearchClearButton from "./SearchClearButton";
 import styles from "../DashboardFilterBar.module.css";
 
 interface Props {

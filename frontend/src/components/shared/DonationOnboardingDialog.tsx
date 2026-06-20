@@ -13,7 +13,7 @@ import { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Heart, X, ExternalLink, Star } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import type { DonationsConfig } from "../SupportSection";
+import type { DonationsConfig } from "../settings/SupportSection";
 import styles from "../DonationOnboardingDialog.module.css";
 
 export const DONATION_ONBOARDING_SEEN_KEY =

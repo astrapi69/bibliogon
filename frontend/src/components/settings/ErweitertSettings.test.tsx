@@ -21,7 +21,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../SshKeySection", () => ({
+vi.mock("./SshKeySection", () => ({
     default: () => <div data-testid="stub-ssh-key-section"/>,
 }));
 

@@ -167,7 +167,7 @@ vi.mock("../contexts/HelpContext", () => ({
     }),
 }));
 
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => null,
 }));
 

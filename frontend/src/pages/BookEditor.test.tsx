@@ -240,7 +240,7 @@ vi.mock("../components/book/BookMetadataEditor", () => ({
     default: () => <div data-testid="book-metadata-editor-stub" />,
 }));
 vi.mock("../components/import/ConflictResolutionDialog", () => ({ default: () => null }));
-vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
+vi.mock("../components/book/SaveAsTemplateModal", () => ({ default: () => null }));
 vi.mock("../components/book/ChapterTemplatePickerModal", () => ({ default: () => null }));
 vi.mock("../components/book/SaveAsChapterTemplateModal", () => ({ default: () => null }));
 vi.mock("../lib/components/EmptyState", () => ({ EmptyState: () => null }));

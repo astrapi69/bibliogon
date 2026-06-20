@@ -235,10 +235,10 @@ vi.mock("../components/book/KeywordInput", () => ({
 vi.mock("../components/shared/AiGenerateButton", () => ({
     default: () => <div data-testid="ai-generate-stub" />,
 }));
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => <div data-testid="theme-toggle-stub" />,
 }));
-vi.mock("../components/Tooltip", () => ({
+vi.mock("../lib/components/Tooltip", () => ({
     default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

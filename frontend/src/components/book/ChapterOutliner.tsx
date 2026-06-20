@@ -22,7 +22,7 @@ import {
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
-import {BeatSelect} from "../StoryboardAnnotations"
+import {BeatSelect} from "../story-bible/StoryboardAnnotations"
 import {LabelSelect, StatusSelect} from "./ChapterStatusLabel"
 import {chapterWordCount} from "../story-bible/ProseStoryboard"
 import styles from "../ChapterOutliner.module.css"

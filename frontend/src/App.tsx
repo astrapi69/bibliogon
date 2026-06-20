@@ -36,8 +36,8 @@ import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
-import SyncStatusWatcher from "./components/SyncStatusWatcher";
-import SkipToContentLink from "./components/SkipToContentLink";
+import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
+import SkipToContentLink from "./components/shared/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
 import { BulkAiFillJobProvider } from "./contexts/BulkAiFillJobContext";
 import { MediumImportJobProvider } from "./contexts/MediumImportJobContext";
@@ -51,7 +51,7 @@ import DonationReminderBanner, {
     ensureFirstUseDate,
     shouldShowReminder,
 } from "./components/shared/DonationReminderBanner";
-import { getDonationsConfig, type DonationsConfig } from "./components/SupportSection";
+import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
 import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
 import { useWordWrap } from "./hooks/useWordWrap";
 import { api, ApiError } from "./api/client";

@@ -49,7 +49,7 @@ import { useStorageMode } from "../storage/useStorageMode";
 import { ArticleFilterBar } from "../components/articles/ArticleFilterBar";
 import ArticleFilterSheet from "../components/articles/ArticleFilterSheet";
 import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterControls";
-import TileSelectCheckbox from "../components/TileSelectCheckbox";
+import TileSelectCheckbox from "../components/picture-book/TileSelectCheckbox";
 import ArticleRow from "../components/articles/ArticleRow";
 import ArticleListEmptyState from "../components/articles/ArticleListEmptyState";
 import ArticleListHeader from "../components/articles/ArticleListHeader";

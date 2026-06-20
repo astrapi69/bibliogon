@@ -14,8 +14,8 @@ import {
   FileText,
   PanelLeftClose,
 } from "lucide-react";
-import ThemeToggle from "../ThemeToggle";
-import Tooltip from "../Tooltip";
+import ThemeToggle from "../shared/ThemeToggle";
+import Tooltip from "../../lib/components/Tooltip";
 import EditableTitle from "../shared/EditableTitle";
 import styles from "../ChapterSidebar.module.css";
 

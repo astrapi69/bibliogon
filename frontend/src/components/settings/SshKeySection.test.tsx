@@ -9,7 +9,7 @@
 
 import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, waitFor} from "@testing-library/react";
-import SshKeySection from "../SshKeySection";
+import SshKeySection from "./SshKeySection";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({

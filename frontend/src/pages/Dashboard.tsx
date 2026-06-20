@@ -23,12 +23,12 @@ import { usePagedList } from "../hooks/usePagedList";
 import DashboardFilterBar from "../components/dashboard/DashboardFilterBar";
 import DashboardFilterSheet from "../components/dashboard/DashboardFilterSheet";
 import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterControls";
-import TileSelectCheckbox from "../components/TileSelectCheckbox";
+import TileSelectCheckbox from "../components/picture-book/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/book/useBookFilters";
 import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
 import { BookTypeIcon } from "../utils/icons/bookTypeIcon";
-import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
+import SplitButton, { type SplitButtonDropdownItem } from "../components/shared/SplitButton";
 import {
     Plus,
     BookOpen,
@@ -54,7 +54,7 @@ import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox
 import ListPaginationControls from "../components/dashboard/ListPaginationControls";
 import styles from "./Dashboard.module.css";
 import FullscreenButton from "../components/shared/FullscreenButton";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeToggle from "../components/shared/ThemeToggle";
 import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
 import { useDialog } from "../components/shared/AppDialog";
@@ -63,7 +63,7 @@ import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useHelp } from "../contexts/HelpContext";
-import { getDonationsConfig, type DonationsConfig } from "../components/SupportSection";
+import { getDonationsConfig, type DonationsConfig } from "../components/settings/SupportSection";
 import DonationOnboardingDialog, {
     shouldShowDonationOnboarding,
 } from "../components/shared/DonationOnboardingDialog";

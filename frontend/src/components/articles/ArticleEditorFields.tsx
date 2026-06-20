@@ -3,7 +3,7 @@ import { AlertCircle, Loader2, Save } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
 import { RadixSelect } from "../shared/RadixSelect";
-import Tooltip from "../Tooltip";
+import Tooltip from "../../lib/components/Tooltip";
 import layout from "../../pages/ArticleEditor.module.css";
 
 export type SaveStatus = "idle" | "saving" | "saved" | "error";

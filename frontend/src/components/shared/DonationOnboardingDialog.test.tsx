@@ -14,7 +14,7 @@ import DonationOnboardingDialog, {
   shouldShowDonationOnboarding,
   DONATION_ONBOARDING_SEEN_KEY,
 } from "./DonationOnboardingDialog";
-import type {DonationsConfig} from "../SupportSection";
+import type {DonationsConfig} from "../settings/SupportSection";
 
 vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({t: (_: string, f: string) => f}),

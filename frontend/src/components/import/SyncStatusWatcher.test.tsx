@@ -26,7 +26,7 @@ vi.mock("../../storage/useStorageMode", () => ({
 }));
 
 import { useStorageMode } from "../../storage/useStorageMode";
-import SyncStatusWatcher from "../SyncStatusWatcher";
+import SyncStatusWatcher from "./SyncStatusWatcher";
 
 describe("SyncStatusWatcher", () => {
   it("is headless and wires an onReconnect handler", () => {

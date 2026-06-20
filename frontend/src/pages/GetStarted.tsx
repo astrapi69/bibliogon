@@ -5,7 +5,7 @@ import {getStorage} from "../storage";
 import {useI18n} from "../hooks/useI18n";
 import {useBookTypes} from "../hooks/book/useBookTypes";
 import {BookTypeIcon} from "../utils/icons/bookTypeIcon";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeToggle from "../components/shared/ThemeToggle";
 import {notify} from "../utils/platform/notify";
 import styles from "./GetStarted.module.css";
 import {

@@ -24,7 +24,7 @@ import {
     buildStoryboardMessages,
     type ChapterCorpusEntry,
 } from "./storyExtractionPrompts";
-import { STORY_BEATS } from "../components/StoryboardAnnotations";
+import { STORY_BEATS } from "../components/story-bible/StoryboardAnnotations";
 
 /** Char budget per AI request. Long books are split into several requests
  *  (one progress step each); short books fit in a single request. */

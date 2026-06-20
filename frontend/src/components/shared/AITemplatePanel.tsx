@@ -17,7 +17,7 @@ import { aiFillArticle, aiFillBook } from "../../ai/aiFill";
 import { ARTICLE_OFFLINE_FILL_CLASSES } from "../../ai/articleFillPrompts";
 import { BOOK_OFFLINE_FILL_CLASSES } from "../../ai/bookFillPrompts";
 import FieldClassDialog, { type FieldClassDialogResult } from "./FieldClassDialog";
-import TemplateImportDropZone, { TemplateImportFilePreview } from "../TemplateImportDropZone";
+import TemplateImportDropZone, { TemplateImportFilePreview } from "../import/TemplateImportDropZone";
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 3/10. Three first-
 // class buttons that orchestrate the per-record AI-template

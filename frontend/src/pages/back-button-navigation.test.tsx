@@ -54,10 +54,10 @@ vi.mock("react-router-dom", async () => {
 // Heavy children stubs (Settings, Help, GetStarted all pull large
 // component trees - we are only exercising the back-button so the
 // real ones don't need to run).
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => <div data-testid="theme-toggle-stub" />,
 }));
-vi.mock("../components/SupportSection", () => ({
+vi.mock("../components/settings/SupportSection", () => ({
     default: () => <div data-testid="support-stub" />,
     getDonationsConfig: () => ({
         enabled: false,

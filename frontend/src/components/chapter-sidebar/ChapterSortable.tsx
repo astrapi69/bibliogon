@@ -6,7 +6,7 @@ import {
   SortableList,
   type SortableItemRenderProps,
 } from "../../lib/components/SortableList";
-import Tooltip from "../Tooltip";
+import Tooltip from "../../lib/components/Tooltip";
 import styles from "../ChapterSidebar.module.css";
 
 /**

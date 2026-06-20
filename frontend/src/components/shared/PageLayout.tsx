@@ -2,7 +2,7 @@ import * as React from "react";
 import {BookOpen, ChevronLeft} from "lucide-react";
 import {useNavigate} from "react-router-dom";
 
-import ThemeToggle from "../ThemeToggle";
+import ThemeToggle from "./ThemeToggle";
 import {cn} from "@/lib/utils";
 
 export type PageMaxWidth = "sm" | "md" | "lg" | "xl";

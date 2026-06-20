@@ -34,9 +34,9 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import type { useI18n } from "../../hooks/useI18n";
 import type { useContentTypes } from "../../hooks/useContentTypes";
 import { ContentTypeIcon } from "../../utils/icons/contentTypeIcon";
-import SplitButton, { type SplitButtonDropdownItem } from "../SplitButton";
+import SplitButton, { type SplitButtonDropdownItem } from "../shared/SplitButton";
 import FullscreenButton from "../shared/FullscreenButton";
-import ThemeToggle from "../ThemeToggle";
+import ThemeToggle from "../shared/ThemeToggle";
 import NewFromTemplateButton from "../book/NewFromTemplateButton";
 
 type Translate = ReturnType<typeof useI18n>["t"];

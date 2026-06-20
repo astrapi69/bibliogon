@@ -46,11 +46,11 @@ import { LayoutConfigComicPanel } from "./LayoutConfigComicPanel";
 import { MovePanelToPageMenu } from "./MovePanelToPageMenu";
 import { useComicBookEditor } from "./useComicBookEditor";
 import PageThumbnails from "../picture-book/PageThumbnails";
-import { SidebarToggleButton } from "../SidebarToggleButton";
+import { SidebarToggleButton } from "../shared/SidebarToggleButton";
 import { SidebarOverlay } from "../../lib/components/SidebarOverlay";
 import PdfExportControls from "../export/PdfExportControls";
 import EditableTitle from "../shared/EditableTitle";
-import ThemeToggle from "../ThemeToggle";
+import ThemeToggle from "../shared/ThemeToggle";
 
 interface Props {
   bookId: string;

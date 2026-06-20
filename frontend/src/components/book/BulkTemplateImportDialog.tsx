@@ -15,7 +15,7 @@ import {notify} from "../../utils/platform/notify"
 import {api, ApiError, type BulkAiTemplateImportResult} from "../../api/client"
 import TemplateImportDropZone, {
     TemplateImportFilePreview,
-} from "../TemplateImportDropZone"
+} from "../import/TemplateImportDropZone"
 
 // UNIVERSAL-AI-TEMPLATE-02 Session 2, commit 6/10. Reusable
 // bulk-template import modal used by both dashboard bulk action
