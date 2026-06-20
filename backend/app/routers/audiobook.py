@@ -30,9 +30,9 @@ from app import credential_store
 from app.database import get_db
 from app.models import AudioVoice, Book
 from app.paths import get_upload_dir
-from app.services import audiobook_credentials
-from app.services.audiobook_synthesis import generate_dry_run_sample
-from app.services.google_tts_setup import (
+from app.services.audiobook import credentials
+from app.services.audiobook.synthesis import generate_dry_run_sample
+from app.services.audiobook.google_tts_setup import (
     _seeding_status,
     push_google_creds_to_engine,
     seed_google_voices_sync,
@@ -46,7 +46,7 @@ router = APIRouter(tags=["audiobook"])
 # --- ElevenLabs API key configuration ---
 #
 # The verify / store / read / delete plumbing lives in
-# ``app.services.audiobook_credentials``; the endpoints here stay thin.
+# ``app.services.audiobook.credentials``; the endpoints here stay thin.
 
 
 class ElevenLabsKeyRequest(BaseModel):
@@ -62,19 +62,19 @@ def get_elevenlabs_config() -> dict[str, Any]:
     The key itself is never returned. The frontend uses ``configured``
     to decide whether to show "Schlüssel hinterlegt" or the empty input.
     """
-    return {"configured": audiobook_credentials.is_elevenlabs_configured()}
+    return {"configured": credentials.is_elevenlabs_configured()}
 
 
 @router.post("/audiobook/config/elevenlabs")
 def set_elevenlabs_config(req: ElevenLabsKeyRequest) -> dict[str, Any]:
     """Verify, store, and activate an ElevenLabs API key."""
-    return audiobook_credentials.verify_and_store_elevenlabs_key(req.api_key)
+    return credentials.verify_and_store_elevenlabs_key(req.api_key)
 
 
 @router.delete("/audiobook/config/elevenlabs", status_code=204)
 def delete_elevenlabs_config() -> None:
     """Remove the configured ElevenLabs API key from all storage locations."""
-    audiobook_credentials.delete_elevenlabs_key()
+    credentials.delete_elevenlabs_key()
 
 
 # --- Google Cloud TTS credentials (encrypted, Service Account JSON) ---
