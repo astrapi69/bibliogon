@@ -12,7 +12,7 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import CoverUpload from "./CoverUpload"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (key: string, fallback: string) => fallback,
     lang: "en",
@@ -23,7 +23,7 @@ vi.mock("../hooks/useI18n", () => ({
 const mockUpload = vi.fn()
 const mockDelete = vi.fn()
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
   api: {
     covers: {
       upload: (...args: unknown[]) => mockUpload(...args),
@@ -39,7 +39,7 @@ vi.mock("../api/client", () => ({
   },
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
   notify: {
     error: vi.fn(),
     success: vi.fn(),
@@ -104,7 +104,7 @@ describe("CoverUpload", () => {
   })
 
   it("rejects invalid file types with error notification", async () => {
-    const {notify} = await import("../utils/notify")
+    const {notify} = await import("../../utils/notify")
     renderUpload()
 
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement
@@ -118,7 +118,7 @@ describe("CoverUpload", () => {
   })
 
   it("shows error notification on upload failure", async () => {
-    const {notify} = await import("../utils/notify")
+    const {notify} = await import("../../utils/notify")
     mockUpload.mockRejectedValue(new Error("Server error"))
 
     renderUpload()

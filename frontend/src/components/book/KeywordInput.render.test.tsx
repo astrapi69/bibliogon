@@ -43,7 +43,7 @@ vi.mock("react-toastify", () => ({
 // (they dispatch through react-toastify which is mocked above), but we
 // mock them directly to avoid the dynamic eventRecorder import path
 // that react-toastify's recorder pulls in on every call.
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {
         warning: vi.fn(),
         info: vi.fn(),

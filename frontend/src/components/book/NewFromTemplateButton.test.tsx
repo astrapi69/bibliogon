@@ -8,7 +8,7 @@ import NewFromTemplateButton from "./NewFromTemplateButton"
 // submit calls fromAiTemplate and the parent's onCreated fires
 // with the resulting record.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -40,9 +40,9 @@ const {notifyMock, apiMock} = vi.hoisted(() => {
     }
 })
 
-vi.mock("../utils/notify", () => ({notify: notifyMock}))
+vi.mock("../../utils/notify", () => ({notify: notifyMock}))
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {
         constructor(
@@ -200,7 +200,7 @@ describe("NewFromTemplateButton", () => {
     })
 
     it("submit failure surfaces ApiError detail and keeps the dialog open", async () => {
-        const {ApiError} = await import("../api/client")
+        const {ApiError} = await import("../../api/client")
         apiMock.articles.fromAiTemplate.mockRejectedValue(
             new ApiError(
                 400,

@@ -10,12 +10,12 @@
  * not render under happy-dom); the chart itself is covered by E2E.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FeatureTestProvider } from "../features/FeatureTestProvider";
+import { FeatureTestProvider } from "../../features/FeatureTestProvider";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import WritingHistoryView from "./WritingHistoryView";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, f: string) => f,
         lang: "en",
@@ -23,7 +23,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({ notify: { error: vi.fn() } }));
+vi.mock("../../utils/notify", () => ({ notify: { error: vi.fn() } }));
 
 vi.mock("recharts", () => {
     const Passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;
@@ -40,7 +40,7 @@ vi.mock("recharts", () => {
 const summary = vi.fn();
 const byBook = vi.fn();
 const byChapter = vi.fn();
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     BASE: "http://test/api",
     api: {
         writingStats: {
@@ -49,7 +49,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../storage", () => ({
+vi.mock("../../storage", () => ({
     getStorage: () => ({
         writingStats: {
             summary: (...a: unknown[]) => summary(...a),

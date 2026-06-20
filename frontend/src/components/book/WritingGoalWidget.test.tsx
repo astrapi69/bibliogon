@@ -8,9 +8,9 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, waitFor, fireEvent} from "@testing-library/react"
 
 import WritingGoalWidget, {computeStreak} from "./WritingGoalWidget"
-import {api, type WritingSession} from "../api/client"
+import {api, type WritingSession} from "../../api/client"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fb: string) => fb,
         lang: "en",
@@ -26,8 +26,8 @@ vi.mock("react-router-dom", async (orig) => ({
     useNavigate: () => navigateMock,
 }))
 
-vi.mock("../api/client", async () => {
-    const actual = await vi.importActual<typeof import("../api/client")>("../api/client")
+vi.mock("../../api/client", async () => {
+    const actual = await vi.importActual<typeof import("../../api/client")>("../../api/client")
     return {
         ...actual,
         api: {

@@ -9,7 +9,7 @@ import {render, screen, fireEvent} from "@testing-library/react";
 
 import BisacCodeInput, {isValidBisacCode} from "./BisacCodeInput";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
 }));
 

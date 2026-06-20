@@ -15,8 +15,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 
 import CreateBookForm from "./CreateBookForm";
-import { BookTypesProvider } from "../hooks/book/useBookTypes";
-import type { BookTypeDef } from "../api/client";
+import { BookTypesProvider } from "../../hooks/book/useBookTypes";
+import type { BookTypeDef } from "../../api/client";
 
 // BOOK-TYPES-SSOT-YAML-01 C6: CreateBookForm reads the BookType registry
 // to drive the template-tab visibility (capabilities.template_catalog).
@@ -61,7 +61,7 @@ const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
     },
 };
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (key: string, fallback: string) => fallback,
         lang: "en",
@@ -76,7 +76,7 @@ const mockListAuthors = vi.fn();
 const mockCreateAuthor = vi.fn();
 let mockAppConfig: Record<string, unknown> = { author: { name: "", pen_names: [] } };
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         settings: {
             getApp: vi.fn(async () => mockAppConfig),
@@ -101,7 +101,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         alert: vi.fn(),
@@ -109,7 +109,7 @@ vi.mock("./AppDialog", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 

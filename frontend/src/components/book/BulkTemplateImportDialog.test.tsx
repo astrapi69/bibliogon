@@ -8,7 +8,7 @@ import BulkTemplateImportDialog from "./BulkTemplateImportDialog"
 // success) each emit the right toast, ApiError surfaces via
 // notify.error, kind-aware routing to api.{articles,books}.
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -34,9 +34,9 @@ const {notifyMock, apiMock} = vi.hoisted(() => {
     }
 })
 
-vi.mock("../utils/notify", () => ({notify: notifyMock}))
+vi.mock("../../utils/notify", () => ({notify: notifyMock}))
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {
         constructor(
@@ -207,7 +207,7 @@ describe("BulkTemplateImportDialog", () => {
     })
 
     it("ApiError surfaces via notify.error and dialog stays open", async () => {
-        const {ApiError} = await import("../api/client")
+        const {ApiError} = await import("../../api/client")
         apiMock.articles.bulkAiTemplate.import.mockRejectedValue(
             new ApiError(422, "ZIP contains 60 templates; cap is 50", "/api/x", "POST"),
         )
