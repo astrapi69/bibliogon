@@ -12,7 +12,7 @@ import { render, screen } from "@testing-library/react";
 
 import EditorContextMenu from "./EditorContextMenu";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, f: string) => f,
     lang: "en",
