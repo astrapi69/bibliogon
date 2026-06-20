@@ -10,7 +10,7 @@ import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../../db/drafts";
 import "katex/dist/katex.min.css";
-import { buildEditorExtensions } from "../editorExtensions";
+import { buildEditorExtensions } from "./editorExtensions";
 import { findEnclosingSentence } from "../../data/fix-issue-prompts";
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
@@ -18,7 +18,7 @@ import {
     buildMentionLabels,
     createStoryBibleMention,
     handleMentionClick,
-} from "../storyBibleMention";
+} from "../story-bible/storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
 import EditorAiPanel from "./EditorAiPanel";
 import {
@@ -44,7 +44,7 @@ import { warnIfOfflineStorageNearlyFull } from "../../utils/platform/storageQuot
 import { notify } from "../../utils/platform/notify";
 import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
-import { parseContent, textOffsetToDocPos, buildAiPrompts } from "../editorHelpers";
+import { parseContent, textOffsetToDocPos, buildAiPrompts } from "./editorHelpers";
 
 export interface BookContext {
     title: string;
@@ -57,10 +57,10 @@ export interface BookContext {
 // ContentKind + pluginsForContentKind live in editor-gates.ts so
 // they can be imported from non-DOM unit tests without pulling in
 // the entire TipTap extension graph.
-export { pluginsForContentKind } from "../editor-gates";
-export type { ContentKind, PluginGates } from "../editor-gates";
-import type { ContentKind } from "../editor-gates";
-import { pluginsForContentKind as pluginsForKind } from "../editor-gates";
+export { pluginsForContentKind } from "./editor-gates";
+export type { ContentKind, PluginGates } from "./editor-gates";
+import type { ContentKind } from "./editor-gates";
+import { pluginsForContentKind as pluginsForKind } from "./editor-gates";
 import styles from "../Editor.module.css";
 
 interface Props {

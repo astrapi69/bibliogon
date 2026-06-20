@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { pluginsForContentKind } from "../editor-gates";
+import { pluginsForContentKind } from "./editor-gates";
 
 describe("pluginsForContentKind", () => {
     it("hides audiobook for articles", () => {

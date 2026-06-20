@@ -5,7 +5,7 @@
  */
 import { describe, it, expect, vi } from "vitest";
 
-import { promptAndInsertMath } from "../editorMathPrompt";
+import { promptAndInsertMath } from "./editorMathPrompt";
 
 function makeEditor(opts: { active?: boolean; latex?: string } = {}) {
   const calls: string[] = [];

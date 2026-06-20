@@ -29,7 +29,7 @@ import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/platform/notify";
 import {useDialog} from "../shared/AppDialog";
 import AiStoryExtraction from "./AiStoryExtraction";
-import {entityTypeColor, entityTypeIcon} from "../storyBibleIcons";
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryBibleSidebar.module.css";
 
 /** HTML5 drag-and-drop MIME used to carry an entity id from the

@@ -4,7 +4,7 @@ import {
     buildQualityReportPdfDefinition,
     numberChapters,
     type QualityReportLabels,
-} from "../qualityReport"
+} from "./qualityReport"
 import type {ChapterMetric, ChapterMetricsResponse} from "../../api/client"
 import {
     HEADER_FILL,
@@ -12,7 +12,7 @@ import {
     MUTED_COLOR,
     SEVERITY_FILL,
     FLESCH_BAND_FILL,
-} from "../qualityThresholds"
+} from "./qualityThresholds"
 
 const labels: QualityReportLabels = {
     title: "Qualitaetsbericht",

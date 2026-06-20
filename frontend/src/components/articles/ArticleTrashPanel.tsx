@@ -2,7 +2,7 @@ import { ChevronLeft, RotateCcw, Trash, Trash2 } from "lucide-react";
 
 import { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import ViewToggle from "../ViewToggle";
+import ViewToggle from "../dashboard/ViewToggle";
 import TrashCard from "../trash/TrashCard";
 import layout from "../../pages/ArticleList.module.css";
 

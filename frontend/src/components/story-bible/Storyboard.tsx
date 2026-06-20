@@ -54,7 +54,7 @@ import {useStoryBibleIntegration} from "../../hooks/useStoryBibleIntegration"
 import {notify} from "../../utils/platform/notify"
 import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import StoryboardArcView from "./StoryboardArcView"
-import {entityTypeColor, entityTypeIcon} from "../storyBibleIcons"
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons"
 import {
     ActGroupInput,
     BeatSelect,

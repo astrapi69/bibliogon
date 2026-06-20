@@ -5,7 +5,7 @@ import {CollapsibleToolbar} from "./CollapsibleToolbar";
 import {useDialog} from "../shared/AppDialog";
 import {notify} from "../../utils/platform/notify";
 import {copyToClipboard} from "../../utils/platform/clipboard";
-import {promptAndInsertMath} from "../editorMathPrompt";
+import {promptAndInsertMath} from "./editorMathPrompt";
 import {
     editorToMarkdown,
     editorToPlainText,

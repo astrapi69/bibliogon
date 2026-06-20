@@ -23,7 +23,7 @@ import {
     type NavigationSidebarGroup,
 } from "../../lib/components/NavigationSidebar";
 import QualityTab, { NavigableFindingType } from "../quality/QualityTab";
-import TranslationLinks from "../TranslationLinks";
+import TranslationLinks from "../articles/TranslationLinks";
 import AITemplatePanel from "../shared/AITemplatePanel";
 import KdpPublishingWizard from "../kdp-wizard/KdpPublishingWizard";
 import { Row, Field, AuthorSelectField, RepositoryUrlField } from "../book-metadata/MetadataFields";

@@ -1,4 +1,4 @@
-import WritingHistoryView from "../components/WritingHistoryView";
+import WritingHistoryView from "../components/book/WritingHistoryView";
 import { PageLayout } from "../components/shared/PageLayout";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";

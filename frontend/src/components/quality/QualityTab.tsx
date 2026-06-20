@@ -23,7 +23,7 @@ import {
     FILLER_PCT_THRESHOLD,
     PASSIVE_PCT_THRESHOLD,
     LONG_SENTENCE_THRESHOLD,
-} from "../qualityThresholds"
+} from "./qualityThresholds"
 import {slugify} from "../../shared/utils/slugify"
 import {downloadBlob} from "../../shared/utils/downloadBlob"
 import {renderPdfDefinition} from "../../export/formatPdf"
@@ -33,7 +33,7 @@ import {
     numberChapters,
     type NumberedChapterMetric,
     type QualityReportLabels,
-} from "../qualityReport"
+} from "./qualityReport"
 import {notify} from "../../utils/platform/notify"
 import {getStorage} from "../../storage"
 import {computeChapterMetrics} from "../../lib/utils/chapterMetrics"

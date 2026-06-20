@@ -20,7 +20,7 @@ import type { ExportDocument } from "./documentModel";
 import {
   buildQualityReportPdfDefinition,
   type QualityReportLabels,
-} from "../components/qualityReport";
+} from "../components/quality/qualityReport";
 import type { ChapterMetricsResponse } from "../api/client";
 
 const REPORT: ExportDocument = {

@@ -21,7 +21,7 @@ import PdfExportControls from "../export/PdfExportControls"
 import RichTextToolbar from "../editor/RichTextToolbar"
 import ThemeToggle from "../shared/ThemeToggle"
 import {EditorMenu} from "../../lib/components/EditorMenu"
-import {buildPictureBookEditorMenu} from "../buildPictureBookEditorMenu"
+import {buildPictureBookEditorMenu} from "./buildPictureBookEditorMenu"
 import styles from "../PageEditor.module.css"
 
 interface Props {

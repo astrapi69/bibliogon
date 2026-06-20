@@ -33,8 +33,8 @@ import {useDialog} from "../shared/AppDialog";
 import EditableTitle from "../shared/EditableTitle";
 import RichTextEditor from "../editor/RichTextEditor";
 import {RadixSelect} from "../shared/RadixSelect";
-import {RELATIONSHIP_TYPES, relationshipColor} from "../relationshipColors";
-import {entityTypeColor, entityTypeIcon} from "../storyBibleIcons";
+import {RELATIONSHIP_TYPES, relationshipColor} from "./relationshipColors";
+import {entityTypeColor, entityTypeIcon} from "./storyBibleIcons";
 import styles from "./StoryEntityEditor.module.css";
 
 interface StoryEntityEditorProps {

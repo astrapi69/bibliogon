@@ -49,7 +49,7 @@ import {
   buildMentionLabels,
   createStoryBibleMention,
   handleMentionClick,
-} from "../storyBibleMention";
+} from "../story-bible/storyBibleMention";
 
 interface Props {
   /** The current TipTap document. ``null`` renders an empty
