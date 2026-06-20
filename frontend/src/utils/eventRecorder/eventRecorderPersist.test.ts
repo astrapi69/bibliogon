@@ -1,6 +1,6 @@
 import {describe, it, expect, beforeEach, afterEach, vi} from "vitest";
 import "fake-indexeddb/auto";
-import {EVENT_LOG_KEY, offlineDb} from "../storage/dexie/schema";
+import {EVENT_LOG_KEY, offlineDb} from "../../storage/dexie/schema";
 import {eventRecorder, type RecordedEvent} from "./eventRecorder";
 import {initEventLogPersistence} from "./eventRecorderPersist";
 

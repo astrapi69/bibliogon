@@ -27,7 +27,7 @@ from sqlalchemy.orm import Session
 
 from app.exceptions import BibliogonError, ExternalServiceError, NotFoundError, ValidationError
 from app.models import Book, Chapter
-from app.services.audiobook_skip_types import resolve_book_skip_types
+from app.services.audiobook.skip_types import resolve_book_skip_types
 
 logger = logging.getLogger(__name__)
 

@@ -11,7 +11,7 @@ import {
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { Toggle } from "../components/settings/Toggle";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { PageLayout } from "../components/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { KeyRound, Loader2, Pencil, Plus, Trash2 } from "lucide-react";
 import { useI18n } from "../../hooks/useI18n";
-import type { ProviderKeyStatus } from "../../utils/aiConfig";
+import type { ProviderKeyStatus } from "../../utils/ai/aiConfig";
 
 export interface ProviderRow {
     id: string;

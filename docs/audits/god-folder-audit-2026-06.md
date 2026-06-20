@@ -298,3 +298,52 @@ folder in the inventory table marked "no".
   regardless of concern, that is a separate policy decision and would
   change this verdict.
 - **No code was changed.** This document is the sole artifact.
+
+---
+
+## 2026-06-20 update — #466 CC lane (utils / services / routers)
+
+Implemented the non-`components/` remainder of #466 (the `components/`
+domain split is the parallel CCW lane). Pure moves, zero functional
+change; `tsc --noEmit`, Vitest (3727), and backend pytest (2654, +1
+pre-existing local-only `git` force-push test that depends on local
+git config, untouched by this work) all green.
+
+### `frontend/src/utils/` — split (done)
+
+Grouped into six concern subfolders (no barrel, deep relative imports,
+mirroring the `hooks/` split): `format/` (formatDate, formatActiveFilters,
+publicationStatusBadge), `icons/` (bookTypeIcon, contentTypeIcon), `ai/`
+(aiConfig, aiProviders), `eventRecorder/` (eventRecorder,
+eventRecorderPersist), `editor/` (tiptap-markdown, layoutConfig),
+`platform/` (clipboard, notify, storageQuota, spaRedirect, versionCheck,
+imageUrl). `computeAuthorSuggestions` stays flat (domain logic, no clean
+group). Tests colocated with their source.
+
+### `backend/app/services/` — residual clusters (partial)
+
+After the `git/` sub-package (#465), 26 flat files remained (>15).
+Extracted the two clusters of 3+ cohesive files:
+- `services/audiobook/` — credentials, skip_types, synthesis,
+  google_tts_setup (dropped the `audiobook_` prefix).
+- `services/registries/` — book_type_registry, content_type_registry,
+  story_entity_registry (kept the `_registry` basename so importers
+  change only the package path, avoiding monkeypatch-alias churn; the
+  `__file__`-relative `_REGISTRY_PATH` gained one parent level).
+
+Remaining flat: 19. The residual clusters are all **2-file pairs**
+(`ai_bulk_fill_*`, `translation_*`, `plugin_*`, `reset_*`) — below the
+meaningful-extraction threshold (a 2-file sub-package adds a directory
+hop for marginal cohesion gain); the rest are single-concern singletons.
+Left flat by design.
+
+### `backend/app/routers/` — confirmed convention-flat (no change)
+
+Verified every file in `routers/` defines an `APIRouter` (one or more)
+for a single resource — it is a **pure** router folder with no stray
+helper-only modules. This confirms the audit's verdict: FastAPI's
+one-router-per-resource convention legitimises the flatness; the folder
+is left untouched. Several router files do embed helper logic (file-level
+mixed-concern, e.g. the bulk AI-template routers), but that is a separate
+**god-file** concern, not the god-folder restructure of #466, and is not
+addressed here.

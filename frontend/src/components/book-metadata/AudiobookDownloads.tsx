@@ -15,7 +15,7 @@ import {
     Play,
     Pause,
 } from "lucide-react";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
 import { LoadingIndicator } from "../LoadingIndicator";
 import { useWebSocket } from "../../hooks/useWebSocket";

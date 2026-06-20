@@ -23,7 +23,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../../utils/notify", () => ({ notify: { error: vi.fn() } }));
+vi.mock("../../utils/platform/notify", () => ({ notify: { error: vi.fn() } }));
 
 vi.mock("recharts", () => {
     const Passthrough = ({ children }: { children?: React.ReactNode }) => <div>{children}</div>;

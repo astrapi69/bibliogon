@@ -3,14 +3,14 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {useI18n} from "../../hooks/useI18n";
 import {CollapsibleToolbar} from "../CollapsibleToolbar";
 import {useDialog} from "../AppDialog";
-import {notify} from "../../utils/notify";
-import {copyToClipboard} from "../../utils/clipboard";
+import {notify} from "../../utils/platform/notify";
+import {copyToClipboard} from "../../utils/platform/clipboard";
 import {promptAndInsertMath} from "../editorMathPrompt";
 import {
     editorToMarkdown,
     editorToPlainText,
     type DocumentMetadata,
-} from "../../utils/tiptap-markdown";
+} from "../../utils/editor/tiptap-markdown";
 import styles from "../Toolbar.module.css";
 import {
     Bold,

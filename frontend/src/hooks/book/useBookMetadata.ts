@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { api, Author, BookDetail, type GitSyncMappingStatus } from "../../api/client";
 import { getStorage } from "../../storage";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useAuthorProfile, profileDisplayNames } from "../useAuthorProfile";
 import { useI18n } from "../useI18n";
 

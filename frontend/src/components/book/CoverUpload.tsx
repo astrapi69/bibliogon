@@ -6,8 +6,8 @@ import type {CoverUploadResponse} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useCoverUrl} from "../../hooks/useAssetUrl";
 import {useI18n} from "../../hooks/useI18n";
-import {notify} from "../../utils/notify";
-import {warnIfOfflineStorageNearlyFull} from "../../utils/storageQuota";
+import {notify} from "../../utils/platform/notify";
+import {warnIfOfflineStorageNearlyFull} from "../../utils/platform/storageQuota";
 import {EmptyState} from "../EmptyState";
 import styles from "../CoverUpload.module.css";
 

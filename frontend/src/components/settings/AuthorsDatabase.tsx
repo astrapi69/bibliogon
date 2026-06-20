@@ -4,7 +4,7 @@ import {type Author} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
 import {useDialog} from "../AppDialog";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import {downloadText} from "../../export/download";
 import styles from "../../pages/Settings.module.css";
 import SearchClearButton from "../SearchClearButton";

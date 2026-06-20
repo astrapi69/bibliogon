@@ -12,7 +12,7 @@ import {Plus, Trash2} from "lucide-react"
 import {type ChapterLabel} from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import {MOOD_PALETTE} from "../StoryboardAnnotations"
 import styles from "../ChapterStatusLabel.module.css"
 

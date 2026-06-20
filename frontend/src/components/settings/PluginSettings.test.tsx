@@ -14,7 +14,7 @@ vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback, lang: "en"}),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         error: vi.fn(),

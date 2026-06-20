@@ -7,7 +7,7 @@ import { FEATURES, FEATURE_REASON } from "../../features/featureConfig";
 import { useGitStatus } from "../../hooks/useGitStatus";
 import { useRemoteDefaultBranch } from "../../hooks/useRemoteDefaultBranch";
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 /**
  * Reusable Git-repository info card: the repository URL as an external

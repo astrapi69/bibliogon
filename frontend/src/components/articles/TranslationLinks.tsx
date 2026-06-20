@@ -13,7 +13,7 @@ import { api, ApiError, Book, TranslationSiblingsResponse } from "../../api/clie
 import { useI18n } from "../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 /**
  * PGS-04 "Translations:" row for the metadata editor.

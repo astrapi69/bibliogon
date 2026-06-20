@@ -28,7 +28,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from app.models import Book, Page
 from app.repositories.pages import PageRepository, get_page_repository
 from app.schemas import PageCreate, PageOut, PagesReorder, PageUpdate
-from app.services.book_type_registry import pageable_book_types
+from app.services.registries.book_type_registry import pageable_book_types
 
 router = APIRouter(prefix="/books", tags=["pages"])
 

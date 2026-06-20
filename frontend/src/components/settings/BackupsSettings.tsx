@@ -31,7 +31,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
 import { useDialog } from "../AppDialog";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { downloadBlob } from "../../export/download";
 import { backupFilename, exportFullBackup } from "../../export/backupExport";
 import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";

@@ -47,11 +47,11 @@ import {
     type StoryEntityOut,
 } from "../../api/client"
 import {getStorage} from "../../storage";
-import {imageUrlFor} from "../../utils/imageUrl"
+import {imageUrlFor} from "../../utils/platform/imageUrl"
 import {useI18n} from "../../hooks/useI18n"
 import {useStoryboardData} from "../../hooks/useStoryboardData"
 import {useStoryBibleIntegration} from "../../hooks/useStoryBibleIntegration"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import StoryBibleSidebar, {STORY_ENTITY_DND_MIME} from "./StoryBibleSidebar"
 import StoryboardArcView from "./StoryboardArcView"
 import {entityTypeColor, entityTypeIcon} from "../storyBibleIcons"

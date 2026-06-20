@@ -82,7 +82,7 @@ export async function request<T>(
   } catch (networkError) {
     // Record network-level failures (ECONNREFUSED etc.)
     try {
-      const { eventRecorder } = await import("../utils/eventRecorder");
+      const { eventRecorder } = await import("../utils/eventRecorder/eventRecorder");
       eventRecorder.add({
         type: "api_error",
         timestamp: startTime,
@@ -98,7 +98,7 @@ export async function request<T>(
   const durationMs = Math.round(performance.now() - startTime);
   // Record every API call (success and error)
   try {
-    const { eventRecorder } = await import("../utils/eventRecorder");
+    const { eventRecorder } = await import("../utils/eventRecorder/eventRecorder");
     eventRecorder.add({
       type: "api_call",
       timestamp: startTime,

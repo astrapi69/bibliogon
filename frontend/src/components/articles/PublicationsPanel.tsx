@@ -29,7 +29,7 @@ import { useI18n } from "../../hooks/useI18n";
 import {RadixSelect} from "../RadixSelect";
 import {Toggle} from "../settings/Toggle";
 import {Badge, type BadgeVariant} from "../Badge";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 
 const STATUS_VARIANT: Record<PublicationStatus, BadgeVariant> = {
     planned: "muted",

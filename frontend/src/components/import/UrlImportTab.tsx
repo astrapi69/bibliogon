@@ -14,7 +14,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { Link2 } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
 import { runUrlImport, UrlImportError } from "../../import/urlImport";

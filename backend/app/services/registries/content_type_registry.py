@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict, field_validator
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config" / "content-types.yaml"
+_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "content-types.yaml"
 
 
 class ContentTypeExtraField(BaseModel):

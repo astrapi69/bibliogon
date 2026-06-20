@@ -43,7 +43,7 @@ vi.mock("../../export/download", () => ({
 
 const mockNotifySuccess = vi.fn();
 const mockNotifyError = vi.fn();
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: (...args: unknown[]) => mockNotifySuccess(...args),
         error: (...args: unknown[]) => mockNotifyError(...args),

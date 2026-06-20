@@ -29,7 +29,7 @@ import {
 } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../AppDialog";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { LoadingIndicator } from "../LoadingIndicator";
 import styles from "../ChapterVersionsView.module.css";
 

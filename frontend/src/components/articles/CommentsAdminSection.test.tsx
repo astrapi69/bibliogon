@@ -154,7 +154,7 @@ vi.mock("../AppDialog", () => ({
     }),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: (...args: unknown[]) => notifySuccess(...args),
         error: (...args: unknown[]) => notifyError(...args),

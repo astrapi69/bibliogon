@@ -16,7 +16,7 @@ vi.mock("../../hooks/useI18n", () => ({
 }))
 
 const notifyError = vi.fn()
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {error: (...a: unknown[]) => notifyError(...a), success: vi.fn(), info: vi.fn(), warning: vi.fn(), bulkAction: vi.fn()},
 }))
 

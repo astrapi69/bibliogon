@@ -7,7 +7,7 @@
  * structure survives in a format with no markup.
  */
 
-import { nodeToPlainText } from "../utils/tiptap-markdown";
+import { nodeToPlainText } from "../utils/editor/tiptap-markdown";
 import type { ExportDocument } from "./documentModel";
 
 /** Convert the export model to a plain-text string. */

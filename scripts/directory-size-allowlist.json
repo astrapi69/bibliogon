@@ -20,13 +20,6 @@
     "owner": "CC",
     "deadline": "v0.57.0"
   },
-  "frontend/src/utils": {
-    "current": 31,
-    "target": 15,
-    "reason": "Utils god-folder; library-grade utils -> lib/utils (#466)",
-    "owner": "CC",
-    "deadline": "v0.58.0"
-  },
   "frontend/src/export": {
     "current": 29,
     "target": 15,
@@ -43,15 +36,15 @@
   },
   "backend/app/routers": {
     "current": 39,
-    "target": 20,
-    "reason": "Routers god-folder; domain split planned (#466)",
+    "target": 39,
+    "reason": "Convention-flat: every file is an APIRouter for one resource (#466 Task 3, audit-confirmed). Folder left as-is; FastAPI one-router-per-resource legitimises the flatness. File-level helper extraction (some bulk-AI routers) is a separate god-file track, not this folder split.",
     "owner": "Aster",
-    "deadline": "v0.59.0"
+    "deadline": "n/a"
   },
   "backend/app/services": {
-    "current": 27,
+    "current": 20,
     "target": 15,
-    "reason": "Services god-folder; sub-package extraction in progress (#466)",
+    "reason": "Services god-folder; git/ (#465) + audiobook/ + registries/ (#466) sub-packages extracted. Remaining 20 are 2-file clusters (ai_bulk_fill_*/translation_*/plugin_*/reset_*, below extraction threshold) + single-concern singletons.",
     "owner": "Aster",
     "deadline": "v0.59.0"
   }

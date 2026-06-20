@@ -19,7 +19,7 @@
  * - All text is truncated to 200 chars max
  */
 
-import {RingBuffer} from "../lib/utils/RingBuffer";
+import {RingBuffer} from "../../lib/utils/RingBuffer";
 
 // ---------------------------------------------------------------------------
 // Types

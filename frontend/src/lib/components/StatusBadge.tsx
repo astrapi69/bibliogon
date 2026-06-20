@@ -14,7 +14,7 @@
  */
 
 import { Badge, type BadgeVariant } from "../../components/Badge";
-import { publicationStatusVariant } from "../../utils/publicationStatusBadge";
+import { publicationStatusVariant } from "../../utils/format/publicationStatusBadge";
 
 export interface StatusBadgeProps {
   /** Lifecycle status (draft / ready / published / archived; others → neutral). */

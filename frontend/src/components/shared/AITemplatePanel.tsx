@@ -10,7 +10,7 @@ import { useHasAiKey } from "../../features/useHasAiKey";
 import { useHelp } from "../../contexts/HelpContext";
 import { CollapsibleConfigSection } from "../CollapsibleConfigSection";
 import { Toggle } from "../settings/Toggle";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { api, ApiError } from "../../api/client";
 import type { AiFillResponse, AiTemplateImportResult } from "../../api/client";
 import { aiFillArticle, aiFillBook } from "../../ai/aiFill";

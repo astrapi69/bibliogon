@@ -96,7 +96,7 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "cross-file cache poisoning. Verified 2026-05-15.",
     ),
     (
-        "backend/app/services/book_type_registry.py",
+        "backend/app/services/registries/book_type_registry.py",
         "load_book_types",
         "Cache lifetime: process. Tests in "
         "test_book_type_registry.py and test_book_types_endpoint.py "
@@ -106,7 +106,7 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "2026-05-22 (BOOK-TYPES-SSOT-YAML-01).",
     ),
     (
-        "backend/app/services/content_type_registry.py",
+        "backend/app/services/registries/content_type_registry.py",
         "load_content_types",
         "Cache lifetime: process. Tests in "
         "test_content_type_registry.py and "
@@ -119,7 +119,7 @@ ALLOWLIST: list[tuple[str, str, str]] = [
         "``Article.content_type`` was already correct).",
     ),
     (
-        "backend/app/services/story_entity_registry.py",
+        "backend/app/services/registries/story_entity_registry.py",
         "load_story_entity_types",
         "Cache lifetime: process. Tests in "
         "test_story_entity_registry.py read the real committed SSoT "

@@ -18,7 +18,7 @@ vi.mock('react-toastify', () => ({
 }))
 
 import {toast} from 'react-toastify'
-import {ApiError} from '../api/client'
+import {ApiError} from '../../api/client'
 import {notify} from './notify'
 
 beforeEach(() => {

@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config" / "story-bible-entities.yaml"
+_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "story-bible-entities.yaml"
 
 
 class StoryEntityExtraField(BaseModel):

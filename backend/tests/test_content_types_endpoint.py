@@ -18,8 +18,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import content_type_registry
-from app.services.content_type_registry import load_content_types
+from app.services.registries import content_type_registry
+from app.services.registries.content_type_registry import load_content_types
 
 
 @pytest.fixture(autouse=True)

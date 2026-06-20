@@ -25,7 +25,7 @@ import {
 import {getStorage} from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { useDialog } from "../AppDialog";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { RELATIONSHIP_TYPES, relationshipColor } from "./relationshipColors";
 import EntityNode from "./EntityNode";
 import RelationshipGraph from "./RelationshipGraph";

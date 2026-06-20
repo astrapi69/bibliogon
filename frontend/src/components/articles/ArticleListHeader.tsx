@@ -33,7 +33,7 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import type { useI18n } from "../../hooks/useI18n";
 import type { useContentTypes } from "../../hooks/useContentTypes";
-import { ContentTypeIcon } from "../../utils/contentTypeIcon";
+import { ContentTypeIcon } from "../../utils/icons/contentTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../SplitButton";
 import FullscreenButton from "../FullscreenButton";
 import ThemeToggle from "../ThemeToggle";

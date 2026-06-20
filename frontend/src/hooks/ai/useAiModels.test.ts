@@ -12,7 +12,7 @@ vi.mock("../../ai/llmClient", async (importOriginal) => {
 });
 
 import { listModels } from "../../ai/llmClient";
-import { getProviderPreset } from "../../utils/aiProviders";
+import { getProviderPreset } from "../../utils/ai/aiProviders";
 import { useAiModels } from "./useAiModels";
 
 const listModelsMock = vi.mocked(listModels);

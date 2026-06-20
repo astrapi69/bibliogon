@@ -5,7 +5,7 @@ import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { AiClientError, classifyAiClientError } from "../../ai/llmClient";
 import { buildReviewMessages } from "../../ai/reviewPrompts";
 import { reviewString } from "../../data/ai-review-strings";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../useI18n";
 import { useStorageMode } from "../../storage/useStorageMode";
 

@@ -40,11 +40,11 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../../utils/clipboard", () => ({
+vi.mock("../../utils/platform/clipboard", () => ({
     copyToClipboard: (text: string) => copyToClipboardMock(text),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: (...args: unknown[]) => notifySuccess(...args),
         error: (...args: unknown[]) => notifyError(...args),

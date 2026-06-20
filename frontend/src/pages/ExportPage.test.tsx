@@ -41,7 +41,7 @@ vi.mock("../api/client", () => ({
   },
 }))
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
   notify: {error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }))
 

@@ -15,7 +15,7 @@ from typing import get_args
 import pytest
 
 from app.schemas import STORY_ENTITY_TYPES, StoryEntityType
-from app.services.story_entity_registry import (
+from app.services.registries.story_entity_registry import (
     default_story_entity_type_id,
     get_story_entity_type,
     load_story_entity_types,

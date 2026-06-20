@@ -36,7 +36,7 @@ vi.mock("../../api/client", () => ({
   },
 }))
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
   notify: {
     error: vi.fn(),
     success: vi.fn(),
@@ -145,7 +145,7 @@ describe("BackupCompareDialog", () => {
   })
 
   it("shows error notification on API failure", async () => {
-    const {notify} = await import("../../utils/notify")
+    const {notify} = await import("../../utils/platform/notify")
     mockCompare.mockRejectedValue(new Error("Network failure"))
 
     renderDialog()

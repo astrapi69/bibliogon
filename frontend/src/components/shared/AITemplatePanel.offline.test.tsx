@@ -42,7 +42,7 @@ const { notifyMock, apiMock, aiMock } = vi.hoisted(() => {
     };
 });
 
-vi.mock("../../utils/notify", () => ({ notify: notifyMock }));
+vi.mock("../../utils/platform/notify", () => ({ notify: notifyMock }));
 vi.mock("../../api/client", () => ({
     api: apiMock,
     ApiError: class ApiError extends Error {},

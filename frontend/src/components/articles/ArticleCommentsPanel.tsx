@@ -22,7 +22,7 @@ import {useEffect, useState} from "react";
 import {api, ApiError, type ArticleComment} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
-import {formatLocaleDate} from "../../utils/formatDate";
+import {formatLocaleDate} from "../../utils/format/formatDate";
 
 interface Props {
     articleId: string;

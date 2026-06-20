@@ -5,7 +5,7 @@ import {type Page, type PageLayout, type PageUpdate} from "../../api/client"
 import {
     readLayoutNamespace,
     readSecondaryImageAssetId,
-} from "../../utils/layoutConfig"
+} from "../../utils/editor/layoutConfig"
 import CollageCanvas from "../CollageCanvas"
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback"
 import {usePageImageUpload} from "../../hooks/usePageImageUpload"

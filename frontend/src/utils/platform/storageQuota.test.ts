@@ -7,7 +7,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { isStorageNearlyFull, warnIfOfflineStorageNearlyFull } from "./storageQuota";
 
 const getStorageMock = vi.fn();
-vi.mock("../storage", () => ({ getStorage: () => getStorageMock() }));
+vi.mock("../../storage", () => ({ getStorage: () => getStorageMock() }));
 const notifyWarning = vi.fn();
 vi.mock("./notify", () => ({ notify: { warning: (m: string) => notifyWarning(m) } }));
 

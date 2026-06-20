@@ -2,7 +2,7 @@ import {useState, useRef, useEffect} from "react";
 import {X, GripVertical} from "lucide-react";
 import {toast} from "react-toastify";
 import {useI18n} from "../../hooks/useI18n";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import {
     DndContext,
     closestCenter,

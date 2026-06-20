@@ -1,4 +1,4 @@
-"""Unit tests for ``app.services.book_type_registry``.
+"""Unit tests for ``app.services.registries.book_type_registry``.
 
 Filed by BOOK-TYPES-SSOT-YAML-01 (2026-05-24). The module loads
 ``backend/config/book-types.yaml`` once at process start and
@@ -22,8 +22,8 @@ from pathlib import Path
 import pytest
 
 from app.schemas import BookType
-from app.services import book_type_registry
-from app.services.book_type_registry import (
+from app.services.registries import book_type_registry
+from app.services.registries.book_type_registry import (
     BookTypeDef,
     book_type_ids,
     book_types_with_capability,

@@ -10,7 +10,7 @@
  */
 
 import { api } from "../api/client";
-import { imageUrlFor } from "../utils/imageUrl";
+import { imageUrlFor } from "../utils/platform/imageUrl";
 import { bookAssetFileUrl } from "./asset-url";
 import { setOfflineEnabled } from "./connectivity";
 import {

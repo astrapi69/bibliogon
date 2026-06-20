@@ -4,7 +4,7 @@ import {
     providerSupportsBrowserTest,
     type AiConfig,
 } from "../../ai/llmClient";
-import { getProviderPreset } from "../../utils/aiProviders";
+import { getProviderPreset } from "../../utils/ai/aiProviders";
 
 /** Where the current model list came from: a live provider call (`"live"`) or
  *  the offline preset suggestions (`"fallback"`). */

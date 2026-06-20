@@ -1,4 +1,4 @@
-import type {BadgeVariant} from "../components/Badge";
+import type {BadgeVariant} from "../../components/Badge";
 
 /**
  * Maps a publication-lifecycle status to a Badge variant. The status

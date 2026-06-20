@@ -11,7 +11,7 @@ import {
 import {X} from "lucide-react"
 import {useI18n} from "../../hooks/useI18n"
 import {Toggle} from "../settings/Toggle"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import {api, ApiError, type BulkAiTemplateImportResult} from "../../api/client"
 import TemplateImportDropZone, {
     TemplateImportFilePreview,

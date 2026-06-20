@@ -11,7 +11,7 @@ import {
 import {Sparkles, Download, X} from "lucide-react"
 import {useI18n} from "../../hooks/useI18n"
 import {RadixSelect} from "../RadixSelect"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import {api, ApiError, type Article, type Book} from "../../api/client"
 import TemplateImportDropZone, {
     TemplateImportFilePreview,

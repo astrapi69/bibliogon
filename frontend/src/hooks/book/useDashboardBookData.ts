@@ -2,7 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 
 import { Book } from "../../api/client";
 import { getStorage } from "../../storage";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { RESTORE_ACTION_ID, PERMANENT_DELETE_ACTION_ID } from "@astrapi69/entity-kit";
 
 type ConfirmFn = (

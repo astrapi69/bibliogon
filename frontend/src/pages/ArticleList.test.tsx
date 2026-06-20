@@ -177,7 +177,7 @@ vi.mock("../components/RecentDocuments", () => ({
     default: () => null,
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         error: vi.fn(),
         success: vi.fn(),

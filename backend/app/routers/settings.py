@@ -74,8 +74,8 @@ def _validate_ui_defaults(ui: dict[str, Any]) -> None:
     if not isinstance(defaults, dict):
         return
 
-    from app.services.book_type_registry import book_type_ids
-    from app.services.content_type_registry import content_type_ids
+    from app.services.registries.book_type_registry import book_type_ids
+    from app.services.registries.content_type_registry import content_type_ids
 
     checks: tuple[tuple[str, Any], ...] = (
         ("book_type", book_type_ids),

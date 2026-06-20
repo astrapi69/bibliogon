@@ -11,7 +11,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {error: vi.fn(), success: vi.fn(), info: vi.fn()},
 }));
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Trash2 } from "lucide-react";
 import { getStorage } from "../../storage";
 import { useAssetUrl } from "../../hooks/useAssetUrl";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
 
 /**

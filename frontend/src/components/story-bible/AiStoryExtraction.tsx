@@ -17,7 +17,7 @@ import {Loader2, Wand2, X} from "lucide-react";
 import {useFeature} from "@astrapi69/feature-strategy-react";
 
 import {useI18n} from "../../hooks/useI18n";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import {FEATURES} from "../../features/featureConfig";
 import {
     AiClientError,

@@ -15,7 +15,7 @@ import BookBulkActionBar, {
     BOOK_BULK_LIMIT_HARD,
 } from "../components/BookBulkActionBar";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
-import { formatActiveBookFilters } from "../utils/formatActiveFilters";
+import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
@@ -27,7 +27,7 @@ import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/book/useBookFilters";
 import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
-import { BookTypeIcon } from "../utils/bookTypeIcon";
+import { BookTypeIcon } from "../utils/icons/bookTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
 import {
     Plus,
@@ -58,7 +58,7 @@ import ThemeToggle from "../components/ThemeToggle";
 import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
 import { useDialog } from "../components/AppDialog";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";

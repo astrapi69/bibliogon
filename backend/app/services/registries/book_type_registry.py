@@ -28,7 +28,7 @@ from pydantic import BaseModel, ConfigDict
 
 logger = logging.getLogger(__name__)
 
-_REGISTRY_PATH = Path(__file__).resolve().parents[2] / "config" / "book-types.yaml"
+_REGISTRY_PATH = Path(__file__).resolve().parents[3] / "config" / "book-types.yaml"
 
 
 class BookTypeCapabilities(BaseModel):

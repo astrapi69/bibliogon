@@ -5,7 +5,7 @@ import { getStorage } from "../storage";
 import FullscreenButton from "../components/FullscreenButton";
 import ThemeToggle from "../components/ThemeToggle";
 import { ChevronLeft, Home } from "lucide-react";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import SupportSection, { getDonationsConfig } from "../components/SupportSection";
 import CommentsAdminSection from "../components/CommentsAdminSection";

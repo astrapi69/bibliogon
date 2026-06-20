@@ -42,9 +42,9 @@ import {useI18n} from "../../hooks/useI18n";
 import {
     readLayoutNamespace,
     writeLayoutNamespace,
-} from "../../utils/layoutConfig";
-import {imageUrlFor} from "../../utils/imageUrl";
-import {warnIfOfflineStorageNearlyFull} from "../../utils/storageQuota";
+} from "../../utils/editor/layoutConfig";
+import {imageUrlFor} from "../../utils/platform/imageUrl";
+import {warnIfOfflineStorageNearlyFull} from "../../utils/platform/storageQuota";
 import styles from "../CollageCanvas.module.css";
 
 const ACCEPT = "image/png,image/jpeg,image/jpg,image/webp,image/gif";

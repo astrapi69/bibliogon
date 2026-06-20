@@ -34,7 +34,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
     }),
 }));
 import { ApiError, type BookDetail, type Book, type BookTypeDef } from "../../api/client";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { BookTypesProvider } from "../../hooks/book/useBookTypes";
 
 // BOOK-TYPES-SSOT-YAML-01 C7: BookMetadataEditor now reads
@@ -248,7 +248,7 @@ vi.mock("../../api/client", () => ({
     formatVoiceLabel: (v: { id: string }) => v.id,
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: { error: vi.fn(), success: vi.fn(), info: vi.fn(), warning: vi.fn() },
 }));
 
@@ -439,7 +439,7 @@ describe("BookMetadataEditor", () => {
     });
 
     it("save shows success notification", async () => {
-        const { notify } = await import("../../utils/notify");
+        const { notify } = await import("../../utils/platform/notify");
         renderEditor();
 
         fireEvent.click(screen.getByTestId("metadata-save"));
@@ -450,7 +450,7 @@ describe("BookMetadataEditor", () => {
     });
 
     it("save shows error notification on failure", async () => {
-        const { notify } = await import("../../utils/notify");
+        const { notify } = await import("../../utils/platform/notify");
         onSave.mockRejectedValueOnce(new Error("Save failed"));
         renderEditor();
 

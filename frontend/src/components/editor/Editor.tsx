@@ -40,9 +40,9 @@ import { FEATURES } from "../../features/featureConfig";
 import { api, ApiError } from "../../api/client";
 import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { getStorage } from "../../storage";
-import { warnIfOfflineStorageNearlyFull } from "../../utils/storageQuota";
-import { notify } from "../../utils/notify";
-import { editorToMarkdown } from "../../utils/tiptap-markdown";
+import { warnIfOfflineStorageNearlyFull } from "../../utils/platform/storageQuota";
+import { notify } from "../../utils/platform/notify";
+import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import { parseContent, textOffsetToDocPos, buildAiPrompts } from "../editorHelpers";
 

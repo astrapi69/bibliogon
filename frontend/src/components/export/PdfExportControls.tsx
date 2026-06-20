@@ -42,7 +42,7 @@ import {api, ApiError} from "../../api/client"
 import {getStorage} from "../../storage"
 import {FEATURES} from "../../features/featureConfig"
 import {useI18n} from "../../hooks/useI18n"
-import {notify} from "../../utils/notify"
+import {notify} from "../../utils/platform/notify"
 import {Toggle} from "../settings/Toggle"
 import {RadixSelect} from "../RadixSelect"
 

@@ -33,7 +33,7 @@ import {useRef, useState} from "react";
 
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
-import {warnIfOfflineStorageNearlyFull} from "../../utils/storageQuota";
+import {warnIfOfflineStorageNearlyFull} from "../../utils/platform/storageQuota";
 
 import {CollapsibleConfigSection} from "../CollapsibleConfigSection";
 import {Tier1Section} from "./Tier1Section";

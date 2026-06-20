@@ -55,7 +55,7 @@ vi.mock("../../api/client", () => ({
     },
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         error: vi.fn(),
         success: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock("../../utils/notify", () => ({
     },
 }));
 
-import { notify as mockedNotify } from "../../utils/notify";
+import { notify as mockedNotify } from "../../utils/platform/notify";
 const mockNotify = mockedNotify as unknown as {
     error: ReturnType<typeof vi.fn>;
     success: ReturnType<typeof vi.fn>;

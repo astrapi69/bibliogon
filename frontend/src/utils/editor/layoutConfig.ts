@@ -43,8 +43,8 @@
  * still operates on the namespace as before.
  */
 
-import type {PageLayout} from "../api/client"
-import {getStorage} from "../storage";
+import type {PageLayout} from "../../api/client"
+import {getStorage} from "../../storage";
 
 /** Known layout names that can appear as namespace keys. Mirrors
  *  the ``PageLayout`` Literal but as a runtime array for the

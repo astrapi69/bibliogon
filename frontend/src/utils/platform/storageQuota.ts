@@ -6,7 +6,7 @@
  * so they can clear offline books — it never blocks an upload.
  */
 
-import { getStorage } from "../storage";
+import { getStorage } from "../../storage";
 import { notify } from "./notify";
 
 /** Whether origin storage usage is at/over `threshold` of the quota. False

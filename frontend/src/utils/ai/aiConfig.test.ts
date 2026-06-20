@@ -9,7 +9,7 @@ import {
     modelForProvider,
 } from "./aiConfig";
 import { AI_PROVIDER_IDS } from "./aiProviders";
-import { providerSupportsBrowserTest } from "../ai/llmClient";
+import { providerSupportsBrowserTest } from "../../ai/llmClient";
 
 describe("maskSecret", () => {
     it("shows first 4 + last 4 characters for a long key", () => {

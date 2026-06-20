@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { api, ApiError, Chapter, ChapterTemplate } from "../../api/client";
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import {
   Dialog,
   DialogContent,

@@ -1,6 +1,6 @@
 import React from "react"
 import {Image as ImageIcon, Upload, RefreshCw} from "lucide-react"
-import {imageUrlFor} from "../../utils/imageUrl"
+import {imageUrlFor} from "../../utils/platform/imageUrl"
 import {useI18n} from "../../hooks/useI18n"
 import styles from "../PageCanvas.module.css"
 
