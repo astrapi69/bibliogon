@@ -78,7 +78,16 @@ vi.mock("../../utils/platform/notify", () => ({
     notify: {error: (...args: unknown[]) => mockNotifyError(...args)},
 }))
 
+// #497: the offline picture-book client path is dynamically imported.
+const mockDownloadPicturebookPdf = vi.fn()
+vi.mock("../../export/picturebook/gatherPicturebookPdf", () => ({
+    downloadPicturebookPdf: (...args: unknown[]) =>
+        mockDownloadPicturebookPdf(...args),
+}))
+
 beforeEach(() => {
+    mockDownloadPicturebookPdf.mockReset()
+    mockDownloadPicturebookPdf.mockResolvedValue(undefined)
     mockDocumentExportDownload.mockReset()
     mockDocumentExportDownload.mockResolvedValue(undefined)
     mockGetApp.mockReset()
@@ -467,5 +476,86 @@ describe("PdfExportControls - offline (pandoc-export desktop-only)", () => {
         fireEvent.click(btn)
         await new Promise((resolve) => setTimeout(resolve, 20))
         expect(mockDocumentExportDownload).not.toHaveBeenCalled()
+    })
+})
+
+describe("PdfExportControls - offline picture-book client PDF (#497)", () => {
+    it("ENABLES the Export-PDF button offline for a picture book", async () => {
+        renderControls(
+            <PdfExportControls
+                bookId="b1"
+                testidPrefix="pe"
+                bookType="picture_book"
+            />,
+            "dexie",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        await waitFor(() => expect(btn.disabled).toBe(false))
+        expect(btn.getAttribute("title")).toBe("Export as PDF")
+    })
+
+    it("routes a picture-book offline export through the client pdfmake path, not /api", async () => {
+        renderControls(
+            <PdfExportControls
+                bookId="b1"
+                testidPrefix="pe"
+                bookType="picture_book"
+            />,
+            "dexie",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        await waitFor(() => expect(btn.disabled).toBe(false))
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(mockDownloadPicturebookPdf).toHaveBeenCalledWith(
+                "b1",
+                "b1",
+                "8.5x8.5",
+            ),
+        )
+        expect(mockDocumentExportDownload).not.toHaveBeenCalled()
+    })
+
+    it("keeps a non-picture-book (comic) backend-gated offline", async () => {
+        renderControls(
+            <PdfExportControls
+                bookId="b1"
+                testidPrefix="pe"
+                bookType="comic_book"
+            />,
+            "dexie",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        expect(btn.disabled).toBe(true)
+        fireEvent.click(btn)
+        await new Promise((resolve) => setTimeout(resolve, 20))
+        expect(mockDownloadPicturebookPdf).not.toHaveBeenCalled()
+        expect(mockDocumentExportDownload).not.toHaveBeenCalled()
+    })
+
+    it("uses the BACKEND path on a backend deployment even for a picture book (regression)", async () => {
+        renderControls(
+            <PdfExportControls
+                bookId="b1"
+                testidPrefix="pe"
+                bookType="picture_book"
+            />,
+            "api",
+        )
+        const btn = (await screen.findByTestId(
+            "pe-export-pdf",
+        )) as HTMLButtonElement
+        await waitFor(() => expect(btn.disabled).toBe(false))
+        fireEvent.click(btn)
+        await waitFor(() =>
+            expect(mockDocumentExportDownload).toHaveBeenCalled(),
+        )
+        expect(mockDownloadPicturebookPdf).not.toHaveBeenCalled()
     })
 })
