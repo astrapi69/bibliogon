@@ -4,7 +4,7 @@ import {useNavigate} from "react-router-dom"
 import {ChevronLeft, FileText, LayoutGrid, Maximize2, Minimize2} from "lucide-react"
 import {api, type Page, type PageLayout, type PageUpdate} from "../../api/client"
 import {getStorage} from "../../storage";
-import {writeLayoutNamespace} from "../../utils/layoutConfig"
+import {writeLayoutNamespace} from "../../utils/editor/layoutConfig"
 import {useI18n} from "../../hooks/useI18n"
 import {useFullscreenToggle} from "../../hooks/ui/useFullscreenToggle"
 import {useKeyboardShortcuts} from "../../hooks/ui/useKeyboardShortcuts"

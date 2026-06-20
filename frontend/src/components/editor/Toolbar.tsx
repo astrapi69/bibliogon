@@ -10,7 +10,7 @@ import {
     editorToMarkdown,
     editorToPlainText,
     type DocumentMetadata,
-} from "../../utils/tiptap-markdown";
+} from "../../utils/editor/tiptap-markdown";
 import styles from "../Toolbar.module.css";
 import {
     Bold,

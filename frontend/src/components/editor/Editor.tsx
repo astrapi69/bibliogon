@@ -42,7 +42,7 @@ import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { getStorage } from "../../storage";
 import { warnIfOfflineStorageNearlyFull } from "../../utils/storageQuota";
 import { notify } from "../../utils/notify";
-import { editorToMarkdown } from "../../utils/tiptap-markdown";
+import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
 import { parseContent, textOffsetToDocPos, buildAiPrompts } from "../editorHelpers";
 

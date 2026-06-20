@@ -1,6 +1,6 @@
 import React from "react"
 import type {Page, PageLayout} from "../api/client"
-import {readLayoutNamespace} from "../utils/layoutConfig"
+import {readLayoutNamespace} from "../utils/editor/layoutConfig"
 import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
 import {
     LayoutConfigImageBorderTextCenter,

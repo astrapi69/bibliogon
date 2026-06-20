@@ -42,7 +42,7 @@ import {useI18n} from "../hooks/useI18n";
 import {
     readLayoutNamespace,
     writeLayoutNamespace,
-} from "../utils/layoutConfig";
+} from "../utils/editor/layoutConfig";
 import {imageUrlFor} from "../utils/imageUrl";
 import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota";
 import styles from "./CollageCanvas.module.css";

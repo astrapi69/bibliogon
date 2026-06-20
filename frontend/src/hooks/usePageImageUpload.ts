@@ -2,7 +2,7 @@ import React, {useRef, useState} from "react"
 import {type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {getStorage} from "../storage"
 import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota"
-import {writeSecondaryImageAssetId} from "../utils/layoutConfig"
+import {writeSecondaryImageAssetId} from "../utils/editor/layoutConfig"
 import {useI18n} from "../hooks/useI18n"
 
 interface UsePageImageUploadArgs {
