@@ -4,21 +4,21 @@ import { api, ApiError, SaveAbortedError, BookDetail, ChapterType } from "../api
 import ConflictResolutionDialog, {
     type ConflictInfo,
 } from "../components/ConflictResolutionDialog";
-import ChapterSidebar from "../components/ChapterSidebar";
+import ChapterSidebar from "../components/book/ChapterSidebar";
 import { OfflineToggleButton } from "../components/OfflineToggleButton";
 import { getStorage } from "../storage";
 import StoryBibleSidebar from "../components/StoryBibleSidebar";
 import StoryEntityEditor from "../components/StoryEntityEditor";
 import Storyboard from "../components/Storyboard";
 import ProseStoryboard from "../components/ProseStoryboard";
-import ChapterOutliner from "../components/ChapterOutliner";
+import ChapterOutliner from "../components/book/ChapterOutliner";
 import RelationshipGraphView from "../components/RelationshipGraphView";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
 import Editor from "../components/Editor";
 import BookMetadataEditor from "../components/book/BookMetadataEditor";
 import type { NavigableFindingType } from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
-import ChapterTemplatePickerModal from "../components/ChapterTemplatePickerModal";
+import ChapterTemplatePickerModal from "../components/book/ChapterTemplatePickerModal";
 import SaveAsChapterTemplateModal from "../components/SaveAsChapterTemplateModal";
 import { useDialog } from "../components/shared/AppDialog";
 import { notify } from "../utils/platform/notify";

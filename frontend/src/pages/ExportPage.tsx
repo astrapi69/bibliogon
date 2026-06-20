@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { ApiError, BookDetail, api } from "../api/client";
-import ClientExportMenu from "../components/ClientExportMenu";
+import ClientExportMenu from "../components/export/ClientExportMenu";
 import ExportForm from "../components/ExportForm";
 import { PageLayout } from "../components/PageLayout";
 import { LoadingIndicator } from "../components/LoadingIndicator";

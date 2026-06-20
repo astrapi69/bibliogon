@@ -15,7 +15,7 @@ import { useBookMetadata } from "../../hooks/book/useBookMetadata";
 import { useBookMetadataAi } from "../../hooks/book/useBookMetadataAi";
 import KeywordInput from "../KeywordInput";
 import PdfExportControls from "../PdfExportControls";
-import CategoryInput from "../CategoryInput";
+import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
 import CoverUpload from "../CoverUpload";
 import {

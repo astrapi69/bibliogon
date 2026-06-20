@@ -64,7 +64,7 @@ vi.mock("../components/SupportSection", () => ({
         levels: { discovery: false, support: false, advocacy: false },
     }),
 }));
-vi.mock("../components/CommentsAdminSection", () => ({
+vi.mock("../components/articles/CommentsAdminSection", () => ({
     default: () => <div data-testid="comments-stub" />,
 }));
 vi.mock("../components/settings/ErscheinungsbildSettings", () => ({

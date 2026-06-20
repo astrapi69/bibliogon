@@ -8,7 +8,7 @@ import { ChevronLeft, Home } from "lucide-react";
 import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import SupportSection, { getDonationsConfig } from "../components/SupportSection";
-import CommentsAdminSection from "../components/CommentsAdminSection";
+import CommentsAdminSection from "../components/articles/CommentsAdminSection";
 import { ErscheinungsbildSettings } from "../components/settings/ErscheinungsbildSettings";
 import { VerhaltenSettings } from "../components/settings/VerhaltenSettings";
 import { EditorSettings } from "../components/settings/EditorSettings";

@@ -28,7 +28,7 @@ vi.mock("../components/PageLayout", () => ({
         testId?: string;
     }) => <div data-testid={testId}>{children}</div>,
 }));
-vi.mock("../components/ChapterVersionsView", () => ({
+vi.mock("../components/book/ChapterVersionsView", () => ({
     default: () => <div data-testid="cv-view" />,
 }));
 

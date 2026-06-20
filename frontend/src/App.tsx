@@ -41,7 +41,7 @@ import SkipToContentLink from "./components/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
 import { BulkAiFillJobProvider } from "./contexts/BulkAiFillJobContext";
 import { MediumImportJobProvider } from "./contexts/MediumImportJobContext";
-import BulkAiFillDock from "./components/BulkAiFillDock";
+import BulkAiFillDock from "./components/articles/BulkAiFillDock";
 import { HelpProvider } from "./contexts/HelpContext";
 import HelpPanel from "./components/help/HelpPanel";
 import EventRecorderSetup from "./components/EventRecorderSetup";

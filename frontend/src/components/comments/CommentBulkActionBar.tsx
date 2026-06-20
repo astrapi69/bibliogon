@@ -18,7 +18,7 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import {ChevronDown, Trash2} from "lucide-react";
 
-import BulkActionBar from "../BulkActionBar";
+import BulkActionBar from "../dashboard/BulkActionBar";
 import styles from "./CommentBulkActionBar.module.css";
 
 interface Props {

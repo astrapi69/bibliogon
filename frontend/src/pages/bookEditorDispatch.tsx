@@ -1,7 +1,7 @@
 import { type ComponentType } from "react";
 
 import PageEditor from "../components/PageEditor";
-import ComicBookEditor from "../components/ComicBookEditor";
+import ComicBookEditor from "../components/comics/ComicBookEditor";
 
 /**
  * Editor dispatch table for page-based book types (BOOK-TYPES-SSOT-YAML-01 C6).

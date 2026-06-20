@@ -2,7 +2,7 @@ import React from "react"
 import {Check} from "lucide-react"
 import type {PageLayout} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
-import {CollapsibleConfigSection} from "../CollapsibleConfigSection"
+import {CollapsibleConfigSection} from "../shared/CollapsibleConfigSection"
 import styles from "../LayoutPicker.module.css"
 
 interface Props {

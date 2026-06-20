@@ -1,6 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import ChapterVersionsView from "../components/ChapterVersionsView";
+import ChapterVersionsView from "../components/book/ChapterVersionsView";
 import { PageLayout } from "../components/PageLayout";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";

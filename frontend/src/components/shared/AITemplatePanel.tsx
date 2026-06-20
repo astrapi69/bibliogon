@@ -8,7 +8,7 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
 import { useHasAiKey } from "../../features/useHasAiKey";
 import { useHelp } from "../../contexts/HelpContext";
-import { CollapsibleConfigSection } from "../CollapsibleConfigSection";
+import { CollapsibleConfigSection } from "./CollapsibleConfigSection";
 import { Toggle } from "../settings/Toggle";
 import { notify } from "../../utils/platform/notify";
 import { api, ApiError } from "../../api/client";

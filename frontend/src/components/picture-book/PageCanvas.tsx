@@ -6,7 +6,7 @@ import {
     readLayoutNamespace,
     readSecondaryImageAssetId,
 } from "../../utils/editor/layoutConfig"
-import CollageCanvas from "../CollageCanvas"
+import CollageCanvas from "./CollageCanvas"
 import {useDebouncedCallback} from "../../hooks/useDebouncedCallback"
 import {usePageImageUpload} from "../../hooks/usePageImageUpload"
 import {

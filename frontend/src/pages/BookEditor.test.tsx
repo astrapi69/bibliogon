@@ -208,7 +208,7 @@ vi.mock("../components/Editor", () => ({
         autosave: false,
     }),
 }));
-vi.mock("../components/ChapterSidebar", () => ({
+vi.mock("../components/book/ChapterSidebar", () => ({
     // Render a select-button per chapter so tests can drive the real
     // BookEditor ``onSelect`` handler (chapter-switch regression pins).
     default: (props: {
@@ -241,7 +241,7 @@ vi.mock("../components/book/BookMetadataEditor", () => ({
 }));
 vi.mock("../components/ConflictResolutionDialog", () => ({ default: () => null }));
 vi.mock("../components/SaveAsTemplateModal", () => ({ default: () => null }));
-vi.mock("../components/ChapterTemplatePickerModal", () => ({ default: () => null }));
+vi.mock("../components/book/ChapterTemplatePickerModal", () => ({ default: () => null }));
 vi.mock("../components/SaveAsChapterTemplateModal", () => ({ default: () => null }));
 vi.mock("../components/EmptyState", () => ({ EmptyState: () => null }));
 vi.mock("../components/LoadingIndicator", () => ({

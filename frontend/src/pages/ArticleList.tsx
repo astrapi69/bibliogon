@@ -30,9 +30,9 @@ import { useArticleSelection } from "../components/articles/useArticleSelection"
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveArticleFilters } from "../utils/format/formatActiveFilters";
-import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
+import BulkTemplateImportDialog from "../components/book/BulkTemplateImportDialog";
 import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
-import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
+import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
@@ -54,7 +54,7 @@ import ArticleRow from "../components/articles/ArticleRow";
 import ArticleListEmptyState from "../components/articles/ArticleListEmptyState";
 import ArticleListHeader from "../components/articles/ArticleListHeader";
 import ArticleTrashPanel from "../components/articles/ArticleTrashPanel";
-import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
+import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
 import ListPaginationControls from "../components/ListPaginationControls";
 import { EmptyState } from "../components/EmptyState";
 
