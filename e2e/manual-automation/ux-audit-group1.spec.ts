@@ -1,23 +1,32 @@
 /**
  * UX-Full-Audit Surface Group 1: Core Editors walkthrough.
  *
- * Walks ArticleEditor + BookEditor + shared Toolbar via the
- * already-running dev backend (with 198 articles + 11 comments
- * imported from the 209-corpus). Captures DOM state at key
- * stations + screenshots for the audit report.
+ * Walks ArticleEditor + BookEditor + shared Toolbar against the live
+ * E2E backend. The group seeds its own corpus in beforeAll (198
+ * articles + 2 prose books), so it no longer depends on the defunct
+ * external 209-article import. Captures DOM state + screenshots for
+ * the audit report.
  *
  * Run with:
- *   cd e2e && npx playwright test audits/ux-walkthrough-group1.spec.ts --headed=false
+ *   cd e2e && npx playwright test --project=manual-automation ux-audit-group1
  *
  * Outputs: docs/audits/ux-full-audit-2026-05-14-screenshots/group1-*.png
  *
- * Not a test in the conventional sense — these specs gather
- * evidence for the audit report. Assertions are minimal (just
- * "page loaded"); the value is the screenshot + DOM inspection.
+ * Assertions are intentionally minimal (the value is the screenshot +
+ * DOM inspection); the load-bearing pin is that every surface mounts.
  */
 
-import {test, expect} from "@playwright/test"
+import {test} from "@playwright/test"
 import * as path from "node:path"
+import {
+    resetDb,
+    setDashboardView,
+    createArticlesBulk,
+    seedBooksWithChapters,
+} from "../helpers/api"
+import {suppressOnboarding} from "../helpers/ui"
+
+const ARTICLE_COUNT = 198
 
 const SCREENSHOT_DIR = path.resolve(
     __dirname,
@@ -32,9 +41,21 @@ async function snap(page: import("@playwright/test").Page, name: string) {
 }
 
 test.describe("UX-Audit Group 1: Core Editors", () => {
+    // Seed the audit corpus once for the whole group: a 198-article
+    // dashboard state + 2 prose books (each with a chapter so the editor
+    // mounts). These specs deliberately do NOT use the auto-reset
+    // `resetDatabase` fixture (which wipes before every test), so the
+    // seed survives across the group's screenshots.
+    test.beforeAll(async () => {
+        await resetDb()
+        await setDashboardView("grid")
+        await createArticlesBulk(ARTICLE_COUNT)
+        await seedBooksWithChapters(2)
+    })
+
     test.beforeEach(async ({page}) => {
-        // Use the user's running dev instance (5173 + 8000).
         page.setDefaultTimeout(10000)
+        await suppressOnboarding(page)
     })
 
     test("01 Articles dashboard - state with 198 articles", async ({page}) => {

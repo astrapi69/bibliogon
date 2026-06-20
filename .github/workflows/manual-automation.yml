@@ -2,7 +2,9 @@ name: Manual-Testplan Automation
 
 # Runs the manual-automation Playwright project (e2e/manual-automation/),
 # which closes the automatable TC-* gaps of docs/manual-tests/
-# MANUAL-TESTPLAN.md. Same model as e2e-smoke.yml: NIGHTLY + on-demand +
+# MANUAL-TESTPLAN.md and runs the UX-audit walkthrough specs
+# (ux-audit-group{1,2,3}, which seed their own corpus). Same model as
+# e2e-smoke.yml: NIGHTLY + on-demand +
 # on release branches — NOT a per-PR gate (the serial suite drives a live
 # backend and is slow; PR CI stays under ~15 min). The release flow runs it
 # via `make release-test` / the release checklist.
