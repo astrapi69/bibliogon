@@ -56,7 +56,11 @@ test.beforeEach(async ({page}) => {
         seo_description: MOCK_SEO_DESCRIPTION,
     });
     await page.route("https://mock-llm.test/**", (route) => {
-        providerCalls += 1;
+        // Count only generation calls (POST). Since #451 the app also lists
+        // models from the provider (GET /models) once a key is set, so the
+        // mock is hit twice; the "exactly one LLM call" assertion below means
+        // exactly one generation, not the model-listing probe.
+        if (route.request().method() === "POST") providerCalls += 1;
         return route.fulfill({
             status: 200,
             contentType: "application/json",
