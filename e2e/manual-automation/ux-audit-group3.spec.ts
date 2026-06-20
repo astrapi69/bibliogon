@@ -25,6 +25,8 @@
 
 import {test} from "@playwright/test"
 import * as path from "node:path"
+import {resetDb} from "../helpers/api"
+import {suppressOnboarding} from "../helpers/ui"
 
 const SCREENSHOT_DIR = path.resolve(
     __dirname,
@@ -39,8 +41,15 @@ async function snap(page: import("@playwright/test").Page, name: string) {
 }
 
 test.describe("UX-Audit Group 3: Settings", () => {
+    // Settings specs need no article/book corpus; a clean DB keeps the
+    // comments-admin + topics surfaces in a predictable empty state.
+    test.beforeAll(async () => {
+        await resetDb()
+    })
+
     test.beforeEach(async ({page}) => {
         page.setDefaultTimeout(10000)
+        await suppressOnboarding(page)
     })
 
     test("01 Settings page - default tab + tab inventory", async ({page}) => {

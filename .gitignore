@@ -93,3 +93,8 @@ tmp/
 # pytest-testmon impact map (TIA, CI-only — never committed)
 .testmondata
 .testmondata.*
+
+# Regenerated UX-audit walkthrough screenshots (output of the
+# ux-audit-group{1,2,3} manual-automation specs). Evidence artifacts,
+# not source — never committed.
+/docs/audits/ux-full-audit-2026-05-14-screenshots/

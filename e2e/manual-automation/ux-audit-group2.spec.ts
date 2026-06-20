@@ -11,6 +11,15 @@
 
 import {test} from "@playwright/test"
 import * as path from "node:path"
+import {
+    resetDb,
+    setDashboardView,
+    createArticlesBulk,
+    seedBooksWithChapters,
+} from "../helpers/api"
+import {suppressOnboarding} from "../helpers/ui"
+
+const ARTICLE_COUNT = 198
 
 const SCREENSHOT_DIR = path.resolve(
     __dirname,
@@ -25,8 +34,19 @@ async function snap(page: import("@playwright/test").Page, name: string) {
 }
 
 test.describe("UX-Audit Group 2: Dashboards", () => {
+    // Seed the audit corpus once (198 articles + 2 books). These specs
+    // bypass the auto-reset `resetDatabase` fixture so the seed survives
+    // across the group; test 03 plants + restores its own trash item.
+    test.beforeAll(async () => {
+        await resetDb()
+        await setDashboardView("grid")
+        await createArticlesBulk(ARTICLE_COUNT)
+        await seedBooksWithChapters(2)
+    })
+
     test.beforeEach(async ({page}) => {
         page.setDefaultTimeout(10000)
+        await suppressOnboarding(page)
     })
 
     test("01 Articles dashboard - list view + filter affordances", async ({page}) => {

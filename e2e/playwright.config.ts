@@ -1,11 +1,12 @@
 import {defineConfig} from "@playwright/test";
 
 export default defineConfig({
-    // Default testDir is the main suite under ./tests. Each project
-    // overrides testDir below so `npx playwright test` runs the main
-    // suite and `--project=smoke` picks up the separate ./smoke
-    // directory.
-    testDir: "./tests",
+    // Every project sets its own testDir below; this top-level default
+    // is the fallback. It points at ./smoke (the CI gate) so a bare
+    // `npx playwright test` has a sensible default. The former ./tests
+    // "main" suite was removed (#484): dead, not run by any CI workflow,
+    // and superseded by the testid-disciplined ./smoke specs.
+    testDir: "./smoke",
     fullyParallel: false,
     workers: 1, // SQLite = no parallelism
     // A serial 400+-test browser suite against a live backend has an
@@ -78,11 +79,6 @@ export default defineConfig({
         },
     ],
     projects: [
-        {
-            name: "chromium",
-            testDir: "./tests",
-            use: {browserName: "chromium"},
-        },
         {
             // Separate smoke project for the viewport/zoom/dropdown
             // regression suite. Run with:
