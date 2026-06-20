@@ -625,6 +625,12 @@ verify-plugin-locks: ## Detect drift between each plugin's pyproject.toml and it
 	fi; \
 	echo "OK: all plugin pyproject.toml/poetry.lock pairs in sync."
 
+check-dir-size: ## God-folder ratchet: fail if any directory grew past its baseline
+	@python3 scripts/check_directory_size.py
+
+update-dir-baseline: ## Ratchet the directory-size baseline DOWN after a cleanup PR
+	@python3 scripts/check_directory_size.py --update
+
 verify-theme: ## Theme-system gates: token completeness/undefined refs + WCAG contrast + no hardcoded hex
 	@echo "=== theme-token completeness + undefined-token refs ==="
 	@python3 scripts/audit_theme_tokens.py --enforce --quiet

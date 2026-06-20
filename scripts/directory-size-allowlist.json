@@ -1,0 +1,58 @@
+{
+  "frontend/src/components": {
+    "current": 229,
+    "target": 15,
+    "reason": "God-folder; primitives -> lib/components (Phase 2 done), domain split planned (Phase 3, #466)",
+    "owner": "Aster",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/components/settings": {
+    "current": 56,
+    "target": 20,
+    "reason": "Settings panels god-folder; extraction planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/hooks": {
+    "current": 32,
+    "target": 15,
+    "reason": "God-folder; domain subfolders in progress (Phase 1, #466)",
+    "owner": "CC",
+    "deadline": "v0.57.0"
+  },
+  "frontend/src/utils": {
+    "current": 31,
+    "target": 15,
+    "reason": "Utils god-folder; library-grade utils -> lib/utils (#466)",
+    "owner": "CC",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/export": {
+    "current": 29,
+    "target": 15,
+    "reason": "Export god-folder; engine split planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/pages": {
+    "current": 35,
+    "target": 20,
+    "reason": "Pages god-folder; route-group split planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.59.0"
+  },
+  "backend/app/routers": {
+    "current": 39,
+    "target": 20,
+    "reason": "Routers god-folder; domain split planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.59.0"
+  },
+  "backend/app/services": {
+    "current": 27,
+    "target": 15,
+    "reason": "Services god-folder; sub-package extraction in progress (#466)",
+    "owner": "Aster",
+    "deadline": "v0.59.0"
+  }
+}

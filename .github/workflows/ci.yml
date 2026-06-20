@@ -191,6 +191,21 @@ jobs:
       - name: Run hooks on all files
         run: pre-commit run --all-files --show-diff-on-failure
 
+  directory-ratchet:
+    name: Directory size ratchet
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+      # God-folder ratchet (#466): blocks PRs that grow a tracked directory
+      # past its baseline or add a new directory with >15 source files.
+      # Stdlib only -> no dependency install needed.
+      - name: Directory size ratchet
+        run: python scripts/check_directory_size.py
+
   lint-and-type-check:
     name: Backend ruff + mypy
     runs-on: ubuntu-latest
