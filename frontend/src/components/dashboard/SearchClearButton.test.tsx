@@ -12,9 +12,9 @@
 
 import {describe, it, expect, vi} from "vitest";
 import {render, screen, fireEvent} from "@testing-library/react";
-import SearchClearButton from "./SearchClearButton";
+import SearchClearButton from "../SearchClearButton";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback}),
 }));
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, fireEvent, screen } from "@testing-library/react";
-import ViewToggle from "./ViewToggle";
+import ViewToggle from "../ViewToggle";
 
 describe("ViewToggle", () => {
     it("renders both buttons", () => {

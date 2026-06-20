@@ -3,8 +3,8 @@ import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import React from "react";
 
-import RecentDocuments from "./RecentDocuments";
-import type { RecentDocument } from "../hooks/content/useRecentDocuments";
+import RecentDocuments from "../RecentDocuments";
+import type { RecentDocument } from "../../hooks/content/useRecentDocuments";
 
 const navigateMock = vi.fn();
 vi.mock("react-router-dom", async () => {
@@ -14,7 +14,7 @@ vi.mock("react-router-dom", async () => {
   return { ...actual, useNavigate: () => navigateMock };
 });
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, fallback: string) => fallback,
     lang: "en",
@@ -23,7 +23,7 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 const recentMock = vi.fn<() => RecentDocument[]>();
-vi.mock("../hooks/content/useRecentDocuments", () => ({
+vi.mock("../../hooks/content/useRecentDocuments", () => ({
   useRecentDocuments: () => recentMock(),
 }));
 
