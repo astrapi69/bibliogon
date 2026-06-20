@@ -1,4 +1,4 @@
-"""Unit tests for ``app.services.content_type_registry``.
+"""Unit tests for ``app.services.registries.content_type_registry``.
 
 Filed by ARTICLE-TYPES-SSOT-01 (2026-05-29). Mirrors the
 test_book_type_registry.py shape from BOOK-TYPES-SSOT-YAML-01
@@ -17,8 +17,8 @@ from pathlib import Path
 import pytest
 
 from app.schemas import ContentType
-from app.services import content_type_registry
-from app.services.content_type_registry import (
+from app.services.registries import content_type_registry
+from app.services.registries.content_type_registry import (
     ContentTypeDef,
     content_type_extra_field_names,
     content_type_ids,

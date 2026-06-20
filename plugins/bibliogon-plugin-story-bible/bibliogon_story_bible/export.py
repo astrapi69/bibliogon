@@ -116,7 +116,7 @@ def export_story_bible(
     """Return the book's Story Bible as a downloadable Markdown payload
     (``{filename, content, format}``)."""
     from app.models import Book, Chapter, Page, StoryEntity, StoryEntityPageLink
-    from app.services.story_entity_registry import load_story_entity_types
+    from app.services.registries.story_entity_registry import load_story_entity_types
 
     book = db.query(Book).filter(Book.id == book_id).first()
     book_title = book.title if book else book_id

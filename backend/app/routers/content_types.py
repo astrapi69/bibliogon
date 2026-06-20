@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.services.content_type_registry import ContentTypeDef, load_content_types
+from app.services.registries.content_type_registry import ContentTypeDef, load_content_types
 
 router = APIRouter(prefix="/content-types", tags=["content-types"])
 

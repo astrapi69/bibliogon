@@ -446,7 +446,7 @@ def build_kdp_package(book_id: str) -> Path:
         # plugin pytest path (same shape as plugin-getstarted's
         # registry consumption in C8).
         try:
-            from app.services.book_type_registry import get_book_type
+            from app.services.registries.book_type_registry import get_book_type
 
             bt_def = get_book_type(book_type)
             content_model = bt_def.content_model if bt_def else None

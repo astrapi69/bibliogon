@@ -1264,7 +1264,7 @@ class StoryEntity(Base):
     ``article_metadata`` pattern. The valid entity_type values + each
     type's metadata fields are the SSoT in
     ``backend/config/story-bible-entities.yaml`` (loaded by
-    ``app.services.story_entity_registry``); entity_type is validated
+    ``app.services.registries.story_entity_registry``); entity_type is validated
     at the Pydantic schema layer via the ``StoryEntityType`` Literal,
     NOT at the DB layer (matches ``Chapter.chapter_type`` /
     ``Page.layout``).

@@ -24,7 +24,7 @@ def _supported_book_types() -> frozenset[str]:
     isn't importable (plugin's standalone tests).
     """
     try:
-        from app.services.book_type_registry import book_type_ids
+        from app.services.registries.book_type_registry import book_type_ids
     except ImportError:
         return _FALLBACK_BOOK_TYPES
     ids = book_type_ids()
