@@ -41,6 +41,6 @@ test.describe("#472 Settings auto-save", () => {
         // Reload: the change persisted (read back from the stored config).
         await page.reload();
         await expect(page.getByTestId("editor-settings")).toBeVisible();
-        await expect(page.getByTestId("editor-autosave")).toHaveValue(1500);
+        await expect(page.getByTestId("editor-autosave")).toHaveValue("1500");
     });
 });
