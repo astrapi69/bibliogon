@@ -15,7 +15,7 @@ import {describe, it, expect, vi} from "vitest"
 import {render, screen} from "@testing-library/react"
 
 import LayoutConfig from "./LayoutConfig"
-import type {Page, PageLayout} from "../api/client"
+import type {Page, PageLayout} from "../../api/client"
 
 function makePage(overrides: Partial<Page> = {}): Page {
     return {

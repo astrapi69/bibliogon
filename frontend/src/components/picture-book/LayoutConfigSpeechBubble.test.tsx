@@ -16,7 +16,7 @@ import {render, screen, fireEvent, act} from "@testing-library/react"
 
 import LayoutConfigSpeechBubble from "./LayoutConfigSpeechBubble"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",

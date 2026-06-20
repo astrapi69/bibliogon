@@ -14,7 +14,7 @@ import {render, screen, fireEvent} from "@testing-library/react"
 
 import LayoutPicker from "./LayoutPicker"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",

@@ -30,7 +30,7 @@ import CollageCanvas, {
     readCollageTextRegions,
     readCollageBackgroundColor,
 } from "./CollageCanvas";
-import type {Page} from "../api/client";
+import type {Page} from "../../api/client";
 
 function makeCollagePage(layoutConfig: Record<string, unknown> | null): Page {
     return {
@@ -779,9 +779,9 @@ describe("CollageCanvas — C3 add image upload flow", () => {
     // Mock at module load (hoisted by vi.mock).
     it("file upload appends a new image entry with default geometry + sane z_index", async () => {
         const onUpdate = vi.fn().mockResolvedValue(undefined);
-        vi.mock("../api/client", async () => {
+        vi.mock("../../api/client", async () => {
             const actual = (await vi.importActual(
-                "../api/client",
+                "../../api/client",
             )) as Record<string, unknown>;
             return {
                 ...actual,
