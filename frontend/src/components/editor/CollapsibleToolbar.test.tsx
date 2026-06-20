@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 
-import { CollapsibleToolbar } from "./CollapsibleToolbar";
+import { CollapsibleToolbar } from "../CollapsibleToolbar";
 
 const isMobileMock = vi.fn<() => boolean>(() => false);
-vi.mock("../hooks/ui/useIsMobile", () => ({
+vi.mock("../../hooks/ui/useIsMobile", () => ({
     useIsMobile: () => isMobileMock(),
 }));
 

@@ -19,10 +19,10 @@ import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 import type {Editor} from "@tiptap/react"
 import type {JSONContent} from "@tiptap/core"
 
-import RichTextEditor from "./RichTextEditor"
-import RichTextToolbar from "./RichTextToolbar"
+import RichTextEditor from "../RichTextEditor"
+import RichTextToolbar from "../RichTextToolbar"
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_k: string, fallback: string) => fallback,
         lang: "en",

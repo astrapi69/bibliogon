@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
-import * as actions from "./editorContextMenuActions";
+import * as actions from "../editorContextMenuActions";
 
 /** A TipTap-editor stand-in whose ``chain()`` records the command names
  * called on it (each returns the chain; ``run`` ends). */

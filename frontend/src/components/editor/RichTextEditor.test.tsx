@@ -29,7 +29,7 @@ import {render, screen, fireEvent, waitFor, act} from "@testing-library/react"
 import type {JSONContent} from "@tiptap/core"
 import type {Editor} from "@tiptap/react"
 
-import RichTextEditor from "./RichTextEditor"
+import RichTextEditor from "../RichTextEditor"
 
 // Minimal TipTap doc helpers — avoids importing the JSON
 // builders from @tiptap/core (kept tests self-contained).

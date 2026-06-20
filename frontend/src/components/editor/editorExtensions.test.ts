@@ -40,8 +40,8 @@ import { TextStyle } from "@tiptap/extension-text-style";
 import Color from "@tiptap/extension-color";
 import { Footnotes, FootnoteReference, Footnote } from "tiptap-footnotes";
 
-import { InlineMathDollar, BlockMathDollar } from "../extensions/math";
-import { SearchAndReplace } from "../extensions/searchAndReplace";
+import { InlineMathDollar, BlockMathDollar } from "../../extensions/math";
+import { SearchAndReplace } from "../../extensions/searchAndReplace";
 
 function buildEditor(content?: unknown): Editor {
   return new Editor({
