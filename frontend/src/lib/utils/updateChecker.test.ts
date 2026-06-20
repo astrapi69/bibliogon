@@ -10,7 +10,10 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   checkForUpdate,
   compareVersions,
+  isCheckDue,
+  shouldShowBanner,
   RELEASE_TAG_BASE_URL,
+  UPDATE_INTERVALS_MS,
 } from "./updateChecker";
 
 function mockFetch(impl: () => Promise<Partial<Response>> | Partial<Response>) {
@@ -87,5 +90,47 @@ describe("checkForUpdate", () => {
     });
     const result = await checkForUpdate("0.56.0");
     expect(result.status).toBe("error");
+  });
+});
+
+describe("isCheckDue", () => {
+  const now = Date.UTC(2026, 5, 20, 12, 0, 0);
+
+  it("never is never due", () => {
+    expect(isCheckDue(null, "never", now)).toBe(false);
+  });
+
+  it("a missing or unparseable last-check is always due", () => {
+    expect(isCheckDue(null, "daily", now)).toBe(true);
+    expect(isCheckDue("not-a-date", "daily", now)).toBe(true);
+  });
+
+  it("is due once the interval has elapsed (weekly: not after 3 days, yes after 8)", () => {
+    const threeDaysAgo = new Date(now - 3 * UPDATE_INTERVALS_MS.daily).toISOString();
+    const eightDaysAgo = new Date(now - 8 * UPDATE_INTERVALS_MS.daily).toISOString();
+    expect(isCheckDue(threeDaysAgo, "weekly", now)).toBe(false);
+    expect(isCheckDue(eightDaysAgo, "weekly", now)).toBe(true);
+  });
+
+  it("daily: due after just over a day, not after an hour", () => {
+    const hourAgo = new Date(now - 60 * 60 * 1000).toISOString();
+    const dayAgo = new Date(now - 25 * 60 * 60 * 1000).toISOString();
+    expect(isCheckDue(hourAgo, "daily", now)).toBe(false);
+    expect(isCheckDue(dayAgo, "daily", now)).toBe(true);
+  });
+});
+
+describe("shouldShowBanner (dismissed_version)", () => {
+  it("shows when never dismissed", () => {
+    expect(shouldShowBanner("v0.57.0", null)).toBe(true);
+  });
+
+  it("hides for the dismissed version", () => {
+    expect(shouldShowBanner("v0.57.0", "v0.57.0")).toBe(false);
+  });
+
+  it("re-appears for a strictly newer version after a dismissal", () => {
+    expect(shouldShowBanner("v0.58.0", "v0.57.0")).toBe(true);
+    expect(shouldShowBanner("v0.56.0", "v0.57.0")).toBe(false);
   });
 });

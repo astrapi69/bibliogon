@@ -98,3 +98,45 @@ export async function checkForUpdate(
     return { status: "error", currentVersion };
   }
 }
+
+/** Auto-check cadence options (#477 Phase 2). */
+export type UpdateInterval = "daily" | "weekly" | "monthly" | "never";
+
+/** Interval length in milliseconds; `never` is Infinity (never due). */
+export const UPDATE_INTERVALS_MS: Record<UpdateInterval, number> = {
+  daily: 24 * 60 * 60 * 1000,
+  weekly: 7 * 24 * 60 * 60 * 1000,
+  monthly: 30 * 24 * 60 * 60 * 1000,
+  never: Infinity,
+};
+
+/**
+ * Whether an automatic update check is due. `never` is never due; a missing
+ * `lastCheckAt` (or an unparseable one) is always due; otherwise due once the
+ * interval has elapsed since the last check.
+ */
+export function isCheckDue(
+  lastCheckAt: string | null | undefined,
+  interval: UpdateInterval,
+  now: number,
+): boolean {
+  if (interval === "never") return false;
+  if (!lastCheckAt) return true;
+  const last = new Date(lastCheckAt).getTime();
+  if (Number.isNaN(last)) return true;
+  return now - last >= UPDATE_INTERVALS_MS[interval];
+}
+
+/**
+ * Whether the update banner should be shown for `latestVersion` given the
+ * version the user last dismissed. A never-dismissed banner always shows; a
+ * dismissed one only re-appears once a strictly newer version ships (so
+ * "Später" on v0.57.0 stays quiet until v0.58.0+).
+ */
+export function shouldShowBanner(
+  latestVersion: string,
+  dismissedVersion: string | null | undefined,
+): boolean {
+  if (!dismissedVersion) return true;
+  return compareVersions(latestVersion, dismissedVersion) > 0;
+}
