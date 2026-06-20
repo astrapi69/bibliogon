@@ -8,7 +8,7 @@ import {useCoverUrl} from "../../hooks/useAssetUrl";
 import {useI18n} from "../../hooks/useI18n";
 import {notify} from "../../utils/platform/notify";
 import {warnIfOfflineStorageNearlyFull} from "../../utils/platform/storageQuota";
-import {EmptyState} from "../EmptyState";
+import {EmptyState} from "../../lib/components/EmptyState";
 import styles from "../CoverUpload.module.css";
 
 interface Props {

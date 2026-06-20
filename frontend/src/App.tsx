@@ -24,7 +24,7 @@ const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersions
 const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
 const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
 const ShortcutsPage = lazyWithReload(() => import("./pages/ShortcutsPage"));
-import ErrorBoundary from "./components/ErrorBoundary";
+import ErrorBoundary from "./components/shared/ErrorBoundary";
 import { lazyWithReload } from "./lib/lazyWithReload";
 import { useTheme } from "./hooks/ui/useTheme";
 import { I18nProvider } from "./hooks/useI18n";
@@ -50,7 +50,7 @@ import AiSetupWizard, { shouldShowAiWizard } from "./components/settings/AiSetup
 import DonationReminderBanner, {
     ensureFirstUseDate,
     shouldShowReminder,
-} from "./components/DonationReminderBanner";
+} from "./components/shared/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/SupportSection";
 import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
 import { useWordWrap } from "./hooks/useWordWrap";

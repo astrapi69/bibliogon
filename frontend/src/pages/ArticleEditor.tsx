@@ -41,13 +41,13 @@ import {
     SaveIndicator,
     TopicSelect,
 } from "../components/articles/ArticleEditorFields";
-import Editor from "../components/Editor";
+import Editor from "../components/editor/Editor";
 import ArticleImageUpload from "../components/articles/ArticleImageUpload";
 import KeywordInput from "../components/KeywordInput";
 import AiGenerateButton from "../components/shared/AiGenerateButton";
 import ThemeToggle from "../components/ThemeToggle";
 import AuthorSelectInput from "../components/shared/AuthorSelectInput";
-import EditableTitle from "../components/EditableTitle";
+import EditableTitle from "../components/shared/EditableTitle";
 import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import ArticleTranslatePanel from "../components/articles/ArticleTranslatePanel";

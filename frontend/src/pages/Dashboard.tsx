@@ -20,8 +20,8 @@ import { useBookSelection } from "../components/useBookSelection";
 import ViewToggle from "../components/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/usePagedList";
-import DashboardFilterBar from "../components/DashboardFilterBar";
-import DashboardFilterSheet from "../components/DashboardFilterSheet";
+import DashboardFilterBar from "../components/dashboard/DashboardFilterBar";
+import DashboardFilterSheet from "../components/dashboard/DashboardFilterSheet";
 import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
 import TileSelectCheckbox from "../components/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/book/useBookFilters";
@@ -49,7 +49,7 @@ import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import DropZone from "../lib/components/DropZone";
 import RecentDocuments from "../components/RecentDocuments";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
-import DashboardTrashView from "../components/DashboardTrashView";
+import DashboardTrashView from "../components/dashboard/DashboardTrashView";
 import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
 import ListPaginationControls from "../components/ListPaginationControls";
 import styles from "./Dashboard.module.css";
@@ -66,11 +66,11 @@ import { useHelp } from "../contexts/HelpContext";
 import { getDonationsConfig, type DonationsConfig } from "../components/SupportSection";
 import DonationOnboardingDialog, {
     shouldShowDonationOnboarding,
-} from "../components/DonationOnboardingDialog";
+} from "../components/shared/DonationOnboardingDialog";
 // v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
-import { EmptyState } from "../components/EmptyState";
+import { EmptyState } from "../lib/components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import { useStorageMode } from "../storage/useStorageMode";
 

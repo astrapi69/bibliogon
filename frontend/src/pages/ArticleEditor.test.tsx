@@ -201,7 +201,7 @@ vi.mock("../api/client", async () => {
 
 // The Editor component is heavy (TipTap, plugin status, etc.).
 // Stub it so the header-level smoke stays focused.
-vi.mock("../components/Editor", () => ({
+vi.mock("../components/editor/Editor", () => ({
     default: () => <div data-testid="editor-stub" />,
     pluginsForContentKind: () => ({
         markdownMode: false,

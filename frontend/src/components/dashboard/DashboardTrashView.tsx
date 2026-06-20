@@ -8,7 +8,7 @@ import {
 } from "@astrapi69/entity-kit";
 
 import { Book } from "../../api/client";
-import { EmptyState } from "../EmptyState";
+import { EmptyState } from "../../lib/components/EmptyState";
 import styles from "../../pages/Dashboard.module.css";
 
 type Translate = (key: string, fallback: string) => string;

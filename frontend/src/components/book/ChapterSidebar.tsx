@@ -16,7 +16,7 @@ import {
 } from "lucide-react";
 import ThemeToggle from "../ThemeToggle";
 import Tooltip from "../Tooltip";
-import EditableTitle from "../EditableTitle";
+import EditableTitle from "../shared/EditableTitle";
 import styles from "../ChapterSidebar.module.css";
 
 interface Props {

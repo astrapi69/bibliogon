@@ -2,7 +2,7 @@ import { FileText, Plus, Rocket } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useI18n } from "../../hooks/useI18n";
-import { EmptyState } from "../EmptyState";
+import { EmptyState } from "../../lib/components/EmptyState";
 
 /** Empty-state shown when the article list has zero articles. Offers a
  *  primary "new article" CTA plus a get-started link. */

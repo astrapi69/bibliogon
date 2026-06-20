@@ -39,7 +39,7 @@ vi.mock("../RichTextEditor", () => ({
     ),
 }));
 
-vi.mock("../EditableTitle", () => ({
+vi.mock("../shared/EditableTitle", () => ({
     default: ({
         value,
         onSave,

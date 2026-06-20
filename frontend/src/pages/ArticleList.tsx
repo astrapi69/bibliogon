@@ -56,7 +56,7 @@ import ArticleListHeader from "../components/articles/ArticleListHeader";
 import ArticleTrashPanel from "../components/articles/ArticleTrashPanel";
 import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
 import ListPaginationControls from "../components/ListPaginationControls";
-import { EmptyState } from "../components/EmptyState";
+import { EmptyState } from "../lib/components/EmptyState";
 
 export default function ArticleList() {
     const navigate = useNavigate();

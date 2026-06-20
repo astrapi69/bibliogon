@@ -17,7 +17,7 @@ import KeywordInput from "../KeywordInput";
 import PdfExportControls from "../PdfExportControls";
 import CategoryInput from "./CategoryInput";
 import BisacCodeInput from "./BisacCodeInput";
-import CoverUpload from "../CoverUpload";
+import CoverUpload from "./CoverUpload";
 import {
     NavigationSidebar,
     type NavigationSidebarGroup,

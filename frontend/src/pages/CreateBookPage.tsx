@@ -8,7 +8,7 @@ import {
   BookType,
 } from "../api/client";
 import { getStorage } from "../storage";
-import CreateBookForm from "../components/CreateBookForm";
+import CreateBookForm from "../components/book/CreateBookForm";
 import { PageLayout } from "../components/PageLayout";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
 import { useGoBack } from "../hooks/navigation/useGoBack";

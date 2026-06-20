@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { api, ApiError, SaveAbortedError, BookDetail, ChapterType } from "../api/client";
 import ConflictResolutionDialog, {
     type ConflictInfo,
-} from "../components/ConflictResolutionDialog";
+} from "../components/import/ConflictResolutionDialog";
 import ChapterSidebar from "../components/book/ChapterSidebar";
 import { OfflineToggleButton } from "../components/OfflineToggleButton";
 import { getStorage } from "../storage";
@@ -14,7 +14,7 @@ import ProseStoryboard from "../components/ProseStoryboard";
 import ChapterOutliner from "../components/book/ChapterOutliner";
 import RelationshipGraphView from "../components/RelationshipGraphView";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
-import Editor from "../components/Editor";
+import Editor from "../components/editor/Editor";
 import BookMetadataEditor from "../components/book/BookMetadataEditor";
 import type { NavigableFindingType } from "../components/QualityTab";
 import SaveAsTemplateModal from "../components/SaveAsTemplateModal";
@@ -34,7 +34,7 @@ import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildBookEditorMenu } from "./buildBookEditorMenu";
 import { chapterTypeLabels } from "../lib/chapterTypeLabels";
 import { BookOpen, Plus } from "lucide-react";
-import { EmptyState } from "../components/EmptyState";
+import { EmptyState } from "../lib/components/EmptyState";
 import { LoadingIndicator } from "../components/LoadingIndicator";
 import styles from "./BookEditor.module.css";
 import { EDITOR_COMPONENTS, STORYBOARD_BOOK_TYPES } from "./bookEditorDispatch";

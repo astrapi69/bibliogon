@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { isOfflineEnabled } from "../../storage/connectivity";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import CoverPlaceholder from "../CoverPlaceholder";
+import CoverPlaceholder from "./CoverPlaceholder";
 import { formatLocaleDate } from "../../utils/format/formatDate";
 import StatusBadge from "../../lib/components/StatusBadge";
 import { publicationStatusLabels } from "../../utils/format/publicationStatusBadge";

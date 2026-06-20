@@ -49,7 +49,7 @@ import PageThumbnails from "../PageThumbnails";
 import { SidebarToggleButton } from "../SidebarToggleButton";
 import { SidebarOverlay } from "../../lib/components/SidebarOverlay";
 import PdfExportControls from "../PdfExportControls";
-import EditableTitle from "../EditableTitle";
+import EditableTitle from "../shared/EditableTitle";
 import ThemeToggle from "../ThemeToggle";
 
 interface Props {

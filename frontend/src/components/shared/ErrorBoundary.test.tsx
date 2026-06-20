@@ -7,7 +7,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-import ErrorBoundary from "../ErrorBoundary";
+import ErrorBoundary from "./ErrorBoundary";
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),

@@ -3,7 +3,7 @@ import type { Editor as TiptapEditor } from "@tiptap/react";
 import { api, ApiError } from "../../api/client";
 import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../useI18n";
-import type { SpellcheckMatch } from "../../components/EditorPanels";
+import type { SpellcheckMatch } from "../../components/editor/EditorPanels";
 
 /**
  * Bundle the editor's three review-tool toggles (grammar spellcheck,
