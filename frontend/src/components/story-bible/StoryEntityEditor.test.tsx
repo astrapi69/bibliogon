@@ -2,9 +2,9 @@ import {describe, it, expect, vi, beforeEach} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import StoryEntityEditor from "./StoryEntityEditor";
-import type {StoryEntityOut, StoryEntityTypeDef} from "../api/client";
+import type {StoryEntityOut, StoryEntityTypeDef} from "../../api/client";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -13,16 +13,16 @@ vi.mock("../hooks/useI18n", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("./AppDialog", () => ({
+vi.mock("../AppDialog", () => ({
     useDialog: () => ({confirm: mockConfirm}),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {error: vi.fn()},
 }));
 
 // Stub the heavy TipTap-based editors with simple controllable shims.
-vi.mock("./RichTextEditor", () => ({
+vi.mock("../RichTextEditor", () => ({
     default: ({
         onChange,
         testidNamespace,
@@ -39,7 +39,7 @@ vi.mock("./RichTextEditor", () => ({
     ),
 }));
 
-vi.mock("./EditableTitle", () => ({
+vi.mock("../EditableTitle", () => ({
     default: ({
         value,
         onSave,
@@ -67,9 +67,9 @@ const mockListEntities = vi.fn();
 const mockPagesList = vi.fn();
 const mockBooksGet = vi.fn();
 
-vi.mock("../api/client", async () => {
+vi.mock("../../api/client", async () => {
     const actual =
-        await vi.importActual<typeof import("../api/client")>("../api/client");
+        await vi.importActual<typeof import("../../api/client")>("../../api/client");
     return {
         ...actual,
         api: {

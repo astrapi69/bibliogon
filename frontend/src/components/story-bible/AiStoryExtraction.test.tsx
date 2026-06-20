@@ -2,22 +2,22 @@ import {describe, it, expect, beforeEach, vi} from "vitest";
 import {render, screen, fireEvent, waitFor} from "@testing-library/react";
 
 import AiStoryExtraction from "./AiStoryExtraction";
-import {FeatureTestProvider} from "../features/FeatureTestProvider";
-import {applyStoryBible, extractStoryBible, type StoryBibleExtraction} from "../ai/storyExtraction";
+import {FeatureTestProvider} from "../../features/FeatureTestProvider";
+import {applyStoryBible, extractStoryBible, type StoryBibleExtraction} from "../../ai/storyExtraction";
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../../utils/notify", () => ({
     notify: {error: vi.fn(), success: vi.fn(), info: vi.fn()},
 }));
 
 // The orchestrator is unit-tested separately; here it is stubbed so the
 // component's gate + dialog + apply wiring is the subject under test.
-vi.mock("../ai/storyExtraction", () => ({
+vi.mock("../../ai/storyExtraction", () => ({
     extractStoryBible: vi.fn(),
     extractStoryboard: vi.fn(),
     applyStoryBible: vi.fn(),

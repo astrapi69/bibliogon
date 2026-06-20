@@ -16,7 +16,7 @@ import {describe, it, expect, vi, beforeEach} from "vitest"
 import {render, screen, waitFor, fireEvent} from "@testing-library/react"
 
 import Storyboard from "./Storyboard"
-import {api, type Page} from "../api/client"
+import {api, type Page} from "../../api/client"
 
 class ResizeObserverStub {
     observe() {}
@@ -26,7 +26,7 @@ class ResizeObserverStub {
 ;(globalThis as unknown as {ResizeObserver: typeof ResizeObserverStub}).ResizeObserver =
     ResizeObserverStub
 
-vi.mock("../hooks/useI18n", () => ({
+vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (_key: string, fallback: string) => fallback,
         lang: "en",
@@ -34,9 +34,9 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }))
 
-vi.mock("../api/client", async () => {
+vi.mock("../../api/client", async () => {
     const actual =
-        await vi.importActual<typeof import("../api/client")>("../api/client")
+        await vi.importActual<typeof import("../../api/client")>("../../api/client")
     return {
         ...actual,
         api: {
