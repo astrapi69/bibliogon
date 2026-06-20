@@ -11,3 +11,4 @@ export {Badge, default as BadgeDefault} from "./Badge";
 export type {BadgeProps, BadgeVariant} from "./Badge";
 export {EmptyState} from "./EmptyState";
 export type {EmptyStateProps} from "./EmptyState";
+export {default as Tooltip} from "./Tooltip";
