@@ -18,7 +18,7 @@ import { FeatureTestProvider } from "../features/FeatureTestProvider";
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),
 }));
-vi.mock("../hooks/useGoBack", () => ({ useGoBack: () => vi.fn() }));
+vi.mock("../hooks/navigation/useGoBack", () => ({ useGoBack: () => vi.fn() }));
 vi.mock("../components/PageLayout", () => ({
     PageLayout: ({
         children,

@@ -4,7 +4,7 @@ import ChapterVersionsView from "../components/ChapterVersionsView";
 import { PageLayout } from "../components/PageLayout";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 
 /**

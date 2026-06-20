@@ -8,7 +8,7 @@ import { LoadingIndicator } from "../components/LoadingIndicator";
 import { buildBookDocument } from "../export";
 import { asExportEngine, type ExportEngine, shouldUseClientEngine } from "../export/engine";
 import { getStorage } from "../storage";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 import { useStorageMode } from "../storage/useStorageMode";
 import { notify } from "../utils/notify";
