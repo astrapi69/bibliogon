@@ -2,16 +2,13 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
-## [0.57.0] - Unreleased
+## [0.57.0] - 2026-06-21
 
 The **God-Folder + browser-AI + desktop-update-checker** cycle. AI now runs
 browser-direct for all 6 providers in PWA/Dexie mode, provider keys are stored
 per-provider (no more clobber on switch), the desktop build gains an
 update-checker, and Settings auto-saves. The God-Folder campaign (#466) finished
 under the hood. No schema migrations; existing data + ``.bgb``/``.bgp`` unaffected.
-
-> Draft entry — version pins NOT bumped and no tag cut yet; the release flow
-> sets the date and bumps versions (see `.claude/rules/release-workflow.md`).
 
 ### Added
 - **AI provider key management** — keys are stored **per-provider** with an
