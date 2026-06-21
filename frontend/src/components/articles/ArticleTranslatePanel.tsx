@@ -4,6 +4,8 @@ import { Languages, Loader2 } from "lucide-react";
 
 import { api, ApiError, Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../../features/featureConfig";
 import { RadixSelect } from "../shared/RadixSelect";
 import { notify } from "../../utils/platform/notify";
 import layout from "../../pages/ArticleEditor.module.css";
@@ -36,6 +38,12 @@ type ProviderInfo = {
 export default function ArticleTranslatePanel({ article }: { article: Article }) {
     const { t } = useI18n();
     const navigate = useNavigate();
+    // Translation execution (DeepL / LMStudio) runs through the backend
+    // translation plugin; offline (Dexie) it resolves disabled so the section
+    // stays visible + explained instead of firing /api on the guardedFetch
+    // backstop (#34). No provider/health fetch is attempted when disabled.
+    const translation = useFeature(FEATURES.TRANSLATION);
+    const offline = !translation.isActive;
 
     const [translateOpen, setTranslateOpen] = useState(false);
     const [translateLang, setTranslateLang] = useState("en");
@@ -49,7 +57,7 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
     // Filtering by both means the dropdown only lists providers
     // that will actually translate - no 400s, no 120s timeouts.
     useEffect(() => {
-        if (!translateOpen || providers !== null) return;
+        if (offline || !translateOpen || providers !== null) return;
         let cancelled = false;
         Promise.all([api.articleTranslation.providers(), api.articleTranslation.health()])
             .then(([list, health]) => {
@@ -73,7 +81,7 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
         return () => {
             cancelled = true;
         };
-    }, [translateOpen, providers]);
+    }, [offline, translateOpen, providers]);
 
     const currentProvider = providers?.find((p) => p.id === translateProvider);
     const providerAvailable = currentProvider
@@ -113,6 +121,44 @@ export default function ArticleTranslatePanel({ article }: { article: Article })
             setTranslating(false);
         }
     };
+
+    if (offline) {
+        return (
+            <>
+                <h4 className={layout.sectionHeading}>
+                    {t("ui.articles.translate_section", "Übersetzen")}
+                </h4>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    disabled
+                    data-testid="article-editor-translate-open"
+                    title={t(
+                        "ui.feature.requires_desktop_app",
+                        "Diese Funktion benötigt die Desktop-App.",
+                    )}
+                    style={{
+                        alignSelf: "flex-start",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                    }}
+                >
+                    <Languages size={12} />
+                    {t("ui.articles.translate_open", "Diesen Artikel übersetzen")}
+                </button>
+                <p
+                    data-testid="article-editor-translate-offline"
+                    style={{ fontSize: "0.75rem", color: "var(--text-muted)", margin: 0 }}
+                >
+                    {t(
+                        "ui.feature.requires_desktop_app",
+                        "Diese Funktion benötigt die Desktop-App.",
+                    )}
+                </p>
+            </>
+        );
+    }
 
     return (
         <>

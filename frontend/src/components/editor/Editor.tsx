@@ -162,6 +162,9 @@ export default function Editor({
     } = autosave;
     const aiGen = useFeature(FEATURES.AI_GENERATE);
     const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
+    // Grammar spellcheck proxies LanguageTool through the backend; offline it
+    // resolves disabled (visible + explained, not a guardedFetch failure) (#34).
+    const grammar = useFeature(FEATURES.GRAMMAR);
     const aiGenTitle = aiGen.isDisabled
         ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
         : undefined;
@@ -730,7 +733,7 @@ export default function Editor({
                     }
                     spellcheckActive={showSpellcheck}
                     onToggleSpellcheck={
-                        isPluginAvailable(pluginStatus, "grammar")
+                        grammar.isActive && isPluginAvailable(pluginStatus, "grammar")
                             ? handleToggleSpellcheck
                             : undefined
                     }
@@ -757,9 +760,11 @@ export default function Editor({
                             : undefined
                     }
                     spellcheckDisabledReason={
-                        !isPluginAvailable(pluginStatus, "grammar")
-                            ? pluginDisabledMessage(pluginStatus, "grammar")
-                            : undefined
+                        grammar.isDisabled
+                            ? t("ui.feature.requires_desktop_app", "Diese Funktion benötigt die Desktop-App.")
+                            : !isPluginAvailable(pluginStatus, "grammar")
+                              ? pluginDisabledMessage(pluginStatus, "grammar")
+                              : undefined
                     }
                     styleCheckActive={styleCheckActive}
                     styleCheckLoading={styleCheckLoading}
