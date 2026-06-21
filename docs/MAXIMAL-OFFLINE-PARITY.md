@@ -28,9 +28,9 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **git-sync** (backup/push) | Git commit/push | `module-git-backup` | — | **No** — needs git binary | `git-sync` / `git-backup` |
 | **audiobook** | TTS audiobook | `module-audiobook` | — | **No** — TTS cloud/server | `tts` |
 | **story-bible** | Per-book fiction-entity DB | _(no module; storage seam)_ | `storage/dexie/story-bible.ts` + `hooks/useStoryBibleIntegration.ts` | **Partial** — CRUD offline; auto-detect / continuity-check need server | active (`story-bible`) |
-| **grammar** | LanguageTool checks | _(no module)_ | — | **No** — LanguageTool server | _(none — gap, see §3)_ |
+| **grammar** | LanguageTool checks | _(no module)_ | — | **No** — LanguageTool server | `grammar` (`DESKTOP_ONLY` → disabled) |
 | **kdp** | KDP metadata + cover validation | _(no module)_ | `components/kdp-wizard/CoverValidation.tsx` (dimension checks) | **Partial** — basic cover preflight offline; catalog desktop-only | `kdp-category-catalog` (catalog) |
-| **translation** | DeepL / LMStudio translation | _(no module)_ | `components/TranslationLinks.tsx` (links only, gated) | **Partial** — local LMStudio if self-hosted; DeepL needs key/network | `translation-links` (links); execution: _gap, see §3_ |
+| **translation** | DeepL / LMStudio translation | _(no module)_ | `components/TranslationLinks.tsx` (links only, gated) | **Partial** — local LMStudio if self-hosted; DeepL needs key/network | `translation-links` (links); execution: `translation` (`DESKTOP_ONLY` → disabled) |
 | **help** | In-app help | _(no module)_ | `storage/seed/seed-help*.json` | **Yes (static)** | active |
 | **getstarted** | Onboarding + sample book | _(no module)_ | `storage/seed/seed-getstarted.json` | **Yes (static)** | active |
 
@@ -76,18 +76,26 @@ to `disabled` only when `navigator.onLine === false`.
   (`picture-book`), `module-comics`, `module-ms-tools` → active in both modes,
   no gate needed (pure client-side / storage seam). ✓
 
-**Findings (gaps, pre-existing — flagged for follow-up, NOT changed here):**
+**Resolved (these two former gaps are now gated — #34 continuation):**
 
-1. **Grammar** (`plugin-grammar`) has no `FEATURES.*` id. Its editor surfaces
-   call the backend LanguageTool path; offline they hit the `guardedFetch`
-   egress backstop rather than a `disabled`+explained gate. Per the
-   architecture rule, a server-bound feature should be gated, not merely
-   blocked. Recommend a `FEATURES.GRAMMAR` (`DESKTOP_ONLY`/network) gate.
-2. **Translation execution** (`ArticleTranslatePanel`, DeepL/LMStudio) is
-   un-gated (only `TranslationLinks` is gated via `TRANSLATION_LINKS`). Same
-   backstop-vs-gate situation. Recommend a `FEATURES.TRANSLATION` gate
-   (network-dependent; LMStudio-local could keep it active).
+1. **Grammar** (`plugin-grammar`) → `FEATURES.GRAMMAR` (`DESKTOP_ONLY` →
+   `disabled`, reason `requires_desktop_app`). The editor spellcheck toggle
+   (`Editor.tsx`) now disables + explains offline instead of calling
+   `api.grammar.check` on the `guardedFetch` backstop. ✓
+2. **Translation execution** (`ArticleTranslatePanel`, DeepL/LMStudio) →
+   `FEATURES.TRANSLATION` (`DESKTOP_ONLY`). Offline the panel renders a
+   disabled control + desktop-app notice and fires zero `/api`
+   (no providers/health fetch). ✓ `TranslationLinks` stays gated via
+   `TRANSLATION_LINKS`.
 
-Both are out of scope for this structural/parity PR (adding a gate touches
-`featureConfig.ts` + the UI surface + i18n + tests). Filing them as the
-follow-up keeps this PR a clean re-export + documentation change.
+Both verified by `featureConfig.test.ts` (state/reason in api vs dexie) and
+`ArticleTranslatePanel.test.tsx` (disabled offline + zero `/api`, active
+online).
+
+**Remaining un-gated server-bound editor tools (next follow-up):** the inline
+ms-tools **style-check** decorations (`api.msTools.check`) and the editor
+**audio preview** (`api.audiobook.preview`, a TTS path) still gate on backend
+plugin-availability rather than a `FEATURES.*` verdict, so in Dexie mode they
+can surface enabled and fail on the `guardedFetch` backstop. They share the
+exact pattern fixed here; gating them (`FEATURES.STYLE_CHECK`, reuse
+`FEATURES.TTS` for preview) is the clean next step.
