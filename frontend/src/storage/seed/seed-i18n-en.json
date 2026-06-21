@@ -1235,7 +1235,16 @@
       "export_engine_hint": "Which engine the export uses. \"Automatic\" uses Pandoc (LaTeX PDF) online and the browser export offline. \"Browser\" always exports in the browser; \"Backend\" always uses Pandoc (online only).",
       "export_engine_auto": "Automatic (recommended)",
       "export_engine_client": "Browser (offline-capable)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, online only)"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, online only)",
+      "updates_section": "Updates",
+      "updates_description": "Automatic check for new versions.",
+      "auto_check": "Automatic update check",
+      "auto_check_hint": "Checks for new versions in the background.",
+      "check_interval": "Check interval",
+      "interval_daily": "Daily",
+      "interval_weekly": "Weekly",
+      "interval_monthly": "Monthly",
+      "interval_never": "Never"
     },
     "authors_database": {
       "title": "Authors Database",
@@ -2039,7 +2048,11 @@
       "message": "A new version of Bibliogon is available.",
       "button": "Update now",
       "updating": "Saving your work and updating …",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "version_available": "New version {version} available",
+      "whats_new": "What's new?",
+      "later": "Later",
+      "notes_title": "What's new in {version}"
     },
     "versions": {
       "menu_item": "Version history",
@@ -3585,7 +3598,9 @@
       "ai_assistance_label": "AI assistance",
       "ai_assistance_value": "Claude (Anthropic) - architecture, code, content, documentation",
       "resources_heading": "License & Resources",
-      "docs_label": "Documentation"
+      "docs_label": "Documentation",
+      "next_check": "Next automatic check: {time}",
+      "next_check_disabled": "Automatic check disabled"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publish to KDP",

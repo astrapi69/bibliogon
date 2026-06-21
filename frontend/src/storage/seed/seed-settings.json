@@ -107,5 +107,11 @@
       }
     ]
   },
-  "_secrets_managed_externally": false
+  "_secrets_managed_externally": false,
+  "updates": {
+    "auto_check": true,
+    "check_interval": "daily",
+    "last_check_at": null,
+    "dismissed_version": null
+  }
 }

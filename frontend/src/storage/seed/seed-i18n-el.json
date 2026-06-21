@@ -1235,7 +1235,16 @@
       "plugin_active_since": "Ενεργό από",
       "plugin_settings_applied": "Οι ρυθμίσεις εφαρμόστηκαν",
       "plugin_source_zip": "μέσω ZIP",
-      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)"
+      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)",
+      "updates_section": "Ενημερώσεις",
+      "updates_description": "Αυτόματος έλεγχος για νέες εκδόσεις.",
+      "auto_check": "Αυτόματος έλεγχος ενημερώσεων",
+      "auto_check_hint": "Ελέγχει για νέες εκδόσεις στο παρασκήνιο.",
+      "check_interval": "Διάστημα ελέγχου",
+      "interval_daily": "Καθημερινά",
+      "interval_weekly": "Εβδομαδιαία",
+      "interval_monthly": "Μηνιαία",
+      "interval_never": "Ποτέ"
     },
     "authors_database": {
       "title": "Βάση δεδομένων συγγραφέων",
@@ -2039,7 +2048,11 @@
       "message": "Μια νέα έκδοση του Bibliogon είναι διαθέσιμη.",
       "button": "Ενημέρωση τώρα",
       "updating": "Αποθήκευση της εργασίας σας και ενημέρωση …",
-      "dismiss": "Κλείσιμο"
+      "dismiss": "Κλείσιμο",
+      "version_available": "Νέα έκδοση {version} διαθέσιμη",
+      "whats_new": "Τι νέο υπάρχει;",
+      "later": "Αργότερα",
+      "notes_title": "Τι νέο υπάρχει στην {version}"
     },
     "versions": {
       "menu_item": "Ιστορικό εκδόσεων",
@@ -3585,7 +3598,9 @@
       "ai_assistance_label": "Βοήθεια ΤΝ",
       "ai_assistance_value": "Claude (Anthropic) - αρχιτεκτονική, κώδικας, περιεχόμενο, τεκμηρίωση",
       "resources_heading": "Άδεια χρήσης & Πόροι",
-      "docs_label": "Τεκμηρίωση"
+      "docs_label": "Τεκμηρίωση",
+      "next_check": "Επόμενος αυτόματος έλεγχος: {time}",
+      "next_check_disabled": "Ο αυτόματος έλεγχος είναι απενεργοποιημένος"
     },
     "kdp_publishing_wizard": {
       "open_button": "Δημοσίευση στο KDP",
