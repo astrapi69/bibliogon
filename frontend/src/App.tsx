@@ -36,6 +36,7 @@ import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
+import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
 import SkipToContentLink from "./components/shared/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
@@ -161,6 +162,11 @@ export default function App() {
                                              *  applies the update via SKIP_WAITING + controllerchange
                                              *  reload (autosave-safe). */}
                                             <AppUpdateBanner />
+                                            {/* #477 Phase 2: background GitHub-release
+                                             *  check -> non-blocking version banner with
+                                             *  notes + dismiss-per-version (the only
+                                             *  update signal on desktop / API mode). */}
+                                            <AppVersionUpdateBanner />
                                             {/* Headless: drains the offline write queue on reconnect (P3-C9). */}
                                             <SyncStatusWatcher />
                                             {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.
