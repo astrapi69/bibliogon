@@ -56,9 +56,9 @@ The launcher's first job is to detect what is already in place.
 1. **Docker check.** The launcher confirms Docker Desktop is installed and running. If Docker Desktop is missing, a dialog with the install URL appears and the launcher exits. If Docker is installed but not running, a dialog asks you to start Docker Desktop and click Retry; the launcher tries up to three times.
 2. **Bibliogon check.** The launcher looks for an existing Bibliogon install via its manifest (`%APPDATA%\bibliogon\install.json`) or, on a clean machine, checks the default location `%USERPROFILE%\bibliogon`.
    - **Already installed**: the launcher proceeds straight to step 3.
-   - **Not installed**: a welcome dialog appears: "Bibliogon is not installed on this computer yet". Three buttons: **Install** (the launcher downloads the latest release ZIP, extracts to a folder you pick, generates a fresh `.env`, and builds the Docker images - first build takes 3-5 minutes), **Open install guide** (opens the docs in your browser), or **Close**.
-3. **Start.** A small "Starting Bibliogon..." window appears while Docker brings up the containers.
-4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`).
+   - **Not installed**: a welcome dialog appears: "Bibliogon is not installed on this computer yet". Three buttons: **Install** (the launcher downloads the latest release ZIP, extracts to a folder you pick, generates a fresh `.env`, and builds the Docker images - first build takes 3-5 minutes), **Open install guide** (opens the docs in your browser), or **Close**. During install a progress window shows each step (download with a "245 MB / 512 MB" indicator, prepare configuration, build images, start) so you can see it is working.
+3. **Start.** A small status window appears with a checklist (Docker Desktop detected, starting containers, waiting for Bibliogon) while Docker brings up the containers.
+4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`). If port 7880 is already in use by another program, the launcher automatically picks the next free port, saves it to `.env`, and tells you the new address.
 5. **Status window.** The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
 
 ## Stopping Bibliogon

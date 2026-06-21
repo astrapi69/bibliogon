@@ -1,3 +1,10 @@
+# Explicit project name so containers are deterministically prefixed
+# "bibliogon-*" regardless of the install directory name. Without this,
+# Compose derives the project name from the directory basename, which can
+# collide with another local Compose project installed in a similarly
+# named folder (the launcher also passes -p bibliogon as a backstop).
+name: bibliogon
+
 services:
   backend:
     build:

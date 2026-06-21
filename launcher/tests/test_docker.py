@@ -6,8 +6,6 @@ import subprocess
 from pathlib import Path
 from unittest.mock import patch
 
-import pytest
-
 from bibliogon_launcher import docker
 
 
@@ -64,7 +62,10 @@ class TestComposeUpDown:
             ok, _ = docker.compose_up(tmp_path, "docker-compose.prod.yml")
         assert ok is True
         args = mock_run.call_args[0][0]
-        assert args == ["docker", "compose", "-f", "docker-compose.prod.yml", "up", "-d"]
+        assert args == [
+            "docker", "compose", "-p", "bibliogon",
+            "-f", "docker-compose.prod.yml", "up", "-d",
+        ]
 
     def test_compose_up_failure_returns_tail(self, tmp_path: Path) -> None:
         stderr = "\n".join(f"line {i}" for i in range(20))
@@ -147,3 +148,36 @@ class TestComposeBuild:
             ok, detail = docker.compose_build(tmp_path, "docker-compose.prod.yml")
         assert not ok
         assert "build error" in detail
+
+
+class TestProjectNameIsExplicit:
+    """Every compose invocation must pin ``-p bibliogon`` (issue #518,
+    Problem 4) so containers are deterministically named "bibliogon-*"
+    and cannot collide with another local Compose project derived from
+    the install directory name."""
+
+    def _args_for(self, fn, tmp_path: Path) -> list[str]:
+        with patch("bibliogon_launcher.docker._run", return_value=_run_result(stdout="x")) as mock_run:
+            fn(tmp_path, "docker-compose.prod.yml")
+        return mock_run.call_args[0][0]
+
+    def test_project_name_constant(self) -> None:
+        assert docker.PROJECT_NAME == "bibliogon"
+
+    def test_compose_up_pins_project_name(self, tmp_path: Path) -> None:
+        args = self._args_for(docker.compose_up, tmp_path)
+        assert args[:4] == ["docker", "compose", "-p", "bibliogon"]
+
+    def test_compose_down_pins_project_name(self, tmp_path: Path) -> None:
+        args = self._args_for(docker.compose_down, tmp_path)
+        assert args[:4] == ["docker", "compose", "-p", "bibliogon"]
+
+    def test_compose_build_pins_project_name(self, tmp_path: Path) -> None:
+        args = self._args_for(docker.compose_build, tmp_path)
+        assert args[:4] == ["docker", "compose", "-p", "bibliogon"]
+
+    def test_compose_logs_tail_pins_project_name(self, tmp_path: Path) -> None:
+        with patch("bibliogon_launcher.docker._run", return_value=_run_result(stdout="x")) as mock_run:
+            docker.compose_logs_tail(tmp_path, "docker-compose.prod.yml")
+        args = mock_run.call_args[0][0]
+        assert args[:4] == ["docker", "compose", "-p", "bibliogon"]

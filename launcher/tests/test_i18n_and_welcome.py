@@ -9,6 +9,7 @@ arguments / dispatch.
 
 from __future__ import annotations
 
+from contextlib import ExitStack
 from pathlib import Path
 from unittest.mock import patch
 
@@ -163,15 +164,75 @@ class TestDockerMissingDialog:
         assert opens == []
 
 
-# --- welcome-then-docker-check ordering ----------------------------
+# --- docker-check-then-welcome ordering (Problem 1) ----------------
 
 
-class TestWelcomeBeforeDockerCheck:
-    """Welcome dialog fires before the Docker check, never after.
-    Once welcomed=True, the welcome dialog is skipped. Both invariants
-    are essential to the UX contract documented in the prompt."""
+class TestDockerCheckBeforeWelcome:
+    """Docker readiness is the FIRST interactive step (issue #518,
+    Problem 1). The welcome dialog only fires once Docker is confirmed
+    installed AND running, and only when ``welcomed`` is still False.
+    Previously the welcome dialog ran before the Docker check; this
+    class pins the reversed order so it cannot regress."""
 
-    def test_welcome_fires_when_welcomed_false(self, tmp_path: Path) -> None:
+    def _stop_after_welcome(self, main_mod, tmp_path: Path):
+        """Patches that let the flow reach (and stop just after) the
+        welcome step with Docker reported ready, without touching the
+        real install path."""
+        return (
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.docker, "docker_installed", return_value=(True, "v27")),
+            patch.object(main_mod.docker, "docker_daemon_running", return_value=(True, "running")),
+            patch.object(main_mod.manifest, "read_manifest", return_value=None),
+            patch.object(main_mod.config, "is_valid_repo", return_value=False),
+            patch.object(
+                main_mod.config,
+                "launcher_config_path",
+                return_value=tmp_path / "launcher.json",
+            ),
+            patch.object(main_mod, "_install_or_welcome", return_value=None),
+        )
+
+    def test_docker_check_runs_before_welcome_when_docker_missing(self) -> None:
+        """Docker missing + not yet welcomed: the Docker-missing dialog
+        fires and the welcome dialog is NEVER reached."""
+        from bibliogon_launcher import __main__ as main_mod
+
+        with (
+            patch.object(main_mod.settings, "get", side_effect=lambda k: False if k == "welcomed" else None),
+            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.ui, "welcome_dialog") as welcome_mock,
+            patch.object(main_mod.ui, "three_button_dialog", return_value="cancel") as docker_dlg,
+            patch.object(main_mod.webbrowser, "open"),
+        ):
+            rc = main_mod._run_launcher()
+        assert rc == 1
+        docker_dlg.assert_called_once()
+        welcome_mock.assert_not_called()
+
+    def test_docker_not_running_dialog_before_welcome(self) -> None:
+        """Docker installed but daemon down + not yet welcomed: the
+        daemon dialog fires (with a Re-check button) and welcome is
+        never reached."""
+        from bibliogon_launcher import __main__ as main_mod
+
+        with (
+            patch.object(main_mod.settings, "get", side_effect=lambda k: False if k == "welcomed" else None),
+            patch.object(main_mod.docker, "docker_installed", return_value=(True, "v27")),
+            patch.object(main_mod.docker, "docker_daemon_running", return_value=(False, "down")),
+            patch.object(main_mod.config, "get_show_details_default", return_value=False),
+            patch.object(main_mod, "_retry_pending_cleanup"),
+            patch.object(main_mod.ui, "welcome_dialog") as welcome_mock,
+            patch.object(main_mod.ui, "error_dialog", return_value="cancel") as daemon_dlg,
+        ):
+            rc = main_mod._run_launcher()
+        assert rc == 1
+        daemon_dlg.assert_called_once()
+        welcome_mock.assert_not_called()
+
+    def test_welcome_fires_after_docker_ready_when_welcomed_false(self, tmp_path: Path) -> None:
         from bibliogon_launcher import __main__ as main_mod
 
         seen: dict[str, object] = {}
@@ -180,32 +241,26 @@ class TestWelcomeBeforeDockerCheck:
             seen.update(kwargs)
             seen["called"] = True
 
-        with (
-            patch.object(main_mod.settings, "get", side_effect=lambda k: False if k == "welcomed" else None),
-            patch.object(main_mod.settings, "update") as update_mock,
-            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
-            patch.object(main_mod.config, "get_show_details_default", return_value=False),
-            patch.object(main_mod, "_retry_pending_cleanup"),
-            patch.object(main_mod.ui, "welcome_dialog", side_effect=fake_welcome),
-            patch.object(main_mod.ui, "three_button_dialog", return_value="cancel"),
-            patch.object(main_mod.webbrowser, "open"),
-        ):
+        with ExitStack() as stack:
+            for cm in self._stop_after_welcome(main_mod, tmp_path):
+                stack.enter_context(cm)
+            stack.enter_context(
+                patch.object(main_mod.settings, "get", side_effect=lambda k: False if k == "welcomed" else None)
+            )
+            update_mock = stack.enter_context(patch.object(main_mod.settings, "update"))
+            stack.enter_context(patch.object(main_mod.ui, "welcome_dialog", side_effect=fake_welcome))
             main_mod._run_launcher()
         assert seen.get("called") is True
         update_mock.assert_any_call("welcomed", True)
 
-    def test_welcome_skipped_when_welcomed_true(self) -> None:
+    def test_welcome_skipped_when_welcomed_true(self, tmp_path: Path) -> None:
         from bibliogon_launcher import __main__ as main_mod
 
-        with (
-            patch.object(main_mod.settings, "get", return_value=True),
-            patch.object(main_mod.docker, "docker_installed", return_value=(False, "no")),
-            patch.object(main_mod.config, "get_show_details_default", return_value=False),
-            patch.object(main_mod, "_retry_pending_cleanup"),
-            patch.object(main_mod.ui, "welcome_dialog") as welcome_mock,
-            patch.object(main_mod.ui, "three_button_dialog", return_value="cancel"),
-            patch.object(main_mod.webbrowser, "open"),
-        ):
+        with ExitStack() as stack:
+            for cm in self._stop_after_welcome(main_mod, tmp_path):
+                stack.enter_context(cm)
+            stack.enter_context(patch.object(main_mod.settings, "get", return_value=True))
+            welcome_mock = stack.enter_context(patch.object(main_mod.ui, "welcome_dialog"))
             main_mod._run_launcher()
         welcome_mock.assert_not_called()
 
