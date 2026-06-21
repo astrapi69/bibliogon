@@ -28,6 +28,11 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Loader2, ArrowLeft, Trash2, Home, MessageSquare, MoreVertical } from "lucide-react";
 
 import { api, ApiError, ArticleStatus, ContentType, Author } from "../api/client";
+import {
+    SUPPORTED_LANGUAGES,
+    AUTOSAVE_DEBOUNCE_MS,
+    STATUSES,
+} from "./articleEditorConstants";
 import { getStorage } from "../storage";
 import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
 import { buildMetaMessages, parseMetaResponse } from "../ai/metaPrompts";
@@ -66,20 +71,6 @@ import { useTopics } from "../hooks/content/useTopics";
 import { notify } from "../utils/platform/notify";
 import layout from "./ArticleEditor.module.css";
 
-/** Languages Bibliogon UI ships in. Mirrors backend/config/i18n/. */
-const SUPPORTED_LANGUAGES: { code: string; label: string }[] = [
-    { code: "de", label: "Deutsch" },
-    { code: "en", label: "English" },
-    { code: "es", label: "Español" },
-    { code: "fr", label: "Français" },
-    { code: "pt", label: "Português" },
-    { code: "el", label: "Ελληνικά" },
-    { code: "tr", label: "Türkçe" },
-    { code: "ja", label: "日本語" },
-];
-
-const AUTOSAVE_DEBOUNCE_MS = 1000;
-const STATUSES: ArticleStatus[] = ["draft", "ready", "published", "archived"];
 
 export default function ArticleEditor() {
     const { id } = useParams<{ id: string }>();

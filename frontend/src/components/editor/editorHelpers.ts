@@ -1,5 +1,10 @@
 import type { Node as PmNode } from "@tiptap/pm/model";
-import { FIX_ISSUE_PROMPTS, type FixIssueType } from "../../data/fix-issue-prompts";
+import type { Editor as TiptapEditor } from "@tiptap/react";
+import {
+    FIX_ISSUE_PROMPTS,
+    findEnclosingSentence,
+    type FixIssueType,
+} from "../../data/fix-issue-prompts";
 import type { ContentKind } from "./editor-gates";
 
 interface AiPromptContext {
@@ -126,3 +131,24 @@ export function textOffsetToDocPos(
     });
     return { from, to };
 }
+
+/**
+ * Expand the plain-text issue range to its enclosing sentence and return
+ * ProseMirror from/to positions (#207, extracted verbatim from Editor.tsx).
+ * Mirrors the walk in StyleCheckExtension.textOffsetToDocPos so the mapping
+ * stays consistent. Returns null if the offsets fall outside the current
+ * document (chapter drift, doc edited since the check).
+ */
+export const expandToSentenceRange = (
+    ed: TiptapEditor,
+    issueOffset: number,
+    issueLength: number,
+): { from: number; to: number } | null => {
+    const plain = ed.getText();
+    const { start, end } = findEnclosingSentence(plain, issueOffset, issueLength);
+    const { from, to } = textOffsetToDocPos(ed.state.doc, start, end);
+    if (from === null) return null;
+    const resolvedTo = to ?? from;
+    if (resolvedTo < from) return null;
+    return { from, to: resolvedTo };
+};
