@@ -37,7 +37,7 @@ import {
 } from "lucide-react";
 import {type Page, type PageUpdate} from "../../api/client";
 import {getStorage} from "../../storage";
-import {useDragPosition} from "../../hooks/useDragPosition";
+import {useDragPosition} from "../../hooks/ui/useDragPosition";
 import {useI18n} from "../../hooks/useI18n";
 import {
     readLayoutNamespace,

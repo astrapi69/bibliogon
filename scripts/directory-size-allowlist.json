@@ -1,24 +1,17 @@
 {
-  "frontend/src/components": {
-    "current": 229,
-    "target": 15,
-    "reason": "God-folder; primitives -> lib/components (Phase 2 done), domain split planned (Phase 3, #466)",
-    "owner": "Aster",
-    "deadline": "v0.58.0"
-  },
   "frontend/src/components/settings": {
-    "current": 56,
+    "current": 67,
     "target": 20,
-    "reason": "Settings panels god-folder; extraction planned (#466)",
+    "reason": "Settings panels god-folder; extraction planned (#466). The components/ root god-folder itself is resolved (Phase 3 #492 grouped all flat files into concern subfolders; shims removed in #494) and no longer tracked.",
     "owner": "Aster",
     "deadline": "v0.58.0"
   },
   "frontend/src/hooks": {
-    "current": 32,
-    "target": 15,
-    "reason": "God-folder; domain subfolders in progress (Phase 1, #466)",
+    "current": 20,
+    "target": 20,
+    "reason": "Phase 1 (#481) + generic-hook regroup (#466) brought the flat hooks from ~70 to 12 source files (<= 15); the tracked count of 20 includes co-located tests. The residual flat hooks (git-sync, story-bible, useI18n, author/asset) are core/cross-cutting; target set to the current floor.",
     "owner": "CC",
-    "deadline": "v0.57.0"
+    "deadline": "n/a"
   },
   "frontend/src/export": {
     "current": 29,

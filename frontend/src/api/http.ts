@@ -7,7 +7,7 @@ import { ApiError } from "./errors";
  * network egress (`guardedFetch`), the JSON `request()` helper, the API base
  * path, and small response helpers. Entity API modules import the value
  * helpers from here; `client.ts` re-exports `guardedFetch` for the existing
- * `import { guardedFetch } from "../api/client"` call sites.
+ * `import { guardedFetch } from "./client"` call sites.
  */
 
 /** Base path for every backend route. */

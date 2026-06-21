@@ -20,7 +20,7 @@ import { describe, expect, it, vi, beforeEach } from "vitest";
 const getAppMock = vi.fn();
 const updateAppMock = vi.fn();
 
-vi.mock("../api/client", () => ({
+vi.mock("../../api/client", () => ({
     api: {
         settings: {
             getApp: () => getAppMock(),

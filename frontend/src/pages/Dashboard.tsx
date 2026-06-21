@@ -19,7 +19,7 @@ import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/book/useBookSelection";
 import ViewToggle from "../components/dashboard/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
-import { usePagedList } from "../hooks/usePagedList";
+import { usePagedList } from "../hooks/ui/usePagedList";
 import DashboardFilterBar from "../components/dashboard/DashboardFilterBar";
 import DashboardFilterSheet from "../components/dashboard/DashboardFilterSheet";
 import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterControls";

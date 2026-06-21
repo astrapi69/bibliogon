@@ -5,7 +5,7 @@ import {
     pluginDisabledMessage,
 } from "../../hooks/editor/useEditorPluginStatus";
 import { useFullscreenToggle } from "../../hooks/ui/useFullscreenToggle";
-import { useTypewriterScroll } from "../../hooks/useTypewriterScroll";
+import { useTypewriterScroll } from "../../hooks/editor/useTypewriterScroll";
 import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
 import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
 import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../../db/drafts";

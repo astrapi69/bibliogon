@@ -26,7 +26,7 @@ import * as Collapsible from "@radix-ui/react-collapsible";
 
 import {COLLAPSIBLE_CONTENT_ANIMATION} from "../shared/CollapsibleConfigSection";
 import {useCollapsibleState} from "../../hooks/ui/useCollapsibleState";
-import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
+import {useDebouncedCallback} from "../../hooks/ui/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
 import {RadixSelect} from "../shared/RadixSelect";
 
