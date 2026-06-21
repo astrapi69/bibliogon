@@ -5281,3 +5281,162 @@ Diagnosis method that found it: the CI **trace screenshot** showed the open
 "Playwright-visible != user-visible" rule, looking at the rendered frame beat
 guessing from the error text (which only named an anonymous
 `data-state=open aria-hidden` div).
+
+## "Provider X is CORS-blocked in the browser" must be proven with a live preflight, not assumed
+
+Filed 2026-06-19 (#468/#450). Bibliogon gated OpenAI + Mistral as
+not-browser-testable (a `BROWSER_TESTABLE_PROVIDERS` exclusion in
+`frontend/src/ai/llmClient.ts`, introduced with #450) on the reading that a
+403 from `api.openai.com` meant a CORS wall. It did not. A live `curl` with an
+`Origin` header showed `access-control-allow-origin: *` on
+`GET /v1/models` and a passing `OPTIONS` preflight on
+`POST /v1/chat/completions` — the 403 was a **key/account/region-specific
+provider response**, not a universal browser block. The sister project
+(adaptive-learner, a backendless GH-Pages PWA) tested OpenAI "Verbindung ok"
+in the browser the whole time. All 6 providers are reachable browser-direct;
+the exclusion was removed and the analysis recorded at
+`docs/explorations/openai-cors-browser-direct-analysis.md`.
+
+Rule: a "this API is CORS-blocked from the browser" claim is a **testable
+fact**, not a default. Before gating a provider/endpoint as desktop-only for
+CORS reasons, prove it with a real preflight:
+
+```bash
+# Does the response expose a readable CORS header?
+curl -sI -H "Origin: https://example.github.io" https://api.<provider>/v1/models \
+  | grep -i access-control-allow-origin
+# Does the actual write endpoint pass an OPTIONS preflight?
+curl -s -X OPTIONS -H "Origin: https://example.github.io" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: authorization,content-type" \
+  -D - -o /dev/null https://api.<provider>/v1/chat/completions | grep -i access-control
+```
+
+A 401/403 **with** an `access-control-allow-origin` header is an auth/account
+problem the browser CAN surface, not a CORS block. Classify the failure by the
+actual response, not by the status code alone. Pairs with "classify offline AI
+connection-test errors honestly" (#446/#456) below.
+
+## A pinned default model id rots when the provider retires it — derive or refresh it
+
+Filed 2026-06-19 (#454). The offline seed default (`seed-settings.json`, the AI
+config the backendless PWA loads) pinned `claude-sonnet-4-20250514` as the
+default Anthropic model. Anthropic **retired** that snapshot, so a fresh PWA
+user's first AI call failed against a 404/model-not-found before they had a
+chance to pick a model. Fixed by pinning a current model (`claude-sonnet-4-6`)
+and — separately (#451) — loading the model list **dynamically per provider**
+with the preset only as a fallback.
+
+Rule: a hardcoded model-id default is a perishable value, same class as the
+"pinned default model id" / version-pin rot. Treat it like any other external
+constant that an upstream can retire:
+
+- Prefer **dynamic discovery** (query the provider's models endpoint) with the
+  static preset as a fallback, not the source of truth.
+- When a static default is unavoidable (offline seed), the value MUST be a
+  **current, non-dated** alias (`claude-sonnet-4-6`), never a dated snapshot
+  (`...-20250514`) that the provider can sunset.
+- The default lives in `seed-settings.json` (committed, NOT gitignored like
+  `app.yaml`) — so a refresh is a seed edit + `make generate-seed-data`, and
+  the offline PWA picks it up. See the memory `[[ai-pwa-offline-architecture]]`.
+
+## One key column per provider — a single `api_key` field clobbers other providers on switch
+
+Filed 2026-06-19 (#460/#456). Bibliogon stored a single `api_key` for "whatever
+the active provider is". Switching the active provider in Settings overwrote the
+previous provider's key (the user re-typed an Anthropic key, switched to OpenAI,
+came back, and the Anthropic key was gone). A related symptom: the connection
+**Test** flow saved-before-testing and clobbered a known-good config when the
+test failed (#456). Fixed by storing **one key column per provider** plus an
+`active_provider` pointer (#460), surfacing all configured providers in a
+Settings overview table with a per-row live **Test** (#459/#462), and not
+persisting before a successful test.
+
+Rule: when a setting is "the X for the currently selected Y", and Y can change,
+store **one X per Y** with a pointer to the active Y — never a single shared X
+slot. A shared slot makes every Y-switch a silent data-loss event for the
+previous Y's value. The reference design is documented at
+`docs/explorations/ai-key-management-adaptive-learner-reference.md`. Pairs with
+"User-overlay merge semantics" (a per-key store is the structural fix for
+clobber, the same way the union-vs-replace decision is for lists).
+
+## God-Folder relocation: ship re-export shims first, remove them in a later batch, keep the CSS module beside the component
+
+Filed 2026-06-20 (#466, the God-Folder campaign close-out). Grouping a flat
+`frontend/src/{components,hooks,utils,services}` into single-concern
+sub-packages touches hundreds of import sites. Doing the move and the
+import-rewrite in one commit produces a giant, un-bisectable, conflict-magnet
+change (and races hard against parallel sessions). The campaign instead used a
+two-phase shape that stayed green at every step:
+
+1. **Relocate + shim:** move the file into its sub-package and leave a thin
+   flat **re-export shim** at the old path (`export * from "./book/BookCard"`).
+   Every existing importer keeps working; the diff is a move + one-line shim.
+2. **Remove shims + rewrite importers (later batch):** delete the shims and
+   rewrite the importers to the new path, in small batches (the campaign ran 7
+   batches for components). Each batch is independently green.
+
+Two concrete sub-rules that saved rework:
+
+- **Keep the CSS module beside its component.** When a component moves into a
+  sub-package, its co-located `*.module.css` moves WITH it (same folder). Do
+  not centralize CSS modules during a structural move — that turns a pure
+  relocation into a styling change and breaks the "each commit is one concern"
+  property. (The legacy `global.css` stays frozen and in place per the
+  Tailwind-first rule; only the per-component CSS module travels.)
+- **Ratchet the guard, don't whitelist.** A **directory-size ratchet CI guard**
+  (#466 Phase 5) records the post-split baseline and fails if a directory
+  regrows past it — so the campaign's win cannot silently erode. Same spirit as
+  the `.filesize-baseline` god-file ratchet.
+
+Pairs with "Atomic commits are bounded by 'green individually', not 'one
+thing'": the shim is exactly what keeps the intermediate state green so the
+move and the rewrite CAN be separate commits.
+
+## A behavior refactor that removes a UI affordance must update the E2E specs in the SAME change
+
+Filed 2026-06-20 (#473 + #451, repaired in `d6745ea4`). The Settings
+**auto-save-on-change** refactor (`afee7a50`, #473) removed the manual
+"Speichern" buttons; the per-provider dynamic-model work (#451) changed the AI
+settings shape. Four smoke specs still clicked a "Speichern" button (or asserted
+the old model/key order) and broke — the refactors merged without carrying their
+specs along, so the E2E gate was red on already-merged work.
+
+This is the same class as the existing v0.56.0 rule "A format/behavior change
+must reach its E2E specs in the same change, or the gate silently rots" — here
+the changed output is a **removed control** rather than a changed filename. When
+a refactor removes or renames an interactive affordance (a Save button, a tab, a
+testid, a field order), grep `e2e/` for specs that drive the OLD affordance and
+update them in the same change:
+
+```bash
+grep -rln "Speichern\|getByRole('button', { name: /save/i })" e2e/
+```
+
+A removed "Save" button means the spec must assert the **auto-save** behavior
+(change a field → reload → value persisted) instead of clicking a button that no
+longer exists. Pairs with "Coverage Illusion" — the auto-save behavior needs a
+real change-then-reload assertion, not just "the button is gone".
+
+## A pushed SHA can silently fail to trigger CI — re-trigger, don't wait
+
+Filed 2026-06-20 (`5ed87b42`, `5d7680f7`). On rare occasions GitHub Actions does
+not dispatch the configured workflows for a freshly pushed commit (a
+dispatch glitch on that SHA): no run appears, the PR sits with no checks, and
+there is nothing to "wait for". This looks like a slow queue but never resolves.
+
+Recognition + remedy:
+
+- **Recognition:** `gh pr checks <n>` reports no checks (not "pending"); `gh run
+  list --branch <branch> --limit 3` shows no run for the head SHA after a couple
+  of minutes, while other branches' pushes trigger normally.
+- **Remedy:** push a new SHA to re-trigger — an empty commit
+  (`git commit --allow-empty -m "chore: re-trigger CI (dispatch glitch on prior
+  SHA)"`) or a trivial amend-and-force on a feature branch. Do NOT keep waiting;
+  the prior SHA will never get a run.
+- **Do not** confuse this with the "piping a gate through `| tail` masks its exit
+  code" false-green — that one HAS a run that failed; this one has NO run at all.
+
+Pairs with "Operational gaps masquerade as wired infrastructure": a workflow
+that is correctly wired can still no-op on a given SHA; verify a run actually
+exists, don't assume the push implies a run.
