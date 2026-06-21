@@ -2,7 +2,7 @@
 
 Current phase: Phase 2 - build for real users, not just developers
 Last updated: 2026-06-21 (post-v0.56.0 develop refresh — the God-Folder campaign (#466), browser-direct AI for all 6 providers, the desktop update-checker (#477/#479), Settings auto-save (#473), and client-side picture-book PDF (#497) are recorded as shipped; Current focus re-pointed at the v0.57.0 cut.)
-Latest release: v0.56.0 (2026-06-18) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes. Unreleased work on `develop` is summarized in "Recently shipped — v0.55.0 → develop" below.
+Latest release: v0.57.0 (2026-06-21) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
