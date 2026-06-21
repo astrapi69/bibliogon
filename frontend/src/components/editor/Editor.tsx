@@ -7,11 +7,10 @@ import {
 import { useFullscreenToggle } from "../../hooks/ui/useFullscreenToggle";
 import { useTypewriterScroll } from "../../hooks/editor/useTypewriterScroll";
 import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
-import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../../db/drafts";
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
-import { findEnclosingSentence } from "../../data/fix-issue-prompts";
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {
@@ -44,7 +43,7 @@ import { getStorage } from "../../storage";
 import { notify } from "../../utils/platform/notify";
 import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
-import { parseContent, textOffsetToDocPos, buildAiPrompts } from "./editorHelpers";
+import { parseContent, textOffsetToDocPos, buildAiPrompts, expandToSentenceRange } from "./editorHelpers";
 
 export interface BookContext {
     title: string;
@@ -578,25 +577,6 @@ export default function Editor({
         } catch {
             notify.error(t("ui.editor_menu.search_failed", "Suche fehlgeschlagen."));
         }
-    };
-
-    /** Expand the plain-text issue range to its enclosing sentence
-     *  and return ProseMirror from/to positions. Mirrors the walk in
-     *  StyleCheckExtension.textOffsetToDocPos so the mapping stays
-     *  consistent. Returns null if the offsets fall outside the
-     *  current document (chapter drift, doc edited since the check). */
-    const expandToSentenceRange = (
-        ed: TiptapEditor,
-        issueOffset: number,
-        issueLength: number,
-    ): { from: number; to: number } | null => {
-        const plain = ed.getText();
-        const { start, end } = findEnclosingSentence(plain, issueOffset, issueLength);
-        const { from, to } = textOffsetToDocPos(ed.state.doc, start, end);
-        if (from === null) return null;
-        const resolvedTo = to ?? from;
-        if (resolvedTo < from) return null;
-        return { from, to: resolvedTo };
     };
 
     const handleAiSuggest = async () => {
