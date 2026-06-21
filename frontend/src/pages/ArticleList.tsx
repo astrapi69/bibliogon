@@ -35,7 +35,7 @@ import FieldClassDialog, { type FieldClassDialogResult } from "../components/sha
 import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
 import layout from "./ArticleList.module.css";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
-import { usePagedList } from "../hooks/usePagedList";
+import { usePagedList } from "../hooks/ui/usePagedList";
 import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";
 import { useDialog } from "../components/shared/AppDialog";

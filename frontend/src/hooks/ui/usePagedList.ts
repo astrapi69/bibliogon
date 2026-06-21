@@ -22,8 +22,8 @@
  * the page sizes colliding.
  */
 import { useCallback, useEffect, useState } from "react";
-import { ApiError } from "../api/client";
-import { getStorage } from "../storage";
+import { ApiError } from "../../api/client";
+import { getStorage } from "../../storage";
 
 export type PageSize = 10 | 25 | 50 | 100;
 

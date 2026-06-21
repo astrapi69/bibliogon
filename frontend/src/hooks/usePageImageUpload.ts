@@ -3,7 +3,7 @@ import {type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {getStorage} from "../storage"
 import {warnIfOfflineStorageNearlyFull} from "../utils/platform/storageQuota"
 import {writeSecondaryImageAssetId} from "../utils/editor/layoutConfig"
-import {useI18n} from "../hooks/useI18n"
+import {useI18n} from "./useI18n"
 
 interface UsePageImageUploadArgs {
     page: Page

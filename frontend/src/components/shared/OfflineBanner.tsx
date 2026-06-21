@@ -12,7 +12,7 @@
  */
 import {useEffect, useRef, useState} from "react";
 import {WifiOff} from "lucide-react";
-import {useOnlineStatus} from "../../hooks/useOnlineStatus";
+import {useOnlineStatus} from "../../hooks/ui/useOnlineStatus";
 import {useI18n} from "../../hooks/useI18n";
 import {db, deleteDraft, type ChapterDraft} from "../../db/drafts";
 import {api, ApiError} from "../../api/client";

@@ -18,7 +18,7 @@ import {
 import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
 import { LoadingIndicator } from "../shared/LoadingIndicator";
-import { useWebSocket } from "../../hooks/useWebSocket";
+import { useWebSocket } from "../../hooks/ui/useWebSocket";
 import { useDialog } from "../shared/AppDialog";
 import AudiobookPlayer, { PlayerChapter } from "../book/AudiobookPlayer";
 import { slugify } from "../../shared/utils/slugify";

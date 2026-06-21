@@ -1,5 +1,5 @@
 import React from "react"
-import {useDebouncedCallback} from "../../hooks/useDebouncedCallback"
+import {useDebouncedCallback} from "../../hooks/ui/useDebouncedCallback"
 import {useI18n} from "../../hooks/useI18n"
 import {RadixSelect} from "../shared/RadixSelect"
 import {CollapsibleConfigSection} from "../shared/CollapsibleConfigSection"

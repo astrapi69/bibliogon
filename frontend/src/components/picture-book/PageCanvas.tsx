@@ -7,7 +7,7 @@ import {
     readSecondaryImageAssetId,
 } from "../../utils/editor/layoutConfig"
 import CollageCanvas from "./CollageCanvas"
-import {useDebouncedCallback} from "../../hooks/useDebouncedCallback"
+import {useDebouncedCallback} from "../../hooks/ui/useDebouncedCallback"
 import {usePageImageUpload} from "../../hooks/usePageImageUpload"
 import {
     extractPlainText,

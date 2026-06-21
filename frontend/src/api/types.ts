@@ -1548,7 +1548,7 @@ export interface BookPublishingStateUpdatePayload {
 
 // `ApiError` moved to ./errors to break the api/client <-> help/offlineHelp
 // circular dependency (#114). Re-exported here so existing
-// `import { ApiError } from "../api/client"` call sites keep working.
+// `import { ApiError } from "./client"` call sites keep working.
 
 // --- Medium Import ---
 

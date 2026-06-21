@@ -54,7 +54,7 @@ import DonationReminderBanner, {
 } from "./components/shared/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
 import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
-import { useWordWrap } from "./hooks/useWordWrap";
+import { useWordWrap } from "./hooks/editor/useWordWrap";
 import { api, ApiError } from "./api/client";
 import { getStorage } from "./storage";
 import { ToastContainer } from "react-toastify";

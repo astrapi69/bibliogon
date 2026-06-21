@@ -35,7 +35,7 @@ vi.mock("../storage", () => ({
     }),
 }));
 
-import { usePagedList } from "./usePagedList";
+import { usePagedList } from "./ui/usePagedList";
 import { useAllowBooksWithoutAuthor } from "./useAllowBooksWithoutAuthor";
 import { useTopics } from "./content/useTopics";
 

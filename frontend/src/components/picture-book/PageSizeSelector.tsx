@@ -9,8 +9,8 @@
  * Positioned by the consumer next to the "Load more" button OR at
  * the bottom of the list.
  */
-import type { PageSize } from "../../hooks/usePagedList";
-import { ALLOWED_PAGE_SIZES } from "../../hooks/usePagedList";
+import type { PageSize } from "../../hooks/ui/usePagedList";
+import { ALLOWED_PAGE_SIZES } from "../../hooks/ui/usePagedList";
 import { useI18n } from "../../hooks/useI18n";
 import { RadixSelect } from "../shared/RadixSelect";
 

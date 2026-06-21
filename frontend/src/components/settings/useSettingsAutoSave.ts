@@ -1,4 +1,4 @@
-import { useDebouncedCallback } from "../../hooks/useDebouncedCallback";
+import { useDebouncedCallback } from "../../hooks/ui/useDebouncedCallback";
 
 /** Default debounce for settings auto-save (ms). Long enough that a burst
  *  of rapid changes (e.g. clicking five toggles) collapses into a single
