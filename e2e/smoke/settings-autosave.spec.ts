@@ -24,16 +24,19 @@ test.describe("#472 Settings auto-save", () => {
         await expect(page.getByTestId("editor-settings-save")).toHaveCount(0);
 
         const autosave = page.getByTestId("editor-autosave");
-        await autosave.fill("1500");
 
-        // The debounced auto-save lands a PATCH and the short saved toast.
-        await page.waitForResponse(
+        // Arm the PATCH wait BEFORE the edit (arm-before-act): the debounced
+        // auto-save (#472, 500ms) can land before a listener registered after
+        // the fill, which intermittently times the wait out under CI load.
+        const patchLanded = page.waitForResponse(
             (r) =>
                 r.url().includes("/settings/app") &&
                 r.request().method() === "PATCH" &&
                 r.ok(),
-            {timeout: 8000},
+            {timeout: 10000},
         );
+        await autosave.fill("1500");
+        await patchLanded;
         await expect(page.getByText(/Gespeichert|Saved/).first()).toBeVisible({
             timeout: 8000,
         });
