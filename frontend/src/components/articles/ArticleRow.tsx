@@ -4,10 +4,10 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 
 import { Article } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
-import { useArticleImageUrl } from "../../hooks/useArticleImageUrl";
-import { publicationStatusLabels } from "../../utils/publicationStatusBadge";
-import { formatLocaleDate } from "../../utils/formatDate";
-import CoverPlaceholder from "../CoverPlaceholder";
+import { useArticleImageUrl } from "../../hooks/article/useArticleImageUrl";
+import { publicationStatusLabels } from "../../utils/format/publicationStatusBadge";
+import { formatLocaleDate } from "../../utils/format/formatDate";
+import CoverPlaceholder from "../book/CoverPlaceholder";
 import StatusBadge from "../../lib/components/StatusBadge";
 import ContentTypeBadge from "./ContentTypeBadge";
 import CommentsCountBadge from "./CommentsCountBadge";

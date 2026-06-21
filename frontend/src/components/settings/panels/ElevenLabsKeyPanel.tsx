@@ -1,15 +1,15 @@
 import {useEffect, useState} from "react";
-import {Save, Eye, EyeOff, Trash2} from "lucide-react";
+import {Save, Trash2} from "lucide-react";
 import {api} from "../../../api/client";
 import {useI18n} from "../../../hooks/useI18n";
-import {notify} from "../../../utils/notify";
+import {notify} from "../../../utils/platform/notify";
 import {HelpText} from "../HelpText";
+import {TokenInput} from "../../../lib/components/TokenInput";
 
 export function ElevenLabsKeyPanel() {
     const {t} = useI18n();
     const [configured, setConfigured] = useState<boolean | null>(null);
     const [keyInput, setKeyInput] = useState("");
-    const [showKey, setShowKey] = useState(false);
     const [busy, setBusy] = useState(false);
 
     useEffect(() => {
@@ -89,25 +89,14 @@ export function ElevenLabsKeyPanel() {
                 <label className="label">
                     {t("ui.audiobook.elevenlabs_key", "ElevenLabs API-Key")}
                 </label>
-                <div style={{display: "flex", gap: 8, alignItems: "center"}}>
-                    <input
-                        className="input"
-                        type={showKey ? "text" : "password"}
-                        value={keyInput}
-                        placeholder={configured ? t("ui.audiobook.elevenlabs_stored", "********** (gespeichert)") : "sk_..."}
-                        onChange={(e) => setKeyInput(e.target.value)}
-                        style={{flex: 1}}
-                        disabled={busy}
-                    />
-                    <button
-                        type="button"
-                        className="btn-icon"
-                        title={showKey ? t("ui.common.hide", "Ausblenden") : t("ui.common.show", "Anzeigen")}
-                        onClick={() => setShowKey((v) => !v)}
-                    >
-                        {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}
-                    </button>
-                </div>
+                <TokenInput
+                    value={keyInput}
+                    onChange={setKeyInput}
+                    disabled={busy}
+                    placeholder={configured ? t("ui.audiobook.elevenlabs_stored", "********** (gespeichert)") : "sk_..."}
+                    showLabel={t("ui.common.show", "Anzeigen")}
+                    hideLabel={t("ui.common.hide", "Ausblenden")}
+                />
                 <HelpText>
                     {t(
                         "ui.audiobook.elevenlabs_hint",

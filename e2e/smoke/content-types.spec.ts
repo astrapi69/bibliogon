@@ -174,8 +174,14 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
             .getByTestId("article-type-field-difficulty_level-item-advanced")
             .click();
 
-        // Wait for the auto-save.
-        await page.waitForTimeout(500);
+        // Poll the API until the auto-save lands (deterministic vs a fixed
+        // wait that flakes if autosave takes longer than the timeout).
+        await expect
+            .poll(async () => {
+                const a = await getJson<ArticleResponse>(`/articles/${id}`);
+                return a.article_metadata.difficulty_level;
+            })
+            .toBe("advanced");
 
         const article = await getJson<ArticleResponse>(`/articles/${id}`);
         expect(article.content_type).toBe("tutorial");

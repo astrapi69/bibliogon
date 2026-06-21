@@ -161,12 +161,15 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await page.goto("/settings?tab=verhalten");
         await expect(page.getByTestId("verhalten-settings")).toBeVisible();
 
-        // Switch the language setting to English and save - to Dexie, not /api.
+        // Switch the language setting to English - auto-saved (#472) to Dexie,
+        // not /api. No Speichern button.
         await page.getByTestId("settings-language-trigger").click();
         await page.getByTestId("settings-language-item-en").click();
-        await page.getByTestId("verhalten-settings-save").click();
-        // No "Fehler beim Speichern": save succeeds (Dexie).
-        await expect(page.getByTestId("verhalten-settings-save")).toBeEnabled();
+        // The debounced save succeeds (Dexie): the "Gespeichert/Saved" toast
+        // appears and no "Fehler beim Speichern" error toast.
+        await expect(page.getByText(/Gespeichert|Saved/).first()).toBeVisible({
+            timeout: 10_000,
+        });
 
         // Reload: the change persisted in IndexedDB.
         await page.reload();

@@ -12,7 +12,7 @@
  */
 
 import type { AiChatMessage } from "./llmClient";
-import { STORY_BEATS } from "../components/StoryboardAnnotations";
+import { STORY_BEATS } from "../components/story-bible/StoryboardAnnotations";
 
 /** Map a Bibliogon language code to an English language name for the prompt.
  *  Mirrors `backend/app/ai/prompts.py::LANG_MAP`. Unknown codes pass through. */

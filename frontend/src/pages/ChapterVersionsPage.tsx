@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import ChapterVersionsView from "../components/ChapterVersionsView";
-import { PageLayout } from "../components/PageLayout";
+import ChapterVersionsView from "../components/book/ChapterVersionsView";
+import { PageLayout } from "../components/shared/PageLayout";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
-import { useGoBack } from "../hooks/useGoBack";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
 
 /**

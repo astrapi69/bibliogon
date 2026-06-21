@@ -23,7 +23,7 @@ import {
 
 import MetadataChecklist from "./MetadataChecklist"
 import {BookDetail, KdpMetadataCheckResult, type BookTypeDef} from "../../api/client"
-import {BookTypesProvider} from "../../hooks/useBookTypes"
+import {BookTypesProvider} from "../../hooks/book/useBookTypes"
 
 // BOOK-TYPES-SSOT-YAML-01 C7: MetadataChecklist now reads
 // content_model from the registry to decide whether to drop

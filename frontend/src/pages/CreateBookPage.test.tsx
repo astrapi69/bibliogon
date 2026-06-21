@@ -26,7 +26,7 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
         reason: undefined,
     }),
 }));
-import { BookTypesProvider } from "../hooks/useBookTypes";
+import { BookTypesProvider } from "../hooks/book/useBookTypes";
 import type { BookTypeDef } from "../api/client";
 
 const TEST_BOOK_TYPES: Record<string, BookTypeDef> = {
@@ -119,7 +119,7 @@ vi.mock("../api/client", () => ({
     },
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         error: (...args: unknown[]) => mockNotifyError(...args),
@@ -130,7 +130,7 @@ vi.mock("../utils/notify", () => ({
 
 // CreateBookForm pulls in useDialog (template-delete confirm); not
 // exercised by these page tests, so a no-op stub is enough.
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({ confirm: vi.fn(), alert: vi.fn(), prompt: vi.fn() }),
 }));
 

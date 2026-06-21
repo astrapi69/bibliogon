@@ -3,32 +3,32 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { api, ApiError } from "../api/client";
 import { getStorage } from "../storage";
 import { downloadBlob } from "../shared/utils/downloadBlob";
-import WritingGoalWidget from "../components/WritingGoalWidget";
-import NewFromTemplateButton from "../components/NewFromTemplateButton";
-import BulkTemplateImportDialog from "../components/BulkTemplateImportDialog";
-import FieldClassDialog, { type FieldClassDialogResult } from "../components/FieldClassDialog";
-import BulkAiFillConfirmDialog from "../components/BulkAiFillConfirmDialog";
-import BookCard from "../components/BookCard";
-import BookListView from "../components/BookListView";
+import WritingGoalWidget from "../components/book/WritingGoalWidget";
+import NewFromTemplateButton from "../components/book/NewFromTemplateButton";
+import BulkTemplateImportDialog from "../components/book/BulkTemplateImportDialog";
+import FieldClassDialog, { type FieldClassDialogResult } from "../components/shared/FieldClassDialog";
+import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
+import BookCard from "../components/book/BookCard";
+import BookListView from "../components/book/BookListView";
 import BookBulkActionBar, {
     type BookBulkExportFormat,
     BOOK_BULK_LIMIT_HARD,
-} from "../components/BookBulkActionBar";
+} from "../components/book/BookBulkActionBar";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
-import { formatActiveBookFilters } from "../utils/formatActiveFilters";
-import { useBookSelection } from "../components/useBookSelection";
-import ViewToggle from "../components/ViewToggle";
-import { useTrashViewMode, useViewMode } from "../hooks/useViewMode";
-import { usePagedList } from "../hooks/usePagedList";
-import DashboardFilterBar from "../components/DashboardFilterBar";
-import DashboardFilterSheet from "../components/DashboardFilterSheet";
-import ResponsiveFilterControls from "../components/ResponsiveFilterControls";
-import TileSelectCheckbox from "../components/TileSelectCheckbox";
-import { useBookFilters } from "../hooks/useBookFilters";
-import { useDashboardBookData } from "../hooks/useDashboardBookData";
-import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/useBookTypes";
-import { BookTypeIcon } from "../utils/bookTypeIcon";
-import SplitButton, { type SplitButtonDropdownItem } from "../components/SplitButton";
+import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
+import { useBookSelection } from "../components/book/useBookSelection";
+import ViewToggle from "../components/dashboard/ViewToggle";
+import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
+import { usePagedList } from "../hooks/ui/usePagedList";
+import DashboardFilterBar from "../components/dashboard/DashboardFilterBar";
+import DashboardFilterSheet from "../components/dashboard/DashboardFilterSheet";
+import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterControls";
+import TileSelectCheckbox from "../components/picture-book/TileSelectCheckbox";
+import { useBookFilters } from "../hooks/book/useBookFilters";
+import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
+import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
+import { BookTypeIcon } from "../utils/icons/bookTypeIcon";
+import SplitButton, { type SplitButtonDropdownItem } from "../components/shared/SplitButton";
 import {
     Plus,
     BookOpen,
@@ -47,31 +47,31 @@ import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { ImportWizardModal } from "../components/import-wizard";
 import OfflineImportDialog from "../components/import/OfflineImportDialog";
 import DropZone from "../lib/components/DropZone";
-import RecentDocuments from "../components/RecentDocuments";
+import RecentDocuments from "../components/dashboard/RecentDocuments";
 import { makeBookDescriptor } from "../descriptors/bookDescriptor";
-import DashboardTrashView from "../components/DashboardTrashView";
-import BulkSelectAllCheckbox from "../components/BulkSelectAllCheckbox";
-import ListPaginationControls from "../components/ListPaginationControls";
+import DashboardTrashView from "../components/dashboard/DashboardTrashView";
+import BulkSelectAllCheckbox from "../components/dashboard/BulkSelectAllCheckbox";
+import ListPaginationControls from "../components/dashboard/ListPaginationControls";
 import styles from "./Dashboard.module.css";
-import FullscreenButton from "../components/FullscreenButton";
-import ThemeToggle from "../components/ThemeToggle";
-import { useTheme } from "../hooks/useTheme";
+import FullscreenButton from "../components/shared/FullscreenButton";
+import ThemeToggle from "../components/shared/ThemeToggle";
+import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
-import { useDialog } from "../components/AppDialog";
-import { notify } from "../utils/notify";
+import { useDialog } from "../components/shared/AppDialog";
+import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useHelp } from "../contexts/HelpContext";
-import { getDonationsConfig, type DonationsConfig } from "../components/SupportSection";
+import { getDonationsConfig, type DonationsConfig } from "../components/settings/SupportSection";
 import DonationOnboardingDialog, {
     shouldShowDonationOnboarding,
-} from "../components/DonationOnboardingDialog";
+} from "../components/shared/DonationOnboardingDialog";
 // v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
-import { EmptyState } from "../components/EmptyState";
-import { LoadingIndicator } from "../components/LoadingIndicator";
+import { EmptyState } from "../lib/components/EmptyState";
+import { LoadingIndicator } from "../components/shared/LoadingIndicator";
 import { useStorageMode } from "../storage/useStorageMode";
 
 export default function Dashboard() {

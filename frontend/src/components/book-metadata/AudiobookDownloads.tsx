@@ -15,12 +15,12 @@ import {
     Play,
     Pause,
 } from "lucide-react";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
-import { LoadingIndicator } from "../LoadingIndicator";
-import { useWebSocket } from "../../hooks/useWebSocket";
-import { useDialog } from "../AppDialog";
-import AudiobookPlayer, { PlayerChapter } from "../AudiobookPlayer";
+import { LoadingIndicator } from "../shared/LoadingIndicator";
+import { useWebSocket } from "../../hooks/ui/useWebSocket";
+import { useDialog } from "../shared/AppDialog";
+import AudiobookPlayer, { PlayerChapter } from "../book/AudiobookPlayer";
 import { slugify } from "../../shared/utils/slugify";
 import styles from "../BookMetadataEditor.module.css";
 

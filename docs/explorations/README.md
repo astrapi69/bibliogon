@@ -25,7 +25,7 @@ Exploration documents can transition to:
 
 ## Tracking table
 
-Last reviewed: 2026-06-17 (task-status audit against `develop`, v0.54.0)
+Last reviewed: 2026-06-21 (post-v0.56.0 develop refresh — added the two AI analysis/reference docs and marked both as shipped; the per-provider-key + browser-direct-AI work they recommended landed on `develop`). Prior full audit: 2026-06-17 (task-status audit against `develop`, v0.54.0).
 
 The **Done / Open** column reflects how many of a doc's concrete tasks/phases are implemented on `develop`, verified by code grep + closed GitHub issues. Value column reflects a subjective ROI judgement (user impact × adoption gain ÷ effort). Not a commitment.
 
@@ -33,6 +33,8 @@ The **Done / Open** column reflects how many of a doc's concrete tasks/phases ar
 |---|---|---|---|
 | [children-book-plugin.md](children-book-plugin.md) | ~6.5 / 0.5 | **Erledigt** — shipped as `plugin-kinderbuch` (Sessions 2-6: page editor, layouts, PDF/EPUB3, page-count warn). Residual: onboarding/help polish (Session 7). | Onboarding/help polish only. |
 | [exploration-features-2026-05-15.md](exploration-features-2026-05-15.md) | ~7 / 3 | **Teilweise** — #1/#3/#4/#8/#9 shipped, #6 KDP-wizard partial, #2/#5/#10 partial, #7 multi-lang open. | Per-feature triggers (see doc). |
+| [ai-key-management-adaptive-learner-reference.md](ai-key-management-adaptive-learner-reference.md) | reference / shipped | **Erledigt** — the per-provider key store + `active_provider` pointer + Settings overview table + per-row live Test it documents shipped on `develop` (#460, #459, #462). Archive candidate. | None; superseded by shipped feature. |
+| [openai-cors-browser-direct-analysis.md](openai-cors-browser-direct-analysis.md) | analysis / shipped | **Erledigt** — verdict (OpenAI + Mistral are browser-direct; the CORS gate was wrong) implemented; the `BROWSER_TESTABLE_PROVIDERS` exclusion was removed (#468/#450). Archive candidate. | None; verdict applied. |
 | [comic-foundation.md](comic-foundation.md) | ~2.5 / 0.5 | **Teilweise** — `plugin-comics` shipped (Sessions 0-2: panels + multi-bubble + drag). Open: motion-lines, sound-FX, RTL panel order, mobile UX. | File remaining polish as backlog. |
 | [exploration-bibliogon-mobile-selective-sync.md](exploration-bibliogon-mobile-selective-sync.md) | 4 / 2 | **Teilweise** — Phase 1 (LAN), Phase A (PWA), Phase 3 (offline + sync engine) shipped. Open: Phase C (selection/"Phone Library" UI), Phase D (dedicated sync backend + conflict surface). | Phase C/D scope decision. |
 | [EXP-002-user-event-recording.md](EXP-002-user-event-recording.md) | 4 / 2 | **Teilweise** — EVT-01..04 shipped (RingBuffer, Dexie persist, proactive Settings entry, JSON export). Open: EVT-05 (category/appState axis, M), EVT-06 (feature-strategy registration, S). | Demand for category taxonomy or feature-gate. |
@@ -54,6 +56,8 @@ Archived explorations (shipped or historical) live in [archive/](archive/). Newl
 The 2026-06-17 audit found that **most of the previously "act-on-trigger" explorations have already shipped** — plugin-git-sync (all 5 phases), the core import orchestrator (CIO-01..05), TipTap 3, the children's-book plugin (as plugin-kinderbuch), the comics foundation (plugin-comics), and the majority of the 2026-05-15 feature batch. The live exploration set is now dominated by maturation tails and strategic deferrals, not greenfield work.
 
 **Housekeeping (done in this pass):** the three fully-shipped docs (core-import-orchestrator, plugin-git-sync, tiptap-3-migration) moved to [archive/](archive/); `dependency-strategy.md` refreshed (DEP-02 + DEP-09 marked done, community-extension pins unpinned); `children-book-plugin.md`'s stale "deferred" framing removed.
+
+**Update 2026-06-21 (post-v0.56.0 develop):** two AI docs were added to this directory after the 2026-06-17 audit and are now tracked above — `ai-key-management-adaptive-learner-reference.md` and `openai-cors-browser-direct-analysis.md`. Both are **shipped**: the per-provider key store with an `active_provider` pointer, the Settings provider-overview table, and per-row live key Test landed on `develop` (#460/#459/#462), and the CORS gate was removed so all 6 providers run browser-direct in PWA/Dexie mode (#468/#450). Both are archive candidates once the AI-key-management feature is recorded in the next CHANGELOG cut. No new greenfield exploration opened this cycle; the God-Folder refactor, desktop update-checker, and Settings auto-save shipped as direct backlog/feature work, not explorations.
 
 **Highest-value open work with a clear path:**
 - **EXP-002 EVT-05 + EVT-06** — the error-report base shipped (RingBuffer, Dexie persist, Settings entry, JSON export). The two open tasks are small/medium and self-contained: a category/appState axis (M) and a feature-strategy registration (S).

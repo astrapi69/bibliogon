@@ -26,10 +26,10 @@
 
 import {useState} from "react";
 
-import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
+import {useDebouncedCallback} from "../../hooks/ui/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
 
-import {CollapsibleConfigSection} from "../CollapsibleConfigSection";
+import {CollapsibleConfigSection} from "../shared/CollapsibleConfigSection";
 import {Tier1Section} from "./Tier1Section";
 import {Tier2Section} from "./Tier2Section";
 import type {ComicBubbleData} from "./ComicBubble";

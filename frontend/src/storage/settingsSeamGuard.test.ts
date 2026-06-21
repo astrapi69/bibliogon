@@ -37,7 +37,7 @@ const ALLOWLIST = new Set([
     "components/import-wizard/steps/AuthorPicker.tsx",
     // getPlugin("export") is manuscripta-passthrough data; the call
     // sits behind a getStorage().mode === "dexie" guard.
-    "components/ExportForm.tsx",
+    "components/export/ExportForm.tsx",
     // Plugin-settings panel inside the Plugins tab, which is hidden
     // in Dexie mode (#96).
     "components/medium-import/MediumImportSettings.tsx",

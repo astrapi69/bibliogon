@@ -31,7 +31,7 @@ vi.mock("react-router-dom", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         prompt: vi.fn(),
@@ -46,7 +46,7 @@ const mockNotify = vi.hoisted(() => ({
     info: vi.fn(),
     warning: vi.fn(),
 }));
-vi.mock("../../utils/notify", () => ({ notify: mockNotify }));
+vi.mock("../../utils/platform/notify", () => ({ notify: mockNotify }));
 
 const mockAuthorsList = vi.fn().mockResolvedValue([]);
 const mockAuthorsCreate = vi.fn().mockResolvedValue({ id: "a1" });

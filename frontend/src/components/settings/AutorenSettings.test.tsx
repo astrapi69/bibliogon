@@ -24,11 +24,11 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({confirm: vi.fn(), prompt: vi.fn()}),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn()},
 }));
 

@@ -56,12 +56,12 @@ test.describe("Configurable default book-type + content-type", () => {
             .getByTestId("settings-default-book-type-item-comic_book")
             .click();
         // Wait for the Radix listbox to close, which guarantees the
-        // onChange has committed the new value into React state before
-        // we click save (clicking mid-transition raced the selection).
+        // onChange has committed the new value into React state. The change
+        // auto-saves (#472, debounced) — no Speichern button. The poll below
+        // waits for the persisted value.
         await expect(
             page.getByTestId("settings-default-book-type-item-comic_book"),
         ).toBeHidden();
-        await page.getByTestId("verhalten-settings-save").click();
 
         // The change round-trips to the backend. Generous timeout: the
         // PATCH writes the user-overlay config file and the GET reads it
@@ -124,7 +124,12 @@ test.describe("Configurable default book-type + content-type", () => {
 
         await page.goto("/articles");
         await page.getByTestId("article-list-new").click();
-        await expect(page).toHaveURL(/\/articles\/new$/);
+        // A non-registry-default content-type deep-links the type so the
+        // create page pre-selects it (ArticleList `newArticleHref`; see the
+        // "primary deep-links the configured non-default content type"
+        // unit test). Only the registry default (blogpost) gets bare
+        // /articles/new.
+        await expect(page).toHaveURL(/\/articles\/new\?type=tutorial$/);
         await expect(
             page.getByTestId("create-article-title-tutorial"),
         ).toBeVisible();

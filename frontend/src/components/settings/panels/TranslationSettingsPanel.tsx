@@ -1,13 +1,14 @@
 import {useState} from "react";
-import {Save, Eye, EyeOff} from "lucide-react";
+import {Save} from "lucide-react";
 import {useI18n} from "../../../hooks/useI18n";
 import styles from "../../../pages/Settings.module.css";
-import {RadixSelect} from "../../RadixSelect";
+import {RadixSelect} from "../../shared/RadixSelect";
+import {TokenInput} from "../../../lib/components/TokenInput";
 
 /** Custom panel for the translation plugin. Mostly exists to render
- *  ``provider`` as a dropdown and ``deepl_api_key`` as a masked password
- *  field with a show/hide toggle, instead of leaking the key into a
- *  plain text input. The other four fields use the same typed inputs as
+ *  ``provider`` as a dropdown and ``deepl_api_key`` through the shared
+ *  ``TokenInput`` (masked secret field that does not trigger the browser
+ *  password manager). The other four fields use the same typed inputs as
  *  the generic panel.
  */
 export function TranslationSettingsPanel({settings, onSave}: {
@@ -17,7 +18,6 @@ export function TranslationSettingsPanel({settings, onSave}: {
     const {t} = useI18n();
     const [provider, setProvider] = useState<string>(String(settings.provider || "deepl"));
     const [apiKey, setApiKey] = useState<string>(String(settings.deepl_api_key || ""));
-    const [showKey, setShowKey] = useState(false);
     const [freeApi, setFreeApi] = useState<boolean>(
         settings.deepl_free_api === undefined ? true : Boolean(settings.deepl_free_api),
     );
@@ -60,25 +60,13 @@ export function TranslationSettingsPanel({settings, onSave}: {
                 </div>
                 <div className="field">
                     <label className="label">{t("ui.translation.deepl_api_key", "DeepL API-Schlüssel")}</label>
-                    <div style={{display: "flex", gap: 4}}>
-                        <input
-                            className="input"
-                            type={showKey ? "text" : "password"}
-                            value={apiKey}
-                            onChange={(e) => setApiKey(e.target.value)}
-                            placeholder={t("ui.translation.deepl_api_key_placeholder", "Optional, leer = LMStudio")}
-                            style={{flex: 1}}
-                            autoComplete="off"
-                        />
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={() => setShowKey(!showKey)}
-                            title={showKey ? t("ui.common.hide", "Verbergen") : t("ui.common.show", "Anzeigen")}
-                        >
-                            {showKey ? <EyeOff size={14}/> : <Eye size={14}/>}
-                        </button>
-                    </div>
+                    <TokenInput
+                        value={apiKey}
+                        onChange={setApiKey}
+                        placeholder={t("ui.translation.deepl_api_key_placeholder", "Optional, leer = LMStudio")}
+                        showLabel={t("ui.common.show", "Anzeigen")}
+                        hideLabel={t("ui.common.hide", "Verbergen")}
+                    />
                 </div>
                 <div className="field">
                     <label className="label icon-row">

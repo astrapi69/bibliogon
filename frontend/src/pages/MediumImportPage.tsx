@@ -35,7 +35,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ChevronLeft, Eye, Home, Minimize2, Upload, X } from "lucide-react";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeToggle from "../components/shared/ThemeToggle";
 import { useI18n } from "../hooks/useI18n";
 import { useStorageMode } from "../storage/useStorageMode";
 import {
@@ -47,7 +47,7 @@ import {
 import { getStorage } from "../storage";
 import { importParsed, parseMediumZip } from "../medium-import/clientImport";
 import type { ParsedPost } from "../medium-import/walker";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 import { useMediumImportJob } from "../contexts/MediumImportJobContext";
 import MediumImportSettings from "../components/medium-import/MediumImportSettings";
 import MediumImportUploadZone from "../components/medium-import/MediumImportUploadZone";

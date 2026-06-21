@@ -160,4 +160,101 @@ describe("ComicPanel", () => {
         expect(onUploadImage).toHaveBeenCalledTimes(1);
         expect(onUploadImage.mock.calls[0][0]).toBe(file);
     });
+
+    // #437: drag-and-drop image onto a panel.
+    function fileDrag(types: string[], files: File[]) {
+        return {dataTransfer: {types, files}};
+    }
+
+    it("fires onUploadImage when an image is dropped on an empty panel", () => {
+        const onUploadImage = vi.fn();
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={onUploadImage}
+            />,
+        );
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        const file = new File(["x"], "dropped.png", {type: "image/png"});
+        fireEvent.drop(zone, fileDrag(["Files"], [file]));
+        expect(onUploadImage).toHaveBeenCalledTimes(1);
+        expect(onUploadImage.mock.calls[0][0]).toBe(file);
+    });
+
+    it("fires onUploadImage when an image is dropped on a FILLED panel (replace)", () => {
+        const onUploadImage = vi.fn();
+        render(
+            <ComicPanel
+                panel={makePanel({image_asset_id: "a1"})}
+                bubbles={[]}
+                imageUrl="/api/assets/a1"
+                onUploadImage={onUploadImage}
+            />,
+        );
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        const file = new File(["y"], "replacement.jpg", {type: "image/jpeg"});
+        fireEvent.drop(zone, fileDrag(["Files"], [file]));
+        expect(onUploadImage).toHaveBeenCalledTimes(1);
+        expect(onUploadImage.mock.calls[0][0]).toBe(file);
+    });
+
+    it("ignores a dropped non-image file", () => {
+        const onUploadImage = vi.fn();
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={onUploadImage}
+            />,
+        );
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        const file = new File(["z"], "notes.txt", {type: "text/plain"});
+        fireEvent.drop(zone, fileDrag(["Files"], [file]));
+        expect(onUploadImage).not.toHaveBeenCalled();
+    });
+
+    it("takes only the first image when several files are dropped", () => {
+        const onUploadImage = vi.fn();
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={onUploadImage}
+            />,
+        );
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        const first = new File(["a"], "first.png", {type: "image/png"});
+        const second = new File(["b"], "second.png", {type: "image/png"});
+        fireEvent.drop(zone, fileDrag(["Files"], [first, second]));
+        expect(onUploadImage).toHaveBeenCalledTimes(1);
+        expect(onUploadImage.mock.calls[0][0]).toBe(first);
+    });
+
+    it("shows the drag-over overlay while a file is dragged onto the panel", () => {
+        render(
+            <ComicPanel
+                panel={makePanel()}
+                bubbles={[]}
+                onUploadImage={vi.fn()}
+            />,
+        );
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        expect(
+            screen.queryByTestId("comic-drop-zone-p1-overlay"),
+        ).toBeNull();
+        fireEvent.dragEnter(zone, fileDrag(["Files"], []));
+        expect(
+            screen.getByTestId("comic-drop-zone-p1-overlay"),
+        ).toBeInTheDocument();
+    });
+
+    it("does not react to drops on a read-only panel (no onUploadImage)", () => {
+        render(<ComicPanel panel={makePanel()} bubbles={[]} />);
+        const zone = screen.getByTestId("comic-drop-zone-p1");
+        fireEvent.dragEnter(zone, fileDrag(["Files"], []));
+        expect(
+            screen.queryByTestId("comic-drop-zone-p1-overlay"),
+        ).toBeNull();
+    });
 });

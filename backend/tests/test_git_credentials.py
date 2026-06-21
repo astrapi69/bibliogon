@@ -1,7 +1,7 @@
 """Tests for the per-book git credential helpers (PGS-02-FU-01).
 
 Pin the contract that ``git_backup`` and plugin-git-sync share via
-:mod:`app.services.git_credentials`:
+:mod:`app.services.git.credentials`:
 
 - one PAT per book, encrypted at rest
 - HTTPS URL injection produces ``x-access-token:<pat>@host``
@@ -16,7 +16,8 @@ from pathlib import Path
 
 import pytest
 
-from app.services import git_credentials, ssh_keys
+from app.services import ssh_keys
+from app.services.git import credentials as git_credentials
 
 
 @pytest.fixture(autouse=True)

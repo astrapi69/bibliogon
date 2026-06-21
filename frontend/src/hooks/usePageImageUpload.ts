@@ -1,9 +1,9 @@
 import React, {useRef, useState} from "react"
 import {type Page, type PageLayout, type PageUpdate} from "../api/client"
 import {getStorage} from "../storage"
-import {warnIfOfflineStorageNearlyFull} from "../utils/storageQuota"
-import {writeSecondaryImageAssetId} from "../utils/layoutConfig"
-import {useI18n} from "../hooks/useI18n"
+import {warnIfOfflineStorageNearlyFull} from "../utils/platform/storageQuota"
+import {writeSecondaryImageAssetId} from "../utils/editor/layoutConfig"
+import {useI18n} from "./useI18n"
 
 interface UsePageImageUploadArgs {
     page: Page
@@ -17,6 +17,10 @@ interface UsePageImageUploadResult {
     uploadError: string | null
     setUploadError: React.Dispatch<React.SetStateAction<string | null>>
     handleFileChange: (e: React.ChangeEvent<HTMLInputElement>) => Promise<void>
+    /** #437: drag-and-drop entry-point. Uploads + persists the primary
+     *  image directly from a File (no input event), sharing the exact
+     *  upload/persist path as handleFileChange. */
+    uploadPrimaryFile: (file: File) => Promise<void>
     secondaryFileInputRef: React.RefObject<HTMLInputElement | null>
     uploadingSecondary: boolean
     uploadSecondaryError: string | null
@@ -63,9 +67,7 @@ export function usePageImageUpload({
         string | null
     >(null)
 
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]
-        if (!file) return
+    const uploadPrimaryFile = async (file: File) => {
         setUploading(true)
         setUploadError(null)
         try {
@@ -81,6 +83,15 @@ export function usePageImageUpload({
             setUploadError(err instanceof Error ? err.message : String(err))
         } finally {
             setUploading(false)
+        }
+    }
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        try {
+            await uploadPrimaryFile(file)
+        } finally {
             if (fileInputRef.current) fileInputRef.current.value = ""
         }
     }
@@ -128,6 +139,7 @@ export function usePageImageUpload({
         uploadError,
         setUploadError,
         handleFileChange,
+        uploadPrimaryFile,
         secondaryFileInputRef,
         uploadingSecondary,
         uploadSecondaryError,

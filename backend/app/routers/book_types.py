@@ -12,7 +12,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter
 
-from app.services.book_type_registry import BookTypeDef, load_book_types
+from app.services.registries.book_type_registry import BookTypeDef, load_book_types
 
 router = APIRouter(prefix="/book-types", tags=["book-types"])
 

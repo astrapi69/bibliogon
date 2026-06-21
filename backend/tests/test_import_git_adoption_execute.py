@@ -15,7 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import git_backup
+from app.services.git import backup as git_backup
 
 
 @pytest.fixture(scope="module")
@@ -77,9 +77,7 @@ def _execute(client: TestClient, payload: dict) -> dict:
     return {"status_code": resp.status_code, **resp.json()}
 
 
-def test_git_adoption_absent_acts_as_start_fresh(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_git_adoption_absent_acts_as_start_fresh(client: TestClient, tmp_path: Path) -> None:
     zip_path = _wbt_zip_with_git(tmp_path)
     detected = _detect(client, zip_path)
     result = _execute(
@@ -96,9 +94,7 @@ def test_git_adoption_absent_acts_as_start_fresh(
     assert not (git_backup.repo_path(book_id) / ".git").is_dir()
 
 
-def test_git_adoption_start_fresh_explicit_is_noop(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_git_adoption_start_fresh_explicit_is_noop(client: TestClient, tmp_path: Path) -> None:
     zip_path = _wbt_zip_with_git(tmp_path)
     detected = _detect(client, zip_path)
     result = _execute(
@@ -115,12 +111,8 @@ def test_git_adoption_start_fresh_explicit_is_noop(
     assert not (git_backup.repo_path(book_id) / ".git").is_dir()
 
 
-def test_git_adoption_adopt_without_remote_copies_git(
-    client: TestClient, tmp_path: Path
-) -> None:
-    zip_path = _wbt_zip_with_git(
-        tmp_path, remote="https://github.com/foo/bar.git"
-    )
+def test_git_adoption_adopt_without_remote_copies_git(client: TestClient, tmp_path: Path) -> None:
+    zip_path = _wbt_zip_with_git(tmp_path, remote="https://github.com/foo/bar.git")
     detected = _detect(client, zip_path)
     result = _execute(
         client,
@@ -140,12 +132,8 @@ def test_git_adoption_adopt_without_remote_copies_git(
     assert "origin" not in [r.name for r in repo.remotes]
 
 
-def test_git_adoption_adopt_with_remote_sets_up_remote(
-    client: TestClient, tmp_path: Path
-) -> None:
-    zip_path = _wbt_zip_with_git(
-        tmp_path, remote="https://github.com/foo/bar.git"
-    )
+def test_git_adoption_adopt_with_remote_sets_up_remote(client: TestClient, tmp_path: Path) -> None:
+    zip_path = _wbt_zip_with_git(tmp_path, remote="https://github.com/foo/bar.git")
     detected = _detect(client, zip_path)
     result = _execute(
         client,
@@ -167,9 +155,7 @@ def test_git_adoption_adopt_with_remote_sets_up_remote(
     assert urls == ["https://github.com/foo/bar.git"]
 
 
-def test_git_adoption_without_source_git_returns_400(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_git_adoption_without_source_git_returns_400(client: TestClient, tmp_path: Path) -> None:
     """User sends adopt_* but source has no .git/; orchestrator
     returns 400 before reaching the handler."""
     # Build a ZIP WITHOUT .git/.
@@ -199,9 +185,7 @@ def test_git_adoption_without_source_git_returns_400(
     assert "git_repo.present" in result["detail"]
 
 
-def test_git_adoption_sanitization_strips_credentials(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_git_adoption_sanitization_strips_credentials(client: TestClient, tmp_path: Path) -> None:
     """Source repo with extraheader in .git/config -> adopted repo
     has it stripped."""
     src = tmp_path / "src"
@@ -215,8 +199,7 @@ def test_git_adoption_sanitization_strips_credentials(
     cfg = src / ".git" / "config"
     with cfg.open("a", encoding="utf-8") as f:
         f.write(
-            '\n[http "https://github.com/"]\n'
-            "\textraheader = AUTHORIZATION: Basic SECRETTOKEN\n"
+            '\n[http "https://github.com/"]\n\textraheader = AUTHORIZATION: Basic SECRETTOKEN\n'
         )
 
     buf = io.BytesIO()
@@ -244,9 +227,7 @@ def test_git_adoption_sanitization_strips_credentials(
     )
     assert result["status_code"] == 200
     book_id = result["book_id"]
-    adopted_cfg = (
-        git_backup.repo_path(book_id) / ".git" / "config"
-    ).read_text(encoding="utf-8")
+    adopted_cfg = (git_backup.repo_path(book_id) / ".git" / "config").read_text(encoding="utf-8")
     assert "SECRETTOKEN" not in adopted_cfg
     assert "extraheader" not in adopted_cfg.lower()
 
@@ -263,9 +244,7 @@ def test_git_adoption_sanitization_strips_credentials(
 
 
 def _create_book(client: TestClient, title: str = "Backfill Target") -> str:
-    resp = client.post(
-        "/api/books", json={"title": title, "author": "A"}
-    )
+    resp = client.post("/api/books", json={"title": title, "author": "A"})
     assert resp.status_code in (200, 201), resp.text
     return resp.json()["id"]
 
@@ -328,9 +307,7 @@ def test_backfill_adopts_git_at_root(client: TestClient, tmp_path: Path) -> None
     assert (git_backup.repo_path(book_id) / ".git" / "HEAD").is_file()
 
 
-def test_backfill_finds_git_one_level_deep(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_backfill_finds_git_one_level_deep(client: TestClient, tmp_path: Path) -> None:
     book_id = _create_book(client)
     payload = _zip_with_git_one_level_deep(tmp_path)
     resp = client.post(
@@ -340,9 +317,7 @@ def test_backfill_finds_git_one_level_deep(
     assert resp.status_code == 200, resp.text
 
 
-def test_backfill_returns_409_when_target_has_git(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_backfill_returns_409_when_target_has_git(client: TestClient, tmp_path: Path) -> None:
     book_id = _create_book(client)
     target = git_backup.repo_path(book_id)
     target.mkdir(parents=True, exist_ok=True)
@@ -380,13 +355,9 @@ def test_backfill_rejects_non_zip_upload(client: TestClient) -> None:
     assert resp.status_code == 400
 
 
-def test_backfill_preserve_remote_flag(
-    client: TestClient, tmp_path: Path
-) -> None:
+def test_backfill_preserve_remote_flag(client: TestClient, tmp_path: Path) -> None:
     book_id = _create_book(client)
-    payload = _zip_with_git_at_root(
-        tmp_path, remote="https://github.com/foo/bar.git"
-    )
+    payload = _zip_with_git_at_root(tmp_path, remote="https://github.com/foo/bar.git")
     resp = client.post(
         f"/api/books/{book_id}/git-import/adopt",
         files={"file": ("upload.zip", payload, "application/zip")},

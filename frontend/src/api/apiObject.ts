@@ -7,7 +7,7 @@ import { platformApi } from "./platform";
 /**
  * The single typed API client surface. Assembled by spreading the
  * domain-grouped namespace objects (Batch 2 god-file split). client.ts
- * re-exports this as `api` so every `import { api } from "../api/client"`
+ * re-exports this as `api` so every `import { api } from "./client"`
  * call site stays unchanged.
  */
 export const api = {

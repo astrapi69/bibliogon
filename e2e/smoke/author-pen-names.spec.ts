@@ -17,14 +17,18 @@ import {test, expect} from "../fixtures/base";
 test.describe.configure({mode: "serial"});
 
 /**
- * Wait until BOTH Autoren-tab seam writes have committed. The flow fires two
- * saves: blurring the real-name field auto-saves it, then the Add button
- * saves the pen name. Each "saved" toast renders only after its `updateApp`
- * resolves, so waiting for both toasts gates a reload/navigation that would
- * otherwise abort the in-flight IndexedDB write and lose the pen name.
+ * Wait until the Autoren-tab seam write has committed. The real-name blur and
+ * the pen-name Add both auto-save through the debounced seam (#472); the rapid
+ * succession coalesces into a single debounced write covering the final state
+ * (real name + pen name), so a single success toast can render rather than two.
+ * Waiting for that toast gates a reload/navigation that would otherwise abort
+ * the in-flight IndexedDB write and lose the pen name. The downstream reload
+ * assertion (pen-name-0 still present) is the real persistence check.
  */
 async function expectProfileSaved(page: Page): Promise<void> {
-    await expect(page.locator(".Toastify__toast--success")).toHaveCount(2);
+    await expect(
+        page.locator(".Toastify__toast--success").first(),
+    ).toBeVisible();
 }
 
 let apiHits: string[] = [];

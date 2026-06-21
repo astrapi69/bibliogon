@@ -9,7 +9,7 @@ import {
     GitMergeResult,
 } from "../api/client";
 import { useI18n } from "./useI18n";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 
 function describeError(err: unknown): string {
     if (err instanceof ApiError) return err.detail || err.message;

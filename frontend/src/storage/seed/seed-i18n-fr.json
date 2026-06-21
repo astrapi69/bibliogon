@@ -100,7 +100,8 @@
       "requires_network": "Cette fonctionnalité nécessite une connexion internet.",
       "requires_desktop_app": "Cette fonctionnalité nécessite l'application de bureau Bibliogon",
       "requires_ai_key": "Cette fonctionnalité nécessite une clé IA configurée (Paramètres > Assistant IA)",
-      "not_yet_available": "Cette fonctionnalité n'est pas encore disponible."
+      "not_yet_available": "Cette fonctionnalité n'est pas encore disponible.",
+      "provider_cors_blocked": "Ce fournisseur d'IA n'est pas accessible directement depuis le navigateur (CORS). Utilisez l'application de bureau Bibliogon ou passez à Gemini."
     },
     "not_found": {
       "title": "Page introuvable",
@@ -1164,6 +1165,7 @@
       "ai_provider": "Fournisseur AI",
       "ai_base_url": "URL de base",
       "ai_model": "Modele",
+      "ai_model_refresh": "Actualiser les modèles",
       "ai_model_lmstudio": "Fourni par le serveur",
       "ai_temperature": "Température",
       "ai_max_tokens": "Tokens max.",
@@ -1189,6 +1191,29 @@
       "ai_err_invalid": "Requete non valide",
       "ai_err_server": "Erreur du serveur du fournisseur",
       "ai_err_disabled": "Les fonctions AI sont desactivees. Activez-les dans Parametres > General > Assistant AI.",
+      "ai_test_browser_unsupported": "Un test de connexion peut ne pas être possible en mode navigateur pour ce fournisseur. La clé API est vérifiée lors du premier appel d'IA.",
+      "ai_configured_providers": "Fournisseurs d'IA configurés",
+      "ai_configured_providers_hint": "Aperçu des clés enregistrées. Le bouton radio sélectionne le fournisseur actif ; pour en modifier ou en ajouter un, configurez un fournisseur dans le formulaire ci-dessous.",
+      "ai_col_provider": "Fournisseur",
+      "ai_col_model": "Modèle",
+      "ai_col_key": "Clé",
+      "ai_col_status": "Statut",
+      "ai_col_actions": "Actions",
+      "ai_status_active": "Actif",
+      "ai_status_empty": "Vide",
+      "ai_status_desktop": "Bureau uniquement",
+      "ai_status_external": "Géré en externe",
+      "ai_col_active": "Actif",
+      "ai_set_active": "Définir comme fournisseur actif",
+      "ai_test_short": "Tester",
+      "ai_testing": "Test...",
+      "ai_test_ok_short": "Connexion ok",
+      "ai_test_network": "Erreur réseau",
+      "ai_test_desktop_only": "Testable uniquement dans l'app de bureau",
+      "ai_add_key": "Ajouter",
+      "ai_delete_key_title": "Supprimer la clé",
+      "ai_delete_key_confirm": "Supprimer la clé API enregistrée pour {provider} ?",
+      "ai_delete_key_done": "Clé supprimée",
       "editor_title": "Editeur",
       "editor_description": "Intervalles d'enregistrement automatique, conservation des brouillons et limite de contexte IA.",
       "editor_autosave": "Sauvegarde auto (ms)",
@@ -1229,7 +1254,16 @@
       "plugin_active_since": "Actif depuis",
       "plugin_settings_applied": "Paramètres appliqués",
       "plugin_source_zip": "via ZIP",
-      "read_only": "Configuration (lecture seule)"
+      "read_only": "Configuration (lecture seule)",
+      "updates_section": "Mises à jour",
+      "updates_description": "Vérification automatique des nouvelles versions.",
+      "auto_check": "Vérification automatique des mises à jour",
+      "auto_check_hint": "Recherche les nouvelles versions en arrière-plan.",
+      "check_interval": "Intervalle de vérification",
+      "interval_daily": "Quotidien",
+      "interval_weekly": "Hebdomadaire",
+      "interval_monthly": "Mensuel",
+      "interval_never": "Jamais"
     },
     "authors_database": {
       "title": "Base d'auteurs",
@@ -2014,7 +2048,11 @@
       "message": "Une nouvelle version de Bibliogon est disponible.",
       "button": "Mettre à jour maintenant",
       "updating": "Enregistrement de votre travail et mise à jour …",
-      "dismiss": "Fermer"
+      "dismiss": "Fermer",
+      "version_available": "Nouvelle version {version} disponible",
+      "whats_new": "Quoi de neuf ?",
+      "later": "Plus tard",
+      "notes_title": "Nouveautés de {version}"
     },
     "versions": {
       "menu_item": "Historique des versions",
@@ -3236,7 +3274,8 @@
             "italic": "Italique"
           }
         }
-      }
+      },
+      "drop_image": "Déposez l'image ici"
     },
     "chapter_status": {
       "label": "Statut",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "Grille standard (4 cases)",
         "grid_2x3": "Deux rangées (6 cases)",
         "grid_3x2": "Trois rangées (6 cases)"
-      }
+      },
+      "panel_drop_image": "Déposez l'image ici"
     },
     "lan_access": {
       "heading": "Accès LAN",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "Indisponible en mode développement.",
       "update_last_check": "Dernière vérification : {time}",
       "update_last_check_never": "Jamais vérifié.",
+      "update_up_to_date_desktop": "Vous avez la dernière version. ({version})",
+      "update_available_desktop": "Nouvelle version disponible : {version}",
+      "update_open_release": "Ouvrir la page de la version",
+      "update_copy_install": "Copier la commande d'installation",
+      "update_install_copied": "Commande d'installation copiée",
+      "update_install_copy_failed": "Échec de la copie",
+      "update_read_more": "En savoir plus",
       "license_label": "Licence",
       "credits_heading": "Crédits",
       "authors_label": "Auteurs",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "Assistance IA",
       "ai_assistance_value": "Claude (Anthropic) - architecture, code, contenu, documentation",
       "resources_heading": "Licence et ressources",
-      "docs_label": "Documentation"
+      "docs_label": "Documentation",
+      "next_check": "Prochaine vérification automatique : {time}",
+      "next_check_disabled": "Vérification automatique désactivée"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publier sur KDP",

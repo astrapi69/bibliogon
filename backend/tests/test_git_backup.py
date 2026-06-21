@@ -22,7 +22,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import git_backup, git_credentials
+from app.services.git import backup as git_backup
+from app.services.git import credentials as git_credentials
 
 client = TestClient(app)
 
@@ -112,9 +113,7 @@ def test_commit_captures_chapter_change():
     # Add a new chapter so the working tree diverges from HEAD.
     _add_chapter(book_id, "Ch B")
 
-    resp = client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": "Second pass"}
-    )
+    resp = client.post(f"/api/books/{book_id}/git/commit", json={"message": "Second pass"})
     assert resp.status_code == 200
     body = resp.json()
     assert body["message"] == "Second pass"
@@ -127,9 +126,7 @@ def test_commit_refuses_on_clean_tree():
     _add_chapter(book_id, "Ch A")
     client.post(f"/api/books/{book_id}/git/init")
 
-    resp = client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": "no-op"}
-    )
+    resp = client.post(f"/api/books/{book_id}/git/commit", json={"message": "no-op"})
     assert resp.status_code == 409
     assert resp.json()["detail"]["code"] == "nothing_to_commit"
 
@@ -139,9 +136,7 @@ def test_commit_uses_default_message_when_empty():
     _add_chapter(book_id, "Ch A")
     client.post(f"/api/books/{book_id}/git/init")
     _add_chapter(book_id, "Ch B")
-    body = client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": ""}
-    ).json()
+    body = client.post(f"/api/books/{book_id}/git/commit", json={"message": ""}).json()
     assert "Titled Book" in body["message"]
 
 
@@ -237,9 +232,7 @@ def test_chapter_file_contains_tiptap_json():
     )
     client.post(f"/api/books/{book_id}/git/init")
 
-    chapter_file = next(
-        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.json")
-    )
+    chapter_file = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.json"))
     payload = json.loads(chapter_file.read_text(encoding="utf-8"))
     assert payload["title"] == "Content Test"
     assert payload["content"]["type"] == "doc"
@@ -252,8 +245,7 @@ def test_metadata_yaml_has_book_fields():
     import yaml
 
     data = yaml.safe_load(
-        (git_backup.repo_path(book_id) / "config" / "metadata.yaml")
-        .read_text(encoding="utf-8")
+        (git_backup.repo_path(book_id) / "config" / "metadata.yaml").read_text(encoding="utf-8")
     )
     assert data["title"] == "Metadata Test"
     assert data["author"] == "Aster"
@@ -291,9 +283,7 @@ def test_removed_chapter_drops_from_repo_on_commit():
 
     client.delete(f"/api/books/{book_id}/chapters/{ch_id}")
 
-    resp = client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": "Drop removed"}
-    )
+    resp = client.post(f"/api/books/{book_id}/git/commit", json={"message": "Drop removed"})
     assert resp.status_code == 200
     remaining = list(chapters_dir.glob("*.json"))
     assert len(remaining) == 1
@@ -480,9 +470,7 @@ def test_sync_status_local_ahead_after_commit(tmp_path):
     client.post(f"/api/books/{book_id}/git/pull")
 
     _add_chapter(book_id, "Another Ch")
-    client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": "New local"}
-    )
+    client.post(f"/api/books/{book_id}/git/commit", json={"message": "New local"})
     body = client.get(f"/api/books/{book_id}/git/sync-status").json()
     assert body["state"] == "local_ahead"
     assert body["ahead"] == 1
@@ -732,15 +720,17 @@ def test_commit_writes_markdown_alongside_json():
     _add_chapter(
         book_id,
         "Intro",
-        content=json.dumps({
-            "type": "doc",
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "Hello world."}],
-                }
-            ],
-        }),
+        content=json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Hello world."}],
+                    }
+                ],
+            }
+        ),
     )
     client.post(f"/api/books/{book_id}/git/init")
 
@@ -758,21 +748,21 @@ def test_markdown_side_file_contains_title_header_and_body():
     _add_chapter(
         book_id,
         "My Chapter",
-        content=json.dumps({
-            "type": "doc",
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "First paragraph."}],
-                }
-            ],
-        }),
+        content=json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "First paragraph."}],
+                    }
+                ],
+            }
+        ),
     )
     client.post(f"/api/books/{book_id}/git/init")
 
-    md_path = next(
-        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
-    )
+    md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
     content = md_path.read_text(encoding="utf-8")
     assert content.startswith("# My Chapter")
     assert "First paragraph." in content
@@ -787,9 +777,7 @@ def test_markdown_regenerates_on_every_commit():
     )
     client.post(f"/api/books/{book_id}/git/init")
 
-    md_path = next(
-        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
-    )
+    md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
     # First pass: empty body.
     first = md_path.read_text(encoding="utf-8")
     assert first.startswith("# Evolving")
@@ -801,20 +789,20 @@ def test_markdown_regenerates_on_every_commit():
     _add_chapter(
         book_id,
         "Evolving",
-        content=json.dumps({
-            "type": "doc",
-            "content": [
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "Added text."}],
-                }
-            ],
-        }),
+        content=json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Added text."}],
+                    }
+                ],
+            }
+        ),
     )
 
-    client.post(
-        f"/api/books/{book_id}/git/commit", json={"message": "Second"}
-    )
+    client.post(f"/api/books/{book_id}/git/commit", json={"message": "Second"})
     second = md_path.read_text(encoding="utf-8")
     assert "Added text." in second
     assert second != first
@@ -825,26 +813,26 @@ def test_markdown_side_file_renders_heading_node():
     _add_chapter(
         book_id,
         "Heading Test",
-        content=json.dumps({
-            "type": "doc",
-            "content": [
-                {
-                    "type": "heading",
-                    "attrs": {"level": 2},
-                    "content": [{"type": "text", "text": "Subhead"}],
-                },
-                {
-                    "type": "paragraph",
-                    "content": [{"type": "text", "text": "Body."}],
-                },
-            ],
-        }),
+        content=json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "heading",
+                        "attrs": {"level": 2},
+                        "content": [{"type": "text", "text": "Subhead"}],
+                    },
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Body."}],
+                    },
+                ],
+            }
+        ),
     )
     client.post(f"/api/books/{book_id}/git/init")
 
-    md_path = next(
-        (git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md")
-    )
+    md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
     content = md_path.read_text(encoding="utf-8")
     assert "## Subhead" in content
     assert "Body." in content

@@ -135,11 +135,11 @@ vi.mock("../hooks/useAuthorProfile", () => ({
         profile ? [profile.name, ...profile.pen_names].filter(Boolean) : [],
 }));
 
-vi.mock("../hooks/useTopics", () => ({
+vi.mock("../hooks/content/useTopics", () => ({
     useTopics: () => ["tech", "writing"],
 }));
 
-vi.mock("../components/AppDialog", () => ({
+vi.mock("../components/shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: vi.fn(async () => true),
         prompt: vi.fn(),
@@ -148,7 +148,7 @@ vi.mock("../components/AppDialog", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         error: vi.fn(),
@@ -201,7 +201,7 @@ vi.mock("../api/client", async () => {
 
 // The Editor component is heavy (TipTap, plugin status, etc.).
 // Stub it so the header-level smoke stays focused.
-vi.mock("../components/Editor", () => ({
+vi.mock("../components/editor/Editor", () => ({
     default: () => <div data-testid="editor-stub" />,
     pluginsForContentKind: () => ({
         markdownMode: false,
@@ -223,22 +223,22 @@ vi.mock("../components/articles/PublicationsPanel", () => ({
 vi.mock("../components/articles/ArticleCommentsPanel", () => ({
     default: () => <div data-testid="comments-panel-stub" />,
 }));
-vi.mock("../components/AITemplatePanel", () => ({
+vi.mock("../components/shared/AITemplatePanel", () => ({
     default: () => <div data-testid="ai-template-stub" />,
 }));
-vi.mock("../components/ArticleImageUpload", () => ({
+vi.mock("../components/articles/ArticleImageUpload", () => ({
     default: () => <div data-testid="image-upload-stub" />,
 }));
-vi.mock("../components/KeywordInput", () => ({
+vi.mock("../components/book/KeywordInput", () => ({
     default: () => <div data-testid="keyword-input-stub" />,
 }));
-vi.mock("../components/AiGenerateButton", () => ({
+vi.mock("../components/shared/AiGenerateButton", () => ({
     default: () => <div data-testid="ai-generate-stub" />,
 }));
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => <div data-testid="theme-toggle-stub" />,
 }));
-vi.mock("../components/Tooltip", () => ({
+vi.mock("../lib/components/Tooltip", () => ({
     default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 

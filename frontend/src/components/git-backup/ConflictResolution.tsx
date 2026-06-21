@@ -1,5 +1,5 @@
 import { Check, Download, Upload, AlertTriangle } from "lucide-react";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import { useI18n } from "../../hooks/useI18n";
 
 export function ConflictResolution({

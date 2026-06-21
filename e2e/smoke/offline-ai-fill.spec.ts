@@ -56,7 +56,11 @@ test.beforeEach(async ({page}) => {
         seo_description: MOCK_SEO_DESCRIPTION,
     });
     await page.route("https://mock-llm.test/**", (route) => {
-        providerCalls += 1;
+        // Count only generation calls (POST). Since #451 the app also lists
+        // models from the provider (GET /models) once a key is set, so the
+        // mock is hit twice; the "exactly one LLM call" assertion below means
+        // exactly one generation, not the model-listing probe.
+        if (route.request().method() === "POST") providerCalls += 1;
         return route.fulfill({
             status: 200,
             contentType: "application/json",
@@ -91,9 +95,13 @@ test.describe("Offline AI fill (Dexie mode)", () => {
             timeout: 15_000,
         });
         await page.getByTestId("ai-base-url").fill(MOCK_LLM_BASE);
-        await page.getByTestId("ai-model").fill("mock-model");
+        // The model field is disabled until a key is present (#451: models
+        // load per-provider once a key exists), so fill the key BEFORE the
+        // model -- otherwise ai-model stays disabled and .fill() times out.
         await page.getByTestId("ai-api-key-input").fill("sk-mock-offline-key");
-        await page.getByTestId("ai-save").click();
+        await page.getByTestId("ai-model").fill("mock-model");
+        // Auto-save (#472): editing the fields arms the debounced save; no
+        // Speichern button. Wait for the saved toast before navigating.
         await expect(page.getByText(/Gespeichert|Saved/).first()).toBeVisible({
             timeout: 10_000,
         });

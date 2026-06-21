@@ -7,7 +7,7 @@ import { ApiError } from "./errors";
  * network egress (`guardedFetch`), the JSON `request()` helper, the API base
  * path, and small response helpers. Entity API modules import the value
  * helpers from here; `client.ts` re-exports `guardedFetch` for the existing
- * `import { guardedFetch } from "../api/client"` call sites.
+ * `import { guardedFetch } from "./client"` call sites.
  */
 
 /** Base path for every backend route. */
@@ -82,7 +82,7 @@ export async function request<T>(
   } catch (networkError) {
     // Record network-level failures (ECONNREFUSED etc.)
     try {
-      const { eventRecorder } = await import("../utils/eventRecorder");
+      const { eventRecorder } = await import("../utils/eventRecorder/eventRecorder");
       eventRecorder.add({
         type: "api_error",
         timestamp: startTime,
@@ -98,7 +98,7 @@ export async function request<T>(
   const durationMs = Math.round(performance.now() - startTime);
   // Record every API call (success and error)
   try {
-    const { eventRecorder } = await import("../utils/eventRecorder");
+    const { eventRecorder } = await import("../utils/eventRecorder/eventRecorder");
     eventRecorder.add({
       type: "api_call",
       timestamp: startTime,

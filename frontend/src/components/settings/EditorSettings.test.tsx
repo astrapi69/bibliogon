@@ -53,53 +53,81 @@ describe("EditorSettings — extracted Editor tab (SETT-QW-3)", () => {
         expect(screen.getByTestId("editor-ai-chars")).toHaveValue(2000);
     });
 
-    it("invokes onSave with the {editor + ui.picture_book + kdp} envelope on save click", () => {
-        const onSave = vi.fn();
-        render(<EditorSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.change(screen.getByTestId("editor-autosave"), {target: {value: "1500"}});
-        fireEvent.click(screen.getByTestId("editor-settings-save"));
-        expect(onSave).toHaveBeenCalledTimes(1);
-        expect(onSave).toHaveBeenCalledWith({
-            editor: {
-                autosave_debounce_ms: 1500,
-                draft_save_debounce_ms: 3000,
-                draft_max_age_days: 45,
-                ai_context_chars: 4000,
-            },
-            ui: {
-                picture_book: {
-                    pdf_default_format: "8.5x8.5",
-                    pdf_default_bleed_marks: false,
+    it("auto-saves the {editor + ui.picture_book + kdp} envelope after an input change (no save button)", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<EditorSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            expect(screen.queryByTestId("editor-settings-save")).toBeNull();
+            fireEvent.change(screen.getByTestId("editor-autosave"), {target: {value: "1500"}});
+            expect(onSave).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+            expect(onSave).toHaveBeenCalledWith({
+                editor: {
+                    autosave_debounce_ms: 1500,
+                    draft_save_debounce_ms: 3000,
+                    draft_max_age_days: 45,
+                    ai_context_chars: 4000,
                 },
-            },
-            kdp: {
-                default_marketplace: "US",
-            },
-        });
+                ui: {
+                    picture_book: {
+                        pdf_default_format: "8.5x8.5",
+                        pdf_default_bleed_marks: false,
+                    },
+                },
+                kdp: {
+                    default_marketplace: "US",
+                },
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("coalesces several rapid input changes into a single save", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<EditorSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            fireEvent.change(screen.getByTestId("editor-autosave"), {target: {value: "1500"}});
+            fireEvent.change(screen.getByTestId("editor-draft-save"), {target: {value: "3500"}});
+            fireEvent.change(screen.getByTestId("editor-ai-chars"), {target: {value: "5000"}});
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 
     it("seeds PDF defaults from config.ui.picture_book when present", () => {
-        const cfg = {
-            ...baseConfig,
-            ui: {
-                picture_book: {
-                    pdf_default_format: "8.5x11",
-                    pdf_default_bleed_marks: true,
-                },
-            },
-        };
-        const onSave = vi.fn();
-        render(<EditorSettings config={cfg} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("editor-settings-save"));
-        expect(onSave).toHaveBeenCalledWith(
-            expect.objectContaining({
-                ui: expect.objectContaining({
+        vi.useFakeTimers();
+        try {
+            const cfg = {
+                ...baseConfig,
+                ui: {
                     picture_book: {
                         pdf_default_format: "8.5x11",
                         pdf_default_bleed_marks: true,
                     },
+                },
+            };
+            const onSave = vi.fn();
+            render(<EditorSettings config={cfg} onSave={onSave} saving={false}/>);
+            fireEvent.change(screen.getByTestId("editor-autosave"), {target: {value: "1500"}});
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    ui: expect.objectContaining({
+                        picture_book: {
+                            pdf_default_format: "8.5x11",
+                            pdf_default_bleed_marks: true,
+                        },
+                    }),
                 }),
-            }),
-        );
+            );
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

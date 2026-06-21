@@ -1,4 +1,4 @@
-"""Tests for ``app.services.git_import_inspector``.
+"""Tests for ``app.services.git.import_inspector``.
 
 Each test builds a minimal on-disk .git-like directory (or a real
 GitPython-initialized repo) and asserts what
@@ -12,7 +12,7 @@ from pathlib import Path
 import git
 import pytest
 
-from app.services.git_import_inspector import (
+from app.services.git.import_inspector import (
     _looks_like_token_email,
     _scan_security,
     inspect_git_dir,
@@ -130,10 +130,7 @@ def test_security_scan_flags_http_extraheader(tmp_path: Path) -> None:
     root = _init_repo(tmp_path / "book")
     cfg = root / ".git" / "config"
     with cfg.open("a", encoding="utf-8") as f:
-        f.write(
-            '\n[http "https://github.com/"]\n'
-            "\textraheader = AUTHORIZATION: Basic dGVzdA==\n"
-        )
+        f.write('\n[http "https://github.com/"]\n\textraheader = AUTHORIZATION: Basic dGVzdA==\n')
     warnings = _scan_security(root / ".git")
     assert any("extraheader" in w.lower() for w in warnings)
 
@@ -161,9 +158,7 @@ def test_security_scan_flags_suspicious_packed_refs(tmp_path: Path) -> None:
     # Adjacent string literal + `*` binds the wrong way; use explicit
     # concatenation so "0" * 40 is NOT merged into the prefix.
     packed.write_text(
-        "# pack-refs with: peeled fully-peeled sorted\n"
-        + ("0" * 40)
-        + " refs/evil/backdoor\n",
+        "# pack-refs with: peeled fully-peeled sorted\n" + ("0" * 40) + " refs/evil/backdoor\n",
         encoding="utf-8",
     )
     warnings = _scan_security(root / ".git")

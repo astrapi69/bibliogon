@@ -74,8 +74,8 @@ def _validate_ui_defaults(ui: dict[str, Any]) -> None:
     if not isinstance(defaults, dict):
         return
 
-    from app.services.book_type_registry import book_type_ids
-    from app.services.content_type_registry import content_type_ids
+    from app.services.registries.book_type_registry import book_type_ids
+    from app.services.registries.content_type_registry import content_type_ids
 
     checks: tuple[tuple[str, Any], ...] = (
         ("book_type", book_type_ids),
@@ -147,6 +147,9 @@ class AppSettingsUpdate(BaseModel):
     # AR-02 Phase 2.1: settings-managed list of article topics. The
     # ArticleEditor topic dropdown reads from app.yaml topics: [...].
     topics: list[str] | None = None
+    # #477 Phase 2: auto-update-check preferences + state
+    # (auto_check, check_interval, last_check_at, dismissed_version).
+    updates: dict[str, Any] | None = None
 
 
 class AddPenNameRequest(BaseModel):
@@ -249,6 +252,8 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
             current.setdefault("app", {}).update(body.app)
         if body.behavior is not None:
             current.setdefault("behavior", {}).update(body.behavior)
+        if body.updates is not None:
+            current.setdefault("updates", {}).update(body.updates)
         if body.ui is not None:
             current.setdefault("ui", {}).update(body.ui)
         if body.author is not None:

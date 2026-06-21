@@ -1,9 +1,9 @@
 import {Search, ArrowUp, ArrowDown} from "lucide-react";
 import {ArticleStatus} from "../../api/client";
 import {useI18n} from "../../hooks/useI18n";
-import {useArticleFilters} from "../../hooks/useArticleFilters";
-import SearchClearButton from "../SearchClearButton";
-import {RadixSelect} from "../RadixSelect";
+import {useArticleFilters} from "../../hooks/article/useArticleFilters";
+import SearchClearButton from "../dashboard/SearchClearButton";
+import {RadixSelect} from "../shared/RadixSelect";
 import layout from "../../pages/ArticleList.module.css";
 
 export const STATUS_FILTERS: (ArticleStatus | "all")[] = [

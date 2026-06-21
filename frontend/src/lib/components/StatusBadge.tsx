@@ -13,8 +13,8 @@
  * ready = blue (info), published = green (success), archived = dimmed (muted).
  */
 
-import { Badge, type BadgeVariant } from "../../components/Badge";
-import { publicationStatusVariant } from "../../utils/publicationStatusBadge";
+import { Badge, type BadgeVariant } from "./Badge";
+import { publicationStatusVariant } from "../../utils/format/publicationStatusBadge";
 
 export interface StatusBadgeProps {
   /** Lifecycle status (draft / ready / published / archived; others → neutral). */

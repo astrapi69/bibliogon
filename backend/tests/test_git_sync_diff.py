@@ -24,8 +24,8 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.main import app
 from app.models import Asset, Book, Chapter, GitSyncMapping
-from app.services import git_sync_mapping
-from app.services.git_sync_diff import (
+from app.services.git import sync_mapping as git_sync_mapping
+from app.services.git.sync_diff import (
     ChapterIdentity,
     _classify,
     _normalize,
@@ -164,9 +164,7 @@ def _tiptap_paragraph(text: str) -> str:
     )
 
 
-def test_diff_classifies_every_case_end_to_end(
-    db: Session, book: Book, tmp_path: Path
-) -> None:
+def test_diff_classifies_every_case_end_to_end(db: Session, book: Book, tmp_path: Path) -> None:
     """Build a repo with 4 chapters at base, then mutate base + local +
     remote to land each of: unchanged, remote_changed, local_changed,
     both_changed (conflict). Run diff_book against the result and
@@ -192,7 +190,10 @@ def test_diff_classifies_every_case_end_to_end(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -204,25 +205,37 @@ def test_diff_classifies_every_case_end_to_end(
     # slug derived from the title matches the on-disk slug.
     db.add(
         Chapter(
-            book_id=book.id, title="Alpha", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Alpha",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("base alpha"),
         )
     )
     db.add(
         Chapter(
-            book_id=book.id, title="Bravo", chapter_type="chapter", position=1,
+            book_id=book.id,
+            title="Bravo",
+            chapter_type="chapter",
+            position=1,
             content=_tiptap_paragraph("base bravo"),
         )
     )
     db.add(
         Chapter(
-            book_id=book.id, title="Charlie", chapter_type="chapter", position=2,
+            book_id=book.id,
+            title="Charlie",
+            chapter_type="chapter",
+            position=2,
             content=_tiptap_paragraph("base charlie"),
         )
     )
     db.add(
         Chapter(
-            book_id=book.id, title="Delta", chapter_type="chapter", position=3,
+            book_id=book.id,
+            title="Delta",
+            chapter_type="chapter",
+            position=3,
             content=_tiptap_paragraph("base delta"),
         )
     )
@@ -267,9 +280,7 @@ def test_diff_endpoint_404_on_unmapped_book(book: Book) -> None:
     assert resp.status_code == 404
 
 
-def test_diff_endpoint_410_when_clone_missing(
-    db: Session, book: Book, tmp_path: Path
-) -> None:
+def test_diff_endpoint_410_when_clone_missing(db: Session, book: Book, tmp_path: Path) -> None:
     db.add(
         GitSyncMapping(
             book_id=book.id,
@@ -302,7 +313,10 @@ def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -312,7 +326,10 @@ def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("base body"),
         )
     )
@@ -325,10 +342,11 @@ def test_apply_resolutions_take_remote_updates_chapter_and_bumps_cursor(
     mapping.branch = persisted_repo.active_branch.name
     db.commit()
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "foo", "action": "take_remote"},
         ],
@@ -366,7 +384,10 @@ def test_apply_resolutions_keep_local_is_noop_but_still_bumps_cursor(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -376,17 +397,21 @@ def test_apply_resolutions_keep_local_is_noop_but_still_bumps_cursor(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("local edit"),
         )
     )
     db.commit()
     original = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one().content
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "foo", "action": "keep_local"},
         ],
@@ -413,7 +438,10 @@ def test_apply_resolutions_remote_added_creates_chapter(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -424,7 +452,10 @@ def test_apply_resolutions_remote_added_creates_chapter(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("foo"),
         )
     )
@@ -434,10 +465,11 @@ def test_apply_resolutions_remote_added_creates_chapter(
     _write_wbt_chapter(persisted, "chapters", "02-bar.md", "# Bar\n\nbar body\n")
     _commit_all(persisted_repo, "added bar")
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "bar", "action": "take_remote"},
         ],
@@ -463,7 +495,10 @@ def test_apply_resolutions_remote_removed_deletes_chapter(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -474,13 +509,19 @@ def test_apply_resolutions_remote_removed_deletes_chapter(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("foo"),
         )
     )
     db.add(
         Chapter(
-            book_id=book.id, title="Bar", chapter_type="chapter", position=1,
+            book_id=book.id,
+            title="Bar",
+            chapter_type="chapter",
+            position=1,
             content=_tiptap_paragraph("bar"),
         )
     )
@@ -490,10 +531,11 @@ def test_apply_resolutions_remote_removed_deletes_chapter(
     (persisted / "manuscript" / "chapters" / "02-bar.md").unlink()
     _commit_all(persisted_repo, "removed bar")
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "bar", "action": "take_remote"},
         ],
@@ -510,9 +552,7 @@ def test_resolve_endpoint_404_on_unmapped_book(book: Book) -> None:
     assert resp.status_code == 404
 
 
-def test_resolve_endpoint_validates_action_pattern(
-    db: Session, book: Book, tmp_path: Path
-) -> None:
+def test_resolve_endpoint_validates_action_pattern(db: Session, book: Book, tmp_path: Path) -> None:
     """Pydantic-level rejection: action must be keep_local, take_remote,
     or mark_conflict. PGS-03-FU-01 promoted mark_conflict from a
     follow-up to a real action; bogus values still 422."""
@@ -527,7 +567,10 @@ def test_resolve_endpoint_validates_action_pattern(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.commit()
 
@@ -542,9 +585,7 @@ def test_resolve_endpoint_validates_action_pattern(
     assert resp.status_code == 422
 
 
-def test_diff_endpoint_returns_payload_with_counts(
-    db: Session, book: Book, tmp_path: Path
-) -> None:
+def test_diff_endpoint_returns_payload_with_counts(db: Session, book: Book, tmp_path: Path) -> None:
     bare = tmp_path / "remote.git"
     git.Repo.init(bare, bare=True)
     work = tmp_path / "work"
@@ -557,13 +598,19 @@ def test_diff_endpoint_returns_payload_with_counts(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("body"),
         )
     )
@@ -585,7 +632,7 @@ def test_diff_endpoint_returns_payload_with_counts(
 
 
 def test_build_conflict_markdown_emits_git_style_block() -> None:
-    from app.services.git_sync_diff import build_conflict_markdown
+    from app.services.git.sync_diff import build_conflict_markdown
 
     out = build_conflict_markdown(
         local_body="local body line\nsecond local",
@@ -601,11 +648,9 @@ def test_build_conflict_markdown_emits_git_style_block() -> None:
 
 
 def test_build_conflict_markdown_strips_leading_trailing_newlines() -> None:
-    from app.services.git_sync_diff import build_conflict_markdown
+    from app.services.git.sync_diff import build_conflict_markdown
 
-    out = build_conflict_markdown(
-        local_body="\n\nlocal\n\n", remote_body="\nremote\n"
-    )
+    out = build_conflict_markdown(local_body="\n\nlocal\n\n", remote_body="\nremote\n")
     assert "<<<<<<< Bibliogon\nlocal\n=======\nremote\n>>>>>>> Repository\n" == out
 
 
@@ -627,7 +672,10 @@ def test_apply_resolutions_mark_conflict_writes_both_versions(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -636,7 +684,10 @@ def test_apply_resolutions_mark_conflict_writes_both_versions(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("local edit"),
         )
     )
@@ -649,10 +700,11 @@ def test_apply_resolutions_mark_conflict_writes_both_versions(
     mapping.branch = persisted_repo.active_branch.name
     db.commit()
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
         ],
@@ -696,7 +748,10 @@ def test_apply_resolutions_mark_conflict_skips_non_both_changed(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -706,17 +761,21 @@ def test_apply_resolutions_mark_conflict_skips_non_both_changed(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Foo", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Foo",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("base"),
         )
     )
     db.commit()
     original = db.query(Chapter).filter_by(book_id=book.id, title="Foo").one().content
 
-    from app.services.git_sync_diff import apply_resolutions
+    from app.services.git.sync_diff import apply_resolutions
 
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "foo", "action": "mark_conflict"},
         ],
@@ -745,7 +804,10 @@ def test_resolve_endpoint_accepts_mark_conflict_action(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.commit()
 
@@ -770,7 +832,7 @@ def test_resolve_endpoint_accepts_mark_conflict_action(
 def test_collapse_renames_pairs_remote_remove_with_remote_add() -> None:
     """remote_removed (X, body B) + remote_added (Y, body B) collapse
     into a single renamed_remote row. Body must match after H1 strip."""
-    from app.services.git_sync_diff import (
+    from app.services.git.sync_diff import (
         ChapterDiff,
         ChapterIdentity,
         _collapse_renames,
@@ -808,7 +870,7 @@ def test_collapse_renames_pairs_remote_remove_with_remote_add() -> None:
 
 def test_collapse_renames_pairs_local_remove_with_local_add() -> None:
     """local_removed + local_added with matching body -> renamed_local."""
-    from app.services.git_sync_diff import (
+    from app.services.git.sync_diff import (
         ChapterDiff,
         ChapterIdentity,
         _collapse_renames,
@@ -845,7 +907,7 @@ def test_collapse_renames_pairs_local_remove_with_local_add() -> None:
 
 def test_collapse_renames_does_not_pair_when_bodies_differ() -> None:
     """Non-matching body keeps both rows independent."""
-    from app.services.git_sync_diff import (
+    from app.services.git.sync_diff import (
         ChapterDiff,
         ChapterIdentity,
         _collapse_renames,
@@ -880,7 +942,7 @@ def test_collapse_renames_does_not_cross_pair_local_with_remote() -> None:
     """remote_removed must NOT pair with local_added (that's not a
     rename - it's a remote delete + a local create that happen to
     share body)."""
-    from app.services.git_sync_diff import (
+    from app.services.git.sync_diff import (
         ChapterDiff,
         ChapterIdentity,
         _collapse_renames,
@@ -928,7 +990,10 @@ def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -938,14 +1003,15 @@ def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
     # Local DB carries the chapter at the old name.
     db.add(
         Chapter(
-            book_id=book.id, title="Old Name", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Old Name",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("body text"),
         )
     )
     db.commit()
-    chapter_id = (
-        db.query(Chapter).filter_by(book_id=book.id, title="Old Name").one().id
-    )
+    chapter_id = db.query(Chapter).filter_by(book_id=book.id, title="Old Name").one().id
 
     # Remote renames: delete old file, add new file with same body.
     (persisted / "manuscript" / "chapters" / "01-old-name.md").unlink()
@@ -955,7 +1021,7 @@ def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
     db.commit()
 
     # Check the diff sees a rename, not remove + add.
-    from app.services.git_sync_diff import apply_resolutions, diff_book
+    from app.services.git.sync_diff import apply_resolutions, diff_book
 
     diffs = diff_book(db, book_id=book.id)
     classifications = {d.classification for d in diffs}
@@ -965,7 +1031,8 @@ def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
 
     # take_remote on the renamed row updates title; body untouched.
     counts = apply_resolutions(
-        db, book_id=book.id,
+        db,
+        book_id=book.id,
         resolutions=[
             {"section": "chapters", "slug": "new-name", "action": "take_remote"},
         ],
@@ -979,9 +1046,7 @@ def test_apply_resolutions_take_remote_on_renamed_remote_updates_title(
     assert "body text" in chapter.content
 
 
-def test_diff_endpoint_payload_carries_rename_from(
-    db: Session, book: Book, tmp_path: Path
-) -> None:
+def test_diff_endpoint_payload_carries_rename_from(db: Session, book: Book, tmp_path: Path) -> None:
     """HTTP smoke: rename_from surfaces in the diff response so the
     frontend can render 'renamed from X to Y' rows."""
     bare = tmp_path / "remote.git"
@@ -995,7 +1060,10 @@ def test_diff_endpoint_payload_carries_rename_from(
     uploads = tmp_path / "uploads"
     uploads.mkdir()
     git_sync_mapping.persist_clone_after_import(
-        db, staging_path=work, book_id=book.id, uploads_dir=uploads,
+        db,
+        staging_path=work,
+        book_id=book.id,
+        uploads_dir=uploads,
     )
     db.expire_all()
     mapping = db.get(GitSyncMapping, book.id)
@@ -1006,7 +1074,10 @@ def test_diff_endpoint_payload_carries_rename_from(
 
     db.add(
         Chapter(
-            book_id=book.id, title="Was", chapter_type="chapter", position=0,
+            book_id=book.id,
+            title="Was",
+            chapter_type="chapter",
+            position=0,
             content=_tiptap_paragraph("shared body"),
         )
     )
@@ -1020,9 +1091,7 @@ def test_diff_endpoint_payload_carries_rename_from(
     resp = client.post(f"/api/git-sync/{book.id}/diff")
     assert resp.status_code == 200, resp.text
     body = resp.json()
-    rename_rows = [
-        c for c in body["chapters"] if c["classification"] == "renamed_remote"
-    ]
+    rename_rows = [c for c in body["chapters"] if c["classification"] == "renamed_remote"]
     assert len(rename_rows) == 1
     row = rename_rows[0]
     assert row["slug"] == "now"

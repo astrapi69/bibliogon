@@ -12,7 +12,7 @@ vi.mock("../../storage/storageStats", () => ({
     formatBytes: (n: number) => `${n} B`,
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: { success: vi.fn(), error: vi.fn(), info: vi.fn() },
 }));
 

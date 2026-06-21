@@ -1,8 +1,8 @@
 import {useEffect, useRef, useState} from "react";
-import {Save, Plus, X, Database} from "lucide-react";
+import {Plus, X, Database} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
 import {getStorage} from "../../storage";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import styles from "../../pages/Settings.module.css";
 import {SectionHeader} from "./SectionHeader";
 
@@ -196,14 +196,6 @@ export function AuthorSettings({config, onSave, saving}: {
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                    <button
-                        className="btn btn-primary"
-                        disabled={saving}
-                        onClick={() => onSave({author: {name, pen_names: penNames}})}
-                        data-testid="author-save"
-                    >
-                        <Save size={14}/> {t("ui.common.save", "Speichern")}
-                    </button>
                     <button
                         className="btn btn-secondary"
                         disabled={saving || syncing || uniqueProfileNames.length === 0}

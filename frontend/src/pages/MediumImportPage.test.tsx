@@ -42,7 +42,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         warning: vi.fn(),

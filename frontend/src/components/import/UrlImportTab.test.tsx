@@ -12,7 +12,7 @@ vi.mock("../../hooks/useI18n", () => ({
 const navigate = vi.fn();
 vi.mock("react-router-dom", () => ({ useNavigate: () => navigate }));
 
-vi.mock("../../utils/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
+vi.mock("../../utils/platform/notify", () => ({ notify: { success: vi.fn(), error: vi.fn() } }));
 
 const useFeatureMock = vi.fn();
 vi.mock("@astrapi69/feature-strategy-react", () => ({

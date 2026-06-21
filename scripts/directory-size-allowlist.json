@@ -1,0 +1,44 @@
+{
+  "frontend/src/components/settings": {
+    "current": 67,
+    "target": 20,
+    "reason": "Settings panels god-folder; extraction planned (#466). The components/ root god-folder itself is resolved (Phase 3 #492 grouped all flat files into concern subfolders; shims removed in #494) and no longer tracked.",
+    "owner": "Aster",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/hooks": {
+    "current": 20,
+    "target": 20,
+    "reason": "Phase 1 (#481) + generic-hook regroup (#466) brought the flat hooks from ~70 to 12 source files (<= 15); the tracked count of 20 includes co-located tests. The residual flat hooks (git-sync, story-bible, useI18n, author/asset) are core/cross-cutting; target set to the current floor.",
+    "owner": "CC",
+    "deadline": "n/a"
+  },
+  "frontend/src/export": {
+    "current": 29,
+    "target": 15,
+    "reason": "Export god-folder; engine split planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.58.0"
+  },
+  "frontend/src/pages": {
+    "current": 35,
+    "target": 20,
+    "reason": "Pages god-folder; route-group split planned (#466)",
+    "owner": "Aster",
+    "deadline": "v0.59.0"
+  },
+  "backend/app/routers": {
+    "current": 39,
+    "target": 39,
+    "reason": "Convention-flat: every file is an APIRouter for one resource (#466 Task 3, audit-confirmed). Folder left as-is; FastAPI one-router-per-resource legitimises the flatness. File-level helper extraction (some bulk-AI routers) is a separate god-file track, not this folder split.",
+    "owner": "Aster",
+    "deadline": "n/a"
+  },
+  "backend/app/services": {
+    "current": 20,
+    "target": 15,
+    "reason": "Services god-folder; git/ (#465) + audiobook/ + registries/ (#466) sub-packages extracted. Remaining 20 are 2-file clusters (ai_bulk_fill_*/translation_*/plugin_*/reset_*, below extraction threshold) + single-concern singletons.",
+    "owner": "Aster",
+    "deadline": "v0.59.0"
+  }
+}

@@ -34,7 +34,7 @@ async function getAuthor(): Promise<{name?: string; pen_names?: string[]}> {
 
 // SETT-AUTHORS-TAB-CONSOLIDATION-01: the "author" + "authors_database"
 // tabs merged into a single "autoren" tab. Internal testids
-// (``author-settings`` / ``author-real-name`` / ``author-save`` /
+// (``author-settings`` / ``author-real-name`` /
 // ``author-pen-name-*``) are preserved verbatim because the
 // AuthorSettings component still mounts unchanged inside the
 // AutorenSettings wrapper. Only the deep-link query param changes.
@@ -66,7 +66,8 @@ test.describe("Settings - autoren tab (author profile)", () => {
             await realName.fill("E2E Author");
             await expect(realName).toHaveValue("E2E Author");
         }).toPass({timeout: 10_000});
-        await page.getByTestId("author-save").click();
+        // Auto-save (#472): the real name persists on blur; no Speichern button.
+        await realName.blur();
 
         // Backend sees the new name. Use a poll because the save is
         // async; success toast fires after a roundtrip.

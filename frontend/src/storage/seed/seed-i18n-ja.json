@@ -100,7 +100,8 @@
       "requires_network": "この機能にはインターネット接続が必要です。",
       "requires_desktop_app": "この機能には Bibliogon デスクトップアプリが必要です",
       "requires_ai_key": "この機能には設定済みの AI キーが必要です（設定 > AI アシスタント）",
-      "not_yet_available": "この機能はまだ利用できません。"
+      "not_yet_available": "この機能はまだ利用できません。",
+      "provider_cors_blocked": "この AI プロバイダーにはブラウザから直接アクセスできません（CORS）。Bibliogon デスクトップアプリを使うか、Gemini に切り替えてください。"
     },
     "not_found": {
       "title": "ページが見つかりません",
@@ -1163,6 +1164,7 @@
       "ai_provider": "AIプロバイダー",
       "ai_base_url": "ベース URL",
       "ai_model": "モデル",
+      "ai_model_refresh": "モデルを更新",
       "ai_model_lmstudio": "サーバーから提供",
       "ai_temperature": "Temperature",
       "ai_max_tokens": "最大トークン数",
@@ -1188,6 +1190,29 @@
       "ai_err_invalid": "無効なリクエスト",
       "ai_err_server": "プロバイダーのサーバーエラー",
       "ai_err_disabled": "AI機能は無効です。設定 > 一般 > AIアシスタントで有効にしてください。",
+      "ai_test_browser_unsupported": "このプロバイダーでは、ブラウザーモードで接続テストができない場合があります。APIキーは最初のAI呼び出し時に確認されます。",
+      "ai_configured_providers": "設定済みのAIプロバイダー",
+      "ai_configured_providers_hint": "保存済みキーの一覧です。ラジオボタンでアクティブなプロバイダーを選択します。変更または追加するには、下のフォームでプロバイダーを設定してください。",
+      "ai_col_provider": "プロバイダー",
+      "ai_col_model": "モデル",
+      "ai_col_key": "キー",
+      "ai_col_status": "状態",
+      "ai_col_actions": "操作",
+      "ai_status_active": "有効",
+      "ai_status_empty": "未設定",
+      "ai_status_desktop": "デスクトップのみ",
+      "ai_status_external": "外部管理",
+      "ai_col_active": "有効",
+      "ai_set_active": "アクティブなプロバイダーに設定",
+      "ai_test_short": "テスト",
+      "ai_testing": "テスト中...",
+      "ai_test_ok_short": "接続OK",
+      "ai_test_network": "ネットワークエラー",
+      "ai_test_desktop_only": "デスクトップアプリでのみテスト可能",
+      "ai_add_key": "追加",
+      "ai_delete_key_title": "キーを削除",
+      "ai_delete_key_confirm": "{provider} の保存済みAPIキーを削除しますか？",
+      "ai_delete_key_done": "キーを削除しました",
       "editor_title": "エディター",
       "editor_description": "自動保存間隔、下書き保持、AIコンテキスト制限。",
       "editor_autosave": "自動保存 (ms)",
@@ -1210,7 +1235,16 @@
       "export_engine_hint": "エクスポートが使用するエンジン。「自動」はオンラインで Pandoc（LaTeX PDF）、オフラインでブラウザエクスポートを使用します。「ブラウザ」は常にブラウザでエクスポートし、「バックエンド」は常に Pandoc を使用します（オンラインのみ）。",
       "export_engine_auto": "自動（推奨）",
       "export_engine_client": "ブラウザ（オフライン対応）",
-      "export_engine_backend": "バックエンド（Pandoc/LaTeX、オンラインのみ）"
+      "export_engine_backend": "バックエンド（Pandoc/LaTeX、オンラインのみ）",
+      "updates_section": "アップデート",
+      "updates_description": "新しいバージョンを自動的に確認します。",
+      "auto_check": "自動アップデート確認",
+      "auto_check_hint": "バックグラウンドで新しいバージョンを確認します。",
+      "check_interval": "確認間隔",
+      "interval_daily": "毎日",
+      "interval_weekly": "毎週",
+      "interval_monthly": "毎月",
+      "interval_never": "なし"
     },
     "authors_database": {
       "title": "著者データベース",
@@ -2014,7 +2048,11 @@
       "message": "Bibliogon の新しいバージョンが利用可能です。",
       "button": "今すぐ更新",
       "updating": "作業内容を保存して更新しています …",
-      "dismiss": "閉じる"
+      "dismiss": "閉じる",
+      "version_available": "新しいバージョン {version} が利用可能です",
+      "whats_new": "新着情報",
+      "later": "後で",
+      "notes_title": "{version} の新機能"
     },
     "versions": {
       "menu_item": "バージョン履歴",
@@ -3236,7 +3274,8 @@
             "italic": "斜体"
           }
         }
-      }
+      },
+      "drop_image": "画像をここにドロップ"
     },
     "chapter_status": {
       "label": "ステータス",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "標準グリッド（4 コマ）",
         "grid_2x3": "2 段組み（6 コマ）",
         "grid_3x2": "3 段組み（6 コマ）"
-      }
+      },
+      "panel_drop_image": "画像をここにドロップ"
     },
     "lan_access": {
       "heading": "LANアクセス",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "開発モードでは利用できません。",
       "update_last_check": "最終確認: {time}",
       "update_last_check_never": "未確認です。",
+      "update_up_to_date_desktop": "最新バージョンを使用しています。({version})",
+      "update_available_desktop": "新しいバージョンが利用可能です: {version}",
+      "update_open_release": "リリースページを開く",
+      "update_copy_install": "インストールコマンドをコピー",
+      "update_install_copied": "インストールコマンドをコピーしました",
+      "update_install_copy_failed": "コピーに失敗しました",
+      "update_read_more": "続きを読む",
       "license_label": "ライセンス",
       "credits_heading": "クレジット",
       "authors_label": "著者",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "AI アシスタンス",
       "ai_assistance_value": "Claude (Anthropic) - アーキテクチャ、コード、コンテンツ、ドキュメント",
       "resources_heading": "ライセンスとリソース",
-      "docs_label": "ドキュメント"
+      "docs_label": "ドキュメント",
+      "next_check": "次回の自動確認: {time}",
+      "next_check_disabled": "自動確認は無効です"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",

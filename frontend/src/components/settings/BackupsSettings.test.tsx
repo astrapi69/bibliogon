@@ -54,7 +54,7 @@ vi.mock("../../api/client", () => ({
 }));
 
 const mockConfirm = vi.fn();
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: (...args: unknown[]) => mockConfirm(...args),
         prompt: vi.fn(),
@@ -64,7 +64,7 @@ vi.mock("../AppDialog", () => ({
 }));
 
 const mockNotifyError = vi.fn();
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         error: (...args: unknown[]) => mockNotifyError(...args),
         success: vi.fn(),
@@ -75,7 +75,7 @@ vi.mock("../../utils/notify", () => ({
 
 // Stub the dialog so we don't pull in its Radix Portal +
 // fetch/XHR fixtures (covered by BackupCompareDialog.test.tsx).
-vi.mock("../BackupCompareDialog", () => ({
+vi.mock("./BackupCompareDialog", () => ({
     default: ({ open }: { open: boolean; onClose: () => void }) =>
         open ? <div data-testid="stub-backup-compare-dialog">stub-compare-dialog-open</div> : null,
 }));

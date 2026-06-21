@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {useLocation, useNavigate} from "react-router-dom";
 import {api} from "../api/client";
-import ThemeToggle from "../components/ThemeToggle";
+import ThemeToggle from "../components/shared/ThemeToggle";
 import {ChevronLeft, Keyboard, HelpCircle, Info, Home} from "lucide-react";
 import {useI18n} from "../hooks/useI18n";
 import * as Tabs from "@radix-ui/react-tabs";

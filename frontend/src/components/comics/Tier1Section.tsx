@@ -24,11 +24,11 @@
 
 import * as Collapsible from "@radix-ui/react-collapsible";
 
-import {COLLAPSIBLE_CONTENT_ANIMATION} from "../CollapsibleConfigSection";
-import {useCollapsibleState} from "../../hooks/useCollapsibleState";
-import {useDebouncedCallback} from "../../hooks/useDebouncedCallback";
+import {COLLAPSIBLE_CONTENT_ANIMATION} from "../shared/CollapsibleConfigSection";
+import {useCollapsibleState} from "../../hooks/ui/useCollapsibleState";
+import {useDebouncedCallback} from "../../hooks/ui/useDebouncedCallback";
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 
 import styles from "./tier-section.module.css";
 import {

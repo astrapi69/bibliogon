@@ -25,7 +25,7 @@ import {AlertCircle, Banknote} from "lucide-react"
 import {BookDetail} from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
-import {useBookTypes} from "../../hooks/useBookTypes"
+import {useBookTypes} from "../../hooks/book/useBookTypes"
 import type {PricingState, RegionCode} from "./machines/types"
 import {
     DEFAULT_EBOOK_FILE_SIZE_MB,

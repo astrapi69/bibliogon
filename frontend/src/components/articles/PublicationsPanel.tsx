@@ -24,12 +24,12 @@ import {
     PublicationStatus,
 } from "../../api/client";
 import { getStorage } from "../../storage";
-import { useDialog } from "../AppDialog";
+import { useDialog } from "../shared/AppDialog";
 import { useI18n } from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {Toggle} from "../settings/Toggle";
-import {Badge, type BadgeVariant} from "../Badge";
-import { notify } from "../../utils/notify";
+import {Badge, type BadgeVariant} from "../../lib/components/Badge";
+import { notify } from "../../utils/platform/notify";
 
 const STATUS_VARIANT: Record<PublicationStatus, BadgeVariant> = {
     planned: "muted",

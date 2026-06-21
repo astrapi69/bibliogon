@@ -100,7 +100,8 @@
       "requires_network": "This feature requires an internet connection.",
       "requires_desktop_app": "This feature requires the Bibliogon desktop app",
       "requires_ai_key": "This feature requires a configured AI key (Settings > AI Assistant)",
-      "not_yet_available": "This feature is not yet available."
+      "not_yet_available": "This feature is not yet available.",
+      "provider_cors_blocked": "This AI provider can't be reached directly from the browser (CORS). Use the Bibliogon desktop app, or switch to Gemini."
     },
     "not_found": {
       "title": "Page not found",
@@ -1163,6 +1164,7 @@
       "ai_provider": "AI Provider",
       "ai_base_url": "Base URL",
       "ai_model": "Model",
+      "ai_model_refresh": "Refresh models",
       "ai_model_lmstudio": "Provided by server",
       "ai_temperature": "Temperature",
       "ai_max_tokens": "Max Tokens",
@@ -1188,6 +1190,29 @@
       "ai_err_invalid": "Invalid request",
       "ai_err_server": "Provider server error",
       "ai_err_disabled": "AI features are disabled. Enable them at Settings > General > AI Assistant.",
+      "ai_test_browser_unsupported": "A connection test may not be possible in browser mode for this provider. The API key is verified on the first AI call.",
+      "ai_configured_providers": "Configured AI providers",
+      "ai_configured_providers_hint": "Overview of stored keys. The radio button selects the active provider; to change or add one, configure a provider in the form below.",
+      "ai_col_provider": "Provider",
+      "ai_col_model": "Model",
+      "ai_col_key": "Key",
+      "ai_col_status": "Status",
+      "ai_col_actions": "Actions",
+      "ai_status_active": "Active",
+      "ai_status_empty": "Empty",
+      "ai_status_desktop": "Desktop only",
+      "ai_status_external": "Externally managed",
+      "ai_col_active": "Active",
+      "ai_set_active": "Set as active provider",
+      "ai_test_short": "Test",
+      "ai_testing": "Testing...",
+      "ai_test_ok_short": "Connection ok",
+      "ai_test_network": "Network error",
+      "ai_test_desktop_only": "Testable in the desktop app only",
+      "ai_add_key": "Add",
+      "ai_delete_key_title": "Delete key",
+      "ai_delete_key_confirm": "Remove the stored API key for {provider}?",
+      "ai_delete_key_done": "Key removed",
       "editor_title": "Editor",
       "editor_description": "Autosave intervals, draft retention and AI context limit.",
       "editor_autosave": "Autosave (ms)",
@@ -1210,7 +1235,16 @@
       "export_engine_hint": "Which engine the export uses. \"Automatic\" uses Pandoc (LaTeX PDF) online and the browser export offline. \"Browser\" always exports in the browser; \"Backend\" always uses Pandoc (online only).",
       "export_engine_auto": "Automatic (recommended)",
       "export_engine_client": "Browser (offline-capable)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, online only)"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, online only)",
+      "updates_section": "Updates",
+      "updates_description": "Automatic check for new versions.",
+      "auto_check": "Automatic update check",
+      "auto_check_hint": "Checks for new versions in the background.",
+      "check_interval": "Check interval",
+      "interval_daily": "Daily",
+      "interval_weekly": "Weekly",
+      "interval_monthly": "Monthly",
+      "interval_never": "Never"
     },
     "authors_database": {
       "title": "Authors Database",
@@ -2014,7 +2048,11 @@
       "message": "A new version of Bibliogon is available.",
       "button": "Update now",
       "updating": "Saving your work and updating …",
-      "dismiss": "Dismiss"
+      "dismiss": "Dismiss",
+      "version_available": "New version {version} available",
+      "whats_new": "What's new?",
+      "later": "Later",
+      "notes_title": "What's new in {version}"
     },
     "versions": {
       "menu_item": "Version history",
@@ -3236,7 +3274,8 @@
             "italic": "Italic"
           }
         }
-      }
+      },
+      "drop_image": "Drop image here"
     },
     "chapter_status": {
       "label": "Status",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "Standard grid (4 panels)",
         "grid_2x3": "Two-tier (6 panels)",
         "grid_3x2": "Three-tier (6 panels)"
-      }
+      },
+      "panel_drop_image": "Drop image here"
     },
     "lan_access": {
       "heading": "LAN access",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "Not available in development mode.",
       "update_last_check": "Last check: {time}",
       "update_last_check_never": "Never checked.",
+      "update_up_to_date_desktop": "You have the latest version. ({version})",
+      "update_available_desktop": "New version available: {version}",
+      "update_open_release": "Open release page",
+      "update_copy_install": "Copy install command",
+      "update_install_copied": "Install command copied",
+      "update_install_copy_failed": "Copy failed",
+      "update_read_more": "Read more",
       "license_label": "License",
       "credits_heading": "Credits",
       "authors_label": "Authors",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "AI assistance",
       "ai_assistance_value": "Claude (Anthropic) - architecture, code, content, documentation",
       "resources_heading": "License & Resources",
-      "docs_label": "Documentation"
+      "docs_label": "Documentation",
+      "next_check": "Next automatic check: {time}",
+      "next_check_disabled": "Automatic check disabled"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publish to KDP",

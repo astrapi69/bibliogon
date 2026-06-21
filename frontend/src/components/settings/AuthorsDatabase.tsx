@@ -3,11 +3,11 @@ import {Plus, Edit2, Trash2, Save, X, Search, Download, Upload} from "lucide-rea
 import {type Author} from "../../api/client";
 import {getStorage} from "../../storage";
 import {useI18n} from "../../hooks/useI18n";
-import {useDialog} from "../AppDialog";
-import {notify} from "../../utils/notify";
+import {useDialog} from "../shared/AppDialog";
+import {notify} from "../../utils/platform/notify";
 import {downloadText} from "../../export/download";
 import styles from "../../pages/Settings.module.css";
-import SearchClearButton from "../SearchClearButton";
+import SearchClearButton from "../dashboard/SearchClearButton";
 import {SectionHeader} from "./SectionHeader";
 import {
     AuthorsImportError,

@@ -15,9 +15,9 @@ import {useNavigate} from "react-router-dom";
 
 import {ApiError, type ArticleComment} from "../../api/client";
 import {getStorage} from "../../storage";
-import {useDialog} from "../AppDialog";
+import {useDialog} from "../shared/AppDialog";
 import {useI18n} from "../../hooks/useI18n";
-import {notify} from "../../utils/notify";
+import {notify} from "../../utils/platform/notify";
 import {useCommentSelection} from "./useCommentSelection";
 
 const PAGE_SIZE = 100;

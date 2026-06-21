@@ -100,7 +100,8 @@
       "requires_network": "Αυτή η λειτουργία απαιτεί σύνδεση στο διαδίκτυο.",
       "requires_desktop_app": "Αυτή η λειτουργία απαιτεί την εφαρμογή Bibliogon για υπολογιστή",
       "requires_ai_key": "Αυτή η λειτουργία απαιτεί διαμορφωμένο κλειδί AI (Ρυθμίσεις > Βοηθός AI)",
-      "not_yet_available": "Αυτή η λειτουργία δεν είναι ακόμη διαθέσιμη."
+      "not_yet_available": "Αυτή η λειτουργία δεν είναι ακόμη διαθέσιμη.",
+      "provider_cors_blocked": "Αυτός ο πάροχος AI δεν είναι προσβάσιμος απευθείας από το πρόγραμμα περιήγησης (CORS). Χρησιμοποιήστε την εφαρμογή Bibliogon για υπολογιστή ή επιλέξτε το Gemini."
     },
     "not_found": {
       "title": "Η σελίδα δεν βρέθηκε",
@@ -1145,6 +1146,7 @@
       "ai_provider": "Πάροχος AI",
       "ai_base_url": "Base URL",
       "ai_model": "Μοντέλο",
+      "ai_model_refresh": "Ανανέωση μοντέλων",
       "ai_model_lmstudio": "Παρέχεται από τον διακομιστή",
       "ai_temperature": "Temperature",
       "ai_max_tokens": "Max Tokens",
@@ -1170,6 +1172,29 @@
       "ai_err_invalid": "Μη έγκυρο αίτημα",
       "ai_err_server": "Σφάλμα διακομιστή παρόχου",
       "ai_err_disabled": "Οι λειτουργίες AI είναι απενεργοποιημένες. Ενεργοποιήστε τις στις Ρυθμίσεις > Γενικά > Βοηθός AI.",
+      "ai_test_browser_unsupported": "Ο έλεγχος σύνδεσης ίσως να μην είναι δυνατός σε λειτουργία προγράμματος περιήγησης για αυτόν τον πάροχο. Το κλειδί API επαληθεύεται κατά την πρώτη κλήση AI.",
+      "ai_configured_providers": "Διαμορφωμένοι πάροχοι AI",
+      "ai_configured_providers_hint": "Επισκόπηση των αποθηκευμένων κλειδιών. Το κουμπί επιλογής ορίζει τον ενεργό πάροχο· για αλλαγή ή προσθήκη, ρύθμισε έναν πάροχο στην παρακάτω φόρμα.",
+      "ai_col_provider": "Πάροχος",
+      "ai_col_model": "Μοντέλο",
+      "ai_col_key": "Κλειδί",
+      "ai_col_status": "Κατάσταση",
+      "ai_col_actions": "Ενέργειες",
+      "ai_status_active": "Ενεργό",
+      "ai_status_empty": "Κενό",
+      "ai_status_desktop": "Μόνο για υπολογιστή",
+      "ai_status_external": "Εξωτερική διαχείριση",
+      "ai_col_active": "Ενεργός",
+      "ai_set_active": "Ορισμός ως ενεργού παρόχου",
+      "ai_test_short": "Δοκιμή",
+      "ai_testing": "Δοκιμή...",
+      "ai_test_ok_short": "Η σύνδεση είναι εντάξει",
+      "ai_test_network": "Σφάλμα δικτύου",
+      "ai_test_desktop_only": "Δοκιμή μόνο στην εφαρμογή υπολογιστή",
+      "ai_add_key": "Προσθήκη",
+      "ai_delete_key_title": "Διαγραφή κλειδιού",
+      "ai_delete_key_confirm": "Να αφαιρεθεί το αποθηκευμένο κλειδί API για {provider};",
+      "ai_delete_key_done": "Το κλειδί αφαιρέθηκε",
       "editor_title": "Επεξεργαστής",
       "editor_description": "Διαστήματα αυτόματης αποθήκευσης, διατήρηση προχείρων και όριο πλαισίου AI.",
       "editor_autosave": "Αυτόματη αποθήκευση (ms)",
@@ -1210,7 +1235,16 @@
       "plugin_active_since": "Ενεργό από",
       "plugin_settings_applied": "Οι ρυθμίσεις εφαρμόστηκαν",
       "plugin_source_zip": "μέσω ZIP",
-      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)"
+      "read_only": "Ρυθμίσεις (μόνο ανάγνωση)",
+      "updates_section": "Ενημερώσεις",
+      "updates_description": "Αυτόματος έλεγχος για νέες εκδόσεις.",
+      "auto_check": "Αυτόματος έλεγχος ενημερώσεων",
+      "auto_check_hint": "Ελέγχει για νέες εκδόσεις στο παρασκήνιο.",
+      "check_interval": "Διάστημα ελέγχου",
+      "interval_daily": "Καθημερινά",
+      "interval_weekly": "Εβδομαδιαία",
+      "interval_monthly": "Μηνιαία",
+      "interval_never": "Ποτέ"
     },
     "authors_database": {
       "title": "Βάση δεδομένων συγγραφέων",
@@ -2014,7 +2048,11 @@
       "message": "Μια νέα έκδοση του Bibliogon είναι διαθέσιμη.",
       "button": "Ενημέρωση τώρα",
       "updating": "Αποθήκευση της εργασίας σας και ενημέρωση …",
-      "dismiss": "Κλείσιμο"
+      "dismiss": "Κλείσιμο",
+      "version_available": "Νέα έκδοση {version} διαθέσιμη",
+      "whats_new": "Τι νέο υπάρχει;",
+      "later": "Αργότερα",
+      "notes_title": "Τι νέο υπάρχει στην {version}"
     },
     "versions": {
       "menu_item": "Ιστορικό εκδόσεων",
@@ -3236,7 +3274,8 @@
             "italic": "Πλάγια"
           }
         }
-      }
+      },
+      "drop_image": "Αφήστε την εικόνα εδώ"
     },
     "chapter_status": {
       "label": "Κατάσταση",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "Τυπικό πλέγμα (4 καρέ)",
         "grid_2x3": "Δύο επιπέδων (6 καρέ)",
         "grid_3x2": "Τριών επιπέδων (6 καρέ)"
-      }
+      },
+      "panel_drop_image": "Αφήστε την εικόνα εδώ"
     },
     "lan_access": {
       "heading": "Πρόσβαση LAN",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "Μη διαθέσιμο σε λειτουργία ανάπτυξης.",
       "update_last_check": "Τελευταίος έλεγχος: {time}",
       "update_last_check_never": "Δεν έχει γίνει ποτέ έλεγχος.",
+      "update_up_to_date_desktop": "Έχετε την πιο πρόσφατη έκδοση. ({version})",
+      "update_available_desktop": "Νέα έκδοση διαθέσιμη: {version}",
+      "update_open_release": "Άνοιγμα σελίδας έκδοσης",
+      "update_copy_install": "Αντιγραφή εντολής εγκατάστασης",
+      "update_install_copied": "Η εντολή εγκατάστασης αντιγράφηκε",
+      "update_install_copy_failed": "Η αντιγραφή απέτυχε",
+      "update_read_more": "Διαβάστε περισσότερα",
       "license_label": "Άδεια χρήσης",
       "credits_heading": "Συντελεστές",
       "authors_label": "Συγγραφείς",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "Βοήθεια ΤΝ",
       "ai_assistance_value": "Claude (Anthropic) - αρχιτεκτονική, κώδικας, περιεχόμενο, τεκμηρίωση",
       "resources_heading": "Άδεια χρήσης & Πόροι",
-      "docs_label": "Τεκμηρίωση"
+      "docs_label": "Τεκμηρίωση",
+      "next_check": "Επόμενος αυτόματος έλεγχος: {time}",
+      "next_check_disabled": "Ο αυτόματος έλεγχος είναι απενεργοποιημένος"
     },
     "kdp_publishing_wizard": {
       "open_button": "Δημοσίευση στο KDP",

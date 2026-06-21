@@ -87,7 +87,7 @@ class WbtImportHandler:
         if not any(a.purpose == "cover" for a in assets):
             warnings.append("No cover image detected under assets/covers/.")
 
-        from app.services.git_import_inspector import inspect_git_dir
+        from app.services.git.import_inspector import inspect_git_dir
 
         git_dir = project_root / ".git"
         git_repo = inspect_git_dir(git_dir) if git_dir.is_dir() else None
@@ -388,7 +388,7 @@ def _maybe_adopt_git(
     if not git_dir.is_dir():
         return
 
-    from app.services.git_import_adopter import adopt_git_dir
+    from app.services.git.import_adopter import adopt_git_dir
 
     preserve_remote = git_adoption == "adopt_with_remote"
     adopt_git_dir(

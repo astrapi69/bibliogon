@@ -100,7 +100,8 @@
       "requires_network": "Bu özellik bir internet bağlantısı gerektirir.",
       "requires_desktop_app": "Bu özellik Bibliogon masaüstü uygulamasını gerektirir",
       "requires_ai_key": "Bu özellik yapılandırılmış bir yapay zeka anahtarı gerektirir (Ayarlar > Yapay Zeka Asistanı)",
-      "not_yet_available": "Bu özellik henüz kullanılamıyor."
+      "not_yet_available": "Bu özellik henüz kullanılamıyor.",
+      "provider_cors_blocked": "Bu yapay zeka sağlayıcısına tarayıcıdan doğrudan erişilemez (CORS). Bibliogon masaüstü uygulamasını kullanın veya Gemini'ye geçin."
     },
     "not_found": {
       "title": "Sayfa bulunamadı",
@@ -1182,6 +1183,7 @@
       "ai_provider": "AI Saglayicisi",
       "ai_base_url": "Base URL",
       "ai_model": "Model",
+      "ai_model_refresh": "Modelleri yenile",
       "ai_model_lmstudio": "Sunucu tarafindan saglaniyor",
       "ai_temperature": "Sıcaklık",
       "ai_max_tokens": "Maks. Token",
@@ -1207,6 +1209,29 @@
       "ai_err_invalid": "Gecersiz istek",
       "ai_err_server": "Saglayici sunucu hatasi",
       "ai_err_disabled": "AI islevleri devre disi. Ayarlar > Genel > AI Asistani altindan etkinlestirin.",
+      "ai_test_browser_unsupported": "Bu sağlayıcı için tarayıcı modunda bağlantı testi mümkün olmayabilir. API anahtarı ilk yapay zekâ çağrısında doğrulanır.",
+      "ai_configured_providers": "Yapılandırılmış yapay zekâ sağlayıcıları",
+      "ai_configured_providers_hint": "Kayıtlı anahtarların özeti. Radyo düğmesi etkin sağlayıcıyı seçer; değiştirmek veya eklemek için aşağıdaki formda bir sağlayıcı yapılandır.",
+      "ai_col_provider": "Sağlayıcı",
+      "ai_col_model": "Model",
+      "ai_col_key": "Anahtar",
+      "ai_col_status": "Durum",
+      "ai_col_actions": "İşlemler",
+      "ai_status_active": "Etkin",
+      "ai_status_empty": "Boş",
+      "ai_status_desktop": "Yalnızca masaüstü",
+      "ai_status_external": "Harici olarak yönetiliyor",
+      "ai_col_active": "Etkin",
+      "ai_set_active": "Etkin sağlayıcı olarak ayarla",
+      "ai_test_short": "Sına",
+      "ai_testing": "Sınanıyor...",
+      "ai_test_ok_short": "Bağlantı tamam",
+      "ai_test_network": "Ağ hatası",
+      "ai_test_desktop_only": "Yalnızca masaüstü uygulamasında sınanabilir",
+      "ai_add_key": "Ekle",
+      "ai_delete_key_title": "Anahtarı sil",
+      "ai_delete_key_confirm": "{provider} için kayıtlı API anahtarı kaldırılsın mı?",
+      "ai_delete_key_done": "Anahtar kaldırıldı",
       "editor_title": "Duzenleyici",
       "editor_description": "Otomatik kayit araliklari, taslak saklama ve AI baglam siniri.",
       "editor_autosave": "Otomatik kaydetme (ms)",
@@ -1229,7 +1254,16 @@
       "export_engine_hint": "Dışa aktarmanın hangi motoru kullanacağı. \"Otomatik\" çevrimiçi Pandoc (LaTeX PDF), çevrimdışı tarayıcı dışa aktarmasını kullanır. \"Tarayıcı\" her zaman tarayıcıda dışa aktarır; \"Backend\" her zaman Pandoc kullanır (yalnızca çevrimiçi).",
       "export_engine_auto": "Otomatik (önerilen)",
       "export_engine_client": "Tarayıcı (çevrimdışı)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, yalnızca çevrimiçi)"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, yalnızca çevrimiçi)",
+      "updates_section": "Güncellemeler",
+      "updates_description": "Yeni sürümler için otomatik kontrol.",
+      "auto_check": "Otomatik güncelleme kontrolü",
+      "auto_check_hint": "Arka planda yeni sürümleri denetler.",
+      "check_interval": "Kontrol aralığı",
+      "interval_daily": "Günlük",
+      "interval_weekly": "Haftalık",
+      "interval_monthly": "Aylık",
+      "interval_never": "Asla"
     },
     "authors_database": {
       "title": "Yazarlar Veritabanı",
@@ -2014,7 +2048,11 @@
       "message": "Bibliogon'un yeni bir sürümü mevcut.",
       "button": "Şimdi güncelle",
       "updating": "Çalışmanız kaydediliyor ve güncelleniyor …",
-      "dismiss": "Kapat"
+      "dismiss": "Kapat",
+      "version_available": "Yeni sürüm {version} mevcut",
+      "whats_new": "Yenilikler neler?",
+      "later": "Daha sonra",
+      "notes_title": "{version} sürümündeki yenilikler"
     },
     "versions": {
       "menu_item": "Surum gecmisi",
@@ -3236,7 +3274,8 @@
             "italic": "İtalik"
           }
         }
-      }
+      },
+      "drop_image": "Görseli buraya bırakın"
     },
     "chapter_status": {
       "label": "Durum",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "Standart ızgara (4 panel)",
         "grid_2x3": "İki katmanlı (6 panel)",
         "grid_3x2": "Üç katmanlı (6 panel)"
-      }
+      },
+      "panel_drop_image": "Görseli buraya bırakın"
     },
     "lan_access": {
       "heading": "LAN erişimi",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "Geliştirme modunda kullanılamaz.",
       "update_last_check": "Son denetleme: {time}",
       "update_last_check_never": "Hiç denetlenmedi.",
+      "update_up_to_date_desktop": "En son surume sahipsiniz. ({version})",
+      "update_available_desktop": "Yeni surum mevcut: {version}",
+      "update_open_release": "Surum sayfasini ac",
+      "update_copy_install": "Kurulum komutunu kopyala",
+      "update_install_copied": "Kurulum komutu kopyalandi",
+      "update_install_copy_failed": "Kopyalama basarisiz",
+      "update_read_more": "Daha fazla oku",
       "license_label": "Lisans",
       "credits_heading": "Katkıda Bulunanlar",
       "authors_label": "Yazarlar",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "Yapay zeka desteği",
       "ai_assistance_value": "Claude (Anthropic) - mimari, kod, içerik, dokümantasyon",
       "resources_heading": "Lisans ve Kaynaklar",
-      "docs_label": "Dokümantasyon"
+      "docs_label": "Dokümantasyon",
+      "next_check": "Sonraki otomatik kontrol: {time}",
+      "next_check_disabled": "Otomatik kontrol devre dışı"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP'de yayımla",

@@ -54,7 +54,7 @@ import { api } from "../../api/client";
 import { useI18n } from "../../hooks/useI18n";
 import { useStorageMode } from "../../storage/useStorageMode";
 import { resetOfflineDatabase } from "../../storage/dexie-storage";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { downloadBlob } from "../../export/download";
 import { bgbBackupFilename, exportBgbBackup, type BgbProgress } from "../../export/bgbExport";
 import { BgbExportProgress } from "./BgbExportProgress";

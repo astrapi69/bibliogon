@@ -1,8 +1,8 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-17 (Session 9 reconciliation — the v0.52.0 → v0.54.0 shipped arc is recorded below; explorations cleanup (#372): 3 shipped explorations archived, dependency-strategy refreshed, children-book-plugin marked shipped; priorities re-tiered for v0.54.0+.)
-Latest release: v0.56.0 (2026-06-18) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
+Last updated: 2026-06-21 (post-v0.56.0 develop refresh — the God-Folder campaign (#466), browser-direct AI for all 6 providers, the desktop update-checker (#477/#479), Settings auto-save (#473), and client-side picture-book PDF (#497) are recorded as shipped; Current focus re-pointed at the v0.57.0 cut.)
+Latest release: v0.57.0 (2026-06-21) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
 trigger conditions, and effort estimates live in [docs/backlog.md](backlog.md).
@@ -132,6 +132,36 @@ Stability-hardening + import-parity + quality-infra arc. Completed:
   `dependency-strategy.md` refreshed (DEP-02 + DEP-09 done),
   `children-book-plugin.md` marked shipped.
 
+## Recently shipped — v0.55.0 → develop (toward v0.57.0)
+
+The v0.55.0 (Git/import-depth + quality-report) and v0.56.0
+(bulk-delete-fix + publish catch-up) releases shipped — see
+[docs/CHANGELOG.md](CHANGELOG.md). On `develop` since v0.56.0 (unreleased,
+toward v0.57.0):
+
+- **God-Folder campaign (#466) — DONE.** `frontend/src/{hooks,components,
+  utils,services}` are grouped into single-concern sub-packages, the flat
+  re-export shims are removed with importers rewritten, and a
+  **directory-size ratchet CI guard** (Phase 5) blocks regrowth; shared
+  primitives `Badge`/`EmptyState`/`Tooltip` promoted to `lib/components`.
+- **AI browser-direct for all 6 providers — DONE.** The wrong CORS gate is
+  removed (OpenAI + Mistral are browser-capable, #468/#450); per-provider
+  keys with an `active_provider` pointer (#460); a Settings provider
+  overview table with a per-row live **Test** (#459/#462); dynamic
+  per-provider model loading with preset fallback (#451); a current default
+  Anthropic model (#454); honest connection-test error classification
+  (#446/#456); token/key fields no longer trigger the password manager (#448).
+- **Desktop update-checker (#477 Phases 1+2 / #479) — DONE.** A
+  GitHub-Releases version check for SW-less desktop builds: startup
+  auto-check hook, update banner with notes + dismiss-per-version, interval
+  + dismissed-version logic, Settings **Updates** section.
+- **Settings auto-save on change (#473) — DONE.** Manual "Speichern" buttons
+  removed.
+- **Client-side picture-book PDF (#497) — DONE.** Offline/mobile export, no
+  Pandoc.
+- **Comics: set panel image via drag-and-drop (#439) — DONE.**
+- **plugin-parity offline module seam (#34) — DONE.**
+
 ## Planned
 
 - **AI offline — remaining surfaces** (follow-up to 1b). Three
@@ -175,13 +205,22 @@ Stability-hardening + import-parity + quality-infra arc. Completed:
 ## Current focus
 
 All Phase 2 themes and the Maximal-Offline arc (above) are complete
-or deliberately deferred. The v0.52.0 → v0.54.0 Session-9 arc shipped
-(recorded above). The prioritized snapshot for v0.54.0+:
+or deliberately deferred. The Session-9 arc (v0.52.0 → v0.54.0), the
+v0.55.0/v0.56.0 releases, and the post-v0.56.0 develop arc (God-Folder
+close-out, browser-direct AI, desktop update-checker, Settings auto-save,
+client-side picture-book PDF) all shipped (recorded above). The
+prioritized snapshot toward v0.57.0:
 
-- **Release readiness (P1):** run the BACKUP-AKZEPTANZTEST cycle +
-  the Aster real-browser E2E gate, then cut the next release.
+- **Release readiness (P1):** cut **v0.57.0** — write the CHANGELOG entry,
+  bump the version pins (`make sync-versions`), run the
+  BACKUP-AKZEPTANZTEST cycle + the Aster real-browser E2E gate, then tag.
+- **AI key-management follow-up (P2):** record the shipped per-provider
+  key store / overview / Test feature in the CHANGELOG; archive the two
+  shipped AI exploration docs.
 - **Event Recording tail (P2):** EVT-05 (category/appState axis) +
   EVT-06 (feature-strategy registration).
+- **Update-checker tail (P3):** desktop-only today; consider surfacing
+  the same check in the PWA About once a release stream exists for it.
 - **Process (P2):** the 6 multi-agent-gitflow decisions
   (`MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`).
 - **Trigger-gated (P3+):** mobile-sync Phase C/D

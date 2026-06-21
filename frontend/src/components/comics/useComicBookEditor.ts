@@ -21,10 +21,10 @@ import {
 } from "../../api/client";
 import { getStorage } from "../../storage";
 import { bookAssetFileUrl } from "../../storage/asset-url";
-import { useFullscreenToggle } from "../../hooks/useFullscreenToggle";
+import { useFullscreenToggle } from "../../hooks/ui/useFullscreenToggle";
 import { useI18n } from "../../hooks/useI18n";
-import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
-import { notify } from "../../utils/notify";
+import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
+import { notify } from "../../utils/platform/notify";
 
 import {
   COMIC_GRID_MAX_PANELS,
@@ -35,8 +35,8 @@ import {
 import { type MovePageEntry } from "./MovePanelToPageMenu";
 import type { ComicBubbleData } from "./ComicBubble";
 import type { ComicPanelData } from "./ComicPanel";
-import { useDialog } from "../AppDialog";
-import { useDualSidebarCollapse } from "../../hooks/useDualSidebarCollapse";
+import { useDialog } from "../shared/AppDialog";
+import { useDualSidebarCollapse } from "../../hooks/ui/useDualSidebarCollapse";
 
 export function useComicBookEditor(bookId: string) {
   const { t } = useI18n();

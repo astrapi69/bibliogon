@@ -5,6 +5,26 @@
 import {expect, type Page} from "@playwright/test";
 
 /**
+ * Suppress the one-time onboarding dialogs (donation + AI-setup wizard)
+ * whose Radix overlays auto-open on a fresh data dir and intercept
+ * subsequent clicks (#441). Mirrors the baseline-normalisation the shared
+ * `resetDatabase` fixture applies, for specs that bypass that fixture.
+ *
+ * Must be called BEFORE the first navigation in the test (registers an
+ * init script that runs on every page load in the context).
+ */
+export async function suppressOnboarding(page: Page): Promise<void> {
+    await page.addInitScript(() => {
+        try {
+            localStorage.setItem("bibliogon-donation-onboarding-seen", "true");
+            localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
+        } catch {
+            // localStorage unavailable (privacy mode); ignore.
+        }
+    });
+}
+
+/**
  * Robustly soft-delete an article via its grid-card kebab menu.
  *
  * Waits for the list to settle (networkidle), then retries the

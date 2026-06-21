@@ -10,7 +10,7 @@
 
 import type {CSSProperties} from "react";
 
-import {ContentTypeIcon} from "../../utils/contentTypeIcon";
+import {ContentTypeIcon} from "../../utils/icons/contentTypeIcon";
 import {useContentTypes, contentTypeLabelKey, contentTypeIcon} from "../../hooks/useContentTypes";
 import {useI18n} from "../../hooks/useI18n";
 

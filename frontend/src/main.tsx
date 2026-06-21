@@ -7,8 +7,8 @@ import App from "./App";
 // layered utilities -- keeps final say over any existing surface.
 import "./styles/tailwind.css";
 import "./styles/global.css";
-import { verifyBackendVersion } from "./utils/versionCheck";
-import { restoreSpaRedirect } from "./utils/spaRedirect";
+import { verifyBackendVersion } from "./utils/platform/versionCheck";
+import { restoreSpaRedirect } from "./utils/platform/spaRedirect";
 import { explicitStorageMode, ensureDexieStorageLoaded } from "./storage";
 import { initSwUpdateManager } from "./shared/utils/swUpdateManager";
 

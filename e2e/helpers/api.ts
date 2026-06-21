@@ -174,3 +174,68 @@ export async function deleteArticle(id: string): Promise<void> {
 export async function getArticles(): Promise<{id: string; title: string}[]> {
     return request("/articles");
 }
+
+/**
+ * Force both dashboards (and their trash views) into the given view mode.
+ *
+ * The grid view renders the `article-card-*` / `book-card-*` testids that
+ * card-oriented specs drive; `book-card-*` in particular is grid-only (list
+ * view renders `book-list-row-*` instead). Mirrors the grid baseline that
+ * the shared `resetSettings` fixture applies, for specs that bypass it.
+ */
+export async function setDashboardView(view: "grid" | "list" = "grid"): Promise<void> {
+    const app = await request<{ui?: Record<string, unknown>}>("/settings/app");
+    const ui = app.ui ?? {};
+    const dashboard = (ui.dashboard as Record<string, unknown> | undefined) ?? {};
+    await request("/settings/app", {
+        method: "PATCH",
+        body: JSON.stringify({
+            ui: {
+                ...ui,
+                dashboard: {
+                    ...dashboard,
+                    books_view: view,
+                    articles_view: view,
+                    books_trash_view: view,
+                    articles_trash_view: view,
+                },
+            },
+        }),
+    });
+}
+
+/**
+ * Bulk-create `count` articles for dashboard-state fixtures (pagination,
+ * select-all-N, scroll). Titles are zero-padded so sort order is stable.
+ * Created in small concurrent chunks - SQLite is single-writer, so the
+ * chunk size is kept low to avoid "database is locked" under contention.
+ */
+export async function createArticlesBulk(
+    count: number,
+    titlePrefix: string = "Audit Artikel",
+): Promise<void> {
+    const CHUNK = 10;
+    for (let start = 0; start < count; start += CHUNK) {
+        const batch: Promise<unknown>[] = [];
+        for (let i = start; i < Math.min(start + CHUNK, count); i++) {
+            const n = String(i + 1).padStart(3, "0");
+            batch.push(createArticle(`${titlePrefix} ${n}`));
+        }
+        await Promise.all(batch);
+    }
+}
+
+/**
+ * Create `count` prose books, each with one chapter so the editor's
+ * ProseMirror surface mounts when a book is opened.
+ */
+export async function seedBooksWithChapters(
+    count: number,
+    titlePrefix: string = "Audit Buch",
+): Promise<void> {
+    for (let i = 0; i < count; i++) {
+        const n = String(i + 1).padStart(2, "0");
+        const book = await createBook(`${titlePrefix} ${n}`, "Audit Autor");
+        await createChapter(book.id, "Kapitel 1", "Audit Inhalt.");
+    }
+}

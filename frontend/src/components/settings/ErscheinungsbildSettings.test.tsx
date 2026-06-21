@@ -49,21 +49,46 @@ describe("ErscheinungsbildSettings — extracted Appearance tab", () => {
         expect(subCard.querySelector('[data-testid="settings-articles-trash-view-trigger"]')).not.toBeNull();
     });
 
-    it("invokes onSave with the {ui: {theme, dashboard: {...}}} envelope on save click", () => {
-        const onSave = vi.fn();
-        render(<ErscheinungsbildSettings config={baseConfig} onSave={onSave} saving={false}/>);
-        fireEvent.click(screen.getByTestId("erscheinungsbild-settings-save"));
-        expect(onSave).toHaveBeenCalledTimes(1);
-        expect(onSave).toHaveBeenCalledWith({
-            ui: {
-                theme: "nord",
-                dashboard: {
-                    books_view: "list",
-                    articles_view: "grid",
-                    books_trash_view: "list",
-                    articles_trash_view: "grid",
+    it("auto-saves the {ui: {theme, dashboard}} envelope after a change (debounced) and renders no save button", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<ErscheinungsbildSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            expect(screen.queryByTestId("erscheinungsbild-settings-save")).toBeNull();
+            fireEvent.change(screen.getByTestId("settings-books-view-trigger"), {
+                target: {value: "grid"},
+            });
+            expect(onSave).not.toHaveBeenCalled();
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+            expect(onSave).toHaveBeenCalledWith({
+                ui: {
+                    theme: "nord",
+                    dashboard: {
+                        books_view: "grid",
+                        articles_view: "grid",
+                        books_trash_view: "list",
+                        articles_trash_view: "grid",
+                    },
                 },
-            },
-        });
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("coalesces several rapid changes into a single save", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(<ErscheinungsbildSettings config={baseConfig} onSave={onSave} saving={false}/>);
+            fireEvent.change(screen.getByTestId("settings-books-view-trigger"), {target: {value: "grid"}});
+            fireEvent.change(screen.getByTestId("settings-articles-view-trigger"), {target: {value: "list"}});
+            fireEvent.change(screen.getByTestId("settings-books-trash-view-trigger"), {target: {value: "grid"}});
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });

@@ -100,7 +100,8 @@
       "requires_network": "Esta función requiere una conexión a internet.",
       "requires_desktop_app": "Esta función requiere la aplicación de escritorio de Bibliogon",
       "requires_ai_key": "Esta función requiere una clave de IA configurada (Ajustes > Asistente de IA)",
-      "not_yet_available": "Esta función aún no está disponible."
+      "not_yet_available": "Esta función aún no está disponible.",
+      "provider_cors_blocked": "No se puede acceder a este proveedor de IA directamente desde el navegador (CORS). Usa la aplicación de escritorio de Bibliogon o cambia a Gemini."
     },
     "not_found": {
       "title": "Página no encontrada",
@@ -1164,6 +1165,7 @@
       "ai_provider": "Proveedor AI",
       "ai_base_url": "Base URL",
       "ai_model": "Modelo",
+      "ai_model_refresh": "Actualizar modelos",
       "ai_model_lmstudio": "Proporcionado por el servidor",
       "ai_temperature": "Temperatura",
       "ai_max_tokens": "Máx. de tokens",
@@ -1189,6 +1191,29 @@
       "ai_err_invalid": "Solicitud no valida",
       "ai_err_server": "Error del servidor del proveedor",
       "ai_err_disabled": "Las funciones AI estan desactivadas. Activalas en Ajustes > General > Asistente AI.",
+      "ai_test_browser_unsupported": "Es posible que la prueba de conexión no funcione en modo navegador para este proveedor. La clave de API se verifica en la primera llamada de IA.",
+      "ai_configured_providers": "Proveedores de IA configurados",
+      "ai_configured_providers_hint": "Resumen de las claves guardadas. El botón de opción selecciona el proveedor activo; para cambiar o añadir uno, configura un proveedor en el formulario de abajo.",
+      "ai_col_provider": "Proveedor",
+      "ai_col_model": "Modelo",
+      "ai_col_key": "Clave",
+      "ai_col_status": "Estado",
+      "ai_col_actions": "Acciones",
+      "ai_status_active": "Activo",
+      "ai_status_empty": "Vacío",
+      "ai_status_desktop": "Solo escritorio",
+      "ai_status_external": "Gestionado externamente",
+      "ai_col_active": "Activo",
+      "ai_set_active": "Establecer como proveedor activo",
+      "ai_test_short": "Probar",
+      "ai_testing": "Probando...",
+      "ai_test_ok_short": "Conexión correcta",
+      "ai_test_network": "Error de red",
+      "ai_test_desktop_only": "Solo se puede probar en la app de escritorio",
+      "ai_add_key": "Añadir",
+      "ai_delete_key_title": "Eliminar clave",
+      "ai_delete_key_confirm": "¿Eliminar la clave de API guardada para {provider}?",
+      "ai_delete_key_done": "Clave eliminada",
       "editor_title": "Editor",
       "editor_description": "Intervalos de autoguardado, retencion de borradores y limite de contexto IA.",
       "editor_autosave": "Autoguardado (ms)",
@@ -1229,7 +1254,16 @@
       "plugin_active_since": "Activo desde",
       "plugin_settings_applied": "Ajustes aplicados",
       "plugin_source_zip": "vía ZIP",
-      "read_only": "Configuracion (solo lectura)"
+      "read_only": "Configuracion (solo lectura)",
+      "updates_section": "Actualizaciones",
+      "updates_description": "Comprobación automática de nuevas versiones.",
+      "auto_check": "Comprobación automática de actualizaciones",
+      "auto_check_hint": "Busca nuevas versiones en segundo plano.",
+      "check_interval": "Intervalo de comprobación",
+      "interval_daily": "Diariamente",
+      "interval_weekly": "Semanalmente",
+      "interval_monthly": "Mensualmente",
+      "interval_never": "Nunca"
     },
     "authors_database": {
       "title": "Base de datos de autores",
@@ -2014,7 +2048,11 @@
       "message": "Hay una nueva versión de Bibliogon disponible.",
       "button": "Actualizar ahora",
       "updating": "Guardando tu trabajo y actualizando …",
-      "dismiss": "Cerrar"
+      "dismiss": "Cerrar",
+      "version_available": "Nueva versión {version} disponible",
+      "whats_new": "¿Qué hay de nuevo?",
+      "later": "Más tarde",
+      "notes_title": "Novedades en {version}"
     },
     "versions": {
       "menu_item": "Historial de versiones",
@@ -3236,7 +3274,8 @@
             "italic": "Cursiva"
           }
         }
-      }
+      },
+      "drop_image": "Suelta la imagen aquí"
     },
     "chapter_status": {
       "label": "Estado",
@@ -3490,7 +3529,8 @@
         "grid_2x2": "Cuadrícula estándar (4 viñetas)",
         "grid_2x3": "Dos filas (6 viñetas)",
         "grid_3x2": "Tres filas (6 viñetas)"
-      }
+      },
+      "panel_drop_image": "Suelta la imagen aquí"
     },
     "lan_access": {
       "heading": "Acceso LAN",
@@ -3528,6 +3568,13 @@
       "update_dev_mode": "No disponible en modo de desarrollo.",
       "update_last_check": "Última comprobación: {time}",
       "update_last_check_never": "Nunca se comprobó.",
+      "update_up_to_date_desktop": "Tienes la última versión. ({version})",
+      "update_available_desktop": "Nueva versión disponible: {version}",
+      "update_open_release": "Abrir página de la versión",
+      "update_copy_install": "Copiar comando de instalación",
+      "update_install_copied": "Comando de instalación copiado",
+      "update_install_copy_failed": "Error al copiar",
+      "update_read_more": "Leer más",
       "license_label": "Licencia",
       "credits_heading": "Créditos",
       "authors_label": "Autores",
@@ -3551,7 +3598,9 @@
       "ai_assistance_label": "Asistencia de IA",
       "ai_assistance_value": "Claude (Anthropic) - arquitectura, código, contenido, documentación",
       "resources_heading": "Licencia y recursos",
-      "docs_label": "Documentación"
+      "docs_label": "Documentación",
+      "next_check": "Próxima comprobación automática: {time}",
+      "next_check_disabled": "Comprobación automática desactivada"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publicar en KDP",

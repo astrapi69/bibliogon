@@ -1,6 +1,6 @@
 # Bibliogon Backlog
 
-Latest release: v0.56.0 (2026-06-18) — see [ROADMAP.md](ROADMAP.md) and [docs/CHANGELOG.md](CHANGELOG.md).
+Latest release: v0.57.0 (2026-06-21) — see [ROADMAP.md](ROADMAP.md) and [docs/CHANGELOG.md](CHANGELOG.md).
 
 Last updated: 2026-06-17 (Session-9 + explorations-cleanup reconciliation (#372). The v0.52.0 → v0.54.0 arc shipped (recorded in ROADMAP "Recently shipped — Session 9"): god-file burn-down to 0, serialized RMW, CI 3-tier + Test Impact Analysis, security-CI Phase 2, complexity baseline 15, quality-report extensions, selective + full `.bgb` client backup, PWA SW-update banner, 52-TC manual-testplan automation, import parity (GitHub/URL/HTML #352/#353), Settings Daten tab #338, structured EditorMenu #322, recent-docs strip #314, export preview #316, StatusBadge #318, Event Recording base EVT-01..04. Closed issues #340/#342/#346/#347/#349/#351/#352/#353/#355/#356/#358/#359/#360/#363/#366/#368. New filings this pass: EVT-05/06 (P2), QUALITY-REPORT-PDF-HARDCODED-HEX-01 (P3), EDITOR-CONTEXT-MENU-EXPAND-01 (P3, #370), SETTINGS-APP-REQUEST-CASCADE-01 (P3), MEDIUM-IMPORT-OFFLINE-PATH-VERIFY-01 (P3), EXPLORATION-FEATURES-TRIAGE-REFRESH-01 (P4), COMIC-FOUNDATION-RESIDUAL-POLISH-01 (P5). children-book-plugin "deferred"-framing removed (shipped as plugin-kinderbuch). Prettier 2-space/4-space mix tracked by the existing FRONTEND-LINT-FORMAT-SETUP-01 (P5).)
 Previous: 2026-06-01 (Scrivener Ergonomie-Cluster SHIPPED — all 4 P2 items (COMPOSITION-DISTRACTION-FREE-MODE-01, CHAPTER-STATUS-LABELS-01, WRITING-GOALS-PROGRESS-TRACKING-01, CHAPTER-OUTLINER-VIEW-01) implemented in order + archived to 2026-06.md; backend pytest 2485 / Vitest 2593 green. The full Scrivener P3 cluster SHIPPED 2026-06-01 (CHAPTER-SNAPSHOTS-01, DOCX-IMPORT-01 closed-by-discovery, WRITING-HISTORY-STATS-01) + a P0 ALEMBIC-UPGRADE-CHAIN-FIX (the `alembic upgrade head` chain was broken at a6e7f8a9b0c1; fixed + regression-gated), all archived to 2026-06.md. STORY-BIBLE-RELATIONSHIP-GRAPH-01 (P2) SHIPPED 2026-06-01 (interactive @xyflow/react graph: nodes/edges, create/delete, detail panel + nav, position persistence + PNG export; archived to 2026-06.md). The P4 (CHAPTER-COLLECTIONS-01, SCRIVENER-PROJECT-IMPORT-01, CHAPTER-SYNOPSIS-NOTES-01) Scrivener items remain open. Earlier 2026-06-01: v0.43.0 release cut — Story Bible integration depth: prose Storyboard, entity relationships + Arc-View lines, @-mention autocomplete, auto-detect. Closed 3 of the 4 P4 Story Bible follow-ups -> archived to 2026-06.md; re-scoped STORY-BIBLE-INTEGRATION-DOCS-01; filed COMPONENT-CONSISTENCY-TAIL-01.)
@@ -59,13 +59,7 @@ store.
 
 ## P1 - Architecture / Hygiene Debt
 
-- [ ] **RELEASE-READINESS-NEXT-CUT-01** (filed 2026-06-17) — the
-  `develop` branch carries the full v0.52.0 → v0.54.0+ post-release
-  arc; before the next tag, run the BACKUP-AKZEPTANZTEST cycle
-  (`e2e/smoke/backup-acceptance.spec.ts`, export → reset → import →
-  verify) AND the Aster real-browser Playwright smoke gate, then cut
-  per `release-workflow.md`. Not a feature — the release-gate
-  discipline standing between `develop` and the next release.
+(none)
 
 ---
 
@@ -1787,9 +1781,9 @@ Scrivener analysis items 8-10 (filed 2026-06-01 from
   registered, filed 2026-05-24 from COMIC-BOOK-EDITOR-
   METADATA-BUTTON-01 C4 close per Q6 adjudication):
   PageEditor's "Open book metadata" button
-  ([frontend/src/components/PageEditor.tsx:225-244](frontend/src/components/PageEditor.tsx#L225-L244))
+  ([frontend/src/components/picture-book/PageEditor.tsx:225-244](frontend/src/components/picture-book/PageEditor.tsx#L225-L244))
   and ComicBookEditor's "Buch-Metadaten öffnen" button
-  ([frontend/src/components/ComicBookEditor.tsx](frontend/src/components/ComicBookEditor.tsx))
+  ([frontend/src/components/comics/ComicBookEditor.tsx](frontend/src/components/comics/ComicBookEditor.tsx))
   shipped 2026-05-24 are 2 surfaces of the same shape
   (~19-line button, 1 prop: ``onClick``, FileText icon).
   RCU 2-site threshold fires; extraction deferred to P5

@@ -8,12 +8,12 @@ import {
   BookType,
 } from "../api/client";
 import { getStorage } from "../storage";
-import CreateBookForm from "../components/CreateBookForm";
-import { PageLayout } from "../components/PageLayout";
-import { pageableBookTypeIds, useBookTypes } from "../hooks/useBookTypes";
-import { useGoBack } from "../hooks/useGoBack";
+import CreateBookForm from "../components/book/CreateBookForm";
+import { PageLayout } from "../components/shared/PageLayout";
+import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
-import { notify } from "../utils/notify";
+import { notify } from "../utils/platform/notify";
 
 /** Book types the creation flow knows how to title. Anything else falls
  *  back to the configured default (ui.defaults.book_type) or prose. */

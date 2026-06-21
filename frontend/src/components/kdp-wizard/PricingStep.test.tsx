@@ -20,7 +20,7 @@ import {
 import PricingStep from "./PricingStep"
 import {BookDetail, type BookTypeDef} from "../../api/client"
 import type {PricingState} from "./machines/types"
-import {BookTypesProvider} from "../../hooks/useBookTypes"
+import {BookTypesProvider} from "../../hooks/book/useBookTypes"
 
 // BOOK-TYPES-SSOT-YAML-01 C7: PricingStep now reads
 // capabilities.ebook_export from the registry instead of the

@@ -5170,3 +5170,273 @@ shows ALL the expected params. Such a test fails on the pre-fix
 double-write (`expected '?chapter=a' to contain 'chapter=b'`) and passes
 after — a genuine pin. See `BookEditor.test.tsx` "chapter switch updates
 ?chapter= (regression)".
+
+## A format/behavior change must reach its E2E specs in the same change, or the gate silently rots
+
+Filed 2026-06-18 during the v0.56.0 release. Cutting v0.56.0 revealed the
+E2E smoke gate had been effectively red since ~v0.53.0 - and nobody noticed
+because the v0.52.0-v0.55.0 tags were cut but never *published*, so the red
+nightly gate never blocked a release that someone was actually watching.
+
+Root cause of the bulk of the red: a shipped behavior change whose E2E specs
+were never updated. The Settings full-backup + selective-export switched from
+imageless JSON to a `.bgb` ZIP carrying images (#341, ~v0.53.0), but three
+smoke specs (including the release-blocker BACKUP-AKZEPTANZTEST) still asserted
+`.json`. They had been failing every nightly for multiple release cycles.
+Same class as the #342 change (hide the Writing-Goal widget without sessions)
+breaking the writing-history back-button spec that navigated via that widget.
+
+This is the E2E-shaped sibling of the existing "End-to-end behavior tests are
+not 'kwarg passes through' tests" and "Half-wired feature lifecycle" rules:
+
+- When you change a user-observable output (download filename/format, a
+  conditional render gate, a testid, a route), grep `e2e/` for specs that
+  assert the OLD shape and update them in the SAME change. A `.json -> .bgb`
+  switch must update every spec that checks the download suffix; a
+  "hide widget unless sessions exist" gate must update every spec that
+  navigates via that widget.
+- A red nightly gate that "blocks nothing" is not harmless - it is technical
+  debt that compounds until a release actually needs the gate (here, v0.56.0),
+  at which point you pay all of it at once. Treat a red scheduled gate as a
+  real signal even when no release is imminent.
+
+### Diagnostic heuristic: rotating failure-set = flake; consistent = real
+
+When an E2E suite is red across several runs, compare the FAILING SET run to
+run, do not just count failures:
+
+- **Failures that recur in every run** (same specs each time) are
+  deterministic = real bugs / stale specs. Fix these. In v0.56.0 these were:
+  article-list-page testid (a DropZone refactor dropped the root testid,
+  cascading ~22 specs), export-500 (CI runner lacked Pandoc), the three
+  `.bgb` stale specs, authors-db below-fold, editor-overlay click-point,
+  writing-history widget-gate.
+- **Failures that rotate** (a different subset each run, each passing on
+  retry) are non-deterministic = flakes. Do NOT chase them per-run; file a
+  stabilization epic (here #436) and triage by flake-rate, not by whichever
+  run you happened to look at.
+
+Corollary: a count like "30 failing specs" is misleading. One root cause
+(a dropped root testid) cascaded into ~22; one env gap (no Pandoc) into 6.
+Always find the shared upstream cause before treating failures as N
+independent bugs - and read the page snapshot: in v0.56.0 the app rendered
+fine, only the testid was gone, which immediately ruled out an
+"app-won't-load" cascade.
+
+## Never `rm -rf` a path you did not create - especially shared `.claude/worktrees`
+
+Filed 2026-06-18. While diagnosing a (false-positive) cohesion failure I ran
+`rm -rf .claude/worktrees 2>/dev/null && echo "..."` "to test" - the `&&`
+construct executed the `rm`, deleting the working checkout of a PARALLEL
+session's git worktree (`docs/configuration-local-paths-419`).
+
+Recovered with no real loss: the worktree's branch + its one commit were on
+`origin` (and already merged to develop via its PR), and `.git/worktrees/`
+metadata survived (only the checkout dir was removed), so
+`git worktree prune` + `git worktree add <path> <branch>` rebuilt it. Only
+uncommitted changes in that worktree would have been unrecoverable.
+
+Rules this reinforces:
+
+- A destructive `rm`/`git clean`/`git reset --hard` must never be hidden
+  inside a diagnostic `&&`/`||` chain "just to test". If you would not run
+  the `rm` on its own line with intent, do not chain it.
+- `.claude/worktrees/` is SHARED multi-session state (the user runs parallel
+  sessions in isolated worktrees). Never delete, prune, or `rm` anything
+  under it without confirming which session owns it. The cohesion check
+  scanning into `.claude/worktrees/` was a tooling false-positive, not a
+  reason to delete the directory.
+- Pairs with the existing memory `[[feedback_parallel_session_shared_head]]`
+  and the "Plain git status before every commit" rule: parallel-session work
+  is live and must be treated as untouchable unless you created it.
+
+## E2E baseline-normalisation must be on the context, not the page (multi-tab)
+
+Filed 2026-06-18 (#441, the standout takeaway of the E2E flake-stabilisation
+session). The base fixture suppressed the auto-opening onboarding dialogs
+(donation, AI-setup wizard) via `page.addInitScript(...)` on the default
+`page`. A multi-tab spec (content-safety's 409-conflict two-tab race) opens
+its tabs with `const tab = await context.newPage()` — those pages do NOT
+inherit a script registered on the default `page`. In CI (fresh data dir →
+AI reported not-configured) the AI-setup wizard then auto-opened in the tabs
+and its Radix dialog overlay (`<div data-state="open" aria-hidden="true">`)
+intercepted every click in that tab, hard-failing all retries. It passed
+locally only because the local backend doesn't trigger the wizard — the
+classic "passes locally, fails in CI" trap.
+
+Rule: any E2E baseline-normalisation that must hold for EVERY page in a test
+(onboarding/notification suppression, feature flags, locale, seeded
+localStorage, route mocks) belongs on `context.addInitScript` /
+`context.route`, never on a single `page`. `context.addInitScript` is
+evaluated in every page the context creates, including `context.newPage()`
+tabs and popups; `page.addInitScript` covers only that one page. Put it in
+the shared fixture so multi-tab specs are covered by construction.
+
+Detection: grep specs for `context.newPage()` / `newContext()`; if any exist,
+the fixture's init scripts and `route` mocks must be context-scoped or those
+tabs run un-normalised.
+
+Diagnosis method that found it: the CI **trace screenshot** showed the open
+"KI-Assistent einrichten" modal covering the editor — per the existing
+"Playwright-visible != user-visible" rule, looking at the rendered frame beat
+guessing from the error text (which only named an anonymous
+`data-state=open aria-hidden` div).
+
+## "Provider X is CORS-blocked in the browser" must be proven with a live preflight, not assumed
+
+Filed 2026-06-19 (#468/#450). Bibliogon gated OpenAI + Mistral as
+not-browser-testable (a `BROWSER_TESTABLE_PROVIDERS` exclusion in
+`frontend/src/ai/llmClient.ts`, introduced with #450) on the reading that a
+403 from `api.openai.com` meant a CORS wall. It did not. A live `curl` with an
+`Origin` header showed `access-control-allow-origin: *` on
+`GET /v1/models` and a passing `OPTIONS` preflight on
+`POST /v1/chat/completions` — the 403 was a **key/account/region-specific
+provider response**, not a universal browser block. The sister project
+(adaptive-learner, a backendless GH-Pages PWA) tested OpenAI "Verbindung ok"
+in the browser the whole time. All 6 providers are reachable browser-direct;
+the exclusion was removed and the analysis recorded at
+`docs/explorations/openai-cors-browser-direct-analysis.md`.
+
+Rule: a "this API is CORS-blocked from the browser" claim is a **testable
+fact**, not a default. Before gating a provider/endpoint as desktop-only for
+CORS reasons, prove it with a real preflight:
+
+```bash
+# Does the response expose a readable CORS header?
+curl -sI -H "Origin: https://example.github.io" https://api.<provider>/v1/models \
+  | grep -i access-control-allow-origin
+# Does the actual write endpoint pass an OPTIONS preflight?
+curl -s -X OPTIONS -H "Origin: https://example.github.io" \
+  -H "Access-Control-Request-Method: POST" \
+  -H "Access-Control-Request-Headers: authorization,content-type" \
+  -D - -o /dev/null https://api.<provider>/v1/chat/completions | grep -i access-control
+```
+
+A 401/403 **with** an `access-control-allow-origin` header is an auth/account
+problem the browser CAN surface, not a CORS block. Classify the failure by the
+actual response, not by the status code alone. Pairs with "classify offline AI
+connection-test errors honestly" (#446/#456) below.
+
+## A pinned default model id rots when the provider retires it — derive or refresh it
+
+Filed 2026-06-19 (#454). The offline seed default (`seed-settings.json`, the AI
+config the backendless PWA loads) pinned `claude-sonnet-4-20250514` as the
+default Anthropic model. Anthropic **retired** that snapshot, so a fresh PWA
+user's first AI call failed against a 404/model-not-found before they had a
+chance to pick a model. Fixed by pinning a current model (`claude-sonnet-4-6`)
+and — separately (#451) — loading the model list **dynamically per provider**
+with the preset only as a fallback.
+
+Rule: a hardcoded model-id default is a perishable value, same class as the
+"pinned default model id" / version-pin rot. Treat it like any other external
+constant that an upstream can retire:
+
+- Prefer **dynamic discovery** (query the provider's models endpoint) with the
+  static preset as a fallback, not the source of truth.
+- When a static default is unavoidable (offline seed), the value MUST be a
+  **current, non-dated** alias (`claude-sonnet-4-6`), never a dated snapshot
+  (`...-20250514`) that the provider can sunset.
+- The default lives in `seed-settings.json` (committed, NOT gitignored like
+  `app.yaml`) — so a refresh is a seed edit + `make generate-seed-data`, and
+  the offline PWA picks it up. See the memory `[[ai-pwa-offline-architecture]]`.
+
+## One key column per provider — a single `api_key` field clobbers other providers on switch
+
+Filed 2026-06-19 (#460/#456). Bibliogon stored a single `api_key` for "whatever
+the active provider is". Switching the active provider in Settings overwrote the
+previous provider's key (the user re-typed an Anthropic key, switched to OpenAI,
+came back, and the Anthropic key was gone). A related symptom: the connection
+**Test** flow saved-before-testing and clobbered a known-good config when the
+test failed (#456). Fixed by storing **one key column per provider** plus an
+`active_provider` pointer (#460), surfacing all configured providers in a
+Settings overview table with a per-row live **Test** (#459/#462), and not
+persisting before a successful test.
+
+Rule: when a setting is "the X for the currently selected Y", and Y can change,
+store **one X per Y** with a pointer to the active Y — never a single shared X
+slot. A shared slot makes every Y-switch a silent data-loss event for the
+previous Y's value. The reference design is documented at
+`docs/explorations/ai-key-management-adaptive-learner-reference.md`. Pairs with
+"User-overlay merge semantics" (a per-key store is the structural fix for
+clobber, the same way the union-vs-replace decision is for lists).
+
+## God-Folder relocation: ship re-export shims first, remove them in a later batch, keep the CSS module beside the component
+
+Filed 2026-06-20 (#466, the God-Folder campaign close-out). Grouping a flat
+`frontend/src/{components,hooks,utils,services}` into single-concern
+sub-packages touches hundreds of import sites. Doing the move and the
+import-rewrite in one commit produces a giant, un-bisectable, conflict-magnet
+change (and races hard against parallel sessions). The campaign instead used a
+two-phase shape that stayed green at every step:
+
+1. **Relocate + shim:** move the file into its sub-package and leave a thin
+   flat **re-export shim** at the old path (`export * from "./book/BookCard"`).
+   Every existing importer keeps working; the diff is a move + one-line shim.
+2. **Remove shims + rewrite importers (later batch):** delete the shims and
+   rewrite the importers to the new path, in small batches (the campaign ran 7
+   batches for components). Each batch is independently green.
+
+Two concrete sub-rules that saved rework:
+
+- **Keep the CSS module beside its component.** When a component moves into a
+  sub-package, its co-located `*.module.css` moves WITH it (same folder). Do
+  not centralize CSS modules during a structural move — that turns a pure
+  relocation into a styling change and breaks the "each commit is one concern"
+  property. (The legacy `global.css` stays frozen and in place per the
+  Tailwind-first rule; only the per-component CSS module travels.)
+- **Ratchet the guard, don't whitelist.** A **directory-size ratchet CI guard**
+  (#466 Phase 5) records the post-split baseline and fails if a directory
+  regrows past it — so the campaign's win cannot silently erode. Same spirit as
+  the `.filesize-baseline` god-file ratchet.
+
+Pairs with "Atomic commits are bounded by 'green individually', not 'one
+thing'": the shim is exactly what keeps the intermediate state green so the
+move and the rewrite CAN be separate commits.
+
+## A behavior refactor that removes a UI affordance must update the E2E specs in the SAME change
+
+Filed 2026-06-20 (#473 + #451, repaired in `d6745ea4`). The Settings
+**auto-save-on-change** refactor (`afee7a50`, #473) removed the manual
+"Speichern" buttons; the per-provider dynamic-model work (#451) changed the AI
+settings shape. Four smoke specs still clicked a "Speichern" button (or asserted
+the old model/key order) and broke — the refactors merged without carrying their
+specs along, so the E2E gate was red on already-merged work.
+
+This is the same class as the existing v0.56.0 rule "A format/behavior change
+must reach its E2E specs in the same change, or the gate silently rots" — here
+the changed output is a **removed control** rather than a changed filename. When
+a refactor removes or renames an interactive affordance (a Save button, a tab, a
+testid, a field order), grep `e2e/` for specs that drive the OLD affordance and
+update them in the same change:
+
+```bash
+grep -rln "Speichern\|getByRole('button', { name: /save/i })" e2e/
+```
+
+A removed "Save" button means the spec must assert the **auto-save** behavior
+(change a field → reload → value persisted) instead of clicking a button that no
+longer exists. Pairs with "Coverage Illusion" — the auto-save behavior needs a
+real change-then-reload assertion, not just "the button is gone".
+
+## A pushed SHA can silently fail to trigger CI — re-trigger, don't wait
+
+Filed 2026-06-20 (`5ed87b42`, `5d7680f7`). On rare occasions GitHub Actions does
+not dispatch the configured workflows for a freshly pushed commit (a
+dispatch glitch on that SHA): no run appears, the PR sits with no checks, and
+there is nothing to "wait for". This looks like a slow queue but never resolves.
+
+Recognition + remedy:
+
+- **Recognition:** `gh pr checks <n>` reports no checks (not "pending"); `gh run
+  list --branch <branch> --limit 3` shows no run for the head SHA after a couple
+  of minutes, while other branches' pushes trigger normally.
+- **Remedy:** push a new SHA to re-trigger — an empty commit
+  (`git commit --allow-empty -m "chore: re-trigger CI (dispatch glitch on prior
+  SHA)"`) or a trivial amend-and-force on a feature branch. Do NOT keep waiting;
+  the prior SHA will never get a run.
+- **Do not** confuse this with the "piping a gate through `| tail` masks its exit
+  code" false-green — that one HAS a run that failed; this one has NO run at all.
+
+Pairs with "Operational gaps masquerade as wired infrastructure": a workflow
+that is correctly wired can still no-op on a given SHA; verify a run actually
+exists, don't assume the push implies a run.

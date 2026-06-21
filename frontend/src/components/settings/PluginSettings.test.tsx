@@ -14,7 +14,7 @@ vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({t: (_k: string, fallback: string) => fallback, lang: "en"}),
 }));
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         error: vi.fn(),
@@ -47,7 +47,7 @@ vi.mock("../../api/client", () => ({
 // useDialog needs a DialogProvider; mock it as a deterministic stub
 // instead of pulling the full provider into the test render tree.
 const confirmMock = vi.fn(async () => true);
-vi.mock("../AppDialog", () => ({
+vi.mock("../shared/AppDialog", () => ({
     useDialog: () => ({
         confirm: confirmMock,
         prompt: vi.fn(),

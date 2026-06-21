@@ -1,11 +1,11 @@
 import {useEffect, useRef, useState} from "react";
-import {Save, X} from "lucide-react";
+import {X} from "lucide-react";
 import {useI18n} from "../../hooks/useI18n";
-import {useBookTypes} from "../../hooks/useBookTypes";
+import {useBookTypes} from "../../hooks/book/useBookTypes";
 import {useContentTypes} from "../../hooks/useContentTypes";
 import {asExportEngine, type ExportEngine} from "../../export/engine";
 import styles from "../../pages/Settings.module.css";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 import {ComboboxSelect} from "../../lib/components/ComboboxSelect";
 import {
     buildBookLanguageOptions,
@@ -16,8 +16,9 @@ import {FEATURES} from "../../features/featureConfig";
 import {HelpText} from "./HelpText";
 import {SectionHeader} from "./SectionHeader";
 import {Toggle} from "./Toggle";
+import {useSettingsAutoSave} from "./useSettingsAutoSave";
 
-export function VerhaltenSettings({config, onSave, saving}: {
+export function VerhaltenSettings({config, onSave}: {
     config: Record<string, unknown>;
     onSave: (data: Record<string, unknown>) => void;
     saving: boolean;
@@ -29,6 +30,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
     const behavior = (config.behavior || {}) as Record<string, unknown>;
     const ui = (config.ui || {}) as Record<string, unknown>;
     const uiDefaults = (ui.defaults || {}) as Record<string, unknown>;
+    const updates = (config.updates || {}) as Record<string, unknown>;
 
     const [lang, setLang] = useState((app.default_language as string) || "de");
     const [trashEnabled, setTrashEnabled] = useState(Boolean(app.trash_auto_delete_enabled));
@@ -63,6 +65,11 @@ export function VerhaltenSettings({config, onSave, saving}: {
     // export pipeline already forces the client engine offline regardless of
     // the stored preference.
     const pandocExport = useFeature(FEATURES.PANDOC_EXPORT);
+    // #477 Phase 2: auto-update-check preferences.
+    const [autoCheck, setAutoCheck] = useState(updates.auto_check !== false);
+    const [checkInterval, setCheckInterval] = useState(
+        (updates.check_interval as string) || "daily",
+    );
 
     // The parent loads `config` asynchronously (getApp); this effect
     // re-hydrates the form once the real config arrives. A late arrival
@@ -74,6 +81,7 @@ export function VerhaltenSettings({config, onSave, saving}: {
         return (value) => {
             userEdited.current = true;
             setter(value);
+            triggerSave();
         };
     }
 
@@ -87,6 +95,9 @@ export function VerhaltenSettings({config, onSave, saving}: {
         const b = (config.behavior || {}) as Record<string, unknown>;
         setSkipNonDestructive(Boolean(b.skip_non_destructive_confirmations));
         setExportEngine(asExportEngine(b.export_engine));
+        const u = (config.updates || {}) as Record<string, unknown>;
+        setAutoCheck(u.auto_check !== false);
+        setCheckInterval((u.check_interval as string) || "daily");
         const uiBranch = (config.ui || {}) as Record<string, unknown>;
         const d = (uiBranch.defaults || {}) as Record<string, unknown>;
         setDefaultBookType((d.book_type as string) || "prose");
@@ -111,11 +122,13 @@ export function VerhaltenSettings({config, onSave, saving}: {
                 : [...prev, trimmed],
         );
         setNewLanguage("");
+        triggerSave();
     };
 
     const removeCustomLanguage = (value: string) => {
         userEdited.current = true;
         setCustomLanguages((prev) => prev.filter((c) => c !== value));
+        triggerSave();
     };
 
     const buildSaveData = () => ({
@@ -131,6 +144,14 @@ export function VerhaltenSettings({config, onSave, saving}: {
             skip_non_destructive_confirmations: skipNonDestructive,
             export_engine: exportEngine,
         },
+        // #477 Phase 2: preserve runtime state (last_check_at /
+        // dismissed_version) via the spread; only the two preferences
+        // are owned by this panel.
+        updates: {
+            ...updates,
+            auto_check: autoCheck,
+            check_interval: checkInterval,
+        },
         // Preserve other ui.* branches (picture_book, dashboard, ...)
         // via the spread; only the defaults branch is owned here. The
         // backend PATCH shallow-merges ui, so the full branch is sent.
@@ -145,6 +166,8 @@ export function VerhaltenSettings({config, onSave, saving}: {
             },
         },
     });
+
+    const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
 
     return (
         <div className={styles.section} data-testid="verhalten-settings">
@@ -171,6 +194,60 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         ]}
                     />
                 </div>
+                <div className="field" data-testid="settings-updates-section">
+                    <label className="label">
+                        {t("ui.settings.updates_section", "Updates")}
+                    </label>
+                    <Toggle
+                        label={t(
+                            "ui.settings.auto_check",
+                            "Automatische Update-Prüfung",
+                        )}
+                        checked={autoCheck}
+                        onChange={onEdit(setAutoCheck)}
+                        testId="settings-auto-check"
+                        description={t(
+                            "ui.settings.auto_check_hint",
+                            "Prüft im Hintergrund auf neue Versionen.",
+                        )}
+                    />
+                </div>
+                {autoCheck && (
+                    <div className="field">
+                        <label className="label">
+                            {t("ui.settings.check_interval", "Prüfintervall")}
+                        </label>
+                        <RadixSelect
+                            value={checkInterval}
+                            onValueChange={onEdit(setCheckInterval)}
+                            testId="settings-check-interval"
+                            options={[
+                                {
+                                    value: "daily",
+                                    label: t("ui.settings.interval_daily", "Täglich"),
+                                },
+                                {
+                                    value: "weekly",
+                                    label: t(
+                                        "ui.settings.interval_weekly",
+                                        "Wöchentlich",
+                                    ),
+                                },
+                                {
+                                    value: "monthly",
+                                    label: t(
+                                        "ui.settings.interval_monthly",
+                                        "Monatlich",
+                                    ),
+                                },
+                                {
+                                    value: "never",
+                                    label: t("ui.settings.interval_never", "Nie"),
+                                },
+                            ]}
+                        />
+                    </div>
+                )}
                 <div className="field">
                     <Toggle
                         label={t("ui.settings.trash_checkbox", "Gelöschte Bücher automatisch entfernen")}
@@ -385,16 +462,6 @@ export function VerhaltenSettings({config, onSave, saving}: {
                         </div>
                     </div>
                 </div>
-
-                <button
-                    className="btn btn-primary"
-                    disabled={saving}
-                    onClick={() => onSave(buildSaveData())}
-                    data-testid="verhalten-settings-save"
-                    style={{marginTop: 12}}
-                >
-                    <Save size={14}/> {t("ui.common.save", "Speichern")}
-                </button>
             </div>
         </div>
     );

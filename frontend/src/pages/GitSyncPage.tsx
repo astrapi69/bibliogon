@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { Upload, GitBranch, AlertTriangle, Check, Loader2, GitMerge } from "lucide-react";
-import GitSyncDiffDialog from "../components/GitSyncDiffDialog";
+import GitSyncDiffDialog from "../components/import/GitSyncDiffDialog";
 import {
     api,
     ApiError,
@@ -11,12 +11,13 @@ import {
 } from "../api/client";
 import { useI18n } from "../hooks/useI18n";
 import { Toggle } from "../components/settings/Toggle";
-import { notify } from "../utils/notify";
-import { PageLayout } from "../components/PageLayout";
+import { notify } from "../utils/platform/notify";
+import { PageLayout } from "../components/shared/PageLayout";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { FeatureNotice } from "../features/FeatureNotice";
-import { useGoBack } from "../hooks/useGoBack";
+import { TokenInput } from "../lib/components/TokenInput";
+import { useGoBack } from "../hooks/navigation/useGoBack";
 
 /**
  * PGS-02 commit-to-repo page (Dialog->Pages migration C8), per-book at
@@ -459,19 +460,16 @@ function CredentialsSection({
             </div>
             {open && (
                 <div style={{ marginTop: 8, display: "flex", gap: 6 }}>
-                    <input
-                        className="input"
-                        data-testid="git-sync-credential-input"
-                        type="password"
+                    <TokenInput
+                        testId="git-sync-credential-input"
                         value={pat}
-                        onChange={(e) => setPat(e.target.value)}
+                        onChange={setPat}
                         placeholder={t(
                             "ui.git_sync.credential_input_placeholder",
                             "Personal Access Token",
                         )}
-                        autoComplete="off"
-                        spellCheck={false}
-                        style={{ flex: 1, minWidth: 0 }}
+                        showLabel={t("ui.common.show", "Anzeigen")}
+                        hideLabel={t("ui.common.hide", "Ausblenden")}
                     />
                     <button
                         type="button"

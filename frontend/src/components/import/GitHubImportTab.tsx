@@ -16,10 +16,11 @@ import { useFeature } from "@astrapi69/feature-strategy-react";
 import { ArrowUp, FileText, Folder, FolderGit2, Loader2 } from "lucide-react";
 
 import { useI18n } from "../../hooks/useI18n";
-import { notify } from "../../utils/notify";
+import { notify } from "../../utils/platform/notify";
 import { FEATURES } from "../../features/featureConfig";
 import { FeatureNotice } from "../../features/FeatureNotice";
 import { getGitHubToken, setGitHubToken } from "../../import/githubToken";
+import { TokenInput } from "../../lib/components/TokenInput";
 import {
     GitHubNotFoundError,
     GitHubRateLimitError,
@@ -226,17 +227,17 @@ export default function GitHubImportTab({ onImported, onClose }: GitHubImportTab
                 </button>
                 {showToken && (
                     <div className="flex flex-col gap-1">
-                        <input
-                            data-testid="github-import-token"
-                            className="input min-h-[44px]"
-                            type="password"
-                            autoComplete="off"
+                        <TokenInput
+                            testId="github-import-token"
+                            className="min-h-[44px]"
                             placeholder={t(
                                 "ui.github_import.token_placeholder",
                                 "GitHub Personal Access Token (optional)",
                             )}
                             value={token}
-                            onChange={(e) => setToken(e.target.value)}
+                            onChange={setToken}
+                            showLabel={t("ui.common.show", "Anzeigen")}
+                            hideLabel={t("ui.common.hide", "Ausblenden")}
                         />
                         <p className="m-0 text-xs text-[var(--text-muted)]">
                             {t(

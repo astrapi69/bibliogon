@@ -19,8 +19,8 @@ import pytest
 from fastapi.testclient import TestClient
 
 from app.main import app
-from app.services import book_type_registry
-from app.services.book_type_registry import load_book_types
+from app.services.registries import book_type_registry
+from app.services.registries.book_type_registry import load_book_types
 
 
 @pytest.fixture(autouse=True)

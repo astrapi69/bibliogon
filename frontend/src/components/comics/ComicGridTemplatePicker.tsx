@@ -18,7 +18,7 @@
  */
 
 import {useI18n} from "../../hooks/useI18n";
-import {RadixSelect} from "../RadixSelect";
+import {RadixSelect} from "../shared/RadixSelect";
 
 import {
     COMIC_GRID_TEMPLATE_PICKER_OPTIONS,

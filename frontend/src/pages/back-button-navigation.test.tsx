@@ -54,17 +54,17 @@ vi.mock("react-router-dom", async () => {
 // Heavy children stubs (Settings, Help, GetStarted all pull large
 // component trees - we are only exercising the back-button so the
 // real ones don't need to run).
-vi.mock("../components/ThemeToggle", () => ({
+vi.mock("../components/shared/ThemeToggle", () => ({
     default: () => <div data-testid="theme-toggle-stub" />,
 }));
-vi.mock("../components/SupportSection", () => ({
+vi.mock("../components/settings/SupportSection", () => ({
     default: () => <div data-testid="support-stub" />,
     getDonationsConfig: () => ({
         enabled: false,
         levels: { discovery: false, support: false, advocacy: false },
     }),
 }));
-vi.mock("../components/CommentsAdminSection", () => ({
+vi.mock("../components/articles/CommentsAdminSection", () => ({
     default: () => <div data-testid="comments-stub" />,
 }));
 vi.mock("../components/settings/ErscheinungsbildSettings", () => ({
@@ -100,7 +100,7 @@ vi.mock("../hooks/useI18n", () => ({
     }),
 }));
 
-vi.mock("../utils/notify", () => ({
+vi.mock("../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         warning: vi.fn(),
@@ -146,7 +146,7 @@ vi.mock("../api/client", () => ({
 import Settings from "./Settings";
 import Help from "./Help";
 import GetStarted from "./GetStarted";
-import {BookTypesProvider} from "../hooks/useBookTypes";
+import {BookTypesProvider} from "../hooks/book/useBookTypes";
 import type {BookTypeDef} from "../api/client";
 
 // BOOK-TYPES-SSOT-YAML-01 C5: GetStarted now reads the BookType

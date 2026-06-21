@@ -58,7 +58,7 @@ ALLOWLIST = {
     # Storyboard mood-color preset palette (user-facing data values).
     # Extracted from Storyboard.tsx into the shared annotation-editor
     # module (STORY-BIBLE-STORYBOARD-INTEGRATION-01 C3).
-    "frontend/src/components/StoryboardAnnotations.tsx",
+    "frontend/src/components/story-bible/StoryboardAnnotations.tsx",
     # Comic-bubble convention defaults (white fill / black stroke /
     # beige narration) — kept theme-independent by design decision
     # (2026-05-30), mirrored 1:1 with the Python PDF walker.
@@ -67,17 +67,17 @@ ALLOWLIST = {
     # Story Bible per-entity-type accent colors (user-facing data
     # values; mid-tones chosen to read on both light + dark sidebars,
     # used only as decorative icon tints). STORY-BIBLE-PLUGIN-01 C7.
-    "frontend/src/components/storyBibleIcons.ts",
+    "frontend/src/components/story-bible/storyBibleIcons.ts",
     # Relationship-type legend colours (user-facing colour DATA shared
     # by the relationship editor + the Arc View relationship lines).
     # STORY-BIBLE C10.
-    "frontend/src/components/relationshipColors.ts",
+    "frontend/src/components/story-bible/relationshipColors.ts",
     # Chapter-label chip readable-text computation: black/white text
     # picked by relative luminance of the user-chosen label color. Pure
     # contrast math on DATA (the label hex), not theme styling.
     # CHAPTER-STATUS-LABELS-01. (Status-dot colors use theme tokens in
     # ChapterStatusLabel.module.css, not hardcoded hex.)
-    "frontend/src/components/ChapterStatusLabel.tsx",
+    "frontend/src/components/book/ChapterStatusLabel.tsx",
     # Client-side export engine output styling (v0.48.0). These hex
     # values style the STANDALONE exported HTML/PDF documents, which
     # are self-contained artifacts with no access to the app's
@@ -89,7 +89,7 @@ ALLOWLIST = {
     # document and cannot resolve ``var(--*)`` theme tokens, so the
     # report carries a fixed theme-independent hex palette (severity
     # tints + grey rules). Color DATA, baked into the exported PDF.
-    "frontend/src/components/qualityThresholds.ts",
+    "frontend/src/components/quality/qualityThresholds.ts",
     # AI story-extraction prompt text (#427). The single hex is an
     # EXAMPLE value inside a prompt instruction string ("mood_color: a
     # hex colour like \"#4ECDC4\" ..."), i.e. documentation/data shown

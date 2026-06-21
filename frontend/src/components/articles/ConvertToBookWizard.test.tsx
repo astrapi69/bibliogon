@@ -29,7 +29,7 @@ vi.mock("../../hooks/useI18n", () => ({
     }),
 }))
 
-vi.mock("../../utils/notify", () => ({
+vi.mock("../../utils/platform/notify", () => ({
     notify: {
         success: vi.fn(),
         warning: vi.fn(),
@@ -491,7 +491,7 @@ describe("ConvertToBookWizard submit", () => {
         // Navigation lives on the toast CTA, which the
         // successAction mock receives as its 3rd arg. Invoking the
         // captured action proves the CTA wiring is intact end-to-end.
-        const {notify} = await import("../../utils/notify")
+        const {notify} = await import("../../utils/platform/notify")
         mockFromArticles.mockResolvedValue({
             id: "new-book-id",
             title: "My New Book",
@@ -1076,7 +1076,7 @@ describe("ConvertToBookWizard Add-to-Authors-DB (Bug 8 Phase 2)", () => {
             title: "My New Book",
             chapters: [],
         })
-        const {notify} = await import("../../utils/notify")
+        const {notify} = await import("../../utils/platform/notify")
         render(
             <ConvertToBookWizard
                 open

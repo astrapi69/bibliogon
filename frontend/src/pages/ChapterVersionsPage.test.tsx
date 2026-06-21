@@ -18,8 +18,8 @@ import { FeatureTestProvider } from "../features/FeatureTestProvider";
 vi.mock("../hooks/useI18n", () => ({
     useI18n: () => ({ t: (_k: string, fallback: string) => fallback }),
 }));
-vi.mock("../hooks/useGoBack", () => ({ useGoBack: () => vi.fn() }));
-vi.mock("../components/PageLayout", () => ({
+vi.mock("../hooks/navigation/useGoBack", () => ({ useGoBack: () => vi.fn() }));
+vi.mock("../components/shared/PageLayout", () => ({
     PageLayout: ({
         children,
         testId,
@@ -28,7 +28,7 @@ vi.mock("../components/PageLayout", () => ({
         testId?: string;
     }) => <div data-testid={testId}>{children}</div>,
 }));
-vi.mock("../components/ChapterVersionsView", () => ({
+vi.mock("../components/book/ChapterVersionsView", () => ({
     default: () => <div data-testid="cv-view" />,
 }));
 

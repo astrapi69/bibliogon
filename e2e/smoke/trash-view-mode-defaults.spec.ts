@@ -55,15 +55,22 @@ async function pickViewMode(
 async function saveAppearance(
     page: import("@playwright/test").Page,
 ): Promise<void> {
-    const saved = page.waitForResponse(
-        (r) =>
-            r.url().includes("/settings/app") &&
-            r.request().method() === "PATCH" &&
-            r.ok(),
-        {timeout: 8000},
-    );
-    await page.getByTestId("erscheinungsbild-settings-save").click();
-    await saved;
+    // Auto-save (#472): a value CHANGE arms the debounced PATCH (there is no
+    // Speichern button). Await that PATCH landing -- but tolerate the no-op
+    // case: selecting the value that is already the current default (e.g. grid,
+    // the books_trash_view default) fires NO PATCH, so a hard wait would time
+    // out. By the time this resolves the value is persisted either way (the
+    // PATCH landed, or no change was needed); the downstream re-open assertion
+    // verifies the saved value.
+    await page
+        .waitForResponse(
+            (r) =>
+                r.url().includes("/settings/app") &&
+                r.request().method() === "PATCH" &&
+                r.ok(),
+            {timeout: 8000},
+        )
+        .catch(() => {});
 }
 
 /** Navigate to the dashboard and WAIT for its settings fetch to land,

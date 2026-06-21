@@ -7,7 +7,7 @@ import {
   BACK_MATTER_TYPES,
   STRUCTURE_TYPES,
 } from "../../lib/utils/chapterGroups";
-import Tooltip from "../Tooltip";
+import Tooltip from "../../lib/components/Tooltip";
 
 /**
  * Add-chapter dropdown for the chapter sidebar's "Inhalt" section header.

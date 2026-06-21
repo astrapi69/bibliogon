@@ -1,5 +1,5 @@
 import { useI18n } from "../../../hooks/useI18n";
-import { RadixSelect } from "../../RadixSelect";
+import { RadixSelect } from "../../shared/RadixSelect";
 import type {
     DetectedBookSummary,
     DetectedProject,

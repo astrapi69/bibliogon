@@ -34,7 +34,7 @@ import {
 } from "../../../api/client"
 import {getStorage} from "../../../storage"
 import {useI18n} from "../../../hooks/useI18n"
-import {notify} from "../../../utils/notify"
+import {notify} from "../../../utils/platform/notify"
 import {computeAuthorSuggestions} from "../../../utils/computeAuthorSuggestions"
 import {
     useAuthorProfile,

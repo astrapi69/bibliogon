@@ -23,7 +23,7 @@
  * mode, where they hold the full workspace).
  */
 
-import { eventRecorder, type RecordedEvent } from "../utils/eventRecorder";
+import { eventRecorder, type RecordedEvent } from "../utils/eventRecorder/eventRecorder";
 import { EVENT_LOG_KEY, offlineDb, type EventLogSnapshot } from "./dexie/schema";
 
 /** One headline category in the storage overview. `key` is both the

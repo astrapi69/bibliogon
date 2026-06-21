@@ -42,7 +42,7 @@ from app.schemas import (
     StoryEntityUpdate,
     _decode_relationships,
 )
-from app.services.story_entity_registry import (
+from app.services.registries.story_entity_registry import (
     StoryEntityTypeDef,
     load_story_entity_types,
 )

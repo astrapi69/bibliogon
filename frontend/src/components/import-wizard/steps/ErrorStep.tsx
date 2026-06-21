@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Bug, Check, ChevronDown, ChevronUp, Copy } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
-import { copyToClipboard } from "../../../utils/clipboard";
+import { copyToClipboard } from "../../../utils/platform/clipboard";
 import {
     buildGithubIssueUrl,
     formatDetails,

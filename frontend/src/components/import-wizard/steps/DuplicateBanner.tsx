@@ -1,7 +1,7 @@
 import { AlertTriangle } from "lucide-react";
 import { useI18n } from "../../../hooks/useI18n";
 import type { DuplicateInfo } from "../../../api/import";
-import { useDialog } from "../../AppDialog";
+import { useDialog } from "../../shared/AppDialog";
 
 export function DuplicateBanner({
     duplicate,
