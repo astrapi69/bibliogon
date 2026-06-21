@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     useEditorPluginStatus,
     isPluginAvailable,
@@ -30,6 +30,7 @@ import {
 import { useEditorDisplaySettings } from "../../hooks/editor/useEditorDisplaySettings";
 import { useAiChapterReview } from "../../hooks/ai/useAiChapterReview";
 import { useEditorWordCount } from "../../hooks/editor/useEditorWordCount";
+import { useEditorImageUpload } from "../../hooks/editor/useEditorImageUpload";
 import EditorStatusBar from "../../lib/components/EditorStatusBar";
 import { WORDS_PER_MINUTE } from "../../lib/utils/textStats";
 import { useEditorAutosave } from "../../hooks/editor/useEditorAutosave";
@@ -40,7 +41,6 @@ import { FEATURES } from "../../features/featureConfig";
 import { api, ApiError } from "../../api/client";
 import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { getStorage } from "../../storage";
-import { warnIfOfflineStorageNearlyFull } from "../../utils/platform/storageQuota";
 import { notify } from "../../utils/platform/notify";
 import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
@@ -264,35 +264,11 @@ export default function Editor({
     // local per-instance.
     const editorDisplay = useEditorDisplaySettings();
 
-    const imageInputRef = useRef<HTMLInputElement>(null);
-
-    const uploadAndInsertImage = async (file: File) => {
-        if (!bookId) return;
-        try {
-            const asset = await getStorage().assets.upload(bookId, file, "figure");
-            const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
-            editorRef.current?.chain().focus().setImage({ src, alt: file.name }).run();
-            void warnIfOfflineStorageNearlyFull(
-                t(
-                    "ui.offline.storage_almost_full",
-                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
-                ),
-            );
-        } catch (err) {
-            notify.error(t("ui.editor.upload_failed", "Upload fehlgeschlagen"), err);
-        }
-    };
-
-    // Context-menu "Insert image": open a file picker, then run the
-    // same upload+insert path as drag/paste. Only wired when the
-    // surface has a bookId to upload assets against.
-    const handleImageFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file && file.type.startsWith("image/")) {
-            void uploadAndInsertImage(file);
-        }
-        event.target.value = "";
-    };
+    // Image upload/insert (drag, paste, context-menu) extracted to a hook
+    // (#207). Drag/paste handlers in the useEditor config below call
+    // ``uploadAndInsertImage`` directly.
+    const { imageInputRef, uploadAndInsertImage, handleImageFileSelected } =
+        useEditorImageUpload({ bookId, editorRef, t });
 
     const { wordCount, charCount, syncCounts } = useEditorWordCount();
 
