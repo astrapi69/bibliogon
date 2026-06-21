@@ -131,6 +131,50 @@ describe("VerhaltenSettings — extracted Behavior tab", () => {
                         book_language: "de",
                     },
                 },
+                updates: {
+                    auto_check: true,
+                    check_interval: "daily",
+                },
+            });
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+
+    it("auto-saves the updates block: toggling auto-check + interval (#477)", () => {
+        vi.useFakeTimers();
+        try {
+            const onSave = vi.fn();
+            render(
+                <VerhaltenSettings
+                    config={{
+                        ...baseConfig,
+                        updates: {
+                            auto_check: true,
+                            check_interval: "daily",
+                            last_check_at: "2026-06-20T10:00:00Z",
+                            dismissed_version: "v0.50.0",
+                        },
+                    }}
+                    onSave={onSave}
+                    saving={false}
+                />,
+            );
+            // The section renders + the interval dropdown is visible while
+            // auto-check is on.
+            expect(screen.getByTestId("settings-updates-section")).toBeTruthy();
+            fireEvent.change(screen.getByTestId("settings-check-interval-trigger"), {
+                target: {value: "weekly"},
+            });
+            vi.advanceTimersByTime(500);
+            expect(onSave).toHaveBeenCalledTimes(1);
+            const payload = onSave.mock.calls[0][0];
+            expect(payload.updates).toEqual({
+                auto_check: true,
+                check_interval: "weekly",
+                // runtime state preserved via the spread:
+                last_check_at: "2026-06-20T10:00:00Z",
+                dismissed_version: "v0.50.0",
             });
         } finally {
             vi.useRealTimers();

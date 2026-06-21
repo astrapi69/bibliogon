@@ -1235,7 +1235,16 @@
       "export_engine_hint": "Welche Engine der Export nutzt. „Automatisch“ verwendet online Pandoc (LaTeX-PDF) und offline den Browser-Export. „Browser“ exportiert immer direkt im Browser; „Backend“ immer über Pandoc (nur online).",
       "export_engine_auto": "Automatisch (empfohlen)",
       "export_engine_client": "Browser (offline-fähig)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, nur online)"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, nur online)",
+      "updates_section": "Updates",
+      "updates_description": "Automatische Prüfung auf neue Versionen.",
+      "auto_check": "Automatische Update-Prüfung",
+      "auto_check_hint": "Prüft im Hintergrund auf neue Versionen.",
+      "check_interval": "Prüfintervall",
+      "interval_daily": "Täglich",
+      "interval_weekly": "Wöchentlich",
+      "interval_monthly": "Monatlich",
+      "interval_never": "Nie"
     },
     "authors_database": {
       "title": "Autoren-Datenbank",
@@ -2039,7 +2048,11 @@
       "message": "Eine neue Version von Bibliogon ist verfügbar.",
       "button": "Jetzt aktualisieren",
       "updating": "Deine Änderungen werden gesichert und die App wird aktualisiert …",
-      "dismiss": "Schließen"
+      "dismiss": "Schließen",
+      "version_available": "Neue Version {version} verfügbar",
+      "whats_new": "Was ist neu?",
+      "later": "Später",
+      "notes_title": "Neuerungen in {version}"
     },
     "versions": {
       "menu_item": "Versionsverlauf",
@@ -3585,7 +3598,9 @@
       "ai_assistance_label": "KI-Assistenz",
       "ai_assistance_value": "Claude (Anthropic) - Architektur, Code, Content, Dokumentation",
       "resources_heading": "Lizenz & Ressourcen",
-      "docs_label": "Dokumentation"
+      "docs_label": "Dokumentation",
+      "next_check": "Nächste automatische Prüfung: {time}",
+      "next_check_disabled": "Automatische Prüfung deaktiviert"
     },
     "kdp_publishing_wizard": {
       "open_button": "Für KDP veröffentlichen",

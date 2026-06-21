@@ -1254,7 +1254,16 @@
       "plugin_active_since": "Actif depuis",
       "plugin_settings_applied": "Paramètres appliqués",
       "plugin_source_zip": "via ZIP",
-      "read_only": "Configuration (lecture seule)"
+      "read_only": "Configuration (lecture seule)",
+      "updates_section": "Mises à jour",
+      "updates_description": "Vérification automatique des nouvelles versions.",
+      "auto_check": "Vérification automatique des mises à jour",
+      "auto_check_hint": "Recherche les nouvelles versions en arrière-plan.",
+      "check_interval": "Intervalle de vérification",
+      "interval_daily": "Quotidien",
+      "interval_weekly": "Hebdomadaire",
+      "interval_monthly": "Mensuel",
+      "interval_never": "Jamais"
     },
     "authors_database": {
       "title": "Base d'auteurs",
@@ -2039,7 +2048,11 @@
       "message": "Une nouvelle version de Bibliogon est disponible.",
       "button": "Mettre à jour maintenant",
       "updating": "Enregistrement de votre travail et mise à jour …",
-      "dismiss": "Fermer"
+      "dismiss": "Fermer",
+      "version_available": "Nouvelle version {version} disponible",
+      "whats_new": "Quoi de neuf ?",
+      "later": "Plus tard",
+      "notes_title": "Nouveautés de {version}"
     },
     "versions": {
       "menu_item": "Historique des versions",
@@ -3585,7 +3598,9 @@
       "ai_assistance_label": "Assistance IA",
       "ai_assistance_value": "Claude (Anthropic) - architecture, code, contenu, documentation",
       "resources_heading": "Licence et ressources",
-      "docs_label": "Documentation"
+      "docs_label": "Documentation",
+      "next_check": "Prochaine vérification automatique : {time}",
+      "next_check_disabled": "Vérification automatique désactivée"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publier sur KDP",

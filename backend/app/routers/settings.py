@@ -147,6 +147,9 @@ class AppSettingsUpdate(BaseModel):
     # AR-02 Phase 2.1: settings-managed list of article topics. The
     # ArticleEditor topic dropdown reads from app.yaml topics: [...].
     topics: list[str] | None = None
+    # #477 Phase 2: auto-update-check preferences + state
+    # (auto_check, check_interval, last_check_at, dismissed_version).
+    updates: dict[str, Any] | None = None
 
 
 class AddPenNameRequest(BaseModel):
@@ -249,6 +252,8 @@ def update_app_settings(body: AppSettingsUpdate) -> dict[str, Any]:
             current.setdefault("app", {}).update(body.app)
         if body.behavior is not None:
             current.setdefault("behavior", {}).update(body.behavior)
+        if body.updates is not None:
+            current.setdefault("updates", {}).update(body.updates)
         if body.ui is not None:
             current.setdefault("ui", {}).update(body.ui)
         if body.author is not None:

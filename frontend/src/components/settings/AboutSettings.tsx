@@ -33,6 +33,7 @@ import SupportSection, { getDonationsConfig } from "./SupportSection";
 import { SectionHeader } from "./SectionHeader";
 import { LanAccessSettings } from "./LanAccessSettings";
 import { UpdateCheckButton } from "./UpdateCheckButton";
+import { NextUpdateCheck } from "./NextUpdateCheck";
 import ErrorReportDialog from "../shared/ErrorReportDialog";
 
 interface Props {
@@ -176,7 +177,11 @@ export function AboutSettings({ appConfig }: Props) {
               Contributors and License & Resources sections are
               client-side and render in both modes; only the backend
               dependency rows inside System are gated on systemInfo. */}
-          <VersionSection t={t} lang={lang} />
+          <VersionSection
+            t={t}
+            lang={lang}
+            updates={appConfig?.updates as Record<string, unknown> | undefined}
+          />
           <SystemInfoSection info={systemInfo} offline={offline} t={t} />
           <PluginListSection
             plugins={plugins}
@@ -267,7 +272,15 @@ export function parseUserAgent(ua: string): string {
  *  build date. All four come from Vite build-time literals, so the
  *  section renders offline (Dexie mode). The running license moved
  *  to the License & Resources section per issue #87. */
-function VersionSection({ t, lang }: { t: T; lang: string }) {
+function VersionSection({
+  t,
+  lang,
+  updates,
+}: {
+  t: T;
+  lang: string;
+  updates: Record<string, unknown> | undefined;
+}) {
   return (
     <article data-testid="about-version-section" style={sectionStyle}>
       <h3 style={{ marginTop: 0, marginBottom: 12 }}>
@@ -300,6 +313,7 @@ function VersionSection({ t, lang }: { t: T; lang: string }) {
         </dd>
       </dl>
       <UpdateCheckButton />
+      <NextUpdateCheck updates={updates} />
     </article>
   );
 }

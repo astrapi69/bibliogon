@@ -17,6 +17,16 @@ export interface UpdateBannerProps {
   onDismiss?: () => void;
   /** Accessible label for the dismiss control. Defaults to "Dismiss". */
   dismissLabel?: string;
+  /**
+   * Optional extra actions rendered as secondary buttons before the primary
+   * one (e.g. "What's new?" / "Later"). Presentational only — the caller
+   * wires the handlers.
+   */
+  secondaryActions?: {
+    label: string;
+    onClick: () => void;
+    testId?: string;
+  }[];
 }
 
 /**
@@ -44,16 +54,28 @@ export function UpdateBanner({
   onUpdate,
   onDismiss,
   dismissLabel = "Dismiss",
+  secondaryActions = [],
 }: UpdateBannerProps) {
   return (
     <div
       role="status"
       aria-live="polite"
       data-testid="update-banner"
-      className="fixed inset-x-0 bottom-0 z-[1000] flex items-center justify-center gap-3 border-t border-[var(--accent)] bg-[var(--bg-card)] px-4 py-3 text-[var(--text)] shadow-[var(--shadow-lg)]"
+      className="fixed inset-x-0 bottom-0 z-[1000] flex flex-wrap items-center justify-center gap-3 border-t border-[var(--accent)] bg-[var(--bg-card)] px-4 py-3 text-[var(--text)] shadow-[var(--shadow-lg)]"
     >
       <RefreshCw size={18} aria-hidden className="shrink-0 text-[var(--accent)]" />
       <span className="text-center text-[0.95rem]">{message}</span>
+      {secondaryActions.map((action) => (
+        <button
+          key={action.label}
+          type="button"
+          onClick={action.onClick}
+          data-testid={action.testId}
+          className="btn btn-secondary shrink-0"
+        >
+          {action.label}
+        </button>
+      ))}
       <button
         type="button"
         onClick={onUpdate}

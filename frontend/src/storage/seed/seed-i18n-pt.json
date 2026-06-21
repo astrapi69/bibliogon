@@ -1235,7 +1235,16 @@
       "export_engine_hint": "Que motor a exportação usa. «Automático» usa Pandoc (PDF LaTeX) online e a exportação do navegador offline. «Navegador» exporta sempre no navegador; «Backend» usa sempre Pandoc (apenas online).",
       "export_engine_auto": "Automático (recomendado)",
       "export_engine_client": "Navegador (offline)",
-      "export_engine_backend": "Backend (Pandoc/LaTeX, apenas online)"
+      "export_engine_backend": "Backend (Pandoc/LaTeX, apenas online)",
+      "updates_section": "Atualizações",
+      "updates_description": "Verificação automática de novas versões.",
+      "auto_check": "Verificação automática de atualizações",
+      "auto_check_hint": "Procura novas versões em segundo plano.",
+      "check_interval": "Intervalo de verificação",
+      "interval_daily": "Diariamente",
+      "interval_weekly": "Semanalmente",
+      "interval_monthly": "Mensalmente",
+      "interval_never": "Nunca"
     },
     "authors_database": {
       "title": "Base de dados de autores",
@@ -2039,7 +2048,11 @@
       "message": "Uma nova versão do Bibliogon está disponível.",
       "button": "Atualizar agora",
       "updating": "A guardar o seu trabalho e a atualizar …",
-      "dismiss": "Fechar"
+      "dismiss": "Fechar",
+      "version_available": "Nova versão {version} disponível",
+      "whats_new": "O que há de novo?",
+      "later": "Mais tarde",
+      "notes_title": "Novidades na {version}"
     },
     "versions": {
       "menu_item": "Historico de versoes",
@@ -3585,7 +3598,9 @@
       "ai_assistance_label": "Assistência de IA",
       "ai_assistance_value": "Claude (Anthropic) - arquitetura, código, conteúdo, documentação",
       "resources_heading": "Licença e recursos",
-      "docs_label": "Documentação"
+      "docs_label": "Documentação",
+      "next_check": "Próxima verificação automática: {time}",
+      "next_check_disabled": "Verificação automática desativada"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publicar na KDP",

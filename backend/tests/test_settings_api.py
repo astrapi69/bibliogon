@@ -184,6 +184,47 @@ def test_update_behavior_skip_confirmations_round_trips(client, temp_base):
     assert got.json()["behavior"]["skip_non_destructive_confirmations"] is True
 
 
+def test_update_updates_block_round_trips(client, temp_base):
+    """updates.* (auto_check/check_interval/last_check_at/dismissed_version)
+    persists end-to-end (#477 Phase 2).
+
+    Without the ``updates`` field on AppSettingsUpdate the auto-update
+    preferences would be silently dropped at validation (same class as
+    the ``behavior`` regression above). Fails on the pre-field code.
+    """
+    resp = client.patch(
+        "/api/settings/app",
+        json={
+            "updates": {
+                "auto_check": False,
+                "check_interval": "weekly",
+                "last_check_at": "2026-06-20T10:00:00Z",
+                "dismissed_version": "v0.57.0",
+            }
+        },
+    )
+    assert resp.status_code == 200
+    body = resp.json()["updates"]
+    assert body["auto_check"] is False
+    assert body["check_interval"] == "weekly"
+    assert body["last_check_at"] == "2026-06-20T10:00:00Z"
+    assert body["dismissed_version"] == "v0.57.0"
+
+    with open(temp_base / "config" / "app.yaml") as f:
+        on_disk = yaml.safe_load(f)
+    assert on_disk["updates"]["check_interval"] == "weekly"
+
+    # A partial PATCH merges (does not clobber sibling keys).
+    resp2 = client.patch(
+        "/api/settings/app",
+        json={"updates": {"last_check_at": "2026-06-21T12:00:00Z"}},
+    )
+    merged = resp2.json()["updates"]
+    assert merged["last_check_at"] == "2026-06-21T12:00:00Z"
+    assert merged["check_interval"] == "weekly"
+    assert merged["dismissed_version"] == "v0.57.0"
+
+
 def test_update_preserves_unmentioned_sections(client):
     """Sections not included in the PATCH body remain unchanged."""
     resp = client.patch("/api/settings/app", json={"app": {"language": "es"}})
