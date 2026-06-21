@@ -347,3 +347,32 @@ is left untouched. Several router files do embed helper logic (file-level
 mixed-concern, e.g. the bulk AI-template routers), but that is a separate
 **god-file** concern, not the god-folder restructure of #466, and is not
 addressed here.
+
+---
+
+## Completion status — 2026-06-21 (#466 closed)
+
+The frontend god-folder restructure is complete. Final state per the
+directory-size ratchet baseline (`scripts/directory-size-baseline.json`):
+
+| Directory | Audit (src) | Now (src) | Status |
+|---|---:|---:|---|
+| `frontend/src/components` (root) | 126 | **0** | **Done** — Phase 3 (#492) grouped every flat file into 11 concern subfolders; the 126 re-export shims were removed in #494 (all importers rewritten to the real paths). Root holds only CSS modules + `index.ts` barrels; no longer tracked. |
+| `frontend/src/hooks` (root) | 49 | **12** | **Done** — Phase 1 (#481) split 5 domains; the generic editor/ui hooks were regrouped (#466) leaving 12 source files (≤ 15). Residual flat hooks are core/cross-cutting (`useI18n`, git-sync, story-bible, author/asset). |
+| `frontend/src/utils` | 17 | ~1 | **Done** — #491 split into `text/`/`date/`/`format/`/`icons/`/`platform/`/`ai/`/`editor/`/`eventRecorder/`. |
+| `backend/app/services` | — | 20 | **Documented** — `git/` (#465) + `audiobook/` + `registries/` extracted; remaining 20 are 2-file clusters below the extraction threshold + singletons (allowlisted, target v0.59.0). |
+| `backend/app/routers` | — | 39 | **Convention-flat** — one `APIRouter` per resource; left as-is (audit-confirmed). |
+
+### Final balance (#466)
+- **hooks/**: ~70 → 12 flat source (5 Phase-1 domains + editor/ui regroup).
+- **components/**: 229 → 0 flat source (11 concern subfolders; shims removed).
+- **utils/**: 6 concern subfolders.
+- **lib/components/**: 3 primitives promoted (Badge, Tooltip, EmptyState).
+- **Backend**: `services/git/` + `audiobook/` + `registries/` extracted.
+- **Ratchet guard** (`check_directory_size.py`) active in CI, protecting
+  every reduction against regression; allowlist trimmed (the resolved
+  `components` + `hooks` god-folder entries removed/relaxed).
+
+Outstanding (tracked in the allowlist, not part of #466's core scope):
+`components/settings` (67), `export` (29), `pages` (35) on the frontend;
+`services` (20) on the backend.
