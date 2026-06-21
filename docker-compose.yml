@@ -1,3 +1,7 @@
+# Explicit project name so dev containers are deterministically prefixed
+# "bibliogon-*" and do not collide with another local Compose project.
+name: bibliogon
+
 services:
   backend:
     build:

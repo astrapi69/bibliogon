@@ -79,73 +79,28 @@ def _run_launcher() -> int:
     show_details = config.get_show_details_default()
 
     # 0. Retry pending cleanup from a previously interrupted uninstall.
+    #    Silent in the normal case; no dialog before the Docker check.
     _retry_pending_cleanup()
 
-    # 0.5 First-ever-launch welcome. Tells the user what Bibliogon
-    # needs (Docker, ~800 MB) and what the first run looks like
-    # (~2 GB / 5-10 min) BEFORE any check fires. Order matters: the
-    # user should know what is required before being told they don't
-    # have it.
+    # 1. Docker readiness is the FIRST thing the user sees a dialog about.
+    #    Bibliogon cannot do anything without a running Docker daemon, so
+    #    we check installed + running before the welcome / install prompts.
+    #    A failure here shows a clear "start Docker Desktop, then re-check"
+    #    message with a Retry button - no other dialog precedes it.
+    if not _ensure_docker_ready(show_details):
+        return 1
+
+    # 2. First-ever-launch welcome. Tells the user what Bibliogon needs
+    #    (Docker, ~800 MB) and what the first run looks like (~2 GB /
+    #    5-10 min). Shown only after Docker is confirmed ready, so the
+    #    user never reads "you need Docker" guidance while Docker is
+    #    actually fine.
     if not bool(settings.get("welcomed")):
         ui.welcome_dialog(
             guide_url=_docker_guide_url(),
             security_url=_docker_security_url(),
         )
         settings.update("welcomed", True)
-
-    # 1. Docker installed?
-    ok, detail = docker.docker_installed()
-    if not ok:
-        logger.error("docker --version failed: %s", detail)
-        choice = ui.three_button_dialog(
-            title=i18n.t("docker.missing.title"),
-            message=(
-                f"{i18n.t('docker.missing.heading')}\n\n"
-                f"{i18n.t('docker.missing.explanation')}\n\n"
-                f"{i18n.t('docker.missing.next_step')}"
-            ),
-            primary_label=i18n.t("docker.missing.install_button"),
-            secondary_label=i18n.t("docker.missing.guide_button"),
-            cancel_label=i18n.t("docker.missing.quit_button"),
-        )
-        if choice == "primary":
-            try:
-                webbrowser.open(DOCKER_INSTALL_URL)
-            except OSError as exc:
-                logger.warning("opening Docker download page failed: %s", exc)
-        elif choice == "secondary":
-            try:
-                webbrowser.open(_docker_guide_url())
-            except OSError as exc:
-                logger.warning("opening Bibliogon Docker guide failed: %s", exc)
-        return 1
-
-    # 2. Docker daemon running? Retry loop: user may need to start Docker Desktop.
-    for attempt in range(3):
-        ok, detail = docker.docker_daemon_running()
-        if ok:
-            break
-        logger.warning("docker info failed (attempt %d): %s", attempt + 1, detail)
-        choice = ui.error_dialog(
-            title=i18n.t("docker.daemon.title"),
-            message=i18n.t("docker.daemon.message"),
-            actions=[(i18n.t("common.retry"), "retry"), (i18n.t("common.cancel"), "cancel")],
-            details=f"docker info attempt {attempt + 1} failed:\n{detail}",
-            help_url=INSTALL_GUIDE_URL,
-            initial_show_details=show_details,
-        )
-        if choice != "retry":
-            return 1
-    else:
-        ui.error_dialog(
-            title=i18n.t("docker.daemon.title"),
-            message=i18n.t("docker.daemon.exhausted_message"),
-            actions=[(i18n.t("common.ok"), "ok")],
-            details="docker info failed on three consecutive retries.",
-            help_url=INSTALL_GUIDE_URL,
-            initial_show_details=show_details,
-        )
-        return 1
 
     # 3. Locate repo via manifest or legacy launcher.json.
     #    Priority: manifest (written by installer) > launcher.json (legacy).
@@ -198,27 +153,52 @@ def _run_launcher() -> int:
         )
         return 1
 
-    port = config.read_port(repo)
+    # 4.5 Resolve the port. If the configured port is held by a foreign
+    #     process (e.g. another local app on 7880), pick the next free
+    #     port and persist it to .env so the next start reuses it. If the
+    #     port already serves a healthy Bibliogon, reuse it as-is.
+    port, previous_port = _resolve_port(repo)
+    if previous_port is not None:
+        ui.info_box(
+            i18n.t("port.switched.title"),
+            i18n.t("port.switched.message", old=previous_port, new=port),
+        )
 
     # 5. Launch status window, run docker compose + health wait + browser on a
     # background thread so the UI stays responsive.
     window = ui.StatusWindow()
-    window.set_starting(i18n.t("status.starting"))
+    window.set_title(i18n.t("status.starting"))
+
+    start_steps = (
+        ("docker", i18n.t("checklist.docker_ready")),
+        ("containers", i18n.t("checklist.starting_containers")),
+        ("ready", i18n.t("checklist.waiting_ready")),
+    )
 
     def worker() -> None:
+        window.after(0, lambda: window.set_progress(None))
+        window.after(0, lambda: window.set_checklist(
+            _checklist_states(start_steps, done={"docker"}, active="containers")
+        ))
         ok, up_detail = docker.compose_up(repo, config.COMPOSE_FILENAME)
         if not ok:
             logger.error("compose up failed: %s", up_detail)
             window.after(0, lambda: _handle_compose_failure(window, port, up_detail, show_details))
             return
 
-        window.after(0, lambda: window.set_starting(i18n.t("status.almost_ready")))
+        window.after(0, lambda: window.set_checklist(
+            _checklist_states(start_steps, done={"docker", "containers"}, active="ready")
+        ))
+        window.after(0, lambda: window.set_progress(None, i18n.t("status.almost_ready")))
         if not health.wait_for_healthy(port, timeout_seconds=60.0):
             tail = docker.compose_logs_tail(repo, config.COMPOSE_FILENAME, lines=20)
             logger.error("health timeout; last lines:\n%s", tail)
             window.after(0, lambda: _handle_health_timeout(window, repo, port, tail, show_details))
             return
 
+        window.after(0, lambda: window.set_checklist(
+            _checklist_states(start_steps, done={"docker", "containers", "ready"}, active=None)
+        ))
         url = f"http://localhost:{port}"
         try:
             opened = webbrowser.open(url)
@@ -246,6 +226,128 @@ def _run_launcher() -> int:
 
 
 # --- Step helpers ---
+
+
+def _ensure_docker_ready(show_details: bool) -> bool:
+    """Check Docker is installed and the daemon is running.
+
+    This is the launcher's first interactive step (Problem 1): nothing
+    else can work without Docker, so we confirm it before any welcome
+    or install dialog. Returns True when Docker is ready, False when the
+    user gave up (the caller then exits).
+
+    On "not installed" we offer download / guide / quit. On "not running"
+    we loop up to three times with a Retry button so the user can start
+    Docker Desktop and re-check without relaunching.
+    """
+    ok, detail = docker.docker_installed()
+    if not ok:
+        logger.error("docker --version failed: %s", detail)
+        choice = ui.three_button_dialog(
+            title=i18n.t("docker.missing.title"),
+            message=(
+                f"{i18n.t('docker.missing.heading')}\n\n"
+                f"{i18n.t('docker.missing.explanation')}\n\n"
+                f"{i18n.t('docker.missing.next_step')}"
+            ),
+            primary_label=i18n.t("docker.missing.install_button"),
+            secondary_label=i18n.t("docker.missing.guide_button"),
+            cancel_label=i18n.t("docker.missing.quit_button"),
+        )
+        if choice == "primary":
+            try:
+                webbrowser.open(DOCKER_INSTALL_URL)
+            except OSError as exc:
+                logger.warning("opening Docker download page failed: %s", exc)
+        elif choice == "secondary":
+            try:
+                webbrowser.open(_docker_guide_url())
+            except OSError as exc:
+                logger.warning("opening Bibliogon Docker guide failed: %s", exc)
+        return False
+
+    # Daemon running? Retry loop: the user may need to start Docker Desktop
+    # and click Re-check.
+    for attempt in range(3):
+        ok, detail = docker.docker_daemon_running()
+        if ok:
+            return True
+        logger.warning("docker info failed (attempt %d): %s", attempt + 1, detail)
+        choice = ui.error_dialog(
+            title=i18n.t("docker.daemon.title"),
+            message=i18n.t("docker.daemon.message"),
+            actions=[(i18n.t("docker.daemon.recheck"), "retry"), (i18n.t("common.cancel"), "cancel")],
+            details=f"docker info attempt {attempt + 1} failed:\n{detail}",
+            help_url=INSTALL_GUIDE_URL,
+            initial_show_details=show_details,
+        )
+        if choice != "retry":
+            return False
+    ui.error_dialog(
+        title=i18n.t("docker.daemon.title"),
+        message=i18n.t("docker.daemon.exhausted_message"),
+        actions=[(i18n.t("common.ok"), "ok")],
+        details="docker info failed on three consecutive retries.",
+        help_url=INSTALL_GUIDE_URL,
+        initial_show_details=show_details,
+    )
+    return False
+
+
+def _resolve_port(repo: Path) -> tuple[int, int | None]:
+    """Return the port Bibliogon should bind, plus the previous port if switched.
+
+    Resolution order:
+      1. The port configured in ``.env`` is free -> use it (no switch).
+      2. It is busy but already serves a healthy Bibliogon -> reuse it
+         (our own container from a prior session; no switch).
+      3. It is busy with a foreign process -> find the next free port,
+         persist it to ``.env``, and report the switch so the caller can
+         inform the user.
+
+    Returns ``(port, None)`` when no switch happened, or
+    ``(new_port, old_port)`` when the port was changed.
+    """
+    configured = config.read_port(repo)
+    if config.is_port_free(configured):
+        return configured, None
+    if health.is_healthy(configured):
+        logger.info("port %d already serves Bibliogon; reusing it", configured)
+        return configured, None
+    new_port = config.find_free_port(configured + 1)
+    if new_port == configured:
+        logger.warning("no free port found near %d; proceeding with it", configured)
+        return configured, None
+    if not config.write_port(repo, new_port):
+        logger.warning("could not persist port %d to .env; proceeding with %d", new_port, configured)
+        return configured, None
+    logger.info("port %d busy; switched Bibliogon to %d", configured, new_port)
+    return new_port, configured
+
+
+def _checklist_states(
+    steps: tuple[tuple[str, str], ...],
+    *,
+    done: set[str],
+    active: str | None,
+) -> list[tuple[str, str]]:
+    """Build the ``(label, status)`` list for ``StatusWindow.set_checklist``.
+
+    ``steps`` is an ordered ``(key, label)`` tuple. A key in ``done`` is
+    rendered done, the ``active`` key is rendered active, everything else
+    is pending. Pure function so the step-state transitions are unit
+    testable without a Tk window.
+    """
+    items: list[tuple[str, str]] = []
+    for key, label in steps:
+        if key in done:
+            status = "done"
+        elif key == active:
+            status = "active"
+        else:
+            status = "pending"
+        items.append((label, status))
+    return items
 
 
 def _schedule_update_check(window: ui.StatusWindow, mdata: dict | None) -> None:
@@ -467,26 +569,56 @@ def _run_install_flow() -> Path | None:
         return None
     target = Path(picked) if picked else target
 
-    # Show status window during download + extract
+    # Show status window with a step checklist + progress bar during the
+    # install. Each phase flips its checklist row to done so the user can
+    # see the install is alive (Problem 2).
     window = ui.StatusWindow()
-    window.set_starting(
-        i18n.t("install.downloading", version=f"v{installer.BIBLIOGON_TARGET_VERSION}")
+    window.set_title(i18n.t("install.title"))
+
+    install_steps = (
+        ("download", i18n.t("checklist.download")),
+        ("config", i18n.t("checklist.prepare_config")),
+        ("build", i18n.t("checklist.build_images")),
+        ("start", i18n.t("checklist.starting_app")),
     )
+
+    def _render(done: set[str], active: str | None) -> None:
+        window.after(0, lambda: window.set_checklist(
+            _checklist_states(install_steps, done=done, active=active)
+        ))
 
     result: dict = {}
 
     def worker() -> None:
-        # Phase 1: Download and extract
-        ok, detail = installer.download_release(target)
+        # Phase 1: Download and extract (with byte-level progress).
+        _render(done=set(), active="download")
+        last_percent = {"value": -1}
+
+        def on_progress(downloaded: int, total: int) -> None:
+            if total > 0:
+                fraction = downloaded / total
+                percent = int(fraction * 100)
+                if percent == last_percent["value"]:
+                    return  # throttle: only repaint on a whole-percent change
+                last_percent["value"] = percent
+                label = f"{installer.human_size(downloaded)} / {installer.human_size(total)}"
+                window.after(0, lambda: window.set_progress(fraction, label))
+            else:
+                label = installer.human_size(downloaded)
+                window.after(0, lambda: window.set_progress(None, label))
+
+        ok, detail = installer.download_release(target, progress_callback=on_progress)
         if not ok:
             result["error"] = detail
             window.after(0, window.destroy)
             return
-        window.after(0, lambda: window.set_starting(i18n.t("install.preparing_config")))
+
+        # Phase 2: Prepare configuration + manifest.
+        _render(done={"download"}, active="config")
+        window.after(0, lambda: window.set_progress(None, i18n.t("install.preparing_config")))
         ok2, detail2 = installer.create_env_file(target)
         if not ok2:
             logger.warning("env file creation: %s", detail2)
-        # Write manifest
         try:
             manifest.write_manifest(target, installer.BIBLIOGON_TARGET_VERSION)
         except Exception as exc:
@@ -498,21 +630,26 @@ def _run_install_flow() -> Path | None:
         cfg["repo_path"] = str(target)
         config.save_launcher_config(cfg)
 
-        # Phase 2: Build and start Docker stack
-        window.after(0, lambda: window.set_starting(i18n.t("install.building_images")))
+        # Resolve the port before the build so the stack maps a free one.
+        port, _previous = _resolve_port(target)
+
+        # Phase 3: Build and start Docker stack (length unknown -> spinner).
+        _render(done={"download", "config"}, active="build")
+        window.after(0, lambda: window.set_progress(None, i18n.t("install.building_images")))
         ok3, detail3 = docker.compose_build(target, config.COMPOSE_FILENAME)
         if not ok3:
             result["error"] = f"Docker build failed:\n{detail3}"
             window.after(0, window.destroy)
             return
 
-        # Phase 3: Wait for health
-        window.after(0, lambda: window.set_starting(i18n.t("install.waiting_health")))
-        port = config.read_port(target)
+        # Phase 4: Wait for health.
+        _render(done={"download", "config", "build"}, active="start")
+        window.after(0, lambda: window.set_progress(None, i18n.t("install.waiting_health")))
         if not health.wait_for_healthy(port, timeout_seconds=120.0):
             # Not fatal: stack may still be starting
             result["slow_start"] = True
 
+        _render(done={"download", "config", "build", "start"}, active=None)
         result["ok"] = True
         result["port"] = port
         window.after(0, window.destroy)

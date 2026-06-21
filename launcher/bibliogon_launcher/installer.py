@@ -21,6 +21,7 @@ import secrets
 import shutil
 import tempfile
 import zipfile
+from collections.abc import Callable
 from pathlib import Path
 from urllib.error import URLError
 from urllib.request import urlopen
@@ -28,6 +29,35 @@ from urllib.request import urlopen
 logger = logging.getLogger("bibliogon_launcher.installer")
 
 GITHUB_REPO = "astrapi69/bibliogon"
+
+# Chunk size for the streamed download. 256 KiB keeps the progress
+# callback firing often enough to feel live without thrashing the UI.
+_DOWNLOAD_CHUNK = 256 * 1024
+
+# Callback signature: (downloaded_bytes, total_bytes). total_bytes is 0
+# when the server sends no Content-Length, in which case the UI shows an
+# indeterminate state instead of a percentage.
+ProgressCallback = Callable[[int, int], None]
+
+
+def human_size(num_bytes: int) -> str:
+    """Render a byte count as a short human string, e.g. ``"245 MB"``.
+
+    Used for the download progress label. Binary units (1024-based)
+    to match what Docker and the OS report. Returns ``"0 B"`` for a
+    negative or zero count.
+    """
+    if num_bytes <= 0:
+        return "0 B"
+    units = ("B", "KB", "MB", "GB", "TB")
+    size = float(num_bytes)
+    index = 0
+    while size >= 1024 and index < len(units) - 1:
+        size /= 1024
+        index += 1
+    if index == 0:
+        return f"{int(size)} {units[index]}"
+    return f"{size:.0f} {units[index]}"
 
 # The Bibliogon version this launcher was built for. Updated during
 # the release workflow (Step 4) alongside the other version strings.
@@ -69,12 +99,22 @@ def release_zip_url(version: str | None = None) -> str:
     return f"https://github.com/{GITHUB_REPO}/archive/refs/tags/{tag}.zip"
 
 
-def download_release(target_dir: Path, version: str | None = None) -> tuple[bool, str]:
+def download_release(
+    target_dir: Path,
+    version: str | None = None,
+    progress_callback: ProgressCallback | None = None,
+) -> tuple[bool, str]:
     """Download and extract a Bibliogon release to ``target_dir``.
 
     The ZIP from GitHub contains a single top-level directory named
     ``bibliogon-{version}/``. We strip that prefix so files land
     directly inside ``target_dir``.
+
+    ``progress_callback`` is invoked with ``(downloaded_bytes,
+    total_bytes)`` as the stream is read so the UI can render a
+    progress bar and a "245 MB / 512 MB" label. ``total_bytes`` is 0
+    when the server omits ``Content-Length`` (the UI then shows an
+    indeterminate state). Callback exceptions never abort the download.
 
     Returns ``(True, "ok")`` on success, ``(False, detail)`` on failure.
     """
@@ -91,7 +131,7 @@ def download_release(target_dir: Path, version: str | None = None) -> tuple[bool
             import os
             os.close(tmp_fd)
             with urlopen(url, timeout=120) as resp, open(tmp_zip, "wb") as out:
-                shutil.copyfileobj(resp, out)
+                _stream_to_file(resp, out, progress_callback)
         except (URLError, OSError, TimeoutError) as exc:
             return False, f"Download failed: {exc}"
 
@@ -131,6 +171,46 @@ def download_release(target_dir: Path, version: str | None = None) -> tuple[bool
                 tmp_zip.unlink()
             except OSError:
                 pass
+
+
+def _total_from_response(resp: object) -> int:
+    """Best-effort Content-Length read; 0 when absent or unparseable."""
+    try:
+        raw = resp.headers.get("Content-Length")  # type: ignore[attr-defined]
+    except AttributeError:
+        return 0
+    try:
+        return max(0, int(raw)) if raw is not None else 0
+    except (TypeError, ValueError):
+        return 0
+
+
+def _stream_to_file(resp: object, out: object, progress_callback: ProgressCallback | None) -> None:
+    """Copy ``resp`` to ``out`` in chunks, reporting progress.
+
+    Mirrors ``shutil.copyfileobj`` but emits ``(downloaded, total)`` to
+    ``progress_callback`` after each chunk. A callback that raises is
+    swallowed: a broken progress observer must never abort a download.
+    """
+    total = _total_from_response(resp)
+    downloaded = 0
+    if progress_callback is not None:
+        _safe_progress(progress_callback, 0, total)
+    while True:
+        chunk = resp.read(_DOWNLOAD_CHUNK)  # type: ignore[attr-defined]
+        if not chunk:
+            break
+        out.write(chunk)  # type: ignore[attr-defined]
+        downloaded += len(chunk)
+        if progress_callback is not None:
+            _safe_progress(progress_callback, downloaded, total)
+
+
+def _safe_progress(progress_callback: ProgressCallback, downloaded: int, total: int) -> None:
+    try:
+        progress_callback(downloaded, total)
+    except Exception as exc:  # noqa: BLE001 - observer must never break the download
+        logger.warning("download progress callback failed: %s", exc)
 
 
 def create_env_file(repo_dir: Path) -> tuple[bool, str]:

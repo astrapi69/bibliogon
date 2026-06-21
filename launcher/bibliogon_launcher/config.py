@@ -9,6 +9,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import socket
 from pathlib import Path
 
 
@@ -20,6 +21,7 @@ ENV_FILENAME = ".env"
 ENV_EXAMPLE_FILENAME = ".env.example"
 
 _PORT_LINE_RE = re.compile(r"^\s*BIBLIOGON_PORT\s*=\s*(\d+)\s*$", re.MULTILINE)
+_PORT_ASSIGN_RE = re.compile(r"^(\s*BIBLIOGON_PORT\s*=\s*)\d+(\s*)$", re.MULTILINE)
 
 
 def appdata_dir(env: dict[str, str] | None = None) -> Path:
@@ -118,3 +120,72 @@ def read_port(repo: Path) -> int:
     except ValueError:
         return DEFAULT_PORT
     return port if 1 <= port <= 65535 else DEFAULT_PORT
+
+
+def is_port_free(port: int, host: str = "127.0.0.1") -> bool:
+    """True if ``port`` can be bound on ``host`` right now.
+
+    Used to detect a conflict before ``docker compose up`` maps the
+    port. A bind that succeeds means no other process holds the port;
+    a bind that fails (``OSError``) means it is taken. We bind rather
+    than connect because a free port has nothing to connect to.
+    """
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind((host, port))
+        except OSError:
+            return False
+    return True
+
+
+def find_free_port(start_port: int, host: str = "127.0.0.1", max_tries: int = 100) -> int:
+    """Return the first free port at or after ``start_port``.
+
+    Scans ``start_port, start_port + 1, ...`` up to ``max_tries``
+    candidates, clamping to the valid 1-65535 range. Falls back to
+    ``start_port`` if nothing free is found within the window (the
+    caller then surfaces the original conflict rather than silently
+    looping forever).
+    """
+    candidate = start_port
+    for _ in range(max_tries):
+        if candidate > 65535:
+            break
+        if 1 <= candidate <= 65535 and is_port_free(candidate, host):
+            return candidate
+        candidate += 1
+    return start_port
+
+
+def write_port(repo: Path, port: int) -> bool:
+    """Persist ``port`` as ``BIBLIOGON_PORT`` in the repo's ``.env``.
+
+    Also rewrites any ``localhost:<old-port>`` occurrence in the file
+    (e.g. ``BIBLIOGON_CORS_ORIGINS``) so the CORS origin keeps matching
+    the served port. Returns True on success, False if the ``.env`` is
+    missing or cannot be written. The persisted value is what
+    :func:`read_port` reads on the next launch, so a resolved port
+    sticks across restarts.
+    """
+    env_file = repo / ENV_FILENAME
+    if not env_file.is_file():
+        return False
+    try:
+        text = env_file.read_text(encoding="utf-8")
+    except OSError:
+        return False
+    old_port = read_port(repo)
+    new_text, count = _PORT_ASSIGN_RE.subn(rf"\g<1>{port}\g<2>", text)
+    if count == 0:
+        # No existing assignment: append one so the value is honoured.
+        if new_text and not new_text.endswith("\n"):
+            new_text += "\n"
+        new_text += f"BIBLIOGON_PORT={port}\n"
+    if old_port != port:
+        new_text = new_text.replace(f"localhost:{old_port}", f"localhost:{port}")
+    try:
+        env_file.write_text(new_text, encoding="utf-8")
+    except OSError:
+        return False
+    return True

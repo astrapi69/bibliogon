@@ -14,12 +14,24 @@ from pathlib import Path
 # from a --windowed PyInstaller build. On non-Windows this is a no-op.
 _CREATE_NO_WINDOW = 0x08000000
 
+# Explicit Compose project name. Passed as ``-p`` on every compose
+# invocation so containers are deterministically named "bibliogon-*"
+# regardless of the install directory. Mirrors the top-level ``name:``
+# key in the compose files; the launcher passes it explicitly as a
+# backstop for older Compose versions that ignore ``name:``.
+PROJECT_NAME = "bibliogon"
+
 
 def _creation_flags() -> int:
     import sys
     if sys.platform == "win32":
         return _CREATE_NO_WINDOW
     return 0
+
+
+def _compose_base(compose_file: str) -> list[str]:
+    """Common prefix for every compose subcommand: pins the project name."""
+    return ["docker", "compose", "-p", PROJECT_NAME, "-f", compose_file]
 
 
 def _run(cmd: list[str], *, cwd: Path | None = None, timeout: float = 10.0) -> subprocess.CompletedProcess:
@@ -64,7 +76,7 @@ def compose_up(repo: Path, compose_file: str) -> tuple[bool, str]:
     """Start the stack detached. Returns the compose output on failure."""
     try:
         result = _run(
-            ["docker", "compose", "-f", compose_file, "up", "-d"],
+            _compose_base(compose_file) + ["up", "-d"],
             cwd=repo,
             timeout=120.0,
         )
@@ -80,7 +92,7 @@ def compose_up(repo: Path, compose_file: str) -> tuple[bool, str]:
 def compose_down(repo: Path, compose_file: str) -> tuple[bool, str]:
     try:
         result = _run(
-            ["docker", "compose", "-f", compose_file, "down"],
+            _compose_base(compose_file) + ["down"],
             cwd=repo,
             timeout=60.0,
         )
@@ -97,7 +109,7 @@ def compose_logs_tail(repo: Path, compose_file: str, lines: int = 20) -> str:
     """Return the last ``lines`` of container output for error reporting."""
     try:
         result = _run(
-            ["docker", "compose", "-f", compose_file, "logs", "--tail", str(lines)],
+            _compose_base(compose_file) + ["logs", "--tail", str(lines)],
             cwd=repo,
             timeout=15.0,
         )
@@ -150,7 +162,7 @@ def compose_build(repo: Path, compose_file: str) -> tuple[bool, str]:
     images need to be pulled/built for the first time."""
     try:
         result = _run(
-            ["docker", "compose", "-f", compose_file, "up", "--build", "-d"],
+            _compose_base(compose_file) + ["up", "--build", "-d"],
             cwd=repo,
             timeout=600.0,  # first build can take several minutes
         )

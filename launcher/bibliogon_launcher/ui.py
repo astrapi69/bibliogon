@@ -12,7 +12,21 @@ import locale
 import threading
 import tkinter as tk
 import webbrowser
-from tkinter import filedialog, messagebox
+from tkinter import filedialog, messagebox, ttk
+
+
+# Checklist status glyphs. Geometric/dingbat symbols (not emoji); they
+# render with Segoe UI on Windows and DejaVu on Linux CI.
+_CHECKLIST_GLYPHS = {
+    "done": "✓",     # check mark
+    "active": "▸",   # right-pointing triangle
+    "pending": "·",  # middle dot
+}
+_CHECKLIST_COLORS = {
+    "done": "#2e7d32",
+    "active": "#1a73e8",
+    "pending": "#999999",
+}
 
 
 _OS_LOCALE_PREFIXES: tuple[tuple[str, str], ...] = (
@@ -642,14 +656,27 @@ class StatusWindow:
     def __init__(self, on_close: callable | None = None) -> None:
         self._root = _ensure_root()
         self._root.title("Bibliogon")
-        self._root.geometry("360x200")
+        self._root.geometry("420x220")
         self._root.protocol("WM_DELETE_WINDOW", self._handle_close)
 
         self._label = tk.Label(self._root, text="Starting Bibliogon...", font=("Segoe UI", 11))
-        self._label.pack(pady=(24, 12))
+        self._label.pack(pady=(20, 8))
+
+        # Progress bar shown only during long operations (install/build).
+        # Hidden by default so the simple starting/running states stay
+        # uncluttered. Determinate when a fraction is known, indeterminate
+        # (animated) when it is not.
+        self._progress = ttk.Progressbar(self._root, length=320, mode="determinate", maximum=100)
+        self._progress_visible = False
+        self._progress_indeterminate = False
 
         self._detail = tk.Label(self._root, text="", font=("Segoe UI", 9), fg="#555")
-        self._detail.pack(pady=(0, 12))
+        self._detail.pack(pady=(0, 8))
+
+        # Checklist of install steps. Built on demand by set_checklist.
+        self._checklist_frame = tk.Frame(self._root)
+        self._checklist_visible = False
+        self._checklist_rows: dict[str, tk.Label] = {}
 
         self._button = tk.Button(self._root, text="", state="disabled", width=20)
         self._button.pack(pady=(0, 8))
@@ -669,7 +696,84 @@ class StatusWindow:
         self._button.configure(text="", state="disabled")
         self._root.update_idletasks()
 
+    def set_title(self, text: str) -> None:
+        """Set the large heading line (e.g. "Installing Bibliogon...")."""
+        self._label.configure(text=text)
+        self._root.update_idletasks()
+
+    def set_progress(self, fraction: float | None, detail: str = "") -> None:
+        """Show the progress bar. ``fraction`` 0..1 for determinate,
+        ``None`` for an animated indeterminate bar (length unknown).
+
+        ``detail`` updates the small line below (e.g. "245 MB / 512 MB").
+        Safe to call repeatedly from the worker via ``window.after``.
+        """
+        if not self._progress_visible:
+            self._progress.pack(before=self._detail, pady=(0, 8))
+            self._progress_visible = True
+        if fraction is None:
+            if not self._progress_indeterminate:
+                self._progress.configure(mode="indeterminate")
+                self._progress.start(12)
+                self._progress_indeterminate = True
+        else:
+            if self._progress_indeterminate:
+                self._progress.stop()
+                self._progress.configure(mode="determinate")
+                self._progress_indeterminate = False
+            clamped = max(0.0, min(1.0, fraction))
+            self._progress.configure(value=clamped * 100)
+        if detail:
+            self._detail.configure(text=detail)
+        self._root.update_idletasks()
+
+    def hide_progress(self) -> None:
+        """Remove the progress bar (used when entering the running state)."""
+        if self._progress_indeterminate:
+            self._progress.stop()
+            self._progress_indeterminate = False
+        if self._progress_visible:
+            self._progress.pack_forget()
+            self._progress_visible = False
+
+    def hide_checklist(self) -> None:
+        """Remove the install-step checklist (used at the running state)."""
+        if self._checklist_visible:
+            self._checklist_frame.pack_forget()
+            self._checklist_visible = False
+
+    def set_checklist(self, items: list[tuple[str, str]]) -> None:
+        """Render an install-step checklist.
+
+        ``items`` is a list of ``(label, status)`` where status is one of
+        ``"done"``, ``"active"``, ``"pending"``. Rebuilds the rows each
+        call (the list is short) so the worker can simply re-send the full
+        state after each step finishes.
+        """
+        if not self._checklist_visible:
+            self._checklist_frame.pack(before=self._button, padx=24, pady=(4, 8), anchor="w")
+            self._checklist_visible = True
+        for child in self._checklist_frame.winfo_children():
+            child.destroy()
+        self._checklist_rows = {}
+        for label, status in items:
+            glyph = _CHECKLIST_GLYPHS.get(status, _CHECKLIST_GLYPHS["pending"])
+            color = _CHECKLIST_COLORS.get(status, _CHECKLIST_COLORS["pending"])
+            row = tk.Label(
+                self._checklist_frame,
+                text=f"{glyph}  {label}",
+                font=("Segoe UI", 9),
+                fg=color,
+                anchor="w",
+                justify="left",
+            )
+            row.pack(fill="x", anchor="w")
+            self._checklist_rows[label] = row
+        self._root.update_idletasks()
+
     def set_running(self, port: int, on_stop: callable, on_settings: callable | None = None) -> None:
+        self.hide_progress()
+        self.hide_checklist()
         self._label.configure(text=f"Bibliogon is running on localhost:{port}")
         self._detail.configure(text="Browser opened. Close this window or click Stop to shut down.")
         self._stop_cb = on_stop
