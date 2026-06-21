@@ -2,6 +2,60 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.57.0] - Unreleased
+
+The **God-Folder + browser-AI + desktop-update-checker** cycle. AI now runs
+browser-direct for all 6 providers in PWA/Dexie mode, provider keys are stored
+per-provider (no more clobber on switch), the desktop build gains an
+update-checker, and Settings auto-saves. The God-Folder campaign (#466) finished
+under the hood. No schema migrations; existing data + ``.bgb``/``.bgp`` unaffected.
+
+> Draft entry — version pins NOT bumped and no tag cut yet; the release flow
+> sets the date and bumps versions (see `.claude/rules/release-workflow.md`).
+
+### Added
+- **AI provider key management** — keys are stored **per-provider** with an
+  ``active_provider`` pointer, surfaced in a Settings provider-overview table
+  (which providers have a key, masked) with a **per-row live "Test" button**
+  (#459, #460, #462).
+- **AI model lists load dynamically per provider**, with the static preset only
+  as a fallback (#451).
+- **Desktop update-checker** — for SW-less desktop builds, a GitHub-Releases
+  version check: a startup auto-check hook, an update banner with release notes
+  and dismiss-per-version, an interval + dismissed-version policy, and a Settings
+  **Updates** section (#477 Phases 1+2, #479).
+- **Client-side picture-book PDF** — picture-book PDF export now runs entirely in
+  the browser for offline/mobile, no Pandoc (#497).
+- **Comics** — set a panel's image via **drag-and-drop** (#439).
+- **plugin-parity offline module seam** — a module seam for plugin parity in the
+  backendless build (#34).
+
+### Changed
+- **AI runs browser-direct for all 6 providers in PWA/Dexie mode** — the
+  incorrect CORS gate that marked OpenAI + Mistral as not-browser-capable is
+  removed; the earlier "OpenAI 403 = CORS wall" reading was a
+  key/account/region response, not a browser block (#468, #450).
+- **Settings auto-save on change** — settings persist as you edit them; the
+  manual "Speichern" buttons are removed (#473).
+- **God-Folder refactor (#466)** — ``frontend/src/{hooks,components,utils,
+  services}`` are grouped into single-concern sub-packages, the flat re-export
+  shims are removed with importers rewritten, and a **directory-size ratchet CI
+  guard** blocks regrowth; the shared ``Badge``/``EmptyState``/``Tooltip``
+  primitives move to ``lib/components``. Internal; no user-visible change.
+
+### Fixed
+- **AI now works browser-direct in PWA/Dexie mode** — the offline build calls the
+  user's provider directly with their own key instead of failing (#450).
+- **Honest AI connection-test errors** — the offline AI connection test reports
+  the actual failing layer instead of a generic error, and no longer
+  clobbers a working config by saving before the test (#446, #456).
+- **Default AI model** — the offline seed default is a current Anthropic model
+  instead of the retired ``claude-sonnet-4-20250514`` (#454).
+- **Token/key fields** no longer trigger the browser's password-manager prompt
+  (#448).
+
+No schema migrations; existing data + ``.bgb``/``.bgp`` unaffected.
+
 ## [0.56.0] - 2026-06-18
 
 The **first published release since v0.51.0** — it brings the GitHub releases
