@@ -23,12 +23,12 @@
   "frontend/src/components/story-bible": 24,
   "frontend/src/export": 29,
   "frontend/src/hooks": 20,
-  "frontend/src/hooks/editor": 12,
+  "frontend/src/hooks/editor": 13,
   "frontend/src/hooks/ui": 27,
   "frontend/src/import": 15,
   "frontend/src/lib/components": 32,
   "frontend/src/lib/utils": 22,
-  "frontend/src/pages": 35,
+  "frontend/src/pages": 36,
   "frontend/src/storage": 22,
   "frontend/src/storage/dexie": 21
 }
