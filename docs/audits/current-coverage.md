@@ -1,5 +1,44 @@
 # Test Coverage Audit - v0.17.0 (with v0.20.0 addendum)
 
+## 2026-06-21 backend coverage spot-check (post-v0.56.0 develop)
+
+Backend-only measurement on `develop` (not a full pyramid re-audit). Command:
+
+```bash
+cd backend && poetry run pytest --cov=app --cov-report=term-missing -q --ignore=mutants
+```
+
+Result: **2656 passed, 1 skipped** — backend statement coverage **90%**
+(14118 statements, 1401 missed). This is **above the 85% project gate**, so no
+new tests were added in this pass (per the coverage targets in
+`.claude/rules/quality-checks.md`, services target >= 80% and the project gate
+is 85%).
+
+Weakest `app/` modules (informational; none block the gate — all are
+external-IO / credential / setup paths where low unit coverage is expected and
+exercised indirectly or in CI plugin matrices):
+
+| Module | Cover | Note |
+|---|---|---|
+| `app/services/audiobook/google_tts_setup.py` | 36% | Google-Cloud TTS setup; live-credential path |
+| `app/routes_misc.py` | 55% | misc/admin glue endpoints |
+| `app/import_plugins/handlers/bgb_archive_reader.py` | 57% | `.bgb` ZIP reader; covered indirectly by backup E2E |
+| `app/routers/audiobook.py` | 58% | async TTS export + persistence endpoints |
+| `app/routes_admin.py` | 64% | admin/debug glue |
+| `app/services/audiobook/credentials.py` | 71% | TTS credential storage |
+
+If a future pass wants to lift these, the highest-leverage targets are
+`bgb_archive_reader.py` (a pure parser — unit-testable directly against a
+crafted `.bgb`) and `routers/audiobook.py` (TestClient happy-path + the 410/409
+guards). The audiobook setup/credential modules wrap external services and are
+the right place to keep mocked-boundary coverage rather than chasing line count.
+
+Note: the per-suite tables below are stale (v0.17.0 / v0.20.0 era, April 2026)
+and predate the test growth; a full pyramid re-audit is tracked separately and
+was out of scope for this backend spot-check.
+
+---
+
 Audit date: 2026-04-18 (primary), 2026-04-20 (v0.20.0 addendum below)
 Previous audit: 2026-04-13 (archived as `history/2026-04-13-coverage.md`)
 Scope: everything on `main` as of commit `decb531` (primary) plus
