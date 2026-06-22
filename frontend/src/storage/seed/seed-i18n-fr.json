@@ -3431,7 +3431,16 @@
       "col_target": "Objectif",
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Résumé court…",
-      "synopsis_auto": "Générer à partir du premier paragraphe"
+      "synopsis_auto": "Générer à partir du premier paragraphe",
+      "collections_label": "Collections",
+      "collection_all": "Tous les chapitres",
+      "collection_new": "Nouvelle collection",
+      "collection_delete": "Supprimer",
+      "collection_name": "Nom de la collection",
+      "collection_filter": "Filtrer par collection",
+      "collection_default_name": "Nouvelle collection",
+      "collection_save_failed": "Impossible d'enregistrer la collection",
+      "col_in_collection": "Dans"
     },
     "storyboard": {
       "title": "Storyboard",
