@@ -146,6 +146,10 @@ describe("featureRegistry", () => {
         // The Daten tab is purely client-side (#338): active in both modes.
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, DEXIE_NO_KEY)).toBe("active");
+        // The diagnostic event recorder runs entirely client-side (EVT-06):
+        // active in both modes.
+        expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, DEXIE_NO_KEY)).toBe("active");
     });
 
     it("gates network-dependent import features on connectivity, not storage mode", () => {

@@ -66,6 +66,7 @@ export const FEATURES = {
     SELECTIVE_EXPORT: "selective-export",
     EXPORT_PREVIEW: "export-preview",
     DATA_MANAGEMENT: "data-management",
+    EVENT_RECORDING: "event-recording",
 
     AI_FILL: "ai-fill",
     AI_GENERATE: "ai-generate",
@@ -148,6 +149,12 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // navigator.storage.estimate() and writes only through the storage
     // seam. No backend round-trip, so it is active in both modes (#338).
     FEATURES.DATA_MANAGEMENT,
+    // The diagnostic event recorder (in-memory ring buffer + Dexie-persisted
+    // log) runs entirely client-side and never sends anything anywhere; it is
+    // active in both modes. Registered as a declared feature (EVT-06) so the
+    // recorder consults the registry instead of mounting ungated, giving a
+    // single kill-switch and an audit point.
+    FEATURES.EVENT_RECORDING,
 ];
 
 /**
