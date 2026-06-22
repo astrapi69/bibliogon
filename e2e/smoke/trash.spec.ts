@@ -21,7 +21,7 @@
 
 import {test, expect, acceptDialog, createBook, resetDb} from "../fixtures/base";
 import type {Page} from "@playwright/test";
-import {clickMenuItem} from "../helpers/ui";
+import {clickMenuItem, softDeleteBookViaKebab} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -52,13 +52,13 @@ async function openBookMenu(page: Page, bookId: string) {
 }
 
 async function moveBookToTrashViaUI(page: Page, bookId: string) {
-    await openBookMenu(page, bookId);
-    // Wait for the Radix dropdown item to be visible/stable before
-    // clicking: clicking mid-open-transition let the click miss and the
-    // card stayed on the grid, failing the assertion below (flake #522).
-    const deleteItem = page.getByTestId(`book-card-menu-delete-${bookId}`);
-    await deleteItem.waitFor({state: "visible"});
-    await deleteItem.click();
+    // Delegate to the canonical robust soft-delete: it settles on
+    // networkidle and re-opens the kebab on each attempt inside a
+    // toPass loop. Under sustained load the dashboard grid re-renders
+    // and detaches the open menu's delete item mid-click; a single
+    // open+click does not survive that (#522 hardened the click but not
+    // the detach; #533).
+    await softDeleteBookViaKebab(page, bookId);
     // The card disappears from the main grid.
     await expect(page.getByTestId(`book-card-${bookId}`)).not.toBeVisible({
         timeout: 10000,

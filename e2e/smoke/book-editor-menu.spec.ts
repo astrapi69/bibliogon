@@ -28,6 +28,11 @@ test.describe("BookEditor structured menu", () => {
         await page.setViewportSize(WIDE);
         await page.goto(`/book/${book.id}`);
 
+        // Let the book + chapters finish loading before opening the menu.
+        // A late data-load re-render can otherwise detach an open menu
+        // item mid-click, which a single click() doesn't survive (#533).
+        await page.waitForLoadState("networkidle");
+
         // Sidebar header carries the menu trigger.
         const trigger = page.getByTestId("book-editor-menu-trigger");
         await expect(trigger).toBeVisible();
