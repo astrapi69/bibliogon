@@ -10,7 +10,7 @@
  *  Its columns come from CHAPTER-STATUS-LABELS-01 (status/label) +
  *  WRITING-GOALS-PROGRESS-TRACKING-01 (target_words). */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, ChevronDown, ChevronUp} from "lucide-react"
+import {ArrowLeft, ChevronDown, ChevronUp, Wand2} from "lucide-react"
 
 import {
     api,
@@ -22,6 +22,7 @@ import {
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
+import {firstParagraphText} from "../../lib/utils/firstParagraph"
 import {BeatSelect} from "../story-bible/StoryboardAnnotations"
 import {LabelSelect, StatusSelect} from "./ChapterStatusLabel"
 import {chapterWordCount} from "../story-bible/ProseStoryboard"
@@ -29,7 +30,7 @@ import styles from "../ChapterOutliner.module.css"
 
 type OutlinerPatch = Pick<
     ChapterUpdatePayload,
-    "status" | "label_id" | "target_words" | "story_beat" | "notes"
+    "status" | "label_id" | "target_words" | "story_beat" | "notes" | "synopsis"
 >
 
 type SortKey = "position" | "title" | "words" | "target" | "status"
@@ -105,6 +106,15 @@ export default function ChapterOutliner({
             }
         },
         [bookId, chapters, t],
+    )
+
+    const handleAutoSynopsis = useCallback(
+        (chapter: Chapter): void => {
+            const generated = firstParagraphText(chapter.content)
+            if (!generated || generated === (chapter.synopsis ?? "")) return
+            void handlePatch(chapter.id, {synopsis: generated})
+        },
+        [handlePatch],
     )
 
     const toggleSort = (key: SortKey) => {
@@ -201,6 +211,7 @@ export default function ChapterOutliner({
                                 <SortHeader label={t("ui.chapter_status.label", "Status")} col="status" />
                                 <th>{t("ui.chapter_label.label", "Label")}</th>
                                 <th>{t("ui.storyboard.beat_label", "Beat")}</th>
+                                <th>{t("ui.outliner.col_synopsis", "Synopsis")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -266,6 +277,33 @@ export default function ChapterOutliner({
                                                 namespace={testidNamespace}
                                                 idSuffix={ch.id}
                                             />
+                                        </td>
+                                        <td>
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    key={`syn-${ch.id}-${ch.synopsis ?? ""}`}
+                                                    className="input w-full min-w-[10rem]"
+                                                    defaultValue={ch.synopsis ?? ""}
+                                                    placeholder={t("ui.outliner.synopsis_placeholder", "Short summary…")}
+                                                    aria-label={t("ui.outliner.col_synopsis", "Synopsis")}
+                                                    data-testid={`${testidNamespace}-synopsis-${ch.id}`}
+                                                    onBlur={(e) => {
+                                                        const next = e.target.value.trim() || null
+                                                        if (next === (ch.synopsis ?? null)) return
+                                                        void handlePatch(ch.id, {synopsis: next})
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() => handleAutoSynopsis(ch)}
+                                                    title={t("ui.outliner.synopsis_auto", "Generate from first paragraph")}
+                                                    aria-label={t("ui.outliner.synopsis_auto", "Generate from first paragraph")}
+                                                    data-testid={`${testidNamespace}-synopsis-auto-${ch.id}`}
+                                                >
+                                                    <Wand2 size={14} />
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 )
