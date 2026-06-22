@@ -119,5 +119,21 @@
   "welcome.heading": "始める前に",
   "welcome.title": "Bibliogon へようこそ",
   "welcome.trust_anchor": "Docker は確立されており(2013 年以降)、無料で、世界中の何百万もの開発者に使用されています。",
-  "welcome.trust_link": "Docker のセキュリティについて詳しく"
+  "welcome.trust_link": "Docker のセキュリティについて詳しく",
+  "state.checking": "Checking Docker...",
+  "state.not_installed": "Bibliogon is not installed.",
+  "state.running": "Bibliogon is running on port {port}.",
+  "state.stopped": "Bibliogon is installed but stopped.",
+  "button.start": "Start",
+  "button.start_docker": "Start Docker",
+  "port.label": "Port:",
+  "port.free": "free",
+  "port.in_use": "in use",
+  "port.own": "in use by Bibliogon",
+  "port.invalid_hint": "1024-65535",
+  "tray.open": "Open",
+  "tray.tooltip": "Bibliogon running on port {port}",
+  "progress.install_done": "Installation complete. Bibliogon is ready.",
+  "progress.start_done": "Bibliogon is running.",
+  "progress.uninstall_done": "Uninstall complete."
 }

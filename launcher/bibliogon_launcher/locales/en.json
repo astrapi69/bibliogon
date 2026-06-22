@@ -113,5 +113,21 @@
   "welcome.heading": "Before you start",
   "welcome.title": "Welcome to Bibliogon",
   "welcome.trust_anchor": "Docker is established (since 2013), free, and used by millions of developers worldwide.",
-  "welcome.trust_link": "More about Docker security"
+  "welcome.trust_link": "More about Docker security",
+  "state.checking": "Checking Docker...",
+  "state.not_installed": "Bibliogon is not installed.",
+  "state.running": "Bibliogon is running on port {port}.",
+  "state.stopped": "Bibliogon is installed but stopped.",
+  "button.start": "Start",
+  "button.start_docker": "Start Docker",
+  "port.label": "Port:",
+  "port.free": "free",
+  "port.in_use": "in use",
+  "port.own": "in use by Bibliogon",
+  "port.invalid_hint": "1024-65535",
+  "tray.open": "Open",
+  "tray.tooltip": "Bibliogon running on port {port}",
+  "progress.install_done": "Installation complete. Bibliogon is ready.",
+  "progress.start_done": "Bibliogon is running.",
+  "progress.uninstall_done": "Uninstall complete."
 }

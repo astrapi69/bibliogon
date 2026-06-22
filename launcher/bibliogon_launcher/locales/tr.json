@@ -119,5 +119,21 @@
   "welcome.heading": "Başlamadan önce",
   "welcome.title": "Bibliogon'a hoş geldin",
   "welcome.trust_anchor": "Docker köklü (2013'ten beri), ücretsiz ve dünya çapında milyonlarca geliştirici tarafından kullanılıyor.",
-  "welcome.trust_link": "Docker güvenliği hakkında daha fazla"
+  "welcome.trust_link": "Docker güvenliği hakkında daha fazla",
+  "state.checking": "Checking Docker...",
+  "state.not_installed": "Bibliogon is not installed.",
+  "state.running": "Bibliogon is running on port {port}.",
+  "state.stopped": "Bibliogon is installed but stopped.",
+  "button.start": "Start",
+  "button.start_docker": "Start Docker",
+  "port.label": "Port:",
+  "port.free": "free",
+  "port.in_use": "in use",
+  "port.own": "in use by Bibliogon",
+  "port.invalid_hint": "1024-65535",
+  "tray.open": "Open",
+  "tray.tooltip": "Bibliogon running on port {port}",
+  "progress.install_done": "Installation complete. Bibliogon is ready.",
+  "progress.start_done": "Bibliogon is running.",
+  "progress.uninstall_done": "Uninstall complete."
 }
