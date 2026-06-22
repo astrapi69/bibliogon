@@ -3431,7 +3431,16 @@
       "col_target": "Στόχος",
       "col_synopsis": "Synopsis",
       "synopsis_placeholder": "Short summary…",
-      "synopsis_auto": "Generate from first paragraph"
+      "synopsis_auto": "Generate from first paragraph",
+      "collections_label": "Collections",
+      "collection_all": "All chapters",
+      "collection_new": "New collection",
+      "collection_delete": "Delete",
+      "collection_name": "Collection name",
+      "collection_filter": "Filter to collection",
+      "collection_default_name": "New collection",
+      "collection_save_failed": "Could not save collection",
+      "col_in_collection": "In"
     },
     "storyboard": {
       "title": "Storyboard",

@@ -157,6 +157,15 @@ export interface ContentTypeDef {
  *  entity's 5-value status enum further down. */
 export type BookStatus = "draft" | "ready" | "published" | "archived";
 
+/** A named, ordered set of chapter ids (CHAPTER-COLLECTIONS-01,
+ *  Scrivener "Collections" parity). Stored as a JSON list on
+ *  ``Book.collections``. */
+export interface BookCollection {
+    id: string;
+    name: string;
+    chapter_ids: string[];
+}
+
 export interface Book {
     id: string;
     /** ``prose`` for the existing chapter-based authoring flow;
@@ -241,6 +250,9 @@ export interface Book {
     audiobook_skip_chapter_types: string[];
     created_at: string;
     updated_at: string;
+    /** Manual chapter collections (CHAPTER-COLLECTIONS-01). Rides the
+     *  base Book row through the storage seam (PATCH return + offline). */
+    collections?: BookCollection[] | null;
 }
 
 export interface BookDetail extends Book {

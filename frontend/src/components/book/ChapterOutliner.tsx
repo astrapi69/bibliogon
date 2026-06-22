@@ -15,6 +15,7 @@ import {ArrowLeft, ChevronDown, ChevronUp, Wand2} from "lucide-react"
 import {
     api,
     SaveAbortedError,
+    type BookCollection,
     type Chapter,
     type ChapterLabel,
     type ChapterUpdatePayload,
@@ -57,6 +58,24 @@ export default function ChapterOutliner({
     const [loadError, setLoadError] = useState(false)
     const [sortKey, setSortKey] = useState<SortKey>("position")
     const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+    const [collections, setCollections] = useState<BookCollection[]>([])
+    const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null)
+    const [filterToCollection, setFilterToCollection] = useState(false)
+
+    useEffect(() => {
+        let cancelled = false
+        getStorage()
+            .books.get(bookId)
+            .then((book) => {
+                if (!cancelled) setCollections(book.collections ?? [])
+            })
+            .catch(() => {
+                if (!cancelled) setCollections([])
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [bookId])
 
     useEffect(() => {
         let cancelled = false
@@ -117,6 +136,67 @@ export default function ChapterOutliner({
         [handlePatch],
     )
 
+    // --- Collections (CHAPTER-COLLECTIONS-01) ---
+
+    const activeCollection = useMemo(
+        () => collections.find((c) => c.id === activeCollectionId) ?? null,
+        [collections, activeCollectionId],
+    )
+
+    const saveCollections = useCallback(
+        (next: BookCollection[]): void => {
+            setCollections(next)
+            void getStorage()
+                .books.update(bookId, {collections: next})
+                .catch((err) =>
+                    notify.error(t("ui.outliner.collection_save_failed", "Could not save collection"), err),
+                )
+        },
+        [bookId, t],
+    )
+
+    const handleNewCollection = useCallback(() => {
+        const created: BookCollection = {
+            id: crypto.randomUUID(),
+            name: t("ui.outliner.collection_default_name", "New collection"),
+            chapter_ids: [],
+        }
+        saveCollections([...collections, created])
+        setActiveCollectionId(created.id)
+        setFilterToCollection(false)
+    }, [collections, saveCollections, t])
+
+    const handleRenameCollection = useCallback(
+        (name: string) => {
+            const trimmed = name.trim()
+            if (!activeCollection || !trimmed || trimmed === activeCollection.name) return
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, name: trimmed} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
+    const handleDeleteCollection = useCallback(() => {
+        if (!activeCollection) return
+        saveCollections(collections.filter((c) => c.id !== activeCollection.id))
+        setActiveCollectionId(null)
+        setFilterToCollection(false)
+    }, [activeCollection, collections, saveCollections])
+
+    const toggleMembership = useCallback(
+        (chapterId: string) => {
+            if (!activeCollection) return
+            const ids = activeCollection.chapter_ids.includes(chapterId)
+                ? activeCollection.chapter_ids.filter((id) => id !== chapterId)
+                : [...activeCollection.chapter_ids, chapterId]
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, chapter_ids: ids} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
     const toggleSort = (key: SortKey) => {
         if (key === sortKey) {
             setSortDir((d) => (d === "asc" ? "desc" : "asc"))
@@ -150,6 +230,14 @@ export default function ChapterOutliner({
             return a.position - b.position
         })
     }, [chapters, sortKey, sortDir])
+
+    const displayed = useMemo(() => {
+        if (filterToCollection && activeCollection) {
+            const ids = new Set(activeCollection.chapter_ids)
+            return sorted.filter((c) => ids.has(c.id))
+        }
+        return sorted
+    }, [sorted, filterToCollection, activeCollection])
 
     const SortHeader = ({label, col}: {label: string; col: SortKey}) => (
         <th
@@ -187,6 +275,65 @@ export default function ChapterOutliner({
                     {chapters.length} {t("ui.storyboard.chapters_unit", "chapters")}
                 </span>
             </div>
+            <div className="flex flex-wrap items-center gap-2 px-3 py-2" data-testid={`${testidNamespace}-collections-bar`}>
+                <span className="text-sm font-medium">
+                    {t("ui.outliner.collections_label", "Collections")}:
+                </span>
+                <select
+                    className="input w-auto"
+                    value={activeCollectionId ?? ""}
+                    onChange={(e) => {
+                        setActiveCollectionId(e.target.value || null)
+                        setFilterToCollection(false)
+                    }}
+                    aria-label={t("ui.outliner.collections_label", "Collections")}
+                    data-testid={`${testidNamespace}-collection-select`}
+                >
+                    <option value="">{t("ui.outliner.collection_all", "All chapters")}</option>
+                    {collections.map((c) => (
+                        <option key={c.id} value={c.id}>
+                            {c.name} ({c.chapter_ids.length})
+                        </option>
+                    ))}
+                </select>
+                <button
+                    type="button"
+                    className="btn btn-ghost btn-sm"
+                    onClick={handleNewCollection}
+                    data-testid={`${testidNamespace}-collection-new`}
+                >
+                    + {t("ui.outliner.collection_new", "New collection")}
+                </button>
+                {activeCollection && (
+                    <>
+                        <input
+                            key={`colname-${activeCollection.id}-${activeCollection.name}`}
+                            className="input w-auto"
+                            defaultValue={activeCollection.name}
+                            aria-label={t("ui.outliner.collection_name", "Collection name")}
+                            data-testid={`${testidNamespace}-collection-name`}
+                            onBlur={(e) => handleRenameCollection(e.target.value)}
+                        />
+                        <label className="flex items-center gap-1 text-sm">
+                            <input
+                                type="checkbox"
+                                checked={filterToCollection}
+                                onChange={(e) => setFilterToCollection(e.target.checked)}
+                                data-testid={`${testidNamespace}-collection-filter`}
+                            />
+                            {t("ui.outliner.collection_filter", "Filter to collection")}
+                        </label>
+                        <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={handleDeleteCollection}
+                            data-testid={`${testidNamespace}-collection-delete`}
+                        >
+                            {t("ui.outliner.collection_delete", "Delete")}
+                        </button>
+                    </>
+                )}
+            </div>
             <div className={styles.scroll}>
                 {loadError ? (
                     <div className={styles.empty} data-testid={`${testidNamespace}-error`}>
@@ -204,6 +351,9 @@ export default function ChapterOutliner({
                     <table className={styles.table}>
                         <thead>
                             <tr>
+                                {activeCollection && (
+                                    <th>{t("ui.outliner.col_in_collection", "In")}</th>
+                                )}
                                 <SortHeader label="#" col="position" />
                                 <SortHeader label={t("ui.outliner.col_title", "Title")} col="title" />
                                 <SortHeader label={t("ui.outliner.col_words", "Words")} col="words" />
@@ -215,7 +365,7 @@ export default function ChapterOutliner({
                             </tr>
                         </thead>
                         <tbody>
-                            {sorted.map((ch) => {
+                            {displayed.map((ch) => {
                                 const words = chapterWordCount(ch.content)
                                 const over =
                                     ch.target_words != null &&
@@ -223,6 +373,17 @@ export default function ChapterOutliner({
                                     words >= ch.target_words
                                 return (
                                     <tr key={ch.id} data-testid={`${testidNamespace}-row-${ch.id}`}>
+                                        {activeCollection && (
+                                            <td className={styles.num}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeCollection.chapter_ids.includes(ch.id)}
+                                                    onChange={() => toggleMembership(ch.id)}
+                                                    aria-label={t("ui.outliner.col_in_collection", "In collection")}
+                                                    data-testid={`${testidNamespace}-member-${ch.id}`}
+                                                />
+                                            </td>
+                                        )}
                                         <td className={styles.num}>{ch.position + 1}</td>
                                         <td
                                             className={styles.titleCell}

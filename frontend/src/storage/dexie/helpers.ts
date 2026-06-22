@@ -71,6 +71,7 @@ export function buildBook(data: import("../../api/client").BookCreate, id: strin
         cover_image: null,
         custom_css: null,
         notes: null,
+        collections: null,
         repository_url: null,
         ai_assisted: false,
         ai_tokens_used: 0,
