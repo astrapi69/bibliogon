@@ -15,6 +15,7 @@ from app.import_plugins.handlers.office import (
     DocxImportHandler,
     EpubImportHandler,
 )
+from app.import_plugins.handlers.scrivener import ScrivenerImportHandler
 from app.import_plugins.handlers.wbt import WbtImportHandler
 from app.import_plugins.registry import register
 
@@ -25,12 +26,16 @@ from app.import_plugins.registry import register
 #    directory that already is a WBT project root.
 # 3. docx / epub each claim their own file extensions; disjoint with
 #    everything above.
-# 4. markdown-folder claims DIRECTORY inputs without a WBT marker.
-# 5. single markdown is the universal fallback for .md/.markdown/.txt
+# 4. scrivener claims a DIRECTORY carrying a .scrivx index, ahead of
+#    markdown-folder so a .scriv bundle is never treated as a plain
+#    markdown directory.
+# 5. markdown-folder claims DIRECTORY inputs without a WBT/scrivx marker.
+# 6. single markdown is the universal fallback for .md/.markdown/.txt
 #    file inputs.
 register(BgbImportHandler())
 register(WbtImportHandler())
 register(DocxImportHandler())
 register(EpubImportHandler())
+register(ScrivenerImportHandler())
 register(MarkdownFolderHandler())
 register(MarkdownImportHandler())

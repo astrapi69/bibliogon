@@ -2074,7 +2074,7 @@ ui:
     multi_book_articles_note: '{count} article(s) seront egalement restaures.'
     preview_articles_note: '{count} article(s) seront egalement restaures.'
     step_1_drop_zone: Deposez un fichier ici ou cliquez pour parcourir
-    step_1_accepted_formats: 'Accepte : .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub'
+    step_1_accepted_formats: 'Accepte : .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Format de fichier non pris en charge. Accepte : {formats}'
     error_file_too_large: Fichier trop volumineux (>{max} Mo).
     warn_large_file: Fichier volumineux ({size}) ; la detection peut prendre un instant.
