@@ -1,7 +1,9 @@
-import {useEffect, useRef} from "react";
-import {useLocation} from "react-router-dom";
-import {eventRecorder} from "../../utils/eventRecorder/eventRecorder";
-import {initEventLogPersistence} from "../../utils/eventRecorder/eventRecorderPersist";
+import { useEffect, useRef } from "react";
+import { useLocation } from "react-router-dom";
+import { useFeature } from "@astrapi69/feature-strategy-react";
+import { FEATURES } from "../../features/featureConfig";
+import { eventRecorder } from "../../utils/eventRecorder/eventRecorder";
+import { initEventLogPersistence } from "../../utils/eventRecorder/eventRecorderPersist";
 
 /**
  * Invisible component that installs global event recorders.
@@ -14,21 +16,29 @@ import {initEventLogPersistence} from "../../utils/eventRecorder/eventRecorderPe
  * API calls and toasts are recorded by their respective modules
  * (client.ts and notify.ts) directly.
  *
- * On mount it also restores the persisted event log from Dexie (EVT-02)
- * so the diagnostic history survives a tab-refresh / crash, then wires
- * the recorder's flush-to-Dexie listener.
+ * Gated on the {@link FEATURES.EVENT_RECORDING} feature (EVT-06): the recorder
+ * is a declared, always-active feature rather than running ungated, so the
+ * registry is the single kill-switch. While inactive it installs no listeners
+ * and restores no persisted log.
+ *
+ * When active, on mount it also restores the persisted event log from Dexie
+ * (EVT-02) so the diagnostic history survives a tab-refresh / crash, then
+ * wires the recorder's flush-to-Dexie listener.
  */
 export default function EventRecorderSetup() {
     const location = useLocation();
     const prevPath = useRef(location.pathname);
+    const { isActive } = useFeature(FEATURES.EVENT_RECORDING);
 
     // --- Persistence restore + flush wiring (EVT-02) ---
     useEffect(() => {
+        if (!isActive) return;
         void initEventLogPersistence();
-    }, []);
+    }, [isActive]);
 
     // --- Click listener ---
     useEffect(() => {
+        if (!isActive) return;
         const handler = (e: MouseEvent) => {
             const target = e.target as HTMLElement;
             const button = target.closest("button") || target.closest("a[class*='btn']");
@@ -49,12 +59,13 @@ export default function EventRecorderSetup() {
             });
         };
 
-        document.addEventListener("click", handler, {capture: true});
-        return () => document.removeEventListener("click", handler, {capture: true});
-    }, []);
+        document.addEventListener("click", handler, { capture: true });
+        return () => document.removeEventListener("click", handler, { capture: true });
+    }, [isActive]);
 
     // --- Navigation ---
     useEffect(() => {
+        if (!isActive) return;
         if (location.pathname !== prevPath.current) {
             eventRecorder.add({
                 type: "navigation",
@@ -64,10 +75,11 @@ export default function EventRecorderSetup() {
             });
             prevPath.current = location.pathname;
         }
-    }, [location.pathname]);
+    }, [isActive, location.pathname]);
 
     // --- Uncaught errors ---
     useEffect(() => {
+        if (!isActive) return;
         const onError = (e: ErrorEvent) => {
             eventRecorder.add({
                 type: "uncaught_error",
@@ -92,7 +104,7 @@ export default function EventRecorderSetup() {
             window.removeEventListener("error", onError);
             window.removeEventListener("unhandledrejection", onRejection);
         };
-    }, []);
+    }, [isActive]);
 
     return null;
 }
