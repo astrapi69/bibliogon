@@ -128,6 +128,19 @@ _PUBLISHING_LIFECYCLE = ("draft", "ready", "published", "archived")
 PublicationStatus = Literal["draft", "ready", "published", "archived"]
 
 
+class CollectionItem(BaseModel):
+    """One manual chapter collection (CHAPTER-COLLECTIONS-01).
+
+    A named, ordered set of chapter ids. Stored as a JSON list on
+    ``Book.collections``; ``chapter_ids`` are not FK-validated here (a
+    stale id is harmless - the UI simply skips chapters it cannot find).
+    """
+
+    id: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=200)
+    chapter_ids: list[str] = Field(default_factory=list)
+
+
 class BookCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     subtitle: str | None = None
@@ -209,6 +222,7 @@ class BookUpdate(BaseModel):
     # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted relationship-graph
     # node positions {entity_id: {x, y}}.
     graph_layout: dict | None = None
+    collections: list[CollectionItem] | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: manual repo URL for books not
     # imported via plugin-git-sync. See Book model field-comment +
     # docs/ROADMAP.md "Book Metadata Extensions" entry. Empty string
@@ -536,6 +550,8 @@ class BookOut(BaseModel):
     custom_css: str | None = None
     # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
     notes: str | None = None
+    # Manual chapter collections (CHAPTER-COLLECTIONS-01).
+    collections: list[CollectionItem] | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL. The
     # BookMetadataEditor reads this directly when no GitSyncMapping
     # exists; when a mapping exists, the UI prefers the mapping's

@@ -156,6 +156,11 @@ class Book(Base):
     # the relationship graph, a JSON object {entity_id: {x, y}}. NULL =
     # no saved layout (the graph falls back to its circular auto-layout).
     graph_layout: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # CHAPTER-COLLECTIONS-01: manual chapter collections (Scrivener
+    # "Collections" parity) - a JSON list of {id, name, chapter_ids[]}.
+    # Rides the Book row through the storage seam so it works offline,
+    # the same way graph_layout does. NULL = no collections yet.
+    collections: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repository URL for
     # authors who track their book project externally. Two source
     # paths overlap conceptually but have different lifecycles:
