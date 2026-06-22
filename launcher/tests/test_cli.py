@@ -23,6 +23,10 @@ class TestIsCliInvocation:
     def test_unknown_arg_is_not_cli(self) -> None:
         assert cli.is_cli_invocation(["--frobnicate"]) is False
 
+    def test_debug_alone_is_not_cli(self) -> None:
+        # --debug is a modifier, not an action, so it must NOT force CLI.
+        assert cli.is_cli_invocation(["--debug"]) is False
+
 
 class TestVersion:
 

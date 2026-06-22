@@ -6,12 +6,11 @@ in-memory dict; ``t(key)`` looks up the active language and falls
 back to English when a key is missing.
 
 Locale resolution priority:
-1. Explicit ``settings.language`` value (set via Settings dialog).
+1. Explicit ``settings.language`` value (persisted user preference).
 2. OS locale: ``de_*`` -> ``de``; otherwise ``en``.
 
-The OS-locale step delegates to :func:`bibliogon_launcher.ui._current_lang`
-so there is one source of truth for locale detection across the
-launcher; if that helper is rewritten the i18n layer follows.
+The OS-locale step uses :func:`detect_os_lang` in this module, the
+single source of truth for locale detection across the launcher.
 
 PyInstaller note: ``locales/*.json`` is included via ``datas`` in
 ``bibliogon-launcher.spec``. ``importlib.resources.files`` reads
@@ -21,6 +20,7 @@ through the bundled tree without manual ``sys._MEIPASS`` handling.
 from __future__ import annotations
 
 import json
+import locale
 import logging
 from importlib import resources
 from typing import Any
@@ -30,6 +30,39 @@ logger = logging.getLogger("bibliogon_launcher.i18n")
 _CATALOG: dict[str, dict[str, str]] = {}
 _ACTIVE_LANG: str = "en"
 _FALLBACK_LANG: str = "en"
+
+# OS-locale prefix -> launcher language. Single source of truth for
+# locale detection (moved here from the retired ui.py so i18n has no
+# tkinter dependency). Matches by prefix: de_DE / de_AT / de_CH -> de.
+_OS_LOCALE_PREFIXES: tuple[tuple[str, str], ...] = (
+    ("de", "de"),
+    ("el", "el"),
+    ("es", "es"),
+    ("fr", "fr"),
+    ("pt", "pt"),
+    ("tr", "tr"),
+    ("ja", "ja"),
+)
+
+
+def detect_os_lang() -> str:
+    """Return the launcher language matching the OS locale, else ``"en"``."""
+    try:
+        code, _ = locale.getlocale()
+    except (TypeError, ValueError):
+        code = None
+    if code is None:
+        try:
+            code = locale.getdefaultlocale()[0]
+        except (ValueError, IndexError, TypeError):
+            code = None
+    if not code:
+        return "en"
+    code_lc = code.lower()
+    for prefix, lang in _OS_LOCALE_PREFIXES:
+        if code_lc.startswith(prefix):
+            return lang
+    return "en"
 
 
 def _load_catalogs() -> None:
@@ -67,13 +100,7 @@ def init(settings_language: str | None = None) -> None:
 def _resolve_language(settings_language: str | None) -> str:
     if settings_language and settings_language in _CATALOG:
         return settings_language
-    # Single source of truth for OS-locale detection: the existing
-    # helper in ui.py. Imported lazily to avoid a circular import at
-    # module load (ui.py imports nothing from i18n at module level
-    # currently, but future wiring shouldn't create one).
-    from bibliogon_launcher.ui import _current_lang
-
-    detected = _current_lang()
+    detected = detect_os_lang()
     return detected if detected in _CATALOG else _FALLBACK_LANG
 
 

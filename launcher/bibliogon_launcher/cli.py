@@ -17,7 +17,7 @@ import logging
 import sys
 from pathlib import Path
 
-from bibliogon_launcher import __version__, actions, cleanup, config, installer, manifest
+from bibliogon_launcher import actions, cleanup, config, installer, manifest
 
 logger = logging.getLogger("bibliogon_launcher.cli")
 
@@ -44,9 +44,14 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def is_cli_invocation(argv: list[str]) -> bool:
-    """True if any known CLI flag is present (so __main__ skips the GUI)."""
+    """True if a CLI action flag is present (so __main__ skips the GUI).
+
+    ``--debug`` is intentionally excluded: it is a modifier that also
+    applies to the GUI path, so ``--debug`` alone opens the window with
+    verbose logging rather than running headless.
+    """
     flags = {
-        "--version", "--debug", "--check", "--status", "--install",
+        "--version", "--check", "--status", "--install",
         "--start", "--stop", "--uninstall", "--open", "--port",
     }
     return any(arg.split("=")[0] in flags for arg in argv)

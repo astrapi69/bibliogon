@@ -1,8 +1,8 @@
-"""Tests for port-conflict detection and resolution (issue #518, Problem 3).
+"""Tests for the pure port helpers in ``config`` (issue #518, Problem 3).
 
-Covers the pure socket/.env helpers in ``config`` and the
-``_resolve_port`` orchestration in ``__main__`` (which decides between
-reuse, switch-to-free-port, and proceed-anyway).
+Covers the socket-bind freeness check, the next-free-port scan, and the
+``.env`` port read/write round-trip. The higher-level port resolution is
+exercised through the actions layer (see ``test_actions.py``).
 """
 
 from __future__ import annotations
@@ -90,76 +90,3 @@ class TestWritePort:
 
     def test_returns_false_when_env_missing(self, tmp_path: Path) -> None:
         assert config.write_port(tmp_path, 7881) is False
-
-
-class TestResolvePort:
-    """``__main__._resolve_port`` decides reuse vs switch vs proceed."""
-
-    def _repo_with_port(self, tmp_path: Path, port: int) -> Path:
-        (tmp_path / ".env").write_text(f"BIBLIOGON_PORT={port}\n", encoding="utf-8")
-        return tmp_path
-
-    def test_returns_configured_when_free(self, tmp_path: Path) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        repo = self._repo_with_port(tmp_path, 7880)
-        with patch.object(main_mod.config, "is_port_free", return_value=True):
-            port, previous = main_mod._resolve_port(repo)
-        assert port == 7880
-        assert previous is None
-
-    def test_reuses_port_when_own_bibliogon_already_healthy(self, tmp_path: Path) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        repo = self._repo_with_port(tmp_path, 7880)
-        with (
-            patch.object(main_mod.config, "is_port_free", return_value=False),
-            patch.object(main_mod.health, "is_healthy", return_value=True),
-            patch.object(main_mod.config, "write_port") as write_mock,
-        ):
-            port, previous = main_mod._resolve_port(repo)
-        assert port == 7880
-        assert previous is None
-        write_mock.assert_not_called()  # never moves our own running instance
-
-    def test_switches_to_free_port_when_foreign_process_holds_it(self, tmp_path: Path) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        repo = self._repo_with_port(tmp_path, 7880)
-        with (
-            patch.object(main_mod.config, "is_port_free", return_value=False),
-            patch.object(main_mod.health, "is_healthy", return_value=False),
-            patch.object(main_mod.config, "find_free_port", return_value=7881),
-            patch.object(main_mod.config, "write_port", return_value=True) as write_mock,
-        ):
-            port, previous = main_mod._resolve_port(repo)
-        assert port == 7881
-        assert previous == 7880
-        write_mock.assert_called_once_with(repo, 7881)
-
-    def test_proceeds_with_configured_when_no_free_port_found(self, tmp_path: Path) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        repo = self._repo_with_port(tmp_path, 7880)
-        with (
-            patch.object(main_mod.config, "is_port_free", return_value=False),
-            patch.object(main_mod.health, "is_healthy", return_value=False),
-            patch.object(main_mod.config, "find_free_port", return_value=7880),  # nothing free
-        ):
-            port, previous = main_mod._resolve_port(repo)
-        assert port == 7880
-        assert previous is None
-
-    def test_proceeds_with_configured_when_persist_fails(self, tmp_path: Path) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        repo = self._repo_with_port(tmp_path, 7880)
-        with (
-            patch.object(main_mod.config, "is_port_free", return_value=False),
-            patch.object(main_mod.health, "is_healthy", return_value=False),
-            patch.object(main_mod.config, "find_free_port", return_value=7881),
-            patch.object(main_mod.config, "write_port", return_value=False),
-        ):
-            port, previous = main_mod._resolve_port(repo)
-        assert port == 7880
-        assert previous is None  # not announced as switched if it could not persist

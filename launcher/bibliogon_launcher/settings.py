@@ -31,10 +31,9 @@ SETTINGS_FILENAME = "settings.json"
 DEFAULTS: dict[str, Any] = {
     "auto_update_check": True,
     # ``language`` None means "use OS locale detection". An explicit
-    # value ("en", "de", ...) overrides detection until the user
-    # changes it again from the Settings dialog. New launchers and
-    # users who never opened Settings always get None here, so the
-    # i18n layer falls through to ``ui._current_lang()``.
+    # value ("en", "de", ...) overrides detection. New launchers and
+    # users who never set a preference get None here, so the i18n layer
+    # falls through to ``i18n.detect_os_lang()``.
     "language": None,
     # ``welcomed`` flips True after the user clicks Continue on the
     # first-ever-launch welcome dialog. Subsequent starts skip the

@@ -118,27 +118,3 @@ class _CtxWrap:
 
     def __exit__(self, *exc: object) -> None:
         return None
-
-
-class TestChecklistStates:
-    """``__main__._checklist_states`` maps step keys to render statuses."""
-
-    STEPS = (("a", "Step A"), ("b", "Step B"), ("c", "Step C"))
-
-    def test_active_and_pending(self) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        items = main_mod._checklist_states(self.STEPS, done=set(), active="a")
-        assert items == [("Step A", "active"), ("Step B", "pending"), ("Step C", "pending")]
-
-    def test_done_and_active_mix(self) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        items = main_mod._checklist_states(self.STEPS, done={"a"}, active="b")
-        assert items == [("Step A", "done"), ("Step B", "active"), ("Step C", "pending")]
-
-    def test_all_done(self) -> None:
-        from bibliogon_launcher import __main__ as main_mod
-
-        items = main_mod._checklist_states(self.STEPS, done={"a", "b", "c"}, active=None)
-        assert [status for _, status in items] == ["done", "done", "done"]
