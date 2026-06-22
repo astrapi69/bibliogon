@@ -180,3 +180,95 @@ def _tail_output(result: subprocess.CompletedProcess) -> str:
     text = result.stderr.strip() or result.stdout.strip()
     lines = text.splitlines()
     return "\n".join(lines[-10:]) or "(no output)"
+
+
+# --- Project-name-aware helpers (used by the actions layer) ---
+#
+# These take the Compose project name explicitly rather than relying on
+# the module-level PROJECT_NAME constant, so the actions/CLI/GUI layers
+# can pass it as a parameter per the launcher spec. They are additive;
+# the older repo+compose_file helpers above stay for backwards
+# compatibility with the existing install/cleanup flow.
+
+
+def _compose_base_project(project: str, compose_file: str | None = None) -> list[str]:
+    """Compose prefix pinned to ``project``; adds ``-f`` only when given."""
+    base = ["docker", "compose", "-p", project]
+    if compose_file:
+        base += ["-f", compose_file]
+    return base
+
+
+def project_container_ids(project: str, *, all_states: bool = False) -> list[str]:
+    """Return container ids belonging to a Compose project.
+
+    Filters by the ``com.docker.compose.project`` label so the result is
+    independent of container naming. ``all_states`` includes stopped
+    containers (``docker ps -a``). Returns an empty list on any error
+    (docker missing, daemon down) so callers can treat "unknown" as
+    "none".
+    """
+    cmd = ["docker", "ps", "-q", "--filter", f"label=com.docker.compose.project={project}"]
+    if all_states:
+        cmd.insert(2, "-a")
+    try:
+        result = _run(cmd)
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        return []
+    if result.returncode != 0:
+        return []
+    return [line for line in (result.stdout or "").strip().splitlines() if line]
+
+
+def project_up_build(compose_file: str, project: str) -> tuple[bool, str]:
+    """Build images and start the stack for ``project`` (first install)."""
+    repo = Path(compose_file).parent
+    try:
+        result = _run(
+            _compose_base_project(project, compose_file) + ["up", "--build", "-d"],
+            cwd=repo,
+            timeout=600.0,
+        )
+    except FileNotFoundError:
+        return False, "docker command not found on PATH"
+    except subprocess.TimeoutExpired:
+        return False, "docker compose up --build timed out after 10 minutes"
+    if result.returncode != 0:
+        return False, _tail_output(result)
+    return True, "started"
+
+
+def project_up(compose_file: str, project: str) -> tuple[bool, str]:
+    """Start the existing (already-built) stack for ``project``."""
+    repo = Path(compose_file).parent
+    try:
+        result = _run(
+            _compose_base_project(project, compose_file) + ["up", "-d"],
+            cwd=repo,
+            timeout=120.0,
+        )
+    except FileNotFoundError:
+        return False, "docker command not found on PATH"
+    except subprocess.TimeoutExpired:
+        return False, "docker compose up timed out after 120s"
+    if result.returncode != 0:
+        return False, _tail_output(result)
+    return True, "started"
+
+
+def project_down(project: str, compose_file: str | None = None) -> tuple[bool, str]:
+    """Stop the stack for ``project``.
+
+    ``docker compose -p <project> down`` works without ``-f`` for a
+    running project, so the compose file is optional here - the GUI/CLI
+    can stop a project knowing only its name.
+    """
+    try:
+        result = _run(_compose_base_project(project, compose_file) + ["down"], timeout=60.0)
+    except FileNotFoundError:
+        return False, "docker command not found on PATH"
+    except subprocess.TimeoutExpired:
+        return False, "docker compose down timed out after 60s"
+    if result.returncode != 0:
+        return False, _tail_output(result)
+    return True, "stopped"

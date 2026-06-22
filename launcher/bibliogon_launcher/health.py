@@ -17,9 +17,14 @@ import urllib.request
 HEALTH_PATH = "/api/health"
 
 
-def is_healthy(port: int, *, timeout: float = 2.0) -> bool:
-    """One shot: True if the backend answers healthy, False otherwise."""
-    url = f"http://localhost:{port}{HEALTH_PATH}"
+def is_healthy(port: int, *, path: str = HEALTH_PATH, timeout: float = 2.0) -> bool:
+    """One shot: True if the backend answers healthy, False otherwise.
+
+    ``path`` defaults to the health endpoint but is overridable so the
+    actions layer can honour the spec's ``health_check(port, path,
+    timeout)`` signature.
+    """
+    url = f"http://localhost:{port}{path}"
     try:
         with urllib.request.urlopen(url, timeout=timeout) as resp:
             if resp.status != 200:
