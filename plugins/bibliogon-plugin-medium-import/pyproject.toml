@@ -14,7 +14,7 @@ fastapi = "^0.136.0"
 pyyaml = "^6.0"
 beautifulsoup4 = "^4.14.3"
 httpx = "^0.28.0"
-python-multipart = "^0.0.27"
+python-multipart = "^0.0.31"
 # Statistical language detection for imported article body text.
 # Pure Python, no C extensions; ~1MB. Used in walker.py to set
 # Article.language without relying on Medium HTML metadata
