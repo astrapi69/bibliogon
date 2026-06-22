@@ -109,6 +109,7 @@ export function useBookMetadata({
             backpage_author_bio: book.backpage_author_bio || "",
             cover_image: book.cover_image || "",
             custom_css: book.custom_css || "",
+            notes: book.notes || "",
             tts_engine: book.tts_engine || "",
             tts_voice: book.tts_voice || "",
             tts_speed: book.tts_speed || "1.0",

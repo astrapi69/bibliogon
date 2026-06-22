@@ -402,6 +402,16 @@ export default function BookMetadataEditor({
                             language="markdown"
                             fullscreen
                         />
+                        <Field
+                            label={t("ui.metadata.notes", "Projektnotizen")}
+                            value={form.notes}
+                            onChange={(v) => set("notes", v)}
+                            multiline
+                            placeholder={t(
+                                "ui.metadata.notes_placeholder",
+                                "Notizen zum Buchprojekt…",
+                            )}
+                        />
                         <Row>
                             <Field
                                 label={t("ui.metadata.edition", "Edition")}
