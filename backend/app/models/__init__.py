@@ -149,6 +149,9 @@ class Book(Base):
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). Free-text
+    # space for the author's book-wide planning notes; optional, born NULL.
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted node positions for
     # the relationship graph, a JSON object {entity_id: {x, y}}. NULL =
     # no saved layout (the graph falls back to its circular auto-layout).
@@ -283,6 +286,12 @@ class Chapter(Base):
     # Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01).
     # Promotes the former per-device localStorage goal to a DB column.
     target_words: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01). A short free-text
+    # summary, distinct from the Storyboard ``notes`` annotation above:
+    # ``notes`` is a board sticky, ``synopsis`` is the chapter's logline
+    # shown in the Outliner. Optional, born NULL; may be auto-generated
+    # client-side from the first paragraph of the chapter content.
+    synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 
