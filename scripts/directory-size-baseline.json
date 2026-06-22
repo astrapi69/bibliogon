@@ -27,7 +27,7 @@
   "frontend/src/hooks/ui": 27,
   "frontend/src/import": 15,
   "frontend/src/lib/components": 32,
-  "frontend/src/lib/utils": 22,
+  "frontend/src/lib/utils": 24,
   "frontend/src/pages": 36,
   "frontend/src/storage": 22,
   "frontend/src/storage/dexie": 21

@@ -107,6 +107,8 @@ export const booksApi = {
         /** Cover reference (``assets/covers/cover-x.png``). PATCH-only -
          *  the .bgb importer re-points it onto the restored cover asset. */
         cover_image?: string | null;
+        /** Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). */
+        notes?: string | null;
       },
     ) =>
       request<Book>(`/books/${id}`, {
