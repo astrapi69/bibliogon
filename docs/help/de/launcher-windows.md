@@ -67,7 +67,12 @@ Im Launcher-Fenster auf **Bibliogon beenden** klicken, oder das Fenster einfach 
 
 ## Zweiter Start
 
-Erneuter Doppelklick auf den Launcher. Wenn Bibliogon bereits läuft (z.B. weil du das Launcher-Fenster minimiert hast), erkennt der Launcher die laufende Instanz und öffnet nur den Browser an der korrekten URL, ohne eine zweite Kopie zu starten.
+Erneuter Doppelklick auf den Launcher. Wenn Bibliogon bereits läuft (z.B. weil du das Launcher-Fenster minimiert hast), erkennt der Launcher die laufende Instanz und zeigt einen Verwaltungsdialog, statt eine zweite Kopie zu starten:
+
+- **Im Browser öffnen** - `http://localhost:7880` der laufenden Instanz öffnen.
+- **Stoppen** - `docker compose down` ausführen und die Container stoppen; die Installation bleibt erhalten.
+- **Deinstallieren** - nach Bestätigung Bibliogon vollständig entfernen (siehe Deinstallation unten).
+- **Schließen** - den Launcher schließen, die Container laufen weiter.
 
 ## Fehlerbehebung
 
@@ -96,9 +101,9 @@ Wir planen, Code-Signing neu zu bewerten, wenn Bibliogon eine Nutzerbasis hat, d
 
 Siehe [Deinstallieren](uninstall.md) für den Launcher-Weg und das `uninstall.sh`-Skript als Fallback.
 
-Kurz: im Launcher-Fenster auf **Uninstall** klicken und bestätigen. Der Launcher entfernt das Installationsverzeichnis und sein eigenes Manifest. Docker-Volumes (Buchdaten) bleiben standardmäßig erhalten; sie müssen explizit mit entfernt werden, wenn alles weg soll.
+Kurz: im Verwaltungsdialog (oder im Hauptfenster) auf **Deinstallieren** klicken und bestätigen. Der Launcher entfernt danach alles: die Docker-Container, -Images und -Volumes (**deine Buchdaten werden gelöscht** - exportiere deine Bücher vorher, wenn du sie behalten willst), das Installationsverzeichnis, Desktop-Verknüpfungen, das Manifest sowie die Konfigurationsverzeichnisse (`%USERPROFILE%\.bibliogon` und `%APPDATA%\bibliogon`). Dieselbe Bereinigung gibt es ohne Fenster über `bibliogon-launcher.exe --uninstall`. Eine abgebrochene Deinstallation wird beim nächsten Start automatisch fortgesetzt.
 
-Wenn du nur das Launcher-Binary löschen und Bibliogon behalten willst: `bibliogon-launcher.exe` löschen, optional auch das Konfigurationsverzeichnis `%APPDATA%\bibliogon\`.
+Wenn du nur das Launcher-Binary löschen und Bibliogon behalten willst: `bibliogon-launcher.exe` löschen, statt die Deinstallation auszuführen.
 
 ## Verwandte Seiten
 

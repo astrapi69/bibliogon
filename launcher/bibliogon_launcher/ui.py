@@ -437,6 +437,67 @@ def three_button_dialog(
     return result["choice"]
 
 
+def management_dialog(port: int) -> str:
+    """Four-button management dialog for an already-running Bibliogon.
+
+    Shown when the launcher detects Bibliogon is already running. Returns
+    one of ``"open"`` (open the browser), ``"stop"`` (stop the stack but
+    keep the install), ``"uninstall"`` (full teardown), or ``"close"``
+    (close the launcher, leave the container running).
+
+    ``open`` is the Enter default; Escape and the window-X map to
+    ``close`` so the safest choice is the dismissive one.
+    """
+    from bibliogon_launcher import i18n
+
+    _ensure_root()
+    win = tk.Toplevel()
+    win.title(i18n.t("manage.title"))
+    win.resizable(False, False)
+
+    result = {"choice": "close"}
+
+    tk.Label(
+        win,
+        text=i18n.t("manage.message", port=port),
+        justify="left",
+        wraplength=440,
+        padx=20,
+        pady=16,
+    ).pack()
+
+    buttons = tk.Frame(win)
+    buttons.pack(padx=20, pady=(0, 16))
+
+    def _click(choice: str) -> None:
+        result["choice"] = choice
+        win.destroy()
+
+    open_btn = tk.Button(
+        buttons, text=i18n.t("common.open_browser"), width=16, command=lambda: _click("open")
+    )
+    open_btn.pack(side="left", padx=(0, 6))
+    tk.Button(
+        buttons, text=i18n.t("manage.stop"), width=10, command=lambda: _click("stop")
+    ).pack(side="left", padx=(0, 6))
+    tk.Button(
+        buttons, text=i18n.t("manage.uninstall"), width=12, command=lambda: _click("uninstall")
+    ).pack(side="left", padx=(0, 6))
+    tk.Button(
+        buttons, text=i18n.t("common.close"), width=10, command=lambda: _click("close")
+    ).pack(side="left")
+
+    open_btn.focus_set()
+    win.bind("<Return>", lambda _e: _click("open"))
+    win.bind("<Escape>", lambda _e: _click("close"))
+    win.protocol("WM_DELETE_WINDOW", lambda: _click("close"))
+
+    _center_over_root(win)
+    win.grab_set()
+    win.wait_window()
+    return result["choice"]
+
+
 def welcome_dialog(*, guide_url: str, security_url: str | None = None) -> None:
     """First-ever-launch welcome screen.
 

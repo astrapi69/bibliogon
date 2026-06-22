@@ -89,7 +89,9 @@ CLEANUP_STEPS = (
     "remove_volumes",
     "remove_images",
     "rmtree",
+    "remove_shortcuts",
     "delete_manifest",
+    "remove_config_dirs",
 )
 
 

@@ -20,7 +20,7 @@ import sys
 import webbrowser
 from pathlib import Path
 
-from bibliogon_launcher import __version__, config, docker, health, i18n, installer, lockfile, manifest, settings, ui, update_check
+from bibliogon_launcher import __version__, cleanup, config, docker, health, i18n, installer, lockfile, manifest, settings, ui, update_check
 
 
 logger = logging.getLogger("bibliogon_launcher")
@@ -52,6 +52,11 @@ def main() -> int:
         i18n.init(settings.get("language"))
     except Exception as exc:
         logger.warning("i18n init failed, continuing in English: %s", exc)
+
+    # Headless CLI uninstall: same reusable cleanup as the GUI path, no
+    # window. Useful for scripts and for users who want a one-shot teardown.
+    if "--uninstall" in sys.argv:
+        return _cli_uninstall()
 
     lock_path = config.lockfile_path()
     try:
@@ -163,6 +168,11 @@ def _run_launcher() -> int:
             i18n.t("port.switched.title"),
             i18n.t("port.switched.message", old=previous_port, new=port),
         )
+    elif health.is_healthy(port):
+        # Bibliogon is already serving on this port (e.g. a container left
+        # running by a previous session). Offer the management dialog
+        # (open / stop / uninstall) instead of starting a second time.
+        return _run_management(repo, port)
 
     # 5. Launch status window, run docker compose + health wait + browser on a
     # background thread so the UI stays responsive.
@@ -418,56 +428,26 @@ def _show_update_notification(tag: str, url: str, current: str) -> None:
 def _retry_pending_cleanup() -> None:
     """Silently retry any incomplete uninstall from a previous session.
 
-    Reads cleanup.json. For each step still marked False, retries it.
-    Updates cleanup.json after each successful retry. Deletes the file
-    when all steps are done. Never blocks or shows dialogs except a
-    one-time warning if rmtree still fails (the user may need to
-    delete the directory manually).
+    Delegates the step logic to :func:`cleanup.retry_pending_cleanup`
+    (shared with the fresh uninstall path). Shows a one-time warning
+    only if the install directory still cannot be removed (the user may
+    need to delete it manually). Never blocks otherwise.
     """
-    pending = manifest.read_cleanup_pending()
-    if pending is None:
+    results = cleanup.retry_pending_cleanup()
+    if results is None:
         return
-
-    steps = pending.get("steps", {})
-    install_dir = Path(pending.get("install_dir", ""))
-    logger.info("Pending cleanup found from %s, retrying...", pending.get("pending_since", "?"))
-
-    if not steps.get("compose_down"):
-        ok, _ = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
-        manifest.update_cleanup_step("compose_down", ok)
-
-    if not steps.get("remove_volumes"):
-        ok, _ = docker.remove_volumes()
-        manifest.update_cleanup_step("remove_volumes", ok)
-
-    if not steps.get("remove_images"):
-        ok, _ = docker.remove_images()
-        manifest.update_cleanup_step("remove_images", ok)
-
-    if not steps.get("rmtree"):
-        ok, detail = installer.remove_install(install_dir)
-        manifest.update_cleanup_step("rmtree", ok)
-        if not ok and install_dir.exists():
-            logger.warning("Pending rmtree still failed: %s", detail)
+    if not results.get("rmtree", False):
+        pending = manifest.read_cleanup_pending() or {}
+        path = pending.get("install_dir", "")
+        if path and Path(path).exists():
+            logger.warning("Pending rmtree still failed for %s", path)
             ui.error_dialog(
                 title=i18n.t("cleanup.title"),
-                message=i18n.t("cleanup.message", path=str(install_dir)),
+                message=i18n.t("cleanup.message", path=path),
                 actions=[(i18n.t("common.ok"), "ok")],
-                details=detail,
+                details=f"Pending cleanup steps incomplete: {results}",
                 initial_show_details=config.get_show_details_default(),
             )
-
-    if not steps.get("delete_manifest"):
-        manifest.delete_manifest()
-        manifest.update_cleanup_step("delete_manifest", True)
-
-    # Check if everything is now done
-    updated = manifest.read_cleanup_pending()
-    if manifest.all_cleanup_done(updated):
-        manifest.delete_cleanup_pending()
-        logger.info("Pending cleanup completed successfully.")
-    else:
-        logger.warning("Pending cleanup still has incomplete steps.")
 
 
 def _check_launcher_target_stale() -> bool:
@@ -700,8 +680,25 @@ def _run_install_flow() -> Path | None:
     return None
 
 
+_UNINSTALL_STEP_LABELS = {
+    "compose_down": "uninstall.stopping",
+    "remove_volumes": "uninstall.removing_volumes",
+    "remove_images": "uninstall.removing_images",
+    "rmtree": "uninstall.removing_files",
+    "remove_shortcuts": "uninstall.removing_shortcuts",
+    "delete_manifest": "uninstall.removing_config",
+    "remove_config_dirs": "uninstall.removing_config",
+}
+
+
 def _run_uninstall_flow(install_dir: Path) -> bool:
-    """Uninstall Bibliogon after user confirmation. Returns True if uninstalled."""
+    """Uninstall Bibliogon after user confirmation. Returns True if uninstalled.
+
+    Confirms, then runs the reusable :func:`cleanup.uninstall_bibliogon`
+    on a background thread, mapping each step to a status-window label so
+    the user sees live progress (Problem 2 applied to uninstall). The
+    cleanup itself is crash-safe and resumable on the next launch.
+    """
     show_details = config.get_show_details_default()
     choice = ui.two_button_dialog(
         title=i18n.t("uninstall.title"),
@@ -712,62 +709,33 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
     if choice != "primary":
         return False
 
-    # Write cleanup state BEFORE any destructive operation so a crash
-    # or abort mid-uninstall can be retried on next launcher start.
-    manifest.write_cleanup_pending(install_dir)
-
-    # Phase 1: Stop Docker stack (best-effort, continue if Docker is not running)
     window = ui.StatusWindow()
+    window.set_title(i18n.t("uninstall.title"))
     window.set_starting(i18n.t("uninstall.stopping"))
 
+    result: dict = {}
+
+    def on_step(step_key: str) -> None:
+        label = i18n.t(_UNINSTALL_STEP_LABELS.get(step_key, "uninstall.stopping"))
+        window.after(0, lambda: window.set_starting(label))
+
     def uninstall_worker() -> None:
-        ok, detail = docker.compose_down(install_dir, config.COMPOSE_FILENAME)
-        manifest.update_cleanup_step("compose_down", ok)
-        if not ok:
-            logger.warning("compose down: %s", detail)
-
-        window.after(0, lambda: window.set_starting(i18n.t("uninstall.removing_volumes")))
-        ok2, detail2 = docker.remove_volumes()
-        manifest.update_cleanup_step("remove_volumes", ok2)
-        if not ok2:
-            logger.warning("remove volumes: %s", detail2)
-
-        window.after(0, lambda: window.set_starting(i18n.t("uninstall.removing_images")))
-        ok3, detail3 = docker.remove_images()
-        manifest.update_cleanup_step("remove_images", ok3)
-        if not ok3:
-            logger.warning("remove images: %s", detail3)
-
+        result["steps"] = cleanup.uninstall_bibliogon(install_dir, status_callback=on_step)
         window.after(0, window.destroy)
 
     window.run_in_background(uninstall_worker)
     window.run_mainloop()
 
-    # Phase 2: Remove install directory
-    ok, detail = installer.remove_install(install_dir)
-    manifest.update_cleanup_step("rmtree", ok)
-    if not ok:
+    steps = result.get("steps", {})
+    if not steps.get("rmtree", False) and install_dir.exists():
         ui.error_dialog(
             title=i18n.t("uninstall.failed.title"),
             message=i18n.t("uninstall.failed.message"),
             actions=[(i18n.t("common.ok"), "ok")],
-            details=detail,
+            details=f"Some uninstall steps did not complete: {steps}",
             initial_show_details=show_details,
         )
         return False
-
-    # Phase 3: Clean up manifest and legacy config
-    manifest.delete_manifest()
-    manifest.update_cleanup_step("delete_manifest", True)
-    try:
-        cfg = config.load_launcher_config()
-        cfg.pop("repo_path", None)
-        config.save_launcher_config(cfg)
-    except Exception:
-        pass
-
-    # All steps done: remove cleanup state file
-    manifest.delete_cleanup_pending()
 
     ui.two_button_dialog(
         title=i18n.t("uninstall.complete.title"),
@@ -776,6 +744,60 @@ def _run_uninstall_flow(install_dir: Path) -> bool:
         secondary_label="",
     )
     return True
+
+
+def _run_management(repo: Path, port: int) -> int:
+    """Show the management dialog for an already-running Bibliogon.
+
+    Loops on the four-button dialog: Open in browser / Stop / Uninstall /
+    Close. ``open`` re-shows the dialog (a convenience action); ``stop``,
+    ``uninstall``, and ``close`` each end the launcher. Returns 0.
+
+    This is the launcher acting as a management tool, not just an
+    installer (Problem 5): the previously unreachable uninstall flow is
+    now wired here.
+    """
+    while True:
+        choice = ui.management_dialog(port)
+        if choice == "open":
+            url = f"http://localhost:{port}"
+            try:
+                webbrowser.open(url)
+            except OSError as exc:
+                logger.warning("webbrowser.open failed: %s", exc)
+            continue
+        if choice == "stop":
+            ok, detail = docker.compose_down(repo, config.COMPOSE_FILENAME)
+            if not ok:
+                logger.warning("stop via management dialog failed: %s", detail)
+            ui.info_box(i18n.t("manage.stopped.title"), i18n.t("manage.stopped.message"))
+            return 0
+        if choice == "uninstall":
+            _run_uninstall_flow(repo)
+            return 0
+        return 0  # close: leave the container running
+
+
+def _cli_uninstall() -> int:
+    """Headless uninstall for the ``--uninstall`` CLI flag.
+
+    Resolves the install directory from the manifest (falling back to the
+    legacy config), runs the shared cleanup with stdout progress, and
+    returns 0 on full success, 1 otherwise.
+    """
+    install_dir = manifest.install_dir_from_manifest() or config.resolve_repo_path()
+    logger.info("CLI uninstall starting for %s", install_dir)
+    print(f"Uninstalling Bibliogon from {install_dir} ...")
+
+    def on_step(step_key: str) -> None:
+        print(f"  - {step_key}")
+
+    results = cleanup.uninstall_bibliogon(install_dir, status_callback=on_step)
+    if all(results.values()):
+        print("Uninstall complete.")
+        return 0
+    print(f"Uninstall incomplete: {results}")
+    return 1
 
 
 def _installation_moved_picker() -> Path | None:
@@ -892,9 +914,19 @@ def _shutdown(window: ui.StatusWindow, repo: Path) -> None:
 
 
 def _handle_already_running() -> None:
+    """Another launcher instance holds the lock. Offer management.
+
+    When the install is resolvable, show the management dialog (Open /
+    Stop / Uninstall / Close) so the launcher is a management tool rather
+    than only reporting "already open" (Problem 5). Falls back to the
+    plain info box + browser-open when no valid install is found.
+    """
     repo = config.resolve_repo_path()
-    port = config.read_port(repo) if config.is_valid_repo(repo) else config.DEFAULT_PORT
-    url = f"http://localhost:{port}"
+    if config.is_valid_repo(repo):
+        port = config.read_port(repo)
+        _run_management(repo, port)
+        return
+    url = f"http://localhost:{config.DEFAULT_PORT}"
     ui.info_box(
         i18n.t("already_running.title"),
         i18n.t("already_running.message"),
