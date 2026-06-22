@@ -109,6 +109,8 @@ export const booksApi = {
         cover_image?: string | null;
         /** Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). */
         notes?: string | null;
+        /** Manual chapter collections (CHAPTER-COLLECTIONS-01). */
+        collections?: import("./types").BookCollection[] | null;
       },
     ) =>
       request<Book>(`/books/${id}`, {
