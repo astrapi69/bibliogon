@@ -1726,7 +1726,9 @@
       "asin_ebook": "ASIN del e-book",
       "asin_paperback": "ASIN tapa blanda",
       "asin_hardcover": "ASIN tapa dura",
-      "backpage_author_bio": "Sobre el autor"
+      "backpage_author_bio": "Sobre el autor",
+      "notes": "Notas del proyecto",
+      "notes_placeholder": "Notas sobre el proyecto del libro…"
     },
     "cover": {
       "choose_file": "Elegir archivo",
@@ -3426,7 +3428,10 @@
       "open": "Abrir esquema",
       "col_title": "Título",
       "col_words": "Palabras",
-      "col_target": "Objetivo"
+      "col_target": "Objetivo",
+      "col_synopsis": "Sinopsis",
+      "synopsis_placeholder": "Resumen breve…",
+      "synopsis_auto": "Generar desde el primer párrafo"
     },
     "storyboard": {
       "title": "Storyboard",

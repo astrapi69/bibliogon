@@ -975,6 +975,8 @@ ui:
     interval_never: "Nunca"
     title: "Configuracion"
     tab_general: "General"
+    notes: "Notas del proyecto"
+    notes_placeholder: "Notas sobre el proyecto del libro…"
     tab_erscheinungsbild: "Apariencia"
     tab_verhalten: "Comportamiento"
     tab_editor: "Editor"
@@ -3254,6 +3256,9 @@ ui:
     col_title: "Título"
     col_words: "Palabras"
     col_target: "Objetivo"
+    col_synopsis: "Sinopsis"
+    synopsis_placeholder: "Resumen breve…"
+    synopsis_auto: "Generar desde el primer párrafo"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mas"

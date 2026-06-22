@@ -959,6 +959,8 @@ ui:
     interval_never: "Never"
     title: "Settings"
     tab_general: "General"
+    notes: "Project notes"
+    notes_placeholder: "Notes about the book project…"
     tab_erscheinungsbild: "Appearance"
     tab_verhalten: "Behavior"
     tab_editor: "Editor"
@@ -3264,6 +3266,9 @@ ui:
     col_title: "Title"
     col_words: "Words"
     col_target: "Target"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Short summary…"
+    synopsis_auto: "Generate from first paragraph"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"

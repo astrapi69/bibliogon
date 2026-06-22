@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN brochura",
       "asin_hardcover": "ASIN capa dura",
-      "backpage_author_bio": "Sobre o autor"
+      "backpage_author_bio": "Sobre o autor",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "Escolher arquivo",
@@ -3426,7 +3428,10 @@
       "open": "Abrir estrutura",
       "col_title": "Título",
       "col_words": "Palavras",
-      "col_target": "Meta"
+      "col_target": "Meta",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph"
     },
     "storyboard": {
       "title": "Storyboard",

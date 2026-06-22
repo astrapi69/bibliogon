@@ -957,6 +957,8 @@ ui:
     interval_never: "Ποτέ"
     title: "Ρυθμίσεις"
     tab_general: "Γενικά"
+    notes: "Project notes"
+    notes_placeholder: "Notes about the book project…"
     tab_erscheinungsbild: "Εμφάνιση"
     tab_verhalten: "Συμπεριφορά"
     tab_editor: "Επεξεργαστής"
@@ -3254,6 +3256,9 @@ ui:
     col_title: "Τίτλος"
     col_words: "Λέξεις"
     col_target: "Στόχος"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Short summary…"
+    synopsis_auto: "Generate from first paragraph"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} ακόμη"

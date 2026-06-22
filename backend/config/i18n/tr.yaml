@@ -975,6 +975,8 @@ ui:
     interval_never: "Asla"
     title: "Ayarlar"
     tab_general: "Genel"
+    notes: "Project notes"
+    notes_placeholder: "Notes about the book project…"
     tab_erscheinungsbild: "Gorunum"
     tab_verhalten: "Davranis"
     tab_editor: "Düzenleyici"
@@ -3254,6 +3256,9 @@ ui:
     col_title: "Başlık"
     col_words: "Kelime"
     col_target: "Hedef"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Short summary…"
+    synopsis_auto: "Generate from first paragraph"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} daha"
