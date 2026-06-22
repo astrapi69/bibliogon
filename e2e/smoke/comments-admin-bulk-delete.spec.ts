@@ -13,6 +13,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -81,7 +82,7 @@ test.describe("Comments-Admin bulk-delete (Bug 4a)", () => {
         ).toHaveCount(0);
 
         // Open the bulk-delete dropdown and pick Trash.
-        await page.getByTestId("comment-bulk-delete-menu").click();
+        await clickMenuItem(page, "comment-bulk-delete-menu");
         await page.getByTestId("comment-bulk-delete-trash").click();
 
         // All three rows drop from the visible list.
@@ -118,7 +119,7 @@ test.describe("Comments-Admin bulk-delete (Bug 4a)", () => {
         await page.getByTestId(`comments-admin-select-${ids[0]}`).click();
         await page.getByTestId(`comments-admin-select-${ids[1]}`).click();
 
-        await page.getByTestId("comment-bulk-delete-menu").click();
+        await clickMenuItem(page, "comment-bulk-delete-menu");
         await page.getByTestId("comment-bulk-delete-permanent").click();
 
         // TypeToConfirmDialog gates the action — must type the count.

@@ -28,6 +28,7 @@
  */
 
 import {test, expect, createBook} from "../fixtures/base"
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api"
 
@@ -85,7 +86,7 @@ test.describe("Bulk delete - data-destructive UI guards", () => {
         await expect(page.getByTestId("book-bulk-count")).toContainText(/^2/)
 
         // Open the bulk-delete dropdown and choose "Move to trash".
-        await page.getByTestId("book-bulk-delete-menu").click()
+        await clickMenuItem(page, "book-bulk-delete-menu")
         await expect(
             page.getByTestId("book-bulk-delete-menu-content"),
         ).toBeVisible()
@@ -147,7 +148,7 @@ test.describe("Bulk delete - data-destructive UI guards", () => {
         await expect(page.getByTestId("book-bulk-count")).toContainText(/^3/)
 
         // Open dropdown -> Endgültig löschen.
-        await page.getByTestId("book-bulk-delete-menu").click()
+        await clickMenuItem(page, "book-bulk-delete-menu")
         await page.getByTestId("book-bulk-delete-permanent").click()
 
         // Dialog opens. Confirm button is disabled because nothing

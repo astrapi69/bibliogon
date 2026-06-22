@@ -13,6 +13,7 @@
  */
 
 import { test, expect, createBook, createChapter } from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const WIDE = { width: 1440, height: 900 };
 const NARROW = { width: 600, height: 900 };
@@ -46,7 +47,7 @@ test.describe("BookEditor structured menu", () => {
         await expect(page.getByTestId("book-editor-menu-item-shortcuts")).toBeVisible();
 
         // Choosing an action dispatches (navigates) and closes the menu.
-        await page.getByTestId("book-editor-menu-item-shortcuts").click();
+        await clickMenuItem(page, "book-editor-menu-item-shortcuts");
         await expect.poll(() => page.url()).toContain("/help/shortcuts");
         await expect(page.getByTestId("book-editor-menu-panel")).toHaveCount(0);
     });
