@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN E-Book",
       "asin_paperback": "ASIN Taschenbuch",
       "asin_hardcover": "ASIN Hardcover",
-      "backpage_author_bio": "Über den Autor"
+      "backpage_author_bio": "Über den Autor",
+      "notes": "Projektnotizen",
+      "notes_placeholder": "Notizen zum Buchprojekt…"
     },
     "cover": {
       "choose_file": "Datei wählen",
@@ -3426,7 +3428,10 @@
       "open": "Gliederung öffnen",
       "col_title": "Titel",
       "col_words": "Wörter",
-      "col_target": "Ziel"
+      "col_target": "Ziel",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Kurze Zusammenfassung…",
+      "synopsis_auto": "Aus erstem Absatz erzeugen"
     },
     "storyboard": {
       "title": "Storyboard",

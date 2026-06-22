@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN 電子書籍",
       "asin_paperback": "ASIN ペーパーバック",
       "asin_hardcover": "ASIN ハードカバー",
-      "backpage_author_bio": "著者について"
+      "backpage_author_bio": "著者について",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "ファイルを選択",
@@ -3426,7 +3428,10 @@
       "open": "アウトラインを開く",
       "col_title": "タイトル",
       "col_words": "語数",
-      "col_target": "目標"
+      "col_target": "目標",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph"
     },
     "storyboard": {
       "title": "ストーリーボード",

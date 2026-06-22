@@ -204,6 +204,8 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
+    notes: str | None = Field(default=None, max_length=20000)
     # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted relationship-graph
     # node positions {entity_id: {x, y}}.
     graph_layout: dict | None = None
@@ -532,6 +534,8 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
+    notes: str | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL. The
     # BookMetadataEditor reads this directly when no GitSyncMapping
     # exists; when a mapping exists, the UI prefers the mapping's
@@ -632,6 +636,7 @@ class ChapterCreate(BaseModel):
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
+    synopsis: str | None = Field(default=None, max_length=2000)
 
     @field_validator("mood_color")
     @classmethod
@@ -666,6 +671,7 @@ class ChapterUpdate(BaseModel):
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
+    synopsis: str | None = Field(default=None, max_length=2000)
 
     @field_validator("mood_color")
     @classmethod
@@ -736,6 +742,7 @@ class ChapterOut(BaseModel):
     status: str | None = None
     label_id: str | None = None
     target_words: int | None = None
+    synopsis: str | None = None
 
 
 class WritingSessionOut(BaseModel):

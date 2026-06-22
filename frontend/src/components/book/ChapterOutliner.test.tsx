@@ -123,4 +123,33 @@ describe("ChapterOutliner", () => {
         expect(id).toBe("alpha")
         expect(patch.target_words).toBe(3000)
     })
+
+    it("renders a synopsis cell per chapter row", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        await waitFor(() => expect(screen.getByTestId("outliner-synopsis-alpha")).toBeInTheDocument())
+        expect(screen.getByTestId("outliner-synopsis-beta")).toBeInTheDocument()
+        expect(screen.getByTestId("outliner-synopsis-auto-alpha")).toBeInTheDocument()
+    })
+
+    it("PATCHes synopsis on synopsis-input blur", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        const input = await screen.findByTestId("outliner-synopsis-alpha")
+        fireEvent.change(input, {target: {value: "The hero departs."}})
+        fireEvent.blur(input)
+        await waitFor(() => expect(api.chapters.update).toHaveBeenCalled())
+        const [, id, patch] = (api.chapters.update as ReturnType<typeof vi.fn>).mock.calls[0]
+        expect(id).toBe("alpha")
+        expect(patch.synopsis).toBe("The hero departs.")
+    })
+
+    it("auto-generates the synopsis from the first paragraph", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        const btn = await screen.findByTestId("outliner-synopsis-auto-alpha")
+        fireEvent.click(btn)
+        await waitFor(() => expect(api.chapters.update).toHaveBeenCalled())
+        const [, id, patch] = (api.chapters.update as ReturnType<typeof vi.fn>).mock.calls[0]
+        expect(id).toBe("alpha")
+        // alpha's content is "one two three four five" (plain text fixture).
+        expect(patch.synopsis).toBe("one two three four five")
+    })
 })

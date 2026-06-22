@@ -220,6 +220,8 @@ export interface Book {
     backpage_author_bio: string | null;
     cover_image: string | null;
     custom_css: string | null;
+    /** Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). */
+    notes?: string | null;
     /** BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL for
      *  books tracked externally. When the book is
      *  plugin-git-sync-managed, GitSyncMappingStatus.repo_url
@@ -275,6 +277,9 @@ export interface Chapter {
     label_id?: string | null;
     /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
     target_words?: number | null;
+    /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
+     *  distinct from the Storyboard ``notes`` annotation. */
+    synopsis?: string | null;
 }
 
 /** A per-day writing-session row (WRITING-GOALS-PROGRESS-TRACKING-01). */
@@ -1136,6 +1141,9 @@ export interface ChapterUpdatePayload {
     label_id?: string | null;
     /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
     target_words?: number | null;
+    /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
+     *  distinct from the Storyboard ``notes`` annotation. */
+    synopsis?: string | null;
 }
 
 export interface ChapterVersionSummary {

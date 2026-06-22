@@ -483,6 +483,23 @@ describe("BookMetadataEditor", () => {
         expect(savedData.subtitle).toBeNull();
     });
 
+    it("project notes round-trip through form state to onSave payload", async () => {
+        renderEditor({ notes: null });
+        const notesInput = screen.getByRole("textbox", { name: "Projektnotizen" });
+        fireEvent.change(notesInput, { target: { value: "Plan act two next." } });
+        fireEvent.click(screen.getByTestId("metadata-save"));
+        await waitFor(() => expect(onSave).toHaveBeenCalled());
+        expect(onSave.mock.calls[0][0].notes).toBe("Plan act two next.");
+    });
+
+    it("existing book notes prefill the project-notes field", () => {
+        renderEditor({ notes: "Existing project plan." });
+        const notesInput = screen.getByRole("textbox", {
+            name: "Projektnotizen",
+        }) as HTMLTextAreaElement;
+        expect(notesInput.value).toBe("Existing project plan.");
+    });
+
     // --- Copy from book ---
 
     it("shows copy button when other books exist", () => {

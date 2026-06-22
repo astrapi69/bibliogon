@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN χαρτόδετο",
       "asin_hardcover": "ASIN σκληρόδετο",
-      "backpage_author_bio": "Σχετικά με τον συγγραφέα"
+      "backpage_author_bio": "Σχετικά με τον συγγραφέα",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "Επιλογή αρχείου",
@@ -3426,7 +3428,10 @@
       "open": "Άνοιγμα διάρθρωσης",
       "col_title": "Τίτλος",
       "col_words": "Λέξεις",
-      "col_target": "Στόχος"
+      "col_target": "Στόχος",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph"
     },
     "storyboard": {
       "title": "Storyboard",

@@ -960,6 +960,8 @@ ui:
     interval_never: "Nie"
     title: "Einstellungen"
     tab_general: "Allgemein"
+    notes: "Projektnotizen"
+    notes_placeholder: "Notizen zum Buchprojekt…"
     tab_erscheinungsbild: "Erscheinungsbild"
     tab_verhalten: "Verhalten"
     tab_editor: "Editor"
@@ -3264,6 +3266,9 @@ ui:
     col_title: "Titel"
     col_words: "Wörter"
     col_target: "Ziel"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Kurze Zusammenfassung…"
+    synopsis_auto: "Aus erstem Absatz erzeugen"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} weitere"

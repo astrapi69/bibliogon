@@ -957,6 +957,8 @@ ui:
     interval_never: "なし"
     title: "設定"
     tab_general: "一般"
+    notes: "Project notes"
+    notes_placeholder: "Notes about the book project…"
     tab_erscheinungsbild: "外観"
     tab_verhalten: "動作"
     tab_editor: "エディタ"
@@ -3254,6 +3256,9 @@ ui:
     col_title: "タイトル"
     col_words: "語数"
     col_target: "目標"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Short summary…"
+    synopsis_auto: "Generate from first paragraph"
   storyboard:
     title: "ストーリーボード"
     more_entities: "他{count}件"

@@ -975,6 +975,8 @@ ui:
     interval_never: "Jamais"
     title: "Paramètres"
     tab_general: "Général"
+    notes: "Notes du projet"
+    notes_placeholder: "Notes sur le projet du livre…"
     tab_erscheinungsbild: "Apparence"
     tab_verhalten: "Comportement"
     tab_editor: "Editeur"
@@ -3254,6 +3256,9 @@ ui:
     col_title: "Titre"
     col_words: "Mots"
     col_target: "Objectif"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Résumé court…"
+    synopsis_auto: "Générer à partir du premier paragraphe"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} de plus"

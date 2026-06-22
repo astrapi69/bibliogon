@@ -1726,7 +1726,9 @@
       "asin_ebook": "ASIN e-kitap",
       "asin_paperback": "ASIN karton kapak",
       "asin_hardcover": "ASIN sert kapak",
-      "backpage_author_bio": "Yazar hakkinda"
+      "backpage_author_bio": "Yazar hakkinda",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "Dosya sec",
@@ -3426,7 +3428,10 @@
       "open": "Taslağı aç",
       "col_title": "Başlık",
       "col_words": "Kelime",
-      "col_target": "Hedef"
+      "col_target": "Hedef",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph"
     },
     "storyboard": {
       "title": "Storyboard",
