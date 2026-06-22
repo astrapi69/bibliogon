@@ -128,3 +128,63 @@ describe("formatEventLog", () => {
         expect(log).toContain('Toast: error "Export failed"');
     });
 });
+
+// --- EVT-05: optional category / action / appState axis ---
+
+describe("category/action/appState axis (EVT-05)", () => {
+    it("round-trips the optional fields through the buffer", () => {
+        eventRecorder.add({
+            type: "api_call",
+            timestamp: 0,
+            method: "POST",
+            endpoint: "/api/books",
+            category: "storage",
+            action: "create_book",
+            appState: {mode: "dexie", language: "de", online: false, theme: "nord", version: "0.57.0"},
+        });
+        const [stored] = eventRecorder.getAll();
+        expect(stored.category).toBe("storage");
+        expect(stored.action).toBe("create_book");
+        expect(stored.appState).toEqual({
+            mode: "dexie",
+            language: "de",
+            online: false,
+            theme: "nord",
+            version: "0.57.0",
+        });
+    });
+
+    it("sanitizes a sensitive action and truncates a long one", () => {
+        expect(
+            sanitizeEvent({type: "click", timestamp: 0, action: "set api_key value"}).action,
+        ).toBe("[REDACTED]");
+
+        const long = "x".repeat(300);
+        const result = sanitizeEvent({type: "click", timestamp: 0, action: long});
+        expect(result.action).toHaveLength(203);
+        expect(result.action?.endsWith("...")).toBe(true);
+    });
+
+    it("renders the category:action tag and the app-state block in the markdown export", () => {
+        const log = formatEventLog([
+            {
+                type: "api_call",
+                timestamp: 0,
+                method: "POST",
+                endpoint: "/api/import",
+                category: "import",
+                action: "medium_zip",
+                appState: {mode: "dexie", language: "en", online: true},
+            },
+        ]);
+        expect(log).toContain("{import:medium_zip}");
+        expect(log).toContain("(mode=dexie, lang=en, online=true)");
+    });
+
+    it("leaves legacy events without the semantic axis unchanged", () => {
+        const log = formatEventLog([{type: "navigation", timestamp: 0, from: "/a", to: "/b"}]);
+        expect(log).not.toContain("{");
+        expect(log).not.toContain("(mode=");
+        expect(log).toContain("Navigation: /a -> /b");
+    });
+});
