@@ -295,8 +295,8 @@ test.describe("Article-to-book conversion", () => {
         // Re-fetch the book from the API and verify position 0 is the
         // title page (DB-level assertion is stable across UI rendering
         // tweaks).
-        await page.waitForTimeout(50) // give the URL listener a tick
-        expect(bookId).not.toBe("")
+        // Poll until the URL listener has set bookId, deterministically.
+        await expect.poll(() => bookId).not.toBe("")
         const res = await fetch(`${API}/books/${bookId}`)
         expect(res.ok).toBe(true)
         const detail = (await res.json()) as {
