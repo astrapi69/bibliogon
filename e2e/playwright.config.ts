@@ -28,6 +28,13 @@ export default defineConfig({
     // animations:disabled freezes CSS transitions so a screenshot taken
     // mid-transition cannot flake the diff.
     expect: {
+        // Assertion-wait budget. The default is 5000ms, but under
+        // sustained full-suite load a page's top-level container can take
+        // longer than that to render, flaking toBeVisible/toBeAttached on
+        // the first attempt (#535). Match the 10s actionTimeout so the
+        // assertion waits get the same headroom; a genuinely missing
+        // element still fails, just after 10s.
+        timeout: 10_000,
         toHaveScreenshot: {
             maxDiffPixelRatio: 0.01,
             animations: "disabled",
