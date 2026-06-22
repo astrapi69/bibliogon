@@ -52,9 +52,16 @@ async function openBookMenu(page: Page, bookId: string) {
 
 async function moveBookToTrashViaUI(page: Page, bookId: string) {
     await openBookMenu(page, bookId);
-    await page.getByTestId(`book-card-menu-delete-${bookId}`).click();
+    // Wait for the Radix dropdown item to be visible/stable before
+    // clicking: clicking mid-open-transition let the click miss and the
+    // card stayed on the grid, failing the assertion below (flake #522).
+    const deleteItem = page.getByTestId(`book-card-menu-delete-${bookId}`);
+    await deleteItem.waitFor({state: "visible"});
+    await deleteItem.click();
     // The card disappears from the main grid.
-    await expect(page.getByTestId(`book-card-${bookId}`)).not.toBeVisible();
+    await expect(page.getByTestId(`book-card-${bookId}`)).not.toBeVisible({
+        timeout: 10000,
+    });
 }
 
 async function openTrashView(page: Page) {
