@@ -16,6 +16,7 @@
  */
 
 import {test, expect, createPictureBook} from "../fixtures/base"
+import {clickMenuItem} from "../helpers/ui";
 import type {Page} from "@playwright/test"
 
 const API = "http://localhost:8000/api"
@@ -209,7 +210,7 @@ test.describe("Picture-Book PageEditor smoke", () => {
         await expect(
             page.getByTestId("new-book-menu-item-picture-book"),
         ).toBeVisible()
-        await page.getByTestId("new-book-menu-item-picture-book").click()
+        await clickMenuItem(page, "new-book-menu-item-picture-book")
 
         // The modal opens with the picture-book title + no Template tab.
         await expect(

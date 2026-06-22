@@ -23,6 +23,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -86,7 +87,7 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
         await expect(card).toBeVisible({timeout: 5000});
 
         // Open the kebab menu.
-        await page.getByTestId(`book-card-menu-${book.id}`).click();
+        await clickMenuItem(page, `book-card-menu-${book.id}`);
 
         // Use the permanent-delete item: book move-to-trash
         // (Dashboard.handleDelete) deletes immediately with NO confirm
@@ -128,7 +129,7 @@ test.describe("Bug 6: menu auto-closes before dialog opens", () => {
         await expect(page.getByTestId("article-editor-actions-menu")).toBeVisible({
             timeout: 5000,
         });
-        await page.getByTestId("article-editor-actions-menu").click();
+        await clickMenuItem(page, "article-editor-actions-menu");
 
         const reclassifyItem = page.getByTestId("article-editor-menu-reclassify");
         await expect(reclassifyItem).toBeVisible({timeout: 3000});

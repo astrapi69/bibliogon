@@ -22,6 +22,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -170,7 +171,7 @@ test.describe("Comments trash-lifecycle (Bug 10)", () => {
             ).toBeVisible({timeout: 5000});
         }
         await page.getByTestId("comments-admin-select-all").click();
-        await page.getByTestId("comment-bulk-delete-menu").click();
+        await clickMenuItem(page, "comment-bulk-delete-menu");
         await page.getByTestId("comment-bulk-delete-trash").click();
         for (const id of ids) {
             await expect(
@@ -218,7 +219,7 @@ test.describe("Comments trash-lifecycle (Bug 10)", () => {
             ).toBeVisible({timeout: 5000});
         }
         await page.getByTestId("comments-admin-select-all").click();
-        await page.getByTestId("comment-bulk-delete-menu").click();
+        await clickMenuItem(page, "comment-bulk-delete-menu");
         await page.getByTestId("comment-bulk-delete-trash").click();
         for (const id of ids) {
             await expect(

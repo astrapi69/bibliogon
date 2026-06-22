@@ -15,6 +15,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -50,8 +51,8 @@ test.describe("Reclassify Article ⇄ ArticleComment (F2c)", () => {
         await expect(page.getByTestId("article-editor-actions-menu")).toBeVisible();
 
         // Open the kebab and pick "Move to comments".
-        await page.getByTestId("article-editor-actions-menu").click();
-        await page.getByTestId("article-editor-menu-reclassify").click();
+        await clickMenuItem(page, "article-editor-actions-menu");
+        await clickMenuItem(page, "article-editor-menu-reclassify");
 
         // AppDialog confirm appears — accept it. AppDialog uses a
         // generic confirm button; click by role to stay tolerant of

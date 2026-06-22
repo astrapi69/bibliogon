@@ -27,6 +27,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -117,7 +118,7 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         await expect(page.getByTestId("article-list-page")).toBeVisible();
 
         await page.getByTestId("new-article-chevron").click();
-        await page.getByTestId("new-article-menu-item-tutorial").click();
+        await clickMenuItem(page, "new-article-menu-item-tutorial");
         // Navigates to /articles/new?type=tutorial; submit to create it.
         const id = await submitCreateForm(page);
 
@@ -195,7 +196,7 @@ test.describe("ARTICLE-TYPES-SSOT-01 (renamed to ContentType) content-types arc"
         // label (or fallback id).
         await page.goto("/articles");
         await page.getByTestId("new-article-chevron").click();
-        await page.getByTestId("new-article-menu-item-tutorial").click();
+        await clickMenuItem(page, "new-article-menu-item-tutorial");
         const id = await submitCreateForm(page);
 
         // Back to the list. Wait for the row to render before probing

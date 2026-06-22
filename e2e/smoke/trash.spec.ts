@@ -21,6 +21,7 @@
 
 import {test, expect, acceptDialog, createBook, resetDb} from "../fixtures/base";
 import type {Page} from "@playwright/test";
+import {clickMenuItem} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -47,7 +48,7 @@ async function openDashboard(page: Page) {
 }
 
 async function openBookMenu(page: Page, bookId: string) {
-    await page.getByTestId(`book-card-menu-${bookId}`).click();
+    await clickMenuItem(page, `book-card-menu-${bookId}`);
 }
 
 async function moveBookToTrashViaUI(page: Page, bookId: string) {
@@ -183,7 +184,7 @@ test.describe("Trash - permanent delete from BookCard menu", () => {
         await openDashboard(page);
 
         await openBookMenu(page, bookId);
-        await page.getByTestId(`book-card-menu-delete-permanent-${bookId}`).click();
+        await clickMenuItem(page, `book-card-menu-delete-permanent-${bookId}`);
         await acceptDialog(page);
 
         // The card disappears from the main grid and does NOT
