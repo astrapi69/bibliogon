@@ -354,7 +354,7 @@ lxml = ["lxml"]
 
 [[package]]
 name = "bibliogon-plugin-audiobook"
-version = "0.49.0"
+version = "0.57.0"
 description = "Audiobook generation plugin for Bibliogon: TTS-based chapter-by-chapter audio."
 optional = false
 python-versions = "^3.11"
@@ -375,7 +375,7 @@ url = "../plugins/bibliogon-plugin-audiobook"
 
 [[package]]
 name = "bibliogon-plugin-comics"
-version = "0.49.0"
+version = "0.57.0"
 description = "Comics plugin for Bibliogon - panel-based pages, multi-bubble, comic-specific layouts (Phase 1: scaffolding)"
 optional = false
 python-versions = "^3.11"
@@ -394,7 +394,7 @@ url = "../plugins/bibliogon-plugin-comics"
 
 [[package]]
 name = "bibliogon-plugin-export"
-version = "0.49.0"
+version = "0.57.0"
 description = "EPUB, PDF and project structure export plugin for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -415,7 +415,7 @@ url = "../plugins/bibliogon-plugin-export"
 
 [[package]]
 name = "bibliogon-plugin-getstarted"
-version = "0.49.0"
+version = "0.57.0"
 description = "Onboarding and getting started guide for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -433,7 +433,7 @@ url = "../plugins/bibliogon-plugin-getstarted"
 
 [[package]]
 name = "bibliogon-plugin-git-sync"
-version = "0.49.0"
+version = "0.57.0"
 description = "Import plugin for write-book-template git repositories. Clones a public git URL, stages the repo, and delegates to the core WbtImportHandler."
 optional = false
 python-versions = "^3.11"
@@ -453,7 +453,7 @@ url = "../plugins/bibliogon-plugin-git-sync"
 
 [[package]]
 name = "bibliogon-plugin-grammar"
-version = "0.49.0"
+version = "0.57.0"
 description = "Grammar check plugin for Bibliogon via LanguageTool"
 optional = false
 python-versions = "^3.11"
@@ -472,7 +472,7 @@ url = "../plugins/bibliogon-plugin-grammar"
 
 [[package]]
 name = "bibliogon-plugin-help"
-version = "0.49.0"
+version = "0.57.0"
 description = "In-app help, keyboard shortcuts, and FAQ for Bibliogon"
 optional = false
 python-versions = "^3.11"
@@ -490,7 +490,7 @@ url = "../plugins/bibliogon-plugin-help"
 
 [[package]]
 name = "bibliogon-plugin-kdp"
-version = "0.49.0"
+version = "0.57.0"
 description = "Amazon KDP plugin for Bibliogon - metadata export, cover validation, preview"
 optional = false
 python-versions = "^3.11"
@@ -510,7 +510,7 @@ url = "../plugins/bibliogon-plugin-kdp"
 
 [[package]]
 name = "bibliogon-plugin-kinderbuch"
-version = "0.49.0"
+version = "0.57.0"
 description = "Children's book plugin for Bibliogon - picture-per-page layout and special templates"
 optional = false
 python-versions = "^3.11"
@@ -553,7 +553,7 @@ url = "../plugins/bibliogon-plugin-medium-import"
 
 [[package]]
 name = "bibliogon-plugin-ms-tools"
-version = "0.49.0"
+version = "0.57.0"
 description = "Manuscript quality tools: style checks, sanitization, readability metrics."
 optional = false
 python-versions = "^3.11"
@@ -571,7 +571,7 @@ url = "../plugins/bibliogon-plugin-ms-tools"
 
 [[package]]
 name = "bibliogon-plugin-story-bible"
-version = "0.49.0"
+version = "0.57.0"
 description = "Story Bible plugin for Bibliogon - per-book fiction-writing entity database (characters, settings, plot points, items, lore) with @-mention cross-references (Session 1: scaffolding)"
 optional = false
 python-versions = "^3.11"
@@ -590,7 +590,7 @@ url = "../plugins/bibliogon-plugin-story-bible"
 
 [[package]]
 name = "bibliogon-plugin-translation"
-version = "0.49.0"
+version = "0.57.0"
 description = "Translation plugin for Bibliogon: DeepL and local LLM (LMStudio) integration."
 optional = false
 python-versions = "^3.11"
@@ -1337,7 +1337,7 @@ version = "0.7.1"
 description = "XML bomb protection for Python stdlib modules"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "defusedxml-0.7.1-py2.py3-none-any.whl", hash = "sha256:a352e7e428770286cc899e2542b6cdaedb2b4953ff269a210103ec58f6198a61"},
     {file = "defusedxml-0.7.1.tar.gz", hash = "sha256:1bb3032db185915b62d7c6209c5a8792be6a32ab2fedacc84e01b52c51aa3e69"},
@@ -9283,4 +9283,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "dc09052017c7c66525067a077094761bcfc0adc2c56ce47031392996d9a03cf8"
+content-hash = "6127198673cf3afdbf7a4b44ef64c454ace953b92b91cd0a431ad65cb748cd32"

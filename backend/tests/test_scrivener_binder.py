@@ -87,6 +87,21 @@ def test_parse_malformed_xml_yields_empty_list() -> None:
     assert parse_binder("<Binder><not closed") == []
 
 
+def test_parse_entity_expansion_attack_yields_empty_list() -> None:
+    """A billion-laughs / entity-expansion payload must degrade to an empty
+    list, not blow up memory. The parser uses defusedxml, which forbids
+    internal entity definitions (DefusedXmlException), caught here."""
+    payload = """<?xml version="1.0"?>
+    <!DOCTYPE lolz [
+      <!ENTITY lol "lol">
+      <!ENTITY lol2 "&lol;&lol;&lol;&lol;&lol;">
+    ]>
+    <Binder>
+      <BinderItem UUID="X" Type="Text"><Title>&lol2;</Title></BinderItem>
+    </Binder>"""
+    assert parse_binder(payload) == []
+
+
 def test_parse_no_binder_element_yields_empty_list() -> None:
     assert parse_binder("<ScrivenerProject></ScrivenerProject>") == []
 

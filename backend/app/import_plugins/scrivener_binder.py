@@ -13,6 +13,9 @@ from __future__ import annotations
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
+import defusedxml.ElementTree as DefusedET
+from defusedxml.common import DefusedXmlException
+
 # Folder item types whose contents are NOT manuscript chapters and must
 # be skipped wholesale (research notes, the trash). The Draft / Manuscript
 # folder (``DraftFolder``) and plain ``Folder`` dividers are descended
@@ -37,8 +40,8 @@ def parse_binder(scrivx_xml: str) -> list[BinderEntry]:
     rather than raising, so the importer degrades to "nothing to import".
     """
     try:
-        root = ET.fromstring(scrivx_xml)
-    except ET.ParseError:
+        root = DefusedET.fromstring(scrivx_xml)
+    except (ET.ParseError, DefusedXmlException):
         return []
     binder = root.find("Binder") if root.tag != "Binder" else root
     if binder is None:
