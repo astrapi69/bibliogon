@@ -81,10 +81,14 @@ export async function softDeleteBookViaKebab(
  * open-animation and a late re-render — the trash / book-editor-menu
  * flake class (#522, #524).
  *
- * For the grid-kebab case where the OPEN menu's item can DETACH
- * mid-click under full-suite load, use the stronger
- * `softDelete*ViaKebab` toPass loop above, which re-opens the menu on
- * each attempt.
+ * Deliberately a single click, NOT a `toPass()` re-click loop: most
+ * call sites are TOGGLE triggers, where a second click would close the
+ * menu again (#533 — a toPass loop here made trash flaky). When an OPEN
+ * menu re-renders and detaches an item mid-click, settle the cause at
+ * the call site (e.g. wait for the page's data load before opening the
+ * menu) rather than re-clicking. For the grid-kebab case where the menu
+ * can CLOSE on a per-card re-render, use the `softDelete*ViaKebab`
+ * helpers above, which re-open the menu each attempt.
  */
 export async function clickMenuItem(page: Page, testId: string): Promise<void> {
     const item = page.getByTestId(testId);
