@@ -39,6 +39,39 @@ export type EventType =
     | "uncaught_error"
     | "unhandled_rejection";
 
+/**
+ * Optional semantic category axis (EVT-05), additive to {@link EventType}.
+ * Where `type` records the mechanical shape of an interaction (a click, an
+ * API call), `category` records the domain it belongs to, so a bug report
+ * reads at a glance which subsystem the user was exercising.
+ */
+export type EventCategory =
+    | "storage"
+    | "import"
+    | "export"
+    | "editor"
+    | "network"
+    | "error";
+
+/**
+ * Optional per-entry snapshot of the app context at record time (EVT-05).
+ * A small, non-sensitive subset; all fields optional. Mirrors the once-only
+ * app-state block that the export already appends, but per entry so a long
+ * session that switched mode/theme/language stays attributable.
+ */
+export interface EventAppState {
+    /** Effective storage backend ("api" | "dexie"). */
+    mode?: string;
+    /** Active UI language code (e.g. "de", "en"). */
+    language?: string;
+    /** navigator.onLine at record time. */
+    online?: boolean;
+    /** Active theme variant. */
+    theme?: string;
+    /** App version string. */
+    version?: string;
+}
+
 export interface RecordedEvent {
     type: EventType;
     /** Milliseconds since page load (performance.now). */
@@ -70,6 +103,12 @@ export interface RecordedEvent {
     /** Old and new path for navigation. */
     from?: string;
     to?: string;
+    /** Optional semantic category, additive to {@link EventType} (EVT-05). */
+    category?: EventCategory;
+    /** Optional semantic action verb in free text, additive (EVT-05). */
+    action?: string;
+    /** Optional per-entry app-state snapshot (EVT-05). */
+    appState?: EventAppState;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +127,9 @@ export function sanitizeEvent(event: RecordedEvent): RecordedEvent {
     }
     if (copy.text && SENSITIVE_FIELD.test(copy.text)) {
         copy.text = "[REDACTED]";
+    }
+    if (copy.action && SENSITIVE_FIELD.test(copy.action)) {
+        copy.action = "[REDACTED]";
     }
 
     // Strip query params from URLs
@@ -111,6 +153,9 @@ export function sanitizeEvent(event: RecordedEvent): RecordedEvent {
     }
     if (copy.message && copy.message.length > MAX_TEXT_LENGTH) {
         copy.message = copy.message.substring(0, MAX_TEXT_LENGTH) + "...";
+    }
+    if (copy.action && copy.action.length > MAX_TEXT_LENGTH) {
+        copy.action = copy.action.substring(0, MAX_TEXT_LENGTH) + "...";
     }
 
     return copy;
@@ -200,38 +245,67 @@ function formatTime(ms: number): string {
     return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
 }
 
+/** Render the mechanical (type-based) portion of one event line. */
+function formatBaseLine(ev: RecordedEvent, time: string): string {
+    switch (ev.type) {
+        case "click":
+            return `${time}  Klick: "${ev.text || "?"}"${ev.testId ? ` [${ev.testId}]` : ""}`;
+        case "navigation":
+            return `${time}  Navigation: ${ev.from || "?"} -> ${ev.to || "?"}`;
+        case "dialog_open":
+            return `${time}  Dialog geöffnet: "${ev.text || "?"}"`;
+        case "dialog_close":
+            return `${time}  Dialog geschlossen: "${ev.text || "?"}"`;
+        case "dropdown_change":
+            return `${time}  Dropdown: ${ev.field || "?"} = "${ev.value || "?"}"`;
+        case "checkbox_change":
+            return `${time}  Checkbox: ${ev.field || "?"} = ${ev.value || "?"}`;
+        case "file_upload":
+            return `${time}  Upload: ${ev.text || "Datei"} (${ev.value || "?"})`;
+        case "api_call":
+            return `${time}  API: ${ev.method || "?"} ${ev.endpoint || "?"} -> ${ev.status || "?"} (${ev.durationMs || 0}ms)`;
+        case "api_error":
+            return `${time}  API Fehler: ${ev.method || "?"} ${ev.endpoint || "?"} -> ${ev.message || "?"}`;
+        case "toast":
+            return `${time}  Toast: ${ev.level || "?"} "${ev.message || "?"}"`;
+        case "uncaught_error":
+            return `${time}  Uncaught Error: ${ev.message || "?"} (${ev.source || "?"}:${ev.line || "?"})`;
+        case "unhandled_rejection":
+            return `${time}  Unhandled Rejection: ${ev.message || "?"}`;
+        default:
+            return `${time}  ${ev.type}: ${ev.text || ev.message || ""}`;
+    }
+}
+
+/**
+ * Render the optional semantic axis (EVT-05) as a suffix: a `{category:action}`
+ * tag plus a compact `(mode=…, lang=…)` app-state block. Returns an empty
+ * string when no semantic context is present, so legacy events are unchanged.
+ */
+function formatContext(ev: RecordedEvent): string {
+    let suffix = "";
+    if (ev.category || ev.action) {
+        const tag =
+            ev.category && ev.action ? `${ev.category}:${ev.action}` : ev.category || ev.action;
+        suffix += ` {${tag}}`;
+    }
+    if (ev.appState) {
+        const state = ev.appState;
+        const parts: string[] = [];
+        if (state.mode) parts.push(`mode=${state.mode}`);
+        if (state.language) parts.push(`lang=${state.language}`);
+        if (state.online !== undefined) parts.push(`online=${state.online}`);
+        if (state.theme) parts.push(`theme=${state.theme}`);
+        if (state.version) parts.push(`v${state.version}`);
+        if (parts.length) suffix += ` (${parts.join(", ")})`;
+    }
+    return suffix;
+}
+
 /** Render the event buffer as a human-readable multi-line string. */
 export function formatEventLog(events?: RecordedEvent[]): string {
     const items = events || eventRecorder.getAll();
-    return items.map((ev) => {
-        const time = formatTime(ev.timestamp);
-        switch (ev.type) {
-            case "click":
-                return `${time}  Klick: "${ev.text || "?"}"${ev.testId ? ` [${ev.testId}]` : ""}`;
-            case "navigation":
-                return `${time}  Navigation: ${ev.from || "?"} -> ${ev.to || "?"}`;
-            case "dialog_open":
-                return `${time}  Dialog geöffnet: "${ev.text || "?"}"`;
-            case "dialog_close":
-                return `${time}  Dialog geschlossen: "${ev.text || "?"}"`;
-            case "dropdown_change":
-                return `${time}  Dropdown: ${ev.field || "?"} = "${ev.value || "?"}"`;
-            case "checkbox_change":
-                return `${time}  Checkbox: ${ev.field || "?"} = ${ev.value || "?"}`;
-            case "file_upload":
-                return `${time}  Upload: ${ev.text || "Datei"} (${ev.value || "?"})`;
-            case "api_call":
-                return `${time}  API: ${ev.method || "?"} ${ev.endpoint || "?"} -> ${ev.status || "?"} (${ev.durationMs || 0}ms)`;
-            case "api_error":
-                return `${time}  API Fehler: ${ev.method || "?"} ${ev.endpoint || "?"} -> ${ev.message || "?"}`;
-            case "toast":
-                return `${time}  Toast: ${ev.level || "?"} "${ev.message || "?"}"`;
-            case "uncaught_error":
-                return `${time}  Uncaught Error: ${ev.message || "?"} (${ev.source || "?"}:${ev.line || "?"})`;
-            case "unhandled_rejection":
-                return `${time}  Unhandled Rejection: ${ev.message || "?"}`;
-            default:
-                return `${time}  ${ev.type}: ${ev.text || ev.message || ""}`;
-        }
-    }).join("\n");
+    return items
+        .map((ev) => formatBaseLine(ev, formatTime(ev.timestamp)) + formatContext(ev))
+        .join("\n");
 }
