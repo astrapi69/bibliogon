@@ -65,18 +65,6 @@ store.
 
 ## P2 - High-Value User Features
 
-- [ ] **EVT-05** (filed 2026-06-17) — Event Recording: optional
-  category/appState axis. Add an optional `category`
-  (storage/import/export/editor/network/error) + `action` string +
-  per-entry `appState` subset (mode/language/online/theme/version) to
-  each recorded event, additive to the current `EventType` enum;
-  surface it in the JSON/Markdown export. Effort M. Base EVT-01..04
-  shipped. See [EXP-002](explorations/EXP-002-user-event-recording.md).
-- [ ] **EVT-06** (filed 2026-06-17) — register `EVENT_RECORDING` in the
-  feature-strategy `ALWAYS_ACTIVE` set (`src/features/featureConfig.ts`)
-  so the recorder is a declared, always-active feature rather than
-  running ungated. Effort S. See
-  [EXP-002](explorations/EXP-002-user-event-recording.md).
 - [ ] **MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01** (was P3,
   raised to P2 2026-06-17) — adjudicate the 6 open coordination
   decisions in
