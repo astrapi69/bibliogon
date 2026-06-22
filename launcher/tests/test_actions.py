@@ -348,6 +348,36 @@ class TestSetPort:
         assert data["port"] == 8001
 
 
+class TestResolveComposeFile:
+
+    def test_prefers_source_checkout(self, tmp_path: Path) -> None:
+        compose = tmp_path / "docker-compose.prod.yml"
+        with patch("bibliogon_launcher.actions.source_checkout_repo", return_value=tmp_path):
+            result = actions.resolve_compose_file()
+        assert result == compose
+
+    def test_falls_back_to_manifest(self, tmp_path: Path) -> None:
+        compose = tmp_path / "docker-compose.prod.yml"
+        compose.write_text("services: {}\n")
+        with patch("bibliogon_launcher.actions.source_checkout_repo", return_value=None), \
+             patch("bibliogon_launcher.manifest.install_dir_from_manifest", return_value=tmp_path):
+            assert actions.resolve_compose_file() == compose
+
+    def test_falls_back_to_configured_repo(self, tmp_path: Path) -> None:
+        compose = tmp_path / "docker-compose.prod.yml"
+        compose.write_text("services: {}\n")
+        with patch("bibliogon_launcher.actions.source_checkout_repo", return_value=None), \
+             patch("bibliogon_launcher.manifest.install_dir_from_manifest", return_value=None), \
+             patch("bibliogon_launcher.config.resolve_repo_path", return_value=tmp_path):
+            assert actions.resolve_compose_file() == compose
+
+    def test_none_when_nothing_found(self, tmp_path: Path) -> None:
+        with patch("bibliogon_launcher.actions.source_checkout_repo", return_value=None), \
+             patch("bibliogon_launcher.manifest.install_dir_from_manifest", return_value=None), \
+             patch("bibliogon_launcher.config.resolve_repo_path", return_value=tmp_path / "absent"):
+            assert actions.resolve_compose_file() is None
+
+
 class TestSetRepoPort:
 
     def test_writes_env(self, tmp_path: Path) -> None:

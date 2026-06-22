@@ -250,3 +250,40 @@ def set_repo_port(repo: Path, port: int) -> tuple[bool, str]:
     if config.write_port(Path(repo), port):
         return True, str(port)
     return False, "could not write .env"
+
+
+# --- Repo / compose-file resolution ----------------------------------
+
+
+def source_checkout_repo() -> Path | None:
+    """Return the in-tree repo dir when the launcher runs from source.
+
+    ``actions.py`` lives at ``launcher/bibliogon_launcher/actions.py``,
+    so ``parents[2]`` is the repository root. When that root carries the
+    production compose file the launcher is running from a developer
+    checkout - the spec says to prefer it over a downloaded copy.
+    """
+    candidate = Path(__file__).resolve().parents[2]
+    if (candidate / config.COMPOSE_FILENAME).is_file():
+        return candidate
+    return None
+
+
+def resolve_compose_file() -> Path | None:
+    """Locate the compose file to operate on, or None if not found.
+
+    Resolution order (per spec - local checkout wins):
+      1. the in-tree source checkout,
+      2. the install dir recorded in the manifest,
+      3. the configured / default repo path.
+    """
+    repo = source_checkout_repo()
+    if repo is not None:
+        return repo / config.COMPOSE_FILENAME
+    install_dir = manifest.install_dir_from_manifest()
+    if install_dir is not None and (install_dir / config.COMPOSE_FILENAME).is_file():
+        return install_dir / config.COMPOSE_FILENAME
+    repo = config.resolve_repo_path()
+    if (repo / config.COMPOSE_FILENAME).is_file():
+        return repo / config.COMPOSE_FILENAME
+    return None
