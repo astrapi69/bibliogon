@@ -72,6 +72,12 @@ a = Analysis(
         "matplotlib",
         "scipy",
         "PIL",  # Pillow is only for the icon-generation script, not runtime.
+        # pystray is an optional source-install extra (system tray); the
+        # frozen binary intentionally ships without it and falls back to
+        # plain window behaviour. Excluding it also avoids bundling the
+        # platform tray backends (Xlib/AppIndicator).
+        "pystray",
+        "Xlib",
     ],
     noarchive=False,
     cipher=block_cipher,

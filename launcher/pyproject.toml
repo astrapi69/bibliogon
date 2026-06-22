@@ -15,11 +15,22 @@ python = ">=3.11,<3.14"
 # stdlib-only runtime: tkinter, urllib, webbrowser, subprocess, pathlib, json, logging
 # Tkinter ships with Python on Windows installers; no pip dep required.
 platformdirs = "^4.9.6"
+# Optional system-tray support (`pip install bibliogon-launcher[tray]`).
+# The launcher falls back to normal window behaviour when these are
+# absent; the frozen PyInstaller binary excludes them deliberately.
+pystray = {version = "^0.19.5", optional = true}
+pillow = {version = "^12.2.0", optional = true}
+
+[tool.poetry.extras]
+tray = ["pystray", "pillow"]
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
 pyinstaller = "^6.11.0"
-pillow = "^12.2.0"  # Used only by the icon-generation script; bumped from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}
+# pillow is declared in [tool.poetry.dependencies] as an optional (tray)
+# dep; it is also installed for the dev icon-generation script. Bumped
+# from 11.x for CVE-2026-{25990,40192,42308,42309,42310,42311}.
+pillow = "^12.2.0"
 
 [tool.poetry.scripts]
 bibliogon-launcher = "bibliogon_launcher.__main__:main"

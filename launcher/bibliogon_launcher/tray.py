@@ -24,7 +24,10 @@ try:  # pragma: no cover - import availability is environment-dependent
     import pystray
     from PIL import Image
     HAS_TRAY = True
-except ImportError:  # pragma: no cover
+except Exception:  # noqa: BLE001 - fail open: tray is optional, never block startup
+    # Not just ImportError: on a headless Linux box pystray's import
+    # raises Xlib.error.DisplayNameError when no DISPLAY is set. Any
+    # failure here must degrade to "no tray", never crash the launcher.
     pystray = None  # type: ignore[assignment]
     Image = None  # type: ignore[assignment]
     HAS_TRAY = False
