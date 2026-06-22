@@ -58,6 +58,7 @@ vi.mock("../../storage", () => ({
             get: vi.fn(),
         },
         chapterLabels: {list: h.labelListSpy},
+        books: {get: vi.fn().mockResolvedValue({collections: []}), update: vi.fn()},
     }),
 }))
 

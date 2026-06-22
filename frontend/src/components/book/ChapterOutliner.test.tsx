@@ -34,6 +34,7 @@ vi.mock("../../api/client", async () => {
             ...actual.api,
             chapters: {list: vi.fn(), update: vi.fn(), get: vi.fn()},
             chapterLabels: {list: vi.fn().mockResolvedValue([])},
+            books: {get: vi.fn(), update: vi.fn()},
         },
     }
 })
@@ -76,6 +77,8 @@ beforeEach(() => {
             version: 2,
         }),
     )
+    ;(api.books.get as ReturnType<typeof vi.fn>).mockResolvedValue({collections: []})
+    ;(api.books.update as ReturnType<typeof vi.fn>).mockResolvedValue({})
 })
 
 describe("ChapterOutliner", () => {
@@ -151,5 +154,42 @@ describe("ChapterOutliner", () => {
         expect(id).toBe("alpha")
         // alpha's content is "one two three four five" (plain text fixture).
         expect(patch.synopsis).toBe("one two three four five")
+    })
+
+    const lastCollections = () => {
+        const calls = (api.books.update as ReturnType<typeof vi.fn>).mock.calls
+        return calls.at(-1)?.[1].collections as Array<{name: string; chapter_ids: string[]}>
+    }
+
+    it("creates a collection and persists it via books.update", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        await waitFor(() => expect(api.books.update).toHaveBeenCalled())
+        expect(lastCollections()).toHaveLength(1)
+        expect(lastCollections()[0].name).toBeTruthy()
+    })
+
+    it("adds a chapter to the active collection", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        fireEvent.click(await screen.findByTestId("outliner-member-alpha"))
+        await waitFor(() => expect(lastCollections()[0].chapter_ids).toContain("alpha"))
+    })
+
+    it("filters rows to the active collection", async () => {
+        const {container} = render(
+            <ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />,
+        )
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        fireEvent.click(await screen.findByTestId("outliner-member-alpha"))
+        fireEvent.click(screen.getByTestId("outliner-collection-filter"))
+        await waitFor(() => expect(rowOrder(container)).toEqual(["alpha"]))
+    })
+
+    it("deletes the active collection", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        fireEvent.click(await screen.findByTestId("outliner-collection-delete"))
+        await waitFor(() => expect(lastCollections()).toHaveLength(0))
     })
 })
