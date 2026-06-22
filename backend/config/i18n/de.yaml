@@ -2083,7 +2083,7 @@ ui:
     multi_book_articles_note: 'Außerdem werden {count} Artikel mit wiederhergestellt.'
     preview_articles_note: 'Außerdem werden {count} Artikel mit wiederhergestellt.'
     step_1_drop_zone: Datei hier ablegen oder zum Durchsuchen klicken
-    step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub'
+    step_1_accepted_formats: 'Akzeptiert: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Dateiformat nicht unterstützt. Akzeptiert: {formats}'
     error_file_too_large: Datei zu gross (>{max} MB).
     warn_large_file: Große Datei ({size}); Erkennung dauert einen Moment.

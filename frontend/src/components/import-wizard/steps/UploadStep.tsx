@@ -16,6 +16,10 @@ const GIT_URL_RE = /^(?:https?:\/\/|git@[^\s:]+:|ssh:\/\/git@)[^\s]+(?:\.git)?\/
 // - CIO-04 added .docx + .epub via Pandoc-based office handlers
 // - .html/.htm route through the markdown handler (stored as HTML),
 //   matching the offline client importer (detectFormat -> htmlToTipTap)
+// - SCRIVENER-PROJECT-IMPORT-01: a Scrivener .scriv bundle is a folder;
+//   the user zips it and uploads as .zip (already accepted). The
+//   orchestrator extracts it and the ScrivenerImportHandler claims the
+//   directory by its .scrivx index ahead of markdown-folder.
 const ACCEPTED_EXTENSIONS = [
     ".bgb",
     ".md",
@@ -332,7 +336,7 @@ export function UploadStep({
                 >
                     {t(
                         "ui.import_wizard.step_1_accepted_formats",
-                        "Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
+                        "Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub",
                     )}
                 </p>
             </div>
