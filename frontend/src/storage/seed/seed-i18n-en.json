@@ -3442,7 +3442,8 @@
       "collection_save_failed": "Could not save collection",
       "col_in_collection": "In",
       "col_notes": "Notes",
-      "notes_placeholder": "Working notes…"
+      "notes_placeholder": "Working notes…",
+      "collection_color": "Collection color"
     },
     "storyboard": {
       "title": "Storyboard",

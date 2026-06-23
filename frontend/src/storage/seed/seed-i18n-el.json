@@ -3442,7 +3442,8 @@
       "collection_save_failed": "Could not save collection",
       "col_in_collection": "In",
       "col_notes": "Σημειώσεις",
-      "notes_placeholder": "Σημειώσεις εργασίας…"
+      "notes_placeholder": "Σημειώσεις εργασίας…",
+      "collection_color": "Χρώμα συλλογής"
     },
     "storyboard": {
       "title": "Storyboard",

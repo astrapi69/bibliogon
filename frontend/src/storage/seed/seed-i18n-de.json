@@ -3442,7 +3442,8 @@
       "collection_save_failed": "Sammlung konnte nicht gespeichert werden",
       "col_in_collection": "In",
       "col_notes": "Notizen",
-      "notes_placeholder": "Arbeitsnotizen…"
+      "notes_placeholder": "Arbeitsnotizen…",
+      "collection_color": "Farbe der Sammlung"
     },
     "storyboard": {
       "title": "Storyboard",

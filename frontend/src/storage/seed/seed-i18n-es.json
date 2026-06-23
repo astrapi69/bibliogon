@@ -3442,7 +3442,8 @@
       "collection_save_failed": "No se pudo guardar la colección",
       "col_in_collection": "En",
       "col_notes": "Notas",
-      "notes_placeholder": "Notas de trabajo…"
+      "notes_placeholder": "Notas de trabajo…",
+      "collection_color": "Color de la colección"
     },
     "storyboard": {
       "title": "Storyboard",

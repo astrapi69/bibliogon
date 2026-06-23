@@ -177,7 +177,11 @@ describe("ChapterOutliner", () => {
 
     const lastCollections = () => {
         const calls = (api.books.update as ReturnType<typeof vi.fn>).mock.calls
-        return calls.at(-1)?.[1].collections as Array<{name: string; chapter_ids: string[]}>
+        return calls.at(-1)?.[1].collections as Array<{
+            name: string
+            chapter_ids: string[]
+            color?: string | null
+        }>
     }
 
     it("creates a collection and persists it via books.update", async () => {
@@ -210,5 +214,22 @@ describe("ChapterOutliner", () => {
         fireEvent.click(await screen.findByTestId("outliner-collection-new"))
         fireEvent.click(await screen.findByTestId("outliner-collection-delete"))
         await waitFor(() => expect(lastCollections()).toHaveLength(0))
+    })
+
+    it("sets a collection color and persists it", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        fireEvent.click(await screen.findByTestId("outliner-collection-color-#3b82f6"))
+        await waitFor(() => expect(lastCollections()[0].color).toBe("#3b82f6"))
+        expect(screen.getByTestId("outliner-collection-color-dot")).toBeInTheDocument()
+    })
+
+    it("toggles a collection color off when the active swatch is clicked again", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        fireEvent.click(await screen.findByTestId("outliner-collection-new"))
+        fireEvent.click(await screen.findByTestId("outliner-collection-color-#3b82f6"))
+        await waitFor(() => expect(lastCollections()[0].color).toBe("#3b82f6"))
+        fireEvent.click(screen.getByTestId("outliner-collection-color-#3b82f6"))
+        await waitFor(() => expect(lastCollections()[0].color).toBeNull())
     })
 })

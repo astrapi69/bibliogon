@@ -36,6 +36,11 @@ type OutlinerPatch = Pick<
 
 type SortKey = "position" | "title" | "words" | "target" | "status"
 
+// Fixed swatch palette for collection colours (CHAPTER-COLLECTIONS-01).
+// Hex so the swatch renders via inline backgroundColor (a genuinely
+// dynamic value, the sanctioned inline-style case).
+const COLLECTION_COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#6b7280"]
+
 interface Props {
     bookId: string
     bookTitle: string
@@ -197,6 +202,16 @@ export default function ChapterOutliner({
         [activeCollection, collections, saveCollections],
     )
 
+    const setCollectionColor = useCallback(
+        (color: string | null) => {
+            if (!activeCollection) return
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, color} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
     const toggleSort = (key: SortKey) => {
         if (key === sortKey) {
             setSortDir((d) => (d === "asc" ? "desc" : "asc"))
@@ -306,6 +321,14 @@ export default function ChapterOutliner({
                 </button>
                 {activeCollection && (
                     <>
+                        {activeCollection.color && (
+                            <span
+                                className="h-3 w-3 rounded-full border border-[var(--border)]"
+                                style={{backgroundColor: activeCollection.color}}
+                                data-testid={`${testidNamespace}-collection-color-dot`}
+                                aria-hidden="true"
+                            />
+                        )}
                         <input
                             key={`colname-${activeCollection.id}-${activeCollection.name}`}
                             className="input w-auto"
@@ -314,6 +337,28 @@ export default function ChapterOutliner({
                             data-testid={`${testidNamespace}-collection-name`}
                             onBlur={(e) => handleRenameCollection(e.target.value)}
                         />
+                        <div
+                            className="flex items-center gap-1"
+                            role="group"
+                            aria-label={t("ui.outliner.collection_color", "Collection color")}
+                        >
+                            {COLLECTION_COLORS.map((color) => (
+                                <button
+                                    key={color}
+                                    type="button"
+                                    className="h-5 w-5 rounded-full border border-[var(--border)]"
+                                    style={{backgroundColor: color}}
+                                    aria-label={color}
+                                    aria-pressed={activeCollection.color === color}
+                                    onClick={() =>
+                                        setCollectionColor(
+                                            activeCollection.color === color ? null : color,
+                                        )
+                                    }
+                                    data-testid={`${testidNamespace}-collection-color-${color}`}
+                                />
+                            ))}
+                        </div>
                         <label className="flex items-center gap-1 text-sm">
                             <input
                                 type="checkbox"

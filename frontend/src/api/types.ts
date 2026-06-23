@@ -164,6 +164,8 @@ export interface BookCollection {
     id: string;
     name: string;
     chapter_ids: string[];
+    /** Optional swatch colour (hex) for visual distinction (CHAPTER-COLLECTIONS-01). */
+    color?: string | null;
 }
 
 export interface Book {
