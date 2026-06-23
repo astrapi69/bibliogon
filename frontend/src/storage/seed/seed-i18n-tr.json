@@ -3683,7 +3683,16 @@
       "arc_mailto_subject": "ARC isteği",
       "arc_send_mail": "E-posta yaz",
       "conflict_banner": "Kitap meta verileri son sihirbaz oturumundan bu yana değişti. Paketi oluşturmadan önce lütfen meta verileri + kapağı yeniden doğrulayın.",
-      "conflict_dismiss": "Bildirimi kapat"
+      "conflict_dismiss": "Bildirimi kapat",
+      "step_guide": "Kılavuz",
+      "guide_intro": "Bibliogon senin yerine yüklemez. Paketini KDP'de şöyle yayımlarsın:",
+      "guide_open_kdp": "KDP Bookshelf'i aç",
+      "guide_step_create": "KDP'de yeni bir başlık oluştur (e-Kitap veya Ciltsiz/Ciltli).",
+      "guide_step_manuscript": "Manuskript dosyasını ZIP'ten yükle: e-Kitap için manuscript-ebook.epub, baskı için manuscript-paperback.pdf.",
+      "guide_step_cover": "Kapak dosyasını yükle (cover.*).",
+      "guide_step_metadata": "metadata.json'daki bilgileri aktar (başlık, yazar, açıklama, kategoriler, anahtar kelimeler).",
+      "guide_step_price": "Fiyatı belirle (telif + asgari fiyat için Fiyatlar adımına bak) ve yayımla.",
+      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et."
     }
   }
 }

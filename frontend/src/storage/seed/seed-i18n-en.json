@@ -3683,7 +3683,16 @@
       "arc_mailto_subject": "ARC request",
       "arc_send_mail": "Compose email",
       "conflict_banner": "The book metadata changed since the last wizard session. Please re-validate metadata + cover before building the package.",
-      "conflict_dismiss": "Dismiss notice"
+      "conflict_dismiss": "Dismiss notice",
+      "step_guide": "Guide",
+      "guide_intro": "Bibliogon does not upload for you. Here's how to publish your package on KDP:",
+      "guide_open_kdp": "Open KDP Bookshelf",
+      "guide_step_create": "Create a new title on KDP (eBook or Paperback/Hardcover).",
+      "guide_step_manuscript": "Upload the manuscript file from the ZIP: manuscript-ebook.epub for eBook, manuscript-paperback.pdf for print.",
+      "guide_step_cover": "Upload the cover file (cover.*).",
+      "guide_step_metadata": "Transfer the details from metadata.json (title, author, description, categories, keywords).",
+      "guide_step_price": "Set the price (see the Pricing step for royalties + minimum price) and publish.",
+      "guide_note": "Check the cover validation report (cover-validation-report.json) in the ZIP if KDP rejects the cover."
     }
   }
 }

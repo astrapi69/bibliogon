@@ -3683,7 +3683,16 @@
       "arc_mailto_subject": "Αίτημα ARC",
       "arc_send_mail": "Σύνταξη email",
       "conflict_banner": "Τα μεταδεδομένα του βιβλίου άλλαξαν από την τελευταία συνεδρία του οδηγού. Επικυρώστε ξανά τα μεταδεδομένα + το εξώφυλλο προτού δημιουργήσετε το πακέτο.",
-      "conflict_dismiss": "Απόρριψη ειδοποίησης"
+      "conflict_dismiss": "Απόρριψη ειδοποίησης",
+      "step_guide": "Οδηγός",
+      "guide_intro": "Το Bibliogon δεν ανεβάζει για εσένα. Δες πώς να δημοσιεύσεις το πακέτο σου στο KDP:",
+      "guide_open_kdp": "Άνοιγμα KDP Bookshelf",
+      "guide_step_create": "Δημιούργησε έναν νέο τίτλο στο KDP (eBook ή χαρτόδετο/σκληρόδετο).",
+      "guide_step_manuscript": "Ανέβασε το αρχείο χειρογράφου από το ZIP: manuscript-ebook.epub για eBook, manuscript-paperback.pdf για εκτύπωση.",
+      "guide_step_cover": "Ανέβασε το αρχείο εξωφύλλου (cover.*).",
+      "guide_step_metadata": "Μετέφερε τα στοιχεία από το metadata.json (τίτλος, συγγραφέας, περιγραφή, κατηγορίες, λέξεις-κλειδιά).",
+      "guide_step_price": "Όρισε την τιμή (δες το βήμα Τιμές για δικαιώματα + ελάχιστη τιμή) και δημοσίευσε.",
+      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο."
     }
   }
 }

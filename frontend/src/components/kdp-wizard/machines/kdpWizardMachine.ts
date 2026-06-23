@@ -220,6 +220,15 @@ export const kdpWizardMachine = setup({
         },
         exportSuccess: {
             on: {
+                // KDP-WIZARD-UPLOAD-GUIDE-01: after the package is built,
+                // ADVANCE to the KDP upload-guide step.
+                ADVANCE: { target: "guide" },
+                CANCEL: { target: "metadata", actions: "reset" },
+            },
+        },
+        guide: {
+            on: {
+                BACK: { target: "exportSuccess" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },

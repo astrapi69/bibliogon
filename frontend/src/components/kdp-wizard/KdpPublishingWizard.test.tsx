@@ -145,8 +145,31 @@ vi.mock("./ArcStep", () => ({
 }))
 
 vi.mock("./ExportPackage", () => ({
+    default: ({
+        onGenerate,
+        onSuccess,
+    }: {
+        onGenerate?: () => void
+        onSuccess?: (filename: string, blobUrl: string) => void
+    }) => (
+        <div data-testid="kdp-publishing-wizard-step-4-export">
+            <button
+                type="button"
+                data-testid="mock-export-success"
+                onClick={() => {
+                    // Mirror the real ExportPackage: GENERATE (→ exporting)
+                    // then EXPORT_SUCCESS (→ exportSuccess).
+                    onGenerate?.()
+                    onSuccess?.("book-kdp-package.zip", "blob:mock")
+                }}
+            />
+        </div>
+    ),
+}))
+
+vi.mock("./KdpGuideStep", () => ({
     default: () => (
-        <div data-testid="kdp-publishing-wizard-step-4-export" />
+        <div data-testid="kdp-publishing-wizard-step-5-guide" />
     ),
 }))
 
@@ -318,8 +341,15 @@ describe("KdpPublishingWizard (Phase 2 useMachine integration)", () => {
         fireEvent.click(
             screen.getByTestId("kdp-publishing-wizard-step-3-next"),
         )
+        // export step: generate the package (mock fires onSuccess) →
+        // machine moves to exportSuccess, enabling ADVANCE to guide.
+        fireEvent.click(screen.getByTestId("mock-export-success"))
         fireEvent.click(
-            screen.getByTestId("kdp-publishing-wizard-step-4-finish"),
+            screen.getByTestId("kdp-publishing-wizard-step-4-next"),
+        )
+        // guide is now the last step → Finish.
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-5-finish"),
         )
         expect(onClose).toHaveBeenCalledTimes(1)
     })
