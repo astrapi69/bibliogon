@@ -156,6 +156,25 @@ describe("ChapterOutliner", () => {
         expect(patch.synopsis).toBe("one two three four five")
     })
 
+    it("renders an inspector-notes cell per chapter row", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        await waitFor(() => expect(screen.getByTestId("outliner-notes-alpha")).toBeInTheDocument())
+        expect(screen.getByTestId("outliner-notes-beta")).toBeInTheDocument()
+    })
+
+    it("PATCHes inspector_notes on notes-input blur", async () => {
+        render(<ChapterOutliner bookId="b1" bookTitle="Book" onBack={vi.fn()} onSelectChapter={vi.fn()} />)
+        const input = await screen.findByTestId("outliner-notes-alpha")
+        fireEvent.change(input, {target: {value: "Add a flashback here."}})
+        fireEvent.blur(input)
+        await waitFor(() => expect(api.chapters.update).toHaveBeenCalled())
+        const call = (api.chapters.update as ReturnType<typeof vi.fn>).mock.calls.find(
+            (c) => (c[2] as Record<string, unknown>).inspector_notes !== undefined,
+        )
+        expect(call?.[1]).toBe("alpha")
+        expect((call?.[2] as Record<string, unknown>).inspector_notes).toBe("Add a flashback here.")
+    })
+
     const lastCollections = () => {
         const calls = (api.books.update as ReturnType<typeof vi.fn>).mock.calls
         return calls.at(-1)?.[1].collections as Array<{name: string; chapter_ids: string[]}>

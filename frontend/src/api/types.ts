@@ -292,6 +292,10 @@ export interface Chapter {
     /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
      *  distinct from the Storyboard ``notes`` annotation. */
     synopsis?: string | null;
+    /** Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive) -
+     *  the author's chapter-local working notes, distinct from the
+     *  Storyboard ``notes`` sticky and from project-wide ``Book.notes``. */
+    inspector_notes?: string | null;
 }
 
 /** A per-day writing-session row (WRITING-GOALS-PROGRESS-TRACKING-01). */
@@ -1156,6 +1160,8 @@ export interface ChapterUpdatePayload {
     /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
      *  distinct from the Storyboard ``notes`` annotation. */
     synopsis?: string | null;
+    /** Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive). */
+    inspector_notes?: string | null;
 }
 
 export interface ChapterVersionSummary {

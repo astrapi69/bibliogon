@@ -3269,6 +3269,8 @@ ui:
     col_synopsis: "Synopsis"
     synopsis_placeholder: "Kurze Zusammenfassung…"
     synopsis_auto: "Aus erstem Absatz erzeugen"
+    col_notes: "Notizen"
+    notes_placeholder: "Arbeitsnotizen…"
     collections_label: "Sammlungen"
     collection_all: "Alle Kapitel"
     collection_new: "Neue Sammlung"

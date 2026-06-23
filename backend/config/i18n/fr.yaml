@@ -3259,6 +3259,8 @@ ui:
     col_synopsis: "Synopsis"
     synopsis_placeholder: "Résumé court…"
     synopsis_auto: "Générer à partir du premier paragraphe"
+    col_notes: "Notes"
+    notes_placeholder: "Notes de travail…"
     collections_label: "Collections"
     collection_all: "Tous les chapitres"
     collection_new: "Nouvelle collection"

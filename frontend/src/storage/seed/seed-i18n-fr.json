@@ -3440,7 +3440,9 @@
       "collection_filter": "Filtrer par collection",
       "collection_default_name": "Nouvelle collection",
       "collection_save_failed": "Impossible d'enregistrer la collection",
-      "col_in_collection": "Dans"
+      "col_in_collection": "Dans",
+      "col_notes": "Notes",
+      "notes_placeholder": "Notes de travail…"
     },
     "storyboard": {
       "title": "Storyboard",

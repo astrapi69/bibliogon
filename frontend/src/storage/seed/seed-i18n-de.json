@@ -3440,7 +3440,9 @@
       "collection_filter": "Auf Sammlung filtern",
       "collection_default_name": "Neue Sammlung",
       "collection_save_failed": "Sammlung konnte nicht gespeichert werden",
-      "col_in_collection": "In"
+      "col_in_collection": "In",
+      "col_notes": "Notizen",
+      "notes_placeholder": "Arbeitsnotizen…"
     },
     "storyboard": {
       "title": "Storyboard",
