@@ -215,6 +215,30 @@ Do not blindly commit AI-generated blocks.
 - Docstring rule (TSDoc for TypeScript, Google Style for Python).
 - Human review (Sparring Partner reviews all agent output).
 
+## 7. Feature Screenshots
+
+Every UI feature is documented visually. Screenshots are generated
+automatically via Playwright and tracked in `docs/screenshots/`. On a UI
+change, update the screenshot spec and regenerate the PNGs.
+
+**Rules:**
+
+- A new or visually-changed UI feature ships a screenshot under
+  `docs/screenshots/{feature}/`: add a test block to
+  `e2e/feature-screenshots/capture-features.spec.ts`, run
+  `make capture-screenshots`, commit the PNGs, and update the
+  `docs/screenshots/README.md` index.
+- Capture settings: 1280x720, default theme, locale de-DE, PNG, with
+  realistic data (no "Test 1" titles).
+- Pure backend / test / docs PRs are exempt.
+
+**Enforcement:**
+
+- Human review on UI PRs. On-demand generation, no CI gate (the
+  `feature-screenshots` Playwright project is out of the smoke gate and
+  CI). See `.claude/rules/quality-checks.md` "Feature-Screenshots" and
+  `docs/MODULE-ARCHITECTURE.md` "Feature-screenshot catalog".
+
 ## Priority Hierarchy
 
 When multiple tasks compete, this ordering applies:
