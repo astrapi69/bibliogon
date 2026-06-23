@@ -8,10 +8,11 @@ package-mode = true
 packages = [{include = "bibliogon_launcher"}]
 
 [tool.poetry.dependencies]
-# PyInstaller supports 3.11 through 3.13 as of the current release; pin
-# the upper bound here so poetry's solver is satisfied. Update when
-# PyInstaller ships support for 3.14+.
-python = ">=3.11,<3.14"
+# PyInstaller 6.16+ supports Python 3.14 (and 3.11-3.13); pin the upper
+# bound here so poetry's solver is satisfied. CI builds on 3.12 (see
+# .github/workflows/launcher-*.yml); the wider range lets the venv use a
+# 3.14 interpreter locally on distros that only ship tkinter for 3.14.
+python = ">=3.11,<3.15"
 # stdlib-only runtime: tkinter, urllib, webbrowser, subprocess, pathlib, json, logging
 # Tkinter ships with Python on Windows installers; no pip dep required.
 platformdirs = "^4.9.6"

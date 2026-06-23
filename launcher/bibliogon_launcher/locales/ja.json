@@ -55,6 +55,7 @@
   "install_prompt.message": "Bibliogon はまだこのコンピューターにインストールされていません。今すぐインストールしますか?",
   "install_prompt.title": "Bibliogon はインストールされていません",
   "manage.message": "Bibliogon はポート {port} で実行中です。\n\n操作を選んでください。",
+  "manage.start": "開始",
   "manage.stop": "停止",
   "manage.stopped.message": "Bibliogon を停止しました。もう一度起動するにはランチャーを再度開いてください。",
   "manage.stopped.title": "Bibliogon を停止しました",
@@ -93,6 +94,11 @@
   "status.almost_ready": "もうすぐ準備完了...",
   "status.starting": "Bibliogon を起動中...",
   "technical_details": "技術的な詳細",
+  "tray.open": "開く",
+  "tray.open_browser": "ブラウザーで開く",
+  "tray.quit": "終了",
+  "tray.stop": "停止",
+  "tray.tooltip": "Bibliogon はポート {port} で実行中です",
   "uninstall.complete.message": "Bibliogon がアンインストールされました。",
   "uninstall.complete.title": "アンインストール完了",
   "uninstall.confirm": "アンインストール",
@@ -119,5 +125,9 @@
   "welcome.heading": "始める前に",
   "welcome.title": "Bibliogon へようこそ",
   "welcome.trust_anchor": "Docker は確立されており(2013 年以降)、無料で、世界中の何百万もの開発者に使用されています。",
-  "welcome.trust_link": "Docker のセキュリティについて詳しく"
+  "welcome.trust_link": "Docker のセキュリティについて詳しく",
+  "window.state.no_docker": "Docker が起動していません",
+  "window.state.not_installed": "Bibliogon がインストールされていません",
+  "window.state.running": "Bibliogon が実行中です",
+  "window.state.stopped": "Bibliogon はインストール済みですが停止しています"
 }

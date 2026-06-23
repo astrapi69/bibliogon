@@ -55,6 +55,7 @@
   "install_prompt.message": "Bibliogon bu bilgisayara henüz yüklü değil. Şimdi yüklensin mi?",
   "install_prompt.title": "Bibliogon yüklü değil",
   "manage.message": "Bibliogon {port} numaralı bağlantı noktasında çalışıyor.\n\nNe yapmak istediğini seç.",
+  "manage.start": "Başlat",
   "manage.stop": "Durdur",
   "manage.stopped.message": "Bibliogon durduruldu. Yeniden başlatmak için başlatıcıyı tekrar aç.",
   "manage.stopped.title": "Bibliogon durduruldu",
@@ -93,6 +94,11 @@
   "status.almost_ready": "Neredeyse hazır...",
   "status.starting": "Bibliogon başlatılıyor...",
   "technical_details": "Teknik ayrıntılar",
+  "tray.open": "Aç",
+  "tray.open_browser": "Tarayıcıda aç",
+  "tray.quit": "Çıkış",
+  "tray.stop": "Durdur",
+  "tray.tooltip": "Bibliogon {port} numaralı bağlantı noktasında çalışıyor",
   "uninstall.complete.message": "Bibliogon kaldırıldı.",
   "uninstall.complete.title": "Kaldırma tamamlandı",
   "uninstall.confirm": "Kaldır",
@@ -119,5 +125,9 @@
   "welcome.heading": "Başlamadan önce",
   "welcome.title": "Bibliogon'a hoş geldin",
   "welcome.trust_anchor": "Docker köklü (2013'ten beri), ücretsiz ve dünya çapında milyonlarca geliştirici tarafından kullanılıyor.",
-  "welcome.trust_link": "Docker güvenliği hakkında daha fazla"
+  "welcome.trust_link": "Docker güvenliği hakkında daha fazla",
+  "window.state.no_docker": "Docker çalışmıyor",
+  "window.state.not_installed": "Bibliogon yüklü değil",
+  "window.state.running": "Bibliogon çalışıyor",
+  "window.state.stopped": "Bibliogon yüklü ama durduruldu"
 }

@@ -100,6 +100,25 @@ def is_valid_repo(repo: Path) -> bool:
     return (repo / COMPOSE_FILENAME).is_file()
 
 
+def source_checkout_repo() -> Path | None:
+    """Return the Bibliogon repo root IF the launcher is running from a
+    source checkout, else ``None``.
+
+    ``__file__`` is ``<repo>/launcher/bibliogon_launcher/config.py``, so
+    ``parents[2]`` is the repo root. When that root carries the production
+    compose file, the launcher is running from a real checkout and should
+    use it directly - never a stale downloaded release in a tmp dir. In a
+    PyInstaller bundle or a pip install, ``parents[2]`` is not a valid repo,
+    so this returns ``None`` and the classic download flow is used (end
+    users are unaffected).
+    """
+    try:
+        candidate = Path(__file__).resolve().parents[2]
+    except IndexError:  # pragma: no cover - path too shallow
+        return None
+    return candidate if is_valid_repo(candidate) else None
+
+
 def read_port(repo: Path) -> int:
     """Read ``BIBLIOGON_PORT`` from ``.env`` in the repo; fall back to default.
 

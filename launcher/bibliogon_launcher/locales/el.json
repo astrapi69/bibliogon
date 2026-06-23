@@ -49,6 +49,7 @@
   "install_prompt.message": "Το Bibliogon δεν είναι ακόμη εγκατεστημένο σε αυτόν τον υπολογιστή. Να εγκατασταθεί τώρα;",
   "install_prompt.title": "Το Bibliogon δεν είναι εγκατεστημένο",
   "manage.message": "Το Bibliogon εκτελείται στη θύρα {port}.\n\nΕπίλεξε τι θέλεις να κάνεις.",
+  "manage.start": "Έναρξη",
   "manage.stop": "Διακοπή",
   "manage.stopped.message": "Το Bibliogon σταμάτησε. Άνοιξε ξανά τον launcher για να το ξεκινήσεις.",
   "manage.stopped.title": "Το Bibliogon σταμάτησε",
@@ -87,6 +88,11 @@
   "status.almost_ready": "Σχεδόν έτοιμο...",
   "status.starting": "Εκκίνηση Bibliogon...",
   "technical_details": "Τεχνικές λεπτομέρειες",
+  "tray.open": "Άνοιγμα",
+  "tray.open_browser": "Άνοιγμα στο πρόγραμμα περιήγησης",
+  "tray.quit": "Έξοδος",
+  "tray.stop": "Διακοπή",
+  "tray.tooltip": "Το Bibliogon εκτελείται στη θύρα {port}",
   "uninstall.complete.message": "Το Bibliogon έχει απεγκατασταθεί.",
   "uninstall.complete.title": "Η απεγκατάσταση ολοκληρώθηκε",
   "uninstall.confirm": "Απεγκατάσταση",
@@ -113,5 +119,9 @@
   "welcome.heading": "Πριν ξεκινήσεις",
   "welcome.title": "Καλωσόρισες στο Bibliogon",
   "welcome.trust_anchor": "Το Docker είναι καθιερωμένο (από το 2013), δωρεάν και χρησιμοποιείται από εκατομμύρια προγραμματιστές παγκοσμίως.",
-  "welcome.trust_link": "Περισσότερα για την ασφάλεια του Docker"
+  "welcome.trust_link": "Περισσότερα για την ασφάλεια του Docker",
+  "window.state.no_docker": "Το Docker δεν εκτελείται",
+  "window.state.not_installed": "Το Bibliogon δεν είναι εγκατεστημένο",
+  "window.state.running": "Το Bibliogon εκτελείται",
+  "window.state.stopped": "Το Bibliogon είναι εγκατεστημένο αλλά σταματημένο"
 }
