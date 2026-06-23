@@ -238,10 +238,63 @@ test.describe("Feature Screenshots", () => {
 
         test("chapter outliner", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
+            // Seed synopsis + Inspector notes so the Outliner shot shows the
+            // Synopsis + Notizen columns populated (CHAPTER-SYNOPSIS-NOTES-01).
+            const chapters = await page.request
+                .get(`${API}/books/${book.id}/chapters`)
+                .then((r) => r.json())
+                .catch(() => [] as Array<{id: string; version: number; title?: string}>);
+            const seedNotes: Record<string, {synopsis: string; inspector_notes: string}> = {
+                Vorwort: {
+                    synopsis: "Der Erzähler blickt aufs offene Wasser zurück.",
+                    inspector_notes: "Rückblende prüfen — passt der Einstieg zum Ton?",
+                },
+                "Kapitel 1: Anker lichten": {
+                    synopsis: "Der Aufbruch in See, erste Zweifel an Bord.",
+                    inspector_notes: "Zeitlinie prüfen.",
+                },
+            };
+            for (const c of chapters) {
+                const n = seedNotes[c.title ?? ""];
+                if (!n) continue;
+                await page.request
+                    .patch(`${API}/books/${book.id}/chapters/${c.id}`, {
+                        data: {version: c.version, synopsis: n.synopsis, inspector_notes: n.inspector_notes},
+                    })
+                    .catch(() => {});
+            }
             await page.goto(`/book/${book.id}?view=outline`);
             await page.getByTestId("outliner").waitFor({state: "visible"}).catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-editor/chapter-outliner.png`});
+        });
+
+        test("chapter collections", async ({page}) => {
+            const book = await seedProseBook("Schreiben am Meer");
+            const chapters = await page.request
+                .get(`${API}/books/${book.id}/chapters`)
+                .then((r) => r.json())
+                .catch(() => [] as Array<{id: string}>);
+            const ids = chapters.slice(0, 2).map((c: {id: string}) => c.id);
+            // Seed two colour-coded collections (CHAPTER-COLLECTIONS-01 +
+            // collection colours) so the Sammlungen bar + coloured dot show.
+            await page.request
+                .patch(`${API}/books/${book.id}`, {
+                    data: {
+                        collections: [
+                            {id: "kampf", name: "Kampfszenen", chapter_ids: ids, color: "#ef4444"},
+                            {id: "backstory", name: "Backstory", chapter_ids: [], color: "#3b82f6"},
+                        ],
+                    },
+                })
+                .catch(() => {});
+            await page.goto(`/book/${book.id}?view=outline`);
+            await page.getByTestId("outliner").waitFor({state: "visible"}).catch(() => {});
+            await page
+                .selectOption('[data-testid="outliner-collection-select"]', "kampf")
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-editor/chapter-collections.png`});
         });
 
         test("writing goals", async ({page}) => {
@@ -435,6 +488,15 @@ test.describe("Feature Screenshots", () => {
                 page.screenshot({path: `${OUT}/settings/about-version.png`}),
             ));
         });
+
+        test("auto-save behaviour tab", async ({page}) => {
+            // Settings auto-save on change (#473): no manual "Speichern"
+            // button — the Behaviour tab is a representative auto-saving form.
+            await page.goto("/settings?tab=verhalten");
+            await page.getByTestId("verhalten-settings").waitFor({state: "visible"}).catch(() => {});
+            await page.waitForTimeout(300);
+            await page.screenshot({path: `${OUT}/settings/auto-save.png`});
+        });
     });
 
     // ===================== Quality Report =====================
@@ -479,6 +541,18 @@ test.describe("Feature Screenshots", () => {
             await page.getByTestId("import-wizard-modal").waitFor({state: "visible"}).catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/import-wizard.png`});
+        });
+
+        test("scrivener import", async ({page}) => {
+            // SCRIVENER-PROJECT-IMPORT-01: a .scriv bundle imports via the
+            // .zip path; the upload step lists Scrivener in the accepted
+            // formats. (No dedicated tab — the wizard auto-detects format.)
+            await page.goto("/");
+            await page.getByTestId("import-wizard-btn").click().catch(() => {});
+            await page.getByTestId("import-wizard-modal").waitFor({state: "visible"}).catch(() => {});
+            await page.getByTestId("upload-step").waitFor({state: "visible"}).catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/scrivener-import.png`});
         });
 
         test("export preview", async ({page}) => {

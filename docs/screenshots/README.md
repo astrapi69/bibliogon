@@ -47,7 +47,8 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Editor toolbar | ![Editor Toolbar](book-editor/editor-with-toolbar.png) |
 | Composition mode (distraction-free) | ![Composition Mode](book-editor/composition-mode.png) |
 | Chapter status + labels | ![Chapter Status Labels](book-editor/chapter-status-labels.png) |
-| Chapter outliner | ![Chapter Outliner](book-editor/chapter-outliner.png) |
+| Chapter outliner (synopsis + Inspector notes columns) | ![Chapter Outliner](book-editor/chapter-outliner.png) |
+| Chapter collections (Sammlungen bar + colour dots) | ![Chapter Collections](book-editor/chapter-collections.png) |
 | Writing goals | ![Writing Goals](book-editor/writing-goals.png) |
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
@@ -83,6 +84,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Update checker | ![Update Checker](settings/update-checker.png) |
 | Data management | ![Data Management](settings/data-management.png) |
 | About / version | ![About Version](settings/about-version.png) |
+| Auto-save behaviour tab (no Save button, #473) | ![Settings Auto-Save](settings/auto-save.png) |
 
 ## Quality Report
 
@@ -97,6 +99,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Feature | Screenshot |
 | --- | --- |
 | Import wizard | ![Import Wizard](import-export/import-wizard.png) |
+| Scrivener import (.scriv via the .zip upload path) | ![Scrivener Import](import-export/scrivener-import.png) |
 | Export preview | ![Export Preview](import-export/export-preview.png) |
 | Full-data backup (.bgb) | ![BGB Backup](import-export/bgb-backup.png) |
 
@@ -114,3 +117,13 @@ a separate later category):
 
 Panel drag-and-drop is not captured: a mid-drag frame cannot be screenshotted
 deterministically; the static panel grid is shown in *Comic page with panels*.
+
+The EVT event-recording axes (EVT-05/06) are not yet captured: `EventRecorderSetup`
+mounts globally in `App.tsx` with no stable testid/route to target a clean shot —
+deferred until it exposes a screenshot anchor.
+
+> The PNGs for the features added since the catalog shipped (Chapter
+> collections, Settings auto-save, Scrivener import — and the synopsis +
+> Inspector-notes columns folded into the Chapter-outliner shot) are generated
+> by `make capture-screenshots` in a browser-enabled environment; the capture
+> spec already covers them.
