@@ -126,6 +126,24 @@ export default defineConfig({
             use: {browserName: "chromium", viewport: {width: 1280, height: 800}},
         },
         {
+            // FEATURE-SCREENSHOT-CATALOG-01 generator. Run with:
+            //   npx playwright test --project=feature-screenshots
+            //   (or: make capture-screenshots)
+            // Output goes under docs/screenshots/ — a visual catalog of
+            // every feature for docs / README / Medium / onboarding, NOT
+            // a regression gate (that is the `visual` project). Kept out
+            // of the default + smoke runs and out of CI: on-demand only.
+            // 16:9 desktop viewport, locale de-DE, default theme.
+            name: "feature-screenshots",
+            testDir: "./feature-screenshots",
+            use: {
+                browserName: "chromium",
+                viewport: {width: 1280, height: 720},
+                locale: "de-DE",
+            },
+            retries: 0,
+        },
+        {
             // VISUAL-REGRESSION-SCREENSHOTS-01 pixel-diff suite. Run with:
             //   npx playwright test --project=visual
             // Regenerate the committed baseline with:

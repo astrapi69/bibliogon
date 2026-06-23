@@ -1,6 +1,6 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-visual test-visual-update \
+       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-visual test-visual-update capture-screenshots update-screenshots \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
@@ -491,6 +491,11 @@ test-visual: ## Run visual regression tests (pixel-diff screenshots)
 
 test-visual-update: ## Regenerate visual regression baseline screenshots
 	cd e2e && npx playwright test --project=visual --update-snapshots
+
+capture-screenshots: ## Capture the feature-screenshot catalog (docs/screenshots/)
+	cd e2e && npx playwright test --project=feature-screenshots
+
+update-screenshots: capture-screenshots ## Alias for capture-screenshots
 
 # --- Version sync ---
 
