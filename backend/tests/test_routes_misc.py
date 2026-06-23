@@ -32,6 +32,13 @@ class TestVoicesEndpoint:
     def test_list_voices_returns_seeded_rows_for_engine_language(self, client):
         db = SessionLocal()
         try:
+            # Idempotent seed: another test (or app-startup voice sync) may
+            # have already inserted this voice_id, which is UNIQUE. A bare
+            # add() then collides under the full-suite order. Delete any
+            # existing row first so this test is order-independent.
+            db.query(AudioVoice).filter(
+                AudioVoice.voice_id == "de-DE-KatjaNeural"
+            ).delete()
             db.add(
                 AudioVoice(
                     engine="edge-tts",
