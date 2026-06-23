@@ -3692,7 +3692,19 @@
       "guide_step_cover": "Ανέβασε το αρχείο εξωφύλλου (cover.*).",
       "guide_step_metadata": "Μετέφερε τα στοιχεία από το metadata.json (τίτλος, συγγραφέας, περιγραφή, κατηγορίες, λέξεις-κλειδιά).",
       "guide_step_price": "Όρισε την τιμή (δες το βήμα Τιμές για δικαιώματα + ελάχιστη τιμή) και δημοσίευσε.",
-      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο."
+      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο.",
+      "step_format": "Μορφή",
+      "format_intro": "Επίλεξε τη μορφή δημοσίευσης. Το eBook είναι EPUB· το χαρτόδετο και το σκληρόδετο είναι PDF εκτύπωσης με τελείωμα κοπής.",
+      "format_kind_label": "Μορφή",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Χαρτόδετο (PDF με τελείωμα κοπής)",
+      "format_kind_hardcover": "Σκληρόδετο (PDF με τελείωμα κοπής)",
+      "format_trim_label": "Μέγεθος κοπής",
+      "format_margin_label": "Περιθώρια",
+      "format_margin_narrow": "Στενά",
+      "format_margin_normal": "Κανονικά",
+      "format_margin_wide": "Πλατιά",
+      "guide_format_label": "Επιλεγμένη μορφή"
     }
   }
 }

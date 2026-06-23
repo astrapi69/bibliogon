@@ -87,6 +87,10 @@ export const kdpWizardMachine = setup({
                 coverIssues: event.issues,
             };
         }),
+        setFormat: assign(({ context, event }) => {
+            if (event.type !== "FORMAT_CHANGE") return {};
+            return { format: { ...context.format, ...event.format } };
+        }),
         setPricing: assign(({ context, event }) => {
             if (event.type !== "PRICING_CHANGE") return {};
             return {
@@ -166,14 +170,23 @@ export const kdpWizardMachine = setup({
         cover: {
             on: {
                 COVER_VALIDATED: { actions: "setCoverValidated" },
-                // C8: cover → pricing. C10 will keep this same
-                // target + add pricing → arc → export instead of
-                // today's pricing → export.
+                // KDP-WIZARD-FORMAT-STEP-01: cover → format → pricing.
                 ADVANCE: {
-                    target: "pricing",
+                    target: "format",
                     guard: "canAdvanceFromCover",
                 },
                 BACK: { target: "metadata" },
+                CANCEL: { target: "metadata", actions: "reset" },
+            },
+        },
+        format: {
+            // Unguarded ADVANCE: the format always has a sensible
+            // default (ebook / 6x9 / normal), so the user can proceed
+            // immediately or refine the choice first.
+            on: {
+                FORMAT_CHANGE: { actions: "setFormat" },
+                ADVANCE: { target: "pricing" },
+                BACK: { target: "cover" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },
@@ -184,7 +197,7 @@ export const kdpWizardMachine = setup({
                     target: "arc",
                     guard: "hasRequiredPricing",
                 },
-                BACK: { target: "cover" },
+                BACK: { target: "format" },
                 CANCEL: { target: "metadata", actions: "reset" },
             },
         },

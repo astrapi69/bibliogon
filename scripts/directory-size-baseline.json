@@ -16,7 +16,7 @@
   "frontend/src/components/export": 12,
   "frontend/src/components/import": 18,
   "frontend/src/components/import-wizard/steps": 21,
-  "frontend/src/components/kdp-wizard": 16,
+  "frontend/src/components/kdp-wizard": 18,
   "frontend/src/components/picture-book": 22,
   "frontend/src/components/settings": 67,
   "frontend/src/components/shared": 48,

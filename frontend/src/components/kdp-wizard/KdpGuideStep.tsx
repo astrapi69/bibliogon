@@ -11,10 +11,23 @@
 import {ExternalLink, BookOpen} from "lucide-react"
 
 import {useI18n} from "../../hooks/useI18n"
+import type {FormatState, KdpFormatKind} from "./machines/types"
 
 const KDP_URL = "https://kdp.amazon.com";
 
-export default function KdpGuideStep() {
+const FORMAT_LABEL: Record<KdpFormatKind, string> = {
+    ebook: "eBook",
+    paperback: "Taschenbuch",
+    hardcover: "Hardcover",
+};
+
+interface Props {
+    /** The format chosen in the format step (KDP-WIZARD-FORMAT-STEP-01).
+     *  Optional so per-step tests can render the guide standalone. */
+    format?: FormatState;
+}
+
+export default function KdpGuideStep({format}: Props) {
     const {t} = useI18n();
     const steps = [
         t(
@@ -61,6 +74,24 @@ export default function KdpGuideStep() {
                 <ExternalLink size={12} />
             </a>
 
+            {format && (
+                <p
+                    style={styles.formatSummary}
+                    data-testid="kdp-publishing-wizard-step-5-format-summary"
+                >
+                    {t("ui.kdp_publishing_wizard.guide_format_label", "Gewähltes Format")}:{" "}
+                    <strong>
+                        {t(
+                            `ui.kdp_publishing_wizard.format_kind_${format.kind}`,
+                            FORMAT_LABEL[format.kind],
+                        )}
+                    </strong>
+                    {format.kind !== "ebook" && (
+                        <> · {format.trim_size.replace("x", " × ")} in</>
+                    )}
+                </p>
+            )}
+
             <ol style={styles.list} data-testid="kdp-publishing-wizard-step-5-steps">
                 {steps.map((stepText, index) => (
                     <li key={index} style={styles.listItem}>
@@ -95,6 +126,11 @@ const styles: Record<string, React.CSSProperties> = {
         gap: 6,
         marginBottom: 16,
         textDecoration: "none",
+    },
+    formatSummary: {
+        fontSize: "0.8125rem",
+        color: "var(--text-primary)",
+        marginBottom: 12,
     },
     list: {
         margin: "0 0 16px",

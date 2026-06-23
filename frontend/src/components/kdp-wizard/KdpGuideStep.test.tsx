@@ -27,4 +27,20 @@ describe("KdpGuideStep", () => {
         expect(link).toHaveAttribute("target", "_blank");
         expect(link).toHaveAttribute("rel", "noopener noreferrer");
     });
+
+    it("omits the format summary when no format is passed", () => {
+        render(<KdpGuideStep />);
+        expect(
+            screen.queryByTestId("kdp-publishing-wizard-step-5-format-summary"),
+        ).not.toBeInTheDocument();
+    });
+
+    it("consumes the chosen format: shows it with the trim size for print", () => {
+        render(
+            <KdpGuideStep format={{kind: "paperback", trim_size: "6x9", margin: "normal"}} />,
+        );
+        const summary = screen.getByTestId("kdp-publishing-wizard-step-5-format-summary");
+        expect(summary).toBeInTheDocument();
+        expect(summary.textContent).toContain("6 × 9");
+    });
 });

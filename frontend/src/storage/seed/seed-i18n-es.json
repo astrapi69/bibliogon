@@ -3692,7 +3692,19 @@
       "guide_step_cover": "Sube el archivo de portada (cover.*).",
       "guide_step_metadata": "Transfiere los datos de metadata.json (título, autor, descripción, categorías, palabras clave).",
       "guide_step_price": "Fija el precio (consulta el paso de Precios para regalías + precio mínimo) y publica.",
-      "guide_note": "Revisa el informe de validación de portada (cover-validation-report.json) del ZIP si KDP rechaza la portada."
+      "guide_note": "Revisa el informe de validación de portada (cover-validation-report.json) del ZIP si KDP rechaza la portada.",
+      "step_format": "Formato",
+      "format_intro": "Elige el formato de publicación. eBook es EPUB; tapa blanda y tapa dura son PDF de impresión con sangrado.",
+      "format_kind_label": "Formato",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Tapa blanda (PDF con sangrado)",
+      "format_kind_hardcover": "Tapa dura (PDF con sangrado)",
+      "format_trim_label": "Tamaño de corte",
+      "format_margin_label": "Márgenes",
+      "format_margin_narrow": "Estrecho",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Ancho",
+      "guide_format_label": "Formato elegido"
     }
   }
 }

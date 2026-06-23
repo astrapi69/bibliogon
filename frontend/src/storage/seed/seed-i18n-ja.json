@@ -3692,7 +3692,19 @@
       "guide_step_cover": "表紙ファイル（cover.*）をアップロードします。",
       "guide_step_metadata": "metadata.json の情報（タイトル、著者、説明、カテゴリー、キーワード）を転記します。",
       "guide_step_price": "価格を設定し（ロイヤルティと最低価格は「価格」ステップを参照）、公開します。",
-      "guide_note": "KDP が表紙を却下した場合は、ZIP 内の表紙検証レポート（cover-validation-report.json）を確認してください。"
+      "guide_note": "KDP が表紙を却下した場合は、ZIP 内の表紙検証レポート（cover-validation-report.json）を確認してください。",
+      "step_format": "形式",
+      "format_intro": "出版形式を選択します。eBook は EPUB、ペーパーバックとハードカバーは裁ち落とし付きの印刷用 PDF です。",
+      "format_kind_label": "形式",
+      "format_kind_ebook": "eBook（EPUB/KPF）",
+      "format_kind_paperback": "ペーパーバック（裁ち落とし付き PDF）",
+      "format_kind_hardcover": "ハードカバー（裁ち落とし付き PDF）",
+      "format_trim_label": "トリムサイズ",
+      "format_margin_label": "余白",
+      "format_margin_narrow": "狭い",
+      "format_margin_normal": "標準",
+      "format_margin_wide": "広い",
+      "guide_format_label": "選択した形式"
     }
   }
 }
