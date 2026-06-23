@@ -2,6 +2,70 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [Unreleased]
+
+Draft for the next release (targeting v0.58.0). Version pins are NOT
+bumped and no tag is set yet. No schema migrations; existing data +
+``.bgb``/``.bgp`` unaffected.
+
+### Added
+- **Scrivener `.scriv` project import** — import a Scrivener project as a
+  new book + chapters; the `.scrivx` index is parsed with `defusedxml`
+  (bandit B314-safe) (#554).
+- **Manual chapter collections** — group chapters into user-defined
+  collections in the Chapter Outliner; backend + frontend types + i18n
+  across 8 catalogs + offline seed (#553).
+- **Per-chapter synopsis + project notes** — a synopsis column with
+  auto-generate (first paragraph) in the Chapter Outliner and a
+  project-notes field in the book metadata editor; backend + i18n ×8 +
+  offline seed (#551).
+- **Event recorder structuring axis (EVT-05)** — optional
+  `category`/`action`/per-entry `appState` on recorded diagnostic events,
+  additive to the existing `EventType`, surfaced in the Markdown + JSON
+  export.
+- **Event recorder feature gate (EVT-06)** — the diagnostic recorder is a
+  declared `EVENT_RECORDING` feature (always active in both modes), so it
+  has a single registry kill-switch instead of running ungated.
+- **Automated feature-screenshot catalog** — `docs/screenshots/` with 31
+  on-demand capture specs (`make capture-screenshots`), a visual catalog
+  of every feature for docs / README / onboarding; not a CI gate (#556).
+- **Desktop launcher management dialog** — reachable Stop/Uninstall when
+  an instance is already running (#521), plus a Docker-first check,
+  install progress, port-conflict handling, and a deterministic project
+  name (#519).
+
+### Changed
+- **Offline grammar + translation are gated as disabled-with-reason** —
+  the server-bound LanguageTool spellcheck and DeepL/LMStudio translation
+  have no browser path, so in Dexie mode they render visible-but-disabled
+  with an explanation instead of failing silently (#34).
+- **Internal refactors (no user-visible effect)** — Storyboard god-file
+  split (`StoryboardCard` extracted), ArticleEditor static-config + editor
+  helper extractions, `useEditorImageUpload` hook, with directory-size
+  ratchet baselines adjusted accordingly (#207).
+
+### Fixed
+- **Chapter Outliner loads chapter labels offline** — labels resolve in
+  Dexie mode instead of staying empty (#548).
+
+### Security
+- **Dependency security bumps** from `pip-audit` — `starlette`,
+  `python-multipart`, `msgpack` (#549).
+
+### Internal / Tests
+- **Backend coverage** raised on four weak modules — `routes_misc.py`,
+  `services/audiobook/google_tts_setup.py`,
+  `import_plugins/handlers/bgb_archive_reader.py` (all → 100%) and
+  `routers/audiobook.py` (→ 88%); +46 tests (#562).
+- **E2E flake stabilization** — a `clickMenuItem` helper hardening 17+
+  Radix menu-click sites, conversion of `waitForTimeout`s to deterministic
+  waits, a 10s `expect.timeout` for the load-timing class, a hardened
+  `/api/test/reset` clearing shared backend state, committed
+  viewport-regression baselines, and a test-isolation audit (#522–#540).
+- **Module seam tests** for the offline export / picture-book / comic
+  barrels; new `make test-e2e-manual` / `test-e2e-all` targets (#559);
+  the feature-screenshot rule anchored in the project docs (#561).
+
 ## [0.57.0] - 2026-06-21
 
 The **God-Folder + browser-AI + desktop-update-checker** cycle. AI now runs
