@@ -3692,7 +3692,19 @@
       "guide_step_cover": "Envie o arquivo de capa (cover.*).",
       "guide_step_metadata": "Transfira os dados de metadata.json (título, autor, descrição, categorias, palavras-chave).",
       "guide_step_price": "Defina o preço (veja a etapa de Preços para royalties + preço mínimo) e publique.",
-      "guide_note": "Verifique o relatório de validação de capa (cover-validation-report.json) no ZIP se o KDP rejeitar a capa."
+      "guide_note": "Verifique o relatório de validação de capa (cover-validation-report.json) no ZIP se o KDP rejeitar a capa.",
+      "step_format": "Formato",
+      "format_intro": "Escolha o formato de publicação. eBook é EPUB; capa comum e capa dura são PDFs de impressão com sangria.",
+      "format_kind_label": "Formato",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Capa comum (PDF com sangria)",
+      "format_kind_hardcover": "Capa dura (PDF com sangria)",
+      "format_trim_label": "Tamanho de corte",
+      "format_margin_label": "Margens",
+      "format_margin_narrow": "Estreita",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Larga",
+      "guide_format_label": "Formato escolhido"
     }
   }
 }

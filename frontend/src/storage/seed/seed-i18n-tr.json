@@ -3692,7 +3692,19 @@
       "guide_step_cover": "Kapak dosyasını yükle (cover.*).",
       "guide_step_metadata": "metadata.json'daki bilgileri aktar (başlık, yazar, açıklama, kategoriler, anahtar kelimeler).",
       "guide_step_price": "Fiyatı belirle (telif + asgari fiyat için Fiyatlar adımına bak) ve yayımla.",
-      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et."
+      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et.",
+      "step_format": "Biçim",
+      "format_intro": "Yayın biçimini seç. eBook EPUB'dur; ciltsiz ve ciltli, taşmalı baskı PDF'leridir.",
+      "format_kind_label": "Biçim",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Ciltsiz (taşmalı PDF)",
+      "format_kind_hardcover": "Ciltli (taşmalı PDF)",
+      "format_trim_label": "Kesim boyutu",
+      "format_margin_label": "Kenar boşlukları",
+      "format_margin_narrow": "Dar",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Geniş",
+      "guide_format_label": "Seçilen biçim"
     }
   }
 }

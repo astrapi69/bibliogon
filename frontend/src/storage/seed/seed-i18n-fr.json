@@ -3692,7 +3692,19 @@
       "guide_step_cover": "Téléverse le fichier de couverture (cover.*).",
       "guide_step_metadata": "Reporte les informations de metadata.json (titre, auteur, description, catégories, mots-clés).",
       "guide_step_price": "Définis le prix (voir l'étape Prix pour les redevances + le prix minimum) et publie.",
-      "guide_note": "Consulte le rapport de validation de couverture (cover-validation-report.json) du ZIP si KDP refuse la couverture."
+      "guide_note": "Consulte le rapport de validation de couverture (cover-validation-report.json) du ZIP si KDP refuse la couverture.",
+      "step_format": "Format",
+      "format_intro": "Choisis le format de publication. eBook = EPUB ; broché et relié sont des PDF d'impression avec fond perdu.",
+      "format_kind_label": "Format",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Broché (PDF avec fond perdu)",
+      "format_kind_hardcover": "Relié (PDF avec fond perdu)",
+      "format_trim_label": "Taille de coupe",
+      "format_margin_label": "Marges",
+      "format_margin_narrow": "Étroite",
+      "format_margin_normal": "Normale",
+      "format_margin_wide": "Large",
+      "guide_format_label": "Format choisi"
     }
   }
 }

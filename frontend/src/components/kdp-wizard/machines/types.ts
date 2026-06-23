@@ -41,6 +41,25 @@ export interface PricingState {
     prices: Partial<Record<RegionCode, PriceEntry>>;
 }
 
+// --- Format selection (KDP-WIZARD-FORMAT-STEP-01) ----------------
+
+export type KdpFormatKind = "ebook" | "paperback" | "hardcover";
+/** KDP standard print trim sizes (inches). eBook ignores this. */
+export type KdpTrimSize =
+    | "5x8"
+    | "5.25x8"
+    | "5.5x8.5"
+    | "6x9"
+    | "7x10"
+    | "8.5x11";
+export type KdpMargin = "narrow" | "normal" | "wide";
+
+export interface FormatState {
+    kind: KdpFormatKind;
+    trim_size: KdpTrimSize;
+    margin: KdpMargin;
+}
+
 // --- ARC reviewer (Track 4) --------------------------------------
 
 export type ReviewStatus =
@@ -110,6 +129,9 @@ export interface KdpWizardContext {
     coverDimensions: ImageDimensions | null;
     coverIssues: ValidationIssue[];
 
+    // Format selection (KDP-WIZARD-FORMAT-STEP-01):
+    format: FormatState;
+
     // Step 3 — pricing (C8):
     pricing: PricingState;
 
@@ -135,6 +157,8 @@ export type KdpWizardEvent =
           dim: ImageDimensions;
           issues: ValidationIssue[];
       }
+    // Format selection (KDP-WIZARD-FORMAT-STEP-01):
+    | { type: "FORMAT_CHANGE"; format: Partial<FormatState> }
     // Step-3 (pricing, C8):
     | { type: "PRICING_CHANGE"; pricing: Partial<PricingState> }
     // Persistence (C10):
@@ -158,6 +182,11 @@ export const initialContext: KdpWizardContext = {
     metadataIssuesFiltered: [],
     coverDimensions: null,
     coverIssues: [],
+    format: {
+        kind: "ebook",
+        trim_size: "6x9",
+        margin: "normal",
+    },
     pricing: {
         royalty_plan: null,
         kdp_select_enrolled: false,
