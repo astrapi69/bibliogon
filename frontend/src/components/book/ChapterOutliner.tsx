@@ -12,14 +12,7 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react"
 import {ArrowLeft, ChevronDown, ChevronUp, Wand2} from "lucide-react"
 
-import {
-    api,
-    SaveAbortedError,
-    type BookCollection,
-    type Chapter,
-    type ChapterLabel,
-    type ChapterUpdatePayload,
-} from "../../api/client"
+import {type BookCollection, type Chapter, type ChapterLabel} from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
@@ -27,19 +20,11 @@ import {firstParagraphText} from "../../lib/utils/firstParagraph"
 import {BeatSelect} from "../story-bible/StoryboardAnnotations"
 import {LabelSelect, StatusSelect} from "./ChapterStatusLabel"
 import {chapterWordCount} from "../story-bible/ProseStoryboard"
+import OutlinerCollectionsBar from "./OutlinerCollectionsBar"
+import {useInlineEdit} from "./useInlineEdit"
 import styles from "../ChapterOutliner.module.css"
 
-type OutlinerPatch = Pick<
-    ChapterUpdatePayload,
-    "status" | "label_id" | "target_words" | "story_beat" | "notes" | "synopsis" | "inspector_notes"
->
-
 type SortKey = "position" | "title" | "words" | "target" | "status"
-
-// Fixed swatch palette for collection colours (CHAPTER-COLLECTIONS-01).
-// Hex so the swatch renders via inline backgroundColor (a genuinely
-// dynamic value, the sanctioned inline-style case).
-const COLLECTION_COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#8b5cf6", "#6b7280"]
 
 interface Props {
     bookId: string
@@ -108,29 +93,7 @@ export default function ChapterOutliner({
     }, [bookId])
     useEffect(() => loadLabels(), [loadLabels])
 
-    const handlePatch = useCallback(
-        async (chapterId: string, patch: OutlinerPatch): Promise<void> => {
-            const current = chapters.find((c) => c.id === chapterId)
-            if (!current) return
-            try {
-                const updated = await getStorage().chapters.update(bookId, chapterId, {
-                    version: current.version,
-                    ...patch,
-                })
-                setChapters((prev) => prev.map((c) => (c.id === chapterId ? updated : c)))
-            } catch (err: unknown) {
-                if (err instanceof SaveAbortedError) return
-                notify.error(t("ui.storyboard.save_failed", "Save failed"), err)
-                try {
-                    const fresh = await getStorage().chapters.get(bookId, chapterId)
-                    setChapters((prev) => prev.map((c) => (c.id === chapterId ? fresh : c)))
-                } catch {
-                    /* toast already fired */
-                }
-            }
-        },
-        [bookId, chapters, t],
-    )
+    const handlePatch = useInlineEdit(bookId, chapters, setChapters)
 
     const handleAutoSynopsis = useCallback(
         (chapter: Chapter): void => {
@@ -212,6 +175,11 @@ export default function ChapterOutliner({
         [activeCollection, collections, saveCollections],
     )
 
+    const selectCollection = useCallback((id: string | null) => {
+        setActiveCollectionId(id)
+        setFilterToCollection(false)
+    }, [])
+
     const toggleSort = (key: SortKey) => {
         if (key === sortKey) {
             setSortDir((d) => (d === "asc" ? "desc" : "asc"))
@@ -290,95 +258,19 @@ export default function ChapterOutliner({
                     {chapters.length} {t("ui.storyboard.chapters_unit", "chapters")}
                 </span>
             </div>
-            <div className="flex flex-wrap items-center gap-2 px-3 py-2" data-testid={`${testidNamespace}-collections-bar`}>
-                <span className="text-sm font-medium">
-                    {t("ui.outliner.collections_label", "Collections")}:
-                </span>
-                <select
-                    className="input w-auto"
-                    value={activeCollectionId ?? ""}
-                    onChange={(e) => {
-                        setActiveCollectionId(e.target.value || null)
-                        setFilterToCollection(false)
-                    }}
-                    aria-label={t("ui.outliner.collections_label", "Collections")}
-                    data-testid={`${testidNamespace}-collection-select`}
-                >
-                    <option value="">{t("ui.outliner.collection_all", "All chapters")}</option>
-                    {collections.map((c) => (
-                        <option key={c.id} value={c.id}>
-                            {c.name} ({c.chapter_ids.length})
-                        </option>
-                    ))}
-                </select>
-                <button
-                    type="button"
-                    className="btn btn-ghost btn-sm"
-                    onClick={handleNewCollection}
-                    data-testid={`${testidNamespace}-collection-new`}
-                >
-                    + {t("ui.outliner.collection_new", "New collection")}
-                </button>
-                {activeCollection && (
-                    <>
-                        {activeCollection.color && (
-                            <span
-                                className="h-3 w-3 rounded-full border border-[var(--border)]"
-                                style={{backgroundColor: activeCollection.color}}
-                                data-testid={`${testidNamespace}-collection-color-dot`}
-                                aria-hidden="true"
-                            />
-                        )}
-                        <input
-                            key={`colname-${activeCollection.id}-${activeCollection.name}`}
-                            className="input w-auto"
-                            defaultValue={activeCollection.name}
-                            aria-label={t("ui.outliner.collection_name", "Collection name")}
-                            data-testid={`${testidNamespace}-collection-name`}
-                            onBlur={(e) => handleRenameCollection(e.target.value)}
-                        />
-                        <div
-                            className="flex items-center gap-1"
-                            role="group"
-                            aria-label={t("ui.outliner.collection_color", "Collection color")}
-                        >
-                            {COLLECTION_COLORS.map((color) => (
-                                <button
-                                    key={color}
-                                    type="button"
-                                    className="h-5 w-5 rounded-full border border-[var(--border)]"
-                                    style={{backgroundColor: color}}
-                                    aria-label={color}
-                                    aria-pressed={activeCollection.color === color}
-                                    onClick={() =>
-                                        setCollectionColor(
-                                            activeCollection.color === color ? null : color,
-                                        )
-                                    }
-                                    data-testid={`${testidNamespace}-collection-color-${color}`}
-                                />
-                            ))}
-                        </div>
-                        <label className="flex items-center gap-1 text-sm">
-                            <input
-                                type="checkbox"
-                                checked={filterToCollection}
-                                onChange={(e) => setFilterToCollection(e.target.checked)}
-                                data-testid={`${testidNamespace}-collection-filter`}
-                            />
-                            {t("ui.outliner.collection_filter", "Filter to collection")}
-                        </label>
-                        <button
-                            type="button"
-                            className="btn btn-ghost btn-sm"
-                            onClick={handleDeleteCollection}
-                            data-testid={`${testidNamespace}-collection-delete`}
-                        >
-                            {t("ui.outliner.collection_delete", "Delete")}
-                        </button>
-                    </>
-                )}
-            </div>
+            <OutlinerCollectionsBar
+                collections={collections}
+                activeCollectionId={activeCollectionId}
+                activeCollection={activeCollection}
+                filterToCollection={filterToCollection}
+                onSelect={selectCollection}
+                onFilterChange={setFilterToCollection}
+                onNew={handleNewCollection}
+                onRename={handleRenameCollection}
+                onDelete={handleDeleteCollection}
+                onSetColor={setCollectionColor}
+                testidNamespace={testidNamespace}
+            />
             <div className={styles.scroll}>
                 {loadError ? (
                     <div className={styles.empty} data-testid={`${testidNamespace}-error`}>
