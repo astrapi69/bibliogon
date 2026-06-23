@@ -897,3 +897,29 @@ def _is_root_alive(root: tk.Tk) -> bool:
     except tk.TclError:
         return False
     return True
+
+
+def _set_window_icon(window: tk.Tk) -> None:
+    """Best-effort window icon for the persistent launcher window.
+
+    Tries the launcher's bundled ``.ico`` (Windows ``iconbitmap``) then a
+    ``.png`` (cross-platform ``iconphoto``). Any failure (missing file,
+    unsupported format on the platform) is swallowed - a launcher must
+    never crash because an icon could not be set.
+    """
+    from pathlib import Path
+
+    launcher_dir = Path(__file__).resolve().parents[1]
+    ico = launcher_dir / "bibliogon.ico"
+    png = launcher_dir / "bibliogon.png"
+    if ico.is_file():
+        try:
+            window.iconbitmap(str(ico))
+            return
+        except tk.TclError:
+            pass
+    if png.is_file():
+        try:
+            window.iconphoto(True, tk.PhotoImage(file=str(png)))
+        except tk.TclError:
+            pass

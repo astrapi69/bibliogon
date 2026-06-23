@@ -42,7 +42,7 @@ def _docker_security_url() -> str:
 
 
 def main() -> int:
-    _setup_logging()
+    _setup_logging(debug="--debug" in sys.argv)
     logger.info("Bibliogon launcher v%s starting", __version__)
 
     # i18n must be live before the welcome dialog or any other UI
@@ -57,6 +57,16 @@ def main() -> int:
     # window. Useful for scripts and for users who want a one-shot teardown.
     if "--uninstall" in sys.argv:
         return _cli_uninstall()
+
+    # Persistent single window (replaces the dialog chain): the default when
+    # running from a source checkout (the repo + production compose file are
+    # present, so install = build), or on explicit --window. End-user frozen
+    # installs that still need to DOWNLOAD a release keep the classic dialog
+    # flow below until the window grows a download step.
+    if "--window" in sys.argv or config.source_checkout_repo() is not None:
+        logger.info("Using the persistent launcher window")
+        from bibliogon_launcher import launcher_app
+        return launcher_app.run_app()
 
     lock_path = config.lockfile_path()
     try:
@@ -937,12 +947,21 @@ def _handle_already_running() -> None:
         logger.warning("webbrowser.open failed: %s", exc)
 
 
-def _setup_logging() -> None:
+def _setup_logging(debug: bool = False) -> None:
     from logging.handlers import RotatingFileHandler
 
     root = logging.getLogger()
-    root.setLevel(logging.INFO)
+    root.setLevel(logging.DEBUG if debug else logging.INFO)
     fmt = logging.Formatter("%(asctime)s %(levelname)s %(name)s %(message)s")
+
+    # Handler 0 (debug only): mirror logs to stdout so a wrapper like
+    # `make launcher` can tee them into a logfile for later analysis. At
+    # DEBUG level this includes every docker command, its exit code, and a
+    # truncated stdout/stderr (see actions._run).
+    if debug:
+        stream_handler = logging.StreamHandler(sys.stdout)
+        stream_handler.setFormatter(fmt)
+        root.addHandler(stream_handler)
 
     # Handler 1: legacy launcher.log under APPDATA/Bibliogon/
     legacy_path = config.logfile_path()

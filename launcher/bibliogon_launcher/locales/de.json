@@ -49,6 +49,7 @@
   "install_prompt.message": "Bibliogon ist auf diesem Computer noch nicht installiert. Jetzt installieren?",
   "install_prompt.title": "Bibliogon ist nicht installiert",
   "manage.message": "Bibliogon läuft auf Port {port}.\n\nWähle, was du tun möchtest.",
+  "manage.start": "Starten",
   "manage.stop": "Stoppen",
   "manage.stopped.message": "Bibliogon wurde gestoppt. Starte den Launcher erneut, um es wieder zu starten.",
   "manage.stopped.title": "Bibliogon gestoppt",
@@ -87,6 +88,11 @@
   "status.almost_ready": "Fast fertig...",
   "status.starting": "Bibliogon wird gestartet...",
   "technical_details": "Technische Details",
+  "tray.open": "Öffnen",
+  "tray.open_browser": "Im Browser öffnen",
+  "tray.quit": "Beenden",
+  "tray.stop": "Stoppen",
+  "tray.tooltip": "Bibliogon läuft auf Port {port}",
   "uninstall.complete.message": "Bibliogon wurde deinstalliert.",
   "uninstall.complete.title": "Deinstallation abgeschlossen",
   "uninstall.confirm": "Deinstallieren",
@@ -113,5 +119,9 @@
   "welcome.heading": "Bevor du startest",
   "welcome.title": "Willkommen bei Bibliogon",
   "welcome.trust_anchor": "Docker ist etabliert (seit 2013), kostenlos und wird weltweit von Millionen Entwicklerinnen und Entwicklern eingesetzt.",
-  "welcome.trust_link": "Mehr zur Sicherheit von Docker"
+  "welcome.trust_link": "Mehr zur Sicherheit von Docker",
+  "window.state.no_docker": "Docker ist nicht gestartet",
+  "window.state.not_installed": "Bibliogon ist nicht installiert",
+  "window.state.running": "Bibliogon läuft",
+  "window.state.stopped": "Bibliogon ist installiert, aber gestoppt"
 }
