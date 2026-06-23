@@ -32,6 +32,7 @@ import {
     createChapter,
     createArticle,
 } from "../helpers/api";
+import {pinServerDates} from "../helpers/pinDates";
 
 const VIEWPORTS = [
     {name: "desktop", width: 1920, height: 1080},
@@ -67,6 +68,10 @@ async function prep(page: Page): Promise<void> {
         // @ts-ignore install frozen clock
         globalThis.Date = FrozenDate;
     });
+    // Pin server-derived card dates (updated_at) so the baselines never
+    // drift across days; the frozen browser clock above cannot fix a
+    // value that the backend stamped at seed time.
+    await pinServerDates(page);
 }
 
 async function settle(page: Page): Promise<void> {

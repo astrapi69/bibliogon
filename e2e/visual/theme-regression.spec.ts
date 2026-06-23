@@ -32,6 +32,7 @@
 import {test, expect, type Page} from "@playwright/test";
 
 import {resetDb, resetSettings, createBook, createChapter, createArticle} from "../helpers/api";
+import {pinServerDates} from "../helpers/pinDates";
 
 const PALETTES = [
     "warm-literary",
@@ -91,6 +92,11 @@ async function applyTheme(page: Page, palette: string, mode: string): Promise<vo
         },
         {palette, mode},
     );
+    // The dashboard card renders a server-derived `updated_at`, which the
+    // frozen browser clock above cannot pin (it comes from the backend, not
+    // `new Date()`). Normalize the dates the renderer sees so the baselines
+    // stay stable across days.
+    await pinServerDates(page);
 }
 
 /**
