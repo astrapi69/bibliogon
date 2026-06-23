@@ -3683,7 +3683,16 @@
       "arc_mailto_subject": "ARC-Anfrage",
       "arc_send_mail": "E-Mail verfassen",
       "conflict_banner": "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
-      "conflict_dismiss": "Hinweis schließen"
+      "conflict_dismiss": "Hinweis schließen",
+      "step_guide": "Anleitung",
+      "guide_intro": "Bibliogon lädt nicht für dich hoch. So veröffentlichst du dein Paket bei KDP:",
+      "guide_open_kdp": "KDP-Bookshelf öffnen",
+      "guide_step_create": "Erstelle bei KDP einen neuen Titel (eBook oder Taschenbuch/Hardcover).",
+      "guide_step_manuscript": "Lade die Manuskript-Datei aus dem ZIP hoch: manuscript-ebook.epub für eBook, manuscript-paperback.pdf für den Druck.",
+      "guide_step_cover": "Lade die Cover-Datei hoch (cover.*).",
+      "guide_step_metadata": "Übertrage die Angaben aus metadata.json (Titel, Autor, Beschreibung, Kategorien, Keywords).",
+      "guide_step_price": "Lege den Preis fest (siehe den Preise-Schritt für Tantiemen + Mindestpreis) und veröffentliche.",
+      "guide_note": "Prüfe den Cover-Validierungsbericht (cover-validation-report.json) im ZIP, falls KDP das Cover ablehnt."
     }
   }
 }

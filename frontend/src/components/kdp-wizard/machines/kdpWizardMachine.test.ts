@@ -372,6 +372,33 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
+    it("ADVANCE from exportSuccess transitions to guide (UPLOAD-GUIDE-01)", () => {
+        const actor = navigateToExport();
+        actor.send({ type: "GENERATE" });
+        actor.send({
+            type: "EXPORT_SUCCESS",
+            filename: "book-kdp-package.zip",
+            blobUrl: "blob:http://localhost/abc-123",
+        });
+        actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("guide");
+        actor.stop();
+    });
+
+    it("BACK from guide returns to exportSuccess", () => {
+        const actor = navigateToExport();
+        actor.send({ type: "GENERATE" });
+        actor.send({
+            type: "EXPORT_SUCCESS",
+            filename: "book-kdp-package.zip",
+            blobUrl: "blob:http://localhost/abc-123",
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({ type: "BACK" });
+        expect(actor.getSnapshot().value).toBe("exportSuccess");
+        actor.stop();
+    });
+
     it("CANCEL from cover resets context and returns to metadata", () => {
         const actor = createActor(kdpWizardMachine).start();
         actor.send({

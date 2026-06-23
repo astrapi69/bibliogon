@@ -32,6 +32,7 @@ import WizardShell, {WizardNav} from "../wizards/WizardShell"
 import ArcStep from "./ArcStep"
 import CoverValidation from "./CoverValidation"
 import ExportPackage from "./ExportPackage"
+import KdpGuideStep from "./KdpGuideStep"
 import {kdpWizardMachine} from "./machines/kdpWizardMachine"
 import MetadataChecklist from "./MetadataChecklist"
 import PricingStep from "./PricingStep"
@@ -42,7 +43,7 @@ interface Props {
     onClose: () => void
 }
 
-const TOTAL_STEPS = 5
+const TOTAL_STEPS = 6
 
 const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = [
     {
@@ -70,11 +71,16 @@ const STEPS: ReadonlyArray<{key: string; labelKey: string; fallback: string}> = 
         labelKey: "ui.kdp_publishing_wizard.step_export",
         fallback: "Paket",
     },
+    {
+        key: "guide",
+        labelKey: "ui.kdp_publishing_wizard.step_guide",
+        fallback: "Anleitung",
+    },
 ] as const
 
 /** Map machine ``state.value`` to the user-visible step index used
  *  by the dot indicator + testid namespace. */
-function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 | 4 {
+function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 | 4 | 5 {
     switch (stateValue) {
         case "metadata":
         case "metadataError":
@@ -90,6 +96,8 @@ function stepIndexFromState(stateValue: string): 0 | 1 | 2 | 3 | 4 {
         case "exportSuccess":
         case "exportError":
             return 4
+        case "guide":
+            return 5
         default:
             return 0
     }
@@ -261,6 +269,9 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         }
         if (stateValue === "arc") {
             return <ArcStep book={book} />
+        }
+        if (stateValue === "guide") {
+            return <KdpGuideStep />
         }
         // export / exporting / exportSuccess / exportError
         return (
