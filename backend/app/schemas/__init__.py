@@ -653,6 +653,9 @@ class ChapterCreate(BaseModel):
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
     synopsis: str | None = Field(default=None, max_length=2000)
+    # Per-chapter Inspector notes (additive enhancement). Distinct from the
+    # Storyboard ``notes`` sticky above and from project-wide ``Book.notes``.
+    inspector_notes: str | None = Field(default=None, max_length=20000)
 
     @field_validator("mood_color")
     @classmethod
@@ -688,6 +691,10 @@ class ChapterUpdate(BaseModel):
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
     synopsis: str | None = Field(default=None, max_length=2000)
+    # Per-chapter Inspector notes (additive enhancement). All optional;
+    # ``exclude_unset=True`` in the PATCH handler means an unsent field is
+    # NOT overwritten to NULL.
+    inspector_notes: str | None = Field(default=None, max_length=20000)
 
     @field_validator("mood_color")
     @classmethod
@@ -759,6 +766,9 @@ class ChapterOut(BaseModel):
     label_id: str | None = None
     target_words: int | None = None
     synopsis: str | None = None
+    # Per-chapter Inspector notes (additive enhancement). Always returned
+    # (NULL when unset); plain Text column round-trips directly.
+    inspector_notes: str | None = None
 
 
 class WritingSessionOut(BaseModel):

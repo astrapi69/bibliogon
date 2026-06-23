@@ -297,6 +297,16 @@ class Chapter(Base):
     # shown in the Outliner. Optional, born NULL; may be auto-generated
     # client-side from the first paragraph of the chapter content.
     synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive
+    # enhancement). The author's free-text working notes for THIS chapter
+    # ("add a flashback here", "check the timeline"). Three distinct
+    # concerns must not be confused:
+    #   - ``notes`` above is the Storyboard board-sticky annotation;
+    #   - ``Book.notes`` is the project-wide planning scratchpad;
+    #   - ``inspector_notes`` is the chapter-local working note, the
+    #     Scrivener "Inspector Notes" equivalent.
+    # Optional, born NULL.
+    inspector_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 

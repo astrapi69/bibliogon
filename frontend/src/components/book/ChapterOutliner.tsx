@@ -31,7 +31,7 @@ import styles from "../ChapterOutliner.module.css"
 
 type OutlinerPatch = Pick<
     ChapterUpdatePayload,
-    "status" | "label_id" | "target_words" | "story_beat" | "notes" | "synopsis"
+    "status" | "label_id" | "target_words" | "story_beat" | "notes" | "synopsis" | "inspector_notes"
 >
 
 type SortKey = "position" | "title" | "words" | "target" | "status"
@@ -362,6 +362,7 @@ export default function ChapterOutliner({
                                 <th>{t("ui.chapter_label.label", "Label")}</th>
                                 <th>{t("ui.storyboard.beat_label", "Beat")}</th>
                                 <th>{t("ui.outliner.col_synopsis", "Synopsis")}</th>
+                                <th>{t("ui.outliner.col_notes", "Notes")}</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -465,6 +466,21 @@ export default function ChapterOutliner({
                                                     <Wand2 size={14} />
                                                 </button>
                                             </div>
+                                        </td>
+                                        <td>
+                                            <input
+                                                key={`notes-${ch.id}-${ch.inspector_notes ?? ""}`}
+                                                className="input w-full min-w-[10rem]"
+                                                defaultValue={ch.inspector_notes ?? ""}
+                                                placeholder={t("ui.outliner.notes_placeholder", "Working notes…")}
+                                                aria-label={t("ui.outliner.col_notes", "Notes")}
+                                                data-testid={`${testidNamespace}-notes-${ch.id}`}
+                                                onBlur={(e) => {
+                                                    const next = e.target.value.trim() || null
+                                                    if (next === (ch.inspector_notes ?? null)) return
+                                                    void handlePatch(ch.id, {inspector_notes: next})
+                                                }}
+                                            />
                                         </td>
                                     </tr>
                                 )
