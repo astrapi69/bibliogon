@@ -249,6 +249,29 @@ test.describe("Feature Screenshots", () => {
             await page.request
                 .patch(`${API}/books/${book.id}`, {data: {word_target: 50000}})
                 .catch(() => {});
+            // WritingGoalWidget renders null with zero writing sessions, and
+            // word_target alone creates none. record_progress fires only on a
+            // chapter content PATCH, so patch one chapter's content to log a
+            // positive daily delta -> a session exists -> the widget renders.
+            const chapters = await page.request
+                .get(`${API}/books/${book.id}/chapters`)
+                .then((r) => r.json())
+                .catch(() => [] as Array<{id: string; title?: string; version: number}>);
+            const target =
+                chapters.find((c: {title?: string}) => c.title?.includes("Kapitel 2")) ??
+                chapters[0];
+            if (target) {
+                await page.request
+                    .patch(`${API}/books/${book.id}/chapters/${target.id}`, {
+                        data: {
+                            content: PROSE(
+                                "Heute kamen die Sätze leicht — eine ganze Szene entstand zwischen Sonnenaufgang und dem ersten Kaffee.",
+                            ),
+                            version: target.version,
+                        },
+                    })
+                    .catch(() => {});
+            }
             await page.goto("/");
             const widget = page.getByTestId("writing-goal-widget");
             await widget.waitFor({state: "visible"}).catch(() => {});
