@@ -3442,7 +3442,8 @@
       "collection_save_failed": "Could not save collection",
       "col_in_collection": "In",
       "col_notes": "メモ",
-      "notes_placeholder": "作業メモ…"
+      "notes_placeholder": "作業メモ…",
+      "collection_color": "コレクションの色"
     },
     "storyboard": {
       "title": "ストーリーボード",

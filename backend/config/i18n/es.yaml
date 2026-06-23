@@ -3265,6 +3265,7 @@ ui:
     collection_all: "Todos los capítulos"
     collection_new: "Nueva colección"
     collection_delete: "Eliminar"
+    collection_color: "Color de la colección"
     collection_name: "Nombre de la colección"
     collection_filter: "Filtrar por colección"
     collection_default_name: "Nueva colección"

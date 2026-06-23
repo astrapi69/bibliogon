@@ -3275,6 +3275,7 @@ ui:
     collection_all: "All chapters"
     collection_new: "New collection"
     collection_delete: "Delete"
+    collection_color: "Collection color"
     collection_name: "Collection name"
     collection_filter: "Filter to collection"
     collection_default_name: "New collection"

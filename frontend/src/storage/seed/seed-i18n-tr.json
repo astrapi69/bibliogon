@@ -3442,7 +3442,8 @@
       "collection_save_failed": "Could not save collection",
       "col_in_collection": "In",
       "col_notes": "Notlar",
-      "notes_placeholder": "Çalışma notları…"
+      "notes_placeholder": "Çalışma notları…",
+      "collection_color": "Koleksiyon rengi"
     },
     "storyboard": {
       "title": "Storyboard",

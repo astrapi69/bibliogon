@@ -3275,6 +3275,7 @@ ui:
     collection_all: "Alle Kapitel"
     collection_new: "Neue Sammlung"
     collection_delete: "Löschen"
+    collection_color: "Farbe der Sammlung"
     collection_name: "Sammlungsname"
     collection_filter: "Auf Sammlung filtern"
     collection_default_name: "Neue Sammlung"

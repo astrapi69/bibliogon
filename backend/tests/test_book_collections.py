@@ -75,3 +75,35 @@ class TestBookCollections:
             json={"collections": [{"id": "c1", "name": "", "chapter_ids": []}]},
         )
         assert r.status_code == 422
+
+    def test_color_defaults_null(self):
+        book_id = _create_book()
+        r = client.patch(
+            f"/api/books/{book_id}",
+            json={"collections": [{"id": "c1", "name": "Plain", "chapter_ids": []}]},
+        )
+        assert r.status_code == 200
+        assert r.json()["collections"][0]["color"] is None
+
+    def test_color_roundtrips(self):
+        book_id = _create_book()
+        r = client.patch(
+            f"/api/books/{book_id}",
+            json={
+                "collections": [
+                    {"id": "c1", "name": "Battles", "chapter_ids": [], "color": "#ef4444"}
+                ]
+            },
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["collections"][0]["color"] == "#ef4444"
+        persisted = client.get(f"/api/books/{book_id}").json()["collections"]
+        assert persisted[0]["color"] == "#ef4444"
+
+    def test_invalid_color_rejected(self):
+        book_id = _create_book()
+        r = client.patch(
+            f"/api/books/{book_id}",
+            json={"collections": [{"id": "c1", "name": "Bad", "chapter_ids": [], "color": "red"}]},
+        )
+        assert r.status_code == 422

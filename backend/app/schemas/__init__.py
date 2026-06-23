@@ -139,6 +139,19 @@ class CollectionItem(BaseModel):
     id: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=1, max_length=200)
     chapter_ids: list[str] = Field(default_factory=list)
+    # Optional swatch colour for visual distinction in the Outliner
+    # ("Kampfszenen" = red, "Backstory" = blue). Hex, matching the
+    # ChapterLabel / mood_color convention; NULL = no colour.
+    color: str | None = Field(default=None, max_length=7)
+
+    @field_validator("color")
+    @classmethod
+    def _validate_collection_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("color must be a hex color code like #RRGGBB")
+        return value
 
 
 class BookCreate(BaseModel):
