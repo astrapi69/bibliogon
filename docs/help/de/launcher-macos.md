@@ -4,7 +4,7 @@ Der macOS-Launcher ist ein `Bibliogon.app`-Bundle, das Bibliogon per Doppelklick
 
 **Diese erste Version ist ausschließlich arm64.** Macs mit Apple Silicon (M1, M2, M3, M4 und neuer) werden unterstützt. Intel-Macs sind mit diesem Binary nicht abgedeckt; dafür bitte stattdessen `install.sh` im Terminal verwenden.
 
-> **Was der Launcher für dich erledigt.** Beim ersten Start erkennt der Launcher, ob Bibliogon bereits auf der Festplatte liegt. Wenn nicht, bietet er an, Bibliogon für dich herunterzuladen und einzurichten (siehe "Erster Start" unten). Du musst nur Docker Desktop selbst installieren; Docker-Lizenzbedingungen verbieten eine stille Drittanbieter-Installation. Plattformübergreifender Überblick: [Installations-Übersicht](installation.md).
+> **Was der Launcher für dich erledigt.** Der Launcher verwaltet den Docker-Stack für eine Kopie des Bibliogon-Repositorys, die bereits auf deinem Rechner liegt: er baut die Images aus deiner lokalen Kopie und startet und stoppt die App für dich. Er lädt Bibliogon **nicht** selbst herunter. Du brauchst vorher zwei Dinge auf der Festplatte: Docker Desktop und die Bibliogon-Quellen (ein `git clone` des Repositorys oder dessen entpacktes Quell-ZIP - der Standardort ist `~/bibliogon`). Docker Desktop installierst du selbst; Docker-Lizenzbedingungen verbieten eine stille Drittanbieter-Installation. Plattformübergreifender Überblick: [Installations-Übersicht](installation.md).
 
 ## Einmalige Einrichtung
 
@@ -67,9 +67,9 @@ xattr -d com.apple.quarantine /pfad/zu/Bibliogon.app
 Die erste Aufgabe des Launchers ist die Erkennung des aktuellen Zustands.
 
 1. **Docker-Prüfung.** Der Launcher bestätigt, dass Docker Desktop installiert ist und läuft. Fehlt Docker Desktop, erscheint ein Dialog mit Installations-URL und der Launcher beendet sich. Ist Docker installiert, aber nicht gestartet, bittet ein Dialog um den Start und einen Klick auf Wiederholen; der Launcher versucht es bis zu drei Mal.
-2. **Bibliogon-Prüfung.** Der Launcher sucht eine bestehende Bibliogon-Installation über die Manifest-Datei (`~/Library/Application Support/bibliogon/install.json`) oder, auf einem frischen Rechner, am Standardort `~/bibliogon`.
-   - **Bereits installiert**: der Launcher fährt direkt mit Schritt 3 fort.
-   - **Nicht installiert**: ein Willkommensdialog erscheint: "Bibliogon ist auf diesem Rechner noch nicht installiert". Drei Schaltflächen: **Installieren** (der Launcher lädt die neueste Release-ZIP herunter, entpackt sie in einen von dir gewählten Ordner, generiert eine frische `.env` und baut die Docker-Images - der erste Build dauert 3-5 Minuten), **Installationsanleitung öffnen** (öffnet die Doku im Browser), oder **Schließen**.
+2. **Repository-Prüfung.** Der Launcher braucht deine lokale Kopie des Bibliogon-Repositorys - den Ordner mit der `docker-compose.prod.yml`. Er sucht sie über die Umgebungsvariable `BIBLIOGON_DIR`, das Repo-Wurzelverzeichnis, wenn du den Launcher aus einem Quell-Checkout startest, oder am Standardort `~/bibliogon`.
+   - **Bereits gebaut**: existieren die Bibliogon-Container schon aus einem früheren Lauf, fährt der Launcher direkt mit Schritt 3 fort.
+   - **Noch nicht gebaut**: solange keine Container existieren, zeigt das Launcher-Fenster eine Schaltfläche **Installieren**. Ein Klick baut die Docker-Images aus deiner lokalen Kopie (`docker compose build`; der erste Build dauert 3-5 Minuten), schreibt den Host-Port in die `.env` und startet anschließend den Stack. Lässt sich das Repository nicht finden, schlägt der Build mit "Compose file not found" fehl - lege die Bibliogon-Quellen nach `~/bibliogon`, setze `BIBLIOGON_DIR` oder starte den Launcher aus dem Repository-Ordner heraus.
 3. **Start.** Ein kleines Fenster mit "Bibliogon startet..." erscheint, während Docker die Container hochfährt.
 4. **Browser.** Sobald Bibliogon bereit ist, öffnet sich der Standard-Browser auf `http://localhost:7880` (bzw. dem in `.env` konfigurierten Port).
 5. **Statusfenster.** Das kleine Fenster wechselt zu "Bibliogon läuft auf localhost:7880" mit der Schaltfläche **Bibliogon stoppen**.
