@@ -11,6 +11,8 @@
   "health_check_key": "status",
   "health_check_value": "ok",
   "browser_path": "/",
+  "icon_path": "frontend/public/icon-192.png",
+  "tray_icon_path": "frontend/public/icon-192.png",
   "config_dir": "~/.config/bibliogon",
   "locale": "de",
   "repo_url": "https://github.com/astrapi69/bibliogon",

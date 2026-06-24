@@ -16,7 +16,7 @@ python = ">=3.11,<3.15"
 # stdlib-only runtime: tkinter, urllib, webbrowser, subprocess, pathlib, json, logging
 # Tkinter ships with Python on Windows installers; no pip dep required.
 platformdirs = "^4.9.6"
-docker-app-launcher = {version = "^0.4.0", extras = ["tray"]}
+docker-app-launcher = "^0.5.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"

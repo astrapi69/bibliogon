@@ -10,7 +10,14 @@ PyPI package (MIT, by Aster), the same library the sibling project
 adaptive-learner uses. Bibliogon supplies only **configuration**
 (`launcher/launcher.json`) and a three-responsibility wrapper; all
 behaviour - the persistent window, the Docker-first flow, the CLI verbs,
-the system tray, and i18n - lives in the library.
+and i18n - lives in the library.
+
+> **System tray.** The optional minimize-to-tray feature needs the library's
+> `tray` extra (pystray + a GTK backend), which on Linux pulls heavyweight
+> system libraries and inflates the frozen binary ~6x. Bibliogon therefore
+> ships **without** the tray extra; the window's close button closes the
+> launcher. `tray_icon_path` stays in the config so the feature works for
+> anyone who installs the extra manually (`pip install pystray`).
 
 This document is the **configuration reference**. For end-user install
 instructions see the per-platform help pages
@@ -62,6 +69,8 @@ The fields Bibliogon sets:
 | `health_check_key` | `status` | JSON key checked in the health response. |
 | `health_check_value` | `ok` | Expected value (`{"status": "ok"}`). |
 | `browser_path` | `/` | Opened in the browser once healthy. |
+| `icon_path` | `frontend/public/icon-192.png` | The Tk window icon (the #402 PWA icon set). Resolved CWD-relative; the wrapper `chdir`s to the repo root, so it resolves from a source checkout. PNG, not SVG (Tk cannot load SVG). Best-effort: a missing file is silently skipped. |
+| `tray_icon_path` | `frontend/public/icon-192.png` | The system-tray icon; falls back to `icon_path`. Config-only unless the optional tray extra is installed (see below). |
 | `config_dir` | `~/.config/bibliogon` | Where the launcher keeps its own state/logs. |
 | `locale` | `de` | Default UI language (the library ships DE/EN). |
 | `repo_url` | `https://github.com/astrapi69/bibliogon` | Project link. |
@@ -102,7 +111,7 @@ python -m bibliogon_launcher --port N   # override the host port
 
 - uses `bibliogon_launcher/__main__.py` as the entry point;
 - bundles `launcher.json` at the bundle root;
-- pulls the library's submodules + tray backends via
+- pulls the library's submodules via
   `docker_app_launcher.pyinstaller.build_info.hidden_imports()`;
 - embeds the Windows icon + version metadata (win32 only) and builds the
   macOS `.app` bundle (whose `CFBundleVersion` is a `sync-versions` target).

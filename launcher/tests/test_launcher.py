@@ -63,6 +63,14 @@ class TestConfigLoads:
         assert cfg.health_check_value == "ok"
         assert cfg.app_version == __version__
 
+    def test_launcher_json_sets_app_icon(self) -> None:
+        cfg = LauncherConfig.from_json(LAUNCHER_JSON)
+        assert cfg.icon_path == "frontend/public/icon-192.png"
+        assert cfg.tray_icon_path == "frontend/public/icon-192.png"
+        # The icon path is CWD-relative; the wrapper chdir's to the repo root
+        # at runtime, so it must exist there (the #402 PWA icon set).
+        assert (LAUNCHER_ROOT.parent / cfg.icon_path).is_file()
+
 
 class TestNoForeignProjectReference:
     """Regression guard: no copied ``adaptive-learner`` identifier leaks into
