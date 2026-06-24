@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-21 (post-v0.56.0 develop refresh — the God-Folder campaign (#466), browser-direct AI for all 6 providers, the desktop update-checker (#477/#479), Settings auto-save (#473), and client-side picture-book PDF (#497) are recorded as shipped; Current focus re-pointed at the v0.57.0 cut.)
+Last updated: 2026-06-24 (post-v0.57.0 develop refresh — the launcher library-first migration (docker-app-launcher 0.7.0), the KDP-wizard Format + Guide steps (#580/#581) and backend bleed/trim (#583/#606), the first-install data-migration dialog (#591), the god-file WARN-tier top-5 split (#207), the E2E flake sweep (#436/#438/#440/#441/#442) + isolation audit, and the unified-metadata export work are recorded as shipped; Current focus re-pointed at the v0.58.0 cut.)
 Latest release: v0.57.0 (2026-06-21) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
@@ -202,18 +202,64 @@ toward v0.57.0):
 
 ---
 
+## Recently shipped — post-v0.57.0 develop arc (toward v0.58.0)
+
+Unreleased on `develop` since the v0.57.0 cut; the next release candidate:
+
+- **Desktop launcher → library-first** — the custom launcher is replaced
+  by the `docker-app-launcher` PyPI package (now **0.7.0**: locale
+  auto-detect, single-instance lock, rotating logging). Bibliogon ships
+  only `launcher/launcher.json` + a thin three-responsibility wrapper;
+  the `tray` extra is deliberately omitted (~6x frozen-binary inflation)
+  and `cleanup_search_paths` left empty (the cleanup scan would otherwise
+  offer the live book-data dir for deletion). See `docs/LAUNCHER-SPEC.md`.
+  Launcher help-docs corrected to the real build-from-local-repo flow
+  (no release download).
+- **KDP Publishing Wizard depth** — a **Format step** (eBook /
+  Taschenbuch / Hardcover + KDP trim size + margin preset, #580) and a
+  **KDP upload-guide step** (#581); the package endpoint now renders the
+  print PDF via **WeasyPrint at the chosen trim size + margins** with
+  crop/bleed marks (eBook → EPUB only; #583/#606).
+- **First-install data-migration dialog** — a welcome dialog offers to
+  import an online `.bgb` backup on first run (#591).
+- **God-file WARN-tier top-5 split (#207)** — `BookEditor` /
+  `BookMetadataEditor` / `ArticleList` / `CollageCanvas` /
+  `ChapterOutliner` decomposed under 500 lines.
+- **Optional per-chapter-collection colour** (#572).
+- **Unified export metadata** — every export format sources its metadata
+  from one `ExportDocument` (SEO work; KDP-package metadata.json +
+  Git-Sync frontmatter deferred).
+- **E2E flake sweep** (#436/#438/#440/#441/#442) — fixed-timeout →
+  deterministic waits, stale `.json→.bgb` specs, content-loading-overlay
+  races, `context.addInitScript` for multi-tab onboarding suppression,
+  `retries:2` — plus a **test-isolation audit** that found data isolation
+  already works and the residual flakes are infra accumulation in the
+  single long-lived backend, not data leakage
+  (`docs/audits/e2e-isolation-audit-2026-06-22.md`).
+- **Feature-screenshot catalog** + a `verify-theme` fix.
+
+---
+
 ## Current focus
 
 All Phase 2 themes and the Maximal-Offline arc (above) are complete
 or deliberately deferred. The Session-9 arc (v0.52.0 → v0.54.0), the
-v0.55.0/v0.56.0 releases, and the post-v0.56.0 develop arc (God-Folder
-close-out, browser-direct AI, desktop update-checker, Settings auto-save,
-client-side picture-book PDF) all shipped (recorded above). The
-prioritized snapshot toward v0.57.0:
+v0.55.0/v0.56.0/v0.57.0 releases, and the post-v0.57.0 develop arc
+(launcher library-first, KDP-wizard Format + Guide + bleed/trim, the
+first-install migration dialog, the god-file top-5 split, the E2E flake
+sweep + isolation audit, unified export metadata) all shipped (recorded
+above). The prioritized snapshot toward v0.58.0:
 
-- **Release readiness (P1):** cut **v0.57.0** — write the CHANGELOG entry,
+- **Release readiness (P1):** cut **v0.58.0** — write the CHANGELOG entry,
   bump the version pins (`make sync-versions`), run the
   BACKUP-AKZEPTANZTEST cycle + the Aster real-browser E2E gate, then tag.
+- **Export-metadata tail (P2):** the two deferred unified-metadata
+  consumers — KDP-package `metadata.json` and Git-Sync frontmatter
+  (backend follow-ups).
+- **Multi-agent coordination (P2):** adjudicate the 6 gitflow decisions —
+  brief prepared at
+  [docs/decisions/multi-agent-coordination-pending.md](decisions/multi-agent-coordination-pending.md)
+  (`MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`).
 - **AI key-management follow-up (P2):** record the shipped per-provider
   key store / overview / Test feature in the CHANGELOG; archive the two
   shipped AI exploration docs.
@@ -221,8 +267,6 @@ prioritized snapshot toward v0.57.0:
   EVT-06 (feature-strategy registration).
 - **Update-checker tail (P3):** desktop-only today; consider surfacing
   the same check in the PWA About once a release stream exists for it.
-- **Process (P2):** the 6 multi-agent-gitflow decisions
-  (`MULTI-AGENT-COORDINATION-EXPLORATION-FOLLOWUP-01`).
 - **Trigger-gated (P3+):** mobile-sync Phase C/D
   (`MOBILE-SELECTIVE-SYNC-EXPLORATION-TRIAGE-01`), Article
   publication/promo (`AR-01` validation first), i18n expansion
@@ -235,7 +279,7 @@ Detailed per-theme work lives in the tiers below.
 
 ## P0 - Deadline / Blocker / Security
 
-(none) — gitflow is clean: `main` holds v0.54.0 and `develop` carries
+(none) — gitflow is clean: `main` holds v0.57.0 and `develop` carries
 the post-release work; nothing on `main` is missing from `develop`, so
 no main→develop sync is pending.
 
