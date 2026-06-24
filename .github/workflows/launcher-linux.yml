@@ -86,7 +86,7 @@ jobs:
       - name: Install launcher dependencies
         run: poetry install --no-interaction --no-ansi
 
-      - name: Run launcher unit tests
+      - name: Run launcher integration tests
         run: poetry run pytest tests/ -v
 
       - name: Regenerate placeholder icon
