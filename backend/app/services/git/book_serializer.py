@@ -114,7 +114,7 @@ def _write_book_state(book: Book, db: Any, repo_dir: Path) -> None:
         # commit. Failure to render MD must NEVER block the JSON
         # commit.
         md_path = manuscript / section / f"{stem}.md"
-        md = _render_chapter_markdown(chapter.title, tiptap_doc)
+        md = _render_chapter_markdown(chapter, index, book, tiptap_doc)
         if md is not None:
             md_path.write_text(md, encoding="utf-8")
         elif md_path.exists():
@@ -163,13 +163,30 @@ def _book_metadata(book: Book) -> dict[str, Any]:
     return {field: getattr(book, field, None) for field in fields}
 
 
-def _render_chapter_markdown(title: str | None, tiptap_doc: Any) -> str | None:
-    """Render a chapter to Markdown. Returns None on any failure.
+def _render_chapter_markdown(
+    chapter: Chapter, index: int, book: Book, tiptap_doc: Any
+) -> str | None:
+    """Render a chapter to Markdown with a YAML front-matter block.
 
-    Phase 5: reuses the export plugin's converter. The export plugin
-    is a path-installed core dependency but the import is kept lazy +
-    exception-tolerant so a disabled/broken plugin never blocks a
-    commit - JSON is the canonical format, Markdown is advisory.
+    Returns None on any failure. Phase 5 + #14 (SEO): reuses the export
+    plugin's converter for the body and prepends a front-matter block
+    (title, chapter index, book title, author, last_modified, word_count)
+    for human-readable, tool-friendly diffs. The export plugin is a
+    path-installed core dependency but the import is kept lazy +
+    exception-tolerant so a disabled/broken plugin never blocks a commit
+    - JSON is the canonical format, Markdown is advisory. The import path
+    strips this front-matter back off (see
+    ``services.backup.markdown_utils.strip_yaml_frontmatter``).
+
+    Args:
+        chapter: The chapter being serialized.
+        index: The chapter's 1-based position within the book.
+        book: The owning book (for title + author front-matter).
+        tiptap_doc: The chapter content parsed from JSON.
+
+    Returns:
+        The Markdown side-file content, or None when the body cannot be
+        rendered.
     """
     try:
         from bibliogon_export.tiptap_to_md import tiptap_to_markdown  # type: ignore[import-untyped]
@@ -185,8 +202,38 @@ def _render_chapter_markdown(title: str | None, tiptap_doc: Any) -> str | None:
         logger_ = logging.getLogger(__name__)
         logger_.warning("tiptap_to_markdown failed: %s", exc)
         return None
+    front_matter = _render_chapter_frontmatter(chapter, index, book)
+    title = chapter.title
     header = f"# {title.strip()}\n\n" if title and title.strip() else ""
-    return str(header + body.rstrip() + "\n")
+    return str(front_matter + header + body.rstrip() + "\n")
+
+
+def _render_chapter_frontmatter(chapter: Chapter, index: int, book: Book) -> str:
+    """Build the leading YAML front-matter block for a chapter ``.md``.
+
+    Args:
+        chapter: The chapter being serialized.
+        index: The chapter's 1-based position within the book.
+        book: The owning book.
+
+    Returns:
+        A ``---``-fenced YAML block ending with a blank line. Empty
+        string values are kept (never crash); ``last_modified`` is an
+        ISO timestamp or None.
+    """
+    from app.services.writing_stats import count_words
+
+    updated_at = getattr(chapter, "updated_at", None)
+    fields = {
+        "title": chapter.title or "",
+        "chapter": index,
+        "book": book.title or "",
+        "author": book.author or "",
+        "last_modified": updated_at.isoformat() if updated_at is not None else None,
+        "word_count": count_words(chapter.content),
+    }
+    body = yaml.safe_dump(fields, sort_keys=False, allow_unicode=True).rstrip()
+    return f"---\n{body}\n---\n\n"
 
 
 def _safe_load_json(raw: str | None) -> Any:

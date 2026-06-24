@@ -26,6 +26,7 @@ from app.services.backup.markdown_utils import (
     extract_title,
     md_to_html,
     read_file_if_exists,
+    strip_yaml_frontmatter,
 )
 
 # --- archive_utils: find_manifest -------------------------------------------
@@ -325,3 +326,42 @@ def test_md_to_html_nested_list_2space_indent():
     html = md_to_html(md)
     # Nested <ul> indicates the doubling worked
     assert html.count("<ul>") >= 2
+
+
+# --- markdown_utils: strip_yaml_frontmatter (#14 read-side) -----------------
+
+
+def test_strip_yaml_frontmatter_removes_leading_block():
+    text = "---\ntitle: My Chapter\nchapter: 1\n---\n\n# My Chapter\n\nBody.\n"
+    stripped = strip_yaml_frontmatter(text)
+    assert "title:" not in stripped
+    assert "chapter:" not in stripped
+    assert stripped.lstrip().startswith("# My Chapter")
+
+
+def test_strip_yaml_frontmatter_without_block_is_unchanged():
+    text = "# Plain Chapter\n\nNo front-matter here.\n"
+    assert strip_yaml_frontmatter(text) == text
+
+
+def test_md_to_html_strips_frontmatter_no_leak():
+    # #14: a chapter .md WITH front-matter imports without leaking the
+    # YAML keys into the chapter body.
+    md = (
+        "---\ntitle: Erstes Kapitel\nchapter: 1\nbook: Mein Buch\n"
+        "author: Aster\nword_count: 4\n---\n\n# Erstes Kapitel\n\nEin zwei drei vier.\n"
+    )
+    html = md_to_html(md)
+    assert "title:" not in html
+    assert "word_count" not in html
+    assert "Mein Buch" not in html
+    assert "<h1>Erstes Kapitel</h1>" in html
+    assert "Ein zwei drei vier." in html
+
+
+def test_md_to_html_without_frontmatter_still_importable():
+    # #14: a chapter .md WITHOUT front-matter still imports exactly as
+    # before the strip was added.
+    html = md_to_html("# Erstes Kapitel\n\nEin zwei drei vier.\n")
+    assert "<h1>Erstes Kapitel</h1>" in html
+    assert "Ein zwei drei vier." in html
