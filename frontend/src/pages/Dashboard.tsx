@@ -67,6 +67,9 @@ import { getDonationsConfig, type DonationsConfig } from "../components/settings
 import DonationOnboardingDialog, {
     shouldShowDonationOnboarding,
 } from "../components/shared/DonationOnboardingDialog";
+import MigrationWelcomeDialog, {
+    shouldOfferMigration,
+} from "../components/shared/MigrationWelcomeDialog";
 // v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
@@ -114,6 +117,9 @@ export default function Dashboard() {
     // chevron dropdown lists every other dashboard-visible type.
     const [defaultBookType, setDefaultBookType] = useState("prose");
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
+    const [showMigration, setShowMigration] = useState(false);
+    // First-install migration check runs once after the books list loads.
+    const migrationCheckedRef = useRef(false);
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -396,6 +402,29 @@ export default function Dashboard() {
         navigate("/", { replace: true, state: null });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, donationsConfig, books, location.state]);
+
+    // First-install data migration (#591): on a fresh install with no
+    // books AND no articles, offer to import a `.bgb` backup made on the
+    // online version. Runs once after the books list loads; the flag (set
+    // on dismiss) keeps it from reappearing. Works in both storage modes.
+    useEffect(() => {
+        if (migrationCheckedRef.current) return;
+        if (loading) return;
+        migrationCheckedRef.current = true;
+        if (books.length > 0) return;
+        if (!shouldOfferMigration()) return;
+        let cancelled = false;
+        void getStorage()
+            .articles.list()
+            .then((articles) => {
+                if (!cancelled && articles.length === 0) setShowMigration(true);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, books]);
 
     const handleBackupExport = () => {
         if (offline) return;
@@ -936,6 +965,14 @@ export default function Dashboard() {
                     donations={donationsConfig}
                 />
             ) : null}
+            <MigrationWelcomeDialog
+                open={showMigration}
+                onClose={() => setShowMigration(false)}
+                onImport={() => {
+                    setShowMigration(false);
+                    setImportWizardOpen(true);
+                }}
+            />
             {bulkDeleteDialog && (
                 <TypeToConfirmDialog
                     open

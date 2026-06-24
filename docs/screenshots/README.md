@@ -83,6 +83,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | AI provider table | ![KI Provider Table](settings/ki-provider-table.png) |
 | Update checker | ![Update Checker](settings/update-checker.png) |
 | Data management | ![Data Management](settings/data-management.png) |
+| Data migration welcome (.bgb from online, #591) | ![Data Migration](settings/data-migration.png) |
 | About / version | ![About Version](settings/about-version.png) |
 | Auto-save behaviour tab (no Save button, #473) | ![Settings Auto-Save](settings/auto-save.png) |
 

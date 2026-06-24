@@ -3705,6 +3705,18 @@
       "format_margin_normal": "Normal",
       "format_margin_wide": "Breit",
       "guide_format_label": "Gewähltes Format"
+    },
+    "migration": {
+      "title": "Willkommen bei Bibliogon",
+      "intro": "Hast du die App schon online genutzt? Deine Bücher und Artikel können übernommen werden.",
+      "step_open": "Öffne die Online-Version.",
+      "step_settings": "Gehe zu Einstellungen → Daten → Vollbackup (.bgb).",
+      "step_download": "Lade die .bgb-Datei herunter.",
+      "step_import": "Klicke hier auf „Backup importieren“.",
+      "skip": "Ohne Daten starten",
+      "open_online": "Online-Version öffnen",
+      "import": "Backup importieren",
+      "settings_hint": "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“."
     }
   }
 }

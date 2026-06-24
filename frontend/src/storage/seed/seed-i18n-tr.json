@@ -3705,6 +3705,18 @@
       "format_margin_normal": "Normal",
       "format_margin_wide": "Geniş",
       "guide_format_label": "Seçilen biçim"
+    },
+    "migration": {
+      "title": "Bibliogon'a hoş geldiniz",
+      "intro": "Uygulamayı çevrimiçi olarak kullandınız mı? Kitaplarınız ve makaleleriniz aktarılabilir.",
+      "step_open": "Çevrimiçi sürümü açın.",
+      "step_settings": "Ayarlar → Veriler → Tam yedek (.bgb) bölümüne gidin.",
+      "step_download": ".bgb dosyasını indirin.",
+      "step_import": "Burada “Yedeği içe aktar” düğmesine tıklayın.",
+      "skip": "Verisiz başla",
+      "open_online": "Çevrimiçi sürümü aç",
+      "import": "Yedeği içe aktar",
+      "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
     }
   }
 }

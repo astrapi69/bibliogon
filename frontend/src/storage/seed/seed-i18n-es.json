@@ -3705,6 +3705,18 @@
       "format_margin_normal": "Normal",
       "format_margin_wide": "Ancho",
       "guide_format_label": "Formato elegido"
+    },
+    "migration": {
+      "title": "Bienvenido a Bibliogon",
+      "intro": "¿Ya has usado la aplicación en línea? Tus libros y artículos se pueden transferir.",
+      "step_open": "Abre la versión en línea.",
+      "step_settings": "Ve a Ajustes → Datos → Copia completa (.bgb).",
+      "step_download": "Descarga el archivo .bgb.",
+      "step_import": "Haz clic aquí en «Importar copia».",
+      "skip": "Empezar sin datos",
+      "open_online": "Abrir versión en línea",
+      "import": "Importar copia",
+      "settings_hint": "¿Migrando desde la versión en línea? Exporta allí una copia completa (.bgb) e impórtala aquí con «Importar copia»."
     }
   }
 }
