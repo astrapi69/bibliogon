@@ -167,16 +167,16 @@ dev-lan: build-frontend ## Serve the whole app on the LAN, single port 0.0.0.0:8
 
 LAUNCHER_LOG_DIR ?= launcher/logs
 
-launcher: ## Start the persistent launcher window for manual testing (--window --debug; logs to launcher/logs/; needs Docker + python3-tk)
+launcher: ## Start the launcher (docker-app-launcher) for manual testing (--debug; logs to launcher/logs/; needs Docker + python3-tk)
 	@mkdir -p $(LAUNCHER_LOG_DIR)
 	@log="$(CURDIR)/$(LAUNCHER_LOG_DIR)/launcher-$$(date +%Y%m%d-%H%M%S).log"; \
 		echo ""; \
-		echo "Starting the Bibliogon launcher window (persistent single window)."; \
+		echo "Starting the Bibliogon launcher (docker-app-launcher, persistent window)."; \
 		echo "  Requires Docker running and tkinter (Debian/Ubuntu: sudo apt install python3-tk)."; \
 		echo "  Output (incl. DEBUG docker traces) is logged to:"; \
 		echo "    $$log"; \
 		echo ""; \
-		cd launcher && poetry run python -m bibliogon_launcher --window --debug 2>&1 | tee "$$log"
+		cd launcher && poetry run python -m bibliogon_launcher --debug 2>&1 | tee "$$log"
 
 launcher-install: ## Install the launcher's Python dependencies
 	cd launcher && poetry install
