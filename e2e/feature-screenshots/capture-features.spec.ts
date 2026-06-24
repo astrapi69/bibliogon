@@ -574,4 +574,120 @@ test.describe("Feature Screenshots", () => {
             ));
         });
     });
+
+    // ===================== KDP Publishing Wizard =====================
+    // The format + guide steps are gated behind the metadata + cover
+    // gates (format) and a generated package (guide), so each shot
+    // seeds a KDP-ready book (rich metadata + a valid-dimension cover)
+    // and drives the wizard via its nav. Crash-resistant: a blocked
+    // gate degrades to "screenshot whatever rendered".
+    test.describe("KDP Wizard", () => {
+        /** Seed a book the KDP wizard can advance through: complete
+         *  metadata + an in-page-generated 700x1100 cover (≥ the KDP
+         *  625x1000 minimum, so the cover gate passes). */
+        async function seedKdpReadyBook(
+            page: import("@playwright/test").Page,
+            title: string,
+        ) {
+            const book = await createBook(title, "Asterios Raptis");
+            await createChapter(
+                book.id,
+                "Kapitel 1: Klarheit",
+                PROSE("Wer verstanden werden will, schreibt kurze Sätze."),
+            );
+            await page.request
+                .patch(`${API}/books/${book.id}`, {
+                    data: {
+                        subtitle: "Ein Handbuch des klaren Satzes",
+                        description:
+                            "Ein Buch über die Kunst, verständlich zu schreiben — ohne Schachtelsätze, dafür mit Rhythmus.",
+                        language: "de",
+                        genre: "Sachbuch",
+                        categories: ["Ratgeber", "Schreiben"],
+                        keywords: ["schreiben", "stil", "klarheit"],
+                        isbn_paperback: "978-3-16-148410-0",
+                    },
+                })
+                .catch(() => {});
+            await page.goto(`/book/${book.id}?view=metadata`);
+            const dataUrl = await page
+                .evaluate(() => {
+                    const canvas = document.createElement("canvas");
+                    canvas.width = 700;
+                    canvas.height = 1100;
+                    const ctx = canvas.getContext("2d");
+                    if (!ctx) return null;
+                    ctx.fillStyle = "#6b4f3a";
+                    ctx.fillRect(0, 0, 700, 1100);
+                    ctx.fillStyle = "#f5ecd9";
+                    ctx.font = "52px serif";
+                    ctx.fillText("Demo-Cover", 70, 320);
+                    return canvas.toDataURL("image/png");
+                })
+                .catch(() => null);
+            if (dataUrl) {
+                const buffer = Buffer.from(dataUrl.split(",")[1], "base64");
+                await page.request
+                    .post(`${API}/books/${book.id}/cover`, {
+                        multipart: {
+                            file: {name: "cover.png", mimeType: "image/png", buffer},
+                        },
+                    })
+                    .catch(() => {});
+            }
+            return book;
+        }
+
+        test("kdp format step", async ({page}) => {
+            const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
+            await page.goto(`/book/${book.id}?view=metadata`);
+            await page.getByTestId("metadata-open-kdp-wizard").click().catch(() => {});
+            // metadata → cover → format
+            await page.getByTestId("kdp-publishing-wizard-step-0-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-1-next").click().catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-2-format")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            // Pick Taschenbuch so the trim-size + margin controls show.
+            await page
+                .getByTestId("kdp-publishing-wizard-format-kind-paperback")
+                .click()
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/kdp-format-step.png`});
+        });
+
+        test("kdp guide step", async ({page}) => {
+            const book = await seedKdpReadyBook(page, "Die Souveränität des Musters");
+            await page.goto(`/book/${book.id}?view=metadata`);
+            await page.getByTestId("metadata-open-kdp-wizard").click().catch(() => {});
+            // metadata → cover → format → pricing
+            await page.getByTestId("kdp-publishing-wizard-step-0-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-1-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-2-next").click().catch(() => {});
+            // pricing: pick the 70% royalty plan to satisfy the guard.
+            await page
+                .getByTestId("kdp-publishing-wizard-step-2-royalty-70")
+                .click()
+                .catch(() => {});
+            // pricing → arc → export
+            await page.getByTestId("kdp-publishing-wizard-step-3-next").click().catch(() => {});
+            await page.getByTestId("kdp-publishing-wizard-step-4-next").click().catch(() => {});
+            // export: generate the package (real backend export — slow).
+            await page.getByTestId("kdp-publishing-wizard-step-2-generate").click().catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-2-done")
+                .waitFor({state: "visible", timeout: 60_000})
+                .catch(() => {});
+            // export → guide
+            await page.getByTestId("kdp-publishing-wizard-step-5-next").click().catch(() => {});
+            await page
+                .getByTestId("kdp-publishing-wizard-step-5-guide")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/import-export/kdp-guide-step.png`});
+        });
+    });
 });

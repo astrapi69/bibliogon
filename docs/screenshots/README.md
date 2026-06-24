@@ -102,6 +102,8 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Scrivener import (.scriv via the .zip upload path) | ![Scrivener Import](import-export/scrivener-import.png) |
 | Export preview | ![Export Preview](import-export/export-preview.png) |
 | Full-data backup (.bgb) | ![BGB Backup](import-export/bgb-backup.png) |
+| KDP wizard — format step (eBook/Taschenbuch/Hardcover + trim + margins) | ![KDP Format Step](import-export/kdp-format-step.png) |
+| KDP wizard — upload guide (kdp.amazon.com + walkthrough) | ![KDP Guide Step](import-export/kdp-guide-step.png) |
 
 ---
 
@@ -121,6 +123,13 @@ deterministically; the static panel grid is shown in *Comic page with panels*.
 The EVT event-recording axes (EVT-05/06) are not yet captured: `EventRecorderSetup`
 mounts globally in `App.tsx` with no stable testid/route to target a clean shot —
 deferred until it exposes a screenshot anchor.
+
+The two KDP-wizard shots (format step + upload guide) are **deep gated** captures:
+the format step seeds a KDP-ready book (complete metadata + a generated
+700×1100 cover) to pass the metadata + cover gates, and the guide step
+additionally generates the export package (a real backend Pandoc export, up to
+~60 s). Both blocks are crash-resistant — if a gate blocks, they screenshot
+whatever rendered — so verify these two when running `make capture-screenshots`.
 
 > The PNGs for the features added since the catalog shipped (Chapter
 > collections, Settings auto-save, Scrivener import — and the synopsis +
