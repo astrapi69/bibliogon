@@ -1,4 +1,15 @@
 ui:
+  migration:
+    title: "Bienvenue dans Bibliogon"
+    intro: "Avez-vous déjà utilisé l'application en ligne ? Vos livres et articles peuvent être récupérés."
+    step_open: "Ouvrez la version en ligne."
+    step_settings: "Allez dans Paramètres → Données → Sauvegarde complète (.bgb)."
+    step_download: "Téléchargez le fichier .bgb."
+    step_import: "Cliquez ici sur « Importer la sauvegarde »."
+    skip: "Démarrer sans données"
+    open_online: "Ouvrir la version en ligne"
+    import: "Importer la sauvegarde"
+    settings_hint: "Vous migrez depuis la version en ligne ? Exportez-y une sauvegarde complète (.bgb) et importez-la ici avec « Importer la sauvegarde »."
   ai_extraction:
     story_bible_button: "Générer à partir du texte du livre"
     storyboard_button: "Générer à partir du texte du livre"

@@ -61,6 +61,7 @@ import {
     type StorageStats,
 } from "../../storage/storageStats";
 import { SectionHeader } from "./SectionHeader";
+import { ONLINE_VERSION_URL } from "../shared/MigrationWelcomeDialog";
 import { SelectiveExportSection } from "./SelectiveExportSection";
 import { BgbExportProgress } from "./BgbExportProgress";
 
@@ -467,6 +468,20 @@ export function DataManagementSettings() {
                         "ui.data.import_description",
                         "Spiele ein Backup oder eine Autorenliste wieder ein. Vorhandene Einträge werden nicht überschrieben.",
                     )}
+                </p>
+                <p className={cardDescClass} data-testid="data-import-online-hint">
+                    {t(
+                        "ui.migration.settings_hint",
+                        "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“.",
+                    )}{" "}
+                    <a
+                        href={ONLINE_VERSION_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        data-testid="data-import-online-link"
+                    >
+                        {t("ui.migration.open_online", "Online-Version öffnen")}
+                    </a>
                 </p>
                 <div className="flex flex-wrap gap-2">
                     <button

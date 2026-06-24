@@ -3705,6 +3705,18 @@
       "format_margin_normal": "標準",
       "format_margin_wide": "広い",
       "guide_format_label": "選択した形式"
+    },
+    "migration": {
+      "title": "Bibliogon へようこそ",
+      "intro": "オンライン版をすでにご利用になりましたか？ 書籍と記事を引き継げます。",
+      "step_open": "オンライン版を開きます。",
+      "step_settings": "設定 → データ → フルバックアップ（.bgb）に移動します。",
+      "step_download": ".bgb ファイルをダウンロードします。",
+      "step_import": "ここで「バックアップをインポート」をクリックします。",
+      "skip": "データなしで開始",
+      "open_online": "オンライン版を開く",
+      "import": "バックアップをインポート",
+      "settings_hint": "オンライン版から移行しますか？ そちらでフルバックアップ（.bgb）をエクスポートし、ここで「バックアップをインポート」から取り込みます。"
     }
   }
 }

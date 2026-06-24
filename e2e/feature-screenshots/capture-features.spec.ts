@@ -478,6 +478,27 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/settings/data-management.png`});
         });
 
+        test("data migration welcome dialog", async ({page}) => {
+            // The first-install migration dialog (#591) surfaces on the
+            // Dashboard when there are no books and no articles (the auto
+            // resetDatabase fixture leaves the workspace empty). Clear the
+            // "offered" flag so the dialog is not suppressed by a prior run.
+            await page.addInitScript(() => {
+                try {
+                    localStorage.removeItem("bibliogon-migration-offered");
+                } catch {
+                    /* ignore */
+                }
+            });
+            await page.goto("/");
+            const dialog = page.getByTestId("migration-welcome-dialog");
+            await dialog.waitFor({state: "visible", timeout: 5000}).catch(() => {});
+            await page.waitForTimeout(300);
+            await (dialog.screenshot({path: `${OUT}/settings/data-migration.png`}).catch(() =>
+                page.screenshot({path: `${OUT}/settings/data-migration.png`}),
+            ));
+        });
+
         test("about version", async ({page}) => {
             await page.goto("/settings?tab=about");
             const section = page.getByTestId("about-version-section");
