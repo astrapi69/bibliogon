@@ -55,6 +55,121 @@ def _slugify(text: str) -> str:
     return slug or "book"
 
 
+# Wizard FormatStep selection -> the human-readable product label KDP uses.
+_FORMAT_LABELS = {
+    "ebook": "eBook",
+    "paperback": "Taschenbuch",
+    "hardcover": "Hardcover",
+}
+
+
+def _format_label(format_kind: str) -> str:
+    """Map the wizard's format kind to its KDP product label.
+
+    Unknown kinds pass through unchanged so a new format never crashes
+    the package build.
+    """
+    return _FORMAT_LABELS.get(format_kind, format_kind)
+
+
+def _isbn_for_format(book_data: dict[str, Any], format_kind: str) -> str | None:
+    """Pick the ISBN matching the format being packaged.
+
+    Hardcover falls back to the paperback ISBN when no dedicated
+    hardcover ISBN is set. Returns None (never crashes) when the field
+    is empty or missing.
+    """
+    if format_kind == "ebook":
+        return book_data.get("isbn_ebook") or None
+    if format_kind == "hardcover":
+        return book_data.get("isbn_hardcover") or book_data.get("isbn_paperback") or None
+    return book_data.get("isbn_paperback") or None
+
+
+def _package_provenance(
+    book_data: dict[str, Any],
+    *,
+    format_kind: str,
+    trim_size: str | None,
+    page_count: int | None,
+) -> dict[str, Any]:
+    """Build the package-build provenance fields for ``metadata.json``.
+
+    These augment the listing-form metadata from
+    :func:`generate_kdp_metadata` with details specific to *this* build:
+    the matching ISBN, the product format/trim, an (optional) page count,
+    and a ``generated_by`` / ``generated_at`` stamp. Empty fields become
+    None rather than raising.
+
+    Args:
+        book_data: The serialised book (from :func:`_book_to_dict`).
+        format_kind: The wizard format selection (``ebook`` /
+            ``paperback`` / ``hardcover``).
+        trim_size: The KDP trim id for print formats, else None.
+        page_count: The manuscript page count when known, else None.
+
+    Returns:
+        A dict of provenance fields to merge into ``metadata.json``.
+    """
+    from datetime import datetime, timezone
+
+    try:
+        from app import __version__ as app_version
+    except ImportError:
+        app_version = "0.0.0+unknown"
+
+    is_print = format_kind in ("paperback", "hardcover")
+    return {
+        "isbn": _isbn_for_format(book_data, format_kind),
+        "format": _format_label(format_kind),
+        "trim_size": trim_size if is_print else None,
+        "page_count": page_count,
+        "generated_by": f"Bibliogon v{app_version}",
+        "generated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+
+def build_kdp_metadata_document(
+    book_data: dict[str, Any],
+    *,
+    format_kind: str,
+    trim_size: str | None = None,
+    page_count: int | None = None,
+) -> dict[str, Any]:
+    """Assemble the full ``metadata.json`` document for the KDP package.
+
+    Merges the listing-form metadata (:func:`generate_kdp_metadata`) with
+    the per-build provenance fields (:func:`_package_provenance`) into the
+    single dict written into the package ZIP. Extracted as a pure,
+    DB-free seam so the package metadata is testable without running the
+    whole manuscript pipeline.
+
+    Args:
+        book_data: The serialised book (from :func:`_book_to_dict`).
+        format_kind: The wizard format selection (``ebook`` /
+            ``paperback`` / ``hardcover``).
+        trim_size: The KDP trim id for print formats, else None.
+        page_count: The manuscript page count when known, else None.
+
+    Returns:
+        The complete metadata dict for ``metadata.json``.
+    """
+    metadata = generate_kdp_metadata(
+        book_data,
+        categories=book_data.get("categories"),
+        keywords=book_data.get("keywords"),
+    )
+    metadata.update(
+        _package_provenance(
+            book_data,
+            format_kind=format_kind,
+            trim_size=trim_size,
+            page_count=page_count,
+        )
+    )
+    return metadata
+
+
 def _book_to_dict(book: Any) -> dict[str, Any]:
     """Serialise a Book ORM to the shape both the KDP helpers and
     the manuscript pipeline consume.
@@ -90,6 +205,7 @@ def _book_to_dict(book: Any) -> dict[str, Any]:
         "publish_date": book.publish_date,
         "isbn_ebook": book.isbn_ebook,
         "isbn_paperback": book.isbn_paperback,
+        "isbn_hardcover": getattr(book, "isbn_hardcover", None),
         "asin_ebook": book.asin_ebook,
         "asin_paperback": book.asin_paperback,
         "keywords": _list_col(book.keywords),
@@ -596,10 +712,11 @@ def build_kdp_package(
 
         cover_path, cover_report = _stage_cover(book_data, tmp_dir)
 
-        metadata = generate_kdp_metadata(
+        metadata = build_kdp_metadata_document(
             book_data,
-            categories=book_data["categories"],
-            keywords=book_data["keywords"],
+            format_kind=format_kind,
+            trim_size=trim_size,
+            page_count=None,
         )
         (tmp_dir / "metadata.json").write_text(
             json.dumps(metadata, indent=2, ensure_ascii=False),

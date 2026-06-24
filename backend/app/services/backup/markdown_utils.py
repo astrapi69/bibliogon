@@ -53,6 +53,27 @@ _CHAPTER_FILENAME_PATTERNS: dict[str, ChapterType] = {
 
 # --- Pure helpers ---
 
+# A leading YAML front-matter block: ``---`` on its own first line, any body,
+# then a closing ``---`` line. Anchored to the very start of the document.
+_FRONT_MATTER_RE = re.compile(r"\A---[ \t]*\r?\n.*?\r?\n---[ \t]*\r?\n?", re.DOTALL)
+
+
+def strip_yaml_frontmatter(text: str) -> str:
+    """Remove a leading YAML front-matter block from a markdown string.
+
+    Returns the text unchanged when it does not start with a ``---`` block, so
+    a chapter ``.md`` without front-matter imports exactly as before.
+
+    Args:
+        text: Raw markdown, possibly prefixed with a ``---``-fenced block.
+
+    Returns:
+        The markdown body with any leading front-matter block removed.
+    """
+    if not text.startswith("---"):
+        return text
+    return _FRONT_MATTER_RE.sub("", text, count=1)
+
 
 def detect_chapter_type(stem: str) -> ChapterType:
     """Detect chapter type from filename stem.
@@ -123,6 +144,12 @@ def md_to_html(text: str) -> str:
     instead of showing raw markdown symbols.
     """
     if not text or not text.strip():
+        return ""
+    # Drop a leading YAML front-matter block (e.g. git-sync .md side-files,
+    # Jekyll/Pandoc docs) so its keys never leak into the chapter body. A
+    # .md without front-matter is returned unchanged by the strip.
+    text = strip_yaml_frontmatter(text)
+    if not text.strip():
         return ""
     # Remove explicit anchor markers {#id} before conversion (Pandoc-specific)
     cleaned = re.sub(r"\s*\{#[\w-]+\}", "", text)

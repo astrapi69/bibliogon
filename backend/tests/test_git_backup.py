@@ -764,7 +764,8 @@ def test_markdown_side_file_contains_title_header_and_body():
 
     md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
     content = md_path.read_text(encoding="utf-8")
-    assert content.startswith("# My Chapter")
+    assert content.startswith("---\n")
+    assert "# My Chapter" in content
     assert "First paragraph." in content
 
 
@@ -778,10 +779,10 @@ def test_markdown_regenerates_on_every_commit():
     client.post(f"/api/books/{book_id}/git/init")
 
     md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
-    # First pass: empty body.
+    # First pass: empty body, but the front-matter + title header remain.
     first = md_path.read_text(encoding="utf-8")
-    assert first.startswith("# Evolving")
-    assert len(first.strip().splitlines()) == 1  # title only
+    assert first.startswith("---\n")
+    assert "# Evolving" in first
 
     # Modify chapter content via the book API - need to bypass the
     # optimistic-lock version field by deleting + re-adding.
@@ -836,6 +837,43 @@ def test_markdown_side_file_renders_heading_node():
     content = md_path.read_text(encoding="utf-8")
     assert "## Subhead" in content
     assert "Body." in content
+
+
+def test_markdown_side_file_has_yaml_frontmatter():
+    """#14: each exported chapter .md carries a leading YAML front-matter
+    block with title, chapter index, book title, author, last_modified,
+    word_count."""
+    import yaml
+
+    book_id = _create_book("Frontmatter Buch")
+    _add_chapter(
+        book_id,
+        "Erstes Kapitel",
+        content=json.dumps(
+            {
+                "type": "doc",
+                "content": [
+                    {
+                        "type": "paragraph",
+                        "content": [{"type": "text", "text": "Ein zwei drei vier."}],
+                    }
+                ],
+            }
+        ),
+    )
+    client.post(f"/api/books/{book_id}/git/init")
+
+    md_path = next((git_backup.repo_path(book_id) / "manuscript" / "chapters").glob("*.md"))
+    content = md_path.read_text(encoding="utf-8")
+    assert content.startswith("---\n")
+    block = content.split("---\n", 2)[1]
+    parsed = yaml.safe_load(block)
+    assert parsed["title"] == "Erstes Kapitel"
+    assert parsed["chapter"] == 1
+    assert parsed["book"] == "Frontmatter Buch"
+    assert parsed["author"] == "Aster"
+    assert parsed["word_count"] == 4
+    assert "last_modified" in parsed
 
 
 def test_pat_never_appears_on_disk_in_git_config(tmp_path):
