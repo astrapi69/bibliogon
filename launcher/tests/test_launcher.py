@@ -71,6 +71,24 @@ class TestConfigLoads:
         # at runtime, so it must exist there (the #402 PWA icon set).
         assert (LAUNCHER_ROOT.parent / cfg.icon_path).is_file()
 
+    def test_launcher_json_runtime_options(self) -> None:
+        import json
+
+        # 0.7.0: the config opts into OS-locale detection. The library
+        # resolves "auto" to the actual locale at load time, so assert the
+        # JSON intent rather than the resolved value.
+        raw = json.loads(LAUNCHER_JSON.read_text(encoding="utf-8"))
+        assert raw["locale"] == "auto"
+
+        cfg = LauncherConfig.from_json(LAUNCHER_JSON)
+        # Single instance + configurable logging (not transformed on load).
+        assert cfg.single_instance is True
+        assert cfg.log_level == "INFO"
+        # cleanup_search_paths stays empty: scanning would risk the live
+        # book-data dir (~/.local/share/bibliogon), which is NOT in the
+        # library's cleanup skip-list.
+        assert cfg.cleanup_search_paths == []
+
 
 class TestNoForeignProjectReference:
     """Regression guard: no copied ``adaptive-learner`` identifier leaks into

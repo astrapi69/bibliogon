@@ -72,7 +72,9 @@ The fields Bibliogon sets:
 | `icon_path` | `frontend/public/icon-192.png` | The Tk window icon (the #402 PWA icon set). Resolved CWD-relative; the wrapper `chdir`s to the repo root, so it resolves from a source checkout. PNG, not SVG (Tk cannot load SVG). Best-effort: a missing file is silently skipped. |
 | `tray_icon_path` | `frontend/public/icon-192.png` | The system-tray icon; falls back to `icon_path`. Config-only unless the optional tray extra is installed (see below). |
 | `config_dir` | `~/.config/bibliogon` | Where the launcher keeps its own state/logs. |
-| `locale` | `de` | Default UI language (the library ships DE/EN). |
+| `locale` | `auto` | UI language. `auto` detects the OS locale (the library ships 11 catalogs: de/en + 9 AI-translated); an in-window picker lets the user switch live. Resolved to the actual locale at load. |
+| `single_instance` | `true` | A second launch focuses the running window instead of starting a duplicate. |
+| `log_level` | `INFO` | Launcher log verbosity (`log_max_size` / `log_backup_count` cap the rotating log). |
 | `repo_url` | `https://github.com/astrapi69/bibliogon` | Project link. |
 | `releases_url` | `.../releases/latest` | Update-check + "new version" link. |
 | `docs_url` | Docker-install help | Shown when Docker is missing. |
@@ -82,9 +84,13 @@ The fields Bibliogon sets:
 `LauncherConfig` accepts more fields than Bibliogon sets (timeouts, window
 size, `legacy_names`, `cleanup_configs`, lifecycle hooks, ...); unset fields
 use the library defaults. See `docker_app_launcher.config.LauncherConfig` for
-the full list. Bibliogon deliberately omits `cleanup_configs` so the cleanup
-verb never targets the live data dir (`~/.local/share/bibliogon`, where book
-data lives).
+the full list. Bibliogon deliberately leaves `cleanup_configs`,
+`cleanup_search_paths`, and `legacy_names` empty: the cleanup verb scans
+`cleanup_search_paths` for `legacy_names` subdirectories, and that scan's
+skip-list does **not** include the live data dir - so a path like
+`~/.local/share` with `legacy_names: ["bibliogon"]` would offer the book-data
+dir (`~/.local/share/bibliogon`) for deletion. Container/image cleanup via
+`compose_project` is unaffected.
 
 ## CLI
 
