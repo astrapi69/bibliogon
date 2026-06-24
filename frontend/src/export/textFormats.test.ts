@@ -83,7 +83,8 @@ describe("toHtml", () => {
     const html = toHtml(DOC);
     expect(html).toContain("<!DOCTYPE html>");
     expect(html).toContain('<html lang="de">');
-    expect(html).toContain("<title>Mein Buch</title>");
+    // SEO (#605): the <title> now carries the author when present.
+    expect(html).toContain("<title>Mein Buch - von Asterios Raptis</title>");
     expect(html).toContain("<h1>Mein Buch</h1>");
     expect(html).toContain("<h2>Kapitel 1</h2>");
     expect(html).toContain("<h2>Kapitel 2</h2>");

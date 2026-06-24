@@ -24,6 +24,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { setDocumentMeta, resetDocumentMeta } from "../lib/utils/documentMeta";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Loader2, ArrowLeft, Trash2, Home, MessageSquare, MoreVertical } from "lucide-react";
 
@@ -87,6 +88,19 @@ export default function ArticleEditor() {
     const { article, setArticle, loading, saveStatus, persistContent, persistMeta } =
         useArticlePersistence(id, t);
     const authorProfile = useAuthorProfile();
+
+    // SEO (#605): per-article document title + og/twitter meta for shared
+    // links. Native DOM (setDocumentMeta), works offline; restored on unmount.
+    useEffect(() => {
+        if (article) {
+            setDocumentMeta({
+                title: article.title,
+                description: article.seo_description || article.excerpt || undefined,
+                type: "article",
+            });
+        }
+        return () => resetDocumentMeta();
+    }, [article?.id, article?.title, article?.seo_description, article?.excerpt]);
 
     // AUTHOR-DATALIST-EXTEND-EDITORS-01: Pattern A author selection
     // for the Article editor — free-text input + autocomplete

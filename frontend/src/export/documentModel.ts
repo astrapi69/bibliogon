@@ -35,6 +35,24 @@ export interface ExportDocument {
    *  book-style when absent. */
   kind?: "book" | "article";
   sections: ExportSection[];
+
+  // --- SEO / document metadata (Maximal-Offline; #605) ----------------
+  // Optional descriptive metadata surfaced by the format generators as
+  // HTML meta tags / JSON-LD, PDF info, EPUB OPF, DOCX properties, and
+  // Markdown YAML front-matter. All optional — a generator emits a field
+  // only when present.
+  /** Plain-text description / blurb. */
+  description?: string;
+  /** Subject keywords (book keywords + categories, article tags). */
+  keywords?: string[];
+  /** Genre / primary subject. */
+  genre?: string;
+  /** ISBN (first available of ebook/paperback/hardcover) — books only. */
+  isbn?: string;
+  /** Publish/release date string as stored (e.g. "2025" or ISO). */
+  publishDate?: string;
+  /** Publisher name. */
+  publisher?: string;
 }
 
 /** The export formats offered by the client-side engine. */

@@ -24,6 +24,7 @@ import { useSidebarCollapse, SIDEBAR_MOBILE_BREAKPOINT_PX } from "../hooks/ui/us
 import { useExclusiveSidebars } from "../hooks/ui/useExclusiveSidebars";
 import { useBookEditorViews } from "../hooks/book/useBookEditorViews";
 import { useBookEditorData } from "../hooks/book/useBookEditorData";
+import { setDocumentMeta, resetDocumentMeta } from "../lib/utils/documentMeta";
 import { SidebarToggleButton } from "../components/shared/SidebarToggleButton";
 import { SidebarOverlay } from "../lib/components/SidebarOverlay";
 import { EditorMenu } from "../lib/components/EditorMenu";
@@ -126,6 +127,20 @@ export default function BookEditor() {
             cancelled = true;
         };
     }, []);
+
+    // SEO (#605): per-book document title + og/twitter meta so a shared
+    // link to /book/:id carries the book's title + blurb. Native DOM via
+    // setDocumentMeta — works in Dexie mode too. Restored on unmount.
+    useEffect(() => {
+        if (book) {
+            setDocumentMeta({
+                title: book.title,
+                description: book.description || undefined,
+                type: "book",
+            });
+        }
+        return () => resetDocumentMeta();
+    }, [book?.id, book?.title, book?.description]);
 
     const [pendingFocus, setPendingFocus] = useState<{
         chapterId: string;

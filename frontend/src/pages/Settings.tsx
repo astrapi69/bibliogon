@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { setDocumentTitle, resetDocumentMeta } from "../lib/utils/documentMeta";
 import { useLocation, useNavigate, useSearchParams } from "react-router-dom";
 import { api } from "../api/client";
 import { getStorage } from "../storage";
@@ -61,6 +62,11 @@ const LEGACY_TAB_REDIRECTS: Record<string, SettingsTab> = {
 export default function Settings() {
     const navigate = useNavigate();
     const location = useLocation();
+    // SEO route title (#605).
+    useEffect(() => {
+        setDocumentTitle("Einstellungen");
+        return () => resetDocumentMeta();
+    }, []);
     // ``location.key`` is the react-router v6/v7 sentinel for "this
     // is the first entry in the app's history stack" - it equals
     // "default" until a programmatic navigation runs. When the user

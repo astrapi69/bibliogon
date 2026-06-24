@@ -34,6 +34,7 @@ import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";
 import { useArticleBulkActions } from "../hooks/article/useArticleBulkActions";
 import { useArticleNewButton } from "../hooks/article/useArticleNewButton";
+import { setDocumentTitle, resetDocumentMeta } from "../lib/utils/documentMeta";
 import { useDialog } from "../components/shared/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
@@ -57,6 +58,11 @@ import { EmptyState } from "../lib/components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    // SEO route title (#605).
+    useEffect(() => {
+        setDocumentTitle("Artikel");
+        return () => resetDocumentMeta();
+    }, []);
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
     // The .bgb backup-export remains desktop-only. Policy #78: visible +
     // disabled with a reason offline, never hidden. `offline` gates only the

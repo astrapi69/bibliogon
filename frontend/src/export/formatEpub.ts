@@ -26,11 +26,18 @@ export async function toEpubBlob(doc: ExportDocument): Promise<Blob> {
     content: tiptapDocToHtml(section.doc) || "<p></p>",
   }));
 
-  const options = {
+  // OPF Dublin-Core metadata (#605): epub-gen-memory maps these to
+  // dc:title / dc:creator / dc:language / dc:description / dc:publisher /
+  // dc:date / dc:identifier. Emit only the fields that are present.
+  const options: Record<string, unknown> = {
     title: doc.title,
     author: doc.author?.trim() || "Unknown",
     lang: doc.language || "en",
   };
+  if (doc.description?.trim()) options.description = doc.description.trim();
+  if (doc.publisher?.trim()) options.publisher = doc.publisher.trim();
+  if (doc.publishDate?.trim()) options.date = doc.publishDate.trim();
+  if (doc.isbn?.trim()) options.id = doc.isbn.trim();
 
   const output = (await epub(options, chapters)) as BlobPart;
   return new Blob([output], { type: "application/epub+zip" });

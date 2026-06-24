@@ -105,9 +105,12 @@ export default defineConfig({
         "icon-maskable.svg",
       ],
       manifest: {
-        name: "Bibliogon",
+        name: "Bibliogon - Open-Source Autoren-Plattform",
         short_name: "Bibliogon",
-        description: "Open-source book authoring platform",
+        description:
+          "Open-Source-Plattform fuer Autoren: Buecher, Artikel und Comics schreiben, organisieren und veroeffentlichen. Offline-faehig, lokal-first.",
+        lang: "de",
+        categories: ["productivity", "books", "writing"],
         theme_color: "#b45309",
         background_color: "#faf8f5",
         display: "standalone",

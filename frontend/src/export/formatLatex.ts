@@ -271,9 +271,24 @@ export function toLatex(doc: ExportDocument): string {
     : `\\title{${escapeLatex(doc.title)}}`;
   const authorLine = `\\author{${escapeLatex(doc.author ?? "")}}`;
 
+  // PDF metadata via hyperref (#605). Brace-wrapped values so commas in
+  // keywords/description don't break the key=value list.
+  const hyper: string[] = [`pdftitle={${escapeLatex(doc.title)}}`];
+  if (doc.author?.trim()) hyper.push(`pdfauthor={${escapeLatex(doc.author.trim())}}`);
+  if (doc.description?.trim()) hyper.push(`pdfsubject={${escapeLatex(doc.description.trim())}}`);
+  const kw = [...(doc.keywords ?? []), doc.genre]
+    .map((k) => k?.trim())
+    .filter(Boolean)
+    .join(", ");
+  if (kw) hyper.push(`pdfkeywords={${escapeLatex(kw)}}`);
+  hyper.push("pdfcreator={Bibliogon}");
+  const hypersetup = `\\hypersetup{\n  ${hyper.join(",\n  ")},\n}`;
+
   const head = [
     `\\documentclass[12pt,a4paper]{${documentClass}}`,
     PREAMBLE_PACKAGES,
+    "",
+    hypersetup,
     "",
     titleLine,
     authorLine,
