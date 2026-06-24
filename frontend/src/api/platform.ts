@@ -58,6 +58,19 @@ import type {
 } from "./client";
 
 /**
+ * KDP package print-format selection sent to
+ * ``POST /kdp/package/{id}``. Maps the wizard's ``FormatState``
+ * (``components/kdp-wizard/machines/types.ts``): ``format_kind`` is the
+ * FormatState ``kind``. eBook → EPUB only; paperback / hardcover add a
+ * PDF rendered at ``trim_size`` + ``margin`` with crop / bleed marks.
+ */
+export interface KdpPackageFormat {
+  format_kind: string;
+  trim_size: string;
+  margin: string;
+}
+
+/**
  * Single-flighted app-settings read. Many components fetch `/settings/app`
  * independently on mount; without dedup that fired ~15 parallel requests per
  * page load. The single-flight collapses the concurrent burst into one request
@@ -132,12 +145,24 @@ export const platformApi = {
     /** Build the KDP-ready ZIP for a book. Returns the blob +
      *  the server-supplied filename. Used by Phase 1 MVP
      *  wizard Step 3. Returns a 400 with a readable detail
-     *  when metadata is incomplete (defence-in-depth gate). */
+     *  when metadata is incomplete (defence-in-depth gate).
+     *
+     *  ``format`` carries the wizard's FormatStep selection so the
+     *  bundled PDF is rendered at the chosen KDP trim size + margins
+     *  (eBook → EPUB only). Omitting it keeps the legacy
+     *  paperback-at-6x9 default. */
     buildPackage: async (
       bookId: string,
+      format?: KdpPackageFormat,
     ): Promise<{ blob: Blob; filename: string }> => {
       const res = await guardedFetch(`${BASE}/kdp/package/${bookId}`, {
         method: "POST",
+        ...(format
+          ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(format),
+            }
+          : {}),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({ detail: res.statusText }));

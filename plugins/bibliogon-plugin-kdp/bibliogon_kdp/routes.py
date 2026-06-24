@@ -223,8 +223,24 @@ def export_book_changelog(book_id: str, title: str = "") -> dict[str, str]:
     return {"markdown": md, "book_id": book_id}
 
 
+class KdpPackageFormat(BaseModel):
+    """Print-format selection from the wizard's FormatStep.
+
+    Mirrors the frontend ``FormatState`` (``machines/types.ts``):
+    ``format_kind`` is the wizard's ``kind`` (eBook / paperback /
+    hardcover), ``trim_size`` is a KDP trim id (``6x9`` etc.), and
+    ``margin`` is a preset (narrow / normal / wide). The whole body is
+    optional; an omitted body defaults to a paperback at 6x9 so a
+    legacy body-less call still bundles EPUB + PDF (#583).
+    """
+
+    format_kind: str = "paperback"
+    trim_size: str | None = None
+    margin: str | None = None
+
+
 @router.post("/package/{book_id}")
-def build_package(book_id: str) -> FileResponse:
+def build_package(book_id: str, fmt: KdpPackageFormat | None = None) -> FileResponse:
     """Build the KDP-ready ZIP package for a book.
 
     Endpoint shape from KDP-PUBLISHING-WIZARD-01 Phase 1 MVP
@@ -251,8 +267,14 @@ def build_package(book_id: str) -> FileResponse:
     client gate (e.g. direct curl) still gets blocked by the
     same rules the wizard's Step 1 enforced.
     """
+    selection = fmt or KdpPackageFormat()
     try:
-        zip_path = build_kdp_package(book_id)
+        zip_path = build_kdp_package(
+            book_id,
+            format_kind=selection.format_kind,
+            trim_size=selection.trim_size,
+            margin=selection.margin,
+        )
     except KdpPackageError as e:
         raise HTTPException(status_code=400, detail=str(e)) from e
 
@@ -284,15 +306,9 @@ def get_book_publishing_state(
     Returns ``state=None`` when no row exists yet — the wizard
     treats this as "first run" + populates defaults locally.
     """
-    book = (
-        db.query(Book)
-        .filter(Book.id == book_id, Book.deleted_at.is_(None))
-        .first()
-    )
+    book = db.query(Book).filter(Book.id == book_id, Book.deleted_at.is_(None)).first()
     if not book:
-        raise HTTPException(
-            status_code=404, detail=f"Book {book_id} not found"
-        )
+        raise HTTPException(status_code=404, detail=f"Book {book_id} not found")
     row = get_publishing_state(db, book_id)
     return BookPublishingStateGetResponse(
         book_id=book_id,
@@ -317,16 +333,12 @@ def upsert_book_publishing_state(
     explicitly-set payload fields (Pydantic's ``exclude_unset``
     distinguishes "absent" from "null").
     """
-    row = upsert_publishing_state(
-        db, book_id, payload.model_dump(exclude_unset=True)
-    )
+    row = upsert_publishing_state(db, book_id, payload.model_dump(exclude_unset=True))
     return BookPublishingStateRead.model_validate(row)
 
 
 @router.delete("/publishing-state/{book_id}", status_code=204)
-def delete_book_publishing_state(
-    book_id: str, db: Session = Depends(get_db)
-) -> None:
+def delete_book_publishing_state(book_id: str, db: Session = Depends(get_db)) -> None:
     """Hard-delete the publishing-state row + cascade ARC reviewers.
 
     No-op if no row exists. Returns 204 either way (idempotent).
@@ -346,9 +358,7 @@ def delete_book_publishing_state(
     "/publishing-state/{book_id}/reviewers",
     response_model=list[ArcReviewerOut],
 )
-def list_book_reviewers(
-    book_id: str, db: Session = Depends(get_db)
-) -> list[ArcReviewerOut]:
+def list_book_reviewers(book_id: str, db: Session = Depends(get_db)) -> list[ArcReviewerOut]:
     """List ARC reviewers for the book, ordered by created_at
     ascending. Empty list when no reviewers have been added yet."""
     rows = list_reviewers(db, book_id)
@@ -385,9 +395,7 @@ def update_book_reviewer(
     permalink, copy version). Auto-stamps ``reviewed_at`` when
     status transitions to ``reviewed`` and the payload didn't
     supply an explicit timestamp."""
-    reviewer = update_reviewer(
-        db, book_id, reviewer_id, payload.model_dump(exclude_unset=True)
-    )
+    reviewer = update_reviewer(db, book_id, reviewer_id, payload.model_dump(exclude_unset=True))
     return ArcReviewerOut.model_validate(reviewer)
 
 
