@@ -1,0 +1,4 @@
+# Bibliogon PWA (GitHub Pages)
+User-agent: *
+Allow: /
+Sitemap: https://astrapi69.github.io/bibliogon/sitemap.xml

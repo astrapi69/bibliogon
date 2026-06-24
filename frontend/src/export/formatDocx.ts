@@ -137,6 +137,17 @@ export async function toDocxBlob(doc: ExportDocument): Promise<Blob> {
     children.push(...nodeToParagraphs(section.doc, docx));
   }
 
-  const document = new Document({ sections: [{ children }] });
+  // Core document properties (#605): title / creator / description /
+  // subject / keywords surface in Word's File > Info panel and in search.
+  const keywords = (doc.keywords ?? []).filter((k) => k.trim()).join(", ");
+  const document = new Document({
+    title: doc.title,
+    creator: doc.author?.trim() || undefined,
+    description: doc.description?.trim() || undefined,
+    subject: doc.genre?.trim() || keywords || undefined,
+    keywords: keywords || undefined,
+    lastModifiedBy: "Bibliogon",
+    sections: [{ children }],
+  });
   return Packer.toBlob(document);
 }

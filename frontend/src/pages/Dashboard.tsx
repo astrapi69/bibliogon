@@ -70,6 +70,7 @@ import DonationOnboardingDialog, {
 import MigrationWelcomeDialog, {
     shouldOfferMigration,
 } from "../components/shared/MigrationWelcomeDialog";
+import { setDocumentTitle, resetDocumentMeta } from "../lib/utils/documentMeta";
 // v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
@@ -109,6 +110,11 @@ export default function Dashboard() {
         setImportWizardOpen(true);
     };
     const { theme, toggle: toggleTheme } = useTheme();
+    // SEO route title (#605).
+    useEffect(() => {
+        setDocumentTitle("Dashboard");
+        return () => resetDocumentMeta();
+    }, []);
     const [showTrash, setShowTrash] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default

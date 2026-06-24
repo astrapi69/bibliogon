@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Social-preview source (#605, Aufgabe 15). Rasterize to a 1200x630
+     og-image.png (e.g. `rsvg-convert -w 1200 -h 630 og-image.svg -o og-image.png`
+     or a headless-browser screenshot) and point og:image at it. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#1a1611"/>
+  <rect x="0" y="0" width="1200" height="12" fill="#b45309"/>
+  <g transform="translate(120,210)">
+    <!-- simple open-book mark -->
+    <path d="M0 40 C 60 10, 130 10, 170 40 L 170 200 C 130 170, 60 170, 0 200 Z"
+          fill="none" stroke="#b45309" stroke-width="10" stroke-linejoin="round"/>
+    <path d="M340 40 C 280 10, 210 10, 170 40 L 170 200 C 210 170, 280 170, 340 200 Z"
+          fill="none" stroke="#e0a458" stroke-width="10" stroke-linejoin="round"/>
+  </g>
+  <text x="540" y="300" font-family="Georgia, 'Times New Roman', serif"
+        font-size="96" font-weight="700" fill="#faf8f5">Bibliogon</text>
+  <text x="542" y="370" font-family="Georgia, 'Times New Roman', serif"
+        font-size="40" fill="#e0a458">Open-Source Autoren-Plattform</text>
+  <text x="542" y="430" font-family="Georgia, 'Times New Roman', serif"
+        font-size="30" fill="#bdb6ab">Buecher, Artikel und Comics - offline-faehig, lokal-first</text>
+</svg>
