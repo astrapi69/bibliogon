@@ -23,7 +23,7 @@ export const DEFAULT_META = {
     ogTitle: "Bibliogon - Open-Source Autoren-Plattform",
     ogDescription:
         "Buecher, Artikel und Comics schreiben, organisieren und veroeffentlichen. Offline-faehig, lokal-first.",
-    ogImage: "https://astrapi69.github.io/bibliogon/icon-512.png",
+    ogImage: "https://astrapi69.github.io/bibliogon/og-image.png",
     ogType: "website",
 } as const;
 

@@ -1,9 +1,13 @@
 /** Static SEO assets: index.html, robots.txt, sitemap.xml, og-image, manifest (#605). */
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 
+function resolve(relFromSrc: string): string {
+    return fileURLToPath(new URL(relFromSrc, import.meta.url));
+}
 function read(relFromSrc: string): string {
-    return readFileSync(new URL(relFromSrc, import.meta.url), "utf-8");
+    return readFileSync(resolve(relFromSrc), "utf-8");
 }
 
 describe("index.html SEO tags", () => {
@@ -53,12 +57,30 @@ describe("sitemap.xml", () => {
     });
 });
 
-describe("og-image source", () => {
+describe("og-image", () => {
     it("og-image.svg exists at the 1200x630 social aspect ratio", () => {
         const svg = read("../public/og-image.svg");
         expect(svg).toContain('width="1200"');
         expect(svg).toContain('height="630"');
         expect(svg).toContain("Bibliogon");
+    });
+
+    it("og-image.png is a >10KB 1200x630 PNG", () => {
+        const buf = readFileSync(resolve("../public/og-image.png"));
+        expect(buf.length).toBeGreaterThan(10_000);
+        // PNG signature + IHDR width/height (big-endian u32 at offsets 16/20).
+        expect(buf.subarray(0, 8).toString("latin1")).toBe("\x89PNG\r\n\x1a\n");
+        expect(buf.readUInt32BE(16)).toBe(1200);
+        expect(buf.readUInt32BE(20)).toBe(630);
+    });
+
+    it("index.html points og:image at the 1200x630 og-image.png", () => {
+        const html = read("../index.html");
+        expect(html).toContain(
+            '<meta property="og:image" content="https://astrapi69.github.io/bibliogon/og-image.png"',
+        );
+        expect(html).toContain('<meta property="og:image:width" content="1200"');
+        expect(html).toContain('<meta property="og:image:height" content="630"');
     });
 });
 
