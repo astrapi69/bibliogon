@@ -125,22 +125,23 @@ def _assets_for_book(book_id: str, db: Any, with_id: bool) -> list[dict[str, Any
             {"id": a.id, "filename": a.filename, "asset_type": a.asset_type, "path": a.path}
             for a in rows
         ]
-    return [
-        {"filename": a.filename, "asset_type": a.asset_type, "path": a.path}
-        for a in rows
-    ]
+    return [{"filename": a.filename, "asset_type": a.asset_type, "path": a.path} for a in rows]
 
 
-def _generate_prose_manuscripts(
+def _generate_prose_epub(
     book_data: dict[str, Any],
     chapters: list[dict[str, Any]],
     assets: list[dict[str, Any]],
     out_dir: Path,
-) -> dict[str, Path]:
-    """Generate prose epub + pdf into ``out_dir``. Returns ``{fmt: path}``.
+) -> Path | None:
+    """Generate the prose EPUB into ``out_dir``. Returns its path or
+    ``None`` on failure.
 
-    Uses the public ``scaffold_project`` + ``run_pandoc`` modules
-    from plugin-export per A3 (direct import).
+    Uses the public ``scaffold_project`` + ``run_pandoc`` modules from
+    plugin-export per A3 (direct import). The print PDF is generated
+    separately by :mod:`.manuscript_pdf` (WeasyPrint) so it can honour
+    the wizard's trim-size + margin selection; pandoc here only emits
+    the reflowable EPUB.
     """
     from bibliogon_export.pandoc_runner import run_pandoc
     from bibliogon_export.scaffolder import scaffold_project
@@ -161,31 +162,71 @@ def _generate_prose_manuscripts(
     cover_path = book_data.get("cover_image")
 
     project_dir = scaffold_project(book_data, chapters, out_dir, export_settings, assets)
-    produced: dict[str, Path] = {}
-    for fmt in ("epub", "pdf"):
-        try:
-            output_path = run_pandoc(
-                project_dir,
-                fmt,
-                config,
-                use_manual_toc=use_manual_toc,
-                cover_path=cover_path,
-            )
-            staged = out_dir / f"manuscript-{'ebook' if fmt == 'epub' else 'paperback'}{'.epub' if fmt == 'epub' else '.pdf'}"
-            shutil.copy2(output_path, staged)
-            produced[fmt] = staged
-        except Exception as exc:  # noqa: BLE001
-            logger.warning("Prose %s generation failed: %s", fmt, exc)
-    return produced
+    try:
+        output_path = run_pandoc(
+            project_dir,
+            "epub",
+            config,
+            use_manual_toc=use_manual_toc,
+            cover_path=cover_path,
+        )
+        staged = out_dir / "manuscript-ebook.epub"
+        shutil.copy2(output_path, staged)
+        return staged
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Prose EPUB generation failed: %s", exc)
+        return None
+
+
+def _generate_prose_pdf(
+    book_data: dict[str, Any],
+    chapters: list[dict[str, Any]],
+    out_dir: Path,
+    *,
+    trim_size: str | None,
+    margin: str | None,
+    bleed_marks: bool,
+) -> Path | None:
+    """Render the prose print PDF via WeasyPrint at the chosen KDP trim
+    size + margin preset. Returns the PDF path or ``None`` on failure."""
+    from .manuscript_pdf import render_manuscript_pdf
+
+    out_path = out_dir / "manuscript-paperback.pdf"
+    try:
+        render_manuscript_pdf(
+            book_data,
+            chapters,
+            out_path,
+            trim_id=trim_size,
+            margin_id=margin,
+            bleed_marks=bleed_marks,
+        )
+        return out_path
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Prose PDF generation failed: %s", exc)
+        return None
 
 
 def _generate_picture_book_manuscript(
     book_id: str,
     db: Any,
     out_dir: Path,
+    *,
+    picture_book_format: str | None = None,
+    bleed_marks: bool = False,
 ) -> Path | None:
-    """Generate picture-book PDF via the public picture_book_pdf module."""
-    from bibliogon_export.picture_book_pdf import generate_picture_book_pdf
+    """Generate picture-book PDF via the public picture_book_pdf module.
+
+    ``picture_book_format`` and ``bleed_marks`` thread the wizard's
+    print selection through. The picture-book pipeline owns its own
+    trim-size set and silently falls back to its default when the id
+    isn't one of its formats, so passing the KDP trim id verbatim is
+    safe (only ``8.5x11`` overlaps both pipelines).
+    """
+    from bibliogon_export.picture_book_pdf import (
+        DEFAULT_PICTURE_BOOK_FORMAT,
+        generate_picture_book_pdf,
+    )
 
     from app.models import Page
     from app.paths import get_upload_dir
@@ -200,15 +241,17 @@ def _generate_picture_book_manuscript(
                 layout_config = json.loads(raw_config)
             except (TypeError, json.JSONDecodeError):
                 layout_config = {}
-        pages_data.append({
-            "id": p.id,
-            "book_id": p.book_id,
-            "position": p.position,
-            "layout": p.layout,
-            "text_content": p.text_content,
-            "image_asset_id": p.image_asset_id,
-            "layout_config": layout_config,
-        })
+        pages_data.append(
+            {
+                "id": p.id,
+                "book_id": p.book_id,
+                "position": p.position,
+                "layout": p.layout,
+                "text_content": p.text_content,
+                "image_asset_id": p.image_asset_id,
+                "layout_config": layout_config,
+            }
+        )
 
     # Reload book through the SQLAlchemy session.
     from app.models import Book
@@ -228,6 +271,8 @@ def _generate_picture_book_manuscript(
             assets=assets,
             upload_dir=upload_dir,
             output_path=out_path,
+            picture_book_format=picture_book_format or DEFAULT_PICTURE_BOOK_FORMAT,
+            picture_book_bleed_marks=bleed_marks,
         )
         return out_path
     except Exception as exc:  # noqa: BLE001
@@ -239,14 +284,24 @@ def _generate_comic_book_manuscript(
     book_id: str,
     db: Any,
     out_dir: Path,
+    *,
+    picture_book_format: str | None = None,
+    bleed_marks: bool = False,
 ) -> Path | None:
     """Generate comic-book PDF via plugin-comics public module.
 
     Lazy-imported so the package builder still works when plugin-
     comics is absent (only relevant for prose / picture-book books).
+    ``picture_book_format`` + ``bleed_marks`` thread the wizard's print
+    selection through; the comic pipeline shares the picture-book
+    trim-size set + gamma-shim default, so an unknown KDP trim id falls
+    back to the pipeline's default.
     """
     try:
-        from bibliogon_comics.comic_book_pdf import generate_comic_book_pdf
+        from bibliogon_comics.comic_book_pdf import (
+            DEFAULT_PICTURE_BOOK_FORMAT,
+            generate_comic_book_pdf,
+        )
     except ImportError as exc:
         logger.warning("plugin-comics not available for comic-book package: %s", exc)
         return None
@@ -279,8 +334,7 @@ def _generate_comic_book_manuscript(
             .all()
         )
         panels_data = [
-            {"id": p.id, "page_id": p.page_id, "position": p.position}
-            for p in panel_rows
+            {"id": p.id, "page_id": p.page_id, "position": p.position} for p in panel_rows
         ]
         bubble_rows = (
             db.query(ComicBubble)
@@ -289,8 +343,7 @@ def _generate_comic_book_manuscript(
             .all()
         )
         bubbles_data = [
-            {"id": b.id, "panel_id": b.panel_id, "position": b.position}
-            for b in bubble_rows
+            {"id": b.id, "panel_id": b.panel_id, "position": b.position} for b in bubble_rows
         ]
     except Exception as exc:  # noqa: BLE001
         logger.warning("comic-book panels/bubbles load failed: %s", exc)
@@ -308,6 +361,8 @@ def _generate_comic_book_manuscript(
             assets=assets,
             upload_dir=upload_dir,
             output_path=out_path,
+            picture_book_format=picture_book_format or DEFAULT_PICTURE_BOOK_FORMAT,
+            picture_book_bleed_marks=bleed_marks,
         )
         return out_path
     except Exception as exc:  # noqa: BLE001
@@ -401,7 +456,13 @@ def _build_readme(book_data: dict[str, Any], book_type: str) -> str:
     return "\n".join(lines) + "\n"
 
 
-def build_kdp_package(book_id: str) -> Path:
+def build_kdp_package(
+    book_id: str,
+    *,
+    format_kind: str = "paperback",
+    trim_size: str | None = None,
+    margin: str | None = None,
+) -> Path:
     """Build the KDP-package ZIP for ``book_id``.
 
     Returns the path to the produced ZIP file. The caller is
@@ -409,12 +470,28 @@ def build_kdp_package(book_id: str) -> Path:
     (FastAPI's BackgroundTasks-or-finally pattern; the surrounding
     /api/kdp/package route does this).
 
+    Args:
+        book_id: the book to package.
+        format_kind: the wizard's FormatStep selection - ``ebook`` /
+            ``paperback`` / ``hardcover``. ``ebook`` produces the EPUB
+            only (no print PDF); the two print kinds add a WeasyPrint
+            PDF rendered at ``trim_size`` + ``margin`` with crop / bleed
+            marks. Defaults to ``paperback`` so a body-less legacy call
+            still bundles EPUB + PDF (#583).
+        trim_size: KDP trim id (one of :data:`manuscript_pdf.KDP_TRIM_SIZES`,
+            e.g. ``6x9``). Missing / unknown values fall back to
+            ``6x9``.
+        margin: margin preset (``narrow`` / ``normal`` / ``wide``).
+            Missing / unknown values fall back to ``normal``.
+
     Raises:
         KdpPackageError on user-facing failures (book not found,
         metadata not complete, manuscript generation failed).
     """
     from app.database import SessionLocal
     from app.models import Book
+
+    is_print = format_kind in ("paperback", "hardcover")
 
     tmp_dir = Path(tempfile.mkdtemp(prefix="kdp_package_"))
     db = SessionLocal()
@@ -430,13 +507,15 @@ def build_kdp_package(book_id: str) -> Path:
         # Gate: metadata must pass the same completeness check the
         # wizard's Step 1 runs. Re-checking server-side prevents
         # the client gate from being bypassed (defence in depth).
-        meta_check = check_metadata_completeness({
-            **book_data,
-            "keywords": book_data["keywords"],
-            "categories": book_data["categories"],
-            "bisac_codes": book_data["bisac_codes"],
-            "chapters": chapters,
-        })
+        meta_check = check_metadata_completeness(
+            {
+                **book_data,
+                "keywords": book_data["keywords"],
+                "categories": book_data["categories"],
+                "bisac_codes": book_data["bisac_codes"],
+                "chapters": chapters,
+            }
+        )
         # BOOK-TYPES-SSOT-YAML-01 C9: page-based books don't use
         # chapters; drop the client-side filter's equivalent
         # server-side. Mirrors MetadataChecklist.filterIssues
@@ -451,9 +530,7 @@ def build_kdp_package(book_id: str) -> Path:
             bt_def = get_book_type(book_type)
             content_model = bt_def.content_model if bt_def else None
         except ImportError:
-            content_model = (
-                "chapters" if book_type == "prose" else "pages"
-            )
+            content_model = "chapters" if book_type == "prose" else "pages"
         if content_model == "pages":
             meta_check.issues = [i for i in meta_check.issues if i.field != "chapters"]
         if not meta_check.is_complete:
@@ -466,15 +543,43 @@ def build_kdp_package(book_id: str) -> Path:
         manuscripts: dict[str, Path] = {}
         if book_type == "prose":
             assets = _assets_for_book(book_id, db, with_id=False)
-            manuscripts = _generate_prose_manuscripts(
-                book_data, chapters, assets, tmp_dir
-            )
+            # Reflowable EPUB is the eBook deliverable; print kinds add
+            # the WeasyPrint PDF at the chosen trim + margin (#583).
+            epub_path = _generate_prose_epub(book_data, chapters, assets, tmp_dir)
+            if epub_path:
+                manuscripts["epub"] = epub_path
+            if is_print:
+                pdf_path = _generate_prose_pdf(
+                    book_data,
+                    chapters,
+                    tmp_dir,
+                    trim_size=trim_size,
+                    margin=margin,
+                    bleed_marks=True,
+                )
+                if pdf_path:
+                    manuscripts["pdf"] = pdf_path
         elif book_type == "picture_book":
-            path = _generate_picture_book_manuscript(book_id, db, tmp_dir)
+            # Picture / comic books have no reflowable EPUB path, so the
+            # PDF is their sole manuscript and is always produced; crop /
+            # bleed marks are added only for the print kinds.
+            path = _generate_picture_book_manuscript(
+                book_id,
+                db,
+                tmp_dir,
+                picture_book_format=trim_size,
+                bleed_marks=is_print,
+            )
             if path:
                 manuscripts["pdf"] = path
         elif book_type == "comic_book":
-            path = _generate_comic_book_manuscript(book_id, db, tmp_dir)
+            path = _generate_comic_book_manuscript(
+                book_id,
+                db,
+                tmp_dir,
+                picture_book_format=trim_size,
+                bleed_marks=is_print,
+            )
             if path:
                 manuscripts["pdf"] = path
         else:

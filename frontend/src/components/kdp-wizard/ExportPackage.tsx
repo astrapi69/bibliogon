@@ -25,9 +25,14 @@ import {Download, Loader2, CheckCircle, AlertCircle, Package} from "lucide-react
 
 import {BookDetail, ApiError, api} from "../../api/client"
 import {useI18n} from "../../hooks/useI18n"
+import type {FormatState} from "./machines/types"
 
 interface Props {
     book: BookDetail
+    /** Wizard FormatStep selection. Threaded to the package endpoint
+     *  so the bundled PDF is rendered at the chosen KDP trim size +
+     *  margins (eBook → EPUB only, no PDF). */
+    format: FormatState
     /** ExportPackage doesn't gate the wizard's Next button — it's
      *  the last step. The wizard shows Finish here regardless.
      *  Prop kept for shape-parity with Step 0 / Step 1. */
@@ -71,6 +76,7 @@ function triggerDownload(blob: Blob, filename: string): string {
 
 export default function ExportPackage({
     book,
+    format,
     onCanAdvanceChange,
     onGenerate,
     onSuccess,
@@ -101,7 +107,11 @@ export default function ExportPackage({
         // ``exporting`` state.
         onGenerate?.()
         try {
-            const {blob, filename} = await api.kdp.buildPackage(book.id)
+            const {blob, filename} = await api.kdp.buildPackage(book.id, {
+                format_kind: format.kind,
+                trim_size: format.trim_size,
+                margin: format.margin,
+            })
             const url = triggerDownload(blob, filename)
             setState({kind: "done", filename, lastBlobUrl: url})
             onSuccess?.(filename, url)

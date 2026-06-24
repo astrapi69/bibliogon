@@ -295,6 +295,7 @@ export default function KdpPublishingWizard({open, book, onClose}: Props) {
         return (
             <ExportPackage
                 book={book}
+                format={snapshot.context.format}
                 onCanAdvanceChange={() => {}}
                 onGenerate={() => send({type: "GENERATE"})}
                 onSuccess={(filename, blobUrl) =>
