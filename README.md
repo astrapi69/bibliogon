@@ -162,6 +162,18 @@ After cloning or downloading the repo, double-click the wrapper for your OS:
 | Windows | `install.cmd` | Wraps `install.ps1` with `-ExecutionPolicy Bypass` so corporate Windows with Group-Policy-locked ExecutionPolicy still runs the installer |
 | Linux | `bash install.sh` | No special wrapper needed |
 
+### Desktop launcher
+
+A single-click desktop launcher starts the Docker stack, waits for it to be
+healthy, opens your browser, and stops the stack when you close the window —
+no `docker compose` commands. It is built on the reusable
+[`docker-app-launcher`](https://pypi.org/project/docker-app-launcher/) library;
+Bibliogon supplies only the configuration in `launcher/launcher.json`. See the
+per-platform guides — [Linux](docs/help/en/launcher-linux.md) ·
+[macOS](docs/help/en/launcher-macos.md) ·
+[Windows](docs/help/en/launcher-windows.md) — and
+[docs/LAUNCHER-SPEC.md](docs/LAUNCHER-SPEC.md) for the configuration reference.
+
 ### Manual install
 
 ```bash
