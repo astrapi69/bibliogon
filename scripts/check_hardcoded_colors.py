@@ -95,6 +95,12 @@ ALLOWLIST = {
     # hex colour like \"#4ECDC4\" ..."), i.e. documentation/data shown
     # to the model, not app styling.
     "frontend/src/ai/storyExtractionPrompts.ts",
+    # Chapter-collection swatch palette (#579). The fixed set of colours a
+    # user picks from to tag a chapter collection — user-facing colour
+    # DATA stored on the collection, NOT theme styling (same class as the
+    # storyboard mood-colour presets above). Each swatch is rendered as a
+    # selectable dot; the chosen value is persisted per collection.
+    "frontend/src/components/book/OutlinerCollectionsBar.tsx",
 }
 
 HEX_RE = re.compile(r"#[0-9a-fA-F]{3,8}\b")
