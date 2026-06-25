@@ -27,14 +27,14 @@ files = [
 
 [[package]]
 name = "docker-app-launcher"
-version = "0.7.0"
+version = "0.12.1"
 description = "Configurable desktop launcher for Docker-based applications"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "docker_app_launcher-0.7.0-py3-none-any.whl", hash = "sha256:73ea5e6fc4b6d5b1ca8de68ec5484aec9fad7b2453f20bb6d97a116ef217a4e7"},
-    {file = "docker_app_launcher-0.7.0.tar.gz", hash = "sha256:61d28f7b0e30a660607a881fe5bd4cba15152973a034fb637362fa9e87ca9fe2"},
+    {file = "docker_app_launcher-0.12.1-py3-none-any.whl", hash = "sha256:4b49bcc67b689333d86967da133ce868142be240f0f798608b7780561698e11d"},
+    {file = "docker_app_launcher-0.12.1.tar.gz", hash = "sha256:4021c277278edcda51d7d2d6a041ffff4ec51cbb08927141ce0b8b2b4f4875c8"},
 ]
 
 [package.dependencies]
@@ -441,4 +441,4 @@ type = ["importlib_metadata (>=7.0.2) ; python_version < \"3.10\"", "jaraco.deve
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "6d47c4286754c5990002de03d5c5400c1cfe76125e1781c6efd4d7b6addee23b"
+content-hash = "465bb4bcb4f5c015e900da51c11146a6bddc61fb404ba2b12ec6d40547523f57"
