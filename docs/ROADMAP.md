@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-24 (post-v0.57.0 develop refresh — the launcher library-first migration (docker-app-launcher 0.7.0), the KDP-wizard Format + Guide steps (#580/#581) and backend bleed/trim (#583/#606), the first-install data-migration dialog (#591), the god-file WARN-tier top-5 split (#207), the E2E flake sweep (#436/#438/#440/#441/#442) + isolation audit, and the unified-metadata export work are recorded as shipped; Current focus re-pointed at the v0.58.0 cut.)
+Last updated: 2026-06-24 (post-v0.57.0 develop refresh — the launcher library-first migration (docker-app-launcher 0.12.1), the KDP-wizard Format + Guide steps (#580/#581) and backend bleed/trim (#583/#606), the first-install data-migration dialog (#591), the god-file WARN-tier top-5 split (#207), the E2E flake sweep (#436/#438/#440/#441/#442) + isolation audit, and the unified-metadata export work are recorded as shipped; Current focus re-pointed at the v0.58.0 cut.)
 Latest release: v0.57.0 (2026-06-21) — see [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
@@ -207,8 +207,11 @@ toward v0.57.0):
 Unreleased on `develop` since the v0.57.0 cut; the next release candidate:
 
 - **Desktop launcher → library-first** — the custom launcher is replaced
-  by the `docker-app-launcher` PyPI package (now **0.7.0**: locale
-  auto-detect, single-instance lock, rotating logging). Bibliogon ships
+  by the `docker-app-launcher` PyPI package (now **0.12.1**: locale
+  auto-detect, single-instance lock, rotating logging, platform-specific
+  Docker diagnostics + guided start, a copy-log button, an
+  always-available cleanup action, and an always-visible
+  enabled/disabled button-state window relayout with tooltips). Bibliogon ships
   only `launcher/launcher.json` + a thin three-responsibility wrapper;
   the `tray` extra is deliberately omitted (~6x frozen-binary inflation)
   and `cleanup_search_paths` left empty (the cleanup scan would otherwise
