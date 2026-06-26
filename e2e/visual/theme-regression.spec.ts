@@ -68,6 +68,8 @@ async function applyTheme(page: Page, palette: string, mode: string): Promise<vo
                 localStorage.setItem("bibliogon-app-theme", palette);
                 localStorage.setItem("bibliogon-theme", mode);
                 localStorage.setItem("bibliogon-donation-onboarding-seen", "true");
+                localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
+                localStorage.setItem("bibliogon-migration-offered", "true");
             } catch {
                 // localStorage unavailable (privacy mode); ignore.
             }
