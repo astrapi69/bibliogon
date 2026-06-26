@@ -23,5 +23,5 @@
   "releases_url": "https://github.com/astrapi69/bibliogon/releases/latest",
   "docs_url": "https://github.com/astrapi69/bibliogon/blob/main/docs/help/en/install/docker-desktop.md",
   "update_check_enabled": true,
-  "app_version": "0.57.0"
+  "app_version": "0.58.0"
 }

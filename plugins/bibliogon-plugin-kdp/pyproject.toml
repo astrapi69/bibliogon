@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "bibliogon-plugin-kdp"
-version = "0.57.0"
+version = "0.58.0"
 description = "Amazon KDP plugin for Bibliogon - metadata export, cover validation, preview"
 authors = ["astrapi69"]
 license = "MIT"
