@@ -38,7 +38,7 @@ import ThemeToggle from "../components/shared/ThemeToggle";
 import EditableTitle from "../components/shared/EditableTitle";
 import { useArticlePersistence } from "../hooks/article/useArticlePersistence";
 import { useArticleEditorActions } from "../hooks/article/useArticleEditorActions";
-import ArticleEditorSidebar from "../components/articles/ArticleEditorSidebar";
+import ArticleEditorSidebar from "../components/articles/editor/ArticleEditorSidebar";
 import { useDialog } from "../components/shared/AppDialog";
 import { useI18n } from "../hooks/useI18n";
 import { useSidebarCollapse } from "../hooks/ui/useSidebarCollapse";

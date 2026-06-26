@@ -1,26 +1,26 @@
-import { ArticleStatus, ContentType, Article } from "../../api/client";
-import { SUPPORTED_LANGUAGES, STATUSES } from "../../pages/articleEditorConstants";
-import { getStorage } from "../../storage";
+import { ArticleStatus, ContentType, Article } from "../../../api/client";
+import { SUPPORTED_LANGUAGES, STATUSES } from "../../../pages/articleEditorConstants";
+import { getStorage } from "../../../storage";
 import { Trash2 } from "lucide-react";
-import { ContentTypeIcon } from "../../utils/icons/contentTypeIcon";
-import ContentTypeFieldsSection from "./ContentTypeFieldsSection";
-import { Field, FieldLabel, TopicSelect } from "./ArticleEditorFields";
-import ArticleImageUpload from "./ArticleImageUpload";
-import KeywordInput from "../book/KeywordInput";
-import AiGenerateButton from "../shared/AiGenerateButton";
-import AuthorSelectInput from "../shared/AuthorSelectInput";
-import { PublicationsPanel } from "./PublicationsPanel";
-import ArticleCommentsPanel from "./ArticleCommentsPanel";
-import ArticleTranslatePanel from "./ArticleTranslatePanel";
-import AITemplatePanel from "../shared/AITemplatePanel";
-import { RadixSelect } from "../shared/RadixSelect";
-import { profileDisplayNames } from "../../hooks/useAuthorProfile";
-import type { useContentTypes } from "../../hooks/useContentTypes";
+import { ContentTypeIcon } from "../../../utils/icons/contentTypeIcon";
+import ContentTypeFieldsSection from "../ContentTypeFieldsSection";
+import { Field, FieldLabel, TopicSelect } from "../ArticleEditorFields";
+import ArticleImageUpload from "../ArticleImageUpload";
+import KeywordInput from "../../book/KeywordInput";
+import AiGenerateButton from "../../shared/AiGenerateButton";
+import AuthorSelectInput from "../../shared/AuthorSelectInput";
+import { PublicationsPanel } from "../PublicationsPanel";
+import ArticleCommentsPanel from "../ArticleCommentsPanel";
+import ArticleTranslatePanel from "../ArticleTranslatePanel";
+import AITemplatePanel from "../../shared/AITemplatePanel";
+import { RadixSelect } from "../../shared/RadixSelect";
+import { profileDisplayNames } from "../../../hooks/useAuthorProfile";
+import type { useContentTypes } from "../../../hooks/useContentTypes";
 import type {
     ArticleExportFormat,
     ArticleAiMetaField,
-} from "../../hooks/article/useArticleEditorActions";
-import layout from "../../pages/ArticleEditor.module.css";
+} from "../../../hooks/article/useArticleEditorActions";
+import layout from "../../../pages/ArticleEditor.module.css";
 
 type Translate = (key: string, fallback: string) => string;
 
