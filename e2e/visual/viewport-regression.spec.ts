@@ -41,14 +41,24 @@ const VIEWPORTS = [
 ] as const;
 
 /** Freeze theme + clock before first paint (same rationale as the theme
- *  spec): default palette/light, donation-onboarding suppressed, and a
- *  pinned clock so any relative-time surface stays stable across days. */
+ *  spec): default palette/light, the three auto-opening onboarding
+ *  overlays suppressed, and a pinned clock so any relative-time surface
+ *  stays stable across days.
+ *
+ *  The donation-onboarding, AI-setup-wizard, and first-install
+ *  migration-welcome dialogs all auto-open on a fresh/empty E2E backend;
+ *  their Radix overlays (`data-state="open" aria-hidden`) intercept
+ *  pointer events and made the metadata-tab clicks flaky (#628). The
+ *  smoke suite suppresses the same three via `e2e/fixtures/base.ts`; the
+ *  visual specs use the raw `test`, so they set the flags here. */
 async function prep(page: Page): Promise<void> {
     await page.addInitScript(() => {
         try {
             localStorage.setItem("bibliogon-app-theme", "warm-literary");
             localStorage.setItem("bibliogon-theme", "light");
             localStorage.setItem("bibliogon-donation-onboarding-seen", "true");
+            localStorage.setItem("bibliogon-ai-setup-dismissed", "true");
+            localStorage.setItem("bibliogon-migration-offered", "true");
         } catch {
             /* ignore */
         }
