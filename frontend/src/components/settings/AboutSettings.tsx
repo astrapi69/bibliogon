@@ -29,7 +29,7 @@ import {
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
 import { getBuildInfo } from "../../lib/buildInfo";
-import { ShareAppSection } from "./ShareAppSection";
+import { ShareAppSection } from "../share/ShareAppSection";
 import { getLocalized } from "./utils";
 import SupportSection, { getDonationsConfig } from "./SupportSection";
 import { SectionHeader } from "./SectionHeader";

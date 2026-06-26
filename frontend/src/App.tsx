@@ -35,7 +35,7 @@ import { DialogProvider } from "./components/shared/AppDialog";
 import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
-import PreviewBanner from "./components/shared/PreviewBanner";
+import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
