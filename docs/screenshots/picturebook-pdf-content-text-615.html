@@ -1,0 +1,39 @@
+<!doctype html><html lang="de"><head><meta charset="utf-8">
+<style>
+  body{font-family:system-ui,Arial,sans-serif;background:#faf8f5;margin:0;padding:32px;color:#1f2937}
+  h1{font-size:20px;margin:0 0 4px} p.sub{margin:0 0 24px;color:#6b7280}
+  .row{display:flex;gap:32px;flex-wrap:wrap}
+  .page{flex:1;min-width:360px}
+  .label{font-weight:700;margin-bottom:8px}
+  .trim{width:100%;aspect-ratio:1/1;border:1px solid #d1d5db;background:#fff;
+        display:flex;flex-direction:column;padding:24px;box-sizing:border-box}
+  .img{flex:0 0 62%;background:#eef2f7;border:1px dashed #c7ccd6;display:flex;
+       align-items:center;justify-content:center;color:#9aa3b2;border-radius:6px}
+  .text{flex:1;display:flex;align-items:center;justify-content:center;
+        text-align:center;font-size:15px;padding-top:14px;white-space:pre-wrap;overflow:hidden}
+  .text.json{color:#b91c1c;font-family:ui-monospace,Menlo,monospace;font-size:11px;
+             align-items:flex-start;text-align:left;word-break:break-all}
+  .tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;margin-left:8px}
+  .bad{background:#fee2e2;color:#b91c1c} .good{background:#dcfce7;color:#166534}
+</style></head><body>
+  <h1>#615 — Picture-book PDF: content-page text</h1>
+  <p class="sub">Same page (image + a TipTap rich-text paragraph). Client-side PWA renderer.</p>
+  <div class="row">
+    
+  <div class="page">
+    <div class="label">Before <span class="tag bad">raw TipTap JSON</span></div>
+    <div class="trim">
+      <div class="img">Seitenbild</div>
+      <div class="text json">{"type":"doc","content":[{"type":"paragraph","attrs":{"textAlign":"center"},"content":[{"type":"text","text":"Der kleine Bär ging in den Wald."}]}]}</div>
+    </div>
+  </div>
+    
+  <div class="page">
+    <div class="label">After <span class="tag good">harvested prose, once</span></div>
+    <div class="trim">
+      <div class="img">Seitenbild</div>
+      <div class="text">Der kleine Bär ging in den Wald.</div>
+    </div>
+  </div>
+  </div>
+</body></html>
