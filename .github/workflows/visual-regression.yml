@@ -80,7 +80,7 @@ jobs:
       - name: Run visual regression
         working-directory: e2e
         run: |
-          if [ "${{ inputs.update_snapshots }}" = "true" ]; then
+          if [ "${{ github.event.inputs.update_snapshots }}" = "true" ]; then
             npx playwright test --project=visual --update-snapshots
           else
             npx playwright test --project=visual --retries=1
@@ -98,7 +98,7 @@ jobs:
       # baselines as an artifact to download + commit (the workflow does not
       # push to the repo itself).
       - uses: actions/upload-artifact@v6
-        if: ${{ inputs.update_snapshots == true }}
+        if: ${{ github.event.inputs.update_snapshots == 'true' }}
         with:
           name: visual-regression-baselines
           path: e2e/visual/**/*-snapshots/**
