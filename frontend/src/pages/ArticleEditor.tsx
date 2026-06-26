@@ -22,22 +22,19 @@
  * because the only writer is the local editor).
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { setDocumentMeta, resetDocumentMeta } from "../lib/utils/documentMeta";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Loader2, ArrowLeft, Trash2, Home, MessageSquare, MoreVertical } from "lucide-react";
 
-import { api, ApiError, ArticleStatus, ContentType, Author } from "../api/client";
+import { ArticleStatus, ContentType, Author } from "../api/client";
 import {
     SUPPORTED_LANGUAGES,
     AUTOSAVE_DEBOUNCE_MS,
     STATUSES,
 } from "./articleEditorConstants";
 import { getStorage } from "../storage";
-import { aiComplete, AiNotConfiguredError } from "../ai/aiComplete";
-import { buildMetaMessages, parseMetaResponse } from "../ai/metaPrompts";
-import { extractBodyText } from "../ai/templateApply";
 import { useContentTypes } from "../hooks/useContentTypes";
 import { ContentTypeIcon } from "../utils/icons/contentTypeIcon";
 import ContentTypeFieldsSection from "../components/articles/ContentTypeFieldsSection";
@@ -58,6 +55,7 @@ import { PublicationsPanel } from "../components/articles/PublicationsPanel";
 import ArticleCommentsPanel from "../components/articles/ArticleCommentsPanel";
 import ArticleTranslatePanel from "../components/articles/ArticleTranslatePanel";
 import { useArticlePersistence } from "../hooks/article/useArticlePersistence";
+import { useArticleEditorActions } from "../hooks/article/useArticleEditorActions";
 import AITemplatePanel from "../components/shared/AITemplatePanel";
 import { useDialog } from "../components/shared/AppDialog";
 import { useI18n } from "../hooks/useI18n";
@@ -68,8 +66,6 @@ import { EditorMenu } from "../lib/components/EditorMenu";
 import { buildArticleEditorMenu } from "./buildArticleEditorMenu";
 import { RadixSelect } from "../components/shared/RadixSelect";
 import { useAuthorProfile, profileDisplayNames } from "../hooks/useAuthorProfile";
-import { useTopics } from "../hooks/content/useTopics";
-import { notify } from "../utils/platform/notify";
 import layout from "./ArticleEditor.module.css";
 
 
@@ -143,230 +139,17 @@ export default function ArticleEditor() {
         return out;
     }, [authorProfile, globalAuthors]);
 
-    const topicsFromHook = useTopics();
-    // Local mirror of the settings topics list so inline-add via the
-    // TopicSelect dropdown can append without waiting on a re-mount of
-    // the hook. Synced from useTopics on every change.
-    const [topics, setTopics] = useState<string[] | null>(topicsFromHook);
-    useEffect(() => {
-        setTopics(topicsFromHook);
-    }, [topicsFromHook]);
-
-    const handleAddTopic = useCallback(
-        async (name: string): Promise<boolean> => {
-            const trimmed = name.trim();
-            if (!trimmed) return false;
-            const current = topics ?? [];
-            if (current.some((t) => t.toLowerCase() === trimmed.toLowerCase())) {
-                // Already exists - just select it without a redundant PATCH.
-                return true;
-            }
-            const next = [...current, trimmed];
-            try {
-                await getStorage().settings.updateApp({ topics: next });
-                setTopics(next);
-                return true;
-            } catch (err) {
-                if (err instanceof ApiError) {
-                    notify.error(
-                        t("ui.articles.topic_add_failed", "Thema konnte nicht angelegt werden."),
-                        err,
-                    );
-                }
-                return false;
-            }
-        },
-        [topics, t],
-    );
-
-    // AR editor-parity Phase 3: export this article. Single-button-
-    // per-format row (no modal) - the format set is small (4) and
-    // each button kicks off a download immediately.
-    type ExportFormat = "markdown" | "html" | "pdf" | "docx" | "latex";
-    const [exporting, setExporting] = useState<ExportFormat | null>(null);
-
-    // AI metadata generation: SEO title / SEO description / tags.
-    // ``aiGenerating`` holds the field currently in flight so the
-    // matching button shows a spinner; other buttons stay clickable
-    // (one-at-a-time semantic mirrors the export buttons above).
-    type AiMetaField = "seo_title" | "seo_description" | "tags";
-    const [aiGenerating, setAiGenerating] = useState<AiMetaField | null>(null);
-
-    const articleHasContent = ((): boolean => {
-        const json = article?.content_json?.trim();
-        if (!json) return false;
-        try {
-            const parsed = JSON.parse(json);
-            const stack: unknown[] = [parsed];
-            while (stack.length) {
-                const node = stack.pop();
-                if (node && typeof node === "object") {
-                    const text = (node as { text?: unknown }).text;
-                    if (typeof text === "string" && text.trim()) return true;
-                    const children = (node as { content?: unknown }).content;
-                    if (Array.isArray(children)) stack.push(...children);
-                }
-            }
-            return false;
-        } catch {
-            return Boolean(json);
-        }
-    })();
-
-    async function handleAiGenerate(field: AiMetaField): Promise<void> {
-        if (!article || aiGenerating) return;
-        setAiGenerating(field);
-        try {
-            // Offline (Dexie / PWA): build the prompt and call the user's
-            // provider browser-direct; online: the backend generate-meta route.
-            const result =
-                getStorage().mode === "dexie"
-                    ? parseMetaResponse(
-                          field,
-                          (
-                              await aiComplete(
-                                  buildMetaMessages(field, {
-                                      title: article.title,
-                                      language: article.language || "de",
-                                      bodyText: extractBodyText(article.content_json),
-                                      topic: article.topic,
-                                  }),
-                                  { maxTokens: 512 },
-                              )
-                          ).content,
-                      )
-                    : await api.articles.generateMeta(article.id, field);
-            if (field === "tags") {
-                const next = result.generated_tags ?? [];
-                setArticle({ ...article, tags: next });
-                void persistMeta({ tags: next });
-                notify.success(
-                    t("ui.articles.tags_generated", "{count} Tags generiert.").replace(
-                        "{count}",
-                        String(next.length),
-                    ),
-                );
-            } else {
-                const text = result.generated_text ?? "";
-                if (field === "seo_title") {
-                    setArticle({ ...article, seo_title: text || null });
-                    void persistMeta({ seo_title: text || null });
-                    notify.success(t("ui.articles.seo_title_generated", "SEO-Titel generiert."));
-                } else {
-                    setArticle({ ...article, seo_description: text || null });
-                    void persistMeta({ seo_description: text || null });
-                    notify.success(
-                        t("ui.articles.seo_description_generated", "SEO-Beschreibung generiert."),
-                    );
-                }
-            }
-        } catch (err) {
-            if (err instanceof AiNotConfiguredError) {
-                notify.info(
-                    t(
-                        "ui.feature.requires_ai_key",
-                        "This feature requires a configured AI key (Settings > AI Assistant)",
-                    ),
-                );
-            } else {
-                notify.error(
-                    t("ui.articles.ai_generation_failed", "KI-Generierung fehlgeschlagen."),
-                    err instanceof ApiError ? err : undefined,
-                );
-            }
-        } finally {
-            setAiGenerating(null);
-        }
-    }
-
-    const handleExport = async (fmt: ExportFormat) => {
-        if (!article || exporting) return;
-        setExporting(fmt);
-        try {
-            // Offline renders in the browser (no Pandoc backend). LaTeX is
-            // always client-side — there is no backend `.tex` path, so it
-            // takes the client engine regardless of connectivity.
-            if (getStorage().mode === "dexie" || fmt === "latex") {
-                const { downloadExport, buildArticleDocument } = await import("../export");
-                await downloadExport(buildArticleDocument(article), fmt);
-            } else {
-                await api.articleExport.download(
-                    article.id,
-                    fmt as "markdown" | "html" | "pdf" | "docx",
-                );
-            }
-            notify.success(t("ui.articles.export_success", "Export gestartet."));
-        } catch (err) {
-            notify.error(
-                t("ui.articles.export_failed", "Export fehlgeschlagen."),
-                err instanceof ApiError ? err : undefined,
-            );
-        } finally {
-            setExporting(null);
-        }
-    };
-
-    async function handleDelete(): Promise<void> {
-        if (!article) return;
-        const ok = await confirm(
-            t("ui.articles.delete_title", "Artikel löschen?"),
-            t(
-                "ui.articles.delete_trash_body",
-                "Dieser Artikel wird in den Papierkorb verschoben und kann später wiederhergestellt werden.",
-            ),
-            "danger",
-            { confirmLabel: t("ui.articles.delete_confirm", "Löschen") },
-        );
-        if (!ok) return;
-        try {
-            await getStorage().articles.delete(article.id);
-            notify.info(t("ui.articles.moved_to_trash", "In den Papierkorb verschoben"));
-            navigate("/articles");
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(t("ui.articles.delete_failed", "Löschen fehlgeschlagen."), err);
-            }
-        }
-    }
-
-    async function handleReclassifyAsComment(): Promise<void> {
-        if (!article) return;
-        // Single-item move uses the simple confirm dialog. The move is
-        // reversible from the Comments admin tab, so type-to-confirm
-        // would be overkill. The dialog spells out the lossy fields
-        // (title, tags, SEO meta, etc.) so the user can't be surprised.
-        const ok = await confirm(
-            t("ui.articles.reclassify_title", "Move article to comments?"),
-            t(
-                "ui.articles.reclassify_body",
-                "The article will be moved to the comments list. Title, subtitle, tags, SEO metadata, publications, and assets are dropped on the move. The action is reversible from Settings → Comments admin.",
-            ),
-            "danger",
-            {
-                confirmLabel: t("ui.articles.reclassify_confirm", "Move to comments"),
-            },
-        );
-        if (!ok) return;
-        try {
-            await api.articles.reclassifyAsComment(article.id);
-            // The article no longer exists locally; navigate away and
-            // surface a toast with a deep-link to the Comments admin
-            // tab so the user can verify the move landed.
-            navigate("/articles");
-            notify.bulkAction(
-                t("ui.articles.reclassify_success", "Article moved to comments."),
-                () => navigate("/settings?tab=comments"),
-                t("ui.articles.reclassify_view", "Open Comments admin"),
-            );
-        } catch (err) {
-            if (err instanceof ApiError) {
-                notify.error(
-                    t("ui.articles.reclassify_failed", "Could not move the article."),
-                    err,
-                );
-            }
-        }
-    }
+    const {
+        topics,
+        handleAddTopic,
+        exporting,
+        handleExport,
+        aiGenerating,
+        articleHasContent,
+        handleAiGenerate,
+        handleDelete,
+        handleReclassifyAsComment,
+    } = useArticleEditorActions({ article, setArticle, persistMeta, navigate, confirm, t });
 
     if (loading || !article) {
         return (
