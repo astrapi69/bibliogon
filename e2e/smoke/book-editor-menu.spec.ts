@@ -13,7 +13,6 @@
  */
 
 import { test, expect, createBook, createChapter } from "../fixtures/base";
-import {clickMenuItem} from "../helpers/ui";
 
 const WIDE = { width: 1440, height: 900 };
 const NARROW = { width: 600, height: 900 };
@@ -52,8 +51,25 @@ test.describe("BookEditor structured menu", () => {
         await expect(page.getByTestId("book-editor-menu-item-shortcuts")).toBeVisible();
 
         // Choosing an action dispatches (navigates) and closes the menu.
-        await clickMenuItem(page, "book-editor-menu-item-shortcuts");
-        await expect.poll(() => page.url()).toContain("/help/shortcuts");
+        // Under CI load a late editor re-render (TipTap mount / word-count)
+        // can remount the Radix portal AFTER networkidle and detach the open
+        // item mid-click ("element was detached from the DOM"), which a single
+        // click() does not survive. Re-open + re-click inside a toPass; the
+        // action navigates away, so the early-return guard stops the loop the
+        // moment the navigation lands (the trigger no longer exists after nav).
+        await expect(async () => {
+            if (page.url().includes("/help/shortcuts")) return;
+            const open = await page
+                .getByTestId("book-editor-menu-panel")
+                .isVisible()
+                .catch(() => false);
+            if (!open) await page.getByTestId("book-editor-menu-trigger").click();
+            const shortcuts = page.getByTestId("book-editor-menu-item-shortcuts");
+            await expect(shortcuts).toBeVisible({timeout: 2000});
+            await shortcuts.click({timeout: 2000});
+            await expect.poll(() => page.url(), {timeout: 2000}).toContain("/help/shortcuts");
+        }).toPass({timeout: 20_000});
+        // After navigating away the editor (and its menu) unmount entirely.
         await expect(page.getByTestId("book-editor-menu-panel")).toHaveCount(0);
     });
 
