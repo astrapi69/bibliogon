@@ -35,6 +35,7 @@ import { DialogProvider } from "./components/shared/AppDialog";
 import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
+import PreviewBanner from "./components/shared/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
@@ -156,6 +157,11 @@ export default function App() {
                                     <MediumImportJobProvider>
                                         <HelpProvider>
                                             <SkipToContentLink />
+                                            {/* #642: non-dismissible preview/test-version
+                                             *  warning. Renders only on the bibliogon-preview
+                                             *  deploy (VITE_IS_PREVIEW=true); off in production
+                                             *  and local builds. Sits above every other banner. */}
+                                            <PreviewBanner />
                                             <OfflineBanner />
                                             {/* PWA: "new version available" banner (issue #323).
                                              *  Subscribes to swUpdateManager; fixed-bottom, dismissible,

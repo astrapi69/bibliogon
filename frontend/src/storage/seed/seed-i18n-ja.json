@@ -3617,7 +3617,22 @@
       "resources_heading": "ライセンスとリソース",
       "docs_label": "ドキュメント",
       "next_check": "次回の自動確認: {time}",
-      "next_check_disabled": "自動確認は無効です"
+      "next_check_disabled": "自動確認は無効です",
+      "commit_label": "コミット",
+      "preview_heading": "プレビュー/テスト版",
+      "share_heading": "アプリを共有",
+      "share_production_heading": "メインバージョン（安定版）",
+      "share_production_description": "QRコードで安定版アプリを共有し、他の人が開けるようにします。",
+      "share_preview_heading": "最新バージョン（テスト）",
+      "share_preview_description": "これはプレビュー/テスト版です。安定しておらず、不具合が含まれる可能性があります。テスターとのみ共有してください。",
+      "share_qr_show": "QRコードを表示",
+      "share_qr_hide": "QRコードを非表示",
+      "share_open": "リンクを開く",
+      "share_copy": "リンクをコピー",
+      "share_copied": "リンクをコピーしました！",
+      "share_copy_failed": "リンクをコピーできませんでした。",
+      "share_native": "共有",
+      "share_text": "著者向けのオープンソースプラットフォーム"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",
@@ -3717,6 +3732,10 @@
       "open_online": "オンライン版を開く",
       "import": "バックアップをインポート",
       "settings_hint": "オンライン版から移行しますか？ そちらでフルバックアップ（.bgb）をエクスポートし、ここで「バックアップをインポート」から取り込みます。"
+    },
+    "preview_banner": {
+      "title": "プレビュー/テスト版",
+      "message": "プレビュー/テスト版を使用しています。安定しておらず、不具合が含まれる可能性があります。"
     }
   }
 }

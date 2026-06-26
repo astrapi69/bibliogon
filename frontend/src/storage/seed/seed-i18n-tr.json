@@ -3617,7 +3617,22 @@
       "resources_heading": "Lisans ve Kaynaklar",
       "docs_label": "Dokümantasyon",
       "next_check": "Sonraki otomatik kontrol: {time}",
-      "next_check_disabled": "Otomatik kontrol devre dışı"
+      "next_check_disabled": "Otomatik kontrol devre dışı",
+      "commit_label": "Commit",
+      "preview_heading": "Önizleme/Test sürümü",
+      "share_heading": "Uygulamayı paylaş",
+      "share_production_heading": "Ana sürüm (kararlı)",
+      "share_production_description": "Kararlı uygulamayı QR kodu ile paylaşın, böylece başkaları açabilir.",
+      "share_preview_heading": "En son sürüm (test)",
+      "share_preview_description": "Bu bir önizleme/test sürümüdür. Kararlı değildir ve hatalar içerebilir. Yalnızca test edenlerle paylaşın.",
+      "share_qr_show": "QR kodunu göster",
+      "share_qr_hide": "QR kodunu gizle",
+      "share_open": "Bağlantıyı aç",
+      "share_copy": "Bağlantıyı kopyala",
+      "share_copied": "Bağlantı kopyalandı!",
+      "share_copy_failed": "Bağlantı kopyalanamadı.",
+      "share_native": "Paylaş",
+      "share_text": "Yazarlar için açık kaynaklı platform"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP'de yayımla",
@@ -3717,6 +3732,10 @@
       "open_online": "Çevrimiçi sürümü aç",
       "import": "Yedeği içe aktar",
       "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
+    },
+    "preview_banner": {
+      "title": "Önizleme/Test sürümü",
+      "message": "Bir önizleme/test sürümü kullanıyorsunuz. Kararlı değildir ve hatalar içerebilir."
     }
   }
 }

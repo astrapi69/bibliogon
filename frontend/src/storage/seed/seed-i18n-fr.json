@@ -3617,7 +3617,22 @@
       "resources_heading": "Licence et ressources",
       "docs_label": "Documentation",
       "next_check": "Prochaine vérification automatique : {time}",
-      "next_check_disabled": "Vérification automatique désactivée"
+      "next_check_disabled": "Vérification automatique désactivée",
+      "commit_label": "Commit",
+      "preview_heading": "Version aperçu/test",
+      "share_heading": "Partager l'application",
+      "share_production_heading": "Version principale (stable)",
+      "share_production_description": "Partagez l'application stable via un code QR pour que d'autres puissent l'ouvrir.",
+      "share_preview_heading": "Dernière version (test)",
+      "share_preview_description": "Ceci est une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs. Ne la partagez qu'avec des testeurs.",
+      "share_qr_show": "Afficher le code QR",
+      "share_qr_hide": "Masquer le code QR",
+      "share_open": "Ouvrir le lien",
+      "share_copy": "Copier le lien",
+      "share_copied": "Lien copié !",
+      "share_copy_failed": "Impossible de copier le lien.",
+      "share_native": "Partager",
+      "share_text": "Plateforme open source pour auteurs"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publier sur KDP",
@@ -3717,6 +3732,10 @@
       "open_online": "Ouvrir la version en ligne",
       "import": "Importer la sauvegarde",
       "settings_hint": "Vous migrez depuis la version en ligne ? Exportez-y une sauvegarde complète (.bgb) et importez-la ici avec « Importer la sauvegarde »."
+    },
+    "preview_banner": {
+      "title": "Version aperçu/test",
+      "message": "Vous utilisez une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs."
     }
   }
 }

@@ -28,6 +28,8 @@ import {
 } from "../../api/client";
 import { getStorage } from "../../storage";
 import { useI18n } from "../../hooks/useI18n";
+import { getBuildInfo } from "../../lib/buildInfo";
+import { ShareAppSection } from "./ShareAppSection";
 import { getLocalized } from "./utils";
 import SupportSection, { getDonationsConfig } from "./SupportSection";
 import { SectionHeader } from "./SectionHeader";
@@ -190,6 +192,7 @@ export function AboutSettings({ appConfig }: Props) {
             lang={lang}
           />
           <ContributorsSection t={t} />
+          <ShareAppSection t={t} />
           {donationsConfig ? (
             <article data-testid="about-donations-section" style={sectionStyle}>
               <SupportSection config={donationsConfig} />
@@ -281,11 +284,35 @@ function VersionSection({
   lang: string;
   updates: Record<string, unknown> | undefined;
 }) {
+  const build = getBuildInfo();
   return (
     <article data-testid="about-version-section" style={sectionStyle}>
       <h3 style={{ marginTop: 0, marginBottom: 12 }}>
         {t("ui.about.version_heading", "Version")}
       </h3>
+      {build.isPreview ? (
+        <div
+          data-testid="about-preview-notice"
+          role="status"
+          style={{
+            marginBottom: 12,
+            padding: "8px 12px",
+            border: "1px solid var(--warning)",
+            borderRadius: 8,
+            backgroundColor: "var(--warning-bg)",
+            color: "var(--warning-dark)",
+            fontSize: "0.85rem",
+          }}
+        >
+          <strong>{t("ui.about.preview_heading", "Vorschau-/Testversion")}</strong>
+          <div>
+            {t(
+              "ui.preview_banner.message",
+              "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten.",
+            )}
+          </div>
+        </div>
+      ) : null}
       <dl style={dlStyle}>
         <dt>
           <strong>{t("ui.about.app_label", "Bibliogon")}</strong>
@@ -298,6 +325,21 @@ function VersionSection({
         </dt>
         <dd data-testid="about-build-hash" style={{ margin: 0 }}>
           {__BUILD_HASH__}
+        </dd>
+        <dt>
+          <strong>{t("ui.about.commit_label", "Commit")}</strong>
+        </dt>
+        <dd style={{ margin: 0 }}>
+          <a
+            href={build.commitUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            data-testid="about-build-commit"
+            style={externalLinkStyle}
+          >
+            <ExternalLink size={14} aria-hidden />
+            {build.commitShort}
+          </a>
         </dd>
         <dt>
           <strong>{t("ui.about.branch_label", "Branch")}</strong>

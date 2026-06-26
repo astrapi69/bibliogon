@@ -510,6 +510,38 @@ test.describe("Feature Screenshots", () => {
             ));
         });
 
+        test("preview build info", async ({page}) => {
+            // #642: build provenance (branch/commit-linked/version/build/date)
+            // + the preview notice in About. The notice itself only renders on
+            // a VITE_IS_PREVIEW=true build; a normal capture run shows the
+            // build-info rows.
+            await page.goto("/settings?tab=about");
+            const section = page.getByTestId("about-version-section");
+            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.scrollIntoViewIfNeeded().catch(() => {});
+            await page.waitForTimeout(300);
+            await (section
+                .screenshot({path: `${OUT}/settings/preview-build-info.png`})
+                .catch(() =>
+                    page.screenshot({path: `${OUT}/settings/preview-build-info.png`}),
+                ));
+        });
+
+        test("share app", async ({page}) => {
+            // #643: "Die App teilen" section with the production + preview
+            // QR/link/copy targets. Expand both QR codes before the shot.
+            await page.goto("/settings?tab=about");
+            const section = page.getByTestId("about-share-section");
+            await section.waitFor({state: "visible"}).catch(() => {});
+            await section.scrollIntoViewIfNeeded().catch(() => {});
+            await page.getByTestId("share-production-qr-toggle").click().catch(() => {});
+            await page.getByTestId("share-preview-qr-toggle").click().catch(() => {});
+            await page.waitForTimeout(300);
+            await (section
+                .screenshot({path: `${OUT}/settings/share-app.png`})
+                .catch(() => page.screenshot({path: `${OUT}/settings/share-app.png`})));
+        });
+
         test("auto-save behaviour tab", async ({page}) => {
             // Settings auto-save on change (#473): no manual "Speichern"
             // button — the Behaviour tab is a representative auto-saving form.

@@ -3617,7 +3617,22 @@
       "resources_heading": "Lizenz & Ressourcen",
       "docs_label": "Dokumentation",
       "next_check": "Nächste automatische Prüfung: {time}",
-      "next_check_disabled": "Automatische Prüfung deaktiviert"
+      "next_check_disabled": "Automatische Prüfung deaktiviert",
+      "commit_label": "Commit",
+      "preview_heading": "Vorschau-/Testversion",
+      "share_heading": "Die App teilen",
+      "share_production_heading": "Hauptversion (stabil)",
+      "share_production_description": "Teile die stabile App per QR-Code, damit andere sie öffnen können.",
+      "share_preview_heading": "Latest-Version (Test)",
+      "share_preview_description": "Dies ist eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten. Teile sie nur mit Testern.",
+      "share_qr_show": "QR-Code anzeigen",
+      "share_qr_hide": "QR-Code verbergen",
+      "share_open": "Link öffnen",
+      "share_copy": "Link kopieren",
+      "share_copied": "Link kopiert!",
+      "share_copy_failed": "Link konnte nicht kopiert werden.",
+      "share_native": "Teilen",
+      "share_text": "Open-Source-Plattform für Autoren"
     },
     "kdp_publishing_wizard": {
       "open_button": "Für KDP veröffentlichen",
@@ -3717,6 +3732,10 @@
       "open_online": "Online-Version öffnen",
       "import": "Backup importieren",
       "settings_hint": "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“."
+    },
+    "preview_banner": {
+      "title": "Vorschau-/Testversion",
+      "message": "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten."
     }
   }
 }

@@ -65,6 +65,12 @@ jobs:
           # No same-origin backend on GitHub Pages -> force the offline
           # IndexedDB storage backend, identical to production.
           VITE_STORAGE_MODE: dexie
+          # Build provenance baked into the bundle (Settings > About) +
+          # the preview marker that turns on the non-stable warning banner.
+          VITE_BUILD_BRANCH: ${{ github.ref_name }}
+          VITE_BUILD_COMMIT: ${{ github.sha }}
+          VITE_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
+          VITE_IS_PREVIEW: "true"
         run: |
           npm ci
           npm run build

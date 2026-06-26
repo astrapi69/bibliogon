@@ -34,10 +34,25 @@ function gitBranch(): string {
     return "unknown";
   }
 }
+// Full git SHA of the built commit, used to build a GitHub commit link in
+// Settings > About. CI sets VITE_BUILD_COMMIT (github.sha); local builds
+// derive it from git. Distinct from __BUILD_HASH__ (the short display hash).
+function gitFullHash(): string {
+  try {
+    return execSync("git rev-parse HEAD", { encoding: "utf8" }).trim();
+  } catch {
+    return "";
+  }
+}
 const buildHash = process.env.VITE_BUILD_HASH || gitShortHash();
 const buildDate = process.env.VITE_BUILD_DATE || new Date().toISOString();
 const buildBranch =
   process.env.VITE_BUILD_BRANCH || process.env.GITHUB_REF_NAME || gitBranch();
+const buildCommit = process.env.VITE_BUILD_COMMIT || gitFullHash();
+// Preview/test marker. Only the preview deploy sets VITE_IS_PREVIEW=true;
+// production and local builds resolve to false, so the warning banner stays
+// off everywhere except the bibliogon-preview GitHub-Pages site.
+const isPreview = process.env.VITE_IS_PREVIEW === "true";
 
 // GitHub-Pages / sub-path support. The deployed base path is injected at
 // build time via VITE_BASE_URL (e.g. "/bibliogon/" for GitHub Pages);
@@ -60,6 +75,8 @@ export default defineConfig({
     __BUILD_HASH__: JSON.stringify(buildHash),
     __BUILD_DATE__: JSON.stringify(buildDate),
     __BUILD_BRANCH__: JSON.stringify(buildBranch),
+    __BUILD_COMMIT__: JSON.stringify(buildCommit),
+    __IS_PREVIEW__: JSON.stringify(isPreview),
   },
   resolve: {
     // ``@`` -> ``src`` alias for the shadcn/ui convention
