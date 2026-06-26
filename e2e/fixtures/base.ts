@@ -26,11 +26,12 @@ export const test = base.extend<{
         //   - AI-setup wizard: opens on the Dashboard whenever the app
         //     config reports AI is not enabled (or omits the ai block),
         //     the state an isolated/fresh E2E backend data dir can land in.
-        //   - first-install migration welcome (#591): opens on the Dashboard
-        //     when there are zero books AND zero articles - the exact state a
-        //     spec lands in after seeding then trashing its only book (e.g.
-        //     trash-view-mode-defaults). Its Radix overlay intercepts the
-        //     in-trash view-mode toggle click, flaking the spec.
+        //   - first-install migration-welcome dialog (#591): opens on the
+        //     first visit (zero books AND zero articles) until
+        //     `bibliogon-migration-offered` is set; its Radix overlay
+        //     intercepts subsequent clicks - the import-wizard clicks
+        //     (section3-import) and the in-trash view-mode toggle
+        //     (trash-view-mode-defaults, after seed+trash) both flaked on it.
         // Applied to the CONTEXT (not a single page) so every page created
         // in the test inherits it - including `context.newPage()` tabs in
         // multi-tab specs (e.g. content-safety's 409-conflict two-tab race),
