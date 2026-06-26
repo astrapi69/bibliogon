@@ -96,9 +96,11 @@ jobs:
 
       # When dispatched with update_snapshots, surface the regenerated
       # baselines as an artifact to download + commit (the workflow does not
-      # push to the repo itself).
+      # push to the repo itself). `always()` is required: `--update-snapshots`
+      # exits non-zero (Playwright reports updated snapshots as failures), so
+      # without it this step's implicit success() gate skips the upload.
       - uses: actions/upload-artifact@v6
-        if: ${{ github.event.inputs.update_snapshots == 'true' }}
+        if: ${{ always() && github.event.inputs.update_snapshots == 'true' }}
         with:
           name: visual-regression-baselines
           path: e2e/visual/**/*-snapshots/**
