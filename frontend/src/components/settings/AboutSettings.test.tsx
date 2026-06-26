@@ -72,6 +72,29 @@ vi.mock("../../storage", async () => {
     };
 });
 
+// Build-provenance mock: a mutable isPreview lets a test flip to the
+// preview build so the About preview notice path is pinned. The commit
+// URL is fixed so the linked-commit assertion is deterministic.
+const buildInfoMock = vi.hoisted(() => ({ isPreview: false }));
+vi.mock("../../lib/buildInfo", () => ({
+    REPO_URL: "https://github.com/astrapi69/bibliogon",
+    getBuildInfo: () => ({
+        branch: "develop",
+        commit: "abcdef1234567890",
+        commitShort: "abcdef12",
+        commitUrl: "https://github.com/astrapi69/bibliogon/commit/abcdef1234567890",
+        date: "2026-06-26T19:03:03Z",
+        isPreview: buildInfoMock.isPreview,
+        version: "0.58.0",
+    }),
+}));
+
+// Stub the share section so this test stays focused on the About panel
+// (the share section has its own ShareAppSection.test.tsx).
+vi.mock("./ShareAppSection", () => ({
+    ShareAppSection: () => <div data-testid="about-share-section-stub" />,
+}));
+
 import { api, type DiscoveredPlugin } from "../../api/client";
 
 const FIXTURE = {
@@ -151,6 +174,7 @@ const PLUGINS_FIXTURE: DiscoveredPlugin[] = [
 describe("AboutSettings", () => {
     beforeEach(() => {
         storageMock.mode.current = "api";
+        buildInfoMock.isPreview = false;
         vi.mocked(api.system.info).mockImplementation(async () => FIXTURE);
         storageMock.discoveredPlugins.mockImplementation(async () => PLUGINS_FIXTURE);
     });
@@ -197,6 +221,31 @@ describe("AboutSettings", () => {
             render(<AboutSettings appConfig={{}} />);
             const section = await screen.findByTestId("about-version-section");
             expect(section.textContent).not.toMatch(/MIT/);
+        });
+
+        it("renders the commit as a GitHub link (short hash shown, full SHA in href)", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            const commit = await screen.findByTestId("about-build-commit");
+            expect(commit.getAttribute("href")).toBe(
+                "https://github.com/astrapi69/bibliogon/commit/abcdef1234567890",
+            );
+            expect(commit.getAttribute("target")).toBe("_blank");
+            expect(commit.getAttribute("rel")).toContain("noopener");
+            expect(commit.textContent).toContain("abcdef12");
+        });
+
+        it("does NOT render the preview notice on a production build", async () => {
+            render(<AboutSettings appConfig={{}} />);
+            await screen.findByTestId("about-version-section");
+            expect(screen.queryByTestId("about-preview-notice")).toBeNull();
+        });
+
+        it("renders the preview notice on a preview build", async () => {
+            buildInfoMock.isPreview = true;
+            render(<AboutSettings appConfig={{}} />);
+            const notice = await screen.findByTestId("about-preview-notice");
+            expect(notice.textContent).toContain("Vorschau-/Testversion");
+            expect(notice.textContent).toContain("nicht stabil");
         });
     });
 

@@ -56,6 +56,13 @@ jobs:
           # IndexedDB storage backend (mobile-sync storage layer). Inert
           # until that layer is on main; harmless before then.
           VITE_STORAGE_MODE: dexie
+          # Build provenance baked into the bundle (Settings > About).
+          # IS_PREVIEW=false: production gets commit + build date in About
+          # but NOT the preview warning banner.
+          VITE_BUILD_BRANCH: ${{ github.ref_name }}
+          VITE_BUILD_COMMIT: ${{ github.sha }}
+          VITE_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
+          VITE_IS_PREVIEW: "false"
         run: |
           npm ci
           npm run build

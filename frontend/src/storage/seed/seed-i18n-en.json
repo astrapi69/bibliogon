@@ -3617,7 +3617,22 @@
       "resources_heading": "License & Resources",
       "docs_label": "Documentation",
       "next_check": "Next automatic check: {time}",
-      "next_check_disabled": "Automatic check disabled"
+      "next_check_disabled": "Automatic check disabled",
+      "commit_label": "Commit",
+      "preview_heading": "Preview/Test version",
+      "share_heading": "Share the app",
+      "share_production_heading": "Main version (stable)",
+      "share_production_description": "Share the stable app via QR code so others can open it.",
+      "share_preview_heading": "Latest version (test)",
+      "share_preview_description": "This is a preview/test version. It is not stable and may contain bugs. Share it only with testers.",
+      "share_qr_show": "Show QR code",
+      "share_qr_hide": "Hide QR code",
+      "share_open": "Open link",
+      "share_copy": "Copy link",
+      "share_copied": "Link copied!",
+      "share_copy_failed": "Could not copy the link.",
+      "share_native": "Share",
+      "share_text": "Open-source platform for authors"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publish to KDP",
@@ -3717,6 +3732,10 @@
       "open_online": "Open online version",
       "import": "Import backup",
       "settings_hint": "Migrating from the online version? Export a full backup (.bgb) there and import it here with “Import backup”."
+    },
+    "preview_banner": {
+      "title": "Preview/Test version",
+      "message": "You are using a preview/test version. It is not stable and may contain bugs."
     }
   }
 }
