@@ -3,7 +3,7 @@
 
 Scans the source trees and records, per directory, the number of source
 files directly inside it (non-recursive). Directories with more than
-``MIN_TRACKED`` files are written to ``scripts/directory-size-baseline.json``.
+``MIN_TRACKED`` files are written to ``.dirsize-baseline.json`` (repo root).
 
 The baseline is the ratchet floor: a directory may shrink (cleanup) but
 must never grow past its recorded value (enforced by
@@ -22,7 +22,7 @@ ROOTS = ["frontend/src", "backend/app"]
 SUFFIXES = {".ts", ".tsx", ".py"}
 # Only track directories above this many files.
 MIN_TRACKED = 10
-BASELINE_PATH = Path("scripts/directory-size-baseline.json")
+BASELINE_PATH = Path(".dirsize-baseline.json")
 
 
 def count_files(directory: Path) -> int:

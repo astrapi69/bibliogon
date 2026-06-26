@@ -4,7 +4,7 @@
 Same philosophy as the complexity ratchet and the file-size gate:
 grandfather the current state, forbid regression.
 
-- Every directory recorded in ``directory-size-baseline.json`` must not
+- Every directory recorded in ``.dirsize-baseline.json`` must not
   grow past its baseline file count (shrinking is fine -> ratchet down via
   ``--update`` or ``generate_directory_baseline.py``).
 - A NEW directory (not in the baseline) with more than ``NEW_GODFOLDER_LIMIT``
@@ -25,7 +25,7 @@ from pathlib import Path
 from generate_directory_baseline import BASELINE_PATH, scan
 
 NEW_GODFOLDER_LIMIT = 15
-ALLOWLIST_PATH = Path("scripts/directory-size-allowlist.json")
+ALLOWLIST_PATH = Path(".dirsize-allowlist.json")
 
 
 def evaluate(
