@@ -1726,7 +1726,9 @@
       "asin_ebook": "ASIN e-kitap",
       "asin_paperback": "ASIN karton kapak",
       "asin_hardcover": "ASIN sert kapak",
-      "backpage_author_bio": "Yazar hakkinda"
+      "backpage_author_bio": "Yazar hakkinda",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "Dosya sec",
@@ -2142,7 +2144,7 @@
       "multi_book_articles_note": "{count} makale de geri yuklenecek.",
       "preview_articles_note": "{count} makale de geri yuklenecek.",
       "step_1_drop_zone": "Dosyayi buraya surukle veya goz atmak icin tikla",
-      "step_1_accepted_formats": "Kabul eder: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
+      "step_1_accepted_formats": "Kabul eder: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub",
       "error_unsupported_format": "Desteklenmeyen dosya bicimi. Kabul eder: {formats}",
       "error_file_too_large": "Dosya cok buyuk (>{max} MB).",
       "warn_large_file": "Buyuk dosya ({size}); algilama biraz surebilir.",
@@ -3426,7 +3428,22 @@
       "open": "Taslağı aç",
       "col_title": "Başlık",
       "col_words": "Kelime",
-      "col_target": "Hedef"
+      "col_target": "Hedef",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph",
+      "collections_label": "Collections",
+      "collection_all": "All chapters",
+      "collection_new": "New collection",
+      "collection_delete": "Delete",
+      "collection_name": "Collection name",
+      "collection_filter": "Filter to collection",
+      "collection_default_name": "New collection",
+      "collection_save_failed": "Could not save collection",
+      "col_in_collection": "In",
+      "col_notes": "Notlar",
+      "notes_placeholder": "Çalışma notları…",
+      "collection_color": "Koleksiyon rengi"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3666,7 +3683,40 @@
       "arc_mailto_subject": "ARC isteği",
       "arc_send_mail": "E-posta yaz",
       "conflict_banner": "Kitap meta verileri son sihirbaz oturumundan bu yana değişti. Paketi oluşturmadan önce lütfen meta verileri + kapağı yeniden doğrulayın.",
-      "conflict_dismiss": "Bildirimi kapat"
+      "conflict_dismiss": "Bildirimi kapat",
+      "step_guide": "Kılavuz",
+      "guide_intro": "Bibliogon senin yerine yüklemez. Paketini KDP'de şöyle yayımlarsın:",
+      "guide_open_kdp": "KDP Bookshelf'i aç",
+      "guide_step_create": "KDP'de yeni bir başlık oluştur (e-Kitap veya Ciltsiz/Ciltli).",
+      "guide_step_manuscript": "Manuskript dosyasını ZIP'ten yükle: e-Kitap için manuscript-ebook.epub, baskı için manuscript-paperback.pdf.",
+      "guide_step_cover": "Kapak dosyasını yükle (cover.*).",
+      "guide_step_metadata": "metadata.json'daki bilgileri aktar (başlık, yazar, açıklama, kategoriler, anahtar kelimeler).",
+      "guide_step_price": "Fiyatı belirle (telif + asgari fiyat için Fiyatlar adımına bak) ve yayımla.",
+      "guide_note": "KDP kapağı reddederse ZIP'teki kapak doğrulama raporunu (cover-validation-report.json) kontrol et.",
+      "step_format": "Biçim",
+      "format_intro": "Yayın biçimini seç. eBook EPUB'dur; ciltsiz ve ciltli, taşmalı baskı PDF'leridir.",
+      "format_kind_label": "Biçim",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Ciltsiz (taşmalı PDF)",
+      "format_kind_hardcover": "Ciltli (taşmalı PDF)",
+      "format_trim_label": "Kesim boyutu",
+      "format_margin_label": "Kenar boşlukları",
+      "format_margin_narrow": "Dar",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Geniş",
+      "guide_format_label": "Seçilen biçim"
+    },
+    "migration": {
+      "title": "Bibliogon'a hoş geldiniz",
+      "intro": "Uygulamayı çevrimiçi olarak kullandınız mı? Kitaplarınız ve makaleleriniz aktarılabilir.",
+      "step_open": "Çevrimiçi sürümü açın.",
+      "step_settings": "Ayarlar → Veriler → Tam yedek (.bgb) bölümüne gidin.",
+      "step_download": ".bgb dosyasını indirin.",
+      "step_import": "Burada “Yedeği içe aktar” düğmesine tıklayın.",
+      "skip": "Verisiz başla",
+      "open_online": "Çevrimiçi sürümü aç",
+      "import": "Yedeği içe aktar",
+      "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
     }
   }
 }

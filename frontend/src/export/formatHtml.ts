@@ -39,15 +39,69 @@ const PAGE_STYLE = `
   figcaption { font-size: 0.9rem; color: #666; text-align: center; }
 `;
 
+/** Escape a string for safe inclusion inside a `<script type="ld+json">`
+ *  block: JSON-encode, then neutralise `<` so a stray `</script>` in any
+ *  field can never terminate the block early. */
+function jsonLdBlock(data: Record<string, unknown>): string {
+  const json = JSON.stringify(data, null, 2).replace(/</g, "\\u003c");
+  return `<script type="application/ld+json">\n${json}\n</script>`;
+}
+
+/** SEO `<head>` meta tags + schema.org JSON-LD built from the document's
+ *  metadata (#605). Every field is emitted only when present. */
+function seoHead(doc: ExportDocument): string {
+  const isBook = doc.kind !== "article";
+  const tags: string[] = [];
+  const m = (attr: "name" | "property", key: string, value?: string) => {
+    const v = value?.trim();
+    if (v) tags.push(`<meta ${attr}="${key}" content="${escapeHtml(v)}" />`);
+  };
+
+  const keywords = doc.keywords?.join(", ");
+  m("name", "description", doc.description);
+  m("name", "author", doc.author);
+  m("name", "keywords", keywords || doc.genre);
+  m("property", "og:title", doc.title);
+  m("property", "og:description", doc.description);
+  m("property", "og:type", isBook ? "book" : "article");
+  m("property", "og:locale", doc.language);
+  if (isBook) {
+    m("property", "book:author", doc.author);
+    m("property", "book:isbn", doc.isbn);
+    m("property", "book:release_date", doc.publishDate);
+  }
+
+  const ld: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": isBook ? "Book" : "Article",
+    name: doc.title,
+  };
+  if (doc.author?.trim()) ld.author = { "@type": "Person", name: doc.author.trim() };
+  if (doc.description?.trim()) ld.description = doc.description.trim();
+  if (doc.language?.trim()) ld.inLanguage = doc.language.trim();
+  if (isBook) {
+    ld.bookFormat = "EBook";
+    if (doc.isbn?.trim()) ld.isbn = doc.isbn.trim();
+    if (doc.publisher?.trim()) ld.publisher = doc.publisher.trim();
+    if (doc.publishDate?.trim()) ld.datePublished = doc.publishDate.trim();
+  }
+  tags.push(jsonLdBlock(ld));
+  return tags.join("\n");
+}
+
 /** A complete standalone HTML document for the given export model. */
 export function toHtml(doc: ExportDocument): string {
   const lang = escapeHtml(doc.language || "en");
+  const titleText = doc.author?.trim()
+    ? `${doc.title} - von ${doc.author.trim()}`
+    : doc.title;
   return `<!DOCTYPE html>
 <html lang="${lang}">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>${escapeHtml(doc.title)}</title>
+<title>${escapeHtml(titleText)}</title>
+${seoHead(doc)}
 <style>${PAGE_STYLE}</style>
 </head>
 <body>

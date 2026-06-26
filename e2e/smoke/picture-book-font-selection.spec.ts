@@ -141,8 +141,14 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
         await page.getByTestId("page-editor-toolbar-font-family-item-Andika").click()
 
-        // Wait for the autosave debounce (800 ms) + PATCH round-trip.
-        await page.waitForTimeout(2000)
+        // Wait for the autosave to persist the Andika mark,
+        // deterministically (poll the API), instead of a fixed sleep.
+        await expect
+            .poll(
+                async () => (await getPage(book.id, pageRow.id)).text_content,
+                {timeout: 10_000},
+            )
+            .toContain('"fontFamily":"Andika"')
 
         const persisted = await getPage(book.id, pageRow.id)
         expect(persisted.text_content).not.toBeNull()
@@ -189,7 +195,13 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         )
         await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
         await page.getByTestId("page-editor-toolbar-font-family-item-Comic Neue").click()
-        await page.waitForTimeout(2000)
+        // Wait deterministically for the Comic Neue mark to persist.
+        await expect
+            .poll(
+                async () => (await getPage(book.id, pageRow.id)).text_content,
+                {timeout: 10_000},
+            )
+            .toContain('"fontFamily":"Comic Neue"')
 
         // Sanity: the mark IS persisted.
         let persisted = await getPage(book.id, pageRow.id)
@@ -204,7 +216,13 @@ test.describe("Picture-Book Font-Selection smoke (4c-B-1 G5)", () => {
         )
         await page.getByTestId("page-editor-toolbar-font-family-trigger").click()
         await page.getByTestId("page-editor-toolbar-font-family-item-__default__").click()
-        await page.waitForTimeout(2000)
+        // Wait deterministically for the default-PATCH to strip the mark.
+        await expect
+            .poll(
+                async () => (await getPage(book.id, pageRow.id)).text_content,
+                {timeout: 10_000},
+            )
+            .not.toContain('"fontFamily"')
 
         // The mark must be gone — D11 backward-compat: a page
         // without a fontFamily mark renders with the hardcoded

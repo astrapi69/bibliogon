@@ -87,6 +87,9 @@ function navigateToPricing(): ReturnType<
         dim: validCoverDim(),
         issues: passingCoverIssues(),
     });
+    // cover → format (KDP-WIZARD-FORMAT-STEP-01) → pricing. The format
+    // step is unguarded (a default format is always set).
+    actor.send({ type: "ADVANCE" });
     actor.send({ type: "ADVANCE" });
     return actor;
 }
@@ -248,7 +251,7 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("ADVANCE from cover transitions to pricing when no error issues (C8)", () => {
+    it("ADVANCE from cover transitions to format when no error issues", () => {
         const actor = createActor(kdpWizardMachine).start();
         actor.send({
             type: "METADATA_LOADED",
@@ -262,7 +265,53 @@ describe("kdpWizardMachine", () => {
             issues: passingCoverIssues(),
         });
         actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("format");
+        actor.stop();
+    });
+
+    it("FORMAT_CHANGE merges into context; ADVANCE format → pricing (FORMAT-STEP-01)", () => {
+        const actor = createActor(kdpWizardMachine).start();
+        actor.send({
+            type: "METADATA_LOADED",
+            result: passingMetadataResult(),
+            issuesFiltered: passingMetadataIssues(),
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({
+            type: "COVER_VALIDATED",
+            dim: validCoverDim(),
+            issues: passingCoverIssues(),
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({
+            type: "FORMAT_CHANGE",
+            format: { kind: "paperback", trim_size: "6x9" },
+        });
+        const ctx = actor.getSnapshot().context;
+        expect(ctx.format.kind).toBe("paperback");
+        expect(ctx.format.trim_size).toBe("6x9");
+        // unguarded ADVANCE → pricing
+        actor.send({ type: "ADVANCE" });
         expect(actor.getSnapshot().value).toBe("pricing");
+        actor.stop();
+    });
+
+    it("BACK from format returns to cover", () => {
+        const actor = createActor(kdpWizardMachine).start();
+        actor.send({
+            type: "METADATA_LOADED",
+            result: passingMetadataResult(),
+            issuesFiltered: passingMetadataIssues(),
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({
+            type: "COVER_VALIDATED",
+            dim: validCoverDim(),
+            issues: passingCoverIssues(),
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({ type: "BACK" });
+        expect(actor.getSnapshot().value).toBe("cover");
         actor.stop();
     });
 
@@ -317,10 +366,10 @@ describe("kdpWizardMachine", () => {
         actor.stop();
     });
 
-    it("BACK from pricing returns to cover", () => {
+    it("BACK from pricing returns to format", () => {
         const actor = navigateToPricing();
         actor.send({ type: "BACK" });
-        expect(actor.getSnapshot().value).toBe("cover");
+        expect(actor.getSnapshot().value).toBe("format");
         actor.stop();
     });
 
@@ -369,6 +418,33 @@ describe("kdpWizardMachine", () => {
         expect(snap.context.exportBlobUrl).toBe(
             "blob:http://localhost/abc-123",
         );
+        actor.stop();
+    });
+
+    it("ADVANCE from exportSuccess transitions to guide (UPLOAD-GUIDE-01)", () => {
+        const actor = navigateToExport();
+        actor.send({ type: "GENERATE" });
+        actor.send({
+            type: "EXPORT_SUCCESS",
+            filename: "book-kdp-package.zip",
+            blobUrl: "blob:http://localhost/abc-123",
+        });
+        actor.send({ type: "ADVANCE" });
+        expect(actor.getSnapshot().value).toBe("guide");
+        actor.stop();
+    });
+
+    it("BACK from guide returns to exportSuccess", () => {
+        const actor = navigateToExport();
+        actor.send({ type: "GENERATE" });
+        actor.send({
+            type: "EXPORT_SUCCESS",
+            filename: "book-kdp-package.zip",
+            blobUrl: "blob:http://localhost/abc-123",
+        });
+        actor.send({ type: "ADVANCE" });
+        actor.send({ type: "BACK" });
+        expect(actor.getSnapshot().value).toBe("exportSuccess");
         actor.stop();
     });
 

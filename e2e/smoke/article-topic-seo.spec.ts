@@ -68,9 +68,15 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
             page.getByTestId("article-editor-topic-item-Writing"),
         ).toBeVisible();
 
-        // Pick Tech (closes the menu).
+        // Pick Tech (closes the menu) and wait for the autosave PATCH to
+        // land, deterministically, instead of a fixed sleep.
+        const topicSaved = page.waitForResponse(
+            (r) =>
+                r.url().includes(`/articles/${article.id}`) &&
+                r.request().method() === "PATCH",
+        );
         await page.getByTestId("article-editor-topic-item-Tech").click();
-        await page.waitForTimeout(300);
+        await topicSaved;
 
         // Reload and assert persistence via the dropdown's selected value.
         await page.reload();
@@ -120,11 +126,18 @@ test.describe("AR-02 Phase 2.1 topic + SEO", () => {
         const article = await postJson<{id: string}>("/articles", {title: "SEO Test"});
         await page.goto(`/articles/${article.id}`);
 
+        // Wait for the (debounced) autosave PATCH carrying both fields,
+        // deterministically, instead of a fixed sleep.
+        const seoSaved = page.waitForResponse(
+            (r) =>
+                r.url().includes(`/articles/${article.id}`) &&
+                r.request().method() === "PATCH",
+        );
         await page.getByTestId("article-editor-seo-title").fill("Custom SEO Headline");
         await page.getByTestId("article-editor-seo-title").blur();
         await page.getByTestId("article-editor-seo-description").fill("Snippet for search.");
         await page.getByTestId("article-editor-seo-description").blur();
-        await page.waitForTimeout(300);
+        await seoSaved;
 
         await page.reload();
         await expect(page.getByTestId("article-editor-seo-title")).toHaveValue("Custom SEO Headline");

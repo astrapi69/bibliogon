@@ -149,10 +149,18 @@ class Book(Base):
     backpage_author_bio: Mapped[str | None] = mapped_column(Text, nullable=True)
     cover_image: Mapped[str | None] = mapped_column(String(500), nullable=True)
     custom_css: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). Free-text
+    # space for the author's book-wide planning notes; optional, born NULL.
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted node positions for
     # the relationship graph, a JSON object {entity_id: {x, y}}. NULL =
     # no saved layout (the graph falls back to its circular auto-layout).
     graph_layout: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # CHAPTER-COLLECTIONS-01: manual chapter collections (Scrivener
+    # "Collections" parity) - a JSON list of {id, name, chapter_ids[]}.
+    # Rides the Book row through the storage seam so it works offline,
+    # the same way graph_layout does. NULL = no collections yet.
+    collections: Mapped[list | None] = mapped_column(JSON, nullable=True)
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repository URL for
     # authors who track their book project externally. Two source
     # paths overlap conceptually but have different lifecycles:
@@ -283,6 +291,22 @@ class Chapter(Base):
     # Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01).
     # Promotes the former per-device localStorage goal to a DB column.
     target_words: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    # Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01). A short free-text
+    # summary, distinct from the Storyboard ``notes`` annotation above:
+    # ``notes`` is a board sticky, ``synopsis`` is the chapter's logline
+    # shown in the Outliner. Optional, born NULL; may be auto-generated
+    # client-side from the first paragraph of the chapter content.
+    synopsis: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive
+    # enhancement). The author's free-text working notes for THIS chapter
+    # ("add a flashback here", "check the timeline"). Three distinct
+    # concerns must not be confused:
+    #   - ``notes`` above is the Storyboard board-sticky annotation;
+    #   - ``Book.notes`` is the project-wide planning scratchpad;
+    #   - ``inspector_notes`` is the chapter-local working note, the
+    #     Scrivener "Inspector Notes" equivalent.
+    # Optional, born NULL.
+    inspector_notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     book: Mapped["Book"] = relationship(back_populates="chapters")
 

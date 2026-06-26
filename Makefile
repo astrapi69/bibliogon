@@ -1,6 +1,7 @@
 .PHONY: dev dev-bg dev-bg-logs dev-down dev-backend dev-frontend stop restart fix-watchers \
+       launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
-       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-visual test-visual-update \
+       test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-visual test-visual-update capture-screenshots update-screenshots \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
@@ -161,6 +162,31 @@ dev-lan: build-frontend ## Serve the whole app on the LAN, single port 0.0.0.0:8
 	@echo ""
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; \
 		BIBLIOGON_LAN_MODE=1 poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+# --- Launcher (desktop, Docker-based) ---
+
+LAUNCHER_LOG_DIR ?= launcher/logs
+
+launcher: ## Start the launcher (docker-app-launcher) for manual testing (--debug; logs to launcher/logs/; needs Docker + python3-tk)
+	@mkdir -p $(LAUNCHER_LOG_DIR)
+	@log="$(CURDIR)/$(LAUNCHER_LOG_DIR)/launcher-$$(date +%Y%m%d-%H%M%S).log"; \
+		echo ""; \
+		echo "Starting the Bibliogon launcher (docker-app-launcher, persistent window)."; \
+		echo "  Requires Docker running and tkinter (Debian/Ubuntu: sudo apt install python3-tk)."; \
+		echo "  Output (incl. DEBUG docker traces) is logged to:"; \
+		echo "    $$log"; \
+		echo ""; \
+		cd launcher && poetry run python -m bibliogon_launcher --debug 2>&1 | tee "$$log"
+
+launcher-install: ## Install the launcher's Python dependencies
+	cd launcher && poetry install
+
+test-launcher: ## Run the launcher unit tests (logs to launcher/logs/; needs python3-tk for the tkinter UI modules)
+	@mkdir -p $(LAUNCHER_LOG_DIR)
+	@log="$(CURDIR)/$(LAUNCHER_LOG_DIR)/test-launcher-$$(date +%Y%m%d-%H%M%S).log"; \
+		echo ""; \
+		echo "=== Launcher Tests (log: $$log) ==="; \
+		cd launcher && poetry run pytest tests/ -v 2>&1 | tee "$$log"
 
 # --- Install ---
 
@@ -486,11 +512,22 @@ test-e2e-smoke: ## Run E2E smoke suite locally
 test-e2e-smoke-retries: ## Run E2E smoke suite locally with a retry budget (CI mode)
 	cd e2e && npx playwright test --project=smoke --retries=1
 
+test-e2e-manual: ## Run the manual-automation E2E project
+	cd e2e && npx playwright test --project=manual-automation
+
+test-e2e-all: ## Run all E2E projects
+	cd e2e && npx playwright test
+
 test-visual: ## Run visual regression tests (pixel-diff screenshots)
 	cd e2e && npx playwright test --project=visual
 
 test-visual-update: ## Regenerate visual regression baseline screenshots
 	cd e2e && npx playwright test --project=visual --update-snapshots
+
+capture-screenshots: ## Capture the feature-screenshot catalog (docs/screenshots/)
+	cd e2e && npx playwright test --project=feature-screenshots
+
+update-screenshots: capture-screenshots ## Alias for capture-screenshots
 
 # --- Version sync ---
 

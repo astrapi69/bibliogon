@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN χαρτόδετο",
       "asin_hardcover": "ASIN σκληρόδετο",
-      "backpage_author_bio": "Σχετικά με τον συγγραφέα"
+      "backpage_author_bio": "Σχετικά με τον συγγραφέα",
+      "notes": "Project notes",
+      "notes_placeholder": "Notes about the book project…"
     },
     "cover": {
       "choose_file": "Επιλογή αρχείου",
@@ -2142,7 +2144,7 @@
       "multi_book_articles_note": "Θα επαναφερθούν επίσης {count} άρθρο(α).",
       "preview_articles_note": "Θα επαναφερθούν επίσης {count} άρθρο(α).",
       "step_1_drop_zone": "Σύρε το αρχείο εδώ ή κάνε κλικ για περιήγηση",
-      "step_1_accepted_formats": "Δέχεται: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
+      "step_1_accepted_formats": "Δέχεται: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub",
       "error_unsupported_format": "Μη υποστηριζόμενη μορφή αρχείου. Δέχεται: {formats}",
       "error_file_too_large": "Αρχείο πολύ μεγάλο (>{max} MB).",
       "warn_large_file": "Μεγάλο αρχείο ({size}); η ανίχνευση μπορεί να πάρει λίγο.",
@@ -3426,7 +3428,22 @@
       "open": "Άνοιγμα διάρθρωσης",
       "col_title": "Τίτλος",
       "col_words": "Λέξεις",
-      "col_target": "Στόχος"
+      "col_target": "Στόχος",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Short summary…",
+      "synopsis_auto": "Generate from first paragraph",
+      "collections_label": "Collections",
+      "collection_all": "All chapters",
+      "collection_new": "New collection",
+      "collection_delete": "Delete",
+      "collection_name": "Collection name",
+      "collection_filter": "Filter to collection",
+      "collection_default_name": "New collection",
+      "collection_save_failed": "Could not save collection",
+      "col_in_collection": "In",
+      "col_notes": "Σημειώσεις",
+      "notes_placeholder": "Σημειώσεις εργασίας…",
+      "collection_color": "Χρώμα συλλογής"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3666,7 +3683,40 @@
       "arc_mailto_subject": "Αίτημα ARC",
       "arc_send_mail": "Σύνταξη email",
       "conflict_banner": "Τα μεταδεδομένα του βιβλίου άλλαξαν από την τελευταία συνεδρία του οδηγού. Επικυρώστε ξανά τα μεταδεδομένα + το εξώφυλλο προτού δημιουργήσετε το πακέτο.",
-      "conflict_dismiss": "Απόρριψη ειδοποίησης"
+      "conflict_dismiss": "Απόρριψη ειδοποίησης",
+      "step_guide": "Οδηγός",
+      "guide_intro": "Το Bibliogon δεν ανεβάζει για εσένα. Δες πώς να δημοσιεύσεις το πακέτο σου στο KDP:",
+      "guide_open_kdp": "Άνοιγμα KDP Bookshelf",
+      "guide_step_create": "Δημιούργησε έναν νέο τίτλο στο KDP (eBook ή χαρτόδετο/σκληρόδετο).",
+      "guide_step_manuscript": "Ανέβασε το αρχείο χειρογράφου από το ZIP: manuscript-ebook.epub για eBook, manuscript-paperback.pdf για εκτύπωση.",
+      "guide_step_cover": "Ανέβασε το αρχείο εξωφύλλου (cover.*).",
+      "guide_step_metadata": "Μετέφερε τα στοιχεία από το metadata.json (τίτλος, συγγραφέας, περιγραφή, κατηγορίες, λέξεις-κλειδιά).",
+      "guide_step_price": "Όρισε την τιμή (δες το βήμα Τιμές για δικαιώματα + ελάχιστη τιμή) και δημοσίευσε.",
+      "guide_note": "Έλεγξε την αναφορά επικύρωσης εξωφύλλου (cover-validation-report.json) στο ZIP αν το KDP απορρίψει το εξώφυλλο.",
+      "step_format": "Μορφή",
+      "format_intro": "Επίλεξε τη μορφή δημοσίευσης. Το eBook είναι EPUB· το χαρτόδετο και το σκληρόδετο είναι PDF εκτύπωσης με τελείωμα κοπής.",
+      "format_kind_label": "Μορφή",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Χαρτόδετο (PDF με τελείωμα κοπής)",
+      "format_kind_hardcover": "Σκληρόδετο (PDF με τελείωμα κοπής)",
+      "format_trim_label": "Μέγεθος κοπής",
+      "format_margin_label": "Περιθώρια",
+      "format_margin_narrow": "Στενά",
+      "format_margin_normal": "Κανονικά",
+      "format_margin_wide": "Πλατιά",
+      "guide_format_label": "Επιλεγμένη μορφή"
+    },
+    "migration": {
+      "title": "Καλώς ήρθατε στο Bibliogon",
+      "intro": "Έχετε ήδη χρησιμοποιήσει την εφαρμογή online; Τα βιβλία και τα άρθρα σας μπορούν να μεταφερθούν.",
+      "step_open": "Ανοίξτε την online έκδοση.",
+      "step_settings": "Μεταβείτε στις Ρυθμίσεις → Δεδομένα → Πλήρες αντίγραφο (.bgb).",
+      "step_download": "Κατεβάστε το αρχείο .bgb.",
+      "step_import": "Κάντε κλικ εδώ στο «Εισαγωγή αντιγράφου».",
+      "skip": "Εκκίνηση χωρίς δεδομένα",
+      "open_online": "Άνοιγμα online έκδοσης",
+      "import": "Εισαγωγή αντιγράφου",
+      "settings_hint": "Μετεγκατάσταση από την online έκδοση; Εξάγετε εκεί ένα πλήρες αντίγραφο (.bgb) και εισαγάγετέ το εδώ με «Εισαγωγή αντιγράφου»."
     }
   }
 }

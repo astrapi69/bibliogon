@@ -14,10 +14,13 @@ The plugin-status cache lives here at module scope;
 the settings router (and tests) that clear it on a config change.
 """
 
+import logging
 import time as _time
 from typing import Any
 
 from fastapi import APIRouter, FastAPI
+
+logger = logging.getLogger(__name__)
 
 # Plugin-status cache (30s TTL). Cleared by invalidate_plugin_status_cache
 # when settings change so the next request reflects fresh state.
@@ -240,6 +243,62 @@ def admin_rediscover() -> dict[str, Any]:
     }
 
 
+def _reset_shared_infra() -> None:
+    """Clear process- and disk-level state the content-table wipe misses.
+
+    Each e2e test resets via ``DELETE /api/test/reset``; the table wipe
+    covers rows, but the single long-lived backend also accumulates
+    config caches, in-flight jobs, orphaned upload files and a growing
+    SQLite WAL. Clearing them here keeps every test running against a
+    backend as fresh as the first. See
+    ``docs/audits/e2e-isolation-audit-2026-06-22.md`` (Option A).
+    """
+    import shutil
+
+    from app.services.platform_schema import load_platform_schemas
+    from app.services.registries.book_type_registry import load_book_types
+    from app.services.registries.content_type_registry import load_content_types
+    from app.services.registries.story_entity_registry import (
+        load_story_entity_types,
+    )
+
+    # Config lru_caches: read-only in e2e today, cleared defensively so a
+    # future config-mutating spec cannot leak a stale schema across tests.
+    for cached in (
+        load_platform_schemas,
+        load_content_types,
+        load_story_entity_types,
+        load_book_types,
+    ):
+        cached.cache_clear()
+
+    # In-flight export / audiobook / bulk-AI jobs (in-memory singleton).
+    from app.job_store import job_store
+
+    job_store.shutdown_all()
+
+    # Orphaned upload/asset files: the rows are deleted by the table wipe,
+    # the files are not, so they accumulate across the run.
+    from app.paths import get_upload_dir
+
+    upload_dir = get_upload_dir()
+    if upload_dir.exists():
+        for child in upload_dir.iterdir():
+            if child.is_dir():
+                shutil.rmtree(child, ignore_errors=True)
+            else:
+                child.unlink(missing_ok=True)
+
+    # Truncate the SQLite WAL so the db file stops growing across the run.
+    from app.database import engine
+
+    try:
+        with engine.connect() as conn:
+            conn.exec_driver_sql("PRAGMA wal_checkpoint(TRUNCATE)")
+    except Exception as exc:  # noqa: BLE001 - non-WAL/non-SQLite: best-effort
+        logger.warning("test-reset WAL checkpoint skipped: %s", exc)
+
+
 def _register_test_reset(app: FastAPI) -> None:
     """Register the debug-only ``DELETE /api/test/reset`` endpoint.
 
@@ -295,15 +354,22 @@ def _register_test_reset(app: FastAPI) -> None:
 
     @app.delete("/api/test/reset")
     def reset_test_db():
-        """Reset all per-test content. Used by e2e tests for clean state."""
+        """Reset all per-test content + shared backend state.
+
+        The table wipe clears content rows; ``_reset_shared_infra`` then
+        clears the process/disk state the wipe misses (config caches, the
+        job store, orphaned upload files, the growing SQLite WAL) so each
+        e2e test runs against a backend as fresh as the first.
+        """
         db = SessionLocal()
         try:
             for model in reset_models_in_order:
                 db.query(model).delete()
             db.commit()
-            return {"status": "reset"}
         finally:
             db.close()
+        _reset_shared_infra()
+        return {"status": "reset"}
 
 
 def register_admin_routes(app: FastAPI, *, debug: bool) -> None:

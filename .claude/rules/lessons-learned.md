@@ -5440,3 +5440,170 @@ Recognition + remedy:
 Pairs with "Operational gaps masquerade as wired infrastructure": a workflow
 that is correctly wired can still no-op on a given SHA; verify a run actually
 exists, don't assume the push implies a run.
+
+## Library-first beats a custom launcher: thin wrapper + config over re-implementation
+
+Filed 2026-06-24 (launcher migration, `6266d28c` → docker-app-launcher 0.7.0).
+Bibliogon's desktop launcher was a hand-written PyInstaller app (the dialog
+chain, the Docker-first flow, the CLI verbs, i18n, the persistent window). It
+was replaced by the published `docker-app-launcher` PyPI package — the same
+library adaptive-learner uses — with Bibliogon supplying ONLY:
+
+1. `launcher/launcher.json` — declarative config (app slug, compose file,
+   ports, health-check path, icon paths, locale, log rotation).
+2. `launcher/bibliogon_launcher/__main__.py` — a thin three-responsibility
+   wrapper: resolve the repo dir holding the compose stack, report the app
+   version on `--version`, then delegate every other flag to
+   `docker_app_launcher.__main__.main`.
+
+All behaviour lives in the library; the app owns config + a wrapper, not logic.
+The win is the same "use what already exists" principle as the TipTap-extension
+and Recurring-Component rules, applied at the dependency layer
+(see `.claude/rules/library-first.md`). Concrete payoffs: bug fixes + new verbs
+(`--cleanup`, single-instance lock, locale auto-detect, rotating logging) arrive
+via a version bump instead of a rewrite; the wrapper is ~60 lines and testable
+without a frozen binary.
+
+When evaluating "build a launcher / installer / updater / tray app": check for a
+maintained library that already does it and shape the app as config + a thin
+adapter. The reference is `docs/LAUNCHER-SPEC.md` (the config reference) +
+`launcher/bibliogon_launcher/__main__.py` (the wrapper). The one caveat is the
+version-pin discipline: `app_version` in `launcher.json` is a
+`make sync-versions` target, not a hand-edit.
+
+## A library "extra" can multiply frozen-binary size — opt out unless the feature earns it
+
+Filed 2026-06-24 (launcher tray-extra decision). `docker-app-launcher` ships an
+optional `tray` extra (minimize-to-tray via `pystray` + a GTK backend). On Linux
+it pulls heavyweight system libraries and **inflates the frozen PyInstaller
+binary ~6x** (the measured build went from ~21 MB to ~139 MB). Bibliogon ships
+**without** the extra: the window's close button closes the launcher, which is
+adequate for the current need. `tray_icon_path` stays in `launcher.json` so the
+feature still works for anyone who installs the extra manually
+(`pip install pystray`) — opting out costs the user nothing.
+
+Rule: an optional dependency / library extra that a frozen/bundled artifact
+embeds must be justified against its size cost, not adopted because it's
+available. A ~6x binary inflation for a minimize-to-tray convenience is a bad
+trade for a download users fetch from GitHub Releases. Keep the config field so
+the feature degrades to opt-in rather than disappearing. Same cost-vs-value
+discipline as the "Bulk-operation limits should be per-operation cost-profile"
+rule, applied to bundle size.
+
+## A "cleanup" verb whose scan can reach the live data dir must be left unconfigured
+
+Filed 2026-06-24 (launcher `cleanup_search_paths` decision). `LauncherConfig`
+exposes `cleanup_search_paths` + `legacy_names`: the `--cleanup` verb scans each
+search path for `legacy_names` subdirectories and offers them for deletion.
+Bibliogon deliberately leaves both **empty**. The reason is a data-safety trap:
+the cleanup scan's skip-list does NOT include the live data dir, so a path like
+`~/.local/share` with `legacy_names: ["bibliogon"]` would offer the user's
+actual book-data directory (`~/.local/share/bibliogon`) for deletion. The
+convenience (sweeping stale leftover dirs) is not worth the risk of pointing a
+delete-offer at production data. Container/image cleanup via `compose_project`
+is unaffected and stays enabled.
+
+Generalises: before enabling a config-driven "scan a directory and offer matches
+for deletion" feature, prove the scan cannot reach live user data — a missing
+entry in the tool's skip-list turns a convenience into a data-loss vector. This
+is the same family as the `.bibliogon-production` marker tripwire and the
+"Filesystem isolation: production data lives outside the project tree" rule:
+when a path-walking operation can delete, the burden is on proving it can't touch
+what matters. See `docs/LAUNCHER-SPEC.md` for the documented rationale.
+
+## Prettier is configured but ungated — respect each file's existing style, never mass-reformat
+
+Filed 2026-06-24 (KDP package session). `frontend/.prettierrc` exists
+(`semi: true, singleQuote: false, tabWidth: 4`) but **no gate runs it**: there is
+no prettier hook in `.pre-commit-config.yaml`, no prettier step in any
+`.github/workflows/*`, and no `format`/`prettier` script in
+`frontend/package.json`. Proof it isn't enforced: the committed frontend files do
+NOT pass `npx prettier --check` against that very config — e.g. `ExportPackage.tsx`
+ships with no semicolons + tight braces (`{useState}`), the opposite of what
+`.prettierrc` wants. Different files even use different styles: `api/platform.ts`
+is 2-space + semicolons, `components/kdp-wizard/*.tsx` is 4-space + no semicolons.
+
+Consequence: running `npx prettier --write` on a touched file reformats the
+**entire** file to the `.prettierrc` style, producing an enormous diff that
+diverges from the repo's actual committed style and collides with parallel
+sessions (one `--write` turned an 83-line logical change into an 887-line diff).
+
+Rule: do NOT run `prettier --write` (or `--check` as a gate) on this repo. Match
+each file's OWN existing style when editing — read the surrounding lines for
+indent width, semicolons, and brace spacing, and write additions to match. This
+is the same "write code that reads like the surrounding code" principle, here
+forced by the absence of an authoritative formatter. If a future session wants
+prettier to be authoritative, that is a separate, deliberate repo-wide
+reformat-and-gate change — not a side effect of touching one file. (ESLint is in
+the same boat: configured via `eslint.config`, run manually, not a CI gate; a
+pre-existing `eslint-disable` warning is not yours to "fix" while touching an
+unrelated line.)
+
+## E2E flake-sweep taxonomy: the recurring anti-pattern classes
+
+Filed 2026-06-24, synthesising the v0.56.0 → post-v0.57.0 sweep
+(#436/#438/#440/#441/#442; residual #534/#535/#536). When a Playwright smoke
+gate goes intermittently red, the failures cluster into a small set of recurring
+anti-pattern classes. Diagnose by class, not spec-by-spec:
+
+1. **Fixed-timeout waits** (#438). A spec uses `waitForTimeout(N)` / an
+   arbitrary sleep instead of waiting on the actual condition. Flakes the moment
+   the machine is slower than N. Fix: deterministic waits — `toHaveURL`,
+   `expect.poll`, `findByTestId` (auto-waiting), `toBeVisible`. Never an
+   absolute sleep.
+2. **Stale-spec drift** (#440). A shipped behaviour/format change never reached
+   the spec: `.json → .bgb` download suffix, a changed default content-type, a
+   removed Save button. The spec asserts the old shape and fails forever. This
+   is the dedicated rule "A format/behavior change must reach its E2E specs in
+   the same change" — fix the spec in the same change that ships the behaviour.
+3. **Overlay / detach races** (#440, #534). A content-loading overlay (or a
+   re-render that detaches the node) intercepts the click, or the element is
+   detached mid-action. Fix: wait for the overlay to be gone / the target to be
+   stable before interacting; assert the post-condition.
+4. **Per-page baseline normalisation in multi-tab** (#441/#442). Onboarding
+   suppression / route mocks registered on the default `page` don't reach
+   `context.newPage()` tabs. Dedicated rule: "E2E baseline-normalisation must be
+   on the context, not the page" — use `context.addInitScript` / `context.route`.
+
+Diagnostic discipline that ties them together (each its own existing rule):
+**read the CI trace screenshot** (`gh run download <id>` → the spec's
+`trace.zip` → latest `resources/*.jpeg`) to see the rendered frame, because
+"Playwright-visible != user-visible"; **rotating failure-set across runs = flake,
+consistent-set = real**; and stale-bundle is the most common post-ship
+false-positive. The residual per-attempt flakes that survive a class-by-class
+sweep are absorbed by `retries:2` in the Playwright config — only re-investigate
+a spec that regresses to failing ALL attempts, not one that fails one attempt and
+passes on retry.
+
+## E2E isolation: distinguish infra-accumulation from data-leak before re-isolating
+
+Filed 2026-06-24 (`docs/audits/e2e-isolation-audit-2026-06-22.md`). A directive
+to "make every E2E test run isolated — own data per spec, no shared state, green
+in any order" reads like a call for a per-worker-backend rewrite. The audit-first
+response found the opposite: **data isolation already worked**, and the flakes
+were **infra accumulation in the single long-lived backend, not cross-test data
+contamination**.
+
+The evidence-based distinction:
+
+- **Data isolation (already solid):** an autouse `resetDatabase` fixture calls
+  `DELETE /api/test/reset` (wipes 19 content tables FK-safe) + `resetSettings()`
+  before every test, and specs seed their own data. So there is no data-level
+  order dependency in serial runs — wiping-before-each + self-seeding gives
+  order-independence for free.
+- **Infra accumulation (the real cause):** one backend process (port 8000)
+  serves all ~142 specs, so its in-memory `lru_cache`s, the module-level
+  `job_store` singleton, orphaned upload/asset files, and the growing SQLite
+  file + WAL all accumulate across the run — late tests hit a heavier, slower
+  backend and flake on timing, not on leaked rows.
+
+Rule: when asked to "isolate the tests", map the actual shared-state surfaces
+first (which reset per test? which accumulate?) before choosing a fix. The cheap,
+correct fix is usually to **close the accumulation gaps** (reset the caches/job
+store, vacuum or recreate the DB file, clean orphan uploads, guard the
+non-`ui`-settings reset) — not an expensive per-worker-backend re-isolation of
+data that is already isolated. The unguarded surfaces (non-`ui` settings keys, a
+lingering job, a colliding upload filename) are latent, not live — pin them with
+a shuffled-order CI variant rather than rewriting the harness. Same "measure
+before you restructure" discipline as the "Audit findings need
+production-vs-dev environment classification" rule.

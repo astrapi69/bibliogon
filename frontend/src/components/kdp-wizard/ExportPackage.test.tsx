@@ -17,6 +17,11 @@ import {render, screen, fireEvent, waitFor} from "@testing-library/react"
 
 import ExportPackage from "./ExportPackage"
 import {ApiError, BookDetail} from "../../api/client"
+import type {FormatState} from "./machines/types"
+
+function makeFormat(overrides: Partial<FormatState> = {}): FormatState {
+    return {kind: "paperback", trim_size: "6x9", margin: "normal", ...overrides}
+}
 
 vi.mock("../../hooks/useI18n", () => ({
     useI18n: () => ({
@@ -113,6 +118,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={vi.fn()}
             />,
         )
@@ -129,6 +135,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={onCanAdvanceChange}
             />,
         )
@@ -144,6 +151,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={vi.fn()}
             />,
         )
@@ -159,8 +167,41 @@ describe("ExportPackage", () => {
             screen.getByTestId("kdp-publishing-wizard-step-2-filename")
                 .textContent,
         ).toBe("test-book-kdp-package.zip")
-        expect(mockBuildPackage).toHaveBeenCalledWith("book-1")
+        expect(mockBuildPackage).toHaveBeenCalledWith("book-1", {
+            format_kind: "paperback",
+            trim_size: "6x9",
+            margin: "normal",
+        })
         expect(global.URL.createObjectURL).toHaveBeenCalledWith(blob)
+    })
+
+    it("maps the FormatStep selection into the package request body", async () => {
+        const blob = new Blob(["zip-bytes"], {type: "application/zip"})
+        mockBuildPackage.mockResolvedValue({
+            blob,
+            filename: "test-book-kdp-package.zip",
+        })
+        render(
+            <ExportPackage
+                book={makeBook()}
+                format={makeFormat({
+                    kind: "hardcover",
+                    trim_size: "8.5x11",
+                    margin: "wide",
+                })}
+                onCanAdvanceChange={vi.fn()}
+            />,
+        )
+        fireEvent.click(
+            screen.getByTestId("kdp-publishing-wizard-step-2-generate"),
+        )
+        await waitFor(() => {
+            expect(mockBuildPackage).toHaveBeenCalledWith("book-1", {
+                format_kind: "hardcover",
+                trim_size: "8.5x11",
+                margin: "wide",
+            })
+        })
     })
 
     it("Download Again does NOT re-call the backend", async () => {
@@ -172,6 +213,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={vi.fn()}
             />,
         )
@@ -197,6 +239,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={vi.fn()}
             />,
         )
@@ -229,6 +272,7 @@ describe("ExportPackage", () => {
         render(
             <ExportPackage
                 book={makeBook()}
+                format={makeFormat()}
                 onCanAdvanceChange={vi.fn()}
             />,
         )

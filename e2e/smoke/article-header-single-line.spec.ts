@@ -16,6 +16,7 @@
  */
 
 import {test, expect} from "../fixtures/base";
+import {clickMenuItem} from "../helpers/ui";
 
 const ABOVE = 1280; // > 1200 breakpoint -> full bar
 const BELOW = 1100; // < 1200 breakpoint -> hamburger
@@ -70,7 +71,7 @@ test.describe("MENU-SINGLE-LINE Article Dashboard", () => {
         await ready(page, BELOW);
         await expect(page.getByTestId("article-list-mobile-menu")).toBeVisible();
         await expect(page.getByTestId("books-nav-btn")).toBeHidden();
-        await page.getByTestId("article-list-mobile-menu").click();
+        await clickMenuItem(page, "article-list-mobile-menu");
         await expect(
             page.getByTestId("article-list-mobile-menu-books"),
         ).toBeVisible();

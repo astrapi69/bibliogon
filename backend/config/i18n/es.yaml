@@ -1,4 +1,15 @@
 ui:
+  migration:
+    title: "Bienvenido a Bibliogon"
+    intro: "¿Ya has usado la aplicación en línea? Tus libros y artículos se pueden transferir."
+    step_open: "Abre la versión en línea."
+    step_settings: "Ve a Ajustes → Datos → Copia completa (.bgb)."
+    step_download: "Descarga el archivo .bgb."
+    step_import: "Haz clic aquí en «Importar copia»."
+    skip: "Empezar sin datos"
+    open_online: "Abrir versión en línea"
+    import: "Importar copia"
+    settings_hint: "¿Migrando desde la versión en línea? Exporta allí una copia completa (.bgb) e impórtala aquí con «Importar copia»."
   ai_extraction:
     story_bible_button: "Generar desde el texto del libro"
     storyboard_button: "Generar desde el texto del libro"
@@ -975,6 +986,8 @@ ui:
     interval_never: "Nunca"
     title: "Configuracion"
     tab_general: "General"
+    notes: "Notas del proyecto"
+    notes_placeholder: "Notas sobre el proyecto del libro…"
     tab_erscheinungsbild: "Apariencia"
     tab_verhalten: "Comportamiento"
     tab_editor: "Editor"
@@ -2072,7 +2085,7 @@ ui:
     multi_book_articles_note: 'Tambien se restauraran {count} articulo(s).'
     preview_articles_note: 'Tambien se restauraran {count} articulo(s).'
     step_1_drop_zone: Arrastra el archivo aqui o haz clic para buscar
-    step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub'
+    step_1_accepted_formats: 'Acepta: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Formato de archivo no admitido. Acepta: {formats}'
     error_file_too_large: Archivo demasiado grande (>{max} MB).
     warn_large_file: Archivo grande ({size}); la deteccion puede tardar un momento.
@@ -3254,6 +3267,21 @@ ui:
     col_title: "Título"
     col_words: "Palabras"
     col_target: "Objetivo"
+    col_synopsis: "Sinopsis"
+    synopsis_placeholder: "Resumen breve…"
+    synopsis_auto: "Generar desde el primer párrafo"
+    col_notes: "Notas"
+    notes_placeholder: "Notas de trabajo…"
+    collections_label: "Colecciones"
+    collection_all: "Todos los capítulos"
+    collection_new: "Nueva colección"
+    collection_delete: "Eliminar"
+    collection_color: "Color de la colección"
+    collection_name: "Nombre de la colección"
+    collection_filter: "Filtrar por colección"
+    collection_default_name: "Nueva colección"
+    collection_save_failed: "No se pudo guardar la colección"
+    col_in_collection: "En"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} mas"
@@ -3432,6 +3460,27 @@ ui:
     step_metadata: "Metadatos"
     step_cover: "Portada"
     step_export: "Paquete"
+    step_format: "Formato"
+    format_intro: "Elige el formato de publicación. eBook es EPUB; tapa blanda y tapa dura son PDF de impresión con sangrado."
+    format_kind_label: "Formato"
+    format_kind_ebook: "eBook (EPUB/KPF)"
+    format_kind_paperback: "Tapa blanda (PDF con sangrado)"
+    format_kind_hardcover: "Tapa dura (PDF con sangrado)"
+    format_trim_label: "Tamaño de corte"
+    format_margin_label: "Márgenes"
+    format_margin_narrow: "Estrecho"
+    format_margin_normal: "Normal"
+    format_margin_wide: "Ancho"
+    guide_format_label: "Formato elegido"
+    step_guide: "Guía"
+    guide_intro: "Bibliogon no sube por ti. Así publicas tu paquete en KDP:"
+    guide_open_kdp: "Abrir KDP Bookshelf"
+    guide_step_create: "Crea un nuevo título en KDP (eBook o tapa blanda/tapa dura)."
+    guide_step_manuscript: "Sube el archivo del manuscrito del ZIP: manuscript-ebook.epub para eBook, manuscript-paperback.pdf para impresión."
+    guide_step_cover: "Sube el archivo de portada (cover.*)."
+    guide_step_metadata: "Transfiere los datos de metadata.json (título, autor, descripción, categorías, palabras clave)."
+    guide_step_price: "Fija el precio (consulta el paso de Precios para regalías + precio mínimo) y publica."
+    guide_note: "Revisa el informe de validación de portada (cover-validation-report.json) del ZIP si KDP rechaza la portada."
     metadata_loading: "Comprobando metadatos…"
     metadata_check_failed: "Falló la comprobación de metadatos."
     metadata_hint: "Los campos obligatorios deben completarse antes de poder subir este libro a KDP. Las advertencias son recomendaciones."

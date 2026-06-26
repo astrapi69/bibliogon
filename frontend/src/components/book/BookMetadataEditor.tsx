@@ -2,35 +2,26 @@ import { useEffect, useMemo, useState } from "react";
 import { Book, BookDetail } from "../../api/client";
 import { getStorage } from "../../storage";
 import { useStorageMode } from "../../storage/useStorageMode";
-import { ComboboxSelect } from "../../lib/components/ComboboxSelect";
-import { buildBookLanguageOptions } from "../../lib/bookLanguages";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../../features/featureConfig";
-import { Save, Copy, ChevronLeft, Sparkles, Rocket } from "lucide-react";
+import { Save, Copy, ChevronLeft, Rocket } from "lucide-react";
 import { notify } from "../../utils/platform/notify";
 import { useI18n } from "../../hooks/useI18n";
 import { useBookTypes } from "../../hooks/book/useBookTypes";
 import { useEditorPluginStatus } from "../../hooks/editor/useEditorPluginStatus";
 import { useBookMetadata } from "../../hooks/book/useBookMetadata";
 import { useBookMetadataAi } from "../../hooks/book/useBookMetadataAi";
-import KeywordInput from "./KeywordInput";
-import PdfExportControls from "../export/PdfExportControls";
-import CategoryInput from "./CategoryInput";
-import BisacCodeInput from "./BisacCodeInput";
-import CoverUpload from "./CoverUpload";
 import {
     NavigationSidebar,
     type NavigationSidebarGroup,
 } from "../../lib/components/NavigationSidebar";
-import QualityTab, { NavigableFindingType } from "../quality/QualityTab";
-import TranslationLinks from "../articles/TranslationLinks";
-import AITemplatePanel from "../shared/AITemplatePanel";
+import type { NavigableFindingType } from "../quality/QualityTab";
 import KdpPublishingWizard from "../kdp-wizard/KdpPublishingWizard";
-import { Row, Field, AuthorSelectField, RepositoryUrlField } from "../book-metadata/MetadataFields";
 import { HtmlFieldWithPreview } from "../book-metadata/HtmlField";
 import { AuthorAssetsPanel } from "../book-metadata/AuthorAssetsPanel";
-import AudiobookBookConfig from "../book-metadata/AudiobookConfig";
-import AudiobookDownloads from "../book-metadata/AudiobookDownloads";
+import ContentTabs from "../book-metadata/ContentTabs";
+import PublishingTabs from "../book-metadata/PublishingTabs";
+import ProductionTabs from "../book-metadata/ProductionTabs";
 import styles from "../BookMetadataEditor.module.css";
 
 interface Props {
@@ -121,38 +112,16 @@ export default function BookMetadataEditor({
     const gitSyncActive = useFeature(FEATURES.GIT_SYNC).isActive;
     const kdpCatalogActive = useFeature(FEATURES.KDP_CATEGORY_CATALOG).isActive;
 
-    const {
-        form,
-        setForm,
-        set,
-        keywords,
-        setKeywords,
-        categories,
-        setCategories,
-        bisacCodes,
-        setBisacCodes,
-        kdpCategoriesCatalog,
-        gitSyncStatus,
-        audiobookOverwrite,
-        setAudiobookOverwrite,
-        audiobookSkipTypes,
-        setAudiobookSkipTypes,
-        saving,
-        addAuthorToDb,
-        setAddAuthorToDb,
-        authorSuggestions,
-        showAddToAuthorsCheckbox,
-        wordsPerDayHint,
-        handleSave,
-    } = useBookMetadata({ book, onSave, kdpCatalogActive, gitSyncActive });
+    const meta = useBookMetadata({ book, onSave, kdpCatalogActive, gitSyncActive });
+    const { setForm, saving, handleSave } = meta;
 
-    const { aiGenerating, aiAvailable, handleAiGenerate } = useBookMetadataAi({
+    const ai = useBookMetadataAi({
         book,
-        form,
+        form: meta.form,
         offline,
         pluginStatus,
-        set,
-        setKeywords,
+        set: meta.set,
+        setKeywords: meta.setKeywords,
     });
 
     // PDF-BLEED-MARKS-01 C2: the Design-tab Export-PDF button +
@@ -351,509 +320,29 @@ export default function BookMetadataEditor({
                 </div>
 
                 <div className={styles.contentColumn}>
-                    {effectiveTab === "general" && (
-                    <div className={styles.tabContent}>
-                        <TranslationLinks bookId={book.id} />
-                        <Row>
-                            <AuthorSelectField
-                                label={t("ui.metadata.author", "Autor")}
-                                value={form.author || ""}
-                                onChange={(v) => set("author", v)}
-                                suggestions={authorSuggestions}
-                                showAddToAuthorsCheckbox={showAddToAuthorsCheckbox}
-                                addToAuthorsDb={addAuthorToDb}
-                                onAddToAuthorsDbChange={setAddAuthorToDb}
-                            />
-                            <div className="field" style={{ flex: 1 }}>
-                                <label className="label">
-                                    {t("ui.metadata.language", "Sprache")}
-                                </label>
-                                <ComboboxSelect
-                                    options={buildBookLanguageOptions(customLanguages)}
-                                    value={form.language || ""}
-                                    onChange={(v) => set("language", v)}
-                                    allowCustom
-                                    onCustomAdd={(v) =>
-                                        setCustomLanguages((prev) =>
-                                            prev.some(
-                                                (c) =>
-                                                    c.toLowerCase() ===
-                                                    v.toLowerCase(),
-                                            )
-                                                ? prev
-                                                : [...prev, v],
-                                        )
-                                    }
-                                    placeholder="de"
-                                    testId="book-metadata-language"
-                                />
-                            </div>
-                        </Row>
-                        <Field
-                            label={t("ui.metadata.subtitle", "Untertitel")}
-                            value={form.subtitle}
-                            onChange={(v) => set("subtitle", v)}
-                        />
-                        <Field
-                            label={t("ui.metadata.description", "Beschreibung")}
-                            value={form.description}
-                            onChange={(v) => set("description", v)}
-                            multiline
-                            language="markdown"
-                            fullscreen
-                        />
-                        <Row>
-                            <Field
-                                label={t("ui.metadata.edition", "Edition")}
-                                value={form.edition}
-                                onChange={(v) => set("edition", v)}
-                                placeholder="z.B. Second Edition"
-                            />
-                            <Field
-                                label={t("ui.metadata.publish_date", "Datum")}
-                                value={form.publish_date}
-                                onChange={(v) => set("publish_date", v)}
-                                placeholder="z.B. 2025"
-                            />
-                        </Row>
-                        {/* BOOK-REPOSITORY-URL-FIELD-01 C3: optional
-                         * git repo URL. When plugin-git-sync owns
-                         * this book (mapping exists), the field
-                         * renders read-only with the canonical
-                         * mapping URL + "managed by git-sync" hint
-                         * so the user understands manual edits
-                         * would diverge from the round-trip. When
-                         * no mapping exists OR the status fetch
-                         * failed, the field is a normal free input
-                         * backed by Book.repository_url. */}
-                        <RepositoryUrlField
-                            bookId={book.id}
-                            value={form.repository_url ?? ""}
-                            onChange={(v) => set("repository_url", v)}
-                            gitSyncStatus={gitSyncStatus}
-                            t={t}
-                        />
-                    </div>
-                    )}
-
-                    {/* EXPOSE-BUCHIDEE-METADATA-01 C2: Story tab houses
-                     * the author-design metadata distinct from the
-                     * General tab's publication-side bibliographic
-                     * fields. ``book_idea`` is the short 1-2 sentence
-                     * premise (no fullscreen — small Field shape).
-                     * ``expose`` is the long-form Plot+Characters+
-                     * Setting document (Field multiline + markdown +
-                     * fullscreen — same shape as description). */}
-                    {effectiveTab === "story" && (
-                    <div className={styles.tabContent} data-testid="metadata-story-content">
-                        <Field
-                            label={t("ui.metadata.book_idea_label", "Buchidee")}
-                            value={form.book_idea}
-                            onChange={(v) => set("book_idea", v)}
-                            placeholder={t(
-                                "ui.metadata.book_idea_placeholder",
-                                "Kurz: 1-2 Sätze, worum geht es?",
-                            )}
-                            multiline
-                        />
-                        <Field
-                            label={t("ui.metadata.expose_label", "Exposé")}
-                            value={form.expose}
-                            onChange={(v) => set("expose", v)}
-                            placeholder={t(
-                                "ui.metadata.expose_placeholder",
-                                "Plot, Figuren, Schauplatz, Ton — ausführlich.",
-                            )}
-                            multiline
-                            language="markdown"
-                            fullscreen
-                        />
-                        {/* Writing target (WRITING-GOALS-PROGRESS-TRACKING-01). */}
-                        <div style={{ marginTop: 8 }}>
-                            <label className="label">
-                                {t("ui.metadata.word_target_label", "Word target")}
-                            </label>
-                            <input
-                                type="number"
-                                min={0}
-                                className="input"
-                                value={form.word_target ?? ""}
-                                onChange={(e) => set("word_target", e.target.value)}
-                                placeholder={t("ui.chapter_target.placeholder", "e.g. 80000")}
-                                data-testid="metadata-word-target"
-                            />
-                        </div>
-                        <div style={{ marginTop: 8 }}>
-                            <label className="label">
-                                {t("ui.metadata.word_target_deadline_label", "Target deadline")}
-                            </label>
-                            <input
-                                type="date"
-                                className="input"
-                                value={form.word_target_deadline ?? ""}
-                                onChange={(e) => set("word_target_deadline", e.target.value)}
-                                data-testid="metadata-word-target-deadline"
-                            />
-                        </div>
-                        {wordsPerDayHint && (
-                            <p
-                                style={{
-                                    color: "var(--text-secondary)",
-                                    fontSize: "0.8125rem",
-                                    marginTop: 6,
-                                }}
-                                data-testid="metadata-words-per-day"
-                            >
-                                {wordsPerDayHint}
-                            </p>
-                        )}
-                    </div>
-                    )}
-
-                    {effectiveTab === "publisher" && (
-                    <div className={styles.tabContent}>
-                        <Row>
-                            <Field
-                                label={t("ui.metadata.publisher", "Verlag")}
-                                value={form.publisher}
-                                onChange={(v) => set("publisher", v)}
-                                placeholder="z.B. Conscious Path Publishing"
-                            />
-                            <Field
-                                label={t("ui.metadata.publisher_city", "Stadt")}
-                                value={form.publisher_city}
-                                onChange={(v) => set("publisher_city", v)}
-                                placeholder="z.B. Ludwigsburg"
-                            />
-                        </Row>
-                    </div>
-                    )}
-
-                    {effectiveTab === "isbn" && (
-                    <div className={styles.tabContent}>
-                        <Row>
-                            <Field
-                                label="ISBN E-Book"
-                                value={form.isbn_ebook}
-                                onChange={(v) => set("isbn_ebook", v)}
-                                placeholder="z.B. 9798253911952"
-                            />
-                            <Field
-                                label="ISBN Taschenbuch"
-                                value={form.isbn_paperback}
-                                onChange={(v) => set("isbn_paperback", v)}
-                            />
-                        </Row>
-                        <Row>
-                            <Field
-                                label="ISBN Hardcover"
-                                value={form.isbn_hardcover}
-                                onChange={(v) => set("isbn_hardcover", v)}
-                            />
-                            <Field
-                                label="ASIN E-Book"
-                                value={form.asin_ebook}
-                                onChange={(v) => set("asin_ebook", v)}
-                                placeholder="z.B. B0GV3XBGVB"
-                            />
-                        </Row>
-                        <Row>
-                            <Field
-                                label="ASIN Taschenbuch"
-                                value={form.asin_paperback}
-                                onChange={(v) => set("asin_paperback", v)}
-                            />
-                            <Field
-                                label="ASIN Hardcover"
-                                value={form.asin_hardcover}
-                                onChange={(v) => set("asin_hardcover", v)}
-                            />
-                        </Row>
-                    </div>
-                    )}
-
-                    {/* Categories + BISAC (Bug 9) live in this Marketing
-                        section. With the NavigationSidebar refactor only
-                        the active section is rendered (conditional mount),
-                        so their testids are queryable only after the
-                        Marketing item is selected. */}
-                    {effectiveTab === "marketing" && (
-                    <div className={styles.tabContent}>
-                        {book.ai_tokens_used > 0 && (
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 8,
-                                    padding: "8px 12px",
-                                    marginBottom: 12,
-                                    background: "var(--surface-2)",
-                                    borderRadius: "var(--radius-sm)",
-                                    fontSize: "0.75rem",
-                                    color: "var(--text-muted)",
-                                }}
-                            >
-                                <Sparkles size={14} />
-                                <span>
-                                    {t("ui.metadata.ai_usage", "AI-Nutzung")}:{" "}
-                                    {book.ai_tokens_used.toLocaleString()} Tokens{" "}
-                                    <span
-                                        title={t(
-                                            "ui.metadata.ai_cost_hint",
-                                            "Geschaetzte Kosten basierend auf typischen Anbieterpreisen",
-                                        )}
-                                    >
-                                        (~${(book.ai_tokens_used * 0.000003).toFixed(4)}
-                                        {" - "}${(book.ai_tokens_used * 0.000015).toFixed(4)})
-                                    </span>
-                                </span>
-                            </div>
-                        )}
-                        <div className="field">
-                            <div
-                                style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "space-between",
-                                    marginBottom: 4,
-                                }}
-                            >
-                                <label className="label" style={{ marginBottom: 0 }}>
-                                    {t("ui.metadata.keywords", "Schlüsselwoerter")}
-                                </label>
-                                {aiAvailable && (
-                                    <button
-                                        type="button"
-                                        className="btn btn-ghost btn-sm"
-                                        disabled={aiGenerating === "keywords"}
-                                        onClick={() => handleAiGenerate("keywords")}
-                                        title={t(
-                                            "ui.metadata.ai_generate_keywords",
-                                            "Keywords mit AI generieren",
-                                        )}
-                                        style={{
-                                            fontSize: "0.75rem",
-                                            padding: "2px 8px",
-                                            display: "flex",
-                                            alignItems: "center",
-                                            gap: 4,
-                                        }}
-                                    >
-                                        <Sparkles size={12} />
-                                        {aiGenerating === "keywords"
-                                            ? t("ui.common.loading", "Laden...")
-                                            : t("ui.metadata.ai_generate", "AI")}
-                                    </button>
-                                )}
-                            </div>
-                            <KeywordInput keywords={keywords} onChange={setKeywords} />
-                        </div>
-                        {/* Bug 9: Books-only subject categorisation. Free-
-                            text categories + format-validated BISAC codes.
-                            Articles deliberately do NOT get these fields —
-                            see lessons-learned "Intentional asymmetry"
-                            entry for the design rationale. */}
-                        <div className="field" data-testid="metadata-categories-field">
-                            <label className="label">
-                                {t("ui.metadata.categories", "Kategorien")}
-                            </label>
-                            <small
-                                style={{
-                                    display: "block",
-                                    color: "var(--text-muted, #6b7280)",
-                                    marginBottom: 4,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
-                                {t(
-                                    "ui.metadata.categories_hint",
-                                    "KDP-Stil-Kategorienamen. Frei wählbar; jede Plattform hat ihre eigene Taxonomie.",
-                                )}
-                            </small>
-                            <CategoryInput
-                                categories={categories}
-                                onChange={setCategories}
-                                suggestions={kdpCategoriesCatalog}
-                            />
-                        </div>
-                        <div className="field" data-testid="metadata-bisac-field">
-                            <label className="label">
-                                {t("ui.metadata.bisac_codes", "BISAC-Codes")}
-                            </label>
-                            <small
-                                style={{
-                                    display: "block",
-                                    color: "var(--text-muted, #6b7280)",
-                                    marginBottom: 4,
-                                    fontSize: "0.75rem",
-                                }}
-                            >
-                                {t(
-                                    "ui.metadata.bisac_hint",
-                                    "Branchen-Standard-Subject-Codes (KDP empfiehlt ≤ 3 Codes).",
-                                )}
-                            </small>
-                            <BisacCodeInput codes={bisacCodes} onChange={setBisacCodes} />
-                        </div>
-                        <HtmlFieldWithPreview
-                            label={t(
-                                "ui.metadata.html_description",
-                                "Buch-Beschreibung (HTML für Amazon)",
-                            )}
-                            value={form.html_description}
-                            onChange={(v) => set("html_description", v)}
-                            maxChars={4000}
-                            aiButton={
-                                aiAvailable
-                                    ? {
-                                          loading: aiGenerating === "html_description",
-                                          onClick: () => handleAiGenerate("html_description"),
-                                          label:
-                                              aiGenerating === "html_description"
-                                                  ? t("ui.common.loading", "Laden...")
-                                                  : t("ui.metadata.ai_generate", "AI"),
-                                      }
-                                    : undefined
-                            }
-                        />
-                        <HtmlFieldWithPreview
-                            label={t("ui.metadata.backpage_description", "Rückseitenbeschreibung")}
-                            value={form.backpage_description}
-                            onChange={(v) => set("backpage_description", v)}
-                            maxChars={600}
-                            rows={4}
-                            aiButton={
-                                aiAvailable
-                                    ? {
-                                          loading: aiGenerating === "backpage_description",
-                                          onClick: () => handleAiGenerate("backpage_description"),
-                                          label:
-                                              aiGenerating === "backpage_description"
-                                                  ? t("ui.common.loading", "Laden...")
-                                                  : t("ui.metadata.ai_generate", "AI"),
-                                      }
-                                    : undefined
-                            }
-                        />
-                        <HtmlFieldWithPreview
-                            label={t(
-                                "ui.metadata.author_bio",
-                                "Autoren-Kurzbiographie (Rückseite)",
-                            )}
-                            value={form.backpage_author_bio}
-                            onChange={(v) => set("backpage_author_bio", v)}
-                            maxChars={2000}
-                            aiButton={
-                                aiAvailable
-                                    ? {
-                                          loading: aiGenerating === "backpage_author_bio",
-                                          onClick: () => handleAiGenerate("backpage_author_bio"),
-                                          label:
-                                              aiGenerating === "backpage_author_bio"
-                                                  ? t("ui.common.loading", "Laden...")
-                                                  : t("ui.metadata.ai_generate", "AI"),
-                                      }
-                                    : undefined
-                            }
-                        />
-                    </div>
-                    )}
-
-                    {effectiveTab === "design" && (
-                    <div className={styles.tabContent}>
-                        <CoverUpload
-                            bookId={book.id}
-                            coverImage={form.cover_image ?? null}
-                            onChange={(newPath) => set("cover_image", newPath ?? "")}
-                        />
-                        {/* PDF-BLEED-MARKS-01 C2: picture-book PDF
-                            export controls. Shared component with
-                            PageEditor's header (closes the
-                            PDF-KDP-FORMATS-01 half-wired surface
-                            per the Recurring-Component-Unification
-                            Rule's canonical 2-site extract-plus-
-                            migrate). Picture-book-only — prose
-                            books export via the chapter pipeline +
-                            ExportDialog. */}
-                        {book.book_type === "picture_book" && (
-                            <div className={styles.row}>
-                                <PdfExportControls
-                                    bookId={book.id}
-                                    testidPrefix="metadata"
-                                    bookType="picture_book"
-                                    exportButtonClassName="button button-primary"
-                                    spinnerClassName="bookMetaSpin"
-                                />
-                                <style>
-                                    {`@keyframes bookMetaSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } } .bookMetaSpin { animation: bookMetaSpin 1s linear infinite; }`}
-                                </style>
-                            </div>
-                        )}
-                        <AuthorAssetsPanel bookId={book.id} />
-                        <Field
-                            label={t("ui.metadata.custom_css", "Custom CSS (EPUB-Styles)")}
-                            value={form.custom_css}
-                            onChange={(v) => set("custom_css", v)}
-                            multiline
-                            mono
-                            fullscreen
-                        />
-                    </div>
-                    )}
-
-                    {isChapterBased && (
-                        <>
-                            {effectiveTab === "audiobook" && (
-                            <div className={styles.tabContent}>
-                                <AudiobookBookConfig
-                                    bookLanguage={book.language}
-                                    bookTitle={book.title}
-                                    bookChapters={book.chapters || []}
-                                    engine={form.tts_engine || ""}
-                                    voice={form.tts_voice || ""}
-                                    speed={form.tts_speed || "1.0"}
-                                    merge={form.audiobook_merge || "merged"}
-                                    customFilename={form.audiobook_filename || ""}
-                                    overwriteExisting={audiobookOverwrite}
-                                    skipChapterTypes={audiobookSkipTypes}
-                                    onEngineChange={(v: string) => {
-                                        set("tts_engine", v);
-                                        set("tts_voice", "");
-                                    }}
-                                    onVoiceChange={(v: string) => set("tts_voice", v)}
-                                    onSpeedChange={(v: string) => set("tts_speed", v)}
-                                    onMergeChange={(v: string) => set("audiobook_merge", v)}
-                                    onCustomFilenameChange={(v: string) =>
-                                        set("audiobook_filename", v)
-                                    }
-                                    onOverwriteExistingChange={setAudiobookOverwrite}
-                                    onSkipChapterTypesChange={setAudiobookSkipTypes}
-                                />
-                                <AudiobookDownloads
-                                    bookId={book.id}
-                                    bookTitle={book.title}
-                                    bookChapters={book.chapters || []}
-                                />
-                            </div>
-                            )}
-
-                            {effectiveTab === "quality" && (
-                            <div className={styles.tabContent}>
-                                <QualityTab
-                                    bookId={book.id}
-                                    bookTitle={book.title}
-                                    onNavigateToIssue={onNavigateToIssue}
-                                />
-                            </div>
-                            )}
-                        </>
-                    )}
-
-                    {effectiveTab === "ai_template" && (
-                    <div className={styles.tabContent}>
-                        <AITemplatePanel kind="book" id={book.id} onApplied={onRefresh} />
-                    </div>
-                    )}
+                    <ContentTabs
+                        activeTab={effectiveTab}
+                        book={book}
+                        meta={meta}
+                        t={t}
+                        customLanguages={customLanguages}
+                        setCustomLanguages={setCustomLanguages}
+                    />
+                    <PublishingTabs
+                        activeTab={effectiveTab}
+                        book={book}
+                        meta={meta}
+                        ai={ai}
+                        t={t}
+                    />
+                    <ProductionTabs
+                        activeTab={effectiveTab}
+                        book={book}
+                        meta={meta}
+                        isChapterBased={isChapterBased}
+                        onNavigateToIssue={onNavigateToIssue}
+                        onRefresh={onRefresh}
+                    />
                 </div>
             </div>
 

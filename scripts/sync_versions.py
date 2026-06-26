@@ -10,6 +10,8 @@ derived location:
 - ``launcher/bibliogon_launcher/__init__.py`` (``__version__`` literal)
 - ``launcher/bibliogon-launcher.spec`` (CFBundleVersion +
   CFBundleShortVersionString plist entries; both get the same value)
+- ``launcher/launcher.json`` (``app_version`` field, read at runtime
+  by docker-app-launcher)
 - ``plugins/*/pyproject.toml`` (every plugin)
 - Plugin ``__init__.py`` files that hold a ``__version__ = "..."``
   literal AND do not already use importlib.metadata or tomllib
@@ -192,6 +194,32 @@ def update_spec_plist(
     return changed
 
 
+def update_launcher_json_version(
+    path: Path, new_version: str, dry_run: bool
+) -> bool:
+    """Update the ``app_version`` field in the launcher config JSON.
+
+    ``launcher/launcher.json`` is read at runtime by docker-app-launcher;
+    its ``app_version`` must track the canonical version so the launcher's
+    update check + About string stay correct. Regex-replace the single
+    field rather than a json round-trip, to keep the diff minimal."""
+    if not path.is_file():
+        return False
+    content = path.read_text(encoding="utf-8")
+    pattern = re.compile(r'("app_version":\s*)"([^"]+)"')
+    match = pattern.search(content)
+    if not match or match.group(2) == new_version:
+        return False
+    new_content = pattern.sub(rf'\g<1>"{new_version}"', content, count=1)
+    if not dry_run:
+        path.write_text(new_content, encoding="utf-8")
+    print(
+        f"  {path.relative_to(REPO)} (app_version): "
+        f"{match.group(2)} -> {new_version}"
+    )
+    return True
+
+
 def update_init_version_literal(
     path: Path, new_version: str, dry_run: bool
 ) -> bool:
@@ -340,6 +368,9 @@ def collect_targets() -> list[tuple[Path, str]]:
     targets.append(
         (REPO / "launcher" / "bibliogon-launcher.spec", "spec")
     )
+    targets.append(
+        (REPO / "launcher" / "launcher.json", "launcher_json")
+    )
 
     for plugin_pyproject in sorted(
         (REPO / "plugins").glob("*/pyproject.toml")
@@ -357,6 +388,7 @@ HANDLERS = {
     "package_lock": update_package_lock_version,
     "spec": update_spec_plist,
     "init_literal": update_init_version_literal,
+    "launcher_json": update_launcher_json_version,
 }
 
 

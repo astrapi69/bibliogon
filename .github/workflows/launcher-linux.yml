@@ -18,7 +18,7 @@ on:
       - "launcher/**"
       - ".github/workflows/launcher-linux.yml"
   pull_request:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "launcher/**"
       - ".github/workflows/launcher-linux.yml"
@@ -86,7 +86,7 @@ jobs:
       - name: Install launcher dependencies
         run: poetry install --no-interaction --no-ansi
 
-      - name: Run launcher unit tests
+      - name: Run launcher integration tests
         run: poetry run pytest tests/ -v
 
       - name: Regenerate placeholder icon

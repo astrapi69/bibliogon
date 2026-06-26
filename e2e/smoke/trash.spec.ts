@@ -21,6 +21,7 @@
 
 import {test, expect, acceptDialog, createBook, resetDb} from "../fixtures/base";
 import type {Page} from "@playwright/test";
+import {clickMenuItem, softDeleteBookViaKebab} from "../helpers/ui";
 
 const API = "http://localhost:8000/api";
 
@@ -47,14 +48,21 @@ async function openDashboard(page: Page) {
 }
 
 async function openBookMenu(page: Page, bookId: string) {
-    await page.getByTestId(`book-card-menu-${bookId}`).click();
+    await clickMenuItem(page, `book-card-menu-${bookId}`);
 }
 
 async function moveBookToTrashViaUI(page: Page, bookId: string) {
-    await openBookMenu(page, bookId);
-    await page.getByTestId(`book-card-menu-delete-${bookId}`).click();
+    // Delegate to the canonical robust soft-delete: it settles on
+    // networkidle and re-opens the kebab on each attempt inside a
+    // toPass loop. Under sustained load the dashboard grid re-renders
+    // and detaches the open menu's delete item mid-click; a single
+    // open+click does not survive that (#522 hardened the click but not
+    // the detach; #533).
+    await softDeleteBookViaKebab(page, bookId);
     // The card disappears from the main grid.
-    await expect(page.getByTestId(`book-card-${bookId}`)).not.toBeVisible();
+    await expect(page.getByTestId(`book-card-${bookId}`)).not.toBeVisible({
+        timeout: 10000,
+    });
 }
 
 async function openTrashView(page: Page) {
@@ -176,7 +184,7 @@ test.describe("Trash - permanent delete from BookCard menu", () => {
         await openDashboard(page);
 
         await openBookMenu(page, bookId);
-        await page.getByTestId(`book-card-menu-delete-permanent-${bookId}`).click();
+        await clickMenuItem(page, `book-card-menu-delete-permanent-${bookId}`);
         await acceptDialog(page);
 
         // The card disappears from the main grid and does NOT

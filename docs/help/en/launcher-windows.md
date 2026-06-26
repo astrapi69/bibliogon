@@ -2,7 +2,7 @@
 
 The Windows launcher is a small `bibliogon-launcher.exe` that starts Bibliogon with a double-click: no terminal, no `docker compose` commands. Docker Desktop still runs the actual app; the launcher just starts and stops it for you.
 
-> **What the launcher does for you.** On first run, the launcher detects whether Bibliogon is already on disk. If it is not, the launcher offers to download and set up Bibliogon for you (see "First launch" below). The only thing you have to install yourself is Docker Desktop; Docker's licensing terms prohibit silent third-party installation. See the [Installation overview](installation.md) for the cross-platform picture.
+> **What the launcher does for you.** The launcher manages the Docker stack for a copy of the Bibliogon repository that is already on your computer: it builds the images from your local copy and starts and stops the app for you. It does **not** download Bibliogon itself. You need two things on disk first: Docker Desktop, and the Bibliogon source (a `git clone` of the repository, or its source ZIP unpacked - the default location is `%USERPROFILE%\bibliogon`). Docker Desktop you install yourself; Docker's licensing terms prohibit silent third-party installation. See the [Installation overview](installation.md) for the cross-platform picture.
 
 For macOS or Linux, see [macOS Launcher](launcher-macos.md) / [Linux Launcher](launcher-linux.md).
 
@@ -54,11 +54,11 @@ See [Why is there a security warning?](#why-is-there-a-security-warning) below f
 The launcher's first job is to detect what is already in place.
 
 1. **Docker check.** The launcher confirms Docker Desktop is installed and running. If Docker Desktop is missing, a dialog with the install URL appears and the launcher exits. If Docker is installed but not running, a dialog asks you to start Docker Desktop and click Retry; the launcher tries up to three times.
-2. **Bibliogon check.** The launcher looks for an existing Bibliogon install via its manifest (`%APPDATA%\bibliogon\install.json`) or, on a clean machine, checks the default location `%USERPROFILE%\bibliogon`.
-   - **Already installed**: the launcher proceeds straight to step 3.
-   - **Not installed**: a welcome dialog appears: "Bibliogon is not installed on this computer yet". Three buttons: **Install** (the launcher downloads the latest release ZIP, extracts to a folder you pick, generates a fresh `.env`, and builds the Docker images - first build takes 3-5 minutes), **Open install guide** (opens the docs in your browser), or **Close**.
-3. **Start.** A small "Starting Bibliogon..." window appears while Docker brings up the containers.
-4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`).
+2. **Bibliogon repository check.** The launcher needs your local copy of the Bibliogon repository - the folder that contains `docker-compose.prod.yml`. It looks for it via the `BIBLIOGON_DIR` environment variable, the repo root when you run the launcher from a source checkout, or the default location `%USERPROFILE%\bibliogon`.
+   - **Already built**: if the Bibliogon containers already exist from an earlier run, the launcher proceeds straight to step 3.
+   - **Not built yet**: when no containers exist, the launcher window shows an **Install** button. Clicking it builds the Docker images from your local copy (`docker compose build`; the first build takes 3-5 minutes), writes the host port into `.env`, and then starts the stack. During install a progress window shows each step (prepare configuration, build images, start) so you can see it is working. If the repository cannot be found, the build fails with "Compose file not found" - place the Bibliogon source at `%USERPROFILE%\bibliogon`, set `BIBLIOGON_DIR`, or run the launcher from inside the repository folder.
+3. **Start.** A small status window appears with a checklist (Docker Desktop detected, starting containers, waiting for Bibliogon) while Docker brings up the containers.
+4. **Browser.** When Bibliogon is ready, your default browser opens at `http://localhost:7880` (or whatever port is configured in `.env`). If port 7880 is already in use by another program, the launcher automatically picks the next free port, saves it to `.env`, and tells you the new address.
 5. **Status window.** The small window switches to "Bibliogon is running on localhost:7880" with a **Stop Bibliogon** button.
 
 ## Stopping Bibliogon
@@ -67,7 +67,12 @@ Click **Stop Bibliogon** in the launcher window, or just close the window. The l
 
 ## Running a second time
 
-Double-click the launcher again. If Bibliogon is already running (for example because you minimized the launcher window and forgot), the launcher detects the running instance and just opens the browser at the correct URL without starting a second copy.
+Double-click the launcher again. If Bibliogon is already running (for example because you minimized the launcher window and forgot), the launcher detects the running instance and shows a management dialog instead of starting a second copy:
+
+- **Open in browser** - open `http://localhost:7880` for the running instance.
+- **Stop** - run `docker compose down` and stop the containers; the installation is kept.
+- **Uninstall** - confirm, then fully remove Bibliogon (see Uninstalling below).
+- **Close** - close the launcher and leave the containers running.
 
 ## Troubleshooting
 
@@ -96,9 +101,9 @@ We plan to revisit code-signing when Bibliogon has a user base that justifies th
 
 See [Uninstall](uninstall.md) for the launcher UI path and the `uninstall.sh` script fallback.
 
-Short version: click **Uninstall** inside the launcher window and confirm. The launcher removes the installation directory and its own manifest. Docker volumes (your book data) are preserved by default; add them explicitly if you want a complete wipe.
+Short version: click **Uninstall** in the management dialog (or the main launcher window) and confirm. The launcher then removes everything: the Docker containers, images, and volumes (**your book data is deleted** - export your books first if you want to keep them), the installation directory, desktop shortcuts, the install manifest, and the per-user config directories (`%USERPROFILE%\.bibliogon` and `%APPDATA%\bibliogon`). The same teardown is available headless via `bibliogon-launcher.exe --uninstall`. An interrupted uninstall resumes automatically on the next launch.
 
-If you only want to remove the launcher binary itself and keep Bibliogon installed, delete `bibliogon-launcher.exe` and optionally the config directory at `%APPDATA%\bibliogon\`.
+If you only want to remove the launcher binary itself and keep Bibliogon installed, delete `bibliogon-launcher.exe` instead of running the Uninstall flow.
 
 ## Related pages
 

@@ -1684,7 +1684,9 @@
       "asin_ebook": "ASIN E-Book",
       "asin_paperback": "ASIN Taschenbuch",
       "asin_hardcover": "ASIN Hardcover",
-      "backpage_author_bio": "Über den Autor"
+      "backpage_author_bio": "Über den Autor",
+      "notes": "Projektnotizen",
+      "notes_placeholder": "Notizen zum Buchprojekt…"
     },
     "cover": {
       "choose_file": "Datei wählen",
@@ -2142,7 +2144,7 @@
       "multi_book_articles_note": "Außerdem werden {count} Artikel mit wiederhergestellt.",
       "preview_articles_note": "Außerdem werden {count} Artikel mit wiederhergestellt.",
       "step_1_drop_zone": "Datei hier ablegen oder zum Durchsuchen klicken",
-      "step_1_accepted_formats": "Akzeptiert: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
+      "step_1_accepted_formats": "Akzeptiert: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub",
       "error_unsupported_format": "Dateiformat nicht unterstützt. Akzeptiert: {formats}",
       "error_file_too_large": "Datei zu gross (>{max} MB).",
       "warn_large_file": "Große Datei ({size}); Erkennung dauert einen Moment.",
@@ -3426,7 +3428,22 @@
       "open": "Gliederung öffnen",
       "col_title": "Titel",
       "col_words": "Wörter",
-      "col_target": "Ziel"
+      "col_target": "Ziel",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Kurze Zusammenfassung…",
+      "synopsis_auto": "Aus erstem Absatz erzeugen",
+      "collections_label": "Sammlungen",
+      "collection_all": "Alle Kapitel",
+      "collection_new": "Neue Sammlung",
+      "collection_delete": "Löschen",
+      "collection_name": "Sammlungsname",
+      "collection_filter": "Auf Sammlung filtern",
+      "collection_default_name": "Neue Sammlung",
+      "collection_save_failed": "Sammlung konnte nicht gespeichert werden",
+      "col_in_collection": "In",
+      "col_notes": "Notizen",
+      "notes_placeholder": "Arbeitsnotizen…",
+      "collection_color": "Farbe der Sammlung"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3666,7 +3683,40 @@
       "arc_mailto_subject": "ARC-Anfrage",
       "arc_send_mail": "E-Mail verfassen",
       "conflict_banner": "Die Buchmetadaten wurden seit der letzten Wizard-Sitzung geändert. Bitte Metadaten + Cover erneut bestätigen, bevor du das Paket erstellst.",
-      "conflict_dismiss": "Hinweis schließen"
+      "conflict_dismiss": "Hinweis schließen",
+      "step_guide": "Anleitung",
+      "guide_intro": "Bibliogon lädt nicht für dich hoch. So veröffentlichst du dein Paket bei KDP:",
+      "guide_open_kdp": "KDP-Bookshelf öffnen",
+      "guide_step_create": "Erstelle bei KDP einen neuen Titel (eBook oder Taschenbuch/Hardcover).",
+      "guide_step_manuscript": "Lade die Manuskript-Datei aus dem ZIP hoch: manuscript-ebook.epub für eBook, manuscript-paperback.pdf für den Druck.",
+      "guide_step_cover": "Lade die Cover-Datei hoch (cover.*).",
+      "guide_step_metadata": "Übertrage die Angaben aus metadata.json (Titel, Autor, Beschreibung, Kategorien, Keywords).",
+      "guide_step_price": "Lege den Preis fest (siehe den Preise-Schritt für Tantiemen + Mindestpreis) und veröffentliche.",
+      "guide_note": "Prüfe den Cover-Validierungsbericht (cover-validation-report.json) im ZIP, falls KDP das Cover ablehnt.",
+      "step_format": "Format",
+      "format_intro": "Wähle das Veröffentlichungsformat. eBook ist EPUB; Taschenbuch und Hardcover sind Druck-PDFs mit Beschnitt.",
+      "format_kind_label": "Format",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Taschenbuch (PDF mit Beschnitt)",
+      "format_kind_hardcover": "Hardcover (PDF mit Beschnitt)",
+      "format_trim_label": "Trim-Größe",
+      "format_margin_label": "Ränder",
+      "format_margin_narrow": "Schmal",
+      "format_margin_normal": "Normal",
+      "format_margin_wide": "Breit",
+      "guide_format_label": "Gewähltes Format"
+    },
+    "migration": {
+      "title": "Willkommen bei Bibliogon",
+      "intro": "Hast du die App schon online genutzt? Deine Bücher und Artikel können übernommen werden.",
+      "step_open": "Öffne die Online-Version.",
+      "step_settings": "Gehe zu Einstellungen → Daten → Vollbackup (.bgb).",
+      "step_download": "Lade die .bgb-Datei herunter.",
+      "step_import": "Klicke hier auf „Backup importieren“.",
+      "skip": "Ohne Daten starten",
+      "open_online": "Online-Version öffnen",
+      "import": "Backup importieren",
+      "settings_hint": "Aus der Online-Version migrieren? Exportiere dort ein Vollbackup (.bgb) und importiere es hier mit „Backup importieren“."
     }
   }
 }

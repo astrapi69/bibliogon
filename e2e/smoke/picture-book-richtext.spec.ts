@@ -172,9 +172,14 @@ test.describe("Picture-Book TipTap rich-text smoke (4c-B-1)", () => {
         await editor.click()
         await page.keyboard.type("Once upon a time")
 
-        // Debounce is 800 ms; allow comfortably more for the
-        // PATCH round-trip on a slow CI runner.
-        await page.waitForTimeout(2000)
+        // Wait for the autosave to persist, deterministically (poll the
+        // API) instead of a fixed sleep past the 800 ms debounce.
+        await expect
+            .poll(
+                async () => (await getPage(book.id, pageRow.id)).text_content,
+                {timeout: 10_000},
+            )
+            .not.toBeNull()
 
         const after = await getPage(book.id, pageRow.id)
         expect(after.text_content).not.toBeNull()

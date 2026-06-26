@@ -223,6 +223,11 @@ vi.mock("../components/articles/PublicationsPanel", () => ({
 vi.mock("../components/articles/ArticleCommentsPanel", () => ({
     default: () => <div data-testid="comments-panel-stub" />,
 }));
+// Stubbed like the sibling panels: ArticleTranslatePanel uses useFeature, which
+// needs a FeatureProvider this page test does not mount (#34).
+vi.mock("../components/articles/ArticleTranslatePanel", () => ({
+    default: () => <div data-testid="translate-panel-stub" />,
+}));
 vi.mock("../components/shared/AITemplatePanel", () => ({
     default: () => <div data-testid="ai-template-stub" />,
 }));

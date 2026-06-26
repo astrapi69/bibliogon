@@ -280,6 +280,7 @@ test.describe("Themes - Classic editor first-line indent", () => {
 
 test.describe("Themes - Notebook editor ruled-lines background", () => {
     let bookId: string;
+    let chapterId: string;
 
     test.beforeEach(async () => {
         const book = await createBook("Notebook Background Smoke");
@@ -290,12 +291,18 @@ test.describe("Themes - Notebook editor ruled-lines background", () => {
                 {type: "paragraph", content: [{type: "text", text: "Probe."}]},
             ],
         });
-        await createChapter(bookId, "Probe Kapitel", tiptapJson);
+        const chapter = await createChapter(bookId, "Probe Kapitel", tiptapJson);
+        chapterId = chapter.id;
     });
 
     async function openEditor(page: Page) {
         await page.goto(`/book/${bookId}`);
-        await page.getByText("Probe Kapitel").first().click();
+        // Click the chapter via its stable sidebar testid, not a text
+        // locator: getByText("Probe Kapitel") matched transient nodes and
+        // timed out before the chapter list had rendered (flake #522).
+        const chapter = page.getByTestId(`chapter-item-${chapterId}`);
+        await chapter.waitFor({state: "visible"});
+        await chapter.click();
         await page.locator(".ProseMirror").waitFor({state: "visible"});
     }
 

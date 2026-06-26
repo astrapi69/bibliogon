@@ -360,6 +360,17 @@ authoritative description:
   on Critical/High, with `.security-ignore.yml` as the single source of truth
   for accepted/deferred advisories.
 
+### Feature-screenshot catalog
+
+- Directory: `docs/screenshots/{feature}/`
+- Capture: `make capture-screenshots` (Playwright project
+  `feature-screenshots`, testDir `e2e/feature-screenshots/`)
+- Spec: `e2e/feature-screenshots/capture-features.spec.ts`
+- No CI gate (on-demand), but mandatory on UI PRs — see
+  `.claude/rules/quality-checks.md` "Feature-Screenshots".
+- Distinct from the `visual` pixel-diff regression suite (`e2e/visual/`)
+  and the help-doc generator (`docs/help/assets/screenshots/`).
+
 ## Reusability principles
 
 1. **Dependency injection over reach-back.** Pass collaborators in

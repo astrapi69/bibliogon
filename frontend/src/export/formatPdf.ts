@@ -173,6 +173,13 @@ export async function toPdfBlob(doc: ExportDocument): Promise<Blob> {
     content: docToPdfContent(doc),
     styles: PDF_STYLES,
     defaultStyle: { fontSize: 11, lineHeight: 1.3 },
-    info: { title: doc.title, author: doc.author || undefined },
+    info: {
+      title: doc.title,
+      author: doc.author || undefined,
+      subject: doc.description || undefined,
+      keywords: (doc.keywords ?? []).filter((k) => k.trim()).join(", ") || undefined,
+      creator: "Bibliogon",
+      producer: "Bibliogon (pdfmake)",
+    },
   });
 }

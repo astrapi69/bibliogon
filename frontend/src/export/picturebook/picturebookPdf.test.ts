@@ -77,6 +77,106 @@ describe("buildPicturebookPdfDefinition", () => {
     expect(content[0].text).toBe("");
   });
 
+  // --- #615: content pages must never print the raw TipTap JSON ---
+
+  const tiptapDoc = (text: string, align?: string): string =>
+    JSON.stringify({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          ...(align ? { attrs: { textAlign: align } } : {}),
+          content: [{ type: "text", text }],
+        },
+      ],
+    });
+
+  it("does not emit raw TipTap JSON for a content page (repro #615)", () => {
+    const def = buildPicturebookPdfDefinition([
+      {
+        imageDataUrl: "data:image/jpeg;base64,AAAA",
+        text: tiptapDoc("Once upon a time"),
+      },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    const serialized = JSON.stringify(content);
+    // The page must not leak the stringified doc as visible text.
+    expect(serialized).not.toContain('{\\"type\\":\\"doc\\"');
+    expect(content.some((b) => b.text === '{"type":"doc"')).toBe(false);
+  });
+
+  it("renders harvested prose once for an image + TipTap content page", () => {
+    const def = buildPicturebookPdfDefinition([
+      {
+        imageDataUrl: "data:image/jpeg;base64,AAAA",
+        text: tiptapDoc("Once upon a time"),
+      },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    // Exactly one image block + one text block.
+    expect(content).toHaveLength(2);
+    expect(content[0].image).toBe("data:image/jpeg;base64,AAAA");
+    expect(content[1].text).toBe("Once upon a time");
+  });
+
+  it("harvests a centered paragraph without leaking the textAlign mark", () => {
+    const def = buildPicturebookPdfDefinition([
+      { text: tiptapDoc("Centered line", "center") },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    expect(content).toHaveLength(1);
+    expect(content[0].text).toBe("Centered line");
+  });
+
+  it("treats an empty-paragraph TipTap doc as having no text", () => {
+    const emptyDoc = JSON.stringify({
+      type: "doc",
+      content: [{ type: "paragraph" }],
+    });
+    const def = buildPicturebookPdfDefinition([
+      { imageDataUrl: "data:image/png;base64,BBBB", text: emptyDoc },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    // Image only — no JSON text block.
+    expect(content).toHaveLength(1);
+    expect(content[0].image).toBe("data:image/png;base64,BBBB");
+  });
+
+  it("renders an image-only content page (TipTap text empty) without text", () => {
+    const def = buildPicturebookPdfDefinition([
+      {
+        imageDataUrl: "data:image/jpeg;base64,CCCC",
+        text: JSON.stringify({ type: "doc", content: [] }),
+      },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    expect(content).toHaveLength(1);
+    expect(content[0].image).toBe("data:image/jpeg;base64,CCCC");
+    // The lone image block gets the wider imageless fit (no text below).
+    const fit = content[0].fit as number[];
+    expect(fit[1]).toBeGreaterThan(0.9 * (612 - 36 * 2));
+  });
+
+  it("renders a text-only TipTap content page (no image)", () => {
+    const def = buildPicturebookPdfDefinition([
+      { text: tiptapDoc("Just words") },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    expect(content).toHaveLength(1);
+    expect(content[0].text).toBe("Just words");
+    expect(content[0].image).toBeUndefined();
+  });
+
+  it("leaves a legacy plain-text (title) page untouched", () => {
+    const def = buildPicturebookPdfDefinition([
+      { text: "My Picture Book" },
+      { imageDataUrl: "data:image/jpeg;base64,DDDD", text: tiptapDoc("p2") },
+    ]);
+    const content = def.content as Record<string, unknown>[];
+    // Title page: plain text passes through unchanged.
+    expect(content[0].text).toBe("My Picture Book");
+  });
+
   it("gives an imageless page more vertical room than an image+text page", () => {
     const imageOnly = buildPicturebookPdfDefinition([
       { imageDataUrl: "data:image/jpeg;base64,AAAA" },

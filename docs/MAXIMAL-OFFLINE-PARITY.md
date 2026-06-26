@@ -28,9 +28,9 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **git-sync** (backup/push) | Git commit/push | `module-git-backup` | — | **No** — needs git binary | `git-sync` / `git-backup` |
 | **audiobook** | TTS audiobook | `module-audiobook` | — | **No** — TTS cloud/server | `tts` |
 | **story-bible** | Per-book fiction-entity DB | _(no module; storage seam)_ | `storage/dexie/story-bible.ts` + `hooks/useStoryBibleIntegration.ts` | **Partial** — CRUD offline; auto-detect / continuity-check need server | active (`story-bible`) |
-| **grammar** | LanguageTool checks | _(no module)_ | — | **No** — LanguageTool server | _(none — gap, see §3)_ |
+| **grammar** | LanguageTool checks | _(no module)_ | — | **No** — LanguageTool server | `grammar` (`DESKTOP_ONLY` → disabled) |
 | **kdp** | KDP metadata + cover validation | _(no module)_ | `components/kdp-wizard/CoverValidation.tsx` (dimension checks) | **Partial** — basic cover preflight offline; catalog desktop-only | `kdp-category-catalog` (catalog) |
-| **translation** | DeepL / LMStudio translation | _(no module)_ | `components/TranslationLinks.tsx` (links only, gated) | **Partial** — local LMStudio if self-hosted; DeepL needs key/network | `translation-links` (links); execution: _gap, see §3_ |
+| **translation** | DeepL / LMStudio translation | _(no module)_ | `components/TranslationLinks.tsx` (links only, gated) | **Partial** — local LMStudio if self-hosted; DeepL needs key/network | `translation-links` (links); execution: `translation` (`DESKTOP_ONLY` → disabled) |
 | **help** | In-app help | _(no module)_ | `storage/seed/seed-help*.json` | **Yes (static)** | active |
 | **getstarted** | Onboarding + sample book | _(no module)_ | `storage/seed/seed-getstarted.json` | **Yes (static)** | active |
 
@@ -76,18 +76,77 @@ to `disabled` only when `navigator.onLine === false`.
   (`picture-book`), `module-comics`, `module-ms-tools` → active in both modes,
   no gate needed (pure client-side / storage seam). ✓
 
-**Findings (gaps, pre-existing — flagged for follow-up, NOT changed here):**
+**Resolved (these two former gaps are now gated — #34 continuation):**
 
-1. **Grammar** (`plugin-grammar`) has no `FEATURES.*` id. Its editor surfaces
-   call the backend LanguageTool path; offline they hit the `guardedFetch`
-   egress backstop rather than a `disabled`+explained gate. Per the
-   architecture rule, a server-bound feature should be gated, not merely
-   blocked. Recommend a `FEATURES.GRAMMAR` (`DESKTOP_ONLY`/network) gate.
-2. **Translation execution** (`ArticleTranslatePanel`, DeepL/LMStudio) is
-   un-gated (only `TranslationLinks` is gated via `TRANSLATION_LINKS`). Same
-   backstop-vs-gate situation. Recommend a `FEATURES.TRANSLATION` gate
-   (network-dependent; LMStudio-local could keep it active).
+1. **Grammar** (`plugin-grammar`) → `FEATURES.GRAMMAR` (`DESKTOP_ONLY` →
+   `disabled`, reason `requires_desktop_app`). The editor spellcheck toggle
+   (`Editor.tsx`) now disables + explains offline instead of calling
+   `api.grammar.check` on the `guardedFetch` backstop. ✓
+2. **Translation execution** (`ArticleTranslatePanel`, DeepL/LMStudio) →
+   `FEATURES.TRANSLATION` (`DESKTOP_ONLY`). Offline the panel renders a
+   disabled control + desktop-app notice and fires zero `/api`
+   (no providers/health fetch). ✓ `TranslationLinks` stays gated via
+   `TRANSLATION_LINKS`.
 
-Both are out of scope for this structural/parity PR (adding a gate touches
-`featureConfig.ts` + the UI surface + i18n + tests). Filing them as the
-follow-up keeps this PR a clean re-export + documentation change.
+Both verified by `featureConfig.test.ts` (state/reason in api vs dexie) and
+`ArticleTranslatePanel.test.tsx` (disabled offline + zero `/api`, active
+online).
+
+**Editor server-bound tools — verified disabled offline (correction
+2026-06-24):** an earlier revision of this section claimed the inline
+ms-tools **style-check** (`api.msTools.check`) and the editor **audio
+preview** (`api.audiobook.preview`, a TTS path) "can surface enabled and
+fail on the `guardedFetch` backstop" in Dexie mode. That is **inaccurate**.
+Both gate on `isPluginAvailable(pluginStatus, …)`, and in Dexie mode
+`getStorage().editorPluginStatus.get()` resolves to the empty map `{}`
+(`storage/dexie/backend-only.ts` — backend-only probes return the empty
+defaults the editor expects, **without** firing `/api`). So
+`isPluginAvailable(pluginStatus, "ms-tools" | "audiobook")` is `false`
+offline, the toolbar passes `onToggleStyleCheck`/`onPreviewAudio` as
+`undefined`, and both controls render **disabled and inert** — zero `/api`,
+no `guardedFetch` rejection. The zero-`/api` invariant holds here.
+
+The only residual is cosmetic: the disabled tooltip falls back to the
+generic `pluginDisabledMessage` ("Plugin nicht verfügbar") rather than the
+policy-#78 `ui.feature.requires_desktop_app` reason used by the
+`FEATURES.*`-gated surfaces. Routing these two through a `FEATURES.*`
+verdict (`FEATURES.TTS` for preview; a new `FEATURES.STYLE_CHECK` for the
+ms-tools decorations) would make the *explanation* consistent — but it is a
+tooltip-copy refinement, not a functional or zero-`/api` gap.
+
+## 4. Audit confirmation — #67 items 2/3 (2026-06-24)
+
+**Item 2 — hidden vs disabled (three-state visibility).** Audit of every
+gate-bearing surface: **zero** features resolve to `hidden` in product UI.
+`featureConfig.ts` emits only `active` or `disabled`+reason; the lone
+`hidden` is the library's fail-closed default for *unknown* ids (a typo
+safety net, never a product state). Policy #78 ("nothing the user owns is
+hidden — it is active or disabled with a reason") holds. No change needed.
+The `grep "hidden"` hits in the frontend are all CSS `className="hidden"`
+(visually-hidden file inputs) or `input:not([type='hidden'])` focus filters
+— not feature gates.
+
+**Item 3 — zero `/api` in Dexie mode.** Every `fetch()` outside the
+`guardedFetch` choke point classified:
+
+| Site | Hits `/api`? | Offline behaviour |
+|------|-------------|-------------------|
+| `api/http.ts` (`guardedFetch`) | n/a | the single egress choke point; rejects `/api` on the backendless build |
+| `utils/platform/versionCheck.ts` (`/api/health`) | yes | gated behind `!forcedOffline` in `main.tsx` — not called offline |
+| `storage/connectivity.ts` (`/api/health` probe) | yes | online-monitor only; not started in forced-dexie |
+| `storage/api-storage.ts`, `storage/offline-download.ts` | yes | `ApiStorage` / take-offline run in **online** mode only |
+| `storage/dexie/backend-only.ts` (publications, platforms, **editorPluginStatus**) | no | return empty defaults `[]` / `{}` offline — never fetch |
+| `ai/llmClient.ts` | no | browser-direct to the user's AI provider (by design) |
+| `import/{githubImport,urlImport}.ts`, `medium-import/clientImport.ts`, `useRemoteDefaultBranch.ts`, `lib/utils/updateChecker.ts` | no | external URLs (GitHub / user URL / Medium CDN / GitHub Releases) — by design |
+| `export/bgbExport.ts` | no | fetches the article's external `featured_image_url` (CDN), not `/api` |
+
+No site bypasses `guardedFetch` to reach `/api` in Dexie mode. The offline
+E2E (`offline-pwa.spec.ts`) enforces this with a hard
+`route.abort('**/api/**')` gate.
+
+**Composition mode in all editors.** The prose composition mode
+(`Editor.tsx`, Ctrl+Shift+D — typewriter scroll + paragraph dimming) is
+prose-specific. Comic + picture-book use the canvas-appropriate analog:
+browser-native fullscreen (`useFullscreenToggle`, Ctrl+Shift+F) in
+`ComicBookEditor.tsx` + `PageEditor.tsx`. Distraction-free editing is
+available in every editor.

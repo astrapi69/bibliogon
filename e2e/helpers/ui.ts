@@ -71,3 +71,27 @@ export async function softDeleteBookViaKebab(
         await del.click({timeout: 2000});
     }).toPass({timeout: 15_000});
 }
+
+/**
+ * Click a dropdown menu trigger or item robustly: wait for it to be
+ * visible (i.e. the Radix open-animation has settled and the node is
+ * rendered) before clicking. Playwright's click then auto-waits for
+ * stable+enabled+receives-events. Replaces bare
+ * `getByTestId(...).click()` on menu surfaces, which raced against the
+ * open-animation and a late re-render — the trash / book-editor-menu
+ * flake class (#522, #524).
+ *
+ * Deliberately a single click, NOT a `toPass()` re-click loop: most
+ * call sites are TOGGLE triggers, where a second click would close the
+ * menu again (#533 — a toPass loop here made trash flaky). When an OPEN
+ * menu re-renders and detaches an item mid-click, settle the cause at
+ * the call site (e.g. wait for the page's data load before opening the
+ * menu) rather than re-clicking. For the grid-kebab case where the menu
+ * can CLOSE on a per-card re-render, use the `softDelete*ViaKebab`
+ * helpers above, which re-open the menu each attempt.
+ */
+export async function clickMenuItem(page: Page, testId: string): Promise<void> {
+    const item = page.getByTestId(testId);
+    await expect(item).toBeVisible({timeout: 5000});
+    await item.click();
+}

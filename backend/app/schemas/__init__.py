@@ -128,6 +128,32 @@ _PUBLISHING_LIFECYCLE = ("draft", "ready", "published", "archived")
 PublicationStatus = Literal["draft", "ready", "published", "archived"]
 
 
+class CollectionItem(BaseModel):
+    """One manual chapter collection (CHAPTER-COLLECTIONS-01).
+
+    A named, ordered set of chapter ids. Stored as a JSON list on
+    ``Book.collections``; ``chapter_ids`` are not FK-validated here (a
+    stale id is harmless - the UI simply skips chapters it cannot find).
+    """
+
+    id: str = Field(min_length=1, max_length=64)
+    name: str = Field(min_length=1, max_length=200)
+    chapter_ids: list[str] = Field(default_factory=list)
+    # Optional swatch colour for visual distinction in the Outliner
+    # ("Kampfszenen" = red, "Backstory" = blue). Hex, matching the
+    # ChapterLabel / mood_color convention; NULL = no colour.
+    color: str | None = Field(default=None, max_length=7)
+
+    @field_validator("color")
+    @classmethod
+    def _validate_collection_color(cls, value: str | None) -> str | None:
+        if value is None or value == "":
+            return None
+        if not MOOD_COLOR_RE.match(value):
+            raise ValueError("color must be a hex color code like #RRGGBB")
+        return value
+
+
 class BookCreate(BaseModel):
     title: str = Field(min_length=1, max_length=500)
     subtitle: str | None = None
@@ -204,9 +230,12 @@ class BookUpdate(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
+    notes: str | None = Field(default=None, max_length=20000)
     # STORY-BIBLE-RELATIONSHIP-GRAPH-01 C5: persisted relationship-graph
     # node positions {entity_id: {x, y}}.
     graph_layout: dict | None = None
+    collections: list[CollectionItem] | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: manual repo URL for books not
     # imported via plugin-git-sync. See Book model field-comment +
     # docs/ROADMAP.md "Book Metadata Extensions" entry. Empty string
@@ -532,6 +561,10 @@ class BookOut(BaseModel):
     backpage_author_bio: str | None = None
     cover_image: str | None = None
     custom_css: str | None = None
+    # Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01).
+    notes: str | None = None
+    # Manual chapter collections (CHAPTER-COLLECTIONS-01).
+    collections: list[CollectionItem] | None = None
     # BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL. The
     # BookMetadataEditor reads this directly when no GitSyncMapping
     # exists; when a mapping exists, the UI prefers the mapping's
@@ -632,6 +665,10 @@ class ChapterCreate(BaseModel):
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
+    synopsis: str | None = Field(default=None, max_length=2000)
+    # Per-chapter Inspector notes (additive enhancement). Distinct from the
+    # Storyboard ``notes`` sticky above and from project-wide ``Book.notes``.
+    inspector_notes: str | None = Field(default=None, max_length=20000)
 
     @field_validator("mood_color")
     @classmethod
@@ -666,6 +703,11 @@ class ChapterUpdate(BaseModel):
     status: ChapterStatus | None = None
     label_id: str | None = Field(default=None, max_length=32)
     target_words: int | None = Field(default=None, ge=0)
+    synopsis: str | None = Field(default=None, max_length=2000)
+    # Per-chapter Inspector notes (additive enhancement). All optional;
+    # ``exclude_unset=True`` in the PATCH handler means an unsent field is
+    # NOT overwritten to NULL.
+    inspector_notes: str | None = Field(default=None, max_length=20000)
 
     @field_validator("mood_color")
     @classmethod
@@ -736,6 +778,10 @@ class ChapterOut(BaseModel):
     status: str | None = None
     label_id: str | None = None
     target_words: int | None = None
+    synopsis: str | None = None
+    # Per-chapter Inspector notes (additive enhancement). Always returned
+    # (NULL when unset); plain Text column round-trips directly.
+    inspector_notes: str | None = None
 
 
 class WritingSessionOut(BaseModel):

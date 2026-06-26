@@ -1,19 +1,15 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api, ApiError } from "../api/client";
+import { api } from "../api/client";
 import { getStorage } from "../storage";
-import { downloadBlob } from "../shared/utils/downloadBlob";
 import WritingGoalWidget from "../components/book/WritingGoalWidget";
 import NewFromTemplateButton from "../components/book/NewFromTemplateButton";
 import BulkTemplateImportDialog from "../components/book/BulkTemplateImportDialog";
-import FieldClassDialog, { type FieldClassDialogResult } from "../components/shared/FieldClassDialog";
+import FieldClassDialog from "../components/shared/FieldClassDialog";
 import BulkAiFillConfirmDialog from "../components/articles/BulkAiFillConfirmDialog";
 import BookCard from "../components/book/BookCard";
 import BookListView from "../components/book/BookListView";
-import BookBulkActionBar, {
-    type BookBulkExportFormat,
-    BOOK_BULK_LIMIT_HARD,
-} from "../components/book/BookBulkActionBar";
+import BookBulkActionBar from "../components/book/BookBulkActionBar";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
 import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/book/useBookSelection";
@@ -26,6 +22,7 @@ import ResponsiveFilterControls from "../components/dashboard/ResponsiveFilterCo
 import TileSelectCheckbox from "../components/picture-book/TileSelectCheckbox";
 import { useBookFilters } from "../hooks/book/useBookFilters";
 import { useDashboardBookData } from "../hooks/book/useDashboardBookData";
+import { useDashboardBulkActions } from "../hooks/book/useDashboardBulkActions";
 import { useBookTypes, bookTypeDefaultTitleKey } from "../hooks/book/useBookTypes";
 import { BookTypeIcon } from "../utils/icons/bookTypeIcon";
 import SplitButton, { type SplitButtonDropdownItem } from "../components/shared/SplitButton";
@@ -58,7 +55,6 @@ import ThemeToggle from "../components/shared/ThemeToggle";
 import { useTheme } from "../hooks/ui/useTheme";
 import { Moon, Sun } from "lucide-react";
 import { useDialog } from "../components/shared/AppDialog";
-import { notify } from "../utils/platform/notify";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
@@ -67,6 +63,10 @@ import { getDonationsConfig, type DonationsConfig } from "../components/settings
 import DonationOnboardingDialog, {
     shouldShowDonationOnboarding,
 } from "../components/shared/DonationOnboardingDialog";
+import MigrationWelcomeDialog, {
+    shouldOfferMigration,
+} from "../components/shared/MigrationWelcomeDialog";
+import { setDocumentTitle, resetDocumentMeta } from "../lib/utils/documentMeta";
 // v0.35.1 (2026-05-18): DonationReminderBanner lifted from Dashboard
 // to App.tsx (App-level mount per user-direction "panel ganz oben am
 // Anfang"). Dashboard keeps DonationsConfig + OnboardingDialog only.
@@ -106,6 +106,11 @@ export default function Dashboard() {
         setImportWizardOpen(true);
     };
     const { theme, toggle: toggleTheme } = useTheme();
+    // SEO route title (#605).
+    useEffect(() => {
+        setDocumentTitle("Dashboard");
+        return () => resetDocumentMeta();
+    }, []);
     const [showTrash, setShowTrash] = useState(false);
     const [donationsConfig, setDonationsConfig] = useState<DonationsConfig | null>(null);
     // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
@@ -114,6 +119,9 @@ export default function Dashboard() {
     // chevron dropdown lists every other dashboard-visible type.
     const [defaultBookType, setDefaultBookType] = useState("prose");
     const [showDonationOnboarding, setShowDonationOnboarding] = useState(false);
+    const [showMigration, setShowMigration] = useState(false);
+    // First-install migration check runs once after the books list loads.
+    const migrationCheckedRef = useRef(false);
     const [importWizardOpen, setImportWizardOpen] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
@@ -164,177 +172,22 @@ export default function Dashboard() {
     // reset the limit (effect below).
     const paged = usePagedList("books");
 
-    /** Bulk export. Reads the current filtered list in display order,
-     *  restricts to the selected IDs, then POSTs them to the backend
-     *  bulk endpoint. The backend preserves the input order in the
-     *  response (ZIP iteration), so the user gets exactly what they
-     *  selected, in the order they saw it on screen. Toasts on
-     *  failure with the server message (which includes the offending
-     *  book's title for fail-loud Pandoc errors). */
-    const handleBulkBookExport = async (format: BookBulkExportFormat) => {
-        const ordered = filters.filteredBooks
-            .map((b) => b.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length === 0) return;
-        if (ordered.length > BOOK_BULK_LIMIT_HARD) return;
-        try {
-            const { blob, filename } = await api.books.bulkExport(ordered, format);
-            downloadBlob(blob, filename);
-            selection.clear();
-        } catch (err) {
-            const message =
-                err instanceof ApiError
-                    ? err.detail
-                    : t("ui.dashboard.bulk.export_failed", "Bulk book export failed");
-            notify.error(message, err);
-        }
-    };
-
-    // UNIVERSAL-AI-TEMPLATE-02: bulk AI-template ZIP export.
-    // Cap of 50 enforced by the action bar's disabled state;
-    // server-side 422 surfaces here as a toast if the bar gate
-    // is somehow bypassed (e.g. e2e replay).
-    const handleBulkBookAiTemplateExport = async () => {
-        const ordered = filters.filteredBooks
-            .map((b) => b.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length === 0) return;
-        try {
-            const { blob, filename } = await api.books.bulkAiTemplate.export(ordered);
-            downloadBlob(blob, filename);
-            notify.success(
-                t(
-                    "ui.ai_template.bulk.export_success",
-                    "{count} template(s) exported as {filename}",
-                )
-                    .replace("{count}", String(ordered.length))
-                    .replace("{filename}", filename),
-            );
-        } catch (err) {
-            const message =
-                err instanceof ApiError
-                    ? err.detail
-                    : t("ui.ai_template.bulk.export_failed", "Bulk template export failed");
-            notify.error(message, err);
-        }
-    };
-
-    const [bulkBookAiImportOpen, setBulkBookAiImportOpen] = useState(false);
-
-    // UNIVERSAL-AI-TEMPLATE-02 commit 8: bulk-AI-fill flow state.
-    // The "Bulk AI fill" dropdown item opens a FieldClassDialog;
-    // submitting that opens the BulkAiFillConfirmDialog; confirm
-    // calls /start and hands off to BulkAiFillJobContext (the
-    // dock takes over from there).
-    const [bulkBookAiFillFieldsOpen, setBulkBookAiFillFieldsOpen] = useState(false);
-    const [bulkBookAiFillConfirm, setBulkBookAiFillConfirm] = useState<{
-        ids: string[];
-        fieldClasses: string[];
-        force: boolean;
-        inlineImageCount?: number | null;
-    } | null>(null);
-
-    // Bulk-delete state. Same shape as the Articles dashboard;
-    // see ArticleList.tsx for the rationale + behavior matrix.
-    const [bulkDeleteDialog, setBulkDeleteDialog] = useState<{
-        ids: string[];
-        count: number;
-    } | null>(null);
-
-    const handleBulkBookDelete = async (permanent: false) => {
-        const ordered = filters.filteredBooks
-            .map((b) => b.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2) return;
-        try {
-            const result = await getStorage().books.bulkDelete(ordered, permanent);
-            setBooks((prev) =>
-                prev.filter(
-                    (b) => !ordered.includes(b.id) || result.failed.some((f) => f.id === b.id),
-                ),
-            );
-            loadTrash();
-            selection.clear();
-            const message = t(
-                "ui.bulk_delete.toast_trashed",
-                "{count} in den Papierkorb verschoben",
-            ).replace("{count}", String(result.deleted_count));
-            notify.bulkAction(
-                message,
-                async () => {
-                    try {
-                        const undone = ordered.filter(
-                            (id) =>
-                                !result.skipped_already_trashed.includes(id) &&
-                                !result.failed.some((f) => f.id === id),
-                        );
-                        if (undone.length === 0) {
-                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
-                            return;
-                        }
-                        // One round-trip via bulk-restore
-                        // (BULK-RESTORE-PARITY-01). Per-id status
-                        // surfaces partial failures via the response
-                        // shape instead of Promise.all's first-rejection
-                        // wins.
-                        const undoResult = await getStorage().books.bulkRestore(undone);
-                        loadBooks();
-                        loadTrash();
-                        if (undoResult.failed.length > 0) {
-                            notify.warning(
-                                t(
-                                    "ui.bulk_delete.toast_undone_partial",
-                                    "{restored} wiederhergestellt, {failed} fehlgeschlagen",
-                                )
-                                    .replace("{restored}", String(undoResult.restored_count))
-                                    .replace("{failed}", String(undoResult.failed.length)),
-                            );
-                        } else {
-                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
-                        }
-                    } catch (undoErr) {
-                        notify.error(
-                            t(
-                                "ui.bulk_delete.toast_undo_failed",
-                                "Wiederherstellen fehlgeschlagen",
-                            ),
-                            undoErr,
-                        );
-                    }
-                },
-                t("ui.bulk_delete.undo_label", "Rückgängig"),
-            );
-        } catch (err) {
-            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
-        }
-    };
-
-    const handleBulkBookDeletePermanentRequest = () => {
-        const ordered = filters.filteredBooks
-            .map((b) => b.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2) return;
-        setBulkDeleteDialog({ ids: ordered, count: ordered.length });
-    };
-
-    const handleBulkBookDeletePermanentConfirmed = async () => {
-        if (!bulkDeleteDialog) return;
-        const { ids } = bulkDeleteDialog;
-        setBulkDeleteDialog(null);
-        try {
-            const result = await getStorage().books.bulkDelete(ids, true);
-            setBooks((prev) => prev.filter((b) => !ids.includes(b.id)));
-            selection.clear();
-            notify.success(
-                t("ui.bulk_delete.toast_deleted_permanent", "{count} endgültig gelöscht").replace(
-                    "{count}",
-                    String(result.deleted_count),
-                ),
-            );
-        } catch (err) {
-            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
-        }
-    };
+    const {
+        handleBulkBookExport,
+        handleBulkBookAiTemplateExport,
+        handleBulkBookDelete,
+        handleBulkBookDeletePermanentRequest,
+        handleBulkBookDeletePermanentConfirmed,
+        bulkBookAiImportOpen,
+        setBulkBookAiImportOpen,
+        bulkBookAiFillFieldsOpen,
+        setBulkBookAiFillFieldsOpen,
+        handleBulkAiFillFieldsSubmit,
+        bulkBookAiFillConfirm,
+        setBulkBookAiFillConfirm,
+        bulkDeleteDialog,
+        setBulkDeleteDialog,
+    } = useDashboardBulkActions({ filters, selection, setBooks, loadBooks, loadTrash, t });
 
     /** Filter changes invalidate selection because a previously-
      *  selected book may now be hidden. Pinning to ``selection.clear``
@@ -396,6 +249,29 @@ export default function Dashboard() {
         navigate("/", { replace: true, state: null });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, donationsConfig, books, location.state]);
+
+    // First-install data migration (#591): on a fresh install with no
+    // books AND no articles, offer to import a `.bgb` backup made on the
+    // online version. Runs once after the books list loads; the flag (set
+    // on dismiss) keeps it from reappearing. Works in both storage modes.
+    useEffect(() => {
+        if (migrationCheckedRef.current) return;
+        if (loading) return;
+        migrationCheckedRef.current = true;
+        if (books.length > 0) return;
+        if (!shouldOfferMigration()) return;
+        let cancelled = false;
+        void getStorage()
+            .articles.list()
+            .then((articles) => {
+                if (!cancelled && articles.length === 0) setShowMigration(true);
+            })
+            .catch(() => {});
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [loading, books]);
 
     const handleBackupExport = () => {
         if (offline) return;
@@ -936,6 +812,14 @@ export default function Dashboard() {
                     donations={donationsConfig}
                 />
             ) : null}
+            <MigrationWelcomeDialog
+                open={showMigration}
+                onClose={() => setShowMigration(false)}
+                onImport={() => {
+                    setShowMigration(false);
+                    setImportWizardOpen(true);
+                }}
+            />
             {bulkDeleteDialog && (
                 <TypeToConfirmDialog
                     open
@@ -959,22 +843,7 @@ export default function Dashboard() {
                 open={bulkBookAiFillFieldsOpen}
                 kind="book"
                 onClose={() => setBulkBookAiFillFieldsOpen(false)}
-                onSubmit={(req: FieldClassDialogResult) => {
-                    const ids = filters.filteredBooks
-                        .map((b) => b.id)
-                        .filter((id) => selection.isSelected(id));
-                    if (ids.length === 0) {
-                        setBulkBookAiFillFieldsOpen(false);
-                        return;
-                    }
-                    setBulkBookAiFillFieldsOpen(false);
-                    setBulkBookAiFillConfirm({
-                        ids,
-                        fieldClasses: req.field_classes,
-                        force: req.force,
-                        inlineImageCount: req.inline_image_count,
-                    });
-                }}
+                onSubmit={handleBulkAiFillFieldsSubmit}
                 title={t(
                     "ui.bulk_ai_fill.field_class_dialog_title",
                     "Bulk AI fill: pick field-classes",

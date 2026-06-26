@@ -10,27 +10,19 @@
  *  Its columns come from CHAPTER-STATUS-LABELS-01 (status/label) +
  *  WRITING-GOALS-PROGRESS-TRACKING-01 (target_words). */
 import React, {useCallback, useEffect, useMemo, useState} from "react"
-import {ArrowLeft, ChevronDown, ChevronUp} from "lucide-react"
+import {ArrowLeft, ChevronDown, ChevronUp, Wand2} from "lucide-react"
 
-import {
-    api,
-    SaveAbortedError,
-    type Chapter,
-    type ChapterLabel,
-    type ChapterUpdatePayload,
-} from "../../api/client"
+import {type BookCollection, type Chapter, type ChapterLabel} from "../../api/client"
 import {getStorage} from "../../storage"
 import {useI18n} from "../../hooks/useI18n"
 import {notify} from "../../utils/platform/notify"
+import {firstParagraphText} from "../../lib/utils/firstParagraph"
 import {BeatSelect} from "../story-bible/StoryboardAnnotations"
 import {LabelSelect, StatusSelect} from "./ChapterStatusLabel"
 import {chapterWordCount} from "../story-bible/ProseStoryboard"
+import OutlinerCollectionsBar from "./OutlinerCollectionsBar"
+import {useInlineEdit} from "./useInlineEdit"
 import styles from "../ChapterOutliner.module.css"
-
-type OutlinerPatch = Pick<
-    ChapterUpdatePayload,
-    "status" | "label_id" | "target_words" | "story_beat" | "notes"
->
 
 type SortKey = "position" | "title" | "words" | "target" | "status"
 
@@ -56,6 +48,24 @@ export default function ChapterOutliner({
     const [loadError, setLoadError] = useState(false)
     const [sortKey, setSortKey] = useState<SortKey>("position")
     const [sortDir, setSortDir] = useState<"asc" | "desc">("asc")
+    const [collections, setCollections] = useState<BookCollection[]>([])
+    const [activeCollectionId, setActiveCollectionId] = useState<string | null>(null)
+    const [filterToCollection, setFilterToCollection] = useState(false)
+
+    useEffect(() => {
+        let cancelled = false
+        getStorage()
+            .books.get(bookId)
+            .then((book) => {
+                if (!cancelled) setCollections(book.collections ?? [])
+            })
+            .catch(() => {
+                if (!cancelled) setCollections([])
+            })
+        return () => {
+            cancelled = true
+        }
+    }, [bookId])
 
     useEffect(() => {
         let cancelled = false
@@ -79,34 +89,96 @@ export default function ChapterOutliner({
     }, [bookId])
 
     const loadLabels = useCallback(() => {
-        if (getStorage().mode === "dexie") { setLabels([]); return }
         getStorage().chapterLabels.list(bookId).then(setLabels).catch(() => setLabels([]))
     }, [bookId])
     useEffect(() => loadLabels(), [loadLabels])
 
-    const handlePatch = useCallback(
-        async (chapterId: string, patch: OutlinerPatch): Promise<void> => {
-            const current = chapters.find((c) => c.id === chapterId)
-            if (!current) return
-            try {
-                const updated = await getStorage().chapters.update(bookId, chapterId, {
-                    version: current.version,
-                    ...patch,
-                })
-                setChapters((prev) => prev.map((c) => (c.id === chapterId ? updated : c)))
-            } catch (err: unknown) {
-                if (err instanceof SaveAbortedError) return
-                notify.error(t("ui.storyboard.save_failed", "Save failed"), err)
-                try {
-                    const fresh = await getStorage().chapters.get(bookId, chapterId)
-                    setChapters((prev) => prev.map((c) => (c.id === chapterId ? fresh : c)))
-                } catch {
-                    /* toast already fired */
-                }
-            }
+    const handlePatch = useInlineEdit(bookId, chapters, setChapters)
+
+    const handleAutoSynopsis = useCallback(
+        (chapter: Chapter): void => {
+            const generated = firstParagraphText(chapter.content)
+            if (!generated || generated === (chapter.synopsis ?? "")) return
+            void handlePatch(chapter.id, {synopsis: generated})
         },
-        [bookId, chapters, t],
+        [handlePatch],
     )
+
+    // --- Collections (CHAPTER-COLLECTIONS-01) ---
+
+    const activeCollection = useMemo(
+        () => collections.find((c) => c.id === activeCollectionId) ?? null,
+        [collections, activeCollectionId],
+    )
+
+    const saveCollections = useCallback(
+        (next: BookCollection[]): void => {
+            setCollections(next)
+            void getStorage()
+                .books.update(bookId, {collections: next})
+                .catch((err) =>
+                    notify.error(t("ui.outliner.collection_save_failed", "Could not save collection"), err),
+                )
+        },
+        [bookId, t],
+    )
+
+    const handleNewCollection = useCallback(() => {
+        const created: BookCollection = {
+            id: crypto.randomUUID(),
+            name: t("ui.outliner.collection_default_name", "New collection"),
+            chapter_ids: [],
+        }
+        saveCollections([...collections, created])
+        setActiveCollectionId(created.id)
+        setFilterToCollection(false)
+    }, [collections, saveCollections, t])
+
+    const handleRenameCollection = useCallback(
+        (name: string) => {
+            const trimmed = name.trim()
+            if (!activeCollection || !trimmed || trimmed === activeCollection.name) return
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, name: trimmed} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
+    const handleDeleteCollection = useCallback(() => {
+        if (!activeCollection) return
+        saveCollections(collections.filter((c) => c.id !== activeCollection.id))
+        setActiveCollectionId(null)
+        setFilterToCollection(false)
+    }, [activeCollection, collections, saveCollections])
+
+    const toggleMembership = useCallback(
+        (chapterId: string) => {
+            if (!activeCollection) return
+            const ids = activeCollection.chapter_ids.includes(chapterId)
+                ? activeCollection.chapter_ids.filter((id) => id !== chapterId)
+                : [...activeCollection.chapter_ids, chapterId]
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, chapter_ids: ids} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
+    const setCollectionColor = useCallback(
+        (color: string | null) => {
+            if (!activeCollection) return
+            saveCollections(
+                collections.map((c) => (c.id === activeCollection.id ? {...c, color} : c)),
+            )
+        },
+        [activeCollection, collections, saveCollections],
+    )
+
+    const selectCollection = useCallback((id: string | null) => {
+        setActiveCollectionId(id)
+        setFilterToCollection(false)
+    }, [])
 
     const toggleSort = (key: SortKey) => {
         if (key === sortKey) {
@@ -141,6 +213,14 @@ export default function ChapterOutliner({
             return a.position - b.position
         })
     }, [chapters, sortKey, sortDir])
+
+    const displayed = useMemo(() => {
+        if (filterToCollection && activeCollection) {
+            const ids = new Set(activeCollection.chapter_ids)
+            return sorted.filter((c) => ids.has(c.id))
+        }
+        return sorted
+    }, [sorted, filterToCollection, activeCollection])
 
     const SortHeader = ({label, col}: {label: string; col: SortKey}) => (
         <th
@@ -178,6 +258,19 @@ export default function ChapterOutliner({
                     {chapters.length} {t("ui.storyboard.chapters_unit", "chapters")}
                 </span>
             </div>
+            <OutlinerCollectionsBar
+                collections={collections}
+                activeCollectionId={activeCollectionId}
+                activeCollection={activeCollection}
+                filterToCollection={filterToCollection}
+                onSelect={selectCollection}
+                onFilterChange={setFilterToCollection}
+                onNew={handleNewCollection}
+                onRename={handleRenameCollection}
+                onDelete={handleDeleteCollection}
+                onSetColor={setCollectionColor}
+                testidNamespace={testidNamespace}
+            />
             <div className={styles.scroll}>
                 {loadError ? (
                     <div className={styles.empty} data-testid={`${testidNamespace}-error`}>
@@ -195,6 +288,9 @@ export default function ChapterOutliner({
                     <table className={styles.table}>
                         <thead>
                             <tr>
+                                {activeCollection && (
+                                    <th>{t("ui.outliner.col_in_collection", "In")}</th>
+                                )}
                                 <SortHeader label="#" col="position" />
                                 <SortHeader label={t("ui.outliner.col_title", "Title")} col="title" />
                                 <SortHeader label={t("ui.outliner.col_words", "Words")} col="words" />
@@ -202,10 +298,12 @@ export default function ChapterOutliner({
                                 <SortHeader label={t("ui.chapter_status.label", "Status")} col="status" />
                                 <th>{t("ui.chapter_label.label", "Label")}</th>
                                 <th>{t("ui.storyboard.beat_label", "Beat")}</th>
+                                <th>{t("ui.outliner.col_synopsis", "Synopsis")}</th>
+                                <th>{t("ui.outliner.col_notes", "Notes")}</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {sorted.map((ch) => {
+                            {displayed.map((ch) => {
                                 const words = chapterWordCount(ch.content)
                                 const over =
                                     ch.target_words != null &&
@@ -213,6 +311,17 @@ export default function ChapterOutliner({
                                     words >= ch.target_words
                                 return (
                                     <tr key={ch.id} data-testid={`${testidNamespace}-row-${ch.id}`}>
+                                        {activeCollection && (
+                                            <td className={styles.num}>
+                                                <input
+                                                    type="checkbox"
+                                                    checked={activeCollection.chapter_ids.includes(ch.id)}
+                                                    onChange={() => toggleMembership(ch.id)}
+                                                    aria-label={t("ui.outliner.col_in_collection", "In collection")}
+                                                    data-testid={`${testidNamespace}-member-${ch.id}`}
+                                                />
+                                            </td>
+                                        )}
                                         <td className={styles.num}>{ch.position + 1}</td>
                                         <td
                                             className={styles.titleCell}
@@ -266,6 +375,48 @@ export default function ChapterOutliner({
                                                 onSave={(beat) => void handlePatch(ch.id, {story_beat: beat})}
                                                 namespace={testidNamespace}
                                                 idSuffix={ch.id}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="flex items-center gap-1">
+                                                <input
+                                                    key={`syn-${ch.id}-${ch.synopsis ?? ""}`}
+                                                    className="input w-full min-w-[10rem]"
+                                                    defaultValue={ch.synopsis ?? ""}
+                                                    placeholder={t("ui.outliner.synopsis_placeholder", "Short summary…")}
+                                                    aria-label={t("ui.outliner.col_synopsis", "Synopsis")}
+                                                    data-testid={`${testidNamespace}-synopsis-${ch.id}`}
+                                                    onBlur={(e) => {
+                                                        const next = e.target.value.trim() || null
+                                                        if (next === (ch.synopsis ?? null)) return
+                                                        void handlePatch(ch.id, {synopsis: next})
+                                                    }}
+                                                />
+                                                <button
+                                                    type="button"
+                                                    className="btn btn-ghost btn-sm"
+                                                    onClick={() => handleAutoSynopsis(ch)}
+                                                    title={t("ui.outliner.synopsis_auto", "Generate from first paragraph")}
+                                                    aria-label={t("ui.outliner.synopsis_auto", "Generate from first paragraph")}
+                                                    data-testid={`${testidNamespace}-synopsis-auto-${ch.id}`}
+                                                >
+                                                    <Wand2 size={14} />
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <input
+                                                key={`notes-${ch.id}-${ch.inspector_notes ?? ""}`}
+                                                className="input w-full min-w-[10rem]"
+                                                defaultValue={ch.inspector_notes ?? ""}
+                                                placeholder={t("ui.outliner.notes_placeholder", "Working notes…")}
+                                                aria-label={t("ui.outliner.col_notes", "Notes")}
+                                                data-testid={`${testidNamespace}-notes-${ch.id}`}
+                                                onBlur={(e) => {
+                                                    const next = e.target.value.trim() || null
+                                                    if (next === (ch.inspector_notes ?? null)) return
+                                                    void handlePatch(ch.id, {inspector_notes: next})
+                                                }}
                                             />
                                         </td>
                                     </tr>

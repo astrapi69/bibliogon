@@ -1,4 +1,15 @@
 ui:
+  migration:
+    title: "Welcome to Bibliogon"
+    intro: "Have you already used the app online? Your books and articles can be carried over."
+    step_open: "Open the online version."
+    step_settings: "Go to Settings → Data → Full backup (.bgb)."
+    step_download: "Download the .bgb file."
+    step_import: "Click “Import backup” here."
+    skip: "Start without data"
+    open_online: "Open online version"
+    import: "Import backup"
+    settings_hint: "Migrating from the online version? Export a full backup (.bgb) there and import it here with “Import backup”."
   ai_extraction:
     story_bible_button: "Generate from book text"
     storyboard_button: "Generate from book text"
@@ -959,6 +970,8 @@ ui:
     interval_never: "Never"
     title: "Settings"
     tab_general: "General"
+    notes: "Project notes"
+    notes_placeholder: "Notes about the book project…"
     tab_erscheinungsbild: "Appearance"
     tab_verhalten: "Behavior"
     tab_editor: "Editor"
@@ -2081,7 +2094,7 @@ ui:
     multi_book_articles_note: '{count} article(s) will also be restored.'
     preview_articles_note: '{count} article(s) will also be restored.'
     step_1_drop_zone: Drop file here or click to browse
-    step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub'
+    step_1_accepted_formats: 'Accepts: .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub'
     error_unsupported_format: 'Unsupported file format. Accepts: {formats}'
     error_file_too_large: File too large (>{max} MB).
     warn_large_file: Large file ({size}); detection may take a moment.
@@ -3264,6 +3277,21 @@ ui:
     col_title: "Title"
     col_words: "Words"
     col_target: "Target"
+    col_synopsis: "Synopsis"
+    synopsis_placeholder: "Short summary…"
+    synopsis_auto: "Generate from first paragraph"
+    col_notes: "Notes"
+    notes_placeholder: "Working notes…"
+    collections_label: "Collections"
+    collection_all: "All chapters"
+    collection_new: "New collection"
+    collection_delete: "Delete"
+    collection_color: "Collection color"
+    collection_name: "Collection name"
+    collection_filter: "Filter to collection"
+    collection_default_name: "New collection"
+    collection_save_failed: "Could not save collection"
+    col_in_collection: "In"
   storyboard:
     title: "Storyboard"
     more_entities: "+{count} more"
@@ -3442,6 +3470,27 @@ ui:
     step_metadata: "Metadata"
     step_cover: "Cover"
     step_export: "Package"
+    step_format: "Format"
+    format_intro: "Choose the publication format. eBook is EPUB; paperback and hardcover are print PDFs with bleed."
+    format_kind_label: "Format"
+    format_kind_ebook: "eBook (EPUB/KPF)"
+    format_kind_paperback: "Paperback (PDF with bleed)"
+    format_kind_hardcover: "Hardcover (PDF with bleed)"
+    format_trim_label: "Trim size"
+    format_margin_label: "Margins"
+    format_margin_narrow: "Narrow"
+    format_margin_normal: "Normal"
+    format_margin_wide: "Wide"
+    guide_format_label: "Chosen format"
+    step_guide: "Guide"
+    guide_intro: "Bibliogon does not upload for you. Here's how to publish your package on KDP:"
+    guide_open_kdp: "Open KDP Bookshelf"
+    guide_step_create: "Create a new title on KDP (eBook or Paperback/Hardcover)."
+    guide_step_manuscript: "Upload the manuscript file from the ZIP: manuscript-ebook.epub for eBook, manuscript-paperback.pdf for print."
+    guide_step_cover: "Upload the cover file (cover.*)."
+    guide_step_metadata: "Transfer the details from metadata.json (title, author, description, categories, keywords)."
+    guide_step_price: "Set the price (see the Pricing step for royalties + minimum price) and publish."
+    guide_note: "Check the cover validation report (cover-validation-report.json) in the ZIP if KDP rejects the cover."
     metadata_loading: "Checking metadata…"
     metadata_check_failed: "Metadata check failed."
     metadata_hint: "Required fields must be filled before this book can be uploaded to KDP. Warnings are recommendations."

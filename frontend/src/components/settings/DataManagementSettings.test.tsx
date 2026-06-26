@@ -227,6 +227,15 @@ describe("DataManagementSettings", () => {
         await waitFor(() => expect(mockNotify.success).toHaveBeenCalled());
     });
 
+    it("shows the 'import from online version' hint + link in the import section (#591)", async () => {
+        render(<DataManagementSettings />);
+        await waitFor(() => expect(screen.getByTestId("data-import-section")).toBeTruthy());
+        expect(screen.getByTestId("data-import-online-hint")).toBeTruthy();
+        const link = screen.getByTestId("data-import-online-link") as HTMLAnchorElement;
+        expect(link.getAttribute("href")).toBe("https://astrapi69.github.io/bibliogon/");
+        expect(link.getAttribute("target")).toBe("_blank");
+    });
+
     it("Medium-import button navigates to the import page", async () => {
         render(<DataManagementSettings />);
         await waitFor(() => expect(screen.getByTestId("data-medium-import-link")).toBeTruthy());

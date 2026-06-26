@@ -17,6 +17,20 @@ describe("featureRegistry", () => {
         );
     });
 
+    it("gates grammar + translation as desktop-only (server-bound, no browser path) (#34)", () => {
+        for (const id of [FEATURES.GRAMMAR, FEATURES.TRANSLATION]) {
+            expect(featureRegistry.getState(id, API)).toBe("active");
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).toBe("disabled");
+            // Server-bound surfaces stay disabled offline even with an AI key.
+            expect(featureRegistry.getState(id, DEXIE_WITH_KEY)).toBe("disabled");
+            expect(featureRegistry.getReason(id, DEXIE_NO_KEY)).toBe(
+                FEATURE_REASON.REQUIRES_DESKTOP_APP,
+            );
+            // Policy #78: visible + explained, never hidden.
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).not.toBe("hidden");
+        }
+    });
+
     it("disables key-dependent features offline only without a key", () => {
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, DEXIE_NO_KEY)).toBe("disabled");
@@ -132,6 +146,10 @@ describe("featureRegistry", () => {
         // The Daten tab is purely client-side (#338): active in both modes.
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.DATA_MANAGEMENT, DEXIE_NO_KEY)).toBe("active");
+        // The diagnostic event recorder runs entirely client-side (EVT-06):
+        // active in both modes.
+        expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, API)).toBe("active");
+        expect(featureRegistry.getState(FEATURES.EVENT_RECORDING, DEXIE_NO_KEY)).toBe("active");
     });
 
     it("gates network-dependent import features on connectivity, not storage mode", () => {

@@ -98,9 +98,7 @@ def test_package_endpoint_returns_zip_when_metadata_complete(client):
     assert r.status_code == 200, r.text
     assert r.headers["content-type"] == "application/zip"
     # ZIP filename includes the slug.
-    assert "kdp-happy-path-kdp-package.zip" in r.headers.get(
-        "content-disposition", ""
-    )
+    assert "kdp-happy-path-kdp-package.zip" in r.headers.get("content-disposition", "")
 
     # Crack open the ZIP and verify the side files exist.
     zf = zipfile.ZipFile(io.BytesIO(r.content))
@@ -112,9 +110,7 @@ def test_package_endpoint_returns_zip_when_metadata_complete(client):
     # At least ONE manuscript file must be present (otherwise the
     # builder would have raised KdpPackageError before the ZIP
     # was bundled).
-    assert any(
-        n.startswith("manuscript-") for n in names
-    ), f"no manuscript-* in {names}"
+    assert any(n.startswith("manuscript-") for n in names), f"no manuscript-* in {names}"
 
 
 def test_package_endpoint_400_when_metadata_incomplete(client):
@@ -172,6 +168,126 @@ def test_package_metadata_json_shape(client):
     assert meta["language"] == "German"  # _map_language_to_kdp("de")
     assert meta["categories"] == ["Fiction", "Romance"]
     assert "love" in meta["keywords"]
+
+
+def _fake_generators(monkeypatch):
+    """Stub the prose EPUB + PDF generators so the manuscript
+    decision can be exercised without Pandoc / WeasyPrint (absent on
+    CI). Each stub writes a tiny real file + records its call. Returns
+    ``(epub_calls, pdf_calls)`` lists for assertions."""
+    from bibliogon_kdp import package as pkg
+
+    epub_calls: list[bool] = []
+    pdf_calls: list[tuple] = []
+
+    def fake_epub(book_data, chapters, assets, out_dir):
+        out = out_dir / "manuscript-ebook.epub"
+        out.write_bytes(b"epub")
+        epub_calls.append(True)
+        return out
+
+    def fake_pdf(book_data, chapters, out_dir, *, trim_size, margin, bleed_marks):
+        pdf_calls.append((trim_size, margin, bleed_marks))
+        out = out_dir / "manuscript-paperback.pdf"
+        out.write_bytes(b"pdf")
+        return out
+
+    monkeypatch.setattr(pkg, "_generate_prose_epub", fake_epub)
+    monkeypatch.setattr(pkg, "_generate_prose_pdf", fake_pdf)
+    return epub_calls, pdf_calls
+
+
+def test_ebook_kind_bundles_epub_without_pdf(client, monkeypatch):
+    """eBook -> EPUB only, no PDF (#583). The prose PDF generator is
+    never invoked and ``manuscript-paperback.pdf`` is absent from the
+    ZIP."""
+    from bibliogon_kdp.package import build_kdp_package
+
+    book_id = _create_book(client, title="KDP Ebook Only")
+    _add_chapter(client, book_id)
+    _patch_book_for_kdp(client, book_id)
+    _epub, pdf_calls = _fake_generators(monkeypatch)
+
+    zip_path = build_kdp_package(book_id, format_kind="ebook")
+    names = set(zipfile.ZipFile(zip_path).namelist())
+
+    assert "manuscript-ebook.epub" in names
+    assert "manuscript-paperback.pdf" not in names
+    assert pdf_calls == []
+
+
+def test_paperback_kind_renders_pdf_with_trim_and_bleed(client, monkeypatch):
+    """Paperback 6x9 -> the prose PDF generator is called with the
+    chosen trim + margin + bleed marks, and the PDF is bundled."""
+    from bibliogon_kdp.package import build_kdp_package
+
+    book_id = _create_book(client, title="KDP Paperback")
+    _add_chapter(client, book_id)
+    _patch_book_for_kdp(client, book_id)
+    _epub, pdf_calls = _fake_generators(monkeypatch)
+
+    zip_path = build_kdp_package(book_id, format_kind="paperback", trim_size="6x9", margin="normal")
+    names = set(zipfile.ZipFile(zip_path).namelist())
+
+    assert "manuscript-ebook.epub" in names
+    assert "manuscript-paperback.pdf" in names
+    assert pdf_calls == [("6x9", "normal", True)]
+
+
+def test_hardcover_kind_renders_pdf_with_trim_and_bleed(client, monkeypatch):
+    """Hardcover 8.5x11 -> the prose PDF generator is called with the
+    8.5x11 trim + bleed marks."""
+    from bibliogon_kdp.package import build_kdp_package
+
+    book_id = _create_book(client, title="KDP Hardcover")
+    _add_chapter(client, book_id)
+    _patch_book_for_kdp(client, book_id)
+    _epub, pdf_calls = _fake_generators(monkeypatch)
+
+    build_kdp_package(book_id, format_kind="hardcover", trim_size="8.5x11", margin="wide")
+
+    assert pdf_calls == [("8.5x11", "wide", True)]
+
+
+def test_missing_format_defaults_to_paperback(client, monkeypatch):
+    """A body-less call defaults to paperback (so the legacy EPUB + PDF
+    bundle is preserved) and threads ``trim_size=None`` - which the
+    WeasyPrint layer resolves to the 6x9 default (#583)."""
+    from bibliogon_kdp.package import build_kdp_package
+
+    book_id = _create_book(client, title="KDP Default Format")
+    _add_chapter(client, book_id)
+    _patch_book_for_kdp(client, book_id)
+    _epub, pdf_calls = _fake_generators(monkeypatch)
+
+    zip_path = build_kdp_package(book_id)
+    names = set(zipfile.ZipFile(zip_path).namelist())
+
+    assert "manuscript-paperback.pdf" in names
+    assert pdf_calls == [(None, None, True)]
+
+
+def test_package_endpoint_accepts_format_body(client, monkeypatch):
+    """The route accepts the FormatStep body and threads it through.
+    eBook over the wire -> the ZIP carries the EPUB but no PDF."""
+    from bibliogon_kdp import package as pkg
+
+    book_id = _create_book(client, title="KDP Body Ebook")
+    _add_chapter(client, book_id)
+    _patch_book_for_kdp(client, book_id)
+    _fake_generators(monkeypatch)
+    # The picture/comic branches are unaffected; only prose generators
+    # are stubbed, which is the book_type created above.
+    assert pkg  # keep the import meaningful for linters
+
+    r = client.post(
+        f"/api/kdp/package/{book_id}",
+        json={"format_kind": "ebook", "trim_size": "6x9", "margin": "normal"},
+    )
+    assert r.status_code == 200, r.text
+    names = set(zipfile.ZipFile(io.BytesIO(r.content)).namelist())
+    assert "manuscript-ebook.epub" in names
+    assert "manuscript-paperback.pdf" not in names
 
 
 def test_package_state_snapshot_carries_book_id(client):

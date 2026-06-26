@@ -28,6 +28,13 @@ export default defineConfig({
     // animations:disabled freezes CSS transitions so a screenshot taken
     // mid-transition cannot flake the diff.
     expect: {
+        // Assertion-wait budget. The default is 5000ms, but under
+        // sustained full-suite load a page's top-level container can take
+        // longer than that to render, flaking toBeVisible/toBeAttached on
+        // the first attempt (#535). Match the 10s actionTimeout so the
+        // assertion waits get the same headroom; a genuinely missing
+        // element still fails, just after 10s.
+        timeout: 10_000,
         toHaveScreenshot: {
             maxDiffPixelRatio: 0.01,
             animations: "disabled",
@@ -117,6 +124,24 @@ export default defineConfig({
             name: "screenshots",
             testDir: "./screenshots",
             use: {browserName: "chromium", viewport: {width: 1280, height: 800}},
+        },
+        {
+            // FEATURE-SCREENSHOT-CATALOG-01 generator. Run with:
+            //   npx playwright test --project=feature-screenshots
+            //   (or: make capture-screenshots)
+            // Output goes under docs/screenshots/ — a visual catalog of
+            // every feature for docs / README / Medium / onboarding, NOT
+            // a regression gate (that is the `visual` project). Kept out
+            // of the default + smoke runs and out of CI: on-demand only.
+            // 16:9 desktop viewport, locale de-DE, default theme.
+            name: "feature-screenshots",
+            testDir: "./feature-screenshots",
+            use: {
+                browserName: "chromium",
+                viewport: {width: 1280, height: 720},
+                locale: "de-DE",
+            },
+            retries: 0,
         },
         {
             // VISUAL-REGRESSION-SCREENSHOTS-01 pixel-diff suite. Run with:

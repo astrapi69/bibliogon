@@ -66,6 +66,7 @@ export const FEATURES = {
     SELECTIVE_EXPORT: "selective-export",
     EXPORT_PREVIEW: "export-preview",
     DATA_MANAGEMENT: "data-management",
+    EVENT_RECORDING: "event-recording",
 
     AI_FILL: "ai-fill",
     AI_GENERATE: "ai-generate",
@@ -86,6 +87,13 @@ export const FEATURES = {
     BULK_EXPORT: "bulk-export",
     WRITING_HISTORY_CSV: "writing-history-csv",
     BOOK_TEMPLATES: "book-templates",
+    // Server-bound review/translation surfaces with no browser path: the
+    // grammar spellcheck proxies LanguageTool through the backend, and the
+    // article translation executes DeepL/LMStudio via the backend plugin.
+    // Offline they have no implementation, so they are disabled+explained
+    // (policy #78) rather than failing silently on the guardedFetch backstop.
+    GRAMMAR: "grammar",
+    TRANSLATION: "translation",
 } as const;
 
 /**
@@ -141,6 +149,12 @@ const ALWAYS_ACTIVE: readonly string[] = [
     // navigator.storage.estimate() and writes only through the storage
     // seam. No backend round-trip, so it is active in both modes (#338).
     FEATURES.DATA_MANAGEMENT,
+    // The diagnostic event recorder (in-memory ring buffer + Dexie-persisted
+    // log) runs entirely client-side and never sends anything anywhere; it is
+    // active in both modes. Registered as a declared feature (EVT-06) so the
+    // recorder consults the registry instead of mounting ungated, giving a
+    // single kill-switch and an audit point.
+    FEATURES.EVENT_RECORDING,
 ];
 
 /**
@@ -195,6 +209,8 @@ const DESKTOP_ONLY: readonly string[] = [
     FEATURES.WRITING_HISTORY_CSV,
     FEATURES.BOOK_TEMPLATES,
     FEATURES.AI_TEMPLATE_FILE_IO,
+    FEATURES.GRAMMAR,
+    FEATURES.TRANSLATION,
 ];
 
 function descriptor(id: string): FeatureDescriptor {

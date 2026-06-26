@@ -1726,7 +1726,9 @@
       "asin_ebook": "ASIN e-book",
       "asin_paperback": "ASIN broche",
       "asin_hardcover": "ASIN relie",
-      "backpage_author_bio": "A propos de l'auteur"
+      "backpage_author_bio": "A propos de l'auteur",
+      "notes": "Notes du projet",
+      "notes_placeholder": "Notes sur le projet du livre…"
     },
     "cover": {
       "choose_file": "Choisir un fichier",
@@ -2142,7 +2144,7 @@
       "multi_book_articles_note": "{count} article(s) seront egalement restaures.",
       "preview_articles_note": "{count} article(s) seront egalement restaures.",
       "step_1_drop_zone": "Deposez un fichier ici ou cliquez pour parcourir",
-      "step_1_accepted_formats": "Accepte : .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template), .docx, .epub",
+      "step_1_accepted_formats": "Accepte : .bgb, .md, .markdown, .txt, .html, .htm, .zip (write-book-template / Scrivener .scriv), .docx, .epub",
       "error_unsupported_format": "Format de fichier non pris en charge. Accepte : {formats}",
       "error_file_too_large": "Fichier trop volumineux (>{max} Mo).",
       "warn_large_file": "Fichier volumineux ({size}) ; la detection peut prendre un instant.",
@@ -3426,7 +3428,22 @@
       "open": "Ouvrir le plan",
       "col_title": "Titre",
       "col_words": "Mots",
-      "col_target": "Objectif"
+      "col_target": "Objectif",
+      "col_synopsis": "Synopsis",
+      "synopsis_placeholder": "Résumé court…",
+      "synopsis_auto": "Générer à partir du premier paragraphe",
+      "collections_label": "Collections",
+      "collection_all": "Tous les chapitres",
+      "collection_new": "Nouvelle collection",
+      "collection_delete": "Supprimer",
+      "collection_name": "Nom de la collection",
+      "collection_filter": "Filtrer par collection",
+      "collection_default_name": "Nouvelle collection",
+      "collection_save_failed": "Impossible d'enregistrer la collection",
+      "col_in_collection": "Dans",
+      "col_notes": "Notes",
+      "notes_placeholder": "Notes de travail…",
+      "collection_color": "Couleur de la collection"
     },
     "storyboard": {
       "title": "Storyboard",
@@ -3666,7 +3683,40 @@
       "arc_mailto_subject": "Demande d'ARC",
       "arc_send_mail": "Rédiger un e-mail",
       "conflict_banner": "Les métadonnées du livre ont changé depuis la dernière session de l'assistant. Veuillez revalider les métadonnées et la couverture avant de générer le paquet.",
-      "conflict_dismiss": "Ignorer l'avertissement"
+      "conflict_dismiss": "Ignorer l'avertissement",
+      "step_guide": "Guide",
+      "guide_intro": "Bibliogon ne téléverse pas à ta place. Voici comment publier ton paquet sur KDP :",
+      "guide_open_kdp": "Ouvrir KDP Bookshelf",
+      "guide_step_create": "Crée un nouveau titre sur KDP (eBook ou broché/relié).",
+      "guide_step_manuscript": "Téléverse le fichier du manuscrit depuis le ZIP : manuscript-ebook.epub pour l'eBook, manuscript-paperback.pdf pour l'impression.",
+      "guide_step_cover": "Téléverse le fichier de couverture (cover.*).",
+      "guide_step_metadata": "Reporte les informations de metadata.json (titre, auteur, description, catégories, mots-clés).",
+      "guide_step_price": "Définis le prix (voir l'étape Prix pour les redevances + le prix minimum) et publie.",
+      "guide_note": "Consulte le rapport de validation de couverture (cover-validation-report.json) du ZIP si KDP refuse la couverture.",
+      "step_format": "Format",
+      "format_intro": "Choisis le format de publication. eBook = EPUB ; broché et relié sont des PDF d'impression avec fond perdu.",
+      "format_kind_label": "Format",
+      "format_kind_ebook": "eBook (EPUB/KPF)",
+      "format_kind_paperback": "Broché (PDF avec fond perdu)",
+      "format_kind_hardcover": "Relié (PDF avec fond perdu)",
+      "format_trim_label": "Taille de coupe",
+      "format_margin_label": "Marges",
+      "format_margin_narrow": "Étroite",
+      "format_margin_normal": "Normale",
+      "format_margin_wide": "Large",
+      "guide_format_label": "Format choisi"
+    },
+    "migration": {
+      "title": "Bienvenue dans Bibliogon",
+      "intro": "Avez-vous déjà utilisé l'application en ligne ? Vos livres et articles peuvent être récupérés.",
+      "step_open": "Ouvrez la version en ligne.",
+      "step_settings": "Allez dans Paramètres → Données → Sauvegarde complète (.bgb).",
+      "step_download": "Téléchargez le fichier .bgb.",
+      "step_import": "Cliquez ici sur « Importer la sauvegarde ».",
+      "skip": "Démarrer sans données",
+      "open_online": "Ouvrir la version en ligne",
+      "import": "Importer la sauvegarde",
+      "settings_hint": "Vous migrez depuis la version en ligne ? Exportez-y une sauvegarde complète (.bgb) et importez-la ici avec « Importer la sauvegarde »."
     }
   }
 }

@@ -22,6 +22,7 @@
  */
 
 import { renderPdfDefinition, type PdfDocDefinition } from "../formatPdf";
+import { extractPlainText } from "../../lib/utils/pageTextContent";
 
 /** KDP picture-book trim sizes (inches) -> pdfmake point dimensions
  *  (1 in = 72 pt). Kept in sync with `PICTURE_BOOK_FORMATS` in
@@ -42,7 +43,12 @@ const MARGIN = 36;
 export interface PicturebookPdfPage {
   /** base64 data URL of the page image, if any (resolved by the caller). */
   imageDataUrl?: string | null;
-  /** plain page text, if any. */
+  /**
+   * Page text, if any. Accepts either legacy plain text OR a stringified
+   * TipTap doc (`Page.text_content` is the latter for the rich text
+   * layouts); the builder harvests it to plain text via `extractPlainText`
+   * so the raw `{"type":"doc",...}` JSON never reaches the PDF.
+   */
   text?: string | null;
 }
 
@@ -69,7 +75,11 @@ export function buildPicturebookPdfDefinition(
 
   pages.forEach((page, index) => {
     const block: Record<string, unknown>[] = [];
-    const hasText = Boolean(page.text && page.text.trim());
+    // `Page.text_content` is a stringified TipTap doc for the rich text
+    // layouts; harvest it to plain prose so the raw JSON never prints.
+    // Legacy plain text passes through unchanged (idempotent).
+    const plainText = extractPlainText(page.text).trim();
+    const hasText = plainText.length > 0;
 
     if (page.imageDataUrl) {
       const imageMaxHeight = (hasText ? 0.68 : 0.94) * innerHeight;
@@ -82,7 +92,7 @@ export function buildPicturebookPdfDefinition(
     }
     if (hasText) {
       block.push({
-        text: page.text,
+        text: plainText,
         fontSize: 14,
         lineHeight: 1.3,
         alignment: "center",

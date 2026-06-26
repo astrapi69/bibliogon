@@ -47,6 +47,28 @@ Go through this checklist before committing:
 
 ---
 
+## Feature-Screenshots
+
+Every new or visually-changed feature MUST get a screenshot under
+`docs/screenshots/`:
+
+1. Add a test block for the feature to the capture spec
+   `e2e/feature-screenshots/capture-features.spec.ts`.
+2. Run `make capture-screenshots`.
+3. Commit the new PNGs: `git add docs/screenshots/`.
+4. Update the `docs/screenshots/README.md` index.
+
+Capture settings: 1280x720, default theme, locale de-DE, PNG. Use
+realistic test data (no "Test 1" titles).
+
+This applies to EVERY PR that contains UI changes. Pure
+backend / test / docs PRs are exempt. On-demand only — there is no CI
+gate (the `feature-screenshots` Playwright project is excluded from the
+smoke gate and CI). See `docs/MODULE-ARCHITECTURE.md`
+"Feature-screenshot catalog".
+
+---
+
 ## Test strategy
 
 ### Test pyramid

@@ -11,21 +11,15 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
 
-import { api, ApiError, Article, BookDetail } from "../api/client";
+import { api } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
-import { useContentTypes, contentTypeDefaultTitleKey } from "../hooks/useContentTypes";
-import { notify } from "../utils/platform/notify";
-import { downloadBlob } from "../shared/utils/downloadBlob";
+import { useContentTypes } from "../hooks/useContentTypes";
 import ViewToggle from "../components/dashboard/ViewToggle";
 import ArticleCard from "../components/articles/ArticleCard";
-import ArticleBulkActionBar, {
-    type BulkExportFormat,
-    type BulkExportMode,
-    BULK_LIMIT_HARD,
-} from "../components/articles/ArticleBulkActionBar";
+import ArticleBulkActionBar from "../components/articles/ArticleBulkActionBar";
 import { useArticleSelection } from "../components/articles/useArticleSelection";
 import ConvertToBookWizard from "../components/articles/ConvertToBookWizard";
 import TypeToConfirmDialog from "../components/dialogs/TypeToConfirmDialog";
@@ -38,6 +32,9 @@ import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
 import { usePagedList } from "../hooks/ui/usePagedList";
 import { useArticleFilters } from "../hooks/article/useArticleFilters";
 import { useArticleListData } from "../hooks/article/useArticleListData";
+import { useArticleBulkActions } from "../hooks/article/useArticleBulkActions";
+import { useArticleNewButton } from "../hooks/article/useArticleNewButton";
+import { setDocumentTitle, resetDocumentMeta } from "../lib/utils/documentMeta";
 import { useDialog } from "../components/shared/AppDialog";
 import { useHelp } from "../contexts/HelpContext";
 import { Search } from "lucide-react";
@@ -61,6 +58,11 @@ import { EmptyState } from "../lib/components/EmptyState";
 export default function ArticleList() {
     const navigate = useNavigate();
     const { t } = useI18n();
+    // SEO route title (#605).
+    useEffect(() => {
+        setDocumentTitle("Artikel");
+        return () => resetDocumentMeta();
+    }, []);
     const bgbImport = useFeature(FEATURES.BGB_IMPORT);
     // The .bgb backup-export remains desktop-only. Policy #78: visible +
     // disabled with a reason offline, never hidden. `offline` gates only the
@@ -78,11 +80,6 @@ export default function ArticleList() {
     const isDexie = mode === "dexie";
     const articleTypesSnapshot = useContentTypes();
     const [showTrash, setShowTrash] = useState(false);
-    // CONFIGURABLE-DEFAULT-CONTENT-BOOK-TYPE-01: workspace default
-    // content-type (ui.defaults.content_type). The SplitButton primary
-    // "Neuer Artikel" creates this type (CreateArticlePage applies it);
-    // its label reflects the default's registry default_title_key.
-    const [defaultContentType, setDefaultContentType] = useState("blogpost");
     const {
         mode: viewMode,
         setMode: setViewMode,
@@ -110,34 +107,9 @@ export default function ArticleList() {
         handleEmptyTrash,
     } = useArticleListData(offline, selection, confirm, t);
     const filters = useArticleFilters(articles, t);
-    // SplitButton primary label ALWAYS reflects the configured default
-    // content-type's ``default_title_key``, mirroring the Book Dashboard's
-    // ``newBookLabel`` (which shows the default book-type's title even for
-    // the registry default). Falls back to the generic "Neuer Artikel"
-    // only when the default is unset/unknown or omits the key. (Issue
-    // #122: previously the label fell back to generic whenever the default
-    // equalled the registry default (blogpost), so a blogpost-default
-    // workspace wrongly showed "Neuer Artikel" instead of "Neuer Blogpost".)
-    const registryDefaultContentType = articleTypesSnapshot.defaultId;
-    const newArticleFallbackLabel = t("ui.articles.new", "Neuer Artikel");
-    const newArticleTitleKey = defaultContentType
-        ? contentTypeDefaultTitleKey(articleTypesSnapshot, defaultContentType)
-        : null;
-    const newArticleLabel = newArticleTitleKey
-        ? t(newArticleTitleKey, newArticleFallbackLabel)
-        : newArticleFallbackLabel;
-    // The primary deep-links a SPECIFIC (non-registry-default) type so
-    // CreateArticlePage renders the type-specific heading. The registry
-    // default (blogpost) and the unconfigured case use the bare
-    // /articles/new, where CreateArticlePage applies the configured
-    // default generically.
-    const hasSpecificDefaultContentType =
-        !!defaultContentType &&
-        defaultContentType !== registryDefaultContentType &&
-        !!articleTypesSnapshot.types[defaultContentType];
-    const newArticleHref = hasSpecificDefaultContentType
-        ? `/articles/new?type=${defaultContentType}`
-        : "/articles/new";
+    // SplitButton primary label + href, derived from the configured
+    // default content-type (god-file split, #207).
+    const { newArticleLabel, newArticleHref } = useArticleNewButton(articleTypesSnapshot, t);
     // DASHBOARD-PAGINATION-LOAD-MORE-01 C6: paged display of the
     // active (non-trash) article list. Slices ``filters.filteredArticles``
     // to ``paged.limit`` for render; "Load more" grows the limit;
@@ -155,210 +127,29 @@ export default function ArticleList() {
         setImportWizardOpen(true);
     };
 
-    /** Article-to-book conversion wizard. Snapshot the user's selected
-     *  Article[] when opening so the wizard's working copy is stable
-     *  even if the parent selection changes (it shouldn't, the page
-     *  freezes interactions behind the dialog, but the snapshot
-     *  decouples the two state machines). */
-    const [convertToBookArticles, setConvertToBookArticles] = useState<Article[] | null>(null);
-
-    const handleOpenConvertToBook = () => {
-        const ids = new Set(selection.selectedIds);
-        const snapshot = filters.filteredArticles.filter((a) => ids.has(a.id));
-        if (snapshot.length === 0) return;
-        setConvertToBookArticles(snapshot);
-    };
-
-    const handleBookCreated = (book: BookDetail) => {
-        // Page-level cleanup after a successful conversion. Runs
-        // unconditionally so the dashboard is in a clean state
-        // regardless of whether the user follows the toast CTA.
-        // Navigation lives on ``handleViewBook`` (toast action),
-        // not here.
-        void book;
-        selection.clear();
-        setConvertToBookArticles(null);
-    };
-
-    const handleViewBook = (book: BookDetail) => {
-        navigate(`/book/${book.id}`);
-    };
-
-    /** Bulk export. Reads the current filtered list in display
-     *  order, restricts to the selected IDs, then POSTs them to the
-     *  backend bulk endpoint. The backend preserves the input order
-     *  in the response (combined sections / ZIP iteration), so the
-     *  user sees exactly what they selected, in the order they saw
-     *  it on screen. Toasts on failure with the server message
-     *  (which includes the offending article title for fail-loud
-     *  pandoc errors). */
-    const handleBulkExport = async (format: BulkExportFormat, mode: BulkExportMode) => {
-        const ordered = filters.filteredArticles
-            .map((a) => a.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length === 0) return;
-        if (ordered.length > BULK_LIMIT_HARD) return; // bar already disables, double-guard.
-        try {
-            const { blob, filename } = await api.articles.bulkExport(ordered, format, mode);
-            downloadBlob(blob, filename);
-            selection.clear();
-        } catch (err) {
-            const message =
-                err instanceof ApiError
-                    ? err.detail
-                    : t("ui.articles.bulk.export_failed", "Bulk export failed");
-            notify.error(message, err);
-        }
-    };
-
-    // UNIVERSAL-AI-TEMPLATE-02: bulk AI-template ZIP export.
-    // Cap of 50 enforced by the bar's disabled state; the
-    // server-side 422 surfaces via toast if the gate is
-    // somehow bypassed.
-    const handleBulkArticleAiTemplateExport = async () => {
-        const ordered = filters.filteredArticles
-            .map((a) => a.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length === 0) return;
-        try {
-            const { blob, filename } = await api.articles.bulkAiTemplate.export(ordered);
-            downloadBlob(blob, filename);
-            notify.success(
-                t(
-                    "ui.ai_template.bulk.export_success",
-                    "{count} template(s) exported as {filename}",
-                )
-                    .replace("{count}", String(ordered.length))
-                    .replace("{filename}", filename),
-            );
-        } catch (err) {
-            const message =
-                err instanceof ApiError
-                    ? err.detail
-                    : t("ui.ai_template.bulk.export_failed", "Bulk template export failed");
-            notify.error(message, err);
-        }
-    };
-
-    const [bulkArticleAiImportOpen, setBulkArticleAiImportOpen] = useState(false);
-
-    // UNIVERSAL-AI-TEMPLATE-02 commit 8: bulk AI-fill flow state.
-    const [bulkArticleAiFillFieldsOpen, setBulkArticleAiFillFieldsOpen] = useState(false);
-    const [bulkArticleAiFillConfirm, setBulkArticleAiFillConfirm] = useState<{
-        ids: string[];
-        fieldClasses: string[];
-        force: boolean;
-        inlineImageCount?: number | null;
-    } | null>(null);
-
-    // Bulk-delete state. The permanent-path dialog opens with a
-    // captured count + ID list so the user typing happens against a
-    // snapshot, not the live selection (which they can't change while
-    // the modal is open, but pinning is still cleaner).
-    const [bulkDeleteDialog, setBulkDeleteDialog] = useState<{
-        ids: string[];
-        count: number;
-    } | null>(null);
-
-    const handleBulkDelete = async (permanent: false) => {
-        const ordered = filters.filteredArticles
-            .map((a) => a.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2) return;
-        try {
-            const result = await getStorage().articles.bulkDelete(ordered, permanent);
-            // Optimistic refresh: drop the deleted IDs from the
-            // visible list right away rather than re-fetching the
-            // whole collection.
-            setArticles((prev) =>
-                prev.filter(
-                    (a) => !ordered.includes(a.id) || result.failed.some((f) => f.id === a.id),
-                ),
-            );
-            void loadTrash();
-            selection.clear();
-            const message = t(
-                "ui.bulk_delete.toast_trashed",
-                "{count} in den Papierkorb verschoben",
-            ).replace("{count}", String(result.deleted_count));
-            // Undo restores every successfully-trashed row via the
-            // bulk-restore endpoint (BULK-RESTORE-PARITY-01). One
-            // round-trip vs Promise.all(N) — serializes the work
-            // into one DB transaction and surfaces per-id failures
-            // via the response shape instead of swallowing them in
-            // Promise.all's "first rejection wins" semantics.
-            notify.bulkAction(
-                message,
-                async () => {
-                    try {
-                        const undone = ordered.filter(
-                            (id) =>
-                                !result.skipped_already_trashed.includes(id) &&
-                                !result.failed.some((f) => f.id === id),
-                        );
-                        if (undone.length === 0) {
-                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
-                            return;
-                        }
-                        const undoResult = await getStorage().articles.bulkRestore(undone);
-                        const fresh = await getStorage().articles.list();
-                        setArticles(fresh);
-                        void loadTrash();
-                        if (undoResult.failed.length > 0) {
-                            notify.warning(
-                                t(
-                                    "ui.bulk_delete.toast_undone_partial",
-                                    "{restored} wiederhergestellt, {failed} fehlgeschlagen",
-                                )
-                                    .replace("{restored}", String(undoResult.restored_count))
-                                    .replace("{failed}", String(undoResult.failed.length)),
-                            );
-                        } else {
-                            notify.info(t("ui.bulk_delete.toast_undone", "Wiederhergestellt"));
-                        }
-                    } catch (undoErr) {
-                        notify.error(
-                            t(
-                                "ui.bulk_delete.toast_undo_failed",
-                                "Wiederherstellen fehlgeschlagen",
-                            ),
-                            undoErr,
-                        );
-                    }
-                },
-                t("ui.bulk_delete.undo_label", "Rückgängig"),
-            );
-        } catch (err) {
-            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
-        }
-    };
-
-    const handleBulkDeletePermanentRequest = () => {
-        const ordered = filters.filteredArticles
-            .map((a) => a.id)
-            .filter((id) => selection.isSelected(id));
-        if (ordered.length < 2) return;
-        setBulkDeleteDialog({ ids: ordered, count: ordered.length });
-    };
-
-    const handleBulkDeletePermanentConfirmed = async () => {
-        if (!bulkDeleteDialog) return;
-        const { ids } = bulkDeleteDialog;
-        setBulkDeleteDialog(null);
-        try {
-            const result = await getStorage().articles.bulkDelete(ids, true);
-            setArticles((prev) => prev.filter((a) => !ids.includes(a.id)));
-            selection.clear();
-            notify.success(
-                t("ui.bulk_delete.toast_deleted_permanent", "{count} endgültig gelöscht").replace(
-                    "{count}",
-                    String(result.deleted_count),
-                ),
-            );
-        } catch (err) {
-            notify.error(t("ui.bulk_delete.toast_failed", "Bulk-Löschen fehlgeschlagen"), err);
-        }
-    };
+    // Multi-select operations (bulk export / delete / AI-fill +
+    // article-to-book conversion) live in a dedicated hook; destructured
+    // to local names so the render below is unchanged (god-file split, #207).
+    const {
+        convertToBookArticles,
+        setConvertToBookArticles,
+        handleOpenConvertToBook,
+        handleBookCreated,
+        handleViewBook,
+        handleBulkExport,
+        handleBulkArticleAiTemplateExport,
+        handleBulkDelete,
+        handleBulkDeletePermanentRequest,
+        handleBulkDeletePermanentConfirmed,
+        bulkDeleteDialog,
+        setBulkDeleteDialog,
+        bulkArticleAiImportOpen,
+        setBulkArticleAiImportOpen,
+        bulkArticleAiFillFieldsOpen,
+        setBulkArticleAiFillFieldsOpen,
+        bulkArticleAiFillConfirm,
+        setBulkArticleAiFillConfirm,
+    } = useArticleBulkActions({ filters, selection, setArticles, loadTrash, navigate, t });
 
     /** Filter changes invalidate selection because a previously-
      *  selected article may now be hidden by the new filter; keeping
@@ -395,27 +186,6 @@ export default function ArticleList() {
         if (offline) return;
         window.open(api.backup.exportUrl(), "_blank");
     };
-
-    // Fetch the configured default content-type for the SplitButton
-    // primary label. No cache on getApp(), and this runs on every
-    // mount, so the label updates as soon as the user returns from
-    // Settings after changing the default. Silent fail: keep "blogpost".
-    useEffect(() => {
-        let cancelled = false;
-        getStorage()
-            .settings.getApp()
-            .then((config) => {
-                if (cancelled) return;
-                const uiConfig = (config.ui || {}) as Record<string, unknown>;
-                const uiDefaults = (uiConfig.defaults || {}) as Record<string, unknown>;
-                const ct = uiDefaults.content_type;
-                if (typeof ct === "string") setDefaultContentType(ct);
-            })
-            .catch(() => {});
-        return () => {
-            cancelled = true;
-        };
-    }, []);
 
     return (
         <DropZone

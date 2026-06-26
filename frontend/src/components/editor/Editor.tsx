@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
     useEditorPluginStatus,
     isPluginAvailable,
@@ -7,11 +7,10 @@ import {
 import { useFullscreenToggle } from "../../hooks/ui/useFullscreenToggle";
 import { useTypewriterScroll } from "../../hooks/editor/useTypewriterScroll";
 import { useKeyboardShortcuts } from "../../hooks/ui/useKeyboardShortcuts";
-import { useEditor, EditorContent, type Editor as TiptapEditor } from "@tiptap/react";
+import { useEditor, EditorContent } from "@tiptap/react";
 import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "../../db/drafts";
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
-import { findEnclosingSentence } from "../../data/fix-issue-prompts";
 import Toolbar from "./Toolbar";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {
@@ -30,6 +29,7 @@ import {
 import { useEditorDisplaySettings } from "../../hooks/editor/useEditorDisplaySettings";
 import { useAiChapterReview } from "../../hooks/ai/useAiChapterReview";
 import { useEditorWordCount } from "../../hooks/editor/useEditorWordCount";
+import { useEditorImageUpload } from "../../hooks/editor/useEditorImageUpload";
 import EditorStatusBar from "../../lib/components/EditorStatusBar";
 import { WORDS_PER_MINUTE } from "../../lib/utils/textStats";
 import { useEditorAutosave } from "../../hooks/editor/useEditorAutosave";
@@ -40,11 +40,10 @@ import { FEATURES } from "../../features/featureConfig";
 import { api, ApiError } from "../../api/client";
 import { aiComplete, AiNotConfiguredError } from "../../ai/aiComplete";
 import { getStorage } from "../../storage";
-import { warnIfOfflineStorageNearlyFull } from "../../utils/platform/storageQuota";
 import { notify } from "../../utils/platform/notify";
 import { editorToMarkdown } from "../../utils/editor/tiptap-markdown";
 import { markdownToHtml } from "../../lib/utils/markdownToHtml";
-import { parseContent, textOffsetToDocPos, buildAiPrompts } from "./editorHelpers";
+import { parseContent, textOffsetToDocPos, buildAiPrompts, expandToSentenceRange } from "./editorHelpers";
 
 export interface BookContext {
     title: string;
@@ -163,6 +162,9 @@ export default function Editor({
     } = autosave;
     const aiGen = useFeature(FEATURES.AI_GENERATE);
     const versionHistory = useFeature(FEATURES.VERSION_HISTORY);
+    // Grammar spellcheck proxies LanguageTool through the backend; offline it
+    // resolves disabled (visible + explained, not a guardedFetch failure) (#34).
+    const grammar = useFeature(FEATURES.GRAMMAR);
     const aiGenTitle = aiGen.isDisabled
         ? t("ui.feature.requires_ai_key", "Configure your API key in Settings > AI.")
         : undefined;
@@ -264,35 +266,11 @@ export default function Editor({
     // local per-instance.
     const editorDisplay = useEditorDisplaySettings();
 
-    const imageInputRef = useRef<HTMLInputElement>(null);
-
-    const uploadAndInsertImage = async (file: File) => {
-        if (!bookId) return;
-        try {
-            const asset = await getStorage().assets.upload(bookId, file, "figure");
-            const src = `/api/books/${bookId}/assets/file/${asset.filename}`;
-            editorRef.current?.chain().focus().setImage({ src, alt: file.name }).run();
-            void warnIfOfflineStorageNearlyFull(
-                t(
-                    "ui.offline.storage_almost_full",
-                    "Browser-Speicher fast voll. Entferne nicht benötigte Offline-Bücher, um Platz zu schaffen.",
-                ),
-            );
-        } catch (err) {
-            notify.error(t("ui.editor.upload_failed", "Upload fehlgeschlagen"), err);
-        }
-    };
-
-    // Context-menu "Insert image": open a file picker, then run the
-    // same upload+insert path as drag/paste. Only wired when the
-    // surface has a bookId to upload assets against.
-    const handleImageFileSelected = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file && file.type.startsWith("image/")) {
-            void uploadAndInsertImage(file);
-        }
-        event.target.value = "";
-    };
+    // Image upload/insert (drag, paste, context-menu) extracted to a hook
+    // (#207). Drag/paste handlers in the useEditor config below call
+    // ``uploadAndInsertImage`` directly.
+    const { imageInputRef, uploadAndInsertImage, handleImageFileSelected } =
+        useEditorImageUpload({ bookId, editorRef, t });
 
     const { wordCount, charCount, syncCounts } = useEditorWordCount();
 
@@ -604,25 +582,6 @@ export default function Editor({
         }
     };
 
-    /** Expand the plain-text issue range to its enclosing sentence
-     *  and return ProseMirror from/to positions. Mirrors the walk in
-     *  StyleCheckExtension.textOffsetToDocPos so the mapping stays
-     *  consistent. Returns null if the offsets fall outside the
-     *  current document (chapter drift, doc edited since the check). */
-    const expandToSentenceRange = (
-        ed: TiptapEditor,
-        issueOffset: number,
-        issueLength: number,
-    ): { from: number; to: number } | null => {
-        const plain = ed.getText();
-        const { start, end } = findEnclosingSentence(plain, issueOffset, issueLength);
-        const { from, to } = textOffsetToDocPos(ed.state.doc, start, end);
-        if (from === null) return null;
-        const resolvedTo = to ?? from;
-        if (resolvedTo < from) return null;
-        return { from, to: resolvedTo };
-    };
-
     const handleAiSuggest = async () => {
         if (!editor) return;
 
@@ -774,7 +733,7 @@ export default function Editor({
                     }
                     spellcheckActive={showSpellcheck}
                     onToggleSpellcheck={
-                        isPluginAvailable(pluginStatus, "grammar")
+                        grammar.isActive && isPluginAvailable(pluginStatus, "grammar")
                             ? handleToggleSpellcheck
                             : undefined
                     }
@@ -801,9 +760,11 @@ export default function Editor({
                             : undefined
                     }
                     spellcheckDisabledReason={
-                        !isPluginAvailable(pluginStatus, "grammar")
-                            ? pluginDisabledMessage(pluginStatus, "grammar")
-                            : undefined
+                        grammar.isDisabled
+                            ? t("ui.feature.requires_desktop_app", "Diese Funktion benötigt die Desktop-App.")
+                            : !isPluginAvailable(pluginStatus, "grammar")
+                              ? pluginDisabledMessage(pluginStatus, "grammar")
+                              : undefined
                     }
                     styleCheckActive={styleCheckActive}
                     styleCheckLoading={styleCheckLoading}

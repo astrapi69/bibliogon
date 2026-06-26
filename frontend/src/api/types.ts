@@ -157,6 +157,17 @@ export interface ContentTypeDef {
  *  entity's 5-value status enum further down. */
 export type BookStatus = "draft" | "ready" | "published" | "archived";
 
+/** A named, ordered set of chapter ids (CHAPTER-COLLECTIONS-01,
+ *  Scrivener "Collections" parity). Stored as a JSON list on
+ *  ``Book.collections``. */
+export interface BookCollection {
+    id: string;
+    name: string;
+    chapter_ids: string[];
+    /** Optional swatch colour (hex) for visual distinction (CHAPTER-COLLECTIONS-01). */
+    color?: string | null;
+}
+
 export interface Book {
     id: string;
     /** ``prose`` for the existing chapter-based authoring flow;
@@ -220,6 +231,8 @@ export interface Book {
     backpage_author_bio: string | null;
     cover_image: string | null;
     custom_css: string | null;
+    /** Project-level notes scratchpad (CHAPTER-SYNOPSIS-NOTES-01). */
+    notes?: string | null;
     /** BOOK-REPOSITORY-URL-FIELD-01: optional git repo URL for
      *  books tracked externally. When the book is
      *  plugin-git-sync-managed, GitSyncMappingStatus.repo_url
@@ -239,6 +252,9 @@ export interface Book {
     audiobook_skip_chapter_types: string[];
     created_at: string;
     updated_at: string;
+    /** Manual chapter collections (CHAPTER-COLLECTIONS-01). Rides the
+     *  base Book row through the storage seam (PATCH return + offline). */
+    collections?: BookCollection[] | null;
 }
 
 export interface BookDetail extends Book {
@@ -275,6 +291,13 @@ export interface Chapter {
     label_id?: string | null;
     /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
     target_words?: number | null;
+    /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
+     *  distinct from the Storyboard ``notes`` annotation. */
+    synopsis?: string | null;
+    /** Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive) -
+     *  the author's chapter-local working notes, distinct from the
+     *  Storyboard ``notes`` sticky and from project-wide ``Book.notes``. */
+    inspector_notes?: string | null;
 }
 
 /** A per-day writing-session row (WRITING-GOALS-PROGRESS-TRACKING-01). */
@@ -1136,6 +1159,11 @@ export interface ChapterUpdatePayload {
     label_id?: string | null;
     /** Per-chapter word target (WRITING-GOALS-PROGRESS-TRACKING-01). */
     target_words?: number | null;
+    /** Per-chapter synopsis (CHAPTER-SYNOPSIS-NOTES-01) - a short logline,
+     *  distinct from the Storyboard ``notes`` annotation. */
+    synopsis?: string | null;
+    /** Per-chapter Inspector notes (CHAPTER-SYNOPSIS-NOTES-01, additive). */
+    inspector_notes?: string | null;
 }
 
 export interface ChapterVersionSummary {

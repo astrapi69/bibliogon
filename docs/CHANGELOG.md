@@ -2,6 +2,116 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.58.0] - 2026-06-26
+
+The **desktop-launcher library-first + KDP-publishing-depth + SEO**
+release. No schema migrations; existing data + ``.bgb``/``.bgp``
+unaffected.
+
+### Added
+- **Desktop launcher → library-first (`docker-app-launcher`).** The
+  hand-written launcher is replaced by the reusable `docker-app-launcher`
+  PyPI package (progressively 0.5.0 → 0.7.0 → 0.12.1); Bibliogon ships
+  only `launcher/launcher.json` config + a thin three-responsibility
+  wrapper. Capabilities: a persistent single window (replacing the dialog
+  chain), Docker-first check + guided start, install progress,
+  port-conflict handling, a deterministic compose-project name, a
+  management dialog with reachable Stop/Uninstall when an instance is
+  already running, locale auto-detect, single-instance lock, rotating
+  logging, platform-specific Docker diagnostics, a copy-log button, an
+  always-available cleanup action, and an always-visible
+  enabled/disabled button-state window relayout with tooltips. The
+  `tray` extra is deliberately omitted (~6x frozen-binary inflation) and
+  `cleanup_search_paths` left empty (the scan would otherwise offer the
+  live book-data dir for deletion). New `docs/LAUNCHER-SPEC.md` config
+  reference + a README desktop-launcher section (#519, #521, #588–#618).
+- **KDP Publishing Wizard — Format + upload-guide steps.** A Format step
+  (eBook / Taschenbuch / Hardcover + KDP trim size + margin preset, #580)
+  and a KDP upload-guide step (#581); the package endpoint renders the
+  print PDF via WeasyPrint at the chosen trim size + margins with
+  crop/bleed marks (eBook → EPUB only, #583/#606). The package
+  `metadata.json` is enriched with `isbn` (format-matched, hardcover
+  falling back to paperback), `format`, `trim_size`, `page_count`,
+  `generated_by`, and `generated_at` (#612/#614).
+- **SEO — meta tags + JSON-LD.** Open Graph / Twitter / JSON-LD meta
+  tags for the PWA and the client-side export engine across every export
+  format (#605/#607); each exported Git-Sync chapter `.md` gains a YAML
+  front-matter block (#614); a 1200×630 social `og-image` (#620).
+- **First-install data-migration dialog** — a welcome dialog offers to
+  import an online `.bgb` backup on first run (PWA → desktop) (#591/#593).
+- **Per-chapter Inspector notes** — a notes field per chapter (#567).
+- **Scrivener `.scriv` project import** — import a Scrivener project as a
+  new book + chapters; the `.scrivx` index is parsed with `defusedxml`
+  (bandit B314-safe) (#554).
+- **Manual chapter collections** — group chapters into user-defined
+  collections in the Chapter Outliner, with an optional per-collection
+  colour; backend + frontend types + i18n across 8 catalogs + offline
+  seed (#553, #572).
+- **Per-chapter synopsis + project notes** — a synopsis column with
+  auto-generate (first paragraph) in the Chapter Outliner and a
+  project-notes field in the book metadata editor; backend + i18n ×8 +
+  offline seed (#551).
+- **Event recorder structuring axis (EVT-05)** — optional
+  `category`/`action`/per-entry `appState` on recorded diagnostic events,
+  additive to the existing `EventType`, surfaced in the Markdown + JSON
+  export.
+- **Event recorder feature gate (EVT-06)** — the diagnostic recorder is a
+  declared `EVENT_RECORDING` feature (always active in both modes), so it
+  has a single registry kill-switch instead of running ungated.
+- **Automated feature-screenshot catalog** — `docs/screenshots/` with 36
+  on-demand capture specs (`make capture-screenshots`), a visual catalog
+  of every feature for docs / README / onboarding; not a CI gate (#556).
+- **Desktop launcher management dialog** — reachable Stop/Uninstall when
+  an instance is already running (#521), plus a Docker-first check,
+  install progress, port-conflict handling, and a deterministic project
+  name (#519).
+
+### Changed
+- **God-file WARN-tier top-5 split (#207)** — `BookEditor`,
+  `BookMetadataEditor`, `CollageCanvas`, `ArticleList`, and
+  `ChapterOutliner` decomposed under 500 lines (#578, #586–#590).
+- **Offline grammar + translation are gated as disabled-with-reason** —
+  the server-bound LanguageTool spellcheck and DeepL/LMStudio translation
+  have no browser path, so in Dexie mode they render visible-but-disabled
+  with an explanation instead of failing silently (#34).
+- **Launcher help-docs** corrected to the real build-from-local-repo flow
+  (the launcher builds the Docker images from a local copy of the repo;
+  it does not download a release ZIP) (#603).
+- **Internal refactors (no user-visible effect)** — Storyboard god-file
+  split (`StoryboardCard` extracted), ArticleEditor static-config + editor
+  helper extractions, `useEditorImageUpload` hook, with directory-size
+  ratchet baselines adjusted accordingly (#207).
+
+### Fixed
+- **Picture-book client-side PDF** no longer prints raw TipTap JSON on
+  content pages — plain text is harvested from the page model (#616).
+- **`og-image`** uses real German umlauts (`Bücher`, `offline-fähig`)
+  instead of ASCII transliterations, and the subtitle no longer overflows
+  the 1200px canvas (#620).
+- **Chapter Outliner loads chapter labels offline** — labels resolve in
+  Dexie mode instead of staying empty (#548).
+
+### Security
+- **Dependency security bumps** from `pip-audit` — `starlette`,
+  `python-multipart`, `msgpack` (#549).
+
+### Internal / Tests
+- **Backend coverage** raised on four weak modules — `routes_misc.py`,
+  `services/audiobook/google_tts_setup.py`,
+  `import_plugins/handlers/bgb_archive_reader.py` (all → 100%) and
+  `routers/audiobook.py` (→ 88%); +46 tests (#562).
+- **E2E flake stabilization** — a `clickMenuItem` helper hardening 17+
+  Radix menu-click sites, conversion of `waitForTimeout`s to deterministic
+  waits, a 10s `expect.timeout` for the load-timing class, a hardened
+  `/api/test/reset` clearing shared backend state, committed
+  viewport-regression baselines, and a test-isolation audit (#522–#540).
+- **Module seam tests** for the offline export / picture-book / comic
+  barrels; new `make test-e2e-manual` / `test-e2e-all` targets (#559);
+  the feature-screenshot rule anchored in the project docs (#561).
+- **Multi-agent coordination brief** — the six open multi-agent-gitflow
+  adjudications captured as a decision brief in `docs/decisions/`, plus a
+  CLAUDE.md + ROADMAP post-v0.57.0 sync and lessons-learned entries (#611).
+
 ## [0.57.0] - 2026-06-21
 
 The **God-Folder + browser-AI + desktop-update-checker** cycle. AI now runs
