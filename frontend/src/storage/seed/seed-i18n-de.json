@@ -96,6 +96,21 @@
       "importing": "Importiere …",
       "import_btn": "Importieren"
     },
+    "tts": {
+      "read_aloud": "Vorlesen",
+      "play": "Abspielen",
+      "pause": "Pause",
+      "resume": "Fortsetzen",
+      "stop": "Stopp",
+      "speed": "Geschwindigkeit",
+      "voice": "Stimme",
+      "default_voice": "Standardstimme",
+      "now_reading": "Liest vor",
+      "no_text": "Kein Text zum Vorlesen vorhanden.",
+      "unavailable": "Ihr Browser unterstützt keine Sprachausgabe.",
+      "settings_title": "Vorlesen (Sprachausgabe)",
+      "settings_hint": "Wähle eine Standardstimme und Geschwindigkeit für die browser-native Sprachausgabe. Geräteabhängig; funktioniert offline."
+    },
     "feature": {
       "requires_network": "Diese Funktion benötigt eine Internetverbindung.",
       "requires_desktop_app": "Diese Funktion benötigt die Bibliogon Desktop-App",

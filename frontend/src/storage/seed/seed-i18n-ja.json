@@ -96,6 +96,21 @@
       "importing": "インポート中 …",
       "import_btn": "インポート"
     },
+    "tts": {
+      "read_aloud": "読み上げ",
+      "play": "再生",
+      "pause": "一時停止",
+      "resume": "再開",
+      "stop": "停止",
+      "speed": "速度",
+      "voice": "音声",
+      "default_voice": "既定の音声",
+      "now_reading": "読み上げ中",
+      "no_text": "読み上げるテキストがありません。",
+      "unavailable": "お使いのブラウザは音声読み上げに対応していません。",
+      "settings_title": "読み上げ（音声出力）",
+      "settings_hint": "ブラウザ標準の音声読み上げで使う既定の音声と速度を選択します。デバイス依存・オフラインで動作します。"
+    },
     "feature": {
       "requires_network": "この機能にはインターネット接続が必要です。",
       "requires_desktop_app": "この機能には Bibliogon デスクトップアプリが必要です",

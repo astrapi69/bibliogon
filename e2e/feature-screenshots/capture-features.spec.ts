@@ -227,6 +227,16 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/book-editor/composition-mode.png`});
         });
 
+        test("web speech read-aloud player", async ({page}) => {
+            const book = await seedProseBook("Schreiben am Meer");
+            await page.goto(`/book/${book.id}`);
+            // Start playback so the mini-player (play/pause + stop + speed)
+            // is in frame rather than the idle floating button.
+            await page.getByTestId("web-speech-tts-button").click().catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-editor/web-speech-tts.png`});
+        });
+
         test("chapter status labels", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}?view=storyboard`);
