@@ -2,15 +2,15 @@ import { useRef, useState } from "react";
 import type { Editor as TiptapEditor } from "@tiptap/react";
 import { WandSparkles, Languages, Loader2, Check, Copy, X } from "lucide-react";
 
-import { useI18n } from "../../hooks/useI18n";
+import { useI18n } from "../../../hooks/useI18n";
 import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURES, FEATURE_REASON } from "../../features/featureConfig";
-import { useStorageMode } from "../../storage/useStorageMode";
-import { aiCorrectGrammar, aiTranslate } from "../../ai/aiTextTools";
-import { classifyAiClientError } from "../../ai/llmClient";
-import { notify } from "../../utils/platform/notify";
-import { copyToClipboard } from "../../utils/platform/clipboard";
-import { RadixSelect } from "../shared/RadixSelect";
+import { FEATURES, FEATURE_REASON } from "../../../features/featureConfig";
+import { useStorageMode } from "../../../storage/useStorageMode";
+import { aiCorrectGrammar, aiTranslate } from "../../../ai/text-tools/aiTextTools";
+import { classifyAiClientError } from "../../../ai/llmClient";
+import { notify } from "../../../utils/platform/notify";
+import { copyToClipboard } from "../../../utils/platform/clipboard";
+import { RadixSelect } from "../../shared/RadixSelect";
 
 type ToolKind = "grammar" | "translate";
 

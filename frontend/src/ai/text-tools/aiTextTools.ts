@@ -16,7 +16,7 @@ import {
     getAiConfig,
     isAiConfigured,
     type AiConfig,
-} from "./llmClient";
+} from "../llmClient";
 
 /** Conservative generation settings: grammar/translation are deterministic
  *  rewrites, so a low temperature keeps the model from paraphrasing. */

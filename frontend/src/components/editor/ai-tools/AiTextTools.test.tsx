@@ -3,10 +3,10 @@ import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import type { ReactNode } from "react";
 
 import AiTextTools from "./AiTextTools";
-import { FeatureTestProvider } from "../../features/FeatureTestProvider";
-import { aiCorrectGrammar, aiTranslate } from "../../ai/aiTextTools";
+import { FeatureTestProvider } from "../../../features/FeatureTestProvider";
+import { aiCorrectGrammar, aiTranslate } from "../../../ai/text-tools/aiTextTools";
 
-vi.mock("../../hooks/useI18n", () => ({
+vi.mock("../../../hooks/useI18n", () => ({
     useI18n: () => ({
         t: (key: string, fallback?: string) => fallback ?? key,
         lang: "de",
@@ -16,25 +16,25 @@ vi.mock("../../hooks/useI18n", () => ({
 
 // Storage mode is the render gate (Dexie-only); flip per test.
 const storageMode = { mode: "dexie" as "dexie" | "api" };
-vi.mock("../../storage/useStorageMode", () => ({ useStorageMode: () => storageMode }));
+vi.mock("../../../storage/useStorageMode", () => ({ useStorageMode: () => storageMode }));
 
-vi.mock("../../ai/aiTextTools", () => ({
+vi.mock("../../../ai/text-tools/aiTextTools", () => ({
     aiCorrectGrammar: vi.fn(async () => ({ text: "Corrected text.", tokens: 1 })),
     aiTranslate: vi.fn(async () => ({ text: "Translated text.", tokens: 1 })),
 }));
 
-vi.mock("../../ai/llmClient", () => ({ classifyAiClientError: () => "unknown" }));
+vi.mock("../../../ai/llmClient", () => ({ classifyAiClientError: () => "unknown" }));
 
 const { notifyMock, copyMock } = vi.hoisted(() => ({
     notifyMock: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
     copyMock: vi.fn(async () => true),
 }));
-vi.mock("../../utils/platform/notify", () => ({ notify: notifyMock }));
-vi.mock("../../utils/platform/clipboard", () => ({ copyToClipboard: copyMock }));
+vi.mock("../../../utils/platform/notify", () => ({ notify: notifyMock }));
+vi.mock("../../../utils/platform/clipboard", () => ({ copyToClipboard: copyMock }));
 
 // Native-select stand-in for the Radix language picker (avoids Radix portal
 // timing in happy-dom; the language flow is the same).
-vi.mock("../shared/RadixSelect", () => ({
+vi.mock("../../shared/RadixSelect", () => ({
     RadixSelect: ({
         testId,
         value,

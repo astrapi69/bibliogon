@@ -12,7 +12,7 @@ import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "..
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
 import Toolbar from "./Toolbar";
-import AiTextTools from "./AiTextTools";
+import AiTextTools from "./ai-tools/AiTextTools";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {
     buildMentionLabels,

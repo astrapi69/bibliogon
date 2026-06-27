@@ -1,11 +1,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 import { aiCorrectGrammar, aiTranslate } from "./aiTextTools";
-import { aiChat, getAiConfig, isAiConfigured, AiClientError } from "./llmClient";
+import { aiChat, getAiConfig, isAiConfigured, AiClientError } from "../llmClient";
 
 // Browser-direct client fully mocked: no real provider call. AiClientError is a
 // real subclass so `instanceof` checks in callers keep working.
-vi.mock("./llmClient", () => {
+vi.mock("../llmClient", () => {
     class AiClientError extends Error {}
     return {
         AiClientError,
