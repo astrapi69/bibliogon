@@ -20,6 +20,7 @@ import {
 } from "../story-bible/storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
 import EditorAiPanel from "./EditorAiPanel";
+import EditorTtsControls from "./EditorTtsControls";
 import {
     EditorSearchBar,
     EditorSpellcheckPanel,
@@ -825,6 +826,15 @@ export default function Editor({
                     }}
                 />
             )}
+
+            {/* Browser-native read-aloud (Web Speech API) - offline
+                fallback to the desktop-only Cloud TTS. Floating speaker
+                button + bottom mini-player; capability-gated inside. */}
+            <EditorTtsControls
+                t={t}
+                lang={bookLanguage}
+                getText={() => editor?.getText() ?? ""}
+            />
 
             {/* AI Assistant Panel */}
             {showAiPanel && !markdownMode && (

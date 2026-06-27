@@ -96,6 +96,21 @@
       "importing": "Importation …",
       "import_btn": "Importer"
     },
+    "tts": {
+      "read_aloud": "Lire à voix haute",
+      "play": "Lire",
+      "pause": "Pause",
+      "resume": "Reprendre",
+      "stop": "Arrêter",
+      "speed": "Vitesse",
+      "voice": "Voix",
+      "default_voice": "Voix par défaut",
+      "now_reading": "Lecture",
+      "no_text": "Aucun texte à lire à voix haute.",
+      "unavailable": "Votre navigateur ne prend pas en charge la synthèse vocale.",
+      "settings_title": "Lecture à voix haute (synthèse vocale)",
+      "settings_hint": "Choisissez une voix et une vitesse par défaut pour la synthèse vocale native du navigateur. Dépend de l'appareil ; fonctionne hors ligne."
+    },
     "feature": {
       "requires_network": "Cette fonctionnalité nécessite une connexion internet.",
       "requires_desktop_app": "Cette fonctionnalité nécessite l'application de bureau Bibliogon",
