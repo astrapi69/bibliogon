@@ -12,6 +12,7 @@ import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "..
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
 import Toolbar from "./Toolbar";
+import AiTextTools from "./AiTextTools";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {
     buildMentionLabels,
@@ -777,6 +778,11 @@ export default function Editor({
                     documentSubtitle={documentSubtitle}
                 />
             </div>
+
+            {/* Offline AI text tools (#661): grammar correction + translation
+                of the selection via the user's own provider key. Self-gates to
+                Dexie mode; online the backend LanguageTool/DeepL path applies. */}
+            <AiTextTools editor={editor} markdownMode={markdownMode} />
 
             {/* Floating exit affordance, only in composition mode
                 (the toolbar that hosts the toggle is hidden). */}
