@@ -31,3 +31,23 @@ backend/app/schemas/__init__.py
 # api/apiObject.ts + the entity modules. Splitting the DTOs would only hurt
 # discoverability (mirrors the backend schemas whitelist rationale).
 frontend/src/api/types.ts
+
+# --- Frontend: TipTap editor shell (intentionally-cohesive wiring hub) ---
+# Owner-directed exception (#207 / #655): unlike the four sibling next-5
+# god-files (GitSyncPage, ConvertToBookWizard, LayoutConfigImageRow,
+# useComicBookEditor — all split under 500), Editor.tsx is the TipTap editor
+# SHELL and is already maximally decomposed: 10+ extracted hooks in
+# hooks/editor/ (autosave, image-upload, tools, word-count, display-settings,
+# plugin-status, typewriter-scroll, ai-chapter-review, …) + 9+ presentational
+# sub-components (Toolbar, EditorAiPanel, EditorSearchBar, EditorSpellcheckPanel,
+# EditorStatusBar, EditorContextMenu, EditorAudioPreview, EditorRecoveryBanner,
+# EditorDisplaySettingsPopover) + helpers/config (editorHelpers, editorExtensions,
+# tiptap-markdown). The residual is irreducible wiring: component state, the
+# useEditor() config, the cross-cutting effects, and the JSX that wires the
+# sub-components. The only path under 500 is a ~50-prop presentational shell,
+# which DEGRADES cohesion and risks the most fragile surface in the codebase
+# (lessons-learned "Coverage Illusion": passing unit tests do not prove the
+# editor works end-to-end). Documented + whitelisted per the #207 escape hatch
+# ("falls eine Datei monolithisch sein MUSS: dokumentieren und in Allowlist
+# aufnehmen") rather than forced into a degrading split.
+frontend/src/components/editor/Editor.tsx
