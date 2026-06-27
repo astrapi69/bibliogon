@@ -35,14 +35,20 @@ function matchesCombo(event: KeyboardEvent, keys: string): boolean {
   if (!key) return false
 
   const ctrlOrMeta = event.ctrlKey || event.metaKey
+  const eventKey = event.key.toLowerCase()
+
+  // "?" inherently requires Shift on most layouts, so the physical event
+  // carries shiftKey=true even though the combo has no explicit "shift".
+  // Enforcing the Shift comparison (needShift=false vs event.shiftKey=true)
+  // would reject every "?" press, so match the produced character directly
+  // and only guard the other modifiers.
+  if (key === "?") return eventKey === "?" && !ctrlOrMeta && !event.altKey
+
   if (needCtrl !== ctrlOrMeta) return false
   if (needShift !== event.shiftKey) return false
   if (needAlt !== event.altKey) return false
 
-  // Match the key itself
-  const eventKey = event.key.toLowerCase()
   if (key === "/") return eventKey === "/" || event.code === "Slash"
-  if (key === "?") return eventKey === "?"
   return eventKey === key
 }
 
@@ -82,10 +88,29 @@ export function useKeyboardShortcuts(shortcuts: Shortcut[]): void {
   }, [])
 }
 
-/** All app-level shortcuts for display in the cheatsheet. */
-export const APP_SHORTCUTS: Array<{keys: string; labelKey: string; labelFallback: string; section: string}> = [
+/** A single row in the shortcut cheatsheet / overview dialog. */
+export interface ShortcutRow {
+  keys: string
+  labelKey: string
+  labelFallback: string
+  section: "app" | "editor"
+  /** Optional muted reminder shown next to the label (i18n key). */
+  noteKey?: string
+  noteFallback?: string
+}
+
+/** All app-level shortcuts for display in the cheatsheet + overview dialog. */
+export const APP_SHORTCUTS: ShortcutRow[] = [
   // App navigation
   {keys: "Ctrl+/", labelKey: "ui.shortcuts.show_shortcuts", labelFallback: "Shortcuts anzeigen", section: "app"},
+  {
+    keys: "Ctrl+S",
+    labelKey: "ui.shortcuts.save",
+    labelFallback: "Speichern",
+    section: "app",
+    noteKey: "ui.shortcuts.save_note",
+    noteFallback: "Auto-Speichern ist aktiv",
+  },
   {keys: "Alt+Z", labelKey: "ui.shortcuts.toggle_word_wrap", labelFallback: "Zeilenumbruch umschalten", section: "app"},
   {keys: "Ctrl+Shift+F", labelKey: "ui.shortcuts.fullscreen", labelFallback: "Vollbild umschalten", section: "app"},
   {keys: "Ctrl+Shift+D", labelKey: "ui.shortcuts.composition_mode", labelFallback: "Kompositionsmodus", section: "app"},
@@ -105,4 +130,22 @@ export const APP_SHORTCUTS: Array<{keys: string; labelKey: string; labelFallback
   {keys: "Ctrl+Shift+B", labelKey: "ui.shortcuts.blockquote", labelFallback: "Zitat", section: "editor"},
   {keys: "Ctrl+Z", labelKey: "ui.shortcuts.undo", labelFallback: "Rückgängig", section: "editor"},
   {keys: "Ctrl+Y", labelKey: "ui.shortcuts.redo", labelFallback: "Wiederherstellen", section: "editor"},
+  {keys: "Ctrl+Shift+Z", labelKey: "ui.shortcuts.redo", labelFallback: "Wiederherstellen", section: "editor"},
 ]
+
+/**
+ * Render a key combo with platform-appropriate modifier glyphs
+ * (⌘/⇧/⌥ on macOS, Ctrl/Shift/Alt elsewhere). Shared by the
+ * /help/shortcuts page and the shortcuts overview dialog.
+ *
+ * @example
+ *   formatShortcutKeys("Ctrl+Shift+F") // "Ctrl+Shift+F" (or "⌘+⇧+F" on Mac)
+ */
+export function formatShortcutKeys(keys: string): string {
+  const isMac =
+    typeof navigator !== "undefined" && navigator.platform.includes("Mac")
+  return keys
+    .replace(/ctrl/gi, isMac ? "⌘" : "Ctrl")
+    .replace(/shift/gi, isMac ? "⇧" : "Shift")
+    .replace(/alt/gi, isMac ? "⌥" : "Alt")
+}

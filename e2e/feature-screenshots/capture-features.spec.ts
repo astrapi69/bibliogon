@@ -227,6 +227,16 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/book-editor/composition-mode.png`});
         });
 
+        test("web speech read-aloud player", async ({page}) => {
+            const book = await seedProseBook("Schreiben am Meer");
+            await page.goto(`/book/${book.id}`);
+            // Start playback so the mini-player (play/pause + stop + speed)
+            // is in frame rather than the idle floating button.
+            await page.getByTestId("web-speech-tts-button").click().catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-editor/web-speech-tts.png`});
+        });
+
         test("chapter status labels", async ({page}) => {
             const book = await seedProseBook("Schreiben am Meer");
             await page.goto(`/book/${book.id}?view=storyboard`);
@@ -552,6 +562,22 @@ test.describe("Feature Screenshots", () => {
         });
     });
 
+    // ===================== Shortcuts =====================
+    test.describe("Shortcuts", () => {
+        test("shortcuts overview dialog", async ({page}) => {
+            // #662: app-global Ctrl+/ overview dialog. Open it on an editor
+            // route so both the App and Editor sections are populated.
+            const book = await createBook("Schreiben am Meer", "Asterios Raptis");
+            await createChapter(book.id, "Kapitel 1: Aufbruch");
+            await page.goto(`/book/${book.id}`);
+            await page.waitForTimeout(400);
+            await page.keyboard.press("Control+Slash");
+            await page.getByTestId("shortcuts-dialog").waitFor({state: "visible"}).catch(() => {});
+            await page.waitForTimeout(300);
+            await page.screenshot({path: `${OUT}/shortcuts/overview-dialog.png`});
+        });
+    });
+
     // ===================== Quality Report =====================
     test.describe("Quality Report", () => {
         async function openQuality(page: import("@playwright/test").Page) {
@@ -768,5 +794,72 @@ test.describe("Feature Screenshots", () => {
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/book-creation/book-template-picker.png`});
         });
+    });
+
+    test.describe("Statistics", () => {
+        test("writing-statistics dashboard", async ({page}) => {
+            // The dashboard surfaces today/weekly/project/heatmap widgets;
+            // writing sessions are not API-seedable, so a fresh DB renders
+            // the empty state — still a valid catalog shot of the route.
+            await page.goto("/statistics");
+            await page
+                .getByTestId("statistics-dashboard-page")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/dashboard/writing-statistics.png`});
+        });
+    });
+});
+
+/**
+ * Offline AI text tools (#661): the editor's browser-direct grammar
+ * correction + translation, rendered only in Dexie (offline / PWA) mode. The
+ * GitHub-Pages build forces dexie via the `bibliogon.storage_mode` override;
+ * we replicate it here, import a small Markdown book client-side, open the
+ * editor and capture the AI-tools row. Best-effort + `.catch()` per the
+ * catalog convention — without a configured key the two buttons render in
+ * their gated (disabled + "configure key") state, which is itself the
+ * three-state-visibility story worth documenting.
+ */
+test.describe("Offline AI text tools", () => {
+    test.beforeEach(async ({page}) => {
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem("bibliogon.storage_mode", "dexie");
+                localStorage.setItem("bibliogon.offline_enabled", "true");
+            } catch {
+                /* localStorage unavailable — fall through */
+            }
+        });
+    });
+
+    test("editor grammar + translation tools (offline)", async ({page}) => {
+        await page.goto("/");
+        await page.getByTestId("dashboard-empty-import").click().catch(() => {});
+        await page
+            .getByTestId("offline-import-input")
+            .setInputFiles({
+                name: "die-reise-nach-norden.md",
+                mimeType: "text/markdown",
+                buffer: Buffer.from(
+                    "# Die Reise nach Norden\n\nEs war ein kalter Morgen, als Lena " +
+                        "den Bahnhof verliess und in den Zug nach Norden stieg.",
+                ),
+            })
+            .catch(() => {});
+        await page.getByTestId("offline-import-confirm").click().catch(() => {});
+        await page
+            .getByText("Die Reise nach Norden")
+            .first()
+            .click()
+            .catch(() => {});
+        await page
+            .getByTestId("editor-ai-tools")
+            .waitFor({state: "visible"})
+            .catch(() => {});
+        await page.getByTestId("editor-ai-grammar").click().catch(() => {});
+        await page.waitForTimeout(400);
+        await page.screenshot({path: `${OUT}/book-editor/ai-text-tools-offline.png`});
     });
 });

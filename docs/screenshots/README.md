@@ -95,6 +95,12 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Preview / test-version banner + build-info (#644) | ![Preview Build Info](settings/preview-build-info.png) |
 | Share-app QR section (#644) | ![Share App](settings/share-app.png) |
 
+## Shortcuts
+
+| Feature | Screenshot |
+| --- | --- |
+| Shortcuts overview dialog (Ctrl+/ or ?, #662) | ![Shortcuts Overview](shortcuts/overview-dialog.png) |
+
 ## Quality Report
 
 | Feature | Screenshot |

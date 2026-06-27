@@ -12,6 +12,7 @@ import { deleteDraft, checkForRecovery, cleanupOldDrafts, hashContent } from "..
 import "katex/dist/katex.min.css";
 import { buildEditorExtensions } from "./editorExtensions";
 import Toolbar from "./Toolbar";
+import AiTextTools from "./ai-tools/AiTextTools";
 import EditorDisplaySettingsPopover from "./EditorDisplaySettingsPopover";
 import {
     buildMentionLabels,
@@ -20,6 +21,7 @@ import {
 } from "../story-bible/storyBibleMention";
 import EditorContextMenu from "./EditorContextMenu";
 import EditorAiPanel from "./EditorAiPanel";
+import EditorTtsControls from "./EditorTtsControls";
 import {
     EditorSearchBar,
     EditorSpellcheckPanel,
@@ -778,6 +780,11 @@ export default function Editor({
                 />
             </div>
 
+            {/* Offline AI text tools (#661): grammar correction + translation
+                of the selection via the user's own provider key. Self-gates to
+                Dexie mode; online the backend LanguageTool/DeepL path applies. */}
+            <AiTextTools editor={editor} markdownMode={markdownMode} />
+
             {/* Floating exit affordance, only in composition mode
                 (the toolbar that hosts the toggle is hidden). */}
             {compositionMode && (
@@ -825,6 +832,15 @@ export default function Editor({
                     }}
                 />
             )}
+
+            {/* Browser-native read-aloud (Web Speech API) - offline
+                fallback to the desktop-only Cloud TTS. Floating speaker
+                button + bottom mini-player; capability-gated inside. */}
+            <EditorTtsControls
+                t={t}
+                lang={bookLanguage}
+                getText={() => editor?.getText() ?? ""}
+            />
 
             {/* AI Assistant Panel */}
             {showAiPanel && !markdownMode && (
