@@ -6,7 +6,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
 
-**[Web-App](https://astrapi69.github.io/bibliogon/)** | **[Dokumentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.57.0**
+**[Web-App](https://astrapi69.github.io/bibliogon/)** | **[Dokumentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.58.0**
 
 ## Story-Bibel
 
@@ -59,6 +59,15 @@ Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederke
 - Titel direkt im Editor bearbeiten (Buch, Artikel, Bilderbuch, Comic) über eine gemeinsame Stift-Umschalt-Komponente; bei veröffentlichten oder archivierten Werken erscheint zuerst ein Warnbanner, damit eine Titeländerung bewusst auf der Veröffentlichungsplattform nachgezogen wird
 - Veröffentlichungs-Status-Lebenszyklus (Entwurf / Bereit / Veröffentlicht / Archiviert), geteilt von Büchern und Artikeln, mit Status-Badge auf jeder Dashboard-Karte und Listenzeile
 - Sprachabhängige Datumsformatierung, die der aktiven UI-Sprache auf allen Surfaces folgt
+- Schreibziele (Buch-Wortziel plus geräteweites Tagesziel) mit einer Serie aufeinanderfolgender Tage und einem Schreib-Statistik-Dashboard (Heute-Fortschrittsring, 7-Tage-Diagramm mit Durchschnittslinie, Projekt-Fortschritt pro Buch mit geschätzter Fertigstellung und eine Aktivitäts-Heatmap)
+- Kompositionsmodus für ablenkungsfreies Schreiben (Strg+Umschalt+D), der die App-Oberfläche ausblendet
+- Kapitel-Outliner mit Kapitel-Synopsis (automatisch aus dem ersten Absatz), Inspector-Notizen und manuellen Kapitel-Sammlungen mit optionaler Farbe pro Sammlung
+- Scrivener-`.scriv`-Projektimport (neben Markdown-, HTML-, DOCX-, EPUB-Dateiimport und dem Medium-HTML-Export-Importer)
+- Erstinstallations-Datenmigrationsdialog, der beim ersten Start anbietet, ein Online-`.bgb`-Backup in die Desktop-App zu importieren
+- Tastenkürzel-Übersichtsdialog mit Suche und Kontextbezug
+- SEO-Meta-Tags (Open Graph / Twitter / JSON-LD) für die PWA und die clientseitige Export-Engine über alle Exportformate, plus YAML-Frontmatter an Git-Sync-Kapiteldateien
+- Diagnose-Event-Recorder (ein In-App-Protokoll, das niemals übertragen wird) mit Markdown-/JSON-Export
+- Automatischer Feature-Screenshot-Katalog unter `docs/screenshots/` (`make capture-screenshots`)
 
 ## Offline-Web-App (PWA)
 
@@ -94,9 +103,12 @@ Ein dedizierter Comic-Editor (`book_type='comic_book'`) liefert mehrteilige Pane
 
 ## KDP-Veröffentlichungs-Wizard
 
-Ein 5-Schritt-Wizard auf XState-Basis für die Amazon-KDP-Veröffentlichungsvorbereitung mit serverseitiger Persistenz und Konflikt-Erkennung.
+Ein 7-Schritt-Wizard für die Amazon-KDP-Veröffentlichungsvorbereitung mit serverseitiger Persistenz und Konflikt-Erkennung.
 
-- **5 Schritte:** Metadaten → Cover → Preisgestaltung → ARC-Reviewer → Launch-Checkliste.
+- **7 Schritte:** Metadaten → Cover → Format → Preisgestaltung → ARC-Reviewer → Export-Paket → KDP-Upload-Anleitung.
+- **Format-Schritt:** eBook / Taschenbuch / Hardcover mit KDP-Trimmgröße und Rand-Voreinstellung; das Druck-PDF wird per WeasyPrint in der gewählten Trimmgröße und mit den Rändern samt Schnitt-/Beschnittmarken gerendert (eBook exportiert stattdessen als EPUB).
+- **Export-Paket:** ein KDP-fertiges Bündel, dessen `metadata.json` die formatpassende `isbn`, `format`, `trim_size` und `page_count` enthält.
+- **Upload-Anleitung:** eine Schritt-für-Schritt-Anleitung durch den KDP-Upload.
 - **Serverseitiger Zustand** (BookPublishingState-Zeile) speichert den Wizard-Fortschritt automatisch; beim erneuten Öffnen rehydriert der Wizard Preisgestaltung und ARC-Auswahl.
 - **Konflikt-Banner**, wenn das Buch außerhalb des Wizards bearbeitet wurde (book.updated_at > state.updated_at), damit der Nutzer die Metadaten erneut validiert.
 - **Cover-Validierung** mit KDP-Maß-, DPI- und Bleed-Prüfungen, inline im Cover-Schritt angezeigt.
