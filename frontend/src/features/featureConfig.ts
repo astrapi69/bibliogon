@@ -72,6 +72,14 @@ export const FEATURES = {
     AI_GENERATE: "ai-generate",
     AI_STORY_EXTRACTION: "ai-story-extraction",
     AI_TEMPLATE_FILE_IO: "ai-template-file-io",
+    // Browser-direct AI text tools (#661): grammar correction + translation of
+    // the editor selection, run against the user's own provider key. They are
+    // the OFFLINE (Dexie) alternative to the backend GRAMMAR / TRANSLATION
+    // surfaces below — key-dependent (active with a key, disabled+explained
+    // without), so they coexist with the desktop-premium LanguageTool / DeepL
+    // paths rather than replacing them.
+    AI_GRAMMAR: "ai-grammar",
+    AI_TRANSLATE: "ai-translate",
 
     GIT_SYNC: "git-sync",
     GIT_BACKUP: "git-backup",
@@ -92,6 +100,8 @@ export const FEATURES = {
     // article translation executes DeepL/LMStudio via the backend plugin.
     // Offline they have no implementation, so they are disabled+explained
     // (policy #78) rather than failing silently on the guardedFetch backstop.
+    // The OFFLINE browser-direct grammar/translation path lives behind the
+    // key-dependent AI_GRAMMAR / AI_TRANSLATE gates above (#661).
     GRAMMAR: "grammar",
     TRANSLATION: "translation",
 } as const;
@@ -162,7 +172,12 @@ const ALWAYS_ACTIVE: readonly string[] = [
  * Dexie mode only when no key is configured; active otherwise (online uses
  * the backend AI path, offline-with-key uses the user's own provider).
  */
-const NEEDS_KEY: readonly string[] = [FEATURES.AI_FILL, FEATURES.AI_GENERATE];
+const NEEDS_KEY: readonly string[] = [
+    FEATURES.AI_FILL,
+    FEATURES.AI_GENERATE,
+    FEATURES.AI_GRAMMAR,
+    FEATURES.AI_TRANSLATE,
+];
 
 /**
  * Features that are purely client-side but reach external hosts directly
