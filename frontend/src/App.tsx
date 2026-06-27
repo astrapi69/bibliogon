@@ -1,5 +1,5 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
 import ArticleList from "./pages/ArticleList";
@@ -55,8 +55,7 @@ import DonationReminderBanner, {
     shouldShowReminder,
 } from "./components/shared/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
-import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
-import { useWordWrap } from "./hooks/editor/useWordWrap";
+import GlobalShortcuts from "./components/shortcuts/GlobalShortcuts";
 import { api, ApiError } from "./api/client";
 import { getStorage } from "./storage";
 import { ToastContainer } from "react-toastify";
@@ -100,28 +99,6 @@ export default function App() {
             })
             .catch(() => {}); // Config load failure is not critical for the wizard
     }, []);
-
-    // Word-wrap toggle (Alt+Z) — applies a body-level CSS class
-    // affecting every .ProseMirror + markdown textarea. Silent on
-    // toggle; the editor's visual state IS the feedback (matches
-    // VS Code / Sublime / IntelliJ behavior).
-    const { toggle: toggleWordWrap } = useWordWrap();
-
-    // Shortcut cheatsheet — Dialog->Pages C9: Ctrl+/ now routes to the
-    // /help/shortcuts page instead of toggling an App-level overlay.
-    const navigate = useNavigate();
-    const shortcuts = useMemo<Shortcut[]>(
-        () => [
-            {
-                keys: "ctrl+/",
-                handler: () => navigate("/help/shortcuts"),
-                label: "Show shortcuts",
-            },
-            { keys: "alt+z", handler: toggleWordWrap, label: "Toggle word wrap" },
-        ],
-        [toggleWordWrap, navigate],
-    );
-    useKeyboardShortcuts(shortcuts);
 
     // Error report dialog state — opened via custom event from notify.ts
     const [errorReport, setErrorReport] = useState<{
@@ -346,6 +323,7 @@ export default function App() {
                                             <AudioExportGate />
                                             <MediumImportGate />
                                             <BulkAiFillDock />
+                                            <GlobalShortcuts />
                                             <HelpPanel />
                                             <ErrorReportDialog
                                                 open={errorReport.open}
