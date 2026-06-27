@@ -146,6 +146,14 @@ export default function WritingGoalWidget() {
       </span>
       <button
         className="btn btn-secondary btn-sm"
+        onClick={() => navigate("/statistics")}
+        data-testid="writing-goal-stats-open"
+      >
+        <BarChart3 size={14} aria-hidden />{" "}
+        {t("ui.writing_stats.dashboard_title", "Statistiken")}
+      </button>
+      <button
+        className="btn btn-secondary btn-sm"
         onClick={() => navigate("/writing-history")}
         data-testid="writing-goal-history-open"
       >
