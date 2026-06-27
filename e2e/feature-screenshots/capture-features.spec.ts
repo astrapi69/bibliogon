@@ -562,6 +562,22 @@ test.describe("Feature Screenshots", () => {
         });
     });
 
+    // ===================== Shortcuts =====================
+    test.describe("Shortcuts", () => {
+        test("shortcuts overview dialog", async ({page}) => {
+            // #662: app-global Ctrl+/ overview dialog. Open it on an editor
+            // route so both the App and Editor sections are populated.
+            const book = await createBook("Schreiben am Meer", "Asterios Raptis");
+            await createChapter(book.id, "Kapitel 1: Aufbruch");
+            await page.goto(`/book/${book.id}`);
+            await page.waitForTimeout(400);
+            await page.keyboard.press("Control+Slash");
+            await page.getByTestId("shortcuts-dialog").waitFor({state: "visible"}).catch(() => {});
+            await page.waitForTimeout(300);
+            await page.screenshot({path: `${OUT}/shortcuts/overview-dialog.png`});
+        });
+    });
+
     // ===================== Quality Report =====================
     test.describe("Quality Report", () => {
         async function openQuality(page: import("@playwright/test").Page) {
@@ -751,6 +767,21 @@ test.describe("Feature Screenshots", () => {
                 .catch(() => {});
             await page.waitForTimeout(400);
             await page.screenshot({path: `${OUT}/import-export/kdp-guide-step.png`});
+        });
+    });
+
+    test.describe("Statistics", () => {
+        test("writing-statistics dashboard", async ({page}) => {
+            // The dashboard surfaces today/weekly/project/heatmap widgets;
+            // writing sessions are not API-seedable, so a fresh DB renders
+            // the empty state — still a valid catalog shot of the route.
+            await page.goto("/statistics");
+            await page
+                .getByTestId("statistics-dashboard-page")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/dashboard/writing-statistics.png`});
         });
     });
 });

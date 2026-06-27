@@ -6,7 +6,10 @@
 import { PageLayout } from "../components/shared/PageLayout";
 import { useGoBack } from "../hooks/navigation/useGoBack";
 import { useI18n } from "../hooks/useI18n";
-import { APP_SHORTCUTS } from "../hooks/ui/useKeyboardShortcuts";
+import {
+  APP_SHORTCUTS,
+  formatShortcutKeys,
+} from "../hooks/ui/useKeyboardShortcuts";
 import styles from "./ShortcutsPage.module.css";
 
 export default function ShortcutsPage() {
@@ -42,7 +45,7 @@ export default function ShortcutsPage() {
           <div className={styles.grid}>
             {shortcuts.map((s) => (
               <div key={s.keys} className={styles.row}>
-                <kbd className={styles.kbd}>{formatKeys(s.keys)}</kbd>
+                <kbd className={styles.kbd}>{formatShortcutKeys(s.keys)}</kbd>
                 <span className={styles.label}>
                   {t(s.labelKey, s.labelFallback)}
                 </span>
@@ -60,11 +63,4 @@ export default function ShortcutsPage() {
       </div>
     </PageLayout>
   );
-}
-
-function formatKeys(keys: string): string {
-  return keys
-    .replace(/ctrl/gi, navigator.platform.includes("Mac") ? "⌘" : "Ctrl")
-    .replace(/shift/gi, navigator.platform.includes("Mac") ? "⇧" : "Shift")
-    .replace(/alt/gi, navigator.platform.includes("Mac") ? "⌥" : "Alt");
 }

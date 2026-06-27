@@ -38,8 +38,21 @@ describe("APP_SHORTCUTS cheatsheet registry", () => {
     expect(keysFor("Ctrl+B")).toBeDefined();
   });
 
-  it("does not invent an unbound Ctrl+S save shortcut", () => {
-    expect(keysFor("Ctrl+S")).toBeUndefined();
+  it("lists Ctrl+S bound to the auto-save reminder (#662)", () => {
+    // Ctrl+S is now a deliberately bound shortcut: it suppresses the
+    // browser save dialog and surfaces an "auto-save is active" reminder,
+    // so it is no longer an unbound/misleading entry. The note key carries
+    // the reminder text.
+    const row = keysFor("Ctrl+S");
+    expect(row).toBeDefined();
+    expect(row?.labelKey).toBe("ui.shortcuts.save");
+    expect(row?.noteKey).toBe("ui.shortcuts.save_note");
+  });
+
+  it("lists the second redo binding (Ctrl+Shift+Z, #662)", () => {
+    const row = keysFor("Ctrl+Shift+Z");
+    expect(row).toBeDefined();
+    expect(row?.labelKey).toBe("ui.shortcuts.redo");
   });
 
   it("every row carries a label key under ui.shortcuts", () => {
