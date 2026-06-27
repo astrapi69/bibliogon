@@ -522,3 +522,8 @@ bugs destroy trust as effectively as backend bugs destroy data.
 100% coverage is not the goal. Meaningful coverage is the goal:
 tests must assert real behavior properties, not just line execution.
 Regression pins for known bug classes count for more than line count.
+
+## TDD (Test-Driven Development)
+
+Siehe `tdd.md` fuer den verbindlichen Red-Green-Refactor
+Workflow. Kurzfassung: Test zuerst, dann Code, dann aufraumen.
