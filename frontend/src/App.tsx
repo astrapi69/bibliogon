@@ -54,7 +54,7 @@ import DonationReminderBanner, {
     shouldShowReminder,
 } from "./components/shared/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
-import GlobalShortcuts from "./components/shared/GlobalShortcuts";
+import GlobalShortcuts from "./components/shortcuts/GlobalShortcuts";
 import { api, ApiError } from "./api/client";
 import { getStorage } from "./storage";
 import { ToastContainer } from "react-toastify";
