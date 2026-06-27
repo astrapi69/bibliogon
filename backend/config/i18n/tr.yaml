@@ -884,6 +884,33 @@ ui:
     memoir:
       name: "Anilar"
       description: "Onsoz ve sonsoz ile cercevelenmis kisisel anilar; sekiz anlatimsal bolum ve tesekkur."
+  book_templates:
+    name:
+      roman_3act: "Roman (3 Perde)"
+      sachbuch: "Kurgu Dışı"
+      kurzgeschichte: "Kısa Öykü"
+      lyrik: "Şiir"
+      kinderbuch: "Resimli Kitap"
+      comic: "Çizgi Roman"
+    desc:
+      roman_3act: "Prolog, perde başlıkları, on bir bölüm ve sonsözden oluşan üç perdelik roman yapısı."
+      sachbuch: "Ön söz, giriş, sekiz bölüm, özet ve ekten oluşan bir kurgu dışı kitap."
+      kurzgeschichte: "Tek bir bölümde tek bir kısa öykü."
+      lyrik: "Yirmi şiir bölümünden oluşan bir şiir kitabı."
+      kinderbuch: "On iki sayfalık resimli kitap (görsel ve metin)."
+      comic: "Standart formatta yirmi iki sayfalık bir çizgi roman."
+    title:
+      prologue: "Prolog"
+      epilogue: "Sonsöz"
+      act: "Perde"
+      chapter: "Bölüm"
+      foreword: "Ön söz"
+      introduction: "Giriş"
+      summary: "Özet"
+      appendix: "Ek"
+      poem: "Şiir"
+      story: "Öykü"
+    page_count: "{count} sayfa"
   save_template:
     title: "Sablon olarak kaydet"
     name: "Ad"

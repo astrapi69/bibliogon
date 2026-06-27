@@ -11,8 +11,8 @@ import {
 import { getStorage } from "../../storage";
 import { useBookTypes } from "../../hooks/book/useBookTypes";
 import { useI18n } from "../../hooks/useI18n";
-import { useFeature } from "@astrapi69/feature-strategy-react";
-import { FEATURES } from "../../features/featureConfig";
+import { useStorageMode } from "../../storage/useStorageMode";
+import { clientTemplateCatalog } from "../../data/bookTemplates";
 import { useDialog } from "../shared/AppDialog";
 import { notify } from "../../utils/platform/notify";
 import { EnhancedTextarea } from "../textarea/EnhancedTextarea";
@@ -124,8 +124,11 @@ export default function CreateBookForm({
     const [series, setSeries] = useState("");
     const [seriesIndex, setSeriesIndex] = useState("");
 
-    const bookTemplates = useFeature(FEATURES.BOOK_TEMPLATES);
-    const offline = !bookTemplates.isActive;
+    // Offline (Dexie) mode swaps the backend template catalog for the
+    // client-side built-in catalog (frontend/src/data/bookTemplates.ts), so
+    // "Aus Vorlage" works on the backendless PWA with zero /api calls.
+    const { mode: storageMode } = useStorageMode();
+    const dexie = storageMode === "dexie";
 
     // Template state
     const [templates, setTemplates] = useState<BookTemplate[] | null>(null);
@@ -234,14 +237,22 @@ export default function CreateBookForm({
     const showAddToAuthorsCheckbox = !authorAlreadyInDb;
 
     // Eagerly load the template catalog so the tab switcher can be shown ONLY
-    // when at least one template exists - mode-agnostic (API or Dexie). A tab
-    // that only ever says "Keine Vorlagen verfügbar" is noise, so an empty list
-    // (no templates created yet, offline, or a fetch error) hides the switcher
-    // and renders the create form directly. Templates are backend-only; offline
-    // the list is empty and fires no /api.
+    // when at least one template exists - mode-agnostic. A tab that only ever
+    // says "Keine Vorlagen verfügbar" is noise, so an empty list hides the
+    // switcher and renders the create form directly.
+    //
+    // Offline (Dexie) loads the client-side built-in catalog for this book
+    // type — works for prose AND picture-book/comic (bypassing the backend-
+    // only template_catalog capability), fires no /api. Online keeps the
+    // backend catalog gated on the registry's template_catalog flag.
     useEffect(() => {
-        if (!supportsTemplateCatalog || templates !== null) return;
-        if (offline) {
+        if (templates !== null) return;
+        if (dexie) {
+            setTemplates(clientTemplateCatalog(bookType, t));
+            setTemplatesError(null);
+            return;
+        }
+        if (!supportsTemplateCatalog) {
             setTemplates([]);
             return;
         }
@@ -255,10 +266,14 @@ export default function CreateBookForm({
                 setTemplates([]);
                 setTemplatesError(String(err?.message || err));
             });
-    }, [supportsTemplateCatalog, templates, offline]);
+        // `t` is intentionally excluded — the i18n mock returns a fresh `t`
+        // per render in tests, which would re-run this load effect endlessly.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [supportsTemplateCatalog, templates, dexie, bookType]);
 
-    // The tab switcher appears only when the loaded catalog has >= 1 template.
-    const showTemplateTabs = supportsTemplateCatalog && (templates?.length ?? 0) > 0;
+    // The tab switcher appears once the loaded catalog has >= 1 template
+    // (offline client catalog or online backend catalog).
+    const showTemplateTabs = (templates?.length ?? 0) > 0;
 
     // When a template is picked, pre-fill language + description from it
     useEffect(() => {
@@ -480,10 +495,21 @@ export default function CreateBookForm({
                                                 : tpl.description}
                                         </div>
                                         <div className={styles.templateMeta}>
-                                            {t(
-                                                "ui.create_book.template_chapter_count",
-                                                "{count} Kapitel",
-                                            ).replace("{count}", String(tpl.chapters.length))}
+                                            {bookType === "prose"
+                                                ? t(
+                                                      "ui.create_book.template_chapter_count",
+                                                      "{count} Kapitel",
+                                                  ).replace(
+                                                      "{count}",
+                                                      String(tpl.chapters.length),
+                                                  )
+                                                : t(
+                                                      "ui.book_templates.page_count",
+                                                      "{count} Seiten",
+                                                  ).replace(
+                                                      "{count}",
+                                                      String(tpl.chapters.length),
+                                                  )}
                                         </div>
                                     </div>
                                 );

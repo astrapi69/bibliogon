@@ -124,6 +124,18 @@ vi.mock("@astrapi69/feature-strategy-react", () => ({
     }),
 }));
 
+// Storage mode drives the offline client-template catalog. Default "api"
+// (the production default) so the existing tests are unaffected; the offline
+// describe at the bottom of this file flips it to "dexie".
+let mockStorageMode: "api" | "dexie" = "api";
+vi.mock("../../storage/useStorageMode", () => ({
+    useStorageMode: () => ({
+        mode: mockStorageMode,
+        online: mockStorageMode === "api",
+        offlineEnabled: mockStorageMode === "dexie",
+    }),
+}));
+
 describe("CreateBookForm", () => {
     const onCancel = vi.fn();
     const onCreate = vi.fn();
@@ -144,6 +156,7 @@ describe("CreateBookForm", () => {
         mockListTemplates.mockResolvedValue([]);
         // Default: Authors-DB is empty; create returns whatever was sent.
         offlineValue = false;
+        mockStorageMode = "api";
         mockAppConfig = { author: { name: "", pen_names: [] } };
         mockListAuthors.mockResolvedValue([]);
         mockCreateAuthor.mockImplementation((data) =>
@@ -796,5 +809,110 @@ describe("CreateBookForm", () => {
             await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1));
             expect(onCreate.mock.calls[0][0].author).toBe("Fresh Author");
         });
+    });
+});
+
+// Offline (Dexie) mode: the "Aus Vorlage" tab is fed by the client-side
+// built-in catalog (frontend/src/data/bookTemplates.ts), works for prose AND
+// picture-book/comic, and submit hands a `client-`-prefixed template_id to
+// onCreateFromTemplate (the page routes it through the storage seam). Folded
+// in here (not a separate file) to stay under the components/book god-folder
+// ratchet baseline.
+describe("CreateBookForm offline (client-side templates)", () => {
+    const onCancel = vi.fn();
+    const onCreate = vi.fn();
+    const onCreateFromTemplate = vi.fn();
+
+    beforeEach(() => {
+        onCancel.mockClear();
+        onCreate.mockClear();
+        onCreateFromTemplate.mockClear();
+        mockStorageMode = "dexie";
+        mockListTemplates.mockReset();
+        mockListTemplates.mockRejectedValue(new Error("must not call /api offline"));
+        mockAppConfig = { author: { name: "", pen_names: [] } };
+        mockListAuthors.mockResolvedValue([]);
+    });
+
+    async function clickTab(testId: string) {
+        const el = await screen.findByTestId(testId);
+        fireEvent.pointerDown(el, { button: 0 });
+        fireEvent.mouseDown(el, { button: 0 });
+        fireEvent.pointerUp(el, { button: 0 });
+        fireEvent.mouseUp(el, { button: 0 });
+        fireEvent.click(el);
+    }
+
+    function renderForm(bookType?: "prose" | "picture_book") {
+        return render(
+            <BookTypesProvider initialTypes={TEST_BOOK_TYPES}>
+                <CreateBookForm
+                    onCancel={onCancel}
+                    onCreate={onCreate}
+                    onCreateFromTemplate={onCreateFromTemplate}
+                    bookType={bookType}
+                />
+            </BookTypesProvider>,
+        );
+    }
+
+    it("shows the template tab with the 4 prose client templates (no /api)", async () => {
+        renderForm("prose");
+        expect(await screen.findByTestId("create-book-mode-template")).toBeTruthy();
+        await clickTab("create-book-mode-template");
+        await waitFor(() => {
+            expect(screen.getByTestId("template-card-client-roman-3akt")).toBeTruthy();
+            expect(screen.getByTestId("template-card-client-sachbuch")).toBeTruthy();
+            expect(
+                screen.getByTestId("template-card-client-kurzgeschichte"),
+            ).toBeTruthy();
+            expect(screen.getByTestId("template-card-client-lyrik")).toBeTruthy();
+        });
+        expect(screen.getByText("Roman (3-Akt)")).toBeTruthy();
+        expect(mockListTemplates).not.toHaveBeenCalled();
+    });
+
+    it("submit hands a client- template_id to onCreateFromTemplate", async () => {
+        renderForm("prose");
+        fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+            target: { value: "Mein Roman" },
+        });
+        fireEvent.change(screen.getByPlaceholderText("Autorenname oder Pen Name"), {
+            target: { value: "Aster" },
+        });
+        await clickTab("create-book-mode-template");
+        await waitFor(() => expect(screen.getByText("Roman (3-Akt)")).toBeTruthy());
+        fireEvent.click(screen.getByTestId("template-card-client-roman-3akt"));
+        fireEvent.click(screen.getByText("Erstellen"));
+
+        await waitFor(() => expect(onCreateFromTemplate).toHaveBeenCalledTimes(1));
+        expect(onCreate).not.toHaveBeenCalled();
+        const arg = onCreateFromTemplate.mock.calls[0][0];
+        expect(arg.template_id).toBe("client-roman-3akt");
+        expect(arg.title).toBe("Mein Roman");
+        expect(arg.author).toBe("Aster");
+    });
+
+    it("offers the Kinderbuch template for picture_book despite template_catalog:false", async () => {
+        renderForm("picture_book");
+        await clickTab("create-book-mode-template");
+        await waitFor(() => {
+            expect(screen.getByTestId("template-card-client-kinderbuch")).toBeTruthy();
+            expect(screen.getByText("12 Seiten")).toBeTruthy();
+        });
+    });
+
+    it("blank-book creation still works offline (regression)", async () => {
+        renderForm("prose");
+        fireEvent.change(screen.getByPlaceholderText("Der Titel deines Buches"), {
+            target: { value: "Leeres Buch" },
+        });
+        fireEvent.change(screen.getByPlaceholderText("Autorenname oder Pen Name"), {
+            target: { value: "Aster" },
+        });
+        fireEvent.click(screen.getByText("Erstellen"));
+        await waitFor(() => expect(onCreate).toHaveBeenCalledTimes(1));
+        expect(onCreateFromTemplate).not.toHaveBeenCalled();
+        expect(onCreate.mock.calls[0][0].title).toBe("Leeres Buch");
     });
 });

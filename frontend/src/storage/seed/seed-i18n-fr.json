@@ -3789,6 +3789,37 @@
     "preview_banner": {
       "title": "Version aperçu/test",
       "message": "Vous utilisez une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs."
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3 actes)",
+        "sachbuch": "Essai",
+        "kurzgeschichte": "Nouvelle",
+        "lyrik": "Poésie",
+        "kinderbuch": "Livre illustré",
+        "comic": "Bande dessinée"
+      },
+      "desc": {
+        "roman_3act": "Structure de roman en trois actes avec prologue, titres d'acte, onze chapitres et épilogue.",
+        "sachbuch": "Un essai avec avant-propos, introduction, huit chapitres, résumé et annexe.",
+        "kurzgeschichte": "Une seule nouvelle en un chapitre.",
+        "lyrik": "Un recueil de poésie avec vingt chapitres de poèmes.",
+        "kinderbuch": "Un livre illustré de douze pages (image et texte).",
+        "comic": "Une bande dessinée de vingt-deux pages au format standard."
+      },
+      "title": {
+        "prologue": "Prologue",
+        "epilogue": "Épilogue",
+        "act": "Acte",
+        "chapter": "Chapitre",
+        "foreword": "Avant-propos",
+        "introduction": "Introduction",
+        "summary": "Résumé",
+        "appendix": "Annexe",
+        "poem": "Poème",
+        "story": "Histoire"
+      },
+      "page_count": "{count} pages"
     }
   }
 }

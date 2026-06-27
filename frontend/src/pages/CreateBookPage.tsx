@@ -8,6 +8,11 @@ import {
   BookType,
 } from "../api/client";
 import { getStorage } from "../storage";
+import {
+  findClientTemplate,
+  instantiateClientBookTemplate,
+  isClientTemplateId,
+} from "../data/bookTemplates";
 import CreateBookForm from "../components/book/CreateBookForm";
 import { PageLayout } from "../components/shared/PageLayout";
 import { pageableBookTypeIds, useBookTypes } from "../hooks/book/useBookTypes";
@@ -127,7 +132,25 @@ export default function CreateBookPage() {
 
   const handleCreateFromTemplate = async (data: BookFromTemplateCreate) => {
     try {
-      // Templates are prose-only today; always return to the dashboard.
+      // Offline (Dexie) client-side built-in templates: instantiate the book +
+      // its chapters/pages straight through the storage seam (zero /api). Page-
+      // based types (Kinderbuch/Comic) land in their editor; prose returns to
+      // the dashboard — handled by goToBookOrDashboard.
+      if (isClientTemplateId(data.template_id)) {
+        const template = findClientTemplate(data.template_id);
+        if (!template) {
+          throw new Error(`Unknown client template: ${data.template_id}`);
+        }
+        const book = await instantiateClientBookTemplate(
+          getStorage(),
+          template,
+          data,
+          t,
+        );
+        goToBookOrDashboard(book.id, template.bookType);
+        return;
+      }
+      // Online backend templates are prose-only; always return to the dashboard.
       await api.books.createFromTemplate(data);
       navigate("/", { state: { bookCreated: true } });
     } catch (err) {

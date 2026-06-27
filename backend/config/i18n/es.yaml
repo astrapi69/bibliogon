@@ -884,6 +884,33 @@ ui:
     memoir:
       name: "Memorias"
       description: "Memorias personales enmarcadas por un prologo y un epilogo, con ocho capitulos narrativos y agradecimientos."
+  book_templates:
+    name:
+      roman_3act: "Novela (3 actos)"
+      sachbuch: "No ficción"
+      kurzgeschichte: "Relato corto"
+      lyrik: "Poesía"
+      kinderbuch: "Libro ilustrado"
+      comic: "Cómic"
+    desc:
+      roman_3act: "Estructura de novela en tres actos con prólogo, títulos de acto, once capítulos y epílogo."
+      sachbuch: "Un libro de no ficción con prefacio, introducción, ocho capítulos, resumen y apéndice."
+      kurzgeschichte: "Un único relato corto en un capítulo."
+      lyrik: "Un poemario con veinte capítulos de poemas."
+      kinderbuch: "Un libro ilustrado de doce páginas (imagen y texto)."
+      comic: "Un cómic de veintidós páginas en formato estándar."
+    title:
+      prologue: "Prólogo"
+      epilogue: "Epílogo"
+      act: "Acto"
+      chapter: "Capítulo"
+      foreword: "Prefacio"
+      introduction: "Introducción"
+      summary: "Resumen"
+      appendix: "Apéndice"
+      poem: "Poema"
+      story: "Relato"
+    page_count: "{count} páginas"
   save_template:
     title: "Guardar como plantilla"
     name: "Nombre"
