@@ -1,3 +1,11 @@
+# .dirsize-allowlist
+# God-Folder Allowlist (aktive Burndown-Verzeichnisse)
+# Verzeichnisse ueber dem Ziel, mit target (Soll-Dateizahl) + deadline.
+# Geprueft von: scripts/check_directory_size.py (WARNUNG, nicht blockierend)
+# CI-Job: Directory size ratchet (.github/workflows/ci.yml)
+# Begleitdatei: .dirsize-baseline (Ratchet-Floor pro Verzeichnis)
+# Eintrag entfernen, sobald das Verzeichnis sein target erreicht.
+#
 {
   "frontend/src/components/settings": {
     "current": 67,

@@ -353,7 +353,7 @@ addressed here.
 ## Completion status — 2026-06-21 (#466 closed)
 
 The frontend god-folder restructure is complete. Final state per the
-directory-size ratchet baseline (`.dirsize-baseline.json`):
+directory-size ratchet baseline (`.dirsize-baseline`):
 
 | Directory | Audit (src) | Now (src) | Status |
 |---|---:|---:|---|
