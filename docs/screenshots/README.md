@@ -86,6 +86,8 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Data migration welcome (.bgb from online, #591) | ![Data Migration](settings/data-migration.png) |
 | About / version | ![About Version](settings/about-version.png) |
 | Auto-save behaviour tab (no Save button, #473) | ![Settings Auto-Save](settings/auto-save.png) |
+| Preview / test-version banner + build-info (#644) | ![Preview Build Info](settings/preview-build-info.png) |
+| Share-app QR section (#644) | ![Share App](settings/share-app.png) |
 
 ## Quality Report
 
