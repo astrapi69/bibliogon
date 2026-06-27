@@ -20,6 +20,7 @@ const CreateBookPage = lazyWithReload(() => import("./pages/CreateBookPage"));
 const CreateArticlePage = lazyWithReload(() => import("./pages/CreateArticlePage"));
 const ExportPage = lazyWithReload(() => import("./pages/ExportPage"));
 const WritingHistoryPage = lazyWithReload(() => import("./pages/WritingHistoryPage"));
+const StatisticsDashboard = lazyWithReload(() => import("./pages/StatisticsDashboard"));
 const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersionsPage"));
 const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
 const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
@@ -312,6 +313,14 @@ export default function App() {
                                                         element={
                                                             <ErrorBoundary surface="writing-history">
                                                                 <WritingHistoryPage />
+                                                            </ErrorBoundary>
+                                                        }
+                                                    />
+                                                    <Route
+                                                        path="/statistics"
+                                                        element={
+                                                            <ErrorBoundary surface="statistics">
+                                                                <StatisticsDashboard />
                                                             </ErrorBoundary>
                                                         }
                                                     />

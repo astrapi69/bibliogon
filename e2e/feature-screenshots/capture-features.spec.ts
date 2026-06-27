@@ -743,4 +743,19 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/import-export/kdp-guide-step.png`});
         });
     });
+
+    test.describe("Statistics", () => {
+        test("writing-statistics dashboard", async ({page}) => {
+            // The dashboard surfaces today/weekly/project/heatmap widgets;
+            // writing sessions are not API-seedable, so a fresh DB renders
+            // the empty state — still a valid catalog shot of the route.
+            await page.goto("/statistics");
+            await page
+                .getByTestId("statistics-dashboard-page")
+                .waitFor({state: "visible"})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/dashboard/writing-statistics.png`});
+        });
+    });
 });
