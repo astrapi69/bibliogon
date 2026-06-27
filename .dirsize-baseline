@@ -1,3 +1,11 @@
+# .dirsize-baseline
+# God-Folder Ratchet Baseline
+# Max erlaubte Dateien pro Verzeichnis (flach, nicht rekursiv).
+# Geprueft von: scripts/check_directory_size.py (make check-dir-size)
+# CI-Job: Directory size ratchet (.github/workflows/ci.yml)
+# Begleitdatei: .dirsize-allowlist (aktive God-Folder mit Burndown-Ziel)
+# Werte nur nach Splits SENKEN, nie erhoehen (make update-dir-baseline).
+#
 {
   "backend/app": 23,
   "backend/app/ai": 19,
