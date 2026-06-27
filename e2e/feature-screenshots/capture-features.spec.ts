@@ -743,4 +743,30 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/import-export/kdp-guide-step.png`});
         });
     });
+
+    test.describe("Book Creation", () => {
+        // The client-side book-template catalog (Maximal-Offline) only renders
+        // in Dexie mode, so this shot forces the offline storage mode before
+        // navigating — the same localStorage override the GH-Pages PWA uses.
+        test("book template picker (offline catalog)", async ({page}) => {
+            await page.addInitScript(() => {
+                try {
+                    localStorage.setItem("bibliogon.storage_mode", "dexie");
+                } catch {
+                    /* ignore */
+                }
+            });
+            await page.goto("/books/new");
+            await page
+                .getByTestId("create-book-mode-template")
+                .click()
+                .catch(() => {});
+            await page
+                .getByTestId("template-card-client-roman-3akt")
+                .click()
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/book-creation/book-template-picker.png`});
+        });
+    });
 });

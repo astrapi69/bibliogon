@@ -839,6 +839,33 @@ ui:
     memoir:
       name: "Memoir"
       description: "A personal memoir framed by a prologue and epilogue, with eight narrative chapters and acknowledgments."
+  book_templates:
+    name:
+      roman_3act: "Novel (3-Act)"
+      sachbuch: "Non-Fiction"
+      kurzgeschichte: "Short Story"
+      lyrik: "Poetry"
+      kinderbuch: "Picture Book"
+      comic: "Comic"
+    desc:
+      roman_3act: "A three-act novel structure with prologue, act headings, eleven chapters and epilogue."
+      sachbuch: "A non-fiction book with foreword, introduction, eight chapters, summary and appendix."
+      kurzgeschichte: "A single short story in one chapter."
+      lyrik: "A poetry collection with twenty poem chapters."
+      kinderbuch: "A picture book with twelve pages (image and text)."
+      comic: "A comic issue with twenty-two pages in the standard format."
+    title:
+      prologue: "Prologue"
+      epilogue: "Epilogue"
+      act: "Act"
+      chapter: "Chapter"
+      foreword: "Foreword"
+      introduction: "Introduction"
+      summary: "Summary"
+      appendix: "Appendix"
+      poem: "Poem"
+      story: "Story"
+    page_count: "{count} pages"
   save_template:
     title: "Save as template"
     name: "Name"

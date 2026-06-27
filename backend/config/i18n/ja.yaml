@@ -837,6 +837,33 @@ ui:
     memoir:
       name: "回想録"
       description: "プロローグとエピローグで枠取られた個人的な回想録。8つの物語章と謝辞を含む。"
+  book_templates:
+    name:
+      roman_3act: "小説（三幕構成）"
+      sachbuch: "ノンフィクション"
+      kurzgeschichte: "短編小説"
+      lyrik: "詩集"
+      kinderbuch: "絵本"
+      comic: "コミック"
+    desc:
+      roman_3act: "プロローグ、幕見出し、11章、エピローグからなる三幕構成の小説。"
+      sachbuch: "まえがき、序章、8つの章、まとめ、付録からなるノンフィクション書。"
+      kurzgeschichte: "1つの章からなる単一の短編小説。"
+      lyrik: "20編の詩の章からなる詩集。"
+      kinderbuch: "12ページ（画像とテキスト）の絵本。"
+      comic: "標準的な形式の22ページのコミック。"
+    title:
+      prologue: "プロローグ"
+      epilogue: "エピローグ"
+      act: "幕"
+      chapter: "章"
+      foreword: "まえがき"
+      introduction: "序章"
+      summary: "まとめ"
+      appendix: "付録"
+      poem: "詩"
+      story: "物語"
+    page_count: "{count}ページ"
   save_template:
     title: "テンプレートとして保存"
     name: "名前"

@@ -3736,6 +3736,37 @@
     "preview_banner": {
       "title": "Versão de pré-visualização/teste",
       "message": "Está a usar uma versão de pré-visualização/teste. Não é estável e pode conter erros."
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Romance (3 atos)",
+        "sachbuch": "Não ficção",
+        "kurzgeschichte": "Conto",
+        "lyrik": "Poesia",
+        "kinderbuch": "Livro ilustrado",
+        "comic": "Quadrinhos"
+      },
+      "desc": {
+        "roman_3act": "Estrutura de romance em três atos com prólogo, títulos de ato, onze capítulos e epílogo.",
+        "sachbuch": "Um livro de não ficção com prefácio, introdução, oito capítulos, resumo e apêndice.",
+        "kurzgeschichte": "Um único conto em um capítulo.",
+        "lyrik": "Uma coletânea de poesia com vinte capítulos de poemas.",
+        "kinderbuch": "Um livro ilustrado com doze páginas (imagem e texto).",
+        "comic": "Uma revista em quadrinhos com vinte e duas páginas no formato padrão."
+      },
+      "title": {
+        "prologue": "Prólogo",
+        "epilogue": "Epílogo",
+        "act": "Ato",
+        "chapter": "Capítulo",
+        "foreword": "Prefácio",
+        "introduction": "Introdução",
+        "summary": "Resumo",
+        "appendix": "Apêndice",
+        "poem": "Poema",
+        "story": "Conto"
+      },
+      "page_count": "{count} páginas"
     }
   }
 }

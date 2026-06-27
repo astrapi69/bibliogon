@@ -39,6 +39,12 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Recent documents | ![Recent Documents](dashboard/recent-documents.png) |
 | Trash view | ![Trash View](dashboard/trash-view.png) |
 
+## Book Creation
+
+| Feature | Screenshot |
+| --- | --- |
+| Book template picker — offline client catalog (#665) | ![Book Template Picker](book-creation/book-template-picker.png) |
+
 ## Book Editor
 
 | Feature | Screenshot |

@@ -465,6 +465,47 @@ test.describe("Offline PWA (Dexie mode)", () => {
         await expect(page.getByTestId("page-editor-page-list")).toBeVisible();
     });
 
+    test("prose book template works offline: Roman seeds chapters via Dexie", async ({
+        page,
+    }) => {
+        // The client-side built-in catalog (frontend/src/data/bookTemplates.ts)
+        // powers the "Aus Vorlage" tab in dexie mode — no /api (hard gate).
+        await page.goto("/books/new");
+        await page.getByTestId("create-book-mode-template").click();
+        await page.getByTestId("template-card-client-roman-3akt").click();
+        await page.getByTestId("create-book-title").fill("Mein Roman");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+
+        // Prose returns to the dashboard; the new book is in the library.
+        await expect(page.getByText("Mein Roman").first()).toBeVisible({
+            timeout: 10000,
+        });
+
+        // Opening it shows the seeded chapter structure (Prolog + Kapitel 1).
+        await page.getByText("Mein Roman").first().click();
+        await page.waitForURL(/\/book\//);
+        await expect(page.getByText("Prolog").first()).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText("Kapitel 1").first()).toBeVisible();
+    });
+
+    test("picture-book template works offline: Kinderbuch seeds 12 pages", async ({
+        page,
+    }) => {
+        await page.goto("/books/new?type=picture_book");
+        await page.getByTestId("create-book-mode-template").click();
+        await page.getByTestId("template-card-client-kinderbuch").click();
+        await page.getByTestId("create-book-title").fill("Mein Bilderbuch");
+        await page.getByTestId("create-book-author").fill("Aster");
+        await page.getByTestId("create-book-submit").click();
+
+        // Page-based type -> opens straight into the page editor with the
+        // seeded pages already present (persisted to Dexie, zero /api).
+        await page.waitForURL(/\/book\//);
+        await expect(page.getByTestId("page-editor-root")).toBeVisible();
+        await expect(page.getByTestId("page-editor-page-list")).toBeVisible();
+    });
+
     test("book cover uploads + displays offline from IndexedDB, persists across reload", async ({
         page,
     }) => {

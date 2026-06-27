@@ -3736,6 +3736,37 @@
     "preview_banner": {
       "title": "Vorschau-/Testversion",
       "message": "Du verwendest eine Vorschau-/Testversion. Sie ist nicht stabil und kann Fehler enthalten."
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3-Akt)",
+        "sachbuch": "Sachbuch",
+        "kurzgeschichte": "Kurzgeschichte",
+        "lyrik": "Lyrik / Gedichte",
+        "kinderbuch": "Kinderbuch",
+        "comic": "Comic"
+      },
+      "desc": {
+        "roman_3act": "Romanstruktur in drei Akten mit Prolog, Aktüberschriften, elf Kapiteln und Epilog.",
+        "sachbuch": "Sachbuch mit Vorwort, Einleitung, acht Kapiteln, Zusammenfassung und Anhang.",
+        "kurzgeschichte": "Eine einzelne Kurzgeschichte in einem Kapitel.",
+        "lyrik": "Gedichtband mit zwanzig Gedicht-Kapiteln.",
+        "kinderbuch": "Bilderbuch mit zwölf Seiten (Bild und Text).",
+        "comic": "Comic-Heft mit zweiundzwanzig Seiten im Standardformat."
+      },
+      "title": {
+        "prologue": "Prolog",
+        "epilogue": "Epilog",
+        "act": "Akt",
+        "chapter": "Kapitel",
+        "foreword": "Vorwort",
+        "introduction": "Einleitung",
+        "summary": "Zusammenfassung",
+        "appendix": "Anhang",
+        "poem": "Gedicht",
+        "story": "Geschichte"
+      },
+      "page_count": "{count} Seiten"
     }
   }
 }
