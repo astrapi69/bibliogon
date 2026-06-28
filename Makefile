@@ -15,6 +15,7 @@
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
        lock-all-plugins verify-plugin-locks verify-theme verify-components check-cohesion check-complexity \
+       bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -810,6 +811,96 @@ endif
 	@gh release create v$(VERSION) \
 		--title "Bibliogon v$(VERSION)" \
 		--notes-file changelog/releases/v$(VERSION).md
+
+# --- Make-based release orchestration (release.yml calls these) ---
+#
+# The mechanical release steps live here, not inline in the workflow, so
+# they run identically locally and in CI (DRY). The workflow only adds the
+# CI-specific glue (git identity, dependency install, launcher build,
+# GitHub-Release publish). The human/LLM CHANGELOG prose + per-release
+# notes stay a precondition (release-workflow.md Step 3).
+
+bump-version: ## Bump canonical version + propagate to all subsystems. Usage: make bump-version VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make bump-version VERSION=0.60.0)
+endif
+	sed -i 's/^version = .*/version = "$(VERSION)"/' backend/pyproject.toml
+	$(MAKE) sync-versions
+	$(MAKE) sync-versions-check
+	./scripts/verify_version_pins.sh $(VERSION)
+
+update-doc-headers: ## Bump version headers in the 5 gated docs. Usage: make update-doc-headers VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make update-doc-headers VERSION=0.60.0)
+endif
+	python3 scripts/update_version_headers.py $(VERSION)
+
+finalize-changelog: ## Date-stamp the CHANGELOG for VERSION. Usage: make finalize-changelog VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make finalize-changelog VERSION=0.60.0)
+endif
+	@DATE=$$(date +%Y-%m-%d); \
+	if grep -q "## \[Unreleased\]" docs/CHANGELOG.md; then \
+		sed -i "s/## \[Unreleased\]/## [$(VERSION)] - $$DATE/" docs/CHANGELOG.md; \
+		echo "Stamped '## [Unreleased]' -> '## [$(VERSION)] - $$DATE'."; \
+	elif grep -qE "^## \[$(VERSION)\]" docs/CHANGELOG.md; then \
+		echo "docs/CHANGELOG.md already carries a [$(VERSION)] entry (prepared). OK."; \
+	else \
+		echo "ERROR: docs/CHANGELOG.md has neither a '## [Unreleased]' block"; \
+		echo "       nor a '## [$(VERSION)]' entry. Prepare the CHANGELOG entry"; \
+		echo "       (release-workflow.md Step 3) before releasing."; \
+		exit 1; \
+	fi
+
+release-prepare: ## Cut release branch from develop + bump version/docs/changelog. Usage: make release-prepare VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make release-prepare VERSION=0.60.0)
+endif
+	@if [ ! -f "changelog/releases/v$(VERSION).md" ]; then \
+		echo "ERROR: changelog/releases/v$(VERSION).md missing."; \
+		echo "Author the per-release notes (release-workflow.md Step 3) first."; \
+		exit 1; \
+	fi
+	@if git ls-remote --tags origin "refs/tags/v$(VERSION)" | grep -q .; then \
+		echo "ERROR: tag v$(VERSION) already exists on origin. Pick a new version."; \
+		exit 1; \
+	fi
+	git checkout develop
+	git pull --ff-only origin develop
+	git checkout -b release/v$(VERSION)
+	$(MAKE) bump-version VERSION=$(VERSION)
+	$(MAKE) update-doc-headers VERSION=$(VERSION)
+	$(MAKE) finalize-changelog VERSION=$(VERSION)
+	git add backend/pyproject.toml frontend/package.json frontend/package-lock.json \
+		launcher/pyproject.toml launcher/bibliogon_launcher/__init__.py \
+		launcher/bibliogon-launcher.spec launcher/launcher.json \
+		install.sh install.ps1 plugins/bibliogon-plugin-*/pyproject.toml \
+		README.md README-de.md CLAUDE.md docs/ROADMAP.md docs/backlog.md docs/CHANGELOG.md
+	git commit -m "chore(release): bump version to $(VERSION)"
+	@echo ""
+	@echo "Release branch release/v$(VERSION) created + committed."
+	@echo "Next: make release-test (+ test-e2e-smoke + test-static-smoke) then"
+	@echo "      make release-finish VERSION=$(VERSION)"
+
+release-finish: ## Merge release to main + tag + back-sync develop. Usage: make release-finish VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make release-finish VERSION=0.60.0)
+endif
+	./scripts/verify_version_pins.sh $(VERSION)
+	git checkout main
+	git pull --ff-only origin main
+	git merge --no-ff release/v$(VERSION) -m "release: v$(VERSION)"
+	git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	git push origin main --tags
+	git checkout develop
+	git pull --ff-only origin develop
+	git merge --no-ff main -m "chore: back-sync v$(VERSION) to develop"
+	git push origin develop
+	git branch -d release/v$(VERSION)
+	git push origin --delete release/v$(VERSION) || true
+	@echo ""
+	@echo "Release v$(VERSION) merged + tagged + back-synced."
+	@echo "Next: make release-publish VERSION=$(VERSION)"
 
 # --- Clean ---
 
