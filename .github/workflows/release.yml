@@ -1,0 +1,233 @@
+name: Release
+
+# One-click Gitflow release orchestration (release-workflow.md, gitflow #79).
+#
+# Triggered MANUALLY via the Actions tab (workflow_dispatch only -- never on
+# push/PR). Given a target version it runs the full mechanical release:
+#
+#   preconditions -> cut release/v<version> from develop -> bump canonical
+#   version + sync subsystems + bump gated doc headers + date-stamp the
+#   CHANGELOG -> run the release gate (+ optional E2E / static smoke) ->
+#   merge --no-ff to main -> tag -> push main + tag -> back-sync develop ->
+#   delete the release branch -> publish the GitHub Release.
+#
+# What this workflow does NOT do (deliberate, see release-workflow.md):
+#   * It does NOT author CHANGELOG prose. The per-release notes file
+#     changelog/releases/v<version>.md AND the docs/CHANGELOG.md entry are
+#     a human/LLM precondition (Step 3); the workflow fails fast if the
+#     notes file is missing. It only date-stamps an "## [Unreleased]"
+#     block when present, or accepts an already-prepared "## [<version>]".
+#   * It does NOT build the launcher binaries. The existing
+#     launcher-{linux,macos,windows}.yml workflows build + attach them on
+#     the "release: created" event. NOTE: a Release created with the
+#     default GITHUB_TOKEN does NOT trigger those workflows (GitHub
+#     suppresses event cascades from GITHUB_TOKEN). To make the launcher
+#     builds fire automatically, add a repo secret RELEASE_PAT (a PAT with
+#     "repo" scope) -- the publish step below prefers it. Without it the
+#     Release still ships; trigger the launcher workflows manually
+#     (workflow_dispatch) or re-run them against the new tag.
+#
+# Caveats to be aware of:
+#   * Pushing to main/develop requires the workflow token to be permitted
+#     past any branch protection on those branches. If protection blocks
+#     the GITHUB_TOKEN, configure RELEASE_PAT (used for checkout below) or
+#     allow the actions bot.
+#   * A safer two-phase variant (prepare -> human review -> finish) can be
+#     built by splitting the gate steps from the merge/tag/publish steps
+#     into two jobs gated by an environment approval; kept single-job here
+#     to match the documented one-click flow.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (e.g. 0.59.0, no leading v)"
+        required: true
+        type: string
+      skip_e2e:
+        description: "Skip E2E + static smoke (hotfixes only)"
+        required: false
+        type: boolean
+        default: false
+
+# Never run two releases concurrently; do NOT cancel an in-flight release
+# (cancelling between the main push and the develop back-sync would leave
+# the branches out of sync).
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+# Defensive opt-in: any JavaScript-runtime action still declaring Node 20
+# is coerced to Node 24 (see the standard-action bumps documented in
+# ci.yml / release-gate.yml). Default Node 20 is removed 2026-09-16.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Cut release v${{ inputs.version }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Validate version input
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: version '${{ inputs.version }}' is not X.Y.Z (no leading v)."
+            exit 1
+          fi
+          echo "Releasing v${{ inputs.version }}"
+
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          # Prefer a PAT (so downstream launcher-*.yml fire on the release
+          # event and so pushes survive branch protection); fall back to
+          # the built-in token.
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Preconditions (tag unused + release notes present)
+        run: |
+          VER="${{ inputs.version }}"
+          if git ls-remote --tags origin "refs/tags/v$VER" | grep -q .; then
+            echo "ERROR: tag v$VER already exists on origin. Pick a new version."
+            exit 1
+          fi
+          if [ ! -f "changelog/releases/v$VER.md" ]; then
+            echo "ERROR: changelog/releases/v$VER.md is missing."
+            echo "Author the per-release notes (release-workflow.md Step 3) before releasing."
+            exit 1
+          fi
+          echo "Preconditions OK."
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+          cache: "npm"
+          cache-dependency-path: |
+            frontend/package-lock.json
+            e2e/package-lock.json
+
+      - name: Install system dependencies
+        # python3-tk: required by the launcher PyInstaller build smoke
+        # inside `make release-test`. pandoc: required by export-plugin
+        # tests + the export path exercised by the gate / E2E.
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-tk pandoc
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Cut release branch from develop
+        run: |
+          git checkout develop
+          git pull --ff-only origin develop
+          git checkout -b "release/v${{ inputs.version }}"
+
+      - name: Bump canonical version + sync subsystems
+        run: |
+          VER="${{ inputs.version }}"
+          sed -i "s/^version = .*/version = \"$VER\"/" backend/pyproject.toml
+          make sync-versions
+          make sync-versions-check
+          ./scripts/verify_version_pins.sh "$VER"
+
+      - name: Update gated doc version headers
+        run: python3 scripts/update_version_headers.py "${{ inputs.version }}"
+
+      - name: Date-stamp the CHANGELOG
+        run: |
+          VER="${{ inputs.version }}"
+          DATE=$(date +%Y-%m-%d)
+          if grep -q "## \[Unreleased\]" docs/CHANGELOG.md; then
+            sed -i "s/## \[Unreleased\]/## [$VER] - $DATE/" docs/CHANGELOG.md
+            echo "Stamped '## [Unreleased]' -> '## [$VER] - $DATE'."
+          elif grep -qE "^## \[$VER\]" docs/CHANGELOG.md; then
+            echo "docs/CHANGELOG.md already carries a '## [$VER]' entry (prepared). OK."
+          else
+            echo "ERROR: docs/CHANGELOG.md has neither an '## [Unreleased]' block"
+            echo "       nor a '## [$VER]' entry. Prepare the CHANGELOG entry first."
+            exit 1
+          fi
+
+      - name: Install all dependencies for the gate
+        # `make release-test` exercises every subsystem: plugins + backend
+        # + frontend (the test suite), docs (verify-docs-discipline) and
+        # launcher (PyInstaller build smoke). Install them all here.
+        run: |
+          cd backend && poetry install --no-interaction --no-ansi && cd ..
+          make install-plugins
+          cd frontend && npm ci && cd ..
+          cd docs && poetry install --no-interaction --no-ansi && cd ..
+          cd launcher && poetry install --no-interaction --no-ansi && cd ..
+
+      - name: Commit release changes
+        run: |
+          git add -A
+          git commit -m "chore(release): bump version to ${{ inputs.version }}"
+
+      - name: Run release gate
+        # test (plugins+backend+frontend) + tsc + ruff + mypy + pre-commit
+        # + verify-docs-{discipline,completeness} + verify-plugin-locks
+        # + verify-theme + launcher PyInstaller build smoke.
+        run: make release-test
+
+      - name: E2E smoke
+        if: ${{ !inputs.skip_e2e }}
+        run: |
+          cd e2e && npm ci && cd ..
+          cd e2e && npx playwright install chromium --with-deps && cd ..
+          make test-e2e-smoke
+
+      - name: Static build smoke
+        if: ${{ !inputs.skip_e2e }}
+        run: make test-static-smoke
+
+      - name: Merge to main
+        run: |
+          git checkout main
+          git pull --ff-only origin main
+          git merge --no-ff "release/v${{ inputs.version }}" \
+            -m "release: v${{ inputs.version }}"
+
+      - name: Tag release
+        run: git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
+
+      - name: Push main + tag
+        run: git push origin main --tags
+
+      - name: Back-sync to develop
+        run: |
+          git checkout develop
+          git pull --ff-only origin develop
+          git merge --no-ff main \
+            -m "chore: back-sync v${{ inputs.version }} to develop"
+          git push origin develop
+
+      - name: Delete release branch
+        run: |
+          git branch -d "release/v${{ inputs.version }}" || true
+          git push origin --delete "release/v${{ inputs.version }}" || true
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: v${{ inputs.version }}
+          name: Bibliogon v${{ inputs.version }}
+          body_path: changelog/releases/v${{ inputs.version }}.md
+          draft: false
+          prerelease: false
+          # PAT (when configured) lets the launcher-*.yml workflows fire on
+          # the resulting "release: created" event; GITHUB_TOKEN cannot.
+          token: ${{ secrets.RELEASE_PAT || secrets.GITHUB_TOKEN }}
