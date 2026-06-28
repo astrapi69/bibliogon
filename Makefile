@@ -2,6 +2,7 @@
        launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
        test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
+       tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
        test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
@@ -325,6 +326,60 @@ test-coverage-frontend: ## Frontend coverage report (coverage/)
 coverage-backend: test-coverage-backend ## Alias of test-coverage-backend (see docs/audits/coverage-baseline.md)
 
 coverage-frontend: test-coverage-frontend ## Alias of test-coverage-frontend (see docs/audits/coverage-baseline.md)
+
+# === TDD cycle (red-green-refactor; see .claude/rules/tdd.md) ===
+# Inner-loop helpers for the mandated red-green-refactor workflow. They
+# reuse the existing test/type targets (test-frontend, test-backend,
+# check-types) so backend runs stay on the python3.12 env convention.
+# Coverage reports live in the existing test-coverage-{backend,frontend}
+# (+ coverage-{backend,frontend}) targets, not duplicated here.
+
+tdd: ## TDD: print the red-green-refactor guide
+	@echo "=== TDD red-green-refactor ==="
+	@echo "1. RED       write a failing test, then:   make test-fail"
+	@echo "2. GREEN     implement until green:         make tdd-green"
+	@echo "3. REFACTOR  clean up, keep tests green:    make tdd-refactor"
+	@echo ""
+	@echo "Single test:  make test-only TEST=<path>"
+	@echo "Watch mode:   make test-watch"
+	@echo "All gates:    make tdd-check"
+
+test-fail: ## TDD RED: run all tests verbosely (expected to fail; never fails make)
+	@echo "=== TDD RED: tests should fail ==="
+	cd frontend && npx vitest run --reporter=verbose 2>&1 || true
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest -v --tb=short 2>&1 || true
+
+tdd-green: test-frontend test-backend ## TDD GREEN: frontend + backend tests must pass
+	@echo ""
+	@echo "TDD GREEN: all tests pass."
+
+tdd-refactor: tdd-green ## TDD REFACTOR: tests + ruff + mypy + tsc
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run ruff check app/
+	$(MAKE) check-types
+	@echo ""
+	@echo "TDD REFACTOR: tests + lint + types green."
+
+tdd-check: tdd-refactor ## TDD: all TDD gates (tests + ruff + mypy + tsc)
+	@echo ""
+	@echo "All TDD gates green."
+
+test-only: ## Run a single test (TEST=path; routed to vitest/playwright/pytest)
+ifndef TEST
+	$(error TEST is required. Usage: make test-only TEST=frontend/src/lib/utils/foo.test.ts)
+endif
+	@t="$(TEST)"; \
+	if echo "$$t" | grep -q "frontend"; then \
+		cd frontend && npx vitest run "$${t#frontend/}" --reporter=verbose; \
+	elif echo "$$t" | grep -q "e2e"; then \
+		cd e2e && npx playwright test "$${t#e2e/}"; \
+	elif echo "$$t" | grep -qE "backend|tests/"; then \
+		cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest "$${t#backend/}" -v; \
+	else \
+		echo "Unknown test path: $$t"; exit 1; \
+	fi
+
+test-watch: ## TDD watch mode: re-run frontend (Vitest) tests on change
+	cd frontend && npx vitest --watch
 
 # --- Dependency security audit (mirrors the CI steps in ci.yml) ---
 
