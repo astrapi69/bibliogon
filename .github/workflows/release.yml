@@ -3,29 +3,33 @@ name: Release
 # One-click Gitflow release orchestration (release-workflow.md, gitflow #79).
 #
 # Triggered MANUALLY via the Actions tab (workflow_dispatch only -- never on
-# push/PR). Given a target version it runs the full mechanical release:
+# push/PR). The mechanical release logic lives in Makefile targets
+# (release-prepare / release-finish and their helpers) so it runs identically
+# locally and in CI (DRY); this workflow only adds the CI-specific glue.
+# Given a target version it runs:
 #
-#   preconditions -> cut release/v<version> from develop -> bump canonical
-#   version + sync subsystems + bump gated doc headers + date-stamp the
-#   CHANGELOG -> run the release gate (+ optional E2E / static smoke) ->
-#   merge --no-ff to main -> tag -> push main + tag -> back-sync develop ->
-#   delete the release branch -> publish the GitHub Release.
+#   make release-prepare  (preconditions -> cut release/v<version> from
+#     develop -> bump-version + update-doc-headers + finalize-changelog ->
+#     commit) -> make release-test (+ optional make test-e2e-smoke /
+#     test-static-smoke) -> make release-finish (merge --no-ff to main ->
+#     tag -> push main + tag -> back-sync develop -> delete release branch)
+#     -> build the Linux launcher binary -> publish the GitHub Release.
 #
 # What this workflow does NOT do (deliberate, see release-workflow.md):
 #   * It does NOT author CHANGELOG prose. The per-release notes file
 #     changelog/releases/v<version>.md AND the docs/CHANGELOG.md entry are
-#     a human/LLM precondition (Step 3); the workflow fails fast if the
-#     notes file is missing. It only date-stamps an "## [Unreleased]"
-#     block when present, or accepts an already-prepared "## [<version>]".
-#   * It does NOT build the launcher binaries. The existing
-#     launcher-{linux,macos,windows}.yml workflows build + attach them on
-#     the "release: created" event. NOTE: a Release created with the
-#     default GITHUB_TOKEN does NOT trigger those workflows (GitHub
-#     suppresses event cascades from GITHUB_TOKEN). To make the launcher
-#     builds fire automatically, add a repo secret RELEASE_PAT (a PAT with
-#     "repo" scope) -- the publish step below prefers it. Without it the
-#     Release still ships; trigger the launcher workflows manually
-#     (workflow_dispatch) or re-run them against the new tag.
+#     a human/LLM precondition (Step 3); make release-prepare fails fast if
+#     the notes file is missing. finalize-changelog only date-stamps an
+#     "## [Unreleased]" block when present, or accepts an already-prepared
+#     "## [<version>]".
+#   * It builds + attaches only the LINUX launcher binary. The macOS /
+#     Windows binaries come from launcher-{macos,windows}.yml on the
+#     "release: created" event. NOTE: a Release created with the default
+#     GITHUB_TOKEN does NOT trigger those workflows (GitHub suppresses event
+#     cascades from GITHUB_TOKEN). To make them fire automatically, add a
+#     repo secret RELEASE_PAT (a PAT with "repo" scope) -- the publish +
+#     checkout steps prefer it. Without it, trigger those workflows manually
+#     (workflow_dispatch) against the new tag.
 #
 # Caveats to be aware of:
 #   * Pushing to main/develop requires the workflow token to be permitted
@@ -92,20 +96,6 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Preconditions (tag unused + release notes present)
-        run: |
-          VER="${{ inputs.version }}"
-          if git ls-remote --tags origin "refs/tags/v$VER" | grep -q .; then
-            echo "ERROR: tag v$VER already exists on origin. Pick a new version."
-            exit 1
-          fi
-          if [ ! -f "changelog/releases/v$VER.md" ]; then
-            echo "ERROR: changelog/releases/v$VER.md is missing."
-            echo "Author the per-release notes (release-workflow.md Step 3) before releasing."
-            exit 1
-          fi
-          echo "Preconditions OK."
-
       - uses: actions/setup-python@v6
         with:
           python-version: "3.12"
@@ -129,38 +119,6 @@ jobs:
       - name: Install Poetry
         run: pip install poetry
 
-      - name: Cut release branch from develop
-        run: |
-          git checkout develop
-          git pull --ff-only origin develop
-          git checkout -b "release/v${{ inputs.version }}"
-
-      - name: Bump canonical version + sync subsystems
-        run: |
-          VER="${{ inputs.version }}"
-          sed -i "s/^version = .*/version = \"$VER\"/" backend/pyproject.toml
-          make sync-versions
-          make sync-versions-check
-          ./scripts/verify_version_pins.sh "$VER"
-
-      - name: Update gated doc version headers
-        run: python3 scripts/update_version_headers.py "${{ inputs.version }}"
-
-      - name: Date-stamp the CHANGELOG
-        run: |
-          VER="${{ inputs.version }}"
-          DATE=$(date +%Y-%m-%d)
-          if grep -q "## \[Unreleased\]" docs/CHANGELOG.md; then
-            sed -i "s/## \[Unreleased\]/## [$VER] - $DATE/" docs/CHANGELOG.md
-            echo "Stamped '## [Unreleased]' -> '## [$VER] - $DATE'."
-          elif grep -qE "^## \[$VER\]" docs/CHANGELOG.md; then
-            echo "docs/CHANGELOG.md already carries a '## [$VER]' entry (prepared). OK."
-          else
-            echo "ERROR: docs/CHANGELOG.md has neither an '## [Unreleased]' block"
-            echo "       nor a '## [$VER]' entry. Prepare the CHANGELOG entry first."
-            exit 1
-          fi
-
       - name: Install all dependencies for the gate
         # `make release-test` exercises every subsystem: plugins + backend
         # + frontend (the test suite), docs (verify-docs-discipline) and
@@ -172,10 +130,12 @@ jobs:
           cd docs && poetry install --no-interaction --no-ansi && cd ..
           cd launcher && poetry install --no-interaction --no-ansi && cd ..
 
-      - name: Commit release changes
-        run: |
-          git add -A
-          git commit -m "chore(release): bump version to ${{ inputs.version }}"
+      - name: Prepare release
+        # Make target: preconditions (notes present + tag unused) -> cut
+        # release/v<version> from develop -> bump-version + update-doc-headers
+        # + finalize-changelog -> commit (explicit paths). Same target runs
+        # locally.
+        run: make release-prepare VERSION=${{ inputs.version }}
 
       - name: Run release gate
         # test (plugins+backend+frontend) + tsc + ruff + mypy + pre-commit
@@ -194,31 +154,22 @@ jobs:
         if: ${{ !inputs.skip_e2e }}
         run: make test-static-smoke
 
-      - name: Merge to main
+      - name: Finish release
+        # Make target: verify pins -> merge --no-ff to main -> tag -> push
+        # main + tag -> back-sync develop -> delete release branch.
+        run: make release-finish VERSION=${{ inputs.version }}
+
+      - name: Build launcher binary (Linux)
+        # The Linux launcher binary is built + attached here so the release
+        # ships at least one binary regardless of the GITHUB_TOKEN cascade
+        # caveat. macOS/Windows binaries come from launcher-{macos,windows}.yml
+        # on the "release: created" event (which needs RELEASE_PAT to fire,
+        # see the header note).
+        working-directory: launcher
         run: |
-          git checkout main
-          git pull --ff-only origin main
-          git merge --no-ff "release/v${{ inputs.version }}" \
-            -m "release: v${{ inputs.version }}"
-
-      - name: Tag release
-        run: git tag -a "v${{ inputs.version }}" -m "Release v${{ inputs.version }}"
-
-      - name: Push main + tag
-        run: git push origin main --tags
-
-      - name: Back-sync to develop
-        run: |
-          git checkout develop
-          git pull --ff-only origin develop
-          git merge --no-ff main \
-            -m "chore: back-sync v${{ inputs.version }} to develop"
-          git push origin develop
-
-      - name: Delete release branch
-        run: |
-          git branch -d "release/v${{ inputs.version }}" || true
-          git push origin --delete "release/v${{ inputs.version }}" || true
+          poetry run pyinstaller bibliogon-launcher.spec --clean --noconfirm
+          hash=$(sha256sum dist/bibliogon-launcher | awk '{print $1}')
+          echo "$hash  bibliogon-launcher" > dist/bibliogon-launcher.sha256
 
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v3
@@ -226,6 +177,9 @@ jobs:
           tag_name: v${{ inputs.version }}
           name: Bibliogon v${{ inputs.version }}
           body_path: changelog/releases/v${{ inputs.version }}.md
+          files: |
+            launcher/dist/bibliogon-launcher
+            launcher/dist/bibliogon-launcher.sha256
           draft: false
           prerelease: false
           # PAT (when configured) lets the launcher-*.yml workflows fire on
