@@ -14,3 +14,11 @@ declare const __APP_VERSION__: string;
 declare const __BUILD_HASH__: string;
 declare const __BUILD_DATE__: string;
 declare const __BUILD_BRANCH__: string;
+
+// Full git SHA of the built commit, used to build a GitHub commit link in
+// Settings > About (or "" when undeterminable). __IS_PREVIEW__ is true only
+// on the bibliogon-preview GitHub-Pages deploy (VITE_IS_PREVIEW=true);
+// production + local builds are false, so the preview warning banner stays
+// off there. See frontend/vite.config.ts `define`.
+declare const __BUILD_COMMIT__: string;
+declare const __IS_PREVIEW__: boolean;

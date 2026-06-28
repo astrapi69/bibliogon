@@ -96,6 +96,21 @@
       "importing": "İçe aktarılıyor …",
       "import_btn": "İçe aktar"
     },
+    "tts": {
+      "read_aloud": "Sesli oku",
+      "play": "Oynat",
+      "pause": "Duraklat",
+      "resume": "Devam et",
+      "stop": "Durdur",
+      "speed": "Hız",
+      "voice": "Ses",
+      "default_voice": "Varsayılan ses",
+      "now_reading": "Okunuyor",
+      "no_text": "Sesli okunacak metin yok.",
+      "unavailable": "Tarayıcınız sesli okumayı desteklemiyor.",
+      "settings_title": "Sesli oku (ses çıkışı)",
+      "settings_hint": "Tarayıcının yerel ses çıkışı için varsayılan bir ses ve hız seçin. Cihaza bağlıdır; çevrimdışı çalışır."
+    },
     "feature": {
       "requires_network": "Bu özellik bir internet bağlantısı gerektirir.",
       "requires_desktop_app": "Bu özellik Bibliogon masaüstü uygulamasını gerektirir",
@@ -385,6 +400,21 @@
       "line_relaxed": "Geniş"
     },
     "editor": {
+      "ai_grammar": "Dilbilgisi (YZ)",
+      "ai_translate": "Çevir (YZ)",
+      "ai_grammar_title": "Seçimin dilbilgisini YZ ile düzelt",
+      "ai_translate_title": "Seçimi YZ ile çevir",
+      "ai_target_lang": "Hedef dil",
+      "ai_translate_run": "Çevir",
+      "ai_tools_running": "YZ çalışıyor…",
+      "ai_tools_no_text": "Metin seçilmedi.",
+      "ai_tools_error": "YZ işlemi başarısız oldu.",
+      "ai_tools_error_key": "Geçersiz veya eksik API anahtarı.",
+      "ai_tools_apply": "Seçimi değiştir",
+      "ai_tools_copy": "Kopyala",
+      "ai_tools_copied": "Panoya kopyalandı.",
+      "ai_tools_applied": "Uygulandı.",
+      "ai_tools_select_hint": "Doğrudan değiştirmek için metin seçin.",
       "edit_title_tooltip": "Başlığı düzenle",
       "published_warning_body": "Dikkat: Bu eser zaten yayımlandı. Bir başlık değişikliği yayın platformunda (ör. KDP) elle güncellenmelidir.",
       "acknowledge_warning_button": "Anladım, başlığı düzenle",
@@ -2012,6 +2042,10 @@
       "section_app": "Uygulama",
       "section_editor": "Duzenleyici",
       "show_shortcuts": "Kisayollari goster",
+      "save": "Kaydet",
+      "save_note": "Otomatik kaydetme etkin",
+      "search_placeholder": "Kısayolları ara…",
+      "no_results": "Kısayol bulunamadı",
       "toggle_word_wrap": "Satir kaydirmayi degistir",
       "fullscreen": "Tam ekrani degistir",
       "composition_mode": "Kompozisyon modu",
@@ -3320,7 +3354,26 @@
       "longest_streak": "En uzun seri",
       "empty": "Bu donemde henuz yazma gecmisi yok.",
       "by_book": "Kitaba gore",
-      "deleted_chapters": "Silinmis bolumler"
+      "deleted_chapters": "Silinmis bolumler",
+      "dashboard_title": "İstatistikler",
+      "dashboard_load_failed": "İstatistikler yüklenemedi.",
+      "today": "Bugün",
+      "daily_goal": "Günlük hedef",
+      "vs_yesterday_up": "Dünden {n} fazla",
+      "vs_yesterday_down": "Dünden {n} az",
+      "vs_yesterday_same": "Dünkü ile aynı",
+      "this_week": "Bu hafta (7 gün)",
+      "weekly_average": "Ort./gün",
+      "week_total": "Hafta toplamı",
+      "project_progress": "Proje ilerlemesi",
+      "no_goals": "Henüz kelime hedefi yok. İlerlemeyi izlemek için bir kitaba kelime hedefi belirleyin.",
+      "words_of_target": "{current} / {target} kelime",
+      "eta": "~{n} günde tamamlanır",
+      "eta_unknown": "Güncel tempo yok",
+      "completed": "Hedefe ulaşıldı",
+      "activity": "Etkinlik",
+      "heatmap_less": "az",
+      "heatmap_more": "çok"
     },
     "relationship_graph": {
       "title": "Iliski grafigi",
@@ -3617,7 +3670,22 @@
       "resources_heading": "Lisans ve Kaynaklar",
       "docs_label": "Dokümantasyon",
       "next_check": "Sonraki otomatik kontrol: {time}",
-      "next_check_disabled": "Otomatik kontrol devre dışı"
+      "next_check_disabled": "Otomatik kontrol devre dışı",
+      "commit_label": "Commit",
+      "preview_heading": "Önizleme/Test sürümü",
+      "share_heading": "Uygulamayı paylaş",
+      "share_production_heading": "Ana sürüm (kararlı)",
+      "share_production_description": "Kararlı uygulamayı QR kodu ile paylaşın, böylece başkaları açabilir.",
+      "share_preview_heading": "En son sürüm (test)",
+      "share_preview_description": "Bu bir önizleme/test sürümüdür. Kararlı değildir ve hatalar içerebilir. Yalnızca test edenlerle paylaşın.",
+      "share_qr_show": "QR kodunu göster",
+      "share_qr_hide": "QR kodunu gizle",
+      "share_open": "Bağlantıyı aç",
+      "share_copy": "Bağlantıyı kopyala",
+      "share_copied": "Bağlantı kopyalandı!",
+      "share_copy_failed": "Bağlantı kopyalanamadı.",
+      "share_native": "Paylaş",
+      "share_text": "Yazarlar için açık kaynaklı platform"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP'de yayımla",
@@ -3717,6 +3785,41 @@
       "open_online": "Çevrimiçi sürümü aç",
       "import": "Yedeği içe aktar",
       "settings_hint": "Çevrimiçi sürümden mi geçiyorsunuz? Orada tam yedek (.bgb) dışa aktarın ve burada “Yedeği içe aktar” ile içe aktarın."
+    },
+    "preview_banner": {
+      "title": "Önizleme/Test sürümü",
+      "message": "Bir önizleme/test sürümü kullanıyorsunuz. Kararlı değildir ve hatalar içerebilir."
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3 Perde)",
+        "sachbuch": "Kurgu Dışı",
+        "kurzgeschichte": "Kısa Öykü",
+        "lyrik": "Şiir",
+        "kinderbuch": "Resimli Kitap",
+        "comic": "Çizgi Roman"
+      },
+      "desc": {
+        "roman_3act": "Prolog, perde başlıkları, on bir bölüm ve sonsözden oluşan üç perdelik roman yapısı.",
+        "sachbuch": "Ön söz, giriş, sekiz bölüm, özet ve ekten oluşan bir kurgu dışı kitap.",
+        "kurzgeschichte": "Tek bir bölümde tek bir kısa öykü.",
+        "lyrik": "Yirmi şiir bölümünden oluşan bir şiir kitabı.",
+        "kinderbuch": "On iki sayfalık resimli kitap (görsel ve metin).",
+        "comic": "Standart formatta yirmi iki sayfalık bir çizgi roman."
+      },
+      "title": {
+        "prologue": "Prolog",
+        "epilogue": "Sonsöz",
+        "act": "Perde",
+        "chapter": "Bölüm",
+        "foreword": "Ön söz",
+        "introduction": "Giriş",
+        "summary": "Özet",
+        "appendix": "Ek",
+        "poem": "Şiir",
+        "story": "Öykü"
+      },
+      "page_count": "{count} sayfa"
     }
   }
 }

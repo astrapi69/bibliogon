@@ -31,6 +31,24 @@ describe("featureRegistry", () => {
         }
     });
 
+    it("gates the offline AI grammar/translation tools as key-dependent (#661)", () => {
+        for (const id of [FEATURES.AI_GRAMMAR, FEATURES.AI_TRANSLATE]) {
+            // Online the strategy abstains (the backend LanguageTool/DeepL path
+            // covers it), so the descriptor's active default wins.
+            expect(featureRegistry.getState(id, API)).toBe("active");
+            // Offline without a key: disabled + the AI-key reason (not the
+            // desktop-app reason the server-bound surfaces use).
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).toBe("disabled");
+            expect(featureRegistry.getReason(id, DEXIE_NO_KEY)).toBe(
+                FEATURE_REASON.REQUIRES_AI_KEY,
+            );
+            // Offline WITH a key: the browser-direct AI path is active.
+            expect(featureRegistry.getState(id, DEXIE_WITH_KEY)).toBe("active");
+            // Policy #78: visible + explained, never hidden.
+            expect(featureRegistry.getState(id, DEXIE_NO_KEY)).not.toBe("hidden");
+        }
+    });
+
     it("disables key-dependent features offline only without a key", () => {
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, API)).toBe("active");
         expect(featureRegistry.getState(FEATURES.AI_GENERATE, DEXIE_NO_KEY)).toBe("disabled");

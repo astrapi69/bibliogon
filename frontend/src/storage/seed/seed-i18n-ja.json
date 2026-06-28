@@ -96,6 +96,21 @@
       "importing": "インポート中 …",
       "import_btn": "インポート"
     },
+    "tts": {
+      "read_aloud": "読み上げ",
+      "play": "再生",
+      "pause": "一時停止",
+      "resume": "再開",
+      "stop": "停止",
+      "speed": "速度",
+      "voice": "音声",
+      "default_voice": "既定の音声",
+      "now_reading": "読み上げ中",
+      "no_text": "読み上げるテキストがありません。",
+      "unavailable": "お使いのブラウザは音声読み上げに対応していません。",
+      "settings_title": "読み上げ（音声出力）",
+      "settings_hint": "ブラウザ標準の音声読み上げで使う既定の音声と速度を選択します。デバイス依存・オフラインで動作します。"
+    },
     "feature": {
       "requires_network": "この機能にはインターネット接続が必要です。",
       "requires_desktop_app": "この機能には Bibliogon デスクトップアプリが必要です",
@@ -385,6 +400,21 @@
       "line_relaxed": "ゆったり"
     },
     "editor": {
+      "ai_grammar": "文法（AI）",
+      "ai_translate": "翻訳（AI）",
+      "ai_grammar_title": "選択範囲の文法をAIで修正",
+      "ai_translate_title": "選択範囲をAIで翻訳",
+      "ai_target_lang": "翻訳先の言語",
+      "ai_translate_run": "翻訳",
+      "ai_tools_running": "AIが処理中…",
+      "ai_tools_no_text": "テキストが選択されていません。",
+      "ai_tools_error": "AI処理に失敗しました。",
+      "ai_tools_error_key": "APIキーが無効または未設定です。",
+      "ai_tools_apply": "選択範囲を置き換え",
+      "ai_tools_copy": "コピー",
+      "ai_tools_copied": "クリップボードにコピーしました。",
+      "ai_tools_applied": "適用しました。",
+      "ai_tools_select_hint": "テキストを選択すると直接置き換えられます。",
       "edit_title_tooltip": "タイトルを編集",
       "published_warning_body": "注意：この作品はすでに公開されています。タイトルの変更は、出版プラットフォーム（KDPなど）で手動で更新する必要があります。",
       "acknowledge_warning_button": "了解、タイトルを編集",
@@ -1970,6 +2000,10 @@
       "section_app": "アプリ",
       "section_editor": "エディター",
       "show_shortcuts": "ショートカットを表示",
+      "save": "保存",
+      "save_note": "自動保存が有効です",
+      "search_placeholder": "ショートカットを検索…",
+      "no_results": "ショートカットが見つかりません",
       "toggle_word_wrap": "ワードラップを切り替え",
       "fullscreen": "全画面表示を切り替え",
       "composition_mode": "集中執筆モード",
@@ -3320,7 +3354,26 @@
       "longest_streak": "最長の連続記録",
       "empty": "この期間の執筆履歴はまだありません。",
       "by_book": "本ごと",
-      "deleted_chapters": "削除された章"
+      "deleted_chapters": "削除された章",
+      "dashboard_title": "統計",
+      "dashboard_load_failed": "統計を読み込めませんでした。",
+      "today": "今日",
+      "daily_goal": "1日の目標",
+      "vs_yesterday_up": "昨日より{n}多い",
+      "vs_yesterday_down": "昨日より{n}少ない",
+      "vs_yesterday_same": "昨日と同じ",
+      "this_week": "今週（7日間）",
+      "weekly_average": "平均/日",
+      "week_total": "週合計",
+      "project_progress": "プロジェクトの進捗",
+      "no_goals": "単語数の目標がまだありません。進捗を追跡するには、本に単語数の目標を設定してください。",
+      "words_of_target": "{current} / {target} 単語",
+      "eta": "約{n}日で完了",
+      "eta_unknown": "最近のペースなし",
+      "completed": "目標達成",
+      "activity": "アクティビティ",
+      "heatmap_less": "少",
+      "heatmap_more": "多"
     },
     "relationship_graph": {
       "title": "関係グラフ",
@@ -3617,7 +3670,22 @@
       "resources_heading": "ライセンスとリソース",
       "docs_label": "ドキュメント",
       "next_check": "次回の自動確認: {time}",
-      "next_check_disabled": "自動確認は無効です"
+      "next_check_disabled": "自動確認は無効です",
+      "commit_label": "コミット",
+      "preview_heading": "プレビュー/テスト版",
+      "share_heading": "アプリを共有",
+      "share_production_heading": "メインバージョン（安定版）",
+      "share_production_description": "QRコードで安定版アプリを共有し、他の人が開けるようにします。",
+      "share_preview_heading": "最新バージョン（テスト）",
+      "share_preview_description": "これはプレビュー/テスト版です。安定しておらず、不具合が含まれる可能性があります。テスターとのみ共有してください。",
+      "share_qr_show": "QRコードを表示",
+      "share_qr_hide": "QRコードを非表示",
+      "share_open": "リンクを開く",
+      "share_copy": "リンクをコピー",
+      "share_copied": "リンクをコピーしました！",
+      "share_copy_failed": "リンクをコピーできませんでした。",
+      "share_native": "共有",
+      "share_text": "著者向けのオープンソースプラットフォーム"
     },
     "kdp_publishing_wizard": {
       "open_button": "KDP で出版",
@@ -3717,6 +3785,41 @@
       "open_online": "オンライン版を開く",
       "import": "バックアップをインポート",
       "settings_hint": "オンライン版から移行しますか？ そちらでフルバックアップ（.bgb）をエクスポートし、ここで「バックアップをインポート」から取り込みます。"
+    },
+    "preview_banner": {
+      "title": "プレビュー/テスト版",
+      "message": "プレビュー/テスト版を使用しています。安定しておらず、不具合が含まれる可能性があります。"
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "小説（三幕構成）",
+        "sachbuch": "ノンフィクション",
+        "kurzgeschichte": "短編小説",
+        "lyrik": "詩集",
+        "kinderbuch": "絵本",
+        "comic": "コミック"
+      },
+      "desc": {
+        "roman_3act": "プロローグ、幕見出し、11章、エピローグからなる三幕構成の小説。",
+        "sachbuch": "まえがき、序章、8つの章、まとめ、付録からなるノンフィクション書。",
+        "kurzgeschichte": "1つの章からなる単一の短編小説。",
+        "lyrik": "20編の詩の章からなる詩集。",
+        "kinderbuch": "12ページ（画像とテキスト）の絵本。",
+        "comic": "標準的な形式の22ページのコミック。"
+      },
+      "title": {
+        "prologue": "プロローグ",
+        "epilogue": "エピローグ",
+        "act": "幕",
+        "chapter": "章",
+        "foreword": "まえがき",
+        "introduction": "序章",
+        "summary": "まとめ",
+        "appendix": "付録",
+        "poem": "詩",
+        "story": "物語"
+      },
+      "page_count": "{count}ページ"
     }
   }
 }

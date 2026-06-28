@@ -39,6 +39,12 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Recent documents | ![Recent Documents](dashboard/recent-documents.png) |
 | Trash view | ![Trash View](dashboard/trash-view.png) |
 
+## Book Creation
+
+| Feature | Screenshot |
+| --- | --- |
+| Book template picker — offline client catalog (#665) | ![Book Template Picker](book-creation/book-template-picker.png) |
+
 ## Book Editor
 
 | Feature | Screenshot |
@@ -53,6 +59,8 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
 | Editor context menu | ![Context Menu](book-editor/context-menu.png) |
+| Read-aloud player (Web Speech API, offline #666) | ![Read Aloud](book-editor/web-speech-tts.png) |
+| AI grammar + translation tools (offline, key-required #661/#669) | ![AI Text Tools](book-editor/ai-text-tools-offline.png) |
 
 ## Article Editor
 
@@ -86,6 +94,14 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Data migration welcome (.bgb from online, #591) | ![Data Migration](settings/data-migration.png) |
 | About / version | ![About Version](settings/about-version.png) |
 | Auto-save behaviour tab (no Save button, #473) | ![Settings Auto-Save](settings/auto-save.png) |
+| Preview / test-version banner + build-info (#644) | ![Preview Build Info](settings/preview-build-info.png) |
+| Share-app QR section (#644) | ![Share App](settings/share-app.png) |
+
+## Shortcuts
+
+| Feature | Screenshot |
+| --- | --- |
+| Shortcuts overview dialog (Ctrl+/ or ?, #662) | ![Shortcuts Overview](shortcuts/overview-dialog.png) |
 
 ## Quality Report
 

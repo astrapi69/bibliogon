@@ -63,6 +63,7 @@ ALLOWLIST = {
     # beige narration) — kept theme-independent by design decision
     # (2026-05-30), mirrored 1:1 with the Python PDF walker.
     "frontend/src/components/comics/ComicBubble.tsx",
+    "frontend/src/components/comics/bubble/bubbleStyle.ts",
     "frontend/src/components/comics/bubbleConfigReads.ts",
     # Story Bible per-entity-type accent colors (user-facing data
     # values; mid-tones chosen to read on both light + dark sidebars,

@@ -1,5 +1,5 @@
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
-import { Routes, Route, useNavigate } from "react-router-dom";
+import { Suspense, useCallback, useEffect, useState } from "react";
+import { Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/Dashboard";
 import BookEditor from "./pages/BookEditor";
 import ArticleList from "./pages/ArticleList";
@@ -20,6 +20,7 @@ const CreateBookPage = lazyWithReload(() => import("./pages/CreateBookPage"));
 const CreateArticlePage = lazyWithReload(() => import("./pages/CreateArticlePage"));
 const ExportPage = lazyWithReload(() => import("./pages/ExportPage"));
 const WritingHistoryPage = lazyWithReload(() => import("./pages/WritingHistoryPage"));
+const StatisticsDashboard = lazyWithReload(() => import("./pages/StatisticsDashboard"));
 const ChapterVersionsPage = lazyWithReload(() => import("./pages/ChapterVersionsPage"));
 const GitBackupPage = lazyWithReload(() => import("./pages/GitBackupPage"));
 const GitSyncPage = lazyWithReload(() => import("./pages/GitSyncPage"));
@@ -35,6 +36,7 @@ import { DialogProvider } from "./components/shared/AppDialog";
 import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
+import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
@@ -53,8 +55,7 @@ import DonationReminderBanner, {
     shouldShowReminder,
 } from "./components/shared/DonationReminderBanner";
 import { getDonationsConfig, type DonationsConfig } from "./components/settings/SupportSection";
-import { useKeyboardShortcuts, Shortcut } from "./hooks/ui/useKeyboardShortcuts";
-import { useWordWrap } from "./hooks/editor/useWordWrap";
+import GlobalShortcuts from "./components/shortcuts/GlobalShortcuts";
 import { api, ApiError } from "./api/client";
 import { getStorage } from "./storage";
 import { ToastContainer } from "react-toastify";
@@ -99,28 +100,6 @@ export default function App() {
             .catch(() => {}); // Config load failure is not critical for the wizard
     }, []);
 
-    // Word-wrap toggle (Alt+Z) — applies a body-level CSS class
-    // affecting every .ProseMirror + markdown textarea. Silent on
-    // toggle; the editor's visual state IS the feedback (matches
-    // VS Code / Sublime / IntelliJ behavior).
-    const { toggle: toggleWordWrap } = useWordWrap();
-
-    // Shortcut cheatsheet — Dialog->Pages C9: Ctrl+/ now routes to the
-    // /help/shortcuts page instead of toggling an App-level overlay.
-    const navigate = useNavigate();
-    const shortcuts = useMemo<Shortcut[]>(
-        () => [
-            {
-                keys: "ctrl+/",
-                handler: () => navigate("/help/shortcuts"),
-                label: "Show shortcuts",
-            },
-            { keys: "alt+z", handler: toggleWordWrap, label: "Toggle word wrap" },
-        ],
-        [toggleWordWrap, navigate],
-    );
-    useKeyboardShortcuts(shortcuts);
-
     // Error report dialog state — opened via custom event from notify.ts
     const [errorReport, setErrorReport] = useState<{
         open: boolean;
@@ -156,6 +135,11 @@ export default function App() {
                                     <MediumImportJobProvider>
                                         <HelpProvider>
                                             <SkipToContentLink />
+                                            {/* #642: non-dismissible preview/test-version
+                                             *  warning. Renders only on the bibliogon-preview
+                                             *  deploy (VITE_IS_PREVIEW=true); off in production
+                                             *  and local builds. Sits above every other banner. */}
+                                            <PreviewBanner />
                                             <OfflineBanner />
                                             {/* PWA: "new version available" banner (issue #323).
                                              *  Subscribes to swUpdateManager; fixed-bottom, dismissible,
@@ -310,6 +294,14 @@ export default function App() {
                                                         }
                                                     />
                                                     <Route
+                                                        path="/statistics"
+                                                        element={
+                                                            <ErrorBoundary surface="statistics">
+                                                                <StatisticsDashboard />
+                                                            </ErrorBoundary>
+                                                        }
+                                                    />
+                                                    <Route
                                                         path="/help/shortcuts"
                                                         element={
                                                             <ErrorBoundary surface="shortcuts">
@@ -331,6 +323,7 @@ export default function App() {
                                             <AudioExportGate />
                                             <MediumImportGate />
                                             <BulkAiFillDock />
+                                            <GlobalShortcuts />
                                             <HelpPanel />
                                             <ErrorReportDialog
                                                 open={errorReport.open}

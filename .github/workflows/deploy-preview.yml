@@ -1,0 +1,83 @@
+name: Deploy preview to bibliogon-preview
+
+# Deploys a PREVIEW build of the Bibliogon frontend (the React/Vite
+# offline PWA) to the separate astrapi69/bibliogon-preview repo, served
+# at https://astrapi69.github.io/bibliogon-preview/.
+#
+# This is additive to deploy-pages.yml (production, unchanged): both
+# track `develop`, but publish to two different repos, so they never
+# collide. A GitHub Pages project site is always served at
+# <user>.github.io/<repo>/, so a distinct preview URL needs a distinct
+# repo (same constraint as the docs site -> bibliogondocs).
+#
+# Like production, the preview has no same-origin backend, so it builds
+# as a standalone offline PWA (VITE_STORAGE_MODE=dexie). Seeds are the
+# committed frontend/src/storage/seed/ JSON - identical to production,
+# no regeneration step (deploy-pages.yml does not regenerate them
+# either).
+#
+# First deploy is gated on a manual setup by the maintainer:
+#   1. Deploy key: public key as a write Deploy Key in bibliogon-preview,
+#      private key as the PREVIEW_DEPLOY_KEY secret in this repo.
+#   2. GitHub Pages in bibliogon-preview: Source = gh-pages branch.
+
+on:
+  push:
+    branches: [develop]
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/deploy-preview.yml'
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to deploy'
+        default: 'develop'
+
+permissions:
+  contents: read
+
+# Only one preview deploy at a time; a newer push supersedes an
+# in-flight one.
+concurrency:
+  group: preview-pages
+  cancel-in-progress: true
+
+# Defensive opt-in: coerce any JavaScript-runtime action still declaring
+# Node 20 to Node 24 (safety net for future additions). Mirrors the
+# other workflows.
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  deploy-preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ github.event.inputs.branch || github.ref }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: "24"
+      - name: Build frontend (base /bibliogon-preview/, offline Dexie storage)
+        working-directory: ./frontend
+        env:
+          VITE_BASE_URL: /bibliogon-preview/
+          # No same-origin backend on GitHub Pages -> force the offline
+          # IndexedDB storage backend, identical to production.
+          VITE_STORAGE_MODE: dexie
+          # Build provenance baked into the bundle (Settings > About) +
+          # the preview marker that turns on the non-stable warning banner.
+          VITE_BUILD_BRANCH: ${{ github.ref_name }}
+          VITE_BUILD_COMMIT: ${{ github.sha }}
+          VITE_BUILD_DATE: ${{ github.event.head_commit.timestamp }}
+          VITE_IS_PREVIEW: "true"
+        run: |
+          npm ci
+          npm run build
+      - name: Deploy to bibliogon-preview (gh-pages)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          deploy_key: ${{ secrets.PREVIEW_DEPLOY_KEY }}
+          external_repository: astrapi69/bibliogon-preview
+          publish_branch: gh-pages
+          publish_dir: frontend/dist

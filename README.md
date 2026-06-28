@@ -6,7 +6,7 @@ Built on [PluginForge](https://github.com/astrapi69/pluginforge), a reusable plu
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.57.0**
+**[Web app](https://astrapi69.github.io/bibliogon/)** | **[Documentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Current version: **v0.59.0**
 
 ## Story Bible
 
@@ -59,6 +59,17 @@ Bibliogon's standout feature: a **per-book database of your fiction's recurring 
 - In-place title editing on every editor (book, article, picture-book, comic-book) via a shared pencil-toggle component; published or archived works gate the edit behind a warning banner so a title change is consciously carried over to the publishing platform
 - Publication-status lifecycle (Draft / Ready / Published / Archived) shared by books and articles, with a status badge on every dashboard card and list row
 - Locale-aware date formatting that follows the active UI language across every surface
+- Writing goals (per-book word target plus a per-device daily goal) with a consecutive-day streak, and a Writing-Statistics dashboard (today progress ring, last-7-days chart with an average line, per-book project progress with an estimated completion, and a contribution-style streak heatmap)
+- Composition mode for distraction-free writing (Ctrl+Shift+D) that hides the app chrome
+- Chapter Outliner with per-chapter synopsis (auto-generate from the first paragraph), Inspector notes, and manual chapter collections with an optional per-collection colour
+- Scrivener `.scriv` project import (alongside Markdown / HTML / DOCX / EPUB file import and the Medium HTML-export importer)
+- First-install data-migration dialog that offers to import an online `.bgb` backup into the desktop app on first run
+- Keyboard-shortcuts overview dialog with search and context-awareness
+- SEO meta tags (Open Graph / Twitter / JSON-LD) for the PWA and the client-side export engine across every export format, plus YAML front-matter on Git-Sync chapter files
+- Diagnostic event recorder (an in-app log that is never transmitted) with Markdown / JSON export
+- Automated feature-screenshot catalog under `docs/screenshots/` (`make capture-screenshots`)
+- Read-aloud (Text-to-Speech) in the editor via the browser's Web Speech API, working fully offline with no backend
+- AI-assisted grammar-check and translation in the editor, run browser-direct against your configured AI provider (works offline once a provider key is set)
 
 ## Offline Web App (PWA)
 
@@ -95,9 +106,12 @@ A dedicated comic-book editor (`book_type='comic_book'`) ships multi-panel page 
 
 ## KDP Publishing Wizard
 
-A 5-step XState-driven wizard for Amazon KDP publishing prep with server-side persistence and conflict detection.
+A 7-step wizard for Amazon KDP publishing prep with server-side persistence and conflict detection.
 
-- **5 steps:** Metadata → Cover → Pricing → ARC reviewers → Launch checklist.
+- **7 steps:** Metadata → Cover → Format → Pricing → ARC reviewers → Export package → KDP upload guide.
+- **Format step:** eBook / Taschenbuch (paperback) / Hardcover with a KDP trim size and a margin preset; the print PDF is rendered via WeasyPrint at the chosen trim size and margins with crop/bleed marks (eBook exports to EPUB instead).
+- **Export package:** a KDP-ready bundle whose `metadata.json` carries the format-matched `isbn`, `format`, `trim_size`, and `page_count`.
+- **Upload guide:** a step-by-step walkthrough of the KDP upload flow.
 - **Server-side state** (BookPublishingState row) auto-saves wizard progress; on reopen the wizard rehydrates pricing + ARC choices.
 - **Conflict banner** when the book has been edited outside the wizard (book.updated_at > state.updated_at) so the user re-validates metadata.
 - **Cover validation** with KDP dimension + DPI + bleed checks, surfaced inline at the Cover step.

@@ -96,6 +96,21 @@
       "importing": "Importation …",
       "import_btn": "Importer"
     },
+    "tts": {
+      "read_aloud": "Lire à voix haute",
+      "play": "Lire",
+      "pause": "Pause",
+      "resume": "Reprendre",
+      "stop": "Arrêter",
+      "speed": "Vitesse",
+      "voice": "Voix",
+      "default_voice": "Voix par défaut",
+      "now_reading": "Lecture",
+      "no_text": "Aucun texte à lire à voix haute.",
+      "unavailable": "Votre navigateur ne prend pas en charge la synthèse vocale.",
+      "settings_title": "Lecture à voix haute (synthèse vocale)",
+      "settings_hint": "Choisissez une voix et une vitesse par défaut pour la synthèse vocale native du navigateur. Dépend de l'appareil ; fonctionne hors ligne."
+    },
     "feature": {
       "requires_network": "Cette fonctionnalité nécessite une connexion internet.",
       "requires_desktop_app": "Cette fonctionnalité nécessite l'application de bureau Bibliogon",
@@ -385,6 +400,21 @@
       "line_relaxed": "Détendue"
     },
     "editor": {
+      "ai_grammar": "Grammaire (IA)",
+      "ai_translate": "Traduire (IA)",
+      "ai_grammar_title": "Corriger la grammaire de la sélection avec l'IA",
+      "ai_translate_title": "Traduire la sélection avec l'IA",
+      "ai_target_lang": "Langue cible",
+      "ai_translate_run": "Traduire",
+      "ai_tools_running": "L'IA travaille…",
+      "ai_tools_no_text": "Aucun texte sélectionné.",
+      "ai_tools_error": "L'action IA a échoué.",
+      "ai_tools_error_key": "Clé API invalide ou manquante.",
+      "ai_tools_apply": "Remplacer la sélection",
+      "ai_tools_copy": "Copier",
+      "ai_tools_copied": "Copié dans le presse-papiers.",
+      "ai_tools_applied": "Appliqué.",
+      "ai_tools_select_hint": "Sélectionnez du texte pour le remplacer directement.",
       "edit_title_tooltip": "Modifier le titre",
       "published_warning_body": "Attention : cette oeuvre a déjà été publiée. Un changement de titre doit être reporté manuellement sur la plateforme de publication (p. ex. KDP).",
       "acknowledge_warning_button": "Compris, modifier le titre",
@@ -2012,6 +2042,10 @@
       "section_app": "Application",
       "section_editor": "Editeur",
       "show_shortcuts": "Afficher les raccourcis",
+      "save": "Enregistrer",
+      "save_note": "L'enregistrement automatique est actif",
+      "search_placeholder": "Rechercher des raccourcis…",
+      "no_results": "Aucun raccourci trouvé",
       "toggle_word_wrap": "Activer/désactiver le retour à la ligne",
       "fullscreen": "Basculer en plein écran",
       "composition_mode": "Mode composition",
@@ -3320,7 +3354,26 @@
       "longest_streak": "Plus longue série",
       "empty": "Aucun historique d'écriture sur cette période.",
       "by_book": "Par livre",
-      "deleted_chapters": "Chapitres supprimés"
+      "deleted_chapters": "Chapitres supprimés",
+      "dashboard_title": "Statistiques",
+      "dashboard_load_failed": "Impossible de charger les statistiques.",
+      "today": "Aujourd'hui",
+      "daily_goal": "Objectif quotidien",
+      "vs_yesterday_up": "{n} de plus qu'hier",
+      "vs_yesterday_down": "{n} de moins qu'hier",
+      "vs_yesterday_same": "Comme hier",
+      "this_week": "Cette semaine (7 jours)",
+      "weekly_average": "Moy./jour",
+      "week_total": "Total de la semaine",
+      "project_progress": "Progression du projet",
+      "no_goals": "Aucun objectif de mots défini. Définissez un objectif de mots sur un livre pour suivre sa progression.",
+      "words_of_target": "{current} / {target} mots",
+      "eta": "Terminé dans ~{n} jours",
+      "eta_unknown": "Aucun rythme récent",
+      "completed": "Objectif atteint",
+      "activity": "Activité",
+      "heatmap_less": "moins",
+      "heatmap_more": "plus"
     },
     "relationship_graph": {
       "title": "Graphe des relations",
@@ -3617,7 +3670,22 @@
       "resources_heading": "Licence et ressources",
       "docs_label": "Documentation",
       "next_check": "Prochaine vérification automatique : {time}",
-      "next_check_disabled": "Vérification automatique désactivée"
+      "next_check_disabled": "Vérification automatique désactivée",
+      "commit_label": "Commit",
+      "preview_heading": "Version aperçu/test",
+      "share_heading": "Partager l'application",
+      "share_production_heading": "Version principale (stable)",
+      "share_production_description": "Partagez l'application stable via un code QR pour que d'autres puissent l'ouvrir.",
+      "share_preview_heading": "Dernière version (test)",
+      "share_preview_description": "Ceci est une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs. Ne la partagez qu'avec des testeurs.",
+      "share_qr_show": "Afficher le code QR",
+      "share_qr_hide": "Masquer le code QR",
+      "share_open": "Ouvrir le lien",
+      "share_copy": "Copier le lien",
+      "share_copied": "Lien copié !",
+      "share_copy_failed": "Impossible de copier le lien.",
+      "share_native": "Partager",
+      "share_text": "Plateforme open source pour auteurs"
     },
     "kdp_publishing_wizard": {
       "open_button": "Publier sur KDP",
@@ -3717,6 +3785,41 @@
       "open_online": "Ouvrir la version en ligne",
       "import": "Importer la sauvegarde",
       "settings_hint": "Vous migrez depuis la version en ligne ? Exportez-y une sauvegarde complète (.bgb) et importez-la ici avec « Importer la sauvegarde »."
+    },
+    "preview_banner": {
+      "title": "Version aperçu/test",
+      "message": "Vous utilisez une version aperçu/test. Elle n'est pas stable et peut contenir des erreurs."
+    },
+    "book_templates": {
+      "name": {
+        "roman_3act": "Roman (3 actes)",
+        "sachbuch": "Essai",
+        "kurzgeschichte": "Nouvelle",
+        "lyrik": "Poésie",
+        "kinderbuch": "Livre illustré",
+        "comic": "Bande dessinée"
+      },
+      "desc": {
+        "roman_3act": "Structure de roman en trois actes avec prologue, titres d'acte, onze chapitres et épilogue.",
+        "sachbuch": "Un essai avec avant-propos, introduction, huit chapitres, résumé et annexe.",
+        "kurzgeschichte": "Une seule nouvelle en un chapitre.",
+        "lyrik": "Un recueil de poésie avec vingt chapitres de poèmes.",
+        "kinderbuch": "Un livre illustré de douze pages (image et texte).",
+        "comic": "Une bande dessinée de vingt-deux pages au format standard."
+      },
+      "title": {
+        "prologue": "Prologue",
+        "epilogue": "Épilogue",
+        "act": "Acte",
+        "chapter": "Chapitre",
+        "foreword": "Avant-propos",
+        "introduction": "Introduction",
+        "summary": "Résumé",
+        "appendix": "Annexe",
+        "poem": "Poème",
+        "story": "Histoire"
+      },
+      "page_count": "{count} pages"
     }
   }
 }

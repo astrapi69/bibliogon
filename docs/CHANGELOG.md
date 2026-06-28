@@ -2,6 +2,74 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.59.0] - 2026-06-28
+
+The **offline-authoring-depth + writing-insights + God-file
+burn-down** release. No schema migrations; existing data +
+``.bgb``/``.bgp`` unaffected.
+
+### Added
+- **Writing-Statistics dashboard (`/statistics`).** A today
+  progress ring with a yesterday comparison, a last-7-days chart
+  with the daily average drawn as a reference line, per-book
+  project progress with an estimated completion at the recent
+  pace, and a contribution-style streak heatmap. Aggregated
+  client-side from the `writingSessions` data so it works in both
+  online and offline (Dexie) mode (#668).
+- **Keyboard-shortcuts overview dialog.** A searchable,
+  context-aware overview of every editor and app shortcut,
+  reachable from the help surface (#667).
+- **Browser-native read-aloud (Text-to-Speech).** Read-aloud in
+  the editor via the Web Speech API — capability-detected and
+  running **fully offline** with no backend. Distinct from the
+  multi-engine audiobook export, which stays desktop-only (#666).
+- **Offline AI grammar-check + translation.** Grammar-check and
+  translation in the editor run **browser-direct** against the
+  configured AI provider and are gated **disabled-until-a-key-is-set**
+  (the `ai-grammar` / `ai-translate` features). The server
+  LanguageTool + DeepL/LMStudio paths stay desktop-only (#661/#669).
+- **Client-side offline book templates.** "Aus Vorlage" works in
+  Dexie mode — creating a book from a template fully client-side,
+  no backend (#670).
+- **Settings — preview/test-version banner + build-info +
+  share-app QR.** A banner for preview/test builds, a build-info
+  section, and a share-app QR-code section in Settings (#644).
+- **GH-Pages static preview deploy.** A preview-deploy workflow
+  for the static GitHub-Pages PWA build (#639) plus a
+  static-smoke gate that exercises the backendless build (#640,
+  #641).
+
+### Changed
+- **God-file WARN-tier burn-down.** Decomposed under the 500-line
+  cohesion threshold: ArticleEditor via sidebar extraction
+  (#207/#634), GitSyncPage (#648), ConvertToBookWizard (#650),
+  LayoutConfigImageRow (#652), useComicBookEditor (#654),
+  AboutSettings (#676), CreateBookForm (#678), the `platform.ts`
+  API client (#680), ComicBubble (#682), and CommentsAdminSection
+  (#684). `Editor.tsx` is whitelisted as the irreducible TipTap
+  editor shell rather than split further (#656).
+- **Ratchet baseline convention.** The directory- and file-size
+  ratchet baselines are renamed to the extension-less
+  `.dirsize-` / `.filesize-` root convention with headers
+  (#637, #646).
+
+### Fixed
+- **Visual-regression suite stabilization.** Onboarding dialogs
+  are suppressed and the flaky mobile-metadata case is skipped so
+  the visual suite runs deterministically (#628, #638).
+
+### Tests / Docs
+- Backend coverage for `logging_config` + `routes_admin` raised
+  above 70% (#636).
+- A pre-release manual testplan covering the release gate, feature
+  walkthrough, and launcher build (#630).
+- Help docs for offline read-aloud (#666) and offline AI
+  grammar/translation (#669) (#674); feature-screenshot catalog
+  refreshed with share-app/build-info entries (#658); version
+  headers + feature docs synced (#672).
+- The TDD red-green-refactor workflow is anchored as a project
+  rule (#659).
+
 ## [0.58.0] - 2026-06-26
 
 The **desktop-launcher library-first + KDP-publishing-depth + SEO**

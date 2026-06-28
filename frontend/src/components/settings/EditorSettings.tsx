@@ -13,6 +13,14 @@ import type {RegionCode} from "../kdp-wizard/machines/types";
 import {RadixSelect} from "../shared/RadixSelect";
 import {Toggle} from "./Toggle";
 import {useSettingsAutoSave} from "./useSettingsAutoSave";
+import {
+    getWebSpeechVoices,
+    isWebSpeechAvailable,
+    readWebSpeechPrefs,
+    writeWebSpeechPrefs,
+    WEB_SPEECH_MIN_RATE,
+    WEB_SPEECH_MAX_RATE,
+} from "../../lib/utils/webSpeech";
 
 function isPictureBookFormat(value: unknown): value is PictureBookFormat {
     return (
@@ -105,6 +113,22 @@ export function EditorSettings({config, onSave}: {
 
     const triggerSave = useSettingsAutoSave(buildSaveData, onSave);
 
+    // Web Speech read-aloud preferences are per-device (voices differ by
+    // device/browser) and work offline, so they live in localStorage via
+    // the lib helpers - not in the backend config above.
+    const ttsAvailable = isWebSpeechAvailable();
+    const [ttsVoices, setTtsVoices] = useState<SpeechSynthesisVoice[]>(() => getWebSpeechVoices());
+    const [ttsVoiceURI, setTtsVoiceURI] = useState<string>(() => readWebSpeechPrefs().voiceURI ?? "");
+    const [ttsRate, setTtsRate] = useState<number>(() => readWebSpeechPrefs().rate);
+
+    useEffect(() => {
+        if (!ttsAvailable) return;
+        const sync = () => setTtsVoices(getWebSpeechVoices());
+        sync();
+        window.speechSynthesis.addEventListener("voiceschanged", sync);
+        return () => window.speechSynthesis?.removeEventListener("voiceschanged", sync);
+    }, [ttsAvailable]);
+
     return (
         <div className={styles.section} data-testid="editor-settings">
             <SectionHeader
@@ -196,6 +220,61 @@ export function EditorSettings({config, onSave}: {
                             }))}
                         />
                     </div>
+                </div>
+
+                <div className={styles.subCard} data-testid="settings-web-speech-tts">
+                    <h3 className={styles.subCardTitle}>
+                        {t("ui.tts.settings_title", "Vorlesen (Sprachausgabe)")}
+                    </h3>
+                    <HelpText>
+                        {t("ui.tts.settings_hint", "Wähle eine Standardstimme und Geschwindigkeit für die browser-native Sprachausgabe. Geräteabhängig; funktioniert offline.")}
+                    </HelpText>
+                    {!ttsAvailable ? (
+                        <p style={{color: "var(--text-muted)", fontSize: "0.8125rem"}} data-testid="web-speech-tts-unavailable">
+                            {t("ui.tts.unavailable", "Ihr Browser unterstützt keine Sprachausgabe.")}
+                        </p>
+                    ) : (
+                        <div className={styles.subCardGrid}>
+                            <div className="field">
+                                <label className="label">{t("ui.tts.voice", "Stimme")}</label>
+                                <RadixSelect
+                                    value={ttsVoiceURI}
+                                    onValueChange={(v) => {
+                                        setTtsVoiceURI(v);
+                                        writeWebSpeechPrefs({voiceURI: v || null, rate: ttsRate});
+                                    }}
+                                    testId="settings-web-speech-voice"
+                                    options={[
+                                        {value: "", label: t("ui.tts.default_voice", "Standardstimme")},
+                                        ...ttsVoices.map((voice) => ({
+                                            value: voice.voiceURI,
+                                            label: `${voice.name} (${voice.lang})`,
+                                        })),
+                                    ]}
+                                />
+                            </div>
+                            <div className="field">
+                                <label className="label">
+                                    {t("ui.tts.speed", "Geschwindigkeit")}: {ttsRate.toFixed(1)}x
+                                </label>
+                                <input
+                                    type="range"
+                                    className="slider"
+                                    data-testid="settings-web-speech-speed"
+                                    min={WEB_SPEECH_MIN_RATE}
+                                    max={WEB_SPEECH_MAX_RATE}
+                                    step={0.1}
+                                    value={ttsRate}
+                                    aria-label={t("ui.tts.speed", "Geschwindigkeit")}
+                                    onChange={(e) => {
+                                        const next = parseFloat(e.target.value);
+                                        setTtsRate(next);
+                                        writeWebSpeechPrefs({voiceURI: ttsVoiceURI || null, rate: next});
+                                    }}
+                                />
+                            </div>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
