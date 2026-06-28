@@ -26,11 +26,11 @@ See [`frontend/src/modules/README.md`](../frontend/src/modules/README.md) and
 | **comics** | Multi-panel comic pages | `module-comics` | `components/comics/{bubblePath,tailDerivation,bubbleTypeStyle}.ts` + `storage/dexie/comics.ts` | **Yes** (storage seam) | `comics` |
 | **git-sync** (import) | GitHub import | `module-git-sync` | `import/{githubImport,githubToken}.ts` (GitHub REST) | **Partial** — needs network | `github-import` |
 | **git-sync** (backup/push) | Git commit/push | `module-git-backup` | — | **No** — needs git binary | `git-sync` / `git-backup` |
-| **audiobook** | TTS audiobook | `module-audiobook` | — | **No** — TTS cloud/server | `tts` |
+| **audiobook** | TTS audiobook export + editor read-aloud | `module-audiobook` | `lib/utils/webSpeech.ts` + `hooks/ui/useWebSpeechTts.ts` (read-aloud) | **Partial** - multi-engine audiobook export No (cloud/server); editor read-aloud **Yes** (browser-native Web Speech API, #666) | export `tts` (`DESKTOP_ONLY`); read-aloud active |
 | **story-bible** | Per-book fiction-entity DB | _(no module; storage seam)_ | `storage/dexie/story-bible.ts` + `hooks/useStoryBibleIntegration.ts` | **Partial** — CRUD offline; auto-detect / continuity-check need server | active (`story-bible`) |
-| **grammar** | LanguageTool checks | _(no module)_ | — | **No** — LanguageTool server | `grammar` (`DESKTOP_ONLY` → disabled) |
+| **grammar** | LanguageTool checks + AI grammar-check | _(no module)_ | `ai/text-tools/aiTextTools.ts` (browser-direct provider) | **Yes** via the configured AI provider (browser-direct, key required, #661/#669); LanguageTool server path No | `ai-grammar` (`REQUIRES_AI_KEY`); server: `grammar` (`DESKTOP_ONLY`) |
 | **kdp** | KDP metadata + cover validation | _(no module)_ | `components/kdp-wizard/CoverValidation.tsx` (dimension checks) | **Partial** — basic cover preflight offline; catalog desktop-only | `kdp-category-catalog` (catalog) |
-| **translation** | DeepL / LMStudio translation | _(no module)_ | `components/TranslationLinks.tsx` (links only, gated) | **Partial** — local LMStudio if self-hosted; DeepL needs key/network | `translation-links` (links); execution: `translation` (`DESKTOP_ONLY` → disabled) |
+| **translation** | DeepL / LMStudio translation + AI translation | _(no module)_ | `ai/text-tools/aiTextTools.ts` (browser-direct) + `components/TranslationLinks.tsx` (links) | **Yes** via the configured AI provider (browser-direct, key required, #661/#669); DeepL/LMStudio server path No | `ai-translate` (`REQUIRES_AI_KEY`); execution server: `translation` (`DESKTOP_ONLY`) |
 | **help** | In-app help | _(no module)_ | `storage/seed/seed-help*.json` | **Yes (static)** | active |
 | **getstarted** | Onboarding + sample book | _(no module)_ | `storage/seed/seed-getstarted.json` | **Yes (static)** | active |
 
@@ -66,7 +66,9 @@ to `disabled` only when `navigator.onLine === false`.
 **Correctly gated** (verified against `featureConfig.ts`):
 
 - `module-audiobook` → `FEATURES.TTS` (`DESKTOP_ONLY` → disabled, reason
-  `requires_desktop_app`). ✓
+  `requires_desktop_app`) for the multi-engine audiobook *export*; the
+  editor's browser-native **read-aloud** (Web Speech API, `useWebSpeechTts`)
+  is a separate, capability-detected feature that runs fully offline (#666). ✓
 - `module-git-backup` → `FEATURES.GIT_BACKUP` (`DESKTOP_ONLY`). ✓
 - `module-git-sync` push/sync → `FEATURES.GIT_SYNC` (`DESKTOP_ONLY`); import →
   `FEATURES.GITHUB_IMPORT` (`NEEDS_NETWORK` → disabled offline). ✓
@@ -91,6 +93,16 @@ to `disabled` only when `navigator.onLine === false`.
 Both verified by `featureConfig.test.ts` (state/reason in api vs dexie) and
 `ArticleTranslatePanel.test.tsx` (disabled offline + zero `/api`, active
 online).
+
+**Offline browser-direct AI text tools (#661/#669):** alongside the
+server-bound grammar/translation paths above, the editor now ships an
+offline **AI grammar-check + translation** (`ai/text-tools/aiTextTools.ts`,
+`components/editor/ai-tools/AiTextTools.tsx`) that calls the configured AI
+provider directly from the browser. These are the `AI_GRAMMAR` /
+`AI_TRANSLATE` features, gated `REQUIRES_AI_KEY` (visible-but-disabled with a
+"configure a provider key" reason until a key is set), so the offline build
+offers a working grammar + translation path with no backend - the
+browser-direct counterpart to the desktop-only LanguageTool / DeepL paths.
 
 **Editor server-bound tools — verified disabled offline (correction
 2026-06-24):** an earlier revision of this section claimed the inline

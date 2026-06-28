@@ -1,7 +1,7 @@
 # Bibliogon Roadmap
 
 Current phase: Phase 2 - build for real users, not just developers
-Last updated: 2026-06-27 (post-v0.58.0 sync. v0.58.0 shipped 2026-06-26 with the docker-app-launcher library-first migration (#519/#521/#588-#618), the KDP-wizard Format + upload-guide steps (#580/#581) with the WeasyPrint print PDF (#583/#606), SEO meta tags + JSON-LD across every export format (#605/#607), the first-install data-migration dialog (#591), Scrivener `.scriv` import (#554), per-chapter synopsis + Inspector notes + manual collections (#551/#567/#553/#572), and the automated feature-screenshot catalog (#556). On develop toward v0.59.0: the Writing-Statistics dashboard (#668) and the keyboard-shortcuts overview dialog (#667).)
+Last updated: 2026-06-27 (post-v0.58.0 sync. v0.58.0 shipped 2026-06-26 with the docker-app-launcher library-first migration (#519/#521/#588-#618), the KDP-wizard Format + upload-guide steps (#580/#581) with the WeasyPrint print PDF (#583/#606), SEO meta tags + JSON-LD across every export format (#605/#607), the first-install data-migration dialog (#591), Scrivener `.scriv` import (#554), per-chapter synopsis + Inspector notes + manual collections (#551/#567/#553/#572), and the automated feature-screenshot catalog (#556). On develop toward v0.59.0: the Writing-Statistics dashboard (#668), the keyboard-shortcuts overview dialog (#667), browser-native read-aloud / Text-to-Speech via the Web Speech API (offline, #666), offline browser-direct AI grammar-check + translation (key-required, #661/#669), and client-side offline book templates (#670).)
 Latest release: v0.58.0 (2026-06-26). See [docs/CHANGELOG.md](CHANGELOG.md) for the full per-release notes.
 
 This file is a **thematic overview** of open work. Detailed scope,
