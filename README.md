@@ -68,6 +68,8 @@ Bibliogon's standout feature: a **per-book database of your fiction's recurring 
 - SEO meta tags (Open Graph / Twitter / JSON-LD) for the PWA and the client-side export engine across every export format, plus YAML front-matter on Git-Sync chapter files
 - Diagnostic event recorder (an in-app log that is never transmitted) with Markdown / JSON export
 - Automated feature-screenshot catalog under `docs/screenshots/` (`make capture-screenshots`)
+- Read-aloud (Text-to-Speech) in the editor via the browser's Web Speech API, working fully offline with no backend
+- AI-assisted grammar-check and translation in the editor, run browser-direct against your configured AI provider (works offline once a provider key is set)
 
 ## Offline Web App (PWA)
 

@@ -59,6 +59,8 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Storyboard | ![Storyboard](book-editor/storyboard.png) |
 | Story Bible | ![Story Bible](book-editor/story-bible.png) |
 | Editor context menu | ![Context Menu](book-editor/context-menu.png) |
+| Read-aloud player (Web Speech API, offline #666) | ![Read Aloud](book-editor/web-speech-tts.png) |
+| AI grammar + translation tools (offline, key-required #661/#669) | ![AI Text Tools](book-editor/ai-text-tools-offline.png) |
 
 ## Article Editor
 

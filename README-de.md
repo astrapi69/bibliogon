@@ -68,6 +68,8 @@ Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederke
 - SEO-Meta-Tags (Open Graph / Twitter / JSON-LD) für die PWA und die clientseitige Export-Engine über alle Exportformate, plus YAML-Frontmatter an Git-Sync-Kapiteldateien
 - Diagnose-Event-Recorder (ein In-App-Protokoll, das niemals übertragen wird) mit Markdown-/JSON-Export
 - Automatischer Feature-Screenshot-Katalog unter `docs/screenshots/` (`make capture-screenshots`)
+- Vorlese-Funktion (Text-to-Speech) im Editor über die Web Speech API des Browsers, vollständig offline ohne Backend
+- KI-gestützte Grammatikprüfung und Übersetzung im Editor, browser-direkt über den konfigurierten KI-Provider (offline, sobald ein Provider-Key gesetzt ist)
 
 ## Offline-Web-App (PWA)
 
