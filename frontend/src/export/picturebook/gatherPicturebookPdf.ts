@@ -17,8 +17,9 @@ import {
 } from "./picturebookPdf";
 
 /** Longest-edge cap (px) for embedded images — keeps base64 + pdfmake memory
- *  bounded on phones (the task's "Base64 zu gross" concern). */
-const MAX_IMAGE_DIM = 1600;
+ *  bounded on phones (the task's "Base64 zu gross" concern). Images at or
+ *  below this on their longest edge are embedded as-is (no re-encode). */
+export const MAX_IMAGE_DIM = 1600;
 
 function blobToDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -29,23 +30,77 @@ function blobToDataUrl(blob: Blob): Promise<string> {
   });
 }
 
-/** Downscale an image Blob to a JPEG data URL no larger than MAX_IMAGE_DIM on
- *  its longest edge. Falls back to the raw bytes if canvas is unavailable. */
-async function blobToDownscaledDataUrl(blob: Blob): Promise<string> {
+/**
+ * Compute the embed dimensions for an image, preserving aspect ratio.
+ *
+ * Returns `needsResize: false` when the image already fits within `maxDim`
+ * on its longest edge — the caller then embeds the original bytes untouched
+ * (full colour + transparency + quality preserved, no lossy re-encode). For
+ * larger images the longest edge is capped to `maxDim` and the other edge is
+ * scaled by the SAME factor, so the result is never geometrically distorted.
+ *
+ * @example
+ * computeImageTarget(3200, 1600) // -> { width: 1600, height: 800, needsResize: true }
+ * computeImageTarget(800, 600)   // -> { width: 800, height: 600, needsResize: false }
+ */
+export function computeImageTarget(
+  naturalWidth: number,
+  naturalHeight: number,
+  maxDim: number = MAX_IMAGE_DIM,
+): { width: number; height: number; needsResize: boolean } {
+  const longest = Math.max(naturalWidth, naturalHeight);
+  if (longest <= maxDim) {
+    return { width: naturalWidth, height: naturalHeight, needsResize: false };
+  }
+  const scale = maxDim / longest;
+  return {
+    width: Math.max(1, Math.round(naturalWidth * scale)),
+    height: Math.max(1, Math.round(naturalHeight * scale)),
+    needsResize: true,
+  };
+}
+
+/**
+ * Resolve an image Blob to a data URL for embedding in the picture-book PDF.
+ *
+ * Colour-fidelity fix: an image that already fits within {@link MAX_IMAGE_DIM}
+ * is returned as its ORIGINAL bytes — no canvas, no re-encode — so colour,
+ * transparency and quality are preserved exactly. A larger image is downscaled
+ * through a canvas that is **pre-filled white** before the bitmap is drawn:
+ * JPEG carries no alpha channel, so without the white backdrop a transparent
+ * PNG composites against black and the illustration prints on a black ground.
+ * White matches the picture-book page colour, so the appearance is unchanged
+ * while memory stays bounded. Aspect ratio is always preserved (no distortion).
+ * Falls back to the raw bytes if the image cannot be decoded or no 2D context
+ * is available.
+ *
+ * @example
+ * const dataUrl = await blobToDataUrlForPdf(pngBlob);
+ */
+export async function blobToDataUrlForPdf(blob: Blob): Promise<string> {
   try {
     const bitmap = await createImageBitmap(blob);
-    const longest = Math.max(bitmap.width, bitmap.height);
-    const scale = longest > MAX_IMAGE_DIM ? MAX_IMAGE_DIM / longest : 1;
-    const width = Math.max(1, Math.round(bitmap.width * scale));
-    const height = Math.max(1, Math.round(bitmap.height * scale));
+    const { width, height, needsResize } = computeImageTarget(
+      bitmap.width,
+      bitmap.height,
+    );
+    if (!needsResize) {
+      bitmap.close?.();
+      return blobToDataUrl(blob);
+    }
     const canvas = document.createElement("canvas");
     canvas.width = width;
     canvas.height = height;
     const ctx = canvas.getContext("2d");
-    if (!ctx) throw new Error("2d context unavailable");
+    if (!ctx) {
+      bitmap.close?.();
+      return blobToDataUrl(blob);
+    }
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, width, height);
     ctx.drawImage(bitmap, 0, 0, width, height);
     bitmap.close?.();
-    return canvas.toDataURL("image/jpeg", 0.82);
+    return canvas.toDataURL("image/jpeg", 0.85);
   } catch {
     return blobToDataUrl(blob);
   }
@@ -70,7 +125,7 @@ export async function gatherPicturebookPdfPages(
       if (filename) {
         const blob = await storage.assets.getBlob(bookId, filename);
         if (blob) {
-          imageDataUrl = await blobToDownscaledDataUrl(blob);
+          imageDataUrl = await blobToDataUrlForPdf(blob);
         }
       }
     }
