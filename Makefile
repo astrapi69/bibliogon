@@ -2,9 +2,9 @@
        launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
        test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
-       tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch \
+       tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
-       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
+       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
@@ -327,6 +327,10 @@ coverage-backend: test-coverage-backend ## Alias of test-coverage-backend (see d
 
 coverage-frontend: test-coverage-frontend ## Alias of test-coverage-frontend (see docs/audits/coverage-baseline.md)
 
+test-cov-backend: test-coverage-backend ## TDD alias of test-coverage-backend (backend coverage report)
+
+test-cov-frontend: test-coverage-frontend ## TDD alias of test-coverage-frontend (frontend coverage report)
+
 # === TDD cycle (red-green-refactor; see .claude/rules/tdd.md) ===
 # Inner-loop helpers for the mandated red-green-refactor workflow. They
 # reuse the existing test/type targets (test-frontend, test-backend,
@@ -380,6 +384,9 @@ endif
 
 test-watch: ## TDD watch mode: re-run frontend (Vitest) tests on change
 	cd frontend && npx vitest --watch
+
+test-watch-backend: ## TDD watch mode: re-run backend (pytest) tests on *.py change
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run ptw . tests/ -v --tb=short
 
 # --- Dependency security audit (mirrors the CI steps in ci.yml) ---
 

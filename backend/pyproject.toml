@@ -53,6 +53,7 @@ ruff = "^0.15.11"
 pre-commit = "^4.5.1"
 pip-audit = "^2.10.0"
 bandit = "^1.9.4"
+pytest-watcher = "^0.6"
 
 [tool.ruff]
 line-length = 100
