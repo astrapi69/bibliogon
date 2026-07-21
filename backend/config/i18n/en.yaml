@@ -2063,6 +2063,7 @@ ui:
     sync_partial: "Some chapters could not be synced."
     conflicts_found: "Conflict found. Please resolve it in Settings."
   update_banner:
+    needs_restart: "Please fully close and reopen the app to finish updating."
     version_available: "New version {version} available"
     whats_new: "What's new?"
     later: "Later"

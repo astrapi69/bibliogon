@@ -2081,6 +2081,7 @@
       "conflicts_found": "競合が見つかりました。設定で解決してください。"
     },
     "update_banner": {
+      "needs_restart": "更新を完了するには、アプリを完全に終了してから再度開いてください。",
       "message": "Bibliogon の新しいバージョンが利用可能です。",
       "button": "今すぐ更新",
       "updating": "作業内容を保存して更新しています …",

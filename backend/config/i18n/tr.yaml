@@ -2054,6 +2054,7 @@ ui:
     sync_partial: "Bazi bolumler senkronize edilemedi."
     conflicts_found: "Çakışma bulundu. Lütfen Ayarlar'da çöz."
   update_banner:
+    needs_restart: "Güncellemeyi tamamlamak için uygulamayı tamamen kapatıp yeniden açın."
     version_available: "Yeni sürüm {version} mevcut"
     whats_new: "Yenilikler neler?"
     later: "Daha sonra"

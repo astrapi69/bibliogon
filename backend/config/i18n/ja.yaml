@@ -2054,6 +2054,7 @@ ui:
     sync_partial: "一部の章は同期できませんでした。"
     conflicts_found: "競合が見つかりました。設定で解決してください。"
   update_banner:
+    needs_restart: "更新を完了するには、アプリを完全に終了してから再度開いてください。"
     version_available: "新しいバージョン {version} が利用可能です"
     whats_new: "新着情報"
     later: "後で"
