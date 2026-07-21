@@ -16,7 +16,7 @@
  *   a strictly newer release ships.
  */
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -26,6 +26,7 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { useUpdateAutoCheck } from "../../hooks/ui/useUpdateAutoCheck";
 import { applyUpdate } from "../../shared/utils/swUpdateManager";
 import { UpdateBanner } from "../../lib/components/UpdateBanner";
+import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
 
 const NOTES_PREVIEW_LIMIT = 500;
 
@@ -33,7 +34,13 @@ export default function AppVersionUpdateBanner() {
   const { t } = useI18n();
   const { mode } = useStorageMode();
   const { pending, dismiss } = useUpdateAutoCheck();
+  const { setReleaseBannerActive } = useReleaseBanner();
   const [showNotes, setShowNotes] = useState(false);
+
+  useEffect(() => {
+    setReleaseBannerActive(pending !== null);
+    return () => setReleaseBannerActive(false);
+  }, [pending, setReleaseBannerActive]);
 
   if (!pending) return null;
 
