@@ -2081,6 +2081,7 @@
       "conflicts_found": "Conflicto encontrado. Resuélvelo en Ajustes."
     },
     "update_banner": {
+      "needs_restart": "Cierra completamente la aplicación y vuelve a abrirla para completar la actualización.",
       "message": "Hay una nueva versión de Bibliogon disponible.",
       "button": "Actualizar ahora",
       "updating": "Guardando tu trabajo y actualizando …",

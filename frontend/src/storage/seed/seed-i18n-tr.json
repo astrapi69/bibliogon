@@ -2081,6 +2081,7 @@
       "conflicts_found": "Çakışma bulundu. Lütfen Ayarlar'da çöz."
     },
     "update_banner": {
+      "needs_restart": "Güncellemeyi tamamlamak için uygulamayı tamamen kapatıp yeniden açın.",
       "message": "Bibliogon'un yeni bir sürümü mevcut.",
       "button": "Şimdi güncelle",
       "updating": "Çalışmanız kaydediliyor ve güncelleniyor …",

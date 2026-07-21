@@ -2054,6 +2054,7 @@ ui:
     sync_partial: "Algunos capitulos no se pudieron sincronizar."
     conflicts_found: "Conflicto encontrado. Resuélvelo en Ajustes."
   update_banner:
+    needs_restart: "Cierra completamente la aplicación y vuelve a abrirla para completar la actualización."
     version_available: "Nueva versión {version} disponible"
     whats_new: "¿Qué hay de nuevo?"
     later: "Más tarde"

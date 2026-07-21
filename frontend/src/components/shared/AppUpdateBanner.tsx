@@ -8,6 +8,7 @@ import {
   subscribeToUpdates,
 } from "../../shared/utils/swUpdateManager";
 import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
+import { needsFullRestartToUpdate } from "./update-banner/needsFullRestart";
 
 /**
  * App-level wiring of the {@link UpdateBanner} to the service-worker update
@@ -27,6 +28,12 @@ import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
  * while that one is showing (`releaseBannerActive` from {@link useReleaseBanner});
  * it still covers the cases the release banner does not (a deploy without a
  * formal release, or a release the user dismissed per-version).
+ *
+ * iOS standalone quirk: on an installed iOS home-screen app a reload does NOT
+ * activate the new worker, so instead of the transient "saving …" state (which
+ * implies an imminent reload that will not come) the banner shows a persistent
+ * "close and reopen the app" hint and keeps the dismiss control available. See
+ * {@link needsFullRestartToUpdate}.
  */
 export default function AppUpdateBanner() {
   const { t } = useI18n();
@@ -35,6 +42,7 @@ export default function AppUpdateBanner() {
   const [available, setAvailable] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const [updating, setUpdating] = useState(false);
+  const needsRestart = needsFullRestartToUpdate();
 
   useEffect(() => subscribeToUpdates(setAvailable), []);
 
@@ -44,11 +52,18 @@ export default function AppUpdateBanner() {
 
   if (releaseBannerActive || !available || dismissed) return null;
 
+  const updatingMessage = needsRestart
+    ? t(
+        "ui.update_banner.needs_restart",
+        "Please fully close and reopen the app to finish updating.",
+      )
+    : t("ui.update_banner.updating", "Saving your work and updating …");
+
   return (
     <UpdateBanner
       message={
         updating
-          ? t("ui.update_banner.updating", "Saving your work and updating …")
+          ? updatingMessage
           : t("ui.update_banner.message", "A new version of Bibliogon is available.")
       }
       buttonLabel={t("ui.update_banner.button", "Update now")}
@@ -56,7 +71,7 @@ export default function AppUpdateBanner() {
         setUpdating(true);
         applyUpdate();
       }}
-      onDismiss={updating ? undefined : () => setDismissed(true)}
+      onDismiss={updating && !needsRestart ? undefined : () => setDismissed(true)}
       dismissLabel={t("ui.update_banner.dismiss", "Dismiss")}
     />
   );

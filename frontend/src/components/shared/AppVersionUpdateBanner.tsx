@@ -27,6 +27,7 @@ import { useUpdateAutoCheck } from "../../hooks/ui/useUpdateAutoCheck";
 import { applyUpdate } from "../../shared/utils/swUpdateManager";
 import { UpdateBanner } from "../../lib/components/UpdateBanner";
 import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
+import { needsFullRestartToUpdate } from "./update-banner/needsFullRestart";
 
 const NOTES_PREVIEW_LIMIT = 500;
 
@@ -36,6 +37,8 @@ export default function AppVersionUpdateBanner() {
   const { pending, dismiss } = useUpdateAutoCheck();
   const { setReleaseBannerActive } = useReleaseBanner();
   const [showNotes, setShowNotes] = useState(false);
+  const [applied, setApplied] = useState(false);
+  const needsRestart = needsFullRestartToUpdate();
 
   useEffect(() => {
     setReleaseBannerActive(pending !== null);
@@ -52,10 +55,10 @@ export default function AppVersionUpdateBanner() {
       if (pending.releaseUrl) {
         window.open(pending.releaseUrl, "_blank", "noopener,noreferrer");
       }
-    } else {
-      // PWA: skipWaiting + reload onto the freshly-deployed worker.
-      applyUpdate();
+      return;
     }
+    applyUpdate();
+    if (needsRestart) setApplied(true);
   };
 
   const notesPreview = pending.releaseNotes
@@ -66,10 +69,17 @@ export default function AppVersionUpdateBanner() {
   return (
     <>
       <UpdateBanner
-        message={t(
-          "ui.update_banner.version_available",
-          "New version {version} available",
-        ).replace("{version}", version)}
+        message={
+          applied && needsRestart
+            ? t(
+                "ui.update_banner.needs_restart",
+                "Please fully close and reopen the app to finish updating.",
+              )
+            : t(
+                "ui.update_banner.version_available",
+                "New version {version} available",
+              ).replace("{version}", version)
+        }
         buttonLabel={t("ui.about.update_apply_button", "Aktualisieren")}
         onUpdate={handleUpdate}
         onDismiss={dismiss}
