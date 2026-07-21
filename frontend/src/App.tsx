@@ -39,6 +39,7 @@ import OfflineBanner from "./components/shared/OfflineBanner";
 import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
+import { ReleaseBannerProvider } from "./components/shared/ReleaseBannerContext";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
 import SkipToContentLink from "./components/shared/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";
@@ -145,12 +146,21 @@ export default function App() {
                                              *  Subscribes to swUpdateManager; fixed-bottom, dismissible,
                                              *  applies the update via SKIP_WAITING + controllerchange
                                              *  reload (autosave-safe). */}
-                                            <AppUpdateBanner />
-                                            {/* #477 Phase 2: background GitHub-release
-                                             *  check -> non-blocking version banner with
-                                             *  notes + dismiss-per-version (the only
-                                             *  update signal on desktop / API mode). */}
-                                            <AppVersionUpdateBanner />
+                                            {/* Both update banners share a
+                                             *  coordination context so at most one shows at
+                                             *  a time: in the PWA a single deploy fires both
+                                             *  the SW-waiting-worker signal and the
+                                             *  GitHub-release signal, and the SW banner steps
+                                             *  aside while the richer release banner is up
+                                             *  (issue #696). */}
+                                            <ReleaseBannerProvider>
+                                                <AppUpdateBanner />
+                                                {/* #477 Phase 2: background GitHub-release
+                                                 *  check -> non-blocking version banner with
+                                                 *  notes + dismiss-per-version (the only
+                                                 *  update signal on desktop / API mode). */}
+                                                <AppVersionUpdateBanner />
+                                            </ReleaseBannerProvider>
                                             {/* Headless: drains the offline write queue on reconnect (P3-C9). */}
                                             <SyncStatusWatcher />
                                             {/* v0.35.1 (2026-05-18): App-level S-03 reminder mount.
