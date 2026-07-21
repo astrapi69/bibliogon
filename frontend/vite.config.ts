@@ -5,6 +5,7 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
+import { buildVersion } from "@astrapi69/vite-plugin-build-version";
 
 import pkg from "./package.json" with { type: "json" };
 
@@ -89,6 +90,17 @@ export default defineConfig({
   plugins: [
     react(),
     tailwindcss(),
+    // Emit `dist/version.json` ({version, buildHash, buildDate}) as a
+    // deploy-independent, self-hostable update signal (LAN / Docker can check
+    // for updates without the GitHub Releases API; it is also the manifest the
+    // @astrapi69/pwa-update runtime kit expects if adopted later). The plugin
+    // also defines __APP_VERSION__ / __BUILD_HASH__ / __BUILD_DATE__, but the
+    // `define` block below stays authoritative (user config wins over plugin
+    // config in Vite's merge, and it carries the same values plus the three
+    // Bibliogon-only literals __BUILD_BRANCH__ / __BUILD_COMMIT__ / __IS_PREVIEW__).
+    // version.json is intentionally OUTSIDE the workbox precache globs
+    // (**/*.{js,css,html,svg,png,woff2}) so it is fetched fresh, not precached.
+    buildVersion({ version: pkg.version, buildHash, buildDate }),
     VitePWA({
       // "prompt" (not "autoUpdate"): a freshly-installed worker WAITS instead
       // of auto-skipWaiting-ing, so the app can surface a user-facing "new

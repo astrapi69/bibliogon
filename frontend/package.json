@@ -88,6 +88,7 @@
     "xstate": "^5.31.1"
   },
   "devDependencies": {
+    "@astrapi69/vite-plugin-build-version": "^0.1.0",
     "@axe-core/react": "^4.11.3",
     "@eslint/js": "^10.0.1",
     "@tailwindcss/vite": "^4.3.0",
