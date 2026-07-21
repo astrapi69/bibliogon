@@ -39,7 +39,7 @@ import OfflineBanner from "./components/shared/OfflineBanner";
 import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
-import { ReleaseBannerProvider } from "./components/shared/ReleaseBannerContext";
+import { ReleaseBannerProvider } from "./components/shared/update-banner/ReleaseBannerContext";
 import SyncStatusWatcher from "./components/import/SyncStatusWatcher";
 import SkipToContentLink from "./components/shared/SkipToContentLink";
 import { AudiobookJobProvider } from "./contexts/AudiobookJobContext";

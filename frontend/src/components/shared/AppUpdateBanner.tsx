@@ -7,7 +7,7 @@ import {
   checkForUpdate,
   subscribeToUpdates,
 } from "../../shared/utils/swUpdateManager";
-import { useReleaseBanner } from "./ReleaseBannerContext";
+import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
 
 /**
  * App-level wiring of the {@link UpdateBanner} to the service-worker update

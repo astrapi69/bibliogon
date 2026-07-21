@@ -12,11 +12,11 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 
-import AppUpdateBanner from "./AppUpdateBanner";
-import AppVersionUpdateBanner from "./AppVersionUpdateBanner";
+import AppUpdateBanner from "../AppUpdateBanner";
+import AppVersionUpdateBanner from "../AppVersionUpdateBanner";
 import { ReleaseBannerProvider } from "./ReleaseBannerContext";
 
-vi.mock("../../hooks/useI18n", () => ({
+vi.mock("../../../hooks/useI18n", () => ({
   useI18n: () => ({
     t: (_k: string, fallback: string) => fallback,
     lang: "en",
@@ -25,16 +25,16 @@ vi.mock("../../hooks/useI18n", () => ({
 }));
 
 let pending: unknown = null;
-vi.mock("../../hooks/ui/useUpdateAutoCheck", () => ({
+vi.mock("../../../hooks/ui/useUpdateAutoCheck", () => ({
   useUpdateAutoCheck: () => ({ pending, dismiss: vi.fn() }),
 }));
 
 let mode: "api" | "dexie" = "dexie";
-vi.mock("../../storage/useStorageMode", () => ({
+vi.mock("../../../storage/useStorageMode", () => ({
   useStorageMode: () => ({ mode }),
 }));
 
-vi.mock("../../shared/utils/swUpdateManager", () => ({
+vi.mock("../../../shared/utils/swUpdateManager", () => ({
   subscribeToUpdates: (cb: (available: boolean) => void) => {
     cb(true);
     return () => {};

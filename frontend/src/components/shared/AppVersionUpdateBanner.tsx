@@ -26,7 +26,7 @@ import { useStorageMode } from "../../storage/useStorageMode";
 import { useUpdateAutoCheck } from "../../hooks/ui/useUpdateAutoCheck";
 import { applyUpdate } from "../../shared/utils/swUpdateManager";
 import { UpdateBanner } from "../../lib/components/UpdateBanner";
-import { useReleaseBanner } from "./ReleaseBannerContext";
+import { useReleaseBanner } from "./update-banner/ReleaseBannerContext";
 
 const NOTES_PREVIEW_LIMIT = 500;
 
