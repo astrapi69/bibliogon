@@ -7,10 +7,25 @@ with no `docker compose` typing.
 Since #588 the launcher is **not** bespoke code. It is the published,
 reusable **[`docker-app-launcher`](https://pypi.org/project/docker-app-launcher/)**
 PyPI package (MIT, by Aster), the same library the sibling project
-adaptive-learner uses. Bibliogon supplies only **configuration**
+adaptive-learner uses. Bibliogon pins `docker-app-launcher = "^0.19.0"`
+in `launcher/pyproject.toml` and supplies only **configuration**
 (`launcher/launcher.json`) and a three-responsibility wrapper; all
 behaviour - the persistent window, the Docker-first flow, the CLI verbs,
 and i18n - lives in the library.
+
+Notable library behaviour since the 0.19.0 bump:
+
+- **Second launch focuses the running window** (upstream #31): with
+  `single_instance: true`, starting the launcher while an instance runs
+  brings the existing window to the foreground instead of exiting
+  silently or opening a duplicate.
+- **Keyboard accessibility** (upstream #31): the window's controls are
+  reachable and operable via keyboard (focus traversal + activation).
+- **Hard error on a missing `--config`** (upstream #32): a `--config`
+  path that does not exist aborts with a clear error instead of falling
+  back to defaults. The Bibliogon wrapper always injects a
+  `launcher.json` resolved from `__file__`, so this is a defensive
+  guarantee, not a behaviour change for end users.
 
 > **System tray.** The optional minimize-to-tray feature needs the library's
 > `tray` extra (pystray + a GTK backend), which on Linux pulls heavyweight
@@ -73,13 +88,13 @@ The fields Bibliogon sets:
 | `tray_icon_path` | `frontend/public/icon-192.png` | The system-tray icon; falls back to `icon_path`. Config-only unless the optional tray extra is installed (see below). |
 | `config_dir` | `~/.config/bibliogon` | Where the launcher keeps its own state/logs. |
 | `locale` | `auto` | UI language. `auto` detects the OS locale (the library ships 11 catalogs: de/en + 9 AI-translated); an in-window picker lets the user switch live. Resolved to the actual locale at load. |
-| `single_instance` | `true` | A second launch focuses the running window instead of starting a duplicate. |
+| `single_instance` | `true` | A second launch focuses the running window instead of starting a duplicate (focus-existing since library 0.19.0, upstream #31). |
 | `log_level` | `INFO` | Launcher log verbosity (`log_max_size` / `log_backup_count` cap the rotating log). |
 | `repo_url` | `https://github.com/astrapi69/bibliogon` | Project link. |
 | `releases_url` | `.../releases/latest` | Update-check + "new version" link. |
 | `docs_url` | Docker-install help | Shown when Docker is missing. |
 | `update_check_enabled` | `true` | Background GitHub-releases version check. |
-| `app_version` | `0.57.0` | The app version. **Kept in sync by `make sync-versions`** (see below). |
+| `app_version` | `0.59.0` | The app version. **Kept in sync by `make sync-versions`** (see below). |
 
 `LauncherConfig` accepts more fields than Bibliogon sets (timeouts, window
 size, `legacy_names`, `cleanup_configs`, lifecycle hooks, ...); unset fields
