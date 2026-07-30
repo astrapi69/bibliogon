@@ -165,18 +165,19 @@ websockets = ["websocket-client (>=1.3.0)"]
 
 [[package]]
 name = "docker-app-launcher"
-version = "0.19.0"
+version = "0.25.1"
 description = "Configurable desktop launcher for Docker-based applications"
 optional = false
 python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "docker_app_launcher-0.19.0-py3-none-any.whl", hash = "sha256:66cdc671c1bf41a39553219d8f4a1abc62a18db5178f45b092a3d57e1566f479"},
-    {file = "docker_app_launcher-0.19.0.tar.gz", hash = "sha256:33d2eb2cd056d4e641340efa5c60f5f6e2dd16f56e24ded699f059a1a70d9f76"},
+    {file = "docker_app_launcher-0.25.1-py3-none-any.whl", hash = "sha256:80a3c6828e7d16551d6e470dacd5255a4bb59b4eb753c02c5bc2403174aa5c8c"},
+    {file = "docker_app_launcher-0.25.1.tar.gz", hash = "sha256:f5da7052376b6953f0fa02dd37cbc133730cfb81d7b457adea2c09ab8aa330cf"},
 ]
 
 [package.dependencies]
 docker = ">=7.2.0,<8.0.0"
+packaging = ">=21.0"
 pyyaml = ">=6.0"
 
 [package.extras]
@@ -233,7 +234,7 @@ version = "26.2"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
-groups = ["dev"]
+groups = ["main", "dev"]
 files = [
     {file = "packaging-26.2-py3-none-any.whl", hash = "sha256:5fc45236b9446107ff2415ce77c807cee2862cb6fac22b8a73826d0693b0980e"},
     {file = "packaging-26.2.tar.gz", hash = "sha256:ff452ff5a3e828ce110190feff1178bb1f2ea2281fa2075aadb987c2fb221661"},
@@ -669,4 +670,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<3.15"
-content-hash = "efb5e48d5d0ceca3cb7f560e11ed4ac4c9aea9468197855ceffc56096d686e5d"
+content-hash = "50de73a19ec1ea612cb9afd2875ae2a1d6c120697990005d923ffad15e9b13cc"
