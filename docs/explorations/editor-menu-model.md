@@ -118,45 +118,45 @@ export interface MenuSeparator {
     readonly kind: "separator"
 }
 
-export interface MenuAction<TIcon = MenuIconSlot> {
+export interface MenuAction<TId extends string = string, TIcon = MenuIconSlot> {
     readonly kind: "action"
-    readonly id: string                 // reaches onAction verbatim
+    readonly id: TId                    // reaches onAction verbatim
     readonly label: string              // already translated
     readonly icon?: TIcon
     readonly shortcut?: string          // display hint only, registers nothing
     readonly disabledReason?: string    // presence means disabled
 }
 
-export type MenuSubmenuEntry<TIcon = MenuIconSlot> =
-    | MenuAction<TIcon>
+export type MenuSubmenuEntry<TId extends string = string, TIcon = MenuIconSlot> =
+    | MenuAction<TId, TIcon>
     | MenuSeparator
 
-export interface MenuSubmenu<TIcon = MenuIconSlot> {
+export interface MenuSubmenu<TId extends string = string, TIcon = MenuIconSlot> {
     readonly kind: "submenu"
     readonly key: string                // NOT an id — never dispatched
     readonly label: string
     readonly icon?: TIcon
-    readonly items: readonly MenuSubmenuEntry<TIcon>[]   // one level, as a type
+    readonly items: readonly MenuSubmenuEntry<TId, TIcon>[]   // one level, as a type
 }
 
-export type MenuEntry<TIcon = MenuIconSlot> =
-    | MenuAction<TIcon>
-    | MenuSubmenu<TIcon>
+export type MenuEntry<TId extends string = string, TIcon = MenuIconSlot> =
+    | MenuAction<TId, TIcon>
+    | MenuSubmenu<TId, TIcon>
     | MenuSeparator
 
-export interface MenuGroup<TIcon = MenuIconSlot> {
+export interface MenuGroup<TId extends string = string, TIcon = MenuIconSlot> {
     readonly key: string
     readonly label: string
-    readonly items: readonly MenuEntry<TIcon>[]
+    readonly items: readonly MenuEntry<TId, TIcon>[]
 }
 
-export interface MenuModel<TIcon = MenuIconSlot> {
-    readonly groups: readonly MenuGroup<TIcon>[]
-    onAction(id: string): void
+export interface MenuModel<TId extends string = string, TIcon = MenuIconSlot> {
+    readonly groups: readonly MenuGroup<TId, TIcon>[]
+    onAction(id: TId): void
 }
 ```
 
-### Three shape changes worth their churn
+### Four shape changes worth their churn
 
 **`disabledReason` on the entry, not a side map.** Today's
 `disabled: Record<actionId, string>` is unbound to the tree: it can name ids
@@ -173,6 +173,33 @@ a parent that can never dispatch (clicking only expands,
 self-referential today: depth 2 type-checks while the renderer refuses to
 recurse (`EditorMenu.tsx:240-244`), so a depth-2 entry silently renders as
 something else.
+
+**Action ids are a caller-supplied closed set (`TId`), not a free string.**
+This is the one decision that overrides the conservative default, and it is
+taken for the second of the two defects it removes, not the first:
+
+- The unchecked cast `actionId.slice("export-".length) as ArticleExportFormat`
+  (`buildArticleEditorMenu.tsx:149`) becomes unnecessary — a template-literal
+  member narrows it.
+- **An unknown id does nothing at all today.** None of the four dispatch
+  switches has a `default` branch, so a typo'd or renamed id is a click that
+  silently goes nowhere. Successfully executed, wrong result, no signal. A
+  closed `TId` makes the switch exhaustive and the typo a compile error.
+
+The cost is a second type parameter on six declarations. Article's generated
+family stays expressible:
+
+```ts
+type ArticleMenuId =
+    | "delete" | "shortcuts" | "help"
+    | `export-${ArticleExportFormat}`
+```
+
+Consumers who fix the icon type once can alias the ceremony away:
+
+```ts
+type AppMenu<TId extends string> = MenuModel<TId, ReactNode>
+```
 
 ### Eleven invalid states become unrepresentable
 
@@ -380,27 +407,37 @@ failing.
 
 ---
 
-## 10. Open questions
+## 10. Design decisions — all settled
 
-Twelve design decisions the evidence does not settle. Listed with what each
-costs; no recommendation is forced where the evidence gives none. Full text
-with the conservative choice taken for each: issue #706.
+Twelve decisions the evidence alone did not settle. All are now taken; the
+full text with the reasoning for each is in issue #706.
 
-Two are load-bearing:
+**The two load-bearing ones, decided 2026-08-04:**
 
-- **Closed set vs. free string for action ids.** A caller-supplied union
-  (`MenuModel<TId extends string>`) would kill two measured defects at once:
-  the unchecked `actionId.slice(…) as ArticleExportFormat` cast
-  (`buildArticleEditorMenu.tsx:149`) and the silent no-op on unknown ids (no
-  `default` branch in any of the four switches). Cost: a second type
-  parameter, and article's prefix dispatch (`export-<format>`) needs a
-  template-literal type.
-- **Does a type-only import count as a dependency?** `TIcon` as a generic
-  keeps the package literally dependency-free; `import type { ReactNode }`
-  removes a type parameter from five declarations at the cost of a
-  compile-time `@types/react`.
+**Action ids are a caller-supplied closed set.** This overrides the
+conservative default (`string`). The deciding argument was the second defect,
+not the first: an unknown id does nothing at all today — no `default` branch
+in any of the four switches — so a typo'd or renamed id is a click that goes
+nowhere with no signal. Successfully executed, wrong result. A second type
+parameter is cheap against that. See §4.
 
----
+**Icons stay a generic `TIcon`; no type-only import.** "Literally
+dependency-free" is a promise given once and never withdrawn. One extra type
+parameter across six declarations is a small price for nobody ever having to
+ask what the package drags in.
+
+**The remaining ten stand as designed** — the conservative choice in each
+case. Two are worth restating because they carry cost:
+
+- **`MenuGroup.key` is required.** It forces ~5 short literals per builder,
+  and it fixes two measured renderer defects: the React key is
+  `group.label || groupIndex` (`EditorMenu.tsx:284`), so two groups sharing a
+  heading collide; and the group testid is index-derived (`:292-295`), so
+  comic's optional Ansicht group shifts every later testid when omitted —
+  `e2e/smoke/book-editor-menu.spec.ts:47` pins `book-editor-menu-group-0`.
+- **The `disabled` side map moves onto the entry**, accepting the call-site
+  churn. It is what removes four of the eleven invalid states, and it is
+  bounded by the same-PR precondition in §6 anyway.
 
 ## 11. Triggers to act
 
