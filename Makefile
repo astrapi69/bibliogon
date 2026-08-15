@@ -40,10 +40,20 @@ dev: ## Start backend + frontend (backend first, then frontend)
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000 &
 	@echo $$! > .pid-backend
 	@echo "Waiting for backend..."
-	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		curl -s http://localhost:8000/api/health > /dev/null 2>&1 && break; \
+	@# Verify /api/health actually answers before claiming readiness.
+	@# A startup crash (e.g. data-dir migration conflict) previously
+	@# fell through to "Backend ready." and started the frontend
+	@# against a dead backend (every request -> vite proxy 502).
+	@backend_up=0; for i in $$(seq 1 30); do \
+		if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then backend_up=1; break; fi; \
 		sleep 1; \
-	done
+	done; \
+	if [ "$$backend_up" -ne 1 ]; then \
+		echo "ERROR: Backend not healthy after 30s - startup failed (see uvicorn output above)."; \
+		kill $$(cat .pid-backend 2>/dev/null) 2>/dev/null || true; \
+		rm -f .pid-backend; \
+		exit 1; \
+	fi
 	@echo "Backend ready. Starting frontend..."
 	@cd frontend && npm run dev
 
