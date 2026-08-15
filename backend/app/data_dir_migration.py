@@ -112,8 +112,7 @@ def migrate_data_dir_if_needed() -> None:
 
     items = _legacy_paths(target)
     has_legacy = any(
-        legacy.exists() and not _is_empty_dir(legacy)
-        for _label, legacy, _dst in items
+        legacy.exists() and not _is_empty_dir(legacy) for _label, legacy, _dst in items
     )
 
     if not has_legacy:
