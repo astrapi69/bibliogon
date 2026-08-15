@@ -2,6 +2,83 @@
 
 Completed phases and their content. Current state in CLAUDE.md, open items in ROADMAP.md.
 
+## [0.60.0] - 2026-08-15
+
+The **boot-resilience + PWA-update-flow + release-automation**
+release. No schema migrations; existing data + ``.bgb``/``.bgp``
+unaffected.
+
+### Added
+- **PWA update signal `version.json`.** The build emits a
+  deploy-independent `dist/version.json` (via
+  `@astrapi69/vite-plugin-build-version`, outside the precache
+  globs) so an installed PWA can detect a new deploy without a
+  service-worker round-trip; the SW update banner is suppressed
+  while the GitHub-release banner is shown (no more double
+  banners) (#697).
+- **iOS standalone update hint.** On an installed iOS home-screen
+  PWA a reload does not activate a freshly installed service
+  worker (WKWebView serves the old bundle until the app is fully
+  closed). The update banners now detect that case
+  (`needsFullRestartToUpdate()`) and swap the post-apply message
+  to a "close and reopen the app" hint instead of a spinner that
+  never resolves; new i18n key in all 8 catalogs + seed (#700).
+
+### Changed
+- **Desktop launcher: docker-app-launcher ^0.12.1 → ^0.28.0**
+  (#702/#705/#709). Highlights along the way: compose start
+  force-recreates the container (closes the class where an app
+  update built the new image but kept the old container running),
+  a one-step `--update` verb + GUI update button, `--doctor`
+  diagnostics, live log follow, cancellable long-running
+  operations with a cross-process concurrency guard, the window
+  follows the system light/dark setting, and install/start/update
+  failures name their cause translated. `docs/LAUNCHER-SPEC.md`
+  documents the new verbs.
+- **Release automation.** A one-click Gitflow release workflow
+  (#686) and Makefile orchestration
+  (`release-prepare`/`release-finish` + `bump-version`/
+  `update-doc-headers`/`finalize-changelog`, #688) replace the
+  hand-driven release steps.
+- **TDD + hook tooling.** TDD inner-loop Make targets
+  (red-green-refactor, watch, coverage aliases, #690/#693) and a
+  `make pre-commit` target wrapping the all-files hook run (the
+  auto-fix entry point, #716).
+
+### Fixed
+- **Backend boot crash-loop (502 on every request).** The app
+  pre-created an empty `<data_dir>/plugins/installed` at import
+  time; the data-dir migration then treated "both paths exist" as
+  a conflict and raised on every boot for any setup with legacy
+  `backend/plugins/installed` content - the port never bound and
+  the dev/prod proxy answered 502 on everything. Empty dirs now
+  count as absent on both sides (genuine both-have-content
+  conflicts still fail loud), the eager mkdir is gone,
+  ZIP-installed plugins load from the canonical data dir after
+  migration, and `make dev` aborts loudly instead of printing
+  "Backend ready." over a dead backend (#715).
+- **UI stuck in German after boot (i18n race).** The catalog
+  fetch applied responses last-write-wins, so a straggling
+  bootstrap `de` response could overwrite the saved language's
+  catalog until the next full remount - the TC-052 nightly flake
+  (~40% fail rate) and a real-user bug on slow networks. Stale
+  responses are now discarded via a cancelled-closure guard
+  (#714).
+- **Client-side picture-book PDF lost colour + quality.** The
+  offline/Dexie PDF path re-encoded every page image through a
+  transparent-black canvas to JPEG, compositing transparent PNG
+  illustrations onto solid black and re-encoding in-cap images
+  lossily. In-cap images now embed their original bytes untouched;
+  genuine downscales white-fill first (#692).
+
+### Tests / Docs
+- The web-speech TTS smoke spec stubs `speechSynthesis` via
+  `defineProperty` (the plain assignment silently no-oped on
+  Chromium's readonly accessor) and waits for editor content -
+  red on every nightly since it landed, now deterministic (#712).
+- Exploration: `editor-menu-model` - scope, design decisions and
+  two spin-off findings recorded (#707).
+
 ## [0.59.0] - 2026-06-28
 
 The **offline-authoring-depth + writing-insights + God-file
