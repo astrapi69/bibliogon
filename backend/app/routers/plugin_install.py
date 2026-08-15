@@ -48,11 +48,19 @@ def get_installed_plugins_dir() -> Path:
 
 
 def configure(base_dir: Path, manager: Any) -> None:
+    """Wire module state at app import.
+
+    Deliberately does NOT create the installed dir: ``configure``
+    runs at import time, before the lifespan's data-dir migration.
+    Pre-creating the target dir made the migration see a conflict
+    on every boot for setups with legacy plugins/installed content.
+    All consumers guard for a missing dir; ``_extract_plugin``
+    creates it on demand.
+    """
     global _base_dir, _manager, _installed_dir
     _base_dir = base_dir
     _manager = manager
     _installed_dir = get_installed_plugins_dir()
-    _installed_dir.mkdir(parents=True, exist_ok=True)
 
 
 # Validation: only allow safe plugin names

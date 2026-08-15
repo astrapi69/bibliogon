@@ -64,15 +64,22 @@ export function I18nProvider({children}: {children: ReactNode}) {
         }).catch(() => {});
     }, []);
 
-    // Fetch strings when language changes
+    // Fetch strings when language changes. The cancelled-closure guard
+    // discards STALE responses: on boot the "de" bootstrap fetch races the
+    // saved-language fetch (settings resolve after mount), and without the
+    // guard whichever response landed LAST won - a straggling "de" catalog
+    // arriving after the saved "en" one left the whole UI German until the
+    // next remount (the TC-052 nightly flake, #713).
     useEffect(() => {
         if (lang === cachedLang && Object.keys(cachedStrings).length > 0) {
             setStrings(cachedStrings);
             return;
         }
+        let cancelled = false;
         getStorage()
             .i18n.get(lang)
             .then((data) => {
+                if (cancelled) return;
                 cachedLang = lang;
                 cachedStrings = data;
                 setStrings(data);
@@ -80,6 +87,9 @@ export function I18nProvider({children}: {children: ReactNode}) {
             .catch(() => {
                 /* Silent bootstrap fallback: t() reverts to fallback strings. */
             });
+        return () => {
+            cancelled = true;
+        };
     }, [lang]);
 
     const setLang = useCallback((newLang: string) => {

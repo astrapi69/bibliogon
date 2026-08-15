@@ -6,7 +6,7 @@ Aufgebaut auf [PluginForge](https://github.com/astrapi69/pluginforge), einem wie
 
 [![Lizenz: MIT](https://img.shields.io/badge/Lizenz-MIT-yellow.svg)](LICENSE)
 
-**[Web-App](https://astrapi69.github.io/bibliogon/)** | **[Dokumentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.59.0**
+**[Web-App](https://astrapi69.github.io/bibliogon/)** | **[Dokumentation](https://astrapi69.github.io/bibliogondocs/)** | **[Issues](https://github.com/astrapi69/bibliogon/issues)** | Aktuelle Version: **v0.60.0**
 
 ## Story-Bibel
 
@@ -74,6 +74,8 @@ Bibliogons Alleinstellungsmerkmal: eine **buchspezifische Datenbank der wiederke
 ## Offline-Web-App (PWA)
 
 Bibliogon läuft als vollständig offline-fähige Progressive Web App auf GitHub Pages — ohne Backend, ohne Installation: **[astrapi69.github.io/bibliogon](https://astrapi69.github.io/bibliogon/)**. Alle Daten liegen im Browser (IndexedDB, local-first); der Backend-lose Build feuert null `/api`-Requests (per hartem E2E-Gate erzwungen).
+
+Parallel dazu wird ein **Preview-Build** unter **[astrapi69.github.io/bibliogon-preview](https://astrapi69.github.io/bibliogon-preview/)** veröffentlicht — dieselbe Offline-PWA, bei jedem `develop`-Push deployt und mit einem Testversions-Banner markiert. Da sie auf einer eigenen Origin läuft, nutzt sie eine **separate IndexedDB**: Kommende Änderungen lassen sich dort ausprobieren, ohne die Daten der regulären Web-App anzufassen.
 
 - **Komplettes Schreiben offline:** Bücher, Kapitel, Artikel, Bilderbücher, Comics, Story-Bibel, Storyboard, Autoren und Publikationen lesen und schreiben über den Storage-Seam gegen eine geseedete IndexedDB.
 - **Import-Wizard offline:** Markdown- / Text- / HTML-Dateien werden zu einem neuen Buch + Kapitel; JSON-Voll-Backups und `.bgb`-Backups werden client-seitig wiederhergestellt; Medium-ZIP-Exporte importieren direkt im Browser.

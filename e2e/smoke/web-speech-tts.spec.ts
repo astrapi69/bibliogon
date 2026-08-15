@@ -44,18 +44,29 @@ test.describe("Web Speech read-aloud", () => {
             const spoken: FakeUtterance[] = [];
             // @ts-expect-error - test stub
             window.__ttsSpoken = spoken;
-            // @ts-expect-error - test stub
-            window.SpeechSynthesisUtterance = FakeUtterance;
-            // @ts-expect-error - test stub
-            window.speechSynthesis = {
-                speak: (u: FakeUtterance) => spoken.push(u),
-                cancel: () => {},
-                pause: () => {},
-                resume: () => {},
-                getVoices: () => [],
-                addEventListener: () => {},
-                removeEventListener: () => {},
-            };
+            // Chromium exposes `speechSynthesis` as a READONLY accessor on
+            // window: a plain `window.speechSynthesis = {...}` assignment
+            // silently no-ops (non-strict), leaving the REAL synthesis in
+            // place - which then throws a sync TypeError when handed our
+            // FakeUtterance, before the hook ever sets status "playing".
+            // That made this spec red on every run since it landed (#711).
+            // defineProperty replaces the accessor for real.
+            Object.defineProperty(window, "SpeechSynthesisUtterance", {
+                value: FakeUtterance,
+                configurable: true,
+            });
+            Object.defineProperty(window, "speechSynthesis", {
+                configurable: true,
+                value: {
+                    speak: (u: FakeUtterance) => spoken.push(u),
+                    cancel: () => {},
+                    pause: () => {},
+                    resume: () => {},
+                    getVoices: () => [],
+                    addEventListener: () => {},
+                    removeEventListener: () => {},
+                },
+            });
         });
     });
 
@@ -69,6 +80,14 @@ test.describe("Web Speech read-aloud", () => {
         const button = page.getByTestId("web-speech-tts-button");
         await expect(button).toBeVisible();
         await expect(button).toBeEnabled();
+
+        // Wait for the chapter content to reach the TipTap editor BEFORE
+        // clicking: getText() feeds speak(), and speak("") is a silent
+        // no-op (status stays idle, the mini-player never mounts). The
+        // button is visible + enabled from first mount, so without this
+        // wait the click races the content fetch - a race CI always lost
+        // (red every nightly since the spec landed, #711).
+        await expect(page.locator(".ProseMirror")).toContainText("VORLESETEXT");
 
         await button.click();
 

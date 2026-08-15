@@ -151,6 +151,65 @@ class TestMigrate:
         # Marker NOT planted on conflict
         assert not (sandbox["target"] / MIGRATION_MARKER_FILENAME).exists()
 
+    def test_empty_target_dir_is_not_a_conflict(self, sandbox) -> None:
+        """Field regression (v0.59.0 boot crash): the app pre-creates
+        an empty ``plugins/installed`` in the data dir at import time,
+        before the lifespan migration runs.
+
+        Expected: the empty target dir is removed, the legacy content
+        moves in, marker planted - no RuntimeError.
+        """
+        legacy_plugins = sandbox["legacy_installed_plugins"]
+        legacy_plugins.mkdir(parents=True)
+        (legacy_plugins / "kinderbuch").mkdir()
+        (legacy_plugins / "kinderbuch" / "plugin.yaml").write_text(
+            "plugin: {name: kinderbuch}", encoding="utf-8"
+        )
+        target_installed = sandbox["target"] / "plugins" / "installed"
+        target_installed.mkdir(parents=True)
+
+        migrate_data_dir_if_needed()
+
+        assert (target_installed / "kinderbuch" / "plugin.yaml").exists()
+        assert not legacy_plugins.exists()
+        assert (sandbox["target"] / MIGRATION_MARKER_FILENAME).exists()
+
+    def test_both_sides_with_content_still_conflict(self, sandbox) -> None:
+        """Empty-dir tolerance must not weaken the real conflict guard:
+        when legacy AND target plugins/installed both hold content,
+        the migration still fails loud.
+        """
+        legacy_plugins = sandbox["legacy_installed_plugins"]
+        legacy_plugins.mkdir(parents=True)
+        (legacy_plugins / "kinderbuch").mkdir()
+        target_installed = sandbox["target"] / "plugins" / "installed"
+        target_installed.mkdir(parents=True)
+        (target_installed / "other-plugin").mkdir()
+
+        with pytest.raises(RuntimeError, match="plugins/installed.*both legacy"):
+            migrate_data_dir_if_needed()
+
+        assert (legacy_plugins / "kinderbuch").exists()
+        assert (target_installed / "other-plugin").exists()
+        assert not (sandbox["target"] / MIGRATION_MARKER_FILENAME).exists()
+
+    def test_empty_legacy_dir_treated_as_fresh_install(self, sandbox) -> None:
+        """An empty legacy dir carries no data.
+
+        Expected: fresh-install path - marker planted, nothing moved,
+        no breadcrumb written next to the empty legacy dir.
+        """
+        sandbox["legacy_uploads"].mkdir()
+
+        migrate_data_dir_if_needed()
+
+        assert (sandbox["target"] / MIGRATION_MARKER_FILENAME).exists()
+        assert not (sandbox["target"] / "uploads").exists()
+        assert sandbox["legacy_uploads"].exists()
+        assert not list(
+            sandbox["legacy_uploads"].parent.glob("uploads.migrated-*")
+        )
+
     def test_marker_present_short_circuits(self, sandbox) -> None:
         """Migration marker already present (from a prior run).
 

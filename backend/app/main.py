@@ -183,10 +183,20 @@ plugin_install.configure(BASE_DIR, manager)
 
 
 def _load_installed_plugins() -> None:
-    """Add installed and bundled plugin directories to sys.path before discovery."""
-    # ZIP-installed plugins
-    installed_dir = BASE_DIR / "plugins" / "installed"
-    if installed_dir.exists():
+    """Add installed and bundled plugin directories to sys.path before discovery.
+
+    ZIP-installed plugins live under ``get_data_dir()/plugins/installed``
+    (the post-migration canonical location). The legacy project-tree
+    path stays as a fallback for setups whose migration marker predates
+    the plugins/installed migration item, so their plugins keep loading.
+    """
+    installed_dirs = (
+        plugin_install.get_installed_plugins_dir(),
+        BASE_DIR / "plugins" / "installed",
+    )
+    for installed_dir in installed_dirs:
+        if not installed_dir.exists():
+            continue
         for plugin_dir in installed_dir.iterdir():
             if plugin_dir.is_dir() and (plugin_dir / "plugin.yaml").exists():
                 path_str = str(plugin_dir)

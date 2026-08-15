@@ -2081,6 +2081,7 @@
       "conflicts_found": "Konflikt gefunden. Bitte in den Einstellungen lösen."
     },
     "update_banner": {
+      "needs_restart": "Bitte schließe die App vollständig und öffne sie erneut, um das Update abzuschließen.",
       "message": "Eine neue Version von Bibliogon ist verfügbar.",
       "button": "Jetzt aktualisieren",
       "updating": "Deine Änderungen werden gesichert und die App wird aktualisiert …",

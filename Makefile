@@ -2,19 +2,21 @@
        launcher launcher-install test-launcher \
        install install-backend install-frontend install-plugins install-e2e \
        test test-fast test-full test-nightly test-backend test-plugins test-e2e test-e2e-ui test-e2e-smoke test-e2e-smoke-retries test-e2e-manual test-e2e-all test-static-smoke test-visual test-visual-update capture-screenshots update-screenshots \
+       tdd test-fail tdd-green tdd-refactor tdd-check test-only test-watch test-watch-backend \
        test-plugin-export test-plugin-grammar test-plugin-kdp test-plugin-kinderbuch test-plugin-ms-tools test-plugin-translation test-plugin-audiobook test-plugin-help test-plugin-getstarted test-plugin-git-sync test-plugin-comics test-plugin-medium-import \
-       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend \
+       test-coverage test-coverage-backend test-coverage-frontend test-coverage-plugins coverage-backend coverage-frontend test-cov-backend test-cov-frontend \
        audit audit-backend audit-frontend security-backend bandit-backend check-security circular-deps \
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
-       lint-frontend format-frontend \
+       lint-frontend format-frontend pre-commit \
        check-blockers archive-task archive-task-dry install-hooks \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
        docs-install docs-build docs-serve \
        sync-mkdocs-nav verify-mkdocs-nav check-mkdocs-orphans verify-docs-discipline \
        lock-all-plugins verify-plugin-locks verify-theme verify-components check-cohesion check-complexity \
+       bump-version update-doc-headers finalize-changelog release-prepare release-finish \
        clean prod prod-down prod-logs help
 
 # --- Development ---
@@ -38,10 +40,20 @@ dev: ## Start backend + frontend (backend first, then frontend)
 	@cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run uvicorn app.main:app --reload --port 8000 &
 	@echo $$! > .pid-backend
 	@echo "Waiting for backend..."
-	@for i in 1 2 3 4 5 6 7 8 9 10; do \
-		curl -s http://localhost:8000/api/health > /dev/null 2>&1 && break; \
+	@# Verify /api/health actually answers before claiming readiness.
+	@# A startup crash (e.g. data-dir migration conflict) previously
+	@# fell through to "Backend ready." and started the frontend
+	@# against a dead backend (every request -> vite proxy 502).
+	@backend_up=0; for i in $$(seq 1 30); do \
+		if curl -s http://localhost:8000/api/health > /dev/null 2>&1; then backend_up=1; break; fi; \
 		sleep 1; \
-	done
+	done; \
+	if [ "$$backend_up" -ne 1 ]; then \
+		echo "ERROR: Backend not healthy after 30s - startup failed (see uvicorn output above)."; \
+		kill $$(cat .pid-backend 2>/dev/null) 2>/dev/null || true; \
+		rm -f .pid-backend; \
+		exit 1; \
+	fi
 	@echo "Backend ready. Starting frontend..."
 	@cd frontend && npm run dev
 
@@ -325,6 +337,67 @@ coverage-backend: test-coverage-backend ## Alias of test-coverage-backend (see d
 
 coverage-frontend: test-coverage-frontend ## Alias of test-coverage-frontend (see docs/audits/coverage-baseline.md)
 
+test-cov-backend: test-coverage-backend ## TDD alias of test-coverage-backend (backend coverage report)
+
+test-cov-frontend: test-coverage-frontend ## TDD alias of test-coverage-frontend (frontend coverage report)
+
+# === TDD cycle (red-green-refactor; see .claude/rules/tdd.md) ===
+# Inner-loop helpers for the mandated red-green-refactor workflow. They
+# reuse the existing test/type targets (test-frontend, test-backend,
+# check-types) so backend runs stay on the python3.12 env convention.
+# Coverage reports live in the existing test-coverage-{backend,frontend}
+# (+ coverage-{backend,frontend}) targets, not duplicated here.
+
+tdd: ## TDD: print the red-green-refactor guide
+	@echo "=== TDD red-green-refactor ==="
+	@echo "1. RED       write a failing test, then:   make test-fail"
+	@echo "2. GREEN     implement until green:         make tdd-green"
+	@echo "3. REFACTOR  clean up, keep tests green:    make tdd-refactor"
+	@echo ""
+	@echo "Single test:  make test-only TEST=<path>"
+	@echo "Watch mode:   make test-watch"
+	@echo "All gates:    make tdd-check"
+
+test-fail: ## TDD RED: run all tests verbosely (expected to fail; never fails make)
+	@echo "=== TDD RED: tests should fail ==="
+	cd frontend && npx vitest run --reporter=verbose 2>&1 || true
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest -v --tb=short 2>&1 || true
+
+tdd-green: test-frontend test-backend ## TDD GREEN: frontend + backend tests must pass
+	@echo ""
+	@echo "TDD GREEN: all tests pass."
+
+tdd-refactor: tdd-green ## TDD REFACTOR: tests + ruff + mypy + tsc
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run ruff check app/
+	$(MAKE) check-types
+	@echo ""
+	@echo "TDD REFACTOR: tests + lint + types green."
+
+tdd-check: tdd-refactor ## TDD: all TDD gates (tests + ruff + mypy + tsc)
+	@echo ""
+	@echo "All TDD gates green."
+
+test-only: ## Run a single test (TEST=path; routed to vitest/playwright/pytest)
+ifndef TEST
+	$(error TEST is required. Usage: make test-only TEST=frontend/src/lib/utils/foo.test.ts)
+endif
+	@t="$(TEST)"; \
+	if echo "$$t" | grep -q "frontend"; then \
+		cd frontend && npx vitest run "$${t#frontend/}" --reporter=verbose; \
+	elif echo "$$t" | grep -q "e2e"; then \
+		cd e2e && npx playwright test "$${t#e2e/}"; \
+	elif echo "$$t" | grep -qE "backend|tests/"; then \
+		cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run pytest "$${t#backend/}" -v; \
+	else \
+		echo "Unknown test path: $$t"; exit 1; \
+	fi
+
+test-watch: ## TDD watch mode: re-run frontend (Vitest) tests on change
+	cd frontend && npx vitest --watch
+
+test-watch-backend: ## TDD watch mode: re-run backend (pytest) tests on *.py change
+	cd backend && poetry env use python3.12 -q 2>/dev/null; poetry run ptw . tests/ -v --tb=short
+
 # --- Dependency security audit (mirrors the CI steps in ci.yml) ---
 
 audit: audit-backend audit-frontend ## Run both dependency security audits
@@ -473,6 +546,9 @@ install-hooks: ## Install scripts/git-hooks/* into .git/hooks (per-checkout, not
 		echo "linked .git/hooks/$$name -> $$hook"; \
 	done
 	@echo "Hooks installed. They run on every git push; tag pushes trigger pre-commit on all backend files."
+
+pre-commit: ## Run all pre-commit hooks on all files. Auto-fix hooks (ruff --fix, ruff-format, whitespace, EOF) rewrite files in place: stage the fixes with 'git add -u', then commit.
+	@cd backend && poetry run pre-commit run --all-files
 
 # --- Type Checking ---
 
@@ -810,6 +886,96 @@ endif
 	@gh release create v$(VERSION) \
 		--title "Bibliogon v$(VERSION)" \
 		--notes-file changelog/releases/v$(VERSION).md
+
+# --- Make-based release orchestration (release.yml calls these) ---
+#
+# The mechanical release steps live here, not inline in the workflow, so
+# they run identically locally and in CI (DRY). The workflow only adds the
+# CI-specific glue (git identity, dependency install, launcher build,
+# GitHub-Release publish). The human/LLM CHANGELOG prose + per-release
+# notes stay a precondition (release-workflow.md Step 3).
+
+bump-version: ## Bump canonical version + propagate to all subsystems. Usage: make bump-version VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make bump-version VERSION=0.60.0)
+endif
+	sed -i 's/^version = .*/version = "$(VERSION)"/' backend/pyproject.toml
+	$(MAKE) sync-versions
+	$(MAKE) sync-versions-check
+	./scripts/verify_version_pins.sh $(VERSION)
+
+update-doc-headers: ## Bump version headers in the 5 gated docs. Usage: make update-doc-headers VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make update-doc-headers VERSION=0.60.0)
+endif
+	python3 scripts/update_version_headers.py $(VERSION)
+
+finalize-changelog: ## Date-stamp the CHANGELOG for VERSION. Usage: make finalize-changelog VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make finalize-changelog VERSION=0.60.0)
+endif
+	@DATE=$$(date +%Y-%m-%d); \
+	if grep -q "## \[Unreleased\]" docs/CHANGELOG.md; then \
+		sed -i "s/## \[Unreleased\]/## [$(VERSION)] - $$DATE/" docs/CHANGELOG.md; \
+		echo "Stamped '## [Unreleased]' -> '## [$(VERSION)] - $$DATE'."; \
+	elif grep -qE "^## \[$(VERSION)\]" docs/CHANGELOG.md; then \
+		echo "docs/CHANGELOG.md already carries a [$(VERSION)] entry (prepared). OK."; \
+	else \
+		echo "ERROR: docs/CHANGELOG.md has neither a '## [Unreleased]' block"; \
+		echo "       nor a '## [$(VERSION)]' entry. Prepare the CHANGELOG entry"; \
+		echo "       (release-workflow.md Step 3) before releasing."; \
+		exit 1; \
+	fi
+
+release-prepare: ## Cut release branch from develop + bump version/docs/changelog. Usage: make release-prepare VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make release-prepare VERSION=0.60.0)
+endif
+	@if [ ! -f "changelog/releases/v$(VERSION).md" ]; then \
+		echo "ERROR: changelog/releases/v$(VERSION).md missing."; \
+		echo "Author the per-release notes (release-workflow.md Step 3) first."; \
+		exit 1; \
+	fi
+	@if git ls-remote --tags origin "refs/tags/v$(VERSION)" | grep -q .; then \
+		echo "ERROR: tag v$(VERSION) already exists on origin. Pick a new version."; \
+		exit 1; \
+	fi
+	git checkout develop
+	git pull --ff-only origin develop
+	git checkout -b release/v$(VERSION)
+	$(MAKE) bump-version VERSION=$(VERSION)
+	$(MAKE) update-doc-headers VERSION=$(VERSION)
+	$(MAKE) finalize-changelog VERSION=$(VERSION)
+	git add backend/pyproject.toml frontend/package.json frontend/package-lock.json \
+		launcher/pyproject.toml launcher/bibliogon_launcher/__init__.py \
+		launcher/bibliogon-launcher.spec launcher/launcher.json \
+		install.sh install.ps1 plugins/bibliogon-plugin-*/pyproject.toml \
+		README.md README-de.md CLAUDE.md docs/ROADMAP.md docs/backlog.md docs/CHANGELOG.md
+	git commit -m "chore(release): bump version to $(VERSION)"
+	@echo ""
+	@echo "Release branch release/v$(VERSION) created + committed."
+	@echo "Next: make release-test (+ test-e2e-smoke + test-static-smoke) then"
+	@echo "      make release-finish VERSION=$(VERSION)"
+
+release-finish: ## Merge release to main + tag + back-sync develop. Usage: make release-finish VERSION=0.X.Y
+ifndef VERSION
+	$(error VERSION is required, e.g. make release-finish VERSION=0.60.0)
+endif
+	./scripts/verify_version_pins.sh $(VERSION)
+	git checkout main
+	git pull --ff-only origin main
+	git merge --no-ff release/v$(VERSION) -m "release: v$(VERSION)"
+	git tag -a v$(VERSION) -m "Release v$(VERSION)"
+	git push origin main --tags
+	git checkout develop
+	git pull --ff-only origin develop
+	git merge --no-ff main -m "chore: back-sync v$(VERSION) to develop"
+	git push origin develop
+	git branch -d release/v$(VERSION)
+	git push origin --delete release/v$(VERSION) || true
+	@echo ""
+	@echo "Release v$(VERSION) merged + tagged + back-synced."
+	@echo "Next: make release-publish VERSION=$(VERSION)"
 
 # --- Clean ---
 
