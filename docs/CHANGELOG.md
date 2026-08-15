@@ -78,6 +78,10 @@ unaffected.
   red on every nightly since it landed, now deterministic (#712).
 - Exploration: `editor-menu-model` - scope, design decisions and
   two spin-off findings recorded (#707).
+- README (EN + DE) documents the **preview web app** at
+  `astrapi69.github.io/bibliogon-preview/` - the develop-tracking
+  PWA build with its own origin (separate IndexedDB) and a
+  test-version banner.
 
 ## [0.59.0] - 2026-06-28
 

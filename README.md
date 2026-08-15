@@ -75,6 +75,8 @@ Bibliogon's standout feature: a **per-book database of your fiction's recurring 
 
 Bibliogon runs as a fully offline Progressive Web App on GitHub Pages — no backend, no install: **[astrapi69.github.io/bibliogon](https://astrapi69.github.io/bibliogon/)**. All data lives in your browser (IndexedDB, local-first); the backendless build fires zero `/api` requests (enforced by a hard E2E gate).
 
+A **preview build** is deployed alongside it at **[astrapi69.github.io/bibliogon-preview](https://astrapi69.github.io/bibliogon-preview/)** — the same offline PWA, published on every `develop` push and marked with a test-version banner. Because it runs on its own origin, it uses a **separate IndexedDB**: you can try upcoming changes there without touching the data in your regular web app.
+
 - **Full authoring offline:** books, chapters, articles, picture books, comics, Story Bible, Storyboard, authors and publications all read/write through the storage seam against a seeded IndexedDB.
 - **Import wizard offline:** Markdown / Text / HTML files become a new book + chapter; JSON full-data backups and `.bgb` backups restore client-side; Medium ZIP exports import in the browser.
 - **Client-side export engine:** Markdown, HTML, Text, PDF, EPUB, DOCX, and LaTeX — generated in the browser, no Pandoc required.
