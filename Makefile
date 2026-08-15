@@ -9,7 +9,7 @@
        test-coverage-plugin-audiobook test-coverage-plugin-export test-coverage-plugin-grammar test-coverage-plugin-kdp test-coverage-plugin-kinderbuch test-coverage-plugin-ms-tools test-coverage-plugin-translation test-coverage-plugin-help test-coverage-plugin-getstarted test-coverage-plugin-git-sync test-coverage-plugin-comics test-coverage-plugin-medium-import \
        mutmut-backend mutmut-export mutmut-ms-tools mutmut-results \
        check-types check-types-backend check-types-frontend \
-       lint-frontend format-frontend \
+       lint-frontend format-frontend pre-commit \
        check-blockers archive-task archive-task-dry install-hooks \
        sync-versions sync-versions-dry sync-versions-check \
        generate-trial-key \
@@ -536,6 +536,9 @@ install-hooks: ## Install scripts/git-hooks/* into .git/hooks (per-checkout, not
 		echo "linked .git/hooks/$$name -> $$hook"; \
 	done
 	@echo "Hooks installed. They run on every git push; tag pushes trigger pre-commit on all backend files."
+
+pre-commit: ## Run all pre-commit hooks on all files. Auto-fix hooks (ruff --fix, ruff-format, whitespace, EOF) rewrite files in place: stage the fixes with 'git add -u', then commit.
+	@cd backend && poetry run pre-commit run --all-files
 
 # --- Type Checking ---
 
