@@ -22,7 +22,7 @@ The launcher detects Docker, downloads Bibliogon automatically, and opens it in 
 |----------|------|
 | Windows | `bibliogon-launcher.exe` |
 | macOS (Apple silicon) | `bibliogon-launcher-macos.zip` |
-| Linux | `bibliogon-launcher-linux` (ELF binary) |
+| Linux | `bibliogon-launcher` (ELF binary) |
 
 Each platform also ships a `*.sha256` checksum next to the binary.
 
