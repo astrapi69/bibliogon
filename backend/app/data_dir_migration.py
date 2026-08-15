@@ -18,6 +18,12 @@ Design rules:
 - **Fail loud on conflict.** If both legacy and target paths
   contain data, raise ``RuntimeError`` so the user notices.
   Silent merge would corrupt data.
+- **Empty directories are not data.** An empty legacy dir has
+  nothing to move; an empty target dir is removed and replaced by
+  the move instead of raising. The app itself pre-creates
+  ``<data_dir>/plugins/installed`` at import time (see
+  ``app.routers.plugin_install``), which must not deadlock the
+  migration that runs later in the lifespan.
 - **Breadcrumb at old path.** A ``.migrated-YYYY-MM-DD`` file is
   written next to each moved item so users can verify before
   deleting.
@@ -53,6 +59,18 @@ _LEGACY_INSTALLED_PLUGINS = _PROJECT_BACKEND_DIR / "plugins" / "installed"
 MIGRATION_MARKER_FILENAME = ".migration-complete"
 
 
+def _is_empty_dir(path: Path) -> bool:
+    """Return True when *path* is a directory containing no entries.
+
+    Empty directories carry no user data. The migration treats them
+    as absent on both sides: an empty legacy dir has nothing worth
+    moving, and an empty target dir is no conflict.
+    """
+    if not path.is_dir():
+        return False
+    return next(path.iterdir(), None) is None
+
+
 def _legacy_paths(target: Path) -> list[tuple[str, Path, Path]]:
     """Return [(label, legacy_path, target_path), ...] for items that
     Phase 2 needs to move."""
@@ -80,7 +98,8 @@ def migrate_data_dir_if_needed() -> None:
 
     No-op in test mode, when the marker is already present, or when
     no legacy data exists. Raises ``RuntimeError`` on conflict
-    (both legacy and target hold data for the same item).
+    (both legacy and target hold actual data for the same item);
+    empty directories on either side never count as a conflict.
     """
     if os.environ.get("BIBLIOGON_TEST") == "1":
         return
@@ -92,7 +111,10 @@ def migrate_data_dir_if_needed() -> None:
         return
 
     items = _legacy_paths(target)
-    has_legacy = any(legacy.exists() for _label, legacy, _dst in items)
+    has_legacy = any(
+        legacy.exists() and not _is_empty_dir(legacy)
+        for _label, legacy, _dst in items
+    )
 
     if not has_legacy:
         # Fresh install or already-migrated target without the marker.
@@ -105,8 +127,11 @@ def migrate_data_dir_if_needed() -> None:
     suffix = f".migrated-{date.today().isoformat()}"
 
     for label, legacy, dst in items:
-        if not legacy.exists():
+        if not legacy.exists() or _is_empty_dir(legacy):
             continue
+        if _is_empty_dir(dst):
+            logger.info("Removing empty target dir %s before migration", dst)
+            dst.rmdir()
         if dst.exists():
             raise RuntimeError(
                 f"Cannot migrate {label}: both legacy ({legacy}) and "

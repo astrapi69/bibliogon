@@ -39,6 +39,7 @@ backend/config/plugins/audiobook/google-credentials.enc
 # Uploads (user assets)
 backend/uploads/
 backend/*.migrated-*
+backend/plugins/
 
 # Production marker (written by FastAPI lifespan startup; see
 # backend/app/paths.py + backend/tests/conftest.py).
