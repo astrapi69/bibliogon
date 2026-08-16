@@ -7,7 +7,15 @@ license = "MIT"
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "^3.11"
+# 3.12+, not 3.11 (#719). app/services/backup/serializer.py uses PEP 695
+# generics (`def restore_row[M](...)`), which 3.11 cannot parse. Declaring
+# ^3.11 let Poetry install cleanly on 3.11 and then fail at import with a
+# SyntaxError in an unrelated-looking file -- 131 pytest collection errors
+# and a backend that will not boot. Every workflow pins 3.12, the Docker
+# image is python:3.12-slim, and [tool.mypy] already targets 3.12, so
+# nothing in the shipping path was ever on 3.11. The plugin packages keep
+# ^3.11: none of them use 3.12-only syntax.
+python = "^3.12"
 fastapi = "^0.136.0"
 uvicorn = {version = "^0.49.0", extras = ["standard"]}
 sqlalchemy = "^2.0.49"
@@ -34,7 +42,7 @@ pillow = "^12.0.0"
 gtts = "^2.5.0"
 pyttsx3 = "^2.90"
 elevenlabs = "^0.2.27"
-cryptography = "^48.0.0"
+cryptography = "^50.0.0"
 ruamel-yaml = "^0.19.0"
 gitpython = "^3.1.40"
 segno = "^1.6.6"
@@ -43,7 +51,17 @@ defusedxml = "^0.7.1"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
 httpx = "^0.28.0"
-mutmut = "^3.5.0"
+# Held at 3.5.x on purpose -- do NOT widen back to a caret (#721).
+# mutmut 3.6.0 resolves the configured source_paths on EVERY trampoline
+# hit via `p.resolve(strict=True)`, and those paths are relative. Any
+# test that monkeypatch.chdir()s away (test_backup_import_revive,
+# test_audiobook_persistence, ...) then makes "app" unresolvable and the
+# run dies during stats collection with
+# `FileNotFoundError: No such file or directory: 'app'`, i.e. the whole
+# nightly produces no score. 3.5.0's record_trampoline_hit does no such
+# resolution and is CWD-independent. Revisit when upstream stops
+# resolving relative source_paths per hit.
+mutmut = "~3.5.0"
 mypy = "^2.1.0"
 types-pyyaml = "^6.0.12.20250915"
 types-markdown = "^3.10.2.20260211"

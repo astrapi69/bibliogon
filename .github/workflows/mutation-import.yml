@@ -11,17 +11,23 @@ name: Mutation Testing (Import Orchestrator)
 #
 # On/off switch
 # -------------
-# This workflow is OFF by default for scheduled runs.
+# This workflow is ON by default for scheduled runs (#721).
 #
-#   * Scheduled runs (nightly 02:00 UTC) execute only when the
-#     repository variable ENABLE_NIGHTLY_MUTATION is set to "true".
-#     Set / unset the variable in
-#       Settings -> Secrets and variables -> Actions -> Variables
+#   * Scheduled runs (nightly 02:00 UTC) execute unless the repository
+#     variable DISABLE_NIGHTLY_MUTATION is set to "true". Set / unset it
+#     in Settings -> Secrets and variables -> Actions -> Variables.
 #     No code change required to flip it.
 #
 #   * workflow_dispatch (manual "Run workflow" button) always runs
 #     regardless of the variable, so a maintainer can do a one-off
-#     audit without enabling the nightly job.
+#     audit even while the nightly is disabled.
+#
+# Was previously opt-IN behind ENABLE_NIGHTLY_MUTATION. That variable was
+# never set, so from the 2026-05-02 wiring until #721 every scheduled run
+# reported "skipped" and no mutation score was ever tracked after the
+# 2026-05-14 manual baseline -- the "wired infrastructure that never ran"
+# failure mode in .claude/rules/lessons-learned.md. Defaulting to ON makes
+# a silent non-run impossible; the kill switch is preserved, just inverted.
 
 on:
   schedule:
@@ -53,7 +59,7 @@ jobs:
     name: mutmut (import scope)
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_MUTATION == 'true'
+    if: github.event_name == 'workflow_dispatch' || vars.DISABLE_NIGHTLY_MUTATION != 'true'
     steps:
       - uses: actions/checkout@v5
 
@@ -68,35 +74,63 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
+      # mutmut reuses an existing mutants/ tree instead of regenerating,
+      # so restoring an incompatible one silently poisons the run: it dies
+      # in ~30s and `|| true` reports success (#721).
+      #
+      # The key therefore hashes everything that decides what the tree
+      # should contain, pyproject.toml included -- it holds
+      # paths_to_mutate/tests_dir and the mutmut version pin, and a change
+      # to either invalidates every cached mutant. The old key hashed
+      # app/routers/import_orchestrator.py (no longer in scope) and missed
+      # both pyproject.toml and app/services/, so scope changes could not
+      # invalidate it.
+      #
+      # restore-keys is deliberately absent. A prefix fallback restores the
+      # newest cache with a matching prefix even when the exact key misses,
+      # which is precisely how a broken tree from an earlier run gets
+      # replayed forever. A miss now means a clean full run instead.
       - name: Restore mutmut cache
         uses: actions/cache@v5
         with:
           path: backend/mutants/
-          key: mutmut-import-${{ hashFiles('backend/app/import_plugins/**', 'backend/app/routers/import_orchestrator.py', 'backend/tests/**') }}
-          restore-keys: |
-            mutmut-import-
+          key: mutmut-v2-${{ hashFiles('backend/pyproject.toml', 'backend/app/import_plugins/**', 'backend/app/services/**', 'backend/tests/**') }}
 
       - name: Override mutmut scope in pyproject.toml
         working-directory: backend
         env:
           INPUT_PATHS: ${{ github.event.inputs.paths }}
         run: |
-          # mutmut v3 reads paths_to_mutate from pyproject.toml. Rewrite
-          # the [tool.mutmut] section to the import-only scope before
-          # running. The CI workspace is throwaway, no need to restore.
+          # mutmut v3 reads paths_to_mutate from pyproject.toml, and that
+          # is the single source of truth for the scope (#721). Only a
+          # workflow_dispatch `paths` input rewrites it; with no input we
+          # leave pyproject.toml alone. The CI workspace is throwaway, so
+          # the rewrite needs no restore.
+          #
+          # This step used to hardcode a default of
+          #   ["app/import_plugins/", "app/routers/import_orchestrator.py"]
+          # which had drifted from pyproject's
+          #   ["app/import_plugins/", "app/services/"]
+          # and, worse, broke every run: naming a single FILE under
+          # app/routers/ makes mutmut create mutants/app/routers/
+          # containing only that file. tests/conftest.py symlinks missing
+          # siblings of app/ back to the real tree but skips any entry that
+          # already exists, so a partially-copied package stays partial and
+          # the harness dies with
+          #   ImportError: cannot import name 'ai_template_bulk' from 'app.routers'
+          # Whole-directory scopes (what pyproject declares) do not have
+          # this problem. Keep dispatch overrides to directories.
           python <<'PY'
           import os
           import re
+          import sys
           from pathlib import Path
 
           override = os.environ.get("INPUT_PATHS", "").strip()
-          if override:
-              entries = [p.strip() for p in override.split(",") if p.strip()]
-          else:
-              entries = [
-                  "app/import_plugins/",
-                  "app/routers/import_orchestrator.py",
-              ]
+          if not override:
+              print("No paths input -- using pyproject.toml scope as-is")
+              sys.exit(0)
+          entries = [p.strip() for p in override.split(",") if p.strip()]
           paths_repr = "[" + ", ".join(f'"{p}"' for p in entries) + "]"
 
           pp = Path("pyproject.toml")
@@ -122,16 +156,108 @@ jobs:
         working-directory: backend
         run: poetry run mutmut results || true
 
-      - name: Generate HTML report
+      # mutmut 3.5 has no `html` subcommand -- the step that used to live
+      # here ran `mutmut html` and only ever printed
+      # "Error: No such command 'html'", swallowed by `|| true` (#721).
+      # `export-cicd-stats` is the machine-readable equivalent and writes
+      # mutants/mutmut-cicd-stats.json (killed / survived / no_tests /
+      # timeout / total), which the upload step below already collects.
+      - name: Export mutation stats
         working-directory: backend
-        run: poetry run mutmut html || true
+        run: poetry run mutmut export-cicd-stats || true
+
+      # Two gates (#721). Every other step ends in `|| true` because mutmut
+      # exits non-zero whenever survivors exist, and that blanket
+      # suppression reported "success" three times for a run that checked
+      # nothing at all: 2026-05-12 (71s) and twice on 2026-08-16 (61s, 89s).
+      #
+      #   1. Liveness  -- fails when no mutant got a verdict. Always a
+      #      broken run, never a quality signal.
+      #   2. Score     -- fails when the mutation score drops below
+      #      MUTATION_MIN_SCORE.
+      #
+      # The score is measured against EXERCISED mutants (killed / (killed +
+      # survived)), not against total. Mutants with no covering test are
+      # real debt, but they are allowlist debt: the tests_dir list in
+      # pyproject.toml has drifted behind the source scope, so killed/total
+      # moves when that list changes rather than when test quality changes.
+      # Gating on the exercised score asks "of the code the tests do reach,
+      # how much do they actually pin?", which is the question a threshold
+      # can answer honestly. The uncovered pool is tracked separately.
+      #
+      # Baseline on the first green full run (2026-08-16, run 31964070604):
+      # 7935 killed / 2205 survived / 2781 no_tests / 7 timeout of 12928 =
+      # 78.3% exercised, 61.4% of total. The 75% default leaves ~3pp of
+      # headroom so ordinary churn does not trip it. Raise it as the score
+      # improves; override without a code change by setting the
+      # MUTATION_MIN_SCORE repository variable.
+      - name: Verify mutation run and score
+        working-directory: backend
+        env:
+          MUTATION_MIN_SCORE: ${{ vars.MUTATION_MIN_SCORE || '75.0' }}
+        run: |
+          python <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          min_score = float(os.environ.get("MUTATION_MIN_SCORE", "75.0"))
+          stats_path = Path("mutants/mutmut-cicd-stats.json")
+          if not stats_path.exists():
+              sys.exit(f"{stats_path} missing -- mutmut produced no stats at all")
+
+          stats = json.loads(stats_path.read_text(encoding="utf-8"))
+          total = stats.get("total", 0)
+          checked = sum(
+              stats.get(k, 0)
+              for k in ("killed", "survived", "no_tests", "timeout", "suspicious", "skipped")
+          )
+          killed = stats.get("killed", 0)
+          scored = killed + stats.get("survived", 0)
+          print(f"total={total} checked={checked} " + " ".join(f"{k}={v}" for k, v in stats.items()))
+          # Two denominators, because they answer different questions and
+          # the audit doc uses the first: killed/total counts mutants with
+          # no covering test against you, killed/(killed+survived) scores
+          # only the mutants a test actually exercised. Reporting one alone
+          # invites comparing against the other.
+          if total:
+              print(f"score vs total:     {killed}/{total} = {100 * killed / total:.1f}%")
+          if scored:
+              print(f"score vs exercised: {killed}/{scored} = {100 * killed / scored:.1f}%")
+          if total and not checked:
+              sys.exit(
+                  "mutmut checked 0 of "
+                  f"{total} mutants -- the run aborted (commonly a poisoned "
+                  "mutants/ cache or a stats-collection crash). See the "
+                  "'Run mutmut' step output."
+              )
+
+          # Score gate. Skipped when nothing was exercised: that is the
+          # liveness failure above, and dividing by zero would mask it.
+          if scored:
+              score = 100 * killed / scored
+              if score < min_score:
+                  sys.exit(
+                      f"mutation score {score:.1f}% is below the "
+                      f"{min_score:.1f}% threshold ({killed} killed / "
+                      f"{scored} exercised). Either the new code is not "
+                      "pinned by tests, or a test stopped pinning code it "
+                      "used to. Open the mutmut artifact and triage the "
+                      "survivors; adjust MUTATION_MIN_SCORE only if the "
+                      "drop is understood and accepted."
+                  )
+              print(f"score {score:.1f}% >= threshold {min_score:.1f}% -- OK")
+          PY
 
       - name: Upload mutmut artifacts
         uses: actions/upload-artifact@v6
         if: always()
         with:
           name: mutmut-import-${{ github.run_id }}
-          path: |
-            backend/html/
-            backend/mutants/
+          # backend/html/ dropped: it was the output of the `mutmut html`
+          # step, and mutmut 3.5 has no such command, so it never existed
+          # (upload-artifact warned "no files found" for it). The stats
+          # JSON lands in backend/mutants/ alongside the mutant tree.
+          path: backend/mutants/
           retention-days: 30

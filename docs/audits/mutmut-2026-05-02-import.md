@@ -10,6 +10,11 @@
 **[FULLY UNBLOCKED — first complete run 2026-05-14. Scope
 expanded to ``app/services/`` later the same day.]**
 
+**[2026-08-16 (#721): the nightly was never actually running, and
+mutmut 3.6.0 had broken the run outright. Both fixed — see
+"2026-08-16 — nightly never ran + mutmut 3.6.0 regression" at the
+end of this document.]**
+
 Combined scope (``app/import_plugins/`` + ``app/services/``)
 2026-05-14 evening run after ``MUTMUT-EXPAND-SCOPE-01``:
 
@@ -465,3 +470,238 @@ or test changes.
 - Rules: [.claude/rules/quality-checks.md](../../.claude/rules/quality-checks.md) (Mutation testing section)
 - Tooling baseline: commit `28fe59c` ("feat(Q-02): set up mutation testing with mutmut v3")
 - Workflow: [.github/workflows/mutation-import.yml](../../.github/workflows/mutation-import.yml)
+
+## 2026-08-16 — nightly never ran + mutmut 3.6.0 regression
+
+Two independent problems, found together while investigating why the
+"Mutation Testing (Import Orchestrator)" workflow shows `skipped` on
+every scheduled run (issue #721).
+
+### 1. The nightly was gated OFF and nobody ever flipped the switch
+
+The job carried
+
+```yaml
+if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_MUTATION == 'true'
+```
+
+and the repository variable `ENABLE_NIGHTLY_MUTATION` was never set. So
+from the 2026-05-02 wiring onward, every scheduled run reported
+`skipped` (e.g. run `31922833810`, job `mutmut (import scope)`), and no
+mutation score was tracked after the 2026-05-14 manual baseline.
+
+This is the exact failure mode already catalogued in
+`.claude/rules/lessons-learned.md` under *"Operational gaps masquerade
+as wired infrastructure"* — the entry even names this workflow. The
+opt-in variable was a documented switch that nothing ever flipped.
+
+Fix: inverted to opt-OUT. The schedule now runs by default and
+`DISABLE_NIGHTLY_MUTATION=true` is the kill switch. A silent non-run is
+no longer possible; disabling it is now a deliberate act.
+
+### 2. mutmut 3.6.0 breaks any test that changes the working directory
+
+`mutmut = "^3.5.0"` had resolved forward to 3.6.0, which fails during
+stats collection:
+
+```
+FAILED tests/test_backup_import_revive.py::test_backup_import_revives_soft_deleted_book
+1 failed, 199 passed
+failed to collect stats. runner returned 1
+```
+
+The same 39-file `tests_dir` subset passes cleanly under plain pytest
+(582 passed), so it is not a test regression. The traceback ends in
+mutmut itself:
+
+```
+File ".../mutmut/mutation/trampoline.py", line 60, in trampoline
+File ".../mutmut/__main__.py", line 120, in record_trampoline_hit
+File "/usr/lib/python3.12/pathlib.py", line 1242, in resolve
+FileNotFoundError: [Errno 2] No such file or directory: 'app'
+```
+
+3.6.0 added this to `record_trampoline_hit`, which runs on *every*
+mutated call:
+
+```python
+source_paths = [p.resolve(strict=True) for p in Config.get().source_paths]
+```
+
+`source_paths` are relative (`app/import_plugins/`, `app/services/`), and
+`strict=True` raises when they do not exist relative to the *current*
+working directory. Bibliogon has many tests that legitimately
+`monkeypatch.chdir(tmp_path)` (`test_backup_import_revive.py`,
+`test_audiobook_persistence.py`, ...); while such a test is running,
+`app` is unresolvable and the whole run dies.
+
+mutmut 3.5.0's `record_trampoline_hit` performs no path resolution at
+all and is CWD-independent — which is why the 2026-05-14 baseline
+worked and nothing since does.
+
+Fix: pinned `mutmut = "~3.5.0"` (3.5.x only) with a comment in
+`backend/pyproject.toml` explaining why it must not be widened back to a
+caret. Working around it on the 3.6 side would mean dropping every
+chdir-using test file from `tests_dir`, which would lower the killed
+count and stay fragile against any future chdir test.
+
+Re-check on the next mutmut release: if upstream stops resolving
+relative `source_paths` per trampoline hit, the caret can return. Note
+also that 3.6 renames `paths_to_mutate` to `source_paths` (3.5 emits a
+deprecation warning for it), and the workflow's "Override mutmut scope"
+step rewrites `paths_to_mutate` by regex with a hard
+`raise SystemExit` when the key is missing — so that step must be
+updated in the same change as any future key rename.
+
+### Note on what the nightly can and cannot tell you
+
+Every meaningful step in the workflow ends in `|| true`:
+
+```yaml
+run: poetry run mutmut run || true
+run: poetry run mutmut results || true
+run: poetry run mutmut html || true
+```
+
+So the enabled nightly publishes an HTML report as an artifact but
+cannot fail on a mutation-score regression. It is an artifact generator,
+not a gate. Adding a score threshold (the original acceptance criterion
+was >= 60% on `app/import_plugins/`) is tracked separately in #721.
+
+### Addendum — two more causes behind the same symptom
+
+Fixing the gate and the mutmut pin was not enough. Dispatching the
+workflow by hand still "succeeded" in about a minute with `mutmut
+results` reporting every mutant as `not checked`.
+
+**Cause 3 — the workflow mutated a scope that cannot work.** The
+"Override mutmut scope" step hardcoded
+
+```
+["app/import_plugins/", "app/routers/import_orchestrator.py"]
+```
+
+while `pyproject.toml` declares `["app/import_plugins/",
+"app/services/"]`, so CI never measured the audited scope. Naming a
+single FILE under `app/routers/` also makes mutmut create
+`mutants/app/routers/` containing only that file, and the conftest
+symlink logic skips entries that already exist:
+
+```python
+_dst = _MUTANT_APP / _app_entry.name
+if _dst.exists():
+    continue
+```
+
+so the partially-copied package stays partial and the harness dies with
+`ImportError: cannot import name 'ai_template_bulk' from 'app.routers'`.
+Whole-directory scopes do not have this problem. The step now leaves
+`pyproject.toml` alone unless a `paths` dispatch input is given —
+pyproject is the single source of truth for the scope. **Keep dispatch
+overrides to directories, never single files.**
+
+**Cause 4 — the cache replayed the breakage.** mutmut reuses an existing
+`mutants/` tree instead of regenerating it, so restoring an incompatible
+one reproduces the failure indefinitely. The cache key hashed
+`app/import_plugins/`, `app/routers/import_orchestrator.py` and
+`tests/` — neither `pyproject.toml` (which holds `paths_to_mutate`,
+`tests_dir` and the version pin) nor `app/services/` — so a scope change
+could not invalidate it, and `restore-keys: mutmut-import-` restored the
+newest prefix match even on an exact-key miss. Key is now
+`mutmut-v2-<hash of pyproject.toml + both mutated trees + tests/>` with
+no `restore-keys`: a miss means a clean full run.
+
+**Liveness guard.** Because every step ends in `|| true` (mutmut exits
+non-zero whenever survivors exist), this workflow reported success three
+times for runs that checked nothing: 2026-05-12 (71 s) and twice on
+2026-08-16 (61 s, 89 s). A new step reads
+`mutants/mutmut-cicd-stats.json` and fails only when 0 of N mutants got
+a verdict — always a broken run, never a quality signal. Survivors still
+pass. This is deliberately **not** a score threshold.
+
+It also prints the score against both denominators, because this
+document uses `killed/total` (which counts uncovered mutants against
+you) while `killed/(killed+survived)` scores only exercised mutants;
+quoting one invites comparison against the other.
+
+### Hazard — running mutmut over a stale mutants/ tree corrupts the source
+
+Running `mutmut run` with a `mutants/` tree left over from a *different*
+scope wrote mutmut's trampoline preamble into the real
+`backend/app/services/*.py` and dropped `*.py.meta` sidecars beside
+them. Recovered with `git checkout -- backend/app/services/` plus
+deleting the `.meta` files, but an uncommitted working tree would have
+been at risk.
+
+Always `rm -rf backend/mutants` before changing `paths_to_mutate` and
+re-running locally. `make mutmut-backend` does not clean for you.
+
+### 2026-08-16 — first green nightly, and the score baseline
+
+Run [31964070604](https://github.com/astrapi69/bibliogon/actions/runs/31964070604)
+is the first complete run this workflow has ever produced. 51 minutes of
+mutation on a 4-vCPU runner, against the job's 90-minute timeout:
+
+```
+total=12928  checked=12928  killed=7935  survived=2205
+no_tests=2781  timeout=7
+score vs total:     7935/12928 = 61.4%
+score vs exercised: 7935/10140 = 78.3%
+```
+
+Both denominators are reported because they answer different questions.
+`killed/total` (the figure the 2026-05-14 entry above uses) counts
+mutants with no covering test against you; `killed/(killed+survived)`
+scores only the mutants a test actually exercised. The gap between 61.4%
+and 78.3% is entirely the `no_tests` pool.
+
+The workflow now gates on the **exercised** score with a default
+threshold of 75.0%, overridable through the `MUTATION_MIN_SCORE`
+repository variable. Exercised rather than total, because the uncovered
+pool moves when the `tests_dir` allowlist is edited rather than when
+test quality changes — gating on it would make an allowlist edit look
+like a quality regression.
+
+### Allowlist drift — why 2781 mutants had no tests
+
+The `no_tests` pool grew from 206 (2026-05-14) to 2781 because the
+mutated scope kept growing while `tests_dir` did not. Grepping the suite
+for test files that reference `app.services.*` or `app.import_plugins.*`
+finds 60; only 33 were listed. The 27 missing ones:
+
+```
+test_archive_safety            test_import_sanitization
+test_asset_rewrite             test_import_staging
+test_backup_full_roundtrip     test_new_chapter_types
+test_backup_import_frontend_arrays  test_plugin_license
+test_bgb_archive_reader        test_scrivener_binder
+test_book_type_registry        test_scrivener_import
+test_book_types_endpoint       test_serializer
+test_chapter_inspector_notes   test_story_entity_registry
+test_content_type_registry     test_test_reset_infra
+test_content_types_endpoint    test_toc_validation
+test_custom_css_import         test_writing_goals
+test_filename_slug             test_writing_history_stats
+test_git_sync_fetch            test_writing_progress_no_negative
+test_google_tts_setup
+```
+
+Several are obvious losses — `test_filename_slug.py` is the only test of
+`services/filename_slug.py`, `test_serializer.py` the only one of
+`backup/serializer.py`, and the three `test_writing_*` files the only
+ones of `writing_stats.py`. Every mutant in those modules was scored
+`no_tests` purely because the file was not on the list.
+
+Individually they are cheap (66 s wall clock for all 27, most of it
+pytest start-up; the slowest is `test_content_types_endpoint.py` at
+7.2 s). The cost is indirect: adding them converts uncovered mutants
+into *executed* ones, so the run has more work to do, and the exercised
+score moves as the newly-covered modules contribute their own
+kill ratio.
+
+**Reviewing this later: re-measure before trusting the threshold.** The
+75% default is calibrated against the 39-file allowlist. Expanding to 66
+changes both the runtime and the denominator, so the next full run's
+numbers are the new baseline — and if the runtime approaches the
+90-minute timeout, raise `timeout-minutes` rather than shrinking the
+allowlist again.
