@@ -19,7 +19,38 @@
  * lives on .ProseMirror, not the editor wrapper).
  */
 
+import type {Page} from "@playwright/test";
 import {test, expect, createArticle} from "../fixtures/base";
+
+/**
+ * Open the display-settings popover, retrying the click until the panel
+ * is actually on screen.
+ *
+ * The retry is not defensive padding, it is required (#720). E2E runs
+ * against `npm run dev`, so React.StrictMode double-invokes every mount
+ * (mount -> unmount -> remount) and the whole route subtree - toggle
+ * button included - is replaced once shortly after first paint. A click
+ * dispatched into that window is delivered to the discarded first-mount
+ * tree: the handler never runs and any state it would have set is thrown
+ * away with the instance. Measured at roughly 1 in 4 first clicks; a
+ * second click always lands.
+ *
+ * toPass() re-runs click-then-assert rather than sleeping a fixed amount,
+ * so it costs nothing on the common path and cannot mask a genuinely
+ * missing panel (it still fails after the timeout).
+ */
+async function openDisplaySettings(page: Page) {
+    const toggle = page.getByTestId("editor-display-settings-toggle");
+    await expect(toggle).toBeVisible({timeout: 10000});
+    const panel = page.getByTestId("editor-display-settings-panel");
+    await expect(async () => {
+        if ((await panel.count()) === 0) {
+            await toggle.click();
+        }
+        await expect(panel).toBeVisible({timeout: 1000});
+    }).toPass({timeout: 15000});
+    return panel;
+}
 
 test.describe("Editor display settings smoke", () => {
     test("changing the width preset writes the CSS var + survives reload", async ({
@@ -30,10 +61,7 @@ test.describe("Editor display settings smoke", () => {
 
         // Open the popover; trigger button lives just below the
         // Toolbar in the Editor.tsx surface.
-        const toggle = page.getByTestId("editor-display-settings-toggle");
-        await expect(toggle).toBeVisible({timeout: 10000});
-        await toggle.click();
-        const panel = page.getByTestId("editor-display-settings-panel");
+        const panel = await openDisplaySettings(page);
         await expect(panel).toBeVisible();
 
         // Pick "narrow" (680px). The select fires onChange which
@@ -79,9 +107,7 @@ test.describe("Editor display settings smoke", () => {
         const article = await createArticle("EditorDisplay Reset Test");
         await page.goto(`/articles/${article.id}`);
 
-        const toggle = page.getByTestId("editor-display-settings-toggle");
-        await expect(toggle).toBeVisible({timeout: 10000});
-        await toggle.click();
+        await openDisplaySettings(page);
 
         // Change all four to non-default values.
         await page.getByTestId("editor-display-settings-width-trigger").click();
