@@ -84,7 +84,14 @@ def test_non_mapping_top_level_fails_loud(tmp_path: Path) -> None:
 def test_committed_ignore_file_parses() -> None:
     """The real committed `.security-ignore.yml` is well-formed and parses."""
     args = security_ignore_args.build_ignore_args(REPO_ROOT / ".security-ignore.yml")
-    assert args == ["--ignore-vuln", "CVE-2025-68616"]
+    assert args == [
+        "--ignore-vuln",
+        "CVE-2025-68616",
+        "--ignore-vuln",
+        "PYSEC-2026-3412",
+        "--ignore-vuln",
+        "PYSEC-2026-2132",
+    ]
     document = yaml.safe_load((REPO_ROOT / ".security-ignore.yml").read_text())
     for entry in document["ignored"]:
         assert {"id", "reason", "tracking", "review_by"} <= entry.keys()

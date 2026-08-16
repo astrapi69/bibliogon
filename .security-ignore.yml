@@ -24,3 +24,23 @@ ignored:
       until the export output is re-validated against the new major.
     tracking: "#47"
     review_by: "2026-09-01"
+  - id: PYSEC-2026-3412
+    package: weasyprint
+    reason: >
+      CSS injection through unescaped presentational-hint attribute values.
+      Reachable only with presentational_hints=True; both WeasyPrint call
+      sites (bibliogon_export picture_book_pdf, bibliogon_comics
+      comic_book_pdf) construct HTML(string=..., base_url=...) and so keep
+      the default presentational_hints=False. Upstream has published no
+      fixed version, so there is nothing to upgrade to.
+    tracking: "#717"
+    review_by: "2026-11-16"
+  - id: PYSEC-2026-2132
+    package: click
+    reason: >
+      Command injection in click.edit(). Bibliogon never calls click.edit();
+      click is a transitive dependency only (gtts, uvicorn, mutmut). The fix
+      is click 8.3.3, which is unreachable while gtts 2.5.4 (the latest
+      release) caps click at ">=7.1,<8.2".
+    tracking: "#717"
+    review_by: "2026-11-16"
