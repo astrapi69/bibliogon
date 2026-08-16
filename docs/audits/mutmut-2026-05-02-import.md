@@ -635,3 +635,73 @@ been at risk.
 
 Always `rm -rf backend/mutants` before changing `paths_to_mutate` and
 re-running locally. `make mutmut-backend` does not clean for you.
+
+### 2026-08-16 — first green nightly, and the score baseline
+
+Run [31964070604](https://github.com/astrapi69/bibliogon/actions/runs/31964070604)
+is the first complete run this workflow has ever produced. 51 minutes of
+mutation on a 4-vCPU runner, against the job's 90-minute timeout:
+
+```
+total=12928  checked=12928  killed=7935  survived=2205
+no_tests=2781  timeout=7
+score vs total:     7935/12928 = 61.4%
+score vs exercised: 7935/10140 = 78.3%
+```
+
+Both denominators are reported because they answer different questions.
+`killed/total` (the figure the 2026-05-14 entry above uses) counts
+mutants with no covering test against you; `killed/(killed+survived)`
+scores only the mutants a test actually exercised. The gap between 61.4%
+and 78.3% is entirely the `no_tests` pool.
+
+The workflow now gates on the **exercised** score with a default
+threshold of 75.0%, overridable through the `MUTATION_MIN_SCORE`
+repository variable. Exercised rather than total, because the uncovered
+pool moves when the `tests_dir` allowlist is edited rather than when
+test quality changes — gating on it would make an allowlist edit look
+like a quality regression.
+
+### Allowlist drift — why 2781 mutants had no tests
+
+The `no_tests` pool grew from 206 (2026-05-14) to 2781 because the
+mutated scope kept growing while `tests_dir` did not. Grepping the suite
+for test files that reference `app.services.*` or `app.import_plugins.*`
+finds 60; only 33 were listed. The 27 missing ones:
+
+```
+test_archive_safety            test_import_sanitization
+test_asset_rewrite             test_import_staging
+test_backup_full_roundtrip     test_new_chapter_types
+test_backup_import_frontend_arrays  test_plugin_license
+test_bgb_archive_reader        test_scrivener_binder
+test_book_type_registry        test_scrivener_import
+test_book_types_endpoint       test_serializer
+test_chapter_inspector_notes   test_story_entity_registry
+test_content_type_registry     test_test_reset_infra
+test_content_types_endpoint    test_toc_validation
+test_custom_css_import         test_writing_goals
+test_filename_slug             test_writing_history_stats
+test_git_sync_fetch            test_writing_progress_no_negative
+test_google_tts_setup
+```
+
+Several are obvious losses — `test_filename_slug.py` is the only test of
+`services/filename_slug.py`, `test_serializer.py` the only one of
+`backup/serializer.py`, and the three `test_writing_*` files the only
+ones of `writing_stats.py`. Every mutant in those modules was scored
+`no_tests` purely because the file was not on the list.
+
+Individually they are cheap (66 s wall clock for all 27, most of it
+pytest start-up; the slowest is `test_content_types_endpoint.py` at
+7.2 s). The cost is indirect: adding them converts uncovered mutants
+into *executed* ones, so the run has more work to do, and the exercised
+score moves as the newly-covered modules contribute their own
+kill ratio.
+
+**Reviewing this later: re-measure before trusting the threshold.** The
+75% default is calibrated against the 39-file allowlist. Expanding to 66
+changes both the runtime and the denominator, so the next full run's
+numbers are the new baseline — and if the runtime approaches the
+90-minute timeout, raise `timeout-minutes` rather than shrinking the
+allowlist again.
