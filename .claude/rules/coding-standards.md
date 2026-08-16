@@ -8,7 +8,8 @@
 
 ## Python (Backend + Plugins)
 
-- Python 3.11+, Poetry for dependency management.
+- Python 3.12+, Poetry for dependency management (the backend uses PEP 695
+  generics; the plugin packages stay compatible with 3.11).
 - Type hints ALWAYS. No `Any` without a comment.
 - Docstrings for public functions (Google style).
 - pytest for tests. Prefer fixtures, no setUp/tearDown.
