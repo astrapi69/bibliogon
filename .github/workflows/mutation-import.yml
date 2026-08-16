@@ -74,13 +74,27 @@ jobs:
         working-directory: backend
         run: poetry install --no-interaction --no-ansi
 
+      # mutmut reuses an existing mutants/ tree instead of regenerating,
+      # so restoring an incompatible one silently poisons the run: it dies
+      # in ~30s and `|| true` reports success (#721).
+      #
+      # The key therefore hashes everything that decides what the tree
+      # should contain, pyproject.toml included -- it holds
+      # paths_to_mutate/tests_dir and the mutmut version pin, and a change
+      # to either invalidates every cached mutant. The old key hashed
+      # app/routers/import_orchestrator.py (no longer in scope) and missed
+      # both pyproject.toml and app/services/, so scope changes could not
+      # invalidate it.
+      #
+      # restore-keys is deliberately absent. A prefix fallback restores the
+      # newest cache with a matching prefix even when the exact key misses,
+      # which is precisely how a broken tree from an earlier run gets
+      # replayed forever. A miss now means a clean full run instead.
       - name: Restore mutmut cache
         uses: actions/cache@v5
         with:
           path: backend/mutants/
-          key: mutmut-import-${{ hashFiles('backend/app/import_plugins/**', 'backend/app/routers/import_orchestrator.py', 'backend/tests/**') }}
-          restore-keys: |
-            mutmut-import-
+          key: mutmut-v2-${{ hashFiles('backend/pyproject.toml', 'backend/app/import_plugins/**', 'backend/app/services/**', 'backend/tests/**') }}
 
       - name: Override mutmut scope in pyproject.toml
         working-directory: backend
@@ -151,6 +165,52 @@ jobs:
       - name: Export mutation stats
         working-directory: backend
         run: poetry run mutmut export-cicd-stats || true
+
+      # Liveness guard, NOT a score gate (#721). Every other step ends in
+      # `|| true` because mutmut exits non-zero whenever survivors exist,
+      # and that blanket suppression has now reported "success" three
+      # times for a run that checked nothing at all: 2026-05-12 (71s),
+      # and twice on 2026-08-16 (61s, 89s). This fails only when the tool
+      # produced no verdict for a single mutant, which is always a broken
+      # run rather than a quality signal. Survivors still pass.
+      - name: Verify the run actually checked mutants
+        working-directory: backend
+        run: |
+          python <<'PY'
+          import json
+          import sys
+          from pathlib import Path
+
+          stats_path = Path("mutants/mutmut-cicd-stats.json")
+          if not stats_path.exists():
+              sys.exit(f"{stats_path} missing -- mutmut produced no stats at all")
+
+          stats = json.loads(stats_path.read_text(encoding="utf-8"))
+          total = stats.get("total", 0)
+          checked = sum(
+              stats.get(k, 0)
+              for k in ("killed", "survived", "no_tests", "timeout", "suspicious", "skipped")
+          )
+          killed = stats.get("killed", 0)
+          scored = killed + stats.get("survived", 0)
+          print(f"total={total} checked={checked} " + " ".join(f"{k}={v}" for k, v in stats.items()))
+          # Two denominators, because they answer different questions and
+          # the audit doc uses the first: killed/total counts mutants with
+          # no covering test against you, killed/(killed+survived) scores
+          # only the mutants a test actually exercised. Reporting one alone
+          # invites comparing against the other.
+          if total:
+              print(f"score vs total:     {killed}/{total} = {100 * killed / total:.1f}%")
+          if scored:
+              print(f"score vs exercised: {killed}/{scored} = {100 * killed / scored:.1f}%")
+          if total and not checked:
+              sys.exit(
+                  "mutmut checked 0 of "
+                  f"{total} mutants -- the run aborted (commonly a poisoned "
+                  "mutants/ cache or a stats-collection crash). See the "
+                  "'Run mutmut' step output."
+              )
+          PY
 
       - name: Upload mutmut artifacts
         uses: actions/upload-artifact@v6
