@@ -166,21 +166,43 @@ jobs:
         working-directory: backend
         run: poetry run mutmut export-cicd-stats || true
 
-      # Liveness guard, NOT a score gate (#721). Every other step ends in
-      # `|| true` because mutmut exits non-zero whenever survivors exist,
-      # and that blanket suppression has now reported "success" three
-      # times for a run that checked nothing at all: 2026-05-12 (71s),
-      # and twice on 2026-08-16 (61s, 89s). This fails only when the tool
-      # produced no verdict for a single mutant, which is always a broken
-      # run rather than a quality signal. Survivors still pass.
-      - name: Verify the run actually checked mutants
+      # Two gates (#721). Every other step ends in `|| true` because mutmut
+      # exits non-zero whenever survivors exist, and that blanket
+      # suppression reported "success" three times for a run that checked
+      # nothing at all: 2026-05-12 (71s) and twice on 2026-08-16 (61s, 89s).
+      #
+      #   1. Liveness  -- fails when no mutant got a verdict. Always a
+      #      broken run, never a quality signal.
+      #   2. Score     -- fails when the mutation score drops below
+      #      MUTATION_MIN_SCORE.
+      #
+      # The score is measured against EXERCISED mutants (killed / (killed +
+      # survived)), not against total. Mutants with no covering test are
+      # real debt, but they are allowlist debt: the tests_dir list in
+      # pyproject.toml has drifted behind the source scope, so killed/total
+      # moves when that list changes rather than when test quality changes.
+      # Gating on the exercised score asks "of the code the tests do reach,
+      # how much do they actually pin?", which is the question a threshold
+      # can answer honestly. The uncovered pool is tracked separately.
+      #
+      # Baseline on the first green full run (2026-08-16, run 31964070604):
+      # 7935 killed / 2205 survived / 2781 no_tests / 7 timeout of 12928 =
+      # 78.3% exercised, 61.4% of total. The 75% default leaves ~3pp of
+      # headroom so ordinary churn does not trip it. Raise it as the score
+      # improves; override without a code change by setting the
+      # MUTATION_MIN_SCORE repository variable.
+      - name: Verify mutation run and score
         working-directory: backend
+        env:
+          MUTATION_MIN_SCORE: ${{ vars.MUTATION_MIN_SCORE || '75.0' }}
         run: |
           python <<'PY'
           import json
+          import os
           import sys
           from pathlib import Path
 
+          min_score = float(os.environ.get("MUTATION_MIN_SCORE", "75.0"))
           stats_path = Path("mutants/mutmut-cicd-stats.json")
           if not stats_path.exists():
               sys.exit(f"{stats_path} missing -- mutmut produced no stats at all")
@@ -210,6 +232,22 @@ jobs:
                   "mutants/ cache or a stats-collection crash). See the "
                   "'Run mutmut' step output."
               )
+
+          # Score gate. Skipped when nothing was exercised: that is the
+          # liveness failure above, and dividing by zero would mask it.
+          if scored:
+              score = 100 * killed / scored
+              if score < min_score:
+                  sys.exit(
+                      f"mutation score {score:.1f}% is below the "
+                      f"{min_score:.1f}% threshold ({killed} killed / "
+                      f"{scored} exercised). Either the new code is not "
+                      "pinned by tests, or a test stopped pinning code it "
+                      "used to. Open the mutmut artifact and triage the "
+                      "survivors; adjust MUTATION_MIN_SCORE only if the "
+                      "drop is understood and accepted."
+                  )
+              print(f"score {score:.1f}% >= threshold {min_score:.1f}% -- OK")
           PY
 
       - name: Upload mutmut artifacts
