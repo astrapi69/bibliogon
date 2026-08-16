@@ -87,22 +87,36 @@ jobs:
         env:
           INPUT_PATHS: ${{ github.event.inputs.paths }}
         run: |
-          # mutmut v3 reads paths_to_mutate from pyproject.toml. Rewrite
-          # the [tool.mutmut] section to the import-only scope before
-          # running. The CI workspace is throwaway, no need to restore.
+          # mutmut v3 reads paths_to_mutate from pyproject.toml, and that
+          # is the single source of truth for the scope (#721). Only a
+          # workflow_dispatch `paths` input rewrites it; with no input we
+          # leave pyproject.toml alone. The CI workspace is throwaway, so
+          # the rewrite needs no restore.
+          #
+          # This step used to hardcode a default of
+          #   ["app/import_plugins/", "app/routers/import_orchestrator.py"]
+          # which had drifted from pyproject's
+          #   ["app/import_plugins/", "app/services/"]
+          # and, worse, broke every run: naming a single FILE under
+          # app/routers/ makes mutmut create mutants/app/routers/
+          # containing only that file. tests/conftest.py symlinks missing
+          # siblings of app/ back to the real tree but skips any entry that
+          # already exists, so a partially-copied package stays partial and
+          # the harness dies with
+          #   ImportError: cannot import name 'ai_template_bulk' from 'app.routers'
+          # Whole-directory scopes (what pyproject declares) do not have
+          # this problem. Keep dispatch overrides to directories.
           python <<'PY'
           import os
           import re
+          import sys
           from pathlib import Path
 
           override = os.environ.get("INPUT_PATHS", "").strip()
-          if override:
-              entries = [p.strip() for p in override.split(",") if p.strip()]
-          else:
-              entries = [
-                  "app/import_plugins/",
-                  "app/routers/import_orchestrator.py",
-              ]
+          if not override:
+              print("No paths input -- using pyproject.toml scope as-is")
+              sys.exit(0)
+          entries = [p.strip() for p in override.split(",") if p.strip()]
           paths_repr = "[" + ", ".join(f'"{p}"' for p in entries) + "]"
 
           pp = Path("pyproject.toml")
@@ -128,16 +142,24 @@ jobs:
         working-directory: backend
         run: poetry run mutmut results || true
 
-      - name: Generate HTML report
+      # mutmut 3.5 has no `html` subcommand -- the step that used to live
+      # here ran `mutmut html` and only ever printed
+      # "Error: No such command 'html'", swallowed by `|| true` (#721).
+      # `export-cicd-stats` is the machine-readable equivalent and writes
+      # mutants/mutmut-cicd-stats.json (killed / survived / no_tests /
+      # timeout / total), which the upload step below already collects.
+      - name: Export mutation stats
         working-directory: backend
-        run: poetry run mutmut html || true
+        run: poetry run mutmut export-cicd-stats || true
 
       - name: Upload mutmut artifacts
         uses: actions/upload-artifact@v6
         if: always()
         with:
           name: mutmut-import-${{ github.run_id }}
-          path: |
-            backend/html/
-            backend/mutants/
+          # backend/html/ dropped: it was the output of the `mutmut html`
+          # step, and mutmut 3.5 has no such command, so it never existed
+          # (upload-artifact warned "no files found" for it). The stats
+          # JSON lands in backend/mutants/ alongside the mutant tree.
+          path: backend/mutants/
           retention-days: 30
