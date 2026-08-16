@@ -567,3 +567,71 @@ So the enabled nightly publishes an HTML report as an artifact but
 cannot fail on a mutation-score regression. It is an artifact generator,
 not a gate. Adding a score threshold (the original acceptance criterion
 was >= 60% on `app/import_plugins/`) is tracked separately in #721.
+
+### Addendum — two more causes behind the same symptom
+
+Fixing the gate and the mutmut pin was not enough. Dispatching the
+workflow by hand still "succeeded" in about a minute with `mutmut
+results` reporting every mutant as `not checked`.
+
+**Cause 3 — the workflow mutated a scope that cannot work.** The
+"Override mutmut scope" step hardcoded
+
+```
+["app/import_plugins/", "app/routers/import_orchestrator.py"]
+```
+
+while `pyproject.toml` declares `["app/import_plugins/",
+"app/services/"]`, so CI never measured the audited scope. Naming a
+single FILE under `app/routers/` also makes mutmut create
+`mutants/app/routers/` containing only that file, and the conftest
+symlink logic skips entries that already exist:
+
+```python
+_dst = _MUTANT_APP / _app_entry.name
+if _dst.exists():
+    continue
+```
+
+so the partially-copied package stays partial and the harness dies with
+`ImportError: cannot import name 'ai_template_bulk' from 'app.routers'`.
+Whole-directory scopes do not have this problem. The step now leaves
+`pyproject.toml` alone unless a `paths` dispatch input is given —
+pyproject is the single source of truth for the scope. **Keep dispatch
+overrides to directories, never single files.**
+
+**Cause 4 — the cache replayed the breakage.** mutmut reuses an existing
+`mutants/` tree instead of regenerating it, so restoring an incompatible
+one reproduces the failure indefinitely. The cache key hashed
+`app/import_plugins/`, `app/routers/import_orchestrator.py` and
+`tests/` — neither `pyproject.toml` (which holds `paths_to_mutate`,
+`tests_dir` and the version pin) nor `app/services/` — so a scope change
+could not invalidate it, and `restore-keys: mutmut-import-` restored the
+newest prefix match even on an exact-key miss. Key is now
+`mutmut-v2-<hash of pyproject.toml + both mutated trees + tests/>` with
+no `restore-keys`: a miss means a clean full run.
+
+**Liveness guard.** Because every step ends in `|| true` (mutmut exits
+non-zero whenever survivors exist), this workflow reported success three
+times for runs that checked nothing: 2026-05-12 (71 s) and twice on
+2026-08-16 (61 s, 89 s). A new step reads
+`mutants/mutmut-cicd-stats.json` and fails only when 0 of N mutants got
+a verdict — always a broken run, never a quality signal. Survivors still
+pass. This is deliberately **not** a score threshold.
+
+It also prints the score against both denominators, because this
+document uses `killed/total` (which counts uncovered mutants against
+you) while `killed/(killed+survived)` scores only exercised mutants;
+quoting one invites comparison against the other.
+
+### Hazard — running mutmut over a stale mutants/ tree corrupts the source
+
+Running `mutmut run` with a `mutants/` tree left over from a *different*
+scope wrote mutmut's trampoline preamble into the real
+`backend/app/services/*.py` and dropped `*.py.meta` sidecars beside
+them. Recovered with `git checkout -- backend/app/services/` plus
+deleting the `.meta` files, but an uncommitted working tree would have
+been at risk.
+
+Always `rm -rf backend/mutants` before changing `paths_to_mutate` and
+re-running locally. `make mutmut-backend` does not clean for you.
