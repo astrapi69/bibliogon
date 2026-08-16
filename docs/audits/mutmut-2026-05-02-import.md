@@ -10,6 +10,11 @@
 **[FULLY UNBLOCKED — first complete run 2026-05-14. Scope
 expanded to ``app/services/`` later the same day.]**
 
+**[2026-08-16 (#721): the nightly was never actually running, and
+mutmut 3.6.0 had broken the run outright. Both fixed — see
+"2026-08-16 — nightly never ran + mutmut 3.6.0 regression" at the
+end of this document.]**
+
 Combined scope (``app/import_plugins/`` + ``app/services/``)
 2026-05-14 evening run after ``MUTMUT-EXPAND-SCOPE-01``:
 
@@ -465,3 +470,100 @@ or test changes.
 - Rules: [.claude/rules/quality-checks.md](../../.claude/rules/quality-checks.md) (Mutation testing section)
 - Tooling baseline: commit `28fe59c` ("feat(Q-02): set up mutation testing with mutmut v3")
 - Workflow: [.github/workflows/mutation-import.yml](../../.github/workflows/mutation-import.yml)
+
+## 2026-08-16 — nightly never ran + mutmut 3.6.0 regression
+
+Two independent problems, found together while investigating why the
+"Mutation Testing (Import Orchestrator)" workflow shows `skipped` on
+every scheduled run (issue #721).
+
+### 1. The nightly was gated OFF and nobody ever flipped the switch
+
+The job carried
+
+```yaml
+if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_MUTATION == 'true'
+```
+
+and the repository variable `ENABLE_NIGHTLY_MUTATION` was never set. So
+from the 2026-05-02 wiring onward, every scheduled run reported
+`skipped` (e.g. run `31922833810`, job `mutmut (import scope)`), and no
+mutation score was tracked after the 2026-05-14 manual baseline.
+
+This is the exact failure mode already catalogued in
+`.claude/rules/lessons-learned.md` under *"Operational gaps masquerade
+as wired infrastructure"* — the entry even names this workflow. The
+opt-in variable was a documented switch that nothing ever flipped.
+
+Fix: inverted to opt-OUT. The schedule now runs by default and
+`DISABLE_NIGHTLY_MUTATION=true` is the kill switch. A silent non-run is
+no longer possible; disabling it is now a deliberate act.
+
+### 2. mutmut 3.6.0 breaks any test that changes the working directory
+
+`mutmut = "^3.5.0"` had resolved forward to 3.6.0, which fails during
+stats collection:
+
+```
+FAILED tests/test_backup_import_revive.py::test_backup_import_revives_soft_deleted_book
+1 failed, 199 passed
+failed to collect stats. runner returned 1
+```
+
+The same 39-file `tests_dir` subset passes cleanly under plain pytest
+(582 passed), so it is not a test regression. The traceback ends in
+mutmut itself:
+
+```
+File ".../mutmut/mutation/trampoline.py", line 60, in trampoline
+File ".../mutmut/__main__.py", line 120, in record_trampoline_hit
+File "/usr/lib/python3.12/pathlib.py", line 1242, in resolve
+FileNotFoundError: [Errno 2] No such file or directory: 'app'
+```
+
+3.6.0 added this to `record_trampoline_hit`, which runs on *every*
+mutated call:
+
+```python
+source_paths = [p.resolve(strict=True) for p in Config.get().source_paths]
+```
+
+`source_paths` are relative (`app/import_plugins/`, `app/services/`), and
+`strict=True` raises when they do not exist relative to the *current*
+working directory. Bibliogon has many tests that legitimately
+`monkeypatch.chdir(tmp_path)` (`test_backup_import_revive.py`,
+`test_audiobook_persistence.py`, ...); while such a test is running,
+`app` is unresolvable and the whole run dies.
+
+mutmut 3.5.0's `record_trampoline_hit` performs no path resolution at
+all and is CWD-independent — which is why the 2026-05-14 baseline
+worked and nothing since does.
+
+Fix: pinned `mutmut = "~3.5.0"` (3.5.x only) with a comment in
+`backend/pyproject.toml` explaining why it must not be widened back to a
+caret. Working around it on the 3.6 side would mean dropping every
+chdir-using test file from `tests_dir`, which would lower the killed
+count and stay fragile against any future chdir test.
+
+Re-check on the next mutmut release: if upstream stops resolving
+relative `source_paths` per trampoline hit, the caret can return. Note
+also that 3.6 renames `paths_to_mutate` to `source_paths` (3.5 emits a
+deprecation warning for it), and the workflow's "Override mutmut scope"
+step rewrites `paths_to_mutate` by regex with a hard
+`raise SystemExit` when the key is missing — so that step must be
+updated in the same change as any future key rename.
+
+### Note on what the nightly can and cannot tell you
+
+Every meaningful step in the workflow ends in `|| true`:
+
+```yaml
+run: poetry run mutmut run || true
+run: poetry run mutmut results || true
+run: poetry run mutmut html || true
+```
+
+So the enabled nightly publishes an HTML report as an artifact but
+cannot fail on a mutation-score regression. It is an artifact generator,
+not a gate. Adding a score threshold (the original acceptance criterion
+was >= 60% on `app/import_plugins/`) is tracked separately in #721.

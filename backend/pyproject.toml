@@ -43,7 +43,17 @@ defusedxml = "^0.7.1"
 [tool.poetry.group.dev.dependencies]
 pytest = "^9.0.0"
 httpx = "^0.28.0"
-mutmut = "^3.5.0"
+# Held at 3.5.x on purpose -- do NOT widen back to a caret (#721).
+# mutmut 3.6.0 resolves the configured source_paths on EVERY trampoline
+# hit via `p.resolve(strict=True)`, and those paths are relative. Any
+# test that monkeypatch.chdir()s away (test_backup_import_revive,
+# test_audiobook_persistence, ...) then makes "app" unresolvable and the
+# run dies during stats collection with
+# `FileNotFoundError: No such file or directory: 'app'`, i.e. the whole
+# nightly produces no score. 3.5.0's record_trampoline_hit does no such
+# resolution and is CWD-independent. Revisit when upstream stops
+# resolving relative source_paths per hit.
+mutmut = "~3.5.0"
 mypy = "^2.1.0"
 types-pyyaml = "^6.0.12.20250915"
 types-markdown = "^3.10.2.20260211"

@@ -2943,14 +2943,14 @@ files = [
 
 [[package]]
 name = "mutmut"
-version = "3.6.0"
+version = "3.5.0"
 description = "mutation testing for Python 3"
 optional = false
 python-versions = ">=3.10"
 groups = ["dev"]
 files = [
-    {file = "mutmut-3.6.0-py3-none-any.whl", hash = "sha256:a9f5b8dcf6cbf9496769d7cf8bdbba37a0ec709ad98f88d103238b62f10bdf37"},
-    {file = "mutmut-3.6.0.tar.gz", hash = "sha256:bcbd3e4d0d2d4edf3dfb42955417279a8866a3dbbcb87d619f2f3fd0ac7fafda"},
+    {file = "mutmut-3.5.0-py3-none-any.whl", hash = "sha256:f19f2dd2e977eb9dc17255d8cb11e24fbfc3191620fba3108cac25779c9d78c9"},
+    {file = "mutmut-3.5.0.tar.gz", hash = "sha256:548186d4b0c494b7b9895db82871cb1f229b9271c9ff7cd633e348dd9afcc772"},
 ]
 
 [package.dependencies]
@@ -9334,4 +9334,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "8730ec2e20382ccbd317310bf0a53b32306bb3ab282688bbd7d883732e4558de"
+content-hash = "2c831ad394ba5f16bf6345f4aba58ce33ce40d98a0d5631bbdf639e6ad3eb188"

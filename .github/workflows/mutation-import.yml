@@ -11,17 +11,23 @@ name: Mutation Testing (Import Orchestrator)
 #
 # On/off switch
 # -------------
-# This workflow is OFF by default for scheduled runs.
+# This workflow is ON by default for scheduled runs (#721).
 #
-#   * Scheduled runs (nightly 02:00 UTC) execute only when the
-#     repository variable ENABLE_NIGHTLY_MUTATION is set to "true".
-#     Set / unset the variable in
-#       Settings -> Secrets and variables -> Actions -> Variables
+#   * Scheduled runs (nightly 02:00 UTC) execute unless the repository
+#     variable DISABLE_NIGHTLY_MUTATION is set to "true". Set / unset it
+#     in Settings -> Secrets and variables -> Actions -> Variables.
 #     No code change required to flip it.
 #
 #   * workflow_dispatch (manual "Run workflow" button) always runs
 #     regardless of the variable, so a maintainer can do a one-off
-#     audit without enabling the nightly job.
+#     audit even while the nightly is disabled.
+#
+# Was previously opt-IN behind ENABLE_NIGHTLY_MUTATION. That variable was
+# never set, so from the 2026-05-02 wiring until #721 every scheduled run
+# reported "skipped" and no mutation score was ever tracked after the
+# 2026-05-14 manual baseline -- the "wired infrastructure that never ran"
+# failure mode in .claude/rules/lessons-learned.md. Defaulting to ON makes
+# a silent non-run impossible; the kill switch is preserved, just inverted.
 
 on:
   schedule:
@@ -53,7 +59,7 @@ jobs:
     name: mutmut (import scope)
     runs-on: ubuntu-latest
     timeout-minutes: 90
-    if: github.event_name == 'workflow_dispatch' || vars.ENABLE_NIGHTLY_MUTATION == 'true'
+    if: github.event_name == 'workflow_dispatch' || vars.DISABLE_NIGHTLY_MUTATION != 'true'
     steps:
       - uses: actions/checkout@v5
 
