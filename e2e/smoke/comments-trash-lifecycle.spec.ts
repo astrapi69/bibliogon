@@ -131,6 +131,15 @@ test.describe("Comments trash-lifecycle (Bug 10)", () => {
         await page.getByTestId(`comments-admin-delete-${commentId}`).click();
         await page.getByRole("button", {name: /(Bestätigen|Confirm|OK)/}).click();
 
+        // Wait for the soft-delete round-trip to land BEFORE switching to
+        // the trash view: the trash list is fetched once on toggle, so a
+        // toggle racing the in-flight delete shows a trash view without
+        // the row and nothing refetches (the retry-exhausting nightly
+        // flake - the sibling soft-delete test above always had this wait).
+        await expect(
+            page.getByTestId(`comments-admin-row-${commentId}`),
+        ).not.toBeVisible({timeout: 5000});
+
         await page.getByTestId("comments-trash-toggle").click();
         await expect(
             page.getByTestId(`comments-trash-row-${commentId}`),

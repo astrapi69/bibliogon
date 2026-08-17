@@ -59,6 +59,11 @@ test.describe("Editor display settings smoke", () => {
         const article = await createArticle("EditorDisplay Width Test");
         await page.goto(`/articles/${article.id}`);
 
+        // Wait for the editor surface to finish mounting before touching
+        // the popover: the content-load re-render can otherwise swallow
+        // the toggle click or unmount the just-opened popover.
+        await expect(page.locator(".ProseMirror")).toBeVisible({timeout: 10000});
+
         // Open the popover; trigger button lives just below the
         // Toolbar in the Editor.tsx surface.
         const panel = await openDisplaySettings(page);
@@ -107,6 +112,10 @@ test.describe("Editor display settings smoke", () => {
         const article = await createArticle("EditorDisplay Reset Test");
         await page.goto(`/articles/${article.id}`);
 
+        // Mount-settle wait (same as the width test), then the #720
+        // retry-open helper - the StrictMode remount can still swallow
+        // the first toggle click.
+        await expect(page.locator(".ProseMirror")).toBeVisible({timeout: 10000});
         await openDisplaySettings(page);
 
         // Change all four to non-default values.
