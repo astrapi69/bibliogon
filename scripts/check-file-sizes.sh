@@ -15,7 +15,12 @@
 #                         add new entries.
 #
 # Tests and generated directories (mutants/, dev-dist/, site/, coverage/)
-# are NOT checked - the policy targets production source code.
+# are NOT checked - the policy targets production source code. Neither is
+# .claude/, which holds agent tooling and, under .claude/worktrees/, the
+# checkouts of parallel sessions: scanning those reported a parallel
+# session's copy of a file as a phantom ERROR against the main tree, and
+# the whitelist never matched because its keys are main-tree-relative
+# (#443).
 #
 # Exit codes:
 #   0 = all clean, only warnings, or only baseline debt
@@ -67,6 +72,7 @@ FILES=$(find . \
     ! -path "*/coverage/*" \
     ! -path "*/.next/*" \
     ! -path "*/mutants/*" \
+    ! -path "*/.claude/*" \
     ! -path "*/dev-dist/*" \
     ! -path "./site/*" \
     ! -path "*/htmlcov/*" \
