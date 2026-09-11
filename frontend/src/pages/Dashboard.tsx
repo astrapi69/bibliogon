@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import { api } from "../api/client";
 import { getStorage } from "../storage";
 import WritingGoalWidget from "../components/book/WritingGoalWidget";
 import NewFromTemplateButton from "../components/book/NewFromTemplateButton";
@@ -15,6 +14,7 @@ import { formatActiveBookFilters } from "../utils/format/formatActiveFilters";
 import { useBookSelection } from "../components/book/useBookSelection";
 import ViewToggle from "../components/dashboard/ViewToggle";
 import { useTrashViewMode, useViewMode } from "../hooks/content/useViewMode";
+import { useBackupExport } from "../hooks/ui/useBackupExport";
 import { usePagedList } from "../hooks/ui/usePagedList";
 import DashboardFilterBar from "../components/dashboard/DashboardFilterBar";
 import DashboardFilterSheet from "../components/dashboard/DashboardFilterSheet";
@@ -273,10 +273,7 @@ export default function Dashboard() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [loading, books]);
 
-    const handleBackupExport = () => {
-        if (offline) return;
-        window.open(api.backup.exportUrl(), "_blank");
-    };
+    const handleBackupExport = useBackupExport(offline);
 
     return (
         <DropZone

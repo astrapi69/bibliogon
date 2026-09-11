@@ -11,9 +11,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FileText } from "lucide-react";
 
-import { api } from "../api/client";
 import { getStorage } from "../storage";
 import { useI18n } from "../hooks/useI18n";
+import { useBackupExport } from "../hooks/ui/useBackupExport";
 import { useFeature } from "@astrapi69/feature-strategy-react";
 import { FEATURES } from "../features/featureConfig";
 import { useContentTypes } from "../hooks/useContentTypes";
@@ -182,10 +182,7 @@ export default function ArticleList() {
      *  articles join when the backup pipeline supports them - tracked
      *  separately). Articles dashboard exposes the action so users
      *  do not have to navigate to the books dashboard to trigger it. */
-    const handleBackupExport = () => {
-        if (offline) return;
-        window.open(api.backup.exportUrl(), "_blank");
-    };
+    const handleBackupExport = useBackupExport(offline);
 
     return (
         <DropZone

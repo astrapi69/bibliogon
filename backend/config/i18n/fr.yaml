@@ -244,6 +244,7 @@ ui:
     book_no_author: "—"
     confirm_delete: "Voulez-vous vraiment supprimer ce livre?"
     backup: "Sauvegarde"
+    backup_preparing: "Préparation de la sauvegarde. Le téléchargement démarrera automatiquement dès que l'archive sera prête ; cela prend plus de temps pour les grandes bibliothèques."
     restore: "Restaurer"
     import: "Importer"
     trash: "Corbeille"

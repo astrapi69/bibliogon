@@ -259,6 +259,7 @@
       "book_no_author": "—",
       "confirm_delete": "Deseja realmente excluir este livro?",
       "backup": "Cópia de segurança",
+      "backup_preparing": "A preparar a cópia de segurança. A transferência começa automaticamente assim que o arquivo estiver pronto; em bibliotecas grandes demora mais.",
       "restore": "Restaurar",
       "import": "Importar",
       "trash": "Lixeira",
