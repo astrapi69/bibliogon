@@ -5,6 +5,10 @@
  * itself is online (a device-offline situation belongs to the
  * existing OfflineBanner - both at once would be noise); disappears
  * on recovery without a reload.
+ *
+ * Since #770 "down" means CONFIRMED down, so the banner cases below drive
+ * the store with `markDownForTests()`; an unconfirmed suspicion must leave
+ * the banner hidden, which is its own case at the end.
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
@@ -39,7 +43,7 @@ describe("BackendUnreachableBanner", () => {
   it("appears on down and disappears again on recovery", () => {
     render(<BackendUnreachableBanner />);
     act(() => {
-      backendReachability.reportNetworkFailure();
+      backendReachability.markDownForTests();
     });
     expect(screen.getByTestId("backend-unreachable-banner")).toBeTruthy();
 
@@ -56,12 +60,38 @@ describe("BackendUnreachableBanner", () => {
     );
     render(<BackendUnreachableBanner />);
     act(() => {
-      backendReachability.reportNetworkFailure();
+      backendReachability.markDownForTests();
     });
 
     await act(async () => {
       fireEvent.click(screen.getByTestId("backend-unreachable-retry"));
     });
     expect(screen.queryByTestId("backend-unreachable-banner")).toBeNull();
+  });
+
+  // #770: a request-specific failure (one oversized upload reset, one
+  // stalled export) must not raise the GLOBAL outage banner. The banner
+  // waits for the confirmation probe.
+  it("stays hidden while a failure is still unconfirmed", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockReturnValue(new Promise(() => {})));
+    render(<BackendUnreachableBanner />);
+
+    await act(async () => {
+      backendReachability.reportNetworkFailure();
+    });
+
+    expect(backendReachability.isSuspected()).toBe(true);
+    expect(screen.queryByTestId("backend-unreachable-banner")).toBeNull();
+  });
+
+  it("appears once the confirmation probe fails", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockRejectedValue(new TypeError("Failed to fetch")));
+    render(<BackendUnreachableBanner />);
+
+    await act(async () => {
+      backendReachability.reportNetworkFailure();
+    });
+
+    expect(screen.getByTestId("backend-unreachable-banner")).toBeTruthy();
   });
 });

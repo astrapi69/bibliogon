@@ -90,7 +90,11 @@ describe("guardedFetch network classification", () => {
     expect(caught).toBeInstanceOf(ApiError);
     expect((caught as ApiError).network).toBe(true);
     expect((caught as ApiError).status).toBe(502);
-    expect(backendReachability.isDown()).toBe(true);
+    // Since #770 the failure is reported as a SUSPICION; the confirmation
+    // probe (which classifies its own 502 the same way) is what flips the
+    // banner. The stubbed fetch keeps answering 502, so it confirms.
+    expect(backendReachability.isSuspected()).toBe(true);
+    await vi.waitFor(() => expect(backendReachability.isDown()).toBe(true));
   });
 
   it("does NOT hijack a FastAPI 502 (ExternalServiceError carries JSON)", async () => {

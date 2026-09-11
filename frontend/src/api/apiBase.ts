@@ -34,3 +34,27 @@ export function isBackendlessOffline(): boolean {
   }
   return import.meta.env.VITE_STORAGE_MODE === "dexie";
 }
+
+/** Gateway statuses a reverse proxy emits when the backend behind it is
+ *  dead. Measured 2026-09-11 (#765): the Vite dev proxy answers 502
+ *  `text/plain` with an empty body, nginx (docker-compose.prod) answers 502
+ *  `text/html`. Only the "everything down" case (`make dev-down`) rejects
+ *  the fetch outright, so without this branch the outage banner would never
+ *  appear in the deployed topologies. */
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+
+/** True for a proxy-level gateway failure, false for a backend-authored one.
+ *  Bibliogon's own `ExternalServiceError` (Pandoc / TTS / LanguageTool) maps
+ *  to HTTP 502 too - but as `application/json` carrying a `detail` the user
+ *  must see. The content-type is the discriminator; the body is never read
+ *  here so the caller still owns the (unconsumed) response stream.
+ *
+ *  Lives in this leaf module (moved from `http.ts`, #770) because the
+ *  reachability probe must classify its own /api/health response the same
+ *  way: a proxy answering 502 resolves the fetch, so without this the probe
+ *  would read a dead backend as healthy and never raise the banner.
+ */
+export function isProxyGatewayFailure(response: Response): boolean {
+  if (!GATEWAY_STATUSES.has(response.status)) return false;
+  return !(response.headers.get("Content-Type") || "").includes("application/json");
+}

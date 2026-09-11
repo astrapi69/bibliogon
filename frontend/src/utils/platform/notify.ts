@@ -205,6 +205,56 @@ function SuccessActionContent(
   );
 }
 
+/** Raise the error toast unconditionally. Separate from ``notify.error`` so
+ *  the withheld-toast flush below can release a toast whose suppression
+ *  checks have already been answered. */
+function raiseErrorToast(message: string, err?: ApiError) {
+  recordToast('error', message)
+  return toast.error(React.createElement(ErrorContent, {message, apiError: err}), {
+    autoClose: 15000,
+    closeOnClick: false,
+  })
+}
+
+/** Toasts withheld while a failure awaits its confirmation probe (#770).
+ *
+ *  A single network failure is not proof of an outage, so the toast cannot
+ *  be dropped on the spot - a request-specific failure (one oversized
+ *  upload reset, one stalled export) must still reach the user. It is
+ *  parked here until the probe decides: released when the backend turns
+ *  out healthy, discarded when the outage is confirmed and the persistent
+ *  banner takes over.
+ */
+type WithheldToast =
+  | {kind: 'error'; message: string; err?: ApiError}
+  | {kind: 'saveError'; message: string; onRetry: () => void; retryLabel: string}
+
+const withheld: WithheldToast[] = []
+
+backendReachability.subscribeSuspicion((confirmedDown) => {
+  const parked = withheld.splice(0, withheld.length)
+  if (confirmedDown) {
+    // The banner is up and states the cause; replaying these would be the
+    // per-call noise #765 removed.
+    return
+  }
+  for (const entry of parked) {
+    if (entry.kind === 'error') {
+      raiseErrorToast(entry.message, entry.err)
+    } else {
+      raiseSaveErrorToast(entry.message, entry.onRetry, entry.retryLabel)
+    }
+  }
+})
+
+function raiseSaveErrorToast(message: string, onRetry: () => void, retryLabel: string) {
+  recordToast('error', message)
+  return toast.error(
+    React.createElement(SaveErrorContent, {message, onRetry, retryLabel}),
+    {autoClose: false, closeOnClick: false, toastId: 'save-error'},
+  )
+}
+
 function recordToast(level: string, message: string) {
   try {
     // Dynamic import to avoid circular dependencies
@@ -231,15 +281,22 @@ export const notify = {
     // The store check also covers the ~22 call sites that pass a message
     // only (no error object) - per-error classification can never reach
     // those, and during an outage every one of them is a network failure.
-    if (err?.network || backendReachability.isDown()) {
+    if (backendReachability.isDown()) {
       console.warn(`[backend-unreachable] ${message}${err ? ` (${err.endpoint})` : ''}`)
       return
     }
-    recordToast('error', message)
-    return toast.error(React.createElement(ErrorContent, {message, apiError: err}), {
-      autoClose: 15000,
-      closeOnClick: false,
-    })
+    // The outage is not established yet (#770). The store decides via one
+    // immediate /api/health probe, so park the toast rather than drop it:
+    // a request-specific failure on a healthy backend still has to be
+    // reported. Note the ApiError's own `network` flag is deliberately NOT
+    // consulted here - it says the request died at the network level, not
+    // that the backend is gone, which is exactly the conflation #770 fixed.
+    if (backendReachability.isSuspected()) {
+      withheld.push({kind: 'error', message, err})
+      console.warn(`[backend-suspect] ${message}${err ? ` (${err.endpoint})` : ''}`)
+      return
+    }
+    return raiseErrorToast(message, err)
   },
   saveError: (message: string, onRetry: () => void, retryLabel: string) => {
     // Autosave fires on a timer, so during an outage this persistent
@@ -250,11 +307,14 @@ export const notify = {
       console.warn(`[backend-unreachable] ${message}`)
       return
     }
-    recordToast('error', message)
-    return toast.error(
-      React.createElement(SaveErrorContent, {message, onRetry, retryLabel}),
-      {autoClose: false, closeOnClick: false, toastId: 'save-error'},
-    )
+    // Same confirm-before-flip parking as notify.error (#770). The stable
+    // toastId means a released save-error still occupies one slot.
+    if (backendReachability.isSuspected()) {
+      withheld.push({kind: 'saveError', message, onRetry, retryLabel})
+      console.warn(`[backend-suspect] ${message}`)
+      return
+    }
+    return raiseSaveErrorToast(message, onRetry, retryLabel)
   },
   warning: (message: string) => { recordToast('warning', message); return toast.warning(message, {autoClose: 12000}) },
   info: (message: string) => { recordToast('info', message); return toast.info(message, {autoClose: 10000}) },
