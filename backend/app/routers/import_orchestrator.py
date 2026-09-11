@@ -285,6 +285,13 @@ def detect_git_import(
 
     detected = plugin.detect(str(staging_path))
     duplicate = _check_duplicate(db, detected)
+    if not duplicate.found:
+        # #762: the content signature hashes the staging DIRECTORY NAME,
+        # so anything that changes it (the #760 branch suffix, a fix to
+        # the slug derivation) makes an already-imported repo look new.
+        # The (url, branch) pair is the stable identity - and the only
+        # one books repaired by scripts/backfill_import_sources.py have.
+        duplicate = _check_git_duplicate(db, payload.git_url, payload.branch)
 
     return DetectResponse(detected=detected, duplicate=duplicate, temp_ref=temp_ref)
 
@@ -479,6 +486,44 @@ def _summaries_in_order(detected: DetectedProject, created_ids: list[str]) -> li
         if match is not None:
             out.append(match)
     return out
+
+
+def _check_git_duplicate(db: Session, git_url: str, branch: str | None) -> DuplicateInfo:
+    """Duplicate lookup by the stable git identity (#762).
+
+    Complements :func:`_check_duplicate`, which matches the handler's
+    content signature. Books imported through the translation-group
+    path - and every book repaired by the backfill script - carry only
+    a ``git:<normalized-url>#<branch>`` row.
+    """
+    from app.services.translation_import import git_source_identifier
+
+    query = db.query(BookImportSource).filter(BookImportSource.source_type == "git")
+    if branch:
+        query = query.filter(
+            BookImportSource.source_identifier == git_source_identifier(git_url, branch)
+        )
+    else:
+        # No branch means "import this repository" - for a translation
+        # group that is every branch at once, and such a repo may carry
+        # no ``main`` book at all (Die-Geister-der-Zeit has main-de +
+        # main-en). Match any already-imported branch of it.
+        prefix = git_source_identifier(git_url, "")
+        query = query.filter(BookImportSource.source_identifier.startswith(prefix))
+    row = query.first()
+    if row is None:
+        return DuplicateInfo(found=False)
+
+    book = db.query(Book).filter(Book.id == row.book_id).first()
+    if book is None or book.deleted_at is not None:
+        return DuplicateInfo(found=False)
+
+    return DuplicateInfo(
+        found=True,
+        existing_book_id=book.id,
+        existing_book_title=book.title,
+        imported_at=row.imported_at,
+    )
 
 
 def _check_duplicate(db: Session, detected: DetectedProject) -> DuplicateInfo:

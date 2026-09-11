@@ -24,6 +24,7 @@ Boundary:
 from __future__ import annotations
 
 import logging
+import re
 import shutil
 import tempfile
 from dataclasses import dataclass
@@ -31,13 +32,18 @@ from pathlib import Path
 
 from sqlalchemy.orm import Session
 
-from app.models import Book, GitSyncMapping
+from app.models import Book, BookImportSource, GitSyncMapping
 from app.paths import get_upload_dir
 from app.services.translation_groups import (
     _BRANCH_LANG_RE,
     derive_language,
     link_books,
 )
+
+#: ``BookImportSource.source_type`` for books imported from a git
+#: branch. Distinct from the WBT handler's content-signature rows so
+#: the two duplicate checks never shadow each other (#762).
+_GIT_SOURCE_TYPE = "git"
 
 logger = logging.getLogger(__name__)
 
@@ -102,6 +108,61 @@ class MultiBranchResult:
     skipped: list[SkippedBranch]
 
 
+def git_source_identifier(git_url: str, branch: str) -> str:
+    """Branch-aware ``BookImportSource.source_identifier`` for a git import.
+
+    Uses the ``git:<normalized>`` shape the model already documents,
+    extended with ``#<branch>`` so the N books of a translation group
+    stay distinguishable (#762). Normalisation folds the ssh and https
+    spellings of one repository together and drops a trailing ``.git``
+    or slash, so re-importing the same repo through the other URL form
+    is still recognised as a duplicate. Lowercased: GitHub treats
+    owner/repo case-insensitively, so ``Die-Geister-der-Zeit`` and
+    ``die-geister-der-zeit`` must not import twice.
+
+    Args:
+        git_url: Remote URL or local path the import cloned from.
+        branch: The branch this particular book came from.
+
+    Returns:
+        For example ``git:github.com/astrapi69/some-book#main-de``.
+
+    Example:
+        >>> git_source_identifier("git@github.com:a/b.git", "main")
+        'git:github.com/a/b#main'
+    """
+    normalized = git_url.strip().rstrip("/")
+    normalized = re.sub(r"^[a-zA-Z][a-zA-Z0-9+.\-]*://", "", normalized)
+    host_part = normalized.split("/", 1)[0]
+    if "@" in host_part:
+        # scp-like ssh form: user@host:owner/repo
+        normalized = normalized.split("@", 1)[1].replace(":", "/", 1)
+    normalized = re.sub(r"\.git$", "", normalized)
+    return f"git:{normalized.lower().rstrip('/')}#{branch}"
+
+
+def _existing_book_for(db: Session, *, git_url: str, branch: str) -> str | None:
+    """Book id previously imported from this (url, branch), if any."""
+    row = (
+        db.query(BookImportSource)
+        .filter(
+            BookImportSource.source_identifier == git_source_identifier(git_url, branch),
+            BookImportSource.source_type == _GIT_SOURCE_TYPE,
+        )
+        .first()
+    )
+    if row is None:
+        return None
+    book = db.get(Book, row.book_id)
+    if book is None or book.deleted_at is not None:
+        # Stale row (book hard-deleted or trashed): treat as not imported
+        # so the user can re-import, and drop the orphan.
+        db.delete(row)
+        db.commit()
+        return None
+    return row.book_id
+
+
 # --- public surface ---
 
 
@@ -131,6 +192,7 @@ def import_translation_group(
         except git.GitCommandError as exc:
             raise CloneFailedError(f"clone failed: {exc}") from exc
 
+        origin_url = _canonical_remote_url(git_url, repo)
         branches = _enumerate_translation_branches(repo)
         if not branches:
             raise NoMatchingBranchesError(
@@ -141,6 +203,27 @@ def import_translation_group(
         imported: list[ImportedBook] = []
         skipped: list[SkippedBranch] = []
         for branch in branches:
+            # #762: a branch already imported from this repo resolves to
+            # its existing book instead of being cloned into a duplicate.
+            # The group is still returned in full, so the caller keeps a
+            # complete picture (and re-linking stays idempotent).
+            existing_id = _existing_book_for(db, git_url=origin_url, branch=branch)
+            if existing_id is not None:
+                existing_book = db.get(Book, existing_id)
+                logger.info(
+                    "translation-import: branch %r already imported as %s; reusing.",
+                    branch,
+                    existing_id,
+                )
+                imported.append(
+                    ImportedBook(
+                        book_id=existing_id,
+                        branch=branch,
+                        language=existing_book.language if existing_book else None,
+                        title=existing_book.title if existing_book else "",
+                    )
+                )
+                continue
             try:
                 book = _import_one_branch(
                     db,
@@ -148,6 +231,7 @@ def import_translation_group(
                     staging=staging,
                     branch=branch,
                     uploads_dir=uploads_dir,
+                    origin_url=origin_url,
                 )
             except _NoWbtLayoutError as exc:
                 logger.warning(
@@ -240,6 +324,7 @@ def _import_one_branch(
     staging: Path,
     branch: str,
     uploads_dir: Path,
+    origin_url: str,
 ) -> ImportedBook | None:
     """Checkout ``branch`` in the staging clone, import via the WBT
     handler, then persist a per-book clone under
@@ -283,10 +368,20 @@ def _import_one_branch(
     db.add(
         GitSyncMapping(
             book_id=book_id,
-            repo_url=_origin_url(repo),
+            repo_url=origin_url,
             branch=branch,
             last_imported_commit_sha=head_sha,
             local_clone_path=str(target_dir),
+        )
+    )
+    # #762: without this row nothing recognised an already-imported
+    # branch, so every re-run recreated the entire group.
+    db.add(
+        BookImportSource(
+            book_id=book_id,
+            source_identifier=git_source_identifier(origin_url, branch),
+            source_type=_GIT_SOURCE_TYPE,
+            format_name="wbt-zip",
         )
     )
     db.commit()
@@ -297,6 +392,41 @@ def _import_one_branch(
         language=resolved_lang,
         title=(book.title if book else ""),
     )
+
+
+def _canonical_remote_url(git_url: str, repo) -> str:
+    """Resolve the URL that identifies the SOURCE repository.
+
+    The WBT handler calls this service with a local staging clone as
+    ``git_url``, so the fresh clone's own ``origin`` points at that
+    throwaway path (``/tmp/bibliogon_import_staging/imp-<uuid>/...``).
+    Persisting that would make ``GitSyncMapping.repo_url`` dead on
+    arrival and the #762 import identifier unrecognisable on the next
+    run, since the staging path carries a new UUID each time.
+
+    Resolution order: the source repo's own ``origin`` (the real
+    remote, when ``git_url`` is a local clone) -> the fresh clone's
+    ``origin`` -> the given URL verbatim (a genuine remote URL, or a
+    local repo with no origin at all).
+
+    Args:
+        git_url: What the caller asked to import (remote URL or path).
+        repo: The freshly created clone.
+
+    Returns:
+        The most durable URL available for this import.
+    """
+    source_path = Path(git_url)
+    if (source_path / ".git").is_dir() or (source_path / "HEAD").is_file():
+        try:
+            import git as gitpython
+
+            source_origin = _origin_url(gitpython.Repo(str(source_path)))
+            if source_origin:
+                return source_origin
+        except Exception:  # pragma: no cover - unreadable source repo
+            logger.warning("translation-import: cannot read origin of source repo %s", git_url)
+    return _origin_url(repo) or git_url
 
 
 def _origin_url(repo) -> str:

@@ -105,7 +105,7 @@ def _slug_from_url(url: str) -> str:
     ``https://gitlab.com/a/b/c``      -> ``c``
     Unknown shapes fall back to ``repo``.
     """
-    tail = url.rstrip("/").rstrip(".git").rsplit("/", 1)[-1]
+    tail = url.rstrip("/").removesuffix(".git").rsplit("/", 1)[-1]
     tail = tail.rsplit(":", 1)[-1]
     safe = re.sub(r"[^A-Za-z0-9_.-]", "-", tail).strip("-_.")
     return safe or "repo"
