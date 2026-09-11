@@ -74,7 +74,7 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
     return ProjectMetadata(
         title=metadata.get("title", project_root.name),
         subtitle=metadata.get("subtitle"),
-        author=metadata.get("author", "Unknown"),
+        author=_parse_author(metadata.get("author")),
         language=_normalize_language(metadata.get("lang", metadata.get("language", "de"))),
         series_name=series_name,
         series_index=series_idx,
@@ -112,6 +112,31 @@ def _parse_project_metadata(metadata: dict[str, Any], project_root: Path) -> Pro
         ),
         custom_css=_read_custom_css(config_dir, project_root),
     )
+
+
+def _parse_author(author_raw: Any) -> str:
+    """Normalize the metadata.yaml ``author`` field to one string (#761).
+
+    Real-world shapes: a plain string, a Pandoc-style list of strings,
+    or a list of mappings carrying ``name`` (+ role/affiliation). List
+    entries join with ", "; unusable values fall back to "Unknown".
+    """
+    if isinstance(author_raw, str) and author_raw.strip():
+        return author_raw.strip()
+    if isinstance(author_raw, dict):
+        author_raw = [author_raw]
+    if isinstance(author_raw, list):
+        names = []
+        for entry in author_raw:
+            if isinstance(entry, str) and entry.strip():
+                names.append(entry.strip())
+            elif isinstance(entry, dict):
+                name = str(entry.get("name") or "").strip()
+                if name:
+                    names.append(name)
+        if names:
+            return ", ".join(names)
+    return "Unknown"
 
 
 def _normalize_language(lang: Any) -> str:

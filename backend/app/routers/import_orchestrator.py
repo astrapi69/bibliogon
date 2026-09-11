@@ -67,6 +67,15 @@ class DetectResponse(BaseModel):
 
 class GitDetectRequest(BaseModel):
     git_url: str = Field(min_length=1, max_length=2000)
+    #: Branch to clone instead of the remote's default branch (#760).
+    #: The charset is a conservative git-ref subset; the no-leading-
+    #: dash rule blocks values that git would parse as an option
+    #: (``--upload-pack=...`` injection class).
+    branch: str | None = Field(
+        default=None,
+        max_length=255,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._/-]*$",
+    )
 
 
 class ExecuteRequest(BaseModel):
@@ -252,7 +261,7 @@ def detect_git_import(
     payload_dir.mkdir(parents=True, exist_ok=True)
 
     try:
-        staging_path = remote.clone(payload.git_url, payload_dir)
+        staging_path = remote.clone(payload.git_url, payload_dir, branch=payload.branch)
     except Exception as exc:
         drop_staged(temp_ref)
         raise HTTPException(

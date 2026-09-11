@@ -44,14 +44,20 @@ class GitImportHandler:
             return False
         return bool(_GIT_URL_RE.match(url.strip()))
 
-    def clone(self, url: str, target_dir: Path) -> Path:
+    def clone(self, url: str, target_dir: Path, branch: str | None = None) -> Path:
         """Clone ``url`` into ``target_dir`` and return the project
         root the orchestrator should dispatch through.
 
         Uses a subdirectory under ``target_dir`` named after the
         repo (trailing ``.git`` stripped) so downstream helpers can
-        treat the result as a normal filesystem path. If the remote
-        is missing WBT layout markers the orchestrator's
+        treat the result as a normal filesystem path. When ``branch``
+        is given (#760) it is cloned instead of the remote default
+        AND joins the directory name (``<slug>@<branch>``): the WBT
+        folder signature hashes the project dirname, so same-layout
+        translation branches stay distinct in the duplicate check
+        while default-branch clones keep the bare slug (signatures of
+        books imported before #760 remain valid). If the remote is
+        missing WBT layout markers the orchestrator's
         ``find_handler`` returns None and the endpoint surfaces a
         415 - no recovery attempted here.
 
@@ -62,6 +68,9 @@ class GitImportHandler:
 
         clean_url = url.strip()
         repo_slug = _slug_from_url(clean_url)
+        if branch:
+            branch_suffix = re.sub(r"[^A-Za-z0-9_.-]", "-", branch)
+            repo_slug = f"{repo_slug}@{branch_suffix}"
         dest = target_dir / repo_slug
         if dest.exists():
             # Extremely rare: UUID-based temp_ref collision. Make
@@ -71,19 +80,20 @@ class GitImportHandler:
             dest = target_dir / f"{repo_slug}-{secrets.token_hex(4)}"
 
         logger.info(
-            "plugin-git-sync: cloning %s into %s (timeout=%ss)",
-            clean_url, dest, _CLONE_TIMEOUT_SECONDS,
+            "plugin-git-sync: cloning %s (branch=%s) into %s (timeout=%ss)",
+            clean_url, branch or "<default>", dest, _CLONE_TIMEOUT_SECONDS,
         )
         # ``kill_after_timeout`` applies to the whole clone op.
         # ``depth`` is intentionally NOT set - users may want the
         # full history for future PGS-02 sync-back; Phase 1 does
         # not optimise clone time.
-        Repo.clone_from(
-            clean_url,
-            str(dest),
-            multi_options=["--quiet"],
-            kill_after_timeout=_CLONE_TIMEOUT_SECONDS,
-        )
+        clone_kwargs: dict = {
+            "multi_options": ["--quiet"],
+            "kill_after_timeout": _CLONE_TIMEOUT_SECONDS,
+        }
+        if branch:
+            clone_kwargs["branch"] = branch
+        Repo.clone_from(clean_url, str(dest), **clone_kwargs)
         return dest
 
 

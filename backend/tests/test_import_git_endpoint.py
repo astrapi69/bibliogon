@@ -138,6 +138,88 @@ def test_detect_git_rejects_empty_url(client: TestClient) -> None:
     assert resp.status_code == 422  # pydantic min_length=1
 
 
+def test_detect_git_passes_branch_to_clone(client: TestClient, monkeypatch) -> None:
+    """#760: an explicit branch must reach GitPython's clone_from so
+    language-variant branches (main-de, main-en, ...) are cloneable."""
+    seen_branches: list[str | None] = []
+
+    def _clone(_url: str, to_path: str, **kwargs) -> None:
+        seen_branches.append(kwargs.get("branch"))
+        _build_wbt(Path(to_path), title="Branch Book DE")
+
+    _patch_git_repo(monkeypatch, _clone)
+
+    resp = client.post(
+        "/api/import/detect/git",
+        json={"git_url": "https://github.com/astrapi69/branch-book", "branch": "main-de"},
+    )
+    assert resp.status_code == 200, resp.text
+    assert seen_branches == ["main-de"]
+
+
+def test_two_branches_of_same_url_import_as_two_books(
+    client: TestClient, monkeypatch
+) -> None:
+    """#760: translation branches share the manuscript file layout, so
+    without a branch-aware clone target they would collide in the
+    folder-signature duplicate check. Both must import."""
+
+    def _clone(_url: str, to_path: str, **kwargs) -> None:
+        branch = kwargs.get("branch") or "default"
+        _build_wbt(Path(to_path), title=f"Same Layout Book {branch}")
+
+    _patch_git_repo(monkeypatch, _clone)
+    url = "https://github.com/astrapi69/two-branch-book"
+
+    created_ids = []
+    for branch in ("main", "main-de"):
+        detect = client.post(
+            "/api/import/detect/git", json={"git_url": url, "branch": branch}
+        )
+        assert detect.status_code == 200, detect.text
+        body = detect.json()
+        assert body["duplicate"]["found"] is False, (
+            f"branch {branch} collided: {body['duplicate']}"
+        )
+        execute = client.post(
+            "/api/import/execute",
+            json={"temp_ref": body["temp_ref"], "duplicate_action": "create"},
+        )
+        assert execute.status_code == 200, execute.text
+        created_ids.append(execute.json()["book_id"])
+
+    assert len(set(created_ids)) == 2
+
+    reimport = client.post(
+        "/api/import/detect/git", json={"git_url": url, "branch": "main-de"}
+    )
+    assert reimport.status_code == 200, reimport.text
+    assert reimport.json()["duplicate"]["found"] is True
+    client.post(
+        "/api/import/execute",
+        json={"temp_ref": reimport.json()["temp_ref"], "duplicate_action": "cancel"},
+    )
+
+
+def test_detect_git_rejects_leading_dash_branch(
+    client: TestClient, monkeypatch
+) -> None:
+    """A branch starting with '-' could be parsed as a git option
+    (option-injection class); pydantic must reject it before any
+    clone attempt."""
+
+    def _clone_panic(*_args, **_kwargs):
+        raise AssertionError("clone must not run for an invalid branch")
+
+    _patch_git_repo(monkeypatch, _clone_panic)
+
+    resp = client.post(
+        "/api/import/detect/git",
+        json={"git_url": "https://github.com/astrapi69/x", "branch": "--upload-pack=evil"},
+    )
+    assert resp.status_code == 422, resp.text
+
+
 def test_detect_git_rejects_malformed_url(
     client: TestClient, monkeypatch
 ) -> None:
