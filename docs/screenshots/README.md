@@ -34,6 +34,7 @@ binary via the repo-level `.gitattributes` (`*.png binary`) — plain git, no LF
 | Feature | Screenshot |
 | --- | --- |
 | Book dashboard — grid view | ![Book Dashboard Grid](dashboard/book-dashboard-grid.png) |
+| Backend-unreachable banner (#765) | ![Backend Unreachable Banner](dashboard/backend-unreachable-banner.png) |
 | Book dashboard — list view | ![Book Dashboard List](dashboard/book-dashboard-list.png) |
 | Article dashboard | ![Article Dashboard](dashboard/article-dashboard.png) |
 | Recent documents | ![Recent Documents](dashboard/recent-documents.png) |

@@ -36,6 +36,7 @@ import { DialogProvider } from "./components/shared/AppDialog";
 import AudioExportGate from "./components/export/AudioExportGate";
 import MediumImportGate from "./components/import/MediumImportGate";
 import OfflineBanner from "./components/shared/OfflineBanner";
+import BackendUnreachableBanner from "./components/shared/BackendUnreachableBanner";
 import PreviewBanner from "./components/preview/PreviewBanner";
 import AppUpdateBanner from "./components/shared/AppUpdateBanner";
 import AppVersionUpdateBanner from "./components/shared/AppVersionUpdateBanner";
@@ -142,6 +143,7 @@ export default function App() {
                                              *  and local builds. Sits above every other banner. */}
                                             <PreviewBanner />
                                             <OfflineBanner />
+                                            <BackendUnreachableBanner />
                                             {/* PWA: "new version available" banner (issue #323).
                                              *  Subscribes to swUpdateManager; fixed-bottom, dismissible,
                                              *  applies the update via SKIP_WAITING + controllerchange

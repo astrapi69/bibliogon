@@ -2122,6 +2122,9 @@
       "error": "オフライン操作に失敗しました。",
       "available": "オフラインで利用可能",
       "banner_message": "オフラインです。変更はローカルに保存され、接続復帰時に同期されます。",
+      "backend_banner_message": "バックエンドに接続できません。サーバーは起動していますか？",
+      "backend_banner_retry": "再試行",
+      "backend_banner_retrying": "確認中…",
       "synced_toast": "同期された章: {count}",
       "sync_partial": "一部の章は同期できませんでした。",
       "conflicts_found": "競合が見つかりました。設定で解決してください。"

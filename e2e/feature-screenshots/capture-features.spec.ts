@@ -149,6 +149,24 @@ test.describe("Feature Screenshots", () => {
             await page.screenshot({path: `${OUT}/dashboard/book-dashboard-grid.png`});
         });
 
+        test("backend unreachable banner", async ({page}) => {
+            await createBook("Die Souveränität des Musters", "Asterios Raptis");
+            await createBook("Schreiben am Meer", "Asterios Raptis");
+            await page.goto("/");
+            await page.getByTestId("new-book-btn").waitFor({state: "visible"}).catch(() => {});
+            await page.route(/^https?:\/\/[^/]+\/api\//, (route) =>
+                route.abort("connectionrefused"),
+            );
+            await page.getByTestId("articles-nav-btn").click().catch(() => {});
+            await page.getByTestId("books-nav-btn").click().catch(() => {});
+            await page
+                .getByTestId("backend-unreachable-banner")
+                .waitFor({state: "visible", timeout: 10_000})
+                .catch(() => {});
+            await page.waitForTimeout(400);
+            await page.screenshot({path: `${OUT}/dashboard/backend-unreachable-banner.png`});
+        });
+
         test("book dashboard list view", async ({page}) => {
             await createBook("Die Souveränität des Musters", "Asterios Raptis");
             await createBook("Schreiben am Meer", "Asterios Raptis");

@@ -1,4 +1,5 @@
 import { ApiError } from "./errors";
+import { backendReachability } from "./backendReachability";
 
 /**
  * Shared HTTP transport core for the typed API client.
@@ -34,6 +35,24 @@ export function isBackendlessOffline(): boolean {
   return import.meta.env.VITE_STORAGE_MODE === "dexie";
 }
 
+/** Gateway statuses a reverse proxy emits when the backend behind it is
+ *  dead. Measured 2026-09-11 (#765): the Vite dev proxy answers 502
+ *  `text/plain` with an empty body, nginx (docker-compose.prod) answers 502
+ *  `text/html`. Only the "everything down" case (`make dev-down`) rejects
+ *  the fetch outright, so without this branch the outage banner would never
+ *  appear in the deployed topologies. */
+const GATEWAY_STATUSES = new Set([502, 503, 504]);
+
+/** True for a proxy-level gateway failure, false for a backend-authored one.
+ *  Bibliogon's own `ExternalServiceError` (Pandoc / TTS / LanguageTool) maps
+ *  to HTTP 502 too - but as `application/json` carrying a `detail` the user
+ *  must see. The content-type is the discriminator; the body is never read
+ *  here so the caller still owns the (unconsumed) response stream. */
+function isProxyGatewayFailure(response: Response): boolean {
+  if (!GATEWAY_STATUSES.has(response.status)) return false;
+  return !(response.headers.get("Content-Type") || "").includes("application/json");
+}
+
 /**
  * The single network egress for the whole client. Every `api.*` method - the
  * JSON `request()` helper AND the raw upload/blob/export calls - goes through
@@ -46,7 +65,7 @@ export function isBackendlessOffline(): boolean {
  * `init` is forwarded only when present so the single-argument call shape that
  * some callers and tests rely on is preserved exactly.
  */
-export function guardedFetch(
+export async function guardedFetch(
   input: string,
   init?: RequestInit,
 ): Promise<Response> {
@@ -60,9 +79,39 @@ export function guardedFetch(
     offlineError.offline = true;
     return Promise.reject(offlineError);
   }
-  return init === undefined
-    ? globalThis.fetch(input)
-    : globalThis.fetch(input, init);
+  try {
+    const response =
+      init === undefined
+        ? await globalThis.fetch(input)
+        : await globalThis.fetch(input, init);
+    if (isProxyGatewayFailure(response)) {
+      backendReachability.reportNetworkFailure();
+      const gatewayError = new ApiError(
+        response.status,
+        `Backend unreachable: proxy returned ${response.status}`,
+        String(input).split("?")[0],
+        init?.method || "GET",
+      );
+      gatewayError.network = true;
+      throw gatewayError;
+    }
+    backendReachability.reportBackendResponse();
+    return response;
+  } catch (fetchFailure) {
+    if (fetchFailure instanceof ApiError) throw fetchFailure;
+    if (fetchFailure instanceof DOMException && fetchFailure.name === "AbortError") {
+      throw fetchFailure;
+    }
+    backendReachability.reportNetworkFailure();
+    const networkError = new ApiError(
+      0,
+      `Backend unreachable: ${String(fetchFailure)}`,
+      String(input).split("?")[0],
+      init?.method || "GET",
+    );
+    networkError.network = true;
+    throw networkError;
+  }
 }
 
 /** Typed JSON request helper. Records timing/errors via the event recorder. */
